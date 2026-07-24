@@ -1741,4 +1741,81 @@ public class NumberToStringConverterAuditFixesTests
     </Variants>
   </Language>
 </Numbers>";
+
+    // ── Item 78 — MaxNumber constrains cardinal component of composite conversions ─
+
+    [TestMethod]
+    public void Convert_Decimal_IntegerPartAtMaxNumber_Succeeds()
+    {
+        var opts = new NumberToStringConverterOptions(EN) { MaxNumber = 1 };
+        var conv = new NumberToStringConverter(opts);
+        // integer part is 1 == MaxNumber → must not throw
+        _ = conv.Convert(1.9m);
+    }
+
+    [TestMethod]
+    public void Convert_Decimal_IntegerPartExceedsMaxNumber_ThrowsArgumentOutOfRange()
+    {
+        var opts = new NumberToStringConverterOptions(EN) { MaxNumber = 1 };
+        var conv = new NumberToStringConverter(opts);
+        // integer part is 2 > MaxNumber → must throw
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => conv.Convert(2.1m),
+            "Convert(decimal) must throw when the integer part exceeds MaxNumber");
+    }
+
+    // ── Item 85 — CultureInfo for month names is resolved once at construction ──
+
+    [TestMethod]
+    public void SupportsLocalizableMonthNames_KnownCultureWithDatePattern_ReturnsTrue()
+    {
+        // EN has a DateFormat in its XML configuration; "EN" resolves to a known CultureInfo.
+        var conv = NumberToStringConverter.GetConverter("EN");
+        Assert.IsTrue(conv.SupportsLocalizableMonthNames,
+            "SupportsLocalizableMonthNames must be true when LanguageIdentifier maps to a system culture");
+    }
+
+    [TestMethod]
+    public void SupportsLocalizableMonthNames_UnknownCultureWithDatePattern_ReturnsFalse()
+    {
+        // Build a converter whose LanguageIdentifier is not a known system culture.
+        var opts = new NumberToStringConverterOptions(EN)
+        {
+            LanguageIdentifier = "XTEST",
+            DatePattern = "{month} {ordinal-day}"
+        };
+        var conv = new NumberToStringConverter(opts);
+        Assert.IsFalse(conv.SupportsLocalizableMonthNames,
+            "SupportsLocalizableMonthNames must be false when LanguageIdentifier is unknown to CultureInfo");
+    }
+
+    [TestMethod]
+    public void SupportsLocalizableMonthNames_NullDatePattern_ReturnsFalse()
+    {
+        // A converter with no DatePattern should never expose month-name support.
+        var opts = new NumberToStringConverterOptions(EN)
+        {
+            LanguageIdentifier = "EN",
+            DatePattern = null
+        };
+        var conv = new NumberToStringConverter(opts);
+        Assert.IsFalse(conv.SupportsLocalizableMonthNames,
+            "SupportsLocalizableMonthNames must be false when no DatePattern is configured");
+    }
+
+    [TestMethod]
+    public void Convert_DateOnly_UnknownCultureInfo_MonthRenderedAsDecimalNumber()
+    {
+        // A converter with an unknown LanguageIdentifier must fall back to a numeric month.
+        var opts = new NumberToStringConverterOptions(EN)
+        {
+            LanguageIdentifier = "XTEST",
+            DatePattern = "{month}"
+        };
+        var conv = new NumberToStringConverter(opts);
+        // 15 March 2024 → month = 3 → expected output "3"
+        string result = conv.Convert(new DateOnly(2024, 3, 15));
+        Assert.AreEqual("3", result,
+            "When LanguageIdentifier does not resolve to a CultureInfo, the month must be emitted as its decimal number");
+    }
 }

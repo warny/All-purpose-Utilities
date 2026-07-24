@@ -148,6 +148,7 @@ namespace Utils.NumberToString
             _dateFirstDay = options.DateFirstDay;
             _dateFirstCardinalDay = options.DateFirstCardinalDay;
             _dateTimeConnector = options.DateTimeConnector;
+            _dateCulture = _datePattern != null ? TryGetDateCultureInfo(LanguageIdentifier) : null;
             // Index both canonical name and localName so both are accepted in API calls and XML constraints.
             _dimensionIndex = VariantDimensions
                 .SelectMany(d => string.IsNullOrEmpty(d.LocalName)
@@ -210,8 +211,34 @@ namespace Utils.NumberToString
         /// </summary>
         public string FractionSeparator { get; }
         /// <summary>
-        /// Maximum number that can be converted or null when unlimited.
+        /// Maximum absolute value that may be passed to <see cref="Convert(BigInteger, string[])"/>,
+        /// or <see langword="null"/> when unlimited.
         /// </summary>
+        /// <remarks>
+        /// <para>
+        /// The limit is enforced on the <em>cardinal</em> component only.
+        /// Composite overloads that internally call <see cref="Convert(BigInteger, string[])"/>
+        /// therefore enforce it on their integer / units component:
+        /// </para>
+        /// <list type="bullet">
+        ///   <item><description>
+        ///     <c>Convert(decimal, …)</c> — checks the truncated integer part.
+        ///     A value such as <c>1.9m</c> with <c>MaxNumber = 1</c> succeeds because the
+        ///     integer part is 1, while <c>2.1m</c> fails because the integer part is 2.
+        ///   </description></item>
+        ///   <item><description>
+        ///     <c>ConvertCurrency(…)</c> — checks the units (whole-currency) component.
+        ///   </description></item>
+        /// </list>
+        /// <para>
+        ///   <c>ConvertOrdinal</c>, <c>ConvertYear</c>, and <c>ConvertMultiplicative</c> are
+        ///   separate conversion surfaces and are not constrained by this property.
+        /// </para>
+        /// <para>
+        ///   Must be non-negative when specified; a negative value is rejected at construction
+        ///   with <see cref="ArgumentOutOfRangeException"/>.
+        /// </para>
+        /// </remarks>
         public BigInteger? MaxNumber { get; }
         /// <summary>
         /// Group definitions for digits
@@ -309,6 +336,14 @@ namespace Utils.NumberToString
         /// <inheritdoc/>
         public bool SupportsDateConversion => _datePattern != null;
 
+        /// <summary>
+        /// Gets a value indicating whether <see cref="Convert(DateOnly, string[])"/> can produce
+        /// localized month names. When <see langword="false"/>, the month token is emitted as a
+        /// decimal number because <see cref="LanguageIdentifier"/> does not resolve to a known
+        /// system culture. This is resolved once at construction time.
+        /// </summary>
+        public bool SupportsLocalizableMonthNames => _dateCulture != null;
+
         /// <summary>Gets the time units for time conversion (hours, minutes, seconds).</summary>
         public IReadOnlyDictionary<string, (string Singular, string Plural, string? Count1Form)> TimeUnits => _timeUnits;
 
@@ -350,6 +385,11 @@ namespace Utils.NumberToString
         private readonly string? _dateFirstDay;
         private readonly string? _dateFirstCardinalDay;
         private readonly string? _dateTimeConnector;
+        /// <summary>
+        /// CultureInfo resolved at construction time for month-name lookup, or <see langword="null"/>
+        /// when <see cref="LanguageIdentifier"/> does not map to a known system culture.
+        /// </summary>
+        private readonly CultureInfo? _dateCulture;
 
         /// <summary>
         /// The raw adjust function before composition with <see cref="LanguageSpecifics"/>.
@@ -595,7 +635,8 @@ namespace Utils.NumberToString
                 if (activeSuffix != null)
                 {
                     BigInteger fracNumerator = BigInteger.Parse(digits);
-                    var valueText = Convert(fracNumerator, variants);
+                    // Fractional numerator is a sub-expression; do not check MaxNumber for it.
+                    var valueText = ConvertCardinalUnchecked(fracNumerator, variants);
                     // Use BigInteger to avoid long overflow when fractional digits exceed 18.
                     long fracPluralProxy = fracNumerator <= 1 ? (long)fracNumerator : 2L;
                     result.Append(valueText).Append(Separator).Append(activeSuffix.ToPlural(fracPluralProxy));
@@ -693,22 +734,50 @@ namespace Utils.NumberToString
 
         /// <summary>
         /// Converts a BigInteger to its string representation, applying the specified morphological
-        /// variant parameters. The pipeline is: raw text → user adjust → variant rules → language finalization.
+        /// variant parameters.
         /// When no parameters are supplied, the first declared value of each dimension is used as default.
         /// </summary>
+        /// <remarks>
+        /// <para>The full transformation pipeline (in order):</para>
+        /// <list type="number">
+        ///   <item><description>
+        ///     Per scale-group: <c>TriggerAt.Group</c> triggers → scale-specific replacements
+        ///     and exact/substring global replacements → scale-specific variant rules
+        ///     → <c>TriggerAt.GroupWithScale</c> triggers.
+        ///   </description></item>
+        ///   <item><description>
+        ///     Final combined pass: value-filtered global replacements → exact/substring global replacements.
+        ///   </description></item>
+        ///   <item><description>User adjust function (<see cref="NumberToStringConverterOptions.AdjustFunction"/>).</description></item>
+        ///   <item><description>All non-scale variant rules, applied in ascending specificity order.</description></item>
+        ///   <item><description><c>TriggerAt.End</c> triggers.</description></item>
+        ///   <item><description><see cref="INumberToStringLanguageSpecifics.FinalizeWriting"/> (language finalization).</description></item>
+        ///   <item><description>Minus prefix when the input is negative.</description></item>
+        /// </list>
+        /// </remarks>
         /// <param name="number">The value to convert.</param>
         /// <param name="variants">
         /// Zero or more <c>"dimension=value"</c> strings. Unrecognised dimensions fall back silently.
         /// </param>
         /// <returns>The formatted number with variants applied.</returns>
         /// <exception cref="ArgumentOutOfRangeException">
-        /// Thrown when <paramref name="number"/> exceeds <see cref="MaxNumber"/>.
+        /// Thrown when the absolute value of <paramref name="number"/> exceeds <see cref="MaxNumber"/>.
         /// </exception>
         public string Convert(BigInteger number, params string[] variants)
         {
             if (MaxNumber.HasValue && BigInteger.Abs(number) > MaxNumber.Value)
                 throw new ArgumentOutOfRangeException(nameof(number), $"The value exceeds the maximum supported number ({MaxNumber.Value}).");
 
+            return ConvertCardinalUnchecked(number, variants);
+        }
+
+        /// <summary>
+        /// Runs the full cardinal conversion pipeline without applying the <see cref="MaxNumber"/> guard.
+        /// Used internally for sub-expressions (fractional numerators, currency subunits) that are
+        /// components of a composite conversion rather than independent top-level values.
+        /// </summary>
+        private string ConvertCardinalUnchecked(BigInteger number, string[] variants)
+        {
             bool isNegative = number.Sign == -1;
             BigInteger abs = isNegative ? BigInteger.Abs(number) : number;
 
@@ -994,6 +1063,38 @@ namespace Utils.NumberToString
         /// When <paramref name="groupNumber"/> is supplied, scale-specific rules for that
         /// level are applied first (before global rules).
         /// </summary>
+        /// <remarks>
+        /// <para>
+        /// The replacement pipeline executes the following stages in order:
+        /// </para>
+        /// <list type="number">
+        ///   <item><description>
+        ///     <b>Scale-specific rules</b> (<c>onScale</c> set): applied per-group when
+        ///     <paramref name="groupNumber"/> matches. Each matching rule is applied in
+        ///     declaration order; multiple rules may fire on the same text (cascading within stage).
+        ///   </description></item>
+        ///   <item><description>
+        ///     <b>Value-filtered global rules</b> (<c>onValue</c> set, no <c>onScale</c>): applied
+        ///     only in the final combined pass (<paramref name="groupNumber"/> is <see langword="null"/>)
+        ///     using the absolute number value. Applied in declaration order.
+        ///   </description></item>
+        ///   <item><description>
+        ///     <b>Exact global replacement</b>: a single O(1) dictionary lookup on the current text.
+        ///     If matched, the method returns immediately — no subsequent stage fires.
+        ///   </description></item>
+        ///   <item><description>
+        ///     <b>Sequential substring replacements</b> (<c>Anywhere</c>, <c>StartsWith</c>,
+        ///     <c>EndsWith</c> scopes): applied in declaration order. Each rule sees the output of
+        ///     the previous rule, so earlier replacements can create input for later ones (cascading).
+        ///   </description></item>
+        /// </list>
+        /// <para>
+        ///   This method is called twice per scale group during <c>ConvertRaw</c>:
+        ///   once per-group (stages 1 &amp; 3–4) and once on the fully assembled string (stages 2–4).
+        ///   Variant rules and triggers run separately in <see cref="Convert(BigInteger, string[])"/>
+        ///   after both <c>ApplyReplacements</c> passes are complete.
+        /// </para>
+        /// </remarks>
         /// <param name="value">The text to transform.</param>
         /// <param name="groupNumber">
         /// Current scale group index, or <see langword="null"/> for the final combined pass.
@@ -1480,7 +1581,8 @@ namespace Utils.NumberToString
             if (subunits > 0)
             {
                 string subunitName = subunits == 1 ? currency.SubunitSingular : currency.SubunitPlural;
-                string subunitsText = Convert(subunits, variants) + Separator + subunitName;
+                // Subunits are a sub-expression; do not check MaxNumber for them.
+                string subunitsText = ConvertCardinalUnchecked(subunits, variants) + Separator + subunitName;
                 result = result + Separator + currency.Connector + Separator + subunitsText;
             }
 
@@ -1698,13 +1800,21 @@ namespace Utils.NumberToString
             return parts.Count > 0 ? string.Join(Separator, parts) : Zero;
         }
 
+        private static CultureInfo? TryGetDateCultureInfo(string identifier)
+        {
+            try { return CultureInfo.GetCultureInfo(identifier); }
+            catch (CultureNotFoundException) { return null; }
+        }
+
         private string GetMonthName(int month)
         {
+            if (_dateCulture is null || month < 1)
+                return month.ToString(CultureInfo.InvariantCulture);
             try
             {
-                return CultureInfo.GetCultureInfo(LanguageIdentifier).DateTimeFormat.MonthNames[month - 1];
+                return _dateCulture.DateTimeFormat.MonthNames[month - 1];
             }
-            catch (Exception ex) when (ex is CultureNotFoundException or IndexOutOfRangeException)
+            catch (IndexOutOfRangeException)
             {
                 return month.ToString(CultureInfo.InvariantCulture);
             }
