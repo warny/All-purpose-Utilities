@@ -446,7 +446,10 @@ namespace Utils.NumberToString
                         throw new InvalidOperationException(
                             $"[{languageIdentifier}] Replacement for '{r.OldValue}' inside a Variant rule has neither " +
                             $"a newValue nor child form-variant elements.");
-                    // else: form variants on nested replacements are currently not expanded in this path.
+                    else
+                        throw new InvalidOperationException(
+                            $"[{languageIdentifier}] Replacement for '{r.OldValue}' inside a Variant rule has form-variant " +
+                            $"children, which are not supported at this nesting level. Use a flat Variant element instead.");
                 }
 
                 foreach (var dimValue in dimValues)

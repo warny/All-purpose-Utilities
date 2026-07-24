@@ -1604,6 +1604,22 @@ public class NumberToStringConverterAuditFixesTests
             "Exception must mention the missing newValue");
     }
 
+    [TestMethod]
+    public void ReadConfiguration_NestedVariantFormVariantReplacement_ThrowsInvalidOperation()
+    {
+        // A <Replacement> inside a structural <Variant> rule that has form-variant children
+        // (instead of newValue) must be rejected — not silently ignored.
+        string xml = BuildXmlWithNestedFormVariantReplacement(
+            structDim: "case", structValues: "nom,acc", structValue: "acc",
+            formDim: "gender", formValues: "m,f", oldValue: "one");
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.ReadConfiguration(xml));
+        StringAssert.Contains(ex.Message, "one",
+            "Exception must identify the replacement's oldValue");
+        StringAssert.Contains(ex.Message, "form-variant",
+            "Exception must mention form-variant children");
+    }
+
     // ── XML helpers for configuration audit tests ─────────────────────────────
 
     private static string BuildXmlWithForms(string dimName, string dimValues, string forms) => $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
@@ -1701,6 +1717,26 @@ public class NumberToStringConverterAuditFixesTests
       <Dimension name=""{dimName}"" values=""{dimValues}"" />
       <Variant type=""{dimName}"" variant=""{dimValue}"">
         <Replacement oldValue=""{oldValue}"" scope=""Standalone"" />
+      </Variant>
+    </Variants>
+  </Language>
+</Numbers>";
+
+    private static string BuildXmlWithNestedFormVariantReplacement(
+        string structDim, string structValues, string structValue,
+        string formDim, string formValues, string oldValue) => $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>XTEST</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+    <Variants>
+      <Dimension name=""{structDim}"" values=""{structValues}"" />
+      <Dimension name=""{formDim}"" values=""{formValues}"" />
+      <Variant type=""{structDim}"" variant=""{structValue}"">
+        <Replacement oldValue=""{oldValue}"" scope=""Standalone"">
+          <Variant type=""{formDim}"" forms=""x,y"" />
+        </Replacement>
       </Variant>
     </Variants>
   </Language>
