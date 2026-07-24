@@ -1191,8 +1191,10 @@ namespace Utils.NumberToString
             /// <param name="localName">Optional language-specific alias (e.g. "genus" for German, "sijamuoto" for Finnish).</param>
             public VariantDimension(string name, IReadOnlyList<string> values, string? localName = null)
             {
+                ArgumentException.ThrowIfNullOrEmpty(name);
+                ArgumentNullException.ThrowIfNull(values);
                 Name = name;
-                Values = values;
+                Values = values.ToImmutableArray();
                 LocalName = localName;
             }
 
@@ -1222,8 +1224,10 @@ namespace Utils.NumberToString
             /// <param name="replacements">Replacement rules applied when this variant is active.</param>
             public VariantRule(IReadOnlyDictionary<string, string> constraints, IReadOnlyList<ReplacementRule> replacements)
             {
-                Constraints = constraints;
-                Replacements = replacements;
+                ArgumentNullException.ThrowIfNull(constraints);
+                ArgumentNullException.ThrowIfNull(replacements);
+                Constraints = constraints.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
+                Replacements = replacements.ToImmutableArray();
             }
 
             /// <summary>Gets the dimension constraints (name → required value).</summary>
@@ -1255,9 +1259,12 @@ namespace Utils.NumberToString
                 string? suffix,
                 string? removeTrailing)
             {
-                Constraints = constraints;
-                Exceptions = exceptions;
-                WordRules = wordRules;
+                ArgumentNullException.ThrowIfNull(constraints);
+                ArgumentNullException.ThrowIfNull(exceptions);
+                ArgumentNullException.ThrowIfNull(wordRules);
+                Constraints = constraints.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
+                Exceptions = exceptions.ToImmutableDictionary();
+                WordRules = wordRules.ToImmutableDictionary();
                 Suffix = suffix;
                 RemoveTrailing = removeTrailing;
             }

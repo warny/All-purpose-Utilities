@@ -1097,4 +1097,134 @@ public class NumberToStringConverterAuditFixesTests
         Assert.ThrowsException<ArgumentOutOfRangeException>(() => new NumberToStringConverter(opts),
             "MaxNumber = -1 must be rejected; a negative maximum makes every conversion fail");
     }
+
+    // ── Item 75 — nested configuration objects must be deep-frozen ────────────
+
+    [TestMethod]
+    public void VariantDimension_MutatingSourceListAfterConstruction_DoesNotAffectValues()
+    {
+        var source = new List<string> { "masc", "fem" };
+        var dim = new NumberToStringConverter.VariantDimension("gender", source);
+
+        source.Add("neut");
+
+        Assert.AreEqual(2, dim.Values.Count,
+            "VariantDimension.Values must not reflect mutations made to the source list after construction");
+    }
+
+    [TestMethod]
+    public void VariantDimension_NullName_ThrowsArgumentNullException()
+    {
+        Assert.ThrowsException<ArgumentNullException>(
+            () => new NumberToStringConverter.VariantDimension(null!, ["masc"]));
+    }
+
+    [TestMethod]
+    public void VariantDimension_EmptyName_ThrowsArgumentException()
+    {
+        Assert.ThrowsException<ArgumentException>(
+            () => new NumberToStringConverter.VariantDimension("", ["masc"]));
+    }
+
+    [TestMethod]
+    public void VariantDimension_NullValues_ThrowsArgumentNullException()
+    {
+        Assert.ThrowsException<ArgumentNullException>(
+            () => new NumberToStringConverter.VariantDimension("gender", null!));
+    }
+
+    [TestMethod]
+    public void VariantRule_MutatingSourceConstraintsAfterConstruction_DoesNotAffectRule()
+    {
+        var constraints = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["gender"] = "fem" };
+        var rule = new NumberToStringConverter.VariantRule(
+            constraints,
+            [new NumberToStringConverter.ReplacementRule("un", "une", ReplacementScope.LastWord)]);
+
+        constraints["case"] = "nominative";
+
+        Assert.AreEqual(1, rule.Constraints.Count,
+            "VariantRule.Constraints must not reflect mutations to the source dictionary after construction");
+    }
+
+    [TestMethod]
+    public void VariantRule_MutatingSourceReplacementsAfterConstruction_DoesNotAffectRule()
+    {
+        var replacements = new List<NumberToStringConverter.ReplacementRule>
+        {
+            new("un", "une", ReplacementScope.LastWord)
+        };
+        var rule = new NumberToStringConverter.VariantRule(
+            new Dictionary<string, string>(),
+            replacements);
+
+        replacements.Add(new NumberToStringConverter.ReplacementRule("deux", "deux", ReplacementScope.LastWord));
+
+        Assert.AreEqual(1, rule.Replacements.Count,
+            "VariantRule.Replacements must not reflect mutations to the source list after construction");
+    }
+
+    [TestMethod]
+    public void VariantRule_NullConstraints_ThrowsArgumentNullException()
+    {
+        Assert.ThrowsException<ArgumentNullException>(
+            () => new NumberToStringConverter.VariantRule(null!, []));
+    }
+
+    [TestMethod]
+    public void VariantRule_NullReplacements_ThrowsArgumentNullException()
+    {
+        Assert.ThrowsException<ArgumentNullException>(
+            () => new NumberToStringConverter.VariantRule(new Dictionary<string, string>(), null!));
+    }
+
+    [TestMethod]
+    public void OrdinalVariantRule_MutatingSourceExceptionsAfterConstruction_DoesNotAffectRule()
+    {
+        var exceptions = new Dictionary<long, string> { [1L] = "premier" };
+        var rule = new NumberToStringConverter.OrdinalVariantRule(
+            new Dictionary<string, string>(), exceptions, new Dictionary<string, string>(), null, null);
+
+        exceptions[2L] = "deuxième";
+
+        Assert.AreEqual(1, rule.Exceptions.Count,
+            "OrdinalVariantRule.Exceptions must not reflect mutations to the source dictionary after construction");
+    }
+
+    [TestMethod]
+    public void OrdinalVariantRule_MutatingSourceWordRulesAfterConstruction_DoesNotAffectRule()
+    {
+        var wordRules = new Dictionary<string, string> { ["one"] = "first" };
+        var rule = new NumberToStringConverter.OrdinalVariantRule(
+            new Dictionary<string, string>(), new Dictionary<long, string>(), wordRules, null, null);
+
+        wordRules["two"] = "second";
+
+        Assert.AreEqual(1, rule.WordRules.Count,
+            "OrdinalVariantRule.WordRules must not reflect mutations to the source dictionary after construction");
+    }
+
+    [TestMethod]
+    public void OrdinalVariantRule_NullConstraints_ThrowsArgumentNullException()
+    {
+        Assert.ThrowsException<ArgumentNullException>(() =>
+            new NumberToStringConverter.OrdinalVariantRule(
+                null!, new Dictionary<long, string>(), new Dictionary<string, string>(), null, null));
+    }
+
+    [TestMethod]
+    public void OrdinalVariantRule_NullExceptions_ThrowsArgumentNullException()
+    {
+        Assert.ThrowsException<ArgumentNullException>(() =>
+            new NumberToStringConverter.OrdinalVariantRule(
+                new Dictionary<string, string>(), null!, new Dictionary<string, string>(), null, null));
+    }
+
+    [TestMethod]
+    public void OrdinalVariantRule_NullWordRules_ThrowsArgumentNullException()
+    {
+        Assert.ThrowsException<ArgumentNullException>(() =>
+            new NumberToStringConverter.OrdinalVariantRule(
+                new Dictionary<string, string>(), new Dictionary<long, string>(), null!, null, null));
+    }
 }
