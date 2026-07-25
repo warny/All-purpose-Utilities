@@ -16,8 +16,9 @@
                  Note: suffix text is language-specific; override Suffixes in the
                  derived configuration as needed (e.g. "on(s)"/"ard(s)" in French).
 -->
-<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
-
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="Utils/NumberConvertionConfiguration.xsd ./NumberConvertionConfiguration.xsd">
 	<!-- ── Short scale ──────────────────────────────────────────────────────── -->
 	<Language
 		groupSize="3"
@@ -49,6 +50,54 @@
 			<Suffixes>
 				<Suffix>on</Suffix>
 			</Suffixes>
+			<Scale0Prefixes>
+				<Digit digit="0" string=""  />
+				<Digit digit="1" string="mi" />
+				<Digit digit="2" string="bi" />
+				<Digit digit="3" string="tri" />
+				<Digit digit="4" string="quadri" />
+				<Digit digit="5" string="quinti" />
+				<Digit digit="6" string="sexti"  />
+				<Digit digit="7" string="septi" />
+				<Digit digit="8" string="octi" />
+				<Digit digit="9" string="noni" />
+			</Scale0Prefixes>
+			<UnitsPrefixes>
+				<Digit digit="0" string="" />
+				<Digit digit="1" string="uni" />
+				<Digit digit="2" string="duo" />
+				<Digit digit="3" string="tre(s)" />
+				<Digit digit="4" string="quattuor" />
+				<Digit digit="5" string="quinqua" />
+				<Digit digit="6" string="se(xs)" />
+				<Digit digit="7" string="septe(mn)" />
+				<Digit digit="8" string="octo" />
+				<Digit digit="9" string="nove(mn)" />
+			</UnitsPrefixes>
+			<TensPrefixes>
+				<Digit digit="0" string="" />
+				<Digit digit="1" string="(n)deci" />
+				<Digit digit="2" string="(ms)vingti" />
+				<Digit digit="3" string="(ns)triginta" />
+				<Digit digit="4" string="(ns)quadraginta" />
+				<Digit digit="5" string="(ns)quinquaginta" />
+				<Digit digit="6" string="(n)sexaginta" />
+				<Digit digit="7" string="(n)septuaginta" />
+				<Digit digit="8" string="(mxs)octoginta" />
+				<Digit digit="9" string="nonaginta" />
+			</TensPrefixes>
+			<HundredsPrefixes>
+				<Digit digit="0" string="" />
+				<Digit digit="1" string="(nx)centi" />
+				<Digit digit="2" string="(ms)ducenti" />
+				<Digit digit="3" string="(ns)trecenti" />
+				<Digit digit="4" string="(ns)quadringenti" />
+				<Digit digit="5" string="(ns)quingenti" />
+				<Digit digit="6" string="(n)sescenti" />
+				<Digit digit="7" string="(n)septingenti" />
+				<Digit digit="8" string="(mxs)octingenti" />
+				<Digit digit="9" string="nongenti" />
+			</HundredsPrefixes>
 		</NumberScale>
 	</Language>
 
@@ -84,7 +133,54 @@
 				<Suffix>on</Suffix>
 				<Suffix>ard</Suffix>
 			</Suffixes>
+			<Scale0Prefixes>
+				<Digit digit="0" string=""  />
+				<Digit digit="1" string="mi" />
+				<Digit digit="2" string="bi" />
+				<Digit digit="3" string="tri" />
+				<Digit digit="4" string="quadri" />
+				<Digit digit="5" string="quinti" />
+				<Digit digit="6" string="sexti"  />
+				<Digit digit="7" string="septi" />
+				<Digit digit="8" string="octi" />
+				<Digit digit="9" string="noni" />
+			</Scale0Prefixes>
+			<UnitsPrefixes>
+				<Digit digit="0" string="" />
+				<Digit digit="1" string="uni" />
+				<Digit digit="2" string="duo" />
+				<Digit digit="3" string="tre(s)" />
+				<Digit digit="4" string="quattuor" />
+				<Digit digit="5" string="quinqua" />
+				<Digit digit="6" string="se(xs)" />
+				<Digit digit="7" string="septe(mn)" />
+				<Digit digit="8" string="octo" />
+				<Digit digit="9" string="nove(mn)" />
+			</UnitsPrefixes>
+			<TensPrefixes>
+				<Digit digit="0" string="" />
+				<Digit digit="1" string="(n)deci" />
+				<Digit digit="2" string="(ms)vingti" />
+				<Digit digit="3" string="(ns)triginta" />
+				<Digit digit="4" string="(ns)quadraginta" />
+				<Digit digit="5" string="(ns)quinquaginta" />
+				<Digit digit="6" string="(n)sexaginta" />
+				<Digit digit="7" string="(n)septuaginta" />
+				<Digit digit="8" string="(mxs)octoginta" />
+				<Digit digit="9" string="nonaginta" />
+			</TensPrefixes>
+			<HundredsPrefixes>
+				<Digit digit="0" string="" />
+				<Digit digit="1" string="(nx)centi" />
+				<Digit digit="2" string="(ms)ducenti" />
+				<Digit digit="3" string="(ns)trecenti" />
+				<Digit digit="4" string="(ns)quadringenti" />
+				<Digit digit="5" string="(ns)quingenti" />
+				<Digit digit="6" string="(n)sescenti" />
+				<Digit digit="7" string="(n)septingenti" />
+				<Digit digit="8" string="(mxs)octingenti" />
+				<Digit digit="9" string="nongenti" />
+			</HundredsPrefixes>
 		</NumberScale>
 	</Language>
-
 </Numbers>

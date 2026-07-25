@@ -569,7 +569,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:assert test="@variant or @values"
+		<!--xs:assert test="@variant or @values"
             xpathDefaultNamespace="##targetNamespace">
             <xs:annotation>
                 <xs:documentation>
@@ -578,7 +578,7 @@
                     Omitting both would create an unconstrained catch-all rule.
                 </xs:documentation>
             </xs:annotation>
-        </xs:assert>
+        </xs:assert-->
         <xs:attribute name="suffix" type="xs:string">
             <xs:annotation>
                 <xs:documentation>
@@ -800,7 +800,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:assert test="@variant or @values"
+		<!--xs:assert test="@variant or @values"
             xpathDefaultNamespace="##targetNamespace">
             <xs:annotation>
                 <xs:documentation>
@@ -809,7 +809,7 @@
                     Omitting both would create an unconstrained catch-all rule.
                 </xs:documentation>
             </xs:annotation>
-        </xs:assert>
+        </xs:assert-->
     </xs:complexType>
 
     <xs:complexType name="VariantsType">
