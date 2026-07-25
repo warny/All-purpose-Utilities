@@ -149,7 +149,7 @@ public class Pop3Client : CommandResponseClient
         foreach (string line in lines)
         {
             string content = line.StartsWith("..", StringComparison.Ordinal) ? line[1..] : line;
-            builder.AppendLine(content);
+            builder.Append(content).Append("\r\n");
         }
         return builder.ToString();
     }
@@ -286,7 +286,7 @@ public class Pop3Client : CommandResponseClient
             foreach (ServerResponse response in batch)
             {
                 string line = response.Message is null ? response.Code : $"{response.Code} {response.Message}";
-                if (line.TrimEnd() == ".")
+                if (line == ".")
                 {
                     return lines;
                 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Text;
@@ -34,7 +35,8 @@ namespace Utils.Net
                     }
                 }
             }
-            DnsServers = dnsServers.ToArray();
+            DnsServers = dnsServers.ToImmutableArray();
+            PrimaryDns = dnsServers.FirstOrDefault();
         }
 
         /// <summary>
@@ -42,13 +44,13 @@ namespace Utils.Net
         /// </summary>
         public NetworkInterface[] NetworkInterfaces { get; private set; }
         /// <summary>
-        /// Gets the preferred DNS server resolved from the network interfaces.
+        /// Gets the preferred DNS server resolved from the network interfaces, or <see langword="null"/> if no DNS server was discovered.
         /// </summary>
-        public IPAddress PrimaryDns => DnsServers[0];
+        public IPAddress? PrimaryDns { get; }
         /// <summary>
         /// Gets the collection of DNS servers discovered for the active network interfaces.
         /// </summary>
-        public IPAddress[] DnsServers { get; private set; }
+        public IReadOnlyList< IPAddress> DnsServers { get; private set; }
 
     }
 }

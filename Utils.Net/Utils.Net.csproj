@@ -2,7 +2,6 @@
 
         <PropertyGroup>
                 <TargetFramework>net9.0</TargetFramework>
-                <EnablePreviewFeatures>True</EnablePreviewFeatures>
                 <AssemblyName>Utils.Net</AssemblyName>
                 <RootNamespace>Utils</RootNamespace>
                 <Copyright>Olivier MARTY 2025</Copyright>
