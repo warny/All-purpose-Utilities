@@ -40,6 +40,20 @@ internal sealed class G4GrammarProjectIndex
             ? G4GrammarNameResolution.Resolved(entries[0])
             : G4GrammarNameResolution.Ambiguous(grammarName, entries);
     }
+
+    /// <summary>Finds the exact project entry that owns a supplied parsed grammar payload.</summary>
+    /// <param name="grammar">Caller grammar payload already known by the consumer.</param>
+    /// <returns>The exact entry when the payload occurs once; otherwise <c>null</c>.</returns>
+    internal G4GrammarProjectEntry? FindEntry(G4Grammar grammar)
+    {
+        if (!_entriesByGrammarName.TryGetValue(grammar.Name, out ImmutableArray<G4GrammarProjectEntry> entries))
+        {
+            return null;
+        }
+
+        G4GrammarProjectEntry[] exactEntries = entries.Where(entry => ReferenceEquals(entry.Grammar, grammar)).ToArray();
+        return exactEntries.Length == 1 ? exactEntries[0] : null;
+    }
 }
 
 /// <summary>Represents one parsed grammar entry available to the project resolver.</summary>

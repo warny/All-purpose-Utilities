@@ -1,13 +1,14 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace Utils.Parser.ProjectCompilation;
 
 /// <summary>
 /// Resolves grammar sources from files rooted at a directory.
 /// </summary>
-public sealed class FileSystemGrammarSourceResolver : IGrammarSourceResolver
+public sealed class FileSystemGrammarSourceResolver : IGrammarSourceResolver, IGrammarSourceCandidateResolver
 {
     /// <summary>Absolute path of the root directory used to locate grammar files.</summary>
     private readonly string _rootDirectory;
@@ -44,6 +45,24 @@ public sealed class FileSystemGrammarSourceResolver : IGrammarSourceResolver
 
         source = null!;
         return false;
+    }
+
+    /// <inheritdoc />
+    IReadOnlyList<GrammarSource> IGrammarSourceCandidateResolver.ResolveCandidates(string grammarName)
+    {
+        string candidateFileName = EnsureGrammarExtension(grammarName);
+        string directPath = GetCandidatePath(candidateFileName);
+        if (File.Exists(directPath))
+        {
+            return [new GrammarSource(Path.GetFileNameWithoutExtension(directPath), directPath, ReadAllText(directPath))];
+        }
+
+        string shortName = Path.GetFileName(candidateFileName);
+        return Directory.EnumerateFiles(_rootDirectory, shortName, SearchOption.AllDirectories)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(static path => path, StringComparer.Ordinal)
+            .Select(path => new GrammarSource(Path.GetFileNameWithoutExtension(path), path, ReadAllText(path)))
+            .ToArray();
     }
 
     /// <summary>

@@ -6,6 +6,7 @@ using Utils.Parser.Bootstrap;
 using Utils.Parser.Diagnostics;
 using Utils.Parser.ProjectCompilation;
 using Utils.Parser.Resolution;
+using Utils.Parser.Model;
 
 namespace UtilsTest.Parser;
 
@@ -339,6 +340,32 @@ public class Antlr4GrammarProjectCompilerTests
             }
         }
     }
+
+    /// <summary>Verifies an explicit entry file wins over a nested file with the same base name.</summary>
+    [TestMethod]
+    public void ParseFromFile_DuplicateNestedName_PreservesExplicitEntryFile()
+    {
+        string tempDirectory = Path.Combine(Path.GetTempPath(), $"UtilsParser_{Guid.NewGuid():N}");
+        string nestedDirectory = Path.Combine(tempDirectory, "nested");
+        Directory.CreateDirectory(nestedDirectory);
+
+        try
+        {
+            string entryPath = Path.Combine(tempDirectory, "Entry.g4");
+            File.WriteAllText(entryPath, "grammar Entry; start : 'a' ;");
+            File.WriteAllText(Path.Combine(nestedDirectory, "Entry.g4"), "this is not a grammar");
+
+            ParserDefinition definition = Antlr4GrammarProjectCompiler.ParseFromFile(entryPath);
+
+            Assert.AreEqual("Entry", definition.Name);
+            Assert.AreEqual("start", definition.RootRule?.Name);
+        }
+        finally
+        {
+            Directory.Delete(tempDirectory, recursive: true);
+        }
+    }
+
     /// <summary>
     /// Creates an in-memory resolver from simple name/text tuples.
     /// </summary>

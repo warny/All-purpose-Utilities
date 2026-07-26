@@ -51,6 +51,14 @@ public static class ParserDiagnostics
     public static readonly ParserDiagnosticDescriptor LexerRuleNotAllowedInParserGrammar =
         new("UP0013", "Lexer rule not allowed in parser grammar", "Lexer rule '{0}' is not allowed in a parser grammar.", DefaultCategory);
 
+    /// <summary>Imported rule declarations are ambiguous.</summary>
+    public static readonly ParserDiagnosticDescriptor ImportedRuleCollision =
+        new("UP0015", "Imported rule collision", "Imported rule '{0}' is declared by multiple grammars: {1}.", DefaultCategory);
+
+    /// <summary>An imported grammar name resolves to several source identities.</summary>
+    public static readonly ParserDiagnosticDescriptor AmbiguousImportedGrammar =
+        new("UP0016", "Ambiguous imported grammar", "Imported grammar '{0}' resolves to multiple sources: {1}.", DefaultCategory);
+
     // Unsupported / ignored / partial support (UP1xxx)
     /// <summary>Import parsed but not resolved.</summary>
     public static readonly ParserDiagnosticDescriptor ImportParsedButNotResolved =
@@ -331,6 +339,8 @@ public static class ParserDiagnostics
             [InvalidEmbeddedParserAttribute.Code] = InvalidEmbeddedParserAttribute,
             [ImportedGrammarNotFound.Code] = ImportedGrammarNotFound,
             [ImportCycleDetected.Code] = ImportCycleDetected,
+            [ImportedRuleCollision.Code] = ImportedRuleCollision,
+            [AmbiguousImportedGrammar.Code] = AmbiguousImportedGrammar,
             [ParserRuleNotAllowedInLexerGrammar.Code] = ParserRuleNotAllowedInLexerGrammar,
             [LexerRuleNotAllowedInParserGrammar.Code] = LexerRuleNotAllowedInParserGrammar,
             [ImportParsedButNotResolved.Code] = ImportParsedButNotResolved,
