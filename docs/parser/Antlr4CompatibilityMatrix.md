@@ -338,3 +338,16 @@ These forms are optional `IParserEmbeddedCodeTransformer` rewrites for generated
 `UtilsParserEnableGeneratedRuleArgumentBinding=true` enables bounded source-generator diagnostics for locally declared parser-rule targets. The generator reports certain generated-C# positional binding failures before emission, including exact-arity failures, named or mixed arguments, non-literal expressions such as `child[1 + 2]`, unsupported conversions, unsupported declared types, and duplicated parameter names. The invalid file is not emitted; unrelated valid grammar files still generate.
 
 Static binding diagnostics validate local parser-rule targets only. Imported, direct/transitive, missing, duplicate-name, ambiguous, aliased, lexer-only, and unresolved targets remain metadata-only for `APU0107` because generated definitions currently contain only local rules and an empty runtime import list. The syntax is not extended, no AST merge or C# expression evaluation is performed, imports are not made executable in a new way, and `Parse(...)` remains metadata-only.
+
+## Import-composition clarification
+
+| Import behavior | Runtime project compiler | Generated class |
+|---|---|---|
+| Shared deterministic graph/composition plan | Used for merged `ParserDefinition` projection | G4 adapter/parity preparation only |
+| Local rule masks imported rule | Supported | Emission remains local-only |
+| Distinct imported-rule collision | Deterministic `UP0015` failure | Represented by the preparatory plan; not emitted |
+| Cycle / missing / ambiguous source | Deterministic `UP0011` / `UP0010` / `UP0016` failure | Represented by the preparatory plan |
+| Aliased import | Edge and alias retained; unqualified composition preserved; no `Alias.rule` | Metadata only; no qualified call support |
+| `tokenVocab` | Lexer rules and modes only, unless full import upgrades visibility | Represented as a distinct edge; not emitted |
+
+The entry grammar alone supplies the root, options, and grammar actions. `ParserDefinition.Imports` remains descriptive, `GrammarEmitter` remains unchanged, and `APU0107` continues to validate local targets only.

@@ -612,3 +612,11 @@ var policy = new ParserRuntimeFeaturePolicy
 The invocation-frame manager is passive infrastructure for future rule metadata execution; it does not bind typed rule parameters, returns, locals, throws/catch/finally metadata, or rule options. The execution-state manager is used for managed parser attempt-boundary rollback, but action buffering remains unsupported.
 
 Current runtime still does not provide ANTLR-compatible typed rule invocation semantics, rollback-safe external mutable semantic state, speculative action replay, continuation replay, or shared-prefix execution.
+
+## Grammar project composition
+
+`Antlr4GrammarProjectCompiler` now obtains all graph, visibility, and rule-selection decisions from one deterministic, Roslyn-free composition plan. Grammar identities combine the ordinal declared name and logical source path; rule identities additionally retain parser/lexer domain and lexer mode. Dependencies preserve declaration order and distinguish full imports from `tokenVocab` edges.
+
+Entry declarations mask imported declarations. Distinct imported declarations with the same unqualified rule name are reported as a collision instead of being selected by dictionary order; diamonds to the same structural declaration are deduplicated. Cycles, missing dependencies, ambiguous sources, aliases, paths, masked declarations, and provenance remain explicit in the plan. Aliased imports participate in the current unqualified runtime composition for backward compatibility, but `Alias.rule` calls are not supported.
+
+`tokenVocab` contributes lexer rules and modes only unless the same grammar is also reached by a full import. The entry grammar alone owns the root, options (including `language`, `superClass`, `caseInsensitive`, and custom options), and grammar actions. Imported options/actions are retained only through source provenance and are not silently merged. `ParserDefinition.Imports` remains descriptive; execution requires the effective merged definition returned by the project compiler.

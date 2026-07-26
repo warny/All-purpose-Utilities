@@ -833,3 +833,11 @@ Generated-C# labeled child return access is currently stabilized through explici
 ### Phase 7 generated binding diagnostic note
 
 The generated-C# rule-call argument binding option now intentionally limits `APU0107` diagnostics to locally declared parser-rule targets because generated parser definitions are still emitted as local-only definitions with empty runtime import lists. The same-project imported-rule resolver remains internal preparatory infrastructure, but it is not used to conclude binding diagnostics until generated definitions can execute the same imported target. This does not complete Phase 7 and does not expand supported syntax. Future work remains for bounded generated grammar composition, complete ANTLR delegate-grammar semantics, alias-qualified calls if ever represented, named arguments, expressions, user-defined types, and C# semantic analysis. The generator incrementality contract for this area is per-file parsing reuse: `.g4` parsing depends on file path, text, and per-file metadata, while the collected project view can still rerun validation and emission globally after grammar or option changes.
+
+## Shared grammar import composition
+
+**Status: in progress.**
+
+The runtime project compiler now consumes a deterministic, Roslyn-free graph and rule-composition plan. The generator has a payload-preserving G4 adapter and its temporary imported-rule resolver delegates to the same planner, eliminating the two independent graph algorithms. Structural grammar/rule identities, full-import versus `tokenVocab` edges, source-order traversal, diamond deduplication, local masking, imported collisions, cycles, absences, ambiguities, aliases, modes, roots, and provenance are explicit and tested.
+
+The next phase is a dedicated generator-emission change: project the effective G4 plan without merging AST model types, preserve incremental per-file parsing, and only then reconsider imported-target diagnostics. Until that phase, `GrammarEmitter` and generated execution remain local-only and `APU0107` must remain local-only.

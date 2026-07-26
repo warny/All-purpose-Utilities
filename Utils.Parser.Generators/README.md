@@ -575,3 +575,9 @@ A : 'a' ;
 ```
 
 With the generated binding option enabled, this grammar reports `APU0107` (`Error`) at the `child[1 + 2]` call site because `1 + 2` is an expression, not a supported simple literal. The invalid grammar file is not emitted, while other valid `.g4` files in the same compilation continue to generate normally.
+
+## Shared import-composition plan boundary
+
+The generator's `G4Grammar` model can now be adapted to the same Roslyn-free grammar composition planner used by `Antlr4GrammarProjectCompiler`. The adapter preserves `G4Grammar`, `G4Rule`, `G4LexerMode`, import metadata, logical paths, parser/lexer domains, modes, aliases, and `tokenVocab` edge types as payload/provenance. The temporary `G4ImportedRuleResolver` delegates to that plan rather than maintaining another graph algorithm.
+
+This is preparatory only: `GrammarEmitter` is unchanged, emitted definitions still contain local rules only, and generated classes do **not** execute imported rules. Consequently `APU0107` remains local-only. Connecting the effective G4 projection to emission is a later, separately reviewed step.

@@ -6,6 +6,7 @@ using Utils.Parser.Bootstrap;
 using Utils.Parser.Diagnostics;
 using Utils.Parser.ProjectCompilation;
 using Utils.Parser.Resolution;
+using Utils.Parser.Model;
 
 namespace UtilsTest.Parser;
 
@@ -294,6 +295,47 @@ public class Antlr4GrammarProjectCompilerTests
         Assert.IsTrue(extraMode.Rules.Any(rule => rule.Name == "EXTRA_A"));
         Assert.IsTrue(extraMode.Rules.Any(rule => rule.Name == "EXTRA_B"));
         Assert.IsTrue(definition.Modes.Any(mode => mode.Name == "ImportedMode"));
+    }
+
+    /// <summary>Verifies distinct imported declarations never use incidental resolver enumeration as a priority rule.</summary>
+    [TestMethod]
+    public void Parse_ImportedRuleCollision_ReportsDeterministicFailure()
+    {
+        var diagnostics = new DiagnosticBag();
+        var resolver = CreateResolver(
+            ("Entry", "grammar Entry; import One, Two; start : item ;"),
+            ("Two", "grammar Two; item : '2' ;"),
+            ("One", "grammar One; item : '1' ;"));
+
+        GrammarValidationException exception = Assert.ThrowsExactly<GrammarValidationException>(() => Antlr4GrammarProjectCompiler.Parse("Entry", resolver, diagnostics));
+        StringAssert.Contains(exception.Message, "item");
+        Assert.IsTrue(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.ImportedRuleCollision.Code));
+    }
+
+    /// <summary>Verifies duplicate declared names with distinct source identities are rejected as ambiguous.</summary>
+    [TestMethod]
+    public void Parse_AmbiguousGrammarSource_ReportsCandidates()
+    {
+        var diagnostics = new DiagnosticBag();
+        var resolver = new InMemoryGrammarSourceResolver([
+            new GrammarSource("Entry", "/entry.g4", "grammar Entry; import Shared; start : item ;"),
+            new GrammarSource("Shared", "/one/Shared.g4", "grammar Shared; item : '1' ;"),
+            new GrammarSource("Shared", "/two/Shared.g4", "grammar Shared; item : '2' ;")]);
+
+        Assert.ThrowsExactly<GrammarValidationException>(() => Antlr4GrammarProjectCompiler.Parse("Entry", resolver, diagnostics));
+        Assert.IsTrue(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.AmbiguousImportedGrammar.Code));
+    }
+
+    /// <summary>Verifies aliases are retained without introducing qualified-call syntax and preserve current unqualified composition.</summary>
+    [TestMethod]
+    public void Parse_AliasedImport_PreservesUnqualifiedCompatibility()
+    {
+        var resolver = CreateResolver(
+            ("Entry", "grammar Entry; import Alias=Shared; start : item ;"),
+            ("Shared", "grammar Shared; item : 'a' ;"));
+
+        ParserDefinition definition = Antlr4GrammarProjectCompiler.Parse("Entry", resolver);
+        Assert.IsTrue(definition.AllRules.ContainsKey("item"));
     }
 
     /// <summary>

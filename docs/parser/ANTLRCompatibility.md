@@ -772,3 +772,11 @@ child[int value] : A ;
 ```
 
 With generated binding enabled, `child[1 + 2]` produces a generation diagnostic because the argument is not a simple literal. `Parse(...)` behavior is unchanged.
+
+## Shared grammar import composition semantics
+
+Project compilation uses one Roslyn-free composition planner shared with the generator's preparatory G4 adapter. It traverses dependencies depth-first in source declaration order, uses ordinal structural identities `(declared name, logical source)` and `(grammar identity, rule name, parser/lexer domain, lexer mode)`, and never relies on dictionary enumeration or object identity for semantic deduplication.
+
+Local entry rules mask imported rules. A diamond reaching the same declaration is deduplicated, while distinct imported declarations with the same unqualified name are a deterministic collision and project compilation fails with `UP0015`. Cycles expose a closed import path and fail with `UP0011`; missing dependencies fail with `UP0010`; ambiguous declared names fail with `UP0016`. Aliases are preserved on graph edges and continue to participate in unqualified runtime composition for compatibility, but qualified `Alias.rule` calls are unsupported.
+
+Full-import and `tokenVocab` edges are distinct. `tokenVocab` contributes lexer rules/modes only; a full-import path to the same grammar upgrades visibility. The entry grammar retains root, actions, and all effective options (`superClass`, `caseInsensitive`, `language`, and custom values); imported options/actions are provenance only and are not merged. `ParserDefinition.Imports` is descriptive metadata, not execution authority. The runtime project compiler executes the merged projection; generated classes remain local-only because `GrammarEmitter` does not yet consume the plan, and `APU0107` therefore remains local-only.
