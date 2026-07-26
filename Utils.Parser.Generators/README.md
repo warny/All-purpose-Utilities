@@ -578,6 +578,6 @@ With the generated binding option enabled, this grammar reports `APU0107` (`Erro
 
 ## Shared import-composition plan boundary
 
-The generator's `G4Grammar` model can now be adapted to the same Roslyn-free grammar composition planner used by `Antlr4GrammarProjectCompiler`. The adapter preserves `G4Grammar`, `G4Rule`, `G4LexerMode`, import metadata, logical paths, parser/lexer domains, modes, aliases, and `tokenVocab` edge types as payload/provenance. The temporary `G4ImportedRuleResolver` delegates to that plan rather than maintaining another graph algorithm.
+The generator's `G4Grammar` model can now be adapted to the same Roslyn-free grammar composition planner used by `Antlr4GrammarProjectCompiler`. The adapter preserves `G4Grammar`, `G4Rule`, `G4LexerMode`, import metadata, logical paths, parser/lexer domains, modes, aliases, and both declared and effective dependency kinds as payload/provenance. Effective kinds make transitive full imports below a `tokenVocab` dependency explicitly lexer-only. The temporary `G4ImportedRuleResolver` delegates to that plan rather than maintaining another graph algorithm, and identifies an already supplied caller by its exact indexed payload so duplicate declared names do not override local-rule priority.
 
 This is preparatory only: `GrammarEmitter` is unchanged, emitted definitions still contain local rules only, and generated classes do **not** execute imported rules. Consequently `APU0107` remains local-only. Connecting the effective G4 projection to emission is a later, separately reviewed step.

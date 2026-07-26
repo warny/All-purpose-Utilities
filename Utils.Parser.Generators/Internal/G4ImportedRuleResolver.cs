@@ -15,8 +15,8 @@ internal sealed class G4ImportedRuleResolver
     /// <summary>Resolves a parser-rule reference from the perspective of one caller grammar.</summary>
     internal G4RuleResolution Resolve(G4Grammar caller, string ruleName)
     {
-        G4GrammarNameResolution callerResolution = _index.ResolveGrammar(caller.Name);
-        if (callerResolution.Kind != G4GrammarNameResolutionKind.Resolved || callerResolution.Entry is not G4GrammarProjectEntry entry)
+        G4GrammarProjectEntry? callerEntry = _index.FindEntry(caller);
+        if (callerEntry is not G4GrammarProjectEntry entry)
         {
             return G4RuleResolution.Ambiguous(ruleName);
         }

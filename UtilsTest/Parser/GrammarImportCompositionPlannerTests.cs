@@ -68,7 +68,7 @@ public sealed class GrammarImportCompositionPlannerTests
         GrammarImportCompositionPlan plan = Build(entry, second, first);
         Assert.AreEqual(2, plan.MissingDependencies.Count);
         Assert.AreEqual(1, plan.AmbiguousDependencies.Count);
-        Assert.AreEqual("Alias", plan.AmbiguousDependencies[0].Edge.Dependency.Alias);
+        Assert.AreEqual("Alias", plan.AmbiguousDependencies[0].Edge.DeclaredDependency.Alias);
     }
 
     /// <summary>Verifies local declarations mask every imported declaration with the same unqualified name.</summary>
@@ -121,6 +121,26 @@ public sealed class GrammarImportCompositionPlannerTests
         Assert.AreEqual("ID", plan.TokenVocabLexerRules.Single().Rule.Name);
     }
 
+    /// <summary>Verifies lexer-only visibility propagates through declared full imports at every descendant level.</summary>
+    [TestMethod]
+    public void Build_TokenVocabFullImportDescendants_ExposeEffectiveLexerOnlyEdges()
+    {
+        Source leaf = Create("Leaf", "/leaf.g4", rules: [Lexer("LEAF"), Parser("hiddenLeaf")]);
+        Source middle = Create("Middle", "/middle.g4", [Import("Leaf")], [Lexer("MIDDLE"), Parser("hiddenMiddle")]);
+        Source vocabulary = Create("Vocabulary", "/vocabulary.g4", [Import("Middle")], [Lexer("ROOT_TOKEN"), Parser("hiddenRoot")]);
+        Source entry = Create("Entry", "/entry.g4", [TokenVocab("Vocabulary")], [Parser("start")]);
+
+        GrammarImportCompositionPlan plan = Build(entry, leaf, vocabulary, middle);
+
+        CollectionAssert.AreEqual(
+            new[] { GrammarDependencyKind.TokenVocab, GrammarDependencyKind.TokenVocab, GrammarDependencyKind.TokenVocab },
+            plan.Dependencies.Select(edge => edge.EffectiveKind).ToArray());
+        CollectionAssert.AreEqual(
+            new[] { GrammarDependencyKind.TokenVocab, GrammarDependencyKind.FullImport, GrammarDependencyKind.FullImport },
+            plan.Dependencies.Select(edge => edge.DeclaredDependency.Kind).ToArray());
+        Assert.IsFalse(plan.EffectiveRules.Any(rule => rule.Rule.Domain == GrammarRuleDomain.Parser && rule.Origin != entry.Identity));
+    }
+
     /// <summary>Verifies full import upgrades token-vocabulary visibility for the same grammar.</summary>
     [TestMethod]
     public void Build_FullImportAndTokenVocab_FullVisibilityWins()
@@ -129,6 +149,23 @@ public sealed class GrammarImportCompositionPlannerTests
         Source entry = Create("Entry", "/entry.g4", [TokenVocab("Shared"), Import("Shared")]);
         GrammarImportCompositionPlan plan = Build(entry, shared);
         CollectionAssert.AreEqual(new[] { "ID", "item" }, plan.EffectiveRules.Select(rule => rule.Rule.Name).ToArray());
+    }
+
+    /// <summary>Verifies a later full-import path upgrades descendant edge visibility without obscuring the earlier effective path.</summary>
+    [TestMethod]
+    public void Build_TokenVocabThenFullImport_ExposesBothEffectiveTraversalKinds()
+    {
+        Source leaf = Create("Leaf", "/leaf.g4", rules: [Parser("item"), Lexer("ID")]);
+        Source shared = Create("Shared", "/shared.g4", [Import("Leaf")]);
+        Source entry = Create("Entry", "/entry.g4", [TokenVocab("Shared"), Import("Shared")]);
+
+        GrammarImportCompositionPlan plan = Build(entry, leaf, shared);
+        GrammarDependencyEdge[] descendantEdges = plan.Dependencies.Where(edge => edge.Importer == shared.Identity).ToArray();
+
+        CollectionAssert.AreEqual(
+            new[] { GrammarDependencyKind.TokenVocab, GrammarDependencyKind.FullImport },
+            descendantEdges.Select(edge => edge.EffectiveKind).ToArray());
+        Assert.IsTrue(plan.EffectiveRules.Any(rule => rule.Rule.Name == "item"));
     }
 
     /// <summary>Verifies available-source enumeration order never changes the plan.</summary>
@@ -160,11 +197,50 @@ public sealed class GrammarImportCompositionPlannerTests
         GrammarImportCompositionPlan runtimePlan = Build(entry, shared);
 
         CollectionAssert.AreEqual(runtimePlan.Grammars.Select(source => source.Identity).ToArray(), g4Plan.Grammars.Select(source => source.Identity).ToArray());
-        CollectionAssert.AreEqual(runtimePlan.Dependencies.Select(edge => edge.Dependency.Kind).ToArray(), g4Plan.Dependencies.Select(edge => edge.Dependency.Kind).ToArray());
+        CollectionAssert.AreEqual(runtimePlan.Dependencies.Select(edge => edge.DeclaredDependency.Kind).ToArray(), g4Plan.Dependencies.Select(edge => edge.DeclaredDependency.Kind).ToArray());
+        CollectionAssert.AreEqual(runtimePlan.Dependencies.Select(edge => edge.EffectiveKind).ToArray(), g4Plan.Dependencies.Select(edge => edge.EffectiveKind).ToArray());
         CollectionAssert.AreEqual(runtimePlan.EffectiveRules.Select(rule => $"{rule.Rule.Domain}:{rule.Rule.Name}:{rule.Rule.LexerMode}").ToArray(), g4Plan.EffectiveRules.Select(rule => $"{rule.Rule.Domain}:{rule.Rule.Name}:{rule.Rule.LexerMode}").ToArray());
         Assert.AreEqual(((RulePayload)runtimePlan.RootRulePayload!).Name, ((G4Rule)g4Plan.RootRulePayload!).Name);
         Assert.AreEqual(runtimePlan.Collisions.Count, g4Plan.Collisions.Count);
         Assert.AreEqual(runtimePlan.MissingDependencies.Count, g4Plan.MissingDependencies.Count);
+    }
+
+    /// <summary>Verifies runtime-neutral and G4 adapters agree on propagated effective edge kinds.</summary>
+    [TestMethod]
+    public void Build_G4AndRuntimeTokenVocabChains_ProduceEffectiveEdgeKindParity()
+    {
+        G4Grammar leafG4 = ParseG4("lexer grammar Leaf; LEAF : 'x' ;");
+        G4Grammar vocabularyG4 = ParseG4("lexer grammar Vocabulary; import Leaf; ROOT : 'r' ;");
+        G4Grammar entryG4 = ParseG4("parser grammar Entry; options { tokenVocab=Vocabulary; } start : ROOT ;");
+        var index = new G4GrammarProjectIndex([
+            new G4GrammarProjectEntry("/leaf.g4", leafG4),
+            new G4GrammarProjectEntry("/vocabulary.g4", vocabularyG4),
+            new G4GrammarProjectEntry("/entry.g4", entryG4)]);
+        GrammarImportCompositionPlan g4Plan = new G4GrammarCompositionAdapter(index).Build(new G4GrammarProjectEntry("/entry.g4", entryG4));
+
+        Source leaf = Create("Leaf", "/leaf.g4", rules: [Lexer("LEAF")]);
+        Source vocabulary = Create("Vocabulary", "/vocabulary.g4", [Import("Leaf")], [Lexer("ROOT")]);
+        Source entry = Create("Entry", "/entry.g4", [TokenVocab("Vocabulary")], [Parser("start")]);
+        GrammarImportCompositionPlan runtimePlan = Build(entry, leaf, vocabulary);
+
+        CollectionAssert.AreEqual(runtimePlan.Dependencies.Select(edge => edge.DeclaredDependency.Kind).ToArray(), g4Plan.Dependencies.Select(edge => edge.DeclaredDependency.Kind).ToArray());
+        CollectionAssert.AreEqual(runtimePlan.Dependencies.Select(edge => edge.EffectiveKind).ToArray(), g4Plan.Dependencies.Select(edge => edge.EffectiveKind).ToArray());
+    }
+
+    /// <summary>Verifies an exact caller payload keeps local-rule priority even when its declared grammar name is duplicated.</summary>
+    [TestMethod]
+    public void G4Resolver_DuplicateCallerName_ResolvesExactCallerLocalRule()
+    {
+        G4Grammar caller = ParseG4("parser grammar Root; start : child[1] ; child[int x] : TOKEN ;");
+        G4Grammar duplicate = ParseG4("parser grammar Root; other : TOKEN ;");
+        var resolver = new G4ImportedRuleResolver(new G4GrammarProjectIndex([
+            new G4GrammarProjectEntry("/one/Root.g4", caller),
+            new G4GrammarProjectEntry("/two/Root.g4", duplicate)]));
+
+        G4RuleResolution resolution = resolver.Resolve(caller, "child");
+
+        Assert.AreEqual(G4RuleResolutionKind.Local, resolution.Kind);
+        Assert.AreSame(caller.ParserRules.Single(rule => rule.Name == "child"), resolution.Rule);
     }
 
     /// <summary>Parses one G4 source for adapter parity tests.</summary>

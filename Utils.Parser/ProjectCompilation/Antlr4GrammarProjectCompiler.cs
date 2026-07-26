@@ -123,15 +123,15 @@ public static class Antlr4GrammarProjectCompiler
         }
         if (plan.MissingDependencies.Count > 0)
         {
-            string name = plan.MissingDependencies[0].Edge.Dependency.GrammarName;
+            string name = plan.MissingDependencies[0].Edge.DeclaredDependency.GrammarName;
             AddMissingGrammarDiagnostic(name, diagnostics);
             throw new GrammarValidationException($"Unable to resolve grammar '{name}'.");
         }
         if (plan.AmbiguousDependencies.Count > 0)
         {
             AmbiguousGrammarDependency ambiguity = plan.AmbiguousDependencies[0];
-            AddAmbiguousGrammarDiagnostic(ambiguity.Edge.Dependency.GrammarName, ambiguity.Candidates, diagnostics);
-            throw new GrammarValidationException($"Grammar '{ambiguity.Edge.Dependency.GrammarName}' resolves to multiple sources.");
+            AddAmbiguousGrammarDiagnostic(ambiguity.Edge.DeclaredDependency.GrammarName, ambiguity.Candidates, diagnostics);
+            throw new GrammarValidationException($"Grammar '{ambiguity.Edge.DeclaredDependency.GrammarName}' resolves to multiple sources.");
         }
         if (plan.Collisions.Count > 0)
         {

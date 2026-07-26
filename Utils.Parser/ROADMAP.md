@@ -838,6 +838,6 @@ The generated-C# rule-call argument binding option now intentionally limits `APU
 
 **Status: in progress.**
 
-The runtime project compiler now consumes a deterministic, Roslyn-free graph and rule-composition plan. The generator has a payload-preserving G4 adapter and its temporary imported-rule resolver delegates to the same planner, eliminating the two independent graph algorithms. Structural grammar/rule identities, full-import versus `tokenVocab` edges, source-order traversal, diamond deduplication, local masking, imported collisions, cycles, absences, ambiguities, aliases, modes, roots, and provenance are explicit and tested.
+The runtime project compiler now consumes a deterministic, Roslyn-free graph and rule-composition plan. The generator has a payload-preserving G4 adapter and its temporary imported-rule resolver delegates to the same planner, eliminating the two independent graph algorithms. Structural grammar/rule identities, declared and effective full-import versus `tokenVocab` edge kinds, transitive lexer-only visibility, source-order traversal, diamond deduplication, local masking, imported collisions, cycles, absences, ambiguities, aliases, modes, roots, and provenance are explicit and tested.
 
 The next phase is a dedicated generator-emission change: project the effective G4 plan without merging AST model types, preserve incremental per-file parsing, and only then reconsider imported-target diagnostics. Until that phase, `GrammarEmitter` and generated execution remain local-only and `APU0107` must remain local-only.

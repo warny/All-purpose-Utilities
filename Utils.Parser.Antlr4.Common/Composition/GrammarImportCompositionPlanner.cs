@@ -52,10 +52,11 @@ internal interface IGrammarCompositionSource
     object? RootRulePayload { get; }
 }
 
-/// <summary>Describes one resolved dependency edge and its import path.</summary>
+/// <summary>Describes one dependency edge, its declared and effective kinds, and its import path.</summary>
 internal sealed record GrammarDependencyEdge(
     GrammarIdentity Importer,
-    GrammarDependency Dependency,
+    GrammarDependency DeclaredDependency,
+    GrammarDependencyKind EffectiveKind,
     GrammarIdentity? Imported,
     IReadOnlyList<GrammarIdentity> ImportPath);
 
@@ -154,11 +155,14 @@ internal static class GrammarImportCompositionPlanner
 
             foreach (GrammarDependency dependency in source.Dependencies)
             {
+                GrammarDependencyKind effectiveKind = requested == Visibility.LexerOnly
+                    ? GrammarDependencyKind.TokenVocab
+                    : dependency.Kind;
                 IReadOnlyList<IGrammarCompositionSource> candidates = _resolve(dependency.GrammarName)
                     .OrderBy(candidate => candidate.Identity.SourceId, StringComparer.Ordinal)
                     .ThenBy(candidate => candidate.Identity.DeclaredName, StringComparer.Ordinal)
                     .ToArray();
-                var unresolvedEdge = new GrammarDependencyEdge(source.Identity, dependency, null, path.ToArray());
+                var unresolvedEdge = new GrammarDependencyEdge(source.Identity, dependency, effectiveKind, null, path.ToArray());
                 if (candidates.Count == 0)
                 {
                     _edges.Add(unresolvedEdge);
@@ -183,9 +187,6 @@ internal static class GrammarImportCompositionPlanner
                     continue;
                 }
 
-                GrammarDependencyKind effectiveKind = requested == Visibility.LexerOnly
-                    ? GrammarDependencyKind.TokenVocab
-                    : dependency.Kind;
                 Visit(imported, effectiveKind, path.Concat([imported.Identity]).ToArray());
             }
         }

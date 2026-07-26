@@ -47,4 +47,4 @@ The parser documentation now records that generated-C# positional rule-call argu
 
 ## Shared grammar import composition update
 
-`ANTLRCompatibility.md` and `Antlr4CompatibilityMatrix.md` now define the common runtime/generator planning semantics: ordinal structural identities, source-order traversal, full-import versus `tokenVocab` edges, local masking, imported collisions, diamond deduplication, cycles, missing/ambiguous dependencies, alias limits, provenance, entry-owned options/actions/root, descriptive `ParserDefinition.Imports`, unchanged local-only `GrammarEmitter`, and local-only `APU0107`.
+`ANTLRCompatibility.md` and `Antlr4CompatibilityMatrix.md` now define the common runtime/generator planning semantics: ordinal structural identities, source-order traversal, declared versus effective full-import/`tokenVocab` edge kinds after visibility propagation, local masking, imported collisions, diamond deduplication, cycles, missing/ambiguous dependencies, alias limits, provenance, entry-owned options/actions/root, descriptive `ParserDefinition.Imports`, unchanged local-only `GrammarEmitter`, and local-only `APU0107`.
