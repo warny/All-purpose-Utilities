@@ -754,6 +754,49 @@ Custom policies should therefore avoid invocation-count-dependent decisions unle
 <h2 id="generated-binding-static-diagnostics">Generated binding static diagnostics</h2>
 <p><code>UtilsParserEnableGeneratedRuleArgumentBinding=true</code> enables bounded source-generator diagnostics for locally declared parser-rule targets. The generator reports certain generated-C# positional binding failures before emission, including exact-arity failures, named or mixed arguments, non-literal expressions such as <code>child[1 + 2]</code>, unsupported conversions, unsupported declared types, and duplicated parameter names. The invalid file is not emitted; unrelated valid grammar files still generate.</p>
 <p>Static binding diagnostics validate local parser-rule targets only. Imported, direct/transitive, missing, duplicate-name, ambiguous, aliased, lexer-only, and unresolved targets remain metadata-only for <code>APU0107</code> because generated definitions currently contain only local rules and an empty runtime import list. The syntax is not extended, no AST merge or C# expression evaluation is performed, imports are not made executable in a new way, and <code>Parse(...)</code> remains metadata-only.</p>
+<h2 id="import-composition-clarification">Import-composition clarification</h2>
+<table>
+<thead>
+<tr>
+<th>Import behavior</th>
+<th>Runtime project compiler</th>
+<th>Generated class</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Shared deterministic graph/composition plan</td>
+<td>Used for merged <code>ParserDefinition</code> projection</td>
+<td>G4 adapter/parity preparation only</td>
+</tr>
+<tr>
+<td>Local rule masks imported rule</td>
+<td>Supported</td>
+<td>Emission remains local-only</td>
+</tr>
+<tr>
+<td>Distinct imported-rule collision</td>
+<td>Recorded in the plan; first source-order depth-first declaration remains effective</td>
+<td>Represented by the preparatory plan; not emitted</td>
+</tr>
+<tr>
+<td>Cycle / missing / ambiguous source</td>
+<td>Deterministic <code>UP0011</code> / <code>UP0010</code> / <code>UP0016</code> failure</td>
+<td>Represented by the preparatory plan</td>
+</tr>
+<tr>
+<td>Aliased import</td>
+<td>Edge and alias retained; unqualified composition preserved; no <code>Alias.rule</code></td>
+<td>Metadata only; no qualified call support</td>
+</tr>
+<tr>
+<td><code>tokenVocab</code></td>
+<td>Lexer rules and modes only, unless full import upgrades visibility; edges expose declared/effective kinds and rules use a provenance path that establishes their visibility</td>
+<td>Represented with the same edge kinds and visibility-specific paths; not emitted</td>
+</tr>
+</tbody>
+</table>
+<p>The entry grammar alone supplies the root, options, and grammar actions. <code>ParserDefinition.Imports</code> remains descriptive, <code>GrammarEmitter</code> remains unchanged, and <code>APU0107</code> continues to validate local targets only.</p>
 
 </article>
 

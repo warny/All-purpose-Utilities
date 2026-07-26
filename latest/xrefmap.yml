@@ -72671,6 +72671,12 @@ references:
   commentId: F:Utils.Parser.Diagnostics.ParserDiagnostics.AmbiguousConstructResolvedHeuristically
   fullName: Utils.Parser.Diagnostics.ParserDiagnostics.AmbiguousConstructResolvedHeuristically
   nameWithType: ParserDiagnostics.AmbiguousConstructResolvedHeuristically
+- uid: Utils.Parser.Diagnostics.ParserDiagnostics.AmbiguousImportedGrammar
+  name: AmbiguousImportedGrammar
+  href: api/Utils.Parser.Diagnostics.ParserDiagnostics.html#Utils_Parser_Diagnostics_ParserDiagnostics_AmbiguousImportedGrammar
+  commentId: F:Utils.Parser.Diagnostics.ParserDiagnostics.AmbiguousImportedGrammar
+  fullName: Utils.Parser.Diagnostics.ParserDiagnostics.AmbiguousImportedGrammar
+  nameWithType: ParserDiagnostics.AmbiguousImportedGrammar
 - uid: Utils.Parser.Diagnostics.ParserDiagnostics.BacktrackingUsed
   name: BacktrackingUsed
   href: api/Utils.Parser.Diagnostics.ParserDiagnostics.html#Utils_Parser_Diagnostics_ParserDiagnostics_BacktrackingUsed
@@ -72797,6 +72803,12 @@ references:
   commentId: F:Utils.Parser.Diagnostics.ParserDiagnostics.ImportedGrammarNotFound
   fullName: Utils.Parser.Diagnostics.ParserDiagnostics.ImportedGrammarNotFound
   nameWithType: ParserDiagnostics.ImportedGrammarNotFound
+- uid: Utils.Parser.Diagnostics.ParserDiagnostics.ImportedRuleCollision
+  name: ImportedRuleCollision
+  href: api/Utils.Parser.Diagnostics.ParserDiagnostics.html#Utils_Parser_Diagnostics_ParserDiagnostics_ImportedRuleCollision
+  commentId: F:Utils.Parser.Diagnostics.ParserDiagnostics.ImportedRuleCollision
+  fullName: Utils.Parser.Diagnostics.ParserDiagnostics.ImportedRuleCollision
+  nameWithType: ParserDiagnostics.ImportedRuleCollision
 - uid: Utils.Parser.Diagnostics.ParserDiagnostics.ImportedRuleIgnoredBecauseAlreadyDefined
   name: ImportedRuleIgnoredBecauseAlreadyDefined
   href: api/Utils.Parser.Diagnostics.ParserDiagnostics.html#Utils_Parser_Diagnostics_ParserDiagnostics_ImportedRuleIgnoredBecauseAlreadyDefined
