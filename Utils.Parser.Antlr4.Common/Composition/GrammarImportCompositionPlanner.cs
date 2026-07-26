@@ -125,6 +125,7 @@ internal static class GrammarImportCompositionPlanner
         private readonly List<AmbiguousGrammarDependency> _ambiguous = [];
         private readonly Dictionary<GrammarIdentity, Visibility> _visibility = [];
         private readonly Dictionary<GrammarIdentity, Visibility> _expanded = [];
+        private readonly Dictionary<GrammarIdentity, VisibilityPaths> _paths = [];
 
         /// <summary>Initializes planning state.</summary>
         internal PlanningState(IGrammarCompositionSource entry, Func<string, IReadOnlyList<IGrammarCompositionSource>> resolve)
@@ -137,6 +138,7 @@ internal static class GrammarImportCompositionPlanner
         internal void Visit(IGrammarCompositionSource source, GrammarDependencyKind? introducedBy, IReadOnlyList<GrammarIdentity> path)
         {
             Visibility requested = introducedBy == GrammarDependencyKind.TokenVocab ? Visibility.LexerOnly : Visibility.Full;
+            RecordPath(source.Identity, requested, path);
             if (!_visibility.TryGetValue(source.Identity, out Visibility existing))
             {
                 _visibility[source.Identity] = requested;
@@ -201,7 +203,7 @@ internal static class GrammarImportCompositionPlanner
                 GrammarDependencyKind? introducedBy = grammar.Identity.Equals(_entry.Identity)
                     ? null
                     : visibility == Visibility.Full ? GrammarDependencyKind.FullImport : GrammarDependencyKind.TokenVocab;
-                IReadOnlyList<GrammarIdentity> path = FindPath(grammar.Identity);
+                IReadOnlyList<GrammarIdentity> path = GetPath(grammar.Identity, visibility);
                 foreach (GrammarRuleDescriptor rule in grammar.Rules)
                 {
                     if (visibility == Visibility.LexerOnly && rule.Domain == GrammarRuleDomain.Parser)
@@ -257,23 +259,32 @@ internal static class GrammarImportCompositionPlanner
                 effective.Where(rule => rule.IntroducedBy == GrammarDependencyKind.TokenVocab && rule.Rule.Domain == GrammarRuleDomain.Lexer).ToArray());
         }
 
-        /// <summary>Finds the first deterministic dependency path to a loaded grammar.</summary>
-        private IReadOnlyList<GrammarIdentity> FindPath(GrammarIdentity identity)
+        /// <summary>Records the first deterministic path that establishes a requested visibility.</summary>
+        private void RecordPath(GrammarIdentity identity, Visibility visibility, IReadOnlyList<GrammarIdentity> path)
         {
-            if (identity.Equals(_entry.Identity))
+            if (!_paths.TryGetValue(identity, out VisibilityPaths? paths))
             {
-                return [_entry.Identity];
+                paths = new VisibilityPaths();
+                _paths[identity] = paths;
             }
 
-            var paths = new Dictionary<GrammarIdentity, GrammarIdentity[]> { [_entry.Identity] = [_entry.Identity] };
-            foreach (GrammarDependencyEdge edge in _edges)
+            if (visibility == Visibility.Full)
             {
-                if (edge.Imported is GrammarIdentity imported && paths.TryGetValue(edge.Importer, out GrammarIdentity[]? parentPath) && !paths.ContainsKey(imported))
-                {
-                    paths[imported] = parentPath.Concat([imported]).ToArray();
-                }
+                paths.FullPath ??= path.ToArray();
             }
-            return paths.TryGetValue(identity, out GrammarIdentity[]? path) ? path : [identity];
+            else
+            {
+                paths.LexerOnlyPath ??= path.ToArray();
+            }
+        }
+
+        /// <summary>Gets a path that actually establishes the grammar's selected effective visibility.</summary>
+        private IReadOnlyList<GrammarIdentity> GetPath(GrammarIdentity identity, Visibility visibility)
+        {
+            VisibilityPaths paths = _paths[identity];
+            return visibility == Visibility.Full
+                ? paths.FullPath ?? throw new InvalidOperationException($"No full-import path was recorded for grammar '{identity.DeclaredName}'.")
+                : paths.LexerOnlyPath ?? throw new InvalidOperationException($"No token-vocabulary path was recorded for grammar '{identity.DeclaredName}'.");
         }
 
         /// <summary>Finds an identity in a path using explicit ordinal identity semantics.</summary>
@@ -294,6 +305,16 @@ internal static class GrammarImportCompositionPlanner
         {
             LexerOnly,
             Full
+        }
+
+        /// <summary>Stores deterministic provenance paths independently for lexer-only and full visibility.</summary>
+        private sealed class VisibilityPaths
+        {
+            /// <summary>Gets or sets the first path that established lexer-only visibility.</summary>
+            internal GrammarIdentity[]? LexerOnlyPath { get; set; }
+
+            /// <summary>Gets or sets the first path that established full visibility.</summary>
+            internal GrammarIdentity[]? FullPath { get; set; }
         }
 
         /// <summary>Compares structural rule identities without using payload object identity.</summary>

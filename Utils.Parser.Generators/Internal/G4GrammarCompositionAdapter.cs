@@ -49,11 +49,12 @@ internal sealed class G4GrammarCompositionAdapter
         {
             Entry = entry;
             Identity = new GrammarIdentity(entry.Grammar.Name, entry.Path);
-            var dependencies = entry.Grammar.Imports.Select(import => new GrammarDependency(import.GrammarName, import.Alias, GrammarDependencyKind.FullImport, import)).ToList();
+            var dependencies = new List<GrammarDependency>();
             if (entry.Grammar.Options.TryGetValue("tokenVocab", out string? tokenVocab) && !string.IsNullOrWhiteSpace(tokenVocab))
             {
                 dependencies.Add(new GrammarDependency(tokenVocab, null, GrammarDependencyKind.TokenVocab, entry.Grammar.Options));
             }
+            dependencies.AddRange(entry.Grammar.Imports.Select(import => new GrammarDependency(import.GrammarName, import.Alias, GrammarDependencyKind.FullImport, import)));
             Dependencies = dependencies;
             Rules = entry.Grammar.LexerRules.Select(rule => new GrammarRuleDescriptor(rule.Name, GrammarRuleDomain.Lexer, "DEFAULT_MODE", rule))
                 .Concat(entry.Grammar.ExtraModes.SelectMany(mode => mode.Rules.Select(rule => new GrammarRuleDescriptor(rule.Name, GrammarRuleDomain.Lexer, mode.Name, rule))))

@@ -245,11 +245,12 @@ public static class Antlr4GrammarProjectCompiler
         {
             Definition = definition;
             Identity = new GrammarIdentity(definition.Name, sourceId);
-            var dependencies = definition.Imports.Select(import => new GrammarDependency(import.GrammarName, import.Alias, GrammarDependencyKind.FullImport, import)).ToList();
+            var dependencies = new List<GrammarDependency>();
             if (definition.Options?.Values.TryGetValue("tokenVocab", out string? tokenVocab) == true && !string.IsNullOrWhiteSpace(tokenVocab))
             {
                 dependencies.Add(new GrammarDependency(tokenVocab!, null, GrammarDependencyKind.TokenVocab, definition.Options));
             }
+            dependencies.AddRange(definition.Imports.Select(import => new GrammarDependency(import.GrammarName, import.Alias, GrammarDependencyKind.FullImport, import)));
             Dependencies = dependencies;
             Rules = definition.Modes.SelectMany(mode => mode.Rules.Select(rule => new GrammarRuleDescriptor(rule.Name, GrammarRuleDomain.Lexer, mode.Name, rule)))
                 .Concat(definition.ParserRules.Select(rule => new GrammarRuleDescriptor(rule.Name, GrammarRuleDomain.Parser, null, rule)))

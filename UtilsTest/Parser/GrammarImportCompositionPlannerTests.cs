@@ -168,6 +168,24 @@ public sealed class GrammarImportCompositionPlannerTests
         Assert.IsTrue(plan.EffectiveRules.Any(rule => rule.Rule.Name == "item"));
     }
 
+    /// <summary>Verifies parser-rule provenance uses the full path that established parser visibility rather than an earlier lexer-only path.</summary>
+    [TestMethod]
+    public void Build_LexerOnlyThenFullPath_ParserRuleUsesFullProvenance()
+    {
+        Source shared = Create("Shared", "/shared.g4", rules: [Lexer("ID"), Parser("item")]);
+        Source lexerBridge = Create("LexerBridge", "/lexer-bridge.g4", [Import("Shared")]);
+        Source parserBridge = Create("ParserBridge", "/parser-bridge.g4", [Import("Shared")]);
+        Source entry = Create("Entry", "/entry.g4", [TokenVocab("LexerBridge"), Import("ParserBridge")]);
+
+        GrammarImportCompositionPlan plan = Build(entry, parserBridge, shared, lexerBridge);
+        EffectiveGrammarRule parserRule = plan.EffectiveRules.Single(rule => rule.Rule.Name == "item");
+
+        Assert.AreEqual(GrammarDependencyKind.FullImport, parserRule.IntroducedBy);
+        CollectionAssert.AreEqual(
+            new[] { "Entry", "ParserBridge", "Shared" },
+            parserRule.ImportPath.Select(identity => identity.DeclaredName).ToArray());
+    }
+
     /// <summary>Verifies available-source enumeration order never changes the plan.</summary>
     [TestMethod]
     public void Build_ReversedSourceEnumeration_ProducesSamePlan()
@@ -193,7 +211,7 @@ public sealed class GrammarImportCompositionPlannerTests
         GrammarImportCompositionPlan g4Plan = new G4GrammarCompositionAdapter(index).Build(new G4GrammarProjectEntry("/entry.g4", entryG4));
 
         Source shared = Create("Shared", "/shared.g4", rules: [Lexer("ID"), Parser("item")]);
-        Source entry = Create("Entry", "/entry.g4", [Import("Shared"), TokenVocab("Shared")], [Parser("start")]);
+        Source entry = Create("Entry", "/entry.g4", [TokenVocab("Shared"), Import("Shared")], [Parser("start")]);
         GrammarImportCompositionPlan runtimePlan = Build(entry, shared);
 
         CollectionAssert.AreEqual(runtimePlan.Grammars.Select(source => source.Identity).ToArray(), g4Plan.Grammars.Select(source => source.Identity).ToArray());
@@ -225,6 +243,36 @@ public sealed class GrammarImportCompositionPlannerTests
 
         CollectionAssert.AreEqual(runtimePlan.Dependencies.Select(edge => edge.DeclaredDependency.Kind).ToArray(), g4Plan.Dependencies.Select(edge => edge.DeclaredDependency.Kind).ToArray());
         CollectionAssert.AreEqual(runtimePlan.Dependencies.Select(edge => edge.EffectiveKind).ToArray(), g4Plan.Dependencies.Select(edge => edge.EffectiveKind).ToArray());
+    }
+
+    /// <summary>Verifies runtime-neutral and G4 plans select the same full provenance path after an earlier lexer-only path.</summary>
+    [TestMethod]
+    public void Build_G4AndRuntimeVisibilityUpgrades_ProduceRuleProvenanceParity()
+    {
+        G4Grammar sharedG4 = ParseG4("grammar Shared; item : ID ; ID : 'a' ;");
+        G4Grammar lexerBridgeG4 = ParseG4("lexer grammar LexerBridge; import Shared;");
+        G4Grammar parserBridgeG4 = ParseG4("parser grammar ParserBridge; import Shared;");
+        G4Grammar entryG4 = ParseG4("parser grammar Entry; options { tokenVocab=LexerBridge; } import ParserBridge; start : item ;");
+        var index = new G4GrammarProjectIndex([
+            new G4GrammarProjectEntry("/shared.g4", sharedG4),
+            new G4GrammarProjectEntry("/lexer-bridge.g4", lexerBridgeG4),
+            new G4GrammarProjectEntry("/parser-bridge.g4", parserBridgeG4),
+            new G4GrammarProjectEntry("/entry.g4", entryG4)]);
+        GrammarImportCompositionPlan g4Plan = new G4GrammarCompositionAdapter(index).Build(new G4GrammarProjectEntry("/entry.g4", entryG4));
+
+        Source shared = Create("Shared", "/shared.g4", rules: [Lexer("ID"), Parser("item")]);
+        Source lexerBridge = Create("LexerBridge", "/lexer-bridge.g4", [Import("Shared")]);
+        Source parserBridge = Create("ParserBridge", "/parser-bridge.g4", [Import("Shared")]);
+        Source entry = Create("Entry", "/entry.g4", [TokenVocab("LexerBridge"), Import("ParserBridge")], [Parser("start")]);
+        GrammarImportCompositionPlan runtimePlan = Build(entry, parserBridge, shared, lexerBridge);
+
+        EffectiveGrammarRule runtimeRule = runtimePlan.EffectiveRules.Single(rule => rule.Rule.Name == "item");
+        EffectiveGrammarRule g4Rule = g4Plan.EffectiveRules.Single(rule => rule.Rule.Name == "item");
+        Assert.AreEqual(runtimeRule.IntroducedBy, g4Rule.IntroducedBy);
+        CollectionAssert.AreEqual(runtimeRule.ImportPath.ToArray(), g4Rule.ImportPath.ToArray());
+        CollectionAssert.AreEqual(
+            new[] { "Entry", "ParserBridge", "Shared" },
+            g4Rule.ImportPath.Select(identity => identity.DeclaredName).ToArray());
     }
 
     /// <summary>Verifies an exact caller payload keeps local-rule priority even when its declared grammar name is duplicated.</summary>
