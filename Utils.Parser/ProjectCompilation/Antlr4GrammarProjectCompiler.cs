@@ -133,13 +133,6 @@ public static class Antlr4GrammarProjectCompiler
             AddAmbiguousGrammarDiagnostic(ambiguity.Edge.DeclaredDependency.GrammarName, ambiguity.Candidates, diagnostics);
             throw new GrammarValidationException($"Grammar '{ambiguity.Edge.DeclaredDependency.GrammarName}' resolves to multiple sources.");
         }
-        if (plan.Collisions.Count > 0)
-        {
-            GrammarRuleCollision collision = plan.Collisions[0];
-            string origins = string.Join(", ", collision.Candidates.Select(candidate => candidate.Origin.SourceId));
-            diagnostics?.Add(ParserDiagnostics.ImportedRuleCollision, collision.RuleName, origins);
-            throw new GrammarValidationException($"Imported rule '{collision.RuleName}' is ambiguous between: {origins}.");
-        }
     }
 
     /// <summary>Validates grammar-type constraints before project-level projection.</summary>
@@ -198,13 +191,18 @@ public static class Antlr4GrammarProjectCompiler
             _diagnostics = diagnostics;
         }
 
-        /// <summary>Resolves and parses all candidates exposed by the source resolver.</summary>
+        /// <summary>Resolves candidates and avoids parsing ambiguous source sets.</summary>
         internal IReadOnlyList<IGrammarCompositionSource> Resolve(string name)
         {
             IReadOnlyList<GrammarSource> sources = _resolver is IGrammarSourceCandidateResolver candidates
                 ? candidates.ResolveCandidates(name)
                 : _resolver.TryResolve(name, out GrammarSource source) ? [source] : [];
-            return sources.Select(Load).Cast<IGrammarCompositionSource>().ToArray();
+            if (sources.Count != 1)
+            {
+                return sources.Select(source => (IGrammarCompositionSource)new RuntimeCompositionCandidate(source)).ToArray();
+            }
+
+            return [Load(sources[0])];
         }
 
         /// <summary>Parses one source once and preserves its stable logical identity.</summary>
@@ -235,6 +233,32 @@ public static class Antlr4GrammarProjectCompiler
             _cache[sourceId] = result;
             return result;
         }
+    }
+
+    /// <summary>Represents an unresolved source candidate without parsing potentially invalid text.</summary>
+    private sealed class RuntimeCompositionCandidate : IGrammarCompositionSource
+    {
+        /// <summary>Initializes a lightweight source candidate.</summary>
+        internal RuntimeCompositionCandidate(GrammarSource source)
+        {
+            Identity = new GrammarIdentity(source.Name, source.Path ?? source.Name);
+            Payload = source;
+        }
+
+        /// <inheritdoc />
+        public GrammarIdentity Identity { get; }
+
+        /// <inheritdoc />
+        public IReadOnlyList<GrammarDependency> Dependencies => [];
+
+        /// <inheritdoc />
+        public IReadOnlyList<GrammarRuleDescriptor> Rules => [];
+
+        /// <inheritdoc />
+        public object Payload { get; }
+
+        /// <inheritdoc />
+        public object? RootRulePayload => null;
     }
 
     /// <summary>Adapts a runtime definition to the common composition source contract.</summary>

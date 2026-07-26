@@ -345,7 +345,7 @@ Static binding diagnostics validate local parser-rule targets only. Imported, di
 |---|---|---|
 | Shared deterministic graph/composition plan | Used for merged `ParserDefinition` projection | G4 adapter/parity preparation only |
 | Local rule masks imported rule | Supported | Emission remains local-only |
-| Distinct imported-rule collision | Deterministic `UP0015` failure | Represented by the preparatory plan; not emitted |
+| Distinct imported-rule collision | Recorded in the plan; first source-order depth-first declaration remains effective | Represented by the preparatory plan; not emitted |
 | Cycle / missing / ambiguous source | Deterministic `UP0011` / `UP0010` / `UP0016` failure | Represented by the preparatory plan |
 | Aliased import | Edge and alias retained; unqualified composition preserved; no `Alias.rule` | Metadata only; no qualified call support |
 | `tokenVocab` | Lexer rules and modes only, unless full import upgrades visibility; edges expose declared/effective kinds and rules use a provenance path that establishes their visibility | Represented with the same edge kinds and visibility-specific paths; not emitted |

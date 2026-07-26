@@ -84,17 +84,19 @@ public sealed class GrammarImportCompositionPlannerTests
         Assert.AreEqual(0, plan.Collisions.Count);
     }
 
-    /// <summary>Verifies distinct direct and transitive imported declarations collide instead of first-wins selection.</summary>
+    /// <summary>Verifies collisions retain deterministic source-order precedence instead of dictionary-order precedence.</summary>
     [TestMethod]
-    public void Build_ImportedCollision_DoesNotChooseArbitrarily()
+    public void Build_ImportedCollision_PreservesFirstTraversalCandidate()
     {
         Source transitive = Create("Transitive", "/transitive.g4", rules: [Parser("item")]);
         Source direct = Create("Direct", "/direct.g4", [Import("Transitive")], [Parser("item")]);
         Source other = Create("Other", "/other.g4", rules: [Parser("item")]);
         Source entry = Create("Entry", "/entry.g4", [Import("Direct"), Import("Other")]);
         GrammarImportCompositionPlan plan = Build(entry, other, direct, transitive);
-        Assert.AreEqual(0, plan.EffectiveRules.Count(rule => rule.Rule.Name == "item"));
+        EffectiveGrammarRule selected = plan.EffectiveRules.Single(rule => rule.Rule.Name == "item");
+        Assert.AreEqual(direct.Identity, selected.Origin);
         Assert.AreEqual(3, plan.Collisions.Single().Candidates.Count);
+        Assert.AreEqual(2, plan.IgnoredRules.Count(rule => rule.Rule.Name == "item"));
     }
 
     /// <summary>Verifies parser/lexer and lexer-mode differences remain distinct collision candidates.</summary>

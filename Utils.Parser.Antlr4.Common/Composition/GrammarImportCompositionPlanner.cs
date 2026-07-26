@@ -240,7 +240,8 @@ internal static class GrammarImportCompositionPlanner
                 else
                 {
                     collisions.Add(new GrammarRuleCollision(group.Key, distinct));
-                    ignored.AddRange(distinct);
+                    effective.Add(distinct[0]);
+                    ignored.AddRange(distinct.Skip(1));
                 }
             }
 

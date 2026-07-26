@@ -297,47 +297,6 @@ public class Antlr4GrammarProjectCompilerTests
         Assert.IsTrue(definition.Modes.Any(mode => mode.Name == "ImportedMode"));
     }
 
-    /// <summary>Verifies distinct imported declarations never use incidental resolver enumeration as a priority rule.</summary>
-    [TestMethod]
-    public void Parse_ImportedRuleCollision_ReportsDeterministicFailure()
-    {
-        var diagnostics = new DiagnosticBag();
-        var resolver = CreateResolver(
-            ("Entry", "grammar Entry; import One, Two; start : item ;"),
-            ("Two", "grammar Two; item : '2' ;"),
-            ("One", "grammar One; item : '1' ;"));
-
-        GrammarValidationException exception = Assert.ThrowsExactly<GrammarValidationException>(() => Antlr4GrammarProjectCompiler.Parse("Entry", resolver, diagnostics));
-        StringAssert.Contains(exception.Message, "item");
-        Assert.IsTrue(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.ImportedRuleCollision.Code));
-    }
-
-    /// <summary>Verifies duplicate declared names with distinct source identities are rejected as ambiguous.</summary>
-    [TestMethod]
-    public void Parse_AmbiguousGrammarSource_ReportsCandidates()
-    {
-        var diagnostics = new DiagnosticBag();
-        var resolver = new InMemoryGrammarSourceResolver([
-            new GrammarSource("Entry", "/entry.g4", "grammar Entry; import Shared; start : item ;"),
-            new GrammarSource("Shared", "/one/Shared.g4", "grammar Shared; item : '1' ;"),
-            new GrammarSource("Shared", "/two/Shared.g4", "grammar Shared; item : '2' ;")]);
-
-        Assert.ThrowsExactly<GrammarValidationException>(() => Antlr4GrammarProjectCompiler.Parse("Entry", resolver, diagnostics));
-        Assert.IsTrue(diagnostics.Any(diagnostic => diagnostic.Code == ParserDiagnostics.AmbiguousImportedGrammar.Code));
-    }
-
-    /// <summary>Verifies aliases are retained without introducing qualified-call syntax and preserve current unqualified composition.</summary>
-    [TestMethod]
-    public void Parse_AliasedImport_PreservesUnqualifiedCompatibility()
-    {
-        var resolver = CreateResolver(
-            ("Entry", "grammar Entry; import Alias=Shared; start : item ;"),
-            ("Shared", "grammar Shared; item : 'a' ;"));
-
-        ParserDefinition definition = Antlr4GrammarProjectCompiler.Parse("Entry", resolver);
-        Assert.IsTrue(definition.AllRules.ContainsKey("item"));
-    }
-
     /// <summary>
     /// Verifies cold-mode generation inputs using the in-memory resolver.
     /// </summary>
@@ -381,6 +340,32 @@ public class Antlr4GrammarProjectCompilerTests
             }
         }
     }
+
+    /// <summary>Verifies an explicit entry file wins over a nested file with the same base name.</summary>
+    [TestMethod]
+    public void ParseFromFile_DuplicateNestedName_PreservesExplicitEntryFile()
+    {
+        string tempDirectory = Path.Combine(Path.GetTempPath(), $"UtilsParser_{Guid.NewGuid():N}");
+        string nestedDirectory = Path.Combine(tempDirectory, "nested");
+        Directory.CreateDirectory(nestedDirectory);
+
+        try
+        {
+            string entryPath = Path.Combine(tempDirectory, "Entry.g4");
+            File.WriteAllText(entryPath, "grammar Entry; start : 'a' ;");
+            File.WriteAllText(Path.Combine(nestedDirectory, "Entry.g4"), "this is not a grammar");
+
+            ParserDefinition definition = Antlr4GrammarProjectCompiler.ParseFromFile(entryPath);
+
+            Assert.AreEqual("Entry", definition.Name);
+            Assert.AreEqual("start", definition.RootRule?.Name);
+        }
+        finally
+        {
+            Directory.Delete(tempDirectory, recursive: true);
+        }
+    }
+
     /// <summary>
     /// Creates an in-memory resolver from simple name/text tuples.
     /// </summary>

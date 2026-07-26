@@ -52,14 +52,14 @@ public sealed class FileSystemGrammarSourceResolver : IGrammarSourceResolver, IG
     {
         string candidateFileName = EnsureGrammarExtension(grammarName);
         string directPath = GetCandidatePath(candidateFileName);
-        var paths = new List<string>();
         if (File.Exists(directPath))
         {
-            paths.Add(directPath);
+            return [new GrammarSource(Path.GetFileNameWithoutExtension(directPath), directPath, ReadAllText(directPath))];
         }
+
         string shortName = Path.GetFileName(candidateFileName);
-        paths.AddRange(Directory.EnumerateFiles(_rootDirectory, shortName, SearchOption.AllDirectories));
-        return paths.Distinct(StringComparer.OrdinalIgnoreCase)
+        return Directory.EnumerateFiles(_rootDirectory, shortName, SearchOption.AllDirectories)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(static path => path, StringComparer.Ordinal)
             .Select(path => new GrammarSource(Path.GetFileNameWithoutExtension(path), path, ReadAllText(path)))
             .ToArray();
