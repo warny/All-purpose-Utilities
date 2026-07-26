@@ -76,20 +76,21 @@
 <p>Use this guide to align GitHub releases with NuGet publishing for the <code>omy.Utils</code> package family.</p>
 <h2 id="versioning-and-tags">Versioning and tags</h2>
 <ol>
-<li>Update package versions in the respective <code>.csproj</code> files when preparing a release.</li>
+<li>Update the synchronized solution version in <code>Directory.Build.targets</code> when preparing a release. Do not version individual <code>.csproj</code> files independently.</li>
 <li>Add release notes to <code>CHANGELOG.md</code> under a new version heading.</li>
-<li>Create a Git tag matching the package version (for example <code>v1.2.1</code>).</li>
+<li>Create a Git tag matching the package version (for example <code>v2.0.0-rc.1</code>).</li>
 </ol>
+<p>All projects inherit the same <code>Version</code> and <code>PackageVersion</code>. <code>Directory.Build.targets</code> is evaluated after project files and therefore overrides legacy project-local <code>&lt;Version&gt;</code> values until those declarations are removed.</p>
 <h2 id="github-release-flow">GitHub release flow</h2>
 <ol>
 <li>Push the release commit to the <code>release</code> branch.</li>
-<li>Create a GitHub release from the tag (<code>vX.Y.Z</code>) and paste the changelog entry as the release notes.</li>
+<li>Create a GitHub release from the tag (<code>vX.Y.Z</code> or <code>vX.Y.Z-prerelease</code>) and paste the changelog entry as the release notes.</li>
 <li>Attach any additional binaries or documentation if needed.</li>
 </ol>
 <h2 id="ci-publishing-pipeline">CI publishing pipeline</h2>
 <ul>
 <li>The <code>Publish NuGet</code> workflow (<code>.github/workflows/nuget-publish.yml</code>) runs on pushes to the <code>release</code> branch.</li>
-<li>It restores, builds, packs, and publishes only packages whose <code>&lt;Version&gt;</code> is not already present on nuget.org.</li>
+<li>It restores, builds, packs, and publishes only packages whose effective <code>&lt;PackageVersion&gt;</code> is not already present on nuget.org.</li>
 <li>The workflow checks NuGet to ensure the package version is not already published before uploading.</li>
 <li>Packages are pushed using the <code>NUGET_API_KEY</code> secret configured in the repository settings.</li>
 </ul>
@@ -97,11 +98,12 @@
 <p>After a release completes:</p>
 <ul>
 <li>Download the generated <code>.nupkg</code> artifacts from the workflow run to verify contents (including README files).</li>
+<li>Confirm that every produced package uses the synchronized solution version.</li>
 <li>Install a package locally to confirm the version and metadata:</li>
 </ul>
 <pre><code class="lang-bash">dotnet new console -n UtilsPackageCheck
 cd UtilsPackageCheck
-dotnet add package omy.Utils --version &lt;version&gt;
+dotnet add package omy.Utils --version 2.0.0-rc.1
 </code></pre>
 <ul>
 <li>Review the package page on nuget.org to confirm the README and metadata render correctly.</li>
