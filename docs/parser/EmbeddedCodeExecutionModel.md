@@ -422,13 +422,13 @@ Current responsibilities:
 - runtime-index-aware hook dispatch for tested parser hook positions: single-item alternatives, sequence positions, quantified content, negation predicate probes, same-source hooks in distinct alternatives, and direct-left-recursive tail views because generated helpers resolve the generated definition before parsing with the generated policy;
 - Roslyn diagnostic reporting and C# compilation errors for invalid embedded C# in the source-generator path, including invalid injected members or member-name collisions;
 - generator warning `UP1031 EmbeddedMembersInjectedByGenerator` for unscoped `@members` and `@parser::members` injected into the generated execution context;
-- generator warning `UP1029 EmbeddedCodeConstructNotExecutedByGenerator` for visible embedded-code constructs that are not executable generated hooks, including lexer actions/predicates, unsupported grammar actions, and `@lexer::members`; parser `@init` and `@after` hooks are generated C# opt-in lifecycle hooks and do not produce `UP1029`.
+- generator warning `UP1029 EmbeddedCodeConstructNotExecutedByGenerator` for visible constructs outside the bounded generated hooks or named-action injection points; supported simple lexer predicates/actions and `@lexer::header` / `@lexer::members` / `@lexer::footer` in combined or lexer grammars are generated-C# opt-in surfaces, while unknown actions/scopes and contextually invalid forms still diagnose. Parser `@init` and `@after` hooks likewise do not produce `UP1029`.
 
 Future responsibilities (source-generation path):
 
 - additional source-generator C# hook shapes beyond parser predicate expressions, parser predicate blocks with `return`, and inline parser action statement bodies;
 - clear distinction between preserved raw metadata and executable generated hooks;
-- lexer embedded-code hooks only after dedicated design work;
+- broader lexer embedded-code shapes beyond the current bounded generated-C# opt-in hooks only after dedicated design work;
 - deterministic semantics for parser actions inside negation probes only after dedicated design work and tests.
 
 ### `Utils.Parser.VisualStudio`
@@ -518,7 +518,7 @@ This model explicitly excludes:
 - supported action bodies include single-statement, multi-statement, and multi-line C# statement bodies using `context`, `ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`, and `actionCode`, including local variables and calls to user members in another partial class declaration;
 - invalid embedded C# is intentionally reported by Roslyn as a compilation error; predicate blocks without a valid `bool` return and actions with invalid C# are not converted into custom parser diagnostics;
 - unscoped `@members` and `@parser::members` are injected into the generated execution context and produce generator warning `UP1031`;
-- visible unsupported embedded-code constructs produce generator warning `UP1029` without changing behavior: `@lexer::members`, lexer actions/predicates, and other unsupported grammar actions are not executed; parser semantic predicates, inline parser actions, and parser `@init` / `@after` hooks are generated as executable opt-in hooks;
+- visible unsupported embedded-code constructs produce generator warning `UP1029` without changing behavior. Supported simple lexer actions/predicates and the documented lexer header/member/footer injection points are generated only for the bounded generated-C# opt-in path; unknown actions/scopes and contextually invalid forms remain non-executable. Parser semantic predicates, inline parser actions, and parser `@init` / `@after` hooks are also generated as executable opt-in hooks;
 - future work may add broader C# shape support without changing default parsing.
 
 ### Rule-call argument syntax `callee[...]`
@@ -571,7 +571,7 @@ Parser action execution now uses structured `ParserActionExecutionOutcome`, alig
 
 Parser embedded-code discovery now has a shared metadata model in `Utils.Parser.EmbeddedCode`. `EmbeddedCodeRuntimeDiscovery` walks a `ParserDefinition` and emits `EmbeddedCodeRuntimeEntry` values with the raw source, `EmbeddedCodeKind`, owning rule name, runtime-compatible alternative and element indexes, a runtime key for executable entries, and an explicit `EmbeddedCodeUnsupportedReason` for skipped entries. The metadata mirrors the existing parser runtime indexing rules for priority-ordered alternatives, single-item alternatives, sequences, quantifier inner parsing, negation probes, and direct-left-recursive base/tail alternatives. It is metadata only: it does not compile source, generate C#, execute actions, or change `ParserEngine` behavior.
 
-The expression-backed prepared registry consumes this shared discovery result before invoking its preparer. Unsupported constructs such as grammar actions, lexer actions/predicates, lexer lifecycle/member actions, and non-inline parser actions remain non-executable, but they now carry explicit skip reasons. Parser `@init` and `@after` hooks are supported only by the source-generator C# opt-in path and remain outside runtime-inline expression preparation. The source-generator path reports `UP1029` when these constructs are visible in its grammar model; this warning is metadata/conservative-only and does not add execution. Invalid C# in a source-generator-supported hook remains a Roslyn compilation error rather than a custom parser diagnostic.
+The expression-backed prepared registry consumes this shared discovery result before invoking its preparer. On that runtime-inline surface, grammar actions, lexer actions/predicates, lexer lifecycle/member actions, and non-inline parser actions remain non-executable and carry explicit skip reasons. Parser `@init` / `@after` and the bounded lexer hooks are supported only by the source-generator C# opt-in path. The source generator reports `UP1029` only for visible constructs outside its supported generated hooks/injection points; the warning never grants execution. Invalid C# in a source-generator-supported hook remains a Roslyn compilation error rather than a custom parser diagnostic.
 
 
 ## Explicit parser rule-call execution policy
