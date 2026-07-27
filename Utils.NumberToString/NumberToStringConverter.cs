@@ -1807,9 +1807,29 @@ namespace Utils.NumberToString
         /// Returns the <see cref="CultureInfo"/> for <paramref name="identifier"/>,
         /// or <see langword="null"/> when the identifier is not recognised by the host platform.
         /// </summary>
+        /// <remarks>
+        /// Tries <c>predefinedOnly: true</c> first so that ICU-backed runtimes reject unknown
+        /// tags instead of synthesising fallback cultures. When that fails the lenient overload
+        /// is used as a fallback for platform-specific aliases (e.g. "EN-uk" → British English
+        /// on Windows NLS), but only if the normalised culture name starts with a 2–3 letter
+        /// primary language subtag (ISO 639-1/2), ruling out arbitrary strings such as "XTEST"
+        /// whose ICU-synthesised name has a longer, non-standard primary subtag.
+        /// </remarks>
         private static CultureInfo? TryGetDateCultureInfo(string identifier)
         {
-            try { return CultureInfo.GetCultureInfo(identifier); }
+            try { return CultureInfo.GetCultureInfo(identifier, predefinedOnly: true); }
+            catch (CultureNotFoundException) { }
+
+            try
+            {
+                var culture = CultureInfo.GetCultureInfo(identifier);
+                // Guard against ICU creating synthetic cultures for arbitrary strings:
+                // the normalised BCP47 name must begin with a 2-3 letter language subtag.
+                string primary = culture.Name.Split('-')[0];
+                return primary.Length is >= 2 and <= 3 && primary.All(char.IsLetter)
+                    ? culture
+                    : null;
+            }
             catch (CultureNotFoundException) { return null; }
         }
 
