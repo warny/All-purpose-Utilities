@@ -20,6 +20,7 @@
         <PackageProjectUrl>https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
         <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
         <PackageReadmeFile>README.md</PackageReadmeFile>
+        <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
     </PropertyGroup>
 
     <ItemGroup>
@@ -44,12 +45,22 @@
     <ItemGroup>
         <None Include="README.md" Pack="true" PackagePath="\" />
         <None Include="buildTransitive\Utils.Parser.Generators.targets" Pack="true" PackagePath="buildTransitive\omy.Utils.Parser.Generators.targets" />
+        <None Include="bin\$(Configuration)\netstandard2.0\Utils.Parser.Generators.dll" Pack="true" PackagePath="analyzers\dotnet\cs" Visible="false" />
+        <None Include="..\Utils.Parser.Antlr4.Common\bin\$(Configuration)\netstandard2.0\Utils.Parser.Antlr4.Common.dll" Pack="true" PackagePath="analyzers\dotnet\cs" Visible="false" />
+        <None Include="..\Utils.Parser.Diagnostics\bin\$(Configuration)\netstandard2.0\Utils.Parser.Diagnostics.dll" Pack="true" PackagePath="analyzers\dotnet\cs" Visible="false" />
+        <None Include="..\Utils.Parser.Source\bin\$(Configuration)\netstandard2.0\Utils.Parser.Source.dll" Pack="true" PackagePath="analyzers\dotnet\cs" Visible="false" />
     </ItemGroup>
 
 
     <ItemGroup>
         <ProjectReference Include="..\Utils.Parser.Diagnostics\Utils.Parser.Diagnostics.csproj" />
-        <ProjectReference Include="..\Utils.Parser.Antlr4.Common\Utils.Parser.Antlr4.Common.csproj" OutputItemType="Analyzer" />
+        <ProjectReference Include="..\Utils.Parser.Antlr4.Common\Utils.Parser.Antlr4.Common.csproj" />
     </ItemGroup>
+
+    <Target Name="ExposeGeneratorAnalyzerDependencies" AfterTargets="GetTargetPathWithTargetPlatformMoniker" DependsOnTargets="BuildOnlySettings;ResolveReferences">
+        <ItemGroup>
+            <TargetPathWithTargetPlatformMoniker Include="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.Extension)' == '.dll'" IncludeRuntimeDependency="false" />
+        </ItemGroup>
+    </Target>
 
 </Project>

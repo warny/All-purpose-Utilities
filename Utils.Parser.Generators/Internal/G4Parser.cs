@@ -124,6 +124,7 @@ internal sealed class G4Parser
             Consume(); // skip unexpected token
         }
 
+        grammar.RootRule = grammar.ParserRules.FirstOrDefault();
         return grammar;
     }
 

@@ -37,6 +37,34 @@ public sealed class GeneratedImportedRuleExecutionParityTests
         Assert.IsNotNull(parse.Invoke(null, new object[] { "a" }));
     }
 
+    /// <summary>Verifies an entry without a local parser rule does not promote an imported parser rule to root.</summary>
+    [TestMethod]
+    public void EntryWithoutLocalParserRule_ImportedRuleDoesNotBecomeRoot()
+    {
+        GeneratorDriverRunResult result = RunGenerator([
+            Grammar("Root.g4", "parser grammar Root; import Shared;"),
+            Grammar("Shared.g4", "parser grammar Shared; child : TOKEN ;")]);
+
+        string source = GetGeneratedSource(result, "Root");
+        StringAssert.Contains(source, "ParserRules: new Rule[] {_child }");
+        StringAssert.Contains(source, "RootRule: null");
+    }
+
+    /// <summary>Verifies imported mode declarations remain in the effective definition even when they contain no rules.</summary>
+    [TestMethod]
+    public void ImportedEmptyLexerMode_IsEmitted()
+    {
+        GeneratorDriverRunResult result = RunGenerator([
+            Grammar("Root.g4", "grammar Root; import Shared; start : TOKEN ; TOKEN : 'a' ;"),
+            Grammar("Shared.g4", "lexer grammar Shared; mode EMPTY;")]);
+
+        AssertNoBindingDiagnostics(result);
+        Assembly assembly = CompileGeneratedSources(result);
+        MethodInfo build = assembly.GetTypes().Single(type => type.Name == "Root").GetMethod("Build", BindingFlags.Public | BindingFlags.Static)!;
+        var definition = (Utils.Parser.Model.ParserDefinition)build.Invoke(null, null)!;
+        Assert.IsTrue(definition.Modes.Any(mode => mode.Name == "EMPTY" && mode.Rules.Count == 0));
+    }
+
     /// <summary>Verifies local parser-rule priority is the only generated binding target and executes through the generated definition.</summary>
     [TestMethod]
     public void LocalRuleShadowsImportedRule_ReportsLocalBindingDiagnosticAndBuildsAfterValidLocalCall()
@@ -168,4 +196,3 @@ public sealed class GeneratedImportedRuleExecutionParityTests
         public override SourceText GetText(CancellationToken cancellationToken = default) => _text;
     }
 }
-

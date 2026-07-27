@@ -33,7 +33,6 @@
         <ProjectReference Include="..\Utils\Utils.csproj" />
         <ProjectReference Include="..\Utils.Parser\Utils.Parser.csproj" />
         <ProjectReference Include="..\Utils.Parser.Generators\Utils.Parser.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-        <ProjectReference Include="..\Utils.Parser.Antlr4.Common\Utils.Parser.Antlr4.Common.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
     <ItemGroup>

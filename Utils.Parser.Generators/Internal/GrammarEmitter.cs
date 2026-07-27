@@ -176,8 +176,8 @@ internal static partial class GrammarEmitter
         sb.AppendLine(" },");
 
         // rootRule
-        string rootRule = grammar.ParserRules.Count > 0
-            ? $"_{Sanitize(grammar.ParserRules[0].Name)}"
+        string rootRule = grammar.RootRule is not null
+            ? $"_{Sanitize(grammar.RootRule.Name)}"
             : "null";
         sb.AppendLine($"            RootRule: {rootRule}) {{ AllowExternalLexerRules = true }});");
         sb.AppendLine("    }");

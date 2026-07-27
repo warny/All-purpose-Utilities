@@ -12,7 +12,14 @@ internal static class EffectiveG4GrammarProjection
     internal static G4Grammar Create(GrammarImportCompositionPlan plan)
     {
         var entry = (G4Grammar)plan.Entry.Payload;
-        var result = new G4Grammar { Name = entry.Name, Kind = entry.Kind, HasTokensBlock = entry.HasTokensBlock, HasChannelsBlock = entry.HasChannelsBlock };
+        var result = new G4Grammar
+        {
+            Name = entry.Name,
+            Kind = entry.Kind,
+            HasTokensBlock = entry.HasTokensBlock,
+            HasChannelsBlock = entry.HasChannelsBlock,
+            RootRule = (G4Rule?)plan.RootRulePayload
+        };
         foreach (KeyValuePair<string, string> option in entry.Options) result.Options.Add(option.Key, option.Value);
         result.Actions.AddRange(entry.Actions);
         result.Imports.AddRange(entry.Imports);
@@ -21,6 +28,13 @@ internal static class EffectiveG4GrammarProjection
             var grammar = (G4Grammar)source.Payload;
             AddDistinct(result.DeclaredTokens, grammar.DeclaredTokens);
             AddDistinct(result.DeclaredChannels, grammar.DeclaredChannels);
+            foreach (G4LexerMode sourceMode in grammar.ExtraModes)
+            {
+                if (!result.ExtraModes.Any(mode => string.Equals(mode.Name, sourceMode.Name, StringComparison.Ordinal)))
+                {
+                    result.ExtraModes.Add(new G4LexerMode { Name = sourceMode.Name });
+                }
+            }
         }
         foreach (EffectiveGrammarRule effective in plan.EffectiveRules)
         {
