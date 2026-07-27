@@ -73,6 +73,9 @@
         <article data-uid="">
 <h1 id="antlr4-compatibility-reference">ANTLR4 Compatibility Reference</h1>
 
+<blockquote>
+<p>This is a technical implementation reference, not the product-support promise. The normative guarantees for <code>2.0.0-rc.1</code> are defined by the <a href="ProductionSupportContract.html"><code>Production Support Contract</code></a>.</p>
+</blockquote>
 <p>This document lists ANTLR4 grammar features and their support status in Utils.Parser.</p>
 <p>For each feature that behaves differently from standard ANTLR4, a <strong>Usage</strong> section explains how to achieve the equivalent result.</p>
 <p>This document must be consulted before modifying any grammar-related component, and updated whenever a feature's support status changes.</p>
@@ -109,7 +112,7 @@ Use this file for implementation-oriented usage guidance when behavior differs f
 </tbody>
 </table>
 <p>When generated, the automatic generated-C# subset is intentionally narrower than ANTLR4: positional only, simple literals only, allowlisted declared target types only, exact arity only, no omitted/default argument consumption, no named or mixed arguments, no arbitrary expressions, no generated ANTLR rule signatures, and no <code>Parse(...)</code> behavior change. The generated wrapper delegates conversion to <code>TypedPositionalLiteralRuleCallExecutionPolicy</code> with throwing failures, so invalid bindings fail before child lifecycle hooks observe partial seeds. Managed seeds participate in the existing generated execution-context rollback and state-aware memoization boundaries.</p>
-<h2 id="compatibility-level-estimate">Compatibility level estimate</h2>
+<h2 id="compatibility-level-estimate-non-normative">Compatibility level estimate (non-normative)</h2>
 <p>This project should not claim full ANTLR4 compatibility. A practical estimate is:</p>
 <ul>
 <li>common grammar syntax and deterministic runtime tokenization/parsing: about 60-65% of practical ANTLR4 usage;</li>
@@ -622,7 +625,7 @@ string json  = RuntimeObservationJsonWriter.Write(recorder.Observations);
 <tr>
 <td>Grammar-level actions <code>@header</code>, <code>@members</code>, <code>@footer</code>, etc.</td>
 <td><code>ParserDefinition.Actions</code></td>
-<td>Metadata only in the default runtime and runtime-inline path. In the source-generator C# path only, parser <code>@header</code> / <code>@parser::header</code> are injected near the top of the generated file, parser <code>@members</code> / <code>@parser::members</code> are injected into <code>{ClassName}ExecutionContext</code>, and parser <code>@footer</code> / <code>@parser::footer</code> are injected as trailing generated C# source near the end of the generated file. Lexer-scoped <code>@lexer::header</code>, <code>@lexer::members</code>, and <code>@lexer::footer</code> are injected through the same limited generated-C# compatibility model with dedicated lexer markers; this does not support lexer inline actions, lexer predicates, <code>$...</code> rewriting, or complete ANTLR lexer target-language compatibility. See <a href="EmbeddedCodeExecutionModel.html"><code>EmbeddedCodeExecutionModel.md</code></a>.</td>
+<td>Metadata only in the default runtime and runtime-inline path. In the source-generator C# path only, parser <code>@header</code> / <code>@parser::header</code> are injected near the top of the generated file, parser <code>@members</code> / <code>@parser::members</code> are injected into <code>{ClassName}ExecutionContext</code>, and parser <code>@footer</code> / <code>@parser::footer</code> are injected as trailing generated C# source near the end of the generated file. Lexer-scoped <code>@lexer::header</code>, <code>@lexer::members</code>, and <code>@lexer::footer</code> are injected through the same limited generated-C# compatibility model with dedicated lexer markers. Simple lexer actions/predicates and bounded lexer <code>$...</code> rewriting are separate generated-C# opt-in features; none of these surfaces implies complete ANTLR lexer target-language compatibility. See <a href="EmbeddedCodeExecutionModel.html"><code>EmbeddedCodeExecutionModel.md</code></a>.</td>
 </tr>
 <tr>
 <td>Rule-call argument clause <code>callee[...]</code></td>
@@ -700,7 +703,7 @@ They are never executed, replayed, or resumed.</p>
 </tr>
 <tr>
 <td>Target-language action execution engines</td>
-<td>No target-language engine is active by default. Inline parser actions and rule lifecycle hooks (<code>@init</code>/<code>@after</code>) can execute only through an explicit runtime policy or generated C# opt-in path. Parser <code>@header</code> / <code>@parser::header</code> are injected only as generated C# source-file compatibility blocks, and parser <code>@footer</code> / <code>@parser::footer</code> are injected only as trailing generated C# source. Lexer actions, lexer predicates, <code>@lexer::header</code>, <code>@lexer::members</code>, <code>@lexer::footer</code>, and other grammar actions remain non-executable.</td>
+<td>No target-language engine is active by default. Inline parser actions and rule lifecycle hooks (<code>@init</code>/<code>@after</code>) can execute only through an explicit runtime policy or generated C# opt-in path. Parser and lexer header/member/footer compatibility blocks, plus simple lexer actions/predicates, exist only in the bounded generated-C# path and remain disabled in conservative <code>Parse(...)</code>. Unknown actions/scopes and broader target-language semantics remain non-executable.</td>
 </tr>
 <tr>
 <td><code>superClass</code> class inheritance (generated code)</td>
@@ -766,9 +769,9 @@ They are never executed, replayed, or resumed.</p>
 <tr>
 <td><code>UP1029</code> EmbeddedCodeConstructNotExecutedByGenerator</td>
 <td>Not emitted by runtime.</td>
-<td>Emitted as a source-generator warning for visible embedded-code constructs that are preserved or recognized but not executed by generated C# hooks or injected parser C# compatibility blocks, including lexer actions/predicates, unsupported grammar actions, <code>@lexer::header</code>, <code>@lexer::members</code>, <code>@lexer::footer</code>, parser named actions in lexer grammars, lexer-grammar unscoped <code>@header</code>, <code>@members</code>, and <code>@footer</code>, unknown parser named actions, and unknown named-action scopes. <code>@init</code>, <code>@after</code>, parser <code>@header</code> / <code>@parser::header</code>, parser <code>@members</code> / <code>@parser::members</code>, and parser <code>@footer</code> / <code>@parser::footer</code> are no longer in this list for generated parser or combined grammars.</td>
+<td>Emitted for visible embedded-code constructs outside the bounded generated hooks or supported parser/lexer header/member/footer injection points, including unsupported grammar actions, contextually invalid named actions, unknown action names, and unknown scopes. Supported simple lexer predicates/actions and supported <code>@lexer::header</code> / <code>@lexer::members</code> / <code>@lexer::footer</code> forms are not classified as unexecuted merely for being lexer-side.</td>
 <td>Generator-only</td>
-<td>This diagnostic uses deterministic most-specific wording and does not add execution or alter <code>ParserEngine</code>; parser semantic predicates, inline parser actions, rule lifecycle hooks (<code>@init</code>/<code>@after</code>), parser headers, parser members, and parser footers are promoted only in the generated C# opt-in path.</td>
+<td>Deterministic wording does not add execution or alter <code>ParserEngine</code>; all promoted hooks and injection points remain generated-C# opt-in, and conservative <code>Parse(...)</code> remains unchanged.</td>
 </tr>
 <tr>
 <td><code>UP1035</code> EmbeddedHeaderInjectedByGenerator</td>

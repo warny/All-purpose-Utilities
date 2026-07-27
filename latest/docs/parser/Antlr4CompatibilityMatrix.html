@@ -74,6 +74,9 @@
 <h1 id="antlr4-compatibility-matrix">ANTLR4 Compatibility Matrix</h1>
 
 <blockquote>
+<p>This matrix describes implementation state and does not itself create a production guarantee. Use the normative <a href="ProductionSupportContract.html"><code>2.0.0-rc.1 Production Support Contract</code></a> to determine the supported RC perimeter.</p>
+</blockquote>
+<blockquote>
 <p>Rule arguments/returns plan: <a href="RuleArgumentsAndReturnsPlan.html"><code>RuleArgumentsAndReturnsPlan.md</code></a> is the design reference for rule parameters, call arguments, returns, labels, rollback, and generated-C# opt-in binding. The matrix rows below describe current behavior only: parameters and returns are metadata plus explicit helper state, raw call arguments are preserved/split syntactically, reusable literal binding policies are explicit opt-in, labels store managed <code>ParserRuleCallResult</code> snapshots, and generated C# emitted with <code>enableGeneratedRuleArgumentBinding</code> performs narrow automatic positional simple-literal binding on <code>ParseWithEmbeddedCode(...)</code> overloads without a <code>basePolicy</code>; the shipped AdditionalFiles source-generator exposes this through the project-wide <code>UtilsParserEnableGeneratedRuleArgumentBinding</code> MSBuild opt-in, disabled by default.</p>
 </blockquote>
 <h2 id="introduction">Introduction</h2>
@@ -122,8 +125,8 @@
 </tr>
 <tr>
 <td>Token channels (<code>channels { ... }</code> and <code>-&gt; channel(...)</code>)</td>
-<td>Supported (runtime command), metadata support available</td>
-<td>Channel command execution is supported; declared channel metadata is recognized by the grammar pipeline.</td>
+<td>Command supported; declarations preserved as metadata</td>
+<td>Channel command execution is supported; declared channel names do not independently create runtime semantics.</td>
 </tr>
 <tr>
 <td>Token vocabularies (<code>tokenVocab</code>)</td>
@@ -204,9 +207,9 @@
 <tr>
 <td>Grammar actions, <code>@header</code>, <code>@members</code>, and <code>@footer</code></td>
 <td>Preserved as metadata where visible, but not executed by default.</td>
-<td>Not supported; classified/skipped when visible to runtime discovery.</td>
-<td>Limited parser-header support for unscoped <code>@header</code> and <code>@parser::header</code>: injected verbatim near the top of the generated C# file, with warning <code>UP1035</code>. Limited parser-member support for unscoped <code>@members</code> and <code>@parser::members</code>: injected verbatim into <code>{ClassName}ExecutionContext</code>, with warning <code>UP1031</code>. Limited parser-footer support for unscoped <code>@footer</code> and <code>@parser::footer</code>: injected verbatim as trailing generated C# source near the end of the generated file after generated type declarations, with warning <code>UP1036</code>. <code>@lexer::header</code>, <code>@lexer::members</code>, <code>@lexer::footer</code>, parser named actions in lexer grammars, lexer-grammar unscoped <code>@header</code>, <code>@members</code>, and <code>@footer</code>, unknown parser named-action names, unknown named-action scopes, and other grammar actions remain unsupported and emit deterministic <code>UP1029</code> diagnostics.</td>
-<td>Parser headers, members, and footers are C# source-generator compatibility bridges, not full ANTLR target-language compatibility. Roslyn reports invalid C# and collisions. Parser footer is not a second header or documented <code>using</code> region. Simple lexer action/predicate execution is limited to generated-C# opt-in.</td>
+<td>Not supported by runtime-inline discovery; classified/skipped there.</td>
+<td>In the generated-C# opt-in path, documented parser and lexer header/member/footer forms are injected at their bounded locations with compatibility warnings. Contextually invalid forms, unknown names/scopes, and other grammar actions remain unsupported and emit deterministic <code>UP1029</code> diagnostics.</td>
+<td>These are C# source-generation compatibility bridges, not full ANTLR target-language compatibility. Roslyn reports invalid C# and collisions; conservative <code>Parse(...)</code> does not execute generated hooks.</td>
 </tr>
 <tr>
 <td>Embedded code preservation</td>
