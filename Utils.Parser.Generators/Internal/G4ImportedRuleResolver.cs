@@ -22,6 +22,10 @@ internal sealed class G4ImportedRuleResolver
         }
 
         GrammarImportCompositionPlan plan = new G4GrammarCompositionAdapter(_index).Build(entry);
+        if (plan.Collisions.Any(collision => string.Equals(collision.RuleName, ruleName, StringComparison.Ordinal)))
+        {
+            return G4RuleResolution.Ambiguous(ruleName);
+        }
         EffectiveGrammarRule[] matches = plan.EffectiveRules
             .Where(item => item.Rule.Domain == GrammarRuleDomain.Parser && string.Equals(item.Rule.Name, ruleName, StringComparison.Ordinal))
             .ToArray();

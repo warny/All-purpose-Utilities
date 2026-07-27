@@ -28,7 +28,7 @@ internal static class GeneratedRuleArgumentBindingValidator
         {
             if (callSite.RawArguments is null) continue;
             var resolution = resolveRule(callSite);
-            if (resolution.Kind == G4RuleResolutionKind.Local && resolution.Rule is not null)
+            if ((resolution.Kind == G4RuleResolutionKind.Local || resolution.Kind == G4RuleResolutionKind.Imported) && resolution.Rule is not null)
             {
                 ValidateCallSite(resolution.Rule, callSite, issues);
             }

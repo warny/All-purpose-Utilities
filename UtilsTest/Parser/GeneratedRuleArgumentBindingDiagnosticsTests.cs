@@ -141,7 +141,7 @@ public sealed class GeneratedRuleArgumentBindingDiagnosticsTests
 
     /// <summary>Verifies unresolved or imported targets do not produce generated-binding diagnostics.</summary>
     [TestMethod]
-    public void Enabled_UnresolvedOrImportedTargets_DoNotReportBindingDiagnostic()
+    public void Enabled_UnresolvedImportDoesNotReportBindingDiagnostic()
     {
         var result = RunGenerator("""
             grammar P;
@@ -151,7 +151,7 @@ public sealed class GeneratedRuleArgumentBindingDiagnosticsTests
             """, "true");
 
         AssertNoBindingDiagnostics(result);
-        Assert.AreEqual(1, result.GeneratedTrees.Length);
+        Assert.AreEqual(0, result.GeneratedTrees.Length);
     }
 
     /// <summary>Verifies an invalid file does not prevent a second valid file from being emitted.</summary>

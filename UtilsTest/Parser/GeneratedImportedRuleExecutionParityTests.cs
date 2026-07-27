@@ -16,23 +16,25 @@ namespace UtilsTest.Parser;
 [TestClass]
 public sealed class GeneratedImportedRuleExecutionParityTests
 {
-    /// <summary>Verifies imported parser-rule calls do not receive APU0107 while generated definitions remain local-only.</summary>
+    /// <summary>Verifies a directly imported parser and lexer rule are emitted and execute through the generated facade.</summary>
     [TestMethod]
-    public void ImportedRuleCall_InvalidArgument_DoesNotReportBindingDiagnosticAndGeneratedRootCannotResolveImport()
+    public void ImportedRuleCall_IsEmittedAndExecutes()
     {
         GeneratorDriverRunResult result = RunGenerator([
-            Grammar("Root.g4", "parser grammar Root; import Shared; start : child[bad] ;"),
-            Grammar("Shared.g4", "parser grammar Shared; child[int value] : TOKEN ;")]);
+            Grammar("Root.g4", "parser grammar Root; import Shared; start : child[1] ;"),
+            Grammar("Shared.g4", "grammar Shared; child[int value] : TOKEN ; TOKEN : 'a' ;")]);
 
         AssertNoBindingDiagnostics(result);
         Assert.AreEqual(2, result.GeneratedTrees.Length);
-        StringAssert.Contains(GetGeneratedSource(result, "Root"), "Imports: new GrammarImport[0]");
+        StringAssert.Contains(GetGeneratedSource(result, "Root"), "new GrammarImport(\"Shared\"");
 
         Assembly assembly = CompileGeneratedSources(result);
-        MethodInfo build = assembly.GetTypes().Single(type => type.Name == "Root").GetMethod("Build", BindingFlags.Public | BindingFlags.Static)!;
-        TargetInvocationException exception = Assert.ThrowsException<TargetInvocationException>(() => build.Invoke(null, null));
-        Assert.IsInstanceOfType<GrammarValidationException>(exception.InnerException);
-        StringAssert.Contains(exception.InnerException!.Message, "references unknown rule 'child'");
+        Type root = assembly.GetTypes().Single(type => type.Name == "Root");
+        MethodInfo build = root.GetMethod("Build", BindingFlags.Public | BindingFlags.Static)!;
+        var definition = (Utils.Parser.Model.ParserDefinition)build.Invoke(null, null)!;
+        CollectionAssert.IsSubsetOf(new[] { "start", "child", "TOKEN" }, definition.AllRules.Keys.ToArray());
+        MethodInfo parse = root.GetMethod("Parse", BindingFlags.Public | BindingFlags.Static)!;
+        Assert.IsNotNull(parse.Invoke(null, new object[] { "a" }));
     }
 
     /// <summary>Verifies local parser-rule priority is the only generated binding target and executes through the generated definition.</summary>
@@ -59,20 +61,20 @@ public sealed class GeneratedImportedRuleExecutionParityTests
 
     /// <summary>Verifies transitive, ambiguous, missing, aliased, lexer, and duplicate-name imports do not produce binding conclusions.</summary>
     [DataTestMethod]
-    [DataRow("Transitive", "parser grammar Root; import Middle; start : child[bad] ;", "parser grammar Middle; import Shared;", "parser grammar Shared; child[int value] : TOKEN ;")]
-    [DataRow("Ambiguous", "parser grammar Root; import A, B; start : child[bad] ;", "parser grammar A; child[int value] : TOKEN ;", "parser grammar B; child[int value] : TOKEN ;")]
-    [DataRow("Missing", "parser grammar Root; import Missing; start : child[bad] ;", "parser grammar Other; other : TOKEN ;", "parser grammar Shared; child[int value] : TOKEN ;")]
-    [DataRow("Aliased", "parser grammar Root; import Alias=Shared; start : child[bad] ;", "parser grammar Shared; child[int value] : TOKEN ;", "parser grammar Other; other : TOKEN ;")]
-    [DataRow("Lexer", "parser grammar Root; import Tokens; start : TOKEN[bad] ;", "lexer grammar Tokens; TOKEN : 'a' ;", "parser grammar Other; other : TOKEN ;")]
-    [DataRow("DuplicateName", "parser grammar Root; import Shared; start : child[bad] ;", "parser grammar Shared; child[int value] : TOKEN ;", "parser grammar Shared; child[int value] : TOKEN ;")]
-    public void ImportedRuleScenarios_DoNotReportBindingDiagnostic(string scenario, string root, string first, string second)
+    [DataRow("Transitive", 1, "parser grammar Root; import Middle; start : child[bad] ;", "parser grammar Middle; import Shared;", "parser grammar Shared; child[int value] : TOKEN ;")]
+    [DataRow("Ambiguous", 0, "parser grammar Root; import A, B; start : child[bad] ;", "parser grammar A; child[int value] : TOKEN ;", "parser grammar B; child[int value] : TOKEN ;")]
+    [DataRow("Missing", 0, "parser grammar Root; import Missing; start : child[bad] ;", "parser grammar Other; other : TOKEN ;", "parser grammar Shared; child[int value] : TOKEN ;")]
+    [DataRow("Aliased", 1, "parser grammar Root; import Alias=Shared; start : child[bad] ;", "parser grammar Shared; child[int value] : TOKEN ;", "parser grammar Other; other : TOKEN ;")]
+    [DataRow("Lexer", 0, "parser grammar Root; import Tokens; start : TOKEN[bad] ;", "lexer grammar Tokens; TOKEN : 'a' ;", "parser grammar Other; other : TOKEN ;")]
+    [DataRow("DuplicateName", 0, "parser grammar Root; import Shared; start : child[bad] ;", "parser grammar Shared; child[int value] : TOKEN ;", "parser grammar Shared; child[int value] : TOKEN ;")]
+    public void ImportedRuleScenarios_ReportOnlyCertainEffectiveTargets(string scenario, int expectedCount, string root, string first, string second)
     {
         GeneratorDriverRunResult result = RunGenerator([
             Grammar("Root.g4", root),
             Grammar($"{scenario}One.g4", first),
             Grammar($"{scenario}Two.g4", second)]);
 
-        AssertNoBindingDiagnostics(result);
+        Assert.AreEqual(expectedCount, BindingDiagnostics(result).Length, scenario);
     }
 
     /// <summary>Runs the generator with generated rule-argument binding enabled.</summary>
