@@ -2455,8 +2455,145 @@ public class NumberToStringConverterAuditFixesTests
             System.Globalization.CultureInfo.InvariantCulture, out _));
     }
 
+    // ── Item 57 — explicit GroupSize=0 is not treated as absent ─────────────
+
+    [TestMethod]
+    public void ReadConfiguration_BaseOn_ExplicitZeroGroupSizeIsNotTreatedAsAbsent()
+    {
+        // Child explicitly sets groupSize="0". The old merge code treated 0 as absent
+        // (GroupSize != 0 → use inherited 3), which silently masked the invalid value.
+        // The corrected merge (GroupSize ?? inherited) propagates explicit 0 to ReadConverter,
+        // which rejects it with ArgumentOutOfRangeException (group size must be positive).
+        string baseKey = "EXPLICIT-ZERO-BASE-" + Guid.NewGuid().ToString("N");
+        string childKey = "EXPLICIT-ZERO-CHILD-" + Guid.NewGuid().ToString("N");
+        const string groupDef = @"<Groups>
+      <Group level=""1"">
+        <Digit digit=""0"" string=""""/><Digit digit=""1"" string=""one""/><Digit digit=""2"" string=""two""/>
+        <Digit digit=""3"" string=""three""/><Digit digit=""4"" string=""four""/><Digit digit=""5"" string=""five""/>
+        <Digit digit=""6"" string=""six""/><Digit digit=""7"" string=""seven""/><Digit digit=""8"" string=""eight""/>
+        <Digit digit=""9"" string=""nine""/>
+      </Group>
+    </Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string=""""/><Scale value=""1"" string=""thousand""/></StaticNames><Suffixes><Suffix>on</Suffix></Suffixes></NumberScale>";
+        string xml = $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>{baseKey}</Culture>
+    {groupDef}
+  </Language>
+  <Language baseOn=""{baseKey}"" groupSize=""0"">
+    <Culture>{childKey}</Culture>
+  </Language>
+</Numbers>";
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => NumberToStringConverter.ReadConfiguration(xml),
+            "Explicit groupSize=\"0\" must propagate through merge and be rejected by ReadConverter, " +
+            "not silently replaced by the inherited non-zero value");
+    }
+
+    // ── Item 57 — explicit empty LanguageSpecifics overrides inherited type ──
+
+    [TestMethod]
+    public void ReadConfiguration_BaseOn_ExplicitEmptyLanguageSpecificsTypeNameOverridesInherited()
+    {
+        // Base language uses a LanguageSpecifics implementation that appends "_TRANSFORMED".
+        // Child explicitly sets <LanguageSpecifics></LanguageSpecifics> (empty string — not absent).
+        // Old code: !string.IsNullOrEmpty("") → false → inherited type wins → output "one_TRANSFORMED".
+        // New code: "" != null → true → explicit "" wins → default (no-op) specifics → output "one".
+        string baseKey = "EMPTYSPEC-BASE-" + Guid.NewGuid().ToString("N");
+        string childKey = "EMPTYSPEC-CHILD-" + Guid.NewGuid().ToString("N");
+        string typeName = "EMPTYSPEC-TYPE-" + Guid.NewGuid().ToString("N");
+        NumberToStringConverter.RegisterLanguageSpecifics(typeName, new TransformingSpecifics());
+
+        const string groupDef = @"<Groups>
+      <Group level=""1"">
+        <Digit digit=""0"" string=""""/><Digit digit=""1"" string=""one""/><Digit digit=""2"" string=""two""/>
+        <Digit digit=""3"" string=""three""/><Digit digit=""4"" string=""four""/><Digit digit=""5"" string=""five""/>
+        <Digit digit=""6"" string=""six""/><Digit digit=""7"" string=""seven""/><Digit digit=""8"" string=""eight""/>
+        <Digit digit=""9"" string=""nine""/>
+      </Group>
+    </Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string=""""/><Scale value=""1"" string=""thousand""/></StaticNames><Suffixes><Suffix>on</Suffix></Suffixes></NumberScale>";
+        string xml = $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>{baseKey}</Culture>
+    {groupDef}
+    <LanguageSpecifics>{typeName}</LanguageSpecifics>
+  </Language>
+  <Language baseOn=""{baseKey}"">
+    <Culture>{childKey}</Culture>
+    <LanguageSpecifics></LanguageSpecifics>
+  </Language>
+</Numbers>";
+        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        string result = converters[childKey].Convert(1);
+        Assert.AreEqual("one", result,
+            "Child explicitly sets empty <LanguageSpecifics> — the parent's transforming specifics " +
+            "must NOT be inherited. Old code would have inherited it (producing 'one_TRANSFORMED').");
+    }
+
+    // ── Atomicity — ReadConverter failure must not commit partial state ────────
+
+    [TestMethod]
+    public void ReadConfiguration_ReadConverter_FailureDoesNotCommitResolvedLanguagesToGlobalCache()
+    {
+        // Document D1 has two languages: one valid (BASE) and one broken (groupSize=0).
+        // ReadConverter fails for the broken language → D1 throws before committing anything.
+        // Document D2 references BASE via baseOn. If D1 had partially committed BASE to
+        // _cachedLanguageTypes, D2 would succeed. The expected behavior is that D2 fails
+        // with "base not found", proving D1's resolution was never written to the global cache.
+        string baseKey = "ATOMIC-NOCACHE-BASE-" + Guid.NewGuid().ToString("N");
+        string brokenKey = "ATOMIC-NOCACHE-BROKEN-" + Guid.NewGuid().ToString("N");
+        string childKey = "ATOMIC-NOCACHE-CHILD-" + Guid.NewGuid().ToString("N");
+
+        const string groupDef = @"<Groups>
+      <Group level=""1"">
+        <Digit digit=""0"" string=""""/><Digit digit=""1"" string=""one""/><Digit digit=""2"" string=""two""/>
+        <Digit digit=""3"" string=""three""/><Digit digit=""4"" string=""four""/><Digit digit=""5"" string=""five""/>
+        <Digit digit=""6"" string=""six""/><Digit digit=""7"" string=""seven""/><Digit digit=""8"" string=""eight""/>
+        <Digit digit=""9"" string=""nine""/>
+      </Group>
+    </Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string=""""/><Scale value=""1"" string=""thousand""/></StaticNames><Suffixes><Suffix>on</Suffix></Suffixes></NumberScale>";
+
+        string d1 = $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>{baseKey}</Culture>
+    {groupDef}
+  </Language>
+  <Language groupSize=""0"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>{brokenKey}</Culture>
+    {groupDef}
+  </Language>
+</Numbers>";
+
+        string d2 = $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language baseOn=""{baseKey}"">
+    <Culture>{childKey}</Culture>
+  </Language>
+</Numbers>";
+
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => NumberToStringConverter.ReadConfiguration(d1),
+            "D1 must fail because one of its languages has an invalid groupSize");
+
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.ReadConfiguration(d2),
+            "D2 must fail because D1 was never committed to _cachedLanguageTypes (atomicity)");
+        StringAssert.Contains(ex.Message, baseKey,
+            "The error message must name the missing base culture to confirm the root cause");
+    }
+
     private sealed class FakeSpecifics : INumberToStringLanguageSpecifics
     {
         public string FinalizeWriting(string language, string value) => value;
+    }
+
+    private sealed class TransformingSpecifics : INumberToStringLanguageSpecifics
+    {
+        public string FinalizeWriting(string language, string value) => value + "_TRANSFORMED";
     }
 }

@@ -128,10 +128,13 @@ namespace Utils.NumberToString
 
         /// <summary>
         /// Parses a configuration document into converter instances keyed by culture name.
-        /// Resolves all <c>baseOn</c> inheritance chains within the document (and against the
-        /// global cache) before committing anything to <see cref="_cachedLanguageTypes"/> or
-        /// returning any converters. This guarantees atomicity: if any language in the document
-        /// fails to resolve (missing base, cycle), no partial state is published.
+        /// Proceeds in three phases to guarantee atomicity:
+        /// <list type="number">
+        ///   <item><description>Resolve all <c>baseOn</c> inheritance chains (throws on cycle or missing base — nothing is committed).</description></item>
+        ///   <item><description>Build converters from the resolved definitions (throws on invalid config — nothing is committed).</description></item>
+        ///   <item><description>Commit all resolved types to <see cref="_cachedLanguageTypes"/> for cross-document inheritance.</description></item>
+        /// </list>
+        /// If any phase throws, no partial state is published to the shared caches.
         /// </summary>
         /// <param name="configuration">The XML configuration document.</param>
         /// <returns>A dictionary mapping culture names to converters.</returns>
@@ -185,11 +188,10 @@ namespace Utils.NumberToString
                     localCacheAdditions.TryAdd(NormalizeCulture(culture), resolved);
             }
 
-            // Phase 2 — all resolutions succeeded; commit to the global cache and build converters.
-            foreach (var resolved in resolvedLanguages)
-                foreach (var culture in resolved.Cultures ?? [])
-                    _cachedLanguageTypes.TryAdd(NormalizeCulture(culture), resolved);
-
+            // Phase 2 — all resolutions succeeded; build converters (may throw if the language
+            // configuration is invalid, e.g. missing scale, bad variant reference). Converters are
+            // constructed before committing to _cachedLanguageTypes: if ReadConverter throws, no
+            // partial state is published to the global cache.
             var result = new Dictionary<string, NumberToStringConverter>();
             foreach (var resolved in resolvedLanguages)
             {
@@ -200,6 +202,12 @@ namespace Utils.NumberToString
                         result.Add(key, ReadConverter(resolved, key));
                 }
             }
+
+            // Phase 3 — all converters built successfully; commit resolved types to the global cache.
+            foreach (var resolved in resolvedLanguages)
+                foreach (var culture in resolved.Cultures ?? [])
+                    _cachedLanguageTypes.TryAdd(NormalizeCulture(culture), resolved);
+
             return result;
         }
 
@@ -325,7 +333,7 @@ namespace Utils.NumberToString
         {
             Cultures = [],
             BaseOn = null,
-            GroupSize = 0,
+            GroupSize = null,
         };
 
         /// <summary>
@@ -341,7 +349,7 @@ namespace Utils.NumberToString
             {
                 Cultures = overriding.Cultures?.Count > 0 ? overriding.Cultures : inherited.Cultures,
                 BaseOn = null,
-                GroupSize = overriding.GroupSize != 0 ? overriding.GroupSize : inherited.GroupSize,
+                GroupSize = overriding.GroupSize ?? inherited.GroupSize,
                 Separator = overriding.Separator ?? inherited.Separator,
                 GroupSeparator = overriding.GroupSeparator ?? inherited.GroupSeparator,
                 Zero = overriding.Zero ?? inherited.Zero,
@@ -351,15 +359,15 @@ namespace Utils.NumberToString
                 MaxNumber = overriding.MaxNumber ?? inherited.MaxNumber,
                 Groups = overriding.Groups ?? inherited.Groups,
                 Exceptions = overriding.Exceptions ?? inherited.Exceptions,
-                NumberScale = overriding.NumberScale ?? inherited.NumberScale,
+                NumberScale = MergeNumberScaleType(inherited.NumberScale, overriding.NumberScale),
                 Replacements = overriding.Replacements ?? inherited.Replacements,
-                LanguageSpecificsTypeName = !string.IsNullOrEmpty(overriding.LanguageSpecificsTypeName)
+                LanguageSpecificsTypeName = overriding.LanguageSpecificsTypeName != null
                     ? overriding.LanguageSpecificsTypeName : inherited.LanguageSpecificsTypeName,
                 Fractions = overriding.Fractions ?? inherited.Fractions,
                 Ordinals = MergeOrdinalsType(inherited.Ordinals, overriding.Ordinals),
                 Variants = overriding.Variants ?? inherited.Variants,
                 YearFormat = overriding.YearFormat ?? inherited.YearFormat,
-                Triggers = (overriding.Triggers?.Count > 0) ? overriding.Triggers : inherited.Triggers,
+                Triggers = overriding.Triggers ?? inherited.Triggers,
                 Multiplicatives = overriding.Multiplicatives ?? inherited.Multiplicatives,
                 GroupConnector = overriding.GroupConnector ?? inherited.GroupConnector,
                 GroupConnectorThresholdString = overriding.GroupConnectorThresholdString ?? inherited.GroupConnectorThresholdString,
@@ -410,6 +418,35 @@ namespace Utils.NumberToString
                 Exceptions = mergedExceptions,
                 Rules = mergedRules,
                 OrdinalVariantsContainer = childOrdinals.OrdinalVariantsContainer ?? baseOrdinals.OrdinalVariantsContainer,
+            };
+        }
+
+        /// <summary>
+        /// Merges two <see cref="NumberScaleType"/> instances field by field so that a derived
+        /// language can override individual sub-sections (e.g., <c>StaticNames</c>, <c>Suffixes</c>)
+        /// while inheriting the rest (e.g., prefix tables) from the base language.
+        /// <para>
+        /// <c>FirstLetterUpperCase</c> and <c>StartIndex</c> have no null sentinel (bool/int); the
+        /// overriding value is used as-is. All reference-typed fields use null as the absent marker,
+        /// so <c>overriding ?? inherited</c> gives correct inheritance semantics.
+        /// </para>
+        /// </summary>
+        private static NumberScaleType? MergeNumberScaleType(NumberScaleType? inherited, NumberScaleType? overriding)
+        {
+            if (overriding == null) return inherited;
+            if (inherited == null) return overriding;
+            return new NumberScaleType
+            {
+                FirstLetterUpperCase = overriding.FirstLetterUpperCase,
+                VoidGroup = overriding.VoidGroup ?? inherited.VoidGroup,
+                GroupSeparator = overriding.GroupSeparator ?? inherited.GroupSeparator,
+                StartIndex = overriding.StartIndex != 0 ? overriding.StartIndex : inherited.StartIndex,
+                StaticNames = overriding.StaticNames ?? inherited.StaticNames,
+                Scale0Prefixes = overriding.Scale0Prefixes ?? inherited.Scale0Prefixes,
+                UnitsPrefixes = overriding.UnitsPrefixes ?? inherited.UnitsPrefixes,
+                TensPrefixes = overriding.TensPrefixes ?? inherited.TensPrefixes,
+                HundredsPrefixes = overriding.HundredsPrefixes ?? inherited.HundredsPrefixes,
+                Suffixes = overriding.Suffixes ?? inherited.Suffixes,
             };
         }
 
@@ -878,7 +915,7 @@ namespace Utils.NumberToString
 
             var options = new NumberToStringConverterOptions
             {
-                Group = language.GroupSize,
+                Group = language.GroupSize ?? 3,
                 Separator = language.Separator,
                 GroupSeparator = language.GroupSeparator,
                 Zero = language.Zero,

@@ -672,10 +672,32 @@ public class LanguageType
     public string BaseOn { get; set; }
 
     /// <summary>
-    /// Gets or sets the number of digits grouped together when formatting.
-    /// </summary>
+    /// <summary>Backing value for XmlSerializer — use <see cref="GroupSize"/> for all logic.</summary>
     [XmlAttribute("groupSize")]
-    public int GroupSize { get; set; }
+    public int GroupSizeXml { get; set; }
+
+    /// <summary>
+    /// Set by XmlSerializer to <see langword="true"/> when the <c>groupSize</c> attribute is
+    /// present in the document. Do not set manually; use <see cref="GroupSize"/> instead.
+    /// </summary>
+    public bool GroupSizeXmlSpecified { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of digits grouped together when formatting.
+    /// <para>
+    /// <see langword="null"/> means the attribute is absent from the XML document and the value
+    /// must be inherited via <c>baseOn</c>. A non-<see langword="null"/> value — including
+    /// <c>0</c> — is treated as explicitly declared and overrides any inherited value during merge.
+    /// Business-level validation (requiring a positive group size) is applied after the merge,
+    /// not during it.
+    /// </para>
+    /// </summary>
+    [XmlIgnore]
+    public int? GroupSize
+    {
+        get => GroupSizeXmlSpecified ? GroupSizeXml : (int?)null;
+        set { GroupSizeXml = value ?? 0; GroupSizeXmlSpecified = value.HasValue; }
+    }
 
     /// <summary>
     /// Gets or sets the separator used between groups.
