@@ -1451,17 +1451,20 @@ namespace Utils.NumberToString
         /// <returns>The textual representation of the fraction.</returns>
         private string BuildFractionText(BigInteger numerator, BigInteger denominator, bool allowFractionNames = true, string[]? variants = null)
         {
+            string[] v = variants ?? [];
             if (allowFractionNames &&
                 TryGetBase10FractionDigits(denominator, out int digits) &&
                 Fractions.TryGetValue(digits, out var suffix) &&
                 BigInteger.Abs(numerator) <= long.MaxValue)
             {
-                string valueText = variants is { Length: > 0 } ? Convert(numerator, variants) : Convert(numerator);
+                // Numerator is a sub-expression; do not apply MaxNumber guard.
+                string valueText = ConvertCardinalUnchecked(numerator, v);
                 return string.Concat(valueText, Separator, suffix.ToPlural((long)BigInteger.Abs(numerator))).Trim();
             }
 
-            string numeratorText = variants is { Length: > 0 } ? Convert(numerator, variants) : Convert(numerator);
-            string denominatorText = variants is { Length: > 0 } ? Convert(denominator, variants) : Convert(denominator);
+            // Numerator and denominator are sub-expressions; do not apply MaxNumber guard.
+            string numeratorText = ConvertCardinalUnchecked(numerator, v);
+            string denominatorText = ConvertCardinalUnchecked(denominator, v);
 
             string connector = FractionSeparator;
             return string.Concat(numeratorText, Separator, connector, Separator, denominatorText).Trim();
@@ -1800,6 +1803,10 @@ namespace Utils.NumberToString
             return parts.Count > 0 ? string.Join(Separator, parts) : Zero;
         }
 
+        /// <summary>
+        /// Returns the <see cref="CultureInfo"/> for <paramref name="identifier"/>,
+        /// or <see langword="null"/> when the identifier is not recognised by the host platform.
+        /// </summary>
         private static CultureInfo? TryGetDateCultureInfo(string identifier)
         {
             try { return CultureInfo.GetCultureInfo(identifier); }

@@ -1742,6 +1742,35 @@ public class NumberToStringConverterAuditFixesTests
   </Language>
 </Numbers>";
 
+    // ── Item 78 — MaxNumber does not constrain ConvertFraction sub-expressions ──
+
+    [TestMethod]
+    public void ConvertFraction_ComponentsExceedMaxNumber_Succeeds()
+    {
+        // ConvertFraction is an independent conversion surface; its numerator and
+        // denominator are sub-expressions that must not be guarded by MaxNumber.
+        var opts = new NumberToStringConverterOptions(EN) { MaxNumber = 1 };
+        var conv = new NumberToStringConverter(opts);
+        string result = conv.ConvertFraction(2, 3);
+        Assert.IsNotNull(result);
+        Assert.IsFalse(string.IsNullOrWhiteSpace(result),
+            "ConvertFraction must succeed even when numerator/denominator exceed MaxNumber");
+    }
+
+    [TestMethod]
+    public void Convert_Number_FractionComponentsExceedMaxNumber_Succeeds()
+    {
+        // Convert(Number) for a proper fraction delegates to BuildFractionText;
+        // the numerator and denominator must not be checked against MaxNumber.
+        var opts = new NumberToStringConverterOptions(EN) { MaxNumber = 1 };
+        var conv = new NumberToStringConverter(opts);
+        var number = new Utils.Numerics.Number(5, 7);
+        string result = conv.Convert(number);
+        Assert.IsNotNull(result);
+        Assert.IsFalse(string.IsNullOrWhiteSpace(result),
+            "Convert(Number) for a fraction must succeed even when components exceed MaxNumber");
+    }
+
     // ── Item 78 — MaxNumber constrains cardinal component of composite conversions ─
 
     [TestMethod]
