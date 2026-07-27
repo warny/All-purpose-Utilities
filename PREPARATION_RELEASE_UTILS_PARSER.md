@@ -24,10 +24,10 @@ Le projet ne doit pas encore être présenté comme un remplacement général d�
 La première release candidate devrait utiliser une version de type :
 
 ```text
-0.9.0-rc.1
+2.0.0-rc.1
 ```
 
-La version `1.0.0` ne devrait être publiée qu’après :
+La version `2.0.0` ne devrait être publiée qu’après :
 
 - stabilisation explicite de l’API publique ;
 - validation du contrat de compatibilité ;
@@ -39,7 +39,11 @@ La version `1.0.0` ne devrait être publiée qu’après :
 
 # P0 — Bloquant avant une première release de production
 
-## 1. Définir le contrat exact de la version 1
+## 1. Définir le premier contrat de production formalisé
+
+**État : terminé pour la documentation de `2.0.0-rc.1`.**
+
+Le contrat normatif est publié dans [`docs/parser/ProductionSupportContract.md`](docs/parser/ProductionSupportContract.md). Sa validation produit reste distincte des étapes fonctionnelles, de packaging et de qualité ci-dessous.
 
 Créer une matrice de support courte et normative couvrant au minimum :
 
@@ -209,7 +213,7 @@ Il faut également préciser le modèle de confiance :
 
 ### Critère de sortie
 
-Le niveau de confiance accepté par la V1 doit être clairement documenté.
+Le niveau de confiance accepté par le premier contrat de production doit être clairement documenté.
 
 ## 7. Ajouter une suite d’acceptation production
 
@@ -287,11 +291,7 @@ Chaque parcours doit inclure :
 - options expérimentales ;
 - comportement des imports.
 
-Les exemples de production ne doivent pas utiliser :
-
-```xml
-Version="*"
-```
+Les exemples de production doivent toujours épingler une version exacte et ne doivent pas utiliser de version NuGet flottante.
 
 ## 10. Ajouter un projet consommateur packagé
 
@@ -352,7 +352,7 @@ Mettre en place :
 
 ---
 
-# Fonctionnalités ne bloquant pas la V1
+# Fonctionnalités ne bloquant pas le premier contrat de production
 
 Les éléments suivants peuvent rester hors périmètre :
 
@@ -386,7 +386,7 @@ Contenu :
 
 - matrice normative ;
 - statut stable/expérimental ;
-- périmètre V1 ;
+- périmètre du premier contrat de production ;
 - limitations ;
 - critères d’acceptation.
 
@@ -440,7 +440,7 @@ Contenu :
 ## PR 5 — Release candidate
 
 ```text
-chore(parser): prepare 0.9.0-rc.1
+chore(parser): prepare 2.0.0-rc.1
 ```
 
 Contenu :
@@ -459,7 +459,7 @@ Contenu :
 
 ## Fonctionnel
 
-- [ ] Contrat de support V1 validé
+- [x] Contrat de support de `2.0.0-rc.1` défini (validation produit restante)
 - [ ] Imports générés finalisés ou explicitement exclus
 - [ ] Parité runtime/générateur validée
 - [ ] Diagnostics des fonctionnalités partielles validés
@@ -515,7 +515,7 @@ Contenu :
 
 La release peut être autorisée lorsque :
 
-1. le périmètre V1 est figé ;
+1. le périmètre du premier contrat de production est figé ;
 2. les imports générés sont finalisés ou officiellement exclus ;
 3. les packages sont testés comme produits consommables ;
 4. les gates qualité et sécurité passent ;
@@ -525,5 +525,5 @@ La release peut être autorisée lorsque :
 La première cible recommandée reste :
 
 ```text
-0.9.0-rc.1
+2.0.0-rc.1
 ```

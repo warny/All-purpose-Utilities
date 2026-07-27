@@ -7,13 +7,13 @@ no reflection, no extra dependencies in your output.
 ## Install
 
 ```bash
-dotnet add package omy.Utils.Parser.Generators
+dotnet add package omy.Utils.Parser.Generators --version 2.0.0-rc.1
 ```
 
 You also need the runtime library:
 
 ```bash
-dotnet add package omy.Utils.Parser
+dotnet add package omy.Utils.Parser --version 2.0.0-rc.1
 ```
 
 ## Supported frameworks
@@ -26,10 +26,12 @@ dotnet add package omy.Utils.Parser
 
 1. You declare a `.g4` grammar file as an `AdditionalFiles` item in your `.csproj`.
 2. At build time the generator parses the file with an internal G4 tokenizer and parser.
-3. It emits a `partial static` C# class with three members:
-   - `BuildDefinition()` — constructs the `ParserDefinition` from generated code.
-   - `Build()` — convenience wrapper that also runs `RuleResolver` to validate and enrich the definition.
-   - `Grammar` — lazily-cached `ParserDefinition` property.
+3. It emits a `partial static` C# facade whose core members include:
+   - `BuildDefinition()` — constructs and resolves a `ParserDefinition` from generated code.
+   - `Build()` — convenience wrapper that currently resolves the result of `BuildDefinition()` again.
+   - `Grammar` — eagerly initialized, process-wide cached `CompiledGrammar` property.
+   - `Tokenize(...)` and conservative `Parse(...)` — delegate to `Grammar`.
+   - generated embedded-code policy/context members and `ParseWithEmbeddedCode(...)` overloads when applicable.
 
 The generated class is a `partial` so you can add hand-written members alongside it.
 
@@ -54,8 +56,8 @@ Or with NuGet packages:
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="omy.Utils.Parser" Version="*" />
-  <PackageReference Include="omy.Utils.Parser.Generators" Version="*"
+  <PackageReference Include="omy.Utils.Parser" Version="2.0.0-rc.1" />
+  <PackageReference Include="omy.Utils.Parser.Generators" Version="2.0.0-rc.1"
                     OutputItemType="Analyzer"
                     ReferenceOutputAssembly="false" />
 </ItemGroup>
@@ -99,17 +101,13 @@ internal static partial class ExpGrammar { }
 using MyApp.Parser;
 using Utils.Parser.Runtime;
 
-// Lazily-cached ParserDefinition (thread-safe)
-var definition = ExpGrammar.Grammar;
+// Process-wide cached CompiledGrammar.
+var grammar = ExpGrammar.Grammar;
 
-// Or build a fresh instance each time
+// Or build a fresh resolved ParserDefinition.
 var definition = ExpGrammar.Build();
-
-var lexer  = new LexerEngine(definition);
-var parser = new ParserEngine(definition);
-
-var tokens = lexer.Tokenize(new StringCharStream("1 + 2 * 3")).ToList();
-var tree   = parser.Parse(tokens);
+var tokens = grammar.Tokenize("1 + 2 * 3");
+var tree = grammar.Parse("1 + 2 * 3");
 ```
 
 ---
@@ -127,24 +125,37 @@ namespace MyApp.Parser;
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Utils.Parser.Generators", "...")]
 internal static partial class ExpGrammar
 {
-    private static global::Utils.Parser.Model.ParserDefinition? _grammar;
-
-    /// <summary>Lazily-cached grammar definition.</summary>
-    public static global::Utils.Parser.Model.ParserDefinition Grammar
-        => _grammar ??= Build();
+    /// <summary>Gets the compiled grammar cached for the generated facade.</summary>
+    public static global::Utils.Parser.Runtime.CompiledGrammar Grammar { get; }
+        = new global::Utils.Parser.Runtime.CompiledGrammar(Build());
 
     /// <summary>Builds and validates the grammar definition.</summary>
     public static global::Utils.Parser.Model.ParserDefinition Build()
         => global::Utils.Parser.Resolution.RuleResolver.Resolve(BuildDefinition());
 
-    /// <summary>Constructs the raw grammar definition from generated code.</summary>
+    /// <summary>Constructs and resolves the grammar definition from generated code.</summary>
     public static global::Utils.Parser.Model.ParserDefinition BuildDefinition()
     {
         // … generated Rule / RuleContent construction …
-        return new global::Utils.Parser.Model.ParserDefinition( … );
+        return global::Utils.Parser.Resolution.RuleResolver.Resolve(
+            new global::Utils.Parser.Model.ParserDefinition( … ));
     }
+
+    public static global::System.Collections.Generic.IReadOnlyList<global::Utils.Parser.Runtime.Token> Tokenize(string input)
+        => Grammar.Tokenize(input);
+
+    public static global::Utils.Parser.Runtime.ParseNode Parse(string input)
+        => Grammar.Parse(input);
 }
 ```
+
+`BuildDefinition()` currently constructs and resolves a new definition. `Build()` calls `RuleResolver.Resolve(BuildDefinition())`, so it resolves that result a second time. This documents the emitted behavior as it exists in `2.0.0-rc.1`; whether the duplicate resolution should be removed is a separate functional concern. `Grammar` is the single initialized `CompiledGrammar` cached by the generated facade. `Parse(...)` is conservative. Supported generated hooks execute only through `ParseWithEmbeddedCode(...)` or a policy explicitly created and used by the caller.
+
+The cached static `Grammar` owns one mutable `LexerEngine` and one mutable `ParserEngine`. Concurrent calls to the generated static `Parse(...)` or `Tokenize(...)` facade are therefore not safe. Concurrent consumers must synchronize access or create a separate `CompiledGrammar` instance for each concurrent operation. Execution contexts and reusable generated policies are mutable as well and must not be shared concurrently.
+
+See the normative [`2.0.0-rc.1 production support contract`](../docs/parser/ProductionSupportContract.md) for the guaranteed generator subset. In particular, imports are analyzed through the common composition plan but the current emitter still builds a local-only definition: imported rules are not executable from the generated facade, and imported targets do not receive `APU0107` binding conclusions.
+
+Until the release workflow publishes a versioned RC directory, use the current [`latest` API documentation](https://warny.github.io/All-purpose-Utilities/latest/). A version-specific link will be added when the corresponding documentation artifact is deployed.
 
 
 ## Generated-C# rule-call arguments

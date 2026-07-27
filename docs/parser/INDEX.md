@@ -4,6 +4,7 @@ This index consolidates the parser documentation set and gives a short summary o
 
 ## Core contracts and boundaries
 
+- [`ProductionSupportContract.md`](./ProductionSupportContract.md): Normative `2.0.0-rc.1` product-support contract and first entry point for deciding what is guaranteed, including the explicit non-thread-safe generated static facade boundary; unlike the technical compatibility matrices, it defines the RC commitment rather than only describing implementation state.
 - [`RuntimeStateOwnership.md`](./RuntimeStateOwnership.md): Canonical authority map for runtime responsibilities (parse decisions, diagnostics, parse-tree ownership, scheduler/registry boundaries).
 - [`ParserMetadataAndRuntimeLimitations.md`](./ParserMetadataAndRuntimeLimitations.md): Limitations-first reference that clarifies metadata-only semantics, unsupported runtime semantics, and activation preconditions.
 - [`RuntimeObservationAndExportContract.md`](./RuntimeObservationAndExportContract.md): Defines what runtime observations are allowed to emit and how exporters must remain passive and non-authoritative.
