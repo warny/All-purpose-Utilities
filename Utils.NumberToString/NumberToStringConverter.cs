@@ -392,6 +392,17 @@ namespace Utils.NumberToString
         private readonly CultureInfo? _dateCulture;
 
         /// <summary>
+        /// Culture names reported by the underlying OS/ICU at class load time.
+        /// Used by <see cref="TryGetDateCultureInfo"/> to distinguish real cultures from
+        /// synthetic ones that ICU can create for arbitrary identifier strings.
+        /// </summary>
+        private static readonly HashSet<string> _knownCultureNames =
+            CultureInfo.GetCultures(CultureTypes.AllCultures)
+                .Select(c => c.Name)
+                .Where(name => !string.IsNullOrEmpty(name))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
         /// The raw adjust function before composition with <see cref="LanguageSpecifics"/>.
         /// Used by <see cref="NumberToStringConverterOptions"/> for round-trip cloning.
         /// </summary>
@@ -1809,11 +1820,12 @@ namespace Utils.NumberToString
         /// </summary>
         /// <remarks>
         /// Tries <c>predefinedOnly: true</c> first so that ICU-backed runtimes reject unknown
-        /// tags instead of synthesising fallback cultures. When that fails the lenient overload
-        /// is used as a fallback for platform-specific aliases (e.g. "EN-uk" → British English
-        /// on Windows NLS), but only if the normalised culture name starts with a 2–3 letter
-        /// primary language subtag (ISO 639-1/2), ruling out arbitrary strings such as "XTEST"
-        /// whose ICU-synthesised name has a longer, non-standard primary subtag.
+        /// tags instead of synthesising fallback cultures. When that fails, the lenient overload
+        /// is used for platform-specific aliases (e.g. "EN-uk" → British English on Windows NLS).
+        /// The result is accepted only if the resolved culture or one of its ancestors appears in
+        /// <see cref="_knownCultureNames"/>; this prevents ICU from synthesising cultures for
+        /// arbitrary strings (e.g. "XTEST", "ZZ") whose parent chain reaches the invariant
+        /// culture without ever passing through a platform-registered culture.
         /// </remarks>
         private static CultureInfo? TryGetDateCultureInfo(string identifier)
         {
@@ -1823,12 +1835,12 @@ namespace Utils.NumberToString
             try
             {
                 var culture = CultureInfo.GetCultureInfo(identifier);
-                // Guard against ICU creating synthetic cultures for arbitrary strings:
-                // the normalised BCP47 name must begin with a 2-3 letter language subtag.
-                string primary = culture.Name.Split('-')[0];
-                return primary.Length is >= 2 and <= 3 && primary.All(char.IsLetter)
-                    ? culture
-                    : null;
+                for (var c = culture; !c.Equals(CultureInfo.InvariantCulture); c = c.Parent)
+                {
+                    if (_knownCultureNames.Contains(c.Name))
+                        return culture;
+                }
+                return null;
             }
             catch (CultureNotFoundException) { return null; }
         }

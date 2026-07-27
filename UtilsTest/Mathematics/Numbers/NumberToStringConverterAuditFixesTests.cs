@@ -1833,6 +1833,36 @@ public class NumberToStringConverterAuditFixesTests
     }
 
     [TestMethod]
+    public void SupportsLocalizableMonthNames_UnknownTwoLetterCode_ReturnsFalse()
+    {
+        // "XQ" is not an ISO 639-1 language code and should not appear in any
+        // platform's known-culture list. ICU may synthesise a culture for it, but the
+        // parent-chain walk must not find a registered ancestor, so the result must be null.
+        var opts = new NumberToStringConverterOptions(EN)
+        {
+            LanguageIdentifier = "XQ",
+            DatePattern = "{month}"
+        };
+        var conv = new NumberToStringConverter(opts);
+        Assert.IsFalse(conv.SupportsLocalizableMonthNames,
+            "SupportsLocalizableMonthNames must be false for a 2-letter non-culture code");
+    }
+
+    [TestMethod]
+    public void SupportsLocalizableMonthNames_UnknownThreeLetterCode_ReturnsFalse()
+    {
+        // "ZZZ" is not an ISO 639-2/3 language code and must be rejected as well.
+        var opts = new NumberToStringConverterOptions(EN)
+        {
+            LanguageIdentifier = "ZZZ",
+            DatePattern = "{month}"
+        };
+        var conv = new NumberToStringConverter(opts);
+        Assert.IsFalse(conv.SupportsLocalizableMonthNames,
+            "SupportsLocalizableMonthNames must be false for a 3-letter non-culture code");
+    }
+
+    [TestMethod]
     public void Convert_DateOnly_UnknownCultureInfo_MonthRenderedAsDecimalNumber()
     {
         // A converter with an unknown LanguageIdentifier must fall back to a numeric month.
