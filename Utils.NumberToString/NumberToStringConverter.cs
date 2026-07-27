@@ -65,8 +65,11 @@ namespace Utils.NumberToString
         /// <see langword="true"/> when a converter was found for the culture or any of its
         /// BCP-47 parent tags; <see langword="false"/> otherwise.
         /// </returns>
-        public static bool TryGetConverter(CultureInfo culture, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out NumberToStringConverter? converter)
-            => TryGetConverter(culture.Name, out converter);
+        public static bool TryGetConverter(CultureInfo? culture, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out NumberToStringConverter? converter)
+        {
+            if (culture is null) { converter = null; return false; }
+            return TryGetConverter(culture.Name, out converter);
+        }
 
         /// <summary>
         /// Attempts to retrieve a number-to-string converter for the specified culture name.

@@ -128,6 +128,10 @@ namespace Utils.NumberToString
 
         /// <summary>
         /// Parses a configuration document into converter instances keyed by culture name.
+        /// Resolves all <c>baseOn</c> inheritance chains within the document (and against the
+        /// global cache) before committing anything to <see cref="_cachedLanguageTypes"/> or
+        /// returning any converters. This guarantees atomicity: if any language in the document
+        /// fails to resolve (missing base, cycle), no partial state is published.
         /// </summary>
         /// <param name="configuration">The XML configuration document.</param>
         /// <returns>A dictionary mapping culture names to converters.</returns>
@@ -141,24 +145,54 @@ namespace Utils.NumberToString
                 obj = (Numbers)serializer.Deserialize(reader);
             }
 
-            // Build a within-document lookup so baseOn can reference a language declared earlier
-            // in the same XML document (case-insensitive culture keys).
+            // Build a within-document lookup so baseOn can reference any language in this
+            // document regardless of declaration order (case-insensitive culture keys).
             var docLanguageTypes = new Dictionary<string, LanguageType>(StringComparer.OrdinalIgnoreCase);
             foreach (var lang in obj.Languages)
                 foreach (var culture in lang.Cultures ?? [])
                     docLanguageTypes.TryAdd(NormalizeCulture(culture), lang);
 
-            var result = new Dictionary<string, NumberToStringConverter>();
+            // Phase 1 — resolve all languages. Keep resolved types in local dictionaries so
+            // nothing is committed to the shared cache until every language in this document
+            // has been resolved successfully (atomicity).
+            var resolvedLanguages = new List<LanguageType>(obj.Languages.Count);
+            var localCacheAdditions = new Dictionary<string, LanguageType>(StringComparer.OrdinalIgnoreCase);
+
             foreach (var language in obj.Languages)
             {
-                var resolved = string.IsNullOrEmpty(language.BaseOn)
-                    ? language
-                    : ResolveBaseOn(language, docLanguageTypes);
+                LanguageType resolved;
+                if (string.IsNullOrEmpty(language.BaseOn))
+                {
+                    resolved = language;
+                }
+                else
+                {
+                    // Pass both the document-local map and the accumulating local cache so that
+                    // languages resolved earlier in this document are available as bases.
+                    resolved = ResolveLanguage(
+                        language,
+                        docLanguageTypes,
+                        localCacheAdditions,
+                        new HashSet<string>(StringComparer.OrdinalIgnoreCase),
+                        new List<string>());
+                }
 
-                // Cache the resolved LanguageType so other documents can reference it via baseOn.
+                resolvedLanguages.Add(resolved);
+
+                // Stage resolved type into the local cache so later languages in this document
+                // can inherit from it via baseOn without hitting the global cache yet.
+                foreach (var culture in resolved.Cultures ?? [])
+                    localCacheAdditions.TryAdd(NormalizeCulture(culture), resolved);
+            }
+
+            // Phase 2 — all resolutions succeeded; commit to the global cache and build converters.
+            foreach (var resolved in resolvedLanguages)
                 foreach (var culture in resolved.Cultures ?? [])
                     _cachedLanguageTypes.TryAdd(NormalizeCulture(culture), resolved);
 
+            var result = new Dictionary<string, NumberToStringConverter>();
+            foreach (var resolved in resolvedLanguages)
+            {
                 foreach (var culture in resolved.Cultures ?? [])
                 {
                     var key = NormalizeCulture(culture);
@@ -170,91 +204,163 @@ namespace Utils.NumberToString
         }
 
         /// <summary>
-        /// Looks up the base language and merges it with the child, producing a fully resolved
-        /// <see cref="LanguageType"/>. The resolved cache is checked first so that a chain such as
-        /// <c>BASE → MID → CHILD</c> always merges against the fully resolved ancestor even when
-        /// all three are declared in the same XML document. If the base is found only in
-        /// <paramref name="docLanguages"/> (not yet cached) and also carries a <c>baseOn</c>
-        /// attribute, it is resolved recursively before the merge.
-        /// Throws <see cref="InvalidOperationException"/> when the referenced base cannot be found
-        /// or when a <c>baseOn</c> cycle is detected.
+        /// Splits a <c>baseOn</c> attribute value into individual culture keys.
+        /// Commas are the separator; each token is trimmed.
         /// </summary>
-        private static LanguageType ResolveBaseOn(
-            LanguageType child,
-            IReadOnlyDictionary<string, LanguageType> docLanguages)
-            => ResolveBaseOn(child, docLanguages, new HashSet<string>(StringComparer.OrdinalIgnoreCase));
-
-        private static LanguageType ResolveBaseOn(
-            LanguageType child,
-            IReadOnlyDictionary<string, LanguageType> docLanguages,
-            HashSet<string> visiting)
+        private static IReadOnlyList<string> ParseBaseOnKeys(string baseOn)
         {
-            string baseKey = NormalizeCulture(child.BaseOn);
-
-            if (!visiting.Add(baseKey))
-                throw new InvalidOperationException(
-                    $"Language configuration error: baseOn cycle detected at \"{baseKey}\". " +
-                    $"Resolution path: {string.Join(" → ", visiting)} → {baseKey}");
-
-            // Prefer the already-resolved version from the cache (handles multi-document chains
-            // and in-order same-document chains where the base was already processed).
-            if (!_cachedLanguageTypes.TryGetValue(baseKey, out var baseType))
+            var keys = new List<string>();
+            foreach (var part in baseOn.Split(','))
             {
-                if (!docLanguages.TryGetValue(baseKey, out baseType))
-                    throw new InvalidOperationException(
-                        $"Language configuration error: baseOn=\"{baseKey}\" cannot be resolved. " +
-                        $"Ensure the base language is registered before the derived language.");
-
-                // The base was found in the raw same-document dict but not yet cached.
-                // If it itself carries a baseOn, resolve it recursively so the merge always
-                // operates on a fully inherited configuration.
-                if (!string.IsNullOrEmpty(baseType.BaseOn))
-                    baseType = ResolveBaseOn(baseType, docLanguages, visiting);
+                var key = NormalizeCulture(part);
+                if (key.Length > 0)
+                    keys.Add(key);
             }
-
-            return MergeLanguageType(baseType!, child);
+            return keys;
         }
 
         /// <summary>
-        /// Returns a new <see cref="LanguageType"/> where <paramref name="child"/> values override
-        /// corresponding fields of <paramref name="baseType"/>. A null/default/empty value in the
-        /// child means "inherit from base"; a non-null value means "override". For
-        /// <see cref="OrdinalsType"/>, exceptions and word-rules are merged element-by-element
-        /// so a child can extend rather than replace the base's ordinal configuration.
+        /// Fully resolves a language by recursively resolving all its <c>baseOn</c> bases,
+        /// then merging them in order (earlier bases have lower priority) and finally
+        /// overlaying the child's own settings on top.
         /// </summary>
-        private static LanguageType MergeLanguageType(LanguageType baseType, LanguageType child) =>
+        /// <param name="child">The language to resolve.</param>
+        /// <param name="docLanguages">All raw (unresolved) languages in the current document.</param>
+        /// <param name="localCache">Resolved languages accumulated so far within this document.</param>
+        /// <param name="visiting">Culture keys currently on the resolution stack (cycle detection).</param>
+        /// <param name="resolutionPath">Ordered list of keys on the stack (for error messages).</param>
+        /// <returns>A fully resolved <see cref="LanguageType"/> with all inherited settings merged in.</returns>
+        private static LanguageType ResolveLanguage(
+            LanguageType child,
+            IReadOnlyDictionary<string, LanguageType> docLanguages,
+            IReadOnlyDictionary<string, LanguageType> localCache,
+            HashSet<string> visiting,
+            List<string> resolutionPath)
+        {
+            // Use the first culture name as the canonical key for this node.
+            string childKey = child.Cultures != null && child.Cultures.Count > 0
+                ? NormalizeCulture(child.Cultures[0])
+                : string.Empty;
+
+            if (!visiting.Add(childKey))
+            {
+                string path = string.Join(" → ", resolutionPath) + " → " + childKey;
+                throw new InvalidOperationException(
+                    $"Language configuration error: baseOn cycle detected: {path}.");
+            }
+            resolutionPath.Add(childKey);
+
+            try
+            {
+                // Build the accumulated inherited type by merging bases left-to-right
+                // (later base has higher priority than earlier base; child is highest).
+                LanguageType accumulated = CreateEmptyLanguageType();
+
+                if (!string.IsNullOrEmpty(child.BaseOn))
+                {
+                    var baseKeys = ParseBaseOnKeys(child.BaseOn);
+                    foreach (var baseKey in baseKeys)
+                    {
+                        LanguageType resolvedBase = FindAndResolveBase(
+                            baseKey, docLanguages, localCache, visiting, resolutionPath);
+                        accumulated = MergeLanguageType(inherited: accumulated, overriding: resolvedBase);
+                    }
+                }
+
+                return MergeLanguageType(inherited: accumulated, overriding: child);
+            }
+            finally
+            {
+                visiting.Remove(childKey);
+                resolutionPath.RemoveAt(resolutionPath.Count - 1);
+            }
+        }
+
+        /// <summary>
+        /// Locates a base language by its culture key and returns it fully resolved.
+        /// Lookup order: <paramref name="localCache"/> (already-resolved in this document),
+        /// then global <see cref="_cachedLanguageTypes"/> (previously loaded documents),
+        /// then <paramref name="docLanguages"/> (raw same-document entry that needs resolution).
+        /// </summary>
+        private static LanguageType FindAndResolveBase(
+            string baseKey,
+            IReadOnlyDictionary<string, LanguageType> docLanguages,
+            IReadOnlyDictionary<string, LanguageType> localCache,
+            HashSet<string> visiting,
+            List<string> resolutionPath)
+        {
+            // 1. Already resolved within this document?
+            if (localCache.TryGetValue(baseKey, out LanguageType? cachedInDoc))
+                return cachedInDoc;
+
+            // 2. Resolved in a previously loaded document?
+            if (_cachedLanguageTypes.TryGetValue(baseKey, out LanguageType? globalBase))
+                return globalBase;
+
+            // 3. Declared raw in this document — resolve recursively.
+            if (docLanguages.TryGetValue(baseKey, out LanguageType? rawBase))
+            {
+                return ResolveLanguage(rawBase, docLanguages, localCache, visiting, resolutionPath);
+            }
+
+            throw new InvalidOperationException(
+                $"Language configuration error: baseOn culture \"{baseKey}\" was not found. " +
+                $"Ensure the base language is declared in the same document or loaded before this one.");
+        }
+
+        /// <summary>
+        /// Returns a blank <see cref="LanguageType"/> used as the accumulator seed when
+        /// merging multiple inherited bases. Every field is null/zero/empty so that the
+        /// first real base's values are picked up unchanged.
+        /// </summary>
+        private static LanguageType CreateEmptyLanguageType() => new()
+        {
+            Cultures = [],
+            BaseOn = null,
+            GroupSize = 0,
+        };
+
+        /// <summary>
+        /// Returns a new <see cref="LanguageType"/> where <paramref name="overriding"/> values
+        /// replace corresponding fields of <paramref name="inherited"/>. A null/default/empty
+        /// value in <paramref name="overriding"/> means "inherit from base"; a non-null/non-zero
+        /// value means "override". For <see cref="OrdinalsType"/>, exceptions and word-rules are
+        /// merged element-by-element so a child can extend rather than replace the base's ordinal
+        /// configuration.
+        /// </summary>
+        private static LanguageType MergeLanguageType(LanguageType inherited, LanguageType overriding) =>
             new()
             {
-                Cultures = child.Cultures,
+                Cultures = overriding.Cultures?.Count > 0 ? overriding.Cultures : inherited.Cultures,
                 BaseOn = null,
-                GroupSize = child.GroupSize != 0 ? child.GroupSize : baseType.GroupSize,
-                Separator = child.Separator ?? baseType.Separator,
-                GroupSeparator = child.GroupSeparator ?? baseType.GroupSeparator,
-                Zero = child.Zero ?? baseType.Zero,
-                Minus = child.Minus ?? baseType.Minus,
-                DecimalSeparator = child.DecimalSeparator ?? baseType.DecimalSeparator,
-                FractionSeparator = child.FractionSeparator ?? baseType.FractionSeparator,
-                MaxNumber = child.MaxNumber ?? baseType.MaxNumber,
-                Groups = child.Groups ?? baseType.Groups,
-                Exceptions = child.Exceptions ?? baseType.Exceptions,
-                NumberScale = child.NumberScale ?? baseType.NumberScale,
-                Replacements = child.Replacements ?? baseType.Replacements,
-                LanguageSpecificsTypeName = !string.IsNullOrEmpty(child.LanguageSpecificsTypeName)
-                    ? child.LanguageSpecificsTypeName : baseType.LanguageSpecificsTypeName,
-                Fractions = child.Fractions ?? baseType.Fractions,
-                Ordinals = MergeOrdinalsType(baseType.Ordinals, child.Ordinals),
-                Variants = child.Variants ?? baseType.Variants,
-                YearFormat = child.YearFormat ?? baseType.YearFormat,
-                Triggers = (child.Triggers?.Count > 0) ? child.Triggers : baseType.Triggers,
-                Multiplicatives = child.Multiplicatives ?? baseType.Multiplicatives,
-                GroupConnector = child.GroupConnector ?? baseType.GroupConnector,
-                GroupConnectorThresholdString = child.GroupConnectorThresholdString ?? baseType.GroupConnectorThresholdString,
-                IntraGroupConnector = child.IntraGroupConnector ?? baseType.IntraGroupConnector,
-                IntraGroupConnectorThresholdString = child.IntraGroupConnectorThresholdString ?? baseType.IntraGroupConnectorThresholdString,
-                ScaleConnector = child.ScaleConnector ?? baseType.ScaleConnector,
-                ScaleConnectorThresholdString = child.ScaleConnectorThresholdString ?? baseType.ScaleConnectorThresholdString,
-                TimeUnits = child.TimeUnits ?? baseType.TimeUnits,
-                DateFormat = child.DateFormat ?? baseType.DateFormat,
+                GroupSize = overriding.GroupSize != 0 ? overriding.GroupSize : inherited.GroupSize,
+                Separator = overriding.Separator ?? inherited.Separator,
+                GroupSeparator = overriding.GroupSeparator ?? inherited.GroupSeparator,
+                Zero = overriding.Zero ?? inherited.Zero,
+                Minus = overriding.Minus ?? inherited.Minus,
+                DecimalSeparator = overriding.DecimalSeparator ?? inherited.DecimalSeparator,
+                FractionSeparator = overriding.FractionSeparator ?? inherited.FractionSeparator,
+                MaxNumber = overriding.MaxNumber ?? inherited.MaxNumber,
+                Groups = overriding.Groups ?? inherited.Groups,
+                Exceptions = overriding.Exceptions ?? inherited.Exceptions,
+                NumberScale = overriding.NumberScale ?? inherited.NumberScale,
+                Replacements = overriding.Replacements ?? inherited.Replacements,
+                LanguageSpecificsTypeName = !string.IsNullOrEmpty(overriding.LanguageSpecificsTypeName)
+                    ? overriding.LanguageSpecificsTypeName : inherited.LanguageSpecificsTypeName,
+                Fractions = overriding.Fractions ?? inherited.Fractions,
+                Ordinals = MergeOrdinalsType(inherited.Ordinals, overriding.Ordinals),
+                Variants = overriding.Variants ?? inherited.Variants,
+                YearFormat = overriding.YearFormat ?? inherited.YearFormat,
+                Triggers = (overriding.Triggers?.Count > 0) ? overriding.Triggers : inherited.Triggers,
+                Multiplicatives = overriding.Multiplicatives ?? inherited.Multiplicatives,
+                GroupConnector = overriding.GroupConnector ?? inherited.GroupConnector,
+                GroupConnectorThresholdString = overriding.GroupConnectorThresholdString ?? inherited.GroupConnectorThresholdString,
+                IntraGroupConnector = overriding.IntraGroupConnector ?? inherited.IntraGroupConnector,
+                IntraGroupConnectorThresholdString = overriding.IntraGroupConnectorThresholdString ?? inherited.IntraGroupConnectorThresholdString,
+                ScaleConnector = overriding.ScaleConnector ?? inherited.ScaleConnector,
+                ScaleConnectorThresholdString = overriding.ScaleConnectorThresholdString ?? inherited.ScaleConnectorThresholdString,
+                TimeUnits = overriding.TimeUnits ?? inherited.TimeUnits,
+                DateFormat = overriding.DateFormat ?? inherited.DateFormat,
             };
 
         /// <summary>

@@ -140,7 +140,7 @@ Malformed programmatic/XML configuration can therefore fail later with `DivideBy
 
 Resolved language definitions are stored in a process-wide cache while documents are parsed. A child can therefore inherit from whichever definition of a culture was cached first in an earlier call. Recursive `baseOn` chains do not maintain a visited set, so cycles can recurse until stack overflow.
 
-**Fix:** `ResolveBaseOn` now accepts a `HashSet<string> visiting` parameter (case-insensitive). Before looking up a base key, `visiting.Add(baseKey)` is called; if it returns false the key is already on the resolution stack and `InvalidOperationException` is thrown with the message "baseOn cycle detected" and the resolution path. The public overload initialises an empty set. Cross-batch inheritance ordering (global cache) remains order-dependent as before; only within-document and multi-document cycles are now detected. Addressed in PR fix/Utils.NumberToString-todo-items-57-60-61.
+**Fix:** `ResolveLanguage` uses both a `HashSet<string> visiting` (case-insensitive, for O(1) cycle detection) and a `List<string> resolutionPath` (for ordered path in error messages). The child's own key is added to `visiting` before resolving any of its bases; a `finally` block always removes it so the set remains accurate after backtracking. Cycle detection is case-insensitive (`OrdinalIgnoreCase`). Multiple bases (`baseOn="B,C,D"`) are supported: each base is resolved independently and merged left-to-right with later bases having higher priority than earlier ones, and the child having highest priority. The resolution prefers the local document cache, then the global cache (already-loaded documents), then raw document entries that are resolved recursively. Atomicity: `ReadConfiguration` performs all resolutions into local temporary structures before committing anything to `_cachedLanguageTypes`, so a cycle or missing-base error in any language rolls back the entire document without publishing partial state. Addressed in PR fix/Utils.NumberToString-todo-items-57-60-61.
 
 ### 58. Runtime variants are permissive while configuration variants are strict
 
@@ -158,17 +158,19 @@ For equally specific matching trigger forms or ordinal variants, the first decla
 
 **Priority: P2 determinism.**
 
-### ✅ 60. `RegisterLanguageSpecifics` stores shared mutable instances globally
+### 🔶 60. `RegisterLanguageSpecifics` stores shared mutable instances globally
 
 A single registered `INumberToStringLanguageSpecifics` instance may be reused by many immutable converters and concurrent calls. The API does not require implementations to be stateless/thread-safe and allows silent replacement under the same key.
 
-**Fix:** `RegisterLanguageSpecifics` now validates `typeName` with `ArgumentException.ThrowIfNullOrWhiteSpace` (null → `ArgumentNullException`, empty/whitespace → `ArgumentException`). XML documentation clarified: the registered instance is shared and must be stateless or thread-safe; duplicate keys are silently replaced. Factory/descriptor registration and thread-testing remain out of scope for this pass. Addressed in PR fix/Utils.NumberToString-todo-items-57-60-61.
+**Fix:** `RegisterLanguageSpecifics` now validates `typeName` with `ArgumentException.ThrowIfNullOrWhiteSpace` (null → `ArgumentNullException`, empty/whitespace → `ArgumentException`) and `instance` with `ArgumentNullException.ThrowIfNull`. XML documentation clarified: the registered instance is shared and must be stateless or thread-safe; duplicate keys are silently replaced. Addressed in PR fix/Utils.NumberToString-todo-items-57-60-61.
+
+> **Partially addressed:** type names and instances are now validated, and the shared concurrent lifecycle is documented. Factory-based registration or immutable descriptors remain future work.
 
 ### ✅ 61. Unknown cultures silently fall back to English
 
 After recursively stripping BCP-47 subtags, `GetConverter` returns the English converter for any unresolved culture. A spelling error can therefore produce valid but wrong-language business text without any diagnostic.
 
-**Fix:** two new overloads `TryGetConverter(string, out NumberToStringConverter?)` and `TryGetConverter(CultureInfo, out NumberToStringConverter?)` return `false` (and `null`) without falling back to English when the culture cannot be resolved. BCP-47 subtag stripping is applied the same way as `GetConverter`. `GetConverter` XML doc updated to mention the fallback and link to `TryGetConverter`. Addressed in PR fix/Utils.NumberToString-todo-items-57-60-61.
+**Fix:** two overloads `TryGetConverter(string?, out NumberToStringConverter?)` and `TryGetConverter(CultureInfo?, out NumberToStringConverter?)` return `false` (and `null`) without falling back to English when the culture cannot be resolved. The `string` overload returns `false` immediately for null, empty or whitespace input. The `CultureInfo` overload returns `false` immediately for a null argument. BCP-47 subtag stripping is applied the same way as `GetConverter`. `GetConverter` XML doc updated to mention the fallback and link to `TryGetConverter`. Addressed in PR fix/Utils.NumberToString-todo-items-57-60-61.
 
 ## Duplications of intent to reduce
 
