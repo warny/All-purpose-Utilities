@@ -151,6 +151,8 @@ internal static partial class ExpGrammar
 
 `BuildDefinition()` currently constructs and resolves a new definition. `Build()` calls `RuleResolver.Resolve(BuildDefinition())`, so it resolves that result a second time. This documents the emitted behavior as it exists in `2.0.0-rc.1`; whether the duplicate resolution should be removed is a separate functional concern. `Grammar` is the single initialized `CompiledGrammar` cached by the generated facade. `Parse(...)` is conservative. Supported generated hooks execute only through `ParseWithEmbeddedCode(...)` or a policy explicitly created and used by the caller.
 
+The cached static `Grammar` owns one mutable `LexerEngine` and one mutable `ParserEngine`. Concurrent calls to the generated static `Parse(...)` or `Tokenize(...)` facade are therefore not safe. Concurrent consumers must synchronize access or create a separate `CompiledGrammar` instance for each concurrent operation. Execution contexts and reusable generated policies are mutable as well and must not be shared concurrently.
+
 See the normative [`2.0.0-rc.1 production support contract`](../docs/parser/ProductionSupportContract.md) for the guaranteed generator subset. In particular, imports are analyzed through the common composition plan but the current emitter still builds a local-only definition: imported rules are not executable from the generated facade, and imported targets do not receive `APU0107` binding conclusions.
 
 Until the release workflow publishes a versioned RC directory, use the current [`latest` API documentation](https://warny.github.io/All-purpose-Utilities/latest/). A version-specific link will be added when the corresponding documentation artifact is deployed.
