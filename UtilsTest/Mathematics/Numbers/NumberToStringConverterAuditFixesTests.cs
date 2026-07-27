@@ -2049,6 +2049,77 @@ public class NumberToStringConverterAuditFixesTests
             "ReadConfiguration must not commit any configurations when a cycle is detected");
     }
 
+    [TestMethod]
+    public void ReadConfiguration_MultipleBases_CycleInOneBranch_ThrowsInvalidOperation()
+    {
+        // A baseOn B,C where C baseOn A — the cycle exists only in the second branch.
+        // The whole document must be rejected regardless of which branch contains the cycle.
+        const string xml = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>MCB-B</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""MCB-A"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>MCB-C</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""MCB-B,MCB-C"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>MCB-A</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.ReadConfiguration(xml));
+        StringAssert.Contains(ex.Message, "cycle",
+            "Cycle in one branch of a multi-base inheritance must be detected");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_CurrentDocumentCycleShadowsCachedCulture_ThrowsInvalidOperation()
+    {
+        // Load a first document containing a standalone language so it lands in the global cache.
+        // RegisterConfigurations (not ReadConfiguration alone) populates CachedConfigurations.
+        string shadowKey = "XSHADOW-" + System.Guid.NewGuid().ToString("N");
+        string firstDoc = $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>{shadowKey}</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+        NumberToStringConverter.RegisterConfigurations([firstDoc]);
+        // Confirm it is cached.
+        Assert.IsTrue(NumberToStringConverter.TryGetConverter(shadowKey, out _),
+            "First document must be loaded into the global cache");
+
+        // Second document redefines shadowKey and introduces a cycle: LOCAL-B → shadowKey → LOCAL-B.
+        // Even though an older valid version of shadowKey is in the global cache, the local
+        // redefinition must take priority and the cycle must be detected.
+        string localB = "XSHADOW-LOCAL-B-" + System.Guid.NewGuid().ToString("N");
+        string secondDoc = $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language baseOn=""{shadowKey}"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>{localB}</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""{localB}"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>{shadowKey}</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.ReadConfiguration(secondDoc));
+        StringAssert.Contains(ex.Message, "cycle",
+            "A locally declared language must shadow the cached version so the cycle is still detected");
+    }
+
     // ── Item 57 — baseOn multi-base and merge order ───────────────────────────
 
     [TestMethod]
@@ -2098,6 +2169,156 @@ public class NumberToStringConverterAuditFixesTests
         var converters = NumberToStringConverter.ReadConfiguration(xml);
         Assert.IsTrue(converters.ContainsKey("CHILD-INH"),
             "Child must load when it inherits minus from base");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_MultipleBases_LaterBaseOverridesEarlierBase()
+    {
+        // A baseOn B,C — C is the later base so C's zero must win over B's zero.
+        const string xml = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero-b"" minus=""minus *"">
+    <Culture>MLB-B</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-b"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero-c"" minus=""minus *"">
+    <Culture>MLB-C</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-c"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""MLB-B,MLB-C"" groupSize=""3"" separator="" "" groupSeparator="","" minus=""minus *"">
+    <Culture>MLB-A</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-c"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        Assert.IsTrue(converters.TryGetValue("MLB-A", out var a));
+        Assert.AreEqual("zero-c", a.Convert(BigInteger.Zero),
+            "Later base (C) must override earlier base (B) — A.zero must be 'zero-c'");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_MultipleBases_ChildOverridesAllBases()
+    {
+        // A baseOn B,C with A's own zero — A's value must win over both bases.
+        const string xml = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero-b"" minus=""minus *"">
+    <Culture>MCA-B</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-b"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero-c"" minus=""minus *"">
+    <Culture>MCA-C</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-c"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""MCA-B,MCA-C"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero-a"" minus=""minus *"">
+    <Culture>MCA-A</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-a"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        Assert.IsTrue(converters.TryGetValue("MCA-A", out var a));
+        Assert.AreEqual("zero-a", a.Convert(BigInteger.Zero),
+            "Child's own zero must override both bases' zero values");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_MultipleBases_IndependentOptionsAreCombined()
+    {
+        // A baseOn B,C — B provides minus, C provides zero (overrides B's zero).
+        // A's final configuration must have zero from C and minus from B (C does not set minus).
+        const string xml = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero-b"" minus=""BMIN *"">
+    <Culture>MIO-B</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-b"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero-c"" minus=""BMIN *"">
+    <Culture>MIO-C</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-c"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""MIO-B,MIO-C"" groupSize=""3"" separator="" "" groupSeparator="","" minus=""BMIN *"">
+    <Culture>MIO-A</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-c"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        Assert.IsTrue(converters.TryGetValue("MIO-A", out var a));
+        Assert.AreEqual("zero-c", a.Convert(BigInteger.Zero),
+            "zero must come from C (later base overrides B)");
+        string negOne = a.Convert(new System.Numerics.BigInteger(-1));
+        StringAssert.StartsWith(negOne, "BMIN",
+            "minus prefix 'BMIN' must be inherited from B (and C since both use it)");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_BaseOn_ClosestAncestorOverridesDeeperAncestor()
+    {
+        // A baseOn B, B baseOn C — B's zero must override C's, and A's zero must override B's.
+        const string xml = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero-c"" minus=""minus *"">
+    <Culture>CAO-C</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-c"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""CAO-C"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero-b"" minus=""minus *"">
+    <Culture>CAO-B</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-b"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""CAO-B"" groupSize=""3"" separator="" "" groupSeparator="","" minus=""minus *"">
+    <Culture>CAO-A</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-b"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        // B must see zero-b (overrides C's zero-c)
+        Assert.IsTrue(converters.TryGetValue("CAO-B", out var b));
+        Assert.AreEqual("zero-b", b.Convert(BigInteger.Zero),
+            "B must override C's zero");
+        // A inherits B's zero-b (A does not set its own zero)
+        Assert.IsTrue(converters.TryGetValue("CAO-A", out var a));
+        Assert.AreEqual("zero-b", a.Convert(BigInteger.Zero),
+            "A must inherit B's zero (which already overrode C's zero)");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_BaseOn_ResultIndependentOfDocumentDeclarationOrder()
+    {
+        // Same inheritance chain as ClosestAncestor but declared in reverse order (A first, then B, then C).
+        // The merge result must be identical regardless of declaration order.
+        const string xml = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language baseOn=""DIO-B"" groupSize=""3"" separator="" "" groupSeparator="","" minus=""minus *"">
+    <Culture>DIO-A</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-b"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""DIO-C"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero-b"" minus=""minus *"">
+    <Culture>DIO-B</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-b"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero-c"" minus=""minus *"">
+    <Culture>DIO-C</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-c"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        Assert.IsTrue(converters.TryGetValue("DIO-A", out var a));
+        Assert.AreEqual("zero-b", a.Convert(BigInteger.Zero),
+            "A's zero must be 'zero-b' (from B, which overrides C) regardless of declaration order");
     }
 
     // ── Item 61 — additional TryGetConverter tests ────────────────────────────

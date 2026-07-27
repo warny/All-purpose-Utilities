@@ -278,9 +278,16 @@ namespace Utils.NumberToString
 
         /// <summary>
         /// Locates a base language by its culture key and returns it fully resolved.
-        /// Lookup order: <paramref name="localCache"/> (already-resolved in this document),
-        /// then global <see cref="_cachedLanguageTypes"/> (previously loaded documents),
-        /// then <paramref name="docLanguages"/> (raw same-document entry that needs resolution).
+        /// <para>
+        /// Lookup order (document-local definitions always take priority over the global cache):
+        /// <list type="number">
+        ///   <item><description><paramref name="localCache"/> — already resolved within this document.</description></item>
+        ///   <item><description><paramref name="docLanguages"/> — declared raw in this document; resolved recursively with full cycle detection.</description></item>
+        ///   <item><description><see cref="_cachedLanguageTypes"/> — resolved in a previously loaded document (cross-document inheritance).</description></item>
+        /// </list>
+        /// A locally declared language always shadows a same-name entry in the global cache, which
+        /// prevents a cached definition from masking a cycle that exists in the current document.
+        /// </para>
         /// </summary>
         private static LanguageType FindAndResolveBase(
             string baseKey,
@@ -289,19 +296,20 @@ namespace Utils.NumberToString
             HashSet<string> visiting,
             List<string> resolutionPath)
         {
-            // 1. Already resolved within this document?
+            // 1. Already resolved within this document (fast path — avoids re-resolving).
             if (localCache.TryGetValue(baseKey, out LanguageType? cachedInDoc))
                 return cachedInDoc;
 
-            // 2. Resolved in a previously loaded document?
+            // 2. Declared raw in this document — resolve recursively.
+            //    Document-local definitions take priority over the global cache so that a local
+            //    definition of a same-named culture is used (and cycles are always detected even
+            //    when an older version of the same culture exists in _cachedLanguageTypes).
+            if (docLanguages.TryGetValue(baseKey, out LanguageType? rawBase))
+                return ResolveLanguage(rawBase, docLanguages, localCache, visiting, resolutionPath);
+
+            // 3. Resolved in a previously loaded document (cross-document inheritance).
             if (_cachedLanguageTypes.TryGetValue(baseKey, out LanguageType? globalBase))
                 return globalBase;
-
-            // 3. Declared raw in this document — resolve recursively.
-            if (docLanguages.TryGetValue(baseKey, out LanguageType? rawBase))
-            {
-                return ResolveLanguage(rawBase, docLanguages, localCache, visiting, resolutionPath);
-            }
 
             throw new InvalidOperationException(
                 $"Language configuration error: baseOn culture \"{baseKey}\" was not found. " +
