@@ -338,9 +338,10 @@ namespace Utils.NumberToString
 
         /// <summary>
         /// Returns a new <see cref="LanguageType"/> where <paramref name="overriding"/> values
-        /// replace corresponding fields of <paramref name="inherited"/>. A null/default/empty
-        /// value in <paramref name="overriding"/> means "inherit from base"; a non-null/non-zero
-        /// value means "override". For <see cref="OrdinalsType"/>, exceptions and word-rules are
+        /// replace corresponding fields of <paramref name="inherited"/>.
+        /// Only an absent value (<see langword="null"/>) inherits from base; an explicitly declared
+        /// value always overrides, including <see langword="false"/>, zero, an empty string, or an
+        /// explicitly empty collection. For <see cref="OrdinalsType"/>, exceptions and word-rules are
         /// merged element-by-element so a child can extend rather than replace the base's ordinal
         /// configuration.
         /// </summary>
@@ -425,11 +426,9 @@ namespace Utils.NumberToString
         /// Merges two <see cref="NumberScaleType"/> instances field by field so that a derived
         /// language can override individual sub-sections (e.g., <c>StaticNames</c>, <c>Suffixes</c>)
         /// while inheriting the rest (e.g., prefix tables) from the base language.
-        /// <para>
-        /// <c>FirstLetterUpperCase</c> and <c>StartIndex</c> have no null sentinel (bool/int); the
-        /// overriding value is used as-is. All reference-typed fields use null as the absent marker,
-        /// so <c>overriding ?? inherited</c> gives correct inheritance semantics.
-        /// </para>
+        /// All fields use <see langword="null"/> as the absent marker; <c>overriding ?? inherited</c>
+        /// gives correct inheritance semantics for every field, including <c>false</c> for
+        /// <c>FirstLetterUpperCase</c> and <c>0</c> for <c>StartIndex</c>.
         /// </summary>
         private static NumberScaleType? MergeNumberScaleType(NumberScaleType? inherited, NumberScaleType? overriding)
         {
@@ -437,10 +436,10 @@ namespace Utils.NumberToString
             if (inherited == null) return overriding;
             return new NumberScaleType
             {
-                FirstLetterUpperCase = overriding.FirstLetterUpperCase,
+                FirstLetterUpperCase = overriding.FirstLetterUpperCase ?? inherited.FirstLetterUpperCase,
                 VoidGroup = overriding.VoidGroup ?? inherited.VoidGroup,
                 GroupSeparator = overriding.GroupSeparator ?? inherited.GroupSeparator,
-                StartIndex = overriding.StartIndex != 0 ? overriding.StartIndex : inherited.StartIndex,
+                StartIndex = overriding.StartIndex ?? inherited.StartIndex,
                 StaticNames = overriding.StaticNames ?? inherited.StaticNames,
                 Scale0Prefixes = overriding.Scale0Prefixes ?? inherited.Scale0Prefixes,
                 UnitsPrefixes = overriding.UnitsPrefixes ?? inherited.UnitsPrefixes,
@@ -499,14 +498,14 @@ namespace Utils.NumberToString
             var scale = new NumberScale(
                 confScale.StaticNames.Scales.OrderBy(n => n.Value).Select(n => n.StringValue).ToArray(),
                 confScale.Suffixes?.Values?.ToArray() ?? Array.Empty<string>(),
-                confScale.StartIndex,
+                confScale.StartIndex ?? 0,
                 confScale.VoidGroup,
                 confScale.GroupSeparator,
                 confScale.Scale0Prefixes?.Digits.OrderBy(n => n.Digit).Select(n => n.StringValue).ToArray(),
                 confScale.UnitsPrefixes?.Digits.OrderBy(n => n.Digit).Select(n => n.StringValue).ToArray(),
                 confScale.TensPrefixes?.Digits.OrderBy(n => n.Digit).Select(n => n.StringValue).ToArray(),
                 confScale.HundredsPrefixes?.Digits.OrderBy(n => n.Digit).Select(n => n.StringValue).ToArray(),
-                confScale.FirstLetterUpperCase
+                confScale.FirstLetterUpperCase ?? false
             );
 
             IEnumerable<NumberToStringConverter.ReplacementRule> ParseReplacements(ReplacementsListType list)

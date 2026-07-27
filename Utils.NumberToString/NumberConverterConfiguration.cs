@@ -671,8 +671,7 @@ public class LanguageType
     [XmlAttribute("baseOn")]
     public string BaseOn { get; set; }
 
-    /// <summary>
-    /// <summary>Backing value for XmlSerializer — use <see cref="GroupSize"/> for all logic.</summary>
+    /// <summary>Backing value for XmlSerializer; use <see cref="GroupSize"/> for application logic.</summary>
     [XmlAttribute("groupSize")]
     public int GroupSizeXml { get; set; }
 
@@ -1028,11 +1027,27 @@ public class StaticNamesType
 /// </summary>
 public class NumberScaleType
 {
-    /// <summary>
-    /// Gets or sets a value indicating whether the first letter of generated names should be upper-case.
-    /// </summary>
+    /// <summary>Backing value for XmlSerializer; use <see cref="FirstLetterUpperCase"/> for application logic.</summary>
     [XmlAttribute("firstLetterUpperCase")]
-    public bool FirstLetterUpperCase { get; set; }
+    public bool FirstLetterUpperCaseXml { get; set; }
+
+    /// <summary>
+    /// Set by XmlSerializer to <see langword="true"/> when the <c>firstLetterUpperCase</c> attribute is
+    /// present in the document. Do not set manually; use <see cref="FirstLetterUpperCase"/> instead.
+    /// </summary>
+    public bool FirstLetterUpperCaseXmlSpecified { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the first letter of generated names should be upper-case.
+    /// <see langword="null"/> when absent from the XML document (inherit from base).
+    /// A non-<see langword="null"/> value — including <see langword="false"/> — is explicitly declared.
+    /// </summary>
+    [XmlIgnore]
+    public bool? FirstLetterUpperCase
+    {
+        get => FirstLetterUpperCaseXmlSpecified ? FirstLetterUpperCaseXml : (bool?)null;
+        set { FirstLetterUpperCaseXml = value ?? false; FirstLetterUpperCaseXmlSpecified = value.HasValue; }
+    }
 
     /// <summary>
     /// Gets or sets the literal inserted when a group value is zero.
@@ -1046,11 +1061,27 @@ public class NumberScaleType
     [XmlAttribute("groupSeparator")]
     public string GroupSeparator { get; set; }
 
+    /// <summary>Backing value for XmlSerializer; use <see cref="StartIndex"/> for application logic.</summary>
+    [XmlAttribute("startIndex")]
+    public int StartIndexXml { get; set; }
+
+    /// <summary>
+    /// Set by XmlSerializer to <see langword="true"/> when the <c>startIndex</c> attribute is
+    /// present in the document. Do not set manually; use <see cref="StartIndex"/> instead.
+    /// </summary>
+    public bool StartIndexXmlSpecified { get; set; }
+
     /// <summary>
     /// Gets or sets the index offset applied when computing scale names.
+    /// <see langword="null"/> when absent from the XML document (inherit from base).
+    /// A non-<see langword="null"/> value — including <c>0</c> — is explicitly declared.
     /// </summary>
-    [XmlAttribute("startIndex")]
-    public int StartIndex { get; set; }
+    [XmlIgnore]
+    public int? StartIndex
+    {
+        get => StartIndexXmlSpecified ? StartIndexXml : (int?)null;
+        set { StartIndexXml = value ?? 0; StartIndexXmlSpecified = value.HasValue; }
+    }
 
     /// <summary>
     /// Gets or sets the static names applied to the first scale levels.

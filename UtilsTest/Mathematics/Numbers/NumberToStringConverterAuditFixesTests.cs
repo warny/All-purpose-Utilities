@@ -2587,6 +2587,147 @@ public class NumberToStringConverterAuditFixesTests
             "The error message must name the missing base culture to confirm the root cause");
     }
 
+    // ── Item 57 — NumberScale.FirstLetterUpperCase explicit presence ──────────
+
+    [TestMethod]
+    public void ReadConfiguration_BaseOn_AbsentFirstLetterUpperCasePreservesInheritedTrue()
+    {
+        // Base has firstLetterUpperCase="true" (explicit). Child has <NumberScale startIndex="1">
+        // but NO firstLetterUpperCase attribute → absent → null.
+        // After MergeNumberScaleType: null ?? true = true (inherited).
+        // The test XML uses <Group level="1"> (groupValue=10), so for 1_000_000 the algorithm
+        // calls GetScaleName(6). With StaticNames.Count=2 and startIndex=1:
+        //   dynamicScale = 6 - 2 + 1 = 5; quotient=2, remainder=1 → suffix="ard", prefix=3="tri"
+        //   GroupSeparator defaults to "lli" → "tri"+"lli"+"ard" = "trilliard".
+        // firstLetterUpperCase=true capitalises → "one Trilliard".
+        string baseKey = "FLUC-BASE-" + Guid.NewGuid().ToString("N");
+        string childKey = "FLUC-CHILD-" + Guid.NewGuid().ToString("N");
+        var converters = NumberToStringConverter.ReadConfiguration(
+            BuildScaleTestXml(baseKey, @"firstLetterUpperCase=""true"" startIndex=""1""",
+                              childKey, @"startIndex=""1"""));
+        Assert.AreEqual("one Trilliard", converters[childKey].Convert(1_000_000),
+            "Absent firstLetterUpperCase must inherit 'true' from base — scale name must be capitalised");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_BaseOn_ExplicitFalseFirstLetterUpperCaseOverridesInheritedTrue()
+    {
+        // Base has firstLetterUpperCase="true". Child has firstLetterUpperCase="false" (explicit).
+        // After MergeNumberScaleType: false ?? true = false (explicit false wins).
+        // Same startIndex=1 and GetScaleName(6) → "trilliard"; firstLetterUpperCase=false → lowercase.
+        // Without the Specified-pattern fix, absent bool was deserialized as false → both tests
+        // would produce lowercase, making the absent-vs-explicit distinction invisible.
+        string baseKey = "FLUC-OVR-BASE-" + Guid.NewGuid().ToString("N");
+        string childKey = "FLUC-OVR-CHILD-" + Guid.NewGuid().ToString("N");
+        var converters = NumberToStringConverter.ReadConfiguration(
+            BuildScaleTestXml(baseKey, @"firstLetterUpperCase=""true"" startIndex=""1""",
+                              childKey, @"firstLetterUpperCase=""false"" startIndex=""1"""));
+        Assert.AreEqual("one trilliard", converters[childKey].Convert(1_000_000),
+            "Explicit firstLetterUpperCase=\"false\" must override inherited 'true' — scale name must be lowercase");
+    }
+
+    // ── Item 57 — NumberScale.StartIndex explicit presence ───────────────────
+
+    [TestMethod]
+    public void ReadConfiguration_BaseOn_AbsentStartIndexPreservesInheritedValue()
+    {
+        // Base has startIndex="1" (explicit). Child has <NumberScale firstLetterUpperCase="true">
+        // but NO startIndex attribute → absent → null.
+        // After MergeNumberScaleType: null ?? 1 = 1 (inherited).
+        // With GetScaleName(6), StaticNames.Count=2, startIndex=1:
+        //   dynamicScale=5; quotient=2, remainder=1 → suffix="ard" → "Trilliard".
+        string baseKey = "SI-BASE-" + Guid.NewGuid().ToString("N");
+        string childKey = "SI-CHILD-" + Guid.NewGuid().ToString("N");
+        var converters = NumberToStringConverter.ReadConfiguration(
+            BuildScaleTestXml(baseKey, @"firstLetterUpperCase=""true"" startIndex=""1""",
+                              childKey, @"firstLetterUpperCase=""true"""));
+        Assert.AreEqual("one Trilliard", converters[childKey].Convert(1_000_000),
+            "Absent startIndex must inherit 1 from base (suffix[1]='ard' → Trilliard, not Trillion)");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_BaseOn_ExplicitZeroStartIndexOverridesInheritedNonZero()
+    {
+        // Base has startIndex="1". Child has startIndex="0" (explicit zero).
+        // After MergeNumberScaleType: 0 ?? 1 = 0 (explicit zero wins — not treated as absent).
+        // With GetScaleName(6), StaticNames.Count=2, startIndex=0:
+        //   dynamicScale=4; quotient=2, remainder=0 → suffix="on" → "Trillion" (≠ "Trilliard").
+        // Without the Specified-pattern fix, startIndex=0 was indistinguishable from absent int=0,
+        // so the inherited 1 was incorrectly kept, producing "Trilliard" instead.
+        string baseKey = "SI-ZERO-BASE-" + Guid.NewGuid().ToString("N");
+        string childKey = "SI-ZERO-CHILD-" + Guid.NewGuid().ToString("N");
+        var converters = NumberToStringConverter.ReadConfiguration(
+            BuildScaleTestXml(baseKey, @"firstLetterUpperCase=""true"" startIndex=""1""",
+                              childKey, @"firstLetterUpperCase=""true"" startIndex=""0"""));
+        Assert.AreEqual("one Trillion", converters[childKey].Convert(1_000_000),
+            "Explicit startIndex=\"0\" must override inherited 1 (suffix[0]='on' → Trillion, not Trilliard)");
+    }
+
+    private static string BuildScaleTestXml(
+        string baseKey, string baseNumberScaleAttrs,
+        string childKey, string childNumberScaleAttrs)
+    {
+        const string groups = @"<Groups>
+  <Group level=""1"">
+    <Digit digit=""0"" string=""""/><Digit digit=""1"" string=""one""/><Digit digit=""2"" string=""two""/>
+    <Digit digit=""3"" string=""three""/><Digit digit=""4"" string=""four""/><Digit digit=""5"" string=""five""/>
+    <Digit digit=""6"" string=""six""/><Digit digit=""7"" string=""seven""/><Digit digit=""8"" string=""eight""/>
+    <Digit digit=""9"" string=""nine""/>
+  </Group>
+</Groups>";
+
+        const string staticAndSuffixes = @"<StaticNames>
+  <Scale value=""0"" string=""""/>
+  <Scale value=""1"" string=""thousand""/>
+</StaticNames>
+<Suffixes><Suffix>on</Suffix><Suffix>ard</Suffix></Suffixes>";
+
+        const string prefixTables = @"<Scale0Prefixes>
+  <Digit digit=""0"" string=""""/><Digit digit=""1"" string=""mi""/><Digit digit=""2"" string=""bi""/>
+  <Digit digit=""3"" string=""tri""/><Digit digit=""4"" string=""quadri""/><Digit digit=""5"" string=""quinti""/>
+  <Digit digit=""6"" string=""sexti""/><Digit digit=""7"" string=""septi""/><Digit digit=""8"" string=""octi""/>
+  <Digit digit=""9"" string=""noni""/>
+</Scale0Prefixes>
+<UnitsPrefixes>
+  <Digit digit=""0"" string=""""/><Digit digit=""1"" string=""uni""/><Digit digit=""2"" string=""duo""/>
+  <Digit digit=""3"" string=""tre(s)""/><Digit digit=""4"" string=""quattuor""/><Digit digit=""5"" string=""quinqua""/>
+  <Digit digit=""6"" string=""se(xs)""/><Digit digit=""7"" string=""septe(mn)""/><Digit digit=""8"" string=""octo""/>
+  <Digit digit=""9"" string=""nove(mn)""/>
+</UnitsPrefixes>
+<TensPrefixes>
+  <Digit digit=""0"" string=""""/><Digit digit=""1"" string=""(n)deci""/><Digit digit=""2"" string=""(ms)vingti""/>
+  <Digit digit=""3"" string=""(ns)triginta""/><Digit digit=""4"" string=""(ns)quadraginta""/>
+  <Digit digit=""5"" string=""(ns)quinquaginta""/><Digit digit=""6"" string=""(n)sexaginta""/>
+  <Digit digit=""7"" string=""(n)septuaginta""/><Digit digit=""8"" string=""(mxs)octoginta""/>
+  <Digit digit=""9"" string=""nonaginta""/>
+</TensPrefixes>
+<HundredsPrefixes>
+  <Digit digit=""0"" string=""""/><Digit digit=""1"" string=""(nx)centi""/><Digit digit=""2"" string=""(ms)ducenti""/>
+  <Digit digit=""3"" string=""(ns)trecenti""/><Digit digit=""4"" string=""(ns)quadringenti""/>
+  <Digit digit=""5"" string=""(ns)quingenti""/><Digit digit=""6"" string=""(n)sescenti""/>
+  <Digit digit=""7"" string=""(n)septingenti""/><Digit digit=""8"" string=""(mxs)octingenti""/>
+  <Digit digit=""9"" string=""nongenti""/>
+</HundredsPrefixes>";
+
+        return $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="""" zero=""zero"" minus=""minus *"">
+    <Culture>{baseKey}</Culture>
+    {groups}
+    <NumberScale {baseNumberScaleAttrs}>
+      {staticAndSuffixes}
+      {prefixTables}
+    </NumberScale>
+  </Language>
+  <Language baseOn=""{baseKey}"">
+    <Culture>{childKey}</Culture>
+    <NumberScale {childNumberScaleAttrs}>
+      {staticAndSuffixes}
+    </NumberScale>
+  </Language>
+</Numbers>";
+    }
+
     private sealed class FakeSpecifics : INumberToStringLanguageSpecifics
     {
         public string FinalizeWriting(string language, string value) => value;
