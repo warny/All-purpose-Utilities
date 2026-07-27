@@ -60394,6 +60394,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.SupportsDateConversion
   nameWithType: NumberToStringConverter.SupportsDateConversion
+- uid: Utils.NumberToString.NumberToStringConverter.SupportsLocalizableMonthNames
+  name: SupportsLocalizableMonthNames
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_SupportsLocalizableMonthNames
+  commentId: P:Utils.NumberToString.NumberToStringConverter.SupportsLocalizableMonthNames
+  fullName: Utils.NumberToString.NumberToStringConverter.SupportsLocalizableMonthNames
+  nameWithType: NumberToStringConverter.SupportsLocalizableMonthNames
+- uid: Utils.NumberToString.NumberToStringConverter.SupportsLocalizableMonthNames*
+  name: SupportsLocalizableMonthNames
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_SupportsLocalizableMonthNames_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.SupportsLocalizableMonthNames
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.SupportsLocalizableMonthNames
+  nameWithType: NumberToStringConverter.SupportsLocalizableMonthNames
 - uid: Utils.NumberToString.NumberToStringConverter.SupportsMultiplicative
   name: SupportsMultiplicative
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_SupportsMultiplicative
