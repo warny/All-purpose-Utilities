@@ -43,7 +43,7 @@ If a grammar relies on one of these areas, validate it with targeted tests befor
 
 Start with the normative [`2.0.0-rc.1 production support contract`](../docs/parser/ProductionSupportContract.md) to determine what the RC guarantees. For a detailed, implementation-aligned inventory (including diagnostics mapping and architectural limits), see [`docs/parser/Antlr4CompatibilityMatrix.md`](../docs/parser/Antlr4CompatibilityMatrix.md); that technical matrix does not expand the product contract.
 
-Versioned API documentation for this release is available at <https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/>.
+Until the release workflow publishes a versioned RC directory, use the current [`latest` API documentation](https://warny.github.io/All-purpose-Utilities/latest/). A version-specific link will be added when the corresponding documentation artifact is deployed.
 
 ### `superClass` compatibility contract
 

@@ -27,8 +27,8 @@ dotnet add package omy.Utils.Parser --version 2.0.0-rc.1
 1. You declare a `.g4` grammar file as an `AdditionalFiles` item in your `.csproj`.
 2. At build time the generator parses the file with an internal G4 tokenizer and parser.
 3. It emits a `partial static` C# facade whose core members include:
-   - `BuildDefinition()` — constructs the `ParserDefinition` from generated code.
-   - `Build()` — convenience wrapper that also runs `RuleResolver` to validate and enrich the definition.
+   - `BuildDefinition()` — constructs and resolves a `ParserDefinition` from generated code.
+   - `Build()` — convenience wrapper that currently resolves the result of `BuildDefinition()` again.
    - `Grammar` — eagerly initialized, process-wide cached `CompiledGrammar` property.
    - `Tokenize(...)` and conservative `Parse(...)` — delegate to `Grammar`.
    - generated embedded-code policy/context members and `ParseWithEmbeddedCode(...)` overloads when applicable.
@@ -126,33 +126,34 @@ namespace MyApp.Parser;
 internal static partial class ExpGrammar
 {
     /// <summary>Gets the compiled grammar cached for the generated facade.</summary>
-    public static global::Utils.Parser.CompiledGrammar Grammar { get; }
-        = new global::Utils.Parser.CompiledGrammar(Build());
+    public static global::Utils.Parser.Runtime.CompiledGrammar Grammar { get; }
+        = new global::Utils.Parser.Runtime.CompiledGrammar(Build());
 
     /// <summary>Builds and validates the grammar definition.</summary>
     public static global::Utils.Parser.Model.ParserDefinition Build()
         => global::Utils.Parser.Resolution.RuleResolver.Resolve(BuildDefinition());
 
-    /// <summary>Constructs the raw grammar definition from generated code.</summary>
+    /// <summary>Constructs and resolves the grammar definition from generated code.</summary>
     public static global::Utils.Parser.Model.ParserDefinition BuildDefinition()
     {
         // … generated Rule / RuleContent construction …
-        return new global::Utils.Parser.Model.ParserDefinition( … );
+        return global::Utils.Parser.Resolution.RuleResolver.Resolve(
+            new global::Utils.Parser.Model.ParserDefinition( … ));
     }
 
-    public static global::System.Collections.Generic.IReadOnlyList<global::Utils.Parser.Model.Token> Tokenize(string input)
+    public static global::System.Collections.Generic.IReadOnlyList<global::Utils.Parser.Runtime.Token> Tokenize(string input)
         => Grammar.Tokenize(input);
 
-    public static global::Utils.Parser.Model.ParseNode Parse(string input)
+    public static global::Utils.Parser.Runtime.ParseNode Parse(string input)
         => Grammar.Parse(input);
 }
 ```
 
-`BuildDefinition()` returns a new raw model, `Build()` returns a new resolved model, and `Grammar` is the single initialized `CompiledGrammar` cached by the generated facade. `Parse(...)` is conservative. Supported generated hooks execute only through `ParseWithEmbeddedCode(...)` or a policy explicitly created and used by the caller.
+`BuildDefinition()` currently constructs and resolves a new definition. `Build()` calls `RuleResolver.Resolve(BuildDefinition())`, so it resolves that result a second time. This documents the emitted behavior as it exists in `2.0.0-rc.1`; whether the duplicate resolution should be removed is a separate functional concern. `Grammar` is the single initialized `CompiledGrammar` cached by the generated facade. `Parse(...)` is conservative. Supported generated hooks execute only through `ParseWithEmbeddedCode(...)` or a policy explicitly created and used by the caller.
 
 See the normative [`2.0.0-rc.1 production support contract`](../docs/parser/ProductionSupportContract.md) for the guaranteed generator subset. In particular, imports are analyzed through the common composition plan but the current emitter still builds a local-only definition: imported rules are not executable from the generated facade, and imported targets do not receive `APU0107` binding conclusions.
 
-Versioned API documentation for this release is available at <https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/>.
+Until the release workflow publishes a versioned RC directory, use the current [`latest` API documentation](https://warny.github.io/All-purpose-Utilities/latest/). A version-specific link will be added when the corresponding documentation artifact is deployed.
 
 
 ## Generated-C# rule-call arguments
