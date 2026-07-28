@@ -1,5 +1,7 @@
 using System;
+using System.Linq;
 using System.Numerics;
+using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.NumberToString;
 
@@ -2726,6 +2728,86 @@ public class NumberToStringConverterAuditFixesTests
     </NumberScale>
   </Language>
 </Numbers>";
+    }
+
+    // ── Item 57 — public API compatibility after internal XML/definition split ──
+
+    [TestMethod]
+    public void PublicApi_LanguageType_GroupSize_RemainsInt()
+    {
+        Assert.AreEqual(typeof(int),
+            typeof(LanguageType).GetProperty(nameof(LanguageType.GroupSize))!.PropertyType,
+            "LanguageType.GroupSize must stay a plain int (historical public API)");
+    }
+
+    [TestMethod]
+    public void PublicApi_NumberScaleType_FirstLetterUpperCase_RemainsBool()
+    {
+        Assert.AreEqual(typeof(bool),
+            typeof(NumberScaleType).GetProperty(nameof(NumberScaleType.FirstLetterUpperCase))!.PropertyType,
+            "NumberScaleType.FirstLetterUpperCase must stay a plain bool (historical public API)");
+    }
+
+    [TestMethod]
+    public void PublicApi_NumberScaleType_StartIndex_RemainsInt()
+    {
+        Assert.AreEqual(typeof(int),
+            typeof(NumberScaleType).GetProperty(nameof(NumberScaleType.StartIndex))!.PropertyType,
+            "NumberScaleType.StartIndex must stay a plain int (historical public API)");
+    }
+
+    [TestMethod]
+    public void PublicApi_XmlSpecified_NotPublic_LanguageType()
+    {
+        var specifiedProps = typeof(LanguageType).GetProperties()
+            .Where(p => p.Name.EndsWith("Specified") || p.Name.EndsWith("Xml"));
+        Assert.IsFalse(specifiedProps.Any(),
+            $"Found unexpected public XML properties on LanguageType: {string.Join(", ", specifiedProps.Select(p => p.Name))}");
+    }
+
+    [TestMethod]
+    public void PublicApi_XmlSpecified_NotPublic_NumberScaleType()
+    {
+        var specifiedProps = typeof(NumberScaleType).GetProperties()
+            .Where(p => p.Name.EndsWith("Specified") || p.Name.EndsWith("Xml"));
+        Assert.IsFalse(specifiedProps.Any(),
+            $"Found unexpected public XML properties on NumberScaleType: {string.Join(", ", specifiedProps.Select(p => p.Name))}");
+    }
+
+    // ── Item 57 — Optional<T> presence semantics ────────────────────────────────
+
+    [TestMethod]
+    public void Optional_Unspecified_IsNotSpecified()
+    {
+        Assert.IsFalse(Optional<int>.Unspecified.IsSpecified);
+    }
+
+    [TestMethod]
+    public void Optional_Of_IsSpecified()
+    {
+        Assert.IsTrue(Optional<int>.Of(0).IsSpecified);
+        Assert.AreEqual(0, Optional<int>.Of(0).Value);
+    }
+
+    [TestMethod]
+    public void Optional_Of_False_IsSpecifiedFalse()
+    {
+        var opt = Optional<bool>.Of(false);
+        Assert.IsTrue(opt.IsSpecified);
+        Assert.IsFalse(opt.Value);
+    }
+
+    [TestMethod]
+    public void Optional_GetValueOrDefault_UnspecifiedReturnsFallback()
+    {
+        Assert.AreEqual(3, Optional<int>.Unspecified.GetValueOrDefault(3));
+    }
+
+    [TestMethod]
+    public void Optional_GetValueOrDefault_SpecifiedReturnsValueEvenWhenZero()
+    {
+        Assert.AreEqual(0, Optional<int>.Of(0).GetValueOrDefault(3),
+            "An explicit 0 must win over the fallback — this is what preserves explicit groupSize/startIndex=0");
     }
 
     private sealed class FakeSpecifics : INumberToStringLanguageSpecifics

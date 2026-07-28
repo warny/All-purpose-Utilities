@@ -21,6 +21,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="UtilsTest.Unit" />
+    </ItemGroup>
+
+    <ItemGroup>
         <Compile Update="NumberConverterResources.Designer.cs">
             <DesignTime>true</DesignTime>
             <AutoGen>true</AutoGen>

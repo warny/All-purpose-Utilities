@@ -671,32 +671,17 @@ public class LanguageType
     [XmlAttribute("baseOn")]
     public string BaseOn { get; set; }
 
-    /// <summary>Backing value for XmlSerializer; use <see cref="GroupSize"/> for application logic.</summary>
-    [XmlAttribute("groupSize")]
-    public int GroupSizeXml { get; set; }
-
-    /// <summary>
-    /// Set by XmlSerializer to <see langword="true"/> when the <c>groupSize</c> attribute is
-    /// present in the document. Do not set manually; use <see cref="GroupSize"/> instead.
-    /// </summary>
-    public bool GroupSizeXmlSpecified { get; set; }
-
     /// <summary>
     /// Gets or sets the number of digits grouped together when formatting.
-    /// <para>
-    /// <see langword="null"/> means the attribute is absent from the XML document and the value
-    /// must be inherited via <c>baseOn</c>. A non-<see langword="null"/> value — including
-    /// <c>0</c> — is treated as explicitly declared and overrides any inherited value during merge.
-    /// Business-level validation (requiring a positive group size) is applied after the merge,
-    /// not during it.
-    /// </para>
     /// </summary>
+    /// <remarks>
+    /// This is the fully-resolved value. XML deserialization and the presence/absence tracking
+    /// required for <c>baseOn</c> merging are handled by the internal <c>LanguageXmlModel</c> and
+    /// <c>LanguageDefinition</c> types, so this public property stays a plain <see cref="int"/> and
+    /// is not deserialized directly.
+    /// </remarks>
     [XmlIgnore]
-    public int? GroupSize
-    {
-        get => GroupSizeXmlSpecified ? GroupSizeXml : (int?)null;
-        set { GroupSizeXml = value ?? 0; GroupSizeXmlSpecified = value.HasValue; }
-    }
+    public int GroupSize { get; set; }
 
     /// <summary>
     /// Gets or sets the separator used between groups.
@@ -1027,27 +1012,15 @@ public class StaticNamesType
 /// </summary>
 public class NumberScaleType
 {
-    /// <summary>Backing value for XmlSerializer; use <see cref="FirstLetterUpperCase"/> for application logic.</summary>
-    [XmlAttribute("firstLetterUpperCase")]
-    public bool FirstLetterUpperCaseXml { get; set; }
-
     /// <summary>
-    /// Set by XmlSerializer to <see langword="true"/> when the <c>firstLetterUpperCase</c> attribute is
-    /// present in the document. Do not set manually; use <see cref="FirstLetterUpperCase"/> instead.
+    /// Gets or sets a value indicating whether the first letter of generated names should be upper-case.
     /// </summary>
-    public bool FirstLetterUpperCaseXmlSpecified { get; set; }
-
-    /// <summary>
-    /// Gets or sets whether the first letter of generated names should be upper-case.
-    /// <see langword="null"/> when absent from the XML document (inherit from base).
-    /// A non-<see langword="null"/> value — including <see langword="false"/> — is explicitly declared.
-    /// </summary>
+    /// <remarks>
+    /// This is the fully-resolved value. Presence/absence tracking for <c>baseOn</c> merging is
+    /// handled by the internal <c>NumberScaleXmlModel</c>/<c>NumberScaleDefinition</c> types.
+    /// </remarks>
     [XmlIgnore]
-    public bool? FirstLetterUpperCase
-    {
-        get => FirstLetterUpperCaseXmlSpecified ? FirstLetterUpperCaseXml : (bool?)null;
-        set { FirstLetterUpperCaseXml = value ?? false; FirstLetterUpperCaseXmlSpecified = value.HasValue; }
-    }
+    public bool FirstLetterUpperCase { get; set; }
 
     /// <summary>
     /// Gets or sets the literal inserted when a group value is zero.
@@ -1061,27 +1034,15 @@ public class NumberScaleType
     [XmlAttribute("groupSeparator")]
     public string GroupSeparator { get; set; }
 
-    /// <summary>Backing value for XmlSerializer; use <see cref="StartIndex"/> for application logic.</summary>
-    [XmlAttribute("startIndex")]
-    public int StartIndexXml { get; set; }
-
-    /// <summary>
-    /// Set by XmlSerializer to <see langword="true"/> when the <c>startIndex</c> attribute is
-    /// present in the document. Do not set manually; use <see cref="StartIndex"/> instead.
-    /// </summary>
-    public bool StartIndexXmlSpecified { get; set; }
-
     /// <summary>
     /// Gets or sets the index offset applied when computing scale names.
-    /// <see langword="null"/> when absent from the XML document (inherit from base).
-    /// A non-<see langword="null"/> value — including <c>0</c> — is explicitly declared.
     /// </summary>
+    /// <remarks>
+    /// This is the fully-resolved value. Presence/absence tracking for <c>baseOn</c> merging is
+    /// handled by the internal <c>NumberScaleXmlModel</c>/<c>NumberScaleDefinition</c> types.
+    /// </remarks>
     [XmlIgnore]
-    public int? StartIndex
-    {
-        get => StartIndexXmlSpecified ? StartIndexXml : (int?)null;
-        set { StartIndexXml = value ?? 0; StartIndexXmlSpecified = value.HasValue; }
-    }
+    public int StartIndex { get; set; }
 
     /// <summary>
     /// Gets or sets the static names applied to the first scale levels.
