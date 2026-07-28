@@ -90,3 +90,7 @@ All notable changes to this project will be documented in this file.
 - Added consumer-focused documentation, getting started guide, GitHub About proposal, and release process notes.
 - Marked internal projects (`Utils.Expressions.CSyntax`, `Utils.Parser.VisualStudio.Worker`) as non-packable to keep NuGet metadata scope limited to published packages.
 - Documented package family overview and usage in the root README and base package README.
+
+### Packaged product-train acceptance
+
+- Centralized the `omy.Utils` and parser-train candidate versions, made Antlr4.Common packable, embedded the DateFormula runtime configuration, and added manifest-driven package-only acceptance validation.

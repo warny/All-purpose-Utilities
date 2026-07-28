@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<!-- TargetFramework remains net8.0 until dependent projects (Utils.Imaging, Utils.Geography,
@@ -12,11 +12,10 @@
 		<Copyright>Olivier MARTY 2025</Copyright>
 		<Authors>Olivier MARTY</Authors>
 		<Company>Olivier MARTY</Company>
-		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>omy.Utils</PackageId>
 		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<Version>1.2.1</Version>
+		<Version>$(UtilsVersion)</Version>
 		<Description>Shared foundation package for the omy.Utils ecosystem, including collections, expressions, streams, security, reflection, formatting, and general-purpose .NET utility helpers.</Description>
 		<RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
@@ -39,9 +38,7 @@
         </ItemGroup>
 
 	<ItemGroup>
-		<None Include="Objects\DateFormulaConfigurations\DateFormulaConfiguration.json">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
+		<EmbeddedResource Include="Objects\DateFormulaConfigurations\DateFormulaConfiguration.json" LogicalName="Utils.Objects.DateFormulaConfigurations.DateFormulaConfiguration.json" />
 	</ItemGroup>
 
         <ItemGroup>

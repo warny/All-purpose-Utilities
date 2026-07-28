@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <EmitCompilerGeneratedFiles Condition="'$(EmitCompilerGeneratedFiles)' == ''">true</EmitCompilerGeneratedFiles>
+        <UtilsParserAttachGeneratedFiles Condition="'$(UtilsParserAttachGeneratedFiles)' == ''">true</UtilsParserAttachGeneratedFiles>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="omy.Utils.Parser" Version="2.0.0-rc.1" />
+        <PackageReference Include="omy.Utils.Parser.Generators" Version="2.0.0-rc.1" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    </ItemGroup>
+    <ItemGroup>
+        <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="Namespace" />
+        <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="ClassName" />
+        <AdditionalFiles Include="Grammars/**/*.g4" Namespace="Packaged.Generated" />
+        <AdditionalFiles Update="Grammars/Root.g4" ClassName="RootGrammar" />
+    </ItemGroup>
+</Project>
