@@ -143,7 +143,10 @@ public class CommandResponseClient : IDisposable
     /// </summary>
     /// <param name="stream">Connected stream used to send commands and receive responses.</param>
     /// <param name="leaveOpen">True to leave the stream open when disposing the client.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <param name="cancellationToken">
+    /// Cancellation token whose lifetime is linked to the session: cancelling this token
+    /// after connection stops the listener, the keep-alive loop, and all pending waiters.
+    /// </param>
     public Task ConnectAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
     {
         _stream = stream;
@@ -158,7 +161,8 @@ public class CommandResponseClient : IDisposable
             NewLine = "\r\n",
             AutoFlush = true
         };
-        _listenTokenSource = new CancellationTokenSource();
+        // Item 47: link the caller token so cancellation stops the session listener.
+        _listenTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _listenThread = new Thread(() => ListenLoop(_listenTokenSource.Token))
         {
             IsBackground = true
