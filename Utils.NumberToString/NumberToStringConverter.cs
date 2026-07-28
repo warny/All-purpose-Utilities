@@ -2042,10 +2042,10 @@ namespace Utils.NumberToString
                 int startIndex = 0,
                 string voidGroup = "ni",
                 string groupSeparator = "lli",
-                IReadOnlyList<string> scale0Prefixes = null,
-                IReadOnlyList<string> unitsPrefixes = null,
-                IReadOnlyList<string> tensPrefixes = null,
-                IReadOnlyList<string> hundredsPrefixes = null,
+                IReadOnlyList<string>? scale0Prefixes = null,
+                IReadOnlyList<string>? unitsPrefixes = null,
+                IReadOnlyList<string>? tensPrefixes = null,
+                IReadOnlyList<string>? hundredsPrefixes = null,
                 bool firstLetterUppercase = false)
         {
             StaticValues = staticValues.Arg().MustNotBeNull().Value.ToImmutableArray();
@@ -2071,17 +2071,17 @@ namespace Utils.NumberToString
             // null (not set in XML) → default "lli"; explicit "" → no separator between prefix and suffix
             GroupSeparator = groupSeparator ?? "lli";
 
-            Scale0Prefixes = scale0Prefixes?.ToImmutableArray() ?? Scale0Prefixes;
-            UnitsPrefixes = unitsPrefixes?.ToImmutableArray() ?? UnitsPrefixes;
-            TensPrefixes = tensPrefixes?.ToImmutableArray() ?? TensPrefixes;
-            HundredsPrefixes = hundredsPrefixes?.ToImmutableArray() ?? HundredsPrefixes;
+            Scale0Prefixes = scale0Prefixes?.ToImmutableArray();
+            UnitsPrefixes = unitsPrefixes?.ToImmutableArray();
+            TensPrefixes = tensPrefixes?.ToImmutableArray();
+            HundredsPrefixes = hundredsPrefixes?.ToImmutableArray();
 
             // Prefix tables used for dynamic generation must each have exactly 10 entries
             // (one per decimal digit 0–9) so that index-by-digit lookups cannot fail.
-            ValidatePrefixTable(Scale0Prefixes, nameof(scale0Prefixes));
-            ValidatePrefixTable(UnitsPrefixes, nameof(unitsPrefixes));
-            ValidatePrefixTable(TensPrefixes, nameof(tensPrefixes));
-            ValidatePrefixTable(HundredsPrefixes, nameof(hundredsPrefixes));
+            if (Scale0Prefixes != null) ValidatePrefixTable(Scale0Prefixes, nameof(scale0Prefixes));
+            if (UnitsPrefixes != null) ValidatePrefixTable(UnitsPrefixes, nameof(unitsPrefixes));
+            if (TensPrefixes != null) ValidatePrefixTable(TensPrefixes, nameof(tensPrefixes));
+            if (HundredsPrefixes != null) ValidatePrefixTable(HundredsPrefixes, nameof(hundredsPrefixes));
         }
 
         /// <summary>Validates that a decimal digit-prefix table has exactly 10 entries (one per decimal digit 0–9) and contains no null entries.</summary>
@@ -2125,69 +2125,29 @@ namespace Utils.NumberToString
         private static readonly Regex PrefixParser = PrefixParserRegex();
 
         /// <summary>
-        /// Gets the default prefixes used for the base scale (10⁰) names.
+        /// Gets the prefixes used for the base scale (10⁰) names, or <see langword="null"/> when
+        /// not configured. Must be provided (directly or via <c>baseOn</c> inheritance) for
+        /// languages that use dynamic scale generation beyond the static names.
         /// </summary>
-        public IReadOnlyList<string> Scale0Prefixes { get; } = [
-    "",
-            "mi",
-            "bi",
-            "tri",
-            "quadri",
-            "quinti",
-            "sexti",
-            "septi",
-            "octi",
-            "noni"
-];
-
+        public IReadOnlyList<string>? Scale0Prefixes { get; }
 
         /// <summary>
-        /// Gets the prefixes used when building unit multipliers.
+        /// Gets the prefixes used when building unit multipliers, or <see langword="null"/> when
+        /// not configured. Required only for scales whose prefix value exceeds 9.
         /// </summary>
-        public IReadOnlyList<string> UnitsPrefixes { get; } = [
-    "",
-            "uni",
-            "duo",
-            "tre(s)",
-            "quattuor",
-            "quinqua",
-            "se(xs)",
-            "septe(mn)",
-            "octo",
-            "nove(mn)"
-];
+        public IReadOnlyList<string>? UnitsPrefixes { get; }
 
         /// <summary>
-        /// Gets the prefixes used when building tens multipliers.
+        /// Gets the prefixes used when building tens multipliers, or <see langword="null"/> when
+        /// not configured. Required only for scales whose prefix value exceeds 9.
         /// </summary>
-        public IReadOnlyList<string> TensPrefixes { get; } = [
-    "",
-            "(n)deci",
-            "(ms)vingti",
-            "(ns)triginta",
-            "(ns)quadraginta",
-            "(ns)quinquaginta",
-            "(n)sexaginta",
-            "(n)septuaginta",
-            "(mxs)octoginta",
-            "nonaginta"
-];
+        public IReadOnlyList<string>? TensPrefixes { get; }
 
         /// <summary>
-        /// Gets the prefixes used when building hundreds multipliers.
+        /// Gets the prefixes used when building hundreds multipliers, or <see langword="null"/> when
+        /// not configured. Required only for scales whose prefix value exceeds 9.
         /// </summary>
-        public IReadOnlyList<string> HundredsPrefixes { get; } = [
-    "",
-            "(nx)centi",
-            "(ms)ducenti",
-            "(ns)trecenti",
-            "(ns)quadringenti",
-            "(ns)quingenti",
-            "(n)sescenti",
-            "(n)septingenti",
-            "(mxs)octingenti",
-            "nongenti"
-];
+        public IReadOnlyList<string>? HundredsPrefixes { get; }
 
 
         /// <summary>
@@ -2212,6 +2172,10 @@ namespace Utils.NumberToString
 
             if (prefix.Between(0L, 9L))
             {
+                if (Scale0Prefixes == null)
+                    throw new InvalidOperationException(
+                        $"Scale0Prefixes is not configured for scale {scale}. " +
+                        "Provide it directly in the NumberScale element or inherit it via baseOn.");
                 var value = Scale0Prefixes[(int)prefix] + GroupSeparator + suffix;
                 return FirstLetterUppercase && value.Length > 0 ? char.ToUpperInvariant(value[0]) + value[1..] : value;
             }
@@ -2230,6 +2194,10 @@ namespace Utils.NumberToString
                     continue;
                 }
 
+                if (HundredsPrefixes == null || TensPrefixes == null || UnitsPrefixes == null)
+                    throw new InvalidOperationException(
+                        $"HundredsPrefixes, TensPrefixes, and UnitsPrefixes must all be configured for scale {scale} " +
+                        "(prefix value exceeds 9). Provide them directly or inherit via baseOn.");
                 Match[] groupValues = [
                     PrefixParser.Match(HundredsPrefixes[(int)h]),
                     PrefixParser.Match(TensPrefixes[(int)t]),

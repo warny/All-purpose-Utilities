@@ -572,14 +572,18 @@ public class NumberToStringConverterAuditFixesTests
                 new System.Globalization.CultureInfo("tr-TR");
 
             var suffixes = Enumerable.Repeat("on", 10).ToArray();
+            var prefixes = new[] { "", "illi", "du", "tre", "qua", "qui", "sex", "sep", "oct", "nov" };
             var scale = new NumberScale(
                 staticValues: (IReadOnlyList<string>)new[] { "" },
                 scaleSuffixes: (IReadOnlyList<string>)suffixes,
-                unitsPrefixes: (IReadOnlyList<string>)new[] { "", "illi", "du", "tre", "qua", "qui", "sex", "sep", "oct", "nov" },
+                unitsPrefixes: (IReadOnlyList<string>)prefixes,
+                tensPrefixes: (IReadOnlyList<string>)prefixes,
+                hundredsPrefixes: (IReadOnlyList<string>)prefixes,
                 firstLetterUppercase: true);
 
-            // scale index 10 will enter the while-loop path (prefix index > 9)
-            string name = scale.GetScaleName(10);
+            // scale=101: dynamicScale=100, DivRem(100,10)=(10,0), prefix=11 → while-loop path (multi-digit)
+            // u=1 → UnitsPrefixes[1]="illi", first letter 'i' must be uppercased via ToUpperInvariant
+            string name = scale.GetScaleName(101);
             Assert.IsTrue(name.Length > 0, "Generated scale name must be non-empty");
             // The first character must be plain uppercase regardless of Turkish culture
             Assert.AreEqual(char.ToUpperInvariant(name[0]),  name[0],
@@ -791,7 +795,10 @@ public class NumberToStringConverterAuditFixesTests
             staticValues: (IReadOnlyList<string>)new[] { "", "thousand" },
             scaleSuffixes: (IReadOnlyList<string>)new[] { "illion" },
             startIndex: 10,
-            scale0Prefixes: (IReadOnlyList<string>)prefixes10);
+            scale0Prefixes: (IReadOnlyList<string>)prefixes10,
+            unitsPrefixes: (IReadOnlyList<string>)prefixes10,
+            tensPrefixes: (IReadOnlyList<string>)prefixes10,
+            hundredsPrefixes: (IReadOnlyList<string>)prefixes10);
         string result = scale.GetScaleName(int.MaxValue);
         Assert.IsNotNull(result);
         Assert.IsFalse(string.IsNullOrWhiteSpace(result), "GetScaleName(int.MaxValue) must return a non-empty string");
