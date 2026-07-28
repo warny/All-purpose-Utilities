@@ -553,4 +553,22 @@ public class CommandResponseLifecycleTests
         await WithTimeout(serverTask, "Server did not receive NOOP within 5s.");
         Assert.AreEqual(1, noopCount, "Only one keep-alive must fire while the previous is pending.");
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // Item 47 — Client ConnectAsync(Stream) binds caller cancellation
+    // ──────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task ConnectAsync_CallerCancellation_StopsListener()
+    {
+        (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
+        using CancellationTokenSource cts = new();
+        using CommandResponseClient client = new();
+        await client.ConnectAsync(clientStream, leaveOpen: true, cts.Token);
+
+        cts.Cancel();
+
+        await Task.Delay(200);
+        Assert.IsFalse(client.IsConnected, "Client must report disconnected after cancellation.");
+    }
 }
