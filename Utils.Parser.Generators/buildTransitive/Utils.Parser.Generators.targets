@@ -2,7 +2,7 @@
     <PropertyGroup>
         <UtilsParserAttachGeneratedFiles Condition="'$(UtilsParserAttachGeneratedFiles)' == ''">true</UtilsParserAttachGeneratedFiles>
         <EmitCompilerGeneratedFiles Condition="'$(UtilsParserAttachGeneratedFiles)' == 'true' and '$(EmitCompilerGeneratedFiles)' == ''">true</EmitCompilerGeneratedFiles>
-        <CompilerGeneratedFilesOutputPath Condition="'$(CompilerGeneratedFilesOutputPath)' == ''">$([MSBuild]::NormalizePath('$(BaseIntermediateOutputPath)', 'generated'))</CompilerGeneratedFilesOutputPath>
+        <CompilerGeneratedFilesOutputPath Condition="'$(CompilerGeneratedFilesOutputPath)' == ''">$([MSBuild]::NormalizePath('$(MSBuildProjectDirectory)', '$(BaseIntermediateOutputPath)', 'generated'))</CompilerGeneratedFilesOutputPath>
     </PropertyGroup>
 
     <ItemGroup>
