@@ -2923,41 +2923,6 @@ public class NumberToStringConverterAuditFixesTests
 
     // Synthetic tests for item 89 — exact default variant matching
 
-    private static string BuildOrdinalVariantXml(
-        string dimName, string dimValues,
-        long excValue, string excForms,
-        string ruleName, string ruleForms,
-        bool putFeminineFirst = false)
-    {
-        // excForms and ruleForms are comma-separated in dimension declaration order unless putFeminineFirst=true.
-        // When putFeminineFirst=true, the forms attribute is declared in the opposite order but dimension order is unchanged.
-        string forms = putFeminineFirst
-            ? string.Join(",", excForms.Split(',').Reverse())
-            : excForms;
-        string ruleFormsOrdered = putFeminineFirst
-            ? string.Join(",", ruleForms.Split(',').Reverse())
-            : ruleForms;
-        return $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
-<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
-  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
-    <Culture>XTEST</Culture>
-    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
-    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
-    <Variants>
-      <Dimension name=""{dimName}"" values=""{dimValues}"" />
-    </Variants>
-    <Ordinals>
-      <OrdinalException value=""{excValue}"">
-        <Variant type=""{dimName}"" forms=""{forms}"" />
-      </OrdinalException>
-      <Ordinal from=""one"">
-        <Variant type=""{dimName}"" forms=""{ruleFormsOrdered}"" />
-      </Ordinal>
-    </Ordinals>
-  </Language>
-</Numbers>";
-    }
-
     [TestMethod]
     public void ReadConfiguration_OrdinalFallback_NonDefaultFormDeclaredFirst_UsesDeclaredDefault()
     {

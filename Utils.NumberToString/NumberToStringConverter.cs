@@ -1577,6 +1577,13 @@ namespace Utils.NumberToString
             // Find the most specific matching ordinal variant
             OrdinalVariantRule? activeVariant = FindBestOrdinalVariant(activeVariants);
 
+            // When the caller specifies no variants, BuildVariantQuery injects dimension
+            // defaults (e.g. {gender=masculine}), which would incorrectly select a variant
+            // exception over the explicit string= base form. Check OrdinalExceptions first
+            // so that string="form" is treated as the true no-variant fallback.
+            if (variants.Length == 0 && OrdinalExceptions.TryGetValue(absNumber, out var baseException))
+                return isNegative ? Minus.Replace("*", baseException) : baseException;
+
             // Exceptions: variant first, then base
             if (activeVariant?.Exceptions.TryGetValue(absNumber, out var varException) == true)
                 return isNegative ? Minus.Replace("*", varException) : varException;
