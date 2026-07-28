@@ -17,6 +17,12 @@ $configPath = Join-Path $temporaryPath "NuGet.config"
 $env:NUGET_PACKAGES = $globalPackages
 $env:DOTNET_ROLL_FORWARD = "Major"
 $validationSucceeded = $false
+$manifest = Get-Content (Join-Path $PSScriptRoot "parser-release-manifest.json") -Raw | ConvertFrom-Json
+$versionProperties = [xml](Get-Content (Join-Path $repoRoot "Directory.Build.props") -Raw)
+$expectedPackages = @{}
+foreach ($package in $manifest.packages) {
+    $expectedPackages[$package.packageId] = ([string]$versionProperties.Project.PropertyGroup.($package.versionProperty)).Trim()
+}
 
 <#
 .SYNOPSIS
@@ -99,6 +105,8 @@ try {
         foreach ($library in $assets.libraries.PSObject.Properties | Where-Object Name -like "omy.*/*") {
             if ($library.Value.type -ne "package") { throw "$($library.Name) is not a package asset." }
             $parts = $library.Name -split "/"
+            if (-not $expectedPackages.ContainsKey($parts[0])) { throw "$($library.Name) is not declared by the product-train manifest." }
+            if ($parts[1] -ne $expectedPackages[$parts[0]]) { throw "$($library.Name) does not use the manifest version '$($expectedPackages[$parts[0]])'." }
             $packageFile = Join-Path $packagesPath "$($parts[0]).$($parts[1]).nupkg"
             if (-not (Test-Path $packageFile)) { throw "$($library.Name) does not match a local candidate package." }
         }
@@ -123,6 +131,72 @@ try {
             if ($LASTEXITCODE -ne 0) { throw "Generator matrix failed (Emit=$emit, Attach=$attach)." }
         }
     }
+
+    $incrementalPath = Join-Path $temporaryPath "incremental-generator-consumer"
+    New-Item (Join-Path $incrementalPath "Grammars") -ItemType Directory -Force | Out-Null
+    Copy-Item (Join-Path $consumerRoot "ParserGeneratorConsumer/ParserGeneratorConsumer.csproj") $incrementalPath
+    Copy-Item (Join-Path $consumerRoot "ParserGeneratorConsumer/Program.cs") $incrementalPath
+    Copy-Item (Join-Path $consumerRoot "ParserGeneratorConsumer/Grammars/*.g4") (Join-Path $incrementalPath "Grammars")
+    $incrementalProject = Join-Path $incrementalPath "ParserGeneratorConsumer.csproj"
+    & dotnet restore $incrementalProject --configfile $configPath --packages $globalPackages --no-cache --force
+    if ($LASTEXITCODE -ne 0) { throw "Incremental generator consumer restore failed." }
+
+    # A real project build proves that imported changes replace, rather than accumulate with, generated output.
+    & dotnet build $incrementalProject --configuration $Configuration --no-restore
+    if ($LASTEXITCODE -ne 0) { throw "Initial incremental generator build failed." }
+    & dotnet run --project $incrementalProject --configuration $Configuration --no-build -- "a" "importedLeaf"
+    if ($LASTEXITCODE -ne 0) { throw "Initial incremental generator execution failed." }
+
+    Set-Content (Join-Path $incrementalPath "Grammars/Shared.g4") "parser grammar Shared;`nchangedLeaf : TOKEN;"
+    & dotnet build $incrementalProject --configuration $Configuration --no-restore
+    if ($LASTEXITCODE -ne 0) { throw "Imported grammar modification rebuild failed." }
+    & dotnet run --project $incrementalProject --configuration $Configuration --no-build -- "a" "changedLeaf" "importedLeaf"
+    if ($LASTEXITCODE -ne 0) { throw "Imported grammar modification was not reflected in generated output." }
+
+    Set-Content (Join-Path $incrementalPath "Grammars/Middle.g4") "parser grammar Middle;`nmiddleRule : TOKEN;"
+    & dotnet build $incrementalProject --configuration $Configuration --no-restore
+    if ($LASTEXITCODE -ne 0) { throw "Import removal rebuild failed." }
+    & dotnet run --project $incrementalProject --configuration $Configuration --no-build -- "a" "local" "changedLeaf"
+    if ($LASTEXITCODE -ne 0) { throw "Removed import left an effective generated rule." }
+
+    $rootGrammar = Join-Path $incrementalPath "Grammars/Root.g4"
+    (Get-Content $rootGrammar -Raw).Replace("tokenVocab=Tokens", "tokenVocab=TokensTwo") | Set-Content $rootGrammar
+    & dotnet build $incrementalProject --configuration $Configuration --no-restore
+    if ($LASTEXITCODE -ne 0) { throw "tokenVocab change rebuild failed." }
+    & dotnet run --project $incrementalProject --configuration $Configuration --no-build -- "z" "local" "changedLeaf" "false"
+    if ($LASTEXITCODE -ne 0) { throw "tokenVocab change was not reflected in generated output." }
+
+    Set-Content (Join-Path $incrementalPath "Grammars/Collision.g4") "parser grammar Collision;`nmiddleRule : TOKEN;`ncollisionOnly : TOKEN;"
+    (Get-Content $rootGrammar -Raw).Replace("import Middle", "import Collision, Middle") | Set-Content $rootGrammar
+    & dotnet build $incrementalProject --configuration $Configuration --no-restore
+    if ($LASTEXITCODE -ne 0) { throw "Imported collision addition rebuild failed." }
+    & dotnet run --project $incrementalProject --configuration $Configuration --no-build -- "z" "collisionOnly" "changedLeaf" "false"
+    if ($LASTEXITCODE -ne 0) { throw "Imported collision was not composed deterministically." }
+    Remove-Item (Join-Path $incrementalPath "Grammars/Collision.g4") -Force
+    (Get-Content $rootGrammar -Raw).Replace("import Collision, Middle", "import Middle") | Set-Content $rootGrammar
+    & dotnet build $incrementalProject --configuration $Configuration --no-restore
+    if ($LASTEXITCODE -ne 0) { throw "Imported collision removal rebuild failed." }
+    & dotnet run --project $incrementalProject --configuration $Configuration --no-build -- "z" "local" "collisionOnly" "false"
+    if ($LASTEXITCODE -ne 0) { throw "Removed collision left stale generated output." }
+
+    $diagnosticLog = Join-Path $temporaryPath "generator-diagnostics.log"
+    Set-Content $rootGrammar "parser grammar Root;`nimport Missing;`nstart : 'a';"
+    & dotnet build $incrementalProject --configuration $Configuration --no-restore 2>&1 | Tee-Object -FilePath $diagnosticLog
+    if ($LASTEXITCODE -eq 0 -or -not (Select-String -Path $diagnosticLog -Pattern "UP0010" -Quiet)) { throw "Missing packaged import did not fail with UP0010." }
+
+    Set-Content $rootGrammar "parser grammar Root;`nimport Middle;`nstart : 'a';"
+    Set-Content (Join-Path $incrementalPath "Grammars/Middle.g4") "parser grammar Middle;`nimport Root;`nmiddleRule : 'a';"
+    & dotnet build $incrementalProject --configuration $Configuration --no-restore 2>&1 | Tee-Object -FilePath $diagnosticLog
+    if ($LASTEXITCODE -eq 0 -or -not (Select-String -Path $diagnosticLog -Pattern "UP0011" -Quiet)) { throw "Packaged import cycle did not fail with UP0011." }
+
+    New-Item (Join-Path $incrementalPath "Grammars/one") -ItemType Directory -Force | Out-Null
+    New-Item (Join-Path $incrementalPath "Grammars/two") -ItemType Directory -Force | Out-Null
+    Set-Content $rootGrammar "parser grammar Root;`nimport Duplicate;`nstart : item;"
+    Set-Content (Join-Path $incrementalPath "Grammars/one/Duplicate.g4") "parser grammar Duplicate;`nitem : 'a';"
+    Set-Content (Join-Path $incrementalPath "Grammars/two/Duplicate.g4") "parser grammar Duplicate;`nitem : 'b';"
+    & dotnet build $incrementalProject --configuration $Configuration --no-restore 2>&1 | Tee-Object -FilePath $diagnosticLog
+    if ($LASTEXITCODE -eq 0 -or -not (Select-String -Path $diagnosticLog -Pattern "UP0016" -Quiet)) { throw "Ambiguous packaged import did not fail with UP0016." }
+
     $validationSucceeded = $true
     Write-Host "Validate: packaged product train passed. No package was published."
 } finally {

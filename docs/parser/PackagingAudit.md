@@ -22,3 +22,9 @@ The generator package deliberately embeds four analyzer-directory DLLs and one `
 ## Existing publication workflow risks
 
 The release workflow discovers every project recursively, packs and pushes inside one loop, and can therefore select unintended packages or leave a partial release when a later push fails. Existence-check network failures are treated like an absent package. It does not validate an immutable candidate set, internal dependency coherence, SourceLink, symbol contents, consumer restoration, or a pre-push vulnerability report. A duplicate version is skipped independently. Package publication cannot be transactional. The acceptance scripts intentionally stop before any push and provide manifest-selected artifacts for a future validate-then-publish workflow.
+
+## Packaged composition and incrementality coverage
+
+The package-only runtime consumer now executes `Antlr4GrammarProjectCompiler` with direct and transitive imports, separate lexer/parser grammars, `tokenVocab`, populated and empty lexer modes, local masking, entry-root ownership, deterministic imported collisions, and missing/cyclic/ambiguous dependency failures. The package-only generator consumer builds the equivalent effective composition and then, in a copied real project, changes an imported grammar, removes its import, changes `tokenVocab`, and adds/removes an imported collision. Every rebuild executes the resulting facade and rejects stale effective rules. Separate builds require `UP0010`, `UP0011`, and `UP0016` for missing, cyclic, and ambiguous imports.
+
+The symbol inspection proves repository metadata, candidate commit identity, `.snupkg` presence, and portable PDB signatures. It does **not** inspect the embedded SourceLink document or retrieve mapped sources, so full SourceLink validation remains an explicit release risk.

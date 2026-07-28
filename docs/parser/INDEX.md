@@ -54,3 +54,5 @@ The parser documentation now records that generated-C# positional rule-call argu
 ## Packaged release-candidate note
 
 `ProductionSupportContract.md` now also records the manifest-driven `omy.Utils`/`omy.Utils.Parser.*` package graph, isolated-feed acceptance boundary, analyzer support-assembly strategy, and the distribution properties that remain unclaimed.
+
+The packaging audit additionally records package-only runtime/generator import scenarios, graph-changing incremental builds, deterministic graph diagnostics, and the precise boundary between portable-symbol checks and unvalidated SourceLink mappings.

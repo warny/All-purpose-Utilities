@@ -598,3 +598,7 @@ The generator's `G4Grammar` model can now be adapted to the same Roslyn-free gra
 The `2.0.0-rc.1` analyzer package places `Utils.Parser.Generators.dll` and its narrowly required `Utils.Parser.Source`, `Utils.Parser.Diagnostics`, and `Utils.Parser.Antlr4.Common` support assemblies together under `analyzers/dotnet/cs`. `SuppressDependenciesWhenPacking` prevents those compiler-host dependencies from becoming runtime dependencies in consuming applications. The package also supplies `buildTransitive/omy.Utils.Parser.Generators.targets` for generated-file attachment and compiler-visible options. The product-train acceptance suite builds before `dotnet pack --no-build`, inspects this exact layout, and compiles real package-only consumers with both `EmitCompilerGeneratedFiles` and `UtilsParserAttachGeneratedFiles` enabled and disabled.
 
 [Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)
+
+### Package-only incremental acceptance
+
+A real isolated consumer restored from the candidate feed builds direct/transitive imports and `tokenVocab`, executes the facade, modifies an imported grammar, removes an import, changes the vocabulary, and adds then removes a collision. Each rebuild executes the new effective composition and asserts removed rules do not remain. Separate failing builds verify `UP0010`, `UP0011`, and `UP0016` from the packaged analyzer.
