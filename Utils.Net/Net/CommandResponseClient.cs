@@ -30,8 +30,12 @@ public class CommandResponseClient : IDisposable
     private string _noOpCommand = "NOOP";
     private bool _leaveOpen;
     private bool _everConnected;
-    private bool _disconnected;
+    private volatile bool _disconnected;
     private TimeSpan _listenTimeout = Timeout.InfiniteTimeSpan;
+
+    // Item 44: track how many command waiters are currently consuming responses so that the
+    // listener knows whether an incoming line is solicited or unsolicited.
+    private volatile int _activeCommandWaiters;
 
     /// <summary>
     /// Gets or sets the maximum number of bytes allowed in a single incoming response line.
@@ -200,30 +204,41 @@ public class CommandResponseClient : IDisposable
             DrainPendingResponses();
             Logger?.LogDebug("Sending: {Command}", RedactCommandForLog(command));
             await _writer.WriteLineAsync(command).ConfigureAwait(false);
-            List<ServerResponse> responses = new();
-            while (true)
+
+            // Item 44: signal that a command waiter is now active so ListenLoop does not
+            // raise UnsolicitedResponseReceived for the expected reply lines.
+            Interlocked.Increment(ref _activeCommandWaiters);
+            try
             {
-                await _responseSignal.WaitAsync(cancellationToken).ConfigureAwait(false);
-                if (!_responseQueue.TryDequeue(out ServerResponse response))
+                List<ServerResponse> responses = new();
+                while (true)
                 {
-                    if (_disconnected)
+                    await _responseSignal.WaitAsync(cancellationToken).ConfigureAwait(false);
+                    if (!_responseQueue.TryDequeue(out ServerResponse response))
                     {
-                        throw new IOException("Connection closed.");
+                        if (_disconnected)
+                        {
+                            throw new IOException("Connection closed.");
+                        }
+                        continue;
                     }
-                    continue;
+                    responses.Add(response);
+                    if (MaxResponseCount > 0 && responses.Count > MaxResponseCount)
+                    {
+                        throw new InvalidDataException($"Server sent more than {MaxResponseCount} response lines for a single command.");
+                    }
+                    if (response.Severity >= ResponseSeverity.Completion || response.Severity == ResponseSeverity.Unknown)
+                    {
+                        break;
+                    }
                 }
-                responses.Add(response);
-                if (MaxResponseCount > 0 && responses.Count > MaxResponseCount)
-                {
-                    throw new InvalidDataException($"Server sent more than {MaxResponseCount} response lines for a single command.");
-                }
-                if (response.Severity >= ResponseSeverity.Completion || response.Severity == ResponseSeverity.Unknown)
-                {
-                    break;
-                }
+                ResetKeepAlive();
+                return responses;
             }
-            ResetKeepAlive();
-            return responses;
+            finally
+            {
+                Interlocked.Decrement(ref _activeCommandWaiters);
+            }
         }
         finally
         {
@@ -296,7 +311,7 @@ public class CommandResponseClient : IDisposable
     {
         while (_responseQueue.TryDequeue(out ServerResponse leftover))
         {
-            UnsolicitedResponseReceived?.Invoke(leftover);
+            RaiseUnsolicitedResponseReceived(leftover);
         }
         while (_responseSignal.CurrentCount > 0)
         {
@@ -375,7 +390,13 @@ public class CommandResponseClient : IDisposable
                 Logger?.LogDebug("Received: {Code} {Message}", SanitizeForLog(response.Code, 10), SanitizeForLog(response.Message ?? string.Empty, 200));
                 _responseQueue.Enqueue(response);
                 _responseSignal.Release();
-                UnsolicitedResponseReceived?.Invoke(response);
+
+                // Item 44: only raise the unsolicited event when there is no active command
+                // waiter. When a command is in flight, its replies are consumed by SendCommandAsync.
+                if (_activeCommandWaiters == 0)
+                {
+                    RaiseUnsolicitedResponseReceived(response);
+                }
             }
         }
         catch (IOException)
@@ -392,6 +413,15 @@ public class CommandResponseClient : IDisposable
             _responseSignal.Release();
             Logger?.LogWarning("Listener thread terminated");
         }
+    }
+
+    /// <summary>
+    /// Raises <see cref="UnsolicitedResponseReceived"/> for a response that arrived while no
+    /// command waiter was active.
+    /// </summary>
+    private void RaiseUnsolicitedResponseReceived(ServerResponse response)
+    {
+        UnsolicitedResponseReceived?.Invoke(response);
     }
 
     /// <summary>
