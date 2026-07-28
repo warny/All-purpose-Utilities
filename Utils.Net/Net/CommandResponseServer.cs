@@ -27,6 +27,13 @@ public class CommandResponseServer : IDisposable
     private bool _leaveOpen;
     private readonly Dictionary<string, CommandRegistration> _handlers = new(StringComparer.OrdinalIgnoreCase);
 
+    // Item 31: lifecycle state machine — 0 NotStarted, 1 Starting, 2 Running, 3 Stopped.
+    private const int StateNotStarted = 0;
+    private const int StateStarting = 1;
+    private const int StateRunning = 2;
+    private const int StateStopped = 3;
+    private int _state = StateNotStarted;
+
     /// <summary>
     /// Gets or sets the maximum number of bytes allowed in a single incoming command line.
     /// Lines longer than this limit cause the session to close with a 500 error.
@@ -144,32 +151,48 @@ public class CommandResponseServer : IDisposable
     /// </exception>
     public Task StartAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
     {
-        if (_listenThread is not null)
+        // Item 31: atomic single-use guard — only one caller can transition from NotStarted to Starting.
+        int prev = Interlocked.CompareExchange(ref _state, StateStarting, StateNotStarted);
+        if (prev != StateNotStarted)
         {
             throw new InvalidOperationException(
                 "This server instance is already running or has already been used. " +
                 "Create a new instance for each incoming connection.");
         }
-        _stream = stream;
-        _leaveOpen = leaveOpen;
-        _contexts.Clear();
-        while (_commandQueue.TryDequeue(out _)) { }
-        _errorCount = 0;
-        _reader = new StreamReader(stream, Encoding.ASCII, false, 1024, true);
-        _writer = new StreamWriter(stream, Encoding.ASCII, 1024, true)
+        try
         {
-            NewLine = "\r\n",
-            AutoFlush = true
-        };
-        _listenTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        _listenThread = new Thread(() => ListenLoop(_listenTokenSource.Token))
+            if (stream is null) throw new ArgumentNullException(nameof(stream));
+            _stream = stream;
+            _leaveOpen = leaveOpen;
+            _contexts.Clear();
+            while (_commandQueue.TryDequeue(out _)) { }
+            _errorCount = 0;
+            _reader = new StreamReader(stream, Encoding.ASCII, false, 1024, true);
+            _writer = new StreamWriter(stream, Encoding.ASCII, 1024, true)
+            {
+                NewLine = "\r\n",
+                AutoFlush = true
+            };
+            _listenTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            _listenThread = new Thread(() => ListenLoop(_listenTokenSource.Token))
+            {
+                IsBackground = true
+            };
+            _listenThread.Start();
+            Logger?.LogInformation("Server started");
+            _processTask = ProcessQueueAsync(_listenTokenSource.Token);
+            Interlocked.Exchange(ref _state, StateRunning);
+            return Task.CompletedTask;
+        }
+        catch
         {
-            IsBackground = true
-        };
-        _listenThread.Start();
-        Logger?.LogInformation("Server started");
-        _processTask = ProcessQueueAsync(_listenTokenSource.Token);
-        return Task.CompletedTask;
+            // Initialization failed: mark as stopped so the instance cannot be reused.
+            Interlocked.Exchange(ref _state, StateStopped);
+            _reader?.Dispose();
+            _writer?.Dispose();
+            _listenTokenSource?.Dispose();
+            throw;
+        }
     }
 
     /// <summary>
@@ -441,6 +464,7 @@ public class CommandResponseServer : IDisposable
     /// </summary>
     public void Dispose()
     {
+        Interlocked.Exchange(ref _state, StateStopped);
         _listenTokenSource?.Cancel();
         _reader?.Dispose();
         _writer?.Dispose();
