@@ -391,4 +391,36 @@ public class CommandResponseLifecycleTests
 
         Assert.ThrowsException<InvalidOperationException>(() => server.RemoveContext("AUTH"));
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // Item 34 — Terminal fault cancels listener and faults Completion
+    // ──────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task FormatterException_FaultsCompletion()
+    {
+        (DuplexStream serverStream, StreamWriter clientWriter, StreamReader clientReader) = CreateServerTestPair();
+        int call = 0;
+        CommandResponseServer server = new(response =>
+        {
+            if (Interlocked.Increment(ref call) == 1)
+                throw new InvalidOperationException("Formatter fault");
+            return $"{response.Code} {response.Message}";
+        });
+        server.RegisterCommand("BOOM", (_, _, _) =>
+            Task.FromResult<IEnumerable<ServerResponse>>(
+                [new ServerResponse("250", ResponseSeverity.Completion, "OK")]));
+        await server.StartAsync(serverStream, leaveOpen: true);
+
+        await clientWriter.WriteLineAsync("BOOM");
+        Task completion = server.Completion;
+        Task settled = await Task.WhenAny(completion, Task.Delay(Timeout5)).ConfigureAwait(false);
+        if (settled != completion)
+            Assert.Fail("Completion did not settle within 5s after formatter fault.");
+
+        Assert.IsTrue(completion.IsFaulted || completion.IsCanceled,
+            "Completion must be faulted or cancelled after a terminal formatter exception.");
+
+        server.Dispose();
+    }
 }
