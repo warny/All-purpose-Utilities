@@ -34,19 +34,43 @@ public class CommandResponseServer : IDisposable
     private const int StateStopped = 3;
     private int _state = StateNotStarted;
 
+    private int _maxLineLength = 8192;
+
     /// <summary>
     /// Gets or sets the maximum number of bytes allowed in a single incoming command line.
     /// Lines longer than this limit cause the session to close with a 500 error.
     /// Default is 8192 bytes (8 KiB).
     /// </summary>
-    public int MaxLineLength { get; set; } = 8192;
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the value is negative.</exception>
+    public int MaxLineLength
+    {
+        get => _maxLineLength;
+        set
+        {
+            if (value < 0)
+                throw new ArgumentOutOfRangeException(nameof(value), value, "MaxLineLength must be non-negative.");
+            _maxLineLength = value;
+        }
+    }
+
+    private int _maxCommandQueueDepth = 1000;
 
     /// <summary>
     /// Gets or sets the maximum number of commands that may wait in the command queue before
     /// the server closes the session to prevent unbounded memory consumption.
     /// Default is 1000. Set to 0 to disable.
     /// </summary>
-    public int MaxCommandQueueDepth { get; set; } = 1000;
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the value is negative.</exception>
+    public int MaxCommandQueueDepth
+    {
+        get => _maxCommandQueueDepth;
+        set
+        {
+            if (value < 0)
+                throw new ArgumentOutOfRangeException(nameof(value), value, "MaxCommandQueueDepth must be non-negative.");
+            _maxCommandQueueDepth = value;
+        }
+    }
 
     private readonly HashSet<string> _contexts = new();
     private readonly Func<ServerResponse, string> _formatter;
@@ -58,11 +82,44 @@ public class CommandResponseServer : IDisposable
     /// </summary>
     public ILogger? Logger { get; set; }
 
+    private int _maxConsecutiveErrors;
+
     /// <summary>
     /// Gets or sets the number of consecutive error responses allowed before the server shuts down.
     /// A value of <c>0</c> disables automatic shutdown.
     /// </summary>
-    public int MaxConsecutiveErrors { get; set; }
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the value is negative.</exception>
+    public int MaxConsecutiveErrors
+    {
+        get => _maxConsecutiveErrors;
+        set
+        {
+            if (value < 0)
+                throw new ArgumentOutOfRangeException(nameof(value), value, "MaxConsecutiveErrors must be non-negative.");
+            _maxConsecutiveErrors = value;
+        }
+    }
+
+    /// <summary>
+    /// Validates that <paramref name="value"/> is a non-empty token free of whitespace and
+    /// control characters, so it can safely be used as a command verb or context name.
+    /// </summary>
+    /// <param name="value">Token to validate.</param>
+    /// <param name="paramName">Parameter name used in the thrown exception.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="value"/> is empty or contains whitespace or control characters.
+    /// </exception>
+    private static void ValidateToken(string value, string paramName)
+    {
+        if (value is null) throw new ArgumentNullException(paramName);
+        if (value.Length == 0) throw new ArgumentException($"{paramName} must not be empty.", paramName);
+        foreach (char c in value)
+        {
+            if (c <= ' ' || c == 0x7F)
+                throw new ArgumentException($"{paramName} must not contain whitespace or control characters.", paramName);
+        }
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CommandResponseServer"/> class.
@@ -97,7 +154,11 @@ public class CommandResponseServer : IDisposable
     /// <param name="requiredContexts">Contexts required for the command to execute.</param>
     public void RegisterCommand(string command, Func<CommandContext, string[], CancellationToken, Task<IEnumerable<ServerResponse>>> handler, params string[] requiredContexts)
     {
-        _handlers[command] = new CommandRegistration(handler, requiredContexts);
+        ValidateToken(command, nameof(command));
+        if (handler is null) throw new ArgumentNullException(nameof(handler));
+        string[] contextsCopy = requiredContexts is null ? [] : (string[])requiredContexts.Clone();
+        foreach (string ctx in contextsCopy) ValidateToken(ctx, nameof(requiredContexts));
+        _handlers[command] = new CommandRegistration(handler, contextsCopy);
         Logger?.LogDebug("Command registered: {Command}", command);
     }
 
@@ -109,6 +170,7 @@ public class CommandResponseServer : IDisposable
     /// <param name="requiredContexts">Contexts required for the command to execute.</param>
     public void RegisterCommand(string command, Func<CommandContext, string[], Task<IEnumerable<ServerResponse>>> handler, params string[] requiredContexts)
     {
+        if (handler is null) throw new ArgumentNullException(nameof(handler));
         RegisterCommand(command, (ctx, args, _) => handler(ctx, args), requiredContexts);
     }
 
@@ -118,6 +180,7 @@ public class CommandResponseServer : IDisposable
     /// <param name="context">Context to add.</param>
     public void AddContext(string context)
     {
+        ValidateToken(context, nameof(context));
         _contexts.Add(context);
         Logger?.LogDebug("Context added: {Context}", context);
     }
@@ -128,6 +191,7 @@ public class CommandResponseServer : IDisposable
     /// <param name="context">Context to remove.</param>
     public void RemoveContext(string context)
     {
+        ValidateToken(context, nameof(context));
         _contexts.Remove(context);
         Logger?.LogDebug("Context removed: {Context}", context);
     }
@@ -137,7 +201,11 @@ public class CommandResponseServer : IDisposable
     /// </summary>
     /// <param name="context">Context to check.</param>
     /// <returns><see langword="true"/> if the context is active; otherwise, <see langword="false"/>.</returns>
-    public bool HasContext(string context) => _contexts.Contains(context);
+    public bool HasContext(string context)
+    {
+        ValidateToken(context, nameof(context));
+        return _contexts.Contains(context);
+    }
 
     /// <summary>
     /// Starts processing commands using the specified stream.

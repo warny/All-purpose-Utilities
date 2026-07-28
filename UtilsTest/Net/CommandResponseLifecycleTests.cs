@@ -237,4 +237,89 @@ public class CommandResponseLifecycleTests
         await Assert.ThrowsExceptionAsync<InvalidOperationException>(() =>
             server.StartAsync(serverStream, leaveOpen: true));
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // Item 42 — Validate server configuration arguments
+    // ──────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void RegisterCommand_NullCommand_Throws()
+    {
+        CommandResponseServer server = new();
+        Assert.ThrowsException<ArgumentNullException>(() =>
+            server.RegisterCommand(null!, (_, _, _) => Task.FromResult<IEnumerable<ServerResponse>>([])));
+    }
+
+    [TestMethod]
+    public void RegisterCommand_EmptyCommand_Throws()
+    {
+        CommandResponseServer server = new();
+        Assert.ThrowsException<ArgumentException>(() =>
+            server.RegisterCommand(string.Empty, (_, _, _) => Task.FromResult<IEnumerable<ServerResponse>>([])));
+    }
+
+    [TestMethod]
+    public void RegisterCommand_CommandWithSpace_Throws()
+    {
+        CommandResponseServer server = new();
+        Assert.ThrowsException<ArgumentException>(() =>
+            server.RegisterCommand("FOO BAR", (_, _, _) => Task.FromResult<IEnumerable<ServerResponse>>([])));
+    }
+
+    [TestMethod]
+    public void RegisterCommand_NullHandler_Throws()
+    {
+        CommandResponseServer server = new();
+        Assert.ThrowsException<ArgumentNullException>(() =>
+            server.RegisterCommand("FOO", (Func<CommandContext, string[], CancellationToken, Task<IEnumerable<ServerResponse>>>)null!));
+    }
+
+    [TestMethod]
+    public void AddContext_NullContext_Throws()
+    {
+        CommandResponseServer server = new();
+        Assert.ThrowsException<ArgumentNullException>(() => server.AddContext(null!));
+    }
+
+    [TestMethod]
+    public void AddContext_EmptyContext_Throws()
+    {
+        CommandResponseServer server = new();
+        Assert.ThrowsException<ArgumentException>(() => server.AddContext(string.Empty));
+    }
+
+    [TestMethod]
+    public void RemoveContext_NullContext_Throws()
+    {
+        CommandResponseServer server = new();
+        Assert.ThrowsException<ArgumentNullException>(() => server.RemoveContext(null!));
+    }
+
+    [TestMethod]
+    public void HasContext_NullContext_Throws()
+    {
+        CommandResponseServer server = new();
+        Assert.ThrowsException<ArgumentNullException>(() => server.HasContext(null!));
+    }
+
+    [TestMethod]
+    public void MaxConsecutiveErrors_NegativeValue_Throws()
+    {
+        CommandResponseServer server = new();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => server.MaxConsecutiveErrors = -1);
+    }
+
+    [TestMethod]
+    public void MaxLineLength_NegativeValue_Throws()
+    {
+        CommandResponseServer server = new();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => server.MaxLineLength = -1);
+    }
+
+    [TestMethod]
+    public void MaxCommandQueueDepth_NegativeValue_Throws()
+    {
+        CommandResponseServer server = new();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => server.MaxCommandQueueDepth = -1);
+    }
 }
