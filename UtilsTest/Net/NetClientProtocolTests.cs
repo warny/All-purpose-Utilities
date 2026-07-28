@@ -81,7 +81,7 @@ public class NetClientProtocolTests
     }
 
     // ──────────────────────────────────────────────────────────────
-    // Item 40 — NetworkParameters.PrimaryDns null-safe (no IndexOutOfRangeException)
+    // Item 40 — NetworkParameters.PrimaryDns null-safe
     // ──────────────────────────────────────────────────────────────
 
     [TestMethod]
@@ -98,15 +98,13 @@ public class NetClientProtocolTests
     {
         NetworkParameters p = new NetworkParameters();
         IPAddress[] first = p.DnsServers;
-        // Mutate the returned array
         if (first.Length > 0) first[0] = IPAddress.Loopback;
         IPAddress[] second = p.DnsServers;
-        // The mutation must not affect the stored state
         Assert.AreEqual(p.PrimaryDns, second.Length > 0 ? second[0] : null);
     }
 
     // ──────────────────────────────────────────────────────────────
-    // Item 62 — SMTP: null / empty recipients validated before MAIL FROM
+    // Item 62 — SMTP: recipients validated before any network I/O
     // ──────────────────────────────────────────────────────────────
 
     [TestMethod]
@@ -125,8 +123,36 @@ public class NetClientProtocolTests
             client.SendMailAsync("sender@example.com", new string[0], "body"));
     }
 
+    [TestMethod]
+    public async Task SmtpClient_SendMailAsync_InvalidRecipient_NoBytesSentToServer()
+    {
+        // Verifies that recipient validation happens before any MAIL FROM is transmitted.
+        (DuplexStream clientStream, StreamWriter sw, StreamReader sr) = CreateTestPair();
+
+        bool mailFromSent = false;
+        Task serverTask = Task.Run(async () =>
+        {
+            await sw.WriteLineAsync("220 smtp.example.com ESMTP");
+            // Respond to MAIL FROM if it arrives
+            string? line = await sr.ReadLineAsync();
+            if (line is not null && line.StartsWith("MAIL FROM", StringComparison.OrdinalIgnoreCase))
+                mailFromSent = true;
+        });
+
+        SmtpClient client = new SmtpClient();
+        await client.ConnectAsync(clientStream, leaveOpen: false);
+
+        // Second recipient has a CR, which ValidateCommandArgument rejects before MAIL FROM
+        await Assert.ThrowsExceptionAsync<ArgumentException>(() =>
+            client.SendMailAsync("sender@example.com", new[] { "good@example.com", "bad\rrecipient" }, "body"));
+
+        // Give the server task a moment to detect MAIL FROM if it had been sent
+        await Task.WhenAny(serverTask, Task.Delay(200));
+        Assert.IsFalse(mailFromSent, "MAIL FROM must not be sent when a recipient fails validation.");
+    }
+
     // ──────────────────────────────────────────────────────────────
-    // Item 59 — SMTP EHLO: last extension line is included
+    // Item 59 — SMTP EHLO: last extension line included
     // ──────────────────────────────────────────────────────────────
 
     [TestMethod]
@@ -136,10 +162,8 @@ public class NetClientProtocolTests
 
         Task serverTask = Task.Run(async () =>
         {
-            // Greeting
             await sw.WriteLineAsync("220 smtp.example.com ESMTP");
-            // Client reads greeting in OnConnect
-            _ = await sr.ReadLineAsync(); // discard EHLO command
+            _ = await sr.ReadLineAsync(); // EHLO command
             await sw.WriteLineAsync("250-smtp.example.com Hello");
             await sw.WriteLineAsync("250-SIZE 10240000");
             await sw.WriteLineAsync("250 STARTTLS");
@@ -151,15 +175,14 @@ public class NetClientProtocolTests
         IReadOnlyList<string> extensions = await client.EhloAsync("testclient.local");
         await serverTask;
 
-        // The last "STARTTLS" line must be included
         Assert.IsTrue(extensions.Contains("STARTTLS"),
-            $"Expected 'STARTTLS' in extensions but got: [{string.Join(", ", extensions)}]");
+            $"Last extension 'STARTTLS' must be included. Got: [{string.Join(", ", extensions)}]");
         Assert.IsTrue(extensions.Contains("SIZE 10240000"),
-            "Expected 'SIZE 10240000' in extensions.");
+            "Middle extension 'SIZE 10240000' must also be included.");
     }
 
     // ──────────────────────────────────────────────────────────────
-    // Item 65 — POP3 RETR: CRLF line endings preserved
+    // Item 65 — POP3 RETR: explicit CRLF line endings
     // ──────────────────────────────────────────────────────────────
 
     [TestMethod]
@@ -180,16 +203,14 @@ public class NetClientProtocolTests
 
         Pop3Client client = new Pop3Client();
         await client.ConnectAsync(clientStream, leaveOpen: false);
-#pragma warning disable CS0618
         string message = await client.RetrieveAsync(1);
-#pragma warning restore CS0618
         await serverTask;
 
         Assert.AreEqual("Subject: hello\r\nbody text\r\n", message);
     }
 
     // ──────────────────────────────────────────────────────────────
-    // Item 64 — POP3 exact terminator: ". " (dot-space) is data, not terminator
+    // Item 64 — Exact terminator: ". " is data, not terminator (POP3 and NNTP)
     // ──────────────────────────────────────────────────────────────
 
     [TestMethod]
@@ -202,7 +223,6 @@ public class NetClientProtocolTests
             await sw.WriteLineAsync("+OK POP3 ready");
             _ = await sr.ReadLineAsync(); // RETR 1
             await sw.WriteLineAsync("+OK message follows");
-            // ". " must be treated as data (not the terminator ".")
             await sw.WriteLineAsync(". ");
             await sw.WriteLineAsync("next line");
             await sw.WriteLineAsync(".");
@@ -211,14 +231,36 @@ public class NetClientProtocolTests
 
         Pop3Client client = new Pop3Client();
         await client.ConnectAsync(clientStream, leaveOpen: false);
-#pragma warning disable CS0618
         string message = await client.RetrieveAsync(1);
-#pragma warning restore CS0618
         await serverTask;
 
-        // Both lines must be present; ". " is data, "next line" follows it
         StringAssert.Contains(message, ". \r\n");
         StringAssert.Contains(message, "next line\r\n");
+    }
+
+    [TestMethod]
+    public async Task NntpClient_ArticleAsync_DotSpaceLine_IsDataNotTerminator()
+    {
+        (DuplexStream clientStream, StreamWriter sw, StreamReader sr) = CreateTestPair();
+
+        Task serverTask = Task.Run(async () =>
+        {
+            await sw.WriteLineAsync("200 NNTP server ready");
+            _ = await sr.ReadLineAsync(); // ARTICLE 1
+            await sw.WriteLineAsync("220 1 <msg@example.com> article follows");
+            await sw.WriteLineAsync(". ");
+            await sw.WriteLineAsync("normal line");
+            await sw.WriteLineAsync(".");
+            sw.BaseStream.Flush();
+        });
+
+        NntpClient client = new NntpClient();
+        await client.ConnectAsync(clientStream, leaveOpen: false);
+        string article = await client.ArticleAsync(1);
+        await serverTask;
+
+        StringAssert.Contains(article, ". \r\n");
+        StringAssert.Contains(article, "normal line\r\n");
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -245,7 +287,6 @@ public class NetClientProtocolTests
         string article = await client.ArticleAsync(1);
         await serverTask;
 
-        // "..dot-prefixed content" → ".dot-prefixed content" after unstuffing
         Assert.AreEqual(".dot-prefixed content\r\n", article);
     }
 
@@ -269,16 +310,65 @@ public class NetClientProtocolTests
         string article = await client.ArticleAsync(1);
         await serverTask;
 
-        // ".malformed" must NOT be unstuffed — the leading dot is preserved
         Assert.AreEqual(".malformed\r\n", article);
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // Item 67 — NNTP UTC: Unspecified Kind treated as UTC, not Local
-    // ──────────────────────────────────────────────────────────────
+    [TestMethod]
+    public async Task NntpClient_HeaderAsync_DoubleDotIsUnstuffed()
+    {
+        (DuplexStream clientStream, StreamWriter sw, StreamReader sr) = CreateTestPair();
+
+        Task serverTask = Task.Run(async () =>
+        {
+            await sw.WriteLineAsync("200 NNTP server ready");
+            _ = await sr.ReadLineAsync(); // HEADER 1
+            await sw.WriteLineAsync("221 1 <msg@example.com> head follows");
+            await sw.WriteLineAsync("..encoded-header");
+            await sw.WriteLineAsync(".");
+            sw.BaseStream.Flush();
+        });
+
+        NntpClient client = new NntpClient();
+        await client.ConnectAsync(clientStream, leaveOpen: false);
+        string header = await client.HeaderAsync(1);
+        await serverTask;
+
+        Assert.AreEqual(".encoded-header\r\n", header);
+    }
 
     [TestMethod]
-    public async Task NntpClient_NewGroupsAsync_UnspecifiedDateTimeKindSentAsUtc()
+    public async Task NntpClient_BodyAsync_DoubleDotIsUnstuffed()
+    {
+        (DuplexStream clientStream, StreamWriter sw, StreamReader sr) = CreateTestPair();
+
+        Task serverTask = Task.Run(async () =>
+        {
+            await sw.WriteLineAsync("200 NNTP server ready");
+            _ = await sr.ReadLineAsync(); // BODY 1
+            await sw.WriteLineAsync("222 1 <msg@example.com> body follows");
+            await sw.WriteLineAsync("..encoded-body-line");
+            await sw.WriteLineAsync(".");
+            sw.BaseStream.Flush();
+        });
+
+        NntpClient client = new NntpClient();
+        await client.ConnectAsync(clientStream, leaveOpen: false);
+        string body = await client.BodyAsync(1);
+        await serverTask;
+
+        Assert.AreEqual(".encoded-body-line\r\n", body);
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Item 67 — NNTP UTC: all three DateTimeKind values send "GMT"
+    //
+    // Policy:
+    //   Utc         → value transmitted as-is with GMT token
+    //   Local       → converted to UTC then transmitted with GMT token
+    //   Unspecified → interpreted as UTC (no local conversion) with GMT token
+    // ──────────────────────────────────────────────────────────────
+
+    private static async Task<string?> CaptureNewGroupsCommandAsync(DateTime sinceUtc)
     {
         (DuplexStream clientStream, StreamWriter sw, StreamReader sr) = CreateTestPair();
         string? capturedCommand = null;
@@ -286,7 +376,7 @@ public class NetClientProtocolTests
         Task serverTask = Task.Run(async () =>
         {
             await sw.WriteLineAsync("200 NNTP server ready");
-            capturedCommand = await sr.ReadLineAsync(); // NEWGROUPS ...
+            capturedCommand = await sr.ReadLineAsync();
             await sw.WriteLineAsync("231 new newsgroups follow");
             await sw.WriteLineAsync(".");
             sw.BaseStream.Flush();
@@ -294,13 +384,90 @@ public class NetClientProtocolTests
 
         NntpClient client = new NntpClient();
         await client.ConnectAsync(clientStream, leaveOpen: false);
-        // Unspecified kind: numeric value is 2024-01-15 08:30:00
-        DateTime unspecified = new DateTime(2024, 1, 15, 8, 30, 0, DateTimeKind.Unspecified);
-        await client.NewGroupsAsync(unspecified);
+        await client.NewGroupsAsync(sinceUtc);
         await serverTask;
+        return capturedCommand;
+    }
 
-        // Must format the value as-is (treating Unspecified as UTC), not convert through local timezone
-        Assert.AreEqual("NEWGROUPS 20240115 083000", capturedCommand,
-            "DateTimeKind.Unspecified must be treated as UTC, not converted through local timezone.");
+    private static async Task<string?> CaptureNewNewsCommandAsync(DateTime sinceUtc)
+    {
+        (DuplexStream clientStream, StreamWriter sw, StreamReader sr) = CreateTestPair();
+        string? capturedCommand = null;
+
+        Task serverTask = Task.Run(async () =>
+        {
+            await sw.WriteLineAsync("200 NNTP server ready");
+            capturedCommand = await sr.ReadLineAsync();
+            await sw.WriteLineAsync("230 list of new articles follows");
+            await sw.WriteLineAsync(".");
+            sw.BaseStream.Flush();
+        });
+
+        NntpClient client = new NntpClient();
+        await client.ConnectAsync(clientStream, leaveOpen: false);
+        await client.NewNewsAsync("misc.test", sinceUtc);
+        await serverTask;
+        return capturedCommand;
+    }
+
+    [TestMethod]
+    public async Task NntpClient_NewGroupsAsync_UtcKind_SendsGmt()
+    {
+        DateTime utcValue = new DateTime(2024, 3, 10, 14, 0, 0, DateTimeKind.Utc);
+        string? cmd = await CaptureNewGroupsCommandAsync(utcValue);
+        Assert.AreEqual("NEWGROUPS 20240310 140000 GMT", cmd);
+    }
+
+    [TestMethod]
+    public async Task NntpClient_NewGroupsAsync_UnspecifiedKind_TreatedAsUtcWithGmt()
+    {
+        DateTime unspecified = new DateTime(2024, 1, 15, 8, 30, 0, DateTimeKind.Unspecified);
+        string? cmd = await CaptureNewGroupsCommandAsync(unspecified);
+        // Unspecified is treated as UTC: numeric values must be unchanged, GMT appended
+        Assert.AreEqual("NEWGROUPS 20240115 083000 GMT", cmd,
+            "DateTimeKind.Unspecified must be forwarded as-is (treated as UTC) with the GMT token.");
+    }
+
+    [TestMethod]
+    public async Task NntpClient_NewGroupsAsync_LocalKind_ConvertedToUtcWithGmt()
+    {
+        // Build a Local value and derive the expected UTC string independently,
+        // so the assertion is correct regardless of the CI machine's timezone.
+        DateTime localValue = new DateTime(2024, 6, 21, 12, 0, 0, DateTimeKind.Local);
+        DateTime expectedUtc = localValue.ToUniversalTime();
+        string expectedCommand =
+            $"NEWGROUPS {expectedUtc:yyyyMMdd} {expectedUtc:HHmmss} GMT";
+
+        string? cmd = await CaptureNewGroupsCommandAsync(localValue);
+        Assert.AreEqual(expectedCommand, cmd);
+    }
+
+    [TestMethod]
+    public async Task NntpClient_NewNewsAsync_UtcKind_SendsGmt()
+    {
+        DateTime utcValue = new DateTime(2024, 3, 10, 14, 0, 0, DateTimeKind.Utc);
+        string? cmd = await CaptureNewNewsCommandAsync(utcValue);
+        Assert.AreEqual("NEWNEWS misc.test 20240310 140000 GMT", cmd);
+    }
+
+    [TestMethod]
+    public async Task NntpClient_NewNewsAsync_UnspecifiedKind_TreatedAsUtcWithGmt()
+    {
+        DateTime unspecified = new DateTime(2024, 1, 15, 8, 30, 0, DateTimeKind.Unspecified);
+        string? cmd = await CaptureNewNewsCommandAsync(unspecified);
+        Assert.AreEqual("NEWNEWS misc.test 20240115 083000 GMT", cmd,
+            "DateTimeKind.Unspecified must be forwarded as-is (treated as UTC) with the GMT token.");
+    }
+
+    [TestMethod]
+    public async Task NntpClient_NewNewsAsync_LocalKind_ConvertedToUtcWithGmt()
+    {
+        DateTime localValue = new DateTime(2024, 6, 21, 12, 0, 0, DateTimeKind.Local);
+        DateTime expectedUtc = localValue.ToUniversalTime();
+        string expectedCommand =
+            $"NEWNEWS misc.test {expectedUtc:yyyyMMdd} {expectedUtc:HHmmss} GMT";
+
+        string? cmd = await CaptureNewNewsCommandAsync(localValue);
+        Assert.AreEqual(expectedCommand, cmd);
     }
 }

@@ -143,7 +143,7 @@ public class NntpClient : CommandResponseClient
         DateTime utc = sinceUtc.Kind == DateTimeKind.Local ? sinceUtc.ToUniversalTime() : DateTime.SpecifyKind(sinceUtc, DateTimeKind.Utc);
         string date = utc.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
         string time = utc.ToString("HHmmss", CultureInfo.InvariantCulture);
-        IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"NEWGROUPS {date} {time}", cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"NEWGROUPS {date} {time} GMT", cancellationToken).ConfigureAwait(false);
         await EnsureCompletionAsync(responses).ConfigureAwait(false);
         return await ReadMultilineAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -161,7 +161,7 @@ public class NntpClient : CommandResponseClient
         DateTime utc = sinceUtc.Kind == DateTimeKind.Local ? sinceUtc.ToUniversalTime() : DateTime.SpecifyKind(sinceUtc, DateTimeKind.Utc);
         string date = utc.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
         string time = utc.ToString("HHmmss", CultureInfo.InvariantCulture);
-        IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"NEWNEWS {group} {date} {time}", cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"NEWNEWS {group} {date} {time} GMT", cancellationToken).ConfigureAwait(false);
         await EnsureCompletionAsync(responses).ConfigureAwait(false);
         IReadOnlyList<string> lines = await ReadMultilineAsync(cancellationToken).ConfigureAwait(false);
         List<int> ids = new();
