@@ -624,4 +624,16 @@ public class CommandResponseLifecycleTests
         await Assert.ThrowsExceptionAsync<ObjectDisposedException>(() =>
             client.ConnectAsync(clientStream, leaveOpen: true));
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // Item 51 — Transactional TCP setup: resource rollback on failure
+    // ──────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task ConnectAsync_Stream_NullStream_Throws()
+    {
+        using CommandResponseClient client = new();
+        await Assert.ThrowsExceptionAsync<ArgumentNullException>(() =>
+            client.ConnectAsync((Stream)null!, leaveOpen: false));
+    }
 }
