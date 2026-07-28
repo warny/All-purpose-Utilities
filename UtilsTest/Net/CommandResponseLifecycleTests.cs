@@ -525,4 +525,32 @@ public class CommandResponseLifecycleTests
         IReadOnlyList<ServerResponse> responses = await WithTimeout(sendTask, "Did not receive PING response after subscriber fault.");
         Assert.AreEqual("250", responses[0].Code);
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // Item 46 — Keep-alive does not overlap with itself
+    // ──────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task KeepAlive_SlowResponse_DoesNotOverlap()
+    {
+        (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
+        using CommandResponseClient client = new();
+        client.NoOpInterval = TimeSpan.FromMilliseconds(100);
+        await client.ConnectAsync(clientStream, leaveOpen: true);
+
+        int noopCount = 0;
+        Task serverTask = Task.Run(async () =>
+        {
+            string? line = await Task.Run(() => serverReader.ReadLine());
+            if (line is not null)
+            {
+                Interlocked.Increment(ref noopCount);
+                await Task.Delay(300);
+                await serverWriter.WriteLineAsync("250 OK");
+            }
+        });
+
+        await WithTimeout(serverTask, "Server did not receive NOOP within 5s.");
+        Assert.AreEqual(1, noopCount, "Only one keep-alive must fire while the previous is pending.");
+    }
 }

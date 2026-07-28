@@ -25,7 +25,11 @@ public class CommandResponseClient : IDisposable
     private readonly SemaphoreSlim _sendLock = new(1, 1);
     private CancellationTokenSource? _listenTokenSource;
     private Thread? _listenThread;
-    private Timer? _keepAliveTimer;
+
+    // Item 46: keep-alive runs as a cancellable Task instead of an async-void Timer callback.
+    private CancellationTokenSource? _keepAliveCts;
+    private Task? _keepAliveTask;
+
     private TimeSpan _noOpInterval = Timeout.InfiniteTimeSpan;
     private string _noOpCommand = "NOOP";
     private bool _leaveOpen;
@@ -86,7 +90,7 @@ public class CommandResponseClient : IDisposable
         set
         {
             _noOpInterval = value;
-            _keepAliveTimer?.Change(value, Timeout.InfiniteTimeSpan);
+            RestartKeepAlive();
         }
     }
 
@@ -163,10 +167,10 @@ public class CommandResponseClient : IDisposable
         _disconnected = false;
         _listenThread.Start();
         Logger?.LogInformation("Client connected to stream");
-        if (_noOpInterval != Timeout.InfiniteTimeSpan)
-        {
-            _keepAliveTimer = new Timer(async _ => await SendNoOpAsync().ConfigureAwait(false), null, _noOpInterval, Timeout.InfiniteTimeSpan);
-        }
+
+        // Item 46: start the keep-alive loop as a cancellable Task.
+        RestartKeepAlive();
+
         return OnConnect(stream, leaveOpen, cancellationToken);
     }
 
@@ -529,19 +533,78 @@ public class CommandResponseClient : IDisposable
         return new ServerResponse(line, ResponseSeverity.Unknown, null);
     }
 
+    // ──────────────────────────────────────────────────────────────
+    // Item 46: cancellable keep-alive loop replacing async-void Timer
+    // ──────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Stops any running keep-alive task and starts a new one if the interval is finite.
+    /// </summary>
+    private void RestartKeepAlive()
+    {
+        StopKeepAlive();
+        if (_noOpInterval == Timeout.InfiniteTimeSpan || _listenTokenSource is null) return;
+        _keepAliveCts = CancellationTokenSource.CreateLinkedTokenSource(_listenTokenSource.Token);
+        CancellationToken ct = _keepAliveCts.Token;
+        TimeSpan interval = _noOpInterval;
+        _keepAliveTask = Task.Run(async () =>
+        {
+            try
+            {
+                while (!ct.IsCancellationRequested)
+                {
+                    await Task.Delay(interval, ct).ConfigureAwait(false);
+                    if (ct.IsCancellationRequested) break;
+                    await SendNoOpAsync(ct).ConfigureAwait(false);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Normal shutdown.
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogWarning(ex, "Keep-alive loop terminated unexpectedly");
+            }
+        }, ct);
+    }
+
+    /// <summary>
+    /// Cancels and awaits the current keep-alive task (up to 1 s).
+    /// </summary>
+    private void StopKeepAlive()
+    {
+        _keepAliveCts?.Cancel();
+        try
+        {
+            _keepAliveTask?.Wait(TimeSpan.FromSeconds(1));
+        }
+        catch
+        {
+            // Ignore faults during shutdown.
+        }
+        _keepAliveCts?.Dispose();
+        _keepAliveCts = null;
+        _keepAliveTask = null;
+    }
+
     /// <summary>
     /// Sends the no-op command.
     /// </summary>
-    private async Task SendNoOpAsync()
+    private async Task SendNoOpAsync(CancellationToken cancellationToken = default)
     {
         try
         {
             Logger?.LogDebug("Sending keep-alive: {Command}", _noOpCommand);
-            await SendCommandAsync(_noOpCommand).ConfigureAwait(false);
+            await SendCommandAsync(_noOpCommand, cancellationToken).ConfigureAwait(false);
         }
-        catch
+        catch (OperationCanceledException)
         {
-            // Ignore keep-alive exceptions.
+            // Ignore cancellation during shutdown.
+        }
+        catch (Exception ex)
+        {
+            Logger?.LogWarning(ex, "Keep-alive command failed");
         }
     }
 
@@ -585,11 +648,13 @@ public class CommandResponseClient : IDisposable
     }
 
     /// <summary>
-    /// Resets the keep alive timer.
+    /// Resets the keep-alive timer by restarting the delay from the current point in time.
     /// </summary>
     protected void ResetKeepAlive()
     {
-        _keepAliveTimer?.Change(_noOpInterval, Timeout.InfiniteTimeSpan);
+        // The loop-based keep-alive automatically resets after each send; calling
+        // RestartKeepAlive restarts the delay whenever a command is successfully sent.
+        RestartKeepAlive();
     }
 
     /// <summary>
@@ -608,6 +673,7 @@ public class CommandResponseClient : IDisposable
     {
         if (!disposing && _writer is null) return;
 
+        StopKeepAlive();
         _listenTokenSource?.Cancel();
         _reader?.Dispose();
         _reader = null;
@@ -618,7 +684,6 @@ public class CommandResponseClient : IDisposable
             _stream?.Dispose();
         }
         _listenThread?.Join(TimeSpan.FromSeconds(1));
-        _keepAliveTimer?.Dispose();
         _client?.Dispose();
         _responseSignal.Dispose();
         _sendLock.Dispose();
