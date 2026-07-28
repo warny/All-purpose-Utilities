@@ -37,10 +37,14 @@ public class CommandResponseServer : IDisposable
     private int _maxLineLength = 8192;
 
     /// <summary>
-    /// Gets or sets the maximum number of bytes allowed in a single incoming command line.
+    /// Gets or sets the maximum number of characters allowed in a single incoming command line.
     /// Lines longer than this limit cause the session to close with a 500 error.
-    /// Default is 8192 bytes (8 KiB).
+    /// Default is 8192.
     /// </summary>
+    /// <remarks>
+    /// The limit is measured in UTF-16 characters (decoded) rather than raw bytes, because the
+    /// underlying <see cref="StreamReader"/> decodes bytes before this check is applied.
+    /// </remarks>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the value is negative.</exception>
     public int MaxLineLength
     {

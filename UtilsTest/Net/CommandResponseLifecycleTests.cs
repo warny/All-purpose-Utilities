@@ -674,4 +674,22 @@ public class CommandResponseLifecycleTests
                 System.Reflection.BindingFlags.DeclaredOnly) is not null;
         Assert.IsFalse(hasFinalizer, "CommandResponseClient must not declare a finalizer.");
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // Item 52 — Line length units are characters, not bytes
+    // ──────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task MaxLineLength_ExactBoundary_Accepted_Client()
+    {
+        (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
+        using CommandResponseClient client = new();
+        client.MaxLineLength = 5;
+        await client.ConnectAsync(clientStream, leaveOpen: true);
+
+        // Send exactly 5 characters "250 X" — must be accepted
+        await serverWriter.WriteLineAsync("250 X");
+        IReadOnlyList<ServerResponse> responses = await WithTimeout(client.ReadAsync(), "ReadAsync timed out.");
+        Assert.AreEqual(1, responses.Count);
+    }
 }
