@@ -1,0 +1,116 @@
+API compatibility errors between '/tmp/api-baseline/pkg/lib/net8.0/Utils.dll' (left) and 'Utils/bin/Release/net8.0/Utils.dll' (right):
+CP0021: Cannot add constraint 'notnull' on type parameter 'T1' of 'Utils.Collections.DoubleIndexedDictionary<T1, T2>'.
+CP0021: Cannot add constraint 'notnull' on type parameter 'T2' of 'Utils.Collections.DoubleIndexedDictionary<T1, T2>'.
+CP0002: Member 'System.Collections.Generic.IEnumerable<T> Utils.Collections.EnumerableEx.FollowedBy<T>(this System.Collections.Generic.IEnumerable<T>, params T[])' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'System.Collections.Generic.IEnumerable<T> Utils.Collections.EnumerableEx.PrecededBy<T>(this System.Collections.Generic.IEnumerable<T>, params T[])' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'System.Collections.Generic.IEnumerable<System.Collections.Generic.IEnumerable<T>> Utils.Collections.EnumerableEx.Slice<T>(this System.Collections.Generic.IEnumerable<T>, params int[])' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0021: Cannot add constraint 'notnull' on type parameter 'K' of 'Utils.Collections.IndexedList<K, V>'.
+CP0021: Cannot add constraint 'notnull' on type parameter 'K' of 'Utils.Collections.LRUCache<K, V>'.
+CP0001: Type 'Utils.Collections.SkipList<T>' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Collections.SymbolTree' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Collections.SymbolLeaf' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionParser' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionParserCore' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.IBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.TryReadToken' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.StringTransformer' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.IStartExpressionBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.IFollowUpExpressionBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.IAdditionalTokens' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'void Utils.Expressions.LiteralPart.Append(string)' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.IParserOptions' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ParserContext' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0008: Type 'Utils.Expressions.ParserOptions' does not implement interface 'Utils.Expressions.IParserOptions' on Utils/bin/Release/net8.0/Utils.dll but it does on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.Tokenizer' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ITokenizerPosition' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Format.StringFormat' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0006: Cannot add interface member 'bool Utils.Mathematics.IAngleCalculator<T>.AreEqual(T, T, T)' to Utils/bin/Release/net8.0/Utils.dll because it does not exist on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll
+CP0006: Cannot add interface member 'bool Utils.Mathematics.IAngleCalculator<T>.AreEqualRounded(T, T, int)' to Utils/bin/Release/net8.0/Utils.dll because it does not exist on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll
+CP0006: Cannot add interface member 'T Utils.Mathematics.IAngleCalculator<T>.NormalizeRounded(T, int)' to Utils/bin/Release/net8.0/Utils.dll because it does not exist on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll
+CP0001: Type 'Utils.Mathematics.INumberToStringConverter' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'System.Nullable<T> Utils.Mathematics.NullableIntEx.Min<T>(System.Nullable<T>, System.Nullable<T>, bool)' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'System.Nullable<T> Utils.Mathematics.NullableIntEx.Max<T>(System.Nullable<T>, System.Nullable<T>, bool)' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'bool Utils.Mathematics.NullableIntEx.GreaterOrEqual<T>(System.Nullable<T>, System.Nullable<T>)' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'int Utils.Mathematics.NullableIntEx.Compare<T>(System.Nullable<T>, System.Nullable<T>, bool)' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0008: Type 'Utils.Mathematics.FloatingPointComparer<T>' does not implement interface 'System.Collections.Generic.IEqualityComparer<T>' on Utils/bin/Release/net8.0/Utils.dll but it does on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll
+CP0002: Member 'bool Utils.Mathematics.FloatingPointComparer<T>.Equals(T, T)' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'int Utils.Mathematics.FloatingPointComparer<T>.GetHashCode(T)' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Mathematics.Numbers' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Mathematics.NumberType' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Mathematics.NumberListType' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Mathematics.DigitType' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Mathematics.DigitListType' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Mathematics.ReplacementsListType' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Mathematics.ReplacementType' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Mathematics.ReplacementScope' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Mathematics.FractionType' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Mathematics.FractionListType' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Mathematics.LanguageType' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Mathematics.GroupType' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Mathematics.GroupsListType' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Mathematics.SuffixesType' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Mathematics.StaticNamesType' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Mathematics.NumberScaleType' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Mathematics.NumberToStringConverter' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Mathematics.NumberScale' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'Utils.Objects.Bytes Utils.Objects.BytesExtensions.Join(params byte[][])' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'Utils.Objects.Bytes Utils.Objects.BytesExtensions.Join(params Utils.Objects.Bytes[])' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'int Utils.Objects.ObjectUtils.ComputeHash<T>(System.Func<T, int>, params T[])' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Randomization.RandomEx' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'System.Collections.Generic.IReadOnlyList<Utils.Range.Range<T>> Utils.Range.Ranges<T>.Intervals.get' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'System.Collections.Generic.IEnumerable<Utils.Range.Range<T1>> Utils.Range.Ranges<T>.InnerParse<T1>(string, string, System.Collections.Generic.IEnumerable<string>, System.Func<string, T1>)' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'bool Utils.Range.Ranges<T>.Contains(Utils.Range.Range<T>)' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'void Utils.Range.Ranges<T>.AddAll(System.Collections.Generic.IEnumerable<Utils.Range.Range<T>>)' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'void Utils.Range.Ranges<T>.Add(Utils.Range.Range<T>)' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'void Utils.Range.Ranges<T>.RemoveAll(System.Collections.Generic.IEnumerable<Utils.Range.Range<T>>)' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'void Utils.Range.Ranges<T>.Remove(Utils.Range.Range<T>)' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'bool Utils.Range.Range<T>.Contains(Utils.Range.Range<T>)' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'bool Utils.Range.Range<T>.Overlap(Utils.Range.Range<T>)' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'bool Utils.Range.Range<T>.Overlap(Utils.Range.Range<T>, Utils.Range.Range<T>)' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'System.Nullable<Utils.Range.Range<T>> Utils.Range.Range<T>.Intersect(Utils.Range.Range<T>)' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'System.Collections.Generic.IEnumerable<Utils.Range.Range<double>> Utils.Range.DoubleRanges.InnerParse(string, System.Globalization.NumberFormatInfo)' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'System.Collections.Generic.IEnumerable<Utils.Range.Range<float>> Utils.Range.SingleRanges.InnerParse(string, System.Globalization.NumberFormatInfo)' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'System.Collections.Generic.IEnumerable<Utils.Range.Range<System.DateTime>> Utils.Range.DateTimeRanges.InnerParse(string, System.Globalization.DateTimeFormatInfo)' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'Utils.Range.ReadOnlyRange<T> Utils.Range.RangeUtils.Reverse<T>(this System.Collections.Generic.IReadOnlyList<T>)' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'System.Collections.Generic.IEnumerable<System.Type> Utils.Reflection.ReflectionEx.GetTypes(this System.Reflection.Assembly, System.Func<System.Type, bool>)' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'System.Collections.Generic.IEnumerable<System.Type> Utils.Reflection.ReflectionEx.GetTypes(this System.Collections.Generic.IEnumerable<System.Reflection.Assembly>, System.Func<System.Type, bool>)' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'Utils.Resources.ExternalResource.ExternalResource(string, string, System.Globalization.CultureInfo)' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0009: Type 'Utils.Security.Authenticator' has the sealed modifier on Utils/bin/Release/net8.0/Utils.dll but not on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll
+CP0002: Member 'System.Security.Cryptography.HMAC Utils.Security.Authenticator.Algorithm.get' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'byte[] Utils.Security.Authenticator.Key.get' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0002: Member 'Utils.Security.Authenticator.Authenticator(System.Security.Cryptography.HMAC, byte[], int, int)' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.Builders.CStyleBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.PlusOperatorBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.OperatorBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.MemberBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.NullOrMemberBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.TypeMatchBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.AddAssignationBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.AssignationBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.PostOperationBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.TypeCastBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.BracketBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.RightParenthesisBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.CloseBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.ConditionalBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.NumberConstantBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.NullBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.TrueBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.FalseBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.SizeOfBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.TypeofBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.NewBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.UnaryOperandBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.ParenthesisBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.BlockBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.DefaultUnaryBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.IfBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.BreakBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.ContinueBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.ReturnBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.WhileBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.ForBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.ForEachBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.SwitchBuilder' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+CP0001: Type 'Utils.Expressions.ExpressionBuilders.ThrowParseException' exists on /tmp/api-baseline/pkg/lib/net8.0/Utils.dll but not on Utils/bin/Release/net8.0/Utils.dll
+API breaking changes found. If those are intentional, the APICompat suppression file can be updated by specifying the '--generate-suppression-file' parameter.

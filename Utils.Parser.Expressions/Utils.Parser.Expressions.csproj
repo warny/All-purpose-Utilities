@@ -1,13 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <IsProductTrainProject>true</IsProductTrainProject>
         <TargetFramework>net8.0</TargetFramework>
         <Copyright>Olivier MARTY 2025</Copyright>
         <Authors>Olivier MARTY</Authors>
         <Company>Olivier MARTY</Company>
         <PackageId>omy.Utils.Parser.Expressions</PackageId>
         <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-        <Version>$(UtilsParserVersion)</Version>
+        <Version>$(ProductTrainVersion)</Version>
         <Description>Optional expression-backed semantic predicate evaluator adapter for omy.Utils.Parser runtime policies.</Description>
         <PackageTags>omy;utilities;parser;antlr4;semantic-predicate;expressions;runtime-policy</PackageTags>
         <PackageReadmeFile>README.md</PackageReadmeFile>

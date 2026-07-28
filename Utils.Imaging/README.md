@@ -198,3 +198,6 @@ bmp.Save("blurred.png");
 ## Related packages
 - `omy.Utils.Fonts` – font parsing and glyph metrics consumed via `IGraphicConverter`.
 - `omy.Utils.Mathematics` – numerical helpers leveraged by drawing routines.
+
+
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)

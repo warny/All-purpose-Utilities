@@ -1,13 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
+        <IsProductTrainProject>true</IsProductTrainProject>
 		<TargetFramework>net8.0</TargetFramework>
 		<Copyright>Olivier MARTY 2025</Copyright>
 		<Authors>Olivier MARTY</Authors>
 		<Company>Olivier MARTY</Company>
 		<PackageId>omy.Utils.Parser</PackageId>
 		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-		<Version>$(UtilsParserVersion)</Version>
+		<Version>$(ProductTrainVersion)</Version>
 		<Description>
 			Universal Parser - A self-describing parser framework.
 			Reads ANTLR4 grammar files and builds parse trees for any source file.

@@ -17,11 +17,10 @@ $configPath = Join-Path $temporaryPath "NuGet.config"
 $originalNuGetPackages = $env:NUGET_PACKAGES
 $env:DOTNET_ROLL_FORWARD = "Major"
 $validationSucceeded = $false
-$manifest = Get-Content (Join-Path $PSScriptRoot "parser-release-manifest.json") -Raw | ConvertFrom-Json
-$versionProperties = [xml](Get-Content (Join-Path $repoRoot "Directory.Build.props") -Raw)
+$manifest = Get-Content (Join-Path $PSScriptRoot "product-train-manifest.json") -Raw | ConvertFrom-Json
 $expectedPackages = @{}
 foreach ($package in $manifest.packages) {
-    $expectedPackages[$package.packageId] = ([string]$versionProperties.Project.PropertyGroup.($package.versionProperty)).Trim()
+    $expectedPackages[$package.packageId] = [string]$manifest.version
 }
 
 <#
@@ -80,7 +79,7 @@ try {
         & dotnet build (Join-Path $repoRoot "Utils.sln") --configuration $Configuration --no-restore
         if ($LASTEXITCODE -ne 0) { throw "Solution build failed." }
     }
-    & (Join-Path $PSScriptRoot "pack-product-train.ps1") -Configuration $Configuration -ArtifactsPath $ArtifactsPath
+    & (Join-Path $PSScriptRoot "pack-product-train.ps1") -Configuration $Configuration -ArtifactsPath $ArtifactsPath -NoBuild
     & (Join-Path $PSScriptRoot "inspect-packages.ps1") -ArtifactsPath $ArtifactsPath -SkipSourceLink:$SkipSourceLink
 
     Remove-AcceptanceDirectory -Path $temporaryPath
@@ -96,6 +95,37 @@ try {
   <packageSourceMapping><clear /><packageSource key="product-train"><package pattern="omy.*" /></packageSource><packageSource key="nuget.org"><package pattern="*" /></packageSource></packageSourceMapping>
 </configuration>
 "@ | Set-Content $configPath
+
+    # Level A: every manifested package is restored and compiled in isolation. Library
+    # packages are loaded by assembly name; analyzer packages must load in Roslyn without CS8032.
+    $automaticRoot = Join-Path $temporaryPath "automatic-consumers"
+    foreach ($package in $manifest.packages) {
+        $safeName = $package.packageId.Replace('.', '-')
+        $projectRoot = Join-Path $automaticRoot $safeName
+        New-Item $projectRoot -ItemType Directory -Force | Out-Null
+        $referenceMetadata = if ($package.kind -eq "analyzer") { ' OutputItemType="Analyzer" ReferenceOutputAssembly="false"' } else { '' }
+        @"
+<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net9.0</TargetFramework><EnablePreviewFeatures>false</EnablePreviewFeatures></PropertyGroup><ItemGroup><PackageReference Include="$($package.packageId)" Version="$($manifest.version)"$referenceMetadata /></ItemGroup></Project>
+"@ | Set-Content (Join-Path $projectRoot "Consumer.csproj")
+        if ($package.kind -eq "analyzer") {
+            'Console.WriteLine("analyzer-loaded");' | Set-Content (Join-Path $projectRoot "Program.cs")
+        } else {
+            $assemblyName = [IO.Path]::GetFileNameWithoutExtension($package.project)
+            "using System.Reflection; var assembly = Assembly.Load(`"$assemblyName`"); var representative = assembly.GetExportedTypes().FirstOrDefault() ?? throw new InvalidOperationException(`"No public type.`"); Console.WriteLine(`"assembly-loaded:${assemblyName}:`" + representative.FullName);" | Set-Content (Join-Path $projectRoot "Program.cs")
+        }
+        $automaticProject = Join-Path $projectRoot "Consumer.csproj"
+        & dotnet restore $automaticProject --configfile $configPath --packages $globalPackages --no-cache --force
+        if ($LASTEXITCODE -ne 0) { throw "Automatic restore failed for $($package.packageId)." }
+        $automaticAssets = Get-Content (Join-Path $projectRoot "obj/project.assets.json") -Raw | ConvertFrom-Json
+        foreach ($library in $automaticAssets.libraries.PSObject.Properties | Where-Object Name -like "omy.*/*") {
+            $parts = $library.Name -split "/"
+            if (-not $expectedPackages.ContainsKey($parts[0]) -or $parts[1] -ne $manifest.version) { throw "$($package.packageId) restored divergent internal asset '$($library.Name)'." }
+        }
+        $buildOutput = & dotnet build $automaticProject --configuration $Configuration --no-restore 2>&1
+        if ($LASTEXITCODE -ne 0 -or ($buildOutput -match "CS8032")) { $buildOutput | Write-Host; throw "Automatic compile/load gate failed for $($package.packageId)." }
+        & dotnet run --project $automaticProject --configuration $Configuration --no-build
+        if ($LASTEXITCODE -ne 0) { throw "Automatic execution failed for $($package.packageId)." }
+    }
 
     $consumerRoot = Join-Path $repoRoot "tests/PackagedAcceptance"
     $projects = @(Get-ChildItem $consumerRoot -Filter *.csproj -Recurse -File)
@@ -201,6 +231,10 @@ try {
     & dotnet build $incrementalProject --configuration $Configuration --no-restore 2>&1 | Tee-Object -FilePath $diagnosticLog
     if ($LASTEXITCODE -eq 0 -or -not (Select-String -Path $diagnosticLog -Pattern "UP0016" -Quiet)) { throw "Ambiguous packaged import did not fail with UP0016." }
 
+    $acceptanceReport = [ordered]@{ version = [string]$manifest.version; platform = [Runtime.InteropServices.RuntimeInformation]::OSDescription; packages = @($manifest.packages | ForEach-Object { [ordered]@{ packageId = $_.packageId; restored = $true; compiled = $true; executed = $true; profile = $_.acceptanceProfile } }); specializedConsumers = @($projects.Name); passed = $true }
+    $reportDirectory = Join-Path $artifactsRoot "reports"
+    New-Item $reportDirectory -ItemType Directory -Force | Out-Null
+    $acceptanceReport | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $reportDirectory "packaged-acceptance.json")
     $validationSucceeded = $true
     Write-Host "Validate: packaged product train passed. No package was published."
 } finally {

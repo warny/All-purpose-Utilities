@@ -222,4 +222,4 @@ The expression-backed prepared registry consumes this shared discovery result be
 
 ## API documentation
 
-See the [versioned API documentation for `omy.Utils.Parser.Expressions` 0.1.0](https://warny.github.io/All-purpose-Utilities/v0.1.0/api/Utils.Parser.Expressions.html).
+See the [versioned API documentation for `omy.Utils.Parser.Expressions` 0.1.0](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/api/Utils.Parser.Expressions.html).

@@ -223,3 +223,6 @@ foreach (CheckError<string> e in errors)
 ## Related packages
 - `omy.Utils.DependencyInjection.Generators` – source generator that wires registrations at compile time.
 - `omy.Utils` – shared helpers consumed by the DI components.
+
+
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)

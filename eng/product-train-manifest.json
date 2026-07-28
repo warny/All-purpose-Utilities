@@ -1,0 +1,474 @@
+{
+  "name": "omy-utils-2.0.0-rc.1",
+  "productTrain": "omy.Utils",
+  "version": "2.0.0-rc.1",
+  "versionProperty": "ProductTrainVersion",
+  "repository": "https://github.com/warny/All-purpose-Utilities",
+  "packages": [
+    {
+      "project": "Utils/Utils.csproj",
+      "packageId": "omy.Utils",
+      "kind": "library",
+      "acceptanceProfile": "standard-library",
+      "targetFrameworks": [
+        "net8.0"
+      ],
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "publicApiPolicy": "published-baseline",
+      "symbolPackage": true,
+      "publishedVersion": "1.2.1",
+      "runtimeResources": [
+        "Utils.Objects.DateFormulaConfigurations.DateFormulaConfiguration.json"
+      ],
+      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+    },
+    {
+      "project": "Utils.IO/Utils.IO.csproj",
+      "packageId": "omy.Utils.IO",
+      "kind": "library",
+      "acceptanceProfile": "standard-library",
+      "targetFrameworks": [
+        "net8.0"
+      ],
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "publicApiPolicy": "published-baseline",
+      "symbolPackage": true,
+      "publishedVersion": "1.2.1",
+      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+    },
+    {
+      "project": "Utils.Xml/Utils.Xml.csproj",
+      "packageId": "omy.Utils.XML",
+      "kind": "library",
+      "acceptanceProfile": "standard-library",
+      "targetFrameworks": [
+        "net9.0"
+      ],
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "publicApiPolicy": "published-baseline",
+      "symbolPackage": true,
+      "publishedVersion": "1.2.1",
+      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+    },
+    {
+      "project": "Utils.Net/Utils.Net.csproj",
+      "packageId": "omy.Utils.Net",
+      "kind": "library",
+      "acceptanceProfile": "standard-library",
+      "targetFrameworks": [
+        "net9.0"
+      ],
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "publicApiPolicy": "published-baseline",
+      "symbolPackage": true,
+      "publishedVersion": "1.2.1",
+      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+    },
+    {
+      "project": "Utils.Data/Utils.Data.csproj",
+      "packageId": "omy.Utils.Data",
+      "kind": "library",
+      "acceptanceProfile": "standard-library",
+      "targetFrameworks": [
+        "net8.0"
+      ],
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "publicApiPolicy": "published-baseline",
+      "symbolPackage": true,
+      "publishedVersion": "1.2.1",
+      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+    },
+    {
+      "project": "Utils.Fonts/Utils.Fonts.csproj",
+      "packageId": "omy.Utils.Fonts",
+      "kind": "library",
+      "acceptanceProfile": "standard-library",
+      "targetFrameworks": [
+        "net8.0"
+      ],
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "publicApiPolicy": "published-baseline",
+      "symbolPackage": true,
+      "publishedVersion": "1.2.1",
+      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+    },
+    {
+      "project": "Utils.Imaging/Utils.Imaging.csproj",
+      "packageId": "omy.Utils.Imaging",
+      "kind": "library",
+      "acceptanceProfile": "standard-library",
+      "targetFrameworks": [
+        "net8.0"
+      ],
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "publicApiPolicy": "published-baseline",
+      "symbolPackage": true,
+      "publishedVersion": "1.2.1",
+      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+    },
+    {
+      "project": "Utils.Geography/Utils.Geography.csproj",
+      "packageId": "omy.Utils.Geography",
+      "kind": "library",
+      "acceptanceProfile": "standard-library",
+      "targetFrameworks": [
+        "net8.0"
+      ],
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "publicApiPolicy": "published-baseline",
+      "symbolPackage": true,
+      "publishedVersion": "1.2.1",
+      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+    },
+    {
+      "project": "Utils.Reflection/Utils.Reflection.csproj",
+      "packageId": "omy.Utils.Reflection",
+      "kind": "library",
+      "acceptanceProfile": "standard-library",
+      "targetFrameworks": [
+        "net8.0"
+      ],
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "publicApiPolicy": "published-baseline",
+      "symbolPackage": true,
+      "publishedVersion": "1.2.1",
+      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+    },
+    {
+      "project": "Utils.Mathematics/Utils.Mathematics.csproj",
+      "packageId": "omy.Utils.Mathematics",
+      "kind": "library",
+      "acceptanceProfile": "standard-library",
+      "targetFrameworks": [
+        "net8.0"
+      ],
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "publicApiPolicy": "published-baseline",
+      "symbolPackage": true,
+      "publishedVersion": "1.2.1",
+      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+    },
+    {
+      "project": "Utils.Collections/Utils.Collections.csproj",
+      "packageId": "omy.Utils.Collections",
+      "kind": "library",
+      "acceptanceProfile": "standard-library",
+      "targetFrameworks": [
+        "net8.0"
+      ],
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "publicApiPolicy": "first-candidate",
+      "symbolPackage": true
+    },
+    {
+      "project": "Utils.OData/Utils.OData.csproj",
+      "packageId": "omy.Utils.OData",
+      "kind": "library",
+      "acceptanceProfile": "standard-library",
+      "targetFrameworks": [
+        "net9.0"
+      ],
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "publicApiPolicy": "published-baseline",
+      "symbolPackage": true,
+      "publishedVersion": "0.0.1",
+      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+    },
+    {
+      "project": "Utils.NumberToString/Utils.NumberToString.csproj",
+      "packageId": "omy.Utils.NumberToString",
+      "kind": "library",
+      "acceptanceProfile": "standard-library",
+      "targetFrameworks": [
+        "net8.0"
+      ],
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "publicApiPolicy": "first-candidate",
+      "symbolPackage": true
+    },
+    {
+      "project": "Utils.VirtualMachine/Utils.VirtualMachine.csproj",
+      "packageId": "omy.Utils.VirtualMachine",
+      "kind": "library",
+      "acceptanceProfile": "standard-library",
+      "targetFrameworks": [
+        "net8.0"
+      ],
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "publicApiPolicy": "published-baseline",
+      "symbolPackage": true,
+      "publishedVersion": "0.1.0",
+      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+    },
+    {
+      "project": "Utils.DependencyInjection/Utils.DependencyInjection.csproj",
+      "packageId": "omy.Utils.DependencyInjection",
+      "kind": "library",
+      "acceptanceProfile": "standard-library",
+      "targetFrameworks": [
+        "net9.0"
+      ],
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "publicApiPolicy": "published-baseline",
+      "symbolPackage": true,
+      "publishedVersion": "1.2.1",
+      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+    },
+    {
+      "project": "Utils.OData.Generators/Utils.OData.Generators.csproj",
+      "packageId": "omy.Utils.OData.Generators",
+      "kind": "analyzer",
+      "acceptanceProfile": "source-generator",
+      "targetFrameworks": [
+        "netstandard2.0"
+      ],
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "publicApiPolicy": "published-baseline",
+      "symbolPackage": true,
+      "publishedVersion": "0.0.1",
+      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+    },
+    {
+      "project": "Utils.IO.Serialization.Generators/Utils.IO.Serialization.Generators.csproj",
+      "packageId": "omy.Utils.IO.Serialization.Generators",
+      "kind": "analyzer",
+      "acceptanceProfile": "source-generator",
+      "targetFrameworks": [
+        "netstandard2.0"
+      ],
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "publicApiPolicy": "published-baseline",
+      "symbolPackage": true,
+      "publishedVersion": "1.2.1",
+      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+    },
+    {
+      "project": "Utils.DependencyInjection.Generators/Utils.DependencyInjection.Generators.csproj",
+      "packageId": "omy.Utils.DependencyInjection.Generators",
+      "kind": "analyzer",
+      "acceptanceProfile": "source-generator",
+      "targetFrameworks": [
+        "netstandard2.0"
+      ],
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "publicApiPolicy": "published-baseline",
+      "symbolPackage": true,
+      "publishedVersion": "1.2.1",
+      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+    },
+    {
+      "project": "Utils.Parser.Source/Utils.Parser.Source.csproj",
+      "packageId": "omy.Utils.Parser.Source",
+      "kind": "library",
+      "acceptanceProfile": "standard-library",
+      "targetFrameworks": [
+        "netstandard2.0"
+      ],
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "publicApiPolicy": "first-candidate",
+      "symbolPackage": true
+    },
+    {
+      "project": "Utils.Parser.Diagnostics/Utils.Parser.Diagnostics.csproj",
+      "packageId": "omy.Utils.Parser.Diagnostics",
+      "kind": "library",
+      "acceptanceProfile": "standard-library",
+      "targetFrameworks": [
+        "netstandard2.0"
+      ],
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "publicApiPolicy": "first-candidate",
+      "symbolPackage": true
+    },
+    {
+      "project": "Utils.Parser.Antlr4.Common/Utils.Parser.Antlr4.Common.csproj",
+      "packageId": "omy.Utils.Parser.Antlr4.Common",
+      "kind": "library",
+      "acceptanceProfile": "standard-library",
+      "targetFrameworks": [
+        "netstandard2.0"
+      ],
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "publicApiPolicy": "first-candidate",
+      "symbolPackage": true
+    },
+    {
+      "project": "Utils.Parser/Utils.Parser.csproj",
+      "packageId": "omy.Utils.Parser",
+      "kind": "library",
+      "acceptanceProfile": "parser-runtime",
+      "targetFrameworks": [
+        "net8.0"
+      ],
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "publicApiPolicy": "first-candidate",
+      "symbolPackage": true
+    },
+    {
+      "project": "Utils.Parser.Expressions/Utils.Parser.Expressions.csproj",
+      "packageId": "omy.Utils.Parser.Expressions",
+      "kind": "library",
+      "acceptanceProfile": "standard-library",
+      "targetFrameworks": [
+        "net8.0"
+      ],
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "publicApiPolicy": "first-candidate",
+      "symbolPackage": true
+    },
+    {
+      "project": "Utils.Parser.Generators/Utils.Parser.Generators.csproj",
+      "packageId": "omy.Utils.Parser.Generators",
+      "kind": "analyzer",
+      "acceptanceProfile": "parser-generator",
+      "targetFrameworks": [
+        "netstandard2.0"
+      ],
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "publicApiPolicy": "first-candidate",
+      "symbolPackage": true,
+      "embeddedAssemblies": [
+        "Utils.Parser.Source.dll",
+        "Utils.Parser.Diagnostics.dll",
+        "Utils.Parser.Antlr4.Common.dll"
+      ],
+      "buildTransitiveAssets": [
+        "buildTransitive/omy.Utils.Parser.Generators.targets"
+      ]
+    }
+  ],
+  "exclusions": [
+    {
+      "project": "DrawTest/DrawTest.csproj",
+      "classification": "application",
+      "reason": "demonstration application"
+    },
+    {
+      "project": "Fractals/Fractals.csproj",
+      "classification": "application",
+      "reason": "demonstration application"
+    },
+    {
+      "project": "UtilsTest/UtilsTest.Unit.csproj",
+      "classification": "test",
+      "reason": "unit test project"
+    },
+    {
+      "project": "UtilsTest.Functional/UtilsTest.Functional.csproj",
+      "classification": "test",
+      "reason": "functional test project"
+    },
+    {
+      "project": "Utils.Expressions.CSyntax/Utils.Expressions.CSyntax.csproj",
+      "classification": "non-packable",
+      "reason": "internal syntax implementation"
+    },
+    {
+      "project": "Utils.Expressions.VBSyntax/Utils.Expressions.VBSyntax.csproj",
+      "classification": "non-packable",
+      "reason": "internal syntax implementation"
+    },
+    {
+      "project": "Utils.Parser.VisualStudio/Utils.Parser.VisualStudio.csproj",
+      "classification": "vsix",
+      "reason": "Visual Studio extension"
+    },
+    {
+      "project": "Utils.Parser.VisualStudio.Worker/Utils.Parser.VisualStudio.Worker.csproj",
+      "classification": "non-packable",
+      "reason": "Visual Studio worker application"
+    },
+    {
+      "project": "tests/PackagedAcceptance/ParserExpressionsConsumer/ParserExpressionsConsumer.csproj",
+      "classification": "test",
+      "reason": "packaged acceptance consumer"
+    },
+    {
+      "project": "tests/PackagedAcceptance/ParserGeneratorConsumer/ParserGeneratorConsumer.csproj",
+      "classification": "test",
+      "reason": "packaged acceptance consumer"
+    },
+    {
+      "project": "tests/PackagedAcceptance/ParserRuntimeConsumer/ParserRuntimeConsumer.csproj",
+      "classification": "test",
+      "reason": "packaged acceptance consumer"
+    },
+    {
+      "project": "tests/PackagedAcceptance/UtilsConsumer/UtilsConsumer.csproj",
+      "classification": "test",
+      "reason": "packaged acceptance consumer"
+    }
+  ]
+}

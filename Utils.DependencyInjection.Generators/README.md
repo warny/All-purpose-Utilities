@@ -142,3 +142,6 @@ Call both `ConfigureServices` (generated) and `RegisterExtraServices` (manual) d
 ## Related packages
 - `omy.Utils.DependencyInjection` – runtime attributes, assembly scanning, and handler pipeline.
 - `omy.Utils` – shared helpers.
+
+
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)

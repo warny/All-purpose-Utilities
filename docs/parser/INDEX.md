@@ -56,3 +56,11 @@ The parser documentation now records that generated-C# positional rule-call argu
 `ProductionSupportContract.md` now also records the manifest-driven `omy.Utils`/`omy.Utils.Parser.*` package graph, isolated-feed acceptance boundary, analyzer support-assembly strategy, and the distribution properties that remain unclaimed.
 
 The packaging audit additionally records package-only runtime/generator import scenarios, graph-changing incremental builds, deterministic graph diagnostics, and the precise boundary between portable-symbol checks and unvalidated SourceLink mappings.
+
+## Synchronized product-train release gate
+
+`PackagingAudit.md` now records the single `omy` 2.0.0-rc.1 version authority, strict topological order, the published `omy.Utils` 1.2.1 API comparison boundary, and first candidate baselines for parser packages.
+
+## Global product-train integration
+
+`PackagingAudit.md` now describes how the retained parser-specific packaged scenarios are nested within the repository-wide 24-package discovery, graph, generic-consumer, integrity, and dry-run publication chain. `ProductionSupportContract.md` clarifies that these distribution gates do not expand parser behavioral guarantees.

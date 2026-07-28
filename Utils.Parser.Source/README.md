@@ -47,3 +47,6 @@ For that reason, `SourceSpan` does not replace `SourceCodeRange`, and `SourceCod
 ## Intended consumers
 
 This package is designed to be shared by diagnostics, parser runtime components, source generators, and future tooling surfaces that need source-location data without depending on `omy.Utils.Parser.Diagnostics`.
+
+
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)

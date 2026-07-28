@@ -124,3 +124,6 @@ These diagnostics describe language support, compilation, and execution boundari
 - `omy.Utils.Parser.Generators`
 
 See the repository root README for installation and package selection guidance.
+
+
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)

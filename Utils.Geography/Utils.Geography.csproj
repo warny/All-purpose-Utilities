@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
+        <IsProductTrainProject>true</IsProductTrainProject>
 		<TargetFramework>net8.0</TargetFramework>
 		<EnablePreviewFeatures>True</EnablePreviewFeatures>
 		<LangVersion>Latest</LangVersion>
@@ -12,7 +13,7 @@
 		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageId>omy.Utils.Geography</PackageId>
-		<Version>1.2.1</Version>
+		<Version>$(ProductTrainVersion)</Version>
 		<Copyright>Olivier MARTY</Copyright>
 		<Description>Geography helpers including coordinates, bounding boxes, map projections, and tile utilities.</Description>
 		<PackageTags>omy;utilities;geography;maps;projection;tile</PackageTags>

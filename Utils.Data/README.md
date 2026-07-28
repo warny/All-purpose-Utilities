@@ -236,3 +236,6 @@ foreach (var cte in select.WithClause!.Definitions)
 ## Related packages
 - `omy.Utils` – shared helpers the data utilities rely on.
 - `omy.Utils.IO` – for binary/stream serialization scenarios.
+
+
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)

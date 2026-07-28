@@ -1,0 +1,37 @@
+name: Plan validated product-train publication
+
+on:
+    workflow_dispatch:
+        inputs:
+            validation-run-id:
+                description: Workflow run containing the validated product-train artifact
+                required: true
+                type: string
+
+permissions:
+    contents: read
+    actions: read
+
+jobs:
+    dry-run-publication-plan:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: 9.0.x
+            - uses: actions/download-artifact@v4
+              with:
+                  pattern: full-product-train-*
+                  path: artifacts
+                  run-id: ${{ inputs.validation-run-id }}
+                  merge-multiple: true
+                  github-token: ${{ github.token }}
+            - name: Verify exact validated artifacts and NuGet state
+              shell: pwsh
+              run: ./eng/publish-product-train.ps1 -ArtifactsPath artifacts
+            - name: Upload dry-run plan
+              uses: actions/upload-artifact@v4
+              with:
+                  name: product-train-publication-plan
+                  path: artifacts/reports/publication-plan.json

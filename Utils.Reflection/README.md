@@ -359,3 +359,6 @@ if (CommandAvailability.Exists(@"C:\tools\ffmpeg.exe"))
 ## Related packages
 - `omy.Utils` – base utilities used by reflection helpers.
 - `omy.Utils.IO` – binary serialization that uses `PropertyOrFieldInfo` from this package.
+
+
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)

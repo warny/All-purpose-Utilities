@@ -137,3 +137,6 @@ foreach (InventoryEntry item in inventory)
 ## Related packages
 - `omy.Utils.IO` – provides `IReader`, `IWriter`, `Reader`, `Writer`, `[GenerateReaderWriter]`, and `[Field]`.
 - `omy.Utils` – shared helpers.
+
+
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)

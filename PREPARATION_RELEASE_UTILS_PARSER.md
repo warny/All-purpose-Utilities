@@ -530,9 +530,9 @@ La première cible recommandée reste :
 
 ## Packaged product train acceptance
 
-The `parser-2.0.0-rc.1` release manifest now fixes the candidate set and topological order:
+The `omy-product-train-2.0.0-rc.1` release manifest now fixes the candidate set and topological order:
 
-1. `omy.Utils` 1.2.2 and `omy.Utils.Parser.Source` 2.0.0-rc.1;
+1. `omy.Utils` and `omy.Utils.Parser.Source` 2.0.0-rc.1;
 2. `omy.Utils.Parser.Diagnostics` and `omy.Utils.Parser.Antlr4.Common` 2.0.0-rc.1;
 3. `omy.Utils.Parser` 2.0.0-rc.1;
 4. `omy.Utils.Parser.Expressions` and `omy.Utils.Parser.Generators` 2.0.0-rc.1.
@@ -542,3 +542,7 @@ The `parser-2.0.0-rc.1` release manifest now fixes the candidate set and topolog
 SourceLink commit validation requires a checkout with remote source-control metadata. Reproducibility, signing, trimming/AOT, performance, and full cross-platform compatibility remain release gates rather than claims established by this suite.
 
 The packaged gate now executes the shared import-composition contract through both `Antlr4GrammarProjectCompiler` and the NuGet analyzer. Its real incremental consumer modifies imported grammar content and graph edges between builds and verifies obsolete effective rules disappear. Symbol checks cover repository identity and portable PDB presence only; SourceLink mapping/retrieval is still pending.
+
+## Global release-chain integration
+
+The parser acceptance scenarios remain specialized parser evidence, but their packages now participate in the repository-wide 24-package `omy.Utils` 2.0.0-rc.1 train. Package discovery, graph ordering, inspection, API/warning/SourceLink/reproducibility gates, hashes, and dry-run publication are owned by `eng/product-train-manifest.json` and the global release-quality scripts.

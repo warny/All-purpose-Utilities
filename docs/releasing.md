@@ -8,7 +8,7 @@ Use this guide to align GitHub releases with NuGet publishing for the `omy.Utils
 2. Add release notes to `CHANGELOG.md` under a new version heading.
 3. Create a Git tag matching the package version (for example `v2.0.0-rc.1`).
 
-All projects inherit the same `Version` and `PackageVersion`. `Directory.Build.targets` is evaluated after project files and therefore overrides legacy project-local `<Version>` values until those declarations are removed.
+The 24 manifested projects use `ProductTrainVersion` from `Directory.Build.props` as their only version authority. The release gate rejects project-local `PackageVersion`, assembly/file version overrides, hard-coded versions, divergent evaluated MSBuild properties, dependencies, assets, or artifacts.
 
 ## GitHub release flow
 
@@ -19,8 +19,9 @@ All projects inherit the same `Version` and `PackageVersion`. `Directory.Build.t
 ## CI publishing pipeline
 
 - The `Publish NuGet` workflow (`.github/workflows/nuget-publish.yml`) runs on pushes to the `release` branch.
-- It restores, builds, packs, and publishes only packages whose effective `<PackageVersion>` is not already present on nuget.org.
-- The workflow checks NuGet to ensure the package version is not already published before uploading.
+- It validates and packs only the 24 manifest-selected packages, then checks package metadata, assemblies, internal dependencies, isolated consumer assets, API compatibility, and reproducibility.
+- Before the first push, it queries all 24 NuGet package IDs. Exactly zero or all 24 may exist. A partial remote train fails with a diagnostic and no automatic push.
+- A fully absent train is pushed in manifest topological order as the single logical `omy 2.0.0-rc.1` release; the dry-run command omits `-Publish`.
 - Packages are pushed using the `NUGET_API_KEY` secret configured in the repository settings.
 
 ## Validating packages
@@ -38,3 +39,7 @@ dotnet add package omy.Utils --version 2.0.0-rc.1
 ```
 
 - Review the package page on nuget.org to confirm the README and metadata render correctly.
+
+## Repository-wide 2.0.0 candidate
+
+The complete process is documented in the [product-train overview](releasing/ProductTrain.md), [quality-gate reference](releasing/ReleaseQualityGates.md), [derived package graph](releasing/PackageGraph.md), and [2.0 migration guide](releasing/MigrationTo2.0.md). The release candidate covers every manifested library and source generator, not only parser packages.

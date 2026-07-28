@@ -212,3 +212,6 @@ current address is in `Breakpoints`, then `BeforeInstruction` follows.
 ## Related packages
 - `omy.Utils.IO` – binary parsing helpers used by the VM framework.
 - `omy.Utils.Fonts` – uses the VM framework for font table parsing.
+
+
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)

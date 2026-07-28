@@ -849,3 +849,9 @@ The generator-emission phase is complete for the shared plan subset: an emission
 The release-candidate train is now manifest-driven and has isolated package consumers for the base utility package, parser runtime, generator analyzer, and expressions adapter. Archive/dependency/version inspection and Linux/Windows CI execution are release gates. Broader grammar scenario coverage, API-baseline enforcement, reproducibility, security hardening, and performance qualification remain open; packaging acceptance does not change parser behavior or ANTLR4 compatibility.
 
 The package-only acceptance gate now covers runtime and generated direct/transitive composition, `tokenVocab`, modes, local/root precedence, graph failures, and real graph-changing rebuilds. Full SourceLink document validation and performance/reproducibility qualification remain open.
+
+## Repository-wide release integration
+
+**Status: complete.**
+
+The parser package family retains its parser-specific compatibility and acceptance contracts while participating in the single repository-wide `omy.Utils` 2.0.0-rc.1 train. Release selection and ordering are derived from the global manifest and evaluated package graph; this does not alter parser runtime behavior, diagnostics, metadata, or ANTLR4 compatibility.

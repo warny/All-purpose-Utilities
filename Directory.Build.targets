@@ -1,3 +1,6 @@
 <Project>
     <!-- Product-train versions are declared before project evaluation in Directory.Build.props. -->
+    <PropertyGroup Condition="'$(ReleaseQualityGates)' == 'true' and '$(IsProductTrainProject)' == 'true'">
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    </PropertyGroup>
 </Project>

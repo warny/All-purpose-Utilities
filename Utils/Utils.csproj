@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
+        <IsProductTrainProject>true</IsProductTrainProject>
 		<!-- TargetFramework remains net8.0 until dependent projects (Utils.Imaging, Utils.Geography,
 		     Utils.VirtualMachine, Utils.Parser.Expressions) are also upgraded to net9.0 (#27).
 		     Upgrading Utils in isolation breaks NU1201 compatibility checks. -->
@@ -15,7 +16,7 @@
 		<PackageId>omy.Utils</PackageId>
 		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<Version>$(UtilsVersion)</Version>
+		<Version>$(ProductTrainVersion)</Version>
 		<Description>Shared foundation package for the omy.Utils ecosystem, including collections, expressions, streams, security, reflection, formatting, and general-purpose .NET utility helpers.</Description>
 		<RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>

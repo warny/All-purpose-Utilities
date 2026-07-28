@@ -1,22 +1,61 @@
+<#
+.SYNOPSIS
+Builds and packs the complete manifested product train without publishing.
+#>
 [CmdletBinding()]
-param(
-    [ValidateNotNullOrEmpty()][string] $Configuration = "Release",
-    [string] $ArtifactsPath = "artifacts"
-)
-
+param([ValidateNotNullOrEmpty()][string] $Configuration = "Release", [string] $ArtifactsPath = "artifacts", [switch] $NoBuild)
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "Release.Common.ps1")
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$manifestPath = Join-Path $PSScriptRoot "parser-release-manifest.json"
-$manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
-$packagePath = [IO.Path]::GetFullPath((Join-Path $repoRoot $ArtifactsPath))
-$packagePath = Join-Path $packagePath "packages"
-
+$manifest = Get-ProductTrainManifest $repoRoot
+$artifactRoot = Resolve-RepositoryPath $repoRoot $ArtifactsPath
+$packagePath = Join-Path $artifactRoot "packages"
+& (Join-Path $PSScriptRoot "validate-product-train.ps1") -Configuration $Configuration
+if ($LASTEXITCODE -ne 0) { throw "Product version validation failed." }
+& (Join-Path $PSScriptRoot "analyze-package-graph.ps1") -Configuration $Configuration -ArtifactsPath $ArtifactsPath
+if ($LASTEXITCODE -ne 0) { throw "Package graph validation failed." }
+$order = @(Get-Content (Join-Path $artifactRoot "reports/package-publication-order.txt"))
+$byId = @{}; $manifest.packages | ForEach-Object { $byId[$_.packageId] = $_ }
 if (Test-Path $packagePath) { Remove-Item $packagePath -Recurse -Force }
 New-Item $packagePath -ItemType Directory -Force | Out-Null
-
-foreach ($package in $manifest.packages) {
-    $project = Join-Path $repoRoot $package.project
+if (-not $NoBuild) {
+    foreach ($id in $order) {
+        $package = $byId[$id]
+        & dotnet build (Resolve-RepositoryPath $repoRoot $package.project) --configuration $Configuration --no-restore -p:ContinuousIntegrationBuild=true -p:UseSharedCompilation=false
+        if ($LASTEXITCODE -ne 0) { throw "Build failed for $($package.project)." }
+    }
+}
+foreach ($id in $order) {
+    $package = $byId[$id]
     Write-Host "Pack: $($package.packageId) from $($package.project)"
-    & dotnet pack $project --configuration $Configuration --no-build --no-restore --output $packagePath -p:ContinuousIntegrationBuild=true
+    & dotnet pack (Resolve-RepositoryPath $repoRoot $package.project) --configuration $Configuration --no-build --no-restore --output $packagePath -p:ContinuousIntegrationBuild=true
     if ($LASTEXITCODE -ne 0) { throw "dotnet pack failed for $($package.project)." }
 }
+
+# NuGet serializes project-reference dependencies as minimum versions. Rewrite only
+# manifested internal dependencies to exact ranges before these archives become candidates.
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$internalIds = @($manifest.packages.packageId | ForEach-Object { $_.ToLowerInvariant() })
+foreach ($archivePath in Get-ChildItem $packagePath -File | Where-Object Extension -in @('.nupkg', '.snupkg')) {
+    $archive = [IO.Compression.ZipFile]::Open($archivePath.FullName, [IO.Compression.ZipArchiveMode]::Update)
+    try {
+        $nuspecEntry = $archive.Entries | Where-Object FullName -like '*.nuspec' | Select-Object -First 1
+        $reader = [IO.StreamReader]::new($nuspecEntry.Open()); try { [xml]$nuspec = $reader.ReadToEnd() } finally { $reader.Dispose() }
+        $changed = $false
+        foreach ($dependency in $nuspec.SelectNodes("//*[local-name()='dependency']")) {
+            if ($internalIds -contains $dependency.id.ToLowerInvariant()) { $dependency.version = "[$($manifest.version)]"; $changed = $true }
+        }
+        if ($changed) {
+            $name = $nuspecEntry.FullName; $nuspecEntry.Delete(); $replacement = $archive.CreateEntry($name, [IO.Compression.CompressionLevel]::Optimal)
+            $writer = [IO.StreamWriter]::new($replacement.Open(), [Text.UTF8Encoding]::new($false)); try { $nuspec.Save($writer) } finally { $writer.Dispose() }
+        }
+    } finally { $archive.Dispose() }
+}
+
+$actual = @(Get-ChildItem $packagePath -Filter *.nupkg -File | Where-Object Extension -eq '.nupkg')
+if ($actual.Count -ne $manifest.packages.Count) { throw "Expected $($manifest.packages.Count) packages, found $($actual.Count)." }
+foreach ($package in $manifest.packages) {
+    $expected = Join-Path $packagePath "$($package.packageId).$($manifest.version).nupkg"
+    if (-not (Test-Path $expected)) { throw "Expected package '$expected' is missing." }
+}
+Write-Host "Pack: complete train staged; no package was published."

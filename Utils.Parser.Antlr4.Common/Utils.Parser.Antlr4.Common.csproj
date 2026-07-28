@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <IsProductTrainProject>true</IsProductTrainProject>
         <TargetFramework>netstandard2.0</TargetFramework>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
@@ -13,7 +14,7 @@
         <PackageTags>omy;utilities;parser;antlr4;grammar;composition</PackageTags>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>Shared ANTLR4 prequel DTOs used by runtime and generator mapping paths.</Description>
-        <Version>$(UtilsParserVersion)</Version>
+        <Version>$(ProductTrainVersion)</Version>
     </PropertyGroup>
 
     <ItemGroup>

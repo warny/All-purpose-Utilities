@@ -1,0 +1,697 @@
+{
+  "exceptions": [
+    {
+      "code": "CS0419",
+      "project": "Utils.Reflection/Utils.Reflection.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS1573",
+      "project": "Utils.Reflection/Utils.Reflection.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8600",
+      "project": "Utils.Reflection/Utils.Reflection.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8602",
+      "project": "Utils.Reflection/Utils.Reflection.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8603",
+      "project": "Utils.Reflection/Utils.Reflection.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8618",
+      "project": "Utils.Reflection/Utils.Reflection.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CA2260",
+      "project": "Utils/Utils.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS1574",
+      "project": "Utils/Utils.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS1580",
+      "project": "Utils/Utils.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8600",
+      "project": "Utils/Utils.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8601",
+      "project": "Utils/Utils.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8602",
+      "project": "Utils/Utils.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8603",
+      "project": "Utils/Utils.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8604",
+      "project": "Utils/Utils.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8605",
+      "project": "Utils/Utils.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8607",
+      "project": "Utils/Utils.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8618",
+      "project": "Utils/Utils.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8619",
+      "project": "Utils/Utils.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8620",
+      "project": "Utils/Utils.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8622",
+      "project": "Utils/Utils.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8625",
+      "project": "Utils/Utils.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8629",
+      "project": "Utils/Utils.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8766",
+      "project": "Utils/Utils.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS0419",
+      "project": "Utils.Mathematics/Utils.Mathematics.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS1574",
+      "project": "Utils.Mathematics/Utils.Mathematics.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS1584",
+      "project": "Utils.Mathematics/Utils.Mathematics.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS1658",
+      "project": "Utils.Mathematics/Utils.Mathematics.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8600",
+      "project": "Utils.Mathematics/Utils.Mathematics.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8602",
+      "project": "Utils.Mathematics/Utils.Mathematics.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS0419",
+      "project": "Utils.VirtualMachine/Utils.VirtualMachine.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS1574",
+      "project": "Utils.VirtualMachine/Utils.VirtualMachine.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS1734",
+      "project": "Utils.IO/Utils.IO.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8600",
+      "project": "Utils.IO/Utils.IO.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8601",
+      "project": "Utils.IO/Utils.IO.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8603",
+      "project": "Utils.IO/Utils.IO.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8604",
+      "project": "Utils.IO/Utils.IO.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8618",
+      "project": "Utils.IO/Utils.IO.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8625",
+      "project": "Utils.IO/Utils.IO.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS1572",
+      "project": "Utils.Net/Utils.Net.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS1573",
+      "project": "Utils.Net/Utils.Net.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS1591",
+      "project": "Utils.Net/Utils.Net.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8600",
+      "project": "Utils.Net/Utils.Net.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8601",
+      "project": "Utils.Net/Utils.Net.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8602",
+      "project": "Utils.Net/Utils.Net.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8603",
+      "project": "Utils.Net/Utils.Net.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8604",
+      "project": "Utils.Net/Utils.Net.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8618",
+      "project": "Utils.Net/Utils.Net.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8625",
+      "project": "Utils.Net/Utils.Net.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8629",
+      "project": "Utils.Net/Utils.Net.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "NU5128",
+      "project": "Utils.DependencyInjection.Generators/Utils.DependencyInjection.Generators.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS0419",
+      "project": "Utils.NumberToString/Utils.NumberToString.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS1573",
+      "project": "Utils.NumberToString/Utils.NumberToString.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS1574",
+      "project": "Utils.NumberToString/Utils.NumberToString.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8600",
+      "project": "Utils.NumberToString/Utils.NumberToString.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8601",
+      "project": "Utils.NumberToString/Utils.NumberToString.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8602",
+      "project": "Utils.NumberToString/Utils.NumberToString.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8603",
+      "project": "Utils.NumberToString/Utils.NumberToString.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8618",
+      "project": "Utils.NumberToString/Utils.NumberToString.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8619",
+      "project": "Utils.NumberToString/Utils.NumberToString.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8625",
+      "project": "Utils.NumberToString/Utils.NumberToString.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8600",
+      "project": "Utils.Collections/Utils.Collections.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8602",
+      "project": "Utils.Collections/Utils.Collections.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8604",
+      "project": "Utils.Collections/Utils.Collections.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8618",
+      "project": "Utils.Collections/Utils.Collections.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8619",
+      "project": "Utils.Collections/Utils.Collections.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8625",
+      "project": "Utils.Collections/Utils.Collections.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8618",
+      "project": "Utils.OData.Generators/Utils.OData.Generators.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "NU5128",
+      "project": "Utils.OData.Generators/Utils.OData.Generators.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS0219",
+      "project": "Utils.OData/Utils.OData.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS1584",
+      "project": "Utils.OData/Utils.OData.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS1658",
+      "project": "Utils.OData/Utils.OData.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8601",
+      "project": "Utils.OData/Utils.OData.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8603",
+      "project": "Utils.OData/Utils.OData.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8618",
+      "project": "Utils.OData/Utils.OData.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS0419",
+      "project": "Utils.Parser/Utils.Parser.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS1572",
+      "project": "Utils.Parser/Utils.Parser.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS1573",
+      "project": "Utils.Parser/Utils.Parser.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS1587",
+      "project": "Utils.Parser/Utils.Parser.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS1591",
+      "project": "Utils.Parser/Utils.Parser.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8602",
+      "project": "Utils.Parser/Utils.Parser.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "RS1032",
+      "project": "Utils.Parser.Generators/Utils.Parser.Generators.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "RS2008",
+      "project": "Utils.Parser.Generators/Utils.Parser.Generators.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8604",
+      "project": "Utils.Data/Utils.Data.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8618",
+      "project": "Utils.Data/Utils.Data.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8600",
+      "project": "Utils.Fonts/Utils.Fonts.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8601",
+      "project": "Utils.Fonts/Utils.Fonts.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8602",
+      "project": "Utils.Fonts/Utils.Fonts.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8603",
+      "project": "Utils.Fonts/Utils.Fonts.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8604",
+      "project": "Utils.Fonts/Utils.Fonts.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8618",
+      "project": "Utils.Fonts/Utils.Fonts.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8619",
+      "project": "Utils.Fonts/Utils.Fonts.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8625",
+      "project": "Utils.Fonts/Utils.Fonts.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS0419",
+      "project": "Utils.Imaging/Utils.Imaging.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8600",
+      "project": "Utils.Imaging/Utils.Imaging.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8603",
+      "project": "Utils.Imaging/Utils.Imaging.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8604",
+      "project": "Utils.Imaging/Utils.Imaging.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8618",
+      "project": "Utils.Imaging/Utils.Imaging.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "CS8625",
+      "project": "Utils.Imaging/Utils.Imaging.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    },
+    {
+      "code": "NU5128",
+      "project": "Utils.IO.Serialization.Generators/Utils.IO.Serialization.Generators.csproj",
+      "reason": "Existing warning debt recorded during the repository-wide release audit; no runtime changes are permitted in this release-gate PR.",
+      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/27",
+      "expiryDate": "2026-12-31"
+    }
+  ]
+}
