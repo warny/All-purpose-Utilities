@@ -122,6 +122,19 @@ public class CommandResponseServer : IDisposable
     }
 
     /// <summary>
+    /// Item 33: throws if the server has already been started, freezing the static configuration
+    /// (registered commands and initial contexts) for the lifetime of the session.
+    /// </summary>
+    /// <param name="memberName">Name of the member being guarded, used in the exception message.</param>
+    /// <exception cref="InvalidOperationException">Thrown when called after <see cref="StartAsync"/>.</exception>
+    private void RequireNotStarted(string memberName)
+    {
+        int state = Volatile.Read(ref _state);
+        if (state != StateNotStarted)
+            throw new InvalidOperationException($"{memberName} must not be called after StartAsync has been called.");
+    }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="CommandResponseServer"/> class.
     /// </summary>
     /// <param name="formatter">Optional formatter used to convert responses to textual lines.</param>
@@ -147,15 +160,17 @@ public class CommandResponseServer : IDisposable
     public event Func<string, CancellationToken, Task<IEnumerable<ServerResponse>>>? CommandReceived;
 
     /// <summary>
-    /// Registers a command handler.
+    /// Registers a command handler. Must be called before <see cref="StartAsync"/>.
     /// </summary>
     /// <param name="command">Command name.</param>
     /// <param name="handler">Handler invoked when the command is received.</param>
     /// <param name="requiredContexts">Contexts required for the command to execute.</param>
+    /// <exception cref="InvalidOperationException">Thrown when called after <see cref="StartAsync"/>.</exception>
     public void RegisterCommand(string command, Func<CommandContext, string[], CancellationToken, Task<IEnumerable<ServerResponse>>> handler, params string[] requiredContexts)
     {
         ValidateToken(command, nameof(command));
         if (handler is null) throw new ArgumentNullException(nameof(handler));
+        RequireNotStarted(nameof(RegisterCommand));
         string[] contextsCopy = requiredContexts is null ? [] : (string[])requiredContexts.Clone();
         foreach (string ctx in contextsCopy) ValidateToken(ctx, nameof(requiredContexts));
         _handlers[command] = new CommandRegistration(handler, contextsCopy);
@@ -175,23 +190,29 @@ public class CommandResponseServer : IDisposable
     }
 
     /// <summary>
-    /// Adds a context to the server.
+    /// Adds an initial context to the server. Must be called before <see cref="StartAsync"/>.
+    /// During a live session, contexts are managed through <see cref="CommandContext"/> inside a handler.
     /// </summary>
     /// <param name="context">Context to add.</param>
+    /// <exception cref="InvalidOperationException">Thrown when called after <see cref="StartAsync"/>.</exception>
     public void AddContext(string context)
     {
         ValidateToken(context, nameof(context));
+        RequireNotStarted(nameof(AddContext));
         _contexts.Add(context);
         Logger?.LogDebug("Context added: {Context}", context);
     }
 
     /// <summary>
-    /// Removes a context from the server.
+    /// Removes an initial context from the server. Must be called before <see cref="StartAsync"/>.
+    /// During a live session, contexts are managed through <see cref="CommandContext"/> inside a handler.
     /// </summary>
     /// <param name="context">Context to remove.</param>
+    /// <exception cref="InvalidOperationException">Thrown when called after <see cref="StartAsync"/>.</exception>
     public void RemoveContext(string context)
     {
         ValidateToken(context, nameof(context));
+        RequireNotStarted(nameof(RemoveContext));
         _contexts.Remove(context);
         Logger?.LogDebug("Context removed: {Context}", context);
     }
@@ -232,7 +253,7 @@ public class CommandResponseServer : IDisposable
             if (stream is null) throw new ArgumentNullException(nameof(stream));
             _stream = stream;
             _leaveOpen = leaveOpen;
-            _contexts.Clear();
+            // Item 33: initial contexts configured before startup are preserved; they must not be cleared here.
             while (_commandQueue.TryDequeue(out _)) { }
             _errorCount = 0;
             _reader = new StreamReader(stream, Encoding.ASCII, false, 1024, true);

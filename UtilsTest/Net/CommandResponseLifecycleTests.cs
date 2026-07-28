@@ -355,4 +355,40 @@ public class CommandResponseLifecycleTests
         Assert.AreEqual(1, sub2Called, "Second subscriber must have been called.");
         Assert.AreEqual("250 OK", reply);
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // Item 33 — Freeze server config after startup
+    // ──────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task RegisterCommand_AfterStartAsync_Throws()
+    {
+        (DuplexStream serverStream, StreamWriter clientWriter, StreamReader clientReader) = CreateServerTestPair();
+        using CommandResponseServer server = new();
+        await server.StartAsync(serverStream, leaveOpen: true);
+
+        Assert.ThrowsException<InvalidOperationException>(() =>
+            server.RegisterCommand("FOO", (_, _, _) => Task.FromResult<IEnumerable<ServerResponse>>([])));
+    }
+
+    [TestMethod]
+    public async Task AddContext_AfterStartAsync_Throws()
+    {
+        (DuplexStream serverStream, StreamWriter clientWriter, StreamReader clientReader) = CreateServerTestPair();
+        using CommandResponseServer server = new();
+        await server.StartAsync(serverStream, leaveOpen: true);
+
+        Assert.ThrowsException<InvalidOperationException>(() => server.AddContext("AUTH"));
+    }
+
+    [TestMethod]
+    public async Task RemoveContext_AfterStartAsync_Throws()
+    {
+        (DuplexStream serverStream, StreamWriter clientWriter, StreamReader clientReader) = CreateServerTestPair();
+        using CommandResponseServer server = new();
+        server.AddContext("AUTH");
+        await server.StartAsync(serverStream, leaveOpen: true);
+
+        Assert.ThrowsException<InvalidOperationException>(() => server.RemoveContext("AUTH"));
+    }
 }
