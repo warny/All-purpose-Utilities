@@ -756,7 +756,7 @@ Custom policies should therefore avoid invocation-count-dependent decisions unle
 <p>These forms are optional <code>IParserEmbeddedCodeTransformer</code> rewrites for generated C# only. The default/no-op transformer leaves <code>$...</code> text unchanged, conservative <code>Parse(...)</code> remains unchanged, and <code>ParserEngine</code> remains target-language-neutral. Parser-managed return and label state follows the existing rollback semantics; no rollback of external side effects is implied.</p>
 <h2 id="generated-binding-static-diagnostics">Generated binding static diagnostics</h2>
 <p><code>UtilsParserEnableGeneratedRuleArgumentBinding=true</code> enables bounded source-generator diagnostics for locally declared parser-rule targets. The generator reports certain generated-C# positional binding failures before emission, including exact-arity failures, named or mixed arguments, non-literal expressions such as <code>child[1 + 2]</code>, unsupported conversions, unsupported declared types, and duplicated parameter names. The invalid file is not emitted; unrelated valid grammar files still generate.</p>
-<p>Static binding diagnostics validate local parser-rule targets only. Imported, direct/transitive, missing, duplicate-name, ambiguous, aliased, lexer-only, and unresolved targets remain metadata-only for <code>APU0107</code> because generated definitions currently contain only local rules and an empty runtime import list. The syntax is not extended, no AST merge or C# expression evaluation is performed, imports are not made executable in a new way, and <code>Parse(...)</code> remains metadata-only.</p>
+<p>Static binding diagnostics validate uniquely resolved local and effective imported parser-rule targets. Missing or ambiguous dependencies, rule collisions, lexer-only targets, and unresolved calls remain outside <code>APU0107</code>. Aliased imports compose unqualified for runtime compatibility; qualified alias calls remain unsupported. No C# expression evaluation is added, and conservative <code>Parse(...)</code> remains unchanged.</p>
 <h2 id="import-composition-clarification">Import-composition clarification</h2>
 <table>
 <thead>
@@ -770,27 +770,27 @@ Custom policies should therefore avoid invocation-count-dependent decisions unle
 <tr>
 <td>Shared deterministic graph/composition plan</td>
 <td>Used for merged <code>ParserDefinition</code> projection</td>
-<td>G4 adapter/parity preparation only</td>
+<td>Used for effective generated emission</td>
 </tr>
 <tr>
 <td>Local rule masks imported rule</td>
 <td>Supported</td>
-<td>Emission remains local-only</td>
+<td>Supported</td>
 </tr>
 <tr>
 <td>Distinct imported-rule collision</td>
-<td>Recorded in the plan; first source-order depth-first declaration remains effective</td>
-<td>Represented by the preparatory plan; not emitted</td>
+<td>First source-order depth-first declaration remains effective</td>
+<td>Same effective declaration emitted; <code>APU0107</code> stays silent</td>
 </tr>
 <tr>
 <td>Cycle / missing / ambiguous source</td>
 <td>Deterministic <code>UP0011</code> / <code>UP0010</code> / <code>UP0016</code> failure</td>
-<td>Represented by the preparatory plan</td>
+<td>Same deterministic diagnostics; affected output is not emitted</td>
 </tr>
 <tr>
 <td>Aliased import</td>
 <td>Edge and alias retained; unqualified composition preserved; no <code>Alias.rule</code></td>
-<td>Metadata only; no qualified call support</td>
+<td>Same unqualified compatibility; no qualified call support</td>
 </tr>
 <tr>
 <td><code>tokenVocab</code></td>
@@ -799,7 +799,7 @@ Custom policies should therefore avoid invocation-count-dependent decisions unle
 </tr>
 </tbody>
 </table>
-<p>The entry grammar alone supplies the root, options, and grammar actions. <code>ParserDefinition.Imports</code> remains descriptive, <code>GrammarEmitter</code> remains unchanged, and <code>APU0107</code> continues to validate local targets only.</p>
+<p>The entry grammar alone supplies the root, options, and grammar actions. <code>ParserDefinition.Imports</code> remains descriptive. Effective rules, modes, tokens, and channels are emitted from the shared plan; <code>APU0107</code> validates only certain effective parser targets.</p>
 
 </article>
 

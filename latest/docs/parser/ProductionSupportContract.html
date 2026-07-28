@@ -146,16 +146,16 @@
 <tr>
 <td>Direct/transitive imports, cycles, collisions, local masking, and local root</td>
 <td>Project compiler uses the common deterministic composition plan; cycles/missing/ambiguous inputs diagnose; the entry grammar owns the root</td>
-<td>The generator analyzes composition, but emitted definitions remain local-only</td>
+<td>The generator emits the same effective rule selection from the common composition plan</td>
 <td>None</td>
-<td>Runtime compiler: <strong>Stable</strong> within tested composition rules. Generator: <strong>Preparatory/internal</strong> and otherwise <strong>out of scope</strong></td>
+<td>Runtime and generator: <strong>Stable</strong> within tested deterministic composition rules</td>
 </tr>
 <tr>
 <td><code>tokenVocab</code></td>
 <td>Lexer-only dependency visibility is composed when resolver inputs exist</td>
-<td>Analyzed but imported effective definitions are not emitted</td>
+<td>Effective lexer rules, fragments, modes, tokens, and channels are emitted without parser rules</td>
 <td>None</td>
-<td>Runtime project compiler: <strong>Stable</strong> for controlled project inputs. Generator execution: <strong>out of scope</strong></td>
+<td>Runtime and generator: <strong>Stable</strong> for controlled project inputs</td>
 </tr>
 <tr>
 <td>Grammar/rule options</td>
@@ -252,8 +252,8 @@
 <h3 id="runtime--project-compiler">Runtime / project compiler</h3>
 <p><code>Antlr4GrammarProjectCompiler</code> consumes the common composition plan. Tested behavior includes direct and transitive traversal, full-import versus <code>tokenVocab</code> visibility, local masking, deterministic imported collisions, diamond deduplication, cycles, missing or ambiguous dependencies, modes, entry-owned options/actions/root, and provenance. Single-file conversion cannot resolve a project dependency without resolver inputs.</p>
 <h3 id="generator">Generator</h3>
-<p>The generator project analyzes composition and shares the common plan, but <code>GrammarEmitter</code> does not yet emit the effective imported definition. Imported rules are therefore not executable through the generated class, and <code>APU0107</code> remains limited to locally declared targets that are actually resolved for generated binding.</p>
-<p>Generated import composition is <strong>Preparatory/internal</strong> and <strong>out of scope for production in <code>2.0.0-rc.1</code></strong> until the functional PR <code>feat(generator): emit effective imported grammar composition</code> is merged and this contract, compatibility documentation, diagnostics, and parity tests are updated together.</p>
+<p>The generator projects the shared composition plan into an effective emission model. Direct and transitive full imports emit selected parser and lexer rules, fragments, and modes; <code>tokenVocab</code> emits lexer declarations only. The entry grammar retains its root, options, and grammar actions. <code>APU0107</code> covers uniquely resolved local and imported parser targets and remains silent for unresolved, lexer-only, source-ambiguous, or rule-collision targets.</p>
+<p>Generated import composition is <strong>Supported under option</strong> for the deterministic subset described above. Unqualified aliased imports retain the runtime compatibility behavior; qualified <code>Alias.rule</code> calls remain unsupported. Per-file parsing is incremental, while graph changes recompute project composition and replace affected generated output without retaining stale declarations.</p>
 <h2 id="8-trust-model">8. Trust model</h2>
 <p>The RC covers grammars written or reviewed by trusted developers, embedded C# treated exactly like source code in the consuming project, and imports resolved from a controlled environment. It offers no sandbox for hostile grammars or code, no safe evaluation boundary for untrusted C#, and no guarantee against malicious resource consumption or side effects.</p>
 <h2 id="9-stability-during-the-rc">9. Stability during the RC</h2>
