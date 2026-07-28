@@ -14365,6 +14365,16 @@
     },
     {
       "type": "Conceptual",
+      "source_relative_path": "docs/parser/PackagingAudit.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/parser/PackagingAudit.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
       "source_relative_path": "docs/parser/ParserMetadataAndRuntimeLimitations.md",
       "output": {
         ".html": {
