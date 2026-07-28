@@ -53,10 +53,17 @@ public class CommandResponseClient : IDisposable
     private int _state = StateNotConnected;
 
     /// <summary>
-    /// Gets or sets the maximum number of bytes allowed in a single incoming response line.
+    /// Gets or sets the maximum number of characters allowed in a single incoming response line.
     /// Lines longer than this limit cause the listener loop to disconnect.
-    /// Default is 8192 bytes (8 KiB). Set to 0 to disable the check.
+    /// Default is 8192. Set to 0 to disable the check.
     /// </summary>
+    /// <remarks>
+    /// The limit is measured in UTF-16 characters (as counted by <see cref="StringBuilder.Length"/>)
+    /// because the underlying <see cref="StreamReader"/> decodes bytes before this check is applied.
+    /// When using ASCII encoding (the default) the character count equals the byte count for
+    /// all code points below 128. For other encodings or non-ASCII content the character count
+    /// may differ from the raw byte count.
+    /// </remarks>
     public int MaxLineLength { get; set; } = 8192;
 
     /// <summary>
@@ -461,12 +468,6 @@ public class CommandResponseClient : IDisposable
 
                 if (line is null)
                 {
-                    break;
-                }
-
-                if (MaxLineLength > 0 && line.Length > MaxLineLength)
-                {
-                    Logger?.LogWarning("Incoming response line exceeded MaxLineLength ({MaxLineLength}); disconnecting.", MaxLineLength);
                     break;
                 }
 
