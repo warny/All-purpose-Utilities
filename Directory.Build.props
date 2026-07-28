@@ -1,5 +1,8 @@
 <Project>
     <PropertyGroup>
+        <!-- Versions for the explicitly manifested parser product train. -->
+        <UtilsVersion>1.2.2</UtilsVersion>
+        <UtilsParserVersion>2.0.0-rc.1</UtilsParserVersion>
         <LangVersion>latest</LangVersion>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>

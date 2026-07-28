@@ -5,9 +5,10 @@
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
         <IsRoslynAnalyzer>true</IsRoslynAnalyzer>
+        <BuildOutputTargetFolder>analyzers/dotnet/cs</BuildOutputTargetFolder>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <PackageId>omy.Utils.Parser.Generators</PackageId>
-        <Version>0.1.0</Version>
+        <Version>$(UtilsParserVersion)</Version>
         <Authors>Olivier MARTY</Authors>
         <Description>
             Roslyn source generator that reads ANTLR4 .g4 grammar files at build time
@@ -45,10 +46,9 @@
     <ItemGroup>
         <None Include="README.md" Pack="true" PackagePath="\" />
         <None Include="buildTransitive\Utils.Parser.Generators.targets" Pack="true" PackagePath="buildTransitive\omy.Utils.Parser.Generators.targets" />
-        <None Include="bin\$(Configuration)\netstandard2.0\Utils.Parser.Generators.dll" Pack="true" PackagePath="analyzers\dotnet\cs" Visible="false" />
-        <None Include="..\Utils.Parser.Antlr4.Common\bin\$(Configuration)\netstandard2.0\Utils.Parser.Antlr4.Common.dll" Pack="true" PackagePath="analyzers\dotnet\cs" Visible="false" />
-        <None Include="..\Utils.Parser.Diagnostics\bin\$(Configuration)\netstandard2.0\Utils.Parser.Diagnostics.dll" Pack="true" PackagePath="analyzers\dotnet\cs" Visible="false" />
-        <None Include="..\Utils.Parser.Source\bin\$(Configuration)\netstandard2.0\Utils.Parser.Source.dll" Pack="true" PackagePath="analyzers\dotnet\cs" Visible="false" />
+        <None Include="..\Utils.Parser.Antlr4.Common\bin\$(Configuration)\netstandard2.0\Utils.Parser.Antlr4.Common.dll" Pack="true" PackagePath="analyzers\dotnet\cs\netstandard2.0" Visible="false" />
+        <None Include="..\Utils.Parser.Diagnostics\bin\$(Configuration)\netstandard2.0\Utils.Parser.Diagnostics.dll" Pack="true" PackagePath="analyzers\dotnet\cs\netstandard2.0" Visible="false" />
+        <None Include="..\Utils.Parser.Source\bin\$(Configuration)\netstandard2.0\Utils.Parser.Source.dll" Pack="true" PackagePath="analyzers\dotnet\cs\netstandard2.0" Visible="false" />
     </ItemGroup>
 
 

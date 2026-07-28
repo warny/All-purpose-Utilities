@@ -1,0 +1,12 @@
+{
+  "name": "parser-2.0.0-rc.1",
+  "packages": [
+    { "project": "Utils/Utils.csproj", "packageId": "omy.Utils", "versionProperty": "UtilsVersion" },
+    { "project": "Utils.Parser.Source/Utils.Parser.Source.csproj", "packageId": "omy.Utils.Parser.Source", "versionProperty": "UtilsParserVersion" },
+    { "project": "Utils.Parser.Diagnostics/Utils.Parser.Diagnostics.csproj", "packageId": "omy.Utils.Parser.Diagnostics", "versionProperty": "UtilsParserVersion" },
+    { "project": "Utils.Parser.Antlr4.Common/Utils.Parser.Antlr4.Common.csproj", "packageId": "omy.Utils.Parser.Antlr4.Common", "versionProperty": "UtilsParserVersion" },
+    { "project": "Utils.Parser/Utils.Parser.csproj", "packageId": "omy.Utils.Parser", "versionProperty": "UtilsParserVersion" },
+    { "project": "Utils.Parser.Expressions/Utils.Parser.Expressions.csproj", "packageId": "omy.Utils.Parser.Expressions", "versionProperty": "UtilsParserVersion" },
+    { "project": "Utils.Parser.Generators/Utils.Parser.Generators.csproj", "packageId": "omy.Utils.Parser.Generators", "versionProperty": "UtilsParserVersion" }
+  ]
+}

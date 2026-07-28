@@ -4,9 +4,21 @@
         <TargetFramework>netstandard2.0</TargetFramework>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
+        <PackageId>omy.Utils.Parser.Antlr4.Common</PackageId>
         <Authors>Olivier MARTY</Authors>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageProjectUrl>https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
+        <PackageTags>omy;utilities;parser;antlr4;grammar;composition</PackageTags>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>Shared ANTLR4 prequel DTOs used by runtime and generator mapping paths.</Description>
+        <Version>$(UtilsParserVersion)</Version>
     </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="README.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
 
 
     <ItemGroup>

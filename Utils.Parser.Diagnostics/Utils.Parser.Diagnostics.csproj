@@ -5,7 +5,7 @@
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
         <PackageId>omy.Utils.Parser.Diagnostics</PackageId>
-        <Version>0.1.0</Version>
+        <Version>$(UtilsParserVersion)</Version>
         <Authors>Olivier MARTY</Authors>
         <Description>Shared diagnostics model and descriptor catalog for Utils.Parser runtime and source generator.</Description>
         <PackageTags>omy;utilities;parser;diagnostics;antlr4;generator</PackageTags>

@@ -841,3 +841,9 @@ The generated-C# rule-call argument binding option now extends `APU0107` to uniq
 The runtime project compiler now consumes a deterministic, Roslyn-free graph and rule-composition plan. The generator has a payload-preserving G4 adapter and its temporary imported-rule resolver delegates to the same planner, eliminating the two independent graph algorithms. Structural grammar/rule identities, declared and effective full-import versus `tokenVocab` edge kinds, transitive lexer-only visibility, visibility-specific provenance paths, source-order traversal, diamond deduplication, local masking, imported collisions, cycles, absences, ambiguities, aliases, modes, roots, and provenance are explicit and tested.
 
 The generator-emission phase is complete for the shared plan subset: an emission-only projection carries the plan’s selected rules and modes without rebuilding the graph, per-file parsing remains reusable, graph changes recompute project composition, and `APU0107` follows certain effective targets. Qualified alias calls and broader ANTLR delegate-grammar semantics remain future work.
+
+## Packaged product train acceptance
+
+**Status: in progress.**
+
+The release-candidate train is now manifest-driven and has isolated package consumers for the base utility package, parser runtime, generator analyzer, and expressions adapter. Archive/dependency/version inspection and Linux/Windows CI execution are release gates. Broader grammar scenario coverage, API-baseline enforcement, reproducibility, security hardening, and performance qualification remain open; packaging acceptance does not change parser behavior or ANTLR4 compatibility.

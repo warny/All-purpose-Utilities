@@ -14,12 +14,11 @@ public static class DateFormula
 {
     private static readonly Lazy<IDateFormulaLanguageProvider> _defaultProvider = new(() =>
     {
-        var path = Path.Combine(AppContext.BaseDirectory,
-            "Objects",
-            "DateFormulaConfigurations",
-            "DateFormulaConfiguration.json");
-        var json = File.ReadAllText(path);
-        return new JsonDateFormulaLanguageProvider(json);
+        const string resourceName = "Utils.Objects.DateFormulaConfigurations.DateFormulaConfiguration.json";
+        using Stream stream = typeof(DateFormula).Assembly.GetManifestResourceStream(resourceName)
+            ?? throw new InvalidOperationException($"The embedded DateFormula configuration resource '{resourceName}' is missing from omy.Utils.");
+        using var reader = new StreamReader(stream);
+        return new JsonDateFormulaLanguageProvider(reader.ReadToEnd());
     });
 
     /// <summary>The default language provider loaded from the bundled configuration file.</summary>

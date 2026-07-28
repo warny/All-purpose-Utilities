@@ -42,3 +42,32 @@ jobs:
                   dotnet-version: '9.0.x'
             - name: Test (${{ matrix.test-suite }})
               run: dotnet test ${{ matrix.project }} --verbosity normal
+
+    packaged-product-train-acceptance:
+        name: Packaged product train acceptance (${{ matrix.os }})
+        runs-on: ${{ matrix.os }}
+        strategy:
+            matrix:
+                os: [ubuntu-latest, windows-latest]
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+            - name: Setup .NET 9.0.x
+              uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: '9.0.x'
+            - name: Validate packaged product train
+              shell: pwsh
+              run: ./eng/test-packaged-product-train.ps1 -Configuration Release
+            - name: Upload validated candidates and reports
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: packaged-product-train-${{ matrix.os }}-${{ github.sha }}
+                  path: |
+                      artifacts/packages/*.nupkg
+                      artifacts/packages/*.snupkg
+                      artifacts/**/*.json
+                      artifacts/**/*.log
+                  if-no-files-found: warn
