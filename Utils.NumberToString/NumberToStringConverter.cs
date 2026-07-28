@@ -181,9 +181,9 @@ namespace Utils.NumberToString
                 if (fracKey > 28)
                     throw new ArgumentOutOfRangeException(nameof(options.Fractions),
                         $"Fraction digit key {fracKey} exceeds the maximum supported decimal precision (28).");
-                if (string.IsNullOrEmpty(fracName))
+                if (string.IsNullOrWhiteSpace(fracName))
                     throw new ArgumentException(
-                        $"Fraction with key {fracKey} has a null or empty name.", nameof(options.Fractions));
+                        $"Fraction with key {fracKey} has a null, empty, or whitespace name.", nameof(options.Fractions));
             }
             MaxNumber = options.MaxNumber;
             if (MaxNumber.HasValue && MaxNumber.Value < 0)

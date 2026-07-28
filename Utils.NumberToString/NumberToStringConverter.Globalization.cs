@@ -894,10 +894,14 @@ namespace Utils.NumberToString
                     .Where(d => d.Values.Count > 0)
                     .ToDictionary(d => d.Name, d => d.Values[0], StringComparer.OrdinalIgnoreCase);
 
-                bool MatchesDefaultQuery(IReadOnlyDictionary<string, string> constraints) =>
-                    constraints.All(kv =>
-                        defaultVariantQuery.TryGetValue(kv.Key, out var def) &&
-                        string.Equals(def, kv.Value, StringComparison.OrdinalIgnoreCase));
+                bool MatchesDefaultQuery(IReadOnlyDictionary<string, string> constraints)
+                {
+                    if (constraints.Count != defaultVariantQuery.Count)
+                        return false;
+                    return defaultVariantQuery.All(kv =>
+                        constraints.TryGetValue(kv.Key, out var actual) &&
+                        string.Equals(actual, kv.Value, StringComparison.OrdinalIgnoreCase));
+                }
 
                 var fallbackExceptions = new Dictionary<long, string>();
                 var fallbackWordRules  = new Dictionary<string, string>();
@@ -908,12 +912,10 @@ namespace Utils.NumberToString
                     {
                         bool needsDefault = exc.StringValue == null;
                         string? defaultForm = null;
-                        string? firstForm = null;
 
                         foreach (var (c, form) in ExpandFormVariants(exc.FormVariants, parsedDimensions,
                             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)))
                         {
-                            firstForm ??= form;
                             if (needsDefault && defaultForm == null && MatchesDefaultQuery(c))
                                 defaultForm = form;
                             var entry = GetOrAddSynthetic(ConstraintKey(c), c);
@@ -921,7 +923,12 @@ namespace Utils.NumberToString
                         }
 
                         if (needsDefault)
-                            fallbackExceptions.TryAdd(exc.Value, defaultForm ?? firstForm!);
+                        {
+                            if (defaultForm == null)
+                                throw new InvalidOperationException(
+                                    $"[{languageIdentifier}] Ordinal exception '{exc.Value}' has no explicit base form and no variant matching the declared default values.");
+                            fallbackExceptions.TryAdd(exc.Value, defaultForm);
+                        }
                     }
                 }
 
@@ -931,12 +938,10 @@ namespace Utils.NumberToString
                     {
                         bool needsDefault = rule.To == null;
                         string? defaultForm = null;
-                        string? firstForm = null;
 
                         foreach (var (c, form) in ExpandFormVariants(rule.FormVariants, parsedDimensions,
                             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)))
                         {
-                            firstForm ??= form;
                             if (needsDefault && defaultForm == null && MatchesDefaultQuery(c))
                                 defaultForm = form;
                             var entry = GetOrAddSynthetic(ConstraintKey(c), c);
@@ -944,7 +949,12 @@ namespace Utils.NumberToString
                         }
 
                         if (needsDefault)
-                            fallbackWordRules.TryAdd(rule.From, defaultForm ?? firstForm!);
+                        {
+                            if (defaultForm == null)
+                                throw new InvalidOperationException(
+                                    $"[{languageIdentifier}] Ordinal rule '{rule.From}' has no explicit base form and no variant matching the declared default values.");
+                            fallbackWordRules.TryAdd(rule.From, defaultForm);
+                        }
                     }
                 }
 
