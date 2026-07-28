@@ -167,7 +167,7 @@ internal static partial class GrammarEmitter
         }
 
         sb.AppendLine($"            DeclaredTokens: new global::System.Collections.Generic.HashSet<string>(global::System.StringComparer.Ordinal) {{ {JoinStringLiterals(grammar.DeclaredTokens)} }},");
-        sb.AppendLine($"            DeclaredChannels: new global::System.Collections.Generic.HashSet<string>(global::System.StringComparer.Ordinal) {{ {JoinStringLiterals(grammar.DeclaredChannels)} }},");
+        sb.AppendLine($"            DeclaredChannels: new global::System.Collections.Generic.HashSet<string>(global::System.StringComparer.Ordinal) {{ \"DEFAULT_CHANNEL\", \"HIDDEN\"{(grammar.DeclaredChannels.Count == 0 ? string.Empty : $", {JoinStringLiterals(grammar.DeclaredChannels)}")} }},");
         sb.AppendLine("            ExtensionBindings: new GrammarExtensionBinding[0],");
 
         // parserRules
@@ -179,7 +179,7 @@ internal static partial class GrammarEmitter
         string rootRule = grammar.RootRule is not null
             ? $"_{Sanitize(grammar.RootRule.Name)}"
             : "null";
-        sb.AppendLine($"            RootRule: {rootRule}) {{ AllowExternalLexerRules = true }});");
+        sb.AppendLine($"            RootRule: {rootRule}) {{ AllowExternalLexerRules = {(grammar.AllowExternalLexerRules ? "true" : "false")} }});");
         sb.AppendLine("    }");
         sb.AppendLine();
 

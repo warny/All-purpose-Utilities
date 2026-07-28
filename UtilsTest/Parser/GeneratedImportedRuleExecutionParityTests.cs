@@ -65,12 +65,50 @@ public sealed class GeneratedImportedRuleExecutionParityTests
         Assert.IsTrue(definition.Modes.Any(mode => mode.Name == "EMPTY" && mode.Rules.Count == 0));
     }
 
+    /// <summary>Verifies generated definitions retain the two built-in channels alongside composed channel declarations.</summary>
+    [TestMethod]
+    public void DeclaredChannels_IncludeBuiltInAndComposedChannels()
+    {
+        GeneratorDriverRunResult result = RunGenerator([
+            Grammar("Root.g4", "lexer grammar Root; channels { COMMENTS } TOKEN : 'a' ;")]);
+
+        Assembly assembly = CompileGeneratedSources(result);
+        MethodInfo build = assembly.GetTypes().Single(type => type.Name == "Root").GetMethod("Build", BindingFlags.Public | BindingFlags.Static)!;
+        var definition = (Utils.Parser.Model.ParserDefinition)build.Invoke(null, null)!;
+        CollectionAssert.AreEquivalent(new[] { "DEFAULT_CHANNEL", "HIDDEN", "COMMENTS" }, definition.DeclaredChannels.ToArray());
+    }
+
+    /// <summary>Verifies a lexer rule declared locally in a parser grammar is rejected before effective import projection.</summary>
+    [TestMethod]
+    public void ParserGrammarWithLocalLexerRule_IsRejected()
+    {
+        GeneratorDriverRunResult result = RunGenerator([
+            Grammar("Root.g4", "parser grammar Root; start : TOKEN ; TOKEN : 'a' ;")]);
+
+        Assert.IsTrue(result.Diagnostics.Any(diagnostic => diagnostic.Id == "UP0013"));
+        Assert.AreEqual(0, result.GeneratedTrees.Length);
+    }
+
+    /// <summary>Verifies a parser grammar enables external lexer rules only when a lexer dependency contributes one.</summary>
+    [TestMethod]
+    public void ParserGrammarWithImportedLexerRule_EnablesExternalLexerRules()
+    {
+        GeneratorDriverRunResult imported = RunGenerator([
+            Grammar("Root.g4", "parser grammar Root; options { tokenVocab=Tokens; } start : TOKEN ;"),
+            Grammar("Tokens.g4", "lexer grammar Tokens; TOKEN : 'a' ;")]);
+        GeneratorDriverRunResult localOnly = RunGenerator([
+            Grammar("Local.g4", "parser grammar Local; start : child ; child : ;")]);
+
+        StringAssert.Contains(GetGeneratedSource(imported, "Root"), "AllowExternalLexerRules = true");
+        StringAssert.Contains(GetGeneratedSource(localOnly, "Local"), "AllowExternalLexerRules = false");
+    }
+
     /// <summary>Verifies local parser-rule priority is the only generated binding target and executes through the generated definition.</summary>
     [TestMethod]
     public void LocalRuleShadowsImportedRule_ReportsLocalBindingDiagnosticAndBuildsAfterValidLocalCall()
     {
         GeneratorDriverRunResult invalid = RunGenerator([
-            Grammar("Root.g4", "parser grammar Root; import Shared; start : child[bad] ; child[int value] : TOKEN ; TOKEN : 'a' ;"),
+            Grammar("Root.g4", "grammar Root; import Shared; start : child[bad] ; child[int value] : TOKEN ; TOKEN : 'a' ;"),
             Grammar("Shared.g4", "parser grammar Shared; child[string value] : TOKEN ;")]);
 
         Assert.AreEqual(1, BindingDiagnostics(invalid).Length);
@@ -78,7 +116,7 @@ public sealed class GeneratedImportedRuleExecutionParityTests
         StringAssert.Contains(invalid.GeneratedTrees[0].FilePath, "Shared");
 
         GeneratorDriverRunResult valid = RunGenerator([
-            Grammar("Root.g4", "parser grammar Root; import Shared; start : child[1] ; child[int value] : TOKEN ; TOKEN : 'a' ;"),
+            Grammar("Root.g4", "grammar Root; import Shared; start : child[1] ; child[int value] : TOKEN ; TOKEN : 'a' ;"),
             Grammar("Shared.g4", "parser grammar Shared; child[string value] : TOKEN ;")]);
 
         AssertNoBindingDiagnostics(valid);

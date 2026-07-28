@@ -18,7 +18,9 @@ internal static class EffectiveG4GrammarProjection
             Kind = entry.Kind,
             HasTokensBlock = entry.HasTokensBlock,
             HasChannelsBlock = entry.HasChannelsBlock,
-            RootRule = (G4Rule?)plan.RootRulePayload
+            RootRule = (G4Rule?)plan.RootRulePayload,
+            AllowExternalLexerRules = entry.Kind == G4GrammarKind.Parser
+                && plan.EffectiveRules.Any(rule => rule.Rule.Domain == GrammarRuleDomain.Lexer && !rule.Origin.Equals(plan.Entry.Identity))
         };
         foreach (KeyValuePair<string, string> option in entry.Options) result.Options.Add(option.Key, option.Value);
         result.Actions.AddRange(entry.Actions);

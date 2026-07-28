@@ -258,6 +258,7 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
         try
         {
             var grammar = file.Grammar;
+            if (ReportEntryGrammarTypeDiagnostics(context, grammar, file.FileName)) return;
             G4GrammarProjectEntry entry = index.FindEntry(grammar) ?? throw new InvalidOperationException($"Grammar '{grammar.Name}' is not uniquely indexed.");
             var plan = composition.Build(entry);
             if (ReportCompositionDiagnostics(context, plan)) return;
@@ -289,6 +290,26 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
         {
             context.ReportDiagnostic(Diagnostic.Create(s_errorDescriptor, Location.None, file.FileName, ex.Message));
         }
+    }
+
+    /// <summary>Rejects lexer rules declared locally by an ANTLR parser grammar before imported rules are projected.</summary>
+    private static bool ReportEntryGrammarTypeDiagnostics(SourceProductionContext context, G4Grammar grammar, string fileName)
+    {
+        if (grammar.Kind != G4GrammarKind.Parser)
+        {
+            return false;
+        }
+
+        G4Rule? offendingRule = grammar.LexerRules.Concat(grammar.ExtraModes.SelectMany(mode => mode.Rules)).FirstOrDefault();
+        if (offendingRule is null)
+        {
+            return false;
+        }
+
+        var diagnostics = new DiagnosticBag();
+        diagnostics.Add(ParserDiagnostics.LexerRuleNotAllowedInParserGrammar, offendingRule.Name);
+        ReportParserDiagnostics(context, diagnostics, fileName);
+        return true;
     }
 
     /// <summary>Reports dependency graph failures from the shared plan and indicates whether emission must stop.</summary>
