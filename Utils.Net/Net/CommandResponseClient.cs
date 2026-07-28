@@ -742,18 +742,9 @@ public class CommandResponseClient : IDisposable
     {
         // Item 49: idempotent — only one caller proceeds through cleanup.
         if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    /// <summary>
-    /// Releases the client resources.
-    /// </summary>
-    private void Dispose(bool disposing)
-    {
-        if (!disposing && _writer is null) return;
 
         Interlocked.Exchange(ref _state, StateDisposed);
+
         StopKeepAlive();
         _listenTokenSource?.Cancel();
         _reader?.Dispose();
@@ -765,18 +756,14 @@ public class CommandResponseClient : IDisposable
             _stream?.Dispose();
         }
         _listenThread?.Join(TimeSpan.FromSeconds(1));
+        _listenTokenSource?.Dispose();
         _client?.Dispose();
         _responseSignal.Dispose();
         _sendLock.Dispose();
+        GC.SuppressFinalize(this);
     }
 
-    /// <summary>
-    /// Deconstruct the client.
-    /// </summary>
-    ~CommandResponseClient()
-    {
-        Dispose(false);
-    }
-
+    // Item 50: no finalizer — all resources are managed. A finalizer that joins threads or
+    // disposes managed semaphores from the finalizer thread can deadlock the GC.
 }
 

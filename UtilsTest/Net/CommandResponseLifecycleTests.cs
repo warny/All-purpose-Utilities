@@ -659,4 +659,19 @@ public class CommandResponseLifecycleTests
         client.Dispose();
         client.Dispose(); // must be safe
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // Item 50 — No finalizer on CommandResponseClient
+    // ──────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void CommandResponseClient_HasNoFinalizer()
+    {
+        bool hasFinalizer = typeof(CommandResponseClient)
+            .GetMethod("Finalize",
+                System.Reflection.BindingFlags.NonPublic |
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.DeclaredOnly) is not null;
+        Assert.IsFalse(hasFinalizer, "CommandResponseClient must not declare a finalizer.");
+    }
 }
