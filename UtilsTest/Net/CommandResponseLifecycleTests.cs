@@ -448,4 +448,30 @@ public class CommandResponseLifecycleTests
         yield return new ServerResponse("250", ResponseSeverity.Completion, "OK");
         throw new InvalidOperationException("Lazy fault");
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // Item 55 — SendResponseAsync respects cancellation
+    // ──────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task SendResponseAsync_AfterSessionCancellation_Throws()
+    {
+        (DuplexStream serverStream, StreamWriter clientWriter, StreamReader clientReader) = CreateServerTestPair();
+        using CancellationTokenSource cts = new();
+        using CommandResponseServer server = new();
+        await server.StartAsync(serverStream, leaveOpen: true, cts.Token);
+        cts.Cancel();
+        await WithTimeout(server.Completion, "Completion did not settle within 5s.");
+
+        bool threw = false;
+        try
+        {
+            await server.SendResponseAsync(new ServerResponse("200", ResponseSeverity.Completion, "OK"));
+        }
+        catch (OperationCanceledException)
+        {
+            threw = true;
+        }
+        Assert.IsTrue(threw, "SendResponseAsync must throw OperationCanceledException after session cancellation.");
+    }
 }
