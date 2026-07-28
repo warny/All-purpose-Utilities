@@ -500,4 +500,29 @@ public class CommandResponseLifecycleTests
         await Task.Delay(50);
         Assert.AreEqual(0, unsolicited.Count, "Solicited response must not be raised as unsolicited.");
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // Item 45 — Unsolicited subscriber exceptions do not kill listener
+    // ──────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task UnsolicitedResponseReceived_SubscriberThrows_ListenerSurvives()
+    {
+        (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
+        using CommandResponseClient client = new();
+        await client.ConnectAsync(clientStream, leaveOpen: true);
+
+        client.UnsolicitedResponseReceived += _ => throw new InvalidOperationException("Subscriber fault");
+
+        await serverWriter.WriteLineAsync("220 Welcome");
+        await Task.Delay(200);
+
+        Assert.IsTrue(client.IsConnected, "Client must remain connected after subscriber exception.");
+
+        Task<IReadOnlyList<ServerResponse>> sendTask = client.SendCommandAsync("PING");
+        string? received = await WithTimeout(Task.Run(() => serverReader.ReadLine()), "Server did not see PING after subscriber fault.");
+        await serverWriter.WriteLineAsync("250 OK");
+        IReadOnlyList<ServerResponse> responses = await WithTimeout(sendTask, "Did not receive PING response after subscriber fault.");
+        Assert.AreEqual("250", responses[0].Code);
+    }
 }

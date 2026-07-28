@@ -62,7 +62,9 @@ public class CommandResponseClient : IDisposable
     public CommandResponseClient() { }
 
     /// <summary>
-    /// Occurs when a response is received from the server.
+    /// Occurs when a response is received from the server while no command waiter is active.
+    /// Exceptions thrown by subscribers are caught and logged rather than propagated to the
+    /// listener thread to prevent a misbehaving callback from killing the transport.
     /// </summary>
     public event Action<ServerResponse>? UnsolicitedResponseReceived;
 
@@ -416,12 +418,24 @@ public class CommandResponseClient : IDisposable
     }
 
     /// <summary>
-    /// Raises <see cref="UnsolicitedResponseReceived"/> for a response that arrived while no
-    /// command waiter was active.
+    /// Raises <see cref="UnsolicitedResponseReceived"/>, catching and logging any subscriber
+    /// exceptions so they cannot terminate the listener thread (item 45).
     /// </summary>
     private void RaiseUnsolicitedResponseReceived(ServerResponse response)
     {
-        UnsolicitedResponseReceived?.Invoke(response);
+        Action<ServerResponse>? handler = UnsolicitedResponseReceived;
+        if (handler is null) return;
+        foreach (Delegate d in handler.GetInvocationList())
+        {
+            try
+            {
+                ((Action<ServerResponse>)d)(response);
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "UnsolicitedResponseReceived subscriber threw an unhandled exception");
+            }
+        }
     }
 
     /// <summary>
