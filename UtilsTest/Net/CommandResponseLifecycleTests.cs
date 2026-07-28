@@ -474,4 +474,30 @@ public class CommandResponseLifecycleTests
         }
         Assert.IsTrue(threw, "SendResponseAsync must throw OperationCanceledException after session cancellation.");
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // Item 44 — Solicited responses are not raised as unsolicited
+    // ──────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task SendCommandAsync_SolicitedResponse_NotRaisedAsUnsolicited()
+    {
+        (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
+        using CommandResponseClient client = new();
+        await client.ConnectAsync(clientStream, leaveOpen: true);
+
+        List<ServerResponse> unsolicited = new();
+        client.UnsolicitedResponseReceived += r => unsolicited.Add(r);
+
+        Task<IReadOnlyList<ServerResponse>> sendTask = client.SendCommandAsync("PING");
+        string? received = await WithTimeout(Task.Run(() => serverReader.ReadLine()), "Server did not see PING.");
+        await serverWriter.WriteLineAsync("250 PONG");
+        IReadOnlyList<ServerResponse> responses = await WithTimeout(sendTask, "Did not receive PING response within 5s.");
+
+        Assert.AreEqual(1, responses.Count);
+        Assert.AreEqual("250", responses[0].Code);
+
+        await Task.Delay(50);
+        Assert.AreEqual(0, unsolicited.Count, "Solicited response must not be raised as unsolicited.");
+    }
 }
