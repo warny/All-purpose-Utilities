@@ -3113,6 +3113,38 @@ public class NumberToStringConverterAuditFixesTests
     }
 
     [TestMethod]
+    public void ReadConfiguration_OrdinalWordRule_ExplicitBaseToTakesPriority()
+    {
+        // Symmetric to ExplicitBaseFormTakesPriority but for word-level rules (<Ordinal to=>).
+        // A word rule with to="explicit-base" and a child <Variant> must return the base form
+        // on a no-variant call; an explicit variant call must return the variant form.
+        string xml = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>XTEST3</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+    <Variants>
+      <Dimension name=""gender"" values=""masculine,feminine"" />
+    </Variants>
+    <Ordinals>
+      <Ordinal from=""one"" to=""explicit-base"">
+        <Variant type=""gender"" variant=""masculine"" value=""variant-default"" />
+      </Ordinal>
+    </Ordinals>
+  </Language>
+</Numbers>";
+
+        var conv = NumberToStringConverter.ReadConfiguration(xml)["XTEST3"];
+        string noVariantResult = conv.ConvertOrdinal(1L);
+        Assert.AreEqual("explicit-base", noVariantResult,
+            "Explicit to= base rule must be returned for no-variant call, not the masculine variant");
+        string explicitResult = conv.ConvertOrdinal(1L, "gender=masculine");
+        Assert.AreEqual("variant-default", explicitResult,
+            "Explicit gender=masculine call must return the variant form");
+    }
+
+    [TestMethod]
     public void Constructor_FractionKeyWhitespaceName_ThrowsArgumentException()
     {
         // Item 95: whitespace-only names must be rejected just like empty/null names.
