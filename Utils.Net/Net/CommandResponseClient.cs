@@ -41,6 +41,9 @@ public class CommandResponseClient : IDisposable
     // listener knows whether an incoming line is solicited or unsolicited.
     private volatile int _activeCommandWaiters;
 
+    // Item 49: idempotent disposal flag.
+    private int _disposed; // 0 = alive, 1 = disposed (use Interlocked)
+
     // Item 48: lifecycle state for single-use connection guard.
     // 0 = NotConnected, 1 = Connecting, 2 = Connected, 3 = Disposed.
     private const int StateNotConnected = 0;
@@ -733,10 +736,12 @@ public class CommandResponseClient : IDisposable
     }
 
     /// <summary>
-    /// Releases the client resources.
+    /// Releases the client resources. Safe to call multiple times (idempotent).
     /// </summary>
     public void Dispose()
     {
+        // Item 49: idempotent — only one caller proceeds through cleanup.
+        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
         Dispose(true);
         GC.SuppressFinalize(this);
     }

@@ -636,4 +636,27 @@ public class CommandResponseLifecycleTests
         await Assert.ThrowsExceptionAsync<ArgumentNullException>(() =>
             client.ConnectAsync((Stream)null!, leaveOpen: false));
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // Item 49 — Idempotent client disposal
+    // ──────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task Dispose_CalledMultipleTimes_DoesNotThrow()
+    {
+        (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
+        CommandResponseClient client = new();
+        await client.ConnectAsync(clientStream, leaveOpen: true);
+
+        client.Dispose();
+        client.Dispose(); // second call must not throw
+    }
+
+    [TestMethod]
+    public void Dispose_WithoutConnect_DoesNotThrow()
+    {
+        CommandResponseClient client = new();
+        client.Dispose();
+        client.Dispose(); // must be safe
+    }
 }
