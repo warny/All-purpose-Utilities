@@ -16,6 +16,56 @@ $globalPackages = Join-Path $temporaryPath "global-packages"
 $configPath = Join-Path $temporaryPath "NuGet.config"
 $env:NUGET_PACKAGES = $globalPackages
 $env:DOTNET_ROLL_FORWARD = "Major"
+$validationSucceeded = $false
+
+<#
+.SYNOPSIS
+Removes an acceptance working directory with retries for Windows file-system delays.
+.DESCRIPTION
+Clears read-only attributes before every attempt. When cleanup follows successful
+validation, callers can choose a warning instead of allowing a transient file lock to
+change the acceptance result.
+.PARAMETER Path
+The directory to remove.
+.PARAMETER IgnoreFailure
+Writes a warning after all retries instead of throwing the final cleanup error.
+#>
+function Remove-AcceptanceDirectory {
+    param(
+        [Parameter(Mandatory)][string] $Path,
+        [switch] $IgnoreFailure
+    )
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        return
+    }
+
+    $lastError = $null
+    for ($attempt = 1; $attempt -le 5; $attempt++) {
+        try {
+            Get-ChildItem -LiteralPath $Path -Recurse -Force -ErrorAction SilentlyContinue | ForEach-Object {
+                if ($_.Attributes -band [IO.FileAttributes]::ReadOnly) {
+                    $_.Attributes = $_.Attributes -band (-bnot [IO.FileAttributes]::ReadOnly)
+                }
+            }
+            Remove-Item -LiteralPath $Path -Recurse -Force -ErrorAction Stop
+            return
+        } catch {
+            $lastError = $_
+            if ($attempt -lt 5) {
+                Start-Sleep -Milliseconds (250 * $attempt)
+            }
+        }
+    }
+
+    $message = "Unable to remove acceptance directory '$Path' after 5 attempts: $($lastError.Exception.Message)"
+    if ($IgnoreFailure) {
+        Write-Warning "$message The validated package artifacts were retained."
+        return
+    }
+
+    throw $message
+}
 
 try {
     if (-not $SkipBuild) {
@@ -27,7 +77,7 @@ try {
     & (Join-Path $PSScriptRoot "pack-product-train.ps1") -Configuration $Configuration -ArtifactsPath $ArtifactsPath
     & (Join-Path $PSScriptRoot "inspect-packages.ps1") -ArtifactsPath $ArtifactsPath -SkipSourceLink:$SkipSourceLink
 
-    if (Test-Path $temporaryPath) { Remove-Item $temporaryPath -Recurse -Force }
+    Remove-AcceptanceDirectory -Path $temporaryPath
     New-Item $globalPackages -ItemType Directory -Force | Out-Null
     @"
 <?xml version="1.0" encoding="utf-8"?>
@@ -73,7 +123,20 @@ try {
             if ($LASTEXITCODE -ne 0) { throw "Generator matrix failed (Emit=$emit, Attach=$attach)." }
         }
     }
+    $validationSucceeded = $true
     Write-Host "Validate: packaged product train passed. No package was published."
 } finally {
-    if (-not $KeepTemporaryProjects -and (Test-Path $temporaryPath)) { Remove-Item $temporaryPath -Recurse -Force }
+    if ($KeepTemporaryProjects) {
+        Write-Host "Temporary acceptance directory retained at '$temporaryPath'."
+    } elseif (-not $validationSucceeded) {
+        Write-Warning "Packaged acceptance failed; temporary projects and logs were retained at '$temporaryPath'."
+    } else {
+        # Compiler and MSBuild servers can retain analyzer or SourceLink assemblies on Windows.
+        # Shutting them down releases those handles before best-effort cleanup.
+        & dotnet build-server shutdown --msbuild
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warning "dotnet build-server shutdown returned exit code $LASTEXITCODE; cleanup will still be attempted."
+        }
+        Remove-AcceptanceDirectory -Path $temporaryPath -IgnoreFailure
+    }
 }
