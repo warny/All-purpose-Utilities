@@ -339,17 +339,28 @@ public class CommandResponseServer : IDisposable
     /// Sends an unsolicited response to the client.
     /// </summary>
     /// <param name="response">Response to send.</param>
-    public async Task SendResponseAsync(ServerResponse response)
+    /// <param name="cancellationToken">
+    /// Token linked to the session lifetime; cancelling it aborts the pending write.
+    /// </param>
+    /// <exception cref="OperationCanceledException">
+    /// Thrown when the token or the session is cancelled before the write completes.
+    /// </exception>
+    public async Task SendResponseAsync(ServerResponse response, CancellationToken cancellationToken = default)
     {
         if (_writer is null)
-        {
             throw new InvalidOperationException("Server is not started.");
-        }
+        CancellationToken sessionToken = _listenTokenSource?.Token ?? CancellationToken.None;
+        using CancellationTokenSource? linked = cancellationToken.CanBeCanceled
+            ? CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, sessionToken)
+            : null;
+        CancellationToken effectiveToken = linked is not null ? linked.Token : sessionToken;
         string line = _formatter(response);
         Logger?.LogDebug("Sending: {Line}", line);
-        await _writeLock.WaitAsync().ConfigureAwait(false);
+        await _writeLock.WaitAsync(effectiveToken).ConfigureAwait(false);
         try
         {
+            if (_listenTokenSource?.IsCancellationRequested == true)
+                throw new OperationCanceledException("Session has been cancelled.");
             await _writer.WriteLineAsync(line).ConfigureAwait(false);
         }
         finally
