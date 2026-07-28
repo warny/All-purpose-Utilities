@@ -173,6 +173,14 @@ into <code>OrdinalVariantRule</code> or <code>VariantRule</code> entries — no 
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.LanguageXmlModel.html">LanguageXmlModel</a></dt>
+      <dd><p>Internal XML model for a language definition. Holds the presence-sensitive
+<code>groupSize</code> attribute (plus its <code>Specified</code> companion) alongside every other
+XML member of a language so XmlSerializer can populate it directly. It is projected onto
+the public <a class="xref" href="Utils.NumberToString.LanguageType.html">LanguageType</a> after inheritance resolution.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.MultiplicativeEntryType.html">MultiplicativeEntryType</a></dt>
       <dd><p>Maps a specific multiplier value to its named multiplicative form.</p>
 </dd>
@@ -195,6 +203,13 @@ into <code>OrdinalVariantRule</code> or <code>VariantRule</code> entries — no 
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.NumberScaleType.html">NumberScaleType</a></dt>
       <dd><p>Configures the prefixes and metadata needed to build number scale names.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.NumberScaleXmlModel.html">NumberScaleXmlModel</a></dt>
+      <dd><p>Internal XML model for a number-scale definition. Carries the two presence-sensitive
+attributes (<code>firstLetterUpperCase</code> and <code>startIndex</code>) with their <code>Specified</code>
+companions. Projected onto the public <a class="xref" href="Utils.NumberToString.NumberScaleType.html">NumberScaleType</a> after resolution.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -252,6 +267,13 @@ when all constraints are satisfied.</p>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.Numbers.html">Numbers</a></dt>
       <dd><p>Represents the root configuration element that aggregates number conversion definitions for multiple languages.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.NumbersXmlModel.html">NumbersXmlModel</a></dt>
+      <dd><p>XML deserialization root. Mirrors <a class="xref" href="Utils.NumberToString.Numbers.html">Numbers</a> but references the internal
+language model so the presence-sensitive attributes carry a <code>Specified</code> companion
+without exposing those technical members on the public configuration API.</p>
 </dd>
     </dl>
     <dl class="jumplist">

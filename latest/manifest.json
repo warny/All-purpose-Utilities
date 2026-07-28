@@ -7992,6 +7992,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.LanguageXmlModel.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.LanguageXmlModel.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.LanguageXmlModel",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.LanguageXmlModel.yml\" sourcestartlinenumber=\"1\">Internal XML model for a language definition. Holds the presence-sensitive\n<code>groupSize</code> attribute (plus its <code>Specified</code> companion) alongside every other\nXML member of a language so XmlSerializer can populate it directly. It is projected onto\nthe public <xref href=\"Utils.NumberToString.LanguageType\" data-throw-if-not-resolved=\"false\"></xref> after inheritance resolution.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.MultiplicativeEntryType.yml",
       "output": {
         ".html": {
@@ -8059,6 +8073,20 @@
       "IsMRef": true,
       "Title": "Utils.NumberToString.NumberScaleType",
       "Summary": "<p sourcefile=\"api/Utils.NumberToString.NumberScaleType.yml\" sourcestartlinenumber=\"1\">Configures the prefixes and metadata needed to build number scale names.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.NumberScaleXmlModel.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.NumberScaleXmlModel.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.NumberScaleXmlModel",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.NumberScaleXmlModel.yml\" sourcestartlinenumber=\"1\">Internal XML model for a number-scale definition. Carries the two presence-sensitive\nattributes (<code>firstLetterUpperCase</code> and <code>startIndex</code>) with their <code>Specified</code>\ncompanions. Projected onto the public <xref href=\"Utils.NumberToString.NumberScaleType\" data-throw-if-not-resolved=\"false\"></xref> after resolution.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -8213,6 +8241,20 @@
       "IsMRef": true,
       "Title": "Utils.NumberToString.Numbers",
       "Summary": "<p sourcefile=\"api/Utils.NumberToString.Numbers.yml\" sourcestartlinenumber=\"1\">Represents the root configuration element that aggregates number conversion definitions for multiple languages.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.NumbersXmlModel.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.NumbersXmlModel.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.NumbersXmlModel",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.NumbersXmlModel.yml\" sourcestartlinenumber=\"1\">XML deserialization root. Mirrors <xref href=\"Utils.NumberToString.Numbers\" data-throw-if-not-resolved=\"false\"></xref> but references the internal\nlanguage model so the presence-sensitive attributes carry a <code>Specified</code> companion\nwithout exposing those technical members on the public configuration API.</p>\n"
     },
     {
       "type": "ManagedReference",
