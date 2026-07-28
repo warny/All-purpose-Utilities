@@ -97,7 +97,7 @@ public class NntpClient : CommandResponseClient
         StringBuilder sb = new();
         foreach (string line in lines)
         {
-            if (line.Length > 1 && line[0] == '.')
+            if (line.StartsWith("..", StringComparison.Ordinal))
             {
                 sb.Append(line.AsSpan(1));
             }
@@ -140,9 +140,10 @@ public class NntpClient : CommandResponseClient
     /// <returns>Collection of group names.</returns>
     public async Task<IReadOnlyList<string>> NewGroupsAsync(DateTime sinceUtc, CancellationToken cancellationToken = default)
     {
-        string date = sinceUtc.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
-        string time = sinceUtc.ToString("HHmmss", CultureInfo.InvariantCulture);
-        IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"NEWGROUPS {date} {time}", cancellationToken).ConfigureAwait(false);
+        DateTime utc = sinceUtc.Kind == DateTimeKind.Local ? sinceUtc.ToUniversalTime() : DateTime.SpecifyKind(sinceUtc, DateTimeKind.Utc);
+        string date = utc.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
+        string time = utc.ToString("HHmmss", CultureInfo.InvariantCulture);
+        IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"NEWGROUPS {date} {time} GMT", cancellationToken).ConfigureAwait(false);
         await EnsureCompletionAsync(responses).ConfigureAwait(false);
         return await ReadMultilineAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -157,9 +158,10 @@ public class NntpClient : CommandResponseClient
     public async Task<IReadOnlyList<int>> NewNewsAsync(string group, DateTime sinceUtc, CancellationToken cancellationToken = default)
     {
         ValidateCommandArgument(group, nameof(group));
-        string date = sinceUtc.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
-        string time = sinceUtc.ToString("HHmmss", CultureInfo.InvariantCulture);
-        IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"NEWNEWS {group} {date} {time}", cancellationToken).ConfigureAwait(false);
+        DateTime utc = sinceUtc.Kind == DateTimeKind.Local ? sinceUtc.ToUniversalTime() : DateTime.SpecifyKind(sinceUtc, DateTimeKind.Utc);
+        string date = utc.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
+        string time = utc.ToString("HHmmss", CultureInfo.InvariantCulture);
+        IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"NEWNEWS {group} {date} {time} GMT", cancellationToken).ConfigureAwait(false);
         await EnsureCompletionAsync(responses).ConfigureAwait(false);
         IReadOnlyList<string> lines = await ReadMultilineAsync(cancellationToken).ConfigureAwait(false);
         List<int> ids = new();
@@ -187,7 +189,7 @@ public class NntpClient : CommandResponseClient
         StringBuilder sb = new();
         foreach (string line in lines)
         {
-            if (line.Length > 1 && line[0] == '.')
+            if (line.StartsWith("..", StringComparison.Ordinal))
             {
                 sb.Append(line.AsSpan(1));
             }
@@ -214,7 +216,7 @@ public class NntpClient : CommandResponseClient
         StringBuilder sb = new();
         foreach (string line in lines)
         {
-            if (line.Length > 1 && line[0] == '.')
+            if (line.StartsWith("..", StringComparison.Ordinal))
             {
                 sb.Append(line.AsSpan(1));
             }
@@ -329,7 +331,7 @@ public class NntpClient : CommandResponseClient
             foreach (ServerResponse response in batch)
             {
                 string line = response.Message is null ? response.Code : $"{response.Code} {response.Message}";
-                if (line.TrimEnd() == ".")
+                if (line == ".")
                 {
                     return lines;
                 }

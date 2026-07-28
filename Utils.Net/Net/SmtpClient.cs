@@ -103,7 +103,7 @@ public class SmtpClient : CommandResponseClient
         ValidateCommandArgument(domain, nameof(domain));
         IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"EHLO {domain}", cancellationToken).ConfigureAwait(false);
         List<string> extensions = new();
-        for (int i = 1; i < responses.Count - 1; i++)
+        for (int i = 1; i < responses.Count; i++)
         {
             if (!string.IsNullOrEmpty(responses[i].Message))
             {
@@ -194,10 +194,14 @@ public class SmtpClient : CommandResponseClient
     public async Task SendMailAsync(string from, IEnumerable<string> recipients, string data, CancellationToken cancellationToken = default)
     {
         ValidateCommandArgument(from, nameof(from));
+        if (recipients is null) throw new ArgumentNullException(nameof(recipients));
+        List<string> recipientList = new(recipients);
+        if (recipientList.Count == 0) throw new ArgumentException("At least one recipient is required.", nameof(recipients));
+        foreach (string rcpt in recipientList) ValidateCommandArgument(rcpt, nameof(recipients));
+
         await EnsureCompletionAsync(await SendCommandAsync($"MAIL FROM:<{from}>", cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
-        foreach (string rcpt in recipients)
+        foreach (string rcpt in recipientList)
         {
-            ValidateCommandArgument(rcpt, nameof(recipients));
             await EnsureCompletionAsync(await SendCommandAsync($"RCPT TO:<{rcpt}>", cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
         }
         await EnsureIntermediateAsync(await SendCommandAsync("DATA", cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
