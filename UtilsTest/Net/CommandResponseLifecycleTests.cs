@@ -423,4 +423,29 @@ public class CommandResponseLifecycleTests
 
         server.Dispose();
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // Item 54 — Lazy response enumerable fault is contained
+    // ──────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task Handler_LazyEnumerableThrows_Returns500()
+    {
+        (DuplexStream serverStream, StreamWriter clientWriter, StreamReader clientReader) = CreateServerTestPair();
+        using CommandResponseServer server = new();
+        server.RegisterCommand("LAZY", (_, _, _) =>
+            Task.FromResult<IEnumerable<ServerResponse>>(ThrowingEnumerable()));
+        await server.StartAsync(serverStream, leaveOpen: true);
+
+        await clientWriter.WriteLineAsync("LAZY");
+        string? reply = await WithTimeout(Task.Run(() => clientReader.ReadLine()), "Did not receive reply within 5s.");
+
+        Assert.IsTrue(reply?.StartsWith("500") == true, $"Expected 500 but got: {reply}");
+    }
+
+    private static IEnumerable<ServerResponse> ThrowingEnumerable()
+    {
+        yield return new ServerResponse("250", ResponseSeverity.Completion, "OK");
+        throw new InvalidOperationException("Lazy fault");
+    }
 }
