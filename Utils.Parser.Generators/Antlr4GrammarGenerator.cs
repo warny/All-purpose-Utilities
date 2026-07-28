@@ -219,9 +219,12 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
     /// <param name="generatorOptions">Project-wide options parsed from analyzer config global options.</param>
     private static void ProcessGrammarProject(SourceProductionContext context, System.Collections.Immutable.ImmutableArray<ParsedGrammarFile> files, Antlr4GrammarGeneratorOptions generatorOptions)
     {
+        var entries = files.Where(static file => file.Grammar is not null).Select(static file => new G4GrammarProjectEntry(file.Path, file.Grammar!)).ToArray();
+        var index = new G4GrammarProjectIndex(entries);
+        var composition = new G4GrammarCompositionAdapter(index);
         foreach (var file in files.OrderBy(static file => file.Path, StringComparer.Ordinal))
         {
-            ProcessParsedGrammarFile(context, file, generatorOptions);
+            ProcessParsedGrammarFile(context, file, generatorOptions, index, composition);
         }
     }
 
@@ -231,7 +234,9 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
     /// <param name="context">Context used to report diagnostics and add generated files.</param>
     /// <param name="file">Parsed grammar file.</param>
     /// <param name="generatorOptions">Project-wide options parsed from analyzer config global options.</param>
-    private static void ProcessParsedGrammarFile(SourceProductionContext context, ParsedGrammarFile file, Antlr4GrammarGeneratorOptions generatorOptions)
+    /// <param name="index">Deterministic index of parsed project grammars.</param>
+    /// <param name="composition">Adapter that builds the shared effective composition plan.</param>
+    private static void ProcessParsedGrammarFile(SourceProductionContext context, ParsedGrammarFile file, Antlr4GrammarGeneratorOptions generatorOptions, G4GrammarProjectIndex index, G4GrammarCompositionAdapter composition)
     {
         if (!file.MetadataValid)
         {
@@ -253,6 +258,11 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
         try
         {
             var grammar = file.Grammar;
+            if (ReportEntryGrammarTypeDiagnostics(context, grammar, file.FileName)) return;
+            G4GrammarProjectEntry entry = index.FindEntry(grammar) ?? throw new InvalidOperationException($"Grammar '{grammar.Name}' is not uniquely indexed.");
+            var plan = composition.Build(entry);
+            if (ReportCompositionDiagnostics(context, plan)) return;
+            G4Grammar effectiveGrammar = EffectiveG4GrammarProjection.Create(plan);
             if (grammar.Options.TryGetValue("superClass", out var superClass) && !string.IsNullOrWhiteSpace(superClass))
             {
                 context.ReportDiagnostic(Diagnostic.Create(s_unsupportedSuperClassDescriptor, Location.None, grammar.Name, superClass));
@@ -260,14 +270,14 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
             ReportEmbeddedParserAttributeDiagnostics(context, file.File, file.Text, grammar);
             ReportUnsupportedEmbeddedCodeDiagnostics(context, file.File, file.Text, grammar);
             if (generatorOptions.EnableGeneratedRuleArgumentBinding
-                && ReportGeneratedRuleArgumentBindingDiagnostics(context, file.File, file.Text, grammar))
+                && ReportGeneratedRuleArgumentBindingDiagnostics(context, file.File, file.Text, grammar, new G4ImportedRuleResolver(index)))
             {
                 ReportParserDiagnostics(context, file.ParseDiagnostics, file.FileName);
                 return;
             }
 
             var generated = GrammarEmitter.Emit(
-                grammar,
+                effectiveGrammar,
                 file.NamespaceName,
                 file.ClassName,
                 file.FileName,
@@ -282,6 +292,37 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
         }
     }
 
+    /// <summary>Rejects lexer rules declared locally by an ANTLR parser grammar before imported rules are projected.</summary>
+    private static bool ReportEntryGrammarTypeDiagnostics(SourceProductionContext context, G4Grammar grammar, string fileName)
+    {
+        if (grammar.Kind != G4GrammarKind.Parser)
+        {
+            return false;
+        }
+
+        G4Rule? offendingRule = grammar.LexerRules.Concat(grammar.ExtraModes.SelectMany(mode => mode.Rules)).FirstOrDefault();
+        if (offendingRule is null)
+        {
+            return false;
+        }
+
+        var diagnostics = new DiagnosticBag();
+        diagnostics.Add(ParserDiagnostics.LexerRuleNotAllowedInParserGrammar, offendingRule.Name);
+        ReportParserDiagnostics(context, diagnostics, fileName);
+        return true;
+    }
+
+    /// <summary>Reports dependency graph failures from the shared plan and indicates whether emission must stop.</summary>
+    private static bool ReportCompositionDiagnostics(SourceProductionContext context, Utils.Parser.Antlr4.Common.Composition.GrammarImportCompositionPlan plan)
+    {
+        var diagnostics = new DiagnosticBag();
+        foreach (var cycle in plan.Cycles) diagnostics.Add(ParserDiagnostics.ImportCycleDetected, string.Join(" -> ", cycle.Path.Select(identity => identity.DeclaredName)));
+        foreach (var missing in plan.MissingDependencies) diagnostics.Add(ParserDiagnostics.ImportedGrammarNotFound, missing.Edge.DeclaredDependency.GrammarName);
+        foreach (var ambiguity in plan.AmbiguousDependencies) diagnostics.Add(ParserDiagnostics.AmbiguousImportedGrammar, ambiguity.Edge.DeclaredDependency.GrammarName, string.Join(", ", ambiguity.Candidates.Select(candidate => candidate.SourceId)));
+        ReportParserDiagnostics(context, diagnostics, plan.Entry.Identity.SourceId);
+        return plan.Cycles.Count > 0 || plan.MissingDependencies.Count > 0 || plan.AmbiguousDependencies.Count > 0;
+    }
+
     /// <summary>
     /// Reports generated-C# rule-call argument binding diagnostics attached to grammar call sites.
     /// </summary>
@@ -289,11 +330,12 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
     /// <param name="file">Grammar additional file.</param>
     /// <param name="text">Grammar source text used to create locations.</param>
     /// <param name="grammar">Parsed grammar AST.</param>
+    /// <param name="resolver">Shared-plan-backed imported target resolver.</param>
     /// <returns><see langword="true"/> when at least one deterministic binding error was reported.</returns>
-    private static bool ReportGeneratedRuleArgumentBindingDiagnostics(SourceProductionContext context, AdditionalText file, SourceText text, G4Grammar grammar)
+    private static bool ReportGeneratedRuleArgumentBindingDiagnostics(SourceProductionContext context, AdditionalText file, SourceText text, G4Grammar grammar, G4ImportedRuleResolver resolver)
     {
         bool hasErrors = false;
-        foreach (GeneratedRuleArgumentBindingIssue issue in GeneratedRuleArgumentBindingValidator.Validate(grammar))
+        foreach (GeneratedRuleArgumentBindingIssue issue in GeneratedRuleArgumentBindingValidator.Validate(grammar, callSite => resolver.Resolve(grammar, callSite.RuleName)))
         {
             hasErrors = true;
             context.ReportDiagnostic(Diagnostic.Create(

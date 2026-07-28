@@ -1,4 +1,5 @@
 using System.Text;
+using System.Linq;
 using Utils.Parser.Diagnostics.EmbeddedCode;
 
 namespace Utils.Parser.Generators.Internal;
@@ -139,7 +140,9 @@ internal static partial class GrammarEmitter
         sb.AppendLine($"            Type: {grammarType},");
         EmitGrammarOptions(sb, grammar, indent: 3);
         sb.AppendLine("            Actions: new GrammarAction[0],");
-        sb.AppendLine("            Imports: new GrammarImport[0],");
+        sb.Append("            Imports: new GrammarImport[] {");
+        sb.Append(string.Join(", ", grammar.Imports.Select(import => $"new GrammarImport(\"{Escape(import.GrammarName)}\", {(import.Alias is null ? "null" : $"\"{Escape(import.Alias)}\"")})")));
+        sb.AppendLine(" },");
 
         // modes
         sb.Append("            Modes: new LexerMode[]");
@@ -163,16 +166,20 @@ internal static partial class GrammarEmitter
             sb.AppendLine("            },");
         }
 
+        sb.AppendLine($"            DeclaredTokens: new global::System.Collections.Generic.HashSet<string>(global::System.StringComparer.Ordinal) {{ {JoinStringLiterals(grammar.DeclaredTokens)} }},");
+        sb.AppendLine($"            DeclaredChannels: new global::System.Collections.Generic.HashSet<string>(global::System.StringComparer.Ordinal) {{ \"DEFAULT_CHANNEL\", \"HIDDEN\"{(grammar.DeclaredChannels.Count == 0 ? string.Empty : $", {JoinStringLiterals(grammar.DeclaredChannels)}")} }},");
+        sb.AppendLine("            ExtensionBindings: new GrammarExtensionBinding[0],");
+
         // parserRules
         sb.Append("            ParserRules: new Rule[] {");
         sb.Append(JoinRuleNames(grammar.ParserRules));
         sb.AppendLine(" },");
 
         // rootRule
-        string rootRule = grammar.ParserRules.Count > 0
-            ? $"_{Sanitize(grammar.ParserRules[0].Name)}"
+        string rootRule = grammar.RootRule is not null
+            ? $"_{Sanitize(grammar.RootRule.Name)}"
             : "null";
-        sb.AppendLine($"            RootRule: {rootRule}));");
+        sb.AppendLine($"            RootRule: {rootRule}) {{ AllowExternalLexerRules = {(grammar.AllowExternalLexerRules ? "true" : "false")} }});");
         sb.AppendLine("    }");
         sb.AppendLine();
 

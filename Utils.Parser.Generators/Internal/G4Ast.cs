@@ -39,6 +39,12 @@ internal sealed class G4Grammar
     /// <summary>Gets parser rules declared by the grammar.</summary>
     public List<G4Rule> ParserRules { get; } = new List<G4Rule>();
 
+    /// <summary>Gets or sets the entry grammar's parser root; imported rules never become the root implicitly.</summary>
+    public G4Rule? RootRule { get; set; }
+
+    /// <summary>Gets or sets a value indicating whether imported lexer rules are present for a parser grammar.</summary>
+    public bool AllowExternalLexerRules { get; set; }
+
     /// <summary>Gets extra lexer modes declared via <c>mode Name;</c>.</summary>
     public List<G4LexerMode> ExtraModes { get; } = new List<G4LexerMode>();
 

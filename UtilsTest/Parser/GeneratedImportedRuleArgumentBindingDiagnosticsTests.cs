@@ -25,8 +25,8 @@ public sealed class GeneratedImportedRuleArgumentBindingDiagnosticsTests
             Grammar("Root.g4", "parser grammar Root; import Shared; start : child[bad] ;"),
             Grammar("Shared.g4", "parser grammar Shared; child[int value] : TOKEN ;")], optionValue);
 
-        AssertNoBindingDiagnostics(result);
-        Assert.AreEqual(2, result.GeneratedTrees.Length);
+        Assert.AreEqual(optionValue == "true" ? 1 : 0, BindingDiagnostics(result).Length);
+        Assert.AreEqual(optionValue == "true" ? 1 : 2, result.GeneratedTrees.Length);
     }
 
     /// <summary>Verifies local parser rules still receive APU0107 diagnostics and suppress only the invalid caller.</summary>
@@ -65,7 +65,8 @@ public sealed class GeneratedImportedRuleArgumentBindingDiagnosticsTests
             Grammar($"{scenario}One.g4", first),
             Grammar($"{scenario}Two.g4", second)], "true");
 
-        AssertNoBindingDiagnostics(result);
+        int expected = scenario is "Direct" or "Transitive" or "Aliased" or "DifferentFile" ? 1 : 0;
+        Assert.AreEqual(expected, BindingDiagnostics(result).Length, scenario);
     }
 
     /// <summary>Creates an in-memory grammar additional file.</summary>

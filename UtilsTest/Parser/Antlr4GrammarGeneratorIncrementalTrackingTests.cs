@@ -56,8 +56,8 @@ public sealed class Antlr4GrammarGeneratorIncrementalTrackingTests
         driver = driver.ReplaceAdditionalText(shared, Grammar("Shared.g4", "parser grammar Shared; child[int value, int other] : TOKEN ;")).RunGenerators(compilation);
 
         AssertParsedFiles(driver.GetRunResult(), ("Root.g4", IncrementalStepRunReason.Cached), ("Shared.g4", IncrementalStepRunReason.Modified), ("Independent.g4", IncrementalStepRunReason.Cached));
-        AssertNoBindingDiagnostics(driver.GetRunResult());
-        AssertTreePresent(driver.GetRunResult(), "Root");
+        AssertSingleBindingDiagnostic(driver.GetRunResult());
+        AssertTreeAbsent(driver.GetRunResult(), "Root");
         AssertTreePresent(driver.GetRunResult(), "Shared");
         AssertTreePresent(driver.GetRunResult(), "Independent");
     }
@@ -91,13 +91,13 @@ public sealed class Antlr4GrammarGeneratorIncrementalTrackingTests
         var shared = Grammar("Shared.g4", "parser grammar Shared; child[int value] : TOKEN ;");
         var independent = Grammar("Independent.g4", "grammar Independent; start : A ; A : 'a' ;");
         GeneratorDriver driver = CreateTrackingDriver([root, shared, independent], "true").RunGenerators(compilation);
-        AssertNoBindingDiagnostics(driver.GetRunResult());
+        AssertSingleBindingDiagnostic(driver.GetRunResult());
 
         driver = driver.ReplaceAdditionalText(independent, Grammar("Independent.g4", "grammar Independent; start : B ; B : 'b' ;")).RunGenerators(compilation);
 
         AssertParsedFiles(driver.GetRunResult(), ("Root.g4", IncrementalStepRunReason.Cached), ("Shared.g4", IncrementalStepRunReason.Cached), ("Independent.g4", IncrementalStepRunReason.Modified));
-        AssertNoBindingDiagnostics(driver.GetRunResult());
-        AssertTreePresent(driver.GetRunResult(), "Root");
+        AssertSingleBindingDiagnostic(driver.GetRunResult());
+        AssertTreeAbsent(driver.GetRunResult(), "Root");
         AssertTreePresent(driver.GetRunResult(), "Shared");
     }
 
@@ -127,11 +127,11 @@ public sealed class Antlr4GrammarGeneratorIncrementalTrackingTests
     public void AddAndRemoveImport_RefreshesAdditionalTextsWithoutStaleState()
     {
         var compilation = CreateCompilation();
-        var root = Grammar("Root.g4", "parser grammar Root; import Shared; start : child[bad] ;");
+        var root = Grammar("Root.g4", "parser grammar Root; import Shared; start : child[1] ;");
         var shared = Grammar("Shared.g4", "parser grammar Shared; child[int value] : TOKEN ;");
         GeneratorDriver driver = CreateTrackingDriver([root], "true").RunGenerators(compilation);
         AssertNoBindingDiagnostics(driver.GetRunResult());
-        AssertTreePresent(driver.GetRunResult(), "Root");
+        AssertTreeAbsent(driver.GetRunResult(), "Root");
         AssertTreeAbsent(driver.GetRunResult(), "Shared");
 
         driver = driver.AddAdditionalTexts([shared]).RunGenerators(compilation);
@@ -143,7 +143,7 @@ public sealed class Antlr4GrammarGeneratorIncrementalTrackingTests
         driver = driver.RemoveAdditionalTexts([shared]).RunGenerators(compilation);
         AssertParsedFiles(driver.GetRunResult(), ("Root.g4", IncrementalStepRunReason.Cached));
         AssertNoBindingDiagnostics(driver.GetRunResult());
-        AssertTreePresent(driver.GetRunResult(), "Root");
+        AssertTreeAbsent(driver.GetRunResult(), "Root");
         AssertTreeAbsent(driver.GetRunResult(), "Shared");
     }
 

@@ -107,9 +107,7 @@ internal sealed class G4Parser
                 var rule = ParseRule();
                 bool isLexer = char.IsUpper(rule.Name[0]) || rule.IsFragment;
 
-                if (grammar.Kind == G4GrammarKind.Parser)
-                    grammar.ParserRules.Add(rule);
-                else if (isLexer)
+                if (isLexer)
                 {
                     if (currentMode == null) grammar.LexerRules.Add(rule);
                     else                     currentMode.Rules.Add(rule);
@@ -124,6 +122,7 @@ internal sealed class G4Parser
             Consume(); // skip unexpected token
         }
 
+        grammar.RootRule = grammar.ParserRules.FirstOrDefault();
         return grammar;
     }
 

@@ -97,8 +97,8 @@ Le travail restant doit couvrir au minimum :
 
 Après cette étape :
 
-- `GrammarEmitter` doit consommer le plan commun ;
-- `APU0107` peut être réactivé pour les règles importées réellement émises ;
+- [x] `GrammarEmitter` consomme une projection mécanique du plan commun ;
+- [x] `APU0107` est réactivé pour les règles importées réellement émises et résolues avec certitude ;
 - des tests de parité runtime/générateur doivent être ajoutés.
 
 ### Alternative temporaire
