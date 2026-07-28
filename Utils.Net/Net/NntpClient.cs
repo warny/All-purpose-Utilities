@@ -140,7 +140,7 @@ public class NntpClient : CommandResponseClient
     /// <returns>Collection of group names.</returns>
     public async Task<IReadOnlyList<string>> NewGroupsAsync(DateTime sinceUtc, CancellationToken cancellationToken = default)
     {
-        DateTime utc = sinceUtc.Kind == DateTimeKind.Utc ? sinceUtc : sinceUtc.ToUniversalTime();
+        DateTime utc = sinceUtc.Kind == DateTimeKind.Local ? sinceUtc.ToUniversalTime() : DateTime.SpecifyKind(sinceUtc, DateTimeKind.Utc);
         string date = utc.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
         string time = utc.ToString("HHmmss", CultureInfo.InvariantCulture);
         IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"NEWGROUPS {date} {time}", cancellationToken).ConfigureAwait(false);
@@ -158,7 +158,7 @@ public class NntpClient : CommandResponseClient
     public async Task<IReadOnlyList<int>> NewNewsAsync(string group, DateTime sinceUtc, CancellationToken cancellationToken = default)
     {
         ValidateCommandArgument(group, nameof(group));
-        DateTime utc = sinceUtc.Kind == DateTimeKind.Utc ? sinceUtc : sinceUtc.ToUniversalTime();
+        DateTime utc = sinceUtc.Kind == DateTimeKind.Local ? sinceUtc.ToUniversalTime() : DateTime.SpecifyKind(sinceUtc, DateTimeKind.Utc);
         string date = utc.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
         string time = utc.ToString("HHmmss", CultureInfo.InvariantCulture);
         IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"NEWNEWS {group} {date} {time}", cancellationToken).ConfigureAwait(false);

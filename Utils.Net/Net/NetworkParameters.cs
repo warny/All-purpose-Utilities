@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Net;
 using System.Net.NetworkInformation;
-using System.Text;
 
 namespace Utils.Net
 {
@@ -12,6 +10,8 @@ namespace Utils.Net
     /// </summary>
     public class NetworkParameters
     {
+        private readonly IPAddress[] _dnsServers;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="NetworkParameters"/> class and snapshots network information.
         /// </summary>
@@ -28,29 +28,29 @@ namespace Utils.Net
                     if (ipProperties.GatewayAddresses == null || ipProperties.GatewayAddresses.Count == 0) continue;
                     IPAddressCollection dnsAddresses = ipProperties.DnsAddresses;
 
-
                     foreach (IPAddress dnsAdress in dnsAddresses)
                     {
                         dnsServers.Add(dnsAdress);
                     }
                 }
             }
-            DnsServers = dnsServers.ToImmutableArray();
-            PrimaryDns = dnsServers.FirstOrDefault();
+            _dnsServers = dnsServers.ToArray();
+            PrimaryDns = _dnsServers.Length > 0 ? _dnsServers[0] : null;
         }
 
         /// <summary>
         /// Gets the network interfaces detected on the host at construction time.
         /// </summary>
         public NetworkInterface[] NetworkInterfaces { get; private set; }
+
         /// <summary>
         /// Gets the preferred DNS server resolved from the network interfaces, or <see langword="null"/> if no DNS server was discovered.
         /// </summary>
         public IPAddress? PrimaryDns { get; }
+
         /// <summary>
         /// Gets the collection of DNS servers discovered for the active network interfaces.
         /// </summary>
-        public IReadOnlyList< IPAddress> DnsServers { get; private set; }
-
+        public IPAddress[] DnsServers => (IPAddress[])_dnsServers.Clone();
     }
 }
