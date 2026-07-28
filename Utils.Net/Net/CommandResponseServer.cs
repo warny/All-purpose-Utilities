@@ -447,6 +447,7 @@ public class CommandResponseServer : IDisposable
                 string verb = parts.Length > 0 ? parts[0] : string.Empty;
                 string[] args = parts.Length > 1 ? parts[1..] : [];
                 IEnumerable<ServerResponse>? responses = null;
+                List<ServerResponse> responseList;
                 if (_handlers.TryGetValue(verb, out CommandRegistration? registration))
                 {
                     if (registration.RequiredContexts.All(_contexts.Contains))
@@ -466,21 +467,39 @@ public class CommandResponseServer : IDisposable
                     {
                         responses = [new ServerResponse("503", ResponseSeverity.PermanentNegative, "Bad sequence of commands")];
                     }
+                    responses ??= [new ServerResponse("502", ResponseSeverity.PermanentNegative, "Command not implemented")];
+                    responseList = responses.ToList();
                 }
                 else if (CommandReceived is not null)
                 {
-                    try
+                    // Item 32: await every CommandReceived subscriber in registration order.
+                    // The last non-empty response sequence wins; the first faulting subscriber
+                    // aborts the chain and yields a 500 reply.
+                    Delegate[] invocations = CommandReceived.GetInvocationList();
+                    responseList = [new ServerResponse("502", ResponseSeverity.PermanentNegative, "Command not implemented")];
+                    foreach (Delegate d in invocations)
                     {
-                        responses = await CommandReceived.Invoke(command, cancellationToken).ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger?.LogError(ex, "CommandReceived handler threw an unhandled exception for command {Verb}", verb);
-                        responses = [new ServerResponse("500", ResponseSeverity.PermanentNegative, "Internal server error")];
+                        var subscriber = (Func<string, CancellationToken, Task<IEnumerable<ServerResponse>>>)d;
+                        try
+                        {
+                            IEnumerable<ServerResponse> sr = await subscriber(command, cancellationToken).ConfigureAwait(false);
+                            List<ServerResponse> candidate = sr?.ToList() ?? [];
+                            if (candidate.Count > 0)
+                                responseList = candidate;
+                        }
+                        catch (OperationCanceledException) { throw; }
+                        catch (Exception ex)
+                        {
+                            Logger?.LogError(ex, "CommandReceived subscriber threw an unhandled exception for command {Verb}", verb);
+                            responseList = [new ServerResponse("500", ResponseSeverity.PermanentNegative, "Internal server error")];
+                            break; // stop on first faulting subscriber
+                        }
                     }
                 }
-                responses ??= [new ServerResponse("502", ResponseSeverity.PermanentNegative, "Command not implemented")];
-                List<ServerResponse> responseList = responses.ToList();
+                else
+                {
+                    responseList = [new ServerResponse("502", ResponseSeverity.PermanentNegative, "Command not implemented")];
+                }
                 await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
                 try
                 {

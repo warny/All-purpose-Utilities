@@ -322,4 +322,37 @@ public class CommandResponseLifecycleTests
         CommandResponseServer server = new();
         Assert.ThrowsException<ArgumentOutOfRangeException>(() => server.MaxCommandQueueDepth = -1);
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // Item 32 — Multicast CommandReceived — all subscribers awaited
+    // ──────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task CommandReceived_MultipleSubscribers_AllAwaited()
+    {
+        (DuplexStream serverStream, StreamWriter clientWriter, StreamReader clientReader) = CreateServerTestPair();
+        using CommandResponseServer server = new();
+
+        int sub1Called = 0;
+        int sub2Called = 0;
+        server.CommandReceived += (_, _) =>
+        {
+            Interlocked.Increment(ref sub1Called);
+            return Task.FromResult<IEnumerable<ServerResponse>>([]);
+        };
+        server.CommandReceived += (_, _) =>
+        {
+            Interlocked.Increment(ref sub2Called);
+            return Task.FromResult<IEnumerable<ServerResponse>>(
+                [new ServerResponse("250", ResponseSeverity.Completion, "OK")]);
+        };
+
+        await server.StartAsync(serverStream, leaveOpen: true);
+        await clientWriter.WriteLineAsync("HELLO");
+        string? reply = await WithTimeout(Task.Run(() => clientReader.ReadLine()), "Did not receive reply within 5s.");
+
+        Assert.AreEqual(1, sub1Called, "First subscriber must have been called.");
+        Assert.AreEqual(1, sub2Called, "Second subscriber must have been called.");
+        Assert.AreEqual("250 OK", reply);
+    }
 }
