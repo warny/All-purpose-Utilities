@@ -7,7 +7,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Utils.Objects;
 
 namespace Utils.Net;
 
@@ -369,9 +368,14 @@ public class CommandResponseClient : IDisposable
 
     /// <summary>
     /// Sends raw lines to the server without waiting for a response.
+    /// Each line is validated to ensure it contains no CR, LF or NUL characters that
+    /// could inject additional protocol commands.
     /// </summary>
     /// <param name="lines">Lines to send.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
+    /// <exception cref="ArgumentException">
+    /// Thrown when any line in <paramref name="lines"/> contains CR, LF or NUL.
+    /// </exception>
     /// <exception cref="InvalidOperationException">Thrown when the client is not connected.</exception>
     protected async Task SendLinesAsync(IEnumerable<string> lines, CancellationToken cancellationToken = default)
     {
@@ -380,10 +384,28 @@ public class CommandResponseClient : IDisposable
             throw new InvalidOperationException("Client is not connected.");
         }
 
+        // Item 53: validate all lines upfront before acquiring the lock and writing anything.
+        // Materialize into a list so we do not enumerate lazily and potentially validate only
+        // part of the sequence before throwing mid-write.
+        List<string> lineList;
+        if (lines is List<string> already)
+        {
+            lineList = already;
+        }
+        else
+        {
+            lineList = [..lines];
+        }
+        foreach (string line in lineList)
+        {
+            if (line is null) throw new ArgumentException("Lines must not contain null entries.", nameof(lines));
+            ValidateCommandArgument(line, nameof(lines));
+        }
+
         await _sendLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            foreach (string line in lines)
+            foreach (string line in lineList)
             {
                 await _writer.WriteLineAsync(line).ConfigureAwait(false);
             }

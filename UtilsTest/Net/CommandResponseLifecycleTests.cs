@@ -692,4 +692,36 @@ public class CommandResponseLifecycleTests
         IReadOnlyList<ServerResponse> responses = await WithTimeout(client.ReadAsync(), "ReadAsync timed out.");
         Assert.AreEqual(1, responses.Count);
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // Item 53 — SendLinesAsync validates against injection
+    // ──────────────────────────────────────────────────────────────
+
+    private sealed class TestableClient : CommandResponseClient
+    {
+        public Task SendLinesPublicAsync(IEnumerable<string> lines, CancellationToken ct = default)
+            => SendLinesAsync(lines, ct);
+    }
+
+    [TestMethod]
+    public async Task SendLinesAsync_LineWithCR_Throws()
+    {
+        (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
+        using TestableClient client = new();
+        await client.ConnectAsync(clientStream, leaveOpen: true);
+
+        await Assert.ThrowsExceptionAsync<ArgumentException>(() =>
+            client.SendLinesPublicAsync(["SAFE", "BAD\rINJECT"]));
+    }
+
+    [TestMethod]
+    public async Task SendLinesAsync_LineWithLF_Throws()
+    {
+        (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
+        using TestableClient client = new();
+        await client.ConnectAsync(clientStream, leaveOpen: true);
+
+        await Assert.ThrowsExceptionAsync<ArgumentException>(() =>
+            client.SendLinesPublicAsync(["SAFE", "BAD\nINJECT"]));
+    }
 }
