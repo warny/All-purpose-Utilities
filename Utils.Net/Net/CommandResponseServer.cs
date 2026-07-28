@@ -469,7 +469,6 @@ public class CommandResponseServer : IDisposable
                 string[] parts = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 string verb = parts.Length > 0 ? parts[0] : string.Empty;
                 string[] args = parts.Length > 1 ? parts[1..] : [];
-                IEnumerable<ServerResponse>? responses = null;
                 List<ServerResponse> responseList;
                 if (_handlers.TryGetValue(verb, out CommandRegistration? registration))
                 {
@@ -478,20 +477,23 @@ public class CommandResponseServer : IDisposable
                         CommandContext ctx = new(_contexts);
                         try
                         {
-                            responses = await registration.Handler(ctx, args, cancellationToken).ConfigureAwait(false);
+                            // Item 54: materialize the (possibly lazy) sequence inside the protected
+                            // block so a fault during enumeration is converted to a 500 reply rather
+                            // than escaping the intended error boundary.
+                            IEnumerable<ServerResponse> responses = await registration.Handler(ctx, args, cancellationToken).ConfigureAwait(false);
+                            responseList = responses?.ToList() ?? throw new InvalidOperationException("Handler returned null sequence");
                         }
+                        catch (OperationCanceledException) { throw; }
                         catch (Exception ex)
                         {
                             Logger?.LogError(ex, "Handler for {Verb} threw an unhandled exception", verb);
-                            responses = [new ServerResponse("500", ResponseSeverity.PermanentNegative, "Internal server error")];
+                            responseList = [new ServerResponse("500", ResponseSeverity.PermanentNegative, "Internal server error")];
                         }
                     }
                     else
                     {
-                        responses = [new ServerResponse("503", ResponseSeverity.PermanentNegative, "Bad sequence of commands")];
+                        responseList = [new ServerResponse("503", ResponseSeverity.PermanentNegative, "Bad sequence of commands")];
                     }
-                    responses ??= [new ServerResponse("502", ResponseSeverity.PermanentNegative, "Command not implemented")];
-                    responseList = responses.ToList();
                 }
                 else if (CommandReceived is not null)
                 {
