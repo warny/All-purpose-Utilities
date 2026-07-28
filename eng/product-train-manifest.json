@@ -23,7 +23,13 @@
       "runtimeResources": [
         "Utils.Objects.DateFormulaConfigurations.DateFormulaConfiguration.json"
       ],
-      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+      "apiAssemblies": [
+        "lib/net8.0/Utils.dll"
+      ],
+      "baselineApiAssemblies": [
+        "lib/net8.0/Utils.dll"
+      ],
+      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
     },
     {
       "project": "Utils.IO/Utils.IO.csproj",
@@ -40,7 +46,13 @@
       "publicApiPolicy": "published-baseline",
       "symbolPackage": true,
       "publishedVersion": "1.2.1",
-      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+      "apiAssemblies": [
+        "lib/net8.0/Utils.IO.dll"
+      ],
+      "baselineApiAssemblies": [
+        "lib/net8.0/Utils.IO.dll"
+      ],
+      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
     },
     {
       "project": "Utils.Xml/Utils.Xml.csproj",
@@ -57,7 +69,13 @@
       "publicApiPolicy": "published-baseline",
       "symbolPackage": true,
       "publishedVersion": "1.2.1",
-      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+      "apiAssemblies": [
+        "lib/net9.0/Utils.XML.dll"
+      ],
+      "baselineApiAssemblies": [
+        "lib/net8.0/Utils.XML.dll"
+      ],
+      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
     },
     {
       "project": "Utils.Net/Utils.Net.csproj",
@@ -74,7 +92,13 @@
       "publicApiPolicy": "published-baseline",
       "symbolPackage": true,
       "publishedVersion": "1.2.1",
-      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+      "apiAssemblies": [
+        "lib/net9.0/Utils.Net.dll"
+      ],
+      "baselineApiAssemblies": [
+        "lib/net9.0/Utils.Net.dll"
+      ],
+      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
     },
     {
       "project": "Utils.Data/Utils.Data.csproj",
@@ -91,7 +115,13 @@
       "publicApiPolicy": "published-baseline",
       "symbolPackage": true,
       "publishedVersion": "1.2.1",
-      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+      "apiAssemblies": [
+        "lib/net8.0/Utils.Data.dll"
+      ],
+      "baselineApiAssemblies": [
+        "lib/net8.0/Utils.Data.dll"
+      ],
+      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
     },
     {
       "project": "Utils.Fonts/Utils.Fonts.csproj",
@@ -108,7 +138,13 @@
       "publicApiPolicy": "published-baseline",
       "symbolPackage": true,
       "publishedVersion": "1.2.1",
-      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+      "apiAssemblies": [
+        "lib/net8.0/Utils.Fonts.dll"
+      ],
+      "baselineApiAssemblies": [
+        "lib/net8.0/Utils.Fonts.dll"
+      ],
+      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
     },
     {
       "project": "Utils.Imaging/Utils.Imaging.csproj",
@@ -125,7 +161,13 @@
       "publicApiPolicy": "published-baseline",
       "symbolPackage": true,
       "publishedVersion": "1.2.1",
-      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+      "apiAssemblies": [
+        "lib/net8.0/Utils.Imaging.dll"
+      ],
+      "baselineApiAssemblies": [
+        "lib/net8.0/Utils.Imaging.dll"
+      ],
+      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
     },
     {
       "project": "Utils.Geography/Utils.Geography.csproj",
@@ -142,7 +184,13 @@
       "publicApiPolicy": "published-baseline",
       "symbolPackage": true,
       "publishedVersion": "1.2.1",
-      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+      "apiAssemblies": [
+        "lib/net8.0/Utils.Geography.dll"
+      ],
+      "baselineApiAssemblies": [
+        "lib/net8.0/Utils.Geography.dll"
+      ],
+      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
     },
     {
       "project": "Utils.Reflection/Utils.Reflection.csproj",
@@ -159,7 +207,13 @@
       "publicApiPolicy": "published-baseline",
       "symbolPackage": true,
       "publishedVersion": "1.2.1",
-      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+      "apiAssemblies": [
+        "lib/net8.0/Utils.Reflection.dll"
+      ],
+      "baselineApiAssemblies": [
+        "lib/net8.0/Utils.Reflection.dll"
+      ],
+      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
     },
     {
       "project": "Utils.Mathematics/Utils.Mathematics.csproj",
@@ -176,7 +230,13 @@
       "publicApiPolicy": "published-baseline",
       "symbolPackage": true,
       "publishedVersion": "1.2.1",
-      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+      "apiAssemblies": [
+        "lib/net8.0/Utils.Mathematics.dll"
+      ],
+      "baselineApiAssemblies": [
+        "lib/net8.0/Utils.Mathematics.dll"
+      ],
+      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
     },
     {
       "project": "Utils.Collections/Utils.Collections.csproj",
@@ -191,7 +251,10 @@
         "windows"
       ],
       "publicApiPolicy": "first-candidate",
-      "symbolPackage": true
+      "symbolPackage": true,
+      "apiAssemblies": [
+        "lib/net8.0/Utils.Collections.dll"
+      ]
     },
     {
       "project": "Utils.OData/Utils.OData.csproj",
@@ -208,7 +271,13 @@
       "publicApiPolicy": "published-baseline",
       "symbolPackage": true,
       "publishedVersion": "0.0.1",
-      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+      "apiAssemblies": [
+        "lib/net9.0/Utils.OData.dll"
+      ],
+      "baselineApiAssemblies": [
+        "lib/net9.0/Utils.OData.dll"
+      ],
+      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
     },
     {
       "project": "Utils.NumberToString/Utils.NumberToString.csproj",
@@ -223,7 +292,10 @@
         "windows"
       ],
       "publicApiPolicy": "first-candidate",
-      "symbolPackage": true
+      "symbolPackage": true,
+      "apiAssemblies": [
+        "lib/net8.0/Utils.NumberToString.dll"
+      ]
     },
     {
       "project": "Utils.VirtualMachine/Utils.VirtualMachine.csproj",
@@ -240,7 +312,13 @@
       "publicApiPolicy": "published-baseline",
       "symbolPackage": true,
       "publishedVersion": "0.1.0",
-      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+      "apiAssemblies": [
+        "lib/net8.0/Utils.VirtualMachine.dll"
+      ],
+      "baselineApiAssemblies": [
+        "lib/net8.0/Utils.VirtualMachine.dll"
+      ],
+      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
     },
     {
       "project": "Utils.DependencyInjection/Utils.DependencyInjection.csproj",
@@ -257,7 +335,13 @@
       "publicApiPolicy": "published-baseline",
       "symbolPackage": true,
       "publishedVersion": "1.2.1",
-      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+      "apiAssemblies": [
+        "lib/net9.0/Utils.DependencyInjection.dll"
+      ],
+      "baselineApiAssemblies": [
+        "lib/net9.0/Utils.DependencyInjection.dll"
+      ],
+      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
     },
     {
       "project": "Utils.OData.Generators/Utils.OData.Generators.csproj",
@@ -274,7 +358,13 @@
       "publicApiPolicy": "published-baseline",
       "symbolPackage": true,
       "publishedVersion": "0.0.1",
-      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+      "apiAssemblies": [
+        "analyzers/dotnet/cs/netstandard2.0/Utils.OData.Generators.dll"
+      ],
+      "baselineApiAssemblies": [
+        "lib/netstandard2.0/Utils.OData.Generators.dll"
+      ],
+      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
     },
     {
       "project": "Utils.IO.Serialization.Generators/Utils.IO.Serialization.Generators.csproj",
@@ -291,7 +381,13 @@
       "publicApiPolicy": "published-baseline",
       "symbolPackage": true,
       "publishedVersion": "1.2.1",
-      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+      "apiAssemblies": [
+        "analyzers/dotnet/cs/netstandard2.0/Utils.IO.Serialization.Generators.dll"
+      ],
+      "baselineApiAssemblies": [
+        "lib/netstandard2.0/Utils.IO.Serialization.Generators.dll"
+      ],
+      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
     },
     {
       "project": "Utils.DependencyInjection.Generators/Utils.DependencyInjection.Generators.csproj",
@@ -308,7 +404,13 @@
       "publicApiPolicy": "published-baseline",
       "symbolPackage": true,
       "publishedVersion": "1.2.1",
-      "acceptedBreakingChanges": "docs/releasing/MigrationTo2.0.md"
+      "apiAssemblies": [
+        "analyzers/dotnet/cs/netstandard2.0/Utils.DependencyInjection.Generators.dll"
+      ],
+      "baselineApiAssemblies": [
+        "lib/netstandard2.0/Utils.DependencyInjection.Generators.dll"
+      ],
+      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
     },
     {
       "project": "Utils.Parser.Source/Utils.Parser.Source.csproj",
@@ -323,7 +425,10 @@
         "windows"
       ],
       "publicApiPolicy": "first-candidate",
-      "symbolPackage": true
+      "symbolPackage": true,
+      "apiAssemblies": [
+        "lib/netstandard2.0/Utils.Parser.Source.dll"
+      ]
     },
     {
       "project": "Utils.Parser.Diagnostics/Utils.Parser.Diagnostics.csproj",
@@ -338,7 +443,10 @@
         "windows"
       ],
       "publicApiPolicy": "first-candidate",
-      "symbolPackage": true
+      "symbolPackage": true,
+      "apiAssemblies": [
+        "lib/netstandard2.0/Utils.Parser.Diagnostics.dll"
+      ]
     },
     {
       "project": "Utils.Parser.Antlr4.Common/Utils.Parser.Antlr4.Common.csproj",
@@ -353,7 +461,10 @@
         "windows"
       ],
       "publicApiPolicy": "first-candidate",
-      "symbolPackage": true
+      "symbolPackage": true,
+      "apiAssemblies": [
+        "lib/netstandard2.0/Utils.Parser.Antlr4.Common.dll"
+      ]
     },
     {
       "project": "Utils.Parser/Utils.Parser.csproj",
@@ -368,7 +479,10 @@
         "windows"
       ],
       "publicApiPolicy": "first-candidate",
-      "symbolPackage": true
+      "symbolPackage": true,
+      "apiAssemblies": [
+        "lib/net8.0/Utils.Parser.dll"
+      ]
     },
     {
       "project": "Utils.Parser.Expressions/Utils.Parser.Expressions.csproj",
@@ -383,7 +497,10 @@
         "windows"
       ],
       "publicApiPolicy": "first-candidate",
-      "symbolPackage": true
+      "symbolPackage": true,
+      "apiAssemblies": [
+        "lib/net8.0/Utils.Parser.Expressions.dll"
+      ]
     },
     {
       "project": "Utils.Parser.Generators/Utils.Parser.Generators.csproj",
@@ -406,6 +523,9 @@
       ],
       "buildTransitiveAssets": [
         "buildTransitive/omy.Utils.Parser.Generators.targets"
+      ],
+      "apiAssemblies": [
+        "analyzers/dotnet/cs/netstandard2.0/Utils.Parser.Generators.dll"
       ]
     }
   ],

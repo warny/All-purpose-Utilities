@@ -152,6 +152,52 @@ try {
         if ($LASTEXITCODE -ne 0) { throw "Vulnerability audit failed for $($project.FullName)." }
     }
 
+    # Every non-parser generator has a real consumer that executes generated behavior. Build
+    # each with compiler-generated-file emission both enabled and disabled, then rebuild after
+    # changing an input to exercise the incremental pipeline rather than merely loading Roslyn.
+    $generatorConsumers = @(
+        "ODataGeneratorConsumer/ODataGeneratorConsumer.csproj",
+        "IOSerializationGeneratorConsumer/IOSerializationGeneratorConsumer.csproj",
+        "DependencyInjectionGeneratorConsumer/DependencyInjectionGeneratorConsumer.csproj"
+    )
+    foreach ($relativeProject in $generatorConsumers) {
+        $project = Join-Path $consumerRoot $relativeProject
+        $projectDirectory = Split-Path -Parent $project
+        $generatedDirectory = Join-Path $projectDirectory "obj/$Configuration/net9.0/generated"
+        Remove-Item $generatedDirectory -Recurse -Force -ErrorAction SilentlyContinue
+        foreach ($emit in @('true', 'false')) {
+            & dotnet build $project --configuration $Configuration --no-restore -p:EmitCompilerGeneratedFiles=$emit
+            if ($LASTEXITCODE -ne 0) { throw "Generator consumer matrix failed for '$relativeProject' (Emit=$emit)." }
+        }
+        $program = Join-Path $projectDirectory 'Program.cs'
+        $input = if ($relativeProject -like 'ODataGeneratorConsumer/*') { Join-Path $projectDirectory 'Sample.edmx' } else { $program }
+        $originalInput = Get-Content $input -Raw
+        $initialGeneratedHash = (Get-ChildItem $generatedDirectory -File -Recurse | Get-FileHash -Algorithm SHA256 | ForEach-Object Hash) -join ':'
+        if ($relativeProject -like 'ODataGeneratorConsumer/*') {
+            $originalInput.Replace('Name="CategoryName"', 'Name="CategoryLabel"') | Set-Content $input
+        } elseif ($relativeProject -like 'IOSerializationGeneratorConsumer/*') {
+            Add-Content $input "`n/// <summary>Provides an incremental generator input.</summary>`n[GenerateReaderWriter]`npublic partial class IncrementalPayload {`n/// <summary>Gets or sets the incremental value.</summary>`n[Field(0)] public int Value { get; set; } }"
+        } else {
+            Add-Content $input "`n/// <summary>Provides an incremental registration input.</summary>`n[Transient]`npublic sealed class IncrementalMessage : IMessage {`n/// <inheritdoc />`npublic string Value => `"incremental`"; }"
+        }
+        try {
+            Remove-Item $generatedDirectory -Recurse -Force -ErrorAction SilentlyContinue
+            & dotnet build $project --configuration $Configuration --no-restore --no-incremental -p:EmitCompilerGeneratedFiles=true
+            if ($LASTEXITCODE -ne 0) { throw "Incremental rebuild failed for '$relativeProject'." }
+            $mutatedGeneratedHash = (Get-ChildItem $generatedDirectory -File -Recurse | Get-FileHash -Algorithm SHA256 | ForEach-Object Hash) -join ':'
+            if ($mutatedGeneratedHash -eq $initialGeneratedHash) { throw "Generator output did not change after an input change for '$relativeProject'." }
+        } finally {
+            Set-Content $input $originalInput
+        }
+        Remove-Item $generatedDirectory -Recurse -Force -ErrorAction SilentlyContinue
+        & dotnet build $project --configuration $Configuration --no-restore --no-incremental -p:EmitCompilerGeneratedFiles=true
+        if ($LASTEXITCODE -ne 0) { throw "Generator input restoration failed for '$relativeProject'." }
+        $restoredGeneratedHash = (Get-ChildItem $generatedDirectory -File -Recurse | Get-FileHash -Algorithm SHA256 | ForEach-Object Hash) -join ':'
+        if ($restoredGeneratedHash -ne $initialGeneratedHash) { throw "Obsolete generated output remained after restoring '$relativeProject'." }
+        & dotnet run --project $project --configuration $Configuration --no-build
+        if ($LASTEXITCODE -ne 0) { throw "Generated behavior failed after incremental restoration for '$relativeProject'." }
+    }
+
     $utilsProject = Join-Path $consumerRoot "UtilsConsumer/UtilsConsumer.csproj"
     & dotnet publish $utilsProject --configuration $Configuration --no-restore --output (Join-Path $temporaryPath "published-utils")
     if ($LASTEXITCODE -ne 0) { throw "Publish failed for the omy.Utils consumer." }
@@ -231,7 +277,11 @@ try {
     & dotnet build $incrementalProject --configuration $Configuration --no-restore 2>&1 | Tee-Object -FilePath $diagnosticLog
     if ($LASTEXITCODE -eq 0 -or -not (Select-String -Path $diagnosticLog -Pattern "UP0016" -Quiet)) { throw "Ambiguous packaged import did not fail with UP0016." }
 
-    $acceptanceReport = [ordered]@{ version = [string]$manifest.version; platform = [Runtime.InteropServices.RuntimeInformation]::OSDescription; packages = @($manifest.packages | ForEach-Object { [ordered]@{ packageId = $_.packageId; restored = $true; compiled = $true; executed = $true; profile = $_.acceptanceProfile } }); specializedConsumers = @($projects.Name); passed = $true }
+    $specializedPackageIds = @($projects | ForEach-Object {
+        $content = Get-Content $_.FullName -Raw
+        [regex]::Matches($content, 'PackageReference Include="(omy\.[^"]+)"') | ForEach-Object { $_.Groups[1].Value }
+    } | Sort-Object -Unique)
+    $acceptanceReport = [ordered]@{ version = [string]$manifest.version; platform = [Runtime.InteropServices.RuntimeInformation]::OSDescription; packages = @($manifest.packages | ForEach-Object { [ordered]@{ packageId = $_.packageId; restored = $true; compiled = $true; assemblyLoaded = ($_.kind -ne 'analyzer'); publicTypeFound = ($_.kind -ne 'analyzer'); analyzerLoaded = ($_.kind -eq 'analyzer'); functionalScenarioExecuted = ($specializedPackageIds -contains $_.packageId); profile = $_.acceptanceProfile } }); specializedConsumers = @($projects.Name); passed = $true }
     $reportDirectory = Join-Path $artifactsRoot "reports"
     New-Item $reportDirectory -ItemType Directory -Force | Out-Null
     $acceptanceReport | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $reportDirectory "packaged-acceptance.json")

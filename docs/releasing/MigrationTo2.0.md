@@ -12,8 +12,8 @@ This is a coordinated major-version release candidate. Update all direct `omy.Ut
 
 ApiCompat findings are accepted only for this coordinated major candidate and remain visible in `artifacts/reports/public-api-comparison.*`. Validate application-specific behavior before production deployment.
 
-## Reviewed binary-compatibility findings
+## Reviewed API compatibility changes
 
-The repository-wide ApiCompat run against verified latest stable packages reports the following accepted major-version incompatibility counts: Core 114; IO 7; XML 1; Net 14; Data 3; Fonts 22; Imaging 7; Geography 23; Reflection 3; Mathematics 19; OData 10; VirtualMachine 7; OData generator 3; IO serialization generator 3; and dependency-injection generator 3. DependencyInjection runtime is binary compatible in the automated comparison. Collections, NumberToString, and parser packages establish first candidate baselines.
+The repository-wide ApiCompat run against verified latest stable packages reports the following accepted major-version incompatibility counts: Core 114; IO 7; XML 1; Net 14; Data 3; Fonts 22; Imaging 7; Geography 23; Reflection 3; Mathematics 19; OData 10; VirtualMachine 7; and three each for the OData, IO serialization, and dependency-injection generators. DependencyInjection runtime is binary compatible in the automated comparison. Collections, NumberToString, and parser packages establish first candidate baselines.
 
-These counts include removed types/members, changed signatures and constraints, assembly identity changes, and analyzer assembly-shape differences. They are not behavioral guarantees or rename inference. The package-specific raw reports under `artifacts/api-compat` and structured `public-api-comparison.json` are the authoritative review inputs; consumers must recompile and exercise their own usage.
+Each accepted diagnostic is pinned by diagnostic ID and exact message in `eng/api-baselines/accepted-api-breaks.json`. New diagnostics and stale acceptances both fail the gate. The counts include removed types/members and changed signatures or constraints; they are not behavioral guarantees or rename inference. The package-specific raw reports under `artifacts/api-compat` and structured `public-api-comparison.json` are the authoritative review inputs; consumers must recompile and exercise their own usage.

@@ -1,0 +1,1533 @@
+{
+  "packages": [
+    {
+      "packageId": "omy.Utils",
+      "baselineVersion": "1.2.1",
+      "acceptedDiagnostics": [
+        {
+          "diagnosticId": "CP0021",
+          "message": "Cannot add constraint 'notnull' on type parameter 'T1' of 'Utils.Collections.DoubleIndexedDictionary<T1, T2>'.",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0021",
+          "message": "Cannot add constraint 'notnull' on type parameter 'T2' of 'Utils.Collections.DoubleIndexedDictionary<T1, T2>'.",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Collections.Generic.IEnumerable<T> Utils.Collections.EnumerableEx.FollowedBy<T>(this System.Collections.Generic.IEnumerable<T>, params T[])' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Collections.Generic.IEnumerable<T> Utils.Collections.EnumerableEx.PrecededBy<T>(this System.Collections.Generic.IEnumerable<T>, params T[])' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Collections.Generic.IEnumerable<System.Collections.Generic.IEnumerable<T>> Utils.Collections.EnumerableEx.Slice<T>(this System.Collections.Generic.IEnumerable<T>, params int[])' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0021",
+          "message": "Cannot add constraint 'notnull' on type parameter 'K' of 'Utils.Collections.IndexedList<K, V>'.",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0021",
+          "message": "Cannot add constraint 'notnull' on type parameter 'K' of 'Utils.Collections.LRUCache<K, V>'.",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Collections.SkipList<T>' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Collections.SymbolTree' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Collections.SymbolLeaf' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionParser' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionParserCore' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.IBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.TryReadToken' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.StringTransformer' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.IStartExpressionBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.IFollowUpExpressionBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.IAdditionalTokens' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.Expressions.LiteralPart.Append(string)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.IParserOptions' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ParserContext' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0008",
+          "message": "Type 'Utils.Expressions.ParserOptions' does not implement interface 'Utils.Expressions.IParserOptions' on {candidateAssembly} but it does on {baselineAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.Tokenizer' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ITokenizerPosition' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Format.StringFormat' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0006",
+          "message": "Cannot add interface member 'bool Utils.Mathematics.IAngleCalculator<T>.AreEqual(T, T, T)' to {candidateAssembly} because it does not exist on {baselineAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0006",
+          "message": "Cannot add interface member 'bool Utils.Mathematics.IAngleCalculator<T>.AreEqualRounded(T, T, int)' to {candidateAssembly} because it does not exist on {baselineAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0006",
+          "message": "Cannot add interface member 'T Utils.Mathematics.IAngleCalculator<T>.NormalizeRounded(T, int)' to {candidateAssembly} because it does not exist on {baselineAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Mathematics.INumberToStringConverter' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Nullable<T> Utils.Mathematics.NullableIntEx.Min<T>(System.Nullable<T>, System.Nullable<T>, bool)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Nullable<T> Utils.Mathematics.NullableIntEx.Max<T>(System.Nullable<T>, System.Nullable<T>, bool)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'bool Utils.Mathematics.NullableIntEx.GreaterOrEqual<T>(System.Nullable<T>, System.Nullable<T>)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'int Utils.Mathematics.NullableIntEx.Compare<T>(System.Nullable<T>, System.Nullable<T>, bool)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0008",
+          "message": "Type 'Utils.Mathematics.FloatingPointComparer<T>' does not implement interface 'System.Collections.Generic.IEqualityComparer<T>' on {candidateAssembly} but it does on {baselineAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'bool Utils.Mathematics.FloatingPointComparer<T>.Equals(T, T)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'int Utils.Mathematics.FloatingPointComparer<T>.GetHashCode(T)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Mathematics.Numbers' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Mathematics.NumberType' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Mathematics.NumberListType' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Mathematics.DigitType' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Mathematics.DigitListType' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Mathematics.ReplacementsListType' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Mathematics.ReplacementType' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Mathematics.ReplacementScope' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Mathematics.FractionType' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Mathematics.FractionListType' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Mathematics.LanguageType' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Mathematics.GroupType' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Mathematics.GroupsListType' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Mathematics.SuffixesType' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Mathematics.StaticNamesType' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Mathematics.NumberScaleType' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Mathematics.NumberToStringConverter' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Mathematics.NumberScale' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Objects.Bytes Utils.Objects.BytesExtensions.Join(params byte[][])' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Objects.Bytes Utils.Objects.BytesExtensions.Join(params Utils.Objects.Bytes[])' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'int Utils.Objects.ObjectUtils.ComputeHash<T>(System.Func<T, int>, params T[])' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Randomization.RandomEx' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Collections.Generic.IReadOnlyList<Utils.Range.Range<T>> Utils.Range.Ranges<T>.Intervals.get' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Collections.Generic.IEnumerable<Utils.Range.Range<T1>> Utils.Range.Ranges<T>.InnerParse<T1>(string, string, System.Collections.Generic.IEnumerable<string>, System.Func<string, T1>)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'bool Utils.Range.Ranges<T>.Contains(Utils.Range.Range<T>)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.Range.Ranges<T>.AddAll(System.Collections.Generic.IEnumerable<Utils.Range.Range<T>>)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.Range.Ranges<T>.Add(Utils.Range.Range<T>)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.Range.Ranges<T>.RemoveAll(System.Collections.Generic.IEnumerable<Utils.Range.Range<T>>)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.Range.Ranges<T>.Remove(Utils.Range.Range<T>)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'bool Utils.Range.Range<T>.Contains(Utils.Range.Range<T>)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'bool Utils.Range.Range<T>.Overlap(Utils.Range.Range<T>)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'bool Utils.Range.Range<T>.Overlap(Utils.Range.Range<T>, Utils.Range.Range<T>)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Nullable<Utils.Range.Range<T>> Utils.Range.Range<T>.Intersect(Utils.Range.Range<T>)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Collections.Generic.IEnumerable<Utils.Range.Range<double>> Utils.Range.DoubleRanges.InnerParse(string, System.Globalization.NumberFormatInfo)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Collections.Generic.IEnumerable<Utils.Range.Range<float>> Utils.Range.SingleRanges.InnerParse(string, System.Globalization.NumberFormatInfo)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Collections.Generic.IEnumerable<Utils.Range.Range<System.DateTime>> Utils.Range.DateTimeRanges.InnerParse(string, System.Globalization.DateTimeFormatInfo)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Range.ReadOnlyRange<T> Utils.Range.RangeUtils.Reverse<T>(this System.Collections.Generic.IReadOnlyList<T>)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Collections.Generic.IEnumerable<System.Type> Utils.Reflection.ReflectionEx.GetTypes(this System.Reflection.Assembly, System.Func<System.Type, bool>)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Collections.Generic.IEnumerable<System.Type> Utils.Reflection.ReflectionEx.GetTypes(this System.Collections.Generic.IEnumerable<System.Reflection.Assembly>, System.Func<System.Type, bool>)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Resources.ExternalResource.ExternalResource(string, string, System.Globalization.CultureInfo)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0009",
+          "message": "Type 'Utils.Security.Authenticator' has the sealed modifier on {candidateAssembly} but not on {baselineAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Security.Cryptography.HMAC Utils.Security.Authenticator.Algorithm.get' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'byte[] Utils.Security.Authenticator.Key.get' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Security.Authenticator.Authenticator(System.Security.Cryptography.HMAC, byte[], int, int)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.Builders.CStyleBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.PlusOperatorBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.OperatorBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.MemberBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.NullOrMemberBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.TypeMatchBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.AddAssignationBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.AssignationBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.PostOperationBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.TypeCastBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.BracketBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.RightParenthesisBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.CloseBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.ConditionalBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.NumberConstantBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.NullBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.TrueBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.FalseBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.SizeOfBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.TypeofBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.NewBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.UnaryOperandBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.ParenthesisBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.BlockBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.DefaultUnaryBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.IfBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.BreakBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.ContinueBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.ReturnBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.WhileBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.ForBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.ForEachBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.SwitchBuilder' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Expressions.ExpressionBuilders.ThrowParseException' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        }
+      ]
+    },
+    {
+      "packageId": "omy.Utils.IO",
+      "baselineVersion": "1.2.1",
+      "acceptedDiagnostics": [
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.IO.StreamCopier.StreamCopier(bool, System.Collections.Generic.IEnumerable<System.IO.Stream>)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.IO.StreamCopier.StreamCopier(System.Collections.Generic.IEnumerable<System.IO.Stream>)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'byte[] Utils.IO.StreamUtils.ReadToEnd(this System.IO.Stream)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.IO.StreamValidator.StreamValidator(System.IO.Stream)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.IO.BaseEncoding.BaseDecoderStream.BaseDecoderStream(System.IO.Stream, Utils.IO.BaseEncoding.IBaseDescriptor)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'T[] Utils.IO.Serialization.ReaderWriterExtensions.ReadArray<T>(this Utils.IO.Serialization.Reader, int, bool)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.IO.Serialization.ReaderWriterExtensions.WriteVariableLengthString(this Utils.IO.Serialization.Writer, string, System.Text.Encoding, bool, int)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        }
+      ]
+    },
+    {
+      "packageId": "omy.Utils.XML",
+      "baselineVersion": "1.2.1",
+      "acceptedDiagnostics": [
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Collections.Generic.IEnumerable<System.Xml.XmlReader> Utils.XML.XmlUtils.ReadChildElements(this System.Xml.XmlReader)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        }
+      ]
+    },
+    {
+      "packageId": "omy.Utils.Net",
+      "baselineVersion": "1.2.1",
+      "acceptedDiagnostics": [
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Threading.Tasks.Task<string> Utils.Net.EchoClient.EchoAsync(string, int, string)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Threading.Tasks.Task<string> Utils.Net.EchoClient.EchoAsync(string, string)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Threading.Tasks.Task<int> Utils.Net.IcmpUtils.SendEchoRequestAsync(System.Net.IPAddress, int, int)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Threading.Tasks.Task<int> Utils.Net.IcmpUtils.SendEchoRequestAsync(System.Net.IPAddress, Utils.Net.Icmp.IcmpPacket, int)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<Utils.Net.Icmp.TracerouteHop>> Utils.Net.IcmpUtils.TracerouteAsync(System.Net.IPAddress, int, int)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Net.NntpServer.NntpServer(Utils.Net.INntpArticleStore)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Threading.Tasks.Task<System.DateTime> Utils.Net.NtpClient.GetTimeAsync(string, int)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Threading.Tasks.Task<System.DateTime> Utils.Net.NtpClient.GetTimeAsync(string)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Threading.Tasks.Task<string> Utils.Net.QuoteOfTheDayClient.GetQuoteAsync(string, int)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Threading.Tasks.Task<string> Utils.Net.QuoteOfTheDayClient.GetQuoteAsync(string)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Threading.Tasks.Task Utils.Net.SmtpServer.StartAsync(System.IO.Stream, bool, System.Threading.CancellationToken)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Threading.Tasks.Task<System.DateTime> Utils.Net.TimeProtocolClient.GetTimeAsync(string, int)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Threading.Tasks.Task<System.DateTime> Utils.Net.TimeProtocolClient.GetTimeAsync(string)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Threading.Tasks.Task Utils.Net.WakeOnLan.SendMagicPacketAsync(System.Net.NetworkInformation.PhysicalAddress, System.Net.IPAddress?, int)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        }
+      ]
+    },
+    {
+      "packageId": "omy.Utils.Data",
+      "baselineVersion": "1.2.1",
+      "acceptedDiagnostics": [
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Data.IDbDataParameter Utils.Data.DbCommandExtensions.AddNewParameter(this System.Data.IDbCommand, string, System.Data.DbType, object)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Data.IDbDataParameter Utils.Data.DbCommandExtensions.AddNewParameter(this System.Data.IDbCommand, string, object)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Data.SqlBuilderInterpolator.SqlBuilderInterpolator(int, int, System.Data.IDbConnection)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        }
+      ]
+    },
+    {
+      "packageId": "omy.Utils.Fonts",
+      "baselineVersion": "1.2.1",
+      "acceptedDiagnostics": [
+        {
+          "diagnosticId": "CP0006",
+          "message": "Cannot add interface member 'float Utils.Fonts.IFont.Scale' to {candidateAssembly} because it does not exist on {baselineAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0006",
+          "message": "Cannot add interface member 'float Utils.Fonts.IFont.BaseLineY' to {candidateAssembly} because it does not exist on {baselineAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0006",
+          "message": "Cannot add interface member 'void Utils.Fonts.IGraphicConverter.ClosePath()' to {candidateAssembly} because it does not exist on {baselineAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0006",
+          "message": "Cannot add interface member 'void Utils.Fonts.IGraphicConverter.BeginDrawGlyph(float, float, System.Numerics.Matrix3x2)' to {candidateAssembly} because it does not exist on {baselineAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0006",
+          "message": "Cannot add interface member 'void Utils.Fonts.IGraphicConverter.EndDrawGlyph()' to {candidateAssembly} because it does not exist on {baselineAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Fonts.TTF.TrueTypeGlyph.TrueTypeGlyph(Utils.Fonts.TTF.Tables.Glyf.GlyphBase)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'short Utils.Fonts.TTF.Tables.AcntTable.Version.get' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.Fonts.TTF.Tables.AcntTable.DescriptionOffset.set' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.Fonts.TTF.Tables.AcntTable.ExtensionOffset.set' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.Fonts.TTF.Tables.AcntTable.SecondaryOffset.set' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Fonts.TTF.Tables.Glyf.GlyphBase[] Utils.Fonts.TTF.Tables.AcntTable.Glyphs.get' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.Fonts.TTF.Tables.AcntTable.Glyphs.set' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'object[] Utils.Fonts.TTF.Tables.AcntTable.Extension.get' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.Fonts.TTF.Tables.AcntTable.Extension.set' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'object[] Utils.Fonts.TTF.Tables.AcntTable.Accent.get' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.Fonts.TTF.Tables.AcntTable.Accent.set' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'float Utils.Fonts.TTF.Tables.KernTable.GetSpacingCorrection(char, char)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Fonts.TTF.Tables.Acnt.AcntFormat0' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Fonts.TTF.Tables.Acnt.AcntFormatBase' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'short Utils.Fonts.TTF.Tables.CMap.CMapFormatBase.Length.get' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0005",
+          "message": "Cannot add abstract member 'int Utils.Fonts.TTF.Tables.CMap.CMapFormatBase.Length.get' to {candidateAssembly} because it does not exist on {baselineAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0005",
+          "message": "Cannot add abstract member 'int Utils.Fonts.TTF.Tables.CMap.CMapFormatBase.Length' to {candidateAssembly} because it does not exist on {baselineAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        }
+      ]
+    },
+    {
+      "packageId": "omy.Utils.Imaging",
+      "baselineVersion": "1.2.1",
+      "acceptedDiagnostics": [
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Imaging.ColorAhsv Utils.Imaging.ColorAhsv.FromColorAshv<TColorAshv, T>(TColorAshv)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Imaging.IColorArgb<double> Utils.Imaging.ColorArgb.Substract(Utils.Imaging.IColorArgb<double>)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Imaging.IColorArgb<byte> Utils.Imaging.ColorArgb32.Substract(Utils.Imaging.IColorArgb<byte>)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Imaging.ColorArgb32 Utils.Imaging.ColorArgb32.LinearGrandient(Utils.Imaging.ColorArgb32, Utils.Imaging.ColorArgb32, float)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Imaging.IColorArgb<ushort> Utils.Imaging.ColorArgb64.Substract(Utils.Imaging.IColorArgb<ushort>)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Imaging.IColorArgb<T> Utils.Imaging.IColorArgb<T>.Substract(Utils.Imaging.IColorArgb<T>)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0006",
+          "message": "Cannot add interface member 'Utils.Imaging.IColorArgb<T> Utils.Imaging.IColorArgb<T>.Subtract(Utils.Imaging.IColorArgb<T>)' to {candidateAssembly} because it does not exist on {baselineAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        }
+      ]
+    },
+    {
+      "packageId": "omy.Utils.Geography",
+      "baselineVersion": "1.2.1",
+      "acceptedDiagnostics": [
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'int Utils.Geography.Display.RepresentationConverter<T>.GetMapSize(byte)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0007",
+          "message": "Type 'Utils.Geography.Model.GeoPoint<T>' does not inherit from base type 'System.Object' on {candidateAssembly} but it does on {baselineAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0009",
+          "message": "Type 'Utils.Geography.Model.GeoPoint<T>' has the sealed modifier on {candidateAssembly} but not on {baselineAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'T Utils.Geography.Model.GeoPoint<T>.MinutesInDegree' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'T Utils.Geography.Model.GeoPoint<T>.SecondsInDegree' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'T Utils.Geography.Model.GeoPoint<T>.SecondsInMinute' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Mathematics.IAngleCalculator<T> Utils.Geography.Model.GeoPoint<T>.degree' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Mathematics.FloatingPointComparer<T> Utils.Geography.Model.GeoPoint<T>.comparer' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Collections.Generic.IReadOnlyList<string> Utils.Geography.Model.GeoPoint<T>.PositiveLatitude' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Collections.Generic.IReadOnlyList<string> Utils.Geography.Model.GeoPoint<T>.NegativeLatitude' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Collections.Generic.IReadOnlyList<string> Utils.Geography.Model.GeoPoint<T>.PositiveLongitude' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Collections.Generic.IReadOnlyList<string> Utils.Geography.Model.GeoPoint<T>.NegativeLongitude' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Geography.Model.GeoPoint<T>.GeoPoint()' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'bool Utils.Geography.Model.GeoPoint<T>.ParseCoordinates(string, string, System.Globalization.CultureInfo, System.Text.RegularExpressions.Regex, out T, out T)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'T Utils.Geography.Model.GeoPoint<T>.ParseCoordinate(Utils.Geography.Model.CoordinateDirection, string, System.Collections.Generic.IReadOnlyList<string>, System.Collections.Generic.IReadOnlyList<string>, System.Globalization.CultureInfo, System.Text.RegularExpressions.Regex)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0012",
+          "message": "Cannot remove 'virtual' keyword from member 'Utils.Geography.Model.GeoPoint<T>.ToString(string, System.IFormatProvider)'.",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Text.RegularExpressions.Regex Utils.Geography.Model.GeoPoint<T>.BuildRegexCoordinates(System.Globalization.CultureInfo)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0007",
+          "message": "Type 'Utils.Geography.Model.GeoPointList<T>' does not inherit from base type 'System.Collections.Generic.List<Utils.Geography.Model.GeoPoint<T>>' on {candidateAssembly} but it does on {baselineAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0007",
+          "message": "Type 'Utils.Geography.Model.GeoPointList2<T>' does not inherit from base type 'System.Collections.Generic.List<Utils.Geography.Model.GeoPointList<T>>' on {candidateAssembly} but it does on {baselineAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0007",
+          "message": "Type 'Utils.Geography.Model.GeoVector<T>' does not inherit from base type 'Utils.Geography.Model.GeoPoint<T>' on {candidateAssembly} but it does on {baselineAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0008",
+          "message": "Type 'Utils.Geography.Model.GeoVector<T>' does not implement interface 'System.IEquatable<Utils.Geography.Model.GeoPoint<T>>' on {candidateAssembly} but it does on {baselineAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.Geography.Model.MapPosition<T>.GeoPoint.set' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.Geography.Model.MapPosition<T>.ZoomLevel.set' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        }
+      ]
+    },
+    {
+      "packageId": "omy.Utils.Reflection",
+      "baselineVersion": "1.2.1",
+      "acceptedDiagnostics": [
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'I Utils.Reflection.LibraryMapper.Emit<I>(string, System.Runtime.InteropServices.CallingConvention)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'T Utils.Reflection.Reflection.Emit.EmitDllMappableClass.Emit<T>(System.Runtime.InteropServices.CallingConvention)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'object Utils.Reflection.Reflection.Emit.EmitDllMappableClass.Emit(System.Type)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        }
+      ]
+    },
+    {
+      "packageId": "omy.Utils.Mathematics",
+      "baselineVersion": "1.2.1",
+      "acceptedDiagnostics": [
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Mathematics.Expressions.ExpressionDerivation.ExpressionDerivation(string)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Linq.Expressions.Expression Utils.Mathematics.Expressions.ExpressionIntegration.Parameter(System.Linq.Expressions.ParameterExpression, object)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Linq.Expressions.Expression Utils.Mathematics.Expressions.ExpressionIntegration.Substract(System.Linq.Expressions.BinaryExpression, System.Linq.Expressions.Expression, System.Linq.Expressions.Expression)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Mathematics.Fourrier.FastFourrierTransform' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Mathematics.Fourrier.FourrierExtensions' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0021",
+          "message": "Cannot remove constraint '!:System.Numerics.ITrigonometricFunctions{`0}' on type parameter 'T' of 'Utils.Mathematics.LinearAlgebra.Line<T>'.",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member '(Utils.Mathematics.LinearAlgebra.Matrix<T>, Utils.Mathematics.LinearAlgebra.Matrix<T>) Utils.Mathematics.LinearAlgebra.Matrix<T>.DiagonalizeLU()' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Mathematics.LinearAlgebra.Matrix<T> Utils.Mathematics.LinearAlgebra.Matrix<T>.Invert()' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'bool Utils.Mathematics.LinearAlgebra.Matrix<T>.IsTriangularised.get' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'bool Utils.Mathematics.LinearAlgebra.Matrix<T>.IsDiagonalized.get' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Mathematics.LinearAlgebra.Matrix<T> Utils.Mathematics.LinearAlgebra.MatrixTransformations.Diagonal<T>(params T[])' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Mathematics.LinearAlgebra.Matrix<T> Utils.Mathematics.LinearAlgebra.MatrixTransformations.Scaling<T>(params T[])' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Mathematics.LinearAlgebra.Matrix<T> Utils.Mathematics.LinearAlgebra.MatrixTransformations.Skew<T>(params T[])' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Mathematics.LinearAlgebra.Matrix<T> Utils.Mathematics.LinearAlgebra.MatrixTransformations.Rotation<T>(params T[])' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Mathematics.LinearAlgebra.Matrix<T> Utils.Mathematics.LinearAlgebra.MatrixTransformations.Translation<T>(params T[])' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Mathematics.LinearAlgebra.Matrix<T> Utils.Mathematics.LinearAlgebra.MatrixTransformations.Transform<T>(params T[])' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Mathematics.LinearAlgebra.Vector<T>.Vector(params T[])' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Mathematics.LinearAlgebra.Vector<T> Utils.Mathematics.LinearAlgebra.Vector<T>.Normalize()' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Mathematics.LinearAlgebra.Vector<T> Utils.Mathematics.LinearAlgebra.Vector<T>.FromNormalSpace()' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        }
+      ]
+    },
+    {
+      "packageId": "omy.Utils.OData",
+      "baselineVersion": "0.0.1",
+      "acceptedDiagnostics": [
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'string? Utils.OData.ODataQueryBuilder.Authorization.get' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0009",
+          "message": "Type 'Utils.OData.ErrorReturnValue' has the sealed modifier on {candidateAssembly} but not on {baselineAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Type Utils.OData.ErrorReturnValue.EqualityContract.get' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.OData.ErrorReturnValue.code.init' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.OData.ErrorReturnValue.message.init' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'bool Utils.OData.ErrorReturnValue.PrintMembers(System.Text.StringBuilder)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0012",
+          "message": "Cannot remove 'virtual' keyword from member 'Utils.OData.ErrorReturnValue.Equals(Utils.OData.ErrorReturnValue?)'.",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0012",
+          "message": "Cannot remove 'virtual' keyword from member 'Utils.OData.ErrorReturnValue.<Clone>$()'.",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.OData.ErrorReturnValue.ErrorReturnValue(Utils.OData.ErrorReturnValue)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.OData.ErrorReturnValue.Deconstruct(out int, out string)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        }
+      ]
+    },
+    {
+      "packageId": "omy.Utils.VirtualMachine",
+      "baselineVersion": "0.1.0",
+      "acceptedDiagnostics": [
+        {
+          "diagnosticId": "CP0006",
+          "message": "Cannot add interface member 'sbyte Utils.VirtualMachine.INumberReader.ReadSByte(Utils.VirtualMachine.Context)' to {candidateAssembly} because it does not exist on {baselineAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.VirtualMachine.VirtualProcessor<T>.Execute(T)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'byte[] Utils.VirtualMachine.Context.Data.get' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.VirtualMachine.Context.Context(byte[])' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.VirtualMachine.DefaultContext.DefaultContext(byte[])' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Collections.Generic.Stack<object> Utils.VirtualMachine.DefaultContext.Stack.get' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.VirtualMachine.VirtualProcessorException.VirtualProcessorException(System.Runtime.Serialization.SerializationInfo, System.Runtime.Serialization.StreamingContext)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        }
+      ]
+    },
+    {
+      "packageId": "omy.Utils.DependencyInjection",
+      "baselineVersion": "1.2.1",
+      "acceptedDiagnostics": []
+    },
+    {
+      "packageId": "omy.Utils.OData.Generators",
+      "baselineVersion": "0.0.1",
+      "acceptedDiagnostics": [
+        {
+          "diagnosticId": "CP0008",
+          "message": "Type 'Utils.OData.Generators.ODataEntityGenerator' does not implement interface 'Microsoft.CodeAnalysis.ISourceGenerator' on {candidateAssembly} but it does on {baselineAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.OData.Generators.ODataEntityGenerator.Initialize(Microsoft.CodeAnalysis.GeneratorInitializationContext)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.OData.Generators.ODataEntityGenerator.Execute(Microsoft.CodeAnalysis.GeneratorExecutionContext)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        }
+      ]
+    },
+    {
+      "packageId": "omy.Utils.IO.Serialization.Generators",
+      "baselineVersion": "1.2.1",
+      "acceptedDiagnostics": [
+        {
+          "diagnosticId": "CP0008",
+          "message": "Type 'Utils.IO.Serialization.Generators.ReaderWriterGenerator' does not implement interface 'Microsoft.CodeAnalysis.ISourceGenerator' on {candidateAssembly} but it does on {baselineAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.IO.Serialization.Generators.ReaderWriterGenerator.Initialize(Microsoft.CodeAnalysis.GeneratorInitializationContext)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.IO.Serialization.Generators.ReaderWriterGenerator.Execute(Microsoft.CodeAnalysis.GeneratorExecutionContext)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        }
+      ]
+    },
+    {
+      "packageId": "omy.Utils.DependencyInjection.Generators",
+      "baselineVersion": "1.2.1",
+      "acceptedDiagnostics": [
+        {
+          "diagnosticId": "CP0008",
+          "message": "Type 'Utils.DependencyInjection.Generators.StaticAutoGenerator' does not implement interface 'Microsoft.CodeAnalysis.ISourceGenerator' on {candidateAssembly} but it does on {baselineAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.DependencyInjection.Generators.StaticAutoGenerator.Initialize(Microsoft.CodeAnalysis.GeneratorInitializationContext)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.DependencyInjection.Generators.StaticAutoGenerator.Execute(Microsoft.CodeAnalysis.GeneratorExecutionContext)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Reviewed major-version API change for the synchronized 2.0 release.",
+          "migrationSection": "docs/releasing/MigrationTo2.0.md#reviewed-api-compatibility-changes"
+        }
+      ]
+    }
+  ]
+}
