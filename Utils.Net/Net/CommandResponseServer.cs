@@ -464,6 +464,8 @@ public class CommandResponseServer : IDisposable
                 {
                     continue;
                 }
+                try
+                {
                 string[] parts = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 string verb = parts.Length > 0 ? parts[0] : string.Empty;
                 string[] args = parts.Length > 1 ? parts[1..] : [];
@@ -558,6 +560,20 @@ public class CommandResponseServer : IDisposable
                     {
                         _errorCount = 0;
                     }
+                }
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    // Item 34: any non-cancellation, non-handler fault (formatter, stream write, etc.)
+                    // is terminal: cancel the listener and re-throw so Completion faults with the
+                    // original exception rather than completing silently.
+                    Logger?.LogError(ex, "Unhandled exception in command processing loop; terminating session");
+                    await (_listenTokenSource?.CancelAsync() ?? Task.CompletedTask).ConfigureAwait(false);
+                    throw;
                 }
             }
         }
