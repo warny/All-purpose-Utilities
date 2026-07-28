@@ -137,13 +137,29 @@ public class CommandResponseClient : IDisposable
     /// <param name="host">Server host name or IP address.</param>
     /// <param name="port">Server port.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
+    /// <exception cref="InvalidOperationException">Thrown when a connection has already been established.</exception>
     public async Task ConnectAsync(string host, int port = -1, CancellationToken cancellationToken = default)
     {
         port = port == -1 ? DefaultPort : port;
         Logger?.LogInformation("Connecting to {Host}:{Port}", host, port);
-        _client = new TcpClient();
-        await _client.ConnectAsync(host, port, cancellationToken).ConfigureAwait(false);
-        await ConnectAsync(_client.GetStream(), false, cancellationToken).ConfigureAwait(false);
+
+        // Item 51: build in local variables; transfer to fields only after full success.
+        TcpClient? tcpClient = null;
+        try
+        {
+            tcpClient = new TcpClient();
+            await tcpClient.ConnectAsync(host, port, cancellationToken).ConfigureAwait(false);
+            // ConnectAsync(Stream) will own tcpClient from here; pass null so our finally does not dispose it.
+            TcpClient capturedClient = tcpClient;
+            tcpClient = null;
+            _client = capturedClient;
+            await ConnectAsync(capturedClient.GetStream(), false, cancellationToken).ConfigureAwait(false);
+        }
+        catch
+        {
+            tcpClient?.Dispose();
+            throw;
+        }
     }
 
     /// <summary>
@@ -155,8 +171,12 @@ public class CommandResponseClient : IDisposable
     /// Cancellation token whose lifetime is linked to the session: cancelling this token
     /// after connection stops the listener, the keep-alive loop, and all pending waiters.
     /// </param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="stream"/> is null.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when a connection has already been established.</exception>
     public Task ConnectAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
     {
+        if (stream is null) throw new ArgumentNullException(nameof(stream));
+
         // Item 48: atomic single-use connection guard.
         int prev = Interlocked.CompareExchange(ref _state, StateConnecting, StateNotConnected);
         if (prev == StateDisposed)
@@ -166,26 +186,47 @@ public class CommandResponseClient : IDisposable
                 "This client is already connected or has already been used. " +
                 "Create a new instance for each connection.");
 
+        // Item 51: build all resources in local variables so we can roll back on failure.
+        StreamReader? reader = null;
+        StreamWriter? writer = null;
+        CancellationTokenSource? listenCts = null;
+        Thread? listenThread = null;
         try
         {
             _stream = stream;
             _leaveOpen = leaveOpen;
             if (stream.CanTimeout)
             {
-                stream.ReadTimeout = _listenTimeout == Timeout.InfiniteTimeSpan ? -1 : (int)_listenTimeout.TotalMilliseconds;
+                int readTimeoutMs = _listenTimeout == Timeout.InfiniteTimeSpan
+                    ? -1
+                    : (int)_listenTimeout.TotalMilliseconds;
+                stream.ReadTimeout = readTimeoutMs;
             }
-            _reader = new StreamReader(stream, Encoding.ASCII, false, 1024, true);
-            _writer = new StreamWriter(stream, Encoding.ASCII, 1024, true)
+            reader = new StreamReader(stream, Encoding.ASCII, false, 1024, true);
+            writer = new StreamWriter(stream, Encoding.ASCII, 1024, true)
             {
                 NewLine = "\r\n",
                 AutoFlush = true
             };
             // Item 47: link the caller token so cancellation stops the session listener.
-            _listenTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            _listenThread = new Thread(() => ListenLoop(_listenTokenSource.Token))
+            listenCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+
+            _reader = reader;
+            _writer = writer;
+            _listenTokenSource = listenCts;
+            reader = null;
+            writer = null;
+            listenCts = null;
+
+            // Capture _listenTokenSource (the field) so the lambda does not close over the
+            // now-nulled local variable.
+            CancellationTokenSource capturedCts = _listenTokenSource;
+            listenThread = new Thread(() => ListenLoop(capturedCts.Token))
             {
                 IsBackground = true
             };
+            _listenThread = listenThread;
+
             _everConnected = true;
             _disconnected = false;
             _listenThread.Start();
@@ -200,9 +241,10 @@ public class CommandResponseClient : IDisposable
         catch
         {
             Interlocked.Exchange(ref _state, StateDisposed);
-            _reader?.Dispose();
-            _writer?.Dispose();
-            _listenTokenSource?.Dispose();
+            reader?.Dispose();
+            writer?.Dispose();
+            listenCts?.Dispose();
+            // listenThread was never started if we're here, so no Join needed.
             throw;
         }
     }
