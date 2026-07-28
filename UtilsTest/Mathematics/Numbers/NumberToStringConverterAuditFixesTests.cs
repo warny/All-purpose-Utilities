@@ -3222,13 +3222,16 @@ public class NumberToStringConverterAuditFixesTests
     }
 
     [TestMethod]
-    public void Constructor_FractionKeyAbove28_ThrowsArgumentOutOfRange()
+    public void Constructor_FractionKeyAbove28_IsAccepted_AndUsedByBigIntegerFraction()
     {
+        // Keys > 28 are valid: ConvertFraction(BigInteger, BigInteger) can resolve denominators
+        // beyond decimal precision (e.g. 10^29). The 28 cap applies only to Convert(decimal).
         var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"));
-        options.Fractions = new Dictionary<int, string> { { 29, "29ths" } };
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
-            () => new NumberToStringConverter(options),
-            "A fraction key above 28 must be rejected (exceeds decimal precision)");
+        options.Fractions = new Dictionary<int, string> { { 29, "nonillionths" } };
+        var conv = new NumberToStringConverter(options);
+        string result = conv.ConvertFraction(System.Numerics.BigInteger.One, System.Numerics.BigInteger.Pow(10, 29));
+        Assert.AreEqual("one nonillionths", result,
+            "Key 29 must be accepted and resolve when denominator is 10^29");
     }
 
     [TestMethod]

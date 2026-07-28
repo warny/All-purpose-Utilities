@@ -170,17 +170,15 @@ namespace Utils.NumberToString
             AdjustFunction = input => LanguageSpecifics.FinalizeWriting(LanguageIdentifier, (_rawAdjustFunction ?? (s => s))(input));
             Fractions = options.Fractions?.ToImmutableDictionary() ?? ImmutableDictionary<int, string>.Empty;
             // Fraction keys represent the number of decimal digits in the denominator (e.g. 2 → hundredths).
-            // Keys must be in [1, 28]: ≥1 because zero or negative digits are meaningless, ≤28 because
-            // decimal supports at most 28 significant digits and Fractions.TryGetValue is called with the
-            // length of the fractional digit string extracted from a decimal value.
+            // Only non-positive keys are rejected here: zero or negative digit counts are meaningless.
+            // There is no upper bound because ConvertFraction(BigInteger, BigInteger) can resolve
+            // denominators beyond decimal precision (e.g. 10^29). The decimal path naturally caps at 28
+            // because string.Length of the fractional part of a decimal never exceeds 28.
             foreach (var (fracKey, fracName) in Fractions)
             {
                 if (fracKey < 1)
                     throw new ArgumentOutOfRangeException(nameof(options.Fractions),
                         $"Fraction digit key {fracKey} is invalid; keys must be ≥ 1 (representing the denominator digit count).");
-                if (fracKey > 28)
-                    throw new ArgumentOutOfRangeException(nameof(options.Fractions),
-                        $"Fraction digit key {fracKey} exceeds the maximum supported decimal precision (28).");
                 if (string.IsNullOrWhiteSpace(fracName))
                     throw new ArgumentException(
                         $"Fraction with key {fracKey} has a null, empty, or whitespace name.", nameof(options.Fractions));
