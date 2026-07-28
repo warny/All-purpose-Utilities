@@ -169,6 +169,20 @@ namespace Utils.NumberToString
             _rawAdjustFunction = options.AdjustFunction;
             AdjustFunction = input => LanguageSpecifics.FinalizeWriting(LanguageIdentifier, (_rawAdjustFunction ?? (s => s))(input));
             Fractions = options.Fractions?.ToImmutableDictionary() ?? ImmutableDictionary<int, string>.Empty;
+            // Fraction keys represent the number of decimal digits in the denominator (e.g. 2 → hundredths).
+            // Only non-positive keys are rejected here: zero or negative digit counts are meaningless.
+            // There is no upper bound because ConvertFraction(BigInteger, BigInteger) can resolve
+            // denominators beyond decimal precision (e.g. 10^29). The decimal path naturally caps at 28
+            // because string.Length of the fractional part of a decimal never exceeds 28.
+            foreach (var (fracKey, fracName) in Fractions)
+            {
+                if (fracKey < 1)
+                    throw new ArgumentOutOfRangeException(nameof(options.Fractions),
+                        $"Fraction digit key {fracKey} is invalid; keys must be ≥ 1 (representing the denominator digit count).");
+                if (string.IsNullOrWhiteSpace(fracName))
+                    throw new ArgumentException(
+                        $"Fraction with key {fracKey} has a null, empty, or whitespace name.", nameof(options.Fractions));
+            }
             MaxNumber = options.MaxNumber;
             if (MaxNumber.HasValue && MaxNumber.Value < 0)
                 throw new ArgumentOutOfRangeException(nameof(options.MaxNumber),
@@ -1561,6 +1575,13 @@ namespace Utils.NumberToString
             // Find the most specific matching ordinal variant
             OrdinalVariantRule? activeVariant = FindBestOrdinalVariant(activeVariants);
 
+            // When the caller specifies no variants, BuildVariantQuery injects dimension
+            // defaults (e.g. {gender=masculine}), which would incorrectly select a variant
+            // exception over the explicit string= base form. Check OrdinalExceptions first
+            // so that string="form" is treated as the true no-variant fallback.
+            if (variants.Length == 0 && OrdinalExceptions.TryGetValue(absNumber, out var baseException))
+                return isNegative ? Minus.Replace("*", baseException) : baseException;
+
             // Exceptions: variant first, then base
             if (activeVariant?.Exceptions.TryGetValue(absNumber, out var varException) == true)
                 return isNegative ? Minus.Replace("*", varException) : varException;
@@ -1569,7 +1590,7 @@ namespace Utils.NumberToString
 
             string raw = absNumber == 0 ? Zero : ConvertRaw((BigInteger)absNumber, activeVariants);
             raw = ApplyVariantRules(raw, activeVariants, absNumber);
-            string ordinal = ApplyOrdinalTransform(raw, activeVariant);
+            string ordinal = ApplyOrdinalTransform(raw, activeVariant, noExplicitVariants: variants.Length == 0);
             if (_rawAdjustFunction != null) ordinal = _rawAdjustFunction(ordinal);
             ordinal = ApplyTriggers(ordinal, TriggerAt.End, null, activeVariants);
             string final = LanguageSpecifics.FinalizeWriting(LanguageIdentifier, ordinal);
@@ -1955,7 +1976,13 @@ namespace Utils.NumberToString
         /// Transforms a cardinal string into its ordinal form by applying word-level rules
         /// or the ordinal suffix to the last word, optionally using a variant-specific override.
         /// </summary>
-        private string ApplyOrdinalTransform(string cardinal, OrdinalVariantRule? activeVariant = null)
+        /// <param name="noExplicitVariants">
+        /// When <see langword="true"/>, the caller specified no variant arguments and
+        /// <see cref="OrdinalWordRules"/> (explicit <c>to=</c> base rules) take priority over
+        /// variant word rules, so that a dimension-default variant injected by
+        /// <c>BuildVariantQuery</c> does not override an explicit base form.
+        /// </param>
+        private string ApplyOrdinalTransform(string cardinal, OrdinalVariantRule? activeVariant = null, bool noExplicitVariants = false)
         {
             string? effectiveSuffix = activeVariant?.Suffix ?? OrdinalSuffix;
             string? effectiveRemoveTrailing = activeVariant?.RemoveTrailing ?? OrdinalRemoveTrailing;
@@ -1973,11 +2000,23 @@ namespace Utils.NumberToString
             string hyphenPrefix = lastHyphen >= 0 ? lastComponent[..(lastHyphen + 1)] : "";
             string lastWord = lastHyphen >= 0 ? lastComponent[(lastHyphen + 1)..] : lastComponent;
 
-            // Variant word rules take priority over base word rules
-            if (activeVariant?.WordRules.TryGetValue(lastWord, out var varReplacement) == true)
-                return prefix + hyphenPrefix + varReplacement;
-            if (OrdinalWordRules.TryGetValue(lastWord, out var replacement))
-                return prefix + hyphenPrefix + replacement;
+            if (noExplicitVariants)
+            {
+                // No variants specified: explicit to= base rule takes priority over the
+                // default-dimension variant word rule that BuildVariantQuery injects.
+                if (OrdinalWordRules.TryGetValue(lastWord, out var baseReplacement))
+                    return prefix + hyphenPrefix + baseReplacement;
+                if (activeVariant?.WordRules.TryGetValue(lastWord, out var varFallback) == true)
+                    return prefix + hyphenPrefix + varFallback;
+            }
+            else
+            {
+                // Variant word rules take priority over base word rules
+                if (activeVariant?.WordRules.TryGetValue(lastWord, out var varReplacement) == true)
+                    return prefix + hyphenPrefix + varReplacement;
+                if (OrdinalWordRules.TryGetValue(lastWord, out var replacement))
+                    return prefix + hyphenPrefix + replacement;
+            }
 
             if (effectiveSuffix != null)
             {

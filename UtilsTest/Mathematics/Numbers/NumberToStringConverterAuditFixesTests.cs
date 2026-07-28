@@ -2887,4 +2887,392 @@ public class NumberToStringConverterAuditFixesTests
     {
         public string FinalizeWriting(string language, string value) => value + "_TRANSFORMED";
     }
+
+    // ── Item 89 — Ordinal fallback must match the declared default variant ─────
+
+    [TestMethod]
+    public void ConvertOrdinal_Spanish_Value1_NoVariant_ReturnsMasculineDefault()
+    {
+        // ES ordinal 1 without variant → must return the masculine form "primero"
+        // (gender dimension declares masculino as its first/default value).
+        var es = NumberToStringConverter.GetConverter("ES");
+        string result = es.ConvertOrdinal(1L);
+        Assert.AreEqual("primero", result,
+            "ConvertOrdinal(1) without variant must return masculine 'primero' for ES");
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_Spanish_Value1_FeminineVariant_ReturnsFemenino()
+    {
+        var es = NumberToStringConverter.GetConverter("ES");
+        string result = es.ConvertOrdinal(1L, "gender=femenino");
+        Assert.AreEqual("primera", result,
+            "ConvertOrdinal(1, gender=femenino) must return feminine 'primera' for ES");
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_Greek_Value11_NoVariant_ReturnsMasculineDefault()
+    {
+        // EL ordinal 11 without variant → must return the masculine form ενδέκατος
+        // (gender dimension declares αρσενικό as its first/default value).
+        var el = NumberToStringConverter.GetConverter("EL");
+        string result = el.ConvertOrdinal(11L);
+        Assert.AreEqual("ενδέκατος", result,
+            "ConvertOrdinal(11) without variant must return masculine 'ενδέκατος' for EL");
+    }
+
+    // Synthetic tests for item 89 — exact default variant matching
+
+    [TestMethod]
+    public void ReadConfiguration_OrdinalFallback_NonDefaultFormDeclaredFirst_UsesDeclaredDefault()
+    {
+        // Dimension declares masculine,feminine (masculine is first/default).
+        // Forms attr lists feminine first (to test XML order is not used).
+        // No-variant call → must return masculine (first declared dimension value).
+        // Variant gender=feminine → must return feminine.
+        // NOTE: forms= always uses dimension declaration order, so "masculine,feminine" regardless.
+        // To test that XML order doesn't matter, we'll use two separate <Variant> children.
+        string xml = $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>XTEST</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+    <Variants>
+      <Dimension name=""gender"" values=""masculine,feminine"" />
+    </Variants>
+    <Ordinals>
+      <OrdinalException value=""1"">
+        <Variant type=""gender"" variant=""feminine"" value=""primera"" />
+        <Variant type=""gender"" variant=""masculine"" value=""primero"" />
+      </OrdinalException>
+    </Ordinals>
+  </Language>
+</Numbers>";
+        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        var conv = converters["XTEST"];
+
+        string defaultResult = conv.ConvertOrdinal(1L);
+        Assert.AreEqual("primero", defaultResult,
+            "No-variant call must return masculine (first declared dimension value), not feminine");
+
+        string feminineResult = conv.ConvertOrdinal(1L, "gender=feminine");
+        Assert.AreEqual("primera", feminineResult,
+            "Explicit gender=feminine call must return 'primera'");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_OrdinalFallback_ReorderingEquivalentNodesDoesNotChangeResult()
+    {
+        // Config A: feminine variant first, then masculine
+        string xmlA = $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>XTEST-A</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+    <Variants>
+      <Dimension name=""gender"" values=""masculine,feminine"" />
+    </Variants>
+    <Ordinals>
+      <OrdinalException value=""1"">
+        <Variant type=""gender"" variant=""feminine"" value=""primera"" />
+        <Variant type=""gender"" variant=""masculine"" value=""primero"" />
+      </OrdinalException>
+    </Ordinals>
+  </Language>
+</Numbers>";
+
+        // Config B: masculine variant first, then feminine
+        string xmlB = $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>XTEST-B</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+    <Variants>
+      <Dimension name=""gender"" values=""masculine,feminine"" />
+    </Variants>
+    <Ordinals>
+      <OrdinalException value=""1"">
+        <Variant type=""gender"" variant=""masculine"" value=""primero"" />
+        <Variant type=""gender"" variant=""feminine"" value=""primera"" />
+      </OrdinalException>
+    </Ordinals>
+  </Language>
+</Numbers>";
+
+        var convA = NumberToStringConverter.ReadConfiguration(xmlA)["XTEST-A"];
+        var convB = NumberToStringConverter.ReadConfiguration(xmlB)["XTEST-B"];
+
+        string resultA = convA.ConvertOrdinal(1L);
+        string resultB = convB.ConvertOrdinal(1L);
+        Assert.AreEqual("primero", resultA,
+            "Config A: no-variant call must return masculine regardless of XML order");
+        Assert.AreEqual("primero", resultB,
+            "Config B: no-variant call must return masculine regardless of XML order");
+        Assert.AreEqual(resultA, resultB,
+            "Reordering XML variant nodes must not change the default result");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_OrdinalFallback_MultipleDimensionsRequiresFullDefaultMatch()
+    {
+        // Dimensions: gender (masculine,feminine) and case (nominative,accusative).
+        // Default query = {gender=masculine, case=nominative}.
+        // Partial form: {gender=masculine} only → must NOT be selected as fallback.
+        // Full form: {gender=masculine, case=nominative} → must be selected as fallback.
+        string xml = $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>XTEST</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+    <Variants>
+      <Dimension name=""gender"" values=""masculine,feminine"" />
+      <Dimension name=""case"" values=""nominative,accusative"" />
+    </Variants>
+    <Ordinals>
+      <OrdinalException value=""1"">
+        <Variant type=""gender"" variant=""masculine"">
+          <Variant type=""case"" variant=""nominative"" value=""first-masc-nom"" />
+          <Variant type=""case"" variant=""accusative"" value=""first-masc-acc"" />
+        </Variant>
+        <Variant type=""gender"" variant=""feminine"">
+          <Variant type=""case"" variant=""nominative"" value=""first-fem-nom"" />
+          <Variant type=""case"" variant=""accusative"" value=""first-fem-acc"" />
+        </Variant>
+      </OrdinalException>
+    </Ordinals>
+  </Language>
+</Numbers>";
+
+        var conv = NumberToStringConverter.ReadConfiguration(xml)["XTEST"];
+        string defaultResult = conv.ConvertOrdinal(1L);
+        Assert.AreEqual("first-masc-nom", defaultResult,
+            "No-variant call must match the fully exact default query {gender=masculine, case=nominative}");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_OrdinalFallback_NoDefaultMatchAndNoBaseForm_Throws()
+    {
+        // No explicit base form (no string= attribute) and only non-default variants declared.
+        // The only form is {gender=feminine}; default is {gender=masculine}.
+        // Must throw InvalidOperationException on ReadConfiguration.
+        string xml = $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>XTEST</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+    <Variants>
+      <Dimension name=""gender"" values=""masculine,feminine"" />
+    </Variants>
+    <Ordinals>
+      <OrdinalException value=""1"">
+        <Variant type=""gender"" variant=""feminine"" value=""primera"" />
+      </OrdinalException>
+    </Ordinals>
+  </Language>
+</Numbers>";
+
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.ReadConfiguration(xml),
+            "Missing default variant form must throw InvalidOperationException");
+        StringAssert.Contains(ex.Message, "1",
+            "Exception message must identify the problematic ordinal value");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_OrdinalFallback_ExplicitBaseFormTakesPriority()
+    {
+        // Has explicit string= attribute on the exception → must use that form as default.
+        // Also has a variant matching the default query → explicit base wins over it.
+        string xml = $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>XTEST</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+    <Variants>
+      <Dimension name=""gender"" values=""masculine,feminine"" />
+    </Variants>
+    <Ordinals>
+      <OrdinalException value=""1"" string=""explicit-base"">
+        <Variant type=""gender"" variant=""masculine"" value=""masculine-form"" />
+        <Variant type=""gender"" variant=""feminine"" value=""primera"" />
+      </OrdinalException>
+    </Ordinals>
+  </Language>
+</Numbers>";
+
+        var conv = NumberToStringConverter.ReadConfiguration(xml)["XTEST"];
+        string defaultResult = conv.ConvertOrdinal(1L);
+        Assert.AreEqual("explicit-base", defaultResult,
+            "Explicit string= base form must be returned for no-variant call, not the variant form");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_OrdinalWordRule_ExplicitBaseToTakesPriority()
+    {
+        // Symmetric to ExplicitBaseFormTakesPriority but for word-level rules (<Ordinal to=>).
+        // A word rule with to="explicit-base" and a child <Variant> must return the base form
+        // on a no-variant call; an explicit variant call must return the variant form.
+        string xml = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>XTEST3</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+    <Variants>
+      <Dimension name=""gender"" values=""masculine,feminine"" />
+    </Variants>
+    <Ordinals>
+      <Ordinal from=""one"" to=""explicit-base"">
+        <Variant type=""gender"" variant=""masculine"" value=""variant-default"" />
+      </Ordinal>
+    </Ordinals>
+  </Language>
+</Numbers>";
+
+        var conv = NumberToStringConverter.ReadConfiguration(xml)["XTEST3"];
+        string noVariantResult = conv.ConvertOrdinal(1L);
+        Assert.AreEqual("explicit-base", noVariantResult,
+            "Explicit to= base rule must be returned for no-variant call, not the masculine variant");
+        string explicitResult = conv.ConvertOrdinal(1L, "gender=masculine");
+        Assert.AreEqual("variant-default", explicitResult,
+            "Explicit gender=masculine call must return the variant form");
+    }
+
+    [TestMethod]
+    public void Constructor_FractionKeyWhitespaceName_ThrowsArgumentException()
+    {
+        // Item 95: whitespace-only names must be rejected just like empty/null names.
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"));
+        options.Fractions = new System.Collections.Generic.Dictionary<int, string> { { 2, "   " } };
+        Assert.ThrowsException<ArgumentException>(
+            () => new NumberToStringConverter(options),
+            "A whitespace-only fraction name must be rejected");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_InvalidOrdinalFallback_DoesNotCommitPartialState()
+    {
+        // Atomicity test: a document with two languages where the second has an invalid ordinal.
+        // ReadConfiguration must throw and must NOT have committed the first language to the global
+        // cache. We use unique GUIDs so the keys cannot collide with anything already cached.
+        string validKey = "XTEST-ATOM-VALID-" + System.Guid.NewGuid().ToString("N");
+        string invalidKey = "XTEST-ATOM-INVALID-" + System.Guid.NewGuid().ToString("N");
+
+        string xml = $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>{validKey}</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+    <Variants>
+      <Dimension name=""gender"" values=""masculine,feminine"" />
+    </Variants>
+    <Ordinals>
+      <OrdinalException value=""1"">
+        <Variant type=""gender"" forms=""primero,primera"" />
+      </OrdinalException>
+    </Ordinals>
+  </Language>
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>{invalidKey}</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+    <Variants>
+      <Dimension name=""gender"" values=""masculine,feminine"" />
+    </Variants>
+    <Ordinals>
+      <OrdinalException value=""1"">
+        <Variant type=""gender"" variant=""feminine"" value=""primera"" />
+      </OrdinalException>
+    </Ordinals>
+  </Language>
+</Numbers>";
+
+        Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.ReadConfiguration(xml),
+            "A document with an invalid ordinal must throw during ReadConfiguration");
+
+        // Phase 3 (commit to global cache) must not have been reached for the valid language either.
+        bool found = NumberToStringConverter.TryGetConverter(validKey, out _);
+        Assert.IsFalse(found,
+            $"The valid language '{validKey}' must NOT be accessible after a failed ReadConfiguration (atomicity)");
+    }
+
+    // ── Item 72 — Sub-second precision contract is documented ─────────────────
+
+    [TestMethod]
+    public void Convert_TimeSpan_SubSecondOnly_RendersAsZero()
+    {
+        // A duration of 500 ms only has no second component → must produce Zero text.
+        var fr = NumberToStringConverter.GetConverter("FR");
+        string result = fr.Convert(TimeSpan.FromMilliseconds(500));
+        Assert.AreEqual(fr.Zero, result,
+            "Convert(TimeSpan) for a sub-second-only duration must render as Zero");
+    }
+
+    [TestMethod]
+    public void Convert_TimeSpan_WithMilliseconds_MillisecondsAreDiscarded()
+    {
+        // 1 hour, 30 minutes, 500 ms → must mention hours and minutes but not milliseconds.
+        var fr = NumberToStringConverter.GetConverter("FR");
+        string result = fr.Convert(TimeSpan.FromHours(1).Add(TimeSpan.FromMinutes(30)).Add(TimeSpan.FromMilliseconds(500)));
+        StringAssert.Contains(result, "heure",
+            "Convert(TimeSpan) for 1h30m500ms must mention the hour component");
+        StringAssert.Contains(result, "minute",
+            "Convert(TimeSpan) for 1h30m500ms must mention the minute component");
+        // milliseconds are silently discarded per the documented precision contract
+        Assert.IsFalse(result.Contains("millisecon"),
+            $"Convert(TimeSpan) must not mention milliseconds; got: {result}");
+    }
+
+    // ── Item 95 — Fraction digit key validation ───────────────────────────────
+
+    [TestMethod]
+    public void Constructor_FractionKeyZero_ThrowsArgumentOutOfRange()
+    {
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"));
+        options.Fractions = new Dictionary<int, string> { { 0, "zeroth" } };
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => new NumberToStringConverter(options),
+            "A fraction key of 0 must be rejected");
+    }
+
+    [TestMethod]
+    public void Constructor_FractionKeyNegative_ThrowsArgumentOutOfRange()
+    {
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"));
+        options.Fractions = new Dictionary<int, string> { { -1, "negative-ths" } };
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => new NumberToStringConverter(options),
+            "A negative fraction key must be rejected");
+    }
+
+    [TestMethod]
+    public void Constructor_FractionKeyAbove28_IsAccepted_AndUsedByBigIntegerFraction()
+    {
+        // Keys > 28 are valid: ConvertFraction(BigInteger, BigInteger) can resolve denominators
+        // beyond decimal precision (e.g. 10^29). The 28 cap applies only to Convert(decimal).
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"));
+        options.Fractions = new Dictionary<int, string> { { 29, "nonillionths" } };
+        var conv = new NumberToStringConverter(options);
+        string result = conv.ConvertFraction(System.Numerics.BigInteger.One, System.Numerics.BigInteger.Pow(10, 29));
+        Assert.AreEqual("one nonillionths", result,
+            "Key 29 must be accepted and resolve when denominator is 10^29");
+    }
+
+    [TestMethod]
+    public void Constructor_FractionKeyEmptyName_ThrowsArgumentException()
+    {
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"));
+        options.Fractions = new Dictionary<int, string> { { 2, "" } };
+        Assert.ThrowsException<ArgumentException>(
+            () => new NumberToStringConverter(options),
+            "An empty fraction name must be rejected");
+    }
 }
