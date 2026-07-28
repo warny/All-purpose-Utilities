@@ -674,13 +674,7 @@ public class LanguageType
     /// <summary>
     /// Gets or sets the number of digits grouped together when formatting.
     /// </summary>
-    /// <remarks>
-    /// This is the fully-resolved value. XML deserialization and the presence/absence tracking
-    /// required for <c>baseOn</c> merging are handled by the internal <c>LanguageXmlModel</c> and
-    /// <c>LanguageDefinition</c> types, so this public property stays a plain <see cref="int"/> and
-    /// is not deserialized directly.
-    /// </remarks>
-    [XmlIgnore]
+    [XmlAttribute("groupSize")]
     public int GroupSize { get; set; }
 
     /// <summary>
@@ -1015,11 +1009,7 @@ public class NumberScaleType
     /// <summary>
     /// Gets or sets a value indicating whether the first letter of generated names should be upper-case.
     /// </summary>
-    /// <remarks>
-    /// This is the fully-resolved value. Presence/absence tracking for <c>baseOn</c> merging is
-    /// handled by the internal <c>NumberScaleXmlModel</c>/<c>NumberScaleDefinition</c> types.
-    /// </remarks>
-    [XmlIgnore]
+    [XmlAttribute("firstLetterUpperCase")]
     public bool FirstLetterUpperCase { get; set; }
 
     /// <summary>
@@ -1037,11 +1027,7 @@ public class NumberScaleType
     /// <summary>
     /// Gets or sets the index offset applied when computing scale names.
     /// </summary>
-    /// <remarks>
-    /// This is the fully-resolved value. Presence/absence tracking for <c>baseOn</c> merging is
-    /// handled by the internal <c>NumberScaleXmlModel</c>/<c>NumberScaleDefinition</c> types.
-    /// </remarks>
-    [XmlIgnore]
+    [XmlAttribute("startIndex")]
     public int StartIndex { get; set; }
 
     /// <summary>

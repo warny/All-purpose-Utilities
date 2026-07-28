@@ -1,7 +1,9 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
+using System.Xml.Serialization;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.NumberToString;
 
@@ -2779,6 +2781,65 @@ public class NumberToStringConverterAuditFixesTests
             .Where(p => p.Name.EndsWith("Specified") || p.Name.EndsWith("Xml"));
         Assert.IsFalse(specifiedProps.Any(),
             $"Found unexpected public XML properties on NumberScaleType: {string.Join(", ", specifiedProps.Select(p => p.Name))}");
+    }
+
+    // ── Item 57 — public API XML serialization contract ─────────────────────────
+
+    [TestMethod]
+    public void PublicApi_LanguageType_XmlSerializationStillWritesGroupSize()
+    {
+        var lang = new LanguageType { GroupSize = 4 };
+        var serializer = new XmlSerializer(typeof(LanguageType));
+        using var writer = new StringWriter();
+        serializer.Serialize(writer, lang);
+        StringAssert.Contains(writer.ToString(), "groupSize=\"4\"",
+            "Serialized LanguageType must include groupSize attribute (public XML contract)");
+    }
+
+    [TestMethod]
+    public void PublicApi_NumberScaleType_XmlSerializationStillWritesFirstLetterUpperCase()
+    {
+        var scale = new NumberScaleType { FirstLetterUpperCase = true };
+        var serializer = new XmlSerializer(typeof(NumberScaleType));
+        using var writer = new StringWriter();
+        serializer.Serialize(writer, scale);
+        StringAssert.Contains(writer.ToString(), "firstLetterUpperCase=\"true\"",
+            "Serialized NumberScaleType must include firstLetterUpperCase attribute (public XML contract)");
+    }
+
+    [TestMethod]
+    public void PublicApi_NumberScaleType_XmlSerializationStillWritesStartIndex()
+    {
+        var scale = new NumberScaleType { StartIndex = 5 };
+        var serializer = new XmlSerializer(typeof(NumberScaleType));
+        using var writer = new StringWriter();
+        serializer.Serialize(writer, scale);
+        StringAssert.Contains(writer.ToString(), "startIndex=\"5\"",
+            "Serialized NumberScaleType must include startIndex attribute (public XML contract)");
+    }
+
+    [TestMethod]
+    public void PublicApi_LanguageType_XmlDeserializationStillReadsGroupSize()
+    {
+        const string xml = "<LanguageType groupSize=\"6\" />";
+        var serializer = new XmlSerializer(typeof(LanguageType));
+        using var reader = new StringReader(xml);
+        var lang = (LanguageType)serializer.Deserialize(reader)!;
+        Assert.AreEqual(6, lang.GroupSize,
+            "XmlSerializer must read groupSize attribute into LanguageType.GroupSize");
+    }
+
+    [TestMethod]
+    public void PublicApi_NumberScaleType_XmlDeserializationStillReadsScaleAttributes()
+    {
+        const string xml = "<NumberScaleType firstLetterUpperCase=\"true\" startIndex=\"7\" />";
+        var serializer = new XmlSerializer(typeof(NumberScaleType));
+        using var reader = new StringReader(xml);
+        var scale = (NumberScaleType)serializer.Deserialize(reader)!;
+        Assert.IsTrue(scale.FirstLetterUpperCase,
+            "XmlSerializer must read firstLetterUpperCase attribute into NumberScaleType.FirstLetterUpperCase");
+        Assert.AreEqual(7, scale.StartIndex,
+            "XmlSerializer must read startIndex attribute into NumberScaleType.StartIndex");
     }
 
     // ── Item 57 — Optional<T> presence semantics ────────────────────────────────
