@@ -171,4 +171,70 @@ public class CommandResponseLifecycleTests
         // leaveOpen=true must not have disposed the underlying stream.
         Assert.IsTrue(serverStream.CanRead, "Stream must remain open when leaveOpen is true.");
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // Item 31 — Atomic single-use server startup
+    // ──────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task StartAsync_ConcurrentCalls_OnlyOneSucceeds()
+    {
+        (DuplexStream serverStream, StreamWriter clientWriter, StreamReader clientReader) = CreateServerTestPair();
+        using CommandResponseServer server = new();
+
+        int success = 0;
+        int failure = 0;
+        Task[] tasks = Enumerable.Range(0, 8).Select(_ => Task.Run(async () =>
+        {
+            try
+            {
+                await server.StartAsync(serverStream, leaveOpen: true);
+                Interlocked.Increment(ref success);
+            }
+            catch (InvalidOperationException)
+            {
+                Interlocked.Increment(ref failure);
+            }
+        })).ToArray();
+
+        await WithTimeout(Task.WhenAll(tasks), "Concurrent StartAsync did not complete within 5s.");
+        Assert.AreEqual(1, success, "Exactly one StartAsync must succeed.");
+        Assert.AreEqual(7, failure, "All other StartAsync calls must throw.");
+    }
+
+    [TestMethod]
+    public async Task StartAsync_SecondCallAfterStart_Throws()
+    {
+        (DuplexStream serverStream, StreamWriter clientWriter, StreamReader clientReader) = CreateServerTestPair();
+        using CommandResponseServer server = new();
+        await server.StartAsync(serverStream, leaveOpen: true);
+
+        await Assert.ThrowsExceptionAsync<InvalidOperationException>(() =>
+            server.StartAsync(serverStream, leaveOpen: true));
+    }
+
+    [TestMethod]
+    public async Task StartAsync_AfterStopped_Throws()
+    {
+        (DuplexStream serverStream, StreamWriter clientWriter, StreamReader clientReader) = CreateServerTestPair();
+        CommandResponseServer server = new();
+        await server.StartAsync(serverStream, leaveOpen: true);
+        server.Dispose();
+
+        await Assert.ThrowsExceptionAsync<InvalidOperationException>(() =>
+            server.StartAsync(serverStream, leaveOpen: true));
+    }
+
+    [TestMethod]
+    public async Task StartAsync_AfterInitializationFailure_Throws()
+    {
+        using CommandResponseServer server = new();
+        await Assert.ThrowsExceptionAsync<ArgumentNullException>(() =>
+            server.StartAsync(null!, leaveOpen: true));
+
+        // A failed startup must leave the instance unusable (single-use contract).
+        (DuplexStream serverStream, StreamWriter clientWriter, StreamReader clientReader) = CreateServerTestPair();
+        await Assert.ThrowsExceptionAsync<InvalidOperationException>(() =>
+            server.StartAsync(serverStream, leaveOpen: true));
+    }
 }
