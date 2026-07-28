@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
     <Language
+        baseOn="SCALE-LONG"
         groupSize="3"
         separator=""
         groupSeparator=""

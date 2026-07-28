@@ -136,13 +136,13 @@ Malformed programmatic/XML configuration can therefore fail later with `DivideBy
 
 **Priority: P2 lifecycle/configuration.**
 
-### 57. `baseOn` inheritance is global, order-dependent and has no cycle detection
+### ✅ 57. `baseOn` inheritance is global, order-dependent and has no cycle detection
 
 Resolved language definitions are stored in a process-wide cache while documents are parsed. A child can therefore inherit from whichever definition of a culture was cached first in an earlier call. Recursive `baseOn` chains do not maintain a visited set, so cycles can recurse until stack overflow.
 
-**Fix:** resolve inheritance inside an isolated configuration graph with explicit document/batch scope, detect cycles with a visiting set, and commit resolved definitions only after the graph validates. Cross-batch inheritance should require an explicit registry/version policy.
+**Fix:** `ResolveLanguage` uses both a `HashSet<string> visiting` (case-insensitive, for O(1) cycle detection) and a `List<string> resolutionPath` (for ordered path in error messages). The child's own key is added to `visiting` before resolving any of its bases; a `finally` block always removes it so the set remains accurate after backtracking. Cycle detection is case-insensitive (`OrdinalIgnoreCase`). Multiple bases (`baseOn="B,C,D"`) are supported: each base is resolved independently and merged left-to-right with later bases having higher priority than earlier ones, and the child having highest priority. The resolution lookup order is: (1) local document cache (already-resolved entries within this document), (2) raw document entries resolved recursively (document-local definitions always shadow the global cache, preventing a cached entry from masking a cycle in the current document), (3) global cache (_cachedLanguageTypes — definitions from previously loaded documents). Atomicity: `ReadConfiguration` performs all resolutions into local temporary structures before committing anything to `_cachedLanguageTypes`, so a cycle or missing-base error in any language rolls back the entire document without publishing partial state.
 
-**Priority: P2 determinism and robustness.**
+**Model split (public API preserved):** Presence/absence tracking is confined to an internal serialization/definition layer so the public configuration types keep their historical shape. Three layers now exist: (1) internal XML models (`NumbersXmlModel`, `LanguageXmlModel`, `NumberScaleXmlModel`) that carry the `[XmlSerializer]` attributes and the `Specified` companions for the presence-sensitive value-type attributes (`groupSize`, `firstLetterUpperCase`, `startIndex`); these are `public` only because `XmlSerializer` requires public types; (2) internal mergeable definitions (`LanguageDefinition`, `NumberScaleDefinition`) that use `Optional<T>` for those three fields and plain nullable reference fields elsewhere, on which `baseOn` inheritance and deterministic left-to-right merging run (`MergeLanguageDefinition`/`MergeNumberScaleDefinition` via `MergeOptional`); (3) the restored public types `LanguageType`/`NumberScaleType`, built by `BuildResolvedLanguage`/`BuildNumberScale` with the historical public API — `int GroupSize`, `bool FirstLetterUpperCase`, `int StartIndex` (no nullable, no `*Xml`/`*XmlSpecified` members). `Optional<T>` distinguishes an explicit `0`/`false` (which overrides an inherited value) from an absent attribute (which inherits); absent value-type fields collapse to the historical defaults (`GroupSize` = 3, `StartIndex` = 0, `FirstLetterUpperCase` = false) when the public type is built. Cycle blocking, deterministic merge, ordered multiple inheritance, and atomic loading are all preserved. Addressed in PR fix/Utils.NumberToString-todo-items-57-60-61.
 
 ### 58. Runtime variants are permissive while configuration variants are strict
 
@@ -160,21 +160,19 @@ For equally specific matching trigger forms or ordinal variants, the first decla
 
 **Priority: P2 determinism.**
 
-### 60. `RegisterLanguageSpecifics` stores shared mutable instances globally
+### 🔶 60. `RegisterLanguageSpecifics` stores shared mutable instances globally
 
 A single registered `INumberToStringLanguageSpecifics` instance may be reused by many immutable converters and concurrent calls. The API does not require implementations to be stateless/thread-safe and allows silent replacement under the same key.
 
-**Fix:** register factories or immutable descriptors instead of instances, validate non-empty names, define duplicate behavior, and document/thread-test the required lifecycle.
+**Fix:** `RegisterLanguageSpecifics` now validates `typeName` with `ArgumentException.ThrowIfNullOrWhiteSpace` (null → `ArgumentNullException`, empty/whitespace → `ArgumentException`) and `instance` with `ArgumentNullException.ThrowIfNull`. XML documentation clarified: the registered instance is shared and must be stateless or thread-safe; duplicate keys are silently replaced. Addressed in PR fix/Utils.NumberToString-todo-items-57-60-61.
 
-**Priority: P2 concurrency/design.**
+> **Partially addressed:** type names and instances are now validated, and the shared concurrent lifecycle is documented. Factory-based registration or immutable descriptors remain future work.
 
-### 61. Unknown cultures silently fall back to English
+### ✅ 61. Unknown cultures silently fall back to English
 
 After recursively stripping BCP-47 subtags, `GetConverter` returns the English converter for any unresolved culture. A spelling error can therefore produce valid but wrong-language business text without any diagnostic.
 
-**Fix:** make fallback policy explicit. Prefer a throwing `GetRequiredConverter`, a `TryGetConverter`, and an opt-in fallback converter/culture. Preserve the current behavior only as a clearly named compatibility path.
-
-**Priority: P2 API correctness.**
+**Fix:** two overloads `TryGetConverter(string?, out NumberToStringConverter?)` and `TryGetConverter(CultureInfo?, out NumberToStringConverter?)` return `false` (and `null`) without falling back to English when the culture cannot be resolved. The `string` overload returns `false` immediately for null, empty or whitespace input. The `CultureInfo` overload returns `false` immediately for a null argument. BCP-47 subtag stripping is applied the same way as `GetConverter`. `GetConverter` XML doc updated to mention the fallback and link to `TryGetConverter`. Addressed in PR fix/Utils.NumberToString-todo-items-57-60-61.
 
 ## Duplications of intent to reduce
 

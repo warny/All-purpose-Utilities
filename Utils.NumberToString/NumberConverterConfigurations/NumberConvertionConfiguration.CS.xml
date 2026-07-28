@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
     <Language
+        baseOn="SCALE-LONG"
         groupSize="3"
         separator=" "
         groupSeparator=""
@@ -61,10 +62,6 @@
                 <!-- Czech: "tisíc" alone for 1000; "jedna tisíc" → "tisíc" via Replacement -->
                 <Scale value="1" string="tisíc" />
             </StaticNames>
-            <Suffixes>
-                <Suffix>on</Suffix>
-                <Suffix>ard</Suffix>
-            </Suffixes>
         </NumberScale>
         <Replacements>
             <!-- Drop "jedna" before "tisíc": 1000 = "tisíc" not "jedna tisíc" -->

@@ -69,19 +69,33 @@ namespace Utils.NumberToString
         // Explicitly registered language-specifics instances, consulted before reflection
         private static readonly ConcurrentDictionary<string, INumberToStringLanguageSpecifics> _registeredSpecifics = new(StringComparer.Ordinal);
 
-        // Stores resolved LanguageType objects for cross-document baseOn resolution
-        private static readonly ConcurrentDictionary<string, LanguageType> _cachedLanguageTypes = new(StringComparer.OrdinalIgnoreCase);
+        // Stores resolved language definitions for cross-document baseOn resolution.
+        // A LanguageDefinition (not the public LanguageType) is cached so that a child in a later
+        // document still sees which fields the base declared explicitly versus inherited.
+        private static readonly ConcurrentDictionary<string, LanguageDefinition> _cachedLanguageTypes = new(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// Registers an <see cref="INumberToStringLanguageSpecifics"/> instance under a given type name
         /// so that XML configurations referencing that name find it without reflection.
         /// </summary>
+        /// <remarks>
+        /// <para>
+        /// If an instance is already registered under <paramref name="typeName"/>, it is
+        /// replaced silently. The registered instance is shared across all converters that
+        /// reference the type name and is invoked concurrently during conversion.
+        /// Implementations must therefore be stateless or internally thread-safe.
+        /// </para>
+        /// </remarks>
         /// <param name="typeName">
         /// The type name as it appears in <c>&lt;LanguageSpecifics&gt;</c> elements (full or short name).
+        /// Must be non-null and non-whitespace.
         /// </param>
-        /// <param name="instance">The instance to register.</param>
+        /// <param name="instance">The instance to register. Must not be <see langword="null"/>.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="instance"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="typeName"/> is null, empty, or whitespace.</exception>
         public static void RegisterLanguageSpecifics(string typeName, INumberToStringLanguageSpecifics instance)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(typeName, nameof(typeName));
             ArgumentNullException.ThrowIfNull(instance);
             _registeredSpecifics[typeName] = instance;
         }
@@ -116,121 +130,341 @@ namespace Utils.NumberToString
 
         /// <summary>
         /// Parses a configuration document into converter instances keyed by culture name.
+        /// Proceeds in three phases to guarantee atomicity:
+        /// <list type="number">
+        ///   <item><description>Resolve all <c>baseOn</c> inheritance chains (throws on cycle or missing base — nothing is committed).</description></item>
+        ///   <item><description>Build converters from the resolved definitions (throws on invalid config — nothing is committed).</description></item>
+        ///   <item><description>Commit all resolved types to <see cref="_cachedLanguageTypes"/> for cross-document inheritance.</description></item>
+        /// </list>
+        /// If any phase throws, no partial state is published to the shared caches.
         /// </summary>
         /// <param name="configuration">The XML configuration document.</param>
         /// <returns>A dictionary mapping culture names to converters.</returns>
         public static Dictionary<string, NumberToStringConverter> ReadConfiguration(string configuration)
         {
-            XmlSerializer serializer = new XmlSerializer(typeof(Numbers), "Utils/NumberConvertionConfiguration.xsd");
+            XmlSerializer serializer = new XmlSerializer(typeof(NumbersXmlModel), "Utils/NumberConvertionConfiguration.xsd");
 
-            Numbers obj;
+            NumbersXmlModel obj;
             using (StringReader reader = new StringReader(configuration))
             {
-                obj = (Numbers)serializer.Deserialize(reader);
+                obj = (NumbersXmlModel)serializer.Deserialize(reader);
             }
 
-            // Build a within-document lookup so baseOn can reference a language declared earlier
-            // in the same XML document (case-insensitive culture keys).
-            var docLanguageTypes = new Dictionary<string, LanguageType>(StringComparer.OrdinalIgnoreCase);
-            foreach (var lang in obj.Languages)
-                foreach (var culture in lang.Cultures ?? [])
-                    docLanguageTypes.TryAdd(NormalizeCulture(culture), lang);
+            var languageModels = obj.Languages ?? new List<LanguageXmlModel>();
 
-            var result = new Dictionary<string, NumberToStringConverter>();
-            foreach (var language in obj.Languages)
+            // Project each XML model onto an internal definition that carries explicit-presence
+            // information (Optional<T>) for the value-type attributes.
+            var definitions = new List<LanguageDefinition>(languageModels.Count);
+            foreach (var model in languageModels)
+                definitions.Add(ToDefinition(model));
+
+            // Build a within-document lookup so baseOn can reference any language in this
+            // document regardless of declaration order (case-insensitive culture keys).
+            var docLanguages = new Dictionary<string, LanguageDefinition>(StringComparer.OrdinalIgnoreCase);
+            foreach (var def in definitions)
+                foreach (var culture in def.Cultures)
+                    docLanguages.TryAdd(NormalizeCulture(culture), def);
+
+            // Phase 1 — resolve all languages. Keep resolved definitions in local dictionaries so
+            // nothing is committed to the shared cache until every language in this document
+            // has been resolved successfully (atomicity).
+            var resolvedDefinitions = new List<LanguageDefinition>(definitions.Count);
+            var localCacheAdditions = new Dictionary<string, LanguageDefinition>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var definition in definitions)
             {
-                var resolved = string.IsNullOrEmpty(language.BaseOn)
-                    ? language
-                    : ResolveBaseOn(language, docLanguageTypes);
+                LanguageDefinition resolved;
+                if (string.IsNullOrEmpty(definition.BaseOn))
+                {
+                    resolved = definition;
+                }
+                else
+                {
+                    // Pass both the document-local map and the accumulating local cache so that
+                    // languages resolved earlier in this document are available as bases.
+                    resolved = ResolveLanguage(
+                        definition,
+                        docLanguages,
+                        localCacheAdditions,
+                        new HashSet<string>(StringComparer.OrdinalIgnoreCase),
+                        new List<string>());
+                }
 
-                // Cache the resolved LanguageType so other documents can reference it via baseOn.
-                foreach (var culture in resolved.Cultures ?? [])
-                    _cachedLanguageTypes.TryAdd(NormalizeCulture(culture), resolved);
+                resolvedDefinitions.Add(resolved);
 
-                foreach (var culture in resolved.Cultures ?? [])
+                // Stage resolved definition into the local cache so later languages in this document
+                // can inherit from it via baseOn without hitting the global cache yet.
+                foreach (var culture in resolved.Cultures)
+                    localCacheAdditions.TryAdd(NormalizeCulture(culture), resolved);
+            }
+
+            // Phase 2 — all resolutions succeeded; build the public language types and converters
+            // (may throw if the language configuration is invalid, e.g. missing scale, bad variant
+            // reference). Converters are constructed before committing to _cachedLanguageTypes: if
+            // ReadConverter throws, no partial state is published to the global cache.
+            var result = new Dictionary<string, NumberToStringConverter>();
+            foreach (var resolved in resolvedDefinitions)
+            {
+                var language = BuildResolvedLanguage(resolved);
+                foreach (var culture in resolved.Cultures)
                 {
                     var key = NormalizeCulture(culture);
                     if (!result.ContainsKey(key))
-                        result.Add(key, ReadConverter(resolved, key));
+                        result.Add(key, ReadConverter(language, key));
                 }
             }
+
+            // Phase 3 — all converters built successfully; commit resolved definitions to the global cache.
+            foreach (var resolved in resolvedDefinitions)
+                foreach (var culture in resolved.Cultures)
+                    _cachedLanguageTypes.TryAdd(NormalizeCulture(culture), resolved);
+
             return result;
         }
 
         /// <summary>
-        /// Looks up the base language and merges it with the child, producing a fully resolved
-        /// <see cref="LanguageType"/>. The resolved cache is checked first so that a chain such as
-        /// <c>BASE → MID → CHILD</c> always merges against the fully resolved ancestor even when
-        /// all three are declared in the same XML document. If the base is found only in
-        /// <paramref name="docLanguages"/> (not yet cached) and also carries a <c>baseOn</c>
-        /// attribute, it is resolved recursively before the merge.
-        /// Throws <see cref="InvalidOperationException"/> when the referenced base cannot be found.
+        /// Splits a <c>baseOn</c> attribute value into individual culture keys.
+        /// Commas are the separator; each token is trimmed.
         /// </summary>
-        private static LanguageType ResolveBaseOn(
-            LanguageType child,
-            IReadOnlyDictionary<string, LanguageType> docLanguages)
+        private static IReadOnlyList<string> ParseBaseOnKeys(string baseOn)
         {
-            string baseKey = NormalizeCulture(child.BaseOn);
-
-            // Prefer the already-resolved version from the cache (handles multi-document chains
-            // and in-order same-document chains where the base was already processed).
-            if (!_cachedLanguageTypes.TryGetValue(baseKey, out var baseType))
+            var keys = new List<string>();
+            foreach (var part in baseOn.Split(','))
             {
-                if (!docLanguages.TryGetValue(baseKey, out baseType))
-                    throw new InvalidOperationException(
-                        $"Language configuration error: baseOn=\"{baseKey}\" cannot be resolved. " +
-                        $"Ensure the base language is registered before the derived language.");
-
-                // The base was found in the raw same-document dict but not yet cached.
-                // If it itself carries a baseOn, resolve it recursively so the merge always
-                // operates on a fully inherited configuration.
-                if (!string.IsNullOrEmpty(baseType.BaseOn))
-                    baseType = ResolveBaseOn(baseType, docLanguages);
+                var key = NormalizeCulture(part);
+                if (key.Length > 0)
+                    keys.Add(key);
             }
-
-            return MergeLanguageType(baseType!, child);
+            return keys;
         }
 
         /// <summary>
-        /// Returns a new <see cref="LanguageType"/> where <paramref name="child"/> values override
-        /// corresponding fields of <paramref name="baseType"/>. A null/default/empty value in the
-        /// child means "inherit from base"; a non-null value means "override". For
-        /// <see cref="OrdinalsType"/>, exceptions and word-rules are merged element-by-element
-        /// so a child can extend rather than replace the base's ordinal configuration.
+        /// Fully resolves a language by recursively resolving all its <c>baseOn</c> bases,
+        /// then merging them in order (earlier bases have lower priority) and finally
+        /// overlaying the child's own settings on top.
         /// </summary>
-        private static LanguageType MergeLanguageType(LanguageType baseType, LanguageType child) =>
+        /// <param name="child">The language to resolve.</param>
+        /// <param name="docLanguages">All raw (unresolved) languages in the current document.</param>
+        /// <param name="localCache">Resolved languages accumulated so far within this document.</param>
+        /// <param name="visiting">Culture keys currently on the resolution stack (cycle detection).</param>
+        /// <param name="resolutionPath">Ordered list of keys on the stack (for error messages).</param>
+        /// <returns>A fully resolved <see cref="LanguageType"/> with all inherited settings merged in.</returns>
+        private static LanguageDefinition ResolveLanguage(
+            LanguageDefinition child,
+            IReadOnlyDictionary<string, LanguageDefinition> docLanguages,
+            IReadOnlyDictionary<string, LanguageDefinition> localCache,
+            HashSet<string> visiting,
+            List<string> resolutionPath)
+        {
+            // Use the first culture name as the canonical key for this node.
+            string childKey = child.Cultures.Count > 0
+                ? NormalizeCulture(child.Cultures[0])
+                : string.Empty;
+
+            if (!visiting.Add(childKey))
+            {
+                string path = string.Join(" → ", resolutionPath) + " → " + childKey;
+                throw new InvalidOperationException(
+                    $"Language configuration error: baseOn cycle detected: {path}.");
+            }
+            resolutionPath.Add(childKey);
+
+            try
+            {
+                // Build the accumulated inherited definition by merging bases left-to-right
+                // (later base has higher priority than earlier base; child is highest).
+                LanguageDefinition accumulated = CreateEmptyLanguageDefinition();
+
+                if (!string.IsNullOrEmpty(child.BaseOn))
+                {
+                    var baseKeys = ParseBaseOnKeys(child.BaseOn);
+                    foreach (var baseKey in baseKeys)
+                    {
+                        LanguageDefinition resolvedBase = FindAndResolveBase(
+                            baseKey, docLanguages, localCache, visiting, resolutionPath);
+                        accumulated = MergeLanguageDefinition(inherited: accumulated, overriding: resolvedBase);
+                    }
+                }
+
+                return MergeLanguageDefinition(inherited: accumulated, overriding: child);
+            }
+            finally
+            {
+                visiting.Remove(childKey);
+                resolutionPath.RemoveAt(resolutionPath.Count - 1);
+            }
+        }
+
+        /// <summary>
+        /// Locates a base language by its culture key and returns it fully resolved.
+        /// <para>
+        /// Lookup order (document-local definitions always take priority over the global cache):
+        /// <list type="number">
+        ///   <item><description><paramref name="localCache"/> — already resolved within this document.</description></item>
+        ///   <item><description><paramref name="docLanguages"/> — declared raw in this document; resolved recursively with full cycle detection.</description></item>
+        ///   <item><description><see cref="_cachedLanguageTypes"/> — resolved in a previously loaded document (cross-document inheritance).</description></item>
+        /// </list>
+        /// A locally declared language always shadows a same-name entry in the global cache, which
+        /// prevents a cached definition from masking a cycle that exists in the current document.
+        /// </para>
+        /// </summary>
+        private static LanguageDefinition FindAndResolveBase(
+            string baseKey,
+            IReadOnlyDictionary<string, LanguageDefinition> docLanguages,
+            IReadOnlyDictionary<string, LanguageDefinition> localCache,
+            HashSet<string> visiting,
+            List<string> resolutionPath)
+        {
+            // 1. Already resolved within this document (fast path — avoids re-resolving).
+            if (localCache.TryGetValue(baseKey, out LanguageDefinition? cachedInDoc))
+                return cachedInDoc;
+
+            // 2. Declared raw in this document — resolve recursively.
+            //    Document-local definitions take priority over the global cache so that a local
+            //    definition of a same-named culture is used (and cycles are always detected even
+            //    when an older version of the same culture exists in _cachedLanguageTypes).
+            if (docLanguages.TryGetValue(baseKey, out LanguageDefinition? rawBase))
+                return ResolveLanguage(rawBase, docLanguages, localCache, visiting, resolutionPath);
+
+            // 3. Resolved in a previously loaded document (cross-document inheritance).
+            if (_cachedLanguageTypes.TryGetValue(baseKey, out LanguageDefinition? globalBase))
+                return globalBase;
+
+            throw new InvalidOperationException(
+                $"Language configuration error: baseOn culture \"{baseKey}\" was not found. " +
+                $"Ensure the base language is declared in the same document or loaded before this one.");
+        }
+
+        /// <summary>
+        /// Projects an XML model onto an internal <see cref="LanguageDefinition"/>, translating the
+        /// presence-sensitive <c>groupSize</c> attribute into an <see cref="Optional{T}"/> and the
+        /// nested number scale into a <see cref="NumberScaleDefinition"/>.
+        /// </summary>
+        private static LanguageDefinition ToDefinition(LanguageXmlModel model) => new()
+        {
+            Cultures = model.Cultures is { Count: > 0 }
+                ? model.Cultures
+                : (IReadOnlyList<string>)[],
+            BaseOn = model.BaseOn,
+            GroupSize = model.GroupSizeSpecified ? Optional<int>.Of(model.GroupSize) : Optional<int>.Unspecified,
+            Separator = model.Separator,
+            GroupSeparator = model.GroupSeparator,
+            Zero = model.Zero,
+            Minus = model.Minus,
+            DecimalSeparator = model.DecimalSeparator,
+            FractionSeparator = model.FractionSeparator,
+            MaxNumber = model.MaxNumber,
+            Groups = model.Groups,
+            Exceptions = model.Exceptions,
+            NumberScale = ToNumberScaleDefinition(model.NumberScale),
+            Replacements = model.Replacements,
+            LanguageSpecificsTypeName = model.LanguageSpecificsTypeName,
+            Fractions = model.Fractions,
+            Ordinals = model.Ordinals,
+            Variants = model.Variants,
+            YearFormat = model.YearFormat,
+            Triggers = model.Triggers,
+            Multiplicatives = model.Multiplicatives,
+            GroupConnector = model.GroupConnector,
+            GroupConnectorThresholdString = model.GroupConnectorThresholdString,
+            IntraGroupConnector = model.IntraGroupConnector,
+            IntraGroupConnectorThresholdString = model.IntraGroupConnectorThresholdString,
+            ScaleConnector = model.ScaleConnector,
+            ScaleConnectorThresholdString = model.ScaleConnectorThresholdString,
+            TimeUnits = model.TimeUnits,
+            DateFormat = model.DateFormat,
+        };
+
+        /// <summary>
+        /// Projects a number-scale XML model onto an internal <see cref="NumberScaleDefinition"/>,
+        /// translating the presence-sensitive <c>firstLetterUpperCase</c> and <c>startIndex</c>
+        /// attributes into <see cref="Optional{T}"/> values.
+        /// </summary>
+        private static NumberScaleDefinition? ToNumberScaleDefinition(NumberScaleXmlModel? model)
+        {
+            if (model == null) return null;
+            return new NumberScaleDefinition
+            {
+                FirstLetterUpperCase = model.FirstLetterUpperCaseSpecified
+                    ? Optional<bool>.Of(model.FirstLetterUpperCase)
+                    : Optional<bool>.Unspecified,
+                VoidGroup = model.VoidGroup,
+                GroupSeparator = model.GroupSeparator,
+                StartIndex = model.StartIndexSpecified
+                    ? Optional<int>.Of(model.StartIndex)
+                    : Optional<int>.Unspecified,
+                StaticNames = model.StaticNames,
+                Scale0Prefixes = model.Scale0Prefixes,
+                UnitsPrefixes = model.UnitsPrefixes,
+                TensPrefixes = model.TensPrefixes,
+                HundredsPrefixes = model.HundredsPrefixes,
+                Suffixes = model.Suffixes,
+            };
+        }
+
+        /// <summary>
+        /// Returns an <see cref="Optional{T}"/> that prefers an explicitly specified
+        /// <paramref name="overriding"/> value and otherwise falls back to <paramref name="inherited"/>.
+        /// An explicit <c>false</c>/<c>0</c> overrides an inherited value; only an unspecified
+        /// override inherits.
+        /// </summary>
+        private static Optional<T> MergeOptional<T>(Optional<T> inherited, Optional<T> overriding) =>
+            overriding.IsSpecified ? overriding : inherited;
+
+        /// <summary>
+        /// Returns a blank <see cref="LanguageDefinition"/> used as the accumulator seed when
+        /// merging multiple inherited bases. Every field is unspecified/null so that the
+        /// first real base's values are picked up unchanged.
+        /// </summary>
+        private static LanguageDefinition CreateEmptyLanguageDefinition() => new()
+        {
+            Cultures = [],
+            BaseOn = null,
+            GroupSize = Optional<int>.Unspecified,
+        };
+
+        /// <summary>
+        /// Returns a new <see cref="LanguageDefinition"/> where <paramref name="overriding"/> values
+        /// replace corresponding fields of <paramref name="inherited"/>.
+        /// Only an absent value inherits from base; an explicitly declared value always overrides,
+        /// including <see langword="false"/>, zero, an empty string, or an explicitly empty
+        /// collection. For <see cref="OrdinalsType"/>, exceptions and word-rules are merged
+        /// element-by-element so a child can extend rather than replace the base's ordinal
+        /// configuration.
+        /// </summary>
+        private static LanguageDefinition MergeLanguageDefinition(LanguageDefinition inherited, LanguageDefinition overriding) =>
             new()
             {
-                Cultures = child.Cultures,
+                Cultures = overriding.Cultures.Count > 0 ? overriding.Cultures : inherited.Cultures,
                 BaseOn = null,
-                GroupSize = child.GroupSize != 0 ? child.GroupSize : baseType.GroupSize,
-                Separator = child.Separator ?? baseType.Separator,
-                GroupSeparator = child.GroupSeparator ?? baseType.GroupSeparator,
-                Zero = child.Zero ?? baseType.Zero,
-                Minus = child.Minus ?? baseType.Minus,
-                DecimalSeparator = child.DecimalSeparator ?? baseType.DecimalSeparator,
-                FractionSeparator = child.FractionSeparator ?? baseType.FractionSeparator,
-                MaxNumber = child.MaxNumber ?? baseType.MaxNumber,
-                Groups = child.Groups ?? baseType.Groups,
-                Exceptions = child.Exceptions ?? baseType.Exceptions,
-                NumberScale = child.NumberScale ?? baseType.NumberScale,
-                Replacements = child.Replacements ?? baseType.Replacements,
-                LanguageSpecificsTypeName = !string.IsNullOrEmpty(child.LanguageSpecificsTypeName)
-                    ? child.LanguageSpecificsTypeName : baseType.LanguageSpecificsTypeName,
-                Fractions = child.Fractions ?? baseType.Fractions,
-                Ordinals = MergeOrdinalsType(baseType.Ordinals, child.Ordinals),
-                Variants = child.Variants ?? baseType.Variants,
-                YearFormat = child.YearFormat ?? baseType.YearFormat,
-                Triggers = (child.Triggers?.Count > 0) ? child.Triggers : baseType.Triggers,
-                Multiplicatives = child.Multiplicatives ?? baseType.Multiplicatives,
-                GroupConnector = child.GroupConnector ?? baseType.GroupConnector,
-                GroupConnectorThresholdString = child.GroupConnectorThresholdString ?? baseType.GroupConnectorThresholdString,
-                IntraGroupConnector = child.IntraGroupConnector ?? baseType.IntraGroupConnector,
-                IntraGroupConnectorThresholdString = child.IntraGroupConnectorThresholdString ?? baseType.IntraGroupConnectorThresholdString,
-                ScaleConnector = child.ScaleConnector ?? baseType.ScaleConnector,
-                ScaleConnectorThresholdString = child.ScaleConnectorThresholdString ?? baseType.ScaleConnectorThresholdString,
-                TimeUnits = child.TimeUnits ?? baseType.TimeUnits,
-                DateFormat = child.DateFormat ?? baseType.DateFormat,
+                GroupSize = MergeOptional(inherited.GroupSize, overriding.GroupSize),
+                Separator = overriding.Separator ?? inherited.Separator,
+                GroupSeparator = overriding.GroupSeparator ?? inherited.GroupSeparator,
+                Zero = overriding.Zero ?? inherited.Zero,
+                Minus = overriding.Minus ?? inherited.Minus,
+                DecimalSeparator = overriding.DecimalSeparator ?? inherited.DecimalSeparator,
+                FractionSeparator = overriding.FractionSeparator ?? inherited.FractionSeparator,
+                MaxNumber = overriding.MaxNumber ?? inherited.MaxNumber,
+                Groups = overriding.Groups ?? inherited.Groups,
+                Exceptions = overriding.Exceptions ?? inherited.Exceptions,
+                NumberScale = MergeNumberScaleDefinition(inherited.NumberScale, overriding.NumberScale),
+                Replacements = overriding.Replacements ?? inherited.Replacements,
+                LanguageSpecificsTypeName = overriding.LanguageSpecificsTypeName != null
+                    ? overriding.LanguageSpecificsTypeName : inherited.LanguageSpecificsTypeName,
+                Fractions = overriding.Fractions ?? inherited.Fractions,
+                Ordinals = MergeOrdinalsType(inherited.Ordinals, overriding.Ordinals),
+                Variants = overriding.Variants ?? inherited.Variants,
+                YearFormat = overriding.YearFormat ?? inherited.YearFormat,
+                Triggers = overriding.Triggers ?? inherited.Triggers,
+                Multiplicatives = overriding.Multiplicatives ?? inherited.Multiplicatives,
+                GroupConnector = overriding.GroupConnector ?? inherited.GroupConnector,
+                GroupConnectorThresholdString = overriding.GroupConnectorThresholdString ?? inherited.GroupConnectorThresholdString,
+                IntraGroupConnector = overriding.IntraGroupConnector ?? inherited.IntraGroupConnector,
+                IntraGroupConnectorThresholdString = overriding.IntraGroupConnectorThresholdString ?? inherited.IntraGroupConnectorThresholdString,
+                ScaleConnector = overriding.ScaleConnector ?? inherited.ScaleConnector,
+                ScaleConnectorThresholdString = overriding.ScaleConnectorThresholdString ?? inherited.ScaleConnectorThresholdString,
+                TimeUnits = overriding.TimeUnits ?? inherited.TimeUnits,
+                DateFormat = overriding.DateFormat ?? inherited.DateFormat,
             };
 
         /// <summary>
@@ -272,6 +506,95 @@ namespace Utils.NumberToString
                 Exceptions = mergedExceptions,
                 Rules = mergedRules,
                 OrdinalVariantsContainer = childOrdinals.OrdinalVariantsContainer ?? baseOrdinals.OrdinalVariantsContainer,
+            };
+        }
+
+        /// <summary>
+        /// Merges two <see cref="NumberScaleDefinition"/> instances field by field so that a derived
+        /// language can override individual sub-sections (e.g., <c>StaticNames</c>, <c>Suffixes</c>)
+        /// while inheriting the rest (e.g., prefix tables) from the base language.
+        /// Reference fields use <see langword="null"/> as the absent marker; the two value-type
+        /// fields use <see cref="Optional{T}"/> so an explicit <c>false</c> for
+        /// <c>FirstLetterUpperCase</c> and <c>0</c> for <c>StartIndex</c> override the inherited value.
+        /// </summary>
+        private static NumberScaleDefinition? MergeNumberScaleDefinition(NumberScaleDefinition? inherited, NumberScaleDefinition? overriding)
+        {
+            if (overriding == null) return inherited;
+            if (inherited == null) return overriding;
+            return new NumberScaleDefinition
+            {
+                FirstLetterUpperCase = MergeOptional(inherited.FirstLetterUpperCase, overriding.FirstLetterUpperCase),
+                VoidGroup = overriding.VoidGroup ?? inherited.VoidGroup,
+                GroupSeparator = overriding.GroupSeparator ?? inherited.GroupSeparator,
+                StartIndex = MergeOptional(inherited.StartIndex, overriding.StartIndex),
+                StaticNames = overriding.StaticNames ?? inherited.StaticNames,
+                Scale0Prefixes = overriding.Scale0Prefixes ?? inherited.Scale0Prefixes,
+                UnitsPrefixes = overriding.UnitsPrefixes ?? inherited.UnitsPrefixes,
+                TensPrefixes = overriding.TensPrefixes ?? inherited.TensPrefixes,
+                HundredsPrefixes = overriding.HundredsPrefixes ?? inherited.HundredsPrefixes,
+                Suffixes = overriding.Suffixes ?? inherited.Suffixes,
+            };
+        }
+
+        /// <summary>
+        /// Builds the public <see cref="LanguageType"/> from a fully resolved
+        /// <see cref="LanguageDefinition"/>. Absent value-type fields collapse to their historical
+        /// defaults (<c>GroupSize</c> = 3, <c>StartIndex</c> = 0, <c>FirstLetterUpperCase</c> = false)
+        /// so the public model stays free of nullable/technical members.
+        /// </summary>
+        private static LanguageType BuildResolvedLanguage(LanguageDefinition definition) => new()
+        {
+            Cultures = definition.Cultures.ToList(),
+            BaseOn = null,
+            GroupSize = definition.GroupSize.GetValueOrDefault(3),
+            Separator = definition.Separator,
+            GroupSeparator = definition.GroupSeparator,
+            Zero = definition.Zero,
+            Minus = definition.Minus,
+            DecimalSeparator = definition.DecimalSeparator,
+            FractionSeparator = definition.FractionSeparator,
+            MaxNumber = definition.MaxNumber,
+            Groups = definition.Groups,
+            Exceptions = definition.Exceptions,
+            NumberScale = BuildNumberScale(definition.NumberScale),
+            Replacements = definition.Replacements,
+            LanguageSpecificsTypeName = definition.LanguageSpecificsTypeName,
+            Fractions = definition.Fractions,
+            Ordinals = definition.Ordinals,
+            Variants = definition.Variants,
+            YearFormat = definition.YearFormat,
+            Triggers = definition.Triggers,
+            Multiplicatives = definition.Multiplicatives,
+            GroupConnector = definition.GroupConnector,
+            GroupConnectorThresholdString = definition.GroupConnectorThresholdString,
+            IntraGroupConnector = definition.IntraGroupConnector,
+            IntraGroupConnectorThresholdString = definition.IntraGroupConnectorThresholdString,
+            ScaleConnector = definition.ScaleConnector,
+            ScaleConnectorThresholdString = definition.ScaleConnectorThresholdString,
+            TimeUnits = definition.TimeUnits,
+            DateFormat = definition.DateFormat,
+        };
+
+        /// <summary>
+        /// Builds the public <see cref="NumberScaleType"/> from a resolved
+        /// <see cref="NumberScaleDefinition"/>, collapsing the two <see cref="Optional{T}"/> fields
+        /// to their historical defaults when absent.
+        /// </summary>
+        private static NumberScaleType? BuildNumberScale(NumberScaleDefinition? definition)
+        {
+            if (definition == null) return null;
+            return new NumberScaleType
+            {
+                FirstLetterUpperCase = definition.FirstLetterUpperCase.GetValueOrDefault(false),
+                VoidGroup = definition.VoidGroup,
+                GroupSeparator = definition.GroupSeparator,
+                StartIndex = definition.StartIndex.GetValueOrDefault(0),
+                StaticNames = definition.StaticNames,
+                Scale0Prefixes = definition.Scale0Prefixes,
+                UnitsPrefixes = definition.UnitsPrefixes,
+                TensPrefixes = definition.TensPrefixes,
+                HundredsPrefixes = definition.HundredsPrefixes,
+                Suffixes = definition.Suffixes,
             };
         }
 

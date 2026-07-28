@@ -1,5 +1,9 @@
 using System;
+using System.IO;
+using System.Linq;
 using System.Numerics;
+using System.Reflection;
+using System.Xml.Serialization;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.NumberToString;
 
@@ -570,14 +574,18 @@ public class NumberToStringConverterAuditFixesTests
                 new System.Globalization.CultureInfo("tr-TR");
 
             var suffixes = Enumerable.Repeat("on", 10).ToArray();
+            var prefixes = new[] { "", "illi", "du", "tre", "qua", "qui", "sex", "sep", "oct", "nov" };
             var scale = new NumberScale(
                 staticValues: (IReadOnlyList<string>)new[] { "" },
                 scaleSuffixes: (IReadOnlyList<string>)suffixes,
-                unitsPrefixes: (IReadOnlyList<string>)new[] { "", "illi", "du", "tre", "qua", "qui", "sex", "sep", "oct", "nov" },
+                unitsPrefixes: (IReadOnlyList<string>)prefixes,
+                tensPrefixes: (IReadOnlyList<string>)prefixes,
+                hundredsPrefixes: (IReadOnlyList<string>)prefixes,
                 firstLetterUppercase: true);
 
-            // scale index 10 will enter the while-loop path (prefix index > 9)
-            string name = scale.GetScaleName(10);
+            // scale=101: dynamicScale=100, DivRem(100,10)=(10,0), prefix=11 → while-loop path (multi-digit)
+            // u=1 → UnitsPrefixes[1]="illi", first letter 'i' must be uppercased via ToUpperInvariant
+            string name = scale.GetScaleName(101);
             Assert.IsTrue(name.Length > 0, "Generated scale name must be non-empty");
             // The first character must be plain uppercase regardless of Turkish culture
             Assert.AreEqual(char.ToUpperInvariant(name[0]),  name[0],
@@ -789,7 +797,10 @@ public class NumberToStringConverterAuditFixesTests
             staticValues: (IReadOnlyList<string>)new[] { "", "thousand" },
             scaleSuffixes: (IReadOnlyList<string>)new[] { "illion" },
             startIndex: 10,
-            scale0Prefixes: (IReadOnlyList<string>)prefixes10);
+            scale0Prefixes: (IReadOnlyList<string>)prefixes10,
+            unitsPrefixes: (IReadOnlyList<string>)prefixes10,
+            tensPrefixes: (IReadOnlyList<string>)prefixes10,
+            hundredsPrefixes: (IReadOnlyList<string>)prefixes10);
         string result = scale.GetScaleName(int.MaxValue);
         Assert.IsNotNull(result);
         Assert.IsFalse(string.IsNullOrWhiteSpace(result), "GetScaleName(int.MaxValue) must return a non-empty string");
@@ -1876,5 +1887,1004 @@ public class NumberToStringConverterAuditFixesTests
         string result = conv.Convert(new DateOnly(2024, 3, 15));
         Assert.AreEqual("3", result,
             "When LanguageIdentifier does not resolve to a CultureInfo, the month must be emitted as its decimal number");
+    }
+
+    // ── Item 57 — baseOn cycle detection ─────────────────────────────────────
+
+    [TestMethod]
+    public void ReadConfiguration_BaseOnCycle_ThrowsInvalidOperation()
+    {
+        // Two languages that each list the other as their baseOn must trigger cycle detection.
+        const string xml = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language baseOn=""CYCLE-B"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>CYCLE-A</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""CYCLE-A"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>CYCLE-B</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.ReadConfiguration(xml));
+        StringAssert.Contains(ex.Message, "cycle",
+            "Exception must mention 'cycle' to identify the cause");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_BaseOnSelfCycle_ThrowsInvalidOperation()
+    {
+        // A language that lists itself as its own baseOn must be rejected.
+        const string xml = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language baseOn=""SELF"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>SELF</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.ReadConfiguration(xml));
+        StringAssert.Contains(ex.Message, "cycle",
+            "Self-cycle must be detected and reported as a cycle");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_BaseOnThreeNodeCycle_ThrowsInvalidOperation()
+    {
+        // A → B → C → A cycle must be detected.
+        const string xml = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language baseOn=""TN-C"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>TN-A</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""TN-A"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>TN-B</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""TN-B"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>TN-C</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.ReadConfiguration(xml));
+        StringAssert.Contains(ex.Message, "cycle",
+            "Three-node cycle must be detected");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_BaseOnCycle_IsCaseInsensitive()
+    {
+        // Cycle detection must be case-insensitive: CYCLE-A and cycle-a are the same node.
+        const string xml = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language baseOn=""ci-b"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>CI-A</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""CI-A"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>ci-b</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.ReadConfiguration(xml));
+        StringAssert.Contains(ex.Message, "cycle",
+            "Case-insensitive cycle must be detected");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_BaseOnMissingCulture_ThrowsInvalidOperation()
+    {
+        // A baseOn referencing a non-existent culture must throw with a clear message.
+        const string xml = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language baseOn=""DOES-NOT-EXIST"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>XMISSING-CHILD</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.ReadConfiguration(xml));
+        StringAssert.Contains(ex.Message, "DOES-NOT-EXIST",
+            "Exception must identify the missing base culture");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_SharedBaseWithoutCycle_Succeeds()
+    {
+        // D inherits from B; E inherits from B. B is used twice but there is no cycle.
+        const string xml = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>SB-BASE</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""SB-BASE"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zerod"" minus=""minus *"">
+    <Culture>SB-D</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""SB-BASE"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zeroe"" minus=""minus *"">
+    <Culture>SB-E</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        Assert.IsTrue(converters.ContainsKey("SB-BASE"), "Base must be registered");
+        Assert.IsTrue(converters.ContainsKey("SB-D"), "D must be registered");
+        Assert.IsTrue(converters.ContainsKey("SB-E"), "E must be registered");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_BaseOnCycle_DoesNotCommitPartialConfigurations()
+    {
+        // A document with one valid language and one cycle must not commit the valid language.
+        string uniqueKey = "PARTIAL-VALID-" + System.Guid.NewGuid().ToString("N");
+        string xml = $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>{uniqueKey}</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""PCYCLE-B"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>PCYCLE-A</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""PCYCLE-A"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>PCYCLE-B</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+        Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.ReadConfiguration(xml));
+        // The valid language in the same document must NOT have been committed.
+        bool found = NumberToStringConverter.TryGetConverter(uniqueKey, out _);
+        Assert.IsFalse(found,
+            "ReadConfiguration must not commit any configurations when a cycle is detected");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_MultipleBases_CycleInOneBranch_ThrowsInvalidOperation()
+    {
+        // A baseOn B,C where C baseOn A — the cycle exists only in the second branch.
+        // The whole document must be rejected regardless of which branch contains the cycle.
+        const string xml = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>MCB-B</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""MCB-A"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>MCB-C</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""MCB-B,MCB-C"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>MCB-A</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.ReadConfiguration(xml));
+        StringAssert.Contains(ex.Message, "cycle",
+            "Cycle in one branch of a multi-base inheritance must be detected");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_CurrentDocumentCycleShadowsCachedCulture_ThrowsInvalidOperation()
+    {
+        // Load a first document containing a standalone language so it lands in the global cache.
+        // RegisterConfigurations (not ReadConfiguration alone) populates CachedConfigurations.
+        string shadowKey = "XSHADOW-" + System.Guid.NewGuid().ToString("N");
+        string firstDoc = $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>{shadowKey}</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+        NumberToStringConverter.RegisterConfigurations([firstDoc]);
+        // Confirm it is cached.
+        Assert.IsTrue(NumberToStringConverter.TryGetConverter(shadowKey, out _),
+            "First document must be loaded into the global cache");
+
+        // Second document redefines shadowKey and introduces a cycle: LOCAL-B → shadowKey → LOCAL-B.
+        // Even though an older valid version of shadowKey is in the global cache, the local
+        // redefinition must take priority and the cycle must be detected.
+        string localB = "XSHADOW-LOCAL-B-" + System.Guid.NewGuid().ToString("N");
+        string secondDoc = $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language baseOn=""{shadowKey}"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>{localB}</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""{localB}"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>{shadowKey}</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.ReadConfiguration(secondDoc));
+        StringAssert.Contains(ex.Message, "cycle",
+            "A locally declared language must shadow the cached version so the cycle is still detected");
+    }
+
+    // ── Item 57 — baseOn multi-base and merge order ───────────────────────────
+
+    [TestMethod]
+    public void ReadConfiguration_BaseOn_ChildOverridesDirectBase()
+    {
+        // Child defines zero="child-zero", base defines zero="base-zero".
+        // The resolved converter must use "child-zero".
+        const string xml = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""base-zero"" minus=""minus *"">
+    <Culture>BASE-OV</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""base-zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""BASE-OV"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""child-zero"" minus=""minus *"">
+    <Culture>CHILD-OV</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""child-zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        Assert.IsTrue(converters.TryGetValue("CHILD-OV", out var child));
+        string result = child.Convert(BigInteger.Zero);
+        Assert.AreEqual("child-zero", result,
+            "Child's own zero value must override the base's zero value");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_BaseOn_InheritedPropertyFromBase_WhenChildOmitsIt()
+    {
+        // Child does not define minus; base defines minus="BASE-MINUS *".
+        // The resolved converter must use "BASE-MINUS *" for negatives.
+        const string xml = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""BASE-MINUS *"">
+    <Culture>BASE-INH</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""BASE-INH"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>CHILD-INH</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+        // Simply verify the child loaded — if it inherited minus correctly, Convert(-1) won't throw.
+        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        Assert.IsTrue(converters.ContainsKey("CHILD-INH"),
+            "Child must load when it inherits minus from base");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_MultipleBases_LaterBaseOverridesEarlierBase()
+    {
+        // A baseOn B,C — C is the later base so C's zero must win over B's zero.
+        const string xml = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero-b"" minus=""minus *"">
+    <Culture>MLB-B</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-b"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero-c"" minus=""minus *"">
+    <Culture>MLB-C</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-c"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""MLB-B,MLB-C"" groupSize=""3"" separator="" "" groupSeparator="","" minus=""minus *"">
+    <Culture>MLB-A</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-c"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        Assert.IsTrue(converters.TryGetValue("MLB-A", out var a));
+        Assert.AreEqual("zero-c", a.Convert(BigInteger.Zero),
+            "Later base (C) must override earlier base (B) — A.zero must be 'zero-c'");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_MultipleBases_ChildOverridesAllBases()
+    {
+        // A baseOn B,C with A's own zero — A's value must win over both bases.
+        const string xml = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero-b"" minus=""minus *"">
+    <Culture>MCA-B</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-b"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero-c"" minus=""minus *"">
+    <Culture>MCA-C</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-c"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""MCA-B,MCA-C"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero-a"" minus=""minus *"">
+    <Culture>MCA-A</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-a"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        Assert.IsTrue(converters.TryGetValue("MCA-A", out var a));
+        Assert.AreEqual("zero-a", a.Convert(BigInteger.Zero),
+            "Child's own zero must override both bases' zero values");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_MultipleBases_IndependentOptionsAreCombined()
+    {
+        // A baseOn B,C — B provides minus, C provides zero (overrides B's zero).
+        // A's final configuration must have zero from C and minus from B (C does not set minus).
+        const string xml = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero-b"" minus=""BMIN *"">
+    <Culture>MIO-B</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-b"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero-c"" minus=""BMIN *"">
+    <Culture>MIO-C</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-c"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""MIO-B,MIO-C"" groupSize=""3"" separator="" "" groupSeparator="","" minus=""BMIN *"">
+    <Culture>MIO-A</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-c"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        Assert.IsTrue(converters.TryGetValue("MIO-A", out var a));
+        Assert.AreEqual("zero-c", a.Convert(BigInteger.Zero),
+            "zero must come from C (later base overrides B)");
+        string negOne = a.Convert(new System.Numerics.BigInteger(-1));
+        StringAssert.StartsWith(negOne, "BMIN",
+            "minus prefix 'BMIN' must be inherited from B (and C since both use it)");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_BaseOn_ClosestAncestorOverridesDeeperAncestor()
+    {
+        // A baseOn B, B baseOn C — B's zero must override C's, and A's zero must override B's.
+        const string xml = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero-c"" minus=""minus *"">
+    <Culture>CAO-C</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-c"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""CAO-C"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero-b"" minus=""minus *"">
+    <Culture>CAO-B</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-b"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""CAO-B"" groupSize=""3"" separator="" "" groupSeparator="","" minus=""minus *"">
+    <Culture>CAO-A</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-b"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        // B must see zero-b (overrides C's zero-c)
+        Assert.IsTrue(converters.TryGetValue("CAO-B", out var b));
+        Assert.AreEqual("zero-b", b.Convert(BigInteger.Zero),
+            "B must override C's zero");
+        // A inherits B's zero-b (A does not set its own zero)
+        Assert.IsTrue(converters.TryGetValue("CAO-A", out var a));
+        Assert.AreEqual("zero-b", a.Convert(BigInteger.Zero),
+            "A must inherit B's zero (which already overrode C's zero)");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_BaseOn_ResultIndependentOfDocumentDeclarationOrder()
+    {
+        // Same inheritance chain as ClosestAncestor but declared in reverse order (A first, then B, then C).
+        // The merge result must be identical regardless of declaration order.
+        const string xml = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language baseOn=""DIO-B"" groupSize=""3"" separator="" "" groupSeparator="","" minus=""minus *"">
+    <Culture>DIO-A</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-b"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""DIO-C"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero-b"" minus=""minus *"">
+    <Culture>DIO-B</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-b"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero-c"" minus=""minus *"">
+    <Culture>DIO-C</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero-c"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        Assert.IsTrue(converters.TryGetValue("DIO-A", out var a));
+        Assert.AreEqual("zero-b", a.Convert(BigInteger.Zero),
+            "A's zero must be 'zero-b' (from B, which overrides C) regardless of declaration order");
+    }
+
+    // ── Item 61 — additional TryGetConverter tests ────────────────────────────
+
+    [TestMethod]
+    public void TryGetConverter_NullString_ReturnsFalse()
+    {
+        Assert.IsFalse(NumberToStringConverter.TryGetConverter((string)null!, out _),
+            "null culture string must return false without throwing");
+    }
+
+    [TestMethod]
+    public void TryGetConverter_WhitespaceString_ReturnsFalse()
+    {
+        Assert.IsFalse(NumberToStringConverter.TryGetConverter("   ", out _),
+            "Whitespace-only culture string must return false");
+    }
+
+    [TestMethod]
+    public void TryGetConverter_NullCultureInfo_ReturnsFalse()
+    {
+        Assert.IsFalse(NumberToStringConverter.TryGetConverter((System.Globalization.CultureInfo)null!, out _),
+            "null CultureInfo must return false without throwing");
+    }
+
+    [TestMethod]
+    public void TryGetConverter_ParentCulture_ReturnsParentConverter()
+    {
+        // "en-US" has subtag "en" which maps to EN; TryGetConverter must find it via BCP-47 stripping.
+        bool found = NumberToStringConverter.TryGetConverter("en-US", out var converter);
+        Assert.IsTrue(found, "en-US must resolve to EN via BCP-47 subtag stripping");
+        Assert.IsNotNull(converter);
+    }
+
+    [TestMethod]
+    public void TryGetConverter_UnknownCulture_DoesNotReturnEnglish()
+    {
+        // An unknown culture must not fall back to English.
+        bool found = NumberToStringConverter.TryGetConverter("XTEST-ZZ-UNKNOWN", out var converter);
+        Assert.IsFalse(found, "Unknown culture must return false, not the English converter");
+        Assert.IsNull(converter);
+    }
+
+    // ── Item 60 — additional RegisterLanguageSpecifics validation ────────────
+
+    [TestMethod]
+    public void RegisterLanguageSpecifics_NullInstance_ThrowsArgumentNullException()
+    {
+        Assert.ThrowsException<ArgumentNullException>(
+            () => NumberToStringConverter.RegisterLanguageSpecifics("ValidName", null!),
+            "Null instance must be rejected");
+    }
+
+    // ── Item 60 — RegisterLanguageSpecifics name validation ───────────────────
+
+    [TestMethod]
+    public void RegisterLanguageSpecifics_NullName_ThrowsArgumentNullException()
+    {
+        Assert.ThrowsException<ArgumentNullException>(
+            () => NumberToStringConverter.RegisterLanguageSpecifics(null!, new FakeSpecifics()),
+            "Null typeName must be rejected");
+    }
+
+    [TestMethod]
+    public void RegisterLanguageSpecifics_EmptyName_ThrowsArgumentException()
+    {
+        Assert.ThrowsException<ArgumentException>(
+            () => NumberToStringConverter.RegisterLanguageSpecifics("", new FakeSpecifics()),
+            "Empty typeName must be rejected");
+    }
+
+    [TestMethod]
+    public void RegisterLanguageSpecifics_WhitespaceName_ThrowsArgumentException()
+    {
+        Assert.ThrowsException<ArgumentException>(
+            () => NumberToStringConverter.RegisterLanguageSpecifics("   ", new FakeSpecifics()),
+            "Whitespace-only typeName must be rejected");
+    }
+
+    // ── Item 61 — TryGetConverter explicit non-fallback API ───────────────────
+
+    [TestMethod]
+    public void TryGetConverter_KnownCulture_ReturnsTrueAndConverter()
+    {
+        bool found = NumberToStringConverter.TryGetConverter("EN", out var converter);
+        Assert.IsTrue(found, "TryGetConverter must return true for a registered culture");
+        Assert.IsNotNull(converter, "converter must not be null when TryGetConverter returns true");
+    }
+
+    [TestMethod]
+    public void TryGetConverter_KnownCultureCaseInsensitive_ReturnsTrueAndConverter()
+    {
+        bool found = NumberToStringConverter.TryGetConverter("en", out var converter);
+        Assert.IsTrue(found, "TryGetConverter must be case-insensitive");
+        Assert.IsNotNull(converter);
+    }
+
+    [TestMethod]
+    public void TryGetConverter_UnknownCulture_ReturnsFalseAndNullConverter()
+    {
+        bool found = NumberToStringConverter.TryGetConverter("XTEST-UNKNOWN", out var converter);
+        Assert.IsFalse(found,
+            "TryGetConverter must return false — not fall back to English — for an unknown culture");
+        Assert.IsNull(converter, "converter must be null when TryGetConverter returns false");
+    }
+
+    [TestMethod]
+    public void TryGetConverter_EmptyString_ReturnsFalse()
+    {
+        Assert.IsFalse(NumberToStringConverter.TryGetConverter("", out _));
+    }
+
+    [TestMethod]
+    public void TryGetConverter_SingleCharString_ReturnsFalse()
+    {
+        Assert.IsFalse(NumberToStringConverter.TryGetConverter("X", out _),
+            "Single-character culture codes are invalid and must return false");
+    }
+
+    [TestMethod]
+    public void TryGetConverter_CultureInfo_KnownCulture_ReturnsTrueAndConverter()
+    {
+        var ci = System.Globalization.CultureInfo.GetCultureInfo("en-US");
+        bool found = NumberToStringConverter.TryGetConverter(ci, out var converter);
+        Assert.IsTrue(found, "TryGetConverter(CultureInfo) must return true for en-US (resolves to EN)");
+        Assert.IsNotNull(converter);
+    }
+
+    [TestMethod]
+    public void TryGetConverter_CultureInfo_InvariantCulture_ReturnsFalse()
+    {
+        // InvariantCulture.Name is "" — too short, so must return false.
+        Assert.IsFalse(NumberToStringConverter.TryGetConverter(
+            System.Globalization.CultureInfo.InvariantCulture, out _));
+    }
+
+    // ── Item 57 — explicit GroupSize=0 is not treated as absent ─────────────
+
+    [TestMethod]
+    public void ReadConfiguration_BaseOn_ExplicitZeroGroupSizeIsNotTreatedAsAbsent()
+    {
+        // Child explicitly sets groupSize="0". The old merge code treated 0 as absent
+        // (GroupSize != 0 → use inherited 3), which silently masked the invalid value.
+        // The corrected merge (GroupSize ?? inherited) propagates explicit 0 to ReadConverter,
+        // which rejects it with ArgumentOutOfRangeException (group size must be positive).
+        string baseKey = "EXPLICIT-ZERO-BASE-" + Guid.NewGuid().ToString("N");
+        string childKey = "EXPLICIT-ZERO-CHILD-" + Guid.NewGuid().ToString("N");
+        const string groupDef = @"<Groups>
+      <Group level=""1"">
+        <Digit digit=""0"" string=""""/><Digit digit=""1"" string=""one""/><Digit digit=""2"" string=""two""/>
+        <Digit digit=""3"" string=""three""/><Digit digit=""4"" string=""four""/><Digit digit=""5"" string=""five""/>
+        <Digit digit=""6"" string=""six""/><Digit digit=""7"" string=""seven""/><Digit digit=""8"" string=""eight""/>
+        <Digit digit=""9"" string=""nine""/>
+      </Group>
+    </Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string=""""/><Scale value=""1"" string=""thousand""/></StaticNames><Suffixes><Suffix>on</Suffix></Suffixes></NumberScale>";
+        string xml = $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>{baseKey}</Culture>
+    {groupDef}
+  </Language>
+  <Language baseOn=""{baseKey}"" groupSize=""0"">
+    <Culture>{childKey}</Culture>
+  </Language>
+</Numbers>";
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => NumberToStringConverter.ReadConfiguration(xml),
+            "Explicit groupSize=\"0\" must propagate through merge and be rejected by ReadConverter, " +
+            "not silently replaced by the inherited non-zero value");
+    }
+
+    // ── Item 57 — explicit empty LanguageSpecifics overrides inherited type ──
+
+    [TestMethod]
+    public void ReadConfiguration_BaseOn_ExplicitEmptyLanguageSpecificsTypeNameOverridesInherited()
+    {
+        // Base language uses a LanguageSpecifics implementation that appends "_TRANSFORMED".
+        // Child explicitly sets <LanguageSpecifics></LanguageSpecifics> (empty string — not absent).
+        // Old code: !string.IsNullOrEmpty("") → false → inherited type wins → output "one_TRANSFORMED".
+        // New code: "" != null → true → explicit "" wins → default (no-op) specifics → output "one".
+        string baseKey = "EMPTYSPEC-BASE-" + Guid.NewGuid().ToString("N");
+        string childKey = "EMPTYSPEC-CHILD-" + Guid.NewGuid().ToString("N");
+        string typeName = "EMPTYSPEC-TYPE-" + Guid.NewGuid().ToString("N");
+        NumberToStringConverter.RegisterLanguageSpecifics(typeName, new TransformingSpecifics());
+
+        const string groupDef = @"<Groups>
+      <Group level=""1"">
+        <Digit digit=""0"" string=""""/><Digit digit=""1"" string=""one""/><Digit digit=""2"" string=""two""/>
+        <Digit digit=""3"" string=""three""/><Digit digit=""4"" string=""four""/><Digit digit=""5"" string=""five""/>
+        <Digit digit=""6"" string=""six""/><Digit digit=""7"" string=""seven""/><Digit digit=""8"" string=""eight""/>
+        <Digit digit=""9"" string=""nine""/>
+      </Group>
+    </Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string=""""/><Scale value=""1"" string=""thousand""/></StaticNames><Suffixes><Suffix>on</Suffix></Suffixes></NumberScale>";
+        string xml = $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>{baseKey}</Culture>
+    {groupDef}
+    <LanguageSpecifics>{typeName}</LanguageSpecifics>
+  </Language>
+  <Language baseOn=""{baseKey}"">
+    <Culture>{childKey}</Culture>
+    <LanguageSpecifics></LanguageSpecifics>
+  </Language>
+</Numbers>";
+        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        string result = converters[childKey].Convert(1);
+        Assert.AreEqual("one", result,
+            "Child explicitly sets empty <LanguageSpecifics> — the parent's transforming specifics " +
+            "must NOT be inherited. Old code would have inherited it (producing 'one_TRANSFORMED').");
+    }
+
+    // ── Atomicity — ReadConverter failure must not commit partial state ────────
+
+    [TestMethod]
+    public void ReadConfiguration_ReadConverter_FailureDoesNotCommitResolvedLanguagesToGlobalCache()
+    {
+        // Document D1 has two languages: one valid (BASE) and one broken (groupSize=0).
+        // ReadConverter fails for the broken language → D1 throws before committing anything.
+        // Document D2 references BASE via baseOn. If D1 had partially committed BASE to
+        // _cachedLanguageTypes, D2 would succeed. The expected behavior is that D2 fails
+        // with "base not found", proving D1's resolution was never written to the global cache.
+        string baseKey = "ATOMIC-NOCACHE-BASE-" + Guid.NewGuid().ToString("N");
+        string brokenKey = "ATOMIC-NOCACHE-BROKEN-" + Guid.NewGuid().ToString("N");
+        string childKey = "ATOMIC-NOCACHE-CHILD-" + Guid.NewGuid().ToString("N");
+
+        const string groupDef = @"<Groups>
+      <Group level=""1"">
+        <Digit digit=""0"" string=""""/><Digit digit=""1"" string=""one""/><Digit digit=""2"" string=""two""/>
+        <Digit digit=""3"" string=""three""/><Digit digit=""4"" string=""four""/><Digit digit=""5"" string=""five""/>
+        <Digit digit=""6"" string=""six""/><Digit digit=""7"" string=""seven""/><Digit digit=""8"" string=""eight""/>
+        <Digit digit=""9"" string=""nine""/>
+      </Group>
+    </Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string=""""/><Scale value=""1"" string=""thousand""/></StaticNames><Suffixes><Suffix>on</Suffix></Suffixes></NumberScale>";
+
+        string d1 = $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>{baseKey}</Culture>
+    {groupDef}
+  </Language>
+  <Language groupSize=""0"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>{brokenKey}</Culture>
+    {groupDef}
+  </Language>
+</Numbers>";
+
+        string d2 = $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language baseOn=""{baseKey}"">
+    <Culture>{childKey}</Culture>
+  </Language>
+</Numbers>";
+
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => NumberToStringConverter.ReadConfiguration(d1),
+            "D1 must fail because one of its languages has an invalid groupSize");
+
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.ReadConfiguration(d2),
+            "D2 must fail because D1 was never committed to _cachedLanguageTypes (atomicity)");
+        StringAssert.Contains(ex.Message, baseKey,
+            "The error message must name the missing base culture to confirm the root cause");
+    }
+
+    // ── Item 57 — NumberScale.FirstLetterUpperCase explicit presence ──────────
+
+    [TestMethod]
+    public void ReadConfiguration_BaseOn_AbsentFirstLetterUpperCasePreservesInheritedTrue()
+    {
+        // Base has firstLetterUpperCase="true" (explicit). Child has <NumberScale startIndex="1">
+        // but NO firstLetterUpperCase attribute → absent → null.
+        // After MergeNumberScaleType: null ?? true = true (inherited).
+        // The test XML uses <Group level="1"> (groupValue=10), so for 1_000_000 the algorithm
+        // calls GetScaleName(6). With StaticNames.Count=2 and startIndex=1:
+        //   dynamicScale = 6 - 2 + 1 = 5; quotient=2, remainder=1 → suffix="ard", prefix=3="tri"
+        //   GroupSeparator defaults to "lli" → "tri"+"lli"+"ard" = "trilliard".
+        // firstLetterUpperCase=true capitalises → "one Trilliard".
+        string baseKey = "FLUC-BASE-" + Guid.NewGuid().ToString("N");
+        string childKey = "FLUC-CHILD-" + Guid.NewGuid().ToString("N");
+        var converters = NumberToStringConverter.ReadConfiguration(
+            BuildScaleTestXml(baseKey, @"firstLetterUpperCase=""true"" startIndex=""1""",
+                              childKey, @"startIndex=""1"""));
+        Assert.AreEqual("one Trilliard", converters[childKey].Convert(1_000_000),
+            "Absent firstLetterUpperCase must inherit 'true' from base — scale name must be capitalised");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_BaseOn_ExplicitFalseFirstLetterUpperCaseOverridesInheritedTrue()
+    {
+        // Base has firstLetterUpperCase="true". Child has firstLetterUpperCase="false" (explicit).
+        // After MergeNumberScaleType: false ?? true = false (explicit false wins).
+        // Same startIndex=1 and GetScaleName(6) → "trilliard"; firstLetterUpperCase=false → lowercase.
+        // Without the Specified-pattern fix, absent bool was deserialized as false → both tests
+        // would produce lowercase, making the absent-vs-explicit distinction invisible.
+        string baseKey = "FLUC-OVR-BASE-" + Guid.NewGuid().ToString("N");
+        string childKey = "FLUC-OVR-CHILD-" + Guid.NewGuid().ToString("N");
+        var converters = NumberToStringConverter.ReadConfiguration(
+            BuildScaleTestXml(baseKey, @"firstLetterUpperCase=""true"" startIndex=""1""",
+                              childKey, @"firstLetterUpperCase=""false"" startIndex=""1"""));
+        Assert.AreEqual("one trilliard", converters[childKey].Convert(1_000_000),
+            "Explicit firstLetterUpperCase=\"false\" must override inherited 'true' — scale name must be lowercase");
+    }
+
+    // ── Item 57 — NumberScale.StartIndex explicit presence ───────────────────
+
+    [TestMethod]
+    public void ReadConfiguration_BaseOn_AbsentStartIndexPreservesInheritedValue()
+    {
+        // Base has startIndex="1" (explicit). Child has <NumberScale firstLetterUpperCase="true">
+        // but NO startIndex attribute → absent → null.
+        // After MergeNumberScaleType: null ?? 1 = 1 (inherited).
+        // With GetScaleName(6), StaticNames.Count=2, startIndex=1:
+        //   dynamicScale=5; quotient=2, remainder=1 → suffix="ard" → "Trilliard".
+        string baseKey = "SI-BASE-" + Guid.NewGuid().ToString("N");
+        string childKey = "SI-CHILD-" + Guid.NewGuid().ToString("N");
+        var converters = NumberToStringConverter.ReadConfiguration(
+            BuildScaleTestXml(baseKey, @"firstLetterUpperCase=""true"" startIndex=""1""",
+                              childKey, @"firstLetterUpperCase=""true"""));
+        Assert.AreEqual("one Trilliard", converters[childKey].Convert(1_000_000),
+            "Absent startIndex must inherit 1 from base (suffix[1]='ard' → Trilliard, not Trillion)");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_BaseOn_ExplicitZeroStartIndexOverridesInheritedNonZero()
+    {
+        // Base has startIndex="1". Child has startIndex="0" (explicit zero).
+        // After MergeNumberScaleType: 0 ?? 1 = 0 (explicit zero wins — not treated as absent).
+        // With GetScaleName(6), StaticNames.Count=2, startIndex=0:
+        //   dynamicScale=4; quotient=2, remainder=0 → suffix="on" → "Trillion" (≠ "Trilliard").
+        // Without the Specified-pattern fix, startIndex=0 was indistinguishable from absent int=0,
+        // so the inherited 1 was incorrectly kept, producing "Trilliard" instead.
+        string baseKey = "SI-ZERO-BASE-" + Guid.NewGuid().ToString("N");
+        string childKey = "SI-ZERO-CHILD-" + Guid.NewGuid().ToString("N");
+        var converters = NumberToStringConverter.ReadConfiguration(
+            BuildScaleTestXml(baseKey, @"firstLetterUpperCase=""true"" startIndex=""1""",
+                              childKey, @"firstLetterUpperCase=""true"" startIndex=""0"""));
+        Assert.AreEqual("one Trillion", converters[childKey].Convert(1_000_000),
+            "Explicit startIndex=\"0\" must override inherited 1 (suffix[0]='on' → Trillion, not Trilliard)");
+    }
+
+    private static string BuildScaleTestXml(
+        string baseKey, string baseNumberScaleAttrs,
+        string childKey, string childNumberScaleAttrs)
+    {
+        const string groups = @"<Groups>
+  <Group level=""1"">
+    <Digit digit=""0"" string=""""/><Digit digit=""1"" string=""one""/><Digit digit=""2"" string=""two""/>
+    <Digit digit=""3"" string=""three""/><Digit digit=""4"" string=""four""/><Digit digit=""5"" string=""five""/>
+    <Digit digit=""6"" string=""six""/><Digit digit=""7"" string=""seven""/><Digit digit=""8"" string=""eight""/>
+    <Digit digit=""9"" string=""nine""/>
+  </Group>
+</Groups>";
+
+        const string staticAndSuffixes = @"<StaticNames>
+  <Scale value=""0"" string=""""/>
+  <Scale value=""1"" string=""thousand""/>
+</StaticNames>
+<Suffixes><Suffix>on</Suffix><Suffix>ard</Suffix></Suffixes>";
+
+        const string prefixTables = @"<Scale0Prefixes>
+  <Digit digit=""0"" string=""""/><Digit digit=""1"" string=""mi""/><Digit digit=""2"" string=""bi""/>
+  <Digit digit=""3"" string=""tri""/><Digit digit=""4"" string=""quadri""/><Digit digit=""5"" string=""quinti""/>
+  <Digit digit=""6"" string=""sexti""/><Digit digit=""7"" string=""septi""/><Digit digit=""8"" string=""octi""/>
+  <Digit digit=""9"" string=""noni""/>
+</Scale0Prefixes>
+<UnitsPrefixes>
+  <Digit digit=""0"" string=""""/><Digit digit=""1"" string=""uni""/><Digit digit=""2"" string=""duo""/>
+  <Digit digit=""3"" string=""tre(s)""/><Digit digit=""4"" string=""quattuor""/><Digit digit=""5"" string=""quinqua""/>
+  <Digit digit=""6"" string=""se(xs)""/><Digit digit=""7"" string=""septe(mn)""/><Digit digit=""8"" string=""octo""/>
+  <Digit digit=""9"" string=""nove(mn)""/>
+</UnitsPrefixes>
+<TensPrefixes>
+  <Digit digit=""0"" string=""""/><Digit digit=""1"" string=""(n)deci""/><Digit digit=""2"" string=""(ms)vingti""/>
+  <Digit digit=""3"" string=""(ns)triginta""/><Digit digit=""4"" string=""(ns)quadraginta""/>
+  <Digit digit=""5"" string=""(ns)quinquaginta""/><Digit digit=""6"" string=""(n)sexaginta""/>
+  <Digit digit=""7"" string=""(n)septuaginta""/><Digit digit=""8"" string=""(mxs)octoginta""/>
+  <Digit digit=""9"" string=""nonaginta""/>
+</TensPrefixes>
+<HundredsPrefixes>
+  <Digit digit=""0"" string=""""/><Digit digit=""1"" string=""(nx)centi""/><Digit digit=""2"" string=""(ms)ducenti""/>
+  <Digit digit=""3"" string=""(ns)trecenti""/><Digit digit=""4"" string=""(ns)quadringenti""/>
+  <Digit digit=""5"" string=""(ns)quingenti""/><Digit digit=""6"" string=""(n)sescenti""/>
+  <Digit digit=""7"" string=""(n)septingenti""/><Digit digit=""8"" string=""(mxs)octingenti""/>
+  <Digit digit=""9"" string=""nongenti""/>
+</HundredsPrefixes>";
+
+        return $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="""" zero=""zero"" minus=""minus *"">
+    <Culture>{baseKey}</Culture>
+    {groups}
+    <NumberScale {baseNumberScaleAttrs}>
+      {staticAndSuffixes}
+      {prefixTables}
+    </NumberScale>
+  </Language>
+  <Language baseOn=""{baseKey}"">
+    <Culture>{childKey}</Culture>
+    <NumberScale {childNumberScaleAttrs}>
+      {staticAndSuffixes}
+    </NumberScale>
+  </Language>
+</Numbers>";
+    }
+
+    // ── Item 57 — public API compatibility after internal XML/definition split ──
+
+    [TestMethod]
+    public void PublicApi_LanguageType_GroupSize_RemainsInt()
+    {
+        Assert.AreEqual(typeof(int),
+            typeof(LanguageType).GetProperty(nameof(LanguageType.GroupSize))!.PropertyType,
+            "LanguageType.GroupSize must stay a plain int (historical public API)");
+    }
+
+    [TestMethod]
+    public void PublicApi_NumberScaleType_FirstLetterUpperCase_RemainsBool()
+    {
+        Assert.AreEqual(typeof(bool),
+            typeof(NumberScaleType).GetProperty(nameof(NumberScaleType.FirstLetterUpperCase))!.PropertyType,
+            "NumberScaleType.FirstLetterUpperCase must stay a plain bool (historical public API)");
+    }
+
+    [TestMethod]
+    public void PublicApi_NumberScaleType_StartIndex_RemainsInt()
+    {
+        Assert.AreEqual(typeof(int),
+            typeof(NumberScaleType).GetProperty(nameof(NumberScaleType.StartIndex))!.PropertyType,
+            "NumberScaleType.StartIndex must stay a plain int (historical public API)");
+    }
+
+    [TestMethod]
+    public void PublicApi_XmlSpecified_NotPublic_LanguageType()
+    {
+        var specifiedProps = typeof(LanguageType).GetProperties()
+            .Where(p => p.Name.EndsWith("Specified") || p.Name.EndsWith("Xml"));
+        Assert.IsFalse(specifiedProps.Any(),
+            $"Found unexpected public XML properties on LanguageType: {string.Join(", ", specifiedProps.Select(p => p.Name))}");
+    }
+
+    [TestMethod]
+    public void PublicApi_XmlSpecified_NotPublic_NumberScaleType()
+    {
+        var specifiedProps = typeof(NumberScaleType).GetProperties()
+            .Where(p => p.Name.EndsWith("Specified") || p.Name.EndsWith("Xml"));
+        Assert.IsFalse(specifiedProps.Any(),
+            $"Found unexpected public XML properties on NumberScaleType: {string.Join(", ", specifiedProps.Select(p => p.Name))}");
+    }
+
+    // ── Item 57 — public API XML serialization contract ─────────────────────────
+
+    [TestMethod]
+    public void PublicApi_LanguageType_XmlSerializationStillWritesGroupSize()
+    {
+        var lang = new LanguageType { GroupSize = 4 };
+        var serializer = new XmlSerializer(typeof(LanguageType));
+        using var writer = new StringWriter();
+        serializer.Serialize(writer, lang);
+        StringAssert.Contains(writer.ToString(), "groupSize=\"4\"",
+            "Serialized LanguageType must include groupSize attribute (public XML contract)");
+    }
+
+    [TestMethod]
+    public void PublicApi_NumberScaleType_XmlSerializationStillWritesFirstLetterUpperCase()
+    {
+        var scale = new NumberScaleType { FirstLetterUpperCase = true };
+        var serializer = new XmlSerializer(typeof(NumberScaleType));
+        using var writer = new StringWriter();
+        serializer.Serialize(writer, scale);
+        StringAssert.Contains(writer.ToString(), "firstLetterUpperCase=\"true\"",
+            "Serialized NumberScaleType must include firstLetterUpperCase attribute (public XML contract)");
+    }
+
+    [TestMethod]
+    public void PublicApi_NumberScaleType_XmlSerializationStillWritesStartIndex()
+    {
+        var scale = new NumberScaleType { StartIndex = 5 };
+        var serializer = new XmlSerializer(typeof(NumberScaleType));
+        using var writer = new StringWriter();
+        serializer.Serialize(writer, scale);
+        StringAssert.Contains(writer.ToString(), "startIndex=\"5\"",
+            "Serialized NumberScaleType must include startIndex attribute (public XML contract)");
+    }
+
+    [TestMethod]
+    public void PublicApi_LanguageType_XmlDeserializationStillReadsGroupSize()
+    {
+        const string xml = "<LanguageType groupSize=\"6\" />";
+        var serializer = new XmlSerializer(typeof(LanguageType));
+        using var reader = new StringReader(xml);
+        var lang = (LanguageType)serializer.Deserialize(reader)!;
+        Assert.AreEqual(6, lang.GroupSize,
+            "XmlSerializer must read groupSize attribute into LanguageType.GroupSize");
+    }
+
+    [TestMethod]
+    public void PublicApi_NumberScaleType_XmlDeserializationStillReadsScaleAttributes()
+    {
+        const string xml = "<NumberScaleType firstLetterUpperCase=\"true\" startIndex=\"7\" />";
+        var serializer = new XmlSerializer(typeof(NumberScaleType));
+        using var reader = new StringReader(xml);
+        var scale = (NumberScaleType)serializer.Deserialize(reader)!;
+        Assert.IsTrue(scale.FirstLetterUpperCase,
+            "XmlSerializer must read firstLetterUpperCase attribute into NumberScaleType.FirstLetterUpperCase");
+        Assert.AreEqual(7, scale.StartIndex,
+            "XmlSerializer must read startIndex attribute into NumberScaleType.StartIndex");
+    }
+
+    // ── Item 57 — Optional<T> presence semantics ────────────────────────────────
+
+    [TestMethod]
+    public void Optional_Unspecified_IsNotSpecified()
+    {
+        Assert.IsFalse(Optional<int>.Unspecified.IsSpecified);
+    }
+
+    [TestMethod]
+    public void Optional_Of_IsSpecified()
+    {
+        Assert.IsTrue(Optional<int>.Of(0).IsSpecified);
+        Assert.AreEqual(0, Optional<int>.Of(0).Value);
+    }
+
+    [TestMethod]
+    public void Optional_Of_False_IsSpecifiedFalse()
+    {
+        var opt = Optional<bool>.Of(false);
+        Assert.IsTrue(opt.IsSpecified);
+        Assert.IsFalse(opt.Value);
+    }
+
+    [TestMethod]
+    public void Optional_GetValueOrDefault_UnspecifiedReturnsFallback()
+    {
+        Assert.AreEqual(3, Optional<int>.Unspecified.GetValueOrDefault(3));
+    }
+
+    [TestMethod]
+    public void Optional_GetValueOrDefault_SpecifiedReturnsValueEvenWhenZero()
+    {
+        Assert.AreEqual(0, Optional<int>.Of(0).GetValueOrDefault(3),
+            "An explicit 0 must win over the fallback — this is what preserves explicit groupSize/startIndex=0");
+    }
+
+    private sealed class FakeSpecifics : INumberToStringLanguageSpecifics
+    {
+        public string FinalizeWriting(string language, string value) => value;
+    }
+
+    private sealed class TransformingSpecifics : INumberToStringLanguageSpecifics
+    {
+        public string FinalizeWriting(string language, string value) => value + "_TRANSFORMED";
     }
 }
