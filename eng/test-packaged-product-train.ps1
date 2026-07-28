@@ -14,7 +14,7 @@ $packagesPath = Join-Path $artifactsRoot "packages"
 $temporaryPath = Join-Path $artifactsRoot "packaged-acceptance"
 $globalPackages = Join-Path $temporaryPath "global-packages"
 $configPath = Join-Path $temporaryPath "NuGet.config"
-$env:NUGET_PACKAGES = $globalPackages
+$originalNuGetPackages = $env:NUGET_PACKAGES
 $env:DOTNET_ROLL_FORWARD = "Major"
 $validationSucceeded = $false
 $manifest = Get-Content (Join-Path $PSScriptRoot "parser-release-manifest.json") -Raw | ConvertFrom-Json
@@ -85,6 +85,10 @@ try {
 
     Remove-AcceptanceDirectory -Path $temporaryPath
     New-Item $globalPackages -ItemType Directory -Force | Out-Null
+    # Do not isolate the solution build in this cache: MSBuild/SourceLink tasks loaded during
+    # that phase can retain handles under NUGET_PACKAGES on Windows. Isolation starts only
+    # after Build, Pack, and Inspect, immediately before packaged-consumer Restore.
+    $env:NUGET_PACKAGES = $globalPackages
     @"
 <?xml version="1.0" encoding="utf-8"?>
 <configuration>
@@ -200,6 +204,7 @@ try {
     $validationSucceeded = $true
     Write-Host "Validate: packaged product train passed. No package was published."
 } finally {
+    $env:NUGET_PACKAGES = $originalNuGetPackages
     if ($KeepTemporaryProjects) {
         Write-Host "Temporary acceptance directory retained at '$temporaryPath'."
     } elseif (-not $validationSucceeded) {
