@@ -41,6 +41,14 @@ public class CommandResponseClient : IDisposable
     // listener knows whether an incoming line is solicited or unsolicited.
     private volatile int _activeCommandWaiters;
 
+    // Item 48: lifecycle state for single-use connection guard.
+    // 0 = NotConnected, 1 = Connecting, 2 = Connected, 3 = Disposed.
+    private const int StateNotConnected = 0;
+    private const int StateConnecting = 1;
+    private const int StateConnected = 2;
+    private const int StateDisposed = 3;
+    private int _state = StateNotConnected;
+
     /// <summary>
     /// Gets or sets the maximum number of bytes allowed in a single incoming response line.
     /// Lines longer than this limit cause the listener loop to disconnect.
@@ -149,33 +157,54 @@ public class CommandResponseClient : IDisposable
     /// </param>
     public Task ConnectAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
     {
-        _stream = stream;
-        _leaveOpen = leaveOpen;
-        if (stream.CanTimeout)
+        // Item 48: atomic single-use connection guard.
+        int prev = Interlocked.CompareExchange(ref _state, StateConnecting, StateNotConnected);
+        if (prev == StateDisposed)
+            throw new ObjectDisposedException(GetType().Name);
+        if (prev != StateNotConnected)
+            throw new InvalidOperationException(
+                "This client is already connected or has already been used. " +
+                "Create a new instance for each connection.");
+
+        try
         {
-            stream.ReadTimeout = _listenTimeout == Timeout.InfiniteTimeSpan ? -1 : (int)_listenTimeout.TotalMilliseconds;
+            _stream = stream;
+            _leaveOpen = leaveOpen;
+            if (stream.CanTimeout)
+            {
+                stream.ReadTimeout = _listenTimeout == Timeout.InfiniteTimeSpan ? -1 : (int)_listenTimeout.TotalMilliseconds;
+            }
+            _reader = new StreamReader(stream, Encoding.ASCII, false, 1024, true);
+            _writer = new StreamWriter(stream, Encoding.ASCII, 1024, true)
+            {
+                NewLine = "\r\n",
+                AutoFlush = true
+            };
+            // Item 47: link the caller token so cancellation stops the session listener.
+            _listenTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            _listenThread = new Thread(() => ListenLoop(_listenTokenSource.Token))
+            {
+                IsBackground = true
+            };
+            _everConnected = true;
+            _disconnected = false;
+            _listenThread.Start();
+            Logger?.LogInformation("Client connected to stream");
+
+            // Item 46: start the keep-alive loop as a cancellable Task.
+            RestartKeepAlive();
+
+            Interlocked.Exchange(ref _state, StateConnected);
+            return OnConnect(stream, leaveOpen, cancellationToken);
         }
-        _reader = new StreamReader(stream, Encoding.ASCII, false, 1024, true);
-        _writer = new StreamWriter(stream, Encoding.ASCII, 1024, true)
+        catch
         {
-            NewLine = "\r\n",
-            AutoFlush = true
-        };
-        // Item 47: link the caller token so cancellation stops the session listener.
-        _listenTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        _listenThread = new Thread(() => ListenLoop(_listenTokenSource.Token))
-        {
-            IsBackground = true
-        };
-        _everConnected = true;
-        _disconnected = false;
-        _listenThread.Start();
-        Logger?.LogInformation("Client connected to stream");
-
-        // Item 46: start the keep-alive loop as a cancellable Task.
-        RestartKeepAlive();
-
-        return OnConnect(stream, leaveOpen, cancellationToken);
+            Interlocked.Exchange(ref _state, StateDisposed);
+            _reader?.Dispose();
+            _writer?.Dispose();
+            _listenTokenSource?.Dispose();
+            throw;
+        }
     }
 
     /// <summary>
@@ -677,6 +706,7 @@ public class CommandResponseClient : IDisposable
     {
         if (!disposing && _writer is null) return;
 
+        Interlocked.Exchange(ref _state, StateDisposed);
         StopKeepAlive();
         _listenTokenSource?.Cancel();
         _reader?.Dispose();

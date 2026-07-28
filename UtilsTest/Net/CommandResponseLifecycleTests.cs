@@ -571,4 +571,57 @@ public class CommandResponseLifecycleTests
         await Task.Delay(200);
         Assert.IsFalse(client.IsConnected, "Client must report disconnected after cancellation.");
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // Item 48 — Atomic single-use client connection
+    // ──────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task ConnectAsync_SecondCallAfterConnect_Throws()
+    {
+        (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
+        using CommandResponseClient client = new();
+        await client.ConnectAsync(clientStream, leaveOpen: true);
+
+        await Assert.ThrowsExceptionAsync<InvalidOperationException>(() =>
+            client.ConnectAsync(clientStream, leaveOpen: true));
+    }
+
+    [TestMethod]
+    public async Task ConnectAsync_ConcurrentCalls_OnlyOneSucceeds()
+    {
+        (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
+        using CommandResponseClient client = new();
+
+        int success = 0;
+        int failure = 0;
+        Task[] tasks = Enumerable.Range(0, 4).Select(_ => Task.Run(async () =>
+        {
+            try
+            {
+                await client.ConnectAsync(clientStream, leaveOpen: true);
+                Interlocked.Increment(ref success);
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException)
+            {
+                Interlocked.Increment(ref failure);
+            }
+        })).ToArray();
+
+        await WithTimeout(Task.WhenAll(tasks), "Concurrent ConnectAsync did not complete within 5s.");
+        Assert.AreEqual(1, success, "Exactly one ConnectAsync must succeed.");
+        Assert.AreEqual(3, failure, "All other ConnectAsync calls must throw.");
+    }
+
+    [TestMethod]
+    public async Task ConnectAsync_AfterDispose_Throws()
+    {
+        (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
+        CommandResponseClient client = new();
+        await client.ConnectAsync(clientStream, leaveOpen: true);
+        client.Dispose();
+
+        await Assert.ThrowsExceptionAsync<ObjectDisposedException>(() =>
+            client.ConnectAsync(clientStream, leaveOpen: true));
+    }
 }
