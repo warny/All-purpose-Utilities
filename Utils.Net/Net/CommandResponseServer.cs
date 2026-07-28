@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -161,7 +161,7 @@ public class CommandResponseServer : IDisposable
             NewLine = "\r\n",
             AutoFlush = true
         };
-        _listenTokenSource = new CancellationTokenSource();
+        _listenTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _listenThread = new Thread(() => ListenLoop(_listenTokenSource.Token))
         {
             IsBackground = true
