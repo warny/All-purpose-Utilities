@@ -8,7 +8,9 @@
         minus="माइनस *"
         decimalSeparator="दशमलव"
         fractionSeparator="बटे"
-    >
+
+                maxNumber="999999"
+        >
         <Culture>HI</Culture>
         <Groups>
             <Group level="1">

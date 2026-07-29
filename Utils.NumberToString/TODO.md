@@ -99,7 +99,9 @@ Trigger patterns are compiled with `new Regex(pattern, RegexOptions.Compiled)` a
 
 **Priority: P1 robustness/security.**
 
-### 54. Core grouping configuration is not structurally validated
+### ✅ 54. Core grouping configuration is not structurally validated
+
+**Fix:** Added aggregate validation of the fully resolved `LanguageType`, including cultures, group size, zero/minus, contiguous groups, complete digit tables, nulls, duplicates, time units, and scale structure. Diagnostics include culture and logical paths.
 
 The constructor checks that `Groups` and `Scale` are non-null but does not ensure that:
 
@@ -128,7 +130,9 @@ Malformed programmatic/XML configuration can therefore fail later with `DivideBy
 
 **Priority: P2 semantic correctness.**
 
-### 56. Configuration registration is non-transactional and duplicate cultures are silently ignored
+### ✅ 56. Configuration registration is non-transactional and duplicate cultures are silently ignored
+
+**Fix:** Registration now builds the complete multi-document batch before a single locked commit, normalizes and rejects intra-batch collisions, and exposes `DuplicateCulturePolicy` for existing-registry collisions.
 
 `RegisterConfigurations` reads and registers each document sequentially. If a later document fails, earlier cultures remain globally registered. `TryAdd` silently keeps the first culture, so typos, conflicting versions or intended overrides are not observable.
 
@@ -144,7 +148,9 @@ Resolved language definitions are stored in a process-wide cache while documents
 
 **Model split (public API preserved):** Presence/absence tracking is confined to an internal serialization/definition layer so the public configuration types keep their historical shape. Three layers now exist: (1) internal XML models (`NumbersXmlModel`, `LanguageXmlModel`, `NumberScaleXmlModel`) that carry the `[XmlSerializer]` attributes and the `Specified` companions for the presence-sensitive value-type attributes (`groupSize`, `firstLetterUpperCase`, `startIndex`); these are `public` only because `XmlSerializer` requires public types; (2) internal mergeable definitions (`LanguageDefinition`, `NumberScaleDefinition`) that use `Optional<T>` for those three fields and plain nullable reference fields elsewhere, on which `baseOn` inheritance and deterministic left-to-right merging run (`MergeLanguageDefinition`/`MergeNumberScaleDefinition` via `MergeOptional`); (3) the restored public types `LanguageType`/`NumberScaleType`, built by `BuildResolvedLanguage`/`BuildNumberScale` with the historical public API — `int GroupSize`, `bool FirstLetterUpperCase`, `int StartIndex` (no nullable, no `*Xml`/`*XmlSpecified` members). `Optional<T>` distinguishes an explicit `0`/`false` (which overrides an inherited value) from an absent attribute (which inherits); absent value-type fields collapse to the historical defaults (`GroupSize` = 3, `StartIndex` = 0, `FirstLetterUpperCase` = false) when the public type is built. Cycle blocking, deterministic merge, ordered multiple inheritance, and atomic loading are all preserved. Addressed in PR fix/Utils.NumberToString-todo-items-57-60-61.
 
-### 58. Runtime variants are permissive while configuration variants are strict
+### ✅ 58. Runtime variants are permissive while configuration variants are strict
+
+**Fix:** Runtime arguments now require strict `dimension=value` syntax and validate aliases, declared dimensions and values, empty components, and duplicate dimensions before defaults are injected.
 
 Configuration references are validated, but `BuildVariantQuery` silently accepts malformed strings, unknown dimension names and undeclared values. These entries either do nothing or prevent expected rules from matching, making caller mistakes difficult to diagnose.
 
@@ -160,7 +166,7 @@ For equally specific matching trigger forms or ordinal variants, the first decla
 
 **Priority: P2 determinism.**
 
-### 🔶 60. `RegisterLanguageSpecifics` stores shared mutable instances globally
+### ✅ 60. `RegisterLanguageSpecifics` stores shared mutable instances globally
 
 A single registered `INumberToStringLanguageSpecifics` instance may be reused by many immutable converters and concurrent calls. The API does not require implementations to be stateless/thread-safe and allows silent replacement under the same key.
 

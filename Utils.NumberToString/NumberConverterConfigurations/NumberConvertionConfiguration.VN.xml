@@ -78,7 +78,7 @@
              101–109 → "một trăm linh một" (connector fires when remainder < 10). -->
         <Ordinals prefix="thứ ">
             <!-- 1st is "thứ nhất", not "thứ một" -->
-            <OrdinalException value="1" string="thứ nhất" />
+            <OrdinalException value="1" string="nhất" />
         </Ordinals>
     </Language>
 </Numbers>

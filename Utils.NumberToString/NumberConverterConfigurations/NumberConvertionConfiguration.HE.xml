@@ -8,7 +8,7 @@
         minus="מינוס *"
         decimalSeparator="נקודה"
         fractionSeparator="על"
-        maxNumber="999999999"
+        maxNumber="999999"
     >
         <Culture>HE</Culture>
         <Groups>

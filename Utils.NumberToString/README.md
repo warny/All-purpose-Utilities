@@ -1376,3 +1376,17 @@ and `<OrdinalException>`:
 
 
 [Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)
+# Configuration validation and runtime contracts
+
+Configuration completeness is validated only after all `baseOn` inheritance has been resolved.
+Diagnostics identify the culture and logical configuration path. Languages without a large-number
+scale must declare `maxNumber` below `10^groupSize`; finite scales likewise require a bound that can
+be named by the configured scale tables.
+
+`RegisterConfigurations` rejects normalized culture collisions by default. Use the overload taking
+`DuplicateCulturePolicy` to keep an existing converter or atomically replace it. Runtime variants use
+strict `dimension=value` syntax and reject unknown dimensions, values, and duplicates.
+
+Language-specific finalization is applied to the complete public conversion result. Ordinal and
+multiplicative bodies, including configured exceptions, pass through adjustment, final triggers, and
+the language finalizer before their type prefix and sign are applied.

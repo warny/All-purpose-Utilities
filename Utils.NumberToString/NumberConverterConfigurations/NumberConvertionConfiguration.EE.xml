@@ -8,7 +8,9 @@
         minus="minus *"
         decimalSeparator="kpɔ"
         fractionSeparator="kple"
-    >
+
+                maxNumber="999999"
+        >
 		<Culture>EE</Culture>
 		<Groups>
 			<Group level="1">

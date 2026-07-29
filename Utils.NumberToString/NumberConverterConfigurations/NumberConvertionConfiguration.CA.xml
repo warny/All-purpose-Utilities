@@ -8,6 +8,8 @@
                 minus="menys *"
                 decimalSeparator="coma"
                 fractionSeparator="partit per"
+
+                maxNumber="999999999999"
         >
                 <Culture>CA</Culture>
                 <Culture>ca-ES</Culture>

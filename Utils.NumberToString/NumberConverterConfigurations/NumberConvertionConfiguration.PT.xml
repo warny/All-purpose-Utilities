@@ -8,7 +8,9 @@
         minus="menos *"
         decimalSeparator="vírgula"
         fractionSeparator="sobre"
-    >
+
+                maxNumber="999999"
+        >
 		<Culture>PT</Culture>
 		<Groups>
 			<Group level="1">

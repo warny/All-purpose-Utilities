@@ -8,7 +8,7 @@
         minus="سالب *"
         decimalSeparator="فاصل"
         fractionSeparator="على"
-        maxNumber="999999999"
+        maxNumber="999999"
     >
         <Culture>AR</Culture>
         <Groups>
