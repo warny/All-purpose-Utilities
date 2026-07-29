@@ -42,9 +42,11 @@ public class CommandResponseClient : IDisposable
     private volatile bool _disconnected;
     private TimeSpan _listenTimeout = Timeout.InfiniteTimeSpan;
 
-    // Item 44: track how many command waiters are currently consuming responses so that the
-    // listener knows whether an incoming line is solicited or unsolicited.
+    // Item 44 / P1-A: track active response owners so the listener can route each line exactly
+    // once. _activeCommandWaiters covers SendCommandAsync; _activeReadWaiters covers ReadAsync.
+    // When the sum is zero, a line has no owner and is raised as unsolicited only (not queued).
     private volatile int _activeCommandWaiters;
+    private volatile int _activeReadWaiters;
 
     // Item 49: idempotent disposal flag.
     private int _disposed; // 0 = alive, 1 = disposed (use Interlocked)
@@ -197,10 +199,15 @@ public class CommandResponseClient : IDisposable
     /// <summary>
     /// Gets a value indicating whether the client is currently connected.
     /// Returns <see langword="false"/> on a newly constructed instance that has not yet called
-    /// <see cref="ConnectAsync(string,int,System.Threading.CancellationToken)"/>, and returns
-    /// <see langword="false"/> again once the connection has been closed or disposed.
+    /// <see cref="ConnectAsync(string,int,System.Threading.CancellationToken)"/>, while
+    /// <see cref="OnConnect"/> is still pending, and once the connection has been closed or disposed.
     /// </summary>
-    public bool IsConnected => _everConnected && !_disconnected;
+    /// <remarks>
+    /// The value becomes <see langword="true"/> only after <see cref="OnConnect"/> completes
+    /// successfully, so subclasses that use <see cref="OnConnect"/> for protocol handshaking can
+    /// rely on the property to reflect the fully-initialised connection state.
+    /// </remarks>
+    public bool IsConnected => _state == StateConnected;
 
     /// <summary>
     /// Default port used by the protocol.
@@ -219,17 +226,18 @@ public class CommandResponseClient : IDisposable
         port = port == -1 ? DefaultPort : port;
         Logger?.LogInformation("Connecting to {Host}:{Port}", host, port);
 
-        // Item 51: build in local variables; transfer to fields only after full success.
+        // Item 51 / P1-B: build in local variables; transfer to fields only after full success.
+        // Do NOT commit _client before ConnectAsync(Stream) succeeds: if that call or OnConnect
+        // fails and rolls back, the TcpClient must still be disposed by the outer catch.
         TcpClient? tcpClient = null;
         try
         {
             tcpClient = new TcpClient();
             await tcpClient.ConnectAsync(host, port, cancellationToken).ConfigureAwait(false);
-            // ConnectAsync(Stream) will own tcpClient from here; pass null so our finally does not dispose it.
-            TcpClient capturedClient = tcpClient;
+            await ConnectAsync(tcpClient.GetStream(), false, cancellationToken).ConfigureAwait(false);
+            // Full success: commit TcpClient ownership to the field.
+            _client = tcpClient;
             tcpClient = null;
-            _client = capturedClient;
-            await ConnectAsync(capturedClient.GetStream(), false, cancellationToken).ConfigureAwait(false);
         }
         catch
         {
@@ -306,27 +314,33 @@ public class CommandResponseClient : IDisposable
             _disconnected = false;
             _listenThread.Start();
             Logger?.LogInformation("Client connected to stream");
-            RestartKeepAlive();
-            Interlocked.Exchange(ref _state, StateConnected);
 
-            // P1-1 fix: mark resources as committed before awaiting OnConnect so the
-            // catch block can stop the listener and roll back if OnConnect fails async.
+            // P1-1 / P1-C: mark resources as committed before awaiting OnConnect so that the
+            // catch block can roll back correctly. State intentionally stays at Connecting until
+            // OnConnect succeeds: public callers that check IsConnected or call SendCommandAsync
+            // will see "not yet connected", and the keep-alive loop will not start.
             committed = true;
             await OnConnect(stream, leaveOpen, cancellationToken).ConfigureAwait(false);
+
+            // OnConnect succeeded. Promote the instance to Connected and start keep-alive.
+            Interlocked.Exchange(ref _state, StateConnected);
+            RestartKeepAlive();
         }
         catch
         {
             if (committed)
             {
-                // OnConnect failed asynchronously after resources were committed to fields.
-                // Null each field after disposing so the subsequent Dispose() call finds
-                // only nulls and does not try to use already-cleaned-up objects.
+                // OnConnect failed after resources were committed to fields.
+                // Null each field after disposing so the subsequent Dispose() call (e.g. from a
+                // using statement) finds only nulls and does not attempt double-cleanup.
+                // RestartKeepAlive was not called yet (P1-C), so StopKeepAlive is a no-op here.
                 StopKeepAlive();
                 _listenTokenSource?.Cancel();
                 _reader?.Dispose();  _reader = null;
                 _listenThread?.Join(TimeSpan.FromSeconds(1));  _listenThread = null;
                 _writer?.Dispose();  _writer = null;
                 if (!_leaveOpen) _stream?.Dispose();
+                _stream = null;  // P1-B: null so Dispose() skips the already-disposed stream
                 _listenTokenSource?.Dispose();  _listenTokenSource = null;
             }
             else
@@ -362,10 +376,12 @@ public class CommandResponseClient : IDisposable
     /// <exception cref="IOException">Thrown when the connection has been closed.</exception>
     public async Task<IReadOnlyList<ServerResponse>> SendCommandAsync(string command, CancellationToken cancellationToken = default)
     {
-        if (_writer is null)
-        {
+        // P1-C: require the fully Connected state so external callers cannot send commands
+        // while OnConnect is still negotiating the session (state = Connecting).
+        if (_state == StateDisposed)
+            throw new ObjectDisposedException(GetType().Name);
+        if (_state != StateConnected)
             throw new InvalidOperationException("Client is not connected.");
-        }
 
         await _sendLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -432,22 +448,33 @@ public class CommandResponseClient : IDisposable
         {
             throw new IOException("Connection closed.");
         }
+
+        // P1-A: register as a response owner BEFORE waiting so the listener routes the next
+        // incoming line to the queue rather than raising it as unsolicited.
+        Interlocked.Increment(ref _activeReadWaiters);
         List<ServerResponse> responses = new();
-        await _responseSignal.WaitAsync(cancellationToken).ConfigureAwait(false);
-        do
+        try
         {
-            if (_responseQueue.TryDequeue(out ServerResponse response))
+            await _responseSignal.WaitAsync(cancellationToken).ConfigureAwait(false);
+            do
             {
-                responses.Add(response);
+                if (_responseQueue.TryDequeue(out ServerResponse response))
+                {
+                    responses.Add(response);
+                }
+                else if (_disconnected)
+                {
+                    throw new IOException("Connection closed.");
+                }
             }
-            else if (_disconnected)
-            {
-                throw new IOException("Connection closed.");
-            }
+            while (await _responseSignal.WaitAsync(0).ConfigureAwait(false));
+            ResetKeepAlive();
+            return responses;
         }
-        while (await _responseSignal.WaitAsync(0).ConfigureAwait(false));
-        ResetKeepAlive();
-        return responses;
+        finally
+        {
+            Interlocked.Decrement(ref _activeReadWaiters);
+        }
     }
 
     /// <summary>
@@ -580,12 +607,17 @@ public class CommandResponseClient : IDisposable
 
                 ServerResponse response = ParseResponseLine(line);
                 Logger?.LogDebug("Received: {Code} {Message}", SanitizeForLog(response.Code, 10), SanitizeForLog(response.Message ?? string.Empty, 200));
-                _responseQueue.Enqueue(response);
-                _responseSignal.Release();
 
-                // Item 44: only raise the unsolicited event when there is no active command
-                // waiter. When a command is in flight, its replies are consumed by SendCommandAsync.
-                if (_activeCommandWaiters == 0)
+                // P1-A: route each line to exactly one destination.
+                // Enqueue (and signal) only when a command or read waiter is active; otherwise
+                // the line is unsolicited and is delivered directly to the event without being
+                // stored in the queue (preventing ReadAsync / SendCommandAsync from seeing it later).
+                if (_activeCommandWaiters + _activeReadWaiters > 0)
+                {
+                    _responseQueue.Enqueue(response);
+                    _responseSignal.Release();
+                }
+                else
                 {
                     RaiseUnsolicitedResponseReceived(response);
                 }
@@ -602,6 +634,9 @@ public class CommandResponseClient : IDisposable
         finally
         {
             _disconnected = true;
+            // P1-C: update state so IsConnected returns false as soon as the listener exits,
+            // regardless of whether Dispose() has been called yet.
+            Interlocked.CompareExchange(ref _state, StateDisposed, StateConnected);
             _responseSignal.Release();
             Logger?.LogWarning("Listener thread terminated");
         }
@@ -624,8 +659,24 @@ public class CommandResponseClient : IDisposable
             catch (Exception ex)
             {
                 Logger?.LogError(ex, "UnsolicitedResponseReceived subscriber threw an unhandled exception");
-                CallbackError?.Invoke(ex);
+                RaiseCallbackError(ex);
             }
+        }
+    }
+
+    /// <summary>
+    /// Forwards <paramref name="ex"/> to each <see cref="CallbackError"/> subscriber in turn,
+    /// catching individual subscriber exceptions so a misbehaving subscriber cannot suppress
+    /// the delivery to the remaining subscribers or propagate back into the transport (P2-E).
+    /// </summary>
+    private void RaiseCallbackError(Exception ex)
+    {
+        Action<Exception>? handler = CallbackError;
+        if (handler is null) return;
+        foreach (Delegate d in handler.GetInvocationList())
+        {
+            try { ((Action<Exception>)d)(ex); }
+            catch (Exception inner) { Logger?.LogError(inner, "CallbackError subscriber threw an unhandled exception"); }
         }
     }
 
@@ -730,7 +781,10 @@ public class CommandResponseClient : IDisposable
     private void RestartKeepAlive()
     {
         StopKeepAlive();
-        if (_noOpInterval == Timeout.InfiniteTimeSpan || _listenTokenSource is null) return;
+        // P1-C: do not start keep-alive until the state is fully Connected (i.e. OnConnect has
+        // returned successfully). Setting NoOpInterval before ConnectAsync returns is permitted
+        // but the loop is not created until ConnectAsync explicitly calls RestartKeepAlive().
+        if (_noOpInterval == Timeout.InfiniteTimeSpan || _listenTokenSource is null || _state != StateConnected) return;
         Interlocked.Exchange(ref _lastActivityTick, Environment.TickCount64);
         _keepAliveCts = CancellationTokenSource.CreateLinkedTokenSource(_listenTokenSource.Token);
         CancellationToken ct = _keepAliveCts.Token;
@@ -764,7 +818,7 @@ public class CommandResponseClient : IDisposable
             catch (Exception ex)
             {
                 Logger?.LogWarning(ex, "Keep-alive loop terminated unexpectedly");
-                CallbackError?.Invoke(ex);
+                RaiseCallbackError(ex);  // P2-E: isolated from keep-alive loop; subscriber faults go to log only
             }
         }, ct);
     }
@@ -800,11 +854,18 @@ public class CommandResponseClient : IDisposable
         }
         catch (OperationCanceledException)
         {
-            // Ignore cancellation during shutdown.
+            // Normal shutdown path; do not report via CallbackError.
+        }
+        catch (ObjectDisposedException)
+        {
+            // Resources were disposed during shutdown; treat as normal cancellation.
         }
         catch (Exception ex)
         {
+            // P2-F: forward genuine NOOP failures to the observable error channel so callers
+            // can detect recurring connection issues even when no logger is configured.
             Logger?.LogWarning(ex, "Keep-alive command failed");
+            RaiseCallbackError(ex);
         }
     }
 
@@ -868,15 +929,15 @@ public class CommandResponseClient : IDisposable
 
         StopKeepAlive();
         _listenTokenSource?.Cancel();
-        _reader?.Dispose();
+        _reader?.Dispose();          // interrupt any blocking read so the listener thread can exit
         _reader = null;
-        _writer?.Dispose();
+        _listenThread?.Join(TimeSpan.FromSeconds(1));  // wait for listener to stop before disposing writer
+        _writer?.Dispose();          // P1-D: safe to dispose only after the listener has exited
         _writer = null;
         if (!_leaveOpen)
         {
             _stream?.Dispose();
         }
-        _listenThread?.Join(TimeSpan.FromSeconds(1));
         _listenTokenSource?.Dispose();
         _client?.Dispose();
         _responseSignal.Dispose();
