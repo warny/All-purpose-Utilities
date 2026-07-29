@@ -38,7 +38,6 @@ public class CommandResponseClient : IDisposable
     private TimeSpan _noOpInterval = Timeout.InfiniteTimeSpan;
     private string _noOpCommand = "NOOP";
     private bool _leaveOpen;
-    private bool _everConnected;
     private volatile bool _disconnected;
     private TimeSpan _listenTimeout = Timeout.InfiniteTimeSpan;
 
@@ -310,7 +309,6 @@ public class CommandResponseClient : IDisposable
                 IsBackground = true
             };
 
-            _everConnected = true;
             _disconnected = false;
             _listenThread.Start();
             Logger?.LogInformation("Client connected to stream");
@@ -399,7 +397,7 @@ public class CommandResponseClient : IDisposable
             Interlocked.Increment(ref _activeCommandWaiters);
             try
             {
-                await _writer.WriteLineAsync(command).ConfigureAwait(false);
+                await _writer.WriteLineAsync(command.AsMemory(), cancellationToken).ConfigureAwait(false);
                 List<ServerResponse> responses = new();
                 while (true)
                 {
@@ -490,10 +488,11 @@ public class CommandResponseClient : IDisposable
     /// <exception cref="InvalidOperationException">Thrown when the client is not connected.</exception>
     protected async Task SendLinesAsync(IEnumerable<string> lines, CancellationToken cancellationToken = default)
     {
-        if (_writer is null)
-        {
+        // P1-3: apply the same state guards as SendCommandAsync before waiting on the lock.
+        if (_state == StateDisposed)
+            throw new ObjectDisposedException(GetType().Name);
+        if (_state != StateConnected)
             throw new InvalidOperationException("Client is not connected.");
-        }
 
         // Item 53 / P2-6: always materialise into a new list — even when the caller passes a
         // List<string> — so a concurrent mutation between validation and the write loop cannot
@@ -505,12 +504,25 @@ public class CommandResponseClient : IDisposable
             ValidateCommandArgument(line, nameof(lines));
         }
 
-        await _sendLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        // Link the session lifetime token so a concurrent Dispose() or caller cancellation
+        // both unblock the lock wait and each individual write.
+        CancellationToken sessionToken = _listenTokenSource?.Token ?? CancellationToken.None;
+        using CancellationTokenSource linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, sessionToken);
+        CancellationToken effective = linkedCts.Token;
+
+        await _sendLock.WaitAsync(effective).ConfigureAwait(false);
         try
         {
+            // P1-3: re-verify state after acquiring the lock; the session may have ended
+            // between the initial check and lock acquisition.
+            if (_state == StateDisposed)
+                throw new ObjectDisposedException(GetType().Name);
+            if (_disconnected)
+                throw new IOException("Connection closed.");
+
             foreach (string line in lineList)
             {
-                await _writer.WriteLineAsync(line).ConfigureAwait(false);
+                await _writer!.WriteLineAsync(line.AsMemory(), effective).ConfigureAwait(false);
             }
             ResetKeepAlive();
         }
@@ -521,13 +533,15 @@ public class CommandResponseClient : IDisposable
     }
 
     /// <summary>
-    /// Removes any queued responses that were not consumed by previous commands.
+    /// Discards any queued responses left by a previous cancelled or interrupted waiter.
     /// </summary>
     private void DrainPendingResponses()
     {
-        // Discard stale solicited responses left from an interrupted command waiter.
-        // These were already delivered via UnsolicitedResponseReceived at arrival time
-        // if no waiter was active; re-raising them here would cause double delivery (P1-4 fix).
+        // With exclusive routing (P1-A), a line is only enqueued when a command or read waiter
+        // was active at the moment of arrival. Items found here are therefore residual responses
+        // from a cancelled SendCommandAsync or ReadAsync that dequeued its waiter count but
+        // left signals in the queue (e.g. cancelled during _responseSignal.WaitAsync).
+        // Discard them so the next command starts with a clean queue.
         while (_responseQueue.TryDequeue(out _)) { }
         while (_responseSignal.CurrentCount > 0) { _responseSignal.Wait(0); }
     }
@@ -940,8 +954,11 @@ public class CommandResponseClient : IDisposable
         }
         _listenTokenSource?.Dispose();
         _client?.Dispose();
-        _responseSignal.Dispose();
-        _sendLock.Dispose();
+        // _responseSignal and _sendLock are intentionally NOT disposed: SemaphoreSlim holds no
+        // native resources unless AvailableWaitHandle is accessed (which we never do), so there
+        // is nothing to release. Disposing them would race with any SendCommandAsync / ReadAsync
+        // finally block that calls Release() after the 1-second StopKeepAlive timeout expires,
+        // causing a secondary ObjectDisposedException with no benefit (item 49 / P1-1).
         GC.SuppressFinalize(this);
     }
 

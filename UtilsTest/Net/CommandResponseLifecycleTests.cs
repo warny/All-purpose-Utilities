@@ -1111,6 +1111,87 @@ public class CommandResponseLifecycleTests
     }
 
     // ──────────────────────────────────────────────────────────────
+    // P1-1 (item 49) — Dispose concurrent with active operations must not throw
+    // ──────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task Dispose_WhileSendCommandOwnsLock_DoesNotThrow()
+    {
+        // Verifies that disposing while SendCommandAsync holds _sendLock does not produce a
+        // secondary ObjectDisposedException from the Release() call in SendCommandAsync's finally.
+        (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
+        CommandResponseClient client = new();
+        await client.ConnectAsync(clientStream, leaveOpen: true);
+
+        Task<IReadOnlyList<ServerResponse>> sendTask = client.SendCommandAsync("PING");
+        // Wait until the server has received the command (so SendCommandAsync holds _sendLock).
+        await WithTimeout(Task.Run(() => serverReader.ReadLine()), "PING not received.");
+
+        // Dispose while the command is in flight — must not throw internally.
+        bool caughtDisposedException = false;
+        try
+        {
+            client.Dispose();
+        }
+        catch (ObjectDisposedException)
+        {
+            caughtDisposedException = true;
+        }
+        Assert.IsFalse(caughtDisposedException, "Dispose must not throw ObjectDisposedException.");
+
+        // The in-flight SendCommandAsync must complete (with IOException, not ODE).
+        try { await sendTask; }
+        catch (IOException) { /* expected: connection was closed */ }
+        catch (OperationCanceledException) { /* expected: session cancelled */ }
+    }
+
+    [TestMethod]
+    public async Task Dispose_WhileReadAsyncWaits_DoesNotThrow()
+    {
+        // ReadAsync waiting on _responseSignal must not cause ObjectDisposedException when
+        // Dispose() is called concurrently.
+        (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
+        CommandResponseClient client = new();
+        await client.ConnectAsync(clientStream, leaveOpen: true);
+
+        Task<IReadOnlyList<ServerResponse>> readTask = client.ReadAsync();
+        await Task.Delay(50); // let ReadAsync block on _responseSignal
+
+        bool caughtDisposedException = false;
+        try { client.Dispose(); }
+        catch (ObjectDisposedException) { caughtDisposedException = true; }
+        Assert.IsFalse(caughtDisposedException, "Dispose must not throw ObjectDisposedException.");
+
+        try { await readTask; }
+        catch (IOException) { }
+        catch (OperationCanceledException) { }
+    }
+
+    [TestMethod]
+    public async Task Dispose_WhileSecondCommandWaitsForLock_DoesNotThrow()
+    {
+        // A second SendCommandAsync waiting on _sendLock must not get ObjectDisposedException
+        // on the semaphore when Dispose is called.
+        (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
+        CommandResponseClient client = new();
+        await client.ConnectAsync(clientStream, leaveOpen: true);
+
+        Task<IReadOnlyList<ServerResponse>> firstSend = client.SendCommandAsync("FIRST");
+        await WithTimeout(Task.Run(() => serverReader.ReadLine()), "FIRST not received.");
+
+        // Start a second command while the lock is held by the first.
+        Task<IReadOnlyList<ServerResponse>> secondSend = client.SendCommandAsync("SECOND");
+
+        bool caughtDisposedException = false;
+        try { client.Dispose(); }
+        catch (ObjectDisposedException) { caughtDisposedException = true; }
+        Assert.IsFalse(caughtDisposedException, "Dispose must not throw ObjectDisposedException.");
+
+        try { await firstSend; } catch (Exception ex) when (ex is IOException or OperationCanceledException) { }
+        try { await secondSend; } catch (Exception ex) when (ex is IOException or OperationCanceledException or InvalidOperationException) { }
+    }
+
+    // ──────────────────────────────────────────────────────────────
     // P1-1 — ConnectAsync(Stream) must roll back on async OnConnect failure
     // ──────────────────────────────────────────────────────────────
 
