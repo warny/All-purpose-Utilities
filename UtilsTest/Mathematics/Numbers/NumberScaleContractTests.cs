@@ -14,7 +14,6 @@ public class NumberScaleContractTests
         var scale = new NumberScale(["", "thousand"], []);
 
         Assert.IsFalse(scale.IsUnbounded);
-        Assert.AreEqual(1, scale.MaximumSupportedGroupIndex);
         Assert.IsTrue(scale.CanNameGroup(1));
         Assert.IsFalse(scale.CanNameGroup(2));
     }
@@ -29,7 +28,16 @@ public class NumberScaleContractTests
             unitsPrefixes: prefixes, tensPrefixes: prefixes, hundredsPrefixes: prefixes);
 
         Assert.IsTrue(scale.IsUnbounded);
-        Assert.IsNull(scale.MaximumSupportedGroupIndex);
         Assert.IsTrue(scale.CanNameGroup(500));
+    }
+
+    /// <summary>Verifies that an empty static scale name is valid only for group zero.</summary>
+    [TestMethod]
+    public void EmptyStaticName_IsRejectedAboveGroupZero()
+    {
+        var scale = new NumberScale(["", ""], []);
+
+        Assert.IsTrue(scale.CanNameGroup(0));
+        Assert.IsFalse(scale.CanNameGroup(1));
     }
 }

@@ -172,7 +172,7 @@ A single registered `INumberToStringLanguageSpecifics` instance may be reused by
 
 **Fix:** `RegisterLanguageSpecifics` now validates `typeName` with `ArgumentException.ThrowIfNullOrWhiteSpace` (null → `ArgumentNullException`, empty/whitespace → `ArgumentException`) and `instance` with `ArgumentNullException.ThrowIfNull`. XML documentation clarified: the registered instance is shared and must be stateless or thread-safe; duplicate keys are silently replaced. Addressed in PR fix/Utils.NumberToString-todo-items-57-60-61.
 
-> **Partially addressed:** type names and instances are now validated, and the shared concurrent lifecycle is documented. Factory-based registration or immutable descriptors remain future work.
+> **Completed:** type names, shared instances, factories, null factory results, and enriched creation failures are validated. The shared-instance overload retains its documented thread-safety contract, while the factory overload creates one instance per converter.
 
 ### ✅ 61. Unknown cultures silently fall back to English
 

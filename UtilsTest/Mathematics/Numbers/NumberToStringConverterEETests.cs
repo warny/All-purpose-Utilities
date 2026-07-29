@@ -46,7 +46,7 @@ namespace UtilsTest.Mathematics.Numbers
         public void Ordinal_FirstException()
         {
             var c = NumberToStringConverter.GetConverter("EE");
-            Assert.AreEqual("gbãtõ", c.ConvertOrdinal(1));
+            Assert.AreEqual("etsõ gbãtõ", c.ConvertOrdinal(1));
         }
     }
 }

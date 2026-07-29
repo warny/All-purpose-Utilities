@@ -1438,7 +1438,7 @@ public class NumberToStringConverterAuditFixesTests
         // Dimension declares 3 values; forms= provides only 2 → must reject.
         string xml = BuildXmlWithForms("dim1", "a,b,c", "X,Y");
         var ex = Assert.ThrowsException<InvalidOperationException>(
-            () => NumberToStringConverter.ReadConfiguration(xml));
+            () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "dim1",
             "Exception must identify the offending dimension name");
         StringAssert.Contains(ex.Message, "3",
@@ -1453,7 +1453,7 @@ public class NumberToStringConverterAuditFixesTests
         // Dimension declares 2 values; forms= provides 3 → must reject.
         string xml = BuildXmlWithForms("dim1", "a,b", "X,Y,Z");
         var ex = Assert.ThrowsException<InvalidOperationException>(
-            () => NumberToStringConverter.ReadConfiguration(xml));
+            () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "dim1");
     }
 
@@ -1462,7 +1462,7 @@ public class NumberToStringConverterAuditFixesTests
     {
         // Exact count (2 values, 2 forms) must load without error.
         string xml = BuildXmlWithForms("dim1", "a,b", "X,Y");
-        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        var converters = LegacyNumberToStringFixture.ReadConfiguration(xml);
         Assert.IsTrue(converters.Count > 0, "Valid forms count must produce at least one converter");
     }
 
@@ -1475,7 +1475,7 @@ public class NumberToStringConverterAuditFixesTests
         string xml = BuildXmlWithDuplicateDimension(canonical1: "gender", alias1: null,
                                                     canonical2: "gender", alias2: null);
         var ex = Assert.ThrowsException<InvalidOperationException>(
-            () => NumberToStringConverter.ReadConfiguration(xml));
+            () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "gender",
             "Exception must identify the colliding dimension name");
     }
@@ -1487,7 +1487,7 @@ public class NumberToStringConverterAuditFixesTests
         string xml = BuildXmlWithDuplicateDimension(canonical1: "gender", alias1: null,
                                                     canonical2: "case", alias2: "gender");
         var ex = Assert.ThrowsException<InvalidOperationException>(
-            () => NumberToStringConverter.ReadConfiguration(xml));
+            () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "gender");
     }
 
@@ -1508,7 +1508,7 @@ public class NumberToStringConverterAuditFixesTests
     {
         // A culture registered as " XTEST " must be found as "XTEST".
         string xml = BuildMinimalXml(" XTEST ");
-        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        var converters = LegacyNumberToStringFixture.ReadConfiguration(xml);
         Assert.IsTrue(converters.ContainsKey("XTEST"),
             "ReadConfiguration must trim culture keys before registering them");
     }
@@ -1521,7 +1521,7 @@ public class NumberToStringConverterAuditFixesTests
         // indices 0 and 2 (gap at 1) must be rejected.
         string xml = BuildXmlWithScaleIndices(0, 2);
         var ex = Assert.ThrowsException<InvalidOperationException>(
-            () => NumberToStringConverter.ReadConfiguration(xml));
+            () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "contiguous",
             "Exception must mention contiguous indices requirement");
     }
@@ -1532,7 +1532,7 @@ public class NumberToStringConverterAuditFixesTests
         // An index starting at 1 (missing 0) must be rejected.
         string xml = BuildXmlWithScaleIndices(1, 2);
         var ex = Assert.ThrowsException<InvalidOperationException>(
-            () => NumberToStringConverter.ReadConfiguration(xml));
+            () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "0",
             "Exception must mention that index 0 is expected first");
     }
@@ -1542,7 +1542,7 @@ public class NumberToStringConverterAuditFixesTests
     {
         // Indices 0, 1 (the normal pattern) must succeed.
         string xml = BuildXmlWithScaleIndices(0, 1);
-        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        var converters = LegacyNumberToStringFixture.ReadConfiguration(xml);
         Assert.IsTrue(converters.Count > 0, "Contiguous scale indices must load successfully");
     }
 
@@ -1553,7 +1553,7 @@ public class NumberToStringConverterAuditFixesTests
     {
         string xml = BuildXmlWithBareReplacement("one");
         var ex = Assert.ThrowsException<InvalidOperationException>(
-            () => NumberToStringConverter.ReadConfiguration(xml));
+            () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "one",
             "Exception must identify the incomplete replacement's oldValue");
         StringAssert.Contains(ex.Message, "newValue",
@@ -1568,7 +1568,7 @@ public class NumberToStringConverterAuditFixesTests
         // Base culture registered with spaces; child references it via baseOn with spaces.
         // Both must load without error, proving NormalizeCulture is applied to baseOn.
         string xml = BuildXmlWithBaseOn(baseCulture: " XBASE ", childCulture: "XCHILD", baseOnValue: " XBASE ");
-        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        var converters = LegacyNumberToStringFixture.ReadConfiguration(xml);
         Assert.IsTrue(converters.ContainsKey("XBASE"), "Base culture must be registered as 'XBASE'");
         Assert.IsTrue(converters.ContainsKey("XCHILD"), "Child culture must resolve baseOn and load successfully");
     }
@@ -1581,7 +1581,7 @@ public class NumberToStringConverterAuditFixesTests
         // Count matches (2 values, 2 entries) but first entry is empty → must reject.
         string xml = BuildXmlWithForms("dim1", "a,b", ",b");
         var ex = Assert.ThrowsException<InvalidOperationException>(
-            () => NumberToStringConverter.ReadConfiguration(xml));
+            () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "dim1",
             "Exception must identify the dimension");
         StringAssert.Contains(ex.Message, "a",
@@ -1594,7 +1594,7 @@ public class NumberToStringConverterAuditFixesTests
         // Count matches (2 values, 2 entries) but last entry is empty → must reject.
         string xml = BuildXmlWithForms("dim1", "a,b", "X,");
         var ex = Assert.ThrowsException<InvalidOperationException>(
-            () => NumberToStringConverter.ReadConfiguration(xml));
+            () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "dim1");
         StringAssert.Contains(ex.Message, "b",
             "Exception must identify the dimension value that lacks a form");
@@ -1608,7 +1608,7 @@ public class NumberToStringConverterAuditFixesTests
         // A <Replacement> inside a <Variant> rule with no newValue and no <Variant> children must throw.
         string xml = BuildXmlWithNestedBareReplacement(dimName: "gender", dimValues: "a,b", dimValue: "a", oldValue: "one");
         var ex = Assert.ThrowsException<InvalidOperationException>(
-            () => NumberToStringConverter.ReadConfiguration(xml));
+            () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "one",
             "Exception must identify the incomplete replacement's oldValue");
         StringAssert.Contains(ex.Message, "newValue",
@@ -1624,7 +1624,7 @@ public class NumberToStringConverterAuditFixesTests
             structDim: "case", structValues: "nom,acc", structValue: "acc",
             formDim: "gender", formValues: "m,f", oldValue: "one");
         var ex = Assert.ThrowsException<InvalidOperationException>(
-            () => NumberToStringConverter.ReadConfiguration(xml));
+            () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "one",
             "Exception must identify the replacement's oldValue");
         StringAssert.Contains(ex.Message, "form-variant",
@@ -1909,7 +1909,7 @@ public class NumberToStringConverterAuditFixesTests
   </Language>
 </Numbers>";
         var ex = Assert.ThrowsException<InvalidOperationException>(
-            () => NumberToStringConverter.ReadConfiguration(xml));
+            () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "cycle",
             "Exception must mention 'cycle' to identify the cause");
     }
@@ -1927,7 +1927,7 @@ public class NumberToStringConverterAuditFixesTests
   </Language>
 </Numbers>";
         var ex = Assert.ThrowsException<InvalidOperationException>(
-            () => NumberToStringConverter.ReadConfiguration(xml));
+            () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "cycle",
             "Self-cycle must be detected and reported as a cycle");
     }
@@ -1955,7 +1955,7 @@ public class NumberToStringConverterAuditFixesTests
   </Language>
 </Numbers>";
         var ex = Assert.ThrowsException<InvalidOperationException>(
-            () => NumberToStringConverter.ReadConfiguration(xml));
+            () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "cycle",
             "Three-node cycle must be detected");
     }
@@ -1978,7 +1978,7 @@ public class NumberToStringConverterAuditFixesTests
   </Language>
 </Numbers>";
         var ex = Assert.ThrowsException<InvalidOperationException>(
-            () => NumberToStringConverter.ReadConfiguration(xml));
+            () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "cycle",
             "Case-insensitive cycle must be detected");
     }
@@ -1996,7 +1996,7 @@ public class NumberToStringConverterAuditFixesTests
   </Language>
 </Numbers>";
         var ex = Assert.ThrowsException<InvalidOperationException>(
-            () => NumberToStringConverter.ReadConfiguration(xml));
+            () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "DOES-NOT-EXIST",
             "Exception must identify the missing base culture");
     }
@@ -2023,7 +2023,7 @@ public class NumberToStringConverterAuditFixesTests
     <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
   </Language>
 </Numbers>";
-        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        var converters = LegacyNumberToStringFixture.ReadConfiguration(xml);
         Assert.IsTrue(converters.ContainsKey("SB-BASE"), "Base must be registered");
         Assert.IsTrue(converters.ContainsKey("SB-D"), "D must be registered");
         Assert.IsTrue(converters.ContainsKey("SB-E"), "E must be registered");
@@ -2053,7 +2053,7 @@ public class NumberToStringConverterAuditFixesTests
   </Language>
 </Numbers>";
         Assert.ThrowsException<InvalidOperationException>(
-            () => NumberToStringConverter.ReadConfiguration(xml));
+            () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         // The valid language in the same document must NOT have been committed.
         bool found = NumberToStringConverter.TryGetConverter(uniqueKey, out _);
         Assert.IsFalse(found,
@@ -2084,7 +2084,7 @@ public class NumberToStringConverterAuditFixesTests
   </Language>
 </Numbers>";
         var ex = Assert.ThrowsException<InvalidOperationException>(
-            () => NumberToStringConverter.ReadConfiguration(xml));
+            () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "cycle",
             "Cycle in one branch of a multi-base inheritance must be detected");
     }
@@ -2103,7 +2103,7 @@ public class NumberToStringConverterAuditFixesTests
     <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
   </Language>
 </Numbers>";
-        NumberToStringConverter.RegisterConfigurations([firstDoc]);
+        NumberToStringConverter.RegisterConfigurations([LegacyNumberToStringFixture.Complete(firstDoc)]);
         // Confirm it is cached.
         Assert.IsTrue(NumberToStringConverter.TryGetConverter(shadowKey, out _),
             "First document must be loaded into the global cache");
@@ -2126,7 +2126,7 @@ public class NumberToStringConverterAuditFixesTests
   </Language>
 </Numbers>";
         var ex = Assert.ThrowsException<InvalidOperationException>(
-            () => NumberToStringConverter.ReadConfiguration(secondDoc));
+            () => LegacyNumberToStringFixture.ReadConfiguration(secondDoc));
         StringAssert.Contains(ex.Message, "cycle",
             "A locally declared language must shadow the cached version so the cycle is still detected");
     }
@@ -2151,7 +2151,7 @@ public class NumberToStringConverterAuditFixesTests
     <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
   </Language>
 </Numbers>";
-        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        var converters = LegacyNumberToStringFixture.ReadConfiguration(xml);
         Assert.IsTrue(converters.TryGetValue("CHILD-OV", out var child));
         string result = child.Convert(BigInteger.Zero);
         Assert.AreEqual("child-zero", result,
@@ -2177,7 +2177,7 @@ public class NumberToStringConverterAuditFixesTests
   </Language>
 </Numbers>";
         // Simply verify the child loaded — if it inherited minus correctly, Convert(-1) won't throw.
-        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        var converters = LegacyNumberToStringFixture.ReadConfiguration(xml);
         Assert.IsTrue(converters.ContainsKey("CHILD-INH"),
             "Child must load when it inherits minus from base");
     }
@@ -2204,7 +2204,7 @@ public class NumberToStringConverterAuditFixesTests
     <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
   </Language>
 </Numbers>";
-        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        var converters = LegacyNumberToStringFixture.ReadConfiguration(xml);
         Assert.IsTrue(converters.TryGetValue("MLB-A", out var a));
         Assert.AreEqual("zero-c", a.Convert(BigInteger.Zero),
             "Later base (C) must override earlier base (B) — A.zero must be 'zero-c'");
@@ -2232,7 +2232,7 @@ public class NumberToStringConverterAuditFixesTests
     <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
   </Language>
 </Numbers>";
-        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        var converters = LegacyNumberToStringFixture.ReadConfiguration(xml);
         Assert.IsTrue(converters.TryGetValue("MCA-A", out var a));
         Assert.AreEqual("zero-a", a.Convert(BigInteger.Zero),
             "Child's own zero must override both bases' zero values");
@@ -2261,7 +2261,7 @@ public class NumberToStringConverterAuditFixesTests
     <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
   </Language>
 </Numbers>";
-        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        var converters = LegacyNumberToStringFixture.ReadConfiguration(xml);
         Assert.IsTrue(converters.TryGetValue("MIO-A", out var a));
         Assert.AreEqual("zero-c", a.Convert(BigInteger.Zero),
             "zero must come from C (later base overrides B)");
@@ -2292,7 +2292,7 @@ public class NumberToStringConverterAuditFixesTests
     <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
   </Language>
 </Numbers>";
-        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        var converters = LegacyNumberToStringFixture.ReadConfiguration(xml);
         // B must see zero-b (overrides C's zero-c)
         Assert.IsTrue(converters.TryGetValue("CAO-B", out var b));
         Assert.AreEqual("zero-b", b.Convert(BigInteger.Zero),
@@ -2326,7 +2326,7 @@ public class NumberToStringConverterAuditFixesTests
     <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
   </Language>
 </Numbers>";
-        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        var converters = LegacyNumberToStringFixture.ReadConfiguration(xml);
         Assert.IsTrue(converters.TryGetValue("DIO-A", out var a));
         Assert.AreEqual("zero-b", a.Convert(BigInteger.Zero),
             "A's zero must be 'zero-b' (from B, which overrides C) regardless of declaration order");
@@ -2379,7 +2379,7 @@ public class NumberToStringConverterAuditFixesTests
     public void RegisterLanguageSpecifics_NullInstance_ThrowsArgumentNullException()
     {
         Assert.ThrowsException<ArgumentNullException>(
-            () => NumberToStringConverter.RegisterLanguageSpecifics("ValidName", null!),
+            () => NumberToStringConverter.RegisterLanguageSpecifics("ValidName", (INumberToStringLanguageSpecifics)null!),
             "Null instance must be rejected");
     }
 
@@ -2496,8 +2496,8 @@ public class NumberToStringConverterAuditFixesTests
     <Culture>{childKey}</Culture>
   </Language>
 </Numbers>";
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
-            () => NumberToStringConverter.ReadConfiguration(xml),
+        Assert.ThrowsException<InvalidOperationException>(
+            () => LegacyNumberToStringFixture.ReadConfiguration(xml),
             "Explicit groupSize=\"0\" must propagate through merge and be rejected by ReadConverter, " +
             "not silently replaced by the inherited non-zero value");
     }
@@ -2537,7 +2537,7 @@ public class NumberToStringConverterAuditFixesTests
     <LanguageSpecifics></LanguageSpecifics>
   </Language>
 </Numbers>";
-        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        var converters = LegacyNumberToStringFixture.ReadConfiguration(xml);
         string result = converters[childKey].Convert(1);
         Assert.AreEqual("one", result,
             "Child explicitly sets empty <LanguageSpecifics> — the parent's transforming specifics " +
@@ -2587,12 +2587,12 @@ public class NumberToStringConverterAuditFixesTests
   </Language>
 </Numbers>";
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
-            () => NumberToStringConverter.ReadConfiguration(d1),
+        Assert.ThrowsException<InvalidOperationException>(
+            () => LegacyNumberToStringFixture.ReadConfiguration(d1),
             "D1 must fail because one of its languages has an invalid groupSize");
 
         var ex = Assert.ThrowsException<InvalidOperationException>(
-            () => NumberToStringConverter.ReadConfiguration(d2),
+            () => LegacyNumberToStringFixture.ReadConfiguration(d2),
             "D2 must fail because D1 was never committed to _cachedLanguageTypes (atomicity)");
         StringAssert.Contains(ex.Message, baseKey,
             "The error message must name the missing base culture to confirm the root cause");
@@ -2613,7 +2613,7 @@ public class NumberToStringConverterAuditFixesTests
         // firstLetterUpperCase=true capitalises → "one Trilliard".
         string baseKey = "FLUC-BASE-" + Guid.NewGuid().ToString("N");
         string childKey = "FLUC-CHILD-" + Guid.NewGuid().ToString("N");
-        var converters = NumberToStringConverter.ReadConfiguration(
+        var converters = LegacyNumberToStringFixture.ReadConfiguration(
             BuildScaleTestXml(baseKey, @"firstLetterUpperCase=""true"" startIndex=""1""",
                               childKey, @"startIndex=""1"""));
         Assert.AreEqual("one Trilliard", converters[childKey].Convert(1_000_000),
@@ -2630,7 +2630,7 @@ public class NumberToStringConverterAuditFixesTests
         // would produce lowercase, making the absent-vs-explicit distinction invisible.
         string baseKey = "FLUC-OVR-BASE-" + Guid.NewGuid().ToString("N");
         string childKey = "FLUC-OVR-CHILD-" + Guid.NewGuid().ToString("N");
-        var converters = NumberToStringConverter.ReadConfiguration(
+        var converters = LegacyNumberToStringFixture.ReadConfiguration(
             BuildScaleTestXml(baseKey, @"firstLetterUpperCase=""true"" startIndex=""1""",
                               childKey, @"firstLetterUpperCase=""false"" startIndex=""1"""));
         Assert.AreEqual("one trilliard", converters[childKey].Convert(1_000_000),
@@ -2649,7 +2649,7 @@ public class NumberToStringConverterAuditFixesTests
         //   dynamicScale=5; quotient=2, remainder=1 → suffix="ard" → "Trilliard".
         string baseKey = "SI-BASE-" + Guid.NewGuid().ToString("N");
         string childKey = "SI-CHILD-" + Guid.NewGuid().ToString("N");
-        var converters = NumberToStringConverter.ReadConfiguration(
+        var converters = LegacyNumberToStringFixture.ReadConfiguration(
             BuildScaleTestXml(baseKey, @"firstLetterUpperCase=""true"" startIndex=""1""",
                               childKey, @"firstLetterUpperCase=""true"""));
         Assert.AreEqual("one Trilliard", converters[childKey].Convert(1_000_000),
@@ -2667,7 +2667,7 @@ public class NumberToStringConverterAuditFixesTests
         // so the inherited 1 was incorrectly kept, producing "Trilliard" instead.
         string baseKey = "SI-ZERO-BASE-" + Guid.NewGuid().ToString("N");
         string childKey = "SI-ZERO-CHILD-" + Guid.NewGuid().ToString("N");
-        var converters = NumberToStringConverter.ReadConfiguration(
+        var converters = LegacyNumberToStringFixture.ReadConfiguration(
             BuildScaleTestXml(baseKey, @"firstLetterUpperCase=""true"" startIndex=""1""",
                               childKey, @"firstLetterUpperCase=""true"" startIndex=""0"""));
         Assert.AreEqual("one Trillion", converters[childKey].Convert(1_000_000),
@@ -2949,7 +2949,7 @@ public class NumberToStringConverterAuditFixesTests
     </Ordinals>
   </Language>
 </Numbers>";
-        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        var converters = LegacyNumberToStringFixture.ReadConfiguration(xml);
         var conv = converters["XTEST"];
 
         string defaultResult = conv.ConvertOrdinal(1L);
@@ -3002,8 +3002,8 @@ public class NumberToStringConverterAuditFixesTests
   </Language>
 </Numbers>";
 
-        var convA = NumberToStringConverter.ReadConfiguration(xmlA)["XTEST-A"];
-        var convB = NumberToStringConverter.ReadConfiguration(xmlB)["XTEST-B"];
+        var convA = LegacyNumberToStringFixture.ReadConfiguration(xmlA)["XTEST-A"];
+        var convB = LegacyNumberToStringFixture.ReadConfiguration(xmlB)["XTEST-B"];
 
         string resultA = convA.ConvertOrdinal(1L);
         string resultB = convB.ConvertOrdinal(1L);
@@ -3047,7 +3047,7 @@ public class NumberToStringConverterAuditFixesTests
   </Language>
 </Numbers>";
 
-        var conv = NumberToStringConverter.ReadConfiguration(xml)["XTEST"];
+        var conv = LegacyNumberToStringFixture.ReadConfiguration(xml)["XTEST"];
         string defaultResult = conv.ConvertOrdinal(1L);
         Assert.AreEqual("first-masc-nom", defaultResult,
             "No-variant call must match the fully exact default query {gender=masculine, case=nominative}");
@@ -3077,7 +3077,7 @@ public class NumberToStringConverterAuditFixesTests
 </Numbers>";
 
         var ex = Assert.ThrowsException<InvalidOperationException>(
-            () => NumberToStringConverter.ReadConfiguration(xml),
+            () => LegacyNumberToStringFixture.ReadConfiguration(xml),
             "Missing default variant form must throw InvalidOperationException");
         StringAssert.Contains(ex.Message, "1",
             "Exception message must identify the problematic ordinal value");
@@ -3106,7 +3106,7 @@ public class NumberToStringConverterAuditFixesTests
   </Language>
 </Numbers>";
 
-        var conv = NumberToStringConverter.ReadConfiguration(xml)["XTEST"];
+        var conv = LegacyNumberToStringFixture.ReadConfiguration(xml)["XTEST"];
         string defaultResult = conv.ConvertOrdinal(1L);
         Assert.AreEqual("explicit-base", defaultResult,
             "Explicit string= base form must be returned for no-variant call, not the variant form");
@@ -3135,7 +3135,7 @@ public class NumberToStringConverterAuditFixesTests
   </Language>
 </Numbers>";
 
-        var conv = NumberToStringConverter.ReadConfiguration(xml)["XTEST3"];
+        var conv = LegacyNumberToStringFixture.ReadConfiguration(xml)["XTEST3"];
         string noVariantResult = conv.ConvertOrdinal(1L);
         Assert.AreEqual("explicit-base", noVariantResult,
             "Explicit to= base rule must be returned for no-variant call, not the masculine variant");
@@ -3195,7 +3195,7 @@ public class NumberToStringConverterAuditFixesTests
 </Numbers>";
 
         Assert.ThrowsException<InvalidOperationException>(
-            () => NumberToStringConverter.ReadConfiguration(xml),
+            () => LegacyNumberToStringFixture.ReadConfiguration(xml),
             "A document with an invalid ordinal must throw during ReadConfiguration");
 
         // Phase 3 (commit to global cache) must not have been reached for the valid language either.

@@ -105,11 +105,9 @@ namespace Utils.NumberToString
         /// <summary>Registers a factory that creates a language-specific implementation for each converter.</summary>
         /// <param name="typeName">The configured type name.</param>
         /// <param name="factory">The non-null factory.</param>
-        /// <param name="createPerConverter">Reserved compatibility marker; factories always create per converter.</param>
         public static void RegisterLanguageSpecifics(
             string typeName,
-            Func<INumberToStringLanguageSpecifics> factory,
-            bool createPerConverter = true)
+            Func<INumberToStringLanguageSpecifics> factory)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(typeName, nameof(typeName));
             ArgumentNullException.ThrowIfNull(factory);
@@ -118,7 +116,7 @@ namespace Utils.NumberToString
 
         /// <summary>
         /// Loads number-to-string configurations embedded as XML strings.
-        /// Duplicate culture keys are silently ignored (first registration wins).
+        /// Duplicate normalized culture keys are rejected.
         /// </summary>
         /// <param name="configs">The XML documents describing language configurations.</param>
         public static void InitializeConfigurations(params string[] configs)
@@ -126,7 +124,7 @@ namespace Utils.NumberToString
 
         /// <summary>
         /// Registers the provided language configurations for later lookup.
-        /// Duplicate culture keys are silently ignored (first registration wins).
+        /// Duplicate normalized culture keys are rejected by default.
         /// </summary>
         /// <param name="configs">The XML configuration documents to load.</param>
         public static void RegisterConfigurations(IEnumerable<string> configs)
@@ -138,21 +136,29 @@ namespace Utils.NumberToString
         public static void RegisterConfigurations(IEnumerable<string> configs, DuplicateCulturePolicy duplicateCulturePolicy)
         {
             ArgumentNullException.ThrowIfNull(configs);
-            var converters = new Dictionary<string, NumberToStringConverter>(StringComparer.OrdinalIgnoreCase);
-            var definitions = new Dictionary<string, LanguageDefinition>(StringComparer.OrdinalIgnoreCase);
-            foreach (var configuration in configs)
-            {
-                var batch = BuildConfiguration(configuration, commitDefinitions: false, definitions);
-                foreach (var language in batch.Converters)
-                    if (!converters.TryAdd(language.Key, language.Value))
-                        throw new InvalidOperationException($"Duplicate normalized culture '{language.Key}' in configuration batch.");
-                foreach (var definition in batch.Definitions)
-                    if (!definitions.TryAdd(definition.Key, definition.Value))
-                        throw new InvalidOperationException($"Duplicate normalized culture '{definition.Key}' in configuration batch.");
-            }
-
             lock (ConfigurationLock)
             {
+                var converters = new Dictionary<string, NumberToStringConverter>(StringComparer.OrdinalIgnoreCase);
+                var definitions = new Dictionary<string, LanguageDefinition>(StringComparer.OrdinalIgnoreCase);
+                foreach (var configuration in configs)
+                {
+                    var batch = BuildConfiguration(configuration, commitDefinitions: false, definitions);
+                    foreach (var language in batch.Converters)
+                    {
+                        if (converters.TryAdd(language.Key, language.Value)) continue;
+                        if (duplicateCulturePolicy == DuplicateCulturePolicy.Reject)
+                            throw new InvalidOperationException($"Duplicate normalized culture '{language.Key}' in configuration batch.");
+                        if (duplicateCulturePolicy == DuplicateCulturePolicy.Replace)
+                            converters[language.Key] = language.Value;
+                    }
+                    foreach (var definition in batch.Definitions)
+                    {
+                        if (definitions.TryAdd(definition.Key, definition.Value)) continue;
+                        if (duplicateCulturePolicy == DuplicateCulturePolicy.Replace)
+                            definitions[definition.Key] = definition.Value;
+                    }
+                }
+
                 var collisions = converters.Keys.Where(CachedConfigurations.ContainsKey).ToArray();
                 if (duplicateCulturePolicy == DuplicateCulturePolicy.Reject && collisions.Length > 0)
                     throw new InvalidOperationException($"Cultures already registered: {string.Join(", ", collisions)}.");
@@ -725,11 +731,20 @@ namespace Utils.NumberToString
                 Require(parsed, "MaxNumber", "is required when NumberScale is absent.");
                 if (parsed && language.GroupSize > 0)
                     Require(maximum < BigInteger.Pow(10, language.GroupSize), "MaxNumber", "must be below the first value requiring a scale name.");
-                language.NumberScale = new NumberScaleType { StaticNames = new StaticNamesType { Scales = [] } };
+                language.NumberScale = new NumberScaleType
+                {
+                    StaticNames = new StaticNamesType
+                    {
+                        Scales = [new NumberType { Value = 0, StringValue = string.Empty }],
+                    },
+                };
             }
             else
             {
                 Require(language.NumberScale.StaticNames?.Scales != null, "NumberScale.StaticNames", "static names are required (an empty list is allowed). ");
+                if (language.NumberScale.StaticNames?.Scales != null)
+                    foreach (var scaleName in language.NumberScale.StaticNames.Scales.Where(s => s.Value > 0))
+                        Require(!string.IsNullOrWhiteSpace(scaleName.StringValue), $"NumberScale.StaticNames[{scaleName.Value}]", "scale names above index zero must be non-empty.");
             }
 
             if (errors.Count > 0)

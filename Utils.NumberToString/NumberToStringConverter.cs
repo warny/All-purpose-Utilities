@@ -1820,10 +1820,11 @@ namespace Utils.NumberToString
             if (!SupportsMultiplicative)
                 throw new NotSupportedException($"Language '{LanguageIdentifier}' has no multiplicative configuration.");
             var query = BuildVariantQuery(variants);
+            BigInteger magnitude = BigInteger.Abs((BigInteger)multiplier);
             string raw = Multiplicatives.TryGetValue(multiplier, out var named)
                 ? named
-                : ConvertRaw(BigInteger.Abs(multiplier), query) + (MultiplicativeSuffix ?? string.Empty);
-            raw = ApplyVariantRules(raw, query, BigInteger.Abs(multiplier));
+                : (magnitude.IsZero ? Zero : ConvertRaw(magnitude, query)) + (MultiplicativeSuffix ?? string.Empty);
+            raw = ApplyVariantRules(raw, query, magnitude);
             if (_rawAdjustFunction != null) raw = _rawAdjustFunction(raw);
             raw = ApplyTriggers(raw, TriggerAt.End, null, query);
             string final = LanguageSpecifics.FinalizeWriting(LanguageIdentifier, raw);
@@ -2249,22 +2250,11 @@ namespace Utils.NumberToString
 
         /// <summary>Gets whether every non-negative group index can be named.</summary>
         public bool IsUnbounded => ScaleSuffixes.Count > 0
+            && ScaleSuffixes.All(suffix => !string.IsNullOrWhiteSpace(suffix))
             && Scale0Prefixes != null
             && UnitsPrefixes != null
             && TensPrefixes != null
             && HundredsPrefixes != null;
-
-        /// <summary>Gets the greatest group index guaranteed to be nameable, or null for an unbounded scale.</summary>
-        public int? MaximumSupportedGroupIndex
-        {
-            get
-            {
-                if (IsUnbounded) return null;
-                int index = 0;
-                while (index < 10_000 && CanNameGroup(index)) index++;
-                return index - 1;
-            }
-        }
 
         /// <summary>Determines whether the scale can safely name the supplied group index.</summary>
         /// <param name="groupIndex">The zero-based large-number group index.</param>
@@ -2274,8 +2264,8 @@ namespace Utils.NumberToString
             if (groupIndex < 0) return false;
             try
             {
-                _ = GetScaleName(groupIndex);
-                return true;
+                string name = GetScaleName(groupIndex);
+                return groupIndex == 0 || !string.IsNullOrWhiteSpace(name);
             }
             catch (InvalidOperationException)
             {

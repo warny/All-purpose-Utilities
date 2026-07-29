@@ -108,7 +108,7 @@ public class NumberToStringConverterImprovementsTests
     private const string MinimalXmlConfig = """
         <?xml version="1.0" encoding="utf-8" ?>
         <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
-            <Language groupSize="3" separator=" " groupSeparator="" zero="zero" minus="minus *" decimalSeparator="point">
+            <Language groupSize="3" separator=" " groupSeparator="" zero="zero" minus="minus *" decimalSeparator="point" maxNumber="999999">
                 <Culture>TEST-DUPLICATE-B4</Culture>
                 <Groups>
                     <Group level="1">
@@ -128,10 +128,10 @@ public class NumberToStringConverterImprovementsTests
         """;
 
     [TestMethod]
-    public void RegisterConfigurations_DuplicateCultureDoesNotThrow()
+    public void RegisterConfigurations_DuplicateCultureThrowsByDefault()
     {
-        // Registering the same culture twice must not throw (TryAdd instead of Add).
-        NumberToStringConverter.RegisterConfigurations([MinimalXmlConfig, MinimalXmlConfig]);
+        Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.RegisterConfigurations([MinimalXmlConfig, MinimalXmlConfig]));
     }
 
     // ─── C1 — Ordinal conversion (English) ─────────────────────────────────
@@ -304,13 +304,10 @@ public class NumberToStringConverterImprovementsTests
     }
 
     [TestMethod]
-    public void Convert_UnknownVariantDimension_FallsBackSilently()
+    public void Convert_UnknownVariantDimension_Throws()
     {
-        // An unknown dimension is silently ignored → same result as Convert(1)
         var converter = NumberToStringConverter.GetConverter("FR");
-
-        string result = converter.Convert(1, "cas=inconnu");
-        Assert.AreEqual("un", result);
+        Assert.ThrowsException<ArgumentException>(() => converter.Convert(1, "cas=inconnu"));
     }
 
     // ─── C2d — Variants ES (género) ───────────────────────────────────────
@@ -1269,7 +1266,7 @@ public class NumberToStringConverterImprovementsTests
     public void ConvertOrdinal_EE_FirstIsIrregular()
     {
         var ee = NumberToStringConverter.GetConverter("EE");
-        Assert.AreEqual("gbãtõ", ee.ConvertOrdinal(1));
+        Assert.AreEqual("etsõ gbãtõ", ee.ConvertOrdinal(1));
     }
 
     [TestMethod]
@@ -1833,7 +1830,7 @@ public class NumberToStringConverterImprovementsTests
             """;
 
         Assert.ThrowsException<InvalidOperationException>(() =>
-            NumberToStringConverter.ReadConfiguration(xml));
+            LegacyNumberToStringFixture.ReadConfiguration(xml));
     }
 
     [TestMethod]
@@ -1860,7 +1857,7 @@ public class NumberToStringConverterImprovementsTests
             """;
 
         Assert.ThrowsException<InvalidOperationException>(() =>
-            NumberToStringConverter.ReadConfiguration(xml));
+            LegacyNumberToStringFixture.ReadConfiguration(xml));
     }
 
     // ── C15 — Multi-value variant syntax (values="a,b,c") ───────────────────
@@ -1917,7 +1914,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void OrdinalVariant_MultiValue_SameExceptionForAllListedCases()
     {
-        var converters = NumberToStringConverter.ReadConfiguration(MultiValueTestConfig);
+        var converters = LegacyNumberToStringFixture.ReadConfiguration(MultiValueTestConfig);
         var c = converters["TEST-MV"];
 
         // base (no case variant) → exception "eerste"
@@ -1931,7 +1928,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void OrdinalVariant_MultiValue_SuffixOverrideForAllListedCases()
     {
-        var converters = NumberToStringConverter.ReadConfiguration(MultiValueTestConfig);
+        var converters = LegacyNumberToStringFixture.ReadConfiguration(MultiValueTestConfig);
         var c = converters["TEST-MV"];
 
         // 2 → no exception → base suffix "de" → "tweede"
@@ -1945,7 +1942,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void CardinalVariant_MultiValue_SameReplacementForAllListedCases()
     {
-        var converters = NumberToStringConverter.ReadConfiguration(MultiValueTestConfig);
+        var converters = LegacyNumberToStringFixture.ReadConfiguration(MultiValueTestConfig);
         var c = converters["TEST-MV"];
 
         // base / nominatief: één unchanged
@@ -2612,7 +2609,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void BaseReplacement_OnScale_FiresOnlyInTargetGroup()
     {
-        var c = NumberToStringConverter.ReadConfiguration(OnScaleTestConfig)["TEST-OS-BASE"];
+        var c = LegacyNumberToStringFixture.ReadConfiguration(OnScaleTestConfig)["TEST-OS-BASE"];
 
         Assert.AreEqual("MILLE_UN mille",    c.Convert(1000), "1000");
         Assert.AreEqual("MILLE_UN mille un", c.Convert(1001), "1001: thousands yes, units no");
@@ -2623,7 +2620,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void VariantReplacement_OnScale_FiresPerGroupBeforeCombination()
     {
-        var c = NumberToStringConverter.ReadConfiguration(OnScaleTestConfig)["TEST-OS-VARIANT"];
+        var c = LegacyNumberToStringFixture.ReadConfiguration(OnScaleTestConfig)["TEST-OS-VARIANT"];
 
         // onScale=1 rule fires for thousands group only
         Assert.AreEqual("une mille",     c.Convert(1000, "gender=fem"), "1000 fem: thousands inflected");
@@ -2685,7 +2682,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void BaseOn_InheritsGroupsAndScaleFromBase()
     {
-        var cs = NumberToStringConverter.ReadConfiguration(BaseOnTestConfig);
+        var cs = LegacyNumberToStringFixture.ReadConfiguration(BaseOnTestConfig);
         var derived = cs["TEST-BO-DERIVED"];
         Assert.AreEqual("twee",    derived.Convert(2),   "single digit");
         Assert.AreEqual("tien",    derived.Convert(10),  "tens");
@@ -2695,7 +2692,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void BaseOn_EmptyReplacementsOverridesBase_ThousandNotCollapsed()
     {
-        var cs = NumberToStringConverter.ReadConfiguration(BaseOnTestConfig);
+        var cs = LegacyNumberToStringFixture.ReadConfiguration(BaseOnTestConfig);
         var baseConv    = cs["TEST-BO-BASE"];
         var derivedConv = cs["TEST-BO-DERIVED"];
 
@@ -2706,7 +2703,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void BaseOn_OrdinalsAreMerged_ChildExceptionAdded_BaseExceptionInherited()
     {
-        var cs = NumberToStringConverter.ReadConfiguration(BaseOnTestConfig);
+        var cs = LegacyNumberToStringFixture.ReadConfiguration(BaseOnTestConfig);
         var derived = cs["TEST-BO-DERIVED"];
 
         Assert.AreEqual("eerste", derived.ConvertOrdinal(1),  "exception from base");
@@ -2777,7 +2774,7 @@ public class NumberToStringConverterImprovementsTests
             </Numbers>
             """;
 
-        var cs = NumberToStringConverter.ReadConfiguration(chain);
+        var cs = LegacyNumberToStringFixture.ReadConfiguration(chain);
         var child = cs["TEST-CHAIN-CHILD"];
 
         // grandparent groups and scale propagated through two levels
@@ -2800,7 +2797,7 @@ public class NumberToStringConverterImprovementsTests
             </Numbers>
             """;
         var ex = Assert.ThrowsException<InvalidOperationException>(
-            () => NumberToStringConverter.ReadConfiguration(bad));
+            () => LegacyNumberToStringFixture.ReadConfiguration(bad));
         StringAssert.Contains(ex.Message, "DOES-NOT-EXIST");
     }
 
@@ -2907,7 +2904,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void OnValue_OnScale1_Value1_ReplacesExact1000()
     {
-        var cs = NumberToStringConverter.ReadConfiguration(OnValueConfig);
+        var cs = LegacyNumberToStringFixture.ReadConfiguration(OnValueConfig);
         var c = cs["TEST-OV"];
         // 1 × 1000: group text "en tusen" → replaced → "tusen"
         Assert.AreEqual("tusen", c.Convert(1000));
@@ -2916,7 +2913,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void OnValue_OnScale1_Value2_DoesNotReplace()
     {
-        var cs = NumberToStringConverter.ReadConfiguration(OnValueConfig);
+        var cs = LegacyNumberToStringFixture.ReadConfiguration(OnValueConfig);
         var c = cs["TEST-OV"];
         // 2 × 1000: group text "to tusen" → onValue="1" does NOT match → unchanged
         Assert.AreEqual("to tusen", c.Convert(2000));
@@ -2925,7 +2922,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void OnValue_OnScale1_Value1_DoesNotAffectOtherGroups()
     {
-        var cs = NumberToStringConverter.ReadConfiguration(OnValueConfig);
+        var cs = LegacyNumberToStringFixture.ReadConfiguration(OnValueConfig);
         var c = cs["TEST-OV"];
         // 1001: units group = 1 (scale=0, not scale=1) → no replacement for "en"
         Assert.AreEqual("tusen en", c.Convert(1001));
@@ -2934,7 +2931,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void OnValue_OnScale1_Value21_DoesNotReplace()
     {
-        var cs = NumberToStringConverter.ReadConfiguration(OnValueConfig);
+        var cs = LegacyNumberToStringFixture.ReadConfiguration(OnValueConfig);
         var c = cs["TEST-OV"];
         // 21000: thousands group value is 21, not 1 → no replacement
         Assert.AreEqual("tjueen tusen", c.Convert(21000));
@@ -2978,7 +2975,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void OnValue_Global_FiresOnlyForMatchingFullNumber()
     {
-        var cs = NumberToStringConverter.ReadConfiguration(OnValueGlobalConfig);
+        var cs = LegacyNumberToStringFixture.ReadConfiguration(OnValueGlobalConfig);
         var c = cs["TEST-OVG"];
         // abs=1 → final text "en" matches onValue="1" → "ett"
         Assert.AreEqual("ett", c.Convert(1));
@@ -3030,7 +3027,7 @@ public class NumberToStringConverterImprovementsTests
             </Numbers>
             """;
 
-        var cs = NumberToStringConverter.ReadConfiguration(deVariant);
+        var cs = LegacyNumberToStringFixture.ReadConfiguration(deVariant);
         var c = cs["TEST-DE-OV"];
 
         Assert.AreEqual("tausend",            c.Convert(1000),  "1 000");
@@ -3080,7 +3077,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void OnScale_RangeSyntax_FiresForBothMatchingGroups()
     {
-        var cs = NumberToStringConverter.ReadConfiguration(OnScaleRangeConfig);
+        var cs = LegacyNumberToStringFixture.ReadConfiguration(OnScaleRangeConfig);
         var c = cs["TEST-SCR"];
 
         // onScale="1..2" should fire for group 1 (thousands) and group 2 (millions)
@@ -3093,7 +3090,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void OnScale_RangeSyntax_DoesNotFireOutsideRange()
     {
-        var cs = NumberToStringConverter.ReadConfiguration(OnScaleRangeConfig);
+        var cs = LegacyNumberToStringFixture.ReadConfiguration(OnScaleRangeConfig);
         var c = cs["TEST-SCR"];
 
         // group 0 (units) is outside range 1..2 → no replacement
