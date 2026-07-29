@@ -708,9 +708,12 @@ public class CommandResponseLifecycleTests
         client.MaxLineLength = 5;
         await client.ConnectAsync(clientStream, leaveOpen: true);
 
-        // Send exactly 5 characters "250 X" — must be accepted
+        // Start ReadAsync before the server writes so _activeReadWaiters is incremented
+        // before the response arrives — avoids a race where the listener routes the line
+        // as unsolicited because no owner is registered yet.
+        Task<IReadOnlyList<ServerResponse>> readTask = client.ReadAsync();
         await serverWriter.WriteLineAsync("250 X");
-        IReadOnlyList<ServerResponse> responses = await WithTimeout(client.ReadAsync(), "ReadAsync timed out.");
+        IReadOnlyList<ServerResponse> responses = await WithTimeout(readTask, "ReadAsync timed out.");
         Assert.AreEqual(1, responses.Count);
     }
 
@@ -1423,5 +1426,158 @@ public class CommandResponseLifecycleTests
         Assert.AreEqual("250", responses[0].Code, "Response must be the 250 from HELLO, not the earlier 220.");
         await Task.Delay(50);
         Assert.AreEqual(1, unsolicitedCount, "UnsolicitedResponseReceived must not have fired again during drain.");
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Round-5 review — CommandResponseServer fixes
+    // ──────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Blocks all writes until a cancellation token fires or the stream is disposed.
+    /// Used to simulate a stuck WriteLineAsync in ProcessQueueAsync.
+    /// </summary>
+    private sealed class BlockingWriteStream : Stream
+    {
+        public override bool CanRead => true;
+        public override bool CanWrite => true;
+        public override bool CanSeek => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => 0; set => throw new NotSupportedException(); }
+        public override int Read(byte[] buffer, int offset, int count) => 0;
+        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken ct)
+            => Task.FromResult(0);
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken ct = default)
+            => ValueTask.FromResult(0);
+        public override void Write(byte[] buffer, int offset, int count) { }
+        public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken ct)
+            => Task.Delay(Timeout.Infinite, ct);
+        public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken ct = default)
+            => new ValueTask(Task.Delay(Timeout.Infinite, ct));
+        public override void Flush() { }
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) { }
+    }
+
+    [TestMethod]
+    public async Task SendResponseAsync_SingleArgOverload_SendsResponse()
+    {
+        // Verifies the single-argument overload (for binary compatibility with callers
+        // compiled against the pre-token signature) delegates to the two-argument overload.
+        (DuplexStream serverStream, StreamWriter clientWriter, StreamReader clientReader) = CreateServerTestPair();
+        CommandResponseServer server = new();
+        await server.StartAsync(serverStream, leaveOpen: true);
+
+        await WithTimeout(
+            server.SendResponseAsync(new ServerResponse("220", ResponseSeverity.Completion, "Ready")),
+            "SendResponseAsync(ServerResponse) timed out.");
+
+        string? line = await WithTimeout(
+            Task.Run(() => clientReader.ReadLine()),
+            "Client did not receive the response within 5s.");
+
+        Assert.AreEqual("220 Ready", line, "Single-arg overload must send the formatted response.");
+        server.Dispose();
+    }
+
+    [TestMethod]
+    public async Task SendResponseAsync_WithCancelledToken_ThrowsWithoutWriting()
+    {
+        // Verifies effectiveToken is passed to WriteLineAsync (P2 fix) so a pre-cancelled
+        // token prevents the write rather than being silently ignored.
+        // Note: SemaphoreSlim.WaitAsync with a cancelled token raises TaskCanceledException
+        // (a subclass of OperationCanceledException); we accept either.
+        (DuplexStream serverStream, StreamWriter clientWriter, StreamReader clientReader) = CreateServerTestPair();
+        CommandResponseServer server = new();
+        await server.StartAsync(serverStream, leaveOpen: true);
+
+        using CancellationTokenSource cts = new();
+        cts.Cancel();
+
+        bool threw = false;
+        try
+        {
+            await server.SendResponseAsync(
+                new ServerResponse("220", ResponseSeverity.Completion, "Ready"),
+                cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            threw = true;
+        }
+
+        Assert.IsTrue(threw, "SendResponseAsync must throw OperationCanceledException (or subclass) when the token is pre-cancelled.");
+        server.Dispose();
+    }
+
+    [TestMethod]
+    public async Task Dispose_WhileProcessQueueBlocked_CompletesWithinTimeout()
+    {
+        // Verifies that Dispose closes _writer before awaiting _processTask so that a write
+        // stuck in WriteLineAsync (because no client is reading) is interrupted promptly.
+        // Also verifies the session-token cancellation path in ProcessQueueAsync.
+        Pipe clientToServer = new Pipe();
+        BlockingWriteStream blockingStream = new BlockingWriteStream();
+        DuplexStream serverStream = new DuplexStream(
+            clientToServer.Reader.AsStream(),
+            blockingStream);
+        StreamWriter clientWriter = new StreamWriter(clientToServer.Writer.AsStream(), Encoding.ASCII)
+        {
+            NewLine = "\r\n",
+            AutoFlush = true
+        };
+
+        CommandResponseServer server = new();
+        server.RegisterCommand("SLOW", (ctx, args, ct) =>
+        {
+            return Task.FromResult<IEnumerable<ServerResponse>>(
+                [new ServerResponse("200", ResponseSeverity.Completion, "Done")]);
+        });
+        await server.StartAsync(serverStream, leaveOpen: true);
+
+        await clientWriter.WriteLineAsync("SLOW");
+        await Task.Delay(100); // give ProcessQueueAsync time to enter WriteLineAsync and block
+
+        Task disposeTask = Task.Run(() => server.Dispose());
+        await WithTimeout(disposeTask, "Dispose blocked — WriteLineAsync in ProcessQueueAsync was not interrupted.");
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Round-5 review — CommandResponseClient multiline transition fix
+    // ──────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task SendCommandAsync_TransitionWindow_BodyLinesQueuedForReadAsync()
+    {
+        // After SendCommandAsync returns (the initial status line received), body lines sent
+        // by the server before ReadAsync is called must be queued and not lost as unsolicited.
+        // This exercises the _pendingTransition flag that bridges the gap between the end of
+        // SendCommandAsync and the start of the next ReadAsync.
+        (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
+        using CommandResponseClient client = new();
+        int unsolicitedCount = 0;
+        client.UnsolicitedResponseReceived += _ => Interlocked.Increment(ref unsolicitedCount);
+        await client.ConnectAsync(clientStream, leaveOpen: true);
+
+        // Client sends a command; server responds with an initial status line only.
+        Task<IReadOnlyList<ServerResponse>> sendTask = client.SendCommandAsync("RETR 1");
+        await WithTimeout(Task.Run(() => serverReader.ReadLine()), "Server did not see RETR 1.");
+        await serverWriter.WriteLineAsync("+OK bytes");
+        await WithTimeout(sendTask, "SendCommandAsync timed out.");
+
+        // Server sends body lines NOW — before the client calls ReadAsync.
+        // Without _pendingTransition these would be misrouted as unsolicited.
+        await serverWriter.WriteLineAsync("Body line 1");
+        await serverWriter.WriteLineAsync(".");
+        await Task.Delay(100); // let the listener process both lines before ReadAsync is called
+
+        // ReadAsync must find the queued body lines.
+        IReadOnlyList<ServerResponse> body = await WithTimeout(
+            client.ReadAsync(),
+            "ReadAsync timed out — body lines may have been routed as unsolicited.");
+
+        Assert.AreEqual(0, unsolicitedCount,
+            "Body lines must not be raised as unsolicited when _pendingTransition is active.");
+        Assert.AreEqual(2, body.Count,
+            "ReadAsync must return both body lines queued during the transition window.");
     }
 }
