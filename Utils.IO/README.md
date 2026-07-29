@@ -256,3 +256,6 @@ reader.Pop();                              // restore
 ## Related packages
 - `omy.Utils` – foundational helpers referenced by the I/O utilities.
 - `omy.Utils.Reflection` – `PropertyOrFieldInfo` used by the serialization framework.
+
+
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)

@@ -5,15 +5,18 @@ on:
         branches:
             - '**'
 
+permissions:
+    contents: read
+
 jobs:
     build:
 
         runs-on: ubuntu-latest
 
         steps:
-            - uses: actions/checkout@v2
+            - uses: actions/checkout@v4
             - name: Setup .NET 9.0.x
-              uses: actions/setup-dotnet@v3
+              uses: actions/setup-dotnet@v4
               with:
                   dotnet-version: '9.0.x'
             - name: Build
@@ -35,39 +38,42 @@ jobs:
         name: Test (${{ matrix.test-suite }})
 
         steps:
-            - uses: actions/checkout@v2
+            - uses: actions/checkout@v4
             - name: Setup .NET 9.0.x
-              uses: actions/setup-dotnet@v3
+              uses: actions/setup-dotnet@v4
               with:
                   dotnet-version: '9.0.x'
             - name: Test (${{ matrix.test-suite }})
               run: dotnet test ${{ matrix.project }} --verbosity normal
 
-    packaged-product-train-acceptance:
-        name: Packaged product train acceptance (${{ matrix.os }})
+    release-quality-gates:
+        name: Packaged full product-train acceptance (${{ matrix.os }})
         runs-on: ${{ matrix.os }}
         strategy:
+            fail-fast: false
             matrix:
                 os: [ubuntu-latest, windows-latest]
         steps:
             - uses: actions/checkout@v4
               with:
                   fetch-depth: 0
+                  ref: ${{ github.event.pull_request.head.sha }}
             - name: Setup .NET 9.0.x
               uses: actions/setup-dotnet@v4
               with:
                   dotnet-version: '9.0.x'
-            - name: Validate packaged product train
+            - name: Run repository-wide release quality gates
               shell: pwsh
-              run: ./eng/test-packaged-product-train.ps1 -Configuration Release
-            - name: Upload validated candidates and reports
+              run: ./eng/run-release-quality-gates.ps1 -Configuration Release
+            - name: Upload validated full train and reports
               if: always()
               uses: actions/upload-artifact@v4
               with:
-                  name: packaged-product-train-${{ matrix.os }}-${{ github.sha }}
+                  name: full-product-train-${{ matrix.os }}-${{ github.sha }}
                   path: |
                       artifacts/packages/*.nupkg
                       artifacts/packages/*.snupkg
-                      artifacts/**/*.json
+                      artifacts/reports/**
+                      artifacts/manifests/**
                       artifacts/**/*.log
                   if-no-files-found: warn

@@ -325,3 +325,6 @@ double dist = line.DistanceTo(point); // 4  (perpendicular distance)
 ## Related packages
 - `omy.Utils.Imaging` – leverages math helpers for drawing.
 - `omy.Utils` – shared primitives and extensions.
+
+
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)

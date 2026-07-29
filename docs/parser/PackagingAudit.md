@@ -9,7 +9,7 @@
 | Expressions -> Parser, Utils | Two explicit NuGet dependencies | Expression policies implement parser interfaces and use Utils expression contracts | `net8.0` |
 | Generators -> Diagnostics, Antlr4.Common (Diagnostics -> Source) | Embedded analyzer-host DLLs, suppressed from runtime dependency groups | Not application runtime API | Generator and support DLLs `netstandard2.0` |
 
-Topological publication order is `Utils` / `Source`, then `Diagnostics` / `Antlr4.Common`, then `Parser`, then `Expressions` / `Generators`. `omy.Utils` 1.2.2 follows the currently published 1.2.1 patch because the runtime resource delivery fix is compatible. Parser packages were not found on NuGet during the audit and use the documented `2.0.0-rc.1` train version.
+Within the parser-related subgraph, dependencies place `Utils`, `Source`, and `Antlr4.Common` before `Diagnostics` and `Parser`, followed by `Generators` and `Expressions`; the global graph derives the complete 24-package order. All seven packages use the single documented `2.0.0-rc.1` product-train version. `omy.Utils` is intentionally a major-version candidate relative to its published 1.2.1 API; the parser packages use their first candidate baseline.
 
 ## Generator findings
 
@@ -28,3 +28,7 @@ The release workflow discovers every project recursively, packs and pushes insid
 The package-only runtime consumer now executes `Antlr4GrammarProjectCompiler` with direct and transitive imports, separate lexer/parser grammars, `tokenVocab`, populated and empty lexer modes, local masking, entry-root ownership, deterministic imported collisions, and missing/cyclic/ambiguous dependency failures. The package-only generator consumer builds the equivalent effective composition and then, in a copied real project, changes an imported grammar, removes its import, changes `tokenVocab`, and adds/removes an imported collision. Every rebuild executes the resulting facade and rejects stale effective rules. Separate builds require `UP0010`, `UP0011`, and `UP0016` for missing, cyclic, and ambiguous imports.
 
 The symbol inspection proves repository metadata, candidate commit identity, `.snupkg` presence, and portable PDB signatures. It does **not** inspect the embedded SourceLink document or retrieve mapped sources, so full SourceLink validation remains an explicit release risk.
+
+## Repository-wide train generalization
+
+The original seven-package parser acceptance chain is retained as specialized evidence inside the global 24-package train. Discovery now makes every project an explicit include/exclude decision, graph analysis derives publication order, and generic package-only consumers restore, compile, and load every library or analyzer before parser-specific runtime, generator, and incremental scenarios run.

@@ -133,3 +133,6 @@ Console.WriteLine(compiled.ToUriString());
 ## Related packages
 - `omy.Utils.OData` – runtime client and LINQ provider.
 - `omy.Utils` – shared helpers used by the OData components.
+
+
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)

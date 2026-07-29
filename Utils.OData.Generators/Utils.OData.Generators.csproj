@@ -1,12 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
+        <IsProductTrainProject>true</IsProductTrainProject>
         <TargetFramework>netstandard2.0</TargetFramework>
         <IsRoslynAnalyzer>true</IsRoslynAnalyzer>
+        <BuildOutputTargetFolder>analyzers/dotnet/cs</BuildOutputTargetFolder>
         <PackageId>omy.Utils.OData.Generators</PackageId>
         <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>0.0.1</Version>
+        <Version>$(ProductTrainVersion)</Version>
         <Description>Roslyn source generator that builds OData models and helpers from EDMX metadata.</Description>
         <PackageTags>omy;utilities;odata;generator;roslyn;edmx</PackageTags>
         <Copyright>Olivier MARTY 2025</Copyright>

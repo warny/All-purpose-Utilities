@@ -1373,3 +1373,6 @@ and `<OrdinalException>`:
 
 - `omy.Utils` — contains `NumberToStringConverter`, `NumberToStringConverterOptions`, and all built-in culture XML configurations.
 - `omy.Utils.Mathematics` — provides `MathEx.RoundToSignificantDigits` used by the significant-digits precision overload.
+
+
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)

@@ -99,3 +99,6 @@ list.CopyTo(dest, 0);
 
 ## Related packages
 - `omy.Utils` – core utilities including `LRUCache<K,V>`, `IndexedList<K,V>`, and `EnumerableEx` extensions.
+
+
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)

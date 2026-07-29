@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <IsProductTrainProject>true</IsProductTrainProject>
         <TargetFramework>netstandard2.0</TargetFramework>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
@@ -8,7 +9,7 @@
         <BuildOutputTargetFolder>analyzers/dotnet/cs</BuildOutputTargetFolder>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <PackageId>omy.Utils.Parser.Generators</PackageId>
-        <Version>$(UtilsParserVersion)</Version>
+        <Version>$(ProductTrainVersion)</Version>
         <Authors>Olivier MARTY</Authors>
         <Description>
             Roslyn source generator that reads ANTLR4 .g4 grammar files at build time

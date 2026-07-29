@@ -4,6 +4,62 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.0.0-rc.1] - Release candidate
+
+### `omy.Utils`
+
+- **Breaking:** removed the legacy expression parser/builders, number-to-string model, `SkipList<T>`, symbol tree, `StringFormat`, `RandomEx`, and the removed members enumerated in the [1.2.1 API audit](docs/api/omy.Utils-1.2.1-to-2.0.0-rc.1.md). Some sequential `params` array overloads now accept `IEnumerable<T>`, generic dictionary keys gained `notnull` constraints, `Authenticator` is sealed, and interfaces such as `IAngleCalculator<T>` gained members.
+- Nullability annotations are enabled; consumers can receive new source warnings and must recompile.
+- `DateFormulaConfiguration.json` is now an embedded resource, so consumers must stop deploying an application-directory copy.
+- The package remains `net8.0`, depends on `System.Text.Encoding.CodePages` 9.0.6, and no longer carries the inverted parser project dependency.
+- Follow the [migration guide](docs/migration/omy.Utils-1.2.1-to-2.0.0-rc.1.md); these changes justify the major version from published 1.2.1.
+
+### `omy.Utils.Parser` and associated packages
+
+- Established the first API baselines for Source, Diagnostics, Antlr4.Common, Parser, Expressions, and Generators.
+- Synchronized all parser packages and `omy.Utils` at exactly `2.0.0-rc.1`, including exact internal NuGet dependencies.
+- Added manifest, evaluated-project, `.nuspec`, assembly, packaged-consumer assets, artifact-manifest, reproducibility, and all-or-none NuGet publication gates.
+
+### Core
+- `omy.Utils` moves from 1.2.1 to the coordinated major candidate; see the API audit and migration guide.
+
+### IO and serialization
+- `omy.Utils.IO` and `omy.Utils.IO.Serialization.Generators` move from 1.2.1 and are validated as a runtime package and analyzer respectively.
+
+### Networking
+- `omy.Utils.Net` moves from 1.2.1 and retains its `net9.0` target.
+
+### Data
+- `omy.Utils.Data` moves from 1.2.1 and its parser/generator build graph is validated explicitly.
+
+### Imaging and fonts
+- `omy.Utils.Imaging` and `omy.Utils.Fonts` move from 1.2.1 with their transitive product dependencies synchronized.
+
+### Geography
+- `omy.Utils.Geography` moves from 1.2.1.
+
+### Mathematics and collections
+- `omy.Utils.Mathematics` moves from 1.2.1 while `omy.Utils.Collections` establishes its first public baseline; existing breaking mathematics changes remain documented below.
+
+### OData
+- `omy.Utils.OData` moves from its published 0.0.1 and `omy.Utils.OData.Generators` moves from 0.0.1.
+
+### Dependency injection
+- Runtime and generator packages move from 1.2.1 and are treated as a synchronized runtime/analyzer pair.
+
+### Virtual machine
+- `omy.Utils.VirtualMachine` moves from 0.1.0.
+
+### Number formatting
+- `omy.Utils.NumberToString` establishes its first public baseline; the ordinal/year additions remain itemized below.
+
+### Parser
+- The six parser packages establish their first release-candidate API baselines without expanding the production support contract.
+
+### Source generators
+- All four generator packages are packaged under `analyzers/dotnet/cs`, restored by real consumers, and checked for Roslyn load errors.
+
+
 ### Changed — `omy.Utils.Mathematics` (BREAKING)
 - **`Matrix<T>.DiagonalizeLU()` now returns a 3-tuple `(L, U, P)` instead of `(L, U)`.** The previous
   two-factor result was mathematically unable to reconstruct the original matrix whenever partial

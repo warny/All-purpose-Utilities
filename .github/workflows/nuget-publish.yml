@@ -1,4 +1,7 @@
-name: Publish NuGet
+name: Validate NuGet Release
+
+permissions:
+    contents: read
 
 on:
     push:
@@ -13,113 +16,29 @@ jobs:
             matrix:
                 dotnet-version: ['9.0.x']
         steps:
-            - uses: actions/checkout@v2
+            - uses: actions/checkout@v4
             - name: Setup .NET ${{ matrix.dotnet-version }}
-              uses: actions/setup-dotnet@v3
+              uses: actions/setup-dotnet@v4
               with:
                   dotnet-version: ${{ matrix.dotnet-version }}
             - name: Restore
               run: dotnet restore
             - name: Build
               run: dotnet build --configuration Release
-            - name: Pack and publish updated libraries
-              env:
-                  NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+            - name: Validate and pack synchronized product train
               shell: pwsh
-              run: |
-                  function Get-ProjectPropertyValue([xml]$projectXml, [string]$name) {
-                      $propertyNodes = $projectXml.Project.PropertyGroup.$name
-                      if ($null -eq $propertyNodes) {
-                          return $null
-                      }
-
-                      foreach ($propertyNode in @($propertyNodes)) {
-                          if ($null -ne $propertyNode -and -not [string]::IsNullOrWhiteSpace($propertyNode.InnerText)) {
-                              return $propertyNode.InnerText.Trim()
-                          }
-                      }
-
-                      return $null
-                  }
-
-                  $projects = Get-ChildItem -Path . -Recurse -Filter *.csproj -File |
-                      Where-Object { $_.FullName -notmatch "[\\/](bin|obj)[\\/]" }
-
-                  New-Item -ItemType Directory -Path packages -Force | Out-Null
-                  New-Item -ItemType Directory -Path release -Force | Out-Null
-                  $errors = @()
-
-                  foreach ($project in $projects) {
-                      $csproj = $project.FullName
-                      $projectXml = [xml](Get-Content -Path $csproj -Raw)
-
-                      $isPackable = Get-ProjectPropertyValue -projectXml $projectXml -name "IsPackable"
-                      if ($isPackable -and $isPackable.ToLowerInvariant() -eq "false") {
-                          continue
-                      }
-
-                      $pkgId = Get-ProjectPropertyValue -projectXml $projectXml -name "PackageId"
-                      $version = Get-ProjectPropertyValue -projectXml $projectXml -name "Version"
-
-                      if ([string]::IsNullOrWhiteSpace($pkgId) -or [string]::IsNullOrWhiteSpace($version)) {
-                          continue
-                      }
-
-                      $url = "https://api.nuget.org/v3-flatcontainer/$($pkgId.ToLowerInvariant())/index.json"
-                      Write-Host "Checking package $pkgId version $version ($csproj)"
-
-                      $versions = @()
-                      try {
-                          $versions = (Invoke-RestMethod -Uri $url -ErrorAction Stop).versions
-                      } catch {
-                          $versions = @()
-                      }
-
-                      if ($versions -contains $version) {
-                          Write-Host "Skipping $pkgId version $version"
-                          continue
-                      }
-
-                      try {
-                          dotnet pack $csproj --configuration Release --no-build --no-restore -o packages -p:ContinuousIntegrationBuild=true
-                      } catch {
-                          $errors += "Error packing $pkgId version $($version): $($_.Exception.Message)"
-                          continue
-                      }
-
-                      $versionReleaseDirectory = Join-Path "release" $version
-                      New-Item -ItemType Directory -Path $versionReleaseDirectory -Force | Out-Null
-
-                      if (Test-Path "packages/$pkgId.$version.nupkg") {
-                          Copy-Item "packages/$pkgId.$version.nupkg" -Destination $versionReleaseDirectory -Force
-                      }
-
-                      if (Test-Path "packages/$pkgId.$version.snupkg") {
-                          Copy-Item "packages/$pkgId.$version.snupkg" -Destination $versionReleaseDirectory -Force
-                      }
-
-                      $pushOutput = dotnet nuget push "packages/$pkgId.$version.nupkg" --api-key $env:NUGET_API_KEY --source "https://api.nuget.org/v3/index.json" 2>&1
-                      if ($LASTEXITCODE -ne 0) {
-                          $errors += "Error publishing $pkgId version $($version): $pushOutput"
-                          continue
-                      }
-
-                      if (Test-Path "packages/$pkgId.$version.snupkg") {
-                          dotnet nuget push "packages/$pkgId.$version.snupkg" --api-key $env:NUGET_API_KEY --source "https://api.nuget.org/v3/index.json" | Out-Null
-                      }
-                  }
-
-                  if ($errors.Count -gt 0) {
-                      $errors | ForEach-Object { Write-Host $_ }
-                      exit 1
-                  }
+              run: ./eng/test-packaged-product-train.ps1 -Configuration Release
+            - name: Preflight all package IDs (dry run only)
+              shell: pwsh
+              run: ./eng/publish-product-train.ps1 -ArtifactsPath artifacts -PreflightPackageIdsOnly
             - name: Upload package artifacts
               uses: actions/upload-artifact@v4
               with:
                   name: nuget-packages-${{ github.run_number }}
                   path: |
-                      release/**/*.nupkg
-                      release/**/*.snupkg
+                      artifacts/packages/*.nupkg
+                      artifacts/packages/*.snupkg
+                      artifacts/candidate-manifest.json
                   if-no-files-found: error
 
     build-visual-studio-extensions:
@@ -128,9 +47,9 @@ jobs:
             matrix:
                 dotnet-version: ['9.0.x']
         steps:
-            - uses: actions/checkout@v2
+            - uses: actions/checkout@v4
             - name: Setup .NET ${{ matrix.dotnet-version }}
-              uses: actions/setup-dotnet@v3
+              uses: actions/setup-dotnet@v4
               with:
                   dotnet-version: ${{ matrix.dotnet-version }}
             - name: Build VSIX projects

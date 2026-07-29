@@ -1,11 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <IsProductTrainProject>true</IsProductTrainProject>
         <TargetFramework>netstandard2.0</TargetFramework>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
         <PackageId>omy.Utils.Parser.Diagnostics</PackageId>
-        <Version>$(UtilsParserVersion)</Version>
+        <Version>$(ProductTrainVersion)</Version>
         <Authors>Olivier MARTY</Authors>
         <Description>Shared diagnostics model and descriptor catalog for Utils.Parser runtime and source generator.</Description>
         <PackageTags>omy;utilities;parser;diagnostics;antlr4;generator</PackageTags>

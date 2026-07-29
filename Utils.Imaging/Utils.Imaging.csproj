@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
+        <IsProductTrainProject>true</IsProductTrainProject>
 		<TargetFramework>net8.0</TargetFramework>
 		<EnablePreviewFeatures>True</EnablePreviewFeatures>
 		<LangVersion>Latest</LangVersion>
@@ -11,7 +12,7 @@
 		<PackageId>omy.Utils.Imaging</PackageId>
 		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<Version>1.2.1</Version>
+		<Version>$(ProductTrainVersion)</Version>
 		<Copyright>Olivier MARTY</Copyright>
                 <Description>Bitmap accessors, color conversions, and lightweight drawing primitives built on System.Drawing.</Description>
                 <PackageTags>omy;utilities;imaging;bitmap;color;drawing</PackageTags>

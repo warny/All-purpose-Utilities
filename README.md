@@ -123,3 +123,7 @@ dotnet test Utils.sln
 ## License
 
 Apache 2.0 (`LICENSE-apache-2.0.txt`).
+
+## Synchronized 2.0 release candidate
+
+All publishable `omy.Utils` libraries and source generators are prepared as one `2.0.0-rc.1` product train. Contributors can review the [product-train inventory and release boundary](docs/releasing/ProductTrain.md); consumers upgrading from published packages should start with the [2.0 migration guide](docs/releasing/MigrationTo2.0.md).

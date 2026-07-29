@@ -318,3 +318,6 @@ Console.WriteLine(position.ZoomLevel);         // 12
 ## Related packages
 - `omy.Utils.Imaging` – for rendering map overlays.
 - `omy.Utils.Mathematics` – math helpers used by projections.
+
+
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)

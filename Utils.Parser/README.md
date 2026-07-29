@@ -6,7 +6,7 @@ at runtime (without mandatory code generation).
 ## Install
 
 ```bash
-dotnet add package omy.Utils.Parser --version 2.0.0-rc.1
+dotnet add package omy.Utils.Parser --version 2.0.0-rc.1-rc.1
 ```
 
 > For compile-time grammar compilation (zero runtime `.g4` parsing), see
@@ -625,7 +625,7 @@ Entry declarations mask imported declarations. Distinct imported declarations wi
 
 ## `2.0.0-rc.1` package train
 
-Direct consumers normally reference `omy.Utils.Parser`; generator users additionally reference `omy.Utils.Parser.Generators` as an analyzer, and expression-policy users reference `omy.Utils.Parser.Expressions`. `omy.Utils.Parser.Source`, `omy.Utils.Parser.Diagnostics`, and `omy.Utils.Parser.Antlr4.Common` are primarily shared infrastructure dependencies. All parser packages use `2.0.0-rc.1`; `omy.Utils` uses `1.2.2`. Runtime dependencies are expressed as NuGet dependencies, while generator support assemblies are embedded beside the Roslyn analyzer. Candidate archives are selected by `eng/parser-release-manifest.json` and validated through an isolated local feed before publication. Publishing the train cannot be transactional and must follow dependency order.
+Direct consumers normally reference `omy.Utils.Parser`; generator users additionally reference `omy.Utils.Parser.Generators` as an analyzer, and expression-policy users reference `omy.Utils.Parser.Expressions`. `omy.Utils.Parser.Source`, `omy.Utils.Parser.Diagnostics`, and `omy.Utils.Parser.Antlr4.Common` are primarily shared infrastructure dependencies. All seven packages use the synchronized `2.0.0-rc.1` product-train version. Runtime dependencies are expressed as NuGet dependencies, while generator support assemblies are embedded beside the Roslyn analyzer. Candidate archives are selected by `eng/product-train-manifest.json` and validated through an isolated local feed before publication. Publishing the train cannot be transactional and must follow dependency order.
 
 [Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)
 

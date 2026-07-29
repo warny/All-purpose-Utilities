@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
         <PropertyGroup>
+        <IsProductTrainProject>true</IsProductTrainProject>
                 <TargetFramework>net9.0</TargetFramework>
                 <AssemblyName>Utils.Net</AssemblyName>
                 <RootNamespace>Utils</RootNamespace>
@@ -11,7 +12,7 @@
                 <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
                 <PackageReadmeFile>README.md</PackageReadmeFile>
                 <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-                <Version>1.2.1</Version>
+                <Version>$(ProductTrainVersion)</Version>
                 <Description>DNS, ICMP, Wake-on-LAN, ARP, and command/response helpers for .NET networking scenarios.</Description>
                 <PackageTags>omy;utilities;network;dns;icmp;wol;arp;uri;smtp;pop3;nntp</PackageTags>
                 <NoWarn>S101</NoWarn>

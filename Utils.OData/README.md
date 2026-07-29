@@ -206,3 +206,6 @@ ODataQueryCompilation compiled = query.CompileToODataQuery();
 ## Related packages
 - `omy.Utils.OData.Generators` – source generator for strongly typed OData contexts.
 - `omy.Utils` – foundational helpers shared across the family.
+
+
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)
