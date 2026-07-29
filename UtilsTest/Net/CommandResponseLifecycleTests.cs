@@ -526,6 +526,27 @@ public class CommandResponseLifecycleTests
         Assert.AreEqual("250", responses[0].Code);
     }
 
+    [TestMethod]
+    public async Task UnsolicitedSubscriberThrows_ErrorIsObservable()
+    {
+        // P2-5: exceptions from unsolicited-response subscribers must be forwarded to
+        // CallbackError so they are observable even when no logger is configured.
+        (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
+        using CommandResponseClient client = new();
+        await client.ConnectAsync(clientStream, leaveOpen: true);
+
+        var errors = new System.Collections.Concurrent.ConcurrentBag<Exception>();
+        client.CallbackError += ex => errors.Add(ex);
+        client.UnsolicitedResponseReceived += _ => throw new InvalidOperationException("Subscriber fault");
+
+        await serverWriter.WriteLineAsync("220 Welcome");
+        await Task.Delay(200);
+
+        Assert.AreEqual(1, errors.Count, "CallbackError must fire once for the subscriber exception.");
+        Assert.IsInstanceOfType<InvalidOperationException>(errors.First());
+        Assert.IsTrue(client.IsConnected, "Client must remain connected after the subscriber exception.");
+    }
+
     // ──────────────────────────────────────────────────────────────
     // Item 46 — Keep-alive does not overlap with itself
     // ──────────────────────────────────────────────────────────────
@@ -723,6 +744,31 @@ public class CommandResponseLifecycleTests
 
         await Assert.ThrowsExceptionAsync<ArgumentException>(() =>
             client.SendLinesPublicAsync(["SAFE", "BAD\nINJECT"]));
+    }
+
+    [TestMethod]
+    public async Task SendLinesAsync_CallerListMutation_DoesNotBypassValidation()
+    {
+        // P2-6: the caller holds a List<string> and mutates it between the call to
+        // SendLinesAsync and the write loop. Without a defensive copy, a bad line inserted
+        // after validation could reach the wire unchecked.
+        (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
+        using TestableClient client = new();
+        await client.ConnectAsync(clientStream, leaveOpen: true);
+
+        List<string> lines = ["SAFE"];
+        // This call must not throw: at the moment of the call the list is clean.
+        // The point of the test is that the internal copy is made atomically at call
+        // time, so a post-call mutation of `lines` cannot influence what is sent.
+        Task send = client.SendLinesPublicAsync(lines);
+        lines.Add("INJECTED\r\nBAD"); // mutate after the call but before the write finishes
+
+        // Consume the server side so the write can complete without blocking.
+        string? received = await WithTimeout(Task.Run(() => serverReader.ReadLine()), "Server did not receive line.");
+        await send;
+
+        // The injected entry was added after the defensive copy, so only "SAFE" was sent.
+        Assert.AreEqual("SAFE", received, "Only the original line must have been sent.");
     }
 
     // ──────────────────────────────────────────────────────────────

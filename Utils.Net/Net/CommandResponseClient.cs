@@ -114,10 +114,17 @@ public class CommandResponseClient : IDisposable
 
     /// <summary>
     /// Occurs when a response is received from the server while no command waiter is active.
-    /// Exceptions thrown by subscribers are caught and logged rather than propagated to the
-    /// listener thread to prevent a misbehaving callback from killing the transport.
+    /// Exceptions thrown by subscribers are caught; the exception is logged and then forwarded
+    /// to <see cref="CallbackError"/> so callers can observe it without a logger.
     /// </summary>
     public event Action<ServerResponse>? UnsolicitedResponseReceived;
+
+    /// <summary>
+    /// Occurs when a subscriber of <see cref="UnsolicitedResponseReceived"/> throws an
+    /// unhandled exception or when the keep-alive loop terminates unexpectedly.
+    /// Provides an observable channel for callback faults when no logger is configured.
+    /// </summary>
+    public event Action<Exception>? CallbackError;
 
     /// <summary>
     /// Gets or sets the command sent during inactivity to keep the connection alive.
@@ -461,18 +468,10 @@ public class CommandResponseClient : IDisposable
             throw new InvalidOperationException("Client is not connected.");
         }
 
-        // Item 53: validate all lines upfront before acquiring the lock and writing anything.
-        // Materialize into a list so we do not enumerate lazily and potentially validate only
-        // part of the sequence before throwing mid-write.
-        List<string> lineList;
-        if (lines is List<string> already)
-        {
-            lineList = already;
-        }
-        else
-        {
-            lineList = [..lines];
-        }
+        // Item 53 / P2-6: always materialise into a new list — even when the caller passes a
+        // List<string> — so a concurrent mutation between validation and the write loop cannot
+        // bypass the per-line checks or inject additional commands.
+        List<string> lineList = [..lines];
         foreach (string line in lineList)
         {
             if (line is null) throw new ArgumentException("Lines must not contain null entries.", nameof(lines));
@@ -625,6 +624,7 @@ public class CommandResponseClient : IDisposable
             catch (Exception ex)
             {
                 Logger?.LogError(ex, "UnsolicitedResponseReceived subscriber threw an unhandled exception");
+                CallbackError?.Invoke(ex);
             }
         }
     }
@@ -764,6 +764,7 @@ public class CommandResponseClient : IDisposable
             catch (Exception ex)
             {
                 Logger?.LogWarning(ex, "Keep-alive loop terminated unexpectedly");
+                CallbackError?.Invoke(ex);
             }
         }, ct);
     }
