@@ -349,13 +349,14 @@ public class CommandResponseClient : IDisposable
             }
             DrainPendingResponses();
             Logger?.LogDebug("Sending: {Command}", RedactCommandForLog(command));
-            await _writer.WriteLineAsync(command).ConfigureAwait(false);
 
-            // Item 44: signal that a command waiter is now active so ListenLoop does not
-            // raise UnsolicitedResponseReceived for the expected reply lines.
+            // Item 44 / P1-2 race fix: register as the active response owner BEFORE writing
+            // the command so that a response arriving immediately after (or during) the write
+            // is routed to the queue rather than raised as unsolicited.
             Interlocked.Increment(ref _activeCommandWaiters);
             try
             {
+                await _writer.WriteLineAsync(command).ConfigureAwait(false);
                 List<ServerResponse> responses = new();
                 while (true)
                 {
@@ -478,14 +479,11 @@ public class CommandResponseClient : IDisposable
     /// </summary>
     private void DrainPendingResponses()
     {
-        while (_responseQueue.TryDequeue(out ServerResponse leftover))
-        {
-            RaiseUnsolicitedResponseReceived(leftover);
-        }
-        while (_responseSignal.CurrentCount > 0)
-        {
-            _responseSignal.Wait(0);
-        }
+        // Discard stale solicited responses left from an interrupted command waiter.
+        // These were already delivered via UnsolicitedResponseReceived at arrival time
+        // if no waiter was active; re-raising them here would cause double delivery (P1-4 fix).
+        while (_responseQueue.TryDequeue(out _)) { }
+        while (_responseSignal.CurrentCount > 0) { _responseSignal.Wait(0); }
     }
 
     /// <summary>

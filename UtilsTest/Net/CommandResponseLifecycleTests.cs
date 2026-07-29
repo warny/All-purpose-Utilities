@@ -866,4 +866,41 @@ public class CommandResponseLifecycleTests
         CommandResponseClient client = new();
         client.MaxResponseCount = 0;
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // P1-2 / P1-4 — Register owner before write; no double delivery
+    // ──────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task IdleResponse_IsRaisedOnce_NotDeliveredToNextCommand()
+    {
+        // Verifies two fixes:
+        // P1-4: DrainPendingResponses must not re-raise a response that the listener
+        //       already delivered as unsolicited.
+        // P1-2: The unsolicited response must not bleed into the subsequent command's
+        //       response list after DrainPendingResponses has discarded it.
+        (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
+        using CommandResponseClient client = new();
+        await client.ConnectAsync(clientStream, leaveOpen: true);
+
+        int unsolicitedCount = 0;
+        client.UnsolicitedResponseReceived += _ => Interlocked.Increment(ref unsolicitedCount);
+
+        // Server sends a greeting with no active command waiter.
+        await serverWriter.WriteLineAsync("220 Welcome");
+        await Task.Delay(200); // allow listener to process and raise event
+
+        Assert.AreEqual(1, unsolicitedCount, "Welcome must be raised exactly once as unsolicited.");
+
+        // Now send a real command and verify the greeting is not redelivered.
+        Task<IReadOnlyList<ServerResponse>> sendTask = client.SendCommandAsync("HELLO");
+        string? received = await WithTimeout(Task.Run(() => serverReader.ReadLine()), "Server did not see HELLO.");
+        await serverWriter.WriteLineAsync("250 OK");
+        IReadOnlyList<ServerResponse> responses = await WithTimeout(sendTask, "HELLO response not received within 5s.");
+
+        Assert.AreEqual(1, responses.Count, "HELLO must receive exactly one response.");
+        Assert.AreEqual("250", responses[0].Code, "Response must be the 250 from HELLO, not the earlier 220.");
+        await Task.Delay(50);
+        Assert.AreEqual(1, unsolicitedCount, "UnsolicitedResponseReceived must not have fired again during drain.");
+    }
 }
