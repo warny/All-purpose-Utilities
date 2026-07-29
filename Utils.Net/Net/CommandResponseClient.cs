@@ -30,6 +30,10 @@ public class CommandResponseClient : IDisposable
     // Item 46: keep-alive runs as a cancellable Task instead of an async-void Timer callback.
     private CancellationTokenSource? _keepAliveCts;
     private Task? _keepAliveTask;
+    // P1-3 fix: track last activity as a tick count so ResetKeepAlive only updates a timestamp
+    // rather than restarting the loop — which caused the loop to synchronously wait on itself
+    // via StopKeepAlive() when called from within SendCommandAsync.
+    private long _lastActivityTick;
 
     private TimeSpan _noOpInterval = Timeout.InfiniteTimeSpan;
     private string _noOpCommand = "NOOP";
@@ -711,18 +715,30 @@ public class CommandResponseClient : IDisposable
     {
         StopKeepAlive();
         if (_noOpInterval == Timeout.InfiniteTimeSpan || _listenTokenSource is null) return;
+        Interlocked.Exchange(ref _lastActivityTick, Environment.TickCount64);
         _keepAliveCts = CancellationTokenSource.CreateLinkedTokenSource(_listenTokenSource.Token);
         CancellationToken ct = _keepAliveCts.Token;
-        TimeSpan interval = _noOpInterval;
         _keepAliveTask = Task.Run(async () =>
         {
             try
             {
                 while (!ct.IsCancellationRequested)
                 {
-                    await Task.Delay(interval, ct).ConfigureAwait(false);
+                    // Calculate how long until the next send is due, based on last activity.
+                    // Reading _noOpInterval each iteration picks up runtime changes to the property.
+                    long intervalMs = (long)_noOpInterval.TotalMilliseconds;
+                    long elapsedMs = Environment.TickCount64 - Interlocked.Read(ref _lastActivityTick);
+                    long remainingMs = intervalMs - elapsedMs;
+                    if (remainingMs > 0)
+                        await Task.Delay(TimeSpan.FromMilliseconds(remainingMs), ct).ConfigureAwait(false);
                     if (ct.IsCancellationRequested) break;
+                    // Re-check after delay: a command may have arrived during the wait.
+                    elapsedMs = Environment.TickCount64 - Interlocked.Read(ref _lastActivityTick);
+                    if (elapsedMs < intervalMs)
+                        continue; // activity restarted the idle window; recalculate without self-wait
                     await SendNoOpAsync(ct).ConfigureAwait(false);
+                    // SendNoOpAsync → SendCommandAsync → ResetKeepAlive updates _lastActivityTick.
+                    // The loop then recalculates the next delay without restarting itself.
                 }
             }
             catch (OperationCanceledException)
@@ -815,13 +831,12 @@ public class CommandResponseClient : IDisposable
     }
 
     /// <summary>
-    /// Resets the keep-alive timer by restarting the delay from the current point in time.
+    /// Records the current time as the last activity instant, which postpones the next keep-alive send.
+    /// Does not restart the keep-alive loop, avoiding a deadlock where the loop would wait on itself.
     /// </summary>
     protected void ResetKeepAlive()
     {
-        // The loop-based keep-alive automatically resets after each send; calling
-        // RestartKeepAlive restarts the delay whenever a command is successfully sent.
-        RestartKeepAlive();
+        Interlocked.Exchange(ref _lastActivityTick, Environment.TickCount64);
     }
 
     /// <summary>

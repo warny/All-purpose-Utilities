@@ -868,6 +868,47 @@ public class CommandResponseLifecycleTests
     }
 
     // ──────────────────────────────────────────────────────────────
+    // P1-3 — Keep-alive must not wait on its own task
+    // ──────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task KeepAlive_SuccessfulNoop_DoesNotBlockForOneSecond()
+    {
+        // Previous bug: a successful NOOP called ResetKeepAlive → RestartKeepAlive →
+        // StopKeepAlive → _keepAliveTask.Wait(1s), waiting on itself for 1 second.
+        // With a 20 ms interval this meant the effective rate was ~1 NOOP/s.
+        // With the fix (_lastActivityTick timestamp approach) we expect many more.
+        (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
+        using CommandResponseClient client = new();
+        client.NoOpInterval = TimeSpan.FromMilliseconds(20);
+        await client.ConnectAsync(clientStream, leaveOpen: true);
+
+        int noopCount = 0;
+        using CancellationTokenSource cts = new(TimeSpan.FromMilliseconds(500));
+        Task serverTask = Task.Run(async () =>
+        {
+            while (!cts.Token.IsCancellationRequested)
+            {
+                string? line;
+                try { line = await Task.Run(() => serverReader.ReadLine(), cts.Token); }
+                catch (OperationCanceledException) { break; }
+                if (line is null) break;
+                Interlocked.Increment(ref noopCount);
+                try { await serverWriter.WriteLineAsync("250 OK"); }
+                catch { break; }
+            }
+        });
+
+        await Task.WhenAny(serverTask, Task.Delay(TimeSpan.FromSeconds(2)));
+
+        // With the old self-wait: 500 ms / ~1050 ms per NOOP ≈ 0 NOOPs.
+        // With the fix: 500 ms / 20 ms per NOOP ≈ 25 NOOPs. Require at least 5.
+        Assert.IsTrue(noopCount >= 5,
+            $"Expected ≥5 NOOPs in 500 ms with 20 ms interval but got {noopCount}. " +
+            "Self-wait regression may have reappeared.");
+    }
+
+    // ──────────────────────────────────────────────────────────────
     // P1-2 / P1-4 — Register owner before write; no double delivery
     // ──────────────────────────────────────────────────────────────
 
