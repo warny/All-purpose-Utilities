@@ -724,4 +724,146 @@ public class CommandResponseLifecycleTests
         await Assert.ThrowsExceptionAsync<ArgumentException>(() =>
             client.SendLinesPublicAsync(["SAFE", "BAD\nINJECT"]));
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // Item 58 — Validate timeout/limit configuration values
+    // ──────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void MaxLineLength_NegativeValue_ThrowsOnClient()
+    {
+        CommandResponseClient client = new();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => client.MaxLineLength = -1);
+    }
+
+    [TestMethod]
+    public void MaxResponseCount_NegativeValue_Throws()
+    {
+        CommandResponseClient client = new();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => client.MaxResponseCount = -1);
+    }
+
+    [TestMethod]
+    public void ListenTimeout_NegativeValue_Throws()
+    {
+        CommandResponseClient client = new();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+            client.ListenTimeout = TimeSpan.FromMilliseconds(-500));
+    }
+
+    [TestMethod]
+    public void ListenTimeout_InfiniteTimeSpan_DoesNotThrow()
+    {
+        CommandResponseClient client = new();
+        client.ListenTimeout = Timeout.InfiniteTimeSpan;
+    }
+
+    [TestMethod]
+    public void NoOpInterval_NegativeValue_Throws()
+    {
+        CommandResponseClient client = new();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+            client.NoOpInterval = TimeSpan.FromMilliseconds(-500));
+    }
+
+    [TestMethod]
+    public void NoOpInterval_InfiniteTimeSpan_DoesNotThrow()
+    {
+        CommandResponseClient client = new();
+        client.NoOpInterval = Timeout.InfiniteTimeSpan;
+    }
+
+    [TestMethod]
+    public void NoOpInterval_Zero_Throws()
+    {
+        CommandResponseClient client = new();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+            client.NoOpInterval = TimeSpan.Zero);
+    }
+
+    [TestMethod]
+    public void NoOpInterval_Positive_DoesNotThrow()
+    {
+        CommandResponseClient client = new();
+        client.NoOpInterval = TimeSpan.FromSeconds(30);
+    }
+
+    [TestMethod]
+    public void NoOpCommand_Null_Throws()
+    {
+        CommandResponseClient client = new();
+        Assert.ThrowsException<ArgumentNullException>(() => client.NoOpCommand = null!);
+    }
+
+    [TestMethod]
+    public void NoOpCommand_Empty_Throws()
+    {
+        CommandResponseClient client = new();
+        Assert.ThrowsException<ArgumentException>(() => client.NoOpCommand = "");
+    }
+
+    [TestMethod]
+    public void NoOpCommand_Whitespace_Throws()
+    {
+        CommandResponseClient client = new();
+        Assert.ThrowsException<ArgumentException>(() => client.NoOpCommand = "   ");
+    }
+
+    [TestMethod]
+    public void NoOpCommand_ContainsCr_Throws()
+    {
+        CommandResponseClient client = new();
+        Assert.ThrowsException<ArgumentException>(() => client.NoOpCommand = "NOOP\r");
+    }
+
+    [TestMethod]
+    public void NoOpCommand_ContainsLf_Throws()
+    {
+        CommandResponseClient client = new();
+        Assert.ThrowsException<ArgumentException>(() => client.NoOpCommand = "NOOP\n");
+    }
+
+    [TestMethod]
+    public void NoOpCommand_ContainsNul_Throws()
+    {
+        CommandResponseClient client = new();
+        Assert.ThrowsException<ArgumentException>(() => client.NoOpCommand = "NOOP\0");
+    }
+
+    [TestMethod]
+    public void NoOpCommand_Valid_DoesNotThrow()
+    {
+        CommandResponseClient client = new();
+        client.NoOpCommand = "NOOP";
+        Assert.AreEqual("NOOP", client.NoOpCommand);
+    }
+
+    [TestMethod]
+    public void ListenTimeout_ExceedsIntMax_Throws()
+    {
+        CommandResponseClient client = new();
+        TimeSpan tooLarge = TimeSpan.FromMilliseconds((double)int.MaxValue + 1);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => client.ListenTimeout = tooLarge);
+    }
+
+    [TestMethod]
+    public void ListenTimeout_Zero_DoesNotThrow()
+    {
+        CommandResponseClient client = new();
+        client.ListenTimeout = TimeSpan.Zero;
+    }
+
+    [TestMethod]
+    public void MaxLineLength_Zero_DoesNotThrow()
+    {
+        CommandResponseClient client = new();
+        client.MaxLineLength = 0;
+    }
+
+    [TestMethod]
+    public void MaxResponseCount_Zero_DoesNotThrow()
+    {
+        CommandResponseClient client = new();
+        client.MaxResponseCount = 0;
+    }
 }

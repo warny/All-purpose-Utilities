@@ -374,21 +374,29 @@ public class CommandResponseServer : IDisposable
     }
 
     /// <summary>
-    /// Listens for commands from the client on a dedicated thread and enqueues them for processing.
-    /// </summary>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <summary>
     /// Reads one line from <paramref name="reader"/>, enforcing <see cref="MaxLineLength"/> during
-    /// the read rather than after the full line has been buffered. Returns <see langword="null"/> on EOF.
+    /// the read rather than after the full line has been buffered. Uses async reads internally so
+    /// that <paramref name="cancellationToken"/> can interrupt a blocking read (e.g. on a Pipe).
+    /// Returns <see langword="null"/> on EOF or cancellation.
     /// </summary>
     /// <exception cref="InvalidDataException">Thrown when the line exceeds <see cref="MaxLineLength"/>.</exception>
-    private string? ReadLimitedLine(StreamReader reader)
+    private string? ReadLimitedLine(StreamReader reader, CancellationToken cancellationToken)
     {
         var sb = new StringBuilder(256);
-        int ch;
-        while ((ch = reader.Read()) != -1)
+        char[] buf = new char[1];
+        while (true)
         {
-            char c = (char)ch;
+            int read;
+            try
+            {
+                read = reader.ReadAsync(buf.AsMemory(0, 1), cancellationToken).GetAwaiter().GetResult();
+            }
+            catch (OperationCanceledException)
+            {
+                return null;
+            }
+            if (read == 0) return sb.Length == 0 ? null : sb.ToString();
+            char c = buf[0];
             if (c == '\n')
             {
                 if (sb.Length > 0 && sb[sb.Length - 1] == '\r')
@@ -396,10 +404,11 @@ public class CommandResponseServer : IDisposable
                 return sb.ToString();
             }
             sb.Append(c);
-            if (MaxLineLength > 0 && sb.Length > MaxLineLength)
+            // A trailing \r will be stripped when \n arrives, so exclude it from the count.
+            int effectiveLength = (sb.Length > 0 && sb[sb.Length - 1] == '\r') ? sb.Length - 1 : sb.Length;
+            if (MaxLineLength > 0 && effectiveLength > MaxLineLength)
                 throw new InvalidDataException($"Incoming line exceeded MaxLineLength ({MaxLineLength}).");
         }
-        return sb.Length == 0 ? null : sb.ToString();
     }
 
     private void ListenLoop(CancellationToken cancellationToken)
@@ -415,7 +424,7 @@ public class CommandResponseServer : IDisposable
                 string? command;
                 try
                 {
-                    command = ReadLimitedLine(_reader);
+                    command = ReadLimitedLine(_reader, cancellationToken);
                 }
                 catch (InvalidDataException)
                 {

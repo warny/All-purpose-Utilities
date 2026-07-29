@@ -22,6 +22,8 @@ public class CommandResponseClient : IDisposable
     private readonly ConcurrentQueue<ServerResponse> _responseQueue = new();
     private readonly SemaphoreSlim _responseSignal = new(0);
     private readonly SemaphoreSlim _sendLock = new(1, 1);
+
+    // Item 47: store the linked cancellation source so caller cancellation stops the listener.
     private CancellationTokenSource? _listenTokenSource;
     private Thread? _listenThread;
 
@@ -51,6 +53,8 @@ public class CommandResponseClient : IDisposable
     private const int StateDisposed = 3;
     private int _state = StateNotConnected;
 
+    private int _maxLineLength = 8192;
+
     /// <summary>
     /// Gets or sets the maximum number of characters allowed in a single incoming response line.
     /// Lines longer than this limit cause the listener loop to disconnect.
@@ -63,14 +67,36 @@ public class CommandResponseClient : IDisposable
     /// all code points below 128. For other encodings or non-ASCII content the character count
     /// may differ from the raw byte count.
     /// </remarks>
-    public int MaxLineLength { get; set; } = 8192;
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the value is negative.</exception>
+    public int MaxLineLength
+    {
+        get => _maxLineLength;
+        set
+        {
+            if (value < 0)
+                throw new ArgumentOutOfRangeException(nameof(value), value, "MaxLineLength must be non-negative.");
+            _maxLineLength = value;
+        }
+    }
+
+    private int _maxResponseCount = 10_000;
 
     /// <summary>
     /// Gets or sets the maximum number of response lines that <see cref="SendCommandAsync"/> will
     /// accumulate for a single command before throwing <see cref="InvalidDataException"/>.
     /// Default is 10 000. Set to 0 to disable the check.
     /// </summary>
-    public int MaxResponseCount { get; set; } = 10_000;
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the value is negative.</exception>
+    public int MaxResponseCount
+    {
+        get => _maxResponseCount;
+        set
+        {
+            if (value < 0)
+                throw new ArgumentOutOfRangeException(nameof(value), value, "MaxResponseCount must be non-negative.");
+            _maxResponseCount = value;
+        }
+    }
 
     /// <summary>
     /// Gets or sets the logger used to trace client activity.
@@ -92,20 +118,38 @@ public class CommandResponseClient : IDisposable
     /// <summary>
     /// Gets or sets the command sent during inactivity to keep the connection alive.
     /// </summary>
+    /// <exception cref="ArgumentNullException">Thrown when the value is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">Thrown when the value is empty, whitespace, or contains CR, LF or NUL.</exception>
     public string NoOpCommand
     {
         get => _noOpCommand;
-        set => _noOpCommand = value;
+        set
+        {
+            if (value is null) throw new ArgumentNullException(nameof(value));
+            if (string.IsNullOrWhiteSpace(value))
+                throw new ArgumentException("NoOpCommand must not be empty or whitespace.", nameof(value));
+            if (value.AsSpan().IndexOfAny('\r', '\n', '\0') >= 0)
+                throw new ArgumentException("NoOpCommand must not contain CR, LF or NUL.", nameof(value));
+            _noOpCommand = value;
+        }
     }
 
     /// <summary>
-    /// Gets or sets the time to wait before sending a no-op command. Set to <see cref="Timeout.InfiniteTimeSpan"/> to disable.
+    /// Gets or sets the time to wait before sending a no-op command.
+    /// Set to <see cref="Timeout.InfiniteTimeSpan"/> to disable keep-alive.
+    /// Zero is rejected to prevent a busy-loop.
     /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when the value is zero or negative (unless it is <see cref="Timeout.InfiniteTimeSpan"/>).
+    /// </exception>
     public TimeSpan NoOpInterval
     {
         get => _noOpInterval;
         set
         {
+            if (value != Timeout.InfiniteTimeSpan && value <= TimeSpan.Zero)
+                throw new ArgumentOutOfRangeException(nameof(value), value,
+                    "NoOpInterval must be strictly positive or Timeout.InfiniteTimeSpan.");
             _noOpInterval = value;
             RestartKeepAlive();
         }
@@ -114,15 +158,27 @@ public class CommandResponseClient : IDisposable
     /// <summary>
     /// Gets or sets the timeout applied to read operations in the listener loop.
     /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when the value is negative and not <see cref="Timeout.InfiniteTimeSpan"/>.
+    /// </exception>
     public TimeSpan ListenTimeout
     {
         get => _listenTimeout;
         set
         {
+            if (value != Timeout.InfiniteTimeSpan && value < TimeSpan.Zero)
+                throw new ArgumentOutOfRangeException(nameof(value), value,
+                    "ListenTimeout must be non-negative or Timeout.InfiniteTimeSpan.");
+            // Clamp to int range to avoid overflow when converting to milliseconds (item 58).
+            if (value != Timeout.InfiniteTimeSpan && value.TotalMilliseconds > int.MaxValue)
+                throw new ArgumentOutOfRangeException(nameof(value), value,
+                    "ListenTimeout must not exceed approximately 24.8 days (int.MaxValue milliseconds).");
             _listenTimeout = value;
             if (_stream is not null && _stream.CanTimeout)
             {
-                _stream.ReadTimeout = value == Timeout.InfiniteTimeSpan ? -1 : (int)value.TotalMilliseconds;
+                _stream.ReadTimeout = value == Timeout.InfiniteTimeSpan
+                    ? -1
+                    : (int)value.TotalMilliseconds;
             }
         }
     }
@@ -434,17 +490,28 @@ public class CommandResponseClient : IDisposable
 
     /// <summary>
     /// Reads one response line from <paramref name="reader"/>, enforcing <see cref="MaxLineLength"/>
-    /// incrementally rather than after the full line has been buffered, so a peer cannot exhaust
-    /// memory with a single oversized line. Returns <see langword="null"/> on EOF.
+    /// incrementally. Uses async reads so that <paramref name="cancellationToken"/> can interrupt a
+    /// blocking read (e.g. on a Pipe that has no data). Returns <see langword="null"/> on EOF or
+    /// cancellation.
     /// </summary>
     /// <exception cref="InvalidDataException">Thrown when the line exceeds <see cref="MaxLineLength"/>.</exception>
-    private string? ReadLimitedLine(StreamReader reader)
+    private string? ReadLimitedLine(StreamReader reader, CancellationToken cancellationToken)
     {
         var sb = new System.Text.StringBuilder(256);
-        int ch;
-        while ((ch = reader.Read()) != -1)
+        char[] buf = new char[1];
+        while (true)
         {
-            char c = (char)ch;
+            int read;
+            try
+            {
+                read = reader.ReadAsync(buf.AsMemory(0, 1), cancellationToken).GetAwaiter().GetResult();
+            }
+            catch (OperationCanceledException)
+            {
+                return null;
+            }
+            if (read == 0) return sb.Length == 0 ? null : sb.ToString();
+            char c = buf[0];
             if (c == '\n')
             {
                 if (sb.Length > 0 && sb[sb.Length - 1] == '\r')
@@ -452,10 +519,11 @@ public class CommandResponseClient : IDisposable
                 return sb.ToString();
             }
             sb.Append(c);
-            if (MaxLineLength > 0 && sb.Length > MaxLineLength)
+            // A trailing \r will be stripped when \n arrives, so exclude it from the count.
+            int effectiveLength = (sb.Length > 0 && sb[sb.Length - 1] == '\r') ? sb.Length - 1 : sb.Length;
+            if (MaxLineLength > 0 && effectiveLength > MaxLineLength)
                 throw new InvalidDataException($"Incoming response line exceeded MaxLineLength ({MaxLineLength}).");
         }
-        return sb.Length == 0 ? null : sb.ToString();
     }
 
     /// <summary>
@@ -475,7 +543,7 @@ public class CommandResponseClient : IDisposable
                 string? line;
                 try
                 {
-                    line = ReadLimitedLine(_reader);
+                    line = ReadLimitedLine(_reader, cancellationToken);
                 }
                 catch (IOException ex) when (ex.InnerException is SocketException se && se.SocketErrorCode == SocketError.TimedOut)
                 {
