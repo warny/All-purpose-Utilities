@@ -44,8 +44,15 @@ function Expand-ZipArchive {
     [IO.Compression.ZipFile]::ExtractToDirectory($archive, $destination, $true)
 }
 
+<# Normalizes either platform directory separator to a forward slash. #>
+function ConvertTo-RepositoryPath {
+    param([Parameter(Mandatory)][string] $Path)
+    return $Path.Replace([char]0x5c, [char]0x2f).Replace([IO.Path]::DirectorySeparatorChar, [char]0x2f).Replace([IO.Path]::AltDirectorySeparatorChar, [char]0x2f)
+}
+
 <# Returns a stable repository-relative path using forward slashes. #>
 function Get-RepositoryRelativePath {
     param([Parameter(Mandatory)][string] $RepositoryRoot, [Parameter(Mandatory)][string] $Path)
-    return [IO.Path]::GetRelativePath($RepositoryRoot, [IO.Path]::GetFullPath($Path)).Replace('\\', '/')
+    $relative = [IO.Path]::GetRelativePath($RepositoryRoot, [IO.Path]::GetFullPath($Path))
+    return ConvertTo-RepositoryPath $relative
 }

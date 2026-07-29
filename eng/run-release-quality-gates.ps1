@@ -8,6 +8,7 @@ $ErrorActionPreference = "Stop"
 $repoRoot=Split-Path -Parent $PSScriptRoot;$originalPackages=$env:NUGET_PACKAGES;$isolated=Join-Path ([IO.Path]::GetFullPath((Join-Path $repoRoot $ArtifactsPath))) 'quality-gate-packages'
 try{
     $env:NUGET_PACKAGES=$isolated
+    & (Join-Path $PSScriptRoot 'test-release-common.ps1');if($LASTEXITCODE-ne 0){throw 'Release common helper tests failed.'}
     & dotnet restore (Join-Path $repoRoot 'Utils.sln');if($LASTEXITCODE-ne 0){throw 'Solution restore failed.'}
     & dotnet build (Join-Path $repoRoot 'Utils.sln') --configuration $Configuration --no-restore -p:UseSharedCompilation=false;if($LASTEXITCODE-ne 0){throw 'Solution build failed.'}
     & dotnet test (Join-Path $repoRoot 'UtilsTest/UtilsTest.Unit.csproj') --configuration $Configuration --no-build;if($LASTEXITCODE-ne 0){throw 'Unit tests failed.'}
