@@ -29,7 +29,7 @@ function Get-DeclaredAssembly {
 foreach ($package in $manifest.packages) {
     if (-not @($package.apiAssemblies).Count) { throw "$($package.packageId): apiAssemblies must be declared explicitly." }
     $candidateRoot = Join-Path $workRoot "candidate/$($package.packageId)"
-    Expand-Archive (Join-Path $packageRoot "$($package.packageId).$($manifest.version).nupkg") $candidateRoot -Force
+    Expand-ZipArchive (Join-Path $packageRoot "$($package.packageId).$($manifest.version).nupkg") $candidateRoot
     $candidateAssemblies = @($package.apiAssemblies | ForEach-Object { Get-DeclaredAssembly $candidateRoot $_ $package.packageId 'candidate API' })
     $allowedAssemblyNames = @($candidateAssemblies.Name) + @($package.embeddedAssemblies)
     $unexpected = @(Get-ChildItem $candidateRoot -Filter *.dll -File -Recurse | Where-Object FullName -match '[\\/](lib|analyzers)[\\/]' | Where-Object Name -notin $allowedAssemblyNames)
@@ -46,7 +46,7 @@ foreach ($package in $manifest.packages) {
     if ($latestStable -ne $baselineVersion) { throw "$($package.packageId): baseline '$baselineVersion' is not latest stable '$latestStable'." }
     $baselineFile = Join-Path $workRoot "$($package.packageId).$baselineVersion.nupkg"
     Invoke-WebRequest "https://api.nuget.org/v3-flatcontainer/$($package.packageId.ToLowerInvariant())/$baselineVersion/$($package.packageId.ToLowerInvariant()).$baselineVersion.nupkg" -OutFile $baselineFile
-    $baselineRoot = Join-Path $workRoot "baseline/$($package.packageId)"; Expand-Archive $baselineFile $baselineRoot -Force
+    $baselineRoot = Join-Path $workRoot "baseline/$($package.packageId)"; Expand-ZipArchive $baselineFile $baselineRoot
     $acceptancePath = Resolve-RepositoryPath $repoRoot ([string]$package.apiBreakAcceptanceFile)
     if (-not (Test-Path $acceptancePath)) { throw "$($package.packageId): API acceptance file '$($package.apiBreakAcceptanceFile)' does not exist." }
     if (-not $acceptanceCache.ContainsKey($acceptancePath)) { $acceptanceCache[$acceptancePath] = Get-Content $acceptancePath -Raw | ConvertFrom-Json }
@@ -69,6 +69,10 @@ foreach ($package in $manifest.packages) {
 
     $acceptedKeys = @($acceptance[0].acceptedDiagnostics | ForEach-Object {
         if ([string]::IsNullOrWhiteSpace($_.diagnosticId) -or [string]::IsNullOrWhiteSpace($_.message) -or [string]::IsNullOrWhiteSpace($_.reason) -or [string]::IsNullOrWhiteSpace($_.migrationSection)) { throw "$($package.packageId): every accepted diagnostic requires exact ID, message, reason, and migrationSection." }
+        $migrationParts = ([string]$_.migrationSection).Split('#', 2)
+        if ($migrationParts.Count -ne 2 -or [string]::IsNullOrWhiteSpace($migrationParts[1])) { throw "$($package.packageId): migrationSection '$($_.migrationSection)' must identify a checked-in document anchor." }
+        $migrationPath = Resolve-RepositoryPath $repoRoot $migrationParts[0]
+        if (-not (Test-Path -LiteralPath $migrationPath -PathType Leaf) -or -not (Select-String -LiteralPath $migrationPath -SimpleMatch "id=`"$($migrationParts[1])`"" -Quiet)) { throw "$($package.packageId): migration section '$($_.migrationSection)' does not exist." }
         "$($_.diagnosticId)|$($_.message)"
     })
     if (($acceptedKeys | Sort-Object -Unique).Count -ne $acceptedKeys.Count) { throw "$($package.packageId): duplicate API acceptance diagnostics." }

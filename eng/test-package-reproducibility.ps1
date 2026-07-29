@@ -31,18 +31,30 @@ function Get-ArchiveEntries {
 
 try {
     New-Item $temporaryRoot -ItemType Directory -Force | Out-Null
-    $workingFiles = @(& git -C $repoRoot ls-files --cached --others --exclude-standard)
-    if ($LASTEXITCODE -ne 0) { throw "Unable to enumerate repository inputs." }
+    $isCi = $env:CI -eq 'true'
+    $inputSnapshot = if ($isCi) { 'committed-head' } else { 'working-tree-overlay' }
+    $workingFiles = if ($isCi) { @() } else {
+        @(
+            & git -C $repoRoot diff --name-only HEAD
+            if ($LASTEXITCODE -ne 0) { throw "Unable to enumerate modified repository inputs." }
+            & git -C $repoRoot ls-files --others --exclude-standard
+            if ($LASTEXITCODE -ne 0) { throw "Unable to enumerate untracked repository inputs." }
+        ) | Sort-Object -Unique
+    }
     foreach ($run in 1..2) {
         $worktree = Join-Path $temporaryRoot "source-$run"
         & git -C $repoRoot worktree add --detach $worktree HEAD | Out-Null
         if ($LASTEXITCODE -ne 0) { throw "Unable to create isolated worktree $run." }
-        # Overlay current tracked and untracked inputs so the local gate also validates pending changes.
+        # CI compares the committed SHA directly. Local runs overlay only actual working-tree
+        # differences so their result is explicitly distinct from a committed-HEAD result.
         foreach ($relative in $workingFiles) {
             if ($relative -match '(^|/)(artifacts|bin|obj)(/|$)') { continue }
             $source = Join-Path $repoRoot $relative
-            if (-not (Test-Path -LiteralPath $source -PathType Leaf)) { continue }
             $destination = Join-Path $worktree $relative
+            if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
+                Remove-Item -LiteralPath $destination -Force -ErrorAction SilentlyContinue
+                continue
+            }
             New-Item (Split-Path -Parent $destination) -ItemType Directory -Force | Out-Null
             Copy-Item -LiteralPath $source -Destination $destination -Force
         }
@@ -73,7 +85,7 @@ try {
             $comparisons += [ordered]@{ packageId=$package.packageId; version=[string]$manifest.version; artifact=$name; result=$result; firstSha256=$hashOne; secondSha256=$hashTwo; differences=$differences }
         }
     }
-    Write-ReleaseJson ([ordered]@{ productTrain=[string]$manifest.productTrain; version=[string]$manifest.version; isolation='two-distinct-git-worktrees'; artifacts=$comparisons }) (Join-Path $artifactRoot 'reports/reproducibility-report.json')
+    Write-ReleaseJson ([ordered]@{ productTrain=[string]$manifest.productTrain; version=[string]$manifest.version; isolation='two-distinct-git-worktrees'; inputSnapshot=$inputSnapshot; artifacts=$comparisons }) (Join-Path $artifactRoot 'reports/reproducibility-report.json')
 } finally {
     $env:NUGET_PACKAGES = $originalNuGetPackages
     $env:DOTNET_CLI_HOME = $originalDotnetHome

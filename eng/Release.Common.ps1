@@ -30,6 +30,20 @@ function Write-ReleaseJson {
     $Value | ConvertTo-Json -Depth $Depth | Set-Content $Path -Encoding utf8
 }
 
+<# Extracts a ZIP-compatible archive without requiring a .zip file extension. #>
+function Expand-ZipArchive {
+    param(
+        [Parameter(Mandatory)][string] $ArchivePath,
+        [Parameter(Mandatory)][string] $DestinationPath
+    )
+    $archive = [IO.Path]::GetFullPath($ArchivePath)
+    $destination = [IO.Path]::GetFullPath($DestinationPath)
+    if (-not (Test-Path -LiteralPath $archive -PathType Leaf)) { throw "Archive '$archive' does not exist." }
+    Remove-Item -LiteralPath $destination -Recurse -Force -ErrorAction SilentlyContinue
+    New-Item -Path $destination -ItemType Directory -Force | Out-Null
+    [IO.Compression.ZipFile]::ExtractToDirectory($archive, $destination, $true)
+}
+
 <# Returns a stable repository-relative path using forward slashes. #>
 function Get-RepositoryRelativePath {
     param([Parameter(Mandatory)][string] $RepositoryRoot, [Parameter(Mandatory)][string] $Path)

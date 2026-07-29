@@ -19,7 +19,7 @@ $results = @()
 foreach ($package in $manifest.packages) {
     $symbolPackage = Join-Path $packageRoot "$($package.packageId).$($manifest.version).snupkg"
     if (-not (Test-Path $symbolPackage)) { throw "$($package.packageId): symbol package is missing." }
-    $extract = Join-Path $workRoot $package.packageId; Expand-Archive $symbolPackage $extract -Force
+    $extract = Join-Path $workRoot $package.packageId; Expand-ZipArchive $symbolPackage $extract
     $pdbs = @(Get-ChildItem $extract -Filter *.pdb -File -Recurse)
     if (-not $pdbs) { throw "$($package.packageId): no portable PDB was found." }
     $pdbResults = @()
