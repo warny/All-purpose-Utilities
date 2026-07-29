@@ -436,42 +436,71 @@ public class CommandResponseClient : IDisposable
 
     /// <summary>
     /// Reads and returns responses that have been received without sending a command.
+    /// May be called from <see cref="OnConnect"/> (while the state is still
+    /// <c>Connecting</c>) to read a server greeting banner before the connection is
+    /// promoted to <c>Connected</c>.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>List of responses read from the server.</returns>
     /// <exception cref="IOException">Thrown when the connection has been closed.</exception>
     public async Task<IReadOnlyList<ServerResponse>> ReadAsync(CancellationToken cancellationToken = default)
     {
-        if (_disconnected && _responseSignal.CurrentCount == 0)
-        {
-            throw new IOException("Connection closed.");
-        }
+        // Allow during StateConnecting so OnConnect implementations can read the server
+        // greeting (P1-1). External callers see StateNotConnected or StateDisposed until
+        // OnConnect has completed and the state is promoted to StateConnected.
+        if (_state == StateDisposed)
+            throw new ObjectDisposedException(GetType().Name);
+        if (_state != StateConnected && _state != StateConnecting)
+            throw new InvalidOperationException("Client is not connected.");
 
-        // P1-A: register as a response owner BEFORE waiting so the listener routes the next
-        // incoming line to the queue rather than raising it as unsolicited.
-        Interlocked.Increment(ref _activeReadWaiters);
-        List<ServerResponse> responses = new();
+        // Link the session lifetime token so a concurrent Dispose() or session end unblocks
+        // both the lock wait and the signal wait (same pattern as SendLinesAsync, P1-3).
+        CancellationToken sessionToken = _listenTokenSource?.Token ?? CancellationToken.None;
+        using CancellationTokenSource linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, sessionToken);
+        CancellationToken effective = linkedCts.Token;
+
+        // P1-2: serialize with SendCommandAsync by taking the same _sendLock, so only one
+        // response consumer is active at a time. Without this guard, a concurrent ReadAsync
+        // could dequeue a response that was intended for SendCommandAsync (or vice versa),
+        // because both operations share the same _responseQueue.
+        await _sendLock.WaitAsync(effective).ConfigureAwait(false);
         try
         {
-            await _responseSignal.WaitAsync(cancellationToken).ConfigureAwait(false);
-            do
+            if (_state == StateDisposed)
+                throw new ObjectDisposedException(GetType().Name);
+            if (_disconnected && _responseSignal.CurrentCount == 0)
+                throw new IOException("Connection closed.");
+
+            // P1-A: register as a response owner BEFORE waiting so the listener routes the next
+            // incoming line to the queue rather than raising it as unsolicited.
+            Interlocked.Increment(ref _activeReadWaiters);
+            List<ServerResponse> responses = new();
+            try
             {
-                if (_responseQueue.TryDequeue(out ServerResponse response))
+                await _responseSignal.WaitAsync(effective).ConfigureAwait(false);
+                do
                 {
-                    responses.Add(response);
+                    if (_responseQueue.TryDequeue(out ServerResponse response))
+                    {
+                        responses.Add(response);
+                    }
+                    else if (_disconnected)
+                    {
+                        throw new IOException("Connection closed.");
+                    }
                 }
-                else if (_disconnected)
-                {
-                    throw new IOException("Connection closed.");
-                }
+                while (await _responseSignal.WaitAsync(0).ConfigureAwait(false));
+                ResetKeepAlive();
+                return responses;
             }
-            while (await _responseSignal.WaitAsync(0).ConfigureAwait(false));
-            ResetKeepAlive();
-            return responses;
+            finally
+            {
+                Interlocked.Decrement(ref _activeReadWaiters);
+            }
         }
         finally
         {
-            Interlocked.Decrement(ref _activeReadWaiters);
+            _sendLock.Release();
         }
     }
 
@@ -626,7 +655,12 @@ public class CommandResponseClient : IDisposable
                 // Enqueue (and signal) only when a command or read waiter is active; otherwise
                 // the line is unsolicited and is delivered directly to the event without being
                 // stored in the queue (preventing ReadAsync / SendCommandAsync from seeing it later).
-                if (_activeCommandWaiters + _activeReadWaiters > 0)
+                //
+                // P1-1 (banner): also queue during StateConnecting so the server greeting is
+                // buffered even before OnConnect calls ReadAsync. Without this, a banner that
+                // arrives the moment the listener starts would be routed as unsolicited (no owner
+                // is registered yet) and would never reach the ReadAsync call in OnConnect.
+                if (_state == StateConnecting || _activeCommandWaiters + _activeReadWaiters > 0)
                 {
                     _responseQueue.Enqueue(response);
                     _responseSignal.Release();
