@@ -242,7 +242,7 @@ public class CommandResponseClient : IDisposable
     /// </param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="stream"/> is null.</exception>
     /// <exception cref="InvalidOperationException">Thrown when a connection has already been established.</exception>
-    public Task ConnectAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
+    public async Task ConnectAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
     {
         if (stream is null) throw new ArgumentNullException(nameof(stream));
 
@@ -259,7 +259,9 @@ public class CommandResponseClient : IDisposable
         StreamReader? reader = null;
         StreamWriter? writer = null;
         CancellationTokenSource? listenCts = null;
-        Thread? listenThread = null;
+        // P1-1 fix: track whether resources have been committed to fields so the catch
+        // block can choose the correct cleanup path.
+        bool committed = false;
         try
         {
             _stream = stream;
@@ -287,33 +289,47 @@ public class CommandResponseClient : IDisposable
             writer = null;
             listenCts = null;
 
-            // Capture _listenTokenSource (the field) so the lambda does not close over the
-            // now-nulled local variable.
             CancellationTokenSource capturedCts = _listenTokenSource;
-            listenThread = new Thread(() => ListenLoop(capturedCts.Token))
+            _listenThread = new Thread(() => ListenLoop(capturedCts.Token))
             {
                 IsBackground = true
             };
-            _listenThread = listenThread;
 
             _everConnected = true;
             _disconnected = false;
             _listenThread.Start();
             Logger?.LogInformation("Client connected to stream");
-
-            // Item 46: start the keep-alive loop as a cancellable Task.
             RestartKeepAlive();
-
             Interlocked.Exchange(ref _state, StateConnected);
-            return OnConnect(stream, leaveOpen, cancellationToken);
+
+            // P1-1 fix: mark resources as committed before awaiting OnConnect so the
+            // catch block can stop the listener and roll back if OnConnect fails async.
+            committed = true;
+            await OnConnect(stream, leaveOpen, cancellationToken).ConfigureAwait(false);
         }
         catch
         {
+            if (committed)
+            {
+                // OnConnect failed asynchronously after resources were committed to fields.
+                // Null each field after disposing so the subsequent Dispose() call finds
+                // only nulls and does not try to use already-cleaned-up objects.
+                StopKeepAlive();
+                _listenTokenSource?.Cancel();
+                _reader?.Dispose();  _reader = null;
+                _listenThread?.Join(TimeSpan.FromSeconds(1));  _listenThread = null;
+                _writer?.Dispose();  _writer = null;
+                if (!_leaveOpen) _stream?.Dispose();
+                _listenTokenSource?.Dispose();  _listenTokenSource = null;
+            }
+            else
+            {
+                // Synchronous setup failed; only local variables need cleanup.
+                reader?.Dispose();
+                writer?.Dispose();
+                listenCts?.Dispose();
+            }
             Interlocked.Exchange(ref _state, StateDisposed);
-            reader?.Dispose();
-            writer?.Dispose();
-            listenCts?.Dispose();
-            // listenThread was never started if we're here, so no Join needed.
             throw;
         }
     }

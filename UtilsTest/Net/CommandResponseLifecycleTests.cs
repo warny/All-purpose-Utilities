@@ -868,6 +868,43 @@ public class CommandResponseLifecycleTests
     }
 
     // ──────────────────────────────────────────────────────────────
+    // P1-1 — ConnectAsync(Stream) must roll back on async OnConnect failure
+    // ──────────────────────────────────────────────────────────────
+
+    private sealed class FailingOnConnectClient : CommandResponseClient
+    {
+        protected override async Task OnConnect(Stream stream, bool leaveOpen, CancellationToken ct)
+        {
+            await Task.Yield(); // ensure the failure is truly asynchronous
+            throw new InvalidOperationException("Simulated async OnConnect failure");
+        }
+    }
+
+    [TestMethod]
+    public async Task ConnectAsync_OnConnectFailsAsynchronously_RollsBackResources()
+    {
+        (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
+        using FailingOnConnectClient client = new();
+
+        bool threw = false;
+        try
+        {
+            await client.ConnectAsync(clientStream, leaveOpen: true);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("Simulated"))
+        {
+            threw = true;
+        }
+
+        Assert.IsTrue(threw, "ConnectAsync must propagate the OnConnect exception.");
+        Assert.IsFalse(client.IsConnected, "Client must not report connected after OnConnect failure.");
+
+        // A second call must throw ObjectDisposedException — the instance is single-use.
+        await Assert.ThrowsExceptionAsync<ObjectDisposedException>(() =>
+            client.ConnectAsync(clientStream, leaveOpen: true));
+    }
+
+    // ──────────────────────────────────────────────────────────────
     // P1-3 — Keep-alive must not wait on its own task
     // ──────────────────────────────────────────────────────────────
 
