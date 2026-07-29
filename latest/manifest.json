@@ -14245,6 +14245,16 @@
     },
     {
       "type": "Conceptual",
+      "source_relative_path": "docs/api/omy.Utils-1.2.1-to-2.0.0-rc.1.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/api/omy.Utils-1.2.1-to-2.0.0-rc.1.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
       "source_relative_path": "docs/audit-quality-security.md",
       "output": {
         ".html": {
@@ -14279,6 +14289,16 @@
       "output": {
         ".html": {
           "relative_path": "docs/github-about.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/migration/omy.Utils-1.2.1-to-2.0.0-rc.1.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/migration/omy.Utils-1.2.1-to-2.0.0-rc.1.html"
         }
       },
       "version": ""
@@ -14469,6 +14489,56 @@
       "output": {
         ".html": {
           "relative_path": "docs/releasing.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/releasing/AcceptedApiBreaks.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/releasing/AcceptedApiBreaks.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/releasing/MigrationTo2.0.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/releasing/MigrationTo2.0.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/releasing/PackageGraph.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/releasing/PackageGraph.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/releasing/ProductTrain.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/releasing/ProductTrain.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/releasing/ReleaseQualityGates.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/releasing/ReleaseQualityGates.html"
         }
       },
       "version": ""

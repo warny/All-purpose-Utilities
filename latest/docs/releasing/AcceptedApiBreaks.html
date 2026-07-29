@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Accepted API breaks for 2.0.0-rc.1 | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Accepted API breaks for 2.0.0-rc.1 | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../../favicon.ico">
+      <link rel="stylesheet" href="../../public/docfx.min.css">
+      <link rel="stylesheet" href="../../public/main.css">
+      <meta name="docfx:navrel" content="../../toc.html">
+      <meta name="docfx:tocrel" content="../../toc.html">
+      
+      <meta name="docfx:rel" content="../../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/blob/master/docs/releasing/AcceptedApiBreaks.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../../index.html">
+            <img id="logo" class="svg" src="../../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="accepted-api-breaks-for-200-rc1">Accepted API breaks for 2.0.0-rc.1</h1>
+
+<p>This human-review index summarizes the exact machine-enforced diagnostics in <code>eng/api-baselines/accepted-api-breaks.json</code>. The JSON file remains authoritative; every addition or stale acceptance fails the API gate.</p>
+<p><a id="omy-utils"></a></p>
+<h2 id="omyutils">omy.Utils</h2>
+<ul>
+<li>Published baseline: <code>1.2.1</code></li>
+<li>Accepted diagnostics: <strong>114</strong></li>
+<li>Diagnostic classes: <code>CP0001</code>: 70, <code>CP0002</code>: 34, <code>CP0006</code>: 3, <code>CP0008</code>: 2, <code>CP0009</code>: 1, <code>CP0021</code>: 4</li>
+</ul>
+<h3 id="removed-or-incompatible-published-surface">Removed or incompatible published surface</h3>
+<ul>
+<li><code>CP0002</code> — <code>System.Collections.Generic.IEnumerable&lt;T&gt; Utils.Collections.EnumerableEx.FollowedBy&lt;T&gt;(this System.Collections.Generic.IEnumerable&lt;T&gt;, params T[])</code></li>
+<li><code>CP0002</code> — <code>System.Collections.Generic.IEnumerable&lt;T&gt; Utils.Collections.EnumerableEx.PrecededBy&lt;T&gt;(this System.Collections.Generic.IEnumerable&lt;T&gt;, params T[])</code></li>
+<li><code>CP0002</code> — <code>System.Collections.Generic.IEnumerable&lt;System.Collections.Generic.IEnumerable&lt;T&gt;&gt; Utils.Collections.EnumerableEx.Slice&lt;T&gt;(this System.Collections.Generic.IEnumerable&lt;T&gt;, params int[])</code></li>
+<li><code>CP0001</code> — <code>Utils.Collections.SkipList&lt;T&gt;</code></li>
+<li><code>CP0001</code> — <code>Utils.Collections.SymbolTree</code></li>
+<li><code>CP0001</code> — <code>Utils.Collections.SymbolLeaf</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionParser</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionParserCore</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.IBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.TryReadToken</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.StringTransformer</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.IStartExpressionBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.IFollowUpExpressionBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.IAdditionalTokens</code></li>
+<li><code>CP0002</code> — <code>void Utils.Expressions.LiteralPart.Append(string)</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.IParserOptions</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ParserContext</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.Tokenizer</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ITokenizerPosition</code></li>
+<li><code>CP0001</code> — <code>Utils.Format.StringFormat</code></li>
+<li><code>CP0001</code> — <code>Utils.Mathematics.INumberToStringConverter</code></li>
+<li><code>CP0002</code> — <code>System.Nullable&lt;T&gt; Utils.Mathematics.NullableIntEx.Min&lt;T&gt;(System.Nullable&lt;T&gt;, System.Nullable&lt;T&gt;, bool)</code></li>
+<li><code>CP0002</code> — <code>System.Nullable&lt;T&gt; Utils.Mathematics.NullableIntEx.Max&lt;T&gt;(System.Nullable&lt;T&gt;, System.Nullable&lt;T&gt;, bool)</code></li>
+<li><code>CP0002</code> — <code>bool Utils.Mathematics.NullableIntEx.GreaterOrEqual&lt;T&gt;(System.Nullable&lt;T&gt;, System.Nullable&lt;T&gt;)</code></li>
+<li><code>CP0002</code> — <code>int Utils.Mathematics.NullableIntEx.Compare&lt;T&gt;(System.Nullable&lt;T&gt;, System.Nullable&lt;T&gt;, bool)</code></li>
+<li><code>CP0002</code> — <code>bool Utils.Mathematics.FloatingPointComparer&lt;T&gt;.Equals(T, T)</code></li>
+<li><code>CP0002</code> — <code>int Utils.Mathematics.FloatingPointComparer&lt;T&gt;.GetHashCode(T)</code></li>
+<li><code>CP0001</code> — <code>Utils.Mathematics.Numbers</code></li>
+<li><code>CP0001</code> — <code>Utils.Mathematics.NumberType</code></li>
+<li><code>CP0001</code> — <code>Utils.Mathematics.NumberListType</code></li>
+<li><code>CP0001</code> — <code>Utils.Mathematics.DigitType</code></li>
+<li><code>CP0001</code> — <code>Utils.Mathematics.DigitListType</code></li>
+<li><code>CP0001</code> — <code>Utils.Mathematics.ReplacementsListType</code></li>
+<li><code>CP0001</code> — <code>Utils.Mathematics.ReplacementType</code></li>
+<li><code>CP0001</code> — <code>Utils.Mathematics.ReplacementScope</code></li>
+<li><code>CP0001</code> — <code>Utils.Mathematics.FractionType</code></li>
+<li><code>CP0001</code> — <code>Utils.Mathematics.FractionListType</code></li>
+<li><code>CP0001</code> — <code>Utils.Mathematics.LanguageType</code></li>
+<li><code>CP0001</code> — <code>Utils.Mathematics.GroupType</code></li>
+<li><code>CP0001</code> — <code>Utils.Mathematics.GroupsListType</code></li>
+<li><code>CP0001</code> — <code>Utils.Mathematics.SuffixesType</code></li>
+<li><code>CP0001</code> — <code>Utils.Mathematics.StaticNamesType</code></li>
+<li><code>CP0001</code> — <code>Utils.Mathematics.NumberScaleType</code></li>
+<li><code>CP0001</code> — <code>Utils.Mathematics.NumberToStringConverter</code></li>
+<li><code>CP0001</code> — <code>Utils.Mathematics.NumberScale</code></li>
+<li><code>CP0002</code> — <code>Utils.Objects.Bytes Utils.Objects.BytesExtensions.Join(params byte[][])</code></li>
+<li><code>CP0002</code> — <code>Utils.Objects.Bytes Utils.Objects.BytesExtensions.Join(params Utils.Objects.Bytes[])</code></li>
+<li><code>CP0002</code> — <code>int Utils.Objects.ObjectUtils.ComputeHash&lt;T&gt;(System.Func&lt;T, int&gt;, params T[])</code></li>
+<li><code>CP0001</code> — <code>Utils.Randomization.RandomEx</code></li>
+<li><code>CP0002</code> — <code>System.Collections.Generic.IReadOnlyList&lt;Utils.Range.Range&lt;T&gt;&gt; Utils.Range.Ranges&lt;T&gt;.Intervals.get</code></li>
+<li><code>CP0002</code> — <code>System.Collections.Generic.IEnumerable&lt;Utils.Range.Range&lt;T1&gt;&gt; Utils.Range.Ranges&lt;T&gt;.InnerParse&lt;T1&gt;(string, string, System.Collections.Generic.IEnumerable&lt;string&gt;, System.Func&lt;string, T1&gt;)</code></li>
+<li><code>CP0002</code> — <code>bool Utils.Range.Ranges&lt;T&gt;.Contains(Utils.Range.Range&lt;T&gt;)</code></li>
+<li><code>CP0002</code> — <code>void Utils.Range.Ranges&lt;T&gt;.AddAll(System.Collections.Generic.IEnumerable&lt;Utils.Range.Range&lt;T&gt;&gt;)</code></li>
+<li><code>CP0002</code> — <code>void Utils.Range.Ranges&lt;T&gt;.Add(Utils.Range.Range&lt;T&gt;)</code></li>
+<li><code>CP0002</code> — <code>void Utils.Range.Ranges&lt;T&gt;.RemoveAll(System.Collections.Generic.IEnumerable&lt;Utils.Range.Range&lt;T&gt;&gt;)</code></li>
+<li><code>CP0002</code> — <code>void Utils.Range.Ranges&lt;T&gt;.Remove(Utils.Range.Range&lt;T&gt;)</code></li>
+<li><code>CP0002</code> — <code>bool Utils.Range.Range&lt;T&gt;.Contains(Utils.Range.Range&lt;T&gt;)</code></li>
+<li><code>CP0002</code> — <code>bool Utils.Range.Range&lt;T&gt;.Overlap(Utils.Range.Range&lt;T&gt;)</code></li>
+<li><code>CP0002</code> — <code>bool Utils.Range.Range&lt;T&gt;.Overlap(Utils.Range.Range&lt;T&gt;, Utils.Range.Range&lt;T&gt;)</code></li>
+<li><code>CP0002</code> — <code>System.Nullable&lt;Utils.Range.Range&lt;T&gt;&gt; Utils.Range.Range&lt;T&gt;.Intersect(Utils.Range.Range&lt;T&gt;)</code></li>
+<li><code>CP0002</code> — <code>System.Collections.Generic.IEnumerable&lt;Utils.Range.Range&lt;double&gt;&gt; Utils.Range.DoubleRanges.InnerParse(string, System.Globalization.NumberFormatInfo)</code></li>
+<li><code>CP0002</code> — <code>System.Collections.Generic.IEnumerable&lt;Utils.Range.Range&lt;float&gt;&gt; Utils.Range.SingleRanges.InnerParse(string, System.Globalization.NumberFormatInfo)</code></li>
+<li><code>CP0002</code> — <code>System.Collections.Generic.IEnumerable&lt;Utils.Range.Range&lt;System.DateTime&gt;&gt; Utils.Range.DateTimeRanges.InnerParse(string, System.Globalization.DateTimeFormatInfo)</code></li>
+<li><code>CP0002</code> — <code>Utils.Range.ReadOnlyRange&lt;T&gt; Utils.Range.RangeUtils.Reverse&lt;T&gt;(this System.Collections.Generic.IReadOnlyList&lt;T&gt;)</code></li>
+<li><code>CP0002</code> — <code>System.Collections.Generic.IEnumerable&lt;System.Type&gt; Utils.Reflection.ReflectionEx.GetTypes(this System.Reflection.Assembly, System.Func&lt;System.Type, bool&gt;)</code></li>
+<li><code>CP0002</code> — <code>System.Collections.Generic.IEnumerable&lt;System.Type&gt; Utils.Reflection.ReflectionEx.GetTypes(this System.Collections.Generic.IEnumerable&lt;System.Reflection.Assembly&gt;, System.Func&lt;System.Type, bool&gt;)</code></li>
+<li><code>CP0002</code> — <code>Utils.Resources.ExternalResource.ExternalResource(string, string, System.Globalization.CultureInfo)</code></li>
+<li><code>CP0002</code> — <code>System.Security.Cryptography.HMAC Utils.Security.Authenticator.Algorithm.get</code></li>
+<li><code>CP0002</code> — <code>byte[] Utils.Security.Authenticator.Key.get</code></li>
+<li><code>CP0002</code> — <code>Utils.Security.Authenticator.Authenticator(System.Security.Cryptography.HMAC, byte[], int, int)</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.Builders.CStyleBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.PlusOperatorBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.OperatorBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.MemberBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.NullOrMemberBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.TypeMatchBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.AddAssignationBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.AssignationBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.PostOperationBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.TypeCastBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.BracketBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.RightParenthesisBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.CloseBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.ConditionalBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.NumberConstantBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.NullBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.TrueBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.FalseBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.SizeOfBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.TypeofBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.NewBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.UnaryOperandBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.ParenthesisBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.BlockBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.DefaultUnaryBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.IfBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.BreakBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.ContinueBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.ReturnBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.WhileBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.ForBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.ForEachBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.SwitchBuilder</code></li>
+<li><code>CP0001</code> — <code>Utils.Expressions.ExpressionBuilders.ThrowParseException</code></li>
+</ul>
+<h3 id="other-binary-compatibility-changes">Other binary compatibility changes</h3>
+<ul>
+<li><code>CP0021</code> — Cannot add constraint 'notnull' on type parameter 'T1' of 'Utils.Collections.DoubleIndexedDictionary&lt;T1, T2&gt;'.</li>
+<li><code>CP0021</code> — Cannot add constraint 'notnull' on type parameter 'T2' of 'Utils.Collections.DoubleIndexedDictionary&lt;T1, T2&gt;'.</li>
+<li><code>CP0021</code> — Cannot add constraint 'notnull' on type parameter 'K' of 'Utils.Collections.IndexedList&lt;K, V&gt;'.</li>
+<li><code>CP0021</code> — Cannot add constraint 'notnull' on type parameter 'K' of 'Utils.Collections.LRUCache&lt;K, V&gt;'.</li>
+<li><code>CP0008</code> — Type 'Utils.Expressions.ParserOptions' does not implement interface 'Utils.Expressions.IParserOptions' on {candidateAssembly} but it does on {baselineAssembly}</li>
+<li><code>CP0006</code> — Cannot add interface member 'bool Utils.Mathematics.IAngleCalculator<t>.AreEqual(T, T, T)' to {candidateAssembly} because it does not exist on {baselineAssembly}</t></li>
+<li><code>CP0006</code> — Cannot add interface member 'bool Utils.Mathematics.IAngleCalculator<t>.AreEqualRounded(T, T, int)' to {candidateAssembly} because it does not exist on {baselineAssembly}</t></li>
+<li><code>CP0006</code> — Cannot add interface member 'T Utils.Mathematics.IAngleCalculator<t>.NormalizeRounded(T, int)' to {candidateAssembly} because it does not exist on {baselineAssembly}</t></li>
+<li><code>CP0008</code> — Type 'Utils.Mathematics.FloatingPointComparer<t>' does not implement interface 'System.Collections.Generic.IEqualityComparer<t>' on {candidateAssembly} but it does on {baselineAssembly}</t></t></li>
+<li><code>CP0009</code> — Type 'Utils.Security.Authenticator' has the sealed modifier on {candidateAssembly} but not on {baselineAssembly}</li>
+</ul>
+<p><a id="omy-utils-io"></a></p>
+<h2 id="omyutilsio">omy.Utils.IO</h2>
+<ul>
+<li>Published baseline: <code>1.2.1</code></li>
+<li>Accepted diagnostics: <strong>7</strong></li>
+<li>Diagnostic classes: <code>CP0002</code>: 7</li>
+</ul>
+<h3 id="removed-or-incompatible-published-surface-1">Removed or incompatible published surface</h3>
+<ul>
+<li><code>CP0002</code> — <code>Utils.IO.StreamCopier.StreamCopier(bool, System.Collections.Generic.IEnumerable&lt;System.IO.Stream&gt;)</code></li>
+<li><code>CP0002</code> — <code>Utils.IO.StreamCopier.StreamCopier(System.Collections.Generic.IEnumerable&lt;System.IO.Stream&gt;)</code></li>
+<li><code>CP0002</code> — <code>byte[] Utils.IO.StreamUtils.ReadToEnd(this System.IO.Stream)</code></li>
+<li><code>CP0002</code> — <code>Utils.IO.StreamValidator.StreamValidator(System.IO.Stream)</code></li>
+<li><code>CP0002</code> — <code>Utils.IO.BaseEncoding.BaseDecoderStream.BaseDecoderStream(System.IO.Stream, Utils.IO.BaseEncoding.IBaseDescriptor)</code></li>
+<li><code>CP0002</code> — <code>T[] Utils.IO.Serialization.ReaderWriterExtensions.ReadArray&lt;T&gt;(this Utils.IO.Serialization.Reader, int, bool)</code></li>
+<li><code>CP0002</code> — <code>void Utils.IO.Serialization.ReaderWriterExtensions.WriteVariableLengthString(this Utils.IO.Serialization.Writer, string, System.Text.Encoding, bool, int)</code></li>
+</ul>
+<p><a id="omy-utils-xml"></a></p>
+<h2 id="omyutilsxml">omy.Utils.XML</h2>
+<ul>
+<li>Published baseline: <code>1.2.1</code></li>
+<li>Accepted diagnostics: <strong>1</strong></li>
+<li>Diagnostic classes: <code>CP0002</code>: 1</li>
+</ul>
+<h3 id="removed-or-incompatible-published-surface-2">Removed or incompatible published surface</h3>
+<ul>
+<li><code>CP0002</code> — <code>System.Collections.Generic.IEnumerable&lt;System.Xml.XmlReader&gt; Utils.XML.XmlUtils.ReadChildElements(this System.Xml.XmlReader)</code></li>
+</ul>
+<p><a id="omy-utils-net"></a></p>
+<h2 id="omyutilsnet">omy.Utils.Net</h2>
+<ul>
+<li>Published baseline: <code>1.2.1</code></li>
+<li>Accepted diagnostics: <strong>14</strong></li>
+<li>Diagnostic classes: <code>CP0002</code>: 14</li>
+</ul>
+<h3 id="removed-or-incompatible-published-surface-3">Removed or incompatible published surface</h3>
+<ul>
+<li><code>CP0002</code> — <code>System.Threading.Tasks.Task&lt;string&gt; Utils.Net.EchoClient.EchoAsync(string, int, string)</code></li>
+<li><code>CP0002</code> — <code>System.Threading.Tasks.Task&lt;string&gt; Utils.Net.EchoClient.EchoAsync(string, string)</code></li>
+<li><code>CP0002</code> — <code>System.Threading.Tasks.Task&lt;int&gt; Utils.Net.IcmpUtils.SendEchoRequestAsync(System.Net.IPAddress, int, int)</code></li>
+<li><code>CP0002</code> — <code>System.Threading.Tasks.Task&lt;int&gt; Utils.Net.IcmpUtils.SendEchoRequestAsync(System.Net.IPAddress, Utils.Net.Icmp.IcmpPacket, int)</code></li>
+<li><code>CP0002</code> — <code>System.Threading.Tasks.Task&lt;System.Collections.Generic.IEnumerable&lt;Utils.Net.Icmp.TracerouteHop&gt;&gt; Utils.Net.IcmpUtils.TracerouteAsync(System.Net.IPAddress, int, int)</code></li>
+<li><code>CP0002</code> — <code>Utils.Net.NntpServer.NntpServer(Utils.Net.INntpArticleStore)</code></li>
+<li><code>CP0002</code> — <code>System.Threading.Tasks.Task&lt;System.DateTime&gt; Utils.Net.NtpClient.GetTimeAsync(string, int)</code></li>
+<li><code>CP0002</code> — <code>System.Threading.Tasks.Task&lt;System.DateTime&gt; Utils.Net.NtpClient.GetTimeAsync(string)</code></li>
+<li><code>CP0002</code> — <code>System.Threading.Tasks.Task&lt;string&gt; Utils.Net.QuoteOfTheDayClient.GetQuoteAsync(string, int)</code></li>
+<li><code>CP0002</code> — <code>System.Threading.Tasks.Task&lt;string&gt; Utils.Net.QuoteOfTheDayClient.GetQuoteAsync(string)</code></li>
+<li><code>CP0002</code> — <code>System.Threading.Tasks.Task Utils.Net.SmtpServer.StartAsync(System.IO.Stream, bool, System.Threading.CancellationToken)</code></li>
+<li><code>CP0002</code> — <code>System.Threading.Tasks.Task&lt;System.DateTime&gt; Utils.Net.TimeProtocolClient.GetTimeAsync(string, int)</code></li>
+<li><code>CP0002</code> — <code>System.Threading.Tasks.Task&lt;System.DateTime&gt; Utils.Net.TimeProtocolClient.GetTimeAsync(string)</code></li>
+<li><code>CP0002</code> — <code>System.Threading.Tasks.Task Utils.Net.WakeOnLan.SendMagicPacketAsync(System.Net.NetworkInformation.PhysicalAddress, System.Net.IPAddress?, int)</code></li>
+</ul>
+<p><a id="omy-utils-data"></a></p>
+<h2 id="omyutilsdata">omy.Utils.Data</h2>
+<ul>
+<li>Published baseline: <code>1.2.1</code></li>
+<li>Accepted diagnostics: <strong>3</strong></li>
+<li>Diagnostic classes: <code>CP0002</code>: 3</li>
+</ul>
+<h3 id="removed-or-incompatible-published-surface-4">Removed or incompatible published surface</h3>
+<ul>
+<li><code>CP0002</code> — <code>System.Data.IDbDataParameter Utils.Data.DbCommandExtensions.AddNewParameter(this System.Data.IDbCommand, string, System.Data.DbType, object)</code></li>
+<li><code>CP0002</code> — <code>System.Data.IDbDataParameter Utils.Data.DbCommandExtensions.AddNewParameter(this System.Data.IDbCommand, string, object)</code></li>
+<li><code>CP0002</code> — <code>Utils.Data.SqlBuilderInterpolator.SqlBuilderInterpolator(int, int, System.Data.IDbConnection)</code></li>
+</ul>
+<p><a id="omy-utils-fonts"></a></p>
+<h2 id="omyutilsfonts">omy.Utils.Fonts</h2>
+<ul>
+<li>Published baseline: <code>1.2.1</code></li>
+<li>Accepted diagnostics: <strong>22</strong></li>
+<li>Diagnostic classes: <code>CP0001</code>: 2, <code>CP0002</code>: 13, <code>CP0005</code>: 2, <code>CP0006</code>: 5</li>
+</ul>
+<h3 id="removed-or-incompatible-published-surface-5">Removed or incompatible published surface</h3>
+<ul>
+<li><code>CP0002</code> — <code>Utils.Fonts.TTF.TrueTypeGlyph.TrueTypeGlyph(Utils.Fonts.TTF.Tables.Glyf.GlyphBase)</code></li>
+<li><code>CP0002</code> — <code>short Utils.Fonts.TTF.Tables.AcntTable.Version.get</code></li>
+<li><code>CP0002</code> — <code>void Utils.Fonts.TTF.Tables.AcntTable.DescriptionOffset.set</code></li>
+<li><code>CP0002</code> — <code>void Utils.Fonts.TTF.Tables.AcntTable.ExtensionOffset.set</code></li>
+<li><code>CP0002</code> — <code>void Utils.Fonts.TTF.Tables.AcntTable.SecondaryOffset.set</code></li>
+<li><code>CP0002</code> — <code>Utils.Fonts.TTF.Tables.Glyf.GlyphBase[] Utils.Fonts.TTF.Tables.AcntTable.Glyphs.get</code></li>
+<li><code>CP0002</code> — <code>void Utils.Fonts.TTF.Tables.AcntTable.Glyphs.set</code></li>
+<li><code>CP0002</code> — <code>object[] Utils.Fonts.TTF.Tables.AcntTable.Extension.get</code></li>
+<li><code>CP0002</code> — <code>void Utils.Fonts.TTF.Tables.AcntTable.Extension.set</code></li>
+<li><code>CP0002</code> — <code>object[] Utils.Fonts.TTF.Tables.AcntTable.Accent.get</code></li>
+<li><code>CP0002</code> — <code>void Utils.Fonts.TTF.Tables.AcntTable.Accent.set</code></li>
+<li><code>CP0002</code> — <code>float Utils.Fonts.TTF.Tables.KernTable.GetSpacingCorrection(char, char)</code></li>
+<li><code>CP0001</code> — <code>Utils.Fonts.TTF.Tables.Acnt.AcntFormat0</code></li>
+<li><code>CP0001</code> — <code>Utils.Fonts.TTF.Tables.Acnt.AcntFormatBase</code></li>
+<li><code>CP0002</code> — <code>short Utils.Fonts.TTF.Tables.CMap.CMapFormatBase.Length.get</code></li>
+</ul>
+<h3 id="other-binary-compatibility-changes-1">Other binary compatibility changes</h3>
+<ul>
+<li><code>CP0006</code> — Cannot add interface member 'float Utils.Fonts.IFont.Scale' to {candidateAssembly} because it does not exist on {baselineAssembly}</li>
+<li><code>CP0006</code> — Cannot add interface member 'float Utils.Fonts.IFont.BaseLineY' to {candidateAssembly} because it does not exist on {baselineAssembly}</li>
+<li><code>CP0006</code> — Cannot add interface member 'void Utils.Fonts.IGraphicConverter.ClosePath()' to {candidateAssembly} because it does not exist on {baselineAssembly}</li>
+<li><code>CP0006</code> — Cannot add interface member 'void Utils.Fonts.IGraphicConverter.BeginDrawGlyph(float, float, System.Numerics.Matrix3x2)' to {candidateAssembly} because it does not exist on {baselineAssembly}</li>
+<li><code>CP0006</code> — Cannot add interface member 'void Utils.Fonts.IGraphicConverter.EndDrawGlyph()' to {candidateAssembly} because it does not exist on {baselineAssembly}</li>
+<li><code>CP0005</code> — Cannot add abstract member 'int Utils.Fonts.TTF.Tables.CMap.CMapFormatBase.Length.get' to {candidateAssembly} because it does not exist on {baselineAssembly}</li>
+<li><code>CP0005</code> — Cannot add abstract member 'int Utils.Fonts.TTF.Tables.CMap.CMapFormatBase.Length' to {candidateAssembly} because it does not exist on {baselineAssembly}</li>
+</ul>
+<p><a id="omy-utils-imaging"></a></p>
+<h2 id="omyutilsimaging">omy.Utils.Imaging</h2>
+<ul>
+<li>Published baseline: <code>1.2.1</code></li>
+<li>Accepted diagnostics: <strong>7</strong></li>
+<li>Diagnostic classes: <code>CP0002</code>: 6, <code>CP0006</code>: 1</li>
+</ul>
+<h3 id="removed-or-incompatible-published-surface-6">Removed or incompatible published surface</h3>
+<ul>
+<li><code>CP0002</code> — <code>Utils.Imaging.ColorAhsv Utils.Imaging.ColorAhsv.FromColorAshv&lt;TColorAshv, T&gt;(TColorAshv)</code></li>
+<li><code>CP0002</code> — <code>Utils.Imaging.IColorArgb&lt;double&gt; Utils.Imaging.ColorArgb.Substract(Utils.Imaging.IColorArgb&lt;double&gt;)</code></li>
+<li><code>CP0002</code> — <code>Utils.Imaging.IColorArgb&lt;byte&gt; Utils.Imaging.ColorArgb32.Substract(Utils.Imaging.IColorArgb&lt;byte&gt;)</code></li>
+<li><code>CP0002</code> — <code>Utils.Imaging.ColorArgb32 Utils.Imaging.ColorArgb32.LinearGrandient(Utils.Imaging.ColorArgb32, Utils.Imaging.ColorArgb32, float)</code></li>
+<li><code>CP0002</code> — <code>Utils.Imaging.IColorArgb&lt;ushort&gt; Utils.Imaging.ColorArgb64.Substract(Utils.Imaging.IColorArgb&lt;ushort&gt;)</code></li>
+<li><code>CP0002</code> — <code>Utils.Imaging.IColorArgb&lt;T&gt; Utils.Imaging.IColorArgb&lt;T&gt;.Substract(Utils.Imaging.IColorArgb&lt;T&gt;)</code></li>
+</ul>
+<h3 id="other-binary-compatibility-changes-2">Other binary compatibility changes</h3>
+<ul>
+<li><code>CP0006</code> — Cannot add interface member 'Utils.Imaging.IColorArgb<t> Utils.Imaging.IColorArgb<t>.Subtract(Utils.Imaging.IColorArgb<t>)' to {candidateAssembly} because it does not exist on {baselineAssembly}</t></t></t></li>
+</ul>
+<p><a id="omy-utils-geography"></a></p>
+<h2 id="omyutilsgeography">omy.Utils.Geography</h2>
+<ul>
+<li>Published baseline: <code>1.2.1</code></li>
+<li>Accepted diagnostics: <strong>23</strong></li>
+<li>Diagnostic classes: <code>CP0002</code>: 16, <code>CP0007</code>: 4, <code>CP0008</code>: 1, <code>CP0009</code>: 1, <code>CP0012</code>: 1</li>
+</ul>
+<h3 id="removed-or-incompatible-published-surface-7">Removed or incompatible published surface</h3>
+<ul>
+<li><code>CP0002</code> — <code>int Utils.Geography.Display.RepresentationConverter&lt;T&gt;.GetMapSize(byte)</code></li>
+<li><code>CP0002</code> — <code>T Utils.Geography.Model.GeoPoint&lt;T&gt;.MinutesInDegree</code></li>
+<li><code>CP0002</code> — <code>T Utils.Geography.Model.GeoPoint&lt;T&gt;.SecondsInDegree</code></li>
+<li><code>CP0002</code> — <code>T Utils.Geography.Model.GeoPoint&lt;T&gt;.SecondsInMinute</code></li>
+<li><code>CP0002</code> — <code>Utils.Mathematics.IAngleCalculator&lt;T&gt; Utils.Geography.Model.GeoPoint&lt;T&gt;.degree</code></li>
+<li><code>CP0002</code> — <code>Utils.Mathematics.FloatingPointComparer&lt;T&gt; Utils.Geography.Model.GeoPoint&lt;T&gt;.comparer</code></li>
+<li><code>CP0002</code> — <code>System.Collections.Generic.IReadOnlyList&lt;string&gt; Utils.Geography.Model.GeoPoint&lt;T&gt;.PositiveLatitude</code></li>
+<li><code>CP0002</code> — <code>System.Collections.Generic.IReadOnlyList&lt;string&gt; Utils.Geography.Model.GeoPoint&lt;T&gt;.NegativeLatitude</code></li>
+<li><code>CP0002</code> — <code>System.Collections.Generic.IReadOnlyList&lt;string&gt; Utils.Geography.Model.GeoPoint&lt;T&gt;.PositiveLongitude</code></li>
+<li><code>CP0002</code> — <code>System.Collections.Generic.IReadOnlyList&lt;string&gt; Utils.Geography.Model.GeoPoint&lt;T&gt;.NegativeLongitude</code></li>
+<li><code>CP0002</code> — <code>Utils.Geography.Model.GeoPoint&lt;T&gt;.GeoPoint()</code></li>
+<li><code>CP0002</code> — <code>bool Utils.Geography.Model.GeoPoint&lt;T&gt;.ParseCoordinates(string, string, System.Globalization.CultureInfo, System.Text.RegularExpressions.Regex, out T, out T)</code></li>
+<li><code>CP0002</code> — <code>T Utils.Geography.Model.GeoPoint&lt;T&gt;.ParseCoordinate(Utils.Geography.Model.CoordinateDirection, string, System.Collections.Generic.IReadOnlyList&lt;string&gt;, System.Collections.Generic.IReadOnlyList&lt;string&gt;, System.Globalization.CultureInfo, System.Text.RegularExpressions.Regex)</code></li>
+<li><code>CP0002</code> — <code>System.Text.RegularExpressions.Regex Utils.Geography.Model.GeoPoint&lt;T&gt;.BuildRegexCoordinates(System.Globalization.CultureInfo)</code></li>
+<li><code>CP0002</code> — <code>void Utils.Geography.Model.MapPosition&lt;T&gt;.GeoPoint.set</code></li>
+<li><code>CP0002</code> — <code>void Utils.Geography.Model.MapPosition&lt;T&gt;.ZoomLevel.set</code></li>
+</ul>
+<h3 id="other-binary-compatibility-changes-3">Other binary compatibility changes</h3>
+<ul>
+<li><code>CP0007</code> — Type 'Utils.Geography.Model.GeoPoint<t>' does not inherit from base type 'System.Object' on {candidateAssembly} but it does on {baselineAssembly}</t></li>
+<li><code>CP0009</code> — Type 'Utils.Geography.Model.GeoPoint<t>' has the sealed modifier on {candidateAssembly} but not on {baselineAssembly}</t></li>
+<li><code>CP0012</code> — Cannot remove 'virtual' keyword from member 'Utils.Geography.Model.GeoPoint<t>.ToString(string, System.IFormatProvider)'.</t></li>
+<li><code>CP0007</code> — Type 'Utils.Geography.Model.GeoPointList<t>' does not inherit from base type 'System.Collections.Generic.List&lt;Utils.Geography.Model.GeoPoint<t>&gt;' on {candidateAssembly} but it does on {baselineAssembly}</t></t></li>
+<li><code>CP0007</code> — Type 'Utils.Geography.Model.GeoPointList2<t>' does not inherit from base type 'System.Collections.Generic.List&lt;Utils.Geography.Model.GeoPointList<t>&gt;' on {candidateAssembly} but it does on {baselineAssembly}</t></t></li>
+<li><code>CP0007</code> — Type 'Utils.Geography.Model.GeoVector<t>' does not inherit from base type 'Utils.Geography.Model.GeoPoint<t>' on {candidateAssembly} but it does on {baselineAssembly}</t></t></li>
+<li><code>CP0008</code> — Type 'Utils.Geography.Model.GeoVector<t>' does not implement interface 'System.IEquatable&lt;Utils.Geography.Model.GeoPoint<t>&gt;' on {candidateAssembly} but it does on {baselineAssembly}</t></t></li>
+</ul>
+<p><a id="omy-utils-reflection"></a></p>
+<h2 id="omyutilsreflection">omy.Utils.Reflection</h2>
+<ul>
+<li>Published baseline: <code>1.2.1</code></li>
+<li>Accepted diagnostics: <strong>3</strong></li>
+<li>Diagnostic classes: <code>CP0002</code>: 3</li>
+</ul>
+<h3 id="removed-or-incompatible-published-surface-8">Removed or incompatible published surface</h3>
+<ul>
+<li><code>CP0002</code> — <code>I Utils.Reflection.LibraryMapper.Emit&lt;I&gt;(string, System.Runtime.InteropServices.CallingConvention)</code></li>
+<li><code>CP0002</code> — <code>T Utils.Reflection.Reflection.Emit.EmitDllMappableClass.Emit&lt;T&gt;(System.Runtime.InteropServices.CallingConvention)</code></li>
+<li><code>CP0002</code> — <code>object Utils.Reflection.Reflection.Emit.EmitDllMappableClass.Emit(System.Type)</code></li>
+</ul>
+<p><a id="omy-utils-mathematics"></a></p>
+<h2 id="omyutilsmathematics">omy.Utils.Mathematics</h2>
+<ul>
+<li>Published baseline: <code>1.2.1</code></li>
+<li>Accepted diagnostics: <strong>19</strong></li>
+<li>Diagnostic classes: <code>CP0001</code>: 2, <code>CP0002</code>: 16, <code>CP0021</code>: 1</li>
+</ul>
+<h3 id="removed-or-incompatible-published-surface-9">Removed or incompatible published surface</h3>
+<ul>
+<li><code>CP0002</code> — <code>Utils.Mathematics.Expressions.ExpressionDerivation.ExpressionDerivation(string)</code></li>
+<li><code>CP0002</code> — <code>System.Linq.Expressions.Expression Utils.Mathematics.Expressions.ExpressionIntegration.Parameter(System.Linq.Expressions.ParameterExpression, object)</code></li>
+<li><code>CP0002</code> — <code>System.Linq.Expressions.Expression Utils.Mathematics.Expressions.ExpressionIntegration.Substract(System.Linq.Expressions.BinaryExpression, System.Linq.Expressions.Expression, System.Linq.Expressions.Expression)</code></li>
+<li><code>CP0001</code> — <code>Utils.Mathematics.Fourrier.FastFourrierTransform</code></li>
+<li><code>CP0001</code> — <code>Utils.Mathematics.Fourrier.FourrierExtensions</code></li>
+<li><code>CP0002</code> — <code>(Utils.Mathematics.LinearAlgebra.Matrix&lt;T&gt;, Utils.Mathematics.LinearAlgebra.Matrix&lt;T&gt;) Utils.Mathematics.LinearAlgebra.Matrix&lt;T&gt;.DiagonalizeLU()</code></li>
+<li><code>CP0002</code> — <code>Utils.Mathematics.LinearAlgebra.Matrix&lt;T&gt; Utils.Mathematics.LinearAlgebra.Matrix&lt;T&gt;.Invert()</code></li>
+<li><code>CP0002</code> — <code>bool Utils.Mathematics.LinearAlgebra.Matrix&lt;T&gt;.IsTriangularised.get</code></li>
+<li><code>CP0002</code> — <code>bool Utils.Mathematics.LinearAlgebra.Matrix&lt;T&gt;.IsDiagonalized.get</code></li>
+<li><code>CP0002</code> — <code>Utils.Mathematics.LinearAlgebra.Matrix&lt;T&gt; Utils.Mathematics.LinearAlgebra.MatrixTransformations.Diagonal&lt;T&gt;(params T[])</code></li>
+<li><code>CP0002</code> — <code>Utils.Mathematics.LinearAlgebra.Matrix&lt;T&gt; Utils.Mathematics.LinearAlgebra.MatrixTransformations.Scaling&lt;T&gt;(params T[])</code></li>
+<li><code>CP0002</code> — <code>Utils.Mathematics.LinearAlgebra.Matrix&lt;T&gt; Utils.Mathematics.LinearAlgebra.MatrixTransformations.Skew&lt;T&gt;(params T[])</code></li>
+<li><code>CP0002</code> — <code>Utils.Mathematics.LinearAlgebra.Matrix&lt;T&gt; Utils.Mathematics.LinearAlgebra.MatrixTransformations.Rotation&lt;T&gt;(params T[])</code></li>
+<li><code>CP0002</code> — <code>Utils.Mathematics.LinearAlgebra.Matrix&lt;T&gt; Utils.Mathematics.LinearAlgebra.MatrixTransformations.Translation&lt;T&gt;(params T[])</code></li>
+<li><code>CP0002</code> — <code>Utils.Mathematics.LinearAlgebra.Matrix&lt;T&gt; Utils.Mathematics.LinearAlgebra.MatrixTransformations.Transform&lt;T&gt;(params T[])</code></li>
+<li><code>CP0002</code> — <code>Utils.Mathematics.LinearAlgebra.Vector&lt;T&gt;.Vector(params T[])</code></li>
+<li><code>CP0002</code> — <code>Utils.Mathematics.LinearAlgebra.Vector&lt;T&gt; Utils.Mathematics.LinearAlgebra.Vector&lt;T&gt;.Normalize()</code></li>
+<li><code>CP0002</code> — <code>Utils.Mathematics.LinearAlgebra.Vector&lt;T&gt; Utils.Mathematics.LinearAlgebra.Vector&lt;T&gt;.FromNormalSpace()</code></li>
+</ul>
+<h3 id="other-binary-compatibility-changes-4">Other binary compatibility changes</h3>
+<ul>
+<li><code>CP0021</code> — Cannot remove constraint '!:System.Numerics.ITrigonometricFunctions{`0}' on type parameter 'T' of 'Utils.Mathematics.LinearAlgebra.Line<t>'.</t></li>
+</ul>
+<p><a id="omy-utils-odata"></a></p>
+<h2 id="omyutilsodata">omy.Utils.OData</h2>
+<ul>
+<li>Published baseline: <code>0.0.1</code></li>
+<li>Accepted diagnostics: <strong>10</strong></li>
+<li>Diagnostic classes: <code>CP0002</code>: 7, <code>CP0009</code>: 1, <code>CP0012</code>: 2</li>
+</ul>
+<h3 id="removed-or-incompatible-published-surface-10">Removed or incompatible published surface</h3>
+<ul>
+<li><code>CP0002</code> — <code>string? Utils.OData.ODataQueryBuilder.Authorization.get</code></li>
+<li><code>CP0002</code> — <code>System.Type Utils.OData.ErrorReturnValue.EqualityContract.get</code></li>
+<li><code>CP0002</code> — <code>void Utils.OData.ErrorReturnValue.code.init</code></li>
+<li><code>CP0002</code> — <code>void Utils.OData.ErrorReturnValue.message.init</code></li>
+<li><code>CP0002</code> — <code>bool Utils.OData.ErrorReturnValue.PrintMembers(System.Text.StringBuilder)</code></li>
+<li><code>CP0002</code> — <code>Utils.OData.ErrorReturnValue.ErrorReturnValue(Utils.OData.ErrorReturnValue)</code></li>
+<li><code>CP0002</code> — <code>void Utils.OData.ErrorReturnValue.Deconstruct(out int, out string)</code></li>
+</ul>
+<h3 id="other-binary-compatibility-changes-5">Other binary compatibility changes</h3>
+<ul>
+<li><code>CP0009</code> — Type 'Utils.OData.ErrorReturnValue' has the sealed modifier on {candidateAssembly} but not on {baselineAssembly}</li>
+<li><code>CP0012</code> — Cannot remove 'virtual' keyword from member 'Utils.OData.ErrorReturnValue.Equals(Utils.OData.ErrorReturnValue?)'.</li>
+<li><code>CP0012</code> — Cannot remove 'virtual' keyword from member 'Utils.OData.ErrorReturnValue.<clone>$()'.</clone></li>
+</ul>
+<p><a id="omy-utils-virtualmachine"></a></p>
+<h2 id="omyutilsvirtualmachine">omy.Utils.VirtualMachine</h2>
+<ul>
+<li>Published baseline: <code>0.1.0</code></li>
+<li>Accepted diagnostics: <strong>7</strong></li>
+<li>Diagnostic classes: <code>CP0002</code>: 6, <code>CP0006</code>: 1</li>
+</ul>
+<h3 id="removed-or-incompatible-published-surface-11">Removed or incompatible published surface</h3>
+<ul>
+<li><code>CP0002</code> — <code>void Utils.VirtualMachine.VirtualProcessor&lt;T&gt;.Execute(T)</code></li>
+<li><code>CP0002</code> — <code>byte[] Utils.VirtualMachine.Context.Data.get</code></li>
+<li><code>CP0002</code> — <code>Utils.VirtualMachine.Context.Context(byte[])</code></li>
+<li><code>CP0002</code> — <code>Utils.VirtualMachine.DefaultContext.DefaultContext(byte[])</code></li>
+<li><code>CP0002</code> — <code>System.Collections.Generic.Stack&lt;object&gt; Utils.VirtualMachine.DefaultContext.Stack.get</code></li>
+<li><code>CP0002</code> — <code>Utils.VirtualMachine.VirtualProcessorException.VirtualProcessorException(System.Runtime.Serialization.SerializationInfo, System.Runtime.Serialization.StreamingContext)</code></li>
+</ul>
+<h3 id="other-binary-compatibility-changes-6">Other binary compatibility changes</h3>
+<ul>
+<li><code>CP0006</code> — Cannot add interface member 'sbyte Utils.VirtualMachine.INumberReader.ReadSByte(Utils.VirtualMachine.Context)' to {candidateAssembly} because it does not exist on {baselineAssembly}</li>
+</ul>
+<p><a id="omy-utils-dependencyinjection"></a></p>
+<h2 id="omyutilsdependencyinjection">omy.Utils.DependencyInjection</h2>
+<ul>
+<li>Published baseline: <code>1.2.1</code></li>
+<li>Accepted diagnostics: <strong>0</strong></li>
+<li>Diagnostic classes: none (binary compatible)</li>
+</ul>
+<p><a id="omy-utils-odata-generators"></a></p>
+<h2 id="omyutilsodatagenerators">omy.Utils.OData.Generators</h2>
+<ul>
+<li>Published baseline: <code>0.0.1</code></li>
+<li>Accepted diagnostics: <strong>3</strong></li>
+<li>Diagnostic classes: <code>CP0002</code>: 2, <code>CP0008</code>: 1</li>
+</ul>
+<h3 id="removed-or-incompatible-published-surface-12">Removed or incompatible published surface</h3>
+<ul>
+<li><code>CP0002</code> — <code>void Utils.OData.Generators.ODataEntityGenerator.Initialize(Microsoft.CodeAnalysis.GeneratorInitializationContext)</code></li>
+<li><code>CP0002</code> — <code>void Utils.OData.Generators.ODataEntityGenerator.Execute(Microsoft.CodeAnalysis.GeneratorExecutionContext)</code></li>
+</ul>
+<h3 id="other-binary-compatibility-changes-7">Other binary compatibility changes</h3>
+<ul>
+<li><code>CP0008</code> — Type 'Utils.OData.Generators.ODataEntityGenerator' does not implement interface 'Microsoft.CodeAnalysis.ISourceGenerator' on {candidateAssembly} but it does on {baselineAssembly}</li>
+</ul>
+<p><a id="omy-utils-io-serialization-generators"></a></p>
+<h2 id="omyutilsioserializationgenerators">omy.Utils.IO.Serialization.Generators</h2>
+<ul>
+<li>Published baseline: <code>1.2.1</code></li>
+<li>Accepted diagnostics: <strong>3</strong></li>
+<li>Diagnostic classes: <code>CP0002</code>: 2, <code>CP0008</code>: 1</li>
+</ul>
+<h3 id="removed-or-incompatible-published-surface-13">Removed or incompatible published surface</h3>
+<ul>
+<li><code>CP0002</code> — <code>void Utils.IO.Serialization.Generators.ReaderWriterGenerator.Initialize(Microsoft.CodeAnalysis.GeneratorInitializationContext)</code></li>
+<li><code>CP0002</code> — <code>void Utils.IO.Serialization.Generators.ReaderWriterGenerator.Execute(Microsoft.CodeAnalysis.GeneratorExecutionContext)</code></li>
+</ul>
+<h3 id="other-binary-compatibility-changes-8">Other binary compatibility changes</h3>
+<ul>
+<li><code>CP0008</code> — Type 'Utils.IO.Serialization.Generators.ReaderWriterGenerator' does not implement interface 'Microsoft.CodeAnalysis.ISourceGenerator' on {candidateAssembly} but it does on {baselineAssembly}</li>
+</ul>
+<p><a id="omy-utils-dependencyinjection-generators"></a></p>
+<h2 id="omyutilsdependencyinjectiongenerators">omy.Utils.DependencyInjection.Generators</h2>
+<ul>
+<li>Published baseline: <code>1.2.1</code></li>
+<li>Accepted diagnostics: <strong>3</strong></li>
+<li>Diagnostic classes: <code>CP0002</code>: 2, <code>CP0008</code>: 1</li>
+</ul>
+<h3 id="removed-or-incompatible-published-surface-14">Removed or incompatible published surface</h3>
+<ul>
+<li><code>CP0002</code> — <code>void Utils.DependencyInjection.Generators.StaticAutoGenerator.Initialize(Microsoft.CodeAnalysis.GeneratorInitializationContext)</code></li>
+<li><code>CP0002</code> — <code>void Utils.DependencyInjection.Generators.StaticAutoGenerator.Execute(Microsoft.CodeAnalysis.GeneratorExecutionContext)</code></li>
+</ul>
+<h3 id="other-binary-compatibility-changes-9">Other binary compatibility changes</h3>
+<ul>
+<li><code>CP0008</code> — Type 'Utils.DependencyInjection.Generators.StaticAutoGenerator' does not implement interface 'Microsoft.CodeAnalysis.ISourceGenerator' on {candidateAssembly} but it does on {baselineAssembly}</li>
+</ul>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/docs/releasing/AcceptedApiBreaks.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

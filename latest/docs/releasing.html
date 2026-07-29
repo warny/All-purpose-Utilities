@@ -80,7 +80,7 @@
 <li>Add release notes to <code>CHANGELOG.md</code> under a new version heading.</li>
 <li>Create a Git tag matching the package version (for example <code>v2.0.0-rc.1</code>).</li>
 </ol>
-<p>All projects inherit the same <code>Version</code> and <code>PackageVersion</code>. <code>Directory.Build.targets</code> is evaluated after project files and therefore overrides legacy project-local <code>&lt;Version&gt;</code> values until those declarations are removed.</p>
+<p>The 24 manifested projects use <code>ProductTrainVersion</code> from <code>Directory.Build.props</code> as their only version authority. The release gate rejects project-local <code>PackageVersion</code>, assembly/file version overrides, hard-coded versions, divergent evaluated MSBuild properties, dependencies, assets, or artifacts.</p>
 <h2 id="github-release-flow">GitHub release flow</h2>
 <ol>
 <li>Push the release commit to the <code>release</code> branch.</li>
@@ -90,8 +90,9 @@
 <h2 id="ci-publishing-pipeline">CI publishing pipeline</h2>
 <ul>
 <li>The <code>Publish NuGet</code> workflow (<code>.github/workflows/nuget-publish.yml</code>) runs on pushes to the <code>release</code> branch.</li>
-<li>It restores, builds, packs, and publishes only packages whose effective <code>&lt;PackageVersion&gt;</code> is not already present on nuget.org.</li>
-<li>The workflow checks NuGet to ensure the package version is not already published before uploading.</li>
+<li>It validates and packs only the 24 manifest-selected packages, then checks package metadata, assemblies, internal dependencies, isolated consumer assets, API compatibility, and reproducibility.</li>
+<li>Before the first push, it queries all 24 NuGet package IDs. Exactly zero or all 24 may exist. A partial remote train fails with a diagnostic and no automatic push.</li>
+<li>A fully absent train is pushed in manifest topological order as the single logical <code>omy 2.0.0-rc.1</code> release; the dry-run command omits <code>-Publish</code>.</li>
 <li>Packages are pushed using the <code>NUGET_API_KEY</code> secret configured in the repository settings.</li>
 </ul>
 <h2 id="validating-packages">Validating packages</h2>
@@ -108,6 +109,8 @@ dotnet add package omy.Utils --version 2.0.0-rc.1
 <ul>
 <li>Review the package page on nuget.org to confirm the README and metadata render correctly.</li>
 </ul>
+<h2 id="repository-wide-200-candidate">Repository-wide 2.0.0 candidate</h2>
+<p>The complete process is documented in the <a href="releasing/ProductTrain.html">product-train overview</a>, <a href="releasing/ReleaseQualityGates.html">quality-gate reference</a>, <a href="releasing/PackageGraph.html">derived package graph</a>, and <a href="releasing/MigrationTo2.0.html">2.0 migration guide</a>. The release candidate covers every manifested library and source generator, not only parser packages.</p>
 
 </article>
 

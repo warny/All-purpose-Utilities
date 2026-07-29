@@ -110,7 +110,7 @@
 </tr>
 </tbody>
 </table>
-<p>Topological publication order is <code>Utils</code> / <code>Source</code>, then <code>Diagnostics</code> / <code>Antlr4.Common</code>, then <code>Parser</code>, then <code>Expressions</code> / <code>Generators</code>. <code>omy.Utils</code> 1.2.2 follows the currently published 1.2.1 patch because the runtime resource delivery fix is compatible. Parser packages were not found on NuGet during the audit and use the documented <code>2.0.0-rc.1</code> train version.</p>
+<p>Within the parser-related subgraph, dependencies place <code>Utils</code>, <code>Source</code>, and <code>Antlr4.Common</code> before <code>Diagnostics</code> and <code>Parser</code>, followed by <code>Generators</code> and <code>Expressions</code>; the global graph derives the complete 24-package order. All seven packages use the single documented <code>2.0.0-rc.1</code> product-train version. <code>omy.Utils</code> is intentionally a major-version candidate relative to its published 1.2.1 API; the parser packages use their first candidate baseline.</p>
 <h2 id="generator-findings">Generator findings</h2>
 <p>The generator package deliberately embeds four analyzer-directory DLLs and one <code>buildTransitive</code> targets file. Its support projects are built before <code>pack --no-build</code>; hard-coded <code>bin/$(Configuration)/netstandard2.0</code> inputs remain a maintenance risk, but clean candidate staging and archive inspection prevent stale packages from being silently reused. Roslyn load failures, generated-file emission, and attach-file settings are exercised by a real consumer. Different SDK minor-version behavior remains a CI/platform observation rather than a compatibility promise.</p>
 <h2 id="runtime-resources-and-platform-findings">Runtime resources and platform findings</h2>
@@ -120,6 +120,8 @@
 <h2 id="packaged-composition-and-incrementality-coverage">Packaged composition and incrementality coverage</h2>
 <p>The package-only runtime consumer now executes <code>Antlr4GrammarProjectCompiler</code> with direct and transitive imports, separate lexer/parser grammars, <code>tokenVocab</code>, populated and empty lexer modes, local masking, entry-root ownership, deterministic imported collisions, and missing/cyclic/ambiguous dependency failures. The package-only generator consumer builds the equivalent effective composition and then, in a copied real project, changes an imported grammar, removes its import, changes <code>tokenVocab</code>, and adds/removes an imported collision. Every rebuild executes the resulting facade and rejects stale effective rules. Separate builds require <code>UP0010</code>, <code>UP0011</code>, and <code>UP0016</code> for missing, cyclic, and ambiguous imports.</p>
 <p>The symbol inspection proves repository metadata, candidate commit identity, <code>.snupkg</code> presence, and portable PDB signatures. It does <strong>not</strong> inspect the embedded SourceLink document or retrieve mapped sources, so full SourceLink validation remains an explicit release risk.</p>
+<h2 id="repository-wide-train-generalization">Repository-wide train generalization</h2>
+<p>The original seven-package parser acceptance chain is retained as specialized evidence inside the global 24-package train. Discovery now makes every project an explicit include/exclude decision, graph analysis derives publication order, and generic package-only consumers restore, compile, and load every library or analyzer before parser-specific runtime, generator, and incremental scenarios run.</p>
 
 </article>
 
