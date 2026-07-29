@@ -1270,6 +1270,125 @@ public class CommandResponseLifecycleTests
     }
 
     // ──────────────────────────────────────────────────────────────
+    // P1-1 (round 4) — Banner must reach OnConnect even if it arrives
+    //                   before ReadAsync registers a waiter
+    // ──────────────────────────────────────────────────────────────
+
+    private sealed class GreetingCapturingClient : CommandResponseClient
+    {
+        public IReadOnlyList<ServerResponse>? Greeting { get; private set; }
+
+        protected override async Task OnConnect(Stream stream, bool leaveOpen, CancellationToken ct)
+        {
+            Greeting = await ReadAsync(ct);
+        }
+    }
+
+    [TestMethod]
+    public async Task ConnectAsync_ImmediateGreeting_IsDeliveredToOnConnect()
+    {
+        // Verify that a banner written into the pipe buffer BEFORE ConnectAsync starts
+        // is buffered during StateConnecting (P1-1 fix) and delivered to the first
+        // ReadAsync call in OnConnect, rather than being lost as an unsolicited event.
+        (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
+
+        // Write the greeting before connecting so it is already in the pipe buffer
+        // when the listener thread starts reading.
+        await serverWriter.WriteLineAsync("220 Welcome Server");
+
+        GreetingCapturingClient client = new();
+        await WithTimeout(
+            client.ConnectAsync(clientStream, leaveOpen: true),
+            "ConnectAsync timed out — OnConnect may have blocked waiting for the greeting.");
+
+        Assert.IsNotNull(client.Greeting, "OnConnect must have captured the greeting.");
+        Assert.AreEqual(1, client.Greeting!.Count);
+        Assert.AreEqual("Welcome Server", client.Greeting[0].Message);
+
+        client.Dispose();
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // P1-2 (round 4) — ReadAsync must serialize with SendCommandAsync
+    // ──────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task ReadAsync_ConcurrentWithSendCommand_CannotStealCommandResponse()
+    {
+        // ReadAsync now takes the same _sendLock as SendCommandAsync, so they cannot
+        // overlap. This test verifies that ReadAsync does not dequeue the response
+        // that was intended for a concurrent SendCommandAsync.
+        (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
+        using CommandResponseClient client = new();
+        await client.ConnectAsync(clientStream, leaveOpen: true);
+
+        // Start a command that will hold _sendLock while waiting for its response.
+        Task<IReadOnlyList<ServerResponse>> commandTask = client.SendCommandAsync("PING");
+        await WithTimeout(Task.Run(() => serverReader.ReadLine()), "Server did not receive PING.");
+
+        // Start ReadAsync — it must block on _sendLock while SendCommandAsync holds it.
+        Task<IReadOnlyList<ServerResponse>> readTask = client.ReadAsync();
+        await Task.Delay(50); // give ReadAsync time to block on the lock
+
+        // Deliver the command response; only SendCommandAsync should receive it.
+        await serverWriter.WriteLineAsync("250 PONG");
+        IReadOnlyList<ServerResponse> commandResponse =
+            await WithTimeout(commandTask, "PING response not received within 5s.");
+
+        // Small delay so ReadAsync can acquire _sendLock and increment _activeReadWaiters
+        // before the next server message arrives.
+        await Task.Delay(50);
+
+        // Now deliver an unsolicited message; ReadAsync (now the sole waiter) should get it.
+        await serverWriter.WriteLineAsync("250 Unsolicited");
+        IReadOnlyList<ServerResponse> readResponse =
+            await WithTimeout(readTask, "ReadAsync did not complete within 5s.");
+
+        Assert.AreEqual(1, commandResponse.Count);
+        Assert.AreEqual("PONG", commandResponse[0].Message,
+            "SendCommandAsync must receive its own response, not the unsolicited one.");
+        Assert.AreEqual(1, readResponse.Count);
+        Assert.AreEqual("Unsolicited", readResponse[0].Message,
+            "ReadAsync must receive the unsolicited message, not the command response.");
+    }
+
+    [TestMethod]
+    public async Task ConcurrentReadAsync_Calls_AreSerializedByLock()
+    {
+        // Two concurrent ReadAsync calls must be serialized via _sendLock.
+        // The second call blocks until the first completes and releases the lock, so
+        // each call receives its own distinct response without cross-contamination.
+        (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
+        using CommandResponseClient client = new();
+        await client.ConnectAsync(clientStream, leaveOpen: true);
+
+        Task<IReadOnlyList<ServerResponse>> read1 = client.ReadAsync();
+        Task<IReadOnlyList<ServerResponse>> read2 = client.ReadAsync();
+        await Task.Delay(50); // let read1 acquire _sendLock and read2 block on it
+
+        // Send only the first response; only read1 (current lock holder) can receive it.
+        await serverWriter.WriteLineAsync("250 First");
+        IReadOnlyList<ServerResponse> r1 = await WithTimeout(read1,
+            "First ReadAsync timed out waiting for '250 First'.");
+
+        // After read1 releases the lock, give read2 time to acquire it and register
+        // _activeReadWaiters before the second response is sent.
+        await Task.Delay(50);
+
+        // Now read2 holds _sendLock and is waiting; send its response.
+        await serverWriter.WriteLineAsync("251 Second");
+        IReadOnlyList<ServerResponse> r2 = await WithTimeout(read2,
+            "Second ReadAsync timed out waiting for '251 Second'.");
+
+        Assert.IsTrue(r1.Any(r => r.Code == "250"),
+            "First ReadAsync must receive '250 First'.");
+        Assert.IsFalse(r1.Any(r => r.Code == "251"),
+            "First ReadAsync must not steal '251 Second'.");
+        Assert.IsTrue(r2.Any(r => r.Code == "251"),
+            "Second ReadAsync must receive '251 Second'.");
+    }
+
+    // ──────────────────────────────────────────────────────────────
     // P1-2 / P1-4 — Register owner before write; no double delivery
     // ──────────────────────────────────────────────────────────────
 
