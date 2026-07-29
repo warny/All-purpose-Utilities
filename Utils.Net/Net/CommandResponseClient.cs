@@ -46,6 +46,10 @@ public class CommandResponseClient : IDisposable
     // When the sum is zero, a line has no owner and is raised as unsolicited only (not queued).
     private volatile int _activeCommandWaiters;
     private volatile int _activeReadWaiters;
+    // P1 (round-5): set immediately before _activeCommandWaiters is cleared so that lines
+    // arriving between SendCommandAsync returning and the next ReadAsync acquiring the lock
+    // are queued rather than raised as unsolicited, covering the entire protocol transaction.
+    private volatile bool _pendingTransition;
 
     // Item 49: idempotent disposal flag.
     private int _disposed; // 0 = alive, 1 = disposed (use Interlocked)
@@ -384,6 +388,7 @@ public class CommandResponseClient : IDisposable
         await _sendLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            _pendingTransition = false;
             if (_disconnected)
             {
                 throw new IOException("Connection closed.");
@@ -421,6 +426,7 @@ public class CommandResponseClient : IDisposable
                     }
                 }
                 ResetKeepAlive();
+                _pendingTransition = true;
                 return responses;
             }
             finally
@@ -466,6 +472,7 @@ public class CommandResponseClient : IDisposable
         await _sendLock.WaitAsync(effective).ConfigureAwait(false);
         try
         {
+            _pendingTransition = false;
             if (_state == StateDisposed)
                 throw new ObjectDisposedException(GetType().Name);
             if (_disconnected && _responseSignal.CurrentCount == 0)
@@ -660,7 +667,7 @@ public class CommandResponseClient : IDisposable
                 // buffered even before OnConnect calls ReadAsync. Without this, a banner that
                 // arrives the moment the listener starts would be routed as unsolicited (no owner
                 // is registered yet) and would never reach the ReadAsync call in OnConnect.
-                if (_state == StateConnecting || _activeCommandWaiters + _activeReadWaiters > 0)
+                if (_state == StateConnecting || _pendingTransition || _activeCommandWaiters + _activeReadWaiters > 0)
                 {
                     _responseQueue.Enqueue(response);
                     _responseSignal.Release();

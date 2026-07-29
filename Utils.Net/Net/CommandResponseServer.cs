@@ -343,13 +343,22 @@ public class CommandResponseServer : IDisposable
     /// Sends an unsolicited response to the client.
     /// </summary>
     /// <param name="response">Response to send.</param>
+    public Task SendResponseAsync(ServerResponse response)
+    {
+        return SendResponseAsync(response, CancellationToken.None);
+    }
+
+    /// <summary>
+    /// Sends an unsolicited response to the client.
+    /// </summary>
+    /// <param name="response">Response to send.</param>
     /// <param name="cancellationToken">
     /// Token linked to the session lifetime; cancelling it aborts the pending write.
     /// </param>
     /// <exception cref="OperationCanceledException">
     /// Thrown when the token or the session is cancelled before the write completes.
     /// </exception>
-    public async Task SendResponseAsync(ServerResponse response, CancellationToken cancellationToken = default)
+    public async Task SendResponseAsync(ServerResponse response, CancellationToken cancellationToken)
     {
         if (_writer is null)
             throw new InvalidOperationException("Server is not started.");
@@ -365,7 +374,7 @@ public class CommandResponseServer : IDisposable
         {
             if (_listenTokenSource?.IsCancellationRequested == true)
                 throw new OperationCanceledException("Session has been cancelled.");
-            await _writer.WriteLineAsync(line).ConfigureAwait(false);
+            await _writer.WriteLineAsync(line.AsMemory(), effectiveToken).ConfigureAwait(false);
         }
         finally
         {
@@ -556,7 +565,7 @@ public class CommandResponseServer : IDisposable
                     {
                         string line = _formatter(response);
                         Logger?.LogDebug("Sending: {Line}", line);
-                        await _writer.WriteLineAsync(line).ConfigureAwait(false);
+                        await _writer.WriteLineAsync(line.AsMemory(), cancellationToken).ConfigureAwait(false);
                     }
                 }
                 finally
@@ -620,13 +629,13 @@ public class CommandResponseServer : IDisposable
         _listenThread?.Join(TimeSpan.FromSeconds(1));  // wait for listener to exit
         try
         {
-            _processTask?.GetAwaiter().GetResult();    // wait for processor to exit
+            _processTask?.GetAwaiter().GetResult();    // fast: session token cancels any in-progress write
         }
         catch (Exception)
         {
             // Ignore exceptions during shutdown.
         }
-        _writer?.Dispose();                            // safe: no concurrent writes after tasks exit
+        _writer?.Dispose();                            // safe: no concurrent writes after processTask exits
         if (!_leaveOpen)
         {
             _stream?.Dispose();
