@@ -44,6 +44,22 @@ function Expand-ZipArchive {
     [IO.Compression.ZipFile]::ExtractToDirectory($archive, $destination, $true)
 }
 
+<# Computes a deterministic fingerprint for emitted compiler-generated files. #>
+function Get-GeneratedOutputFingerprint {
+    param([Parameter(Mandatory)][string] $Path)
+
+    $files = @(Get-ChildItem $Path -File -Recurse | Sort-Object FullName)
+    if (-not $files) {
+        throw "No compiler-generated files were emitted under '$Path'."
+    }
+    $entries = @($files | ForEach-Object {
+        $relative = [IO.Path]::GetRelativePath($Path, $_.FullName).Replace([char]0x5c, [char]0x2f)
+        "$relative=$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant())"
+    })
+    $content = [Text.Encoding]::UTF8.GetBytes(($entries -join "`n"))
+    return [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($content)).ToLowerInvariant()
+}
+
 <# Normalizes either platform directory separator to a forward slash. #>
 function ConvertTo-RepositoryPath {
     param([Parameter(Mandatory)][string] $Path)

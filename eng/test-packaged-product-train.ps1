@@ -9,6 +9,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot "Release.Common.ps1")
 $artifactsRoot = [IO.Path]::GetFullPath((Join-Path $repoRoot $ArtifactsPath))
 $packagesPath = Join-Path $artifactsRoot "packages"
 $temporaryPath = Join-Path $artifactsRoot "packaged-acceptance"
@@ -169,12 +170,16 @@ try {
             & dotnet build $project --configuration $Configuration --no-restore -p:EmitCompilerGeneratedFiles=$emit
             if ($LASTEXITCODE -ne 0) { throw "Generator consumer matrix failed for '$relativeProject' (Emit=$emit)." }
         }
+        Remove-Item $generatedDirectory -Recurse -Force -ErrorAction SilentlyContinue
+        & dotnet build $project --configuration $Configuration --no-restore --no-incremental -p:EmitCompilerGeneratedFiles=true
+        if ($LASTEXITCODE -ne 0) { throw "Generator baseline build failed for '$relativeProject'." }
         $program = Join-Path $projectDirectory 'Program.cs'
         $input = if ($relativeProject -like 'ODataGeneratorConsumer/*') { Join-Path $projectDirectory 'Sample.edmx' } else { $program }
-        $originalInput = Get-Content $input -Raw
-        $initialGeneratedHash = (Get-ChildItem $generatedDirectory -File -Recurse | Get-FileHash -Algorithm SHA256 | ForEach-Object Hash) -join ':'
+        $originalInput = [IO.File]::ReadAllBytes($input)
+        $originalText = [IO.File]::ReadAllText($input)
+        $initialGeneratedHash = Get-GeneratedOutputFingerprint $generatedDirectory
         if ($relativeProject -like 'ODataGeneratorConsumer/*') {
-            $originalInput.Replace('Name="CategoryName"', 'Name="CategoryLabel"') | Set-Content $input
+            [IO.File]::WriteAllText($input, $originalText.Replace('Name="CategoryName"', 'Name="CategoryLabel"'))
         } elseif ($relativeProject -like 'IOSerializationGeneratorConsumer/*') {
             Add-Content $input "`n/// <summary>Provides an incremental generator input.</summary>`n[GenerateReaderWriter]`npublic partial class IncrementalPayload {`n/// <summary>Gets or sets the incremental value.</summary>`n[Field(0)] public int Value { get; set; } }"
         } else {
@@ -184,16 +189,16 @@ try {
             Remove-Item $generatedDirectory -Recurse -Force -ErrorAction SilentlyContinue
             & dotnet build $project --configuration $Configuration --no-restore --no-incremental -p:EmitCompilerGeneratedFiles=true
             if ($LASTEXITCODE -ne 0) { throw "Incremental rebuild failed for '$relativeProject'." }
-            $mutatedGeneratedHash = (Get-ChildItem $generatedDirectory -File -Recurse | Get-FileHash -Algorithm SHA256 | ForEach-Object Hash) -join ':'
+            $mutatedGeneratedHash = Get-GeneratedOutputFingerprint $generatedDirectory
             if ($mutatedGeneratedHash -eq $initialGeneratedHash) { throw "Generator output did not change after an input change for '$relativeProject'." }
         } finally {
-            Set-Content $input $originalInput
+            [IO.File]::WriteAllBytes($input, $originalInput)
         }
         Remove-Item $generatedDirectory -Recurse -Force -ErrorAction SilentlyContinue
         & dotnet build $project --configuration $Configuration --no-restore --no-incremental -p:EmitCompilerGeneratedFiles=true
         if ($LASTEXITCODE -ne 0) { throw "Generator input restoration failed for '$relativeProject'." }
-        $restoredGeneratedHash = (Get-ChildItem $generatedDirectory -File -Recurse | Get-FileHash -Algorithm SHA256 | ForEach-Object Hash) -join ':'
-        if ($restoredGeneratedHash -ne $initialGeneratedHash) { throw "Obsolete generated output remained after restoring '$relativeProject'." }
+        $restoredGeneratedHash = Get-GeneratedOutputFingerprint $generatedDirectory
+        if ($restoredGeneratedHash -ne $initialGeneratedHash) { throw "Restored generator output differs from the clean baseline for '$relativeProject'." }
         & dotnet run --project $project --configuration $Configuration --no-build
         if ($LASTEXITCODE -ne 0) { throw "Generated behavior failed after incremental restoration for '$relativeProject'." }
     }
