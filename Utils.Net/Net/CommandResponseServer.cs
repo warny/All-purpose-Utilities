@@ -616,20 +616,20 @@ public class CommandResponseServer : IDisposable
     {
         Interlocked.Exchange(ref _state, StateStopped);
         _listenTokenSource?.Cancel();
-        _reader?.Dispose();
-        _writer?.Dispose();
-        if (!_leaveOpen)
-        {
-            _stream?.Dispose();
-        }
-        _listenThread?.Join(TimeSpan.FromSeconds(1));
+        _reader?.Dispose();                             // interrupts blocking read on listener thread
+        _listenThread?.Join(TimeSpan.FromSeconds(1));  // wait for listener to exit
         try
         {
-            _processTask?.GetAwaiter().GetResult();
+            _processTask?.GetAwaiter().GetResult();    // wait for processor to exit
         }
         catch (Exception)
         {
             // Ignore exceptions during shutdown.
+        }
+        _writer?.Dispose();                            // safe: no concurrent writes after tasks exit
+        if (!_leaveOpen)
+        {
+            _stream?.Dispose();
         }
         _listenTokenSource?.Dispose();
         _commandSignal.Dispose();
