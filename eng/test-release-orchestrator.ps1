@@ -39,5 +39,8 @@ try {
 & (Join-Path $PSScriptRoot "test-release-artifact-assembly.ps1")
 if (-not $?) { throw "Release artifact assembly tests failed." }
 
+& (Join-Path $PSScriptRoot "test-existing-package-validation.ps1")
+if (-not $?) { throw "Existing canonical package validation tests failed." }
+
 & (Join-Path $PSScriptRoot "test-release-project-discovery.ps1")
 if (-not $?) { throw "Release project discovery tests failed." }

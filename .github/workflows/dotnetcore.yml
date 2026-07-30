@@ -63,11 +63,55 @@ jobs:
                   path: artifacts/test-results/**
                   if-no-files-found: warn
 
+    canonical-packages:
+        name: Produce canonical packages (Ubuntu)
+        needs: build
+        runs-on: ubuntu-latest
+        timeout-minutes: 35
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+            - uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: '9.0.x'
+            - name: Package discovery
+              shell: pwsh
+              run: ./eng/discover-release-projects.ps1 -Configuration Release -ArtifactsPath artifacts
+            - name: Restore canonical package inputs
+              run: dotnet restore Utils.sln
+            - name: Build canonical package inputs
+              run: dotnet build Utils.sln --configuration Release --no-restore -p:ContinuousIntegrationBuild=true -p:UseSharedCompilation=false
+            - name: Produce canonical packages
+              shell: pwsh
+              run: ./eng/pack-product-train.ps1 -Configuration Release -ArtifactsPath artifacts -NoBuild
+            - name: Inspect canonical packages
+              shell: pwsh
+              run: ./eng/inspect-packages.ps1 -ArtifactsPath artifacts
+            - name: Record canonical package hashes
+              shell: pwsh
+              run: ./eng/write-canonical-package-report.ps1 -ArtifactsPath artifacts
+            - name: Upload canonical packages and diagnostics
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: canonical-packages-${{ github.sha }}
+                  path: |
+                      artifacts/packages/**
+                      artifacts/reports/package-graph.json
+                      artifacts/reports/package-publication-order.txt
+                      artifacts/reports/package-inspection.json
+                      artifacts/reports/package-discovery.json
+                      artifacts/reports/canonical-packages.json
+                      artifacts/logs/**
+                  if-no-files-found: warn
+
     package-validation:
         name: Package validation (${{ matrix.os }})
         needs:
             - build
             - test
+            - canonical-packages
         runs-on: ${{ matrix.os }}
         timeout-minutes: 55
         strategy:
@@ -81,12 +125,14 @@ jobs:
             - uses: actions/setup-dotnet@v4
               with:
                   dotnet-version: '9.0.x'
-            - name: Package discovery
+            - name: Download canonical packages
+              uses: actions/download-artifact@v4
+              with:
+                  name: canonical-packages-${{ github.sha }}
+                  path: artifacts
+            - name: Validate canonical packaged product train
               shell: pwsh
-              run: ./eng/discover-release-projects.ps1 -Configuration Release -ArtifactsPath artifacts
-            - name: Packaging and packaged acceptance
-              shell: pwsh
-              run: ./eng/test-packaged-product-train.ps1 -Configuration Release -ArtifactsPath artifacts
+              run: ./eng/test-packaged-product-train.ps1 -Configuration Release -ArtifactsPath artifacts -UseExistingPackages -SkipBuild
             - name: API compatibility
               shell: pwsh
               run: ./eng/validate-public-api.ps1 -Configuration Release -ArtifactsPath artifacts
@@ -96,13 +142,12 @@ jobs:
             - name: SourceLink local mappings, PDBs, and checksums
               shell: pwsh
               run: ./eng/validate-sourcelink.ps1 -ArtifactsPath artifacts -SkipRemoteRetrieval
-            - name: Upload packages and diagnostics
+            - name: Upload platform validation diagnostics
               if: always()
               uses: actions/upload-artifact@v4
               with:
                   name: package-validation-${{ matrix.os }}-${{ github.sha }}
                   path: |
-                      artifacts/packages/**
                       artifacts/reports/**
                       artifacts/logs/**
                       artifacts/**/*.log
@@ -134,6 +179,7 @@ jobs:
     validated-product-train:
         name: Assemble validated product train
         needs:
+            - canonical-packages
             - package-validation
             - reproducibility
         runs-on: ubuntu-latest
@@ -145,6 +191,11 @@ jobs:
             - uses: actions/setup-dotnet@v4
               with:
                   dotnet-version: '9.0.x'
+            - name: Download canonical packages
+              uses: actions/download-artifact@v4
+              with:
+                  name: canonical-packages-${{ github.sha }}
+                  path: validated-inputs/canonical
             - name: Download Ubuntu package validation
               uses: actions/download-artifact@v4
               with:
@@ -163,6 +214,12 @@ jobs:
             - name: Aggregate validated reports and generate candidate manifest
               shell: pwsh
               run: ./eng/assemble-validated-product-train.ps1 -InputsPath validated-inputs -ArtifactsPath artifacts
+            - name: Verify candidate manifest exists
+              shell: pwsh
+              run: if (-not (Test-Path artifacts/manifests/release-candidate-manifest.json)) { throw "Release candidate manifest was not generated." }
+            - name: Validate publication candidate without publishing
+              shell: pwsh
+              run: ./eng/publish-product-train.ps1 -ArtifactsPath artifacts -ValidateCandidateOnly
             - name: Upload publication-compatible validated train
               if: always()
               uses: actions/upload-artifact@v4

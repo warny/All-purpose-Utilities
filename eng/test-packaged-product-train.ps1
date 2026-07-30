@@ -5,7 +5,9 @@ param(
     [switch] $SkipBuild,
     [switch] $SkipSourceLink,
     [switch] $KeepTemporaryProjects,
-    [switch] $TestNativeRunnerOnly
+    [switch] $TestNativeRunnerOnly,
+    [switch] $UseExistingPackages,
+    [switch] $ValidateExistingPackagesOnly
 )
 
 $ErrorActionPreference = "Stop"
@@ -23,6 +25,9 @@ $manifest = Get-Content (Join-Path $PSScriptRoot "product-train-manifest.json") 
 $nativeLogRoot = Join-Path $artifactsRoot "logs/packaged-acceptance"
 $dotnetPath = @(Get-Command dotnet -CommandType Application)[0].Source
 $nativeCommandIndex = 0
+if ($ValidateExistingPackagesOnly -and -not $UseExistingPackages) {
+    throw "ValidateExistingPackagesOnly requires UseExistingPackages."
+}
 
 <# Runs every dotnet acceptance command with a command-specific timeout and log. #>
 function Invoke-AcceptanceDotNet {
@@ -64,6 +69,42 @@ if ($TestNativeRunnerOnly) {
 $expectedPackages = @{}
 foreach ($package in $manifest.packages) {
     $expectedPackages[$package.packageId] = [string]$manifest.version
+}
+
+<# Verifies that the package directory still contains the exact canonical artifact set. #>
+function Get-ValidatedCanonicalPackages {
+    $reportPath = Join-Path $artifactsRoot "reports/canonical-packages.json"
+    if (-not (Test-Path -LiteralPath $reportPath -PathType Leaf)) { throw "Canonical package report is missing at '$reportPath'." }
+    $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+    $commit = (& git -C $repoRoot rev-parse HEAD).Trim()
+    if ($LASTEXITCODE -ne 0) { throw "Unable to resolve the package-validation commit." }
+    if ($report.productTrain -ne $manifest.productTrain -or $report.version -ne $manifest.version -or $report.commit -ne $commit) {
+        throw "Canonical package report identity, version, or commit does not match this validation run."
+    }
+    $expectedFiles = @($manifest.packages | ForEach-Object {
+        "$($_.packageId).$($manifest.version).nupkg"
+        if ($_.symbolPackage) { "$($_.packageId).$($manifest.version).snupkg" }
+    } | Sort-Object)
+    $reportedFiles = @($report.packages.file | Sort-Object)
+    $actualFiles = @(Get-ChildItem $packagesPath -File | Where-Object Extension -in @(".nupkg", ".snupkg") | Select-Object -ExpandProperty Name | Sort-Object)
+    if (Compare-Object $expectedFiles $reportedFiles) { throw "canonical-packages.json does not declare the exact product-train package set." }
+    if (Compare-Object $expectedFiles $actualFiles) { throw "Existing package directory does not contain the exact canonical package set." }
+    foreach ($item in $report.packages) {
+        $actualHash = (Get-FileHash (Join-Path $packagesPath $item.file) -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($actualHash -ne $item.sha256) {
+            throw "Canonical package '$($item.file)' no longer matches canonical-packages.json."
+        }
+    }
+    return $report
+}
+
+$canonicalPackages = $null
+if ($UseExistingPackages) {
+    $canonicalPackages = Get-ValidatedCanonicalPackages
+    if ($ValidateExistingPackagesOnly) {
+        Write-Host "Existing canonical package validation passed; no package was built or packed."
+        return
+    }
 }
 
 <#
@@ -116,14 +157,16 @@ function Remove-AcceptanceDirectory {
 }
 
 try {
-    if (-not $SkipBuild) {
+    if (-not $UseExistingPackages -and -not $SkipBuild) {
         & Invoke-AcceptanceDotNet restore (Join-Path $repoRoot "Utils.sln")
         if ($LASTEXITCODE -ne 0) { throw "Solution restore failed." }
         & Invoke-AcceptanceDotNet build (Join-Path $repoRoot "Utils.sln") --configuration $Configuration --no-restore
         if ($LASTEXITCODE -ne 0) { throw "Solution build failed." }
     }
-    & (Join-Path $PSScriptRoot "pack-product-train.ps1") -Configuration $Configuration -ArtifactsPath $ArtifactsPath -NoBuild
-    & (Join-Path $PSScriptRoot "inspect-packages.ps1") -ArtifactsPath $ArtifactsPath -SkipSourceLink:$SkipSourceLink
+    if (-not $UseExistingPackages) {
+        & (Join-Path $PSScriptRoot "pack-product-train.ps1") -Configuration $Configuration -ArtifactsPath $ArtifactsPath -NoBuild
+        & (Join-Path $PSScriptRoot "inspect-packages.ps1") -ArtifactsPath $ArtifactsPath -SkipSourceLink:$SkipSourceLink
+    }
 
     Remove-AcceptanceDirectory -Path $temporaryPath
     New-Item $globalPackages -ItemType Directory -Force | Out-Null
@@ -328,7 +371,10 @@ try {
         $content = Get-Content $_.FullName -Raw
         [regex]::Matches($content, 'PackageReference Include="(omy\.[^"]+)"') | ForEach-Object { $_.Groups[1].Value }
     } | Sort-Object -Unique)
-    $acceptanceReport = [ordered]@{ version = [string]$manifest.version; platform = [Runtime.InteropServices.RuntimeInformation]::OSDescription; packages = @($manifest.packages | ForEach-Object { [ordered]@{ packageId = $_.packageId; restored = $true; compiled = $true; assemblyLoaded = ($_.kind -ne 'analyzer'); publicTypeFound = ($_.kind -ne 'analyzer'); analyzerLoaded = ($_.kind -eq 'analyzer'); functionalScenarioExecuted = ($specializedPackageIds -contains $_.packageId); profile = $_.acceptanceProfile } }); specializedConsumers = @($projects.Name); passed = $true }
+    $commit = (& git -C $repoRoot rev-parse HEAD).Trim()
+    if ($LASTEXITCODE -ne 0) { throw "Unable to resolve the packaged-acceptance commit." }
+    $validatedArtifacts = if ($null -ne $canonicalPackages) { @($canonicalPackages.packages | ForEach-Object { [ordered]@{ file = $_.file; sha256 = $_.sha256 } }) } else { @() }
+    $acceptanceReport = [ordered]@{ productTrain = [string]$manifest.productTrain; commit = $commit; version = [string]$manifest.version; platform = [Runtime.InteropServices.RuntimeInformation]::OSDescription; artifacts = $validatedArtifacts; packages = @($manifest.packages | ForEach-Object { [ordered]@{ packageId = $_.packageId; restored = $true; compiled = $true; executed = $true; audited = $true; assemblyLoaded = ($_.kind -ne 'analyzer'); publicTypeFound = ($_.kind -ne 'analyzer'); analyzerLoaded = ($_.kind -eq 'analyzer'); functionalScenarioExecuted = ($specializedPackageIds -contains $_.packageId); profile = $_.acceptanceProfile } }); specializedConsumers = @($projects.Name); passed = $true }
     $reportDirectory = Join-Path $artifactsRoot "reports"
     New-Item $reportDirectory -ItemType Directory -Force | Out-Null
     $acceptanceReport | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $reportDirectory "packaged-acceptance.json")

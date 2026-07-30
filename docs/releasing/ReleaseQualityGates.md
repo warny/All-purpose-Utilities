@@ -28,13 +28,16 @@ Warning exceptions are project-and-code specific in `eng/release-warning-excepti
 ## CI validation tiers
 
 Pull requests use `.github/workflows/dotnetcore.yml`. Build, blocking vulnerability
-checks, unit and functional tests complete before package validation starts. Package
+checks, unit and functional tests run first. A dedicated Ubuntu job then discovers the
+packable projects and produces the canonical package train exactly once. Package
 acceptance, API compatibility, release-warning checks, and local SourceLink mapping,
-PDB, and checksum checks run as individually visible steps on Ubuntu and Windows.
-Reproducibility runs once on Ubuntu because the candidate archives are intended to
-be OS-independent. Job limits are 25 minutes for build/tests, 55 minutes for packaged
-acceptance, and 35 minutes for reproducibility. Every job retains available reports,
-logs, and packages after failure or cancellation.
+PDB, and checksum checks run as individually visible steps on Ubuntu and Windows after
+both jobs download that same immutable package artifact. Neither validation job packs
+the projects. Reproducibility remains a separate two-build check on Ubuntu; it measures
+repeatability in one controlled environment rather than comparing independent builds
+from different operating systems. Job limits are 25 minutes for build/tests, 35 minutes
+for canonical packaging, 55 minutes for packaged acceptance, and 35 minutes for
+reproducibility. Every job retains available reports and logs after failure or cancellation.
 
 The full workflow, `.github/workflows/release-quality-gates.yml`, runs weekly, for
 `v*` tags, and on manual dispatch. It retains the remote SourceLink download, deprecated
@@ -78,12 +81,13 @@ for the full workflow rather than merely increasing the old timeout.
 
 ## Publication-compatible validation artifact
 
-After both platform package-validation jobs and the Ubuntu reproducibility job pass,
-the PR workflow compares the complete Ubuntu and Windows candidate package sets and
-requires identical stable archive entries. ZIP container metadata may differ between
-operating systems; such packages are recorded as logically identical after normalization,
-while any entry-name or entry-content difference remains blocking. It combines the canonical packages, validation
-reports, and reproducibility report, then generates and self-validates
+The Ubuntu canonical-packages job records the SHA-256 of every `.nupkg` and `.snupkg`
+in `canonical-packages.json`. Both platform validation jobs recalculate those hashes
+before running consumers and copy them into their acceptance reports. Assembly verifies
+that Ubuntu and Windows tested every canonical file with exactly the recorded hash; it
+does not compare independently rebuilt platform packages. It copies only the canonical
+package directory, combines the platform validation reports and the distinct Ubuntu
+reproducibility report, then generates and self-validates
 `artifacts/manifests/release-candidate-manifest.json`. The resulting
 `full-product-train-<sha>` artifact preserves the contract consumed by
 `publish-validated-product-train.yml`; pull requests still never publish packages.
