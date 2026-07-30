@@ -55,6 +55,20 @@ $nativeRoot = Join-Path ([IO.Path]::GetTempPath()) "release-native-$([guid]::New
 try {
     New-Item $nativeRoot -ItemType Directory -Force | Out-Null
     $pwsh = Join-Path $PSHOME $(if ($IsWindows) { "pwsh.exe" } else { "pwsh" })
+    $missingExecutable = "release-test-missing-executable-$([guid]::NewGuid().ToString('N'))"
+    $startFailureLog = Join-Path $nativeRoot "start-failure.log"
+    try {
+        Invoke-NativeCommand -FilePath $missingExecutable -LogPath $startFailureLog | Out-Null
+        throw "A missing executable did not fail during process startup."
+    } catch {
+        if ($_.Exception.Message -notmatch [regex]::Escape($missingExecutable)) { throw "Process startup failure lost the executable name: $($_.Exception.Message)" }
+    }
+    if (-not (Test-Path $startFailureLog)) { throw "Process startup failure did not create a log." }
+    $startFailureContent = Get-Content $startFailureLog -Raw
+    if ($startFailureContent -notmatch "COMMAND START" -or $startFailureContent -notmatch "COMMAND END.+FAILED") {
+        throw "Process startup failure log does not contain durable START and FAILED END markers."
+    }
+
     $success = Invoke-NativeCommand -FilePath $pwsh -ArgumentList @("-NoProfile", "-Command", "[Console]::Out.Write('hello output'); [Console]::Error.Write('hello error')") -Timeout ([TimeSpan]::FromSeconds(10)) -LogPath (Join-Path $nativeRoot "success.log")
     if ($success.ExitCode -ne 0 -or $success.StandardOutput -notmatch "hello output" -or $success.StandardError -notmatch "hello error") { throw "Native stdout/stderr capture failed." }
 

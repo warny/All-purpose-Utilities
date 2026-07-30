@@ -31,6 +31,7 @@ function Invoke-NativeCommand {
     $stderr = [Text.StringBuilder]::new()
     $status = "FAILED"
     $exitCode = $null
+    $processStarted = $false
     $process = [Diagnostics.Process]::new()
     $process.StartInfo = [Diagnostics.ProcessStartInfo]::new()
     $process.StartInfo.FileName = $FilePath
@@ -50,6 +51,7 @@ function Invoke-NativeCommand {
     $logWriter.WriteLine("WORKING DIRECTORY: $WorkingDirectory")
     try {
         if (-not $process.Start()) { throw "Unable to start native command: $displayCommand" }
+        $processStarted = $true
         $stdoutTask = $process.StandardOutput.ReadLineAsync()
         $stderrTask = $process.StandardError.ReadLineAsync()
         $stdoutComplete = $false
@@ -110,7 +112,7 @@ function Invoke-NativeCommand {
         return $result
     } finally {
         $duration = [DateTime]::UtcNow - $start
-        if ($process.HasExited) { $exitCode = $process.ExitCode }
+        if ($processStarted -and $process.HasExited) { $exitCode = $process.ExitCode }
         $endMessage = "[$([DateTime]::UtcNow.ToString('O'))] COMMAND END — $status — $duration — exit code: $(if ($null -eq $exitCode) { 'unavailable' } else { $exitCode })"
         Write-Host $endMessage
         $logWriter.WriteLine($endMessage)
