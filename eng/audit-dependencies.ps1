@@ -3,13 +3,16 @@
 Audits vulnerable, deprecated, and outdated dependencies for the solution and product train.
 #>
 [CmdletBinding()]
-param([string] $ArtifactsPath = "artifacts")
+param([string] $ArtifactsPath = "artifacts", [switch] $SkipDeprecated, [switch] $SkipOutdated)
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "Release.Common.ps1")
 $repoRoot = Split-Path -Parent $PSScriptRoot; $artifactRoot = Resolve-RepositoryPath $repoRoot $ArtifactsPath
 $exceptions = Get-Content (Join-Path $PSScriptRoot 'dependency-exceptions.json') -Raw | ConvertFrom-Json
 if (@($exceptions.exceptions | Where-Object { [DateTime]$_.expiryDate -lt [DateTime]::UtcNow.Date })) { throw 'A dependency exception has expired.' }
-$reports=@(); foreach($mode in @(@('vulnerable','--vulnerable','--include-transitive'),@('deprecated','--deprecated'),@('outdated','--outdated'))){
+$auditModes = @(@('vulnerable','--vulnerable','--include-transitive'))
+if (-not $SkipDeprecated) { $auditModes += ,@('deprecated','--deprecated') }
+if (-not $SkipOutdated) { $auditModes += ,@('outdated','--outdated') }
+$reports=@(); foreach($mode in $auditModes){
     $name=$mode[0]; $args=@('list',(Join-Path $repoRoot 'Utils.sln'),'package')+$mode[1..($mode.Count-1)]; $output=& dotnet @args 2>&1; $exit=$LASTEXITCODE
     $path=Join-Path $artifactRoot "reports/dependencies-$name.log"; New-Item (Split-Path $path -Parent) -ItemType Directory -Force | Out-Null; $output|Set-Content $path
     if($exit-ne 0){throw "Dependency $name audit failed."}

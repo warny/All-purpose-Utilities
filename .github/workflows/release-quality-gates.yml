@@ -1,0 +1,64 @@
+name: Full release quality gates
+
+on:
+    workflow_dispatch:
+    push:
+        tags: ['v*']
+    schedule:
+        - cron: '23 3 * * 1'
+
+concurrency:
+    group: release-quality-${{ github.ref }}
+    cancel-in-progress: ${{ github.event_name != 'push' }}
+
+permissions:
+    contents: read
+
+jobs:
+    full-validation:
+        name: Full validation (${{ matrix.os }})
+        runs-on: ${{ matrix.os }}
+        timeout-minutes: 120
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest, windows-latest]
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+            - uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: '9.0.x'
+            - name: Full build, tests, packages, remote SourceLink, and dependency audits
+              shell: pwsh
+              run: ./eng/run-release-quality-gates.ps1 -Mode FullRelease -Configuration Release -SkipReproducibility
+            - name: Upload all release diagnostics
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: full-release-${{ matrix.os }}-${{ github.sha }}
+                  path: artifacts/**/*
+                  if-no-files-found: warn
+
+    reproducibility:
+        name: Full reproducibility
+        runs-on: ubuntu-latest
+        timeout-minutes: 45
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+            - uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: '9.0.x'
+            - name: Two isolated package builds
+              shell: pwsh
+              run: ./eng/test-package-reproducibility.ps1 -Configuration Release -ArtifactsPath artifacts
+            - name: Upload reproducibility diagnostics
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: full-reproducibility-${{ github.sha }}
+                  path: artifacts/**/*
+                  if-no-files-found: warn

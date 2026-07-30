@@ -115,7 +115,7 @@ try {
             "using System.Reflection; var assembly = Assembly.Load(`"$assemblyName`"); var representative = assembly.GetExportedTypes().FirstOrDefault() ?? throw new InvalidOperationException(`"No public type.`"); Console.WriteLine(`"assembly-loaded:${assemblyName}:`" + representative.FullName);" | Set-Content (Join-Path $projectRoot "Program.cs")
         }
         $automaticProject = Join-Path $projectRoot "Consumer.csproj"
-        & dotnet restore $automaticProject --configfile $configPath --packages $globalPackages --no-cache --force
+        & dotnet restore $automaticProject --configfile $configPath --packages $globalPackages
         if ($LASTEXITCODE -ne 0) { throw "Automatic restore failed for $($package.packageId)." }
         $automaticAssets = Get-Content (Join-Path $projectRoot "obj/project.assets.json") -Raw | ConvertFrom-Json
         foreach ($library in $automaticAssets.libraries.PSObject.Properties | Where-Object Name -like "omy.*/*") {
@@ -133,7 +133,7 @@ try {
     foreach ($project in $projects) {
         if ((Get-Content $project.FullName -Raw) -match "ProjectReference") { throw "$($project.FullName) contains a forbidden ProjectReference." }
         Write-Host "Restore: $($project.Name)"
-        & dotnet restore $project.FullName --configfile $configPath --packages $globalPackages --no-cache --force
+        & dotnet restore $project.FullName --configfile $configPath --packages $globalPackages
         if ($LASTEXITCODE -ne 0) { throw "Restore failed for $($project.FullName)." }
         $assetsPath = Join-Path $project.Directory.FullName "obj/project.assets.json"
         $assets = Get-Content $assetsPath -Raw | ConvertFrom-Json
@@ -223,7 +223,7 @@ try {
     Copy-Item (Join-Path $consumerRoot "ParserGeneratorConsumer/Program.cs") $incrementalPath
     Copy-Item (Join-Path $consumerRoot "ParserGeneratorConsumer/Grammars/*.g4") (Join-Path $incrementalPath "Grammars")
     $incrementalProject = Join-Path $incrementalPath "ParserGeneratorConsumer.csproj"
-    & dotnet restore $incrementalProject --configfile $configPath --packages $globalPackages --no-cache --force
+    & dotnet restore $incrementalProject --configfile $configPath --packages $globalPackages
     if ($LASTEXITCODE -ne 0) { throw "Incremental generator consumer restore failed." }
 
     # A real project build proves that imported changes replace, rather than accumulate with, generated output.

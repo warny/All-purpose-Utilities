@@ -1,5 +1,86 @@
 <# Shared, side-effect-free helpers for the repository-wide release gates. #>
 
+<#
+.SYNOPSIS
+Runs a native command with bounded execution time and durable diagnostics.
+.DESCRIPTION
+Arguments are added through ProcessStartInfo.ArgumentList so spaces and quoting are
+preserved on Windows and Linux. Standard output and error are captured separately,
+mirrored to the console, and written to a UTF-8 log. A timeout terminates the process
+tree and throws an error containing the command, duration, exit code, and log path.
+#>
+function Invoke-NativeCommand {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string] $FilePath,
+        [string[]] $ArgumentList = @(),
+        [TimeSpan] $Timeout = ([TimeSpan]::FromMinutes(10)),
+        [Parameter(Mandatory)][string] $LogPath,
+        [string] $WorkingDirectory = (Get-Location).Path,
+        [switch] $IgnoreExitCode
+    )
+
+    if ($Timeout -le [TimeSpan]::Zero) { throw "Timeout must be greater than zero." }
+    $resolvedLog = [IO.Path]::GetFullPath($LogPath)
+    New-Item (Split-Path $resolvedLog -Parent) -ItemType Directory -Force | Out-Null
+    $displayCommand = (@($FilePath) + @($ArgumentList | ForEach-Object { if ($_ -match '\s') { '"' + $_.Replace('"', '\"') + '"' } else { $_ } })) -join ' '
+    $start = [DateTime]::UtcNow
+    $process = [Diagnostics.Process]::new()
+    $process.StartInfo = [Diagnostics.ProcessStartInfo]::new()
+    $process.StartInfo.FileName = $FilePath
+    $process.StartInfo.WorkingDirectory = $WorkingDirectory
+    $process.StartInfo.UseShellExecute = $false
+    $process.StartInfo.RedirectStandardOutput = $true
+    $process.StartInfo.RedirectStandardError = $true
+    $process.StartInfo.CreateNoWindow = $true
+    foreach ($argument in $ArgumentList) { [void]$process.StartInfo.ArgumentList.Add($argument) }
+    try {
+        if (-not $process.Start()) { throw "Unable to start native command: $displayCommand" }
+        # Read both redirected streams concurrently to prevent a full pipe from
+        # deadlocking the child while preserving stdout/stderr independently.
+        $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+        $stderrTask = $process.StandardError.ReadToEndAsync()
+        if (-not $process.WaitForExit([int][Math]::Min($Timeout.TotalMilliseconds, [int]::MaxValue))) {
+            try { $process.Kill($true) } catch { Write-Warning "Unable to terminate the complete process tree: $($_.Exception.Message)" }
+            $process.WaitForExit()
+            $stdoutText = $stdoutTask.GetAwaiter().GetResult()
+            $stderrText = $stderrTask.GetAwaiter().GetResult()
+            $duration = [DateTime]::UtcNow - $start
+            $logText = "COMMAND: $displayCommand`nTIMEOUT: $Timeout`nDURATION: $duration`nSTDOUT:`n$stdoutText`nSTDERR:`n$stderrText"
+            [IO.File]::WriteAllText($resolvedLog, $logText, [Text.UTF8Encoding]::new($false))
+            throw "Native command timed out after $duration (exit code: timeout): $displayCommand. Log: $resolvedLog"
+        }
+        $process.WaitForExit()
+        $stdoutText = $stdoutTask.GetAwaiter().GetResult()
+        $stderrText = $stderrTask.GetAwaiter().GetResult()
+        if ($stdoutText) { Write-Host $stdoutText.TrimEnd() }
+        if ($stderrText) { [Console]::Error.WriteLine($stderrText.TrimEnd()) }
+        $duration = [DateTime]::UtcNow - $start
+        $exitCode = $process.ExitCode
+        $logText = "COMMAND: $displayCommand`nEXIT CODE: $exitCode`nDURATION: $duration`nSTDOUT:`n$stdoutText`nSTDERR:`n$stderrText"
+        [IO.File]::WriteAllText($resolvedLog, $logText, [Text.UTF8Encoding]::new($false))
+        $result = [pscustomobject]@{ ExitCode = $exitCode; StandardOutput = $stdoutText; StandardError = $stderrText; Duration = $duration; LogPath = $resolvedLog; Command = $displayCommand }
+        if ($exitCode -ne 0 -and -not $IgnoreExitCode) { throw "Native command failed after $duration (exit code: $exitCode): $displayCommand. Log: $resolvedLog" }
+        return $result
+    } finally {
+        $process.Dispose()
+    }
+}
+
+<# Runs a named release gate with timestamps, elapsed time, and GitHub log grouping. #>
+function Invoke-ReleaseGate {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string] $Name, [Parameter(Mandatory)][string] $DisplayName, [Parameter(Mandatory)][scriptblock] $Action)
+    $start = [DateTime]::UtcNow
+    Write-Host "[$($start.ToString('O'))] START $Name"
+    if ($env:GITHUB_ACTIONS -eq 'true') { Write-Host "::group::$DisplayName" }
+    try { & $Action }
+    catch { $duration = [DateTime]::UtcNow - $start; throw "Gate '$Name' failed after $duration. $($_.Exception.Message)" }
+    finally { if ($env:GITHUB_ACTIONS -eq 'true') { Write-Host "::endgroup::" } }
+    $duration = [DateTime]::UtcNow - $start
+    Write-Host "[$([DateTime]::UtcNow.ToString('O'))] END $Name — $duration"
+}
+
 <# Loads the authoritative product-train manifest. #>
 function Get-ProductTrainManifest {
     param([Parameter(Mandatory)][string] $RepositoryRoot)

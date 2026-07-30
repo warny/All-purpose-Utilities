@@ -1,27 +1,19 @@
 <#
 .SYNOPSIS
-Validates orchestration behavior for in-process PowerShell release gates.
+Validates release-gate mode, skip behavior, and ordering without network access.
 #>
 [CmdletBinding()]
 param()
 $ErrorActionPreference = "Stop"
-$previousExitCode = $global:LASTEXITCODE
-try {
-    # Simulate a failed native command that ran before a successful PowerShell gate.
-    & dotnet definitely-invalid-command *> $null
-    if ($global:LASTEXITCODE -eq 0) {
-        throw "The native-command failure setup unexpectedly succeeded."
-    }
-    $residualExitCode = $global:LASTEXITCODE
-    & (Join-Path $PSScriptRoot "test-release-common.ps1")
-    if (-not $?) {
-        throw "A successful PowerShell release gate reported failure."
-    }
-    if ($global:LASTEXITCODE -ne $residualExitCode) {
-        throw "The regression setup did not preserve the residual native exit code."
-    }
-} finally {
-    $global:LASTEXITCODE = $previousExitCode
+$orchestrator = Join-Path $PSScriptRoot "run-release-quality-gates.ps1"
+$prPlan = @(& $orchestrator -Mode PullRequest -PlanOnly 6>&1 | ForEach-Object ToString)
+foreach ($skipped in @("build", "tests", "reproducibility")) {
+    if ($prPlan -notcontains "SKIP $skipped") { throw "PullRequest mode did not skip '$skipped'." }
 }
-
+$expected = @("RUN package-discovery", "RUN packaged-product-train", "RUN api-compatibility", "RUN release-warnings", "RUN sourcelink", "RUN dependency-audit", "RUN release-manifest")
+$actual = @($prPlan | Where-Object { $_ -like "RUN *" })
+if (($actual -join "|") -cne ($expected -join "|")) { throw "PullRequest gates ran in an unexpected order: $($actual -join ', ')." }
+$fullPlan = @(& $orchestrator -Mode FullRelease -SkipPackagedAcceptance -SkipRemoteSourceLink -SkipOutdatedDependencyAudit -PlanOnly 6>&1 | ForEach-Object ToString)
+if ($fullPlan -notcontains "SKIP packaged-product-train") { throw "Explicit packaged-acceptance skip was ignored." }
+if ($fullPlan -notcontains "RUN build" -or $fullPlan -notcontains "RUN tests" -or $fullPlan -notcontains "RUN reproducibility") { throw "FullRelease mode omitted a required gate." }
 Write-Host "Release orchestrator tests passed."

@@ -2,53 +2,74 @@ name: Utils
 
 on:
     pull_request:
-        branches:
-            - '**'
+        branches: ['**']
+    workflow_dispatch:
+
+concurrency:
+    group: utils-pr-${{ github.event.pull_request.number || github.ref }}
+    cancel-in-progress: true
 
 permissions:
     contents: read
 
 jobs:
     build:
-
         runs-on: ubuntu-latest
-
+        timeout-minutes: 25
         steps:
             - uses: actions/checkout@v4
-            - name: Setup .NET 9.0.x
-              uses: actions/setup-dotnet@v4
+            - uses: actions/setup-dotnet@v4
               with:
                   dotnet-version: '9.0.x'
+            - name: Restore
+              run: dotnet restore Utils.sln
             - name: Build
-              run: dotnet build --configuration GitHub
-            - name: Scan vulnerable packages
-              run: dotnet list Utils.sln package --vulnerable --include-transitive
+              run: dotnet build Utils.sln --configuration GitHub --no-restore
+            - name: Blocking vulnerability scan
+              shell: pwsh
+              run: ./eng/audit-dependencies.ps1 -ArtifactsPath artifacts -SkipDeprecated -SkipOutdated
+            - name: Upload build diagnostics
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: build-diagnostics
+                  path: artifacts/**/*
+                  if-no-files-found: warn
 
     test:
-
         needs: build
         runs-on: ubuntu-latest
+        timeout-minutes: 25
         strategy:
+            fail-fast: false
             matrix:
                 include:
-                    - test-suite: unit
+                    - suite: unit
                       project: UtilsTest/UtilsTest.Unit.csproj
-                    - test-suite: functional
+                    - suite: functional
                       project: UtilsTest.Functional/UtilsTest.Functional.csproj
-        name: Test (${{ matrix.test-suite }})
-
+        name: Test (${{ matrix.suite }})
         steps:
             - uses: actions/checkout@v4
-            - name: Setup .NET 9.0.x
-              uses: actions/setup-dotnet@v4
+            - uses: actions/setup-dotnet@v4
               with:
                   dotnet-version: '9.0.x'
-            - name: Test (${{ matrix.test-suite }})
-              run: dotnet test ${{ matrix.project }} --verbosity normal
+            - run: dotnet test ${{ matrix.project }} --configuration Release --logger "trx;LogFileName=${{ matrix.suite }}.trx" --results-directory artifacts/test-results
+            - name: Upload test results
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: test-${{ matrix.suite }}
+                  path: artifacts/test-results/**
+                  if-no-files-found: warn
 
-    release-quality-gates:
-        name: Packaged full product-train acceptance (${{ matrix.os }})
+    package-validation:
+        name: Package validation (${{ matrix.os }})
+        needs:
+            - build
+            - test
         runs-on: ${{ matrix.os }}
+        timeout-minutes: 55
         strategy:
             fail-fast: false
             matrix:
@@ -57,23 +78,52 @@ jobs:
             - uses: actions/checkout@v4
               with:
                   fetch-depth: 0
-                  ref: ${{ github.event.pull_request.head.sha }}
-            - name: Setup .NET 9.0.x
-              uses: actions/setup-dotnet@v4
+            - uses: actions/setup-dotnet@v4
               with:
                   dotnet-version: '9.0.x'
-            - name: Run repository-wide release quality gates
+            - name: Packaging and packaged acceptance
               shell: pwsh
-              run: ./eng/run-release-quality-gates.ps1 -Configuration Release
-            - name: Upload validated full train and reports
+              run: ./eng/test-packaged-product-train.ps1 -Configuration Release -ArtifactsPath artifacts
+            - name: API compatibility
+              shell: pwsh
+              run: ./eng/validate-public-api.ps1 -Configuration Release -ArtifactsPath artifacts
+            - name: Release warnings
+              shell: pwsh
+              run: ./eng/validate-release-warnings.ps1 -Configuration Release -ArtifactsPath artifacts
+            - name: SourceLink local mappings, PDBs, and checksums
+              shell: pwsh
+              run: ./eng/validate-sourcelink.ps1 -ArtifactsPath artifacts -SkipRemoteRetrieval
+            - name: Upload packages and diagnostics
               if: always()
               uses: actions/upload-artifact@v4
               with:
-                  name: full-product-train-${{ matrix.os }}-${{ github.sha }}
+                  name: package-validation-${{ matrix.os }}-${{ github.sha }}
                   path: |
-                      artifacts/packages/*.nupkg
-                      artifacts/packages/*.snupkg
+                      artifacts/packages/**
                       artifacts/reports/**
-                      artifacts/manifests/**
+                      artifacts/logs/**
                       artifacts/**/*.log
+                  if-no-files-found: warn
+
+    reproducibility:
+        name: Reproducibility (Ubuntu)
+        needs: package-validation
+        runs-on: ubuntu-latest
+        timeout-minutes: 35
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+            - uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: '9.0.x'
+            - name: Reproducibility
+              shell: pwsh
+              run: ./eng/test-package-reproducibility.ps1 -Configuration Release -ArtifactsPath artifacts
+            - name: Upload reproducibility diagnostics
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: reproducibility-${{ github.sha }}
+                  path: artifacts/**/*
                   if-no-files-found: warn
