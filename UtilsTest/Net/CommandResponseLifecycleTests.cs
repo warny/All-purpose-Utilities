@@ -1542,42 +1542,121 @@ public class CommandResponseLifecycleTests
     }
 
     // ──────────────────────────────────────────────────────────────
-    // Round-5 review — CommandResponseClient multiline transition fix
+    // Round-6 review — SendMultilineCommandAsync
     // ──────────────────────────────────────────────────────────────
 
-    [TestMethod]
-    public async Task SendCommandAsync_TransitionWindow_BodyLinesQueuedForReadAsync()
+    // Helper that exposes the protected SendMultilineCommandAsync for testing.
+    private sealed class MultilineClient : CommandResponseClient
     {
-        // After SendCommandAsync returns (the initial status line received), body lines sent
-        // by the server before ReadAsync is called must be queued and not lost as unsolicited.
-        // This exercises the _pendingTransition flag that bridges the gap between the end of
-        // SendCommandAsync and the start of the next ReadAsync.
+        public Task<(IReadOnlyList<ServerResponse> StatusLines, IReadOnlyList<ServerResponse> BodyLines)>
+            SendMultilineAsync(string command, Func<ServerResponse, bool> isTerminator, CancellationToken ct = default)
+            => SendMultilineCommandAsync(command, isTerminator, ct);
+    }
+
+    [TestMethod]
+    public async Task SingleLineCommand_UnsolicitedResponse_IsRaisedImmediately()
+    {
+        // After a single-line command completes, a server push must be raised as
+        // UnsolicitedResponseReceived, NOT silently queued. The round-5 _pendingTransition
+        // flag would have swallowed such a push; SendMultilineCommandAsync removes the flag.
         (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
         using CommandResponseClient client = new();
         int unsolicitedCount = 0;
         client.UnsolicitedResponseReceived += _ => Interlocked.Increment(ref unsolicitedCount);
         await client.ConnectAsync(clientStream, leaveOpen: true);
 
-        // Client sends a command; server responds with an initial status line only.
-        Task<IReadOnlyList<ServerResponse>> sendTask = client.SendCommandAsync("RETR 1");
-        await WithTimeout(Task.Run(() => serverReader.ReadLine()), "Server did not see RETR 1.");
-        await serverWriter.WriteLineAsync("+OK bytes");
+        Task<IReadOnlyList<ServerResponse>> sendTask = client.SendCommandAsync("PING");
+        await WithTimeout(Task.Run(() => serverReader.ReadLine()), "Server did not see PING.");
+        await serverWriter.WriteLineAsync("250 PONG");
         await WithTimeout(sendTask, "SendCommandAsync timed out.");
 
-        // Server sends body lines NOW — before the client calls ReadAsync.
-        // Without _pendingTransition these would be misrouted as unsolicited.
+        await serverWriter.WriteLineAsync("120 Requeued");
+        await Task.Delay(100);
+
+        Assert.AreEqual(1, unsolicitedCount,
+            "Unsolicited push after a completed command must be raised immediately, not queued.");
+    }
+
+    [TestMethod]
+    public async Task SingleLineCommand_UnsolicitedResponse_NotDiscardedByNextCommand()
+    {
+        // Verifies that a push raised as unsolicited (not queued) is not silently
+        // discarded by DrainPendingResponses when the next command starts.
+        (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
+        using CommandResponseClient client = new();
+        int unsolicitedCount = 0;
+        client.UnsolicitedResponseReceived += _ => Interlocked.Increment(ref unsolicitedCount);
+        await client.ConnectAsync(clientStream, leaveOpen: true);
+
+        // First command.
+        Task<IReadOnlyList<ServerResponse>> cmd1 = client.SendCommandAsync("CMD1");
+        await WithTimeout(Task.Run(() => serverReader.ReadLine()), "Server did not see CMD1.");
+        await serverWriter.WriteLineAsync("250 OK1");
+        await WithTimeout(cmd1, "CMD1 timed out.");
+
+        // Unsolicited push arrives between commands.
+        await serverWriter.WriteLineAsync("120 Push");
+        await Task.Delay(100);
+        Assert.AreEqual(1, unsolicitedCount, "Push must be raised after CMD1 completes.");
+
+        // Second command — DrainPendingResponses must find nothing to drain.
+        Task<IReadOnlyList<ServerResponse>> cmd2 = client.SendCommandAsync("CMD2");
+        await WithTimeout(Task.Run(() => serverReader.ReadLine()), "Server did not see CMD2.");
+        await serverWriter.WriteLineAsync("250 OK2");
+        await WithTimeout(cmd2, "CMD2 timed out.");
+
+        Assert.AreEqual(1, unsolicitedCount,
+            "Unsolicited count must remain 1 after the second command — the push must not be discarded or double-counted.");
+    }
+
+    [TestMethod]
+    public async Task MultilineCommand_BodyLines_NotRaisedAsUnsolicited()
+    {
+        // Body lines delivered by SendMultilineCommandAsync must not leak to
+        // UnsolicitedResponseReceived. _activeCommandWaiters remains > 0 throughout
+        // both the status phase and the body phase, so the listener routes every line
+        // to the queue and never fires the unsolicited event.
+        (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
+        using MultilineClient client = new();
+        int unsolicitedCount = 0;
+        client.UnsolicitedResponseReceived += _ => Interlocked.Increment(ref unsolicitedCount);
+        await client.ConnectAsync(clientStream, leaveOpen: true);
+
+        Task<(IReadOnlyList<ServerResponse> Status, IReadOnlyList<ServerResponse> Body)> multiTask =
+            client.SendMultilineAsync("RETR 1", r => r.Code == ".");
+
+        await WithTimeout(Task.Run(() => serverReader.ReadLine()), "Server did not see RETR 1.");
+        await serverWriter.WriteLineAsync("+OK bytes");
         await serverWriter.WriteLineAsync("Body line 1");
         await serverWriter.WriteLineAsync(".");
-        await Task.Delay(100); // let the listener process both lines before ReadAsync is called
 
-        // ReadAsync must find the queued body lines.
-        IReadOnlyList<ServerResponse> body = await WithTimeout(
-            client.ReadAsync(),
-            "ReadAsync timed out — body lines may have been routed as unsolicited.");
+        var (status, body) = await WithTimeout(multiTask, "SendMultilineAsync timed out.");
 
         Assert.AreEqual(0, unsolicitedCount,
-            "Body lines must not be raised as unsolicited when _pendingTransition is active.");
-        Assert.AreEqual(2, body.Count,
-            "ReadAsync must return both body lines queued during the transition window.");
+            "No line from a multiline command exchange must be raised as unsolicited.");
+    }
+
+    [TestMethod]
+    public async Task MultilineCommand_AllBodyLinesReceived()
+    {
+        // SendMultilineCommandAsync must return all body lines before the terminator.
+        (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
+        using MultilineClient client = new();
+        await client.ConnectAsync(clientStream, leaveOpen: true);
+
+        Task<(IReadOnlyList<ServerResponse> Status, IReadOnlyList<ServerResponse> Body)> multiTask =
+            client.SendMultilineAsync("RETR 1", r => r.Code == ".");
+
+        await WithTimeout(Task.Run(() => serverReader.ReadLine()), "Server did not see RETR 1.");
+        await serverWriter.WriteLineAsync("+OK 42 octets");
+        await serverWriter.WriteLineAsync("Line one");
+        await serverWriter.WriteLineAsync("Line two");
+        await serverWriter.WriteLineAsync(".");
+
+        var (status, body) = await WithTimeout(multiTask, "SendMultilineAsync timed out.");
+
+        Assert.AreEqual(1, status.Count, "Status must contain exactly the opening line.");
+        Assert.AreEqual("+OK 42 octets", status[0].Code, "Status code must be the full +OK line.");
+        Assert.AreEqual(2, body.Count, "Body must contain exactly the two lines before the terminator.");
     }
 }

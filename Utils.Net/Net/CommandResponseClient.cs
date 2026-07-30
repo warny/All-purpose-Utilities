@@ -42,14 +42,11 @@ public class CommandResponseClient : IDisposable
     private TimeSpan _listenTimeout = Timeout.InfiniteTimeSpan;
 
     // Item 44 / P1-A: track active response owners so the listener can route each line exactly
-    // once. _activeCommandWaiters covers SendCommandAsync; _activeReadWaiters covers ReadAsync.
+    // once. _activeCommandWaiters covers SendCommandAsync / SendMultilineCommandAsync;
+    // _activeReadWaiters covers ReadAsync.
     // When the sum is zero, a line has no owner and is raised as unsolicited only (not queued).
     private volatile int _activeCommandWaiters;
     private volatile int _activeReadWaiters;
-    // P1 (round-5): set immediately before _activeCommandWaiters is cleared so that lines
-    // arriving between SendCommandAsync returning and the next ReadAsync acquiring the lock
-    // are queued rather than raised as unsolicited, covering the entire protocol transaction.
-    private volatile bool _pendingTransition;
 
     // Item 49: idempotent disposal flag.
     private int _disposed; // 0 = alive, 1 = disposed (use Interlocked)
@@ -388,7 +385,6 @@ public class CommandResponseClient : IDisposable
         await _sendLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            _pendingTransition = false;
             if (_disconnected)
             {
                 throw new IOException("Connection closed.");
@@ -426,8 +422,111 @@ public class CommandResponseClient : IDisposable
                     }
                 }
                 ResetKeepAlive();
-                _pendingTransition = true;
                 return responses;
+            }
+            finally
+            {
+                Interlocked.Decrement(ref _activeCommandWaiters);
+            }
+        }
+        finally
+        {
+            _sendLock.Release();
+        }
+    }
+
+    /// <summary>
+    /// Sends a command, receives the opening status response(s), then reads all body lines
+    /// until <paramref name="isBodyTerminator"/> returns <see langword="true"/>, all within
+    /// a single locked operation. Use for multi-line protocol commands such as POP3 RETR or
+    /// NNTP ARTICLE where body lines immediately follow the status response; holding
+    /// <c>_activeCommandWaiters</c> throughout both phases eliminates the window in which
+    /// body lines would otherwise be misrouted as unsolicited responses.
+    /// </summary>
+    /// <param name="command">Command line to send (must not contain CR, LF or NUL).</param>
+    /// <param name="isBodyTerminator">
+    /// Returns <see langword="true"/> for the body line that signals the end of the payload
+    /// (e.g. a bare <c>.</c> in POP3 or NNTP). The terminator line itself is not included
+    /// in the returned body lines.
+    /// </param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>
+    /// A tuple of <c>StatusLines</c> (the opening response line(s), including the final
+    /// completion or unknown-severity line) and <c>BodyLines</c> (all lines before the
+    /// terminator). <c>BodyLines</c> is empty when the last status line indicates a negative
+    /// response (severity ≥ <see cref="ResponseSeverity.TransientNegative"/>).
+    /// </returns>
+    /// <exception cref="IOException">Thrown when the connection closes before the exchange completes.</exception>
+    /// <exception cref="InvalidDataException">Thrown when <see cref="MaxResponseCount"/> is exceeded.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the client is not connected.</exception>
+    protected async Task<(IReadOnlyList<ServerResponse> StatusLines, IReadOnlyList<ServerResponse> BodyLines)> SendMultilineCommandAsync(
+        string command,
+        Func<ServerResponse, bool> isBodyTerminator,
+        CancellationToken cancellationToken = default)
+    {
+        if (_state == StateDisposed) throw new ObjectDisposedException(GetType().Name);
+        if (_state != StateConnected) throw new InvalidOperationException("Client is not connected.");
+
+        await _sendLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (_disconnected) throw new IOException("Connection closed.");
+            DrainPendingResponses();
+            Logger?.LogDebug("Sending: {Command}", RedactCommandForLog(command));
+
+            Interlocked.Increment(ref _activeCommandWaiters);
+            try
+            {
+                await _writer.WriteLineAsync(command.AsMemory(), cancellationToken).ConfigureAwait(false);
+
+                // Phase 1: status line(s) — same break condition as SendCommandAsync.
+                var statusLines = new List<ServerResponse>();
+                while (true)
+                {
+                    await _responseSignal.WaitAsync(cancellationToken).ConfigureAwait(false);
+                    if (!_responseQueue.TryDequeue(out ServerResponse response))
+                    {
+                        if (_disconnected) throw new IOException("Connection closed.");
+                        continue;
+                    }
+                    statusLines.Add(response);
+                    if (MaxResponseCount > 0 && statusLines.Count > MaxResponseCount)
+                        throw new InvalidDataException($"Server sent more than {MaxResponseCount} response lines for a single command.");
+                    if (response.Severity >= ResponseSeverity.Completion || response.Severity == ResponseSeverity.Unknown)
+                        break;
+                }
+
+                // Phase 2: body lines. _activeCommandWaiters remains > 0 so the listener
+                // routes all body lines to the queue rather than raising them as unsolicited.
+                // Skip body when the last status is a negative response (4xx/5xx).
+                List<ServerResponse> bodyLines;
+                ServerResponse lastStatus = statusLines[^1];
+                if (lastStatus.Severity == ResponseSeverity.TransientNegative ||
+                    lastStatus.Severity == ResponseSeverity.PermanentNegative)
+                {
+                    bodyLines = [];
+                }
+                else
+                {
+                    bodyLines = new List<ServerResponse>();
+                    while (true)
+                    {
+                        await _responseSignal.WaitAsync(cancellationToken).ConfigureAwait(false);
+                        if (!_responseQueue.TryDequeue(out ServerResponse response))
+                        {
+                            if (_disconnected) throw new IOException("Connection closed.");
+                            continue;
+                        }
+                        if (isBodyTerminator(response))
+                            break;
+                        bodyLines.Add(response);
+                        if (MaxResponseCount > 0 && bodyLines.Count > MaxResponseCount)
+                            throw new InvalidDataException($"Server sent more than {MaxResponseCount} body lines for a single command.");
+                    }
+                }
+
+                ResetKeepAlive();
+                return (statusLines, bodyLines);
             }
             finally
             {
@@ -472,7 +571,6 @@ public class CommandResponseClient : IDisposable
         await _sendLock.WaitAsync(effective).ConfigureAwait(false);
         try
         {
-            _pendingTransition = false;
             if (_state == StateDisposed)
                 throw new ObjectDisposedException(GetType().Name);
             if (_disconnected && _responseSignal.CurrentCount == 0)
@@ -667,7 +765,7 @@ public class CommandResponseClient : IDisposable
                 // buffered even before OnConnect calls ReadAsync. Without this, a banner that
                 // arrives the moment the listener starts would be routed as unsolicited (no owner
                 // is registered yet) and would never reach the ReadAsync call in OnConnect.
-                if (_state == StateConnecting || _pendingTransition || _activeCommandWaiters + _activeReadWaiters > 0)
+                if (_state == StateConnecting || _activeCommandWaiters + _activeReadWaiters > 0)
                 {
                     _responseQueue.Enqueue(response);
                     _responseSignal.Release();
