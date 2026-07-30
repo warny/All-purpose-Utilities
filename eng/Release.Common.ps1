@@ -74,11 +74,19 @@ function Invoke-ReleaseGate {
     $start = [DateTime]::UtcNow
     Write-Host "[$($start.ToString('O'))] START $Name"
     if ($env:GITHUB_ACTIONS -eq 'true') { Write-Host "::group::$DisplayName" }
-    try { & $Action }
-    catch { $duration = [DateTime]::UtcNow - $start; throw "Gate '$Name' failed after $duration. $($_.Exception.Message)" }
-    finally { if ($env:GITHUB_ACTIONS -eq 'true') { Write-Host "::endgroup::" } }
-    $duration = [DateTime]::UtcNow - $start
-    Write-Host "[$([DateTime]::UtcNow.ToString('O'))] END $Name — $duration"
+    $succeeded = $false
+    try {
+        & $Action
+        $succeeded = $true
+    } catch {
+        $duration = [DateTime]::UtcNow - $start
+        throw "Gate '$Name' failed after $duration. $($_.Exception.Message)"
+    } finally {
+        $duration = [DateTime]::UtcNow - $start
+        $status = if ($succeeded) { "SUCCESS" } else { "FAILED" }
+        Write-Host "[$([DateTime]::UtcNow.ToString('O'))] END $Name — $duration — $status"
+        if ($env:GITHUB_ACTIONS -eq 'true') { Write-Host "::endgroup::" }
+    }
 }
 
 <# Loads the authoritative product-train manifest. #>

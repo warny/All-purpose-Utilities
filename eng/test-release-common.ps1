@@ -86,3 +86,16 @@ try {
 } finally {
     Remove-Item $nativeRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
+
+$failedGateOutput = @()
+$gateInformation = @()
+try {
+    Invoke-ReleaseGate -Name "expected-failure" -DisplayName "Expected failure" -Action { throw "planned" } -InformationVariable gateInformation
+    throw "A failing release gate did not throw."
+} catch {
+    $failedGateOutput += @($gateInformation | ForEach-Object MessageData)
+    $failedGateOutput += @($_.Exception.Message)
+}
+if (-not @($failedGateOutput | Where-Object { $_ -match "END expected-failure.+FAILED" })) {
+    throw "A failing release gate did not emit its END marker and duration."
+}

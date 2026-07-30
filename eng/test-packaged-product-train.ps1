@@ -4,7 +4,8 @@ param(
     [string] $ArtifactsPath = "artifacts",
     [switch] $SkipBuild,
     [switch] $SkipSourceLink,
-    [switch] $KeepTemporaryProjects
+    [switch] $KeepTemporaryProjects,
+    [switch] $TestNativeRunnerOnly
 )
 
 $ErrorActionPreference = "Stop"
@@ -19,6 +20,41 @@ $originalNuGetPackages = $env:NUGET_PACKAGES
 $env:DOTNET_ROLL_FORWARD = "Major"
 $validationSucceeded = $false
 $manifest = Get-Content (Join-Path $PSScriptRoot "product-train-manifest.json") -Raw | ConvertFrom-Json
+$nativeLogRoot = Join-Path $artifactsRoot "logs/packaged-acceptance"
+$dotnetPath = @(Get-Command dotnet -CommandType Application)[0].Source
+$nativeCommandIndex = 0
+
+<# Runs every dotnet acceptance command with a command-specific timeout and log. #>
+function Invoke-AcceptanceDotNet {
+    param([Parameter(ValueFromRemainingArguments)][string[]] $Arguments)
+    $script:nativeCommandIndex++
+    $operation = if ($Arguments.Count) { $Arguments[0] } else { "command" }
+    $timeout = switch ($operation) {
+        "restore" { [TimeSpan]::FromMinutes(10) }
+        "build" { [TimeSpan]::FromMinutes(15) }
+        "run" { [TimeSpan]::FromMinutes(5) }
+        "publish" { [TimeSpan]::FromMinutes(10) }
+        "list" { [TimeSpan]::FromMinutes(10) }
+        "pack" { [TimeSpan]::FromMinutes(15) }
+        default { [TimeSpan]::FromMinutes(5) }
+    }
+    $safeOperation = $operation -replace "[^A-Za-z0-9_.-]", "-"
+    $logPath = Join-Path $nativeLogRoot ("{0:D3}-{1}.log" -f $script:nativeCommandIndex, $safeOperation)
+    $result = Invoke-NativeCommand -FilePath $dotnetPath -ArgumentList $Arguments -Timeout $timeout -LogPath $logPath -IgnoreExitCode
+    $global:LASTEXITCODE = $result.ExitCode
+    if ($result.StandardOutput) { $result.StandardOutput -split "\r?\n" }
+}
+
+if ($TestNativeRunnerOnly) {
+    & Invoke-AcceptanceDotNet --version | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Acceptance native-runner success probe failed." }
+    & Invoke-AcceptanceDotNet definitely-invalid-command | Out-Null
+    if ($LASTEXITCODE -eq 0) { throw "Acceptance native-runner failure probe unexpectedly succeeded." }
+    if (@(Get-ChildItem $nativeLogRoot -Filter *.log -File).Count -ne 2) { throw "Acceptance native-runner did not create one log per command." }
+    Write-Host "Packaged acceptance native-runner tests passed."
+    return
+}
+
 $expectedPackages = @{}
 foreach ($package in $manifest.packages) {
     $expectedPackages[$package.packageId] = [string]$manifest.version
@@ -75,9 +111,9 @@ function Remove-AcceptanceDirectory {
 
 try {
     if (-not $SkipBuild) {
-        & dotnet restore (Join-Path $repoRoot "Utils.sln")
+        & Invoke-AcceptanceDotNet restore (Join-Path $repoRoot "Utils.sln")
         if ($LASTEXITCODE -ne 0) { throw "Solution restore failed." }
-        & dotnet build (Join-Path $repoRoot "Utils.sln") --configuration $Configuration --no-restore
+        & Invoke-AcceptanceDotNet build (Join-Path $repoRoot "Utils.sln") --configuration $Configuration --no-restore
         if ($LASTEXITCODE -ne 0) { throw "Solution build failed." }
     }
     & (Join-Path $PSScriptRoot "pack-product-train.ps1") -Configuration $Configuration -ArtifactsPath $ArtifactsPath -NoBuild
@@ -115,16 +151,16 @@ try {
             "using System.Reflection; var assembly = Assembly.Load(`"$assemblyName`"); var representative = assembly.GetExportedTypes().FirstOrDefault() ?? throw new InvalidOperationException(`"No public type.`"); Console.WriteLine(`"assembly-loaded:${assemblyName}:`" + representative.FullName);" | Set-Content (Join-Path $projectRoot "Program.cs")
         }
         $automaticProject = Join-Path $projectRoot "Consumer.csproj"
-        & dotnet restore $automaticProject --configfile $configPath --packages $globalPackages
+        & Invoke-AcceptanceDotNet restore $automaticProject --configfile $configPath --packages $globalPackages
         if ($LASTEXITCODE -ne 0) { throw "Automatic restore failed for $($package.packageId)." }
         $automaticAssets = Get-Content (Join-Path $projectRoot "obj/project.assets.json") -Raw | ConvertFrom-Json
         foreach ($library in $automaticAssets.libraries.PSObject.Properties | Where-Object Name -like "omy.*/*") {
             $parts = $library.Name -split "/"
             if (-not $expectedPackages.ContainsKey($parts[0]) -or $parts[1] -ne $manifest.version) { throw "$($package.packageId) restored divergent internal asset '$($library.Name)'." }
         }
-        $buildOutput = & dotnet build $automaticProject --configuration $Configuration --no-restore 2>&1
+        $buildOutput = & Invoke-AcceptanceDotNet build $automaticProject --configuration $Configuration --no-restore 2>&1
         if ($LASTEXITCODE -ne 0 -or ($buildOutput -match "CS8032")) { $buildOutput | Write-Host; throw "Automatic compile/load gate failed for $($package.packageId)." }
-        & dotnet run --project $automaticProject --configuration $Configuration --no-build
+        & Invoke-AcceptanceDotNet run --project $automaticProject --configuration $Configuration --no-build
         if ($LASTEXITCODE -ne 0) { throw "Automatic execution failed for $($package.packageId)." }
     }
 
@@ -133,7 +169,7 @@ try {
     foreach ($project in $projects) {
         if ((Get-Content $project.FullName -Raw) -match "ProjectReference") { throw "$($project.FullName) contains a forbidden ProjectReference." }
         Write-Host "Restore: $($project.Name)"
-        & dotnet restore $project.FullName --configfile $configPath --packages $globalPackages
+        & Invoke-AcceptanceDotNet restore $project.FullName --configfile $configPath --packages $globalPackages
         if ($LASTEXITCODE -ne 0) { throw "Restore failed for $($project.FullName)." }
         $assetsPath = Join-Path $project.Directory.FullName "obj/project.assets.json"
         $assets = Get-Content $assetsPath -Raw | ConvertFrom-Json
@@ -145,11 +181,11 @@ try {
             $packageFile = Join-Path $packagesPath "$($parts[0]).$($parts[1]).nupkg"
             if (-not (Test-Path $packageFile)) { throw "$($library.Name) does not match a local candidate package." }
         }
-        & dotnet build $project.FullName --configuration $Configuration --no-restore -p:EnablePreviewFeatures=false
+        & Invoke-AcceptanceDotNet build $project.FullName --configuration $Configuration --no-restore -p:EnablePreviewFeatures=false
         if ($LASTEXITCODE -ne 0) { throw "Compile failed for $($project.FullName)." }
-        & dotnet run --project $project.FullName --configuration $Configuration --no-build
+        & Invoke-AcceptanceDotNet run --project $project.FullName --configuration $Configuration --no-build
         if ($LASTEXITCODE -ne 0) { throw "Execute failed for $($project.FullName)." }
-        & dotnet list $project.FullName package --vulnerable --include-transitive --config $configPath
+        & Invoke-AcceptanceDotNet list $project.FullName package --vulnerable --include-transitive --config $configPath
         if ($LASTEXITCODE -ne 0) { throw "Vulnerability audit failed for $($project.FullName)." }
     }
 
@@ -167,11 +203,11 @@ try {
         $generatedDirectory = Join-Path $projectDirectory "obj/$Configuration/net9.0/generated"
         Remove-Item $generatedDirectory -Recurse -Force -ErrorAction SilentlyContinue
         foreach ($emit in @('true', 'false')) {
-            & dotnet build $project --configuration $Configuration --no-restore -p:EmitCompilerGeneratedFiles=$emit
+            & Invoke-AcceptanceDotNet build $project --configuration $Configuration --no-restore -p:EmitCompilerGeneratedFiles=$emit
             if ($LASTEXITCODE -ne 0) { throw "Generator consumer matrix failed for '$relativeProject' (Emit=$emit)." }
         }
         Remove-Item $generatedDirectory -Recurse -Force -ErrorAction SilentlyContinue
-        & dotnet build $project --configuration $Configuration --no-restore --no-incremental -p:EmitCompilerGeneratedFiles=true
+        & Invoke-AcceptanceDotNet build $project --configuration $Configuration --no-restore --no-incremental -p:EmitCompilerGeneratedFiles=true
         if ($LASTEXITCODE -ne 0) { throw "Generator baseline build failed for '$relativeProject'." }
         $program = Join-Path $projectDirectory 'Program.cs'
         $input = if ($relativeProject -like 'ODataGeneratorConsumer/*') { Join-Path $projectDirectory 'Sample.edmx' } else { $program }
@@ -187,7 +223,7 @@ try {
         }
         try {
             Remove-Item $generatedDirectory -Recurse -Force -ErrorAction SilentlyContinue
-            & dotnet build $project --configuration $Configuration --no-restore --no-incremental -p:EmitCompilerGeneratedFiles=true
+            & Invoke-AcceptanceDotNet build $project --configuration $Configuration --no-restore --no-incremental -p:EmitCompilerGeneratedFiles=true
             if ($LASTEXITCODE -ne 0) { throw "Incremental rebuild failed for '$relativeProject'." }
             $mutatedGeneratedHash = Get-GeneratedOutputFingerprint $generatedDirectory
             if ($mutatedGeneratedHash -eq $initialGeneratedHash) { throw "Generator output did not change after an input change for '$relativeProject'." }
@@ -195,24 +231,24 @@ try {
             [IO.File]::WriteAllBytes($input, $originalInput)
         }
         Remove-Item $generatedDirectory -Recurse -Force -ErrorAction SilentlyContinue
-        & dotnet build $project --configuration $Configuration --no-restore --no-incremental -p:EmitCompilerGeneratedFiles=true
+        & Invoke-AcceptanceDotNet build $project --configuration $Configuration --no-restore --no-incremental -p:EmitCompilerGeneratedFiles=true
         if ($LASTEXITCODE -ne 0) { throw "Generator input restoration failed for '$relativeProject'." }
         $restoredGeneratedHash = Get-GeneratedOutputFingerprint $generatedDirectory
         if ($restoredGeneratedHash -ne $initialGeneratedHash) { throw "Restored generator output differs from the clean baseline for '$relativeProject'." }
-        & dotnet run --project $project --configuration $Configuration --no-build
+        & Invoke-AcceptanceDotNet run --project $project --configuration $Configuration --no-build
         if ($LASTEXITCODE -ne 0) { throw "Generated behavior failed after incremental restoration for '$relativeProject'." }
     }
 
     $utilsProject = Join-Path $consumerRoot "UtilsConsumer/UtilsConsumer.csproj"
-    & dotnet publish $utilsProject --configuration $Configuration --no-restore --output (Join-Path $temporaryPath "published-utils")
+    & Invoke-AcceptanceDotNet publish $utilsProject --configuration $Configuration --no-restore --output (Join-Path $temporaryPath "published-utils")
     if ($LASTEXITCODE -ne 0) { throw "Publish failed for the omy.Utils consumer." }
-    & dotnet (Join-Path $temporaryPath "published-utils/UtilsConsumer.dll")
+    & Invoke-AcceptanceDotNet (Join-Path $temporaryPath "published-utils/UtilsConsumer.dll")
     if ($LASTEXITCODE -ne 0) { throw "Published omy.Utils consumer execution failed." }
 
     $generatorProject = Join-Path $consumerRoot "ParserGeneratorConsumer/ParserGeneratorConsumer.csproj"
     foreach ($emit in @("true", "false")) {
         foreach ($attach in @("true", "false")) {
-            & dotnet build $generatorProject --configuration $Configuration --no-restore -p:EmitCompilerGeneratedFiles=$emit -p:UtilsParserAttachGeneratedFiles=$attach
+            & Invoke-AcceptanceDotNet build $generatorProject --configuration $Configuration --no-restore -p:EmitCompilerGeneratedFiles=$emit -p:UtilsParserAttachGeneratedFiles=$attach
             if ($LASTEXITCODE -ne 0) { throw "Generator matrix failed (Emit=$emit, Attach=$attach)." }
         }
     }
@@ -223,55 +259,55 @@ try {
     Copy-Item (Join-Path $consumerRoot "ParserGeneratorConsumer/Program.cs") $incrementalPath
     Copy-Item (Join-Path $consumerRoot "ParserGeneratorConsumer/Grammars/*.g4") (Join-Path $incrementalPath "Grammars")
     $incrementalProject = Join-Path $incrementalPath "ParserGeneratorConsumer.csproj"
-    & dotnet restore $incrementalProject --configfile $configPath --packages $globalPackages
+    & Invoke-AcceptanceDotNet restore $incrementalProject --configfile $configPath --packages $globalPackages
     if ($LASTEXITCODE -ne 0) { throw "Incremental generator consumer restore failed." }
 
     # A real project build proves that imported changes replace, rather than accumulate with, generated output.
-    & dotnet build $incrementalProject --configuration $Configuration --no-restore
+    & Invoke-AcceptanceDotNet build $incrementalProject --configuration $Configuration --no-restore
     if ($LASTEXITCODE -ne 0) { throw "Initial incremental generator build failed." }
-    & dotnet run --project $incrementalProject --configuration $Configuration --no-build -- "a" "importedLeaf"
+    & Invoke-AcceptanceDotNet run --project $incrementalProject --configuration $Configuration --no-build -- "a" "importedLeaf"
     if ($LASTEXITCODE -ne 0) { throw "Initial incremental generator execution failed." }
 
     Set-Content (Join-Path $incrementalPath "Grammars/Shared.g4") "parser grammar Shared;`nchangedLeaf : TOKEN;"
-    & dotnet build $incrementalProject --configuration $Configuration --no-restore
+    & Invoke-AcceptanceDotNet build $incrementalProject --configuration $Configuration --no-restore
     if ($LASTEXITCODE -ne 0) { throw "Imported grammar modification rebuild failed." }
-    & dotnet run --project $incrementalProject --configuration $Configuration --no-build -- "a" "changedLeaf" "importedLeaf"
+    & Invoke-AcceptanceDotNet run --project $incrementalProject --configuration $Configuration --no-build -- "a" "changedLeaf" "importedLeaf"
     if ($LASTEXITCODE -ne 0) { throw "Imported grammar modification was not reflected in generated output." }
 
     Set-Content (Join-Path $incrementalPath "Grammars/Middle.g4") "parser grammar Middle;`nmiddleRule : TOKEN;"
-    & dotnet build $incrementalProject --configuration $Configuration --no-restore
+    & Invoke-AcceptanceDotNet build $incrementalProject --configuration $Configuration --no-restore
     if ($LASTEXITCODE -ne 0) { throw "Import removal rebuild failed." }
-    & dotnet run --project $incrementalProject --configuration $Configuration --no-build -- "a" "local" "changedLeaf"
+    & Invoke-AcceptanceDotNet run --project $incrementalProject --configuration $Configuration --no-build -- "a" "local" "changedLeaf"
     if ($LASTEXITCODE -ne 0) { throw "Removed import left an effective generated rule." }
 
     $rootGrammar = Join-Path $incrementalPath "Grammars/Root.g4"
     (Get-Content $rootGrammar -Raw).Replace("tokenVocab=Tokens", "tokenVocab=TokensTwo") | Set-Content $rootGrammar
-    & dotnet build $incrementalProject --configuration $Configuration --no-restore
+    & Invoke-AcceptanceDotNet build $incrementalProject --configuration $Configuration --no-restore
     if ($LASTEXITCODE -ne 0) { throw "tokenVocab change rebuild failed." }
-    & dotnet run --project $incrementalProject --configuration $Configuration --no-build -- "z" "local" "changedLeaf" "false"
+    & Invoke-AcceptanceDotNet run --project $incrementalProject --configuration $Configuration --no-build -- "z" "local" "changedLeaf" "false"
     if ($LASTEXITCODE -ne 0) { throw "tokenVocab change was not reflected in generated output." }
 
     Set-Content (Join-Path $incrementalPath "Grammars/Collision.g4") "parser grammar Collision;`nmiddleRule : TOKEN;`ncollisionOnly : TOKEN;"
     (Get-Content $rootGrammar -Raw).Replace("import Middle", "import Collision, Middle") | Set-Content $rootGrammar
-    & dotnet build $incrementalProject --configuration $Configuration --no-restore
+    & Invoke-AcceptanceDotNet build $incrementalProject --configuration $Configuration --no-restore
     if ($LASTEXITCODE -ne 0) { throw "Imported collision addition rebuild failed." }
-    & dotnet run --project $incrementalProject --configuration $Configuration --no-build -- "z" "collisionOnly" "changedLeaf" "false"
+    & Invoke-AcceptanceDotNet run --project $incrementalProject --configuration $Configuration --no-build -- "z" "collisionOnly" "changedLeaf" "false"
     if ($LASTEXITCODE -ne 0) { throw "Imported collision was not composed deterministically." }
     Remove-Item (Join-Path $incrementalPath "Grammars/Collision.g4") -Force
     (Get-Content $rootGrammar -Raw).Replace("import Collision, Middle", "import Middle") | Set-Content $rootGrammar
-    & dotnet build $incrementalProject --configuration $Configuration --no-restore
+    & Invoke-AcceptanceDotNet build $incrementalProject --configuration $Configuration --no-restore
     if ($LASTEXITCODE -ne 0) { throw "Imported collision removal rebuild failed." }
-    & dotnet run --project $incrementalProject --configuration $Configuration --no-build -- "z" "local" "collisionOnly" "false"
+    & Invoke-AcceptanceDotNet run --project $incrementalProject --configuration $Configuration --no-build -- "z" "local" "collisionOnly" "false"
     if ($LASTEXITCODE -ne 0) { throw "Removed collision left stale generated output." }
 
     $diagnosticLog = Join-Path $temporaryPath "generator-diagnostics.log"
     Set-Content $rootGrammar "parser grammar Root;`nimport Missing;`nstart : 'a';"
-    & dotnet build $incrementalProject --configuration $Configuration --no-restore 2>&1 | Tee-Object -FilePath $diagnosticLog
+    & Invoke-AcceptanceDotNet build $incrementalProject --configuration $Configuration --no-restore 2>&1 | Tee-Object -FilePath $diagnosticLog
     if ($LASTEXITCODE -eq 0 -or -not (Select-String -Path $diagnosticLog -Pattern "UP0010" -Quiet)) { throw "Missing packaged import did not fail with UP0010." }
 
     Set-Content $rootGrammar "parser grammar Root;`nimport Middle;`nstart : 'a';"
     Set-Content (Join-Path $incrementalPath "Grammars/Middle.g4") "parser grammar Middle;`nimport Root;`nmiddleRule : 'a';"
-    & dotnet build $incrementalProject --configuration $Configuration --no-restore 2>&1 | Tee-Object -FilePath $diagnosticLog
+    & Invoke-AcceptanceDotNet build $incrementalProject --configuration $Configuration --no-restore 2>&1 | Tee-Object -FilePath $diagnosticLog
     if ($LASTEXITCODE -eq 0 -or -not (Select-String -Path $diagnosticLog -Pattern "UP0011" -Quiet)) { throw "Packaged import cycle did not fail with UP0011." }
 
     New-Item (Join-Path $incrementalPath "Grammars/one") -ItemType Directory -Force | Out-Null
@@ -279,7 +315,7 @@ try {
     Set-Content $rootGrammar "parser grammar Root;`nimport Duplicate;`nstart : item;"
     Set-Content (Join-Path $incrementalPath "Grammars/one/Duplicate.g4") "parser grammar Duplicate;`nitem : 'a';"
     Set-Content (Join-Path $incrementalPath "Grammars/two/Duplicate.g4") "parser grammar Duplicate;`nitem : 'b';"
-    & dotnet build $incrementalProject --configuration $Configuration --no-restore 2>&1 | Tee-Object -FilePath $diagnosticLog
+    & Invoke-AcceptanceDotNet build $incrementalProject --configuration $Configuration --no-restore 2>&1 | Tee-Object -FilePath $diagnosticLog
     if ($LASTEXITCODE -eq 0 -or -not (Select-String -Path $diagnosticLog -Pattern "UP0016" -Quiet)) { throw "Ambiguous packaged import did not fail with UP0016." }
 
     $specializedPackageIds = @($projects | ForEach-Object {
@@ -301,7 +337,7 @@ try {
     } else {
         # Compiler and MSBuild servers can retain analyzer or SourceLink assemblies on Windows.
         # Shutting them down releases those handles before best-effort cleanup.
-        & dotnet build-server shutdown --msbuild
+        & Invoke-AcceptanceDotNet build-server shutdown --msbuild
         if ($LASTEXITCODE -ne 0) {
             Write-Warning "dotnet build-server shutdown returned exit code $LASTEXITCODE; cleanup will still be attempted."
         }

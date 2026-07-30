@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Utils.Objects;
 
 namespace Utils.Net;
 
@@ -22,87 +23,29 @@ public class CommandResponseClient : IDisposable
     private readonly ConcurrentQueue<ServerResponse> _responseQueue = new();
     private readonly SemaphoreSlim _responseSignal = new(0);
     private readonly SemaphoreSlim _sendLock = new(1, 1);
-    private readonly object _responseRoutingLock = new();
-
-    // Item 47: store the linked cancellation source so caller cancellation stops the listener.
     private CancellationTokenSource? _listenTokenSource;
     private Thread? _listenThread;
-
-    // Item 46: keep-alive runs as a cancellable Task instead of an async-void Timer callback.
-    private CancellationTokenSource? _keepAliveCts;
-    private Task? _keepAliveTask;
-    // P1-3 fix: track last activity as a tick count so ResetKeepAlive only updates a timestamp
-    // rather than restarting the loop — which caused the loop to synchronously wait on itself
-    // via StopKeepAlive() when called from within SendCommandAsync.
-    private long _lastActivityTick;
-
+    private Timer? _keepAliveTimer;
     private TimeSpan _noOpInterval = Timeout.InfiniteTimeSpan;
     private string _noOpCommand = "NOOP";
     private bool _leaveOpen;
-    private volatile bool _disconnected;
+    private bool _everConnected;
+    private bool _disconnected;
     private TimeSpan _listenTimeout = Timeout.InfiniteTimeSpan;
 
-    // Item 44 / P1-A: track active response owners so the listener can route each line exactly
-    // once. _activeCommandWaiters covers SendCommandAsync; _activeReadWaiters covers ReadAsync.
-    // When the sum is zero, a line has no owner and is raised as unsolicited only (not queued).
-    private volatile int _activeCommandWaiters;
-    private volatile int _activeReadWaiters;
-
-    // Item 49: idempotent disposal flag.
-    private int _disposed; // 0 = alive, 1 = disposed (use Interlocked)
-
-    // Item 48: lifecycle state for single-use connection guard.
-    // 0 = NotConnected, 1 = Connecting, 2 = Connected, 3 = Disposed.
-    private const int StateNotConnected = 0;
-    private const int StateConnecting = 1;
-    private const int StateConnected = 2;
-    private const int StateDisposed = 3;
-    private int _state = StateNotConnected;
-
-    private int _maxLineLength = 8192;
-
     /// <summary>
-    /// Gets or sets the maximum number of characters allowed in a single incoming response line.
+    /// Gets or sets the maximum number of bytes allowed in a single incoming response line.
     /// Lines longer than this limit cause the listener loop to disconnect.
-    /// Default is 8192. Set to 0 to disable the check.
+    /// Default is 8192 bytes (8 KiB). Set to 0 to disable the check.
     /// </summary>
-    /// <remarks>
-    /// The limit is measured in UTF-16 characters (as counted by <see cref="StringBuilder.Length"/>)
-    /// because the underlying <see cref="StreamReader"/> decodes bytes before this check is applied.
-    /// When using ASCII encoding (the default) the character count equals the byte count for
-    /// all code points below 128. For other encodings or non-ASCII content the character count
-    /// may differ from the raw byte count.
-    /// </remarks>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when the value is negative.</exception>
-    public int MaxLineLength
-    {
-        get => _maxLineLength;
-        set
-        {
-            if (value < 0)
-                throw new ArgumentOutOfRangeException(nameof(value), value, "MaxLineLength must be non-negative.");
-            _maxLineLength = value;
-        }
-    }
-
-    private int _maxResponseCount = 10_000;
+    public int MaxLineLength { get; set; } = 8192;
 
     /// <summary>
     /// Gets or sets the maximum number of response lines that <see cref="SendCommandAsync"/> will
     /// accumulate for a single command before throwing <see cref="InvalidDataException"/>.
     /// Default is 10 000. Set to 0 to disable the check.
     /// </summary>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when the value is negative.</exception>
-    public int MaxResponseCount
-    {
-        get => _maxResponseCount;
-        set
-        {
-            if (value < 0)
-                throw new ArgumentOutOfRangeException(nameof(value), value, "MaxResponseCount must be non-negative.");
-            _maxResponseCount = value;
-        }
-    }
+    public int MaxResponseCount { get; set; } = 10_000;
 
     /// <summary>
     /// Gets or sets the logger used to trace client activity.
@@ -115,83 +58,44 @@ public class CommandResponseClient : IDisposable
     public CommandResponseClient() { }
 
     /// <summary>
-    /// Occurs when a response is received from the server while no command waiter is active.
-    /// Exceptions thrown by subscribers are caught; the exception is logged and then forwarded
-    /// to <see cref="CallbackError"/> so callers can observe it without a logger.
+    /// Occurs when a response is received from the server.
     /// </summary>
     public event Action<ServerResponse>? UnsolicitedResponseReceived;
 
     /// <summary>
-    /// Occurs when a subscriber of <see cref="UnsolicitedResponseReceived"/> throws an
-    /// unhandled exception or when the keep-alive loop terminates unexpectedly.
-    /// Provides an observable channel for callback faults when no logger is configured.
-    /// </summary>
-    public event Action<Exception>? CallbackError;
-
-    /// <summary>
     /// Gets or sets the command sent during inactivity to keep the connection alive.
     /// </summary>
-    /// <exception cref="ArgumentNullException">Thrown when the value is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentException">Thrown when the value is empty, whitespace, or contains CR, LF or NUL.</exception>
     public string NoOpCommand
     {
         get => _noOpCommand;
-        set
-        {
-            if (value is null) throw new ArgumentNullException(nameof(value));
-            if (string.IsNullOrWhiteSpace(value))
-                throw new ArgumentException("NoOpCommand must not be empty or whitespace.", nameof(value));
-            if (value.AsSpan().IndexOfAny('\r', '\n', '\0') >= 0)
-                throw new ArgumentException("NoOpCommand must not contain CR, LF or NUL.", nameof(value));
-            _noOpCommand = value;
-        }
+        set => _noOpCommand = value;
     }
 
     /// <summary>
-    /// Gets or sets the time to wait before sending a no-op command.
-    /// Set to <see cref="Timeout.InfiniteTimeSpan"/> to disable keep-alive.
-    /// Zero is rejected to prevent a busy-loop.
+    /// Gets or sets the time to wait before sending a no-op command. Set to <see cref="Timeout.InfiniteTimeSpan"/> to disable.
     /// </summary>
-    /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when the value is zero or negative (unless it is <see cref="Timeout.InfiniteTimeSpan"/>).
-    /// </exception>
     public TimeSpan NoOpInterval
     {
         get => _noOpInterval;
         set
         {
-            if (value != Timeout.InfiniteTimeSpan && value <= TimeSpan.Zero)
-                throw new ArgumentOutOfRangeException(nameof(value), value,
-                    "NoOpInterval must be strictly positive or Timeout.InfiniteTimeSpan.");
             _noOpInterval = value;
-            RestartKeepAlive();
+            _keepAliveTimer?.Change(value, Timeout.InfiniteTimeSpan);
         }
     }
 
     /// <summary>
     /// Gets or sets the timeout applied to read operations in the listener loop.
     /// </summary>
-    /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when the value is negative and not <see cref="Timeout.InfiniteTimeSpan"/>.
-    /// </exception>
     public TimeSpan ListenTimeout
     {
         get => _listenTimeout;
         set
         {
-            if (value != Timeout.InfiniteTimeSpan && value < TimeSpan.Zero)
-                throw new ArgumentOutOfRangeException(nameof(value), value,
-                    "ListenTimeout must be non-negative or Timeout.InfiniteTimeSpan.");
-            // Clamp to int range to avoid overflow when converting to milliseconds (item 58).
-            if (value != Timeout.InfiniteTimeSpan && value.TotalMilliseconds > int.MaxValue)
-                throw new ArgumentOutOfRangeException(nameof(value), value,
-                    "ListenTimeout must not exceed approximately 24.8 days (int.MaxValue milliseconds).");
             _listenTimeout = value;
             if (_stream is not null && _stream.CanTimeout)
             {
-                _stream.ReadTimeout = value == Timeout.InfiniteTimeSpan
-                    ? -1
-                    : (int)value.TotalMilliseconds;
+                _stream.ReadTimeout = value == Timeout.InfiniteTimeSpan ? -1 : (int)value.TotalMilliseconds;
             }
         }
     }
@@ -199,15 +103,10 @@ public class CommandResponseClient : IDisposable
     /// <summary>
     /// Gets a value indicating whether the client is currently connected.
     /// Returns <see langword="false"/> on a newly constructed instance that has not yet called
-    /// <see cref="ConnectAsync(string,int,System.Threading.CancellationToken)"/>, while
-    /// <see cref="OnConnect"/> is still pending, and once the connection has been closed or disposed.
+    /// <see cref="ConnectAsync(string,int,System.Threading.CancellationToken)"/>, and returns
+    /// <see langword="false"/> again once the connection has been closed or disposed.
     /// </summary>
-    /// <remarks>
-    /// The value becomes <see langword="true"/> only after <see cref="OnConnect"/> completes
-    /// successfully, so subclasses that use <see cref="OnConnect"/> for protocol handshaking can
-    /// rely on the property to reflect the fully-initialised connection state.
-    /// </remarks>
-    public bool IsConnected => _state == StateConnected;
+    public bool IsConnected => _everConnected && !_disconnected;
 
     /// <summary>
     /// Default port used by the protocol.
@@ -220,30 +119,13 @@ public class CommandResponseClient : IDisposable
     /// <param name="host">Server host name or IP address.</param>
     /// <param name="port">Server port.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <exception cref="InvalidOperationException">Thrown when a connection has already been established.</exception>
     public async Task ConnectAsync(string host, int port = -1, CancellationToken cancellationToken = default)
     {
         port = port == -1 ? DefaultPort : port;
         Logger?.LogInformation("Connecting to {Host}:{Port}", host, port);
-
-        // Item 51 / P1-B: build in local variables; transfer to fields only after full success.
-        // Do NOT commit _client before ConnectAsync(Stream) succeeds: if that call or OnConnect
-        // fails and rolls back, the TcpClient must still be disposed by the outer catch.
-        TcpClient? tcpClient = null;
-        try
-        {
-            tcpClient = new TcpClient();
-            await tcpClient.ConnectAsync(host, port, cancellationToken).ConfigureAwait(false);
-            await ConnectAsync(tcpClient.GetStream(), false, cancellationToken).ConfigureAwait(false);
-            // Full success: commit TcpClient ownership to the field.
-            _client = tcpClient;
-            tcpClient = null;
-        }
-        catch
-        {
-            tcpClient?.Dispose();
-            throw;
-        }
+        _client = new TcpClient();
+        await _client.ConnectAsync(host, port, cancellationToken).ConfigureAwait(false);
+        await ConnectAsync(_client.GetStream(), false, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -251,107 +133,35 @@ public class CommandResponseClient : IDisposable
     /// </summary>
     /// <param name="stream">Connected stream used to send commands and receive responses.</param>
     /// <param name="leaveOpen">True to leave the stream open when disposing the client.</param>
-    /// <param name="cancellationToken">
-    /// Cancellation token whose lifetime is linked to the session: cancelling this token
-    /// after connection stops the listener, the keep-alive loop, and all pending waiters.
-    /// </param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="stream"/> is null.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when a connection has already been established.</exception>
-    public async Task ConnectAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public Task ConnectAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
     {
-        if (stream is null) throw new ArgumentNullException(nameof(stream));
-
-        // Item 48: atomic single-use connection guard.
-        int prev = Interlocked.CompareExchange(ref _state, StateConnecting, StateNotConnected);
-        if (prev == StateDisposed)
-            throw new ObjectDisposedException(GetType().Name);
-        if (prev != StateNotConnected)
-            throw new InvalidOperationException(
-                "This client is already connected or has already been used. " +
-                "Create a new instance for each connection.");
-
-        // Item 51: build all resources in local variables so we can roll back on failure.
-        StreamReader? reader = null;
-        StreamWriter? writer = null;
-        CancellationTokenSource? listenCts = null;
-        // P1-1 fix: track whether resources have been committed to fields so the catch
-        // block can choose the correct cleanup path.
-        bool committed = false;
-        try
+        _stream = stream;
+        _leaveOpen = leaveOpen;
+        if (stream.CanTimeout)
         {
-            _stream = stream;
-            _leaveOpen = leaveOpen;
-            if (stream.CanTimeout)
-            {
-                int readTimeoutMs = _listenTimeout == Timeout.InfiniteTimeSpan
-                    ? -1
-                    : (int)_listenTimeout.TotalMilliseconds;
-                stream.ReadTimeout = readTimeoutMs;
-            }
-            reader = new StreamReader(stream, Encoding.ASCII, false, 1024, true);
-            writer = new StreamWriter(stream, Encoding.ASCII, 1024, true)
-            {
-                NewLine = "\r\n",
-                AutoFlush = true
-            };
-            // Item 47: link the caller token so cancellation stops the session listener.
-            listenCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-
-            _reader = reader;
-            _writer = writer;
-            _listenTokenSource = listenCts;
-            reader = null;
-            writer = null;
-            listenCts = null;
-
-            CancellationTokenSource capturedCts = _listenTokenSource;
-            _listenThread = new Thread(() => ListenLoop(capturedCts.Token))
-            {
-                IsBackground = true
-            };
-
-            _disconnected = false;
-            _listenThread.Start();
-            Logger?.LogInformation("Client connected to stream");
-
-            // P1-1 / P1-C: mark resources as committed before awaiting OnConnect so that the
-            // catch block can roll back correctly. State intentionally stays at Connecting until
-            // OnConnect succeeds: public callers that check IsConnected or call SendCommandAsync
-            // will see "not yet connected", and the keep-alive loop will not start.
-            committed = true;
-            await OnConnect(stream, leaveOpen, cancellationToken).ConfigureAwait(false);
-
-            // OnConnect succeeded. Promote the instance to Connected and start keep-alive.
-            Interlocked.Exchange(ref _state, StateConnected);
-            RestartKeepAlive();
+            stream.ReadTimeout = _listenTimeout == Timeout.InfiniteTimeSpan ? -1 : (int)_listenTimeout.TotalMilliseconds;
         }
-        catch
+        _reader = new StreamReader(stream, Encoding.ASCII, false, 1024, true);
+        _writer = new StreamWriter(stream, Encoding.ASCII, 1024, true)
         {
-            if (committed)
-            {
-                // OnConnect failed after resources were committed to fields.
-                // Null each field after disposing so the subsequent Dispose() call (e.g. from a
-                // using statement) finds only nulls and does not attempt double-cleanup.
-                // RestartKeepAlive was not called yet (P1-C), so StopKeepAlive is a no-op here.
-                StopKeepAlive();
-                _listenTokenSource?.Cancel();
-                _reader?.Dispose();  _reader = null;
-                _listenThread?.Join(TimeSpan.FromSeconds(1));  _listenThread = null;
-                _writer?.Dispose();  _writer = null;
-                if (!_leaveOpen) _stream?.Dispose();
-                _stream = null;  // P1-B: null so Dispose() skips the already-disposed stream
-                _listenTokenSource?.Dispose();  _listenTokenSource = null;
-            }
-            else
-            {
-                // Synchronous setup failed; only local variables need cleanup.
-                reader?.Dispose();
-                writer?.Dispose();
-                listenCts?.Dispose();
-            }
-            Interlocked.Exchange(ref _state, StateDisposed);
-            throw;
+            NewLine = "\r\n",
+            AutoFlush = true
+        };
+        _listenTokenSource = new CancellationTokenSource();
+        _listenThread = new Thread(() => ListenLoop(_listenTokenSource.Token))
+        {
+            IsBackground = true
+        };
+        _everConnected = true;
+        _disconnected = false;
+        _listenThread.Start();
+        Logger?.LogInformation("Client connected to stream");
+        if (_noOpInterval != Timeout.InfiniteTimeSpan)
+        {
+            _keepAliveTimer = new Timer(async _ => await SendNoOpAsync().ConfigureAwait(false), null, _noOpInterval, Timeout.InfiniteTimeSpan);
         }
+        return OnConnect(stream, leaveOpen, cancellationToken);
     }
 
     /// <summary>
@@ -375,12 +185,10 @@ public class CommandResponseClient : IDisposable
     /// <exception cref="IOException">Thrown when the connection has been closed.</exception>
     public async Task<IReadOnlyList<ServerResponse>> SendCommandAsync(string command, CancellationToken cancellationToken = default)
     {
-        // P1-C: require the fully Connected state so external callers cannot send commands
-        // while OnConnect is still negotiating the session (state = Connecting).
-        if (_state == StateDisposed)
-            throw new ObjectDisposedException(GetType().Name);
-        if (_state != StateConnected)
+        if (_writer is null)
+        {
             throw new InvalidOperationException("Client is not connected.");
+        }
 
         await _sendLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -391,278 +199,87 @@ public class CommandResponseClient : IDisposable
             }
             DrainPendingResponses();
             Logger?.LogDebug("Sending: {Command}", RedactCommandForLog(command));
-
-            // Item 44 / P1-2 race fix: register as the active response owner BEFORE writing
-            // the command so that a response arriving immediately after (or during) the write
-            // is routed to the queue rather than raised as unsolicited.
-            lock (_responseRoutingLock) _activeCommandWaiters++;
-            bool completed = false;
-            try
+            await _writer.WriteLineAsync(command).ConfigureAwait(false);
+            List<ServerResponse> responses = new();
+            while (true)
             {
-                await _writer.WriteLineAsync(command.AsMemory(), cancellationToken).ConfigureAwait(false);
-                List<ServerResponse> responses = new();
-                while (true)
+                await _responseSignal.WaitAsync(cancellationToken).ConfigureAwait(false);
+                if (!_responseQueue.TryDequeue(out ServerResponse response))
                 {
-                    await _responseSignal.WaitAsync(cancellationToken).ConfigureAwait(false);
-                    if (!_responseQueue.TryDequeue(out ServerResponse response))
+                    if (_disconnected)
                     {
-                        if (_disconnected)
-                        {
-                            throw new IOException("Connection closed.");
-                        }
-                        continue;
+                        throw new IOException("Connection closed.");
                     }
-                    responses.Add(response);
-                    if (MaxResponseCount > 0 && responses.Count > MaxResponseCount)
-                    {
-                        throw new InvalidDataException($"Server sent more than {MaxResponseCount} response lines for a single command.");
-                    }
-                    if (response.Severity >= ResponseSeverity.Completion || response.Severity == ResponseSeverity.Unknown)
-                    {
-                        break;
-                    }
+                    continue;
                 }
-                ResetKeepAlive();
-                completed = true;
-                return responses;
+                responses.Add(response);
+                if (MaxResponseCount > 0 && responses.Count > MaxResponseCount)
+                {
+                    throw new InvalidDataException($"Server sent more than {MaxResponseCount} response lines for a single command.");
+                }
+                if (response.Severity >= ResponseSeverity.Completion || response.Severity == ResponseSeverity.Unknown)
+                {
+                    break;
+                }
             }
-            finally
-            {
-                EndResponseOwnership(commandOwner: true, publishResidual: completed);
-            }
+            ResetKeepAlive();
+            return responses;
         }
         finally
         {
             _sendLock.Release();
-        }
-    }
-
-    /// <summary>
-    /// Sends a command and atomically owns its opening response and dot-terminated payload.
-    /// </summary>
-    /// <param name="command">Command to send.</param>
-    /// <param name="expectsPayload">Determines whether the opening response announces a payload.</param>
-    /// <param name="maxPayloadLines">Maximum payload lines, or zero for no limit.</param>
-    /// <param name="maxPayloadCharacters">Maximum payload characters, or zero for no limit.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The opening responses and payload lines, excluding the dot terminator.</returns>
-    /// <remarks>
-    /// The command lock and response ownership are retained until the terminator is consumed.
-    /// This prevents immediate payload lines from being exposed as unsolicited responses and
-    /// prevents another command or read operation from taking ownership during the transition.
-    /// </remarks>
-    protected async Task<(IReadOnlyList<ServerResponse> Responses, IReadOnlyList<string> Payload)> SendMultilineCommandAsync(
-        string command,
-        Func<IReadOnlyList<ServerResponse>, bool> expectsPayload,
-        int maxPayloadLines,
-        int maxPayloadCharacters,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(expectsPayload);
-        if (_state == StateDisposed)
-            throw new ObjectDisposedException(GetType().Name);
-        if (_state != StateConnected)
-            throw new InvalidOperationException("Client is not connected.");
-
-        CancellationToken sessionToken = _listenTokenSource?.Token ?? CancellationToken.None;
-        using CancellationTokenSource linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, sessionToken);
-        CancellationToken effective = linkedCts.Token;
-        await _sendLock.WaitAsync(effective).ConfigureAwait(false);
-        try
-        {
-            if (_disconnected)
-                throw new IOException("Connection closed.");
-            DrainPendingResponses();
-            Logger?.LogDebug("Sending multiline command: {Command}", RedactCommandForLog(command));
-            lock (_responseRoutingLock) _activeCommandWaiters++;
-            bool completed = false;
-            try
-            {
-                await _writer!.WriteLineAsync(command.AsMemory(), effective).ConfigureAwait(false);
-                List<ServerResponse> responses = new();
-                while (true)
-                {
-                    ServerResponse response = await DequeueOwnedResponseAsync(effective).ConfigureAwait(false);
-                    responses.Add(response);
-                    if (MaxResponseCount > 0 && responses.Count > MaxResponseCount)
-                        throw new InvalidDataException($"Server sent more than {MaxResponseCount} opening response lines for a single command.");
-                    if (response.Severity >= ResponseSeverity.Completion || response.Severity == ResponseSeverity.Unknown)
-                        break;
-                }
-
-                List<string> payload = new();
-                int payloadCharacters = 0;
-                if (expectsPayload(responses))
-                {
-                    while (true)
-                    {
-                        ServerResponse response = await DequeueOwnedResponseAsync(effective).ConfigureAwait(false);
-                        string line = response.Message is null ? response.Code : $"{response.Code} {response.Message}";
-                        if (line == ".")
-                            break;
-                        payload.Add(line);
-                        payloadCharacters += line.Length;
-                        if (maxPayloadLines > 0 && payload.Count > maxPayloadLines)
-                            throw new InvalidDataException($"Multiline response exceeded the line limit of {maxPayloadLines}.");
-                        if (maxPayloadCharacters > 0)
-                        {
-                            if (payloadCharacters > maxPayloadCharacters)
-                                throw new InvalidDataException($"Multiline response exceeded the character limit of {maxPayloadCharacters}.");
-                        }
-                    }
-                }
-                ResetKeepAlive();
-                completed = true;
-                return (responses, payload);
-            }
-            finally
-            {
-                EndResponseOwnership(commandOwner: true, publishResidual: completed);
-            }
-        }
-        finally
-        {
-            _sendLock.Release();
-        }
-    }
-
-    /// <summary>
-    /// Removes the next response owned by the active operation.
-    /// </summary>
-    /// <param name="cancellationToken">Cancellation token that bounds the wait.</param>
-    /// <returns>The next queued response.</returns>
-    private async Task<ServerResponse> DequeueOwnedResponseAsync(CancellationToken cancellationToken)
-    {
-        while (true)
-        {
-            await _responseSignal.WaitAsync(cancellationToken).ConfigureAwait(false);
-            if (_responseQueue.TryDequeue(out ServerResponse response))
-                return response;
-            if (_disconnected)
-                throw new IOException("Connection closed.");
         }
     }
 
     /// <summary>
     /// Reads and returns responses that have been received without sending a command.
-    /// May be called from <see cref="OnConnect"/> (while the state is still
-    /// <c>Connecting</c>) to read a server greeting banner before the connection is
-    /// promoted to <c>Connected</c>.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>List of responses read from the server.</returns>
     /// <exception cref="IOException">Thrown when the connection has been closed.</exception>
     public async Task<IReadOnlyList<ServerResponse>> ReadAsync(CancellationToken cancellationToken = default)
     {
-        // Allow during StateConnecting so OnConnect implementations can read the server
-        // greeting (P1-1). External callers see StateNotConnected or StateDisposed until
-        // OnConnect has completed and the state is promoted to StateConnected.
-        if (_state == StateDisposed)
-            throw new ObjectDisposedException(GetType().Name);
-        if (_state != StateConnected && _state != StateConnecting)
-            throw new InvalidOperationException("Client is not connected.");
-
-        // Link the session lifetime token so a concurrent Dispose() or session end unblocks
-        // both the lock wait and the signal wait (same pattern as SendLinesAsync, P1-3).
-        CancellationToken sessionToken = _listenTokenSource?.Token ?? CancellationToken.None;
-        using CancellationTokenSource linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, sessionToken);
-        CancellationToken effective = linkedCts.Token;
-
-        // P1-2: serialize with SendCommandAsync by taking the same _sendLock, so only one
-        // response consumer is active at a time. Without this guard, a concurrent ReadAsync
-        // could dequeue a response that was intended for SendCommandAsync (or vice versa),
-        // because both operations share the same _responseQueue.
-        await _sendLock.WaitAsync(effective).ConfigureAwait(false);
-        try
+        if (_disconnected && _responseSignal.CurrentCount == 0)
         {
-            if (_state == StateDisposed)
-                throw new ObjectDisposedException(GetType().Name);
-            if (_disconnected && _responseSignal.CurrentCount == 0)
+            throw new IOException("Connection closed.");
+        }
+        List<ServerResponse> responses = new();
+        await _responseSignal.WaitAsync(cancellationToken).ConfigureAwait(false);
+        do
+        {
+            if (_responseQueue.TryDequeue(out ServerResponse response))
+            {
+                responses.Add(response);
+            }
+            else if (_disconnected)
+            {
                 throw new IOException("Connection closed.");
-
-            // P1-A: register as a response owner BEFORE waiting so the listener routes the next
-            // incoming line to the queue rather than raising it as unsolicited.
-            lock (_responseRoutingLock) _activeReadWaiters++;
-            bool completed = false;
-            List<ServerResponse> responses = new();
-            try
-            {
-                await _responseSignal.WaitAsync(effective).ConfigureAwait(false);
-                do
-                {
-                    if (_responseQueue.TryDequeue(out ServerResponse response))
-                    {
-                        responses.Add(response);
-                    }
-                    else if (_disconnected)
-                    {
-                        throw new IOException("Connection closed.");
-                    }
-                }
-                while (await _responseSignal.WaitAsync(0).ConfigureAwait(false));
-                ResetKeepAlive();
-                completed = true;
-                return responses;
-            }
-            finally
-            {
-                EndResponseOwnership(commandOwner: false, publishResidual: completed);
             }
         }
-        finally
-        {
-            _sendLock.Release();
-        }
+        while (await _responseSignal.WaitAsync(0).ConfigureAwait(false));
+        ResetKeepAlive();
+        return responses;
     }
 
     /// <summary>
     /// Sends raw lines to the server without waiting for a response.
-    /// Each line is validated to ensure it contains no CR, LF or NUL characters that
-    /// could inject additional protocol commands.
     /// </summary>
     /// <param name="lines">Lines to send.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <exception cref="ArgumentException">
-    /// Thrown when any line in <paramref name="lines"/> contains CR, LF or NUL.
-    /// </exception>
     /// <exception cref="InvalidOperationException">Thrown when the client is not connected.</exception>
     protected async Task SendLinesAsync(IEnumerable<string> lines, CancellationToken cancellationToken = default)
     {
-        // P1-3: apply the same state guards as SendCommandAsync before waiting on the lock.
-        if (_state == StateDisposed)
-            throw new ObjectDisposedException(GetType().Name);
-        if (_state != StateConnected)
-            throw new InvalidOperationException("Client is not connected.");
-
-        // Item 53 / P2-6: always materialise into a new list — even when the caller passes a
-        // List<string> — so a concurrent mutation between validation and the write loop cannot
-        // bypass the per-line checks or inject additional commands.
-        List<string> lineList = [..lines];
-        foreach (string line in lineList)
+        if (_writer is null)
         {
-            if (line is null) throw new ArgumentException("Lines must not contain null entries.", nameof(lines));
-            ValidateCommandArgument(line, nameof(lines));
+            throw new InvalidOperationException("Client is not connected.");
         }
 
-        // Link the session lifetime token so a concurrent Dispose() or caller cancellation
-        // both unblock the lock wait and each individual write.
-        CancellationToken sessionToken = _listenTokenSource?.Token ?? CancellationToken.None;
-        using CancellationTokenSource linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, sessionToken);
-        CancellationToken effective = linkedCts.Token;
-
-        await _sendLock.WaitAsync(effective).ConfigureAwait(false);
+        await _sendLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            // P1-3: re-verify state after acquiring the lock; the session may have ended
-            // between the initial check and lock acquisition.
-            if (_state == StateDisposed)
-                throw new ObjectDisposedException(GetType().Name);
-            if (_disconnected)
-                throw new IOException("Connection closed.");
-
-            foreach (string line in lineList)
+            foreach (string line in lines)
             {
-                await _writer!.WriteLineAsync(line.AsMemory(), effective).ConfigureAwait(false);
+                await _writer.WriteLineAsync(line).ConfigureAwait(false);
             }
             ResetKeepAlive();
         }
@@ -673,70 +290,33 @@ public class CommandResponseClient : IDisposable
     }
 
     /// <summary>
-    /// Releases response ownership and publishes lines that arrived immediately after a
-    /// successfully completed operation as unsolicited responses.
-    /// </summary>
-    /// <param name="commandOwner">Whether the released owner is a command rather than a read.</param>
-    /// <param name="publishResidual">Whether residual lines are valid post-operation notifications.</param>
-    private void EndResponseOwnership(bool commandOwner, bool publishResidual)
-    {
-        List<ServerResponse> residual = new();
-        lock (_responseRoutingLock)
-        {
-            if (commandOwner) _activeCommandWaiters--;
-            else _activeReadWaiters--;
-
-            if (_activeCommandWaiters + _activeReadWaiters == 0)
-            {
-                while (_responseQueue.TryDequeue(out ServerResponse response))
-                {
-                    if (publishResidual) residual.Add(response);
-                }
-                while (_responseSignal.CurrentCount > 0) _responseSignal.Wait(0);
-            }
-        }
-        foreach (ServerResponse response in residual)
-            RaiseUnsolicitedResponseReceived(response);
-    }
-
-    /// <summary>
-    /// Discards any queued responses left by a previous cancelled or interrupted waiter.
+    /// Removes any queued responses that were not consumed by previous commands.
     /// </summary>
     private void DrainPendingResponses()
     {
-        // With exclusive routing (P1-A), a line is only enqueued when a command or read waiter
-        // was active at the moment of arrival. Items found here are therefore residual responses
-        // from a cancelled SendCommandAsync or ReadAsync that dequeued its waiter count but
-        // left signals in the queue (e.g. cancelled during _responseSignal.WaitAsync).
-        // Discard them so the next command starts with a clean queue.
-        while (_responseQueue.TryDequeue(out _)) { }
-        while (_responseSignal.CurrentCount > 0) { _responseSignal.Wait(0); }
+        while (_responseQueue.TryDequeue(out ServerResponse leftover))
+        {
+            UnsolicitedResponseReceived?.Invoke(leftover);
+        }
+        while (_responseSignal.CurrentCount > 0)
+        {
+            _responseSignal.Wait(0);
+        }
     }
 
     /// <summary>
     /// Reads one response line from <paramref name="reader"/>, enforcing <see cref="MaxLineLength"/>
-    /// incrementally. Uses async reads so that <paramref name="cancellationToken"/> can interrupt a
-    /// blocking read (e.g. on a Pipe that has no data). Returns <see langword="null"/> on EOF or
-    /// cancellation.
+    /// incrementally rather than after the full line has been buffered, so a peer cannot exhaust
+    /// memory with a single oversized line. Returns <see langword="null"/> on EOF.
     /// </summary>
     /// <exception cref="InvalidDataException">Thrown when the line exceeds <see cref="MaxLineLength"/>.</exception>
-    private string? ReadLimitedLine(StreamReader reader, CancellationToken cancellationToken)
+    private string? ReadLimitedLine(StreamReader reader)
     {
         var sb = new System.Text.StringBuilder(256);
-        char[] buf = new char[1];
-        while (true)
+        int ch;
+        while ((ch = reader.Read()) != -1)
         {
-            int read;
-            try
-            {
-                read = reader.ReadAsync(buf.AsMemory(0, 1), cancellationToken).GetAwaiter().GetResult();
-            }
-            catch (OperationCanceledException)
-            {
-                return null;
-            }
-            if (read == 0) return sb.Length == 0 ? null : sb.ToString();
-            char c = buf[0];
+            char c = (char)ch;
             if (c == '\n')
             {
                 if (sb.Length > 0 && sb[sb.Length - 1] == '\r')
@@ -744,11 +324,10 @@ public class CommandResponseClient : IDisposable
                 return sb.ToString();
             }
             sb.Append(c);
-            // A trailing \r will be stripped when \n arrives, so exclude it from the count.
-            int effectiveLength = (sb.Length > 0 && sb[sb.Length - 1] == '\r') ? sb.Length - 1 : sb.Length;
-            if (MaxLineLength > 0 && effectiveLength > MaxLineLength)
+            if (MaxLineLength > 0 && sb.Length > MaxLineLength)
                 throw new InvalidDataException($"Incoming response line exceeded MaxLineLength ({MaxLineLength}).");
         }
+        return sb.Length == 0 ? null : sb.ToString();
     }
 
     /// <summary>
@@ -768,7 +347,7 @@ public class CommandResponseClient : IDisposable
                 string? line;
                 try
                 {
-                    line = ReadLimitedLine(_reader, cancellationToken);
+                    line = ReadLimitedLine(_reader);
                 }
                 catch (IOException ex) when (ex.InnerException is SocketException se && se.SocketErrorCode == SocketError.TimedOut)
                 {
@@ -786,29 +365,17 @@ public class CommandResponseClient : IDisposable
                     break;
                 }
 
+                if (MaxLineLength > 0 && line.Length > MaxLineLength)
+                {
+                    Logger?.LogWarning("Incoming response line exceeded MaxLineLength ({MaxLineLength}); disconnecting.", MaxLineLength);
+                    break;
+                }
+
                 ServerResponse response = ParseResponseLine(line);
                 Logger?.LogDebug("Received: {Code} {Message}", SanitizeForLog(response.Code, 10), SanitizeForLog(response.Message ?? string.Empty, 200));
-
-                // P1-A: route each line to exactly one destination.
-                // Enqueue (and signal) only when a command or read waiter is active; otherwise
-                // the line is unsolicited and is delivered directly to the event without being
-                // stored in the queue (preventing ReadAsync / SendCommandAsync from seeing it later).
-                //
-                // P1-1 (banner): also queue during StateConnecting so the server greeting is
-                // buffered even before OnConnect calls ReadAsync. Without this, a banner that
-                // arrives the moment the listener starts would be routed as unsolicited (no owner
-                // is registered yet) and would never reach the ReadAsync call in OnConnect.
-                bool raiseUnsolicited;
-                lock (_responseRoutingLock)
-                {
-                    raiseUnsolicited = _state != StateConnecting && _activeCommandWaiters + _activeReadWaiters == 0;
-                    if (!raiseUnsolicited)
-                    {
-                        _responseQueue.Enqueue(response);
-                        _responseSignal.Release();
-                    }
-                }
-                if (raiseUnsolicited) RaiseUnsolicitedResponseReceived(response);
+                _responseQueue.Enqueue(response);
+                _responseSignal.Release();
+                UnsolicitedResponseReceived?.Invoke(response);
             }
         }
         catch (IOException)
@@ -822,49 +389,8 @@ public class CommandResponseClient : IDisposable
         finally
         {
             _disconnected = true;
-            // P1-C: update state so IsConnected returns false as soon as the listener exits,
-            // regardless of whether Dispose() has been called yet.
-            Interlocked.CompareExchange(ref _state, StateDisposed, StateConnected);
             _responseSignal.Release();
             Logger?.LogWarning("Listener thread terminated");
-        }
-    }
-
-    /// <summary>
-    /// Raises <see cref="UnsolicitedResponseReceived"/>, catching and logging any subscriber
-    /// exceptions so they cannot terminate the listener thread (item 45).
-    /// </summary>
-    private void RaiseUnsolicitedResponseReceived(ServerResponse response)
-    {
-        Action<ServerResponse>? handler = UnsolicitedResponseReceived;
-        if (handler is null) return;
-        foreach (Delegate d in handler.GetInvocationList())
-        {
-            try
-            {
-                ((Action<ServerResponse>)d)(response);
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "UnsolicitedResponseReceived subscriber threw an unhandled exception");
-                RaiseCallbackError(ex);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Forwards <paramref name="ex"/> to each <see cref="CallbackError"/> subscriber in turn,
-    /// catching individual subscriber exceptions so a misbehaving subscriber cannot suppress
-    /// the delivery to the remaining subscribers or propagate back into the transport (P2-E).
-    /// </summary>
-    private void RaiseCallbackError(Exception ex)
-    {
-        Action<Exception>? handler = CallbackError;
-        if (handler is null) return;
-        foreach (Delegate d in handler.GetInvocationList())
-        {
-            try { ((Action<Exception>)d)(ex); }
-            catch (Exception inner) { Logger?.LogError(inner, "CallbackError subscriber threw an unhandled exception"); }
         }
     }
 
@@ -959,101 +485,19 @@ public class CommandResponseClient : IDisposable
         return new ServerResponse(line, ResponseSeverity.Unknown, null);
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // Item 46: cancellable keep-alive loop replacing async-void Timer
-    // ──────────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Stops any running keep-alive task and starts a new one if the interval is finite.
-    /// </summary>
-    private void RestartKeepAlive()
-    {
-        StopKeepAlive();
-        // P1-C: do not start keep-alive until the state is fully Connected (i.e. OnConnect has
-        // returned successfully). Setting NoOpInterval before ConnectAsync returns is permitted
-        // but the loop is not created until ConnectAsync explicitly calls RestartKeepAlive().
-        if (_noOpInterval == Timeout.InfiniteTimeSpan || _listenTokenSource is null || _state != StateConnected) return;
-        Interlocked.Exchange(ref _lastActivityTick, Environment.TickCount64);
-        _keepAliveCts = CancellationTokenSource.CreateLinkedTokenSource(_listenTokenSource.Token);
-        CancellationToken ct = _keepAliveCts.Token;
-        _keepAliveTask = Task.Run(async () =>
-        {
-            try
-            {
-                while (!ct.IsCancellationRequested)
-                {
-                    // Calculate how long until the next send is due, based on last activity.
-                    // Reading _noOpInterval each iteration picks up runtime changes to the property.
-                    long intervalMs = (long)_noOpInterval.TotalMilliseconds;
-                    long elapsedMs = Environment.TickCount64 - Interlocked.Read(ref _lastActivityTick);
-                    long remainingMs = intervalMs - elapsedMs;
-                    if (remainingMs > 0)
-                        await Task.Delay(TimeSpan.FromMilliseconds(remainingMs), ct).ConfigureAwait(false);
-                    if (ct.IsCancellationRequested) break;
-                    // Re-check after delay: a command may have arrived during the wait.
-                    elapsedMs = Environment.TickCount64 - Interlocked.Read(ref _lastActivityTick);
-                    if (elapsedMs < intervalMs)
-                        continue; // activity restarted the idle window; recalculate without self-wait
-                    await SendNoOpAsync(ct).ConfigureAwait(false);
-                    // SendNoOpAsync → SendCommandAsync → ResetKeepAlive updates _lastActivityTick.
-                    // The loop then recalculates the next delay without restarting itself.
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                // Normal shutdown.
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogWarning(ex, "Keep-alive loop terminated unexpectedly");
-                RaiseCallbackError(ex);  // P2-E: isolated from keep-alive loop; subscriber faults go to log only
-            }
-        }, ct);
-    }
-
-    /// <summary>
-    /// Cancels and awaits the current keep-alive task (up to 1 s).
-    /// </summary>
-    private void StopKeepAlive()
-    {
-        _keepAliveCts?.Cancel();
-        try
-        {
-            _keepAliveTask?.Wait(TimeSpan.FromSeconds(1));
-        }
-        catch
-        {
-            // Ignore faults during shutdown.
-        }
-        _keepAliveCts?.Dispose();
-        _keepAliveCts = null;
-        _keepAliveTask = null;
-    }
-
     /// <summary>
     /// Sends the no-op command.
     /// </summary>
-    private async Task SendNoOpAsync(CancellationToken cancellationToken = default)
+    private async Task SendNoOpAsync()
     {
         try
         {
             Logger?.LogDebug("Sending keep-alive: {Command}", _noOpCommand);
-            await SendCommandAsync(_noOpCommand, cancellationToken).ConfigureAwait(false);
+            await SendCommandAsync(_noOpCommand).ConfigureAwait(false);
         }
-        catch (OperationCanceledException)
+        catch
         {
-            // Normal shutdown path; do not report via CallbackError.
-        }
-        catch (ObjectDisposedException)
-        {
-            // Resources were disposed during shutdown; treat as normal cancellation.
-        }
-        catch (Exception ex)
-        {
-            // P2-F: forward genuine NOOP failures to the observable error channel so callers
-            // can detect recurring connection issues even when no logger is configured.
-            Logger?.LogWarning(ex, "Keep-alive command failed");
-            RaiseCallbackError(ex);
+            // Ignore keep-alive exceptions.
         }
     }
 
@@ -1097,45 +541,52 @@ public class CommandResponseClient : IDisposable
     }
 
     /// <summary>
-    /// Records the current time as the last activity instant, which postpones the next keep-alive send.
-    /// Does not restart the keep-alive loop, avoiding a deadlock where the loop would wait on itself.
+    /// Resets the keep alive timer.
     /// </summary>
     protected void ResetKeepAlive()
     {
-        Interlocked.Exchange(ref _lastActivityTick, Environment.TickCount64);
+        _keepAliveTimer?.Change(_noOpInterval, Timeout.InfiniteTimeSpan);
     }
 
     /// <summary>
-    /// Releases the client resources. Safe to call multiple times (idempotent).
+    /// Releases the client resources.
     /// </summary>
     public void Dispose()
     {
-        // Item 49: idempotent — only one caller proceeds through cleanup.
-        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
 
-        Interlocked.Exchange(ref _state, StateDisposed);
+    /// <summary>
+    /// Releases the client resources.
+    /// </summary>
+    private void Dispose(bool disposing)
+    {
+        if (!disposing && _writer is null) return;
 
-        StopKeepAlive();
         _listenTokenSource?.Cancel();
-        _reader?.Dispose();          // interrupt any blocking read so the listener thread can exit
+        _reader?.Dispose();
         _reader = null;
-        _listenThread?.Join(TimeSpan.FromSeconds(1));  // wait for listener to stop before disposing writer
-        _writer?.Dispose();          // P1-D: safe to dispose only after the listener has exited
+        _writer?.Dispose();
         _writer = null;
         if (!_leaveOpen)
         {
             _stream?.Dispose();
         }
-        _listenTokenSource?.Dispose();
+        _listenThread?.Join(TimeSpan.FromSeconds(1));
+        _keepAliveTimer?.Dispose();
         _client?.Dispose();
-        // _responseSignal and _sendLock are intentionally NOT disposed: SemaphoreSlim holds no
-        // native resources unless AvailableWaitHandle is accessed (which we never do), so there
-        // is nothing to release. Disposing them would race with any SendCommandAsync / ReadAsync
-        // finally block that calls Release() after the 1-second StopKeepAlive timeout expires,
-        // causing a secondary ObjectDisposedException with no benefit (item 49 / P1-1).
-        GC.SuppressFinalize(this);
+        _responseSignal.Dispose();
+        _sendLock.Dispose();
     }
 
-    // Item 50: no finalizer — all resources are managed. A finalizer that joins threads or
-    // disposes managed semaphores from the finalizer thread can deadlock the GC.
+    /// <summary>
+    /// Deconstruct the client.
+    /// </summary>
+    ~CommandResponseClient()
+    {
+        Dispose(false);
+    }
+
 }
+

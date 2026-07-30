@@ -10,6 +10,15 @@ The orchestrator uses an isolated NuGet cache and restores its environment. It r
 
 Reports are written below `artifacts/reports`, immutable-candidate metadata below `artifacts/manifests`, and packages below `artifacts/packages`. Failed packaged-acceptance workspaces and logs are retained. Successful temporary consumers are removed after shutting down MSBuild servers to accommodate Windows locks.
 
+Packaged acceptance uses one isolated NuGet global-packages cache for the job. Each
+generated consumer has a distinct top-level package graph and therefore receives one
+explicit restore to produce and inspect its own `project.assets.json`; these restores
+reuse the shared cache rather than forcing network downloads. Every subsequent build,
+run, generator matrix, and publish for that consumer uses `--no-restore`. This preserves
+independent proof that each `omy.*` reference resolves from the candidate feed instead
+of replacing candidates with project references or claiming that all distinct graphs
+can be restored by one MSBuild invocation.
+
 ## Failure policy
 
 Undeclared or ambiguous projects, duplicate IDs, graph cycles, divergent versions, permissive internal dependency versions, unexpected archive contents, missing symbols/readmes/licenses, API breaks without a manifest acceptance, expired warning/dependency exceptions, SourceLink retrieval failures, content-level reproducibility differences, vulnerable product dependencies, and manifest hash differences are blocking.

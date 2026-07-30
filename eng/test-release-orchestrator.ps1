@@ -27,3 +27,11 @@ $fullAuditPlan = @(& $audit -PlanOnly 6>&1 | ForEach-Object ToString)
 if (($fullAuditPlan -join "|") -cne "AUDIT vulnerable|AUDIT deprecated|AUDIT outdated") {
     throw "Full dependency audits were flattened or ordered incorrectly: $($fullAuditPlan -join ', ')."
 }
+
+$runnerArtifacts = Join-Path "artifacts" "packaged-runner-test-$([guid]::NewGuid().ToString('N'))"
+try {
+    & (Join-Path $PSScriptRoot "test-packaged-product-train.ps1") -ArtifactsPath $runnerArtifacts -TestNativeRunnerOnly
+    if (-not $?) { throw "Packaged acceptance native runner test failed." }
+} finally {
+    Remove-Item (Join-Path (Split-Path -Parent $PSScriptRoot) $runnerArtifacts) -Recurse -Force -ErrorAction SilentlyContinue
+}

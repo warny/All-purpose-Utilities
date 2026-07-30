@@ -119,7 +119,9 @@ public class Pop3Client : CommandResponseClient
     /// <returns>Dictionary mapping message number to its size.</returns>
     public async Task<IReadOnlyDictionary<int, int>> ListAsync(CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<string> lines = await SendPop3MultilineCommandAsync("LIST", cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<ServerResponse> responses = await SendCommandAsync("LIST", cancellationToken).ConfigureAwait(false);
+        await EnsureOkAsync(responses).ConfigureAwait(false);
+        IReadOnlyList<string> lines = await ReadMultilineAsync(cancellationToken).ConfigureAwait(false);
         Dictionary<int, int> result = new();
         foreach (string line in lines)
         {
@@ -140,8 +142,10 @@ public class Pop3Client : CommandResponseClient
     /// <returns>Text of the message with dot-stuffing removed.</returns>
     public async Task<string> RetrieveAsync(int id, CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<string> lines = await SendPop3MultilineCommandAsync($"RETR {id}", cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"RETR {id}", cancellationToken).ConfigureAwait(false);
+        await EnsureOkAsync(responses).ConfigureAwait(false);
         StringBuilder builder = new();
+        IReadOnlyList<string> lines = await ReadMultilineAsync(cancellationToken).ConfigureAwait(false);
         foreach (string line in lines)
         {
             string content = line.StartsWith("..", StringComparison.Ordinal) ? line[1..] : line;
@@ -194,7 +198,9 @@ public class Pop3Client : CommandResponseClient
     /// <returns>Collection of capability names.</returns>
     public async Task<IReadOnlyList<string>> GetCapabilitiesAsync(CancellationToken cancellationToken = default)
     {
-        return await SendPop3MultilineCommandAsync("CAPA", cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<ServerResponse> responses = await SendCommandAsync("CAPA", cancellationToken).ConfigureAwait(false);
+        await EnsureOkAsync(responses).ConfigureAwait(false);
+        return await ReadMultilineAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -204,7 +210,9 @@ public class Pop3Client : CommandResponseClient
     /// <returns>Dictionary mapping message numbers to unique identifiers.</returns>
     public async Task<IReadOnlyDictionary<int, string>> ListUniqueIdsAsync(CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<string> lines = await SendPop3MultilineCommandAsync("UIDL", cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<ServerResponse> responses = await SendCommandAsync("UIDL", cancellationToken).ConfigureAwait(false);
+        await EnsureOkAsync(responses).ConfigureAwait(false);
+        IReadOnlyList<string> lines = await ReadMultilineAsync(cancellationToken).ConfigureAwait(false);
         Dictionary<int, string> result = new();
         foreach (string line in lines)
         {
@@ -264,39 +272,31 @@ public class Pop3Client : CommandResponseClient
     }
 
     /// <summary>
-    /// Executes a successful POP3 dot-terminated command as one atomic response operation.
+    /// Reads lines from the server until a single dot line is encountered.
     /// </summary>
-    /// <param name="command">POP3 command to send.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Payload lines excluding the terminator.</returns>
-    private async Task<IReadOnlyList<string>> SendPop3MultilineCommandAsync(string command, CancellationToken cancellationToken)
+    /// <returns>Collection of lines excluding the terminating dot.</returns>
+    private async Task<IReadOnlyList<string>> ReadMultilineAsync(CancellationToken cancellationToken)
     {
-        var result = await SendMultilineCommandAsync(
-            command,
-            responses => responses.Count > 0 && responses[^1].Severity == ResponseSeverity.Completion,
-            MaxMultilineLines,
-            MaxMultilineChars,
-            cancellationToken).ConfigureAwait(false);
-        await EnsureOkAsync(result.Responses).ConfigureAwait(false);
-        ValidateMultilineLimits(result.Payload, "POP3");
-        return result.Payload;
-    }
-
-    /// <summary>
-    /// Validates POP3 payload limits after the atomic transport operation.
-    /// </summary>
-    /// <param name="lines">Payload lines to validate.</param>
-    /// <param name="protocol">Protocol name used in exceptions.</param>
-    private void ValidateMultilineLimits(IReadOnlyList<string> lines, string protocol)
-    {
-        if (MaxMultilineLines > 0 && lines.Count > MaxMultilineLines)
-            throw new InvalidDataException($"{protocol} multi-line response exceeded the line limit of {MaxMultilineLines}.");
+        List<string> lines = new();
         int totalChars = 0;
-        foreach (string line in lines)
+        while (true)
         {
-            totalChars += line.Length;
-            if (MaxMultilineChars > 0 && totalChars > MaxMultilineChars)
-                throw new InvalidDataException($"{protocol} multi-line response exceeded the character limit of {MaxMultilineChars}.");
+            IReadOnlyList<ServerResponse> batch = await ReadAsync(cancellationToken).ConfigureAwait(false);
+            foreach (ServerResponse response in batch)
+            {
+                string line = response.Message is null ? response.Code : $"{response.Code} {response.Message}";
+                if (line == ".")
+                {
+                    return lines;
+                }
+                lines.Add(line);
+                if (MaxMultilineLines > 0 && lines.Count > MaxMultilineLines)
+                    throw new InvalidDataException($"POP3 multi-line response exceeded the line limit of {MaxMultilineLines}.");
+                totalChars += line.Length;
+                if (MaxMultilineChars > 0 && totalChars > MaxMultilineChars)
+                    throw new InvalidDataException($"POP3 multi-line response exceeded the character limit of {MaxMultilineChars}.");
+            }
         }
     }
 
