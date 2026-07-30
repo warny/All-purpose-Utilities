@@ -33,7 +33,11 @@ packable projects and produces the canonical package train exactly once. Package
 acceptance, API compatibility, release-warning checks, and local SourceLink mapping,
 PDB, and checksum checks run as individually visible steps on Ubuntu and Windows after
 both jobs download that same immutable package artifact. Neither validation job packs
-the projects. Reproducibility remains a separate two-build check on Ubuntu; it measures
+the projects. Because Actions jobs have isolated filesystems, each platform restores
+`Utils.sln` locally before source-based API, warning, and SourceLink gates; no `obj/`
+directory is transferred from another job. The warning gate restores autonomously by
+default and accepts `-NoRestore` only when its caller performed that local restore.
+Reproducibility remains a separate two-build check on Ubuntu; it measures
 repeatability in one controlled environment rather than comparing independent builds
 from different operating systems. Job limits are 25 minutes for build/tests, 35 minutes
 for canonical packaging, 55 minutes for packaged acceptance, and 35 minutes for

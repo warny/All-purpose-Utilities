@@ -133,12 +133,20 @@ jobs:
             - name: Validate canonical packaged product train
               shell: pwsh
               run: ./eng/test-packaged-product-train.ps1 -Configuration Release -ArtifactsPath artifacts -UseExistingPackages -SkipBuild
+            - name: Show selected .NET SDK
+              shell: pwsh
+              run: |
+                  dotnet --version
+                  dotnet --list-sdks
+            - name: Restore repository projects for source gates
+              shell: pwsh
+              run: dotnet restore Utils.sln
             - name: API compatibility
               shell: pwsh
               run: ./eng/validate-public-api.ps1 -Configuration Release -ArtifactsPath artifacts
             - name: Release warnings
               shell: pwsh
-              run: ./eng/validate-release-warnings.ps1 -Configuration Release -ArtifactsPath artifacts
+              run: ./eng/validate-release-warnings.ps1 -Configuration Release -ArtifactsPath artifacts -NoRestore
             - name: SourceLink local mappings, PDBs, and checksums
               shell: pwsh
               run: ./eng/validate-sourcelink.ps1 -ArtifactsPath artifacts -SkipRemoteRetrieval
