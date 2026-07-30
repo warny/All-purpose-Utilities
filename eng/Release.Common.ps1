@@ -17,14 +17,20 @@ function Invoke-NativeCommand {
         [TimeSpan] $Timeout = ([TimeSpan]::FromMinutes(10)),
         [Parameter(Mandatory)][string] $LogPath,
         [string] $WorkingDirectory = (Get-Location).Path,
+        [TimeSpan] $TerminationTimeout = ([TimeSpan]::FromSeconds(5)),
         [switch] $IgnoreExitCode
     )
 
     if ($Timeout -le [TimeSpan]::Zero) { throw "Timeout must be greater than zero." }
+    if ($TerminationTimeout -le [TimeSpan]::Zero) { throw "TerminationTimeout must be greater than zero." }
     $resolvedLog = [IO.Path]::GetFullPath($LogPath)
     New-Item (Split-Path $resolvedLog -Parent) -ItemType Directory -Force | Out-Null
     $displayCommand = (@($FilePath) + @($ArgumentList | ForEach-Object { if ($_ -match '\s') { '"' + $_.Replace('"', '\"') + '"' } else { $_ } })) -join ' '
     $start = [DateTime]::UtcNow
+    $stdout = [Text.StringBuilder]::new()
+    $stderr = [Text.StringBuilder]::new()
+    $status = "FAILED"
+    $exitCode = $null
     $process = [Diagnostics.Process]::new()
     $process.StartInfo = [Diagnostics.ProcessStartInfo]::new()
     $process.StartInfo.FileName = $FilePath
@@ -34,35 +40,81 @@ function Invoke-NativeCommand {
     $process.StartInfo.RedirectStandardError = $true
     $process.StartInfo.CreateNoWindow = $true
     foreach ($argument in $ArgumentList) { [void]$process.StartInfo.ArgumentList.Add($argument) }
+
+    $logWriter = [IO.StreamWriter]::new($resolvedLog, $false, [Text.UTF8Encoding]::new($false))
+    $logWriter.AutoFlush = $true
+    $startMessage = "[$($start.ToString('O'))] COMMAND START: $displayCommand"
+    Write-Host $startMessage
+    Write-Host "Log: $resolvedLog"
+    $logWriter.WriteLine($startMessage)
+    $logWriter.WriteLine("WORKING DIRECTORY: $WorkingDirectory")
     try {
         if (-not $process.Start()) { throw "Unable to start native command: $displayCommand" }
-        # Read both redirected streams concurrently to prevent a full pipe from
-        # deadlocking the child while preserving stdout/stderr independently.
-        $stdoutTask = $process.StandardOutput.ReadToEndAsync()
-        $stderrTask = $process.StandardError.ReadToEndAsync()
-        if (-not $process.WaitForExit([int][Math]::Min($Timeout.TotalMilliseconds, [int]::MaxValue))) {
-            try { $process.Kill($true) } catch { Write-Warning "Unable to terminate the complete process tree: $($_.Exception.Message)" }
-            $process.WaitForExit()
-            $stdoutText = $stdoutTask.GetAwaiter().GetResult()
-            $stderrText = $stderrTask.GetAwaiter().GetResult()
-            $duration = [DateTime]::UtcNow - $start
-            $logText = "COMMAND: $displayCommand`nTIMEOUT: $Timeout`nDURATION: $duration`nSTDOUT:`n$stdoutText`nSTDERR:`n$stderrText"
-            [IO.File]::WriteAllText($resolvedLog, $logText, [Text.UTF8Encoding]::new($false))
-            throw "Native command timed out after $duration (exit code: timeout): $displayCommand. Log: $resolvedLog"
+        $stdoutTask = $process.StandardOutput.ReadLineAsync()
+        $stderrTask = $process.StandardError.ReadLineAsync()
+        $stdoutComplete = $false
+        $stderrComplete = $false
+        $timedOut = $false
+        $exitObservedAt = $null
+
+        while (-not ($process.HasExited -and $stdoutComplete -and $stderrComplete)) {
+            if ($process.HasExited -and $null -eq $exitObservedAt) { $exitObservedAt = [DateTime]::UtcNow }
+            if (-not $stdoutComplete -and $stdoutTask.IsCompleted) {
+                $line = $stdoutTask.GetAwaiter().GetResult()
+                if ($null -eq $line) { $stdoutComplete = $true }
+                else {
+                    [void]$stdout.AppendLine($line)
+                    Write-Host $line
+                    $logWriter.WriteLine("[stdout] $line")
+                    $stdoutTask = $process.StandardOutput.ReadLineAsync()
+                }
+            }
+            if (-not $stderrComplete -and $stderrTask.IsCompleted) {
+                $line = $stderrTask.GetAwaiter().GetResult()
+                if ($null -eq $line) { $stderrComplete = $true }
+                else {
+                    [void]$stderr.AppendLine($line)
+                    [Console]::Error.WriteLine($line)
+                    $logWriter.WriteLine("[stderr] $line")
+                    $stderrTask = $process.StandardError.ReadLineAsync()
+                }
+            }
+            if (-not $process.HasExited -and ([DateTime]::UtcNow - $start) -ge $Timeout) {
+                $timedOut = $true
+                $status = "TIMEOUT"
+                $logWriter.WriteLine("TIMEOUT reached after $Timeout; terminating process tree.")
+                try { $process.Kill($true) }
+                catch {
+                    $message = "Unable to terminate the complete process tree: $($_.Exception.Message)"
+                    Write-Warning $message
+                    $logWriter.WriteLine("KILL ERROR: $message")
+                }
+                $terminationMilliseconds = [int][Math]::Min($TerminationTimeout.TotalMilliseconds, [int]::MaxValue)
+                if (-not $process.WaitForExit($terminationMilliseconds)) {
+                    throw "Native command timed out and did not terminate within $TerminationTimeout after the kill attempt: $displayCommand. Log: $resolvedLog"
+                }
+            }
+            if ($null -ne $exitObservedAt -and ([DateTime]::UtcNow - $exitObservedAt) -ge $TerminationTimeout) {
+                $logWriter.WriteLine("STREAM DRAIN TIMEOUT: redirected streams did not close within $TerminationTimeout after process exit.")
+                break
+            }
+            if (-not ($process.HasExited -and $stdoutComplete -and $stderrComplete)) { Start-Sleep -Milliseconds 20 }
         }
-        $process.WaitForExit()
-        $stdoutText = $stdoutTask.GetAwaiter().GetResult()
-        $stderrText = $stderrTask.GetAwaiter().GetResult()
-        if ($stdoutText) { Write-Host $stdoutText.TrimEnd() }
-        if ($stderrText) { [Console]::Error.WriteLine($stderrText.TrimEnd()) }
-        $duration = [DateTime]::UtcNow - $start
+
         $exitCode = $process.ExitCode
-        $logText = "COMMAND: $displayCommand`nEXIT CODE: $exitCode`nDURATION: $duration`nSTDOUT:`n$stdoutText`nSTDERR:`n$stderrText"
-        [IO.File]::WriteAllText($resolvedLog, $logText, [Text.UTF8Encoding]::new($false))
-        $result = [pscustomobject]@{ ExitCode = $exitCode; StandardOutput = $stdoutText; StandardError = $stderrText; Duration = $duration; LogPath = $resolvedLog; Command = $displayCommand }
+        $duration = [DateTime]::UtcNow - $start
+        if ($timedOut) { throw "Native command timed out after $duration (exit code: $exitCode): $displayCommand. Log: $resolvedLog" }
+        $status = if ($exitCode -eq 0) { "SUCCESS" } else { "FAILED" }
+        $result = [pscustomobject]@{ ExitCode = $exitCode; StandardOutput = $stdout.ToString().TrimEnd(); StandardError = $stderr.ToString().TrimEnd(); Duration = $duration; LogPath = $resolvedLog; Command = $displayCommand }
         if ($exitCode -ne 0 -and -not $IgnoreExitCode) { throw "Native command failed after $duration (exit code: $exitCode): $displayCommand. Log: $resolvedLog" }
         return $result
     } finally {
+        $duration = [DateTime]::UtcNow - $start
+        if ($process.HasExited) { $exitCode = $process.ExitCode }
+        $endMessage = "[$([DateTime]::UtcNow.ToString('O'))] COMMAND END — $status — $duration — exit code: $(if ($null -eq $exitCode) { 'unavailable' } else { $exitCode })"
+        Write-Host $endMessage
+        $logWriter.WriteLine($endMessage)
+        $logWriter.Dispose()
         $process.Dispose()
     }
 }

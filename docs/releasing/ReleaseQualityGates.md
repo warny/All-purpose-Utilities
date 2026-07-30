@@ -42,6 +42,11 @@ and outdated dependency reports, complete build/test pass, and all package consu
 on Ubuntu and Windows. Its two-build reproducibility check runs once on Ubuntu. The
 120-minute full-validation limit and per-command limits bound external tools while
 leaving diagnostic logs that name the command, exit code, and elapsed time.
+Native commands create their log and print the command before process startup, then
+stream stdout and stderr to both the Actions console and the log. Each log ends with a
+SUCCESS, FAILED, or TIMEOUT marker. After a timeout, process-tree termination and
+redirected-stream draining have their own bounded grace period, so cleanup cannot turn
+an expired command into an unlimited wait.
 
 For a fast local check after build and test jobs have already passed, run:
 

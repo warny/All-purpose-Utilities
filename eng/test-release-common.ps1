@@ -58,6 +58,26 @@ try {
     $success = Invoke-NativeCommand -FilePath $pwsh -ArgumentList @("-NoProfile", "-Command", "[Console]::Out.Write('hello output'); [Console]::Error.Write('hello error')") -Timeout ([TimeSpan]::FromSeconds(10)) -LogPath (Join-Path $nativeRoot "success.log")
     if ($success.ExitCode -ne 0 -or $success.StandardOutput -notmatch "hello output" -or $success.StandardError -notmatch "hello error") { throw "Native stdout/stderr capture failed." }
 
+    $streamLog = Join-Path $nativeRoot "streaming.log"
+    $commonScript = Join-Path $PSScriptRoot "Release.Common.ps1"
+    $streamJob = Start-Job -ScriptBlock {
+        param($CommonScript, $PowerShellPath, $LogPath)
+        . $CommonScript
+        Invoke-NativeCommand -FilePath $PowerShellPath -ArgumentList @("-NoProfile", "-Command", "Write-Output 'early-line'; Start-Sleep -Seconds 2; Write-Output 'late-line'") -Timeout ([TimeSpan]::FromSeconds(10)) -LogPath $LogPath | Out-Null
+    } -ArgumentList $commonScript, $pwsh, $streamLog
+    try {
+        $deadline = [DateTime]::UtcNow.AddSeconds(5)
+        while ((-not (Test-Path $streamLog) -or -not (Select-String -LiteralPath $streamLog -SimpleMatch "early-line" -Quiet)) -and [DateTime]::UtcNow -lt $deadline) {
+            Start-Sleep -Milliseconds 50
+        }
+        if (-not (Test-Path $streamLog) -or -not (Select-String -LiteralPath $streamLog -SimpleMatch "early-line" -Quiet)) { throw "Native output was not written progressively." }
+        if ($streamJob.State -ne "Running") { throw "Streaming test command completed before progressive output was observed." }
+        Wait-Job $streamJob -Timeout 10 | Out-Null
+        Receive-Job $streamJob -ErrorAction Stop | Out-Null
+    } finally {
+        Remove-Job $streamJob -Force -ErrorAction SilentlyContinue
+    }
+
     $spaced = Join-Path $nativeRoot "argument with spaces.txt"
     $argumentScript = Join-Path $nativeRoot "echo-argument.ps1"
     Set-Content -LiteralPath $argumentScript -Value 'param([string] $Value) [Console]::Write($Value)'
@@ -80,7 +100,10 @@ try {
     $sentinel = Join-Path $nativeRoot "child-survived.txt"
     $childScript = "Start-Sleep -Seconds 4; Set-Content -LiteralPath '$($sentinel.Replace("'", "''"))' survived"
     $parentScript = "Start-Process -FilePath '$($pwsh.Replace("'", "''"))' -ArgumentList @('-NoProfile','-Command',`"$childScript`"); Start-Sleep -Seconds 30"
-    try { Invoke-NativeCommand -FilePath $pwsh -ArgumentList @("-NoProfile", "-Command", $parentScript) -Timeout ([TimeSpan]::FromSeconds(1)) -LogPath (Join-Path $nativeRoot "timeout.log") | Out-Null; throw "Timed command did not throw." } catch { if ($_.Exception.Message -notmatch "timed out") { throw } }
+    $timeoutWatch = [Diagnostics.Stopwatch]::StartNew()
+    try { Invoke-NativeCommand -FilePath $pwsh -ArgumentList @("-NoProfile", "-Command", $parentScript) -Timeout ([TimeSpan]::FromSeconds(1)) -TerminationTimeout ([TimeSpan]::FromSeconds(1)) -LogPath (Join-Path $nativeRoot "timeout.log") | Out-Null; throw "Timed command did not throw." } catch { if ($_.Exception.Message -notmatch "timed out") { throw } }
+    $timeoutWatch.Stop()
+    if ($timeoutWatch.Elapsed -ge [TimeSpan]::FromSeconds(4)) { throw "Native timeout path was not bounded: $($timeoutWatch.Elapsed)." }
     Start-Sleep -Seconds 5
     if (Test-Path $sentinel) { throw "Timed command left a child process running." }
 } finally {
