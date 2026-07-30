@@ -1577,9 +1577,11 @@ public class CommandResponseLifecycleTests
 
         Task<IReadOnlyList<ServerResponse>> command = client.SendCommandAsync("PING");
         await WithTimeout(Task.Run(() => serverReader.ReadLine()), "Server did not see PING.");
+        // Write the completion and notification back-to-back. The listener may parse both
+        // before SendCommandAsync releases ownership; the notification must still be published.
         await serverWriter.WriteLineAsync("200 Pong");
-        await WithTimeout(command, "PING did not complete.");
         await serverWriter.WriteLineAsync("610 Notification");
+        await WithTimeout(command, "PING did not complete.");
 
         ServerResponse response = await WithTimeout(unsolicited.Task, "Unsolicited response was not raised immediately.");
         Assert.AreEqual("610", response.Code);

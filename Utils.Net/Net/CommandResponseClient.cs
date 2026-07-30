@@ -22,6 +22,7 @@ public class CommandResponseClient : IDisposable
     private readonly ConcurrentQueue<ServerResponse> _responseQueue = new();
     private readonly SemaphoreSlim _responseSignal = new(0);
     private readonly SemaphoreSlim _sendLock = new(1, 1);
+    private readonly object _responseRoutingLock = new();
 
     // Item 47: store the linked cancellation source so caller cancellation stops the listener.
     private CancellationTokenSource? _listenTokenSource;
@@ -394,7 +395,8 @@ public class CommandResponseClient : IDisposable
             // Item 44 / P1-2 race fix: register as the active response owner BEFORE writing
             // the command so that a response arriving immediately after (or during) the write
             // is routed to the queue rather than raised as unsolicited.
-            Interlocked.Increment(ref _activeCommandWaiters);
+            lock (_responseRoutingLock) _activeCommandWaiters++;
+            bool completed = false;
             try
             {
                 await _writer.WriteLineAsync(command.AsMemory(), cancellationToken).ConfigureAwait(false);
@@ -421,11 +423,12 @@ public class CommandResponseClient : IDisposable
                     }
                 }
                 ResetKeepAlive();
+                completed = true;
                 return responses;
             }
             finally
             {
-                Interlocked.Decrement(ref _activeCommandWaiters);
+                EndResponseOwnership(commandOwner: true, publishResidual: completed);
             }
         }
         finally
@@ -471,7 +474,8 @@ public class CommandResponseClient : IDisposable
                 throw new IOException("Connection closed.");
             DrainPendingResponses();
             Logger?.LogDebug("Sending multiline command: {Command}", RedactCommandForLog(command));
-            Interlocked.Increment(ref _activeCommandWaiters);
+            lock (_responseRoutingLock) _activeCommandWaiters++;
+            bool completed = false;
             try
             {
                 await _writer!.WriteLineAsync(command.AsMemory(), effective).ConfigureAwait(false);
@@ -508,11 +512,12 @@ public class CommandResponseClient : IDisposable
                     }
                 }
                 ResetKeepAlive();
+                completed = true;
                 return (responses, payload);
             }
             finally
             {
-                Interlocked.Decrement(ref _activeCommandWaiters);
+                EndResponseOwnership(commandOwner: true, publishResidual: completed);
             }
         }
         finally
@@ -577,7 +582,8 @@ public class CommandResponseClient : IDisposable
 
             // P1-A: register as a response owner BEFORE waiting so the listener routes the next
             // incoming line to the queue rather than raising it as unsolicited.
-            Interlocked.Increment(ref _activeReadWaiters);
+            lock (_responseRoutingLock) _activeReadWaiters++;
+            bool completed = false;
             List<ServerResponse> responses = new();
             try
             {
@@ -595,11 +601,12 @@ public class CommandResponseClient : IDisposable
                 }
                 while (await _responseSignal.WaitAsync(0).ConfigureAwait(false));
                 ResetKeepAlive();
+                completed = true;
                 return responses;
             }
             finally
             {
-                Interlocked.Decrement(ref _activeReadWaiters);
+                EndResponseOwnership(commandOwner: false, publishResidual: completed);
             }
         }
         finally
@@ -663,6 +670,33 @@ public class CommandResponseClient : IDisposable
         {
             _sendLock.Release();
         }
+    }
+
+    /// <summary>
+    /// Releases response ownership and publishes lines that arrived immediately after a
+    /// successfully completed operation as unsolicited responses.
+    /// </summary>
+    /// <param name="commandOwner">Whether the released owner is a command rather than a read.</param>
+    /// <param name="publishResidual">Whether residual lines are valid post-operation notifications.</param>
+    private void EndResponseOwnership(bool commandOwner, bool publishResidual)
+    {
+        List<ServerResponse> residual = new();
+        lock (_responseRoutingLock)
+        {
+            if (commandOwner) _activeCommandWaiters--;
+            else _activeReadWaiters--;
+
+            if (_activeCommandWaiters + _activeReadWaiters == 0)
+            {
+                while (_responseQueue.TryDequeue(out ServerResponse response))
+                {
+                    if (publishResidual) residual.Add(response);
+                }
+                while (_responseSignal.CurrentCount > 0) _responseSignal.Wait(0);
+            }
+        }
+        foreach (ServerResponse response in residual)
+            RaiseUnsolicitedResponseReceived(response);
     }
 
     /// <summary>
@@ -764,15 +798,17 @@ public class CommandResponseClient : IDisposable
                 // buffered even before OnConnect calls ReadAsync. Without this, a banner that
                 // arrives the moment the listener starts would be routed as unsolicited (no owner
                 // is registered yet) and would never reach the ReadAsync call in OnConnect.
-                if (_state == StateConnecting || _activeCommandWaiters + _activeReadWaiters > 0)
+                bool raiseUnsolicited;
+                lock (_responseRoutingLock)
                 {
-                    _responseQueue.Enqueue(response);
-                    _responseSignal.Release();
+                    raiseUnsolicited = _state != StateConnecting && _activeCommandWaiters + _activeReadWaiters == 0;
+                    if (!raiseUnsolicited)
+                    {
+                        _responseQueue.Enqueue(response);
+                        _responseSignal.Release();
+                    }
                 }
-                else
-                {
-                    RaiseUnsolicitedResponseReceived(response);
-                }
+                if (raiseUnsolicited) RaiseUnsolicitedResponseReceived(response);
             }
         }
         catch (IOException)
