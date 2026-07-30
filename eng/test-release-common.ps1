@@ -64,8 +64,17 @@ try {
     $argumentResult = Invoke-NativeCommand -FilePath $pwsh -ArgumentList @("-NoProfile", "-File", $argumentScript, $spaced) -Timeout ([TimeSpan]::FromSeconds(10)) -LogPath (Join-Path $nativeRoot "spaces.log")
     if ($argumentResult.StandardOutput -cne $spaced) { throw "A native argument containing spaces was not preserved." }
 
-    $failed = Invoke-NativeCommand -FilePath $pwsh -ArgumentList @("-NoProfile", "-Command", "exit 7") -Timeout ([TimeSpan]::FromSeconds(10)) -LogPath (Join-Path $nativeRoot "failure.log") -IgnoreExitCode
-    if ($failed.ExitCode -ne 7) { throw "Non-zero native exit code was not returned." }
+    $previousNativeErrorPreference = $PSNativeCommandUseErrorActionPreference
+    try {
+        # GitHub's PowerShell host promotes native non-zero exits to errors. ApiCompat
+        # uses such exits to report reviewable diagnostics, so IgnoreExitCode must
+        # still return the complete result under that host preference.
+        $PSNativeCommandUseErrorActionPreference = $true
+        $failed = Invoke-NativeCommand -FilePath $pwsh -ArgumentList @("-NoProfile", "-Command", "exit 7") -Timeout ([TimeSpan]::FromSeconds(10)) -LogPath (Join-Path $nativeRoot "failure.log") -IgnoreExitCode
+        if ($failed.ExitCode -ne 7) { throw "Non-zero native exit code was not returned." }
+    } finally {
+        $PSNativeCommandUseErrorActionPreference = $previousNativeErrorPreference
+    }
     try { Invoke-NativeCommand -FilePath $pwsh -ArgumentList @("-NoProfile", "-Command", "exit 8") -Timeout ([TimeSpan]::FromSeconds(10)) -LogPath (Join-Path $nativeRoot "throw.log") | Out-Null; throw "Non-zero command did not throw." } catch { if ($_.Exception.Message -notmatch "exit code: 8") { throw } }
 
     $sentinel = Join-Path $nativeRoot "child-survived.txt"

@@ -3,7 +3,12 @@
 Compares every explicitly declared public assembly with an exact diagnostic allowlist.
 #>
 [CmdletBinding()]
-param([string] $Configuration = "Release", [string] $ArtifactsPath = "artifacts")
+param(
+    [string] $Configuration = "Release",
+    [string] $ArtifactsPath = "artifacts",
+    [TimeSpan] $ToolInstallTimeout = ([TimeSpan]::FromMinutes(5)),
+    [TimeSpan] $ComparisonTimeout = ([TimeSpan]::FromMinutes(5))
+)
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "Release.Common.ps1")
 $repoRoot = Split-Path -Parent $PSScriptRoot
@@ -13,8 +18,7 @@ $packageRoot = Join-Path $artifactRoot 'packages'; $workRoot = Join-Path $artifa
 Remove-Item $workRoot -Recurse -Force -ErrorAction SilentlyContinue
 New-Item $workRoot -ItemType Directory -Force | Out-Null
 $toolRoot = Join-Path $workRoot 'tool'
-& dotnet tool install Microsoft.DotNet.ApiCompat.Tool --tool-path $toolRoot --version 10.0.302
-if ($LASTEXITCODE -ne 0) { throw 'ApiCompat tool installation failed.' }
+Invoke-NativeCommand -FilePath "dotnet" -ArgumentList @("tool", "install", "Microsoft.DotNet.ApiCompat.Tool", "--tool-path", $toolRoot, "--version", "10.0.302") -Timeout $ToolInstallTimeout -LogPath (Join-Path $workRoot "tool-install.log") | Out-Null
 $tool = Join-Path $toolRoot $(if ($IsWindows) { 'apicompat.exe' } else { 'apicompat' })
 $acceptanceCache = @{}
 $results = @()
@@ -56,15 +60,20 @@ foreach ($package in $manifest.packages) {
     for ($index = 0; $index -lt $candidateAssemblies.Count; $index++) {
         $baselineDll = Get-DeclaredAssembly $baselineRoot $package.baselineApiAssemblies[$index] $package.packageId 'baseline API'
         $log = Join-Path $workRoot "$($package.packageId)-$index.txt"
-        $output = & $tool -l $baselineDll.FullName -r $candidateAssemblies[$index].FullName 2>&1
-        $exitCode = $LASTEXITCODE
-        $output | Set-Content $log
-        $assemblyDiagnostics = @($output | ForEach-Object { [string]$_ } | Where-Object { $_ -match '^CP\d+:' })
+        # ApiCompat intentionally returns a non-zero code when it emits compatibility
+        # diagnostics. Capture that result instead of allowing the GitHub PowerShell
+        # host's native-error preference to terminate the script before allowlist review.
+        $comparison = Invoke-NativeCommand -FilePath $tool -ArgumentList @("-l", $baselineDll.FullName, "-r", $candidateAssemblies[$index].FullName) -Timeout $ComparisonTimeout -LogPath $log -IgnoreExitCode
+        $exitCode = $comparison.ExitCode
+        $output = @($comparison.StandardOutput -split "\r?\n") + @($comparison.StandardError -split "\r?\n")
+        $assemblyDiagnostics = @($output | Where-Object { $_ -match '^CP\d+:' })
         if ($exitCode -ne 0 -and -not $assemblyDiagnostics) { throw "$($package.packageId): ApiCompat failed without producing compatibility diagnostics. See '$log'." }
         $actualKeys += @($assemblyDiagnostics | ForEach-Object { if ($_ -match '^(CP\d+):\s*(.*)$') { $message = $Matches[2].Replace($baselineDll.FullName, '{baselineAssembly}').Replace($candidateAssemblies[$index].FullName, '{candidateAssembly}'); "$($Matches[1])|$message" } })
-        $reverse = & $tool -l $candidateAssemblies[$index].FullName -r $baselineDll.FullName 2>&1
-        if ($LASTEXITCODE -ne 0 -and -not @($reverse | Where-Object { [string]$_ -match '^CP\d+:' })) { throw "$($package.packageId): reverse ApiCompat comparison failed." }
-        $additions += @($reverse | ForEach-Object { [string]$_ } | Where-Object { $_ -match '^(CP0001|CP0002):' }).Count
+        $reverseLog = Join-Path $workRoot "$($package.packageId)-$index-reverse.txt"
+        $reverseResult = Invoke-NativeCommand -FilePath $tool -ArgumentList @("-l", $candidateAssemblies[$index].FullName, "-r", $baselineDll.FullName) -Timeout $ComparisonTimeout -LogPath $reverseLog -IgnoreExitCode
+        $reverse = @($reverseResult.StandardOutput -split "\r?\n") + @($reverseResult.StandardError -split "\r?\n")
+        if ($reverseResult.ExitCode -ne 0 -and -not @($reverse | Where-Object { $_ -match '^CP\d+:' })) { throw "$($package.packageId): reverse ApiCompat comparison failed. See '$reverseLog'." }
+        $additions += @($reverse | Where-Object { $_ -match '^(CP0001|CP0002):' }).Count
     }
 
     $acceptedKeys = @($acceptance[0].acceptedDiagnostics | ForEach-Object {
