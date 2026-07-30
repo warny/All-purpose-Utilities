@@ -35,3 +35,9 @@ try {
 } finally {
     Remove-Item (Join-Path (Split-Path -Parent $PSScriptRoot) $runnerArtifacts) -Recurse -Force -ErrorAction SilentlyContinue
 }
+
+& (Join-Path $PSScriptRoot "test-release-artifact-assembly.ps1")
+if (-not $?) { throw "Release artifact assembly tests failed." }
+
+& (Join-Path $PSScriptRoot "test-release-project-discovery.ps1")
+if (-not $?) { throw "Release project discovery tests failed." }

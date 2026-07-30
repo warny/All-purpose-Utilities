@@ -75,3 +75,13 @@ step, so the active gate and command were not visible and dependent Linux/functi
 work was cancelled. The tiered workflows remove repeated PR build/test work from the
 orchestrator, expose each mandatory PR gate, and reserve remote/advisory release work
 for the full workflow rather than merely increasing the old timeout.
+
+## Publication-compatible validation artifact
+
+After both platform package-validation jobs and the Ubuntu reproducibility job pass,
+the PR workflow compares the complete Ubuntu and Windows candidate package sets and
+requires byte-identical archives. It combines the canonical packages, validation
+reports, and reproducibility report, then generates and self-validates
+`artifacts/manifests/release-candidate-manifest.json`. The resulting
+`full-product-train-<sha>` artifact preserves the contract consumed by
+`publish-validated-product-train.yml`; pull requests still never publish packages.

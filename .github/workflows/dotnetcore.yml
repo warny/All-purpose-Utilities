@@ -81,6 +81,9 @@ jobs:
             - uses: actions/setup-dotnet@v4
               with:
                   dotnet-version: '9.0.x'
+            - name: Package discovery
+              shell: pwsh
+              run: ./eng/discover-release-projects.ps1 -Configuration Release -ArtifactsPath artifacts
             - name: Packaging and packaged acceptance
               shell: pwsh
               run: ./eng/test-packaged-product-train.ps1 -Configuration Release -ArtifactsPath artifacts
@@ -126,4 +129,48 @@ jobs:
               with:
                   name: reproducibility-${{ github.sha }}
                   path: artifacts/**/*
+                  if-no-files-found: warn
+
+    validated-product-train:
+        name: Assemble validated product train
+        needs:
+            - package-validation
+            - reproducibility
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+            - uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: '9.0.x'
+            - name: Download Ubuntu package validation
+              uses: actions/download-artifact@v4
+              with:
+                  name: package-validation-ubuntu-latest-${{ github.sha }}
+                  path: validated-inputs/ubuntu
+            - name: Download Windows package validation
+              uses: actions/download-artifact@v4
+              with:
+                  name: package-validation-windows-latest-${{ github.sha }}
+                  path: validated-inputs/windows
+            - name: Download reproducibility validation
+              uses: actions/download-artifact@v4
+              with:
+                  name: reproducibility-${{ github.sha }}
+                  path: validated-inputs/reproducibility
+            - name: Aggregate validated reports and generate candidate manifest
+              shell: pwsh
+              run: ./eng/assemble-validated-product-train.ps1 -InputsPath validated-inputs -ArtifactsPath artifacts
+            - name: Upload publication-compatible validated train
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: full-product-train-${{ github.sha }}
+                  path: |
+                      artifacts/packages/**
+                      artifacts/reports/**
+                      artifacts/manifests/**
+                      artifacts/logs/**
                   if-no-files-found: warn
