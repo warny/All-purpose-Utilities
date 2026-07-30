@@ -67,7 +67,9 @@ namespace Utils.NumberToString
         private static readonly ConcurrentDictionary<string, NumberToStringConverter> CachedConfigurations = new(StringComparer.InvariantCultureIgnoreCase);
 
         // Explicitly registered language-specifics instances, consulted before reflection
-        private static readonly ConcurrentDictionary<string, INumberToStringLanguageSpecifics> _registeredSpecifics = new(StringComparer.Ordinal);
+        private static readonly ConcurrentDictionary<string, Func<INumberToStringLanguageSpecifics>> _registeredSpecifics = new(StringComparer.Ordinal);
+
+        private static readonly object ConfigurationLock = new();
 
         // Stores resolved language definitions for cross-document baseOn resolution.
         // A LanguageDefinition (not the public LanguageType) is cached so that a child in a later
@@ -97,12 +99,24 @@ namespace Utils.NumberToString
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(typeName, nameof(typeName));
             ArgumentNullException.ThrowIfNull(instance);
-            _registeredSpecifics[typeName] = instance;
+            _registeredSpecifics[typeName] = () => instance;
+        }
+
+        /// <summary>Registers a factory that creates a language-specific implementation for each converter.</summary>
+        /// <param name="typeName">The configured type name.</param>
+        /// <param name="factory">The non-null factory.</param>
+        public static void RegisterLanguageSpecifics(
+            string typeName,
+            Func<INumberToStringLanguageSpecifics> factory)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(typeName, nameof(typeName));
+            ArgumentNullException.ThrowIfNull(factory);
+            _registeredSpecifics[typeName] = factory;
         }
 
         /// <summary>
         /// Loads number-to-string configurations embedded as XML strings.
-        /// Duplicate culture keys are silently ignored (first registration wins).
+        /// Duplicate normalized culture keys are rejected.
         /// </summary>
         /// <param name="configs">The XML documents describing language configurations.</param>
         public static void InitializeConfigurations(params string[] configs)
@@ -110,17 +124,55 @@ namespace Utils.NumberToString
 
         /// <summary>
         /// Registers the provided language configurations for later lookup.
-        /// Duplicate culture keys are silently ignored (first registration wins).
+        /// Duplicate normalized culture keys are rejected by default.
         /// </summary>
         /// <param name="configs">The XML configuration documents to load.</param>
         public static void RegisterConfigurations(IEnumerable<string> configs)
+            => RegisterConfigurations(configs, DuplicateCulturePolicy.Reject);
+
+        /// <summary>Atomically registers configuration documents using an explicit collision policy.</summary>
+        /// <param name="configs">The XML documents to register.</param>
+        /// <param name="duplicateCulturePolicy">The collision policy.</param>
+        public static void RegisterConfigurations(IEnumerable<string> configs, DuplicateCulturePolicy duplicateCulturePolicy)
         {
-            foreach (var configuration in configs)
+            ArgumentNullException.ThrowIfNull(configs);
+            if (!Enum.IsDefined(duplicateCulturePolicy))
+                throw new ArgumentOutOfRangeException(
+                    nameof(duplicateCulturePolicy),
+                    duplicateCulturePolicy,
+                    "Unsupported duplicate culture policy.");
+            lock (ConfigurationLock)
             {
-                var languages = ReadConfiguration(configuration);
-                foreach (var language in languages)
+                var converters = new Dictionary<string, NumberToStringConverter>(StringComparer.OrdinalIgnoreCase);
+                var definitions = new Dictionary<string, LanguageDefinition>(StringComparer.OrdinalIgnoreCase);
+                foreach (var configuration in configs)
                 {
-                    CachedConfigurations.TryAdd(language.Key, language.Value);
+                    var batch = BuildConfiguration(configuration, commitDefinitions: false, definitions);
+                    foreach (var language in batch.Converters)
+                    {
+                        if (converters.TryAdd(language.Key, language.Value)) continue;
+                        if (duplicateCulturePolicy == DuplicateCulturePolicy.Reject)
+                            throw new InvalidOperationException($"Duplicate normalized culture '{language.Key}' in configuration batch.");
+                        if (duplicateCulturePolicy == DuplicateCulturePolicy.Replace)
+                            converters[language.Key] = language.Value;
+                    }
+                    foreach (var definition in batch.Definitions)
+                    {
+                        if (definitions.TryAdd(definition.Key, definition.Value)) continue;
+                        if (duplicateCulturePolicy == DuplicateCulturePolicy.Replace)
+                            definitions[definition.Key] = definition.Value;
+                    }
+                }
+
+                var collisions = converters.Keys.Where(CachedConfigurations.ContainsKey).ToArray();
+                if (duplicateCulturePolicy == DuplicateCulturePolicy.Reject && collisions.Length > 0)
+                    throw new InvalidOperationException($"Cultures already registered: {string.Join(", ", collisions)}.");
+                foreach (var (culture, converter) in converters)
+                {
+                    if (duplicateCulturePolicy == DuplicateCulturePolicy.KeepExisting && CachedConfigurations.ContainsKey(culture))
+                        continue;
+                    CachedConfigurations[culture] = converter;
+                    _cachedLanguageTypes[culture] = definitions[culture];
                 }
             }
         }
@@ -141,6 +193,16 @@ namespace Utils.NumberToString
         /// <param name="configuration">The XML configuration document.</param>
         /// <returns>A dictionary mapping culture names to converters.</returns>
         public static Dictionary<string, NumberToStringConverter> ReadConfiguration(string configuration)
+        {
+            var batch = BuildConfiguration(configuration, commitDefinitions: true);
+            return batch.Converters;
+        }
+
+        /// <summary>Builds one configuration document without publishing converters.</summary>
+        private static ConfigurationBatch BuildConfiguration(
+            string configuration,
+            bool commitDefinitions,
+            IReadOnlyDictionary<string, LanguageDefinition>? inheritedBatchDefinitions = null)
         {
             XmlSerializer serializer = new XmlSerializer(typeof(NumbersXmlModel), "Utils/NumberConvertionConfiguration.xsd");
 
@@ -170,6 +232,10 @@ namespace Utils.NumberToString
             // has been resolved successfully (atomicity).
             var resolvedDefinitions = new List<LanguageDefinition>(definitions.Count);
             var localCacheAdditions = new Dictionary<string, LanguageDefinition>(StringComparer.OrdinalIgnoreCase);
+            if (inheritedBatchDefinitions != null)
+                foreach (var entry in inheritedBatchDefinitions)
+                    localCacheAdditions.Add(entry.Key, entry.Value);
+            var currentDefinitions = new Dictionary<string, LanguageDefinition>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var definition in definitions)
             {
@@ -195,7 +261,12 @@ namespace Utils.NumberToString
                 // Stage resolved definition into the local cache so later languages in this document
                 // can inherit from it via baseOn without hitting the global cache yet.
                 foreach (var culture in resolved.Cultures)
-                    localCacheAdditions.TryAdd(NormalizeCulture(culture), resolved);
+                {
+                    string normalizedCulture = NormalizeCulture(culture);
+                    localCacheAdditions.TryAdd(normalizedCulture, resolved);
+                    if (!currentDefinitions.TryAdd(normalizedCulture, resolved))
+                        throw new InvalidOperationException($"Duplicate normalized culture '{normalizedCulture}' in configuration document.");
+                }
             }
 
             // Phase 2 — all resolutions succeeded; build the public language types and converters
@@ -209,18 +280,25 @@ namespace Utils.NumberToString
                 foreach (var culture in resolved.Cultures)
                 {
                     var key = NormalizeCulture(culture);
-                    if (!result.ContainsKey(key))
-                        result.Add(key, ReadConverter(language, key));
+                    ValidateResolvedLanguage(language, key);
+                    if (!result.TryAdd(key, ReadConverter(language, key)))
+                        throw new InvalidOperationException($"Duplicate normalized culture '{key}' in configuration document.");
                 }
             }
 
             // Phase 3 — all converters built successfully; commit resolved definitions to the global cache.
-            foreach (var resolved in resolvedDefinitions)
-                foreach (var culture in resolved.Cultures)
-                    _cachedLanguageTypes.TryAdd(NormalizeCulture(culture), resolved);
+            if (commitDefinitions)
+                lock (ConfigurationLock)
+                    foreach (var resolved in resolvedDefinitions)
+                        foreach (var culture in resolved.Cultures)
+                            _cachedLanguageTypes.TryAdd(NormalizeCulture(culture), resolved);
 
-            return result;
+            return new ConfigurationBatch(result, currentDefinitions);
         }
+
+        private sealed record ConfigurationBatch(
+            Dictionary<string, NumberToStringConverter> Converters,
+            Dictionary<string, LanguageDefinition> Definitions);
 
         /// <summary>
         /// Splits a <c>baseOn</c> attribute value into individual culture keys.
@@ -300,8 +378,8 @@ namespace Utils.NumberToString
         /// <para>
         /// Lookup order (document-local definitions always take priority over the global cache):
         /// <list type="number">
-        ///   <item><description><paramref name="localCache"/> — already resolved within this document.</description></item>
         ///   <item><description><paramref name="docLanguages"/> — declared raw in this document; resolved recursively with full cycle detection.</description></item>
+        ///   <item><description><paramref name="localCache"/> — already resolved in an earlier document of the current batch.</description></item>
         ///   <item><description><see cref="_cachedLanguageTypes"/> — resolved in a previously loaded document (cross-document inheritance).</description></item>
         /// </list>
         /// A locally declared language always shadows a same-name entry in the global cache, which
@@ -315,16 +393,16 @@ namespace Utils.NumberToString
             HashSet<string> visiting,
             List<string> resolutionPath)
         {
-            // 1. Already resolved within this document (fast path — avoids re-resolving).
-            if (localCache.TryGetValue(baseKey, out LanguageDefinition? cachedInDoc))
-                return cachedInDoc;
-
-            // 2. Declared raw in this document — resolve recursively.
+            // 1. Declared raw in this document — resolve recursively.
             //    Document-local definitions take priority over the global cache so that a local
             //    definition of a same-named culture is used (and cycles are always detected even
             //    when an older version of the same culture exists in _cachedLanguageTypes).
             if (docLanguages.TryGetValue(baseKey, out LanguageDefinition? rawBase))
                 return ResolveLanguage(rawBase, docLanguages, localCache, visiting, resolutionPath);
+
+            // 2. Resolved in an earlier document of the current batch.
+            if (localCache.TryGetValue(baseKey, out LanguageDefinition? cachedInBatch))
+                return cachedInBatch;
 
             // 3. Resolved in a previously loaded document (cross-document inheritance).
             if (_cachedLanguageTypes.TryGetValue(baseKey, out LanguageDefinition? globalBase))
@@ -598,6 +676,86 @@ namespace Utils.NumberToString
             };
         }
 
+        /// <summary>Validates the fully inherited language model and reports all structural defects together.</summary>
+        private static void ValidateResolvedLanguage(LanguageType language, string languageIdentifier)
+        {
+            var errors = new List<string>();
+            void Require(bool condition, string path, string message)
+            {
+                if (!condition) errors.Add($"[{languageIdentifier}] {path}: {message}");
+            }
+
+            Require(language.Cultures?.Any(c => !string.IsNullOrWhiteSpace(c)) == true, "Cultures", "at least one non-empty culture is required.");
+            Require(language.GroupSize > 0 && language.GroupSize < _decimalPowersOfTen.Length, "GroupSize", $"must be between 1 and {_decimalPowersOfTen.Length - 1}.");
+            Require(!string.IsNullOrWhiteSpace(language.Zero), "Zero", "must be non-empty.");
+            Require(!string.IsNullOrWhiteSpace(language.Minus) && language.Minus.Count(c => c == '*') == 1, "Minus", "must be non-empty and contain exactly one '*' body placeholder.");
+            Require(language.Groups?.Groups != null && language.Groups.Groups.Count > 0, "Groups", "at least one group is required.");
+            if (language.Groups?.Groups != null)
+            {
+                int expectedGroup = 1;
+                foreach (var group in language.Groups.Groups.OrderBy(g => g.Level))
+                {
+                    int level = group.Level;
+                    DigitListType digits = group;
+                    Require(level == expectedGroup++, $"Groups[{level}]", "group levels must be contiguous starting at 1.");
+                    Require(digits?.Digits != null, $"Groups[{level}].Digits", "digit list is required.");
+                    if (digits?.Digits == null) continue;
+                    var values = new HashSet<long>();
+                    for (int i = 0; i < digits.Digits.Count; i++)
+                    {
+                        var digit = digits.Digits[i];
+                        Require(digit != null, $"Groups[{level}].Digits[{i}]", "entry must not be null.");
+                        if (digit == null) continue;
+                        Require(values.Add(digit.Digit), $"Groups[{level}].Digits[{i}]", $"digit {digit.Digit} is duplicated.");
+                        Require(digit.StringValue != null || digit.BuildString != null, $"Groups[{level}].Digits[{digit.Digit}]", "at least one of string or build must be non-null.");
+                    }
+                    for (int digit = 0; digit <= 9; digit++)
+                        Require(values.Contains(digit), $"Groups[{level}].Digits[{digit}]", "required digit is missing.");
+                }
+            }
+
+            if (language.TimeUnits?.Units != null)
+            {
+                var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var unit in language.TimeUnits.Units)
+                {
+                    Require(unit != null, "TimeUnits", "unit entry must not be null.");
+                    if (unit == null) continue;
+                    Require(names.Add(unit.Name), $"TimeUnits[{unit.Name}]", "canonical name must be unique.");
+                    Require(!string.IsNullOrWhiteSpace(unit.Singular), $"TimeUnits[{unit.Name}].Singular", "must be non-empty.");
+                    Require(!string.IsNullOrWhiteSpace(unit.Plural), $"TimeUnits[{unit.Name}].Plural", "must be non-empty.");
+                    Require(unit.Count1Form == null || !string.IsNullOrWhiteSpace(unit.Count1Form), $"TimeUnits[{unit.Name}].Count1Form", "must not be blank.");
+                }
+                foreach (string required in new[] { "hour", "minute", "second" })
+                    Require(names.Contains(required), $"TimeUnits[{required}]", "canonical unit is required.");
+            }
+
+            if (language.NumberScale == null)
+            {
+                bool parsed = BigInteger.TryParse(language.MaxNumber, NumberStyles.Integer, CultureInfo.InvariantCulture, out var maximum);
+                Require(parsed, "MaxNumber", "is required when NumberScale is absent.");
+                if (parsed && language.GroupSize > 0)
+                    Require(maximum < BigInteger.Pow(10, language.GroupSize), "MaxNumber", "must be below the first value requiring a scale name.");
+                language.NumberScale = new NumberScaleType
+                {
+                    StaticNames = new StaticNamesType
+                    {
+                        Scales = [new NumberType { Value = 0, StringValue = string.Empty }],
+                    },
+                };
+            }
+            else
+            {
+                Require(language.NumberScale.StaticNames?.Scales != null, "NumberScale.StaticNames", "static names are required (an empty list is allowed). ");
+                if (language.NumberScale.StaticNames?.Scales != null)
+                    foreach (var scaleName in language.NumberScale.StaticNames.Scales.Where(s => s.Value > 0))
+                        Require(!string.IsNullOrWhiteSpace(scaleName.StringValue), $"NumberScale.StaticNames[{scaleName.Value}]", "scale names above index zero must be non-empty.");
+            }
+
+            if (errors.Count > 0)
+                throw new InvalidOperationException("Resolved language configuration is invalid:" + Environment.NewLine + string.Join(Environment.NewLine, errors));
+        }
+
         /// <summary>
         /// Validates that no two variant dimensions share a canonical name or alias (case-insensitive).
         /// </summary>
@@ -656,6 +814,21 @@ namespace Utils.NumberToString
                 confScale.HundredsPrefixes?.Digits.OrderBy(n => n.Digit).Select(n => n.StringValue).ToArray(),
                 confScale.FirstLetterUpperCase
             );
+
+            BigInteger? configuredMaximum = string.IsNullOrWhiteSpace(language.MaxNumber)
+                ? null
+                : BigInteger.Parse(language.MaxNumber, CultureInfo.InvariantCulture);
+            if (!scale.IsUnbounded)
+            {
+                if (!configuredMaximum.HasValue)
+                    throw new InvalidOperationException($"[{languageIdentifier}] MaxNumber is required for a bounded NumberScale.");
+                int maximumGroup = configuredMaximum.Value.IsZero
+                    ? 0
+                    : (configuredMaximum.Value.ToString(CultureInfo.InvariantCulture).Length - 1) / language.GroupSize;
+                for (int groupIndex = 1; groupIndex <= maximumGroup; groupIndex++)
+                    if (!scale.CanNameGroup(groupIndex))
+                        throw new InvalidOperationException($"[{languageIdentifier}] NumberScale cannot name group {groupIndex} required by MaxNumber {configuredMaximum.Value}.");
+            }
 
             IEnumerable<NumberToStringConverter.ReplacementRule> ParseReplacements(ReplacementsListType list)
             {
@@ -1230,7 +1403,14 @@ namespace Utils.NumberToString
 
             if (_registeredSpecifics.TryGetValue(typeName, out var registered))
             {
-                return registered;
+                try
+                {
+                    return registered() ?? throw new InvalidOperationException("The registered factory returned null.");
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException($"LanguageSpecifics factory for configured type '{typeName}' failed.", ex);
+                }
             }
 
             Type specificsType = Type.GetType(typeName, throwOnError: false);

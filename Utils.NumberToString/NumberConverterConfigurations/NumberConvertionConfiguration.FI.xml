@@ -8,7 +8,7 @@
         minus="miinus *"
         decimalSeparator="pilkku"
         fractionSeparator="yli"
-        maxNumber="999999999"
+        maxNumber="999999"
     >
         <Culture>FI</Culture>
         <Groups>

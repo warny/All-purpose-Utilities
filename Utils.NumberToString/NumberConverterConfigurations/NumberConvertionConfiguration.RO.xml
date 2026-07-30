@@ -19,7 +19,9 @@
         fractionSeparator="peste"
         scaleConnector="de"
         scaleConnectorThreshold="20"
-    >
+
+                maxNumber="999999999999"
+        >
         <Culture>RO</Culture>
         <Culture>RO-RO</Culture>
         <Groups>

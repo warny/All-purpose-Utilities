@@ -213,6 +213,7 @@ namespace Utils.NumberToString
             _timeUnits = options.TimeUnits?.ToImmutableDictionary()
                          ?? ImmutableDictionary<string, (string Singular, string Plural, string? Count1Form)>.Empty;
             _datePattern = options.DatePattern;
+            _datePatternSegments = _datePattern == null ? [] : ParseDatePattern(_datePattern, LanguageIdentifier);
             _dateFirstDay = options.DateFirstDay;
             _dateFirstCardinalDay = options.DateFirstCardinalDay;
             _dateTimeConnector = options.DateTimeConnector;
@@ -450,6 +451,7 @@ namespace Utils.NumberToString
         private readonly long _scaleConnectorThreshold;
         private readonly ImmutableDictionary<string, (string Singular, string Plural, string? Count1Form)> _timeUnits;
         private readonly string? _datePattern;
+        private readonly ImmutableArray<DatePatternSegment> _datePatternSegments;
         private readonly string? _dateFirstDay;
         private readonly string? _dateFirstCardinalDay;
         private readonly string? _dateTimeConnector;
@@ -945,14 +947,21 @@ namespace Utils.NumberToString
 
             foreach (var param in variants)
             {
+                if (string.IsNullOrWhiteSpace(param))
+                    throw new ArgumentException($"Language '{LanguageIdentifier}': variant argument must not be null, empty, or whitespace.", nameof(variants));
                 int eq = param.IndexOf('=');
-                if (eq > 0)
-                {
-                    string rawName = param[..eq].Trim();
-                    // Normalize: localName (e.g. "genus") → canonical name (e.g. "gender")
-                    string canonical = _dimensionIndex.TryGetValue(rawName, out var dim) ? dim.Name : rawName;
-                    query[canonical] = param[(eq + 1)..].Trim();
-                }
+                if (eq < 0)
+                    throw new ArgumentException($"Language '{LanguageIdentifier}': variant argument '{param}' must use dimension=value syntax. Allowed dimensions: {string.Join(", ", VariantDimensions.Select(d => d.Name))}.", nameof(variants));
+                string rawName = param[..eq].Trim();
+                string value = param[(eq + 1)..].Trim();
+                if (rawName.Length == 0 || value.Length == 0)
+                    throw new ArgumentException($"Language '{LanguageIdentifier}': variant argument '{param}' requires a non-empty dimension and value.", nameof(variants));
+                if (!_dimensionIndex.TryGetValue(rawName, out var dim))
+                    throw new ArgumentException($"Language '{LanguageIdentifier}': unknown variant dimension '{rawName}'. Allowed dimensions: {string.Join(", ", VariantDimensions.Select(d => d.Name))}.", nameof(variants));
+                if (!dim.Values.Contains(value, StringComparer.OrdinalIgnoreCase))
+                    throw new ArgumentException($"Language '{LanguageIdentifier}': unknown value '{value}' for dimension '{dim.Name}'. Allowed values: {string.Join(", ", dim.Values)}.", nameof(variants));
+                if (!query.TryAdd(dim.Name, value))
+                    throw new ArgumentException($"Language '{LanguageIdentifier}': dimension '{dim.Name}' was supplied more than once (argument '{param}').", nameof(variants));
             }
 
             foreach (var dimension in VariantDimensions)
@@ -1568,9 +1577,12 @@ namespace Utils.NumberToString
             long absNumber = Math.Abs(number);
             var activeVariants = BuildVariantQuery(variants);
 
+            string ordinal;
             if (LanguageSpecifics is IOrdinalLanguageSpecifics ordinalPlugin
                 && ordinalPlugin.TryConvertOrdinal(absNumber, activeVariants, out var pluginResult))
-                return isNegative ? Minus.Replace("*", pluginResult!) : pluginResult!;
+                ordinal = pluginResult!;
+            else
+            {
 
             // Find the most specific matching ordinal variant
             OrdinalVariantRule? activeVariant = FindBestOrdinalVariant(activeVariants);
@@ -1580,17 +1592,20 @@ namespace Utils.NumberToString
             // exception over the explicit string= base form. Check OrdinalExceptions first
             // so that string="form" is treated as the true no-variant fallback.
             if (variants.Length == 0 && OrdinalExceptions.TryGetValue(absNumber, out var baseException))
-                return isNegative ? Minus.Replace("*", baseException) : baseException;
+                ordinal = baseException;
 
             // Exceptions: variant first, then base
-            if (activeVariant?.Exceptions.TryGetValue(absNumber, out var varException) == true)
-                return isNegative ? Minus.Replace("*", varException) : varException;
-            if (OrdinalExceptions.TryGetValue(absNumber, out var exception))
-                return isNegative ? Minus.Replace("*", exception) : exception;
-
-            string raw = absNumber == 0 ? Zero : ConvertRaw((BigInteger)absNumber, activeVariants);
-            raw = ApplyVariantRules(raw, activeVariants, absNumber);
-            string ordinal = ApplyOrdinalTransform(raw, activeVariant, noExplicitVariants: variants.Length == 0);
+            else if (activeVariant?.Exceptions.TryGetValue(absNumber, out var varException) == true)
+                ordinal = varException;
+            else if (OrdinalExceptions.TryGetValue(absNumber, out var exception))
+                ordinal = exception;
+            else
+            {
+                string raw = absNumber == 0 ? Zero : ConvertRaw((BigInteger)absNumber, activeVariants);
+                raw = ApplyVariantRules(raw, activeVariants, absNumber);
+                ordinal = ApplyOrdinalTransform(raw, activeVariant, noExplicitVariants: variants.Length == 0);
+            }
+            }
             if (_rawAdjustFunction != null) ordinal = _rawAdjustFunction(ordinal);
             ordinal = ApplyTriggers(ordinal, TriggerAt.End, null, activeVariants);
             string final = LanguageSpecifics.FinalizeWriting(LanguageIdentifier, ordinal);
@@ -1804,12 +1819,16 @@ namespace Utils.NumberToString
         {
             if (!SupportsMultiplicative)
                 throw new NotSupportedException($"Language '{LanguageIdentifier}' has no multiplicative configuration.");
-            if (Multiplicatives.TryGetValue(multiplier, out var named))
-                return named;
-            if (MultiplicativeSuffix != null)
-                return Convert(multiplier, variants) + MultiplicativeSuffix;
-            // No suffix and no named form — fall back to cardinal
-            return Convert(multiplier, variants);
+            var query = BuildVariantQuery(variants);
+            BigInteger magnitude = BigInteger.Abs((BigInteger)multiplier);
+            string raw = Multiplicatives.TryGetValue(multiplier, out var named)
+                ? named
+                : (magnitude.IsZero ? Zero : ConvertRaw(magnitude, query)) + (MultiplicativeSuffix ?? string.Empty);
+            raw = ApplyVariantRules(raw, query, magnitude);
+            if (_rawAdjustFunction != null) raw = _rawAdjustFunction(raw);
+            raw = ApplyTriggers(raw, TriggerAt.End, null, query);
+            string final = LanguageSpecifics.FinalizeWriting(LanguageIdentifier, raw);
+            return multiplier < 0 ? Minus.Replace("*", final) : final;
         }
 
         private string FormatTimeUnit(int count, (string Singular, string Plural, string? Count1Form) unit, string[] variants)
@@ -1950,12 +1969,53 @@ namespace Utils.NumberToString
                 : (SupportsOrdinals ? ConvertOrdinal(date.Day, variants) : cardinalDay);
             string year = ConvertYear(date.Year, variants);
 
-            return _datePattern!
-                .Replace("{month}", month)
-                .Replace("{ordinal-day}", ordinalDay)
-                .Replace("{cardinal-day}", cardinalDay)
-                .Replace("{year}", year);
+            var values = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["month"] = month,
+                ["ordinal-day"] = ordinalDay,
+                ["cardinal-day"] = cardinalDay,
+                ["year"] = year,
+            };
+            var rendered = new StringBuilder();
+            foreach (var segment in _datePatternSegments)
+                rendered.Append(segment.Token == null ? segment.Text : values[segment.Token]);
+            return rendered.ToString();
         }
+
+        /// <summary>Parses a date pattern once so inserted values are never rescanned as tokens.</summary>
+        private static ImmutableArray<DatePatternSegment> ParseDatePattern(string pattern, string languageIdentifier)
+        {
+            var segments = ImmutableArray.CreateBuilder<DatePatternSegment>();
+            var literal = new StringBuilder();
+            var allowed = new HashSet<string>(["month", "ordinal-day", "cardinal-day", "year"], StringComparer.Ordinal);
+            for (int index = 0; index < pattern.Length; index++)
+            {
+                if (pattern[index] == '}')
+                    throw new InvalidOperationException($"[{languageIdentifier}] DateFormat.Pattern has an unmatched closing brace at index {index}.");
+                if (pattern[index] != '{')
+                {
+                    literal.Append(pattern[index]);
+                    continue;
+                }
+                int end = pattern.IndexOf('}', index + 1);
+                if (end < 0)
+                    throw new InvalidOperationException($"[{languageIdentifier}] DateFormat.Pattern has an unmatched opening brace at index {index}.");
+                if (literal.Length > 0)
+                {
+                    segments.Add(new DatePatternSegment(literal.ToString(), null));
+                    literal.Clear();
+                }
+                string token = pattern[(index + 1)..end];
+                if (!allowed.Contains(token))
+                    throw new InvalidOperationException($"[{languageIdentifier}] DateFormat.Pattern contains unknown or empty token '{{{token}}}'. Allowed tokens: {string.Join(", ", allowed.Select(t => $"{{{t}}}"))}.");
+                segments.Add(new DatePatternSegment(string.Empty, token));
+                index = end;
+            }
+            if (literal.Length > 0) segments.Add(new DatePatternSegment(literal.ToString(), null));
+            return segments.ToImmutable();
+        }
+
+        private sealed record DatePatternSegment(string Text, string? Token);
 
         /// <inheritdoc cref="INumberToStringConverter.Convert(DateTime, string[])"/>
         public string Convert(DateTime dateTime, params string[] variants)
@@ -2187,6 +2247,35 @@ namespace Utils.NumberToString
         /// not configured. Required only for scales whose prefix value exceeds 9.
         /// </summary>
         public IReadOnlyList<string>? HundredsPrefixes { get; }
+
+        /// <summary>Gets whether every non-negative group index can be named.</summary>
+        public bool IsUnbounded => ScaleSuffixes.Count > 0
+            && ScaleSuffixes.All(suffix => !string.IsNullOrWhiteSpace(suffix))
+            && Scale0Prefixes != null
+            && UnitsPrefixes != null
+            && TensPrefixes != null
+            && HundredsPrefixes != null;
+
+        /// <summary>Determines whether the scale can safely name the supplied group index.</summary>
+        /// <param name="groupIndex">The zero-based large-number group index.</param>
+        /// <returns><see langword="true"/> when naming is guaranteed.</returns>
+        public bool CanNameGroup(int groupIndex)
+        {
+            if (groupIndex < 0) return false;
+            try
+            {
+                string name = GetScaleName(groupIndex);
+                return groupIndex == 0 || !string.IsNullOrWhiteSpace(name);
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+            catch (IndexOutOfRangeException)
+            {
+                return false;
+            }
+        }
 
 
         /// <summary>

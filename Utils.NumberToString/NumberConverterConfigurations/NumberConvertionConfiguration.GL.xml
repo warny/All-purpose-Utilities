@@ -8,6 +8,8 @@
                 minus="menos *"
                 decimalSeparator="coma"
                 fractionSeparator="sobre"
+
+                maxNumber="999999999999"
         >
                 <Culture>GL</Culture>
                 <Culture>gl-ES</Culture>

@@ -8,7 +8,9 @@
         minus="minus *"
         decimalSeparator="pojint"
         fractionSeparator="ci"
-    >
+
+                maxNumber="999999"
+        >
         <Culture>WO</Culture>
         <Groups>
             <Group level="1">

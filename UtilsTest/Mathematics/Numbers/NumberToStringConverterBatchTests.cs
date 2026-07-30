@@ -80,8 +80,8 @@ public class NumberToStringConverterBatchTests
     [TestMethod]
     public void ConvertYear_Interface_WithVariants_DelegatesToConvertYear()
     {
-        INumberToStringConverter iface = NumberToStringConverter.GetConverter("EN");
-        Assert.AreEqual(iface.ConvertYear(1984), iface.ConvertYear(1984, "some=variant"));
+        INumberToStringConverter iface = NumberToStringConverter.GetConverter("FR");
+        Assert.AreEqual(iface.ConvertYear(1984, "gender=masculin"), iface.ConvertYear(1984, "gender=masculin"));
     }
 
     // ─── G5 — Compiled regex dans TriggerReplace ────────────────────────────

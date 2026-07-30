@@ -8,6 +8,8 @@
                 minus="ken *"
                 decimalSeparator="koma"
                 fractionSeparator="zati"
+
+                maxNumber="999999999999"
         >
                 <Culture>EU</Culture>
                 <Culture>eu-ES</Culture>

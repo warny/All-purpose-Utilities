@@ -8,7 +8,9 @@
         minus="μείον *"
         decimalSeparator="κόμμα"
         fractionSeparator="διά"
-    >
+
+                maxNumber="999999"
+        >
 		<Culture>EL</Culture>
 		<Groups>
 			<Group level="1">
