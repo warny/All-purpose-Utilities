@@ -57766,6 +57766,30 @@ references:
   fullName.vb: Utils.NumberToString.DigitType.CType
   nameWithType: DigitType.implicit operator
   nameWithType.vb: DigitType.CType
+- uid: Utils.NumberToString.DuplicateCulturePolicy
+  name: DuplicateCulturePolicy
+  href: api/Utils.NumberToString.DuplicateCulturePolicy.html
+  commentId: T:Utils.NumberToString.DuplicateCulturePolicy
+  fullName: Utils.NumberToString.DuplicateCulturePolicy
+  nameWithType: DuplicateCulturePolicy
+- uid: Utils.NumberToString.DuplicateCulturePolicy.KeepExisting
+  name: KeepExisting
+  href: api/Utils.NumberToString.DuplicateCulturePolicy.html#Utils_NumberToString_DuplicateCulturePolicy_KeepExisting
+  commentId: F:Utils.NumberToString.DuplicateCulturePolicy.KeepExisting
+  fullName: Utils.NumberToString.DuplicateCulturePolicy.KeepExisting
+  nameWithType: DuplicateCulturePolicy.KeepExisting
+- uid: Utils.NumberToString.DuplicateCulturePolicy.Reject
+  name: Reject
+  href: api/Utils.NumberToString.DuplicateCulturePolicy.html#Utils_NumberToString_DuplicateCulturePolicy_Reject
+  commentId: F:Utils.NumberToString.DuplicateCulturePolicy.Reject
+  fullName: Utils.NumberToString.DuplicateCulturePolicy.Reject
+  nameWithType: DuplicateCulturePolicy.Reject
+- uid: Utils.NumberToString.DuplicateCulturePolicy.Replace
+  name: Replace
+  href: api/Utils.NumberToString.DuplicateCulturePolicy.html#Utils_NumberToString_DuplicateCulturePolicy_Replace
+  commentId: F:Utils.NumberToString.DuplicateCulturePolicy.Replace
+  fullName: Utils.NumberToString.DuplicateCulturePolicy.Replace
+  nameWithType: DuplicateCulturePolicy.Replace
 - uid: Utils.NumberToString.FormVariantType
   name: FormVariantType
   href: api/Utils.NumberToString.FormVariantType.html
@@ -59377,6 +59401,22 @@ references:
   fullName.vb: Utils.NumberToString.NumberScale.New
   nameWithType: NumberScale.NumberScale
   nameWithType.vb: NumberScale.New
+- uid: Utils.NumberToString.NumberScale.CanNameGroup(System.Int32)
+  name: CanNameGroup(int)
+  href: api/Utils.NumberToString.NumberScale.html#Utils_NumberToString_NumberScale_CanNameGroup_System_Int32_
+  commentId: M:Utils.NumberToString.NumberScale.CanNameGroup(System.Int32)
+  name.vb: CanNameGroup(Integer)
+  fullName: Utils.NumberToString.NumberScale.CanNameGroup(int)
+  fullName.vb: Utils.NumberToString.NumberScale.CanNameGroup(Integer)
+  nameWithType: NumberScale.CanNameGroup(int)
+  nameWithType.vb: NumberScale.CanNameGroup(Integer)
+- uid: Utils.NumberToString.NumberScale.CanNameGroup*
+  name: CanNameGroup
+  href: api/Utils.NumberToString.NumberScale.html#Utils_NumberToString_NumberScale_CanNameGroup_
+  commentId: Overload:Utils.NumberToString.NumberScale.CanNameGroup
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberScale.CanNameGroup
+  nameWithType: NumberScale.CanNameGroup
 - uid: Utils.NumberToString.NumberScale.FirstLetterUppercase
   name: FirstLetterUppercase
   href: api/Utils.NumberToString.NumberScale.html#Utils_NumberToString_NumberScale_FirstLetterUppercase
@@ -59419,6 +59459,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberScale.HundredsPrefixes
   nameWithType: NumberScale.HundredsPrefixes
+- uid: Utils.NumberToString.NumberScale.IsUnbounded
+  name: IsUnbounded
+  href: api/Utils.NumberToString.NumberScale.html#Utils_NumberToString_NumberScale_IsUnbounded
+  commentId: P:Utils.NumberToString.NumberScale.IsUnbounded
+  fullName: Utils.NumberToString.NumberScale.IsUnbounded
+  nameWithType: NumberScale.IsUnbounded
+- uid: Utils.NumberToString.NumberScale.IsUnbounded*
+  name: IsUnbounded
+  href: api/Utils.NumberToString.NumberScale.html#Utils_NumberToString_NumberScale_IsUnbounded_
+  commentId: Overload:Utils.NumberToString.NumberScale.IsUnbounded
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberScale.IsUnbounded
+  nameWithType: NumberScale.IsUnbounded
 - uid: Utils.NumberToString.NumberScale.Scale0Prefixes
   name: Scale0Prefixes
   href: api/Utils.NumberToString.NumberScale.html#Utils_NumberToString_NumberScale_Scale0Prefixes
@@ -60752,6 +60805,15 @@ references:
   fullName.vb: Utils.NumberToString.NumberToStringConverter.RegisterConfigurations(System.Collections.Generic.IEnumerable(Of String))
   nameWithType: NumberToStringConverter.RegisterConfigurations(IEnumerable<string>)
   nameWithType.vb: NumberToStringConverter.RegisterConfigurations(IEnumerable(Of String))
+- uid: Utils.NumberToString.NumberToStringConverter.RegisterConfigurations(System.Collections.Generic.IEnumerable{System.String},Utils.NumberToString.DuplicateCulturePolicy)
+  name: RegisterConfigurations(IEnumerable<string>, DuplicateCulturePolicy)
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_RegisterConfigurations_System_Collections_Generic_IEnumerable_System_String__Utils_NumberToString_DuplicateCulturePolicy_
+  commentId: M:Utils.NumberToString.NumberToStringConverter.RegisterConfigurations(System.Collections.Generic.IEnumerable{System.String},Utils.NumberToString.DuplicateCulturePolicy)
+  name.vb: RegisterConfigurations(IEnumerable(Of String), DuplicateCulturePolicy)
+  fullName: Utils.NumberToString.NumberToStringConverter.RegisterConfigurations(System.Collections.Generic.IEnumerable<string>, Utils.NumberToString.DuplicateCulturePolicy)
+  fullName.vb: Utils.NumberToString.NumberToStringConverter.RegisterConfigurations(System.Collections.Generic.IEnumerable(Of String), Utils.NumberToString.DuplicateCulturePolicy)
+  nameWithType: NumberToStringConverter.RegisterConfigurations(IEnumerable<string>, DuplicateCulturePolicy)
+  nameWithType.vb: NumberToStringConverter.RegisterConfigurations(IEnumerable(Of String), DuplicateCulturePolicy)
 - uid: Utils.NumberToString.NumberToStringConverter.RegisterConfigurations*
   name: RegisterConfigurations
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_RegisterConfigurations_
@@ -60759,6 +60821,15 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.RegisterConfigurations
   nameWithType: NumberToStringConverter.RegisterConfigurations
+- uid: Utils.NumberToString.NumberToStringConverter.RegisterLanguageSpecifics(System.String,System.Func{Utils.NumberToString.INumberToStringLanguageSpecifics})
+  name: RegisterLanguageSpecifics(string, Func<INumberToStringLanguageSpecifics>)
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_RegisterLanguageSpecifics_System_String_System_Func_Utils_NumberToString_INumberToStringLanguageSpecifics__
+  commentId: M:Utils.NumberToString.NumberToStringConverter.RegisterLanguageSpecifics(System.String,System.Func{Utils.NumberToString.INumberToStringLanguageSpecifics})
+  name.vb: RegisterLanguageSpecifics(String, Func(Of INumberToStringLanguageSpecifics))
+  fullName: Utils.NumberToString.NumberToStringConverter.RegisterLanguageSpecifics(string, System.Func<Utils.NumberToString.INumberToStringLanguageSpecifics>)
+  fullName.vb: Utils.NumberToString.NumberToStringConverter.RegisterLanguageSpecifics(String, System.Func(Of Utils.NumberToString.INumberToStringLanguageSpecifics))
+  nameWithType: NumberToStringConverter.RegisterLanguageSpecifics(string, Func<INumberToStringLanguageSpecifics>)
+  nameWithType.vb: NumberToStringConverter.RegisterLanguageSpecifics(String, Func(Of INumberToStringLanguageSpecifics))
 - uid: Utils.NumberToString.NumberToStringConverter.RegisterLanguageSpecifics(System.String,Utils.NumberToString.INumberToStringLanguageSpecifics)
   name: RegisterLanguageSpecifics(string, INumberToStringLanguageSpecifics)
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_RegisterLanguageSpecifics_System_String_Utils_NumberToString_INumberToStringLanguageSpecifics_

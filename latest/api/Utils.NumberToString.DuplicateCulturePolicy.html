@@ -2,11 +2,11 @@
 <html>
   <head>
     <meta charset="utf-8">
-      <title>Enum NumberToStringConverter.TriggerAt | omy.Utils Documentation </title>
+      <title>Enum DuplicateCulturePolicy | omy.Utils Documentation </title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="title" content="Enum NumberToStringConverter.TriggerAt | omy.Utils Documentation ">
+      <meta name="title" content="Enum DuplicateCulturePolicy | omy.Utils Documentation ">
       
-      <meta name="description" content="Specifies when a  fires in the conversion pipeline.">
+      <meta name="description" content="Specifies how registration handles a culture already present in the global registry.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -16,7 +16,7 @@
       <meta name="docfx:rel" content="../">
       
       
-      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_NumberToStringConverter_TriggerAt.md&amp;value=---%0Auid%3A%20Utils.NumberToString.NumberToStringConverter.TriggerAt%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_DuplicateCulturePolicy.md&amp;value=---%0Auid%3A%20Utils.NumberToString.DuplicateCulturePolicy%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
       <meta name="loc:inThisArticle" content="In this article">
       <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
       <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
@@ -84,13 +84,13 @@
           <nav id="breadcrumb"></nav>
         </div>
 
-        <article data-uid="Utils.NumberToString.NumberToStringConverter.TriggerAt">
+        <article data-uid="Utils.NumberToString.DuplicateCulturePolicy">
 
 
 
 
-  <h1 id="Utils_NumberToString_NumberToStringConverter_TriggerAt" data-uid="Utils.NumberToString.NumberToStringConverter.TriggerAt" class="text-break">
-Enum NumberToStringConverter.TriggerAt  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L484"><i class="bi bi-code-slash"></i></a>
+  <h1 id="Utils_NumberToString_DuplicateCulturePolicy" data-uid="Utils.NumberToString.DuplicateCulturePolicy" class="text-break">
+Enum DuplicateCulturePolicy  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/DuplicateCulturePolicy.cs/#L4"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -98,12 +98,12 @@ Enum NumberToStringConverter.TriggerAt  <a class="header-action link-secondary" 
   <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Specifies when a <a class="xref" href="Utils.NumberToString.NumberToStringConverter.TriggerRule.html">NumberToStringConverter.TriggerRule</a> fires in the conversion pipeline.</p>
+  <div class="markdown summary"><p>Specifies how registration handles a culture already present in the global registry.</p>
 </div>
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public enum NumberToStringConverter.TriggerAt</code></pre>
+    <pre><code class="lang-csharp hljs">public enum DuplicateCulturePolicy</code></pre>
   </div>
 
 
@@ -226,17 +226,17 @@ Enum NumberToStringConverter.TriggerAt  <a class="header-action link-secondary" 
   <h2 id="fields">Fields
 </h2>
   <dl class="parameters">
-    <dt id="Utils_NumberToString_NumberToStringConverter_TriggerAt_End"><code>End = 2</code></dt>
+    <dt id="Utils_NumberToString_DuplicateCulturePolicy_KeepExisting"><code>KeepExisting = 1</code></dt>
   
-  <dd><p>Fires on the fully assembled text, after global Replacements and Variants, before FinalizeWriting.</p>
+  <dd><p>Keeps the existing converter.</p>
 </dd>
-    <dt id="Utils_NumberToString_NumberToStringConverter_TriggerAt_Group"><code>Group = 0</code></dt>
+    <dt id="Utils_NumberToString_DuplicateCulturePolicy_Reject"><code>Reject = 0</code></dt>
   
-  <dd><p>Fires on the digit-only text of a group, before the scale name is appended.</p>
+  <dd><p>Rejects the complete batch.</p>
 </dd>
-    <dt id="Utils_NumberToString_NumberToStringConverter_TriggerAt_GroupWithScale"><code>GroupWithScale = 1</code></dt>
+    <dt id="Utils_NumberToString_DuplicateCulturePolicy_Replace"><code>Replace = 2</code></dt>
   
-  <dd><p>Fires on the digit+scale text of a group, after per-group Replacements are applied.</p>
+  <dd><p>Replaces the existing converter.</p>
 </dd>
   </dl>
 
@@ -245,7 +245,7 @@ Enum NumberToStringConverter.TriggerAt  <a class="header-action link-secondary" 
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L484" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/DuplicateCulturePolicy.cs/#L4" class="edit-link">Edit this page</a>
         </div>
 
 

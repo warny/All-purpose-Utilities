@@ -7852,6 +7852,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.DuplicateCulturePolicy.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.DuplicateCulturePolicy.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.DuplicateCulturePolicy",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.DuplicateCulturePolicy.yml\" sourcestartlinenumber=\"1\">Specifies how registration handles a culture already present in the global registry.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.FormVariantType.yml",
       "output": {
         ".html": {
