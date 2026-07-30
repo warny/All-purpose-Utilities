@@ -10,6 +10,8 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $manifest = Get-ProductTrainManifest $repoRoot
 $artifactRoot = Resolve-RepositoryPath $repoRoot $ArtifactsPath
 $packagePath = Join-Path $artifactRoot "packages"
+$logRoot = Join-Path $artifactRoot "logs/canonical-packaging"
+$dotnetPath = @(Get-Command dotnet -CommandType Application)[0].Source
 & (Join-Path $PSScriptRoot "validate-product-train.ps1") -Configuration $Configuration
 if ($LASTEXITCODE -ne 0) { throw "Product version validation failed." }
 & (Join-Path $PSScriptRoot "analyze-package-graph.ps1") -Configuration $Configuration -ArtifactsPath $ArtifactsPath
@@ -21,15 +23,15 @@ New-Item $packagePath -ItemType Directory -Force | Out-Null
 if (-not $NoBuild) {
     foreach ($id in $order) {
         $package = $byId[$id]
-        & dotnet build (Resolve-RepositoryPath $repoRoot $package.project) --configuration $Configuration --no-restore -p:ContinuousIntegrationBuild=true -p:UseSharedCompilation=false
-        if ($LASTEXITCODE -ne 0) { throw "Build failed for $($package.project)." }
+        $buildLog = Join-Path $logRoot "build-$($package.packageId).log"
+        Invoke-NativeCommand -FilePath $dotnetPath -ArgumentList @("build", (Resolve-RepositoryPath $repoRoot $package.project), "--configuration", $Configuration, "--no-restore", "-p:ContinuousIntegrationBuild=true", "-p:UseSharedCompilation=false") -Timeout ([TimeSpan]::FromMinutes(15)) -LogPath $buildLog | Out-Null
     }
 }
 foreach ($id in $order) {
     $package = $byId[$id]
     Write-Host "Pack: $($package.packageId) from $($package.project)"
-    & dotnet pack (Resolve-RepositoryPath $repoRoot $package.project) --configuration $Configuration --no-build --no-restore --output $packagePath -p:ContinuousIntegrationBuild=true
-    if ($LASTEXITCODE -ne 0) { throw "dotnet pack failed for $($package.project)." }
+    $packLog = Join-Path $logRoot "pack-$($package.packageId).log"
+    Invoke-NativeCommand -FilePath $dotnetPath -ArgumentList @("pack", (Resolve-RepositoryPath $repoRoot $package.project), "--configuration", $Configuration, "--no-build", "--no-restore", "--output", $packagePath, "-p:ContinuousIntegrationBuild=true") -Timeout ([TimeSpan]::FromMinutes(15)) -LogPath $packLog | Out-Null
 }
 
 # NuGet serializes project-reference dependencies as minimum versions. Rewrite only
