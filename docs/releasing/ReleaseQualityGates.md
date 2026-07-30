@@ -85,3 +85,5 @@ reports, and reproducibility report, then generates and self-validates
 `artifacts/manifests/release-candidate-manifest.json`. The resulting
 `full-product-train-<sha>` artifact preserves the contract consumed by
 `publish-validated-product-train.yml`; pull requests still never publish packages.
+The artifact contract can be checked locally without contacting NuGet by running
+`./eng/publish-product-train.ps1 -ArtifactsPath <path> -ValidateCandidateOnly`.

@@ -10,6 +10,7 @@ param(
     [string] $ArtifactsPath = "artifacts",
     [switch] $Publish,
     [switch] $PreflightPackageIdsOnly,
+    [switch] $ValidateCandidateOnly,
     [string] $ApiKey = $env:NUGET_API_KEY,
     [string] $CandidateManifestPath
 )
@@ -19,6 +20,7 @@ $manifest = Get-Content (Join-Path $PSScriptRoot "product-train-manifest.json") 
 $artifactRoot = [IO.Path]::GetFullPath((Join-Path $repoRoot $ArtifactsPath))
 $packagesPath = Join-Path $artifactRoot "packages"
 if ($Publish -and $PreflightPackageIdsOnly) { throw "PreflightPackageIdsOnly can never publish packages." }
+if ($ValidateCandidateOnly -and ($Publish -or $PreflightPackageIdsOnly)) { throw "ValidateCandidateOnly cannot publish or run an artifact-free preflight." }
 if ([string]::IsNullOrWhiteSpace($CandidateManifestPath)) {
     $CandidateManifestPath = Join-Path $artifactRoot "manifests/release-candidate-manifest.json"
 }
@@ -69,6 +71,7 @@ if (-not $PreflightPackageIdsOnly) {
     $actualFiles = @(Get-ChildItem $packagesPath -File | Where-Object Extension -in @('.nupkg', '.snupkg') | Select-Object -ExpandProperty Name)
     if (Compare-Object ($listedFiles | Sort-Object) ($actualFiles | Sort-Object)) { throw "Package directory differs from the exact candidate artifact list." }
 }
+if ($ValidateCandidateOnly) { Write-Host "Validated candidate manifest and package hashes without contacting NuGet."; return }
 
 $states = foreach ($package in $manifest.packages) {
     $id = [string]$package.packageId

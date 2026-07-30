@@ -26,7 +26,12 @@ $nativeCommandIndex = 0
 
 <# Runs every dotnet acceptance command with a command-specific timeout and log. #>
 function Invoke-AcceptanceDotNet {
-    param([Parameter(ValueFromRemainingArguments)][string[]] $Arguments)
+    param(
+        [Parameter(Position = 0)][string] $Command,
+        [Parameter(ValueFromRemainingArguments)][string[]] $RemainingArguments,
+        [string[]] $Arguments
+    )
+    if ($null -eq $Arguments) { $Arguments = @($Command) + @($RemainingArguments) }
     $script:nativeCommandIndex++
     $operation = if ($Arguments.Count) { $Arguments[0] } else { "command" }
     $timeout = switch ($operation) {
@@ -48,9 +53,10 @@ function Invoke-AcceptanceDotNet {
 if ($TestNativeRunnerOnly) {
     & Invoke-AcceptanceDotNet --version | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "Acceptance native-runner success probe failed." }
-    & Invoke-AcceptanceDotNet definitely-invalid-command | Out-Null
+    & Invoke-AcceptanceDotNet -Arguments @("definitely-invalid-command", "-p:ReleaseRunnerProbe=Value") | Out-Null
     if ($LASTEXITCODE -eq 0) { throw "Acceptance native-runner failure probe unexpectedly succeeded." }
     if (@(Get-ChildItem $nativeLogRoot -Filter *.log -File).Count -ne 2) { throw "Acceptance native-runner did not create one log per command." }
+    if (-not (Select-String -Path (Join-Path $nativeLogRoot "002-definitely-invalid-command.log") -SimpleMatch "-p:ReleaseRunnerProbe=Value" -Quiet)) { throw "Acceptance native runner did not preserve an MSBuild -p: argument." }
     Write-Host "Packaged acceptance native-runner tests passed."
     return
 }
@@ -181,7 +187,7 @@ try {
             $packageFile = Join-Path $packagesPath "$($parts[0]).$($parts[1]).nupkg"
             if (-not (Test-Path $packageFile)) { throw "$($library.Name) does not match a local candidate package." }
         }
-        & Invoke-AcceptanceDotNet build $project.FullName --configuration $Configuration --no-restore -p:EnablePreviewFeatures=false
+        & Invoke-AcceptanceDotNet -Arguments @("build", $project.FullName, "--configuration", $Configuration, "--no-restore", "-p:EnablePreviewFeatures=false")
         if ($LASTEXITCODE -ne 0) { throw "Compile failed for $($project.FullName)." }
         & Invoke-AcceptanceDotNet run --project $project.FullName --configuration $Configuration --no-build
         if ($LASTEXITCODE -ne 0) { throw "Execute failed for $($project.FullName)." }
@@ -203,11 +209,11 @@ try {
         $generatedDirectory = Join-Path $projectDirectory "obj/$Configuration/net9.0/generated"
         Remove-Item $generatedDirectory -Recurse -Force -ErrorAction SilentlyContinue
         foreach ($emit in @('true', 'false')) {
-            & Invoke-AcceptanceDotNet build $project --configuration $Configuration --no-restore -p:EmitCompilerGeneratedFiles=$emit
+            & Invoke-AcceptanceDotNet -Arguments @("build", $project, "--configuration", $Configuration, "--no-restore", "-p:EmitCompilerGeneratedFiles=$emit")
             if ($LASTEXITCODE -ne 0) { throw "Generator consumer matrix failed for '$relativeProject' (Emit=$emit)." }
         }
         Remove-Item $generatedDirectory -Recurse -Force -ErrorAction SilentlyContinue
-        & Invoke-AcceptanceDotNet build $project --configuration $Configuration --no-restore --no-incremental -p:EmitCompilerGeneratedFiles=true
+        & Invoke-AcceptanceDotNet -Arguments @("build", $project, "--configuration", $Configuration, "--no-restore", "--no-incremental", "-p:EmitCompilerGeneratedFiles=true")
         if ($LASTEXITCODE -ne 0) { throw "Generator baseline build failed for '$relativeProject'." }
         $program = Join-Path $projectDirectory 'Program.cs'
         $input = if ($relativeProject -like 'ODataGeneratorConsumer/*') { Join-Path $projectDirectory 'Sample.edmx' } else { $program }
@@ -223,7 +229,7 @@ try {
         }
         try {
             Remove-Item $generatedDirectory -Recurse -Force -ErrorAction SilentlyContinue
-            & Invoke-AcceptanceDotNet build $project --configuration $Configuration --no-restore --no-incremental -p:EmitCompilerGeneratedFiles=true
+            & Invoke-AcceptanceDotNet -Arguments @("build", $project, "--configuration", $Configuration, "--no-restore", "--no-incremental", "-p:EmitCompilerGeneratedFiles=true")
             if ($LASTEXITCODE -ne 0) { throw "Incremental rebuild failed for '$relativeProject'." }
             $mutatedGeneratedHash = Get-GeneratedOutputFingerprint $generatedDirectory
             if ($mutatedGeneratedHash -eq $initialGeneratedHash) { throw "Generator output did not change after an input change for '$relativeProject'." }
@@ -231,7 +237,7 @@ try {
             [IO.File]::WriteAllBytes($input, $originalInput)
         }
         Remove-Item $generatedDirectory -Recurse -Force -ErrorAction SilentlyContinue
-        & Invoke-AcceptanceDotNet build $project --configuration $Configuration --no-restore --no-incremental -p:EmitCompilerGeneratedFiles=true
+        & Invoke-AcceptanceDotNet -Arguments @("build", $project, "--configuration", $Configuration, "--no-restore", "--no-incremental", "-p:EmitCompilerGeneratedFiles=true")
         if ($LASTEXITCODE -ne 0) { throw "Generator input restoration failed for '$relativeProject'." }
         $restoredGeneratedHash = Get-GeneratedOutputFingerprint $generatedDirectory
         if ($restoredGeneratedHash -ne $initialGeneratedHash) { throw "Restored generator output differs from the clean baseline for '$relativeProject'." }
@@ -248,7 +254,7 @@ try {
     $generatorProject = Join-Path $consumerRoot "ParserGeneratorConsumer/ParserGeneratorConsumer.csproj"
     foreach ($emit in @("true", "false")) {
         foreach ($attach in @("true", "false")) {
-            & Invoke-AcceptanceDotNet build $generatorProject --configuration $Configuration --no-restore -p:EmitCompilerGeneratedFiles=$emit -p:UtilsParserAttachGeneratedFiles=$attach
+            & Invoke-AcceptanceDotNet -Arguments @("build", $generatorProject, "--configuration", $Configuration, "--no-restore", "-p:EmitCompilerGeneratedFiles=$emit", "-p:UtilsParserAttachGeneratedFiles=$attach")
             if ($LASTEXITCODE -ne 0) { throw "Generator matrix failed (Emit=$emit, Attach=$attach)." }
         }
     }
