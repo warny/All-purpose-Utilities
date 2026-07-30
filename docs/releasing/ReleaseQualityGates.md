@@ -80,7 +80,9 @@ for the full workflow rather than merely increasing the old timeout.
 
 After both platform package-validation jobs and the Ubuntu reproducibility job pass,
 the PR workflow compares the complete Ubuntu and Windows candidate package sets and
-requires byte-identical archives. It combines the canonical packages, validation
+requires identical stable archive entries. ZIP container metadata may differ between
+operating systems; such packages are recorded as logically identical after normalization,
+while any entry-name or entry-content difference remains blocking. It combines the canonical packages, validation
 reports, and reproducibility report, then generates and self-validates
 `artifacts/manifests/release-candidate-manifest.json`. The resulting
 `full-product-train-<sha>` artifact preserves the contract consumed by

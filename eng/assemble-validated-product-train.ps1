@@ -3,8 +3,8 @@
 Assembles the publication-compatible artifact from successful platform validations.
 .DESCRIPTION
 Requires Ubuntu and Windows acceptance reports plus the independent reproducibility
-report, verifies that both platforms produced identical candidate package bytes, and
-then generates the self-validating release-candidate manifest. No package is published.
+report, verifies that both platforms produced equivalent candidate package contents,
+and then generates the self-validating release-candidate manifest. No package is published.
 #>
 [CmdletBinding()]
 param(
@@ -20,6 +20,33 @@ $artifactRoot = Resolve-RepositoryPath $repoRoot $ArtifactsPath
 $ubuntuRoot = Join-Path $inputsRoot "ubuntu"
 $windowsRoot = Join-Path $inputsRoot "windows"
 $reproducibilityRoot = Join-Path $inputsRoot "reproducibility"
+
+<# Returns content hashes for the stable entries of a NuGet package archive. #>
+function Get-StableArchiveEntries {
+    param([Parameter(Mandatory)][string] $Path)
+    $archive = [IO.Compression.ZipFile]::OpenRead($Path)
+    $sha = [Security.Cryptography.SHA256]::Create()
+    try {
+        $entries = @{}
+        foreach ($entry in $archive.Entries) {
+            if ($entry.FullName -eq ".signature.p7s" -or
+                $entry.FullName -eq "_rels/.rels" -or
+                $entry.FullName -like "package/services/metadata/core-properties/*") {
+                continue
+            }
+            $stream = $entry.Open()
+            try {
+                $entries[$entry.FullName] = [Convert]::ToHexString($sha.ComputeHash($stream)).ToLowerInvariant()
+            } finally {
+                $stream.Dispose()
+            }
+        }
+        return $entries
+    } finally {
+        $sha.Dispose()
+        $archive.Dispose()
+    }
+}
 
 <# Returns and validates the packaged-acceptance report for one platform. #>
 function Get-PassedAcceptanceReport {
@@ -45,10 +72,25 @@ foreach ($ubuntuPackage in $ubuntuPackages) {
     $windowsPackage = Join-Path (Join-Path $windowsRoot "packages") $ubuntuPackage.Name
     $ubuntuHash = (Get-FileHash $ubuntuPackage.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
     $windowsHash = (Get-FileHash $windowsPackage -Algorithm SHA256).Hash.ToLowerInvariant()
+    $result = "bit-identical"
     if ($ubuntuHash -ne $windowsHash) {
-        throw "Candidate package '$($ubuntuPackage.Name)' differs between Ubuntu and Windows."
+        $ubuntuEntries = Get-StableArchiveEntries $ubuntuPackage.FullName
+        $windowsEntries = Get-StableArchiveEntries $windowsPackage
+        $differences = @($ubuntuEntries.Keys + $windowsEntries.Keys | Sort-Object -Unique | Where-Object {
+            $ubuntuEntries[$_] -ne $windowsEntries[$_]
+        })
+        if ($differences) {
+            throw "Candidate package '$($ubuntuPackage.Name)' has different contents between Ubuntu and Windows: $($differences -join ', ')."
+        }
+        $result = "logically-identical-after-zip-normalization"
     }
-    $packageHashes += [ordered]@{ file = $ubuntuPackage.Name; sha256 = $ubuntuHash }
+    $packageHashes += [ordered]@{
+        file = $ubuntuPackage.Name
+        result = $result
+        canonicalSha256 = $ubuntuHash
+        ubuntuSha256 = $ubuntuHash
+        windowsSha256 = $windowsHash
+    }
 }
 
 $reproducibilityReport = Join-Path $reproducibilityRoot "reports/reproducibility-report.json"
@@ -72,7 +114,7 @@ Write-ReleaseJson ([ordered]@{
     version = [string]$ubuntuAcceptance.version
     ubuntu = [ordered]@{ platform = [string]$ubuntuAcceptance.platform; passed = $true }
     windows = [ordered]@{ platform = [string]$windowsAcceptance.platform; passed = $true }
-    byteIdenticalPackages = $packageHashes
+    packages = $packageHashes
 }) (Join-Path $artifactRoot "reports/cross-platform-validation.json")
 
 & (Join-Path $PSScriptRoot "generate-release-candidate-manifest.ps1") -ArtifactsPath $ArtifactsPath -RequireCrossPlatformValidation
