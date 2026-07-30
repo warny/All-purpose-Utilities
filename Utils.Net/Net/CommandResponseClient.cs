@@ -436,6 +436,20 @@ public class CommandResponseClient : IDisposable
     }
 
     /// <summary>
+    /// Reconstructs the original text line from a body <see cref="ServerResponse"/> as it
+    /// would have appeared on the wire. Use this to convert body lines returned by
+    /// <see cref="SendMultilineCommandAsync"/> back into plain strings for protocol processing
+    /// (e.g. dot-unstuffing, field parsing).
+    /// </summary>
+    /// <param name="response">A body response line.</param>
+    /// <returns>
+    /// <c>response.Code</c> when <c>response.Message</c> is <see langword="null"/>;
+    /// otherwise <c>"Code Message"</c>.
+    /// </returns>
+    protected static string BodyLineToString(ServerResponse response) =>
+        response.Message is null ? response.Code : $"{response.Code} {response.Message}";
+
+    /// <summary>
     /// Sends a command, receives the opening status response(s), then reads all body lines
     /// until <paramref name="isBodyTerminator"/> returns <see langword="true"/>, all within
     /// a single locked operation. Use for multi-line protocol commands such as POP3 RETR or
@@ -449,6 +463,14 @@ public class CommandResponseClient : IDisposable
     /// (e.g. a bare <c>.</c> in POP3 or NNTP). The terminator line itself is not included
     /// in the returned body lines.
     /// </param>
+    /// <param name="maxBodyLines">
+    /// Maximum number of body lines to accept. <see cref="InvalidDataException"/> is thrown
+    /// when the limit is exceeded. Set to 0 to disable.
+    /// </param>
+    /// <param name="maxBodyChars">
+    /// Maximum total characters across all body lines. <see cref="InvalidDataException"/> is
+    /// thrown when the limit is exceeded. Set to 0 to disable.
+    /// </param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>
     /// A tuple of <c>StatusLines</c> (the opening response line(s), including the final
@@ -457,11 +479,13 @@ public class CommandResponseClient : IDisposable
     /// response (severity ≥ <see cref="ResponseSeverity.TransientNegative"/>).
     /// </returns>
     /// <exception cref="IOException">Thrown when the connection closes before the exchange completes.</exception>
-    /// <exception cref="InvalidDataException">Thrown when <see cref="MaxResponseCount"/> is exceeded.</exception>
+    /// <exception cref="InvalidDataException">Thrown when <see cref="MaxResponseCount"/>, <paramref name="maxBodyLines"/> or <paramref name="maxBodyChars"/> is exceeded.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the client is not connected.</exception>
     protected async Task<(IReadOnlyList<ServerResponse> StatusLines, IReadOnlyList<ServerResponse> BodyLines)> SendMultilineCommandAsync(
         string command,
         Func<ServerResponse, bool> isBodyTerminator,
+        int maxBodyLines = 0,
+        int maxBodyChars = 0,
         CancellationToken cancellationToken = default)
     {
         if (_state == StateDisposed) throw new ObjectDisposedException(GetType().Name);
@@ -508,6 +532,7 @@ public class CommandResponseClient : IDisposable
                 }
                 else
                 {
+                    int totalBodyChars = 0;
                     bodyLines = new List<ServerResponse>();
                     while (true)
                     {
@@ -522,6 +547,16 @@ public class CommandResponseClient : IDisposable
                         bodyLines.Add(response);
                         if (MaxResponseCount > 0 && bodyLines.Count > MaxResponseCount)
                             throw new InvalidDataException($"Server sent more than {MaxResponseCount} body lines for a single command.");
+                        if (maxBodyLines > 0 && bodyLines.Count > maxBodyLines)
+                            throw new InvalidDataException($"Multi-line response exceeded the line limit of {maxBodyLines}.");
+                        if (maxBodyChars > 0)
+                        {
+                            totalBodyChars += response.Message is null
+                                ? response.Code.Length
+                                : response.Code.Length + 1 + response.Message.Length;
+                            if (totalBodyChars > maxBodyChars)
+                                throw new InvalidDataException($"Multi-line response exceeded the character limit of {maxBodyChars}.");
+                        }
                     }
                 }
 

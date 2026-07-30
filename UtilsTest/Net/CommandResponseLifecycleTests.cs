@@ -1550,7 +1550,7 @@ public class CommandResponseLifecycleTests
     {
         public Task<(IReadOnlyList<ServerResponse> StatusLines, IReadOnlyList<ServerResponse> BodyLines)>
             SendMultilineAsync(string command, Func<ServerResponse, bool> isTerminator, CancellationToken ct = default)
-            => SendMultilineCommandAsync(command, isTerminator, ct);
+            => SendMultilineCommandAsync(command, isTerminator, cancellationToken: ct);
     }
 
     [TestMethod]
