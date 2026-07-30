@@ -103,6 +103,32 @@ public class NumberToStringReviewTests
         Assert.AreEqual("replacement", NumberToStringConverter.GetConverter(culture).Zero);
     }
 
+    /// <summary>Verifies that a child in a replacing document inherits that document's replacement base.</summary>
+    [TestMethod]
+    public void RegisterConfigurations_ReplaceUsesCurrentDocumentBaseForChild()
+    {
+        string baseCulture = "BATCH-BASE-" + Guid.NewGuid().ToString("N");
+        string childCulture = "BATCH-CHILD-" + Guid.NewGuid().ToString("N");
+        string oldDocument = CreateConfiguration(baseCulture, "old");
+        string replacementDocument = $"<Numbers xmlns=\"Utils/NumberConvertionConfiguration.xsd\">{CreateLanguage(baseCulture, "new", null)}<Language baseOn=\"{baseCulture}\"><Culture>{childCulture}</Culture></Language></Numbers>";
+
+        NumberToStringConverter.RegisterConfigurations(
+            [oldDocument, replacementDocument],
+            DuplicateCulturePolicy.Replace);
+
+        Assert.AreEqual("new", NumberToStringConverter.GetConverter(baseCulture).Zero);
+        Assert.AreEqual("new", NumberToStringConverter.GetConverter(childCulture).Zero);
+    }
+
+    /// <summary>Verifies that undefined duplicate policies are rejected before any configuration is built.</summary>
+    [TestMethod]
+    public void RegisterConfigurations_InvalidPolicyThrows()
+    {
+        var invalidPolicy = (DuplicateCulturePolicy)99;
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+            NumberToStringConverter.RegisterConfigurations([], invalidPolicy));
+    }
+
     /// <summary>Verifies that concurrent replacement batches commit complete converter/definition pairs.</summary>
     [TestMethod]
     public void RegisterConfigurations_ConcurrentReplaceIsConsistent()

@@ -136,6 +136,11 @@ namespace Utils.NumberToString
         public static void RegisterConfigurations(IEnumerable<string> configs, DuplicateCulturePolicy duplicateCulturePolicy)
         {
             ArgumentNullException.ThrowIfNull(configs);
+            if (!Enum.IsDefined(duplicateCulturePolicy))
+                throw new ArgumentOutOfRangeException(
+                    nameof(duplicateCulturePolicy),
+                    duplicateCulturePolicy,
+                    "Unsupported duplicate culture policy.");
             lock (ConfigurationLock)
             {
                 var converters = new Dictionary<string, NumberToStringConverter>(StringComparer.OrdinalIgnoreCase);
@@ -373,8 +378,8 @@ namespace Utils.NumberToString
         /// <para>
         /// Lookup order (document-local definitions always take priority over the global cache):
         /// <list type="number">
-        ///   <item><description><paramref name="localCache"/> — already resolved within this document.</description></item>
         ///   <item><description><paramref name="docLanguages"/> — declared raw in this document; resolved recursively with full cycle detection.</description></item>
+        ///   <item><description><paramref name="localCache"/> — already resolved in an earlier document of the current batch.</description></item>
         ///   <item><description><see cref="_cachedLanguageTypes"/> — resolved in a previously loaded document (cross-document inheritance).</description></item>
         /// </list>
         /// A locally declared language always shadows a same-name entry in the global cache, which
@@ -388,16 +393,16 @@ namespace Utils.NumberToString
             HashSet<string> visiting,
             List<string> resolutionPath)
         {
-            // 1. Already resolved within this document (fast path — avoids re-resolving).
-            if (localCache.TryGetValue(baseKey, out LanguageDefinition? cachedInDoc))
-                return cachedInDoc;
-
-            // 2. Declared raw in this document — resolve recursively.
+            // 1. Declared raw in this document — resolve recursively.
             //    Document-local definitions take priority over the global cache so that a local
             //    definition of a same-named culture is used (and cycles are always detected even
             //    when an older version of the same culture exists in _cachedLanguageTypes).
             if (docLanguages.TryGetValue(baseKey, out LanguageDefinition? rawBase))
                 return ResolveLanguage(rawBase, docLanguages, localCache, visiting, resolutionPath);
+
+            // 2. Resolved in an earlier document of the current batch.
+            if (localCache.TryGetValue(baseKey, out LanguageDefinition? cachedInBatch))
+                return cachedInBatch;
 
             // 3. Resolved in a previously loaded document (cross-document inheritance).
             if (_cachedLanguageTypes.TryGetValue(baseKey, out LanguageDefinition? globalBase))
