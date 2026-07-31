@@ -161,8 +161,8 @@ This human-review index summarizes the exact machine-enforced diagnostics in `en
 ## omy.Utils.Net
 
 - Published baseline: `1.2.1`
-- Accepted diagnostics: **14**
-- Diagnostic classes: `CP0002`: 14
+- Accepted diagnostics: **18**
+- Diagnostic classes: `CP0002`: 18
 
 ### Removed or incompatible published surface
 
@@ -180,6 +180,10 @@ This human-review index summarizes the exact machine-enforced diagnostics in `en
 - `CP0002` — `System.Threading.Tasks.Task<System.DateTime> Utils.Net.TimeProtocolClient.GetTimeAsync(string, int)`
 - `CP0002` — `System.Threading.Tasks.Task<System.DateTime> Utils.Net.TimeProtocolClient.GetTimeAsync(string)`
 - `CP0002` — `System.Threading.Tasks.Task Utils.Net.WakeOnLan.SendMagicPacketAsync(System.Net.NetworkInformation.PhysicalAddress, System.Net.IPAddress?, int)`
+- `CP0002` — `void Utils.Net.Arp.ArpPacket.HardwareType.set` — removed setter; property is now read-only (always returns 1, Ethernet)
+- `CP0002` — `void Utils.Net.Arp.ArpPacket.ProtocolType.set` — removed setter; property is now read-only (always returns 0x0800, IPv4)
+- `CP0002` — `void Utils.Net.Arp.ArpPacket.HardwareAddressLength.set` — removed setter; property is now read-only (always returns 6)
+- `CP0002` — `void Utils.Net.Arp.ArpPacket.ProtocolAddressLength.set` — removed setter; property is now read-only (always returns 4)
 
 <a id="omy-utils-data"></a>
 ## omy.Utils.Data
