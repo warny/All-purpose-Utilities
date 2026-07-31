@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Utils.IO;
 
@@ -21,6 +23,7 @@ public class PartialStream : Stream
     private readonly long startOffset;
     private long partialLength;
     private long partialPosition;
+    private readonly SemaphoreSlim operationGate = new(1, 1);
 
     // Verifies that startOffset + length <= long.MaxValue so that any absolute position
     // within the segment (startOffset + partialPosition, with partialPosition <= partialLength)
@@ -142,7 +145,8 @@ public class PartialStream : Stream
     public override int Read(byte[] buffer, int offset, int count)
     {
         Stream.ValidateBufferArguments(buffer, offset, count);
-        lock (baseStream)
+        operationGate.Wait();
+        try
         {
             long originalBasePosition = baseStream.Position;
             try
@@ -164,6 +168,49 @@ public class PartialStream : Stream
                 baseStream.Position = originalBasePosition;
             }
         }
+        finally { operationGate.Release(); }
+    }
+
+    /// <summary>Reads directly into a span while preserving slice bounds and the base position.</summary>
+    public override int Read(Span<byte> buffer)
+    {
+        operationGate.Wait();
+        try
+        {
+            long original = baseStream.Position;
+            try
+            {
+                int count = (int)Math.Min(buffer.Length, partialLength - partialPosition);
+                if (count <= 0) return 0;
+                baseStream.Position = startOffset + partialPosition;
+                int read = baseStream.Read(buffer[..count]);
+                partialPosition += read;
+                return read;
+            }
+            finally { baseStream.Position = original; }
+        }
+        finally { operationGate.Release(); }
+    }
+
+    /// <summary>Asynchronously reads within the slice without holding a synchronous monitor across an await.</summary>
+    public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+    {
+        await operationGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            long original = baseStream.Position;
+            try
+            {
+                int count = (int)Math.Min(buffer.Length, partialLength - partialPosition);
+                if (count <= 0) return 0;
+                baseStream.Position = startOffset + partialPosition;
+                int read = await baseStream.ReadAsync(buffer[..count], cancellationToken).ConfigureAwait(false);
+                partialPosition += read;
+                return read;
+            }
+            finally { baseStream.Position = original; }
+        }
+        finally { operationGate.Release(); }
     }
 
     /// <summary>
@@ -224,7 +271,8 @@ public class PartialStream : Stream
             throw new ArgumentOutOfRangeException(nameof(count),
                 "Attempted to write beyond the bounds of the partial stream.");
 
-        lock (baseStream)
+        operationGate.Wait();
+        try
         {
             long originalBasePosition = baseStream.Position;
             try
@@ -238,7 +286,49 @@ public class PartialStream : Stream
                 baseStream.Position = originalBasePosition;
             }
         }
+        finally { operationGate.Release(); }
     }
+
+    /// <summary>Writes a span directly while enforcing the same slice bounds as array writes.</summary>
+    public override void Write(ReadOnlySpan<byte> buffer)
+    {
+        if (buffer.Length > partialLength - partialPosition) throw new ArgumentOutOfRangeException(nameof(buffer), "Attempted to write beyond the bounds of the partial stream.");
+        operationGate.Wait();
+        try
+        {
+            long original = baseStream.Position;
+            try
+            {
+                baseStream.Position = startOffset + partialPosition;
+                baseStream.Write(buffer);
+                partialPosition += buffer.Length;
+            }
+            finally { baseStream.Position = original; }
+        }
+        finally { operationGate.Release(); }
+    }
+
+    /// <summary>Asynchronously writes through the underlying stream and honors cancellation.</summary>
+    public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
+    {
+        if (buffer.Length > partialLength - partialPosition) throw new ArgumentOutOfRangeException(nameof(buffer), "Attempted to write beyond the bounds of the partial stream.");
+        await operationGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            long original = baseStream.Position;
+            try
+            {
+                baseStream.Position = startOffset + partialPosition;
+                await baseStream.WriteAsync(buffer, cancellationToken).ConfigureAwait(false);
+                partialPosition += buffer.Length;
+            }
+            finally { baseStream.Position = original; }
+        }
+        finally { operationGate.Release(); }
+    }
+
+    /// <summary>Asynchronously flushes the underlying stream.</summary>
+    public override Task FlushAsync(CancellationToken cancellationToken) => baseStream.FlushAsync(cancellationToken);
 
     /// <summary>
     /// Disposes the partial stream. By default, this does not close or dispose the underlying stream.
@@ -253,5 +343,14 @@ public class PartialStream : Stream
         // If you wish to close the base stream when this partial stream is disposed,
         // call baseStream.Dispose() or baseStream.Close() here.
         base.Dispose(disposing);
+        if (disposing) operationGate.Dispose();
+    }
+
+    /// <summary>Disposes this view asynchronously without disposing its underlying stream.</summary>
+    public override ValueTask DisposeAsync()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+        return ValueTask.CompletedTask;
     }
 }
