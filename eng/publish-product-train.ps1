@@ -33,6 +33,7 @@ if (-not $PreflightPackageIdsOnly) {
         throw "A validated candidate manifest is required for publication planning and publication. Use -PreflightPackageIdsOnly only to check package ID availability."
     }
     $candidate = Get-Content $CandidateManifestPath -Raw | ConvertFrom-Json
+    if (-not $ValidateCandidateOnly -and ($candidate.validationTier -ne 'full-release' -or -not $candidate.reproducibilityValidated)) { throw 'Publication requires a full-release candidate with validated reproducibility.' }
     $commit = (& git -C $repoRoot rev-parse HEAD).Trim()
     if ($LASTEXITCODE -ne 0) { throw "Unable to resolve the repository commit." }
     if ($candidate.productTrain -ne $manifest.productTrain -or $candidate.version -ne $manifest.version -or $candidate.repository -ne $manifest.repository -or $candidate.commit -ne $commit) {
@@ -54,7 +55,7 @@ if (-not $PreflightPackageIdsOnly) {
         if ($item.apiCompatibilityResult -notin @('compatible', 'accepted-major-version-breaks', 'baseline-created')) {
             throw "$($item.packageId): API compatibility gate did not pass."
         }
-        if (-not @($item.reproducibilityResult) -or @($item.reproducibilityResult | Where-Object { $_ -notin @('bit-identical', 'logically-identical-after-zip-normalization') })) {
+        if ($candidate.reproducibilityValidated -and (-not @($item.reproducibilityResult) -or @($item.reproducibilityResult | Where-Object { $_ -notin @('bit-identical', 'logically-identical-after-zip-normalization') }))) {
             throw "$($item.packageId): reproducibility gate did not pass."
         }
         foreach ($artifact in @($item.nupkg, $item.snupkg)) {

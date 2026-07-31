@@ -1,4 +1,4 @@
-name: Utils
+name: Utils pull-request validation
 
 on:
     pull_request:
@@ -8,66 +8,93 @@ on:
 concurrency:
     group: utils-pr-${{ github.event.pull_request.number || github.ref }}
     cancel-in-progress: true
-
 permissions:
     contents: read
+    actions: read
+
+env:
+    DOTNET_CACHE_PATHS: |
+        global.json
+        NuGet.config
+        Directory.Packages.props
+        **/*.csproj
+        **/packages.lock.json
 
 jobs:
-    build:
+    changes:
         runs-on: ubuntu-latest
-        timeout-minutes: 25
+        timeout-minutes: 5
+        outputs:
+            train: ${{ steps.scope.outputs.runProductTrain }}
+            scripts: ${{ steps.scope.outputs.runReleaseScriptTests }}
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+            - id: scope
+              shell: pwsh
+              run: |
+                  if ('${{ github.event_name }}' -eq 'workflow_dispatch') {
+                      ./eng/get-validation-scope.ps1 -ForceProductTrain -WriteGitHubOutput
+                  } else {
+                      ./eng/get-validation-scope.ps1 -BaseRef '${{ github.event.pull_request.base.sha }}' -WriteGitHubOutput
+                  }
+            - name: Lightweight release-script tests
+              if: steps.scope.outputs.runReleaseScriptTests == 'true'
+              shell: pwsh
+              run: ./eng/test-release-orchestrator.ps1
+
+    build:
+        needs: changes
+        if: needs.changes.outputs.train == 'true'
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
         steps:
             - uses: actions/checkout@v4
             - uses: actions/setup-dotnet@v4
               with:
                   dotnet-version: '9.0.x'
-            - name: Restore
-              run: dotnet restore Utils.sln
-            - name: Build
-              run: dotnet build Utils.sln --configuration GitHub --no-restore
-            - name: Blocking vulnerability scan
+                  cache: true
+                  cache-dependency-path: ${{ env.DOTNET_CACHE_PATHS }}
+            - run: dotnet restore Utils.sln
+            - run: dotnet build Utils.sln --configuration GitHub --no-restore
+            - name: Blocking product-graph vulnerability scan
               shell: pwsh
               run: ./eng/audit-dependencies.ps1 -ArtifactsPath artifacts -SkipDeprecated -SkipOutdated
-            - name: Upload build diagnostics
-              if: always()
-              uses: actions/upload-artifact@v4
-              with:
-                  name: build-diagnostics
-                  path: artifacts/**/*
-                  if-no-files-found: warn
 
-    test:
-        needs: build
+    unit-tests:
+        needs: changes
+        if: needs.changes.outputs.train == 'true'
         runs-on: ubuntu-latest
         timeout-minutes: 25
-        strategy:
-            fail-fast: false
-            matrix:
-                include:
-                    - suite: unit
-                      project: UtilsTest/UtilsTest.Unit.csproj
-                    - suite: functional
-                      project: UtilsTest.Functional/UtilsTest.Functional.csproj
-        name: Test (${{ matrix.suite }})
         steps:
             - uses: actions/checkout@v4
             - uses: actions/setup-dotnet@v4
               with:
                   dotnet-version: '9.0.x'
-            - run: dotnet test ${{ matrix.project }} --configuration Release --logger "trx;LogFileName=${{ matrix.suite }}.trx" --results-directory artifacts/test-results
-            - name: Upload test results
-              if: always()
-              uses: actions/upload-artifact@v4
+                  cache: true
+                  cache-dependency-path: ${{ env.DOTNET_CACHE_PATHS }}
+            - run: dotnet test UtilsTest/UtilsTest.Unit.csproj --configuration Release --logger trx --results-directory artifacts/test-results
+
+    functional-tests:
+        needs: changes
+        if: needs.changes.outputs.train == 'true'
+        runs-on: ubuntu-latest
+        timeout-minutes: 25
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-dotnet@v4
               with:
-                  name: test-${{ matrix.suite }}
-                  path: artifacts/test-results/**
-                  if-no-files-found: warn
+                  dotnet-version: '9.0.x'
+                  cache: true
+                  cache-dependency-path: ${{ env.DOTNET_CACHE_PATHS }}
+            - run: dotnet test UtilsTest.Functional/UtilsTest.Functional.csproj --configuration Release --logger trx --results-directory artifacts/test-results
 
     canonical-packages:
-        name: Produce canonical packages (Ubuntu)
-        needs: build
+        needs: changes
+        if: needs.changes.outputs.train == 'true'
         runs-on: ubuntu-latest
-        timeout-minutes: 35
+        timeout-minutes: 30
         steps:
             - uses: actions/checkout@v4
               with:
@@ -75,49 +102,32 @@ jobs:
             - uses: actions/setup-dotnet@v4
               with:
                   dotnet-version: '9.0.x'
-            - name: Package discovery
+                  cache: true
+                  cache-dependency-path: ${{ env.DOTNET_CACHE_PATHS }}
+            - name: Discover, build, and produce the canonical set once
               shell: pwsh
-              run: ./eng/discover-release-projects.ps1 -Configuration Release -ArtifactsPath artifacts
-            - name: Restore canonical package inputs
-              run: dotnet restore Utils.sln
-            - name: Build canonical package inputs
-              run: dotnet build Utils.sln --configuration Release --no-restore -p:ContinuousIntegrationBuild=true -p:UseSharedCompilation=false
-            - name: Produce canonical packages
-              shell: pwsh
-              run: ./eng/pack-product-train.ps1 -Configuration Release -ArtifactsPath artifacts -NoBuild
-            - name: Inspect canonical packages
-              shell: pwsh
-              run: ./eng/inspect-packages.ps1 -ArtifactsPath artifacts
-            - name: Record canonical package hashes
-              shell: pwsh
-              run: ./eng/write-canonical-package-report.ps1 -ArtifactsPath artifacts
-            - name: Upload canonical packages and diagnostics
-              if: always()
-              uses: actions/upload-artifact@v4
+              run: |
+                  ./eng/discover-release-projects.ps1 -Configuration Release -ArtifactsPath artifacts
+                  dotnet restore Utils.sln
+                  dotnet build Utils.sln -c Release --no-restore -p:ContinuousIntegrationBuild=true -p:UseSharedCompilation=false
+                  ./eng/pack-product-train.ps1 -Configuration Release -ArtifactsPath artifacts -NoBuild
+                  ./eng/inspect-packages.ps1 -ArtifactsPath artifacts
+                  ./eng/write-canonical-package-report.ps1 -ArtifactsPath artifacts
+            - uses: actions/upload-artifact@v4
               with:
                   name: canonical-packages-${{ github.sha }}
                   path: |
                       artifacts/packages/**
-                      artifacts/reports/package-graph.json
-                      artifacts/reports/package-publication-order.txt
-                      artifacts/reports/package-inspection.json
-                      artifacts/reports/package-discovery.json
                       artifacts/reports/canonical-packages.json
-                      artifacts/logs/**
-                  if-no-files-found: warn
+                      artifacts/reports/package-discovery.json
+                      artifacts/reports/package-graph.json
+                      artifacts/reports/package-inspection.json
+                  if-no-files-found: error
 
-    package-validation:
-        name: Package validation (${{ matrix.os }})
-        needs:
-            - build
-            - test
-            - canonical-packages
-        runs-on: ${{ matrix.os }}
-        timeout-minutes: 55
-        strategy:
-            fail-fast: false
-            matrix:
-                os: [ubuntu-latest, windows-latest]
+    packaged-validation-ubuntu:
+        needs: canonical-packages
+        runs-on: ubuntu-latest
+        timeout-minutes: 25
         steps:
             - uses: actions/checkout@v4
               with:
@@ -125,47 +135,28 @@ jobs:
             - uses: actions/setup-dotnet@v4
               with:
                   dotnet-version: '9.0.x'
-            - name: Download canonical packages
-              uses: actions/download-artifact@v4
+            - uses: actions/download-artifact@v4
               with:
                   name: canonical-packages-${{ github.sha }}
                   path: artifacts
-            - name: Validate canonical packaged product train
+            - name: Validate the downloaded canonical packages
               shell: pwsh
-              run: ./eng/test-packaged-product-train.ps1 -Configuration Release -ArtifactsPath artifacts -UseExistingPackages -SkipBuild
-            - name: Show selected .NET SDK
-              shell: pwsh
-              run: |
-                  dotnet --version
-                  dotnet --list-sdks
-            - name: Restore repository projects for source gates
-              shell: pwsh
-              run: dotnet restore Utils.sln
-            - name: API compatibility
-              shell: pwsh
-              run: ./eng/validate-public-api.ps1 -Configuration Release -ArtifactsPath artifacts
-            - name: Release warnings
-              shell: pwsh
-              run: ./eng/validate-release-warnings.ps1 -Configuration Release -ArtifactsPath artifacts -NoRestore
-            - name: SourceLink local mappings, PDBs, and checksums
-              shell: pwsh
-              run: ./eng/validate-sourcelink.ps1 -ArtifactsPath artifacts -SkipRemoteRetrieval
-            - name: Upload platform validation diagnostics
+              env:
+                  NUGET_PACKAGES: ${{ github.workspace }}/artifacts/packaged-acceptance/global-packages
+              run: ./eng/test-packaged-product-train.ps1 -ValidationTier PullRequest -Configuration Release -ArtifactsPath artifacts -UseExistingPackages -SkipBuild
+            - uses: actions/upload-artifact@v4
               if: always()
-              uses: actions/upload-artifact@v4
               with:
-                  name: package-validation-${{ matrix.os }}-${{ github.sha }}
+                  name: package-validation-ubuntu-${{ github.sha }}
                   path: |
-                      artifacts/reports/**
+                      artifacts/reports/packaged-acceptance.json
                       artifacts/logs/**
-                      artifacts/**/*.log
                   if-no-files-found: warn
 
-    reproducibility:
-        name: Reproducibility (Ubuntu)
-        needs: package-validation
-        runs-on: ubuntu-latest
-        timeout-minutes: 35
+    packaged-validation-windows-light:
+        needs: canonical-packages
+        runs-on: windows-latest
+        timeout-minutes: 25
         steps:
             - uses: actions/checkout@v4
               with:
@@ -173,69 +164,108 @@ jobs:
             - uses: actions/setup-dotnet@v4
               with:
                   dotnet-version: '9.0.x'
-            - name: Reproducibility
-              shell: pwsh
-              run: ./eng/test-package-reproducibility.ps1 -Configuration Release -ArtifactsPath artifacts
-            - name: Upload reproducibility diagnostics
-              if: always()
-              uses: actions/upload-artifact@v4
-              with:
-                  name: reproducibility-${{ github.sha }}
-                  path: artifacts/**/*
-                  if-no-files-found: warn
-
-    validated-product-train:
-        name: Assemble validated product train
-        needs:
-            - canonical-packages
-            - package-validation
-            - reproducibility
-        runs-on: ubuntu-latest
-        timeout-minutes: 15
-        steps:
-            - uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
-            - uses: actions/setup-dotnet@v4
-              with:
-                  dotnet-version: '9.0.x'
-            - name: Download canonical packages
-              uses: actions/download-artifact@v4
+            - uses: actions/download-artifact@v4
               with:
                   name: canonical-packages-${{ github.sha }}
-                  path: validated-inputs/canonical
-            - name: Download Ubuntu package validation
-              uses: actions/download-artifact@v4
-              with:
-                  name: package-validation-ubuntu-latest-${{ github.sha }}
-                  path: validated-inputs/ubuntu
-            - name: Download Windows package validation
-              uses: actions/download-artifact@v4
-              with:
-                  name: package-validation-windows-latest-${{ github.sha }}
-                  path: validated-inputs/windows
-            - name: Download reproducibility validation
-              uses: actions/download-artifact@v4
-              with:
-                  name: reproducibility-${{ github.sha }}
-                  path: validated-inputs/reproducibility
-            - name: Aggregate validated reports and generate candidate manifest
+                  path: artifacts
+            - name: Restore, build, and execute representative package consumers
               shell: pwsh
-              run: ./eng/assemble-validated-product-train.ps1 -InputsPath validated-inputs -ArtifactsPath artifacts
-            - name: Verify candidate manifest exists
-              shell: pwsh
-              run: if (-not (Test-Path artifacts/manifests/release-candidate-manifest.json)) { throw "Release candidate manifest was not generated." }
-            - name: Validate publication candidate without publishing
-              shell: pwsh
-              run: ./eng/publish-product-train.ps1 -ArtifactsPath artifacts -ValidateCandidateOnly
-            - name: Upload publication-compatible validated train
+              env:
+                  NUGET_PACKAGES: ${{ github.workspace }}/artifacts/packaged-acceptance/global-packages
+              run: ./eng/test-packaged-product-train.ps1 -ValidationTier PullRequest -Configuration Release -ArtifactsPath artifacts -UseExistingPackages -SkipBuild
+            - uses: actions/upload-artifact@v4
               if: always()
-              uses: actions/upload-artifact@v4
               with:
-                  name: full-product-train-${{ github.sha }}
+                  name: package-validation-windows-${{ github.sha }}
                   path: |
-                      artifacts/packages/**
-                      artifacts/reports/**
-                      artifacts/manifests/**
+                      artifacts/reports/packaged-acceptance.json
                       artifacts/logs/**
                   if-no-files-found: warn
+
+    source-gates-ubuntu:
+        needs: canonical-packages
+        runs-on: ubuntu-latest
+        timeout-minutes: 25
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+            - uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: '9.0.x'
+                  cache: true
+                  cache-dependency-path: ${{ env.DOTNET_CACHE_PATHS }}
+            - uses: actions/download-artifact@v4
+              with:
+                  name: canonical-packages-${{ github.sha }}
+                  path: artifacts
+            - shell: pwsh
+              run: |
+                  dotnet restore Utils.sln
+                  ./eng/validate-public-api.ps1 -Configuration Release -ArtifactsPath artifacts
+                  ./eng/validate-release-warnings.ps1 -Configuration Release -ArtifactsPath artifacts -NoRestore
+                  ./eng/validate-sourcelink.ps1 -ArtifactsPath artifacts -SkipRemoteRetrieval
+            - uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: source-gates-${{ github.sha }}
+                  path: |
+                      artifacts/reports/public-api-comparison.json
+                      artifacts/reports/warnings.json
+                      artifacts/reports/sourcelink.json
+                      artifacts/logs/**
+                  if-no-files-found: warn
+
+    required:
+        if: always()
+        needs: [changes, build, unit-tests, functional-tests, canonical-packages, packaged-validation-ubuntu, packaged-validation-windows-light, source-gates-ubuntu]
+        runs-on: ubuntu-latest
+        timeout-minutes: 5
+        steps:
+            - uses: actions/checkout@v4
+            - name: Write measured phase summary
+              if: always()
+              continue-on-error: true
+              shell: pwsh
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: |
+                  Invoke-WebRequest -Headers @{ Authorization = "Bearer $env:GH_TOKEN"; Accept = 'application/vnd.github+json' } -Uri '${{ github.api_url }}/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs?per_page=100' -OutFile jobs.json
+                  ./eng/convert-actions-job-timings.ps1 -JobsJson jobs.json -ArtifactsPath artifacts
+            - name: Write non-publishable PR validation summary
+              shell: pwsh
+              run: |
+                  New-Item artifacts/reports -ItemType Directory -Force | Out-Null
+                  [ordered]@{
+                      commit = '${{ github.sha }}'
+                      validationTier = 'pull-request'
+                      publishable = $false
+                      buildPassed = '${{ needs.build.result }}' -eq 'success'
+                      unitTestsPassed = '${{ needs.unit-tests.result }}' -eq 'success'
+                      functionalTestsPassed = '${{ needs.functional-tests.result }}' -eq 'success'
+                      canonicalPackagesProduced = '${{ needs.canonical-packages.result }}' -eq 'success'
+                      ubuntuPackageValidationPassed = '${{ needs.packaged-validation-ubuntu.result }}' -eq 'success'
+                      windowsPackageValidationPassed = '${{ needs.packaged-validation-windows-light.result }}' -eq 'success'
+                      sourceGatesPassed = '${{ needs.source-gates-ubuntu.result }}' -eq 'success'
+                  } | ConvertTo-Json | Set-Content artifacts/reports/pull-request-validation.json
+            - uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: pull-request-validation-${{ github.sha }}
+                  path: |
+                      artifacts/reports/pull-request-validation.json
+                      artifacts/reports/workflow-timings.json
+                  if-no-files-found: warn
+            - name: Enforce required results (documentation-only is valid)
+              shell: bash
+              run: |
+                  test '${{ needs.changes.result }}' = success
+                  if test '${{ needs.changes.outputs.train }}' = true; then
+                      test '${{ needs.build.result }}' = success
+                      test '${{ needs.unit-tests.result }}' = success
+                      test '${{ needs.functional-tests.result }}' = success
+                      test '${{ needs.canonical-packages.result }}' = success
+                      test '${{ needs.packaged-validation-ubuntu.result }}' = success
+                      test '${{ needs.packaged-validation-windows-light.result }}' = success
+                      test '${{ needs.source-gates-ubuntu.result }}' = success
+                  fi

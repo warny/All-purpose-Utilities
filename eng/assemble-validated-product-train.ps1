@@ -9,7 +9,8 @@ set, and an independent reproducibility report. No package is built or published
 param(
     [string] $InputsPath = "validated-inputs",
     [string] $ArtifactsPath = "artifacts",
-    [switch] $ValidateInputsOnly
+    [switch] $ValidateInputsOnly,
+    [ValidateSet("PullRequest", "FullRelease")][string] $ValidationTier = "FullRelease"
 )
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "Release.Common.ps1")
@@ -77,10 +78,10 @@ function Get-CanonicalAcceptanceReport {
 $ubuntuAcceptance = Get-CanonicalAcceptanceReport -Platform "Ubuntu"
 $windowsAcceptance = Get-CanonicalAcceptanceReport -Platform "Windows"
 $reproducibilityReport = Join-Path $reproducibilityRoot "reports/reproducibility-report.json"
-if (-not (Test-Path -LiteralPath $reproducibilityReport -PathType Leaf)) { throw "Reproducibility report is missing at '$reproducibilityReport'." }
-$reproducibility = Get-Content -LiteralPath $reproducibilityReport -Raw | ConvertFrom-Json
-if (@($reproducibility.artifacts | Where-Object result -notin @("bit-identical", "logically-identical-after-zip-normalization"))) {
-    throw "One or more candidate artifacts failed reproducibility validation."
+if ($ValidationTier -eq 'FullRelease') {
+    if (-not (Test-Path -LiteralPath $reproducibilityReport -PathType Leaf)) { throw "Reproducibility report is missing at '$reproducibilityReport'." }
+    $reproducibility = Get-Content -LiteralPath $reproducibilityReport -Raw | ConvertFrom-Json
+    if (@($reproducibility.artifacts | Where-Object result -notin @("bit-identical", "logically-identical-after-zip-normalization"))) { throw "One or more candidate artifacts failed reproducibility validation." }
 }
 if ($ValidateInputsOnly) {
     Write-Host "Validated canonical packages, Ubuntu, Windows, and reproducibility assembly inputs."
@@ -93,7 +94,7 @@ New-Item (Join-Path $artifactRoot "reports") -ItemType Directory -Force | Out-Nu
 Copy-Item (Join-Path $canonicalRoot "packages/*") (Join-Path $artifactRoot "packages") -Force
 Copy-Item (Join-Path $canonicalRoot "reports/*") (Join-Path $artifactRoot "reports") -Recurse -Force
 Copy-Item (Join-Path $inputsRoot "ubuntu/reports/*") (Join-Path $artifactRoot "reports") -Recurse -Force
-Copy-Item $reproducibilityReport (Join-Path $artifactRoot "reports/reproducibility-report.json") -Force
+if ($ValidationTier -eq 'FullRelease') { Copy-Item $reproducibilityReport (Join-Path $artifactRoot "reports/reproducibility-report.json") -Force }
 Write-ReleaseJson ([ordered]@{
     productTrain = [string]$canonical.productTrain
     commit = [string]$canonical.commit
@@ -106,6 +107,6 @@ Write-ReleaseJson ([ordered]@{
     })
 }) (Join-Path $artifactRoot "reports/cross-platform-validation.json")
 
-& (Join-Path $PSScriptRoot "generate-release-candidate-manifest.ps1") -ArtifactsPath $ArtifactsPath -RequireCrossPlatformValidation
+& (Join-Path $PSScriptRoot "generate-release-candidate-manifest.ps1") -ArtifactsPath $ArtifactsPath -RequireCrossPlatformValidation -ValidationTier $ValidationTier
 & (Join-Path $PSScriptRoot "publish-product-train.ps1") -ArtifactsPath $ArtifactsPath -ValidateCandidateOnly
 Write-Host "Canonical packages and cross-platform validation results assembled at '$artifactRoot'."
