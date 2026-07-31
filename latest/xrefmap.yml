@@ -46974,6 +46974,25 @@ references:
   fullName.vb: Utils.Net.CommandResponseClient.New
   nameWithType: CommandResponseClient.CommandResponseClient
   nameWithType.vb: CommandResponseClient.New
+- uid: Utils.Net.CommandResponseClient.BodyLineToString(Utils.Net.ServerResponse)
+  name: BodyLineToString(ServerResponse)
+  href: api/Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_BodyLineToString_Utils_Net_ServerResponse_
+  commentId: M:Utils.Net.CommandResponseClient.BodyLineToString(Utils.Net.ServerResponse)
+  fullName: Utils.Net.CommandResponseClient.BodyLineToString(Utils.Net.ServerResponse)
+  nameWithType: CommandResponseClient.BodyLineToString(ServerResponse)
+- uid: Utils.Net.CommandResponseClient.BodyLineToString*
+  name: BodyLineToString
+  href: api/Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_BodyLineToString_
+  commentId: Overload:Utils.Net.CommandResponseClient.BodyLineToString
+  isSpec: "True"
+  fullName: Utils.Net.CommandResponseClient.BodyLineToString
+  nameWithType: CommandResponseClient.BodyLineToString
+- uid: Utils.Net.CommandResponseClient.CallbackError
+  name: CallbackError
+  href: api/Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_CallbackError
+  commentId: E:Utils.Net.CommandResponseClient.CallbackError
+  fullName: Utils.Net.CommandResponseClient.CallbackError
+  nameWithType: CommandResponseClient.CallbackError
 - uid: Utils.Net.CommandResponseClient.ConnectAsync(System.IO.Stream,System.Boolean,System.Threading.CancellationToken)
   name: ConnectAsync(Stream, bool, CancellationToken)
   href: api/Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_ConnectAsync_System_IO_Stream_System_Boolean_System_Threading_CancellationToken_
@@ -47041,22 +47060,6 @@ references:
   isSpec: "True"
   fullName: Utils.Net.CommandResponseClient.Dispose
   nameWithType: CommandResponseClient.Dispose
-- uid: Utils.Net.CommandResponseClient.Finalize
-  name: ~CommandResponseClient()
-  href: api/Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_Finalize
-  commentId: M:Utils.Net.CommandResponseClient.Finalize
-  name.vb: ''
-  fullName: Utils.Net.CommandResponseClient.~CommandResponseClient()
-  fullName.vb: ''
-  nameWithType: CommandResponseClient.~CommandResponseClient()
-  nameWithType.vb: ''
-- uid: Utils.Net.CommandResponseClient.Finalize*
-  name: ~CommandResponseClient
-  href: api/Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_Finalize_
-  commentId: Overload:Utils.Net.CommandResponseClient.Finalize
-  isSpec: "True"
-  fullName: Utils.Net.CommandResponseClient.~CommandResponseClient
-  nameWithType: CommandResponseClient.~CommandResponseClient
 - uid: Utils.Net.CommandResponseClient.IsConnected
   name: IsConnected
   href: api/Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_IsConnected
@@ -47238,6 +47241,22 @@ references:
   isSpec: "True"
   fullName: Utils.Net.CommandResponseClient.SanitizeForLog
   nameWithType: CommandResponseClient.SanitizeForLog
+- uid: Utils.Net.CommandResponseClient.SendBodyAndReadAsync(System.Collections.Generic.IEnumerable{System.String},System.Threading.CancellationToken)
+  name: SendBodyAndReadAsync(IEnumerable<string>, CancellationToken)
+  href: api/Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SendBodyAndReadAsync_System_Collections_Generic_IEnumerable_System_String__System_Threading_CancellationToken_
+  commentId: M:Utils.Net.CommandResponseClient.SendBodyAndReadAsync(System.Collections.Generic.IEnumerable{System.String},System.Threading.CancellationToken)
+  name.vb: SendBodyAndReadAsync(IEnumerable(Of String), CancellationToken)
+  fullName: Utils.Net.CommandResponseClient.SendBodyAndReadAsync(System.Collections.Generic.IEnumerable<string>, System.Threading.CancellationToken)
+  fullName.vb: Utils.Net.CommandResponseClient.SendBodyAndReadAsync(System.Collections.Generic.IEnumerable(Of String), System.Threading.CancellationToken)
+  nameWithType: CommandResponseClient.SendBodyAndReadAsync(IEnumerable<string>, CancellationToken)
+  nameWithType.vb: CommandResponseClient.SendBodyAndReadAsync(IEnumerable(Of String), CancellationToken)
+- uid: Utils.Net.CommandResponseClient.SendBodyAndReadAsync*
+  name: SendBodyAndReadAsync
+  href: api/Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SendBodyAndReadAsync_
+  commentId: Overload:Utils.Net.CommandResponseClient.SendBodyAndReadAsync
+  isSpec: "True"
+  fullName: Utils.Net.CommandResponseClient.SendBodyAndReadAsync
+  nameWithType: CommandResponseClient.SendBodyAndReadAsync
 - uid: Utils.Net.CommandResponseClient.SendCommandAsync(System.String,System.Threading.CancellationToken)
   name: SendCommandAsync(string, CancellationToken)
   href: api/Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SendCommandAsync_System_String_System_Threading_CancellationToken_
@@ -47270,6 +47289,22 @@ references:
   isSpec: "True"
   fullName: Utils.Net.CommandResponseClient.SendLinesAsync
   nameWithType: CommandResponseClient.SendLinesAsync
+- uid: Utils.Net.CommandResponseClient.SendMultilineCommandAsync(System.String,System.Func{Utils.Net.ServerResponse,System.Boolean},System.Int32,System.Int32,System.Threading.CancellationToken)
+  name: SendMultilineCommandAsync(string, Func<ServerResponse, bool>, int, int, CancellationToken)
+  href: api/Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SendMultilineCommandAsync_System_String_System_Func_Utils_Net_ServerResponse_System_Boolean__System_Int32_System_Int32_System_Threading_CancellationToken_
+  commentId: M:Utils.Net.CommandResponseClient.SendMultilineCommandAsync(System.String,System.Func{Utils.Net.ServerResponse,System.Boolean},System.Int32,System.Int32,System.Threading.CancellationToken)
+  name.vb: SendMultilineCommandAsync(String, Func(Of ServerResponse, Boolean), Integer, Integer, CancellationToken)
+  fullName: Utils.Net.CommandResponseClient.SendMultilineCommandAsync(string, System.Func<Utils.Net.ServerResponse, bool>, int, int, System.Threading.CancellationToken)
+  fullName.vb: Utils.Net.CommandResponseClient.SendMultilineCommandAsync(String, System.Func(Of Utils.Net.ServerResponse, Boolean), Integer, Integer, System.Threading.CancellationToken)
+  nameWithType: CommandResponseClient.SendMultilineCommandAsync(string, Func<ServerResponse, bool>, int, int, CancellationToken)
+  nameWithType.vb: CommandResponseClient.SendMultilineCommandAsync(String, Func(Of ServerResponse, Boolean), Integer, Integer, CancellationToken)
+- uid: Utils.Net.CommandResponseClient.SendMultilineCommandAsync*
+  name: SendMultilineCommandAsync
+  href: api/Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SendMultilineCommandAsync_
+  commentId: Overload:Utils.Net.CommandResponseClient.SendMultilineCommandAsync
+  isSpec: "True"
+  fullName: Utils.Net.CommandResponseClient.SendMultilineCommandAsync
+  nameWithType: CommandResponseClient.SendMultilineCommandAsync
 - uid: Utils.Net.CommandResponseClient.SplitCodeAndMessage(System.String)
   name: SplitCodeAndMessage(string)
   href: api/Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SplitCodeAndMessage_System_String_
@@ -47525,6 +47560,12 @@ references:
   commentId: M:Utils.Net.CommandResponseServer.SendResponseAsync(Utils.Net.ServerResponse)
   fullName: Utils.Net.CommandResponseServer.SendResponseAsync(Utils.Net.ServerResponse)
   nameWithType: CommandResponseServer.SendResponseAsync(ServerResponse)
+- uid: Utils.Net.CommandResponseServer.SendResponseAsync(Utils.Net.ServerResponse,System.Threading.CancellationToken)
+  name: SendResponseAsync(ServerResponse, CancellationToken)
+  href: api/Utils.Net.CommandResponseServer.html#Utils_Net_CommandResponseServer_SendResponseAsync_Utils_Net_ServerResponse_System_Threading_CancellationToken_
+  commentId: M:Utils.Net.CommandResponseServer.SendResponseAsync(Utils.Net.ServerResponse,System.Threading.CancellationToken)
+  fullName: Utils.Net.CommandResponseServer.SendResponseAsync(Utils.Net.ServerResponse, System.Threading.CancellationToken)
+  nameWithType: CommandResponseServer.SendResponseAsync(ServerResponse, CancellationToken)
 - uid: Utils.Net.CommandResponseServer.SendResponseAsync*
   name: SendResponseAsync
   href: api/Utils.Net.CommandResponseServer.html#Utils_Net_CommandResponseServer_SendResponseAsync_

@@ -141,6 +141,9 @@ Class SmtpClient  <a class="header-action link-secondary" title="View source" hr
       <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_UnsolicitedResponseReceived">CommandResponseClient.UnsolicitedResponseReceived</a>
     </div>
     <div>
+      <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_CallbackError">CommandResponseClient.CallbackError</a>
+    </div>
+    <div>
       <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_NoOpCommand">CommandResponseClient.NoOpCommand</a>
     </div>
     <div>
@@ -162,10 +165,19 @@ Class SmtpClient  <a class="header-action link-secondary" title="View source" hr
       <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SendCommandAsync_System_String_System_Threading_CancellationToken_">CommandResponseClient.SendCommandAsync(string, CancellationToken)</a>
     </div>
     <div>
+      <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_BodyLineToString_Utils_Net_ServerResponse_">CommandResponseClient.BodyLineToString(ServerResponse)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SendMultilineCommandAsync_System_String_System_Func_Utils_Net_ServerResponse_System_Boolean__System_Int32_System_Int32_System_Threading_CancellationToken_">CommandResponseClient.SendMultilineCommandAsync(string, Func&lt;ServerResponse, bool&gt;, int, int, CancellationToken)</a>
+    </div>
+    <div>
       <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_ReadAsync_System_Threading_CancellationToken_">CommandResponseClient.ReadAsync(CancellationToken)</a>
     </div>
     <div>
       <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SendLinesAsync_System_Collections_Generic_IEnumerable_System_String__System_Threading_CancellationToken_">CommandResponseClient.SendLinesAsync(IEnumerable&lt;string&gt;, CancellationToken)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SendBodyAndReadAsync_System_Collections_Generic_IEnumerable_System_String__System_Threading_CancellationToken_">CommandResponseClient.SendBodyAndReadAsync(IEnumerable&lt;string&gt;, CancellationToken)</a>
     </div>
     <div>
       <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_ValidateCommandArgument_System_String_System_String_">CommandResponseClient.ValidateCommandArgument(string, string)</a>
@@ -696,7 +708,7 @@ accidental credential usage on unencrypted channels.</p>
 
   <h3 id="Utils_Net_SmtpClient_ParseResponseLine_System_String_" data-uid="Utils.Net.SmtpClient.ParseResponseLine(System.String)">
   ParseResponseLine(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L243"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L242"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Parses a single response line using SMTP semantics where a hyphen after the status code
@@ -736,7 +748,7 @@ indicates that more lines will follow.</p>
 
   <h3 id="Utils_Net_SmtpClient_QuitAsync_System_Threading_CancellationToken_" data-uid="Utils.Net.SmtpClient.QuitAsync(System.Threading.CancellationToken)">
   QuitAsync(CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L232"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L231"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Sends the QUIT command and closes the connection.</p>
