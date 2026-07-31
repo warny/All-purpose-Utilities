@@ -249,6 +249,17 @@ public class NtpClientTests
     }
 
     [TestMethod]
+    public async Task UdpNtpTransport_EmptyRequest_ThrowsArgumentException()
+    {
+        var transport = new UdpNtpTransport(TimeSpan.FromSeconds(1));
+        var endpoint = new IPEndPoint(IPAddress.Loopback, 123);
+
+        await Assert.ThrowsExceptionAsync<ArgumentException>(
+            () => transport.ExchangeAsync(endpoint, new byte[0], CancellationToken.None))
+            .ConfigureAwait(false);
+    }
+
+    [TestMethod]
     public async Task GetTimeAsync_FractionConversion_IsAccurateWithinOneTickOrDocumentedTolerance()
     {
         DateTime baseTime = new(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc);

@@ -131,27 +131,33 @@ namespace Utils.Net
 
         public async Task<byte[]> ExchangeAsync(IPEndPoint endpoint, byte[] request, CancellationToken cancellationToken)
         {
+            ArgumentNullException.ThrowIfNull(endpoint);
+            ArgumentNullException.ThrowIfNull(request);
+            if (request.Length == 0)
+                throw new ArgumentException("The NTP request must not be empty.", nameof(request));
+
             using var client = new UdpClient(endpoint.AddressFamily);
             client.Connect(endpoint);
 
-            await client.SendAsync(request, request.Length).WaitAsync(cancellationToken).ConfigureAwait(false);
-
             using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeoutCts.CancelAfter(_receiveTimeout);
-            UdpReceiveResult result;
+            CancellationToken effectiveToken = timeoutCts.Token;
+
             try
             {
-                result = await client.ReceiveAsync(timeoutCts.Token).ConfigureAwait(false);
+                await client.SendAsync(request, request.Length).WaitAsync(effectiveToken).ConfigureAwait(false);
+
+                UdpReceiveResult result = await client.ReceiveAsync(effectiveToken).ConfigureAwait(false);
+
+                if (!result.RemoteEndPoint.Equals(endpoint))
+                    throw new System.IO.IOException("NTP response received from unexpected endpoint.");
+
+                return result.Buffer;
             }
             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
                 throw new SocketException((int)SocketError.TimedOut);
             }
-
-            if (!result.RemoteEndPoint.Equals(endpoint))
-                throw new System.IO.IOException("NTP response received from unexpected endpoint.");
-
-            return result.Buffer;
         }
     }
 }
