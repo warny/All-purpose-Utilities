@@ -220,8 +220,7 @@ public class SmtpClient : CommandResponseClient
             }
         }
         lines.Add(".");
-        await SendLinesAsync(lines, cancellationToken).ConfigureAwait(false);
-        IReadOnlyList<ServerResponse> result = await ReadAsync(cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<ServerResponse> result = await SendBodyAndReadAsync(lines, cancellationToken).ConfigureAwait(false);
         await EnsureCompletionAsync(result).ConfigureAwait(false);
     }
 

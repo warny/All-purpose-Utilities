@@ -276,8 +276,7 @@ public class NntpClient : CommandResponseClient
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task PostAsync(string article, CancellationToken cancellationToken = default)
     {
-        await SendLinesAsync(["POST"], cancellationToken).ConfigureAwait(false);
-        IReadOnlyList<ServerResponse> intermediate = await ReadAsync(cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<ServerResponse> intermediate = await SendCommandAsync("POST", cancellationToken).ConfigureAwait(false);
         if (intermediate.Count == 0 || intermediate[^1].Severity != ResponseSeverity.Intermediate)
         {
             throw new IOException(intermediate.Count > 0 ? intermediate[^1].Message : "Server closed connection");
@@ -297,8 +296,7 @@ public class NntpClient : CommandResponseClient
             }
         }
         lines.Add(".");
-        await SendLinesAsync(lines, cancellationToken).ConfigureAwait(false);
-        IReadOnlyList<ServerResponse> responses = await ReadAsync(cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<ServerResponse> responses = await SendBodyAndReadAsync(lines, cancellationToken).ConfigureAwait(false);
         await EnsureCompletionAsync(responses).ConfigureAwait(false);
     }
 

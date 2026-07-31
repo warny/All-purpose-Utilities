@@ -548,6 +548,7 @@ public sealed class NntpServer : IDisposable
     /// <returns>Responses to send.</returns>
     private Task<IEnumerable<ServerResponse>> HandleQuit(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
+        _server.CloseAfterResponse();
         return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("205", ResponseSeverity.Completion, "closing connection") });
     }
 }

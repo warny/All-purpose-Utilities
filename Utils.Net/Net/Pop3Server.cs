@@ -368,6 +368,7 @@ public sealed class Pop3Server : IDisposable
             await _mailbox.DeleteAsync(id, cancellationToken).ConfigureAwait(false);
         }
         _deleted.Clear();
+        _server.CloseAfterResponse();
         return new[] { new ServerResponse("+OK", ResponseSeverity.Completion, "bye") };
     }
 }

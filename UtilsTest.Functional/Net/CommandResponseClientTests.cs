@@ -244,7 +244,10 @@ public class CommandResponseClientTests
     }
 
     /// <summary>
-    /// Verifies that <see cref="CommandResponseClient.ReadAsync"/> retrieves server greetings before any command is sent.
+    /// Verifies that <see cref="CommandResponseClient.ReadAsync"/> retrieves a server greeting
+    /// when called from <see cref="CommandResponseClient.OnConnect"/>. Reading the banner from
+    /// OnConnect is the reliable pattern: the state is still Connecting so all incoming lines
+    /// are buffered regardless of active-waiter counts.
     /// </summary>
     [TestMethod]
     public async Task ReadAsync_RetrievesInitialGreeting()
@@ -261,19 +264,26 @@ public class CommandResponseClientTests
             await writer.WriteLineAsync("200 Ready");
             string? command = await reader.ReadLineAsync();
             if (command == "PING")
-            {
                 await writer.WriteLineAsync("200 Pong");
-            }
             listener.Stop();
         });
 
-        using CommandResponseClient client = new() { NoOpInterval = Timeout.InfiniteTimeSpan };
+        using GreetingReadingClient client = new() { NoOpInterval = Timeout.InfiniteTimeSpan };
         await client.ConnectAsync("127.0.0.1", port);
-        IReadOnlyList<ServerResponse> greeting = await client.ReadAsync();
-        Assert.AreEqual("200", greeting[0].Code);
+        Assert.AreEqual("200", client.Banner![0].Code);
         IReadOnlyList<ServerResponse> response = await client.SendCommandAsync("PING");
         Assert.AreEqual("200", response[0].Code);
         await serverTask;
+    }
+
+    private sealed class GreetingReadingClient : CommandResponseClient
+    {
+        public IReadOnlyList<ServerResponse>? Banner { get; private set; }
+
+        protected override async Task OnConnect(Stream stream, bool leaveOpen, CancellationToken cancellationToken)
+        {
+            Banner = await ReadAsync(cancellationToken);
+        }
     }
 
     /// <summary>

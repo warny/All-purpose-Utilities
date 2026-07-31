@@ -373,12 +373,12 @@ public sealed class SmtpServer : IDisposable
             }
             catch (FormatException)
             {
-                _server.RemoveContext("AUTH-LOGIN-USER");
+                _server.RemoveRuntimeContext("AUTH-LOGIN-USER");
                 return new[] { new ServerResponse("501", ResponseSeverity.PermanentNegative, "Invalid auth") };
             }
             _loginUser = user;
-            _server.RemoveContext("AUTH-LOGIN-USER");
-            _server.AddContext("AUTH-LOGIN-PASS");
+            _server.RemoveRuntimeContext("AUTH-LOGIN-USER");
+            _server.AddRuntimeContext("AUTH-LOGIN-PASS");
             string prompt = Convert.ToBase64String(Encoding.ASCII.GetBytes("Password:"));
             return new[] { new ServerResponse("334", ResponseSeverity.Intermediate, prompt) };
         }
@@ -391,10 +391,10 @@ public sealed class SmtpServer : IDisposable
             }
             catch (FormatException)
             {
-                _server.RemoveContext("AUTH-LOGIN-PASS");
+                _server.RemoveRuntimeContext("AUTH-LOGIN-PASS");
                 return new[] { new ServerResponse("501", ResponseSeverity.PermanentNegative, "Invalid auth") };
             }
-            _server.RemoveContext("AUTH-LOGIN-PASS");
+            _server.RemoveRuntimeContext("AUTH-LOGIN-PASS");
             if (_authenticator is not null && _loginUser is not null)
             {
                 SmtpAuthenticationResult result = await _authenticator.AuthenticateAsync(_loginUser, password, cancellationToken).ConfigureAwait(false);
@@ -403,7 +403,7 @@ public sealed class SmtpServer : IDisposable
                     _failedAuthCount = 0;
                     _isAuthenticated = true;
                     _canRelay = result.CanRelay;
-                    _server.AddContext("AUTH");
+                    _server.AddRuntimeContext("AUTH");
                     return new[] { new ServerResponse("235", ResponseSeverity.Completion, "Authenticated") };
                 }
             }
@@ -430,7 +430,7 @@ public sealed class SmtpServer : IDisposable
         {
             if (line == ".")
             {
-                _server.RemoveContext("DATA");
+                _server.RemoveRuntimeContext("DATA");
                 string data = string.Join("\r\n", _dataLines);
                 SmtpMessage message = new(_from ?? string.Empty, new List<string>(_recipients), data);
                 await _store.StoreAsync(message, cancellationToken).ConfigureAwait(false);
@@ -445,14 +445,14 @@ public sealed class SmtpServer : IDisposable
             _dataChars += processed.Length;
             if (MaxDataLines > 0 && _dataLines.Count > MaxDataLines)
             {
-                _server.RemoveContext("DATA");
+                _server.RemoveRuntimeContext("DATA");
                 _dataLines.Clear();
                 _dataChars = 0;
                 return new[] { new ServerResponse("552", ResponseSeverity.PermanentNegative, "Message body too long (line limit exceeded)") };
             }
             if (MaxDataChars > 0 && _dataChars > MaxDataChars)
             {
-                _server.RemoveContext("DATA");
+                _server.RemoveRuntimeContext("DATA");
                 _dataLines.Clear();
                 _dataChars = 0;
                 return new[] { new ServerResponse("552", ResponseSeverity.PermanentNegative, "Message body too long (size limit exceeded)") };

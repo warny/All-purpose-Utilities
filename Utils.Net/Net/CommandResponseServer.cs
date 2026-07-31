@@ -194,8 +194,9 @@ public class CommandResponseServer : IDisposable
     }
 
     /// <summary>
-    /// Adds an initial context to the server. Must be called before <see cref="StartAsync"/>.
-    /// During a live session, contexts are managed through <see cref="CommandContext"/> inside a handler.
+    /// Adds a context to the server. Must be called before <see cref="StartAsync"/>.
+    /// To modify contexts during a live session from inside a command handler, use
+    /// <see cref="AddRuntimeContext"/>.
     /// </summary>
     /// <param name="context">Context to add.</param>
     /// <exception cref="InvalidOperationException">Thrown when called after <see cref="StartAsync"/>.</exception>
@@ -208,8 +209,9 @@ public class CommandResponseServer : IDisposable
     }
 
     /// <summary>
-    /// Removes an initial context from the server. Must be called before <see cref="StartAsync"/>.
-    /// During a live session, contexts are managed through <see cref="CommandContext"/> inside a handler.
+    /// Removes a context from the server. Must be called before <see cref="StartAsync"/>.
+    /// To modify contexts during a live session from inside a command handler, use
+    /// <see cref="RemoveRuntimeContext"/>.
     /// </summary>
     /// <param name="context">Context to remove.</param>
     /// <exception cref="InvalidOperationException">Thrown when called after <see cref="StartAsync"/>.</exception>
@@ -219,6 +221,28 @@ public class CommandResponseServer : IDisposable
         RequireNotStarted(nameof(RemoveContext));
         _contexts.Remove(context);
         Logger?.LogDebug("Context removed: {Context}", context);
+    }
+
+    /// <summary>
+    /// Adds a context during a live session. Safe to call from inside a
+    /// <see cref="CommandReceived"/> handler while the server is running.
+    /// </summary>
+    internal void AddRuntimeContext(string context)
+    {
+        ValidateToken(context, nameof(context));
+        _contexts.Add(context);
+        Logger?.LogDebug("Context added at runtime: {Context}", context);
+    }
+
+    /// <summary>
+    /// Removes a context during a live session. Safe to call from inside a
+    /// <see cref="CommandReceived"/> handler while the server is running.
+    /// </summary>
+    internal void RemoveRuntimeContext(string context)
+    {
+        ValidateToken(context, nameof(context));
+        _contexts.Remove(context);
+        Logger?.LogDebug("Context removed at runtime: {Context}", context);
     }
 
     /// <summary>
@@ -533,8 +557,11 @@ public class CommandResponseServer : IDisposable
                     // Item 32: await every CommandReceived subscriber in registration order.
                     // The last non-empty response sequence wins; the first faulting subscriber
                     // aborts the chain and yields a 500 reply.
+                    // An empty (or null) result from ALL subscribers means "no response needed"
+                    // (e.g. a body-line accumulator that has not yet hit its terminator).
+                    // Only the hard-coded else branch below (no handler at all) sends 502.
                     Delegate[] invocations = CommandReceived.GetInvocationList();
-                    responseList = [new ServerResponse("502", ResponseSeverity.PermanentNegative, "Command not implemented")];
+                    responseList = [];
                     foreach (Delegate d in invocations)
                     {
                         var subscriber = (Func<string, CancellationToken, Task<IEnumerable<ServerResponse>>>)d;
