@@ -28,7 +28,8 @@ public class Writer : IWriter, IStreamMapping<Writer>
     /// <summary>
     /// Dictionary mapping a type to its associated writer delegate.
     /// </summary>
-    private readonly Dictionary<Type, Delegate> writers = [];
+    private readonly IReadOnlyDictionary<Type, Delegate> writers;
+    private readonly ContractCache contractCache = new();
 
     /// <summary>
     /// Gets or sets the current position within the stream.
@@ -42,7 +43,8 @@ public class Writer : IWriter, IStreamMapping<Writer>
     /// <summary>
     /// Gets the number of bytes left to write in the stream.
     /// </summary>
-    public long BytesLeft => Stream.Length - Stream.Position;
+    [Obsolete("BytesLeft is not remaining capacity. Use TryGetBytesUntilCurrentLength instead.")]
+    public long BytesLeft => TryGetBytesUntilCurrentLength(out long value) ? value : throw new NotSupportedException("The stream does not expose a coherent current length.");
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Writer"/> class using default converters.
@@ -57,6 +59,7 @@ public class Writer : IWriter, IStreamMapping<Writer>
     public Writer(Stream stream, params IEnumerable<Delegate> converters)
     {
         this.Stream = stream ?? throw new ArgumentNullException(nameof(stream));
+        Dictionary<Type, Delegate> registrations = [];
         var defaultDelegates = new RawWriter().WriterDelegates;
         foreach (var converter in converters.Union(defaultDelegates))
         {
@@ -64,17 +67,15 @@ public class Writer : IWriter, IStreamMapping<Writer>
             var arguments = method.GetParameters();
             arguments.ArgMustBeOfSize(2);
             arguments[0].ArgMustBe(a => a.ParameterType == typeof(IWriter), "The first argument of the function is not IWriter");
-            if (!writers.ContainsKey(arguments[1].ParameterType))
-            {
-                writers.Add(arguments[1].ParameterType, converter);
-            }
+            registrations.TryAdd(arguments[1].ParameterType, converter);
         }
+        writers = registrations;
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Writer"/> class by copying existing writers.
     /// </summary>
-    private Writer(Stream stream, IDictionary<Type, Delegate> writers)
+    private Writer(Stream stream, IReadOnlyDictionary<Type, Delegate> writers)
     {
         this.Stream = stream;
         this.writers = writers.ToDictionary();
@@ -106,7 +107,7 @@ public class Writer : IWriter, IStreamMapping<Writer>
         var type = value.GetType();
         if (!TryFindWriterFor(type, out var writerDelegate))
         {
-            writerDelegate = CreateWriterFor(type);
+            writerDelegate = GetOrCreateWriter(type);
         }
         writerDelegate.DynamicInvoke(this, value);
     }
@@ -121,7 +122,7 @@ public class Writer : IWriter, IStreamMapping<Writer>
         if (value is null) throw new ArgumentNullException(nameof(value));
         if (!TryFindWriterFor(typeof(T), out var writerDelegate))
         {
-            writerDelegate = CreateWriterFor(typeof(T));
+            writerDelegate = GetOrCreateWriter(typeof(T));
         }
         var writer = (Action<IWriter, T>)writerDelegate;
         writer.Invoke(this, value);
@@ -149,8 +150,18 @@ public class Writer : IWriter, IStreamMapping<Writer>
     public void Push(int offset, SeekOrigin origin)
     {
         if (!Stream.CanSeek) throw new NotSupportedException("Stream does not support seeking.");
-        this.positionsStack.Push(Stream.Position);
-        Stream.Seek(offset, origin);
+        long original = Stream.Position;
+        try
+        {
+            Stream.Seek(offset, origin);
+            this.positionsStack.Push(original);
+        }
+        catch
+        {
+            try { Stream.Position = original; }
+            catch { /* Position restoration is best effort; preserve the seek exception. */ }
+            throw;
+        }
     }
 
     /// <summary>
@@ -173,6 +184,22 @@ public class Writer : IWriter, IStreamMapping<Writer>
         return new Writer(s, writers);
     }
 
+    /// <summary>Attempts to measure the bytes between the current position and the stream's current length.</summary>
+    public bool TryGetBytesUntilCurrentLength(out long bytesLeft)
+    {
+        bytesLeft = 0;
+        if (!Stream.CanSeek) return false;
+        try
+        {
+            long length = Stream.Length;
+            long position = Stream.Position;
+            if (position < 0 || position > length) return false;
+            bytesLeft = length - position;
+            return true;
+        }
+        catch (NotSupportedException) { return false; }
+    }
+
     /// <summary>
     /// Tries to find a writer delegate for a given type.
     /// </summary>
@@ -181,16 +208,41 @@ public class Writer : IWriter, IStreamMapping<Writer>
     /// <returns><see langword="true"/> if a writer was found; otherwise, <see langword="false"/>.</returns>
     private bool TryFindWriterFor(Type type, out Delegate writer)
     {
-        foreach (var t in type.GetTypeHierarchy().SelectMany(h => h.Interfaces.Prepend(h.Type)))
+        if (writers.TryGetValue(type, out writer)) return true;
+        var candidates = writers.Where(pair => pair.Key.IsAssignableFrom(type)).ToArray();
+        var mostSpecific = candidates.Where(candidate => !candidates.Any(other =>
+            candidate.Key != other.Key && candidate.Key.IsAssignableFrom(other.Key))).ToArray();
+        if (mostSpecific.Length == 1)
         {
-            if (writers.TryGetValue(t, out writer))
-            {
-                return true;
-            }
+            writer = CreateWriterAdapter(type, mostSpecific[0].Value);
+            return true;
+        }
+        if (mostSpecific.Length > 1)
+        {
+            string registrations = string.Join(", ", mostSpecific.Select(candidate => candidate.Key.FullName ?? candidate.Key.Name).OrderBy(name => name, StringComparer.Ordinal));
+            throw new SerializationContractException(type,
+                [new SerializationContractDiagnostic("UIORT005", $"Writer converters registered for {registrations} are equally specific for {type.FullName ?? type.Name}.")]);
         }
         writer = null;
         return false;
     }
+
+    /// <summary>Creates a strongly typed adapter for a contravariant base or interface writer.</summary>
+    private static Delegate CreateWriterAdapter(Type requestedType, Delegate converter)
+    {
+        MethodInfo invoke = converter.GetType().GetMethod("Invoke")!;
+        Type acceptedType = invoke.GetParameters()[1].ParameterType;
+        ParameterExpression writerParameter = Expression.Parameter(typeof(IWriter), "writer");
+        ParameterExpression valueParameter = Expression.Parameter(requestedType, "value");
+        MethodCallExpression call = Expression.Call(Expression.Constant(converter), invoke,
+            writerParameter, Expression.Convert(valueParameter, acceptedType));
+        Type adapterType = typeof(Action<,>).MakeGenericType(typeof(IWriter), requestedType);
+        return Expression.Lambda(adapterType, call, writerParameter, valueParameter).Compile();
+    }
+
+    /// <summary>Gets the shared result of the single logical writer build for a type.</summary>
+    private Delegate GetOrCreateWriter(Type type)
+        => contractCache.GetOrBuild(type, CreateWriterFor);
 
     /// <summary>
     /// Creates a writer for a given type dynamically using expression trees.
@@ -202,23 +254,19 @@ public class Writer : IWriter, IStreamMapping<Writer>
         var expressions = new List<Expression>();
 
         // Get fields or properties with custom FieldAttribute
-        var propertiesOrFields = type.GetMembers(BindingFlags.GetField | BindingFlags.GetProperty | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                .Where(m => m.GetCustomAttribute<FieldAttribute>() is not null)
-                .Select(m => new PropertyOrFieldInfo(m))
-                .OrderBy(m => m.GetCustomAttribute<FieldAttribute>().Order)
-                .ToArray();
+        var contract = ReflectionContractBuilder.Build(type, SerializationDirection.Write);
 
         var writerArgument = Expression.Parameter(typeof(IWriter), "writer");
-        var objectArgument = Expression.Parameter(typeof(object), "obj");
+        var objectArgument = Expression.Parameter(type, "obj");
 
         // Cast the object to its original type before accessing members
-        var typedObject = Expression.Convert(objectArgument, type);
+        var typedObject = objectArgument;
 
-        foreach (var propertyOrField in propertiesOrFields)
+        foreach (var propertyOrField in contract.Members)
         {
-            if (!TryFindWriterFor(propertyOrField.Type, out var fieldWriter))
+            if (!TryFindWriterFor(propertyOrField.ValueType, out var fieldWriter))
             {
-                fieldWriter = CreateWriterFor(propertyOrField.Type);
+                fieldWriter = GetOrCreateWriter(propertyOrField.ValueType);
             }
 
             // Generate the call to the writer delegate
@@ -243,12 +291,11 @@ public class Writer : IWriter, IStreamMapping<Writer>
 
         // Create the final block and lambda
         var block = Expression.Block(expressions);
-        var lambda = Expression.Lambda(block, writerArgument, objectArgument);
+        var lambdaType = typeof(Action<,>).MakeGenericType(typeof(IWriter), type);
+        var lambda = Expression.Lambda(lambdaType, block, writerArgument, objectArgument);
 
         var compiledLambda = lambda.Compile();
-        writers.Add(type, compiledLambda);
         return compiledLambda;
     }
 }
 #pragma warning restore S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
-

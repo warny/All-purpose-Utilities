@@ -40,12 +40,15 @@ public class RawReader
     /// </summary>
     public bool BigEndian { get; init; } = false;
 
+    /// <summary>Gets or sets the maximum accepted payload length for length-prefixed values.</summary>
+    public int MaximumLength { get; init; } = int.MaxValue;
+
     // Integer reading methods
     /// <summary>Reads a byte from the reader.</summary>
-    public byte ReadByte(IReader reader) => (byte)reader.ReadByte();
+    public byte ReadByte(IReader reader) => ReadRequiredByte(reader, nameof(Byte));
 
     /// <summary>Reads a signed byte from the reader.</summary>
-    public sbyte ReadSByte(IReader reader) => (sbyte)reader.ReadByte();
+    public sbyte ReadSByte(IReader reader) => unchecked((sbyte)ReadRequiredByte(reader, nameof(SByte)));
 
     /// <summary>Reads a 16-bit signed integer.</summary>
     public short ReadShort(IReader reader) => ReadNumber<short>(reader, false);
@@ -92,8 +95,8 @@ public class RawReader
             var isUnsigned = T.Sign(T.Zero - T.One) == 1;
 
             Func<IReader, T> d = BigEndian
-                ? (IReader reader) => T.ReadBigEndian(reader.ReadBytes(size), isUnsigned)
-                : (IReader reader) => T.ReadLittleEndian(reader.ReadBytes(size), isUnsigned);
+                ? (IReader reader) => T.ReadBigEndian(ReadExactly(reader, size, typeof(T).Name), isUnsigned)
+                : (IReader reader) => T.ReadLittleEndian(ReadExactly(reader, size, typeof(T).Name), isUnsigned);
             return d;
         }
     }
@@ -108,7 +111,7 @@ public class RawReader
     private T ReadNumber<T>(IReader reader, bool isUnsigned) where T : struct, IBinaryInteger<T>
     {
         int size = Marshal.SizeOf(typeof(T));
-        byte[] bytes = reader.ReadBytes(size);
+        byte[] bytes = ReadExactly(reader, size, typeof(T).Name);
         T value = BigEndian
             ? T.ReadBigEndian(bytes, isUnsigned)
             : T.ReadLittleEndian(bytes, isUnsigned);
@@ -123,7 +126,7 @@ public class RawReader
     /// <returns>The bytes representing the number.</returns>
     private byte[] ReadNumberBytes(IReader reader, int length)
     {
-        byte[] bytes = reader.ReadBytes(length);
+        byte[] bytes = ReadExactly(reader, length, "numeric value");
         if (BitConverter.IsLittleEndian ^ BigEndian) bytes.Reverse();
         return bytes;
     }
@@ -133,15 +136,16 @@ public class RawReader
     public BigInteger ReadBigInteger(IReader reader)
     {
         int length = ReadInt(reader);
-        byte[] bytes = reader.ReadBytes(length);
+        ValidateLength(length, nameof(BigInteger));
+        byte[] bytes = ReadExactly(reader, length, nameof(BigInteger));
         return new BigInteger(bytes);
     }
 
     /// <summary>Reads a signed 128-bit integer.</summary>
-    public Int128 ReadInt128(IReader reader) => BitConverterEx.ToInt128(reader.ReadBytes(16));
+    public Int128 ReadInt128(IReader reader) => BitConverterEx.ToInt128(ReadExactly(reader, 16, nameof(Int128)));
 
     /// <summary>Reads an unsigned 128-bit integer.</summary>
-    public UInt128 ReadUInt128(IReader reader) => BitConverterEx.ToUInt128(reader.ReadBytes(16));
+    public UInt128 ReadUInt128(IReader reader) => BitConverterEx.ToUInt128(ReadExactly(reader, 16, nameof(UInt128)));
 
     /// <summary>Reads a complex number.</summary>
     public Complex ReadComplex(IReader reader)
@@ -169,14 +173,15 @@ public class RawReader
     public string ReadString(IReader reader)
     {
         int length = ReadInt(reader);
-        byte[] bytes = reader.ReadBytes(length);
+        ValidateLength(length, nameof(String));
+        byte[] bytes = ReadExactly(reader, length, nameof(String));
         return Encoding.GetString(bytes);
     }
 
     /// <summary>Reads a single character as a 2-byte UTF-16 code unit, respecting <see cref="BigEndian"/>.</summary>
     public char ReadChar(IReader reader)
     {
-        byte[] bytes = reader.ReadBytes(sizeof(char));
+        byte[] bytes = ReadExactly(reader, sizeof(char), nameof(Char));
         return BigEndian
             ? (char)((bytes[0] << 8) | bytes[1])
             : (char)(bytes[0] | (bytes[1] << 8));
@@ -184,8 +189,43 @@ public class RawReader
 
     // Miscellaneous reading methods
     /// <summary>Reads a <see cref="Guid"/>.</summary>
-    public Guid ReadGuid(IReader reader) => new Guid(reader.ReadBytes(16));
+    public Guid ReadGuid(IReader reader) => new Guid(ReadExactly(reader, 16, nameof(Guid)));
 
     /// <summary>Reads a boolean value.</summary>
     public bool ReadBool(IReader reader) => ReadByte(reader) == 1;
+
+    /// <summary>Reads one required byte and rejects EOF rather than converting it to a value.</summary>
+    private static byte ReadRequiredByte(IReader reader, string valueType)
+    {
+        int value = reader.ReadByte();
+        if (value < 0) throw CreateEndOfStream(valueType, 1, 0);
+        return (byte)value;
+    }
+
+    /// <summary>Reads exactly the requested binary payload, including across partial stream reads.</summary>
+    private static byte[] ReadExactly(IReader reader, int length, string valueType)
+    {
+        byte[] result = new byte[length];
+        int received = 0;
+        while (received < length)
+        {
+            byte[] part = reader.ReadBytes(length - received);
+            if (part.Length == 0) throw CreateEndOfStream(valueType, length, received);
+            int copied = Math.Min(part.Length, length - received);
+            part.AsSpan(0, copied).CopyTo(result.AsSpan(received));
+            received += copied;
+        }
+        return result;
+    }
+
+    /// <summary>Creates the common exact-read failure used by every primitive converter.</summary>
+    private static EndOfStreamException CreateEndOfStream(string valueType, int expected, int received) =>
+        new($"Unexpected end of stream while reading {valueType}: expected {expected} bytes, received {received}.");
+
+    /// <summary>Rejects invalid or unreasonably large length-prefixed payload declarations.</summary>
+    private void ValidateLength(int length, string valueType)
+    {
+        if (length < 0 || length > MaximumLength)
+            throw new InvalidDataException($"Invalid {valueType} payload length {length}; allowed range is 0..{MaximumLength}.");
+    }
 }

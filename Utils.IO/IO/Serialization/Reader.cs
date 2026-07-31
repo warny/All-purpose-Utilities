@@ -22,7 +22,7 @@ public class Reader : IReader, IStreamMapping<Reader>
     /// <summary>
     /// Gets the number of bytes remaining in the stream.
     /// </summary>
-    public long BytesLeft => Stream.Length - Stream.Position;
+    public long BytesLeft => TryGetBytesLeft(out long value) ? value : throw new NotSupportedException("The stream does not expose a coherent remaining length.");
 
     /// <summary>
     /// Gets or sets the current position within the stream.
@@ -41,20 +41,50 @@ public class Reader : IReader, IStreamMapping<Reader>
     /// <summary>
     /// Dictionary mapping a type to its reader delegate.
     /// </summary>
-    private readonly Dictionary<Type, Delegate> readers = [];
+    private readonly IReadOnlyDictionary<Type, Delegate> readers;
+
+    /// <summary>Coordinates one logical contract build for each type.</summary>
+    private readonly ContractCache contractCache = new();
 
     /// <summary>
     /// Initializes a new instance of <see cref="Reader"/> using default converters.
     /// </summary>
-    public Reader(Stream stream) : this(stream, new RawReader().ReaderDelegates) { }
+    public Reader(Stream stream) : this(stream, new ReaderOptions()) { }
+
+    /// <summary>
+    /// Initializes a new instance of <see cref="Reader"/> using default converters and explicit payload options.
+    /// </summary>
+    /// <param name="stream">Stream to read from.</param>
+    /// <param name="options">Payload safety options; a null maximum preserves unlimited historical reads.</param>
+    public Reader(Stream stream, ReaderOptions options)
+        : this(stream, CreateRawReader(options).ReaderDelegates) { }
+
+    /// <summary>
+    /// Initializes a new instance of <see cref="Reader"/> with explicit payload options and custom converters.
+    /// </summary>
+    /// <param name="stream">Stream to read from.</param>
+    /// <param name="options">Payload safety options.</param>
+    /// <param name="converters">Reader delegates used to deserialize objects.</param>
+    public Reader(Stream stream, ReaderOptions options, params IEnumerable<Delegate> converters)
+        : this(stream, converters.Union(CreateRawReader(options).ReaderDelegates)) { }
 
     /// <summary>
     /// Initializes a new instance of <see cref="Reader"/> copying converters.
     /// </summary>
-    private Reader(Stream stream, IDictionary<Type, Delegate> readers)
+    private Reader(Stream stream, IReadOnlyDictionary<Type, Delegate> readers)
     {
         this.Stream = stream;
         this.readers = readers.ToDictionary();
+    }
+
+    /// <summary>Creates and validates the primitive reader configured for this reader instance.</summary>
+    private static RawReader CreateRawReader(ReaderOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        if (options.MaximumPayloadLength < 0)
+            throw new ArgumentOutOfRangeException(nameof(options), "MaximumPayloadLength must be non-negative or null.");
+
+        return new RawReader { MaximumLength = options.MaximumPayloadLength ?? int.MaxValue };
     }
 
     /// <summary>
@@ -65,14 +95,16 @@ public class Reader : IReader, IStreamMapping<Reader>
     public Reader(Stream stream, params IEnumerable<Delegate> converters)
     {
         this.Stream = stream ?? throw new ArgumentNullException(nameof(stream));
+        Dictionary<Type, Delegate> registrations = [];
         foreach (var converter in converters.Union(new RawReader().ReaderDelegates))
         {
             var method = converter.GetMethodInfo();
             var arguments = method.GetParameters();
             arguments.ArgMustBeOfSizes([1]);
             arguments[0].ArgMustBe(a => a.ParameterType == typeof(IReader), "The first argument of the function {method.Name} is not IReader");
-            readers.TryAdd(method.ReturnType, converter);
+            registrations.TryAdd(method.ReturnType, converter);
         }
+        readers = registrations;
     }
 
     /// <summary>
@@ -91,7 +123,7 @@ public class Reader : IReader, IStreamMapping<Reader>
         if (type is null) throw new ArgumentNullException(nameof(type));
         if (!TryFindReaderFor(type, out var readerDelegate))
         {
-            readerDelegate = CreateReaderFor(type);
+            readerDelegate = GetOrCreateReader(type);
         }
         return readerDelegate.DynamicInvoke(this);
     }
@@ -104,7 +136,7 @@ public class Reader : IReader, IStreamMapping<Reader>
     {
         if (!TryFindReaderFor(typeof(T), out var readerDelegate))
         {
-            readerDelegate = CreateReaderFor(typeof(T));
+            readerDelegate = GetOrCreateReader(typeof(T));
         }
         var reader = (Func<IReader, T>)readerDelegate;
         return reader.Invoke(this);
@@ -127,8 +159,18 @@ public class Reader : IReader, IStreamMapping<Reader>
     public void Push(int offset, SeekOrigin origin)
     {
         if (!Stream.CanSeek) throw new NotSupportedException("Stream does not support seeking.");
-        this.positionsStack.Push(Stream.Position);
-        Stream.Seek(offset, origin);
+        long original = Stream.Position;
+        try
+        {
+            Stream.Seek(offset, origin);
+            this.positionsStack.Push(original);
+        }
+        catch
+        {
+            try { Stream.Position = original; }
+            catch { /* Position restoration is best effort; preserve the seek exception. */ }
+            throw;
+        }
     }
 
     /// <summary>
@@ -158,6 +200,22 @@ public class Reader : IReader, IStreamMapping<Reader>
     /// <returns><see cref="byte"/>array</returns>
     public byte[] ReadBytes(int length) => Stream.ReadBytes(length);
 
+    /// <summary>Attempts to obtain the number of readable bytes between the current position and stream length.</summary>
+    public bool TryGetBytesLeft(out long bytesLeft)
+    {
+        bytesLeft = 0;
+        if (!Stream.CanSeek) return false;
+        try
+        {
+            long length = Stream.Length;
+            long position = Stream.Position;
+            if (position < 0 || position > length) return false;
+            bytesLeft = length - position;
+            return true;
+        }
+        catch (NotSupportedException) { return false; }
+    }
+
     /// <summary>
     /// Creates a new reader that is limited to a slice of the underlying stream.
     /// </summary>
@@ -177,16 +235,21 @@ public class Reader : IReader, IStreamMapping<Reader>
     /// <returns><see langword="true"/> if a reader was found.</returns>
     private bool TryFindReaderFor(Type type, out Delegate reader)
     {
-        foreach (var t in type.GetTypeHierarchy().SelectMany(h => h.Interfaces.Prepend(h.Type)))
+        if (readers.TryGetValue(type, out reader)) return true;
+        Type[] broaderRegistrations = readers.Keys.Where(registeredType => registeredType.IsAssignableFrom(type)).ToArray();
+        if (broaderRegistrations.Length > 0)
         {
-            if (readers.TryGetValue(t, out reader))
-            {
-                return true;
-            }
+            string registrations = string.Join(", ", broaderRegistrations.Select(candidate => candidate.FullName ?? candidate.Name).OrderBy(name => name, StringComparer.Ordinal));
+            throw new SerializationContractException(type,
+                [new SerializationContractDiagnostic("UIORT005", $"Reader converter(s) registered for {registrations} cannot read {type.FullName ?? type.Name} because their return types do not guarantee that concrete result.")]);
         }
         reader = null;
         return false;
     }
+
+    /// <summary>Gets the shared result of the single logical contract build for a type.</summary>
+    private Delegate GetOrCreateReader(Type type)
+        => contractCache.GetOrBuild(type, CreateReaderFor);
 
     /// <summary>
     /// Creates a reader for a given type dynamically using expression trees.
@@ -195,11 +258,7 @@ public class Reader : IReader, IStreamMapping<Reader>
     /// <returns>A delegate capable of reading the given type.</returns>
     private Delegate CreateReaderFor(Type type)
     {
-        var propertiesOrFields = type.GetMembers(BindingFlags.GetField | BindingFlags.GetProperty | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-            .Where(m => m.GetCustomAttribute<FieldAttribute>() is not null)
-            .Select(m => new PropertyOrFieldInfo(m))
-            .OrderBy(m => m.GetCustomAttribute<FieldAttribute>().Order)
-            .ToArray();
+        var contract = ReflectionContractBuilder.Build(type, SerializationDirection.Read);
 
         var readerArgument = Expression.Parameter(typeof(IReader), "reader");
 
@@ -212,11 +271,11 @@ public class Reader : IReader, IStreamMapping<Reader>
 
         var blockExpressions = new List<Expression> { assignNewObject };
 
-        foreach (var propertyOrField in propertiesOrFields)
+        foreach (var propertyOrField in contract.Members)
         {
-            if (!TryFindReaderFor(propertyOrField.Type, out var fieldReader))
+            if (!TryFindReaderFor(propertyOrField.ValueType, out var fieldReader))
             {
-                fieldReader = CreateReaderFor(propertyOrField.Type);
+                fieldReader = GetOrCreateReader(propertyOrField.ValueType);
             }
 
             // Generate the call to the reader delegate
@@ -236,7 +295,7 @@ public class Reader : IReader, IStreamMapping<Reader>
                 _ => throw new NotSupportedException("Unsupported member type.")
             };
 
-            var assignValue = Expression.Assign(memberAccess, Expression.Convert(readCall, propertyOrField.Type));
+            var assignValue = Expression.Assign(memberAccess, Expression.Convert(readCall, propertyOrField.ValueType));
 
             blockExpressions.Add(assignValue);
         }
@@ -249,7 +308,6 @@ public class Reader : IReader, IStreamMapping<Reader>
         var lambda = Expression.Lambda(block, readerArgument);
 
         var compiledLambda = lambda.Compile();
-        readers.Add(type, compiledLambda);
         return compiledLambda;
     }
 }

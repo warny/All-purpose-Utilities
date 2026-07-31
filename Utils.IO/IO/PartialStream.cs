@@ -1,5 +1,8 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Utils.IO;
 
@@ -17,10 +20,16 @@ namespace Utils.IO;
 /// </summary>
 public class PartialStream : Stream
 {
+    private static readonly ConditionalWeakTable<Stream, SemaphoreSlim> SharedOperationGates = new();
     private readonly Stream baseStream;
     private readonly long startOffset;
     private long partialLength;
     private long partialPosition;
+    private readonly SemaphoreSlim operationGate;
+
+    /// <summary>Gets the synchronization gate shared by every view over the same underlying stream.</summary>
+    private static SemaphoreSlim GetOperationGate(Stream stream) =>
+        SharedOperationGates.GetValue(stream, static _ => new SemaphoreSlim(1, 1));
 
     // Verifies that startOffset + length <= long.MaxValue so that any absolute position
     // within the segment (startOffset + partialPosition, with partialPosition <= partialLength)
@@ -48,11 +57,18 @@ public class PartialStream : Stream
         if (length < 0)
             throw new ArgumentOutOfRangeException(nameof(length), "Length must be non-negative.");
 
-        long position = baseStream.Position;
-        ValidateRange(position, length, nameof(length));
-
         this.baseStream = baseStream;
-        this.startOffset = position;
+        this.operationGate = GetOperationGate(baseStream);
+        operationGate.Wait();
+        try
+        {
+            this.startOffset = baseStream.Position;
+            ValidateRange(startOffset, length, nameof(length));
+        }
+        finally
+        {
+            operationGate.Release();
+        }
         this.partialLength = length;
         this.partialPosition = 0;
     }
@@ -78,6 +94,7 @@ public class PartialStream : Stream
         ValidateRange(position, length, nameof(length));
 
         this.baseStream = baseStream;
+        this.operationGate = GetOperationGate(baseStream);
         this.startOffset = position;
         this.partialLength = length;
         this.partialPosition = 0;
@@ -102,7 +119,15 @@ public class PartialStream : Stream
     /// Gets the length of this partial view of the underlying stream.
     /// Setting this value does not change the length of the underlying stream.
     /// </summary>
-    public override long Length => partialLength;
+    public override long Length
+    {
+        get
+        {
+            operationGate.Wait();
+            try { return partialLength; }
+            finally { operationGate.Release(); }
+        }
+    }
 
     /// <summary>
     /// Gets or sets the position within this partial stream. Must be in [0, <see cref="Length"/>].
@@ -110,13 +135,22 @@ public class PartialStream : Stream
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the value is negative or exceeds <see cref="Length"/>.</exception>
     public override long Position
     {
-        get => partialPosition;
+        get
+        {
+            operationGate.Wait();
+            try { return partialPosition; }
+            finally { operationGate.Release(); }
+        }
         set
         {
-            if (value < 0 || value > partialLength)
-                throw new ArgumentOutOfRangeException(nameof(value),
-                    $"Position must be in [0, {partialLength}].");
-            partialPosition = value;
+            operationGate.Wait();
+            try
+            {
+                if (value < 0 || value > partialLength)
+                    throw new ArgumentOutOfRangeException(nameof(value), $"Position must be in [0, {partialLength}].");
+                partialPosition = value;
+            }
+            finally { operationGate.Release(); }
         }
     }
 
@@ -142,7 +176,8 @@ public class PartialStream : Stream
     public override int Read(byte[] buffer, int offset, int count)
     {
         Stream.ValidateBufferArguments(buffer, offset, count);
-        lock (baseStream)
+        operationGate.Wait();
+        try
         {
             long originalBasePosition = baseStream.Position;
             try
@@ -164,6 +199,49 @@ public class PartialStream : Stream
                 baseStream.Position = originalBasePosition;
             }
         }
+        finally { operationGate.Release(); }
+    }
+
+    /// <summary>Reads directly into a span while preserving slice bounds and the base position.</summary>
+    public override int Read(Span<byte> buffer)
+    {
+        operationGate.Wait();
+        try
+        {
+            long original = baseStream.Position;
+            try
+            {
+                int count = (int)Math.Min(buffer.Length, partialLength - partialPosition);
+                if (count <= 0) return 0;
+                baseStream.Position = startOffset + partialPosition;
+                int read = baseStream.Read(buffer[..count]);
+                partialPosition += read;
+                return read;
+            }
+            finally { baseStream.Position = original; }
+        }
+        finally { operationGate.Release(); }
+    }
+
+    /// <summary>Asynchronously reads within the slice without holding a synchronous monitor across an await.</summary>
+    public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+    {
+        await operationGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            long original = baseStream.Position;
+            try
+            {
+                int count = (int)Math.Min(buffer.Length, partialLength - partialPosition);
+                if (count <= 0) return 0;
+                baseStream.Position = startOffset + partialPosition;
+                int read = await baseStream.ReadAsync(buffer[..count], cancellationToken).ConfigureAwait(false);
+                partialPosition += read;
+                return read;
+            }
+            finally { baseStream.Position = original; }
+        }
+        finally { operationGate.Release(); }
     }
 
     /// <summary>
@@ -174,22 +252,26 @@ public class PartialStream : Stream
     /// <returns>The new position within this partial stream.</returns>
     public override long Seek(long offset, SeekOrigin origin)
     {
-        long newPosition = origin switch
+        operationGate.Wait();
+        try
         {
-            SeekOrigin.Begin => offset,
-            SeekOrigin.Current => checked(partialPosition + offset),
-            SeekOrigin.End => checked(partialLength + offset),
-            _ => throw new ArgumentOutOfRangeException(nameof(origin), "Invalid seek origin.")
-        };
+            long newPosition = origin switch
+            {
+                SeekOrigin.Begin => offset,
+                SeekOrigin.Current => checked(partialPosition + offset),
+                SeekOrigin.End => checked(partialLength + offset),
+                _ => throw new ArgumentOutOfRangeException(nameof(origin), "Invalid seek origin.")
+            };
 
-        if (newPosition < 0)
-            throw new IOException("An attempt was made to seek before the beginning of the stream.");
-        if (newPosition > partialLength)
-            throw new ArgumentOutOfRangeException(nameof(offset),
-                "Seek would position past the end of the partial stream.");
+            if (newPosition < 0)
+                throw new IOException("An attempt was made to seek before the beginning of the stream.");
+            if (newPosition > partialLength)
+                throw new ArgumentOutOfRangeException(nameof(offset), "Seek would position past the end of the partial stream.");
 
-        partialPosition = newPosition;
-        return partialPosition;
+            partialPosition = newPosition;
+            return partialPosition;
+        }
+        finally { operationGate.Release(); }
     }
 
     /// <summary>
@@ -200,12 +282,17 @@ public class PartialStream : Stream
     /// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="value"/> is negative or if <c>startOffset + value</c> would overflow a <see langword="long"/>.</exception>
     public override void SetLength(long value)
     {
-        if (value < 0)
-            throw new ArgumentOutOfRangeException(nameof(value), "Length must be non-negative.");
-        ValidateRange(startOffset, value, nameof(value));
-        partialLength = value;
-        if (partialPosition > partialLength)
-            partialPosition = partialLength;
+        operationGate.Wait();
+        try
+        {
+            if (value < 0)
+                throw new ArgumentOutOfRangeException(nameof(value), "Length must be non-negative.");
+            ValidateRange(startOffset, value, nameof(value));
+            partialLength = value;
+            if (partialPosition > partialLength)
+                partialPosition = partialLength;
+        }
+        finally { operationGate.Release(); }
     }
 
     /// <summary>
@@ -220,12 +307,10 @@ public class PartialStream : Stream
     public override void Write(byte[] buffer, int offset, int count)
     {
         Stream.ValidateBufferArguments(buffer, offset, count);
-        if (count > partialLength - partialPosition)
-            throw new ArgumentOutOfRangeException(nameof(count),
-                "Attempted to write beyond the bounds of the partial stream.");
-
-        lock (baseStream)
+        operationGate.Wait();
+        try
         {
+            ValidateWritableCount(count, nameof(count));
             long originalBasePosition = baseStream.Position;
             try
             {
@@ -238,6 +323,55 @@ public class PartialStream : Stream
                 baseStream.Position = originalBasePosition;
             }
         }
+        finally { operationGate.Release(); }
+    }
+
+    /// <summary>Writes a span directly while enforcing the same slice bounds as array writes.</summary>
+    public override void Write(ReadOnlySpan<byte> buffer)
+    {
+        operationGate.Wait();
+        try
+        {
+            ValidateWritableCount(buffer.Length, nameof(buffer));
+            long original = baseStream.Position;
+            try
+            {
+                baseStream.Position = startOffset + partialPosition;
+                baseStream.Write(buffer);
+                partialPosition += buffer.Length;
+            }
+            finally { baseStream.Position = original; }
+        }
+        finally { operationGate.Release(); }
+    }
+
+    /// <summary>Asynchronously writes through the underlying stream and honors cancellation.</summary>
+    public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
+    {
+        await operationGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            ValidateWritableCount(buffer.Length, nameof(buffer));
+            long original = baseStream.Position;
+            try
+            {
+                baseStream.Position = startOffset + partialPosition;
+                await baseStream.WriteAsync(buffer, cancellationToken).ConfigureAwait(false);
+                partialPosition += buffer.Length;
+            }
+            finally { baseStream.Position = original; }
+        }
+        finally { operationGate.Release(); }
+    }
+
+    /// <summary>Asynchronously flushes the underlying stream.</summary>
+    public override Task FlushAsync(CancellationToken cancellationToken) => baseStream.FlushAsync(cancellationToken);
+
+    /// <summary>Validates a write count while the operation gate protects the current slice state.</summary>
+    private void ValidateWritableCount(int count, string parameterName)
+    {
+        if (count > partialLength - partialPosition)
+            throw new ArgumentOutOfRangeException(parameterName, "Attempted to write beyond the bounds of the partial stream.");
     }
 
     /// <summary>
@@ -253,5 +387,14 @@ public class PartialStream : Stream
         // If you wish to close the base stream when this partial stream is disposed,
         // call baseStream.Dispose() or baseStream.Close() here.
         base.Dispose(disposing);
+        // The gate belongs to the underlying stream and may still be used by another view.
+    }
+
+    /// <summary>Disposes this view asynchronously without disposing its underlying stream.</summary>
+    public override ValueTask DisposeAsync()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+        return ValueTask.CompletedTask;
     }
 }

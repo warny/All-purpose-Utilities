@@ -81,7 +81,7 @@ MemoryStream buffer = src.ReadToMemoryStream();
 
 ## PartialStream examples
 
-`PartialStream` exposes a bounded slice of a seekable stream without copying data. Disposing it does not close the underlying stream.
+`PartialStream` exposes a bounded slice of a seekable stream without copying data. Views over the same underlying stream share synchronization so their temporary seeks cannot interfere. Disposing a view does not close the underlying stream or invalidate the synchronization used by another view.
 
 ```csharp
 using Utils.IO;
@@ -96,6 +96,18 @@ byte[] chunk = slice.ReadBytes((int)slice.Length);
 fs.Position = 200;
 using var tail = new PartialStream(fs, length: 50);
 ```
+
+Length-prefixed strings and `BigInteger` values have no additional payload limit by default, preserving historical round trips. Set an explicit limit when reading untrusted input:
+
+```csharp
+using Utils.IO.Serialization;
+
+var options = new ReaderOptions { MaximumPayloadLength = 4 * 1024 * 1024 };
+var reader = new Reader(stream, options);
+string value = reader.Read<string>();
+```
+
+The limit is measured in payload bytes. `null` means unlimited, zero accepts only empty payloads, and negative limits are rejected when the reader is constructed.
 
 ## StreamCopier examples
 
@@ -259,3 +271,17 @@ reader.Pop();                              // restore
 
 
 [Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)
+
+## Serialization contract rules
+
+`[Field(order)]` defines the binary format. Orders must be unique within a type; negative orders are supported and sort before non-negative orders. Reflection and generated serializers sort numerically and never use reflection enumeration order. Deserialization requires a concrete closed type with an accessible parameterless constructor and public writable instance members; serialization requires public readable instance members.
+
+Runtime contract discovery, validation, converter resolution, delegate generation, caching, and execution are separate stages. Invalid reflection contracts raise an aggregated `SerializationContractException` (`UIORT001`–`UIORT007`) before expression compilation. Recursive value contracts are rejected because the package does not implicitly implement object identities or graph references.
+
+Custom runtime converters have the signatures `T ReadX(IReader)` and `void WriteX(IWriter, T)`. Readers require an exact return-type registration. Writers accept base/interface registrations, select the most specific applicable type, and reject equal-specificity ambiguity. The source generator recognizes accessible static methods with the same exact signatures, retains the selected Roslyn symbol, and emits a fully qualified call. Convention names (`Read{Type}`/`Write{Type}`) remain supported but ambiguous exact matches are errors.
+
+A `Reader` or `Writer` coordinates concurrent first-time contract construction with explicit shared states and a cross-thread dependency graph, sharing both successful delegates and structured failures without mutual-wait deadlocks. Stream position stacks and object execution remain instance state and should not be manipulated concurrently by callers.
+
+`Reader.TryGetBytesLeft(out long)` reports a value only for a coherent seekable stream. `Writer.TryGetBytesUntilCurrentLength(out long)` deliberately describes distance to the current length—not writable capacity; the old `Writer.BytesLeft` member is obsolete. Failed `Push(offset, origin)` calls do not add stack entries and attempt to restore position without hiding the original seek error.
+
+`PartialStream` implements Span and Memory-based async operations with identical slice limits. Async operations delegate to the underlying stream, honor cancellation, restore the underlying position, and do not hold a synchronous monitor across an `await`. `FlushAsync` flushes without finalizing an encoding quantum, and disposing a partial view never disposes its underlying stream.

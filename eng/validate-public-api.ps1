@@ -53,7 +53,12 @@ foreach ($package in $manifest.packages) {
     $baselineRoot = Join-Path $workRoot "baseline/$($package.packageId)"; Expand-ZipArchive $baselineFile $baselineRoot
     $acceptancePath = Resolve-RepositoryPath $repoRoot ([string]$package.apiBreakAcceptanceFile)
     if (-not (Test-Path $acceptancePath)) { throw "$($package.packageId): API acceptance file '$($package.apiBreakAcceptanceFile)' does not exist." }
-    if (-not $acceptanceCache.ContainsKey($acceptancePath)) { $acceptanceCache[$acceptancePath] = Get-Content $acceptancePath -Raw | ConvertFrom-Json }
+    if (-not $acceptanceCache.ContainsKey($acceptancePath)) {
+        $acceptanceManifest = Get-Content $acceptancePath -Raw | ConvertFrom-Json
+        $stableCandidateVersion = ([string]$manifest.version).Split('-', 2)[0]
+        if ([string]$acceptanceManifest.version -ne $stableCandidateVersion) { throw "$($package.packageId): API acceptance manifest version '$($acceptanceManifest.version)' does not match candidate major release '$stableCandidateVersion'." }
+        $acceptanceCache[$acceptancePath] = $acceptanceManifest
+    }
     $acceptance = @($acceptanceCache[$acceptancePath].packages | Where-Object packageId -eq $package.packageId)
     if ($acceptance.Count -ne 1 -or $acceptance[0].baselineVersion -ne $baselineVersion) { throw "$($package.packageId): acceptance entry and baseline must match exactly once." }
     $actualKeys = @(); $additions = 0

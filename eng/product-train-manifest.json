@@ -29,7 +29,7 @@
       "baselineApiAssemblies": [
         "lib/net8.0/Utils.dll"
       ],
-      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
+      "apiBreakAcceptanceFile": "eng/api-breaking-changes/2.0.0.json"
     },
     {
       "project": "Utils.IO/Utils.IO.csproj",
@@ -52,7 +52,7 @@
       "baselineApiAssemblies": [
         "lib/net8.0/Utils.IO.dll"
       ],
-      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
+      "apiBreakAcceptanceFile": "eng/api-breaking-changes/2.0.0.json"
     },
     {
       "project": "Utils.Xml/Utils.Xml.csproj",
@@ -75,7 +75,7 @@
       "baselineApiAssemblies": [
         "lib/net8.0/Utils.XML.dll"
       ],
-      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
+      "apiBreakAcceptanceFile": "eng/api-breaking-changes/2.0.0.json"
     },
     {
       "project": "Utils.Net/Utils.Net.csproj",
@@ -98,7 +98,7 @@
       "baselineApiAssemblies": [
         "lib/net9.0/Utils.Net.dll"
       ],
-      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
+      "apiBreakAcceptanceFile": "eng/api-breaking-changes/2.0.0.json"
     },
     {
       "project": "Utils.Data/Utils.Data.csproj",
@@ -121,7 +121,7 @@
       "baselineApiAssemblies": [
         "lib/net8.0/Utils.Data.dll"
       ],
-      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
+      "apiBreakAcceptanceFile": "eng/api-breaking-changes/2.0.0.json"
     },
     {
       "project": "Utils.Fonts/Utils.Fonts.csproj",
@@ -144,7 +144,7 @@
       "baselineApiAssemblies": [
         "lib/net8.0/Utils.Fonts.dll"
       ],
-      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
+      "apiBreakAcceptanceFile": "eng/api-breaking-changes/2.0.0.json"
     },
     {
       "project": "Utils.Imaging/Utils.Imaging.csproj",
@@ -167,7 +167,7 @@
       "baselineApiAssemblies": [
         "lib/net8.0/Utils.Imaging.dll"
       ],
-      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
+      "apiBreakAcceptanceFile": "eng/api-breaking-changes/2.0.0.json"
     },
     {
       "project": "Utils.Geography/Utils.Geography.csproj",
@@ -190,7 +190,7 @@
       "baselineApiAssemblies": [
         "lib/net8.0/Utils.Geography.dll"
       ],
-      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
+      "apiBreakAcceptanceFile": "eng/api-breaking-changes/2.0.0.json"
     },
     {
       "project": "Utils.Reflection/Utils.Reflection.csproj",
@@ -213,7 +213,7 @@
       "baselineApiAssemblies": [
         "lib/net8.0/Utils.Reflection.dll"
       ],
-      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
+      "apiBreakAcceptanceFile": "eng/api-breaking-changes/2.0.0.json"
     },
     {
       "project": "Utils.Mathematics/Utils.Mathematics.csproj",
@@ -236,7 +236,7 @@
       "baselineApiAssemblies": [
         "lib/net8.0/Utils.Mathematics.dll"
       ],
-      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
+      "apiBreakAcceptanceFile": "eng/api-breaking-changes/2.0.0.json"
     },
     {
       "project": "Utils.Collections/Utils.Collections.csproj",
@@ -277,7 +277,7 @@
       "baselineApiAssemblies": [
         "lib/net9.0/Utils.OData.dll"
       ],
-      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
+      "apiBreakAcceptanceFile": "eng/api-breaking-changes/2.0.0.json"
     },
     {
       "project": "Utils.NumberToString/Utils.NumberToString.csproj",
@@ -318,7 +318,7 @@
       "baselineApiAssemblies": [
         "lib/net8.0/Utils.VirtualMachine.dll"
       ],
-      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
+      "apiBreakAcceptanceFile": "eng/api-breaking-changes/2.0.0.json"
     },
     {
       "project": "Utils.DependencyInjection/Utils.DependencyInjection.csproj",
@@ -341,7 +341,7 @@
       "baselineApiAssemblies": [
         "lib/net9.0/Utils.DependencyInjection.dll"
       ],
-      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
+      "apiBreakAcceptanceFile": "eng/api-breaking-changes/2.0.0.json"
     },
     {
       "project": "Utils.OData.Generators/Utils.OData.Generators.csproj",
@@ -364,7 +364,7 @@
       "baselineApiAssemblies": [
         "lib/netstandard2.0/Utils.OData.Generators.dll"
       ],
-      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
+      "apiBreakAcceptanceFile": "eng/api-breaking-changes/2.0.0.json"
     },
     {
       "project": "Utils.IO.Serialization.Generators/Utils.IO.Serialization.Generators.csproj",
@@ -387,7 +387,7 @@
       "baselineApiAssemblies": [
         "lib/netstandard2.0/Utils.IO.Serialization.Generators.dll"
       ],
-      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
+      "apiBreakAcceptanceFile": "eng/api-breaking-changes/2.0.0.json"
     },
     {
       "project": "Utils.DependencyInjection.Generators/Utils.DependencyInjection.Generators.csproj",
@@ -410,7 +410,7 @@
       "baselineApiAssemblies": [
         "lib/netstandard2.0/Utils.DependencyInjection.Generators.dll"
       ],
-      "apiBreakAcceptanceFile": "eng/api-baselines/accepted-api-breaks.json"
+      "apiBreakAcceptanceFile": "eng/api-breaking-changes/2.0.0.json"
     },
     {
       "project": "Utils.Parser.Source/Utils.Parser.Source.csproj",
