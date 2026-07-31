@@ -861,6 +861,12 @@
           "message": "Member 'void Utils.Net.Arp.ArpPacket.ProtocolAddressLength.set' exists on {baselineAssembly} but not on {candidateAssembly}",
           "reason": "The setter is deliberately removed in the 2.0 candidate; ArpPacket.ProtocolAddressLength is now a read-only computed property always returning the IPv4 constant (4).",
           "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-net"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.Net.DNS.DNSHeader.Append(Utils.Net.DNS.DNSHeader)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "The published member is deliberately absent or signature-incompatible in the 2.0 candidate and is retained as an enumerated major-version break.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-net"
         }
       ]
     },
