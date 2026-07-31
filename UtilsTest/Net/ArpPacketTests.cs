@@ -230,4 +230,42 @@ public class ArpPacketTests
         CollectionAssert.AreEqual(packet.TargetHardwareAddress.GetAddressBytes(), read.TargetHardwareAddress.GetAddressBytes());
         Assert.AreEqual(packet.TargetProtocolAddress, read.TargetProtocolAddress);
     }
+
+    [TestMethod]
+    public void ToBytes_UnsupportedOperation_ThrowsInvalidOperationException()
+    {
+        ArpPacket packet = ValidRequest();
+        packet.Operation = (ArpOperation)99;
+        Assert.ThrowsException<InvalidOperationException>(() => packet.ToBytes());
+    }
+
+    [TestMethod]
+    public void Read_UnsupportedOperation_ThrowsInvalidDataException()
+    {
+        byte[] bytes = ValidRequest().ToBytes();
+        // Set operation to an unsupported value (99 = 0x0063).
+        bytes[6] = 0x00;
+        bytes[7] = 99;
+        Assert.ThrowsException<InvalidDataException>(() => ArpPacket.Read(bytes));
+    }
+
+    [TestMethod]
+    public void NewPacket_WithDefaultAddresses_CannotBeSerialized()
+    {
+        // A freshly constructed packet has PhysicalAddress.None (0-byte MAC) and IPAddress.Any;
+        // ToBytes must reject these even when Operation is set.
+        var packet = new ArpPacket { Operation = ArpOperation.Request };
+        Assert.ThrowsException<InvalidOperationException>(() => packet.ToBytes());
+    }
+
+    [TestMethod]
+    public void HardwareAndProtocolProperties_AreReadOnlyInvariants()
+    {
+        // Verify that the invariant properties always return the expected constant values.
+        var packet = new ArpPacket { Operation = ArpOperation.Request };
+        Assert.AreEqual((ushort)1, packet.HardwareType);
+        Assert.AreEqual((ushort)0x0800, packet.ProtocolType);
+        Assert.AreEqual((byte)6, packet.HardwareAddressLength);
+        Assert.AreEqual((byte)4, packet.ProtocolAddressLength);
+    }
 }

@@ -128,6 +128,35 @@ public class DNSHeaderMergeTests
     }
 
     [TestMethod]
+    public void MergeRecordsFrom_DifferentErrorCode_PreservesTargetErrorCode()
+    {
+        // Documented policy: error codes of the target are preserved even when merging a source
+        // with a different error code.
+        var a = ResponseWithQuestion();
+        a.ErrorCode = DNSError.NameError;
+        var b = ResponseWithQuestion();
+        b.ErrorCode = DNSError.Ok;
+        b.Responses.Add(ARecord("example.com", "192.0.2.99"));
+
+        a.MergeRecordsFrom(b);
+
+        Assert.AreEqual(DNSError.NameError, a.ErrorCode);
+    }
+
+    [TestMethod]
+    public void MergeRecordsFrom_DifferentAuthoritativeFlag_PreservesTargetFlag()
+    {
+        var a = ResponseWithQuestion();
+        a.AuthoritativeAnswer = true;
+        var b = ResponseWithQuestion();
+        b.AuthoritativeAnswer = false;
+
+        a.MergeRecordsFrom(b);
+
+        Assert.IsTrue(a.AuthoritativeAnswer);
+    }
+
+    [TestMethod]
     public void Append_CompatibilityBehavior_IsDocumentedAndTested()
     {
         // The obsolete Append still merges distinct records and rejects a shared ID.

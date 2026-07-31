@@ -225,4 +225,48 @@ public class DNSLookupTests
 
         await Assert.ThrowsExceptionAsync<OperationCanceledException>(() => lookup.RequestAsync("A", "example.com", DNSClassId.ALL, cts.Token));
     }
+
+    // ---- Argument validation on RequestAsync (item 56) ----
+
+    [TestMethod]
+    public async Task RequestAsync_NullType_Throws()
+    {
+        var lookup = new DNSLookup(new FakeTransport((ep, q) => (BuildResponse(q), null)), ServerA);
+        await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => lookup.RequestAsync(null!, "example.com"));
+    }
+
+    [TestMethod]
+    public async Task RequestAsync_EmptyType_Throws()
+    {
+        var lookup = new DNSLookup(new FakeTransport((ep, q) => (BuildResponse(q), null)), ServerA);
+        await Assert.ThrowsExceptionAsync<ArgumentException>(() => lookup.RequestAsync("", "example.com"));
+    }
+
+    [TestMethod]
+    public async Task RequestAsync_WhitespaceType_Throws()
+    {
+        var lookup = new DNSLookup(new FakeTransport((ep, q) => (BuildResponse(q), null)), ServerA);
+        await Assert.ThrowsExceptionAsync<ArgumentException>(() => lookup.RequestAsync("   ", "example.com"));
+    }
+
+    [TestMethod]
+    public async Task RequestAsync_NullName_Throws()
+    {
+        var lookup = new DNSLookup(new FakeTransport((ep, q) => (BuildResponse(q), null)), ServerA);
+        await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => lookup.RequestAsync("A", null!));
+    }
+
+    [TestMethod]
+    public async Task RequestAsync_EmptyName_Throws()
+    {
+        var lookup = new DNSLookup(new FakeTransport((ep, q) => (BuildResponse(q), null)), ServerA);
+        await Assert.ThrowsExceptionAsync<ArgumentException>(() => lookup.RequestAsync("A", ""));
+    }
+
+    [TestMethod]
+    public async Task RequestAsync_WhitespaceName_Throws()
+    {
+        var lookup = new DNSLookup(new FakeTransport((ep, q) => (BuildResponse(q), null)), ServerA);
+        await Assert.ThrowsExceptionAsync<ArgumentException>(() => lookup.RequestAsync("A", "   "));
+    }
 }

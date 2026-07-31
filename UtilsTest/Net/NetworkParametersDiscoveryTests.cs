@@ -154,4 +154,35 @@ public class NetworkParametersDiscoveryTests
             new[] { IPAddress.Parse("192.0.2.10"), IPAddress.Parse("192.0.2.20") },
             result);
     }
+
+    [TestMethod]
+    public void SelectDnsServers_NoMetric_PreservesOsEnumerationOrder()
+    {
+        // When metric is null (the real-world case after fix), OS enumeration order is preserved
+        // among interfaces with the same gateway status.
+        var result = NetworkParameters.SelectDnsServers(new[]
+        {
+            Up(null, Dns("192.0.2.1"), Gateways("10.0.0.1")),
+            Up(null, Dns("192.0.2.2"), Gateways("10.0.0.1")),
+        });
+
+        // First-seen order preserved.
+        CollectionAssert.AreEqual(
+            new[] { IPAddress.Parse("192.0.2.1"), IPAddress.Parse("192.0.2.2") },
+            result);
+    }
+
+    [TestMethod]
+    public void SelectDnsServers_InterfaceWithGateway_PreferredOverNoGateway()
+    {
+        // Gateway interfaces always come before no-gateway interfaces, regardless of OS order.
+        var result = NetworkParameters.SelectDnsServers(new[]
+        {
+            Up(null, Dns("10.0.0.53"), Gateways()),         // no gateway (listed first)
+            Up(null, Dns("192.0.2.53"), Gateways("192.0.2.1")), // gateway (listed second)
+        });
+
+        Assert.AreEqual(IPAddress.Parse("192.0.2.53"), result[0]);
+        Assert.AreEqual(IPAddress.Parse("10.0.0.53"), result[1]);
+    }
 }
