@@ -33,13 +33,18 @@ Warning exceptions are project-and-code specific in `eng/release-warning-excepti
 | Code/package pull request | Code, package, `eng`, workflow, or release-doc change | Build, global vulnerability audit, tests, one canonical pack, package/hash inspection, representative and automatic consumers on Ubuntu and Windows, API, warnings, local SourceLink | 10–15 minutes | `pull-request-product-train-*` | **No** |
 | Full release | `master`, weekly, `v*`, or manual | Every consumer and matrix, reproducibility, remote SourceLink, vulnerable/deprecated/outdated audits, complete manifest | Recorded by Actions | `full-product-train-*` | Yes, after separate approval |
 
-The deterministic pull-request set contains `UtilsConsumer` (root package and net9),
+The deterministic pull-request set contains `UtilsConsumer` (root package and net8),
 `ParserRuntimeConsumer` (complex composition and internal dependencies),
 `ParserGeneratorConsumer` (source generation), and
-`DependencyInjectionGeneratorConsumer` (analyzer composition). Every package outside
+`DependencyInjectionGeneratorConsumer` (analyzer composition and net9). Every package outside
 those specialized scenarios still receives the automatic minimal consumer: isolated
 restore, canonical-version graph inspection, compile, public type/analyzer load, and
 execution. FullRelease retains every consumer and specialized matrix.
+
+The framework coverage is derived from the selected consumer project files and tested
+offline: the PR subset currently covers both `net8.0` and `net9.0`. Selection and gate
+flags are defined by `eng/get-packaged-validation-plan.ps1`, preventing documentation,
+tests, and packaged acceptance from maintaining separate lists.
 
 The `changes` job uses `eng/get-validation-scope.ps1`, not a third-party path action.
 Ordinary non-release documentation skips package production and both platform runners.

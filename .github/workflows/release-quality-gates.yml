@@ -65,6 +65,7 @@ jobs:
     source-gates:
         needs: canonical
         runs-on: ubuntu-latest
+        timeout-minutes: 45
         steps:
             - uses: actions/checkout@v4
               with: { fetch-depth: 0 }
@@ -84,6 +85,7 @@ jobs:
     reproducibility:
         needs: canonical
         runs-on: ubuntu-latest
+        timeout-minutes: 45
         steps:
             - uses: actions/checkout@v4
               with: { fetch-depth: 0 }
@@ -97,6 +99,7 @@ jobs:
     candidate:
         needs: [canonical, packaged-validation, source-gates, reproducibility]
         runs-on: ubuntu-latest
+        timeout-minutes: 15
         steps:
             - uses: actions/checkout@v4
               with: { fetch-depth: 0 }

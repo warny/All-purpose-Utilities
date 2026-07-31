@@ -15,6 +15,7 @@ permissions:
 jobs:
     changes:
         runs-on: ubuntu-latest
+        timeout-minutes: 5
         outputs:
             train: ${{ steps.scope.outputs.runProductTrain }}
             scripts: ${{ steps.scope.outputs.runReleaseScriptTests }}
@@ -33,6 +34,7 @@ jobs:
         needs: changes
         if: needs.changes.outputs.train == 'true'
         runs-on: ubuntu-latest
+        timeout-minutes: 20
         steps:
             - uses: actions/checkout@v4
             - uses: actions/setup-dotnet@v4
@@ -50,6 +52,7 @@ jobs:
         needs: [changes, build]
         if: needs.changes.outputs.train == 'true'
         runs-on: ubuntu-latest
+        timeout-minutes: 25
         strategy:
             fail-fast: false
             matrix:
@@ -70,6 +73,7 @@ jobs:
         needs: [changes, build]
         if: needs.changes.outputs.train == 'true'
         runs-on: ubuntu-latest
+        timeout-minutes: 30
         steps:
             - uses: actions/checkout@v4
               with: { fetch-depth: 0 }
@@ -98,6 +102,7 @@ jobs:
             fail-fast: false
             matrix: { os: [ubuntu-latest, windows-latest] }
         runs-on: ${{ matrix.os }}
+        timeout-minutes: 35
         name: Package validation (${{ matrix.os }})
         steps:
             - uses: actions/checkout@v4
@@ -118,6 +123,7 @@ jobs:
     source-gates:
         needs: canonical-packages
         runs-on: ubuntu-latest
+        timeout-minutes: 30
         steps:
             - uses: actions/checkout@v4
               with: { fetch-depth: 0 }
@@ -140,6 +146,7 @@ jobs:
     assemble-pr-candidate:
         needs: [canonical-packages, packaged-validation, source-gates]
         runs-on: ubuntu-latest
+        timeout-minutes: 10
         steps:
             - uses: actions/checkout@v4
               with: { fetch-depth: 0 }
@@ -162,6 +169,7 @@ jobs:
         if: always()
         needs: [changes, build, tests, canonical-packages, packaged-validation, source-gates, assemble-pr-candidate]
         runs-on: ubuntu-latest
+        timeout-minutes: 5
         steps:
             - uses: actions/checkout@v4
             - name: Write measured phase summary

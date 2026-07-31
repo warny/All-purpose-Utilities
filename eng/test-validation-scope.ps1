@@ -12,4 +12,15 @@ Assert-Scope 'src/Thing.csproj' $true
 Assert-Scope 'eng/tool.ps1' $true $true
 Assert-Scope '.github/workflows/ci.yml' $true $true
 Assert-Scope 'docs/releasing/guide.md' $true $true
+foreach ($path in @(
+    'Utils.sln',
+    'src/Grammar.g4',
+    'src/Resources/data.json',
+    'src/Strings.resx',
+    '.editorconfig',
+    'LICENSE-apache-2.0.txt',
+    'src/unknown.build-input'
+)) {
+    Assert-Scope $path $true
+}
 Write-Host 'Validation-scope tests passed.'

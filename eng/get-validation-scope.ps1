@@ -31,7 +31,9 @@ $result = [ordered]@{
     codeOrPackages = $codeOrPackages.Count -gt 0
     releaseInfrastructure = $releaseInfrastructure.Count -gt 0
     documentationOnly = $documentationOnly -and $releaseInfrastructure.Count -eq 0
-    runProductTrain = $codeOrPackages.Count -gt 0 -or $releaseInfrastructure.Count -gt 0
+    # Fail closed: only a change set proven to contain ordinary documentation can
+    # bypass compilation and package validation. Unknown files always run the train.
+    runProductTrain = -not $documentationOnly -or $releaseInfrastructure.Count -gt 0
     runReleaseScriptTests = $releaseInfrastructure.Count -gt 0
 }
 if ($WriteGitHubOutput) {

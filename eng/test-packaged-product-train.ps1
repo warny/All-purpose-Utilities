@@ -23,6 +23,7 @@ $originalNuGetPackages = $env:NUGET_PACKAGES
 $env:DOTNET_ROLL_FORWARD = "Major"
 $validationSucceeded = $false
 $manifest = Get-Content (Join-Path $PSScriptRoot "product-train-manifest.json") -Raw | ConvertFrom-Json
+$validationPlan = & (Join-Path $PSScriptRoot "get-packaged-validation-plan.ps1") -ValidationTier $ValidationTier | ConvertFrom-Json
 $nativeLogRoot = Join-Path $artifactsRoot "logs/packaged-acceptance"
 $dotnetPath = @(Get-Command dotnet -CommandType Application)[0].Source
 $nativeCommandIndex = 0
@@ -215,17 +216,11 @@ try {
     }
 
     $consumerRoot = Join-Path $repoRoot "tests/PackagedAcceptance"
-    $projects = @(Get-ChildItem $consumerRoot -Filter *.csproj -Recurse -File)
-    # Pull requests retain representative root, composition, generator, net8 and net9 scenarios.
-    $pullRequestConsumers = @(
-        "UtilsConsumer.csproj",
-        "ParserRuntimeConsumer.csproj",
-        "ParserGeneratorConsumer.csproj",
-        "DependencyInjectionGeneratorConsumer.csproj"
-    )
-    if ($ValidationTier -eq "PullRequest") {
-        $projects = @($projects | Where-Object Name -in $pullRequestConsumers)
-    }
+    # The shared plan makes the representative root/composition/generator and
+    # net8/net9 selection observable and testable without running acceptance.
+    $projects = @($validationPlan.consumers | ForEach-Object {
+        Get-Item (Join-Path $consumerRoot $_.relativePath)
+    })
     foreach ($project in $projects) {
         if ((Get-Content $project.FullName -Raw) -match "ProjectReference") { throw "$($project.FullName) contains a forbidden ProjectReference." }
         Write-Host "Restore: $($project.Name)"
@@ -245,7 +240,7 @@ try {
         if ($LASTEXITCODE -ne 0) { throw "Compile failed for $($project.FullName)." }
         & Invoke-AcceptanceDotNet run --project $project.FullName --configuration $Configuration --no-build
         if ($LASTEXITCODE -ne 0) { throw "Execute failed for $($project.FullName)." }
-        if ($ValidationTier -eq "FullRelease") {
+        if ($validationPlan.perConsumerVulnerabilityAudit) {
             & Invoke-AcceptanceDotNet list $project.FullName package --vulnerable --include-transitive --config $configPath
             if ($LASTEXITCODE -ne 0) { throw "Vulnerability audit failed for $($project.FullName)." }
         }
@@ -259,7 +254,7 @@ try {
         "IOSerializationGeneratorConsumer/IOSerializationGeneratorConsumer.csproj",
         "DependencyInjectionGeneratorConsumer/DependencyInjectionGeneratorConsumer.csproj"
     )
-    if ($ValidationTier -eq "PullRequest") {
+    if (-not $validationPlan.exhaustiveGeneratorMatrices) {
         $generatorConsumers = @("DependencyInjectionGeneratorConsumer/DependencyInjectionGeneratorConsumer.csproj")
     }
     foreach ($relativeProject in $generatorConsumers) {
@@ -318,72 +313,72 @@ try {
         }
     }
 
-    if ($ValidationTier -eq "FullRelease") {
+    if ($validationPlan.exhaustiveGeneratorMatrices) {
         $incrementalPath = Join-Path $temporaryPath "incremental-generator-consumer"
-    New-Item (Join-Path $incrementalPath "Grammars") -ItemType Directory -Force | Out-Null
-    Copy-Item (Join-Path $consumerRoot "ParserGeneratorConsumer/ParserGeneratorConsumer.csproj") $incrementalPath
-    Copy-Item (Join-Path $consumerRoot "ParserGeneratorConsumer/Program.cs") $incrementalPath
-    Copy-Item (Join-Path $consumerRoot "ParserGeneratorConsumer/Grammars/*.g4") (Join-Path $incrementalPath "Grammars")
-    $incrementalProject = Join-Path $incrementalPath "ParserGeneratorConsumer.csproj"
-    & Invoke-AcceptanceDotNet restore $incrementalProject --configfile $configPath --packages $globalPackages
-    if ($LASTEXITCODE -ne 0) { throw "Incremental generator consumer restore failed." }
-
-    # A real project build proves that imported changes replace, rather than accumulate with, generated output.
-    & Invoke-AcceptanceDotNet build $incrementalProject --configuration $Configuration --no-restore
-    if ($LASTEXITCODE -ne 0) { throw "Initial incremental generator build failed." }
-    & Invoke-AcceptanceDotNet run --project $incrementalProject --configuration $Configuration --no-build -- "a" "importedLeaf"
-    if ($LASTEXITCODE -ne 0) { throw "Initial incremental generator execution failed." }
-
-    Set-Content (Join-Path $incrementalPath "Grammars/Shared.g4") "parser grammar Shared;`nchangedLeaf : TOKEN;"
-    & Invoke-AcceptanceDotNet build $incrementalProject --configuration $Configuration --no-restore
-    if ($LASTEXITCODE -ne 0) { throw "Imported grammar modification rebuild failed." }
-    & Invoke-AcceptanceDotNet run --project $incrementalProject --configuration $Configuration --no-build -- "a" "changedLeaf" "importedLeaf"
-    if ($LASTEXITCODE -ne 0) { throw "Imported grammar modification was not reflected in generated output." }
-
-    Set-Content (Join-Path $incrementalPath "Grammars/Middle.g4") "parser grammar Middle;`nmiddleRule : TOKEN;"
-    & Invoke-AcceptanceDotNet build $incrementalProject --configuration $Configuration --no-restore
-    if ($LASTEXITCODE -ne 0) { throw "Import removal rebuild failed." }
-    & Invoke-AcceptanceDotNet run --project $incrementalProject --configuration $Configuration --no-build -- "a" "local" "changedLeaf"
-    if ($LASTEXITCODE -ne 0) { throw "Removed import left an effective generated rule." }
-
-    $rootGrammar = Join-Path $incrementalPath "Grammars/Root.g4"
-    (Get-Content $rootGrammar -Raw).Replace("tokenVocab=Tokens", "tokenVocab=TokensTwo") | Set-Content $rootGrammar
-    & Invoke-AcceptanceDotNet build $incrementalProject --configuration $Configuration --no-restore
-    if ($LASTEXITCODE -ne 0) { throw "tokenVocab change rebuild failed." }
-    & Invoke-AcceptanceDotNet run --project $incrementalProject --configuration $Configuration --no-build -- "z" "local" "changedLeaf" "false"
-    if ($LASTEXITCODE -ne 0) { throw "tokenVocab change was not reflected in generated output." }
-
-    Set-Content (Join-Path $incrementalPath "Grammars/Collision.g4") "parser grammar Collision;`nmiddleRule : TOKEN;`ncollisionOnly : TOKEN;"
-    (Get-Content $rootGrammar -Raw).Replace("import Middle", "import Collision, Middle") | Set-Content $rootGrammar
-    & Invoke-AcceptanceDotNet build $incrementalProject --configuration $Configuration --no-restore
-    if ($LASTEXITCODE -ne 0) { throw "Imported collision addition rebuild failed." }
-    & Invoke-AcceptanceDotNet run --project $incrementalProject --configuration $Configuration --no-build -- "z" "collisionOnly" "changedLeaf" "false"
-    if ($LASTEXITCODE -ne 0) { throw "Imported collision was not composed deterministically." }
-    Remove-Item (Join-Path $incrementalPath "Grammars/Collision.g4") -Force
-    (Get-Content $rootGrammar -Raw).Replace("import Collision, Middle", "import Middle") | Set-Content $rootGrammar
-    & Invoke-AcceptanceDotNet build $incrementalProject --configuration $Configuration --no-restore
-    if ($LASTEXITCODE -ne 0) { throw "Imported collision removal rebuild failed." }
-    & Invoke-AcceptanceDotNet run --project $incrementalProject --configuration $Configuration --no-build -- "z" "local" "collisionOnly" "false"
-    if ($LASTEXITCODE -ne 0) { throw "Removed collision left stale generated output." }
-
-    $diagnosticLog = Join-Path $temporaryPath "generator-diagnostics.log"
-    Set-Content $rootGrammar "parser grammar Root;`nimport Missing;`nstart : 'a';"
-    & Invoke-AcceptanceDotNet build $incrementalProject --configuration $Configuration --no-restore 2>&1 | Tee-Object -FilePath $diagnosticLog
-    if ($LASTEXITCODE -eq 0 -or -not (Select-String -Path $diagnosticLog -Pattern "UP0010" -Quiet)) { throw "Missing packaged import did not fail with UP0010." }
-
-    Set-Content $rootGrammar "parser grammar Root;`nimport Middle;`nstart : 'a';"
-    Set-Content (Join-Path $incrementalPath "Grammars/Middle.g4") "parser grammar Middle;`nimport Root;`nmiddleRule : 'a';"
-    & Invoke-AcceptanceDotNet build $incrementalProject --configuration $Configuration --no-restore 2>&1 | Tee-Object -FilePath $diagnosticLog
-    if ($LASTEXITCODE -eq 0 -or -not (Select-String -Path $diagnosticLog -Pattern "UP0011" -Quiet)) { throw "Packaged import cycle did not fail with UP0011." }
-
-    New-Item (Join-Path $incrementalPath "Grammars/one") -ItemType Directory -Force | Out-Null
-    New-Item (Join-Path $incrementalPath "Grammars/two") -ItemType Directory -Force | Out-Null
-    Set-Content $rootGrammar "parser grammar Root;`nimport Duplicate;`nstart : item;"
-    Set-Content (Join-Path $incrementalPath "Grammars/one/Duplicate.g4") "parser grammar Duplicate;`nitem : 'a';"
-    Set-Content (Join-Path $incrementalPath "Grammars/two/Duplicate.g4") "parser grammar Duplicate;`nitem : 'b';"
-    & Invoke-AcceptanceDotNet build $incrementalProject --configuration $Configuration --no-restore 2>&1 | Tee-Object -FilePath $diagnosticLog
-    if ($LASTEXITCODE -eq 0 -or -not (Select-String -Path $diagnosticLog -Pattern "UP0016" -Quiet)) { throw "Ambiguous packaged import did not fail with UP0016." }
-
+        New-Item (Join-Path $incrementalPath "Grammars") -ItemType Directory -Force | Out-Null
+        Copy-Item (Join-Path $consumerRoot "ParserGeneratorConsumer/ParserGeneratorConsumer.csproj") $incrementalPath
+        Copy-Item (Join-Path $consumerRoot "ParserGeneratorConsumer/Program.cs") $incrementalPath
+        Copy-Item (Join-Path $consumerRoot "ParserGeneratorConsumer/Grammars/*.g4") (Join-Path $incrementalPath "Grammars")
+        $incrementalProject = Join-Path $incrementalPath "ParserGeneratorConsumer.csproj"
+        & Invoke-AcceptanceDotNet restore $incrementalProject --configfile $configPath --packages $globalPackages
+        if ($LASTEXITCODE -ne 0) { throw "Incremental generator consumer restore failed." }
+    
+        # A real project build proves that imported changes replace, rather than accumulate with, generated output.
+        & Invoke-AcceptanceDotNet build $incrementalProject --configuration $Configuration --no-restore
+        if ($LASTEXITCODE -ne 0) { throw "Initial incremental generator build failed." }
+        & Invoke-AcceptanceDotNet run --project $incrementalProject --configuration $Configuration --no-build -- "a" "importedLeaf"
+        if ($LASTEXITCODE -ne 0) { throw "Initial incremental generator execution failed." }
+    
+        Set-Content (Join-Path $incrementalPath "Grammars/Shared.g4") "parser grammar Shared;`nchangedLeaf : TOKEN;"
+        & Invoke-AcceptanceDotNet build $incrementalProject --configuration $Configuration --no-restore
+        if ($LASTEXITCODE -ne 0) { throw "Imported grammar modification rebuild failed." }
+        & Invoke-AcceptanceDotNet run --project $incrementalProject --configuration $Configuration --no-build -- "a" "changedLeaf" "importedLeaf"
+        if ($LASTEXITCODE -ne 0) { throw "Imported grammar modification was not reflected in generated output." }
+    
+        Set-Content (Join-Path $incrementalPath "Grammars/Middle.g4") "parser grammar Middle;`nmiddleRule : TOKEN;"
+        & Invoke-AcceptanceDotNet build $incrementalProject --configuration $Configuration --no-restore
+        if ($LASTEXITCODE -ne 0) { throw "Import removal rebuild failed." }
+        & Invoke-AcceptanceDotNet run --project $incrementalProject --configuration $Configuration --no-build -- "a" "local" "changedLeaf"
+        if ($LASTEXITCODE -ne 0) { throw "Removed import left an effective generated rule." }
+    
+        $rootGrammar = Join-Path $incrementalPath "Grammars/Root.g4"
+        (Get-Content $rootGrammar -Raw).Replace("tokenVocab=Tokens", "tokenVocab=TokensTwo") | Set-Content $rootGrammar
+        & Invoke-AcceptanceDotNet build $incrementalProject --configuration $Configuration --no-restore
+        if ($LASTEXITCODE -ne 0) { throw "tokenVocab change rebuild failed." }
+        & Invoke-AcceptanceDotNet run --project $incrementalProject --configuration $Configuration --no-build -- "z" "local" "changedLeaf" "false"
+        if ($LASTEXITCODE -ne 0) { throw "tokenVocab change was not reflected in generated output." }
+    
+        Set-Content (Join-Path $incrementalPath "Grammars/Collision.g4") "parser grammar Collision;`nmiddleRule : TOKEN;`ncollisionOnly : TOKEN;"
+        (Get-Content $rootGrammar -Raw).Replace("import Middle", "import Collision, Middle") | Set-Content $rootGrammar
+        & Invoke-AcceptanceDotNet build $incrementalProject --configuration $Configuration --no-restore
+        if ($LASTEXITCODE -ne 0) { throw "Imported collision addition rebuild failed." }
+        & Invoke-AcceptanceDotNet run --project $incrementalProject --configuration $Configuration --no-build -- "z" "collisionOnly" "changedLeaf" "false"
+        if ($LASTEXITCODE -ne 0) { throw "Imported collision was not composed deterministically." }
+        Remove-Item (Join-Path $incrementalPath "Grammars/Collision.g4") -Force
+        (Get-Content $rootGrammar -Raw).Replace("import Collision, Middle", "import Middle") | Set-Content $rootGrammar
+        & Invoke-AcceptanceDotNet build $incrementalProject --configuration $Configuration --no-restore
+        if ($LASTEXITCODE -ne 0) { throw "Imported collision removal rebuild failed." }
+        & Invoke-AcceptanceDotNet run --project $incrementalProject --configuration $Configuration --no-build -- "z" "local" "collisionOnly" "false"
+        if ($LASTEXITCODE -ne 0) { throw "Removed collision left stale generated output." }
+    
+        $diagnosticLog = Join-Path $temporaryPath "generator-diagnostics.log"
+        Set-Content $rootGrammar "parser grammar Root;`nimport Missing;`nstart : 'a';"
+        & Invoke-AcceptanceDotNet build $incrementalProject --configuration $Configuration --no-restore 2>&1 | Tee-Object -FilePath $diagnosticLog
+        if ($LASTEXITCODE -eq 0 -or -not (Select-String -Path $diagnosticLog -Pattern "UP0010" -Quiet)) { throw "Missing packaged import did not fail with UP0010." }
+    
+        Set-Content $rootGrammar "parser grammar Root;`nimport Middle;`nstart : 'a';"
+        Set-Content (Join-Path $incrementalPath "Grammars/Middle.g4") "parser grammar Middle;`nimport Root;`nmiddleRule : 'a';"
+        & Invoke-AcceptanceDotNet build $incrementalProject --configuration $Configuration --no-restore 2>&1 | Tee-Object -FilePath $diagnosticLog
+        if ($LASTEXITCODE -eq 0 -or -not (Select-String -Path $diagnosticLog -Pattern "UP0011" -Quiet)) { throw "Packaged import cycle did not fail with UP0011." }
+    
+        New-Item (Join-Path $incrementalPath "Grammars/one") -ItemType Directory -Force | Out-Null
+        New-Item (Join-Path $incrementalPath "Grammars/two") -ItemType Directory -Force | Out-Null
+        Set-Content $rootGrammar "parser grammar Root;`nimport Duplicate;`nstart : item;"
+        Set-Content (Join-Path $incrementalPath "Grammars/one/Duplicate.g4") "parser grammar Duplicate;`nitem : 'a';"
+        Set-Content (Join-Path $incrementalPath "Grammars/two/Duplicate.g4") "parser grammar Duplicate;`nitem : 'b';"
+        & Invoke-AcceptanceDotNet build $incrementalProject --configuration $Configuration --no-restore 2>&1 | Tee-Object -FilePath $diagnosticLog
+        if ($LASTEXITCODE -eq 0 -or -not (Select-String -Path $diagnosticLog -Pattern "UP0016" -Quiet)) { throw "Ambiguous packaged import did not fail with UP0016." }
+    
     }
 
     $specializedPackageIds = @($projects | ForEach-Object {
@@ -393,7 +388,7 @@ try {
     $commit = (& git -C $repoRoot rev-parse HEAD).Trim()
     if ($LASTEXITCODE -ne 0) { throw "Unable to resolve the packaged-acceptance commit." }
     $validatedArtifacts = if ($null -ne $canonicalPackages) { @($canonicalPackages.packages | ForEach-Object { [ordered]@{ file = $_.file; sha256 = $_.sha256 } }) } else { @() }
-    $acceptanceReport = [ordered]@{ productTrain = [string]$manifest.productTrain; commit = $commit; version = [string]$manifest.version; platform = [Runtime.InteropServices.RuntimeInformation]::OSDescription; artifacts = $validatedArtifacts; packages = @($manifest.packages | ForEach-Object { [ordered]@{ packageId = $_.packageId; restored = $true; compiled = $true; executed = $true; audited = ($ValidationTier -eq "FullRelease"); assemblyLoaded = ($_.kind -ne 'analyzer'); publicTypeFound = ($_.kind -ne 'analyzer'); analyzerLoaded = ($_.kind -eq 'analyzer'); functionalScenarioExecuted = ($specializedPackageIds -contains $_.packageId); profile = $_.acceptanceProfile } }); specializedConsumers = @($projects.Name); passed = $true }
+    $acceptanceReport = [ordered]@{ productTrain = [string]$manifest.productTrain; commit = $commit; version = [string]$manifest.version; platform = [Runtime.InteropServices.RuntimeInformation]::OSDescription; artifacts = $validatedArtifacts; packages = @($manifest.packages | ForEach-Object { [ordered]@{ packageId = $_.packageId; restored = $true; compiled = $true; executed = $true; audited = [bool]$validationPlan.perConsumerVulnerabilityAudit; assemblyLoaded = ($_.kind -ne 'analyzer'); publicTypeFound = ($_.kind -ne 'analyzer'); analyzerLoaded = ($_.kind -eq 'analyzer'); functionalScenarioExecuted = ($specializedPackageIds -contains $_.packageId); profile = $_.acceptanceProfile } }); specializedConsumers = @($projects.Name); passed = $true }
     $reportDirectory = Join-Path $artifactsRoot "reports"
     New-Item $reportDirectory -ItemType Directory -Force | Out-Null
     $acceptanceReport | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $reportDirectory "packaged-acceptance.json")
