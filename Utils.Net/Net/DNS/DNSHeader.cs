@@ -238,16 +238,90 @@ public class DNSHeader : DNSElement
     }
 
     /// <summary>
+    /// Merges the answer, authority and additional records from another compatible
+    /// <see cref="DNSHeader"/> into this one. Records are cloned before insertion and duplicates
+    /// (as determined by <see cref="DNSElementsComparer.Default"/>) are skipped.
+    /// </summary>
+    /// <param name="other">The header whose records should be merged into this one.</param>
+    /// <remarks>
+    /// <para>
+    /// This method has a well-defined contract that <see cref="Append(DNSHeader)"/> lacked:
+    /// </para>
+    /// <list type="bullet">
+    /// <item><description>Both headers must carry the same question section (same names, types and classes, in order).</description></item>
+    /// <item><description>Both headers must have the same <see cref="QrBit"/> and <see cref="OpCode"/>.</description></item>
+    /// <item><description>The record-count fields are not touched here; they are derived from the collections when the header is serialised.</description></item>
+    /// <item><description>The header <see cref="ID"/> and flag bits of this instance are preserved; merging never silently overwrites them.</description></item>
+    /// </list>
+    /// <para>
+    /// The question section of <paramref name="other"/> is not appended: it must already match, so
+    /// only the answer/authority/additional record sets are combined.
+    /// </para>
+    /// </remarks>
+    /// <exception cref="ArgumentNullException"><paramref name="other"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// The two headers are not compatible for merging: their question sections differ, or their
+    /// <see cref="QrBit"/>/<see cref="OpCode"/> differ.
+    /// </exception>
+    public void MergeRecordsFrom(DNSHeader other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+
+        if (QrBit != other.QrBit)
+            throw new InvalidOperationException(
+                $"Cannot merge a {other.QrBit} header into a {QrBit} header.");
+
+        if (OpCode != other.OpCode)
+            throw new InvalidOperationException(
+                $"Cannot merge headers with different opcodes ({OpCode} vs {other.OpCode}).");
+
+        if (!QuestionsMatch(this, other))
+            throw new InvalidOperationException(
+                "Cannot merge headers whose question sections differ.");
+
+        MergeInto(Responses, other.Responses);
+        MergeInto(Authorities, other.Authorities);
+        MergeInto(Additionals, other.Additionals);
+    }
+
+    private static bool QuestionsMatch(DNSHeader a, DNSHeader b)
+    {
+        if (a.Requests.Count != b.Requests.Count)
+            return false;
+        for (int i = 0; i < a.Requests.Count; i++)
+        {
+            if (!DNSElementsComparer.Default.Equals(a.Requests[i], b.Requests[i]))
+                return false;
+        }
+        return true;
+    }
+
+    private static void MergeInto(IList<DNSResponseRecord> target, IList<DNSResponseRecord> source)
+    {
+        foreach (var record in source)
+        {
+            if (!target.Contains(record, DNSElementsComparer.Default))
+                target.Add((DNSResponseRecord)record.Clone());
+        }
+    }
+
+    /// <summary>
     /// Merges (appends) the requests, responses, authority, and additional records from another
     /// <see cref="DNSHeader"/> into the current one, provided the IDs do not match.
     /// </summary>
     /// <param name="header">Another <see cref="DNSHeader"/> to merge from.</param>
-    /// <exception cref="Exception">Thrown if the <paramref name="header"/> has the same <see cref="ID"/> as the current header.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="header"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown if <paramref name="header"/> has the same <see cref="ID"/> as the current header.
+    /// </exception>
+    [Obsolete("Use MergeRecordsFrom; Append had ambiguous ID and flag semantics.")]
     public void Append(DNSHeader header)
     {
+        ArgumentNullException.ThrowIfNull(header);
+
         if (this.ID == header.ID)
         {
-            throw new Exception("Mismatch headers");
+            throw new InvalidOperationException("Cannot append a header that shares the same ID.");
         }
 
         foreach (var request in header.Requests)
@@ -258,29 +332,9 @@ public class DNSHeader : DNSElement
             }
         }
 
-        foreach (var response in header.Responses)
-        {
-            if (!Responses.Contains(response))
-            {
-                Responses.Add((DNSResponseRecord)response.Clone());
-            }
-        }
-
-        foreach (var authority in header.Authorities)
-        {
-            if (!Authorities.Contains(authority))
-            {
-                Authorities.Add((DNSResponseRecord)authority.Clone());
-            }
-        }
-
-        foreach (var additional in header.Additionals)
-        {
-            if (!Additionals.Contains(additional))
-            {
-                Additionals.Add((DNSResponseRecord)additional.Clone());
-            }
-        }
+        MergeInto(Responses, header.Responses);
+        MergeInto(Authorities, header.Authorities);
+        MergeInto(Additionals, header.Additionals);
     }
 
     /// <summary>
