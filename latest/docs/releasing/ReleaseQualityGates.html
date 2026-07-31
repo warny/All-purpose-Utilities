@@ -90,21 +90,71 @@ can be restored by one MSBuild invocation.</p>
 <p>Undeclared or ambiguous projects, duplicate IDs, graph cycles, divergent versions, permissive internal dependency versions, unexpected archive contents, missing symbols/readmes/licenses, API breaks without a manifest acceptance, expired warning/dependency exceptions, SourceLink retrieval failures, content-level reproducibility differences, vulnerable product dependencies, and manifest hash differences are blocking.</p>
 <p>Warning exceptions are project-and-code specific in <code>eng/release-warning-exceptions.json</code>; dependency exceptions require scope, reason, tracking issue, and expiry in <code>eng/dependency-exceptions.json</code>. No wildcard exception is allowed.</p>
 <h2 id="ci-validation-tiers">CI validation tiers</h2>
-<p>Pull requests use <code>.github/workflows/dotnetcore.yml</code>. Build, blocking vulnerability
-checks, unit and functional tests run first. A dedicated Ubuntu job then discovers the
-packable projects and produces the canonical package train exactly once. Package
-acceptance, API compatibility, release-warning checks, and local SourceLink mapping,
-PDB, and checksum checks run as individually visible steps on Ubuntu and Windows after
-both jobs download that same immutable package artifact. Neither validation job packs
-the projects. Because Actions jobs have isolated filesystems, each platform restores
-<code>Utils.sln</code> locally before source-based API, warning, and SourceLink gates; no <code>obj/</code>
-directory is transferred from another job. The warning gate restores autonomously by
-default and accepts <code>-NoRestore</code> only when its caller performed that local restore.
-Reproducibility remains a separate two-build check on Ubuntu; it measures
-repeatability in one controlled environment rather than comparing independent builds
-from different operating systems. Job limits are 25 minutes for build/tests, 35 minutes
-for canonical packaging, 55 minutes for packaged acceptance, and 35 minutes for
-reproducibility. Every job retains available reports and logs after failure or cancellation.</p>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Trigger</th>
+<th>Gates</th>
+<th style="text-align: right;">Target</th>
+<th>Artifact</th>
+<th>Publishable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lightweight pull request</td>
+<td>Ordinary documentation outside <code>docs/releasing</code></td>
+<td>Path classification and lightweight script checks</td>
+<td style="text-align: right;">Under 2 minutes</td>
+<td>None</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Ordinary code pull request</td>
+<td>Code or test change</td>
+<td>Parallel build, tests, one canonical pack, four representative consumers on Ubuntu and Windows, API, warnings, local SourceLink</td>
+<td style="text-align: right;">5–10 minutes</td>
+<td>Diagnostic reports only</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Package pull request</td>
+<td>Package or release-infrastructure change</td>
+<td>Same fast gates with canonical package inspection and cross-platform consumers</td>
+<td style="text-align: right;">10–15 minutes maximum</td>
+<td>Diagnostic reports only</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Full release</td>
+<td><code>master</code>, weekly, <code>v*</code>, or manual</td>
+<td>Every consumer and matrix, reproducibility, remote SourceLink, vulnerable/deprecated/outdated audits, complete manifest</td>
+<td style="text-align: right;">Recorded by Actions</td>
+<td><code>full-product-train-*</code></td>
+<td>Yes, after separate approval</td>
+</tr>
+</tbody>
+</table>
+<p>The deterministic pull-request set contains <code>UtilsConsumer</code> (root package and net8),
+<code>ParserRuntimeConsumer</code> (complex composition and internal dependencies),
+<code>ParserGeneratorConsumer</code> (source generation), and
+<code>DependencyInjectionGeneratorConsumer</code> (analyzer composition and net9). PullRequest restores, builds, and executes only these representative projects; canonical inspection still validates every archive and hash. FullRelease retains every consumer, the generated per-package consumers, and every specialized matrix.</p>
+<p>The framework coverage is derived from the selected consumer project files and tested
+offline: the PR subset currently covers both <code>net8.0</code> and <code>net9.0</code>. Selection and gate
+flags are defined by <code>eng/get-packaged-validation-plan.ps1</code>, preventing documentation,
+tests, and packaged acceptance from maintaining separate lists.</p>
+<p>The <code>changes</code> job uses <code>eng/get-validation-scope.ps1</code>, not a third-party path action.
+Ordinary non-release documentation skips package production and both platform runners.
+Changes below <code>eng</code>, <code>.github/workflows</code>, and <code>docs/releasing</code> run release-script tests.
+Manual dispatch has no pull-request base SHA, so it explicitly uses <code>-ForceProductTrain</code>
+and always runs the complete PR validation rather than attempting an empty diff.</p>
+<p>Pull requests do not assemble a publication candidate. Their final JSON is a small,
+explicitly non-publishable status summary. Only FullRelease assembles a candidate and
+sets <code>validationTier: full-release</code> with <code>reproducibilityValidated: true</code> after the
+two-build Ubuntu reproducibility gate. Publication-capable commands continue to reject
+anything else before contacting NuGet.</p>
+<p>Pull requests use <code>.github/workflows/dotnetcore.yml</code>. Build, unit tests, functional tests, and canonical packaging start in parallel immediately after path classification. Canonical packaging unlocks three parallel branches: Ubuntu packaged acceptance, Windows packaged acceptance, and Ubuntu-only source gates. Both platform jobs download and hash-check the same canonical package artifact; neither packs projects. API compatibility, warnings, and local SourceLink run once on Ubuntu. Reproducibility, remote SourceLink, deprecated/outdated audits, per-consumer vulnerability scans, and exhaustive specialized scenarios remain outside the PR critical path. Each package job uses an isolated <code>NUGET_PACKAGES</code> directory, so the ordinary NuGet cache cannot replace the canonical feed. The final <code>required</code> job only evaluates job results and emits best-effort timing plus a non-publishable status report; it downloads no validation artifacts. The previous PR run exceeded 30 minutes before failing during candidate assembly. That assembly has been removed; observed replacement timings are recorded per job in <code>workflow-timings.json</code> and should be added here after the first completed run.</p>
 <p>The full workflow, <code>.github/workflows/release-quality-gates.yml</code>, runs weekly, for
 <code>v*</code> tags, and on manual dispatch. It retains the remote SourceLink download, deprecated
 and outdated dependency reports, complete build/test pass, and all package consumers
