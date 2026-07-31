@@ -35,6 +35,7 @@ if ($packagedScript -notmatch 'get-packaged-validation-plan\.ps1' -or $packagedS
 
 & (Join-Path $PSScriptRoot 'test-validation-scope.ps1')
 & (Join-Path $PSScriptRoot 'test-packaged-validation-plan.ps1')
+& (Join-Path $PSScriptRoot 'test-workflow-timeouts.ps1')
 
 $runnerArtifacts = Join-Path "artifacts" "packaged-runner-test-$([guid]::NewGuid().ToString('N'))"
 try {
