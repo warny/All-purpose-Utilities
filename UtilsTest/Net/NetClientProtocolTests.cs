@@ -360,6 +360,84 @@ public class NetClientProtocolTests
     }
 
     // ──────────────────────────────────────────────────────────────
+    // Round-7 — SendMultilineCommandAsync: immediate body delivery
+    //
+    // These tests verify that body lines arriving in the same burst
+    // as the status line are never misrouted as unsolicited responses.
+    // The server writes status + body + terminator in one WriteAsync
+    // call so the listener sees all content before the client can
+    // register a separate ReadAsync waiter.
+    // ──────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task Pop3Client_ListAsync_ImmediateBodyDelivery_ReturnsAllEntries()
+    {
+        (DuplexStream clientStream, StreamWriter sw, StreamReader sr) = CreateTestPair();
+
+        Task serverTask = Task.Run(async () =>
+        {
+            await sw.WriteLineAsync("+OK POP3 ready");
+            _ = await sr.ReadLineAsync(); // LIST
+            // Send status + body + terminator atomically.
+            await sw.BaseStream.WriteAsync(
+                System.Text.Encoding.ASCII.GetBytes("+OK 2 messages\r\n1 1024\r\n2 4096\r\n.\r\n"));
+        });
+
+        Pop3Client client = new Pop3Client();
+        await client.ConnectAsync(clientStream, leaveOpen: false);
+        IReadOnlyDictionary<int, int> result = await client.ListAsync();
+        await serverTask;
+
+        Assert.AreEqual(2, result.Count, "Both entries must be returned.");
+        Assert.AreEqual(1024, result[1]);
+        Assert.AreEqual(4096, result[2]);
+    }
+
+    [TestMethod]
+    public async Task Pop3Client_RetrieveAsync_ImmediateBodyDelivery_DotUnstuffingApplied()
+    {
+        (DuplexStream clientStream, StreamWriter sw, StreamReader sr) = CreateTestPair();
+
+        Task serverTask = Task.Run(async () =>
+        {
+            await sw.WriteLineAsync("+OK POP3 ready");
+            _ = await sr.ReadLineAsync(); // RETR 1
+            // Dot-stuffed line "..note" must become ".note" in the result.
+            await sw.BaseStream.WriteAsync(
+                System.Text.Encoding.ASCII.GetBytes("+OK 42 octets\r\nFrom: alice\r\n..note\r\n.\r\n"));
+        });
+
+        Pop3Client client = new Pop3Client();
+        await client.ConnectAsync(clientStream, leaveOpen: false);
+        string message = await client.RetrieveAsync(1);
+        await serverTask;
+
+        Assert.AreEqual("From: alice\r\n.note\r\n", message);
+    }
+
+    [TestMethod]
+    public async Task NntpClient_ArticleAsync_ImmediateBodyDelivery_DotUnstuffingApplied()
+    {
+        (DuplexStream clientStream, StreamWriter sw, StreamReader sr) = CreateTestPair();
+
+        Task serverTask = Task.Run(async () =>
+        {
+            await sw.WriteLineAsync("200 NNTP server ready");
+            _ = await sr.ReadLineAsync(); // ARTICLE 1
+            // Dot-stuffed line "..sig" must become ".sig" in the result.
+            await sw.BaseStream.WriteAsync(
+                System.Text.Encoding.ASCII.GetBytes("220 1 <id@host> article\r\nSubject: test\r\n..sig\r\n.\r\n"));
+        });
+
+        NntpClient client = new NntpClient();
+        await client.ConnectAsync(clientStream, leaveOpen: false);
+        string article = await client.ArticleAsync(1);
+        await serverTask;
+
+        Assert.AreEqual("Subject: test\r\n.sig\r\n", article);
+    }
+
+    // ──────────────────────────────────────────────────────────────
     // Item 67 — NNTP UTC: all three DateTimeKind values send "GMT"
     //
     // Policy:

@@ -91,12 +91,13 @@ public class NntpClient : CommandResponseClient
     /// <returns>Article text.</returns>
     public async Task<string> ArticleAsync(int id, CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"ARTICLE {id}", cancellationToken).ConfigureAwait(false);
-        await EnsureCompletionAsync(responses).ConfigureAwait(false);
-        IReadOnlyList<string> lines = await ReadMultilineAsync(cancellationToken).ConfigureAwait(false);
+        var (status, body) = await SendMultilineCommandAsync(
+            $"ARTICLE {id}", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, cancellationToken).ConfigureAwait(false);
+        await EnsureCompletionAsync(status).ConfigureAwait(false);
         StringBuilder sb = new();
-        foreach (string line in lines)
+        foreach (ServerResponse response in body)
         {
+            string line = BodyLineToString(response);
             if (line.StartsWith("..", StringComparison.Ordinal))
             {
                 sb.Append(line.AsSpan(1));
@@ -117,12 +118,13 @@ public class NntpClient : CommandResponseClient
     /// <returns>Collection of tuples containing group name, last and first article numbers.</returns>
     public async Task<IReadOnlyList<(string group, int last, int first)>> ListAsync(CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<ServerResponse> responses = await SendCommandAsync("LIST", cancellationToken).ConfigureAwait(false);
-        await EnsureCompletionAsync(responses).ConfigureAwait(false);
-        IReadOnlyList<string> lines = await ReadMultilineAsync(cancellationToken).ConfigureAwait(false);
+        var (status, body) = await SendMultilineCommandAsync(
+            "LIST", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, cancellationToken).ConfigureAwait(false);
+        await EnsureCompletionAsync(status).ConfigureAwait(false);
         List<(string group, int last, int first)> result = new();
-        foreach (string line in lines)
+        foreach (ServerResponse response in body)
         {
+            string line = BodyLineToString(response);
             string[] parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length >= 3)
             {
@@ -143,9 +145,13 @@ public class NntpClient : CommandResponseClient
         DateTime utc = sinceUtc.Kind == DateTimeKind.Local ? sinceUtc.ToUniversalTime() : DateTime.SpecifyKind(sinceUtc, DateTimeKind.Utc);
         string date = utc.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
         string time = utc.ToString("HHmmss", CultureInfo.InvariantCulture);
-        IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"NEWGROUPS {date} {time} GMT", cancellationToken).ConfigureAwait(false);
-        await EnsureCompletionAsync(responses).ConfigureAwait(false);
-        return await ReadMultilineAsync(cancellationToken).ConfigureAwait(false);
+        var (status, body) = await SendMultilineCommandAsync(
+            $"NEWGROUPS {date} {time} GMT", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, cancellationToken).ConfigureAwait(false);
+        await EnsureCompletionAsync(status).ConfigureAwait(false);
+        List<string> result = new(body.Count);
+        foreach (ServerResponse response in body)
+            result.Add(BodyLineToString(response));
+        return result;
     }
 
     /// <summary>
@@ -161,13 +167,13 @@ public class NntpClient : CommandResponseClient
         DateTime utc = sinceUtc.Kind == DateTimeKind.Local ? sinceUtc.ToUniversalTime() : DateTime.SpecifyKind(sinceUtc, DateTimeKind.Utc);
         string date = utc.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
         string time = utc.ToString("HHmmss", CultureInfo.InvariantCulture);
-        IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"NEWNEWS {group} {date} {time} GMT", cancellationToken).ConfigureAwait(false);
-        await EnsureCompletionAsync(responses).ConfigureAwait(false);
-        IReadOnlyList<string> lines = await ReadMultilineAsync(cancellationToken).ConfigureAwait(false);
+        var (status, body) = await SendMultilineCommandAsync(
+            $"NEWNEWS {group} {date} {time} GMT", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, cancellationToken).ConfigureAwait(false);
+        await EnsureCompletionAsync(status).ConfigureAwait(false);
         List<int> ids = new();
-        foreach (string line in lines)
+        foreach (ServerResponse response in body)
         {
-            if (int.TryParse(line, out int id))
+            if (int.TryParse(BodyLineToString(response), out int id))
             {
                 ids.Add(id);
             }
@@ -183,12 +189,13 @@ public class NntpClient : CommandResponseClient
     /// <returns>Header text.</returns>
     public async Task<string> HeaderAsync(int id, CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"HEADER {id}", cancellationToken).ConfigureAwait(false);
-        await EnsureCompletionAsync(responses).ConfigureAwait(false);
-        IReadOnlyList<string> lines = await ReadMultilineAsync(cancellationToken).ConfigureAwait(false);
+        var (status, body) = await SendMultilineCommandAsync(
+            $"HEADER {id}", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, cancellationToken).ConfigureAwait(false);
+        await EnsureCompletionAsync(status).ConfigureAwait(false);
         StringBuilder sb = new();
-        foreach (string line in lines)
+        foreach (ServerResponse response in body)
         {
+            string line = BodyLineToString(response);
             if (line.StartsWith("..", StringComparison.Ordinal))
             {
                 sb.Append(line.AsSpan(1));
@@ -210,12 +217,13 @@ public class NntpClient : CommandResponseClient
     /// <returns>Body text.</returns>
     public async Task<string> BodyAsync(int id, CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"BODY {id}", cancellationToken).ConfigureAwait(false);
-        await EnsureCompletionAsync(responses).ConfigureAwait(false);
-        IReadOnlyList<string> lines = await ReadMultilineAsync(cancellationToken).ConfigureAwait(false);
+        var (status, body) = await SendMultilineCommandAsync(
+            $"BODY {id}", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, cancellationToken).ConfigureAwait(false);
+        await EnsureCompletionAsync(status).ConfigureAwait(false);
         StringBuilder sb = new();
-        foreach (string line in lines)
+        foreach (ServerResponse response in body)
         {
+            string line = BodyLineToString(response);
             if (line.StartsWith("..", StringComparison.Ordinal))
             {
                 sb.Append(line.AsSpan(1));
@@ -268,8 +276,7 @@ public class NntpClient : CommandResponseClient
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task PostAsync(string article, CancellationToken cancellationToken = default)
     {
-        await SendLinesAsync(["POST"], cancellationToken).ConfigureAwait(false);
-        IReadOnlyList<ServerResponse> intermediate = await ReadAsync(cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<ServerResponse> intermediate = await SendCommandAsync("POST", cancellationToken).ConfigureAwait(false);
         if (intermediate.Count == 0 || intermediate[^1].Severity != ResponseSeverity.Intermediate)
         {
             throw new IOException(intermediate.Count > 0 ? intermediate[^1].Message : "Server closed connection");
@@ -289,8 +296,7 @@ public class NntpClient : CommandResponseClient
             }
         }
         lines.Add(".");
-        await SendLinesAsync(lines, cancellationToken).ConfigureAwait(false);
-        IReadOnlyList<ServerResponse> responses = await ReadAsync(cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<ServerResponse> responses = await SendBodyAndReadAsync(lines, cancellationToken).ConfigureAwait(false);
         await EnsureCompletionAsync(responses).ConfigureAwait(false);
     }
 
@@ -316,32 +322,5 @@ public class NntpClient : CommandResponseClient
         return Task.CompletedTask;
     }
 
-    /// <summary>
-    /// Reads lines from the server until a single dot line is encountered.
-    /// </summary>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Collection of lines excluding the terminating dot.</returns>
-    private async Task<IReadOnlyList<string>> ReadMultilineAsync(CancellationToken cancellationToken)
-    {
-        List<string> lines = new();
-        int totalChars = 0;
-        while (true)
-        {
-            IReadOnlyList<ServerResponse> batch = await ReadAsync(cancellationToken).ConfigureAwait(false);
-            foreach (ServerResponse response in batch)
-            {
-                string line = response.Message is null ? response.Code : $"{response.Code} {response.Message}";
-                if (line == ".")
-                {
-                    return lines;
-                }
-                lines.Add(line);
-                if (MaxMultilineLines > 0 && lines.Count > MaxMultilineLines)
-                    throw new InvalidDataException($"NNTP multi-line response exceeded the line limit of {MaxMultilineLines}.");
-                totalChars += line.Length;
-                if (MaxMultilineChars > 0 && totalChars > MaxMultilineChars)
-                    throw new InvalidDataException($"NNTP multi-line response exceeded the character limit of {MaxMultilineChars}.");
-            }
-        }
-    }
+
 }

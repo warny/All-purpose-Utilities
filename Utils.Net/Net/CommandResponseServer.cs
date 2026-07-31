@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -27,19 +27,54 @@ public class CommandResponseServer : IDisposable
     private bool _leaveOpen;
     private readonly Dictionary<string, CommandRegistration> _handlers = new(StringComparer.OrdinalIgnoreCase);
 
+    // Item 31: lifecycle state machine — 0 NotStarted, 1 Starting, 2 Running, 3 Stopped.
+    private const int StateNotStarted = 0;
+    private const int StateStarting = 1;
+    private const int StateRunning = 2;
+    private const int StateStopped = 3;
+    private int _state = StateNotStarted;
+
+    private int _maxLineLength = 8192;
+
     /// <summary>
-    /// Gets or sets the maximum number of bytes allowed in a single incoming command line.
+    /// Gets or sets the maximum number of characters allowed in a single incoming command line.
     /// Lines longer than this limit cause the session to close with a 500 error.
-    /// Default is 8192 bytes (8 KiB).
+    /// Default is 8192.
     /// </summary>
-    public int MaxLineLength { get; set; } = 8192;
+    /// <remarks>
+    /// The limit is measured in UTF-16 characters (decoded) rather than raw bytes, because the
+    /// underlying <see cref="StreamReader"/> decodes bytes before this check is applied.
+    /// </remarks>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the value is negative.</exception>
+    public int MaxLineLength
+    {
+        get => _maxLineLength;
+        set
+        {
+            if (value < 0)
+                throw new ArgumentOutOfRangeException(nameof(value), value, "MaxLineLength must be non-negative.");
+            _maxLineLength = value;
+        }
+    }
+
+    private int _maxCommandQueueDepth = 1000;
 
     /// <summary>
     /// Gets or sets the maximum number of commands that may wait in the command queue before
     /// the server closes the session to prevent unbounded memory consumption.
     /// Default is 1000. Set to 0 to disable.
     /// </summary>
-    public int MaxCommandQueueDepth { get; set; } = 1000;
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the value is negative.</exception>
+    public int MaxCommandQueueDepth
+    {
+        get => _maxCommandQueueDepth;
+        set
+        {
+            if (value < 0)
+                throw new ArgumentOutOfRangeException(nameof(value), value, "MaxCommandQueueDepth must be non-negative.");
+            _maxCommandQueueDepth = value;
+        }
+    }
 
     private readonly HashSet<string> _contexts = new();
     private readonly Func<ServerResponse, string> _formatter;
@@ -51,11 +86,57 @@ public class CommandResponseServer : IDisposable
     /// </summary>
     public ILogger? Logger { get; set; }
 
+    private int _maxConsecutiveErrors;
+
     /// <summary>
     /// Gets or sets the number of consecutive error responses allowed before the server shuts down.
     /// A value of <c>0</c> disables automatic shutdown.
     /// </summary>
-    public int MaxConsecutiveErrors { get; set; }
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the value is negative.</exception>
+    public int MaxConsecutiveErrors
+    {
+        get => _maxConsecutiveErrors;
+        set
+        {
+            if (value < 0)
+                throw new ArgumentOutOfRangeException(nameof(value), value, "MaxConsecutiveErrors must be non-negative.");
+            _maxConsecutiveErrors = value;
+        }
+    }
+
+    /// <summary>
+    /// Validates that <paramref name="value"/> is a non-empty token free of whitespace and
+    /// control characters, so it can safely be used as a command verb or context name.
+    /// </summary>
+    /// <param name="value">Token to validate.</param>
+    /// <param name="paramName">Parameter name used in the thrown exception.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="value"/> is empty or contains whitespace or control characters.
+    /// </exception>
+    private static void ValidateToken(string value, string paramName)
+    {
+        if (value is null) throw new ArgumentNullException(paramName);
+        if (value.Length == 0) throw new ArgumentException($"{paramName} must not be empty.", paramName);
+        foreach (char c in value)
+        {
+            if (c <= ' ' || c == 0x7F)
+                throw new ArgumentException($"{paramName} must not contain whitespace or control characters.", paramName);
+        }
+    }
+
+    /// <summary>
+    /// Item 33: throws if the server has already been started, freezing the static configuration
+    /// (registered commands and initial contexts) for the lifetime of the session.
+    /// </summary>
+    /// <param name="memberName">Name of the member being guarded, used in the exception message.</param>
+    /// <exception cref="InvalidOperationException">Thrown when called after <see cref="StartAsync"/>.</exception>
+    private void RequireNotStarted(string memberName)
+    {
+        int state = Volatile.Read(ref _state);
+        if (state != StateNotStarted)
+            throw new InvalidOperationException($"{memberName} must not be called after StartAsync has been called.");
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CommandResponseServer"/> class.
@@ -83,14 +164,20 @@ public class CommandResponseServer : IDisposable
     public event Func<string, CancellationToken, Task<IEnumerable<ServerResponse>>>? CommandReceived;
 
     /// <summary>
-    /// Registers a command handler.
+    /// Registers a command handler. Must be called before <see cref="StartAsync"/>.
     /// </summary>
     /// <param name="command">Command name.</param>
     /// <param name="handler">Handler invoked when the command is received.</param>
     /// <param name="requiredContexts">Contexts required for the command to execute.</param>
+    /// <exception cref="InvalidOperationException">Thrown when called after <see cref="StartAsync"/>.</exception>
     public void RegisterCommand(string command, Func<CommandContext, string[], CancellationToken, Task<IEnumerable<ServerResponse>>> handler, params string[] requiredContexts)
     {
-        _handlers[command] = new CommandRegistration(handler, requiredContexts);
+        ValidateToken(command, nameof(command));
+        if (handler is null) throw new ArgumentNullException(nameof(handler));
+        RequireNotStarted(nameof(RegisterCommand));
+        string[] contextsCopy = requiredContexts is null ? [] : (string[])requiredContexts.Clone();
+        foreach (string ctx in contextsCopy) ValidateToken(ctx, nameof(requiredContexts));
+        _handlers[command] = new CommandRegistration(handler, contextsCopy);
         Logger?.LogDebug("Command registered: {Command}", command);
     }
 
@@ -102,27 +189,60 @@ public class CommandResponseServer : IDisposable
     /// <param name="requiredContexts">Contexts required for the command to execute.</param>
     public void RegisterCommand(string command, Func<CommandContext, string[], Task<IEnumerable<ServerResponse>>> handler, params string[] requiredContexts)
     {
+        if (handler is null) throw new ArgumentNullException(nameof(handler));
         RegisterCommand(command, (ctx, args, _) => handler(ctx, args), requiredContexts);
     }
 
     /// <summary>
-    /// Adds a context to the server.
+    /// Adds a context to the server. Must be called before <see cref="StartAsync"/>.
+    /// To modify contexts during a live session from inside a command handler, use
+    /// <see cref="AddRuntimeContext"/>.
     /// </summary>
     /// <param name="context">Context to add.</param>
+    /// <exception cref="InvalidOperationException">Thrown when called after <see cref="StartAsync"/>.</exception>
     public void AddContext(string context)
     {
+        ValidateToken(context, nameof(context));
+        RequireNotStarted(nameof(AddContext));
         _contexts.Add(context);
         Logger?.LogDebug("Context added: {Context}", context);
     }
 
     /// <summary>
-    /// Removes a context from the server.
+    /// Removes a context from the server. Must be called before <see cref="StartAsync"/>.
+    /// To modify contexts during a live session from inside a command handler, use
+    /// <see cref="RemoveRuntimeContext"/>.
     /// </summary>
     /// <param name="context">Context to remove.</param>
+    /// <exception cref="InvalidOperationException">Thrown when called after <see cref="StartAsync"/>.</exception>
     public void RemoveContext(string context)
     {
+        ValidateToken(context, nameof(context));
+        RequireNotStarted(nameof(RemoveContext));
         _contexts.Remove(context);
         Logger?.LogDebug("Context removed: {Context}", context);
+    }
+
+    /// <summary>
+    /// Adds a context during a live session. Safe to call from inside a
+    /// <see cref="CommandReceived"/> handler while the server is running.
+    /// </summary>
+    internal void AddRuntimeContext(string context)
+    {
+        ValidateToken(context, nameof(context));
+        _contexts.Add(context);
+        Logger?.LogDebug("Context added at runtime: {Context}", context);
+    }
+
+    /// <summary>
+    /// Removes a context during a live session. Safe to call from inside a
+    /// <see cref="CommandReceived"/> handler while the server is running.
+    /// </summary>
+    internal void RemoveRuntimeContext(string context)
+    {
+        ValidateToken(context, nameof(context));
+        _contexts.Remove(context);
+        Logger?.LogDebug("Context removed at runtime: {Context}", context);
     }
 
     /// <summary>
@@ -130,7 +250,11 @@ public class CommandResponseServer : IDisposable
     /// </summary>
     /// <param name="context">Context to check.</param>
     /// <returns><see langword="true"/> if the context is active; otherwise, <see langword="false"/>.</returns>
-    public bool HasContext(string context) => _contexts.Contains(context);
+    public bool HasContext(string context)
+    {
+        ValidateToken(context, nameof(context));
+        return _contexts.Contains(context);
+    }
 
     /// <summary>
     /// Starts processing commands using the specified stream.
@@ -144,32 +268,48 @@ public class CommandResponseServer : IDisposable
     /// </exception>
     public Task StartAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
     {
-        if (_listenThread is not null)
+        // Item 31: atomic single-use guard — only one caller can transition from NotStarted to Starting.
+        int prev = Interlocked.CompareExchange(ref _state, StateStarting, StateNotStarted);
+        if (prev != StateNotStarted)
         {
             throw new InvalidOperationException(
                 "This server instance is already running or has already been used. " +
                 "Create a new instance for each incoming connection.");
         }
-        _stream = stream;
-        _leaveOpen = leaveOpen;
-        _contexts.Clear();
-        while (_commandQueue.TryDequeue(out _)) { }
-        _errorCount = 0;
-        _reader = new StreamReader(stream, Encoding.ASCII, false, 1024, true);
-        _writer = new StreamWriter(stream, Encoding.ASCII, 1024, true)
+        try
         {
-            NewLine = "\r\n",
-            AutoFlush = true
-        };
-        _listenTokenSource = new CancellationTokenSource();
-        _listenThread = new Thread(() => ListenLoop(_listenTokenSource.Token))
+            if (stream is null) throw new ArgumentNullException(nameof(stream));
+            _stream = stream;
+            _leaveOpen = leaveOpen;
+            // Item 33: initial contexts configured before startup are preserved; they must not be cleared here.
+            while (_commandQueue.TryDequeue(out _)) { }
+            _errorCount = 0;
+            _reader = new StreamReader(stream, Encoding.ASCII, false, 1024, true);
+            _writer = new StreamWriter(stream, Encoding.ASCII, 1024, true)
+            {
+                NewLine = "\r\n",
+                AutoFlush = true
+            };
+            _listenTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            _listenThread = new Thread(() => ListenLoop(_listenTokenSource.Token))
+            {
+                IsBackground = true
+            };
+            _listenThread.Start();
+            Logger?.LogInformation("Server started");
+            _processTask = ProcessQueueAsync(_listenTokenSource.Token);
+            Interlocked.Exchange(ref _state, StateRunning);
+            return Task.CompletedTask;
+        }
+        catch
         {
-            IsBackground = true
-        };
-        _listenThread.Start();
-        Logger?.LogInformation("Server started");
-        _processTask = ProcessQueueAsync(_listenTokenSource.Token);
-        return Task.CompletedTask;
+            // Initialization failed: mark as stopped so the instance cannot be reused.
+            Interlocked.Exchange(ref _state, StateStopped);
+            _reader?.Dispose();
+            _writer?.Dispose();
+            _listenTokenSource?.Dispose();
+            throw;
+        }
     }
 
     /// <summary>
@@ -227,18 +367,38 @@ public class CommandResponseServer : IDisposable
     /// Sends an unsolicited response to the client.
     /// </summary>
     /// <param name="response">Response to send.</param>
-    public async Task SendResponseAsync(ServerResponse response)
+    public Task SendResponseAsync(ServerResponse response)
+    {
+        return SendResponseAsync(response, CancellationToken.None);
+    }
+
+    /// <summary>
+    /// Sends an unsolicited response to the client.
+    /// </summary>
+    /// <param name="response">Response to send.</param>
+    /// <param name="cancellationToken">
+    /// Token linked to the session lifetime; cancelling it aborts the pending write.
+    /// </param>
+    /// <exception cref="OperationCanceledException">
+    /// Thrown when the token or the session is cancelled before the write completes.
+    /// </exception>
+    public async Task SendResponseAsync(ServerResponse response, CancellationToken cancellationToken)
     {
         if (_writer is null)
-        {
             throw new InvalidOperationException("Server is not started.");
-        }
+        CancellationToken sessionToken = _listenTokenSource?.Token ?? CancellationToken.None;
+        using CancellationTokenSource? linked = cancellationToken.CanBeCanceled
+            ? CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, sessionToken)
+            : null;
+        CancellationToken effectiveToken = linked is not null ? linked.Token : sessionToken;
         string line = _formatter(response);
         Logger?.LogDebug("Sending: {Line}", line);
-        await _writeLock.WaitAsync().ConfigureAwait(false);
+        await _writeLock.WaitAsync(effectiveToken).ConfigureAwait(false);
         try
         {
-            await _writer.WriteLineAsync(line).ConfigureAwait(false);
+            if (_listenTokenSource?.IsCancellationRequested == true)
+                throw new OperationCanceledException("Session has been cancelled.");
+            await _writer.WriteLineAsync(line.AsMemory(), effectiveToken).ConfigureAwait(false);
         }
         finally
         {
@@ -247,21 +407,29 @@ public class CommandResponseServer : IDisposable
     }
 
     /// <summary>
-    /// Listens for commands from the client on a dedicated thread and enqueues them for processing.
-    /// </summary>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <summary>
     /// Reads one line from <paramref name="reader"/>, enforcing <see cref="MaxLineLength"/> during
-    /// the read rather than after the full line has been buffered. Returns <see langword="null"/> on EOF.
+    /// the read rather than after the full line has been buffered. Uses async reads internally so
+    /// that <paramref name="cancellationToken"/> can interrupt a blocking read (e.g. on a Pipe).
+    /// Returns <see langword="null"/> on EOF or cancellation.
     /// </summary>
     /// <exception cref="InvalidDataException">Thrown when the line exceeds <see cref="MaxLineLength"/>.</exception>
-    private string? ReadLimitedLine(StreamReader reader)
+    private string? ReadLimitedLine(StreamReader reader, CancellationToken cancellationToken)
     {
         var sb = new StringBuilder(256);
-        int ch;
-        while ((ch = reader.Read()) != -1)
+        char[] buf = new char[1];
+        while (true)
         {
-            char c = (char)ch;
+            int read;
+            try
+            {
+                read = reader.ReadAsync(buf.AsMemory(0, 1), cancellationToken).GetAwaiter().GetResult();
+            }
+            catch (OperationCanceledException)
+            {
+                return null;
+            }
+            if (read == 0) return sb.Length == 0 ? null : sb.ToString();
+            char c = buf[0];
             if (c == '\n')
             {
                 if (sb.Length > 0 && sb[sb.Length - 1] == '\r')
@@ -269,10 +437,11 @@ public class CommandResponseServer : IDisposable
                 return sb.ToString();
             }
             sb.Append(c);
-            if (MaxLineLength > 0 && sb.Length > MaxLineLength)
+            // A trailing \r will be stripped when \n arrives, so exclude it from the count.
+            int effectiveLength = (sb.Length > 0 && sb[sb.Length - 1] == '\r') ? sb.Length - 1 : sb.Length;
+            if (MaxLineLength > 0 && effectiveLength > MaxLineLength)
                 throw new InvalidDataException($"Incoming line exceeded MaxLineLength ({MaxLineLength}).");
         }
-        return sb.Length == 0 ? null : sb.ToString();
     }
 
     private void ListenLoop(CancellationToken cancellationToken)
@@ -288,7 +457,7 @@ public class CommandResponseServer : IDisposable
                 string? command;
                 try
                 {
-                    command = ReadLimitedLine(_reader);
+                    command = ReadLimitedLine(_reader, cancellationToken);
                 }
                 catch (InvalidDataException)
                 {
@@ -352,10 +521,12 @@ public class CommandResponseServer : IDisposable
                 {
                     continue;
                 }
+                try
+                {
                 string[] parts = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 string verb = parts.Length > 0 ? parts[0] : string.Empty;
                 string[] args = parts.Length > 1 ? parts[1..] : [];
-                IEnumerable<ServerResponse>? responses = null;
+                List<ServerResponse> responseList;
                 if (_handlers.TryGetValue(verb, out CommandRegistration? registration))
                 {
                     if (registration.RequiredContexts.All(_contexts.Contains))
@@ -363,33 +534,57 @@ public class CommandResponseServer : IDisposable
                         CommandContext ctx = new(_contexts);
                         try
                         {
-                            responses = await registration.Handler(ctx, args, cancellationToken).ConfigureAwait(false);
+                            // Item 54: materialize the (possibly lazy) sequence inside the protected
+                            // block so a fault during enumeration is converted to a 500 reply rather
+                            // than escaping the intended error boundary.
+                            IEnumerable<ServerResponse> responses = await registration.Handler(ctx, args, cancellationToken).ConfigureAwait(false);
+                            responseList = responses?.ToList() ?? throw new InvalidOperationException("Handler returned null sequence");
                         }
+                        catch (OperationCanceledException) { throw; }
                         catch (Exception ex)
                         {
                             Logger?.LogError(ex, "Handler for {Verb} threw an unhandled exception", verb);
-                            responses = [new ServerResponse("500", ResponseSeverity.PermanentNegative, "Internal server error")];
+                            responseList = [new ServerResponse("500", ResponseSeverity.PermanentNegative, "Internal server error")];
                         }
                     }
                     else
                     {
-                        responses = [new ServerResponse("503", ResponseSeverity.PermanentNegative, "Bad sequence of commands")];
+                        responseList = [new ServerResponse("503", ResponseSeverity.PermanentNegative, "Bad sequence of commands")];
                     }
                 }
                 else if (CommandReceived is not null)
                 {
-                    try
+                    // Item 32: await every CommandReceived subscriber in registration order.
+                    // The last non-empty response sequence wins; the first faulting subscriber
+                    // aborts the chain and yields a 500 reply.
+                    // An empty (or null) result from ALL subscribers means "no response needed"
+                    // (e.g. a body-line accumulator that has not yet hit its terminator).
+                    // Only the hard-coded else branch below (no handler at all) sends 502.
+                    Delegate[] invocations = CommandReceived.GetInvocationList();
+                    responseList = [];
+                    foreach (Delegate d in invocations)
                     {
-                        responses = await CommandReceived.Invoke(command, cancellationToken).ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger?.LogError(ex, "CommandReceived handler threw an unhandled exception for command {Verb}", verb);
-                        responses = [new ServerResponse("500", ResponseSeverity.PermanentNegative, "Internal server error")];
+                        var subscriber = (Func<string, CancellationToken, Task<IEnumerable<ServerResponse>>>)d;
+                        try
+                        {
+                            IEnumerable<ServerResponse> sr = await subscriber(command, cancellationToken).ConfigureAwait(false);
+                            List<ServerResponse> candidate = sr?.ToList() ?? [];
+                            if (candidate.Count > 0)
+                                responseList = candidate;
+                        }
+                        catch (OperationCanceledException) { throw; }
+                        catch (Exception ex)
+                        {
+                            Logger?.LogError(ex, "CommandReceived subscriber threw an unhandled exception for command {Verb}", verb);
+                            responseList = [new ServerResponse("500", ResponseSeverity.PermanentNegative, "Internal server error")];
+                            break; // stop on first faulting subscriber
+                        }
                     }
                 }
-                responses ??= [new ServerResponse("502", ResponseSeverity.PermanentNegative, "Command not implemented")];
-                List<ServerResponse> responseList = responses.ToList();
+                else
+                {
+                    responseList = [new ServerResponse("502", ResponseSeverity.PermanentNegative, "Command not implemented")];
+                }
                 await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
                 try
                 {
@@ -397,7 +592,7 @@ public class CommandResponseServer : IDisposable
                     {
                         string line = _formatter(response);
                         Logger?.LogDebug("Sending: {Line}", line);
-                        await _writer.WriteLineAsync(line).ConfigureAwait(false);
+                        await _writer.WriteLineAsync(line.AsMemory(), cancellationToken).ConfigureAwait(false);
                     }
                 }
                 finally
@@ -428,6 +623,20 @@ public class CommandResponseServer : IDisposable
                         _errorCount = 0;
                     }
                 }
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    // Item 34: any non-cancellation, non-handler fault (formatter, stream write, etc.)
+                    // is terminal: cancel the listener and re-throw so Completion faults with the
+                    // original exception rather than completing silently.
+                    Logger?.LogError(ex, "Unhandled exception in command processing loop; terminating session");
+                    await (_listenTokenSource?.CancelAsync() ?? Task.CompletedTask).ConfigureAwait(false);
+                    throw;
+                }
             }
         }
         catch (OperationCanceledException)
@@ -441,21 +650,22 @@ public class CommandResponseServer : IDisposable
     /// </summary>
     public void Dispose()
     {
+        Interlocked.Exchange(ref _state, StateStopped);
         _listenTokenSource?.Cancel();
-        _reader?.Dispose();
-        _writer?.Dispose();
-        if (!_leaveOpen)
-        {
-            _stream?.Dispose();
-        }
-        _listenThread?.Join(TimeSpan.FromSeconds(1));
+        _reader?.Dispose();                             // interrupts blocking read on listener thread
+        _listenThread?.Join(TimeSpan.FromSeconds(1));  // wait for listener to exit
         try
         {
-            _processTask?.GetAwaiter().GetResult();
+            _processTask?.GetAwaiter().GetResult();    // fast: session token cancels any in-progress write
         }
         catch (Exception)
         {
             // Ignore exceptions during shutdown.
+        }
+        _writer?.Dispose();                            // safe: no concurrent writes after processTask exits
+        if (!_leaveOpen)
+        {
+            _stream?.Dispose();
         }
         _listenTokenSource?.Dispose();
         _commandSignal.Dispose();
