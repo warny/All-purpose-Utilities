@@ -91,69 +91,96 @@ public class DNSHeaderMergeTests
     }
 
     [TestMethod]
-    public void MergeRecordsFrom_DifferentErrorCodes_ThrowsOrUsesDocumentedPolicy()
+    public void MergeRecordsFrom_DifferentErrorCode_Throws()
     {
-        // Documented policy: error codes / flags of the target are preserved; merging does not
-        // overwrite them and error-code differences do not block a merge of otherwise compatible
-        // headers.
         var a = ResponseWithQuestion();
         a.ErrorCode = DNSError.Ok;
         var b = ResponseWithQuestion();
         b.ErrorCode = DNSError.ServerFailure;
-        b.Responses.Add(ARecord("example.com", "192.0.2.5"));
 
-        a.MergeRecordsFrom(b);
-
-        Assert.AreEqual(DNSError.Ok, a.ErrorCode);
-        Assert.AreEqual(1, a.Responses.Count);
+        Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
     }
 
     [TestMethod]
-    public void MergeRecordsFrom_DoesNotSilentlyOverwriteFlags()
+    public void MergeRecordsFrom_DifferentAuthoritativeAnswer_Throws()
     {
         var a = ResponseWithQuestion();
-        a.RecursionDesired = true;
         a.AuthoritativeAnswer = true;
+        var b = ResponseWithQuestion();
+        b.AuthoritativeAnswer = false;
+
+        Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
+    }
+
+    [TestMethod]
+    public void MergeRecordsFrom_DifferentMessageTruncated_Throws()
+    {
+        var a = ResponseWithQuestion();
+        a.MessageTruncated = false;
+        var b = ResponseWithQuestion();
+        b.MessageTruncated = true;
+
+        Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
+    }
+
+    [TestMethod]
+    public void MergeRecordsFrom_DifferentAuthenticDatas_Throws()
+    {
+        var a = ResponseWithQuestion();
+        a.AuthenticDatas = true;
+        var b = ResponseWithQuestion();
+        b.AuthenticDatas = false;
+
+        Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
+    }
+
+    [TestMethod]
+    public void MergeRecordsFrom_DifferentCheckingDisabled_Throws()
+    {
+        var a = ResponseWithQuestion();
+        a.CheckingDisabled = false;
+        var b = ResponseWithQuestion();
+        b.CheckingDisabled = true;
+
+        Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
+    }
+
+    [TestMethod]
+    public void MergeRecordsFrom_AllFlagsIdentical_MergesRecords()
+    {
+        // When all checked flags are identical, the merge must succeed.
+        var a = ResponseWithQuestion();
+        a.ErrorCode = DNSError.Ok;
+        a.AuthoritativeAnswer = true;
+        a.MessageTruncated = false;
+        a.AuthenticDatas = false;
+        a.CheckingDisabled = false;
+        a.Responses.Add(ARecord("a.example.com", "192.0.2.1"));
+
+        var b = ResponseWithQuestion();
+        b.ErrorCode = DNSError.Ok;
+        b.AuthoritativeAnswer = true;
+        b.MessageTruncated = false;
+        b.AuthenticDatas = false;
+        b.CheckingDisabled = false;
+        b.Responses.Add(ARecord("b.example.com", "192.0.2.2"));
+
+        a.MergeRecordsFrom(b);
+
+        Assert.AreEqual(2, a.Responses.Count);
+    }
+
+    [TestMethod]
+    public void MergeRecordsFrom_DoesNotOverwriteId()
+    {
+        var a = ResponseWithQuestion();
         ushort originalId = a.ID;
 
         var b = ResponseWithQuestion();
-        b.RecursionDesired = false;
-        b.AuthoritativeAnswer = false;
 
         a.MergeRecordsFrom(b);
 
-        Assert.IsTrue(a.RecursionDesired);
-        Assert.IsTrue(a.AuthoritativeAnswer);
         Assert.AreEqual(originalId, a.ID);
-    }
-
-    [TestMethod]
-    public void MergeRecordsFrom_DifferentErrorCode_PreservesTargetErrorCode()
-    {
-        // Documented policy: error codes of the target are preserved even when merging a source
-        // with a different error code.
-        var a = ResponseWithQuestion();
-        a.ErrorCode = DNSError.NameError;
-        var b = ResponseWithQuestion();
-        b.ErrorCode = DNSError.Ok;
-        b.Responses.Add(ARecord("example.com", "192.0.2.99"));
-
-        a.MergeRecordsFrom(b);
-
-        Assert.AreEqual(DNSError.NameError, a.ErrorCode);
-    }
-
-    [TestMethod]
-    public void MergeRecordsFrom_DifferentAuthoritativeFlag_PreservesTargetFlag()
-    {
-        var a = ResponseWithQuestion();
-        a.AuthoritativeAnswer = true;
-        var b = ResponseWithQuestion();
-        b.AuthoritativeAnswer = false;
-
-        a.MergeRecordsFrom(b);
-
-        Assert.IsTrue(a.AuthoritativeAnswer);
     }
 
     [TestMethod]

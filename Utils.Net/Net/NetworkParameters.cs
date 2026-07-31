@@ -53,27 +53,14 @@ namespace Utils.Net
         private static NetworkInterfaceSnapshot CreateSnapshot(NetworkInterface networkInterface)
         {
             IReadOnlyList<IPAddress> dns = Array.Empty<IPAddress>();
-            IReadOnlyList<GatewayIPAddressInformation> gateways = Array.Empty<GatewayIPAddressInformation>();
-            int? metric = null;
 
             if (networkInterface.OperationalStatus == OperationalStatus.Up)
             {
                 IPInterfaceProperties ipProperties = networkInterface.GetIPProperties();
                 dns = ipProperties.DnsAddresses?.ToArray() ?? (IReadOnlyList<IPAddress>)Array.Empty<IPAddress>();
-                gateways = ipProperties.GatewayAddresses?.ToArray() ?? (IReadOnlyList<GatewayIPAddressInformation>)Array.Empty<GatewayIPAddressInformation>();
-                metric = TryGetMetric(ipProperties);
             }
 
-            return new NetworkInterfaceSnapshot(networkInterface.OperationalStatus, metric, dns, gateways);
-        }
-
-        private static int? TryGetMetric(IPInterfaceProperties ipProperties)
-        {
-            // A true routing metric is not reliably available via the managed API on all platforms.
-            // IPv4InterfaceProperties.Index is an interface identifier, not a routing priority.
-            // Returning null preserves the OS enumeration order as a tie-breaker, which is more
-            // meaningful than sorting by a value that does not represent routing preference.
-            return null;
+            return new NetworkInterfaceSnapshot(networkInterface.OperationalStatus, dns);
         }
 
         /// <summary>
@@ -83,30 +70,26 @@ namespace Utils.Net
         /// <remarks>
         /// Any interface whose <see cref="NetworkInterfaceSnapshot.Status"/> is
         /// <see cref="OperationalStatus.Up"/> contributes its DNS servers, whether or not it has a
-        /// default gateway. This deliberately includes VPN and point-to-point interfaces that carry
-        /// a resolver but advertise no gateway. Ordering is deterministic:
-        /// interfaces that have at least one gateway are preferred over those without, then by
-        /// OS enumeration order (the order returned by the operating system), then by DNS order
-        /// within an interface. Wildcard/unspecified and multicast resolver addresses are excluded,
-        /// and duplicates are removed while preserving the first-seen priority.
+        /// default gateway. This deliberately includes VPN, point-to-point and gateway-less
+        /// interfaces. Ordering strictly follows the OS enumeration order of interfaces (the order
+        /// returned by <see cref="NetworkInterface.GetAllNetworkInterfaces"/>), then by DNS
+        /// address order within each interface. Wildcard/unspecified and multicast resolver
+        /// addresses are excluded, and duplicates are removed while preserving the first-seen
+        /// priority.
         /// </remarks>
         internal static IPAddress[] SelectDnsServers(IReadOnlyList<NetworkInterfaceSnapshot> snapshots)
         {
             if (snapshots is null)
                 throw new ArgumentNullException(nameof(snapshots));
 
-            var ordered = snapshots
-                .Select((snapshot, index) => (snapshot, index))
-                .Where(item => item.snapshot.Status == OperationalStatus.Up)
-                .OrderByDescending(item => item.snapshot.Gateways.Count > 0)
-                .ThenBy(item => item.snapshot.Metric ?? int.MaxValue)
-                .ThenBy(item => item.index);
+            var active = snapshots
+                .Where(item => item.Status == OperationalStatus.Up);
 
             var result = new List<IPAddress>();
             var seen = new HashSet<IPAddress>();
-            foreach (var item in ordered)
+            foreach (var item in active)
             {
-                foreach (IPAddress dns in item.snapshot.DnsAddresses)
+                foreach (IPAddress dns in item.DnsAddresses)
                 {
                     if (dns is null)
                         continue;
@@ -137,12 +120,8 @@ namespace Utils.Net
     /// A pure, testable snapshot of the DNS-relevant properties of a single network interface.
     /// </summary>
     /// <param name="Status">The operational status of the interface.</param>
-    /// <param name="Metric">The routing metric of the interface, or <see langword="null"/> when unknown.</param>
     /// <param name="DnsAddresses">The DNS resolver addresses configured on the interface.</param>
-    /// <param name="Gateways">The default gateways configured on the interface.</param>
     internal sealed record NetworkInterfaceSnapshot(
         OperationalStatus Status,
-        int? Metric,
-        IReadOnlyList<IPAddress> DnsAddresses,
-        IReadOnlyList<GatewayIPAddressInformation> Gateways);
+        IReadOnlyList<IPAddress> DnsAddresses);
 }

@@ -9,21 +9,6 @@ namespace UtilsTest.Net;
 [TestClass]
 public class NetworkParametersDiscoveryTests
 {
-    private sealed class FakeGateway : GatewayIPAddressInformation
-    {
-        private readonly IPAddress _address;
-        public FakeGateway(IPAddress address) => _address = address;
-        public override IPAddress Address => _address;
-    }
-
-    private static IReadOnlyList<GatewayIPAddressInformation> Gateways(params string[] addresses)
-    {
-        var list = new List<GatewayIPAddressInformation>();
-        foreach (var a in addresses)
-            list.Add(new FakeGateway(IPAddress.Parse(a)));
-        return list;
-    }
-
     private static IReadOnlyList<IPAddress> Dns(params string[] addresses)
     {
         var list = new List<IPAddress>();
@@ -32,15 +17,15 @@ public class NetworkParametersDiscoveryTests
         return list;
     }
 
-    private static NetworkInterfaceSnapshot Up(int? metric, IReadOnlyList<IPAddress> dns, IReadOnlyList<GatewayIPAddressInformation> gateways)
-        => new(OperationalStatus.Up, metric, dns, gateways);
+    private static NetworkInterfaceSnapshot Up(IReadOnlyList<IPAddress> dns)
+        => new(OperationalStatus.Up, dns);
 
     [TestMethod]
     public void DiscoverDns_UpInterfaceWithoutGateway_IsIncluded()
     {
         var result = NetworkParameters.SelectDnsServers(new[]
         {
-            Up(10, Dns("192.0.2.53"), Gateways()),
+            Up(Dns("192.0.2.53")),
         });
 
         CollectionAssert.Contains(result, IPAddress.Parse("192.0.2.53"));
@@ -52,7 +37,7 @@ public class NetworkParametersDiscoveryTests
         // A VPN interface (no gateway) still contributes its resolver.
         var result = NetworkParameters.SelectDnsServers(new[]
         {
-            Up(5, Dns("10.10.0.53"), Gateways()),
+            Up(Dns("10.10.0.53")),
         });
 
         CollectionAssert.Contains(result, IPAddress.Parse("10.10.0.53"));
@@ -63,19 +48,19 @@ public class NetworkParametersDiscoveryTests
     {
         var result = NetworkParameters.SelectDnsServers(new[]
         {
-            new NetworkInterfaceSnapshot(OperationalStatus.Down, 1, Dns("192.0.2.53"), Gateways("192.0.2.1")),
+            new NetworkInterfaceSnapshot(OperationalStatus.Down, Dns("192.0.2.53")),
         });
 
         Assert.AreEqual(0, result.Length);
     }
 
     [TestMethod]
-    public void DiscoverDns_Duplicates_AreRemovedPreservingPriority()
+    public void DiscoverDns_Duplicates_AreRemovedPreservingOsOrder()
     {
         var result = NetworkParameters.SelectDnsServers(new[]
         {
-            Up(10, Dns("192.0.2.53", "192.0.2.54"), Gateways("192.0.2.1")), // gateway → priority
-            Up(5, Dns("192.0.2.53"), Gateways()),                            // no gateway, duplicate
+            Up(Dns("192.0.2.53", "192.0.2.54")), // first interface
+            Up(Dns("192.0.2.53")),                // duplicate from second interface
         });
 
         CollectionAssert.AreEqual(
@@ -88,7 +73,7 @@ public class NetworkParametersDiscoveryTests
     {
         var result = NetworkParameters.SelectDnsServers(new[]
         {
-            Up(10, Dns("0.0.0.0", "224.0.0.251", "192.0.2.53"), Gateways("192.0.2.1")),
+            Up(Dns("0.0.0.0", "224.0.0.251", "192.0.2.53")),
         });
 
         CollectionAssert.AreEqual(new[] { IPAddress.Parse("192.0.2.53") }, result);
@@ -99,7 +84,7 @@ public class NetworkParametersDiscoveryTests
     {
         var result = NetworkParameters.SelectDnsServers(new[]
         {
-            Up(10, Dns("192.0.2.53", "2001:db8::53"), Gateways("192.0.2.1")),
+            Up(Dns("192.0.2.53", "2001:db8::53")),
         });
 
         CollectionAssert.AreEqual(
@@ -112,23 +97,23 @@ public class NetworkParametersDiscoveryTests
     {
         var result = NetworkParameters.SelectDnsServers(new[]
         {
-            Up(10, Dns(), Gateways("192.0.2.1")),
+            Up(Dns()),
         });
 
         Assert.AreEqual(0, result.Length);
     }
 
     [TestMethod]
-    public void PrimaryDns_EqualsFirstOrderedDns()
+    public void PrimaryDns_EqualsFirstDnsInOsEnumerationOrder()
     {
-        // Interface with a gateway is preferred over one without, so its DNS is first.
+        // OS enumeration order is preserved: the first interface's DNS comes first.
         var result = NetworkParameters.SelectDnsServers(new[]
         {
-            Up(5, Dns("10.0.0.53"), Gateways()),                  // no gateway
-            Up(10, Dns("192.0.2.53"), Gateways("192.0.2.1")),    // gateway → wins
+            Up(Dns("10.0.0.53")),     // listed first → its DNS is first
+            Up(Dns("192.0.2.53")),    // listed second
         });
 
-        Assert.AreEqual(IPAddress.Parse("192.0.2.53"), result[0]);
+        Assert.AreEqual(IPAddress.Parse("10.0.0.53"), result[0]);
     }
 
     [TestMethod]
@@ -141,29 +126,29 @@ public class NetworkParametersDiscoveryTests
     }
 
     [TestMethod]
-    public void SelectDnsServers_OrdersByMetricThenOsOrder()
+    public void SelectDnsServers_PreservesOsEnumerationOrder()
     {
         var result = NetworkParameters.SelectDnsServers(new[]
         {
-            Up(20, Dns("192.0.2.20"), Gateways("192.0.2.1")),
-            Up(10, Dns("192.0.2.10"), Gateways("192.0.2.1")),
+            Up(Dns("192.0.2.20")), // first in OS order
+            Up(Dns("192.0.2.10")), // second in OS order
         });
 
-        // Lower metric first.
+        // OS enumeration order is strictly preserved regardless of any routing attributes.
         CollectionAssert.AreEqual(
-            new[] { IPAddress.Parse("192.0.2.10"), IPAddress.Parse("192.0.2.20") },
+            new[] { IPAddress.Parse("192.0.2.20"), IPAddress.Parse("192.0.2.10") },
             result);
     }
 
     [TestMethod]
-    public void SelectDnsServers_NoMetric_PreservesOsEnumerationOrder()
+    public void SelectDnsServers_NoMetricOrGateway_PreservesOsEnumerationOrder()
     {
-        // When metric is null (the real-world case after fix), OS enumeration order is preserved
-        // among interfaces with the same gateway status.
+        // When no routing attributes are available, OS enumeration order is preserved
+        // for all interfaces regardless of whether they have a default gateway.
         var result = NetworkParameters.SelectDnsServers(new[]
         {
-            Up(null, Dns("192.0.2.1"), Gateways("10.0.0.1")),
-            Up(null, Dns("192.0.2.2"), Gateways("10.0.0.1")),
+            Up(Dns("192.0.2.1")), // first in OS order
+            Up(Dns("192.0.2.2")), // second in OS order
         });
 
         // First-seen order preserved.
@@ -173,16 +158,17 @@ public class NetworkParametersDiscoveryTests
     }
 
     [TestMethod]
-    public void SelectDnsServers_InterfaceWithGateway_PreferredOverNoGateway()
+    public void SelectDnsServers_GatewaylessInterface_IncludedInOsOrder()
     {
-        // Gateway interfaces always come before no-gateway interfaces, regardless of OS order.
+        // Interfaces without a default gateway are included in OS enumeration order —
+        // no gateway-based reordering occurs. The first listed interface's DNS comes first.
         var result = NetworkParameters.SelectDnsServers(new[]
         {
-            Up(null, Dns("10.0.0.53"), Gateways()),         // no gateway (listed first)
-            Up(null, Dns("192.0.2.53"), Gateways("192.0.2.1")), // gateway (listed second)
+            Up(Dns("10.0.0.53")),      // no gateway, listed first
+            Up(Dns("192.0.2.53")),     // has or has not a gateway, listed second
         });
 
-        Assert.AreEqual(IPAddress.Parse("192.0.2.53"), result[0]);
-        Assert.AreEqual(IPAddress.Parse("10.0.0.53"), result[1]);
+        Assert.AreEqual(IPAddress.Parse("10.0.0.53"), result[0]);
+        Assert.AreEqual(IPAddress.Parse("192.0.2.53"), result[1]);
     }
 }

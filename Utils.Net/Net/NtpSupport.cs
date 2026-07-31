@@ -97,7 +97,25 @@ namespace Utils.Net
     /// </summary>
     internal sealed class UdpNtpTransport : INtpTransport
     {
-        private const int ReceiveTimeoutMs = 5000;
+        private static readonly TimeSpan DefaultReceiveTimeout = TimeSpan.FromSeconds(5);
+
+        private readonly TimeSpan _receiveTimeout;
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="UdpNtpTransport"/> with the default 5-second
+        /// receive timeout.
+        /// </summary>
+        public UdpNtpTransport() : this(DefaultReceiveTimeout) { }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="UdpNtpTransport"/> with an injectable receive
+        /// timeout. Intended for use in tests that need a shorter timeout to avoid slow test runs.
+        /// </summary>
+        /// <param name="receiveTimeout">The maximum time to wait for a UDP reply.</param>
+        internal UdpNtpTransport(TimeSpan receiveTimeout)
+        {
+            _receiveTimeout = receiveTimeout;
+        }
 
         public async Task<byte[]> ExchangeAsync(IPEndPoint endpoint, byte[] request, CancellationToken cancellationToken)
         {
@@ -107,7 +125,7 @@ namespace Utils.Net
             await client.SendAsync(request, request.Length).WaitAsync(cancellationToken).ConfigureAwait(false);
 
             using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeoutCts.CancelAfter(ReceiveTimeoutMs);
+            timeoutCts.CancelAfter(_receiveTimeout);
             UdpReceiveResult result;
             try
             {

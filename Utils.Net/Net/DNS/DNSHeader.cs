@@ -260,8 +260,10 @@ public class DNSHeader : DNSElement
     /// </remarks>
     /// <exception cref="ArgumentNullException"><paramref name="other"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">
-    /// The two headers are not compatible for merging: their question sections differ, or their
-    /// <see cref="QrBit"/>/<see cref="OpCode"/> differ.
+    /// The two headers are not compatible for merging: their question sections differ, or any of
+    /// <see cref="QrBit"/>, <see cref="OpCode"/>, <see cref="ErrorCode"/>,
+    /// <see cref="AuthoritativeAnswer"/>, <see cref="MessageTruncated"/>,
+    /// <see cref="AuthenticDatas"/>, or <see cref="CheckingDisabled"/> differ.
     /// </exception>
     public void MergeRecordsFrom(DNSHeader other)
     {
@@ -274,6 +276,26 @@ public class DNSHeader : DNSElement
         if (OpCode != other.OpCode)
             throw new InvalidOperationException(
                 $"Cannot merge headers with different opcodes ({OpCode} vs {other.OpCode}).");
+
+        if (ErrorCode != other.ErrorCode)
+            throw new InvalidOperationException(
+                $"Cannot merge headers with different error codes ({ErrorCode} vs {other.ErrorCode}).");
+
+        if (AuthoritativeAnswer != other.AuthoritativeAnswer)
+            throw new InvalidOperationException(
+                $"Cannot merge headers with different AuthoritativeAnswer flags ({AuthoritativeAnswer} vs {other.AuthoritativeAnswer}).");
+
+        if (MessageTruncated != other.MessageTruncated)
+            throw new InvalidOperationException(
+                $"Cannot merge headers with different MessageTruncated flags ({MessageTruncated} vs {other.MessageTruncated}).");
+
+        if (AuthenticDatas != other.AuthenticDatas)
+            throw new InvalidOperationException(
+                $"Cannot merge headers with different AuthenticDatas flags ({AuthenticDatas} vs {other.AuthenticDatas}).");
+
+        if (CheckingDisabled != other.CheckingDisabled)
+            throw new InvalidOperationException(
+                $"Cannot merge headers with different CheckingDisabled flags ({CheckingDisabled} vs {other.CheckingDisabled}).");
 
         if (!QuestionsMatch(this, other))
             throw new InvalidOperationException(

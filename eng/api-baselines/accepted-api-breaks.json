@@ -837,6 +837,30 @@
           "message": "Member 'System.Threading.Tasks.Task Utils.Net.WakeOnLan.SendMagicPacketAsync(System.Net.NetworkInformation.PhysicalAddress, System.Net.IPAddress?, int)' exists on {baselineAssembly} but not on {candidateAssembly}",
           "reason": "The published member is deliberately absent or signature-incompatible in the 2.0 candidate and is retained as an enumerated major-version break.",
           "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-net"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.Net.Arp.ArpPacket.HardwareType.set' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "The setter is deliberately removed in the 2.0 candidate; ArpPacket.HardwareType is now a read-only computed property always returning the Ethernet constant (1).",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-net"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.Net.Arp.ArpPacket.ProtocolType.set' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "The setter is deliberately removed in the 2.0 candidate; ArpPacket.ProtocolType is now a read-only computed property always returning the IPv4 constant (0x0800).",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-net"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.Net.Arp.ArpPacket.HardwareAddressLength.set' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "The setter is deliberately removed in the 2.0 candidate; ArpPacket.HardwareAddressLength is now a read-only computed property always returning the Ethernet constant (6).",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-net"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.Net.Arp.ArpPacket.ProtocolAddressLength.set' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "The setter is deliberately removed in the 2.0 candidate; ArpPacket.ProtocolAddressLength is now a read-only computed property always returning the IPv4 constant (4).",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-net"
         }
       ]
     },

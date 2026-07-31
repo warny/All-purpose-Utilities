@@ -10,7 +10,8 @@ namespace UtilsTest.Functional.Net;
 
 /// <summary>
 /// Functional tests for <see cref="NtpClient"/> using real loopback UDP sockets.
-/// These tests verify the actual transport layer without hitting a real NTP server.
+/// These tests verify the production <see cref="UdpNtpTransport"/> transport layer without
+/// hitting a real NTP server.
 /// </summary>
 [TestClass]
 public class NtpClientFunctionalTests
@@ -86,37 +87,6 @@ public class NtpClientFunctionalTests
             => Task.FromResult(new[] { _address });
     }
 
-    /// <summary>
-    /// A real UDP-based NtpTransport wrapper used for functional tests.
-    /// Re-implements the core exchange so we can test with the internal overload.
-    /// </summary>
-    private sealed class RealUdpTransport : INtpTransport
-    {
-        private const int ReceiveTimeoutMs = 5000;
-
-        public async Task<byte[]> ExchangeAsync(IPEndPoint endpoint, byte[] request, CancellationToken cancellationToken)
-        {
-            using var client = new UdpClient(endpoint.AddressFamily);
-            client.Connect(endpoint);
-
-            await client.SendAsync(request, request.Length).WaitAsync(cancellationToken).ConfigureAwait(false);
-
-            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeoutCts.CancelAfter(ReceiveTimeoutMs);
-            UdpReceiveResult result;
-            try
-            {
-                result = await client.ReceiveAsync(timeoutCts.Token).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-            {
-                throw new SocketException((int)SocketError.TimedOut);
-            }
-
-            return result.Buffer;
-        }
-    }
-
     [TestMethod]
     [Timeout(10000)]
     public async Task NtpClient_RealLoopbackServer_ReturnsExpectedTime()
@@ -126,7 +96,7 @@ public class NtpClientFunctionalTests
         var (port, serverTask) = StartLoopbackServer(req => BuildNtpReply(req, expectedTime));
 
         var resolver = new LoopbackResolver();
-        var transport = new RealUdpTransport();
+        var transport = new UdpNtpTransport();
 
         DateTime result = await NtpClient.GetTimeAsync("loopback.test", port, resolver, transport, CancellationToken.None)
             .ConfigureAwait(false);
@@ -148,8 +118,8 @@ public class NtpClientFunctionalTests
 
         var resolver = new LoopbackResolver();
 
-        // Use a very short timeout transport to avoid waiting 5 seconds in CI.
-        var transport = new ShortTimeoutUdpTransport(500);
+        // Use a short timeout to avoid waiting the full 5 seconds in CI.
+        var transport = new UdpNtpTransport(TimeSpan.FromMilliseconds(500));
 
         var ex = await Assert.ThrowsExceptionAsync<NtpQueryException>(
             () => NtpClient.GetTimeAsync("loopback.test", port, resolver, transport, CancellationToken.None))
@@ -170,7 +140,6 @@ public class NtpClientFunctionalTests
         using var cts = new CancellationTokenSource();
 
         // Server that signals cancellation after receiving the request.
-        var serverReady = new TaskCompletionSource<bool>();
         var (port, serverTask) = StartLoopbackServer(req =>
         {
             // Cancel after receiving the request but before sending a reply.
@@ -179,7 +148,7 @@ public class NtpClientFunctionalTests
         });
 
         var resolver = new LoopbackResolver();
-        var transport = new RealUdpTransport();
+        var transport = new UdpNtpTransport();
 
         await Assert.ThrowsExceptionAsync<OperationCanceledException>(
             () => NtpClient.GetTimeAsync("loopback.test", port, resolver, transport, cts.Token))
@@ -198,7 +167,7 @@ public class NtpClientFunctionalTests
         var (port, serverTask) = StartLoopbackServer(req => BuildNtpReply(req, serverTime));
 
         var resolver = new LoopbackResolver();
-        var transport = new RealUdpTransport();
+        var transport = new UdpNtpTransport();
 
         DateTime result = await NtpClient.GetTimeAsync("loopback.test", port, resolver, transport, CancellationToken.None)
             .ConfigureAwait(false);
@@ -209,35 +178,5 @@ public class NtpClientFunctionalTests
         TimeSpan diff = (result - serverTime).Duration();
         Assert.IsTrue(diff < TimeSpan.FromSeconds(1),
             $"Expected ~{serverTime:O} but got {result:O} (diff = {diff}).");
-    }
-
-    /// <summary>
-    /// A UDP transport with a configurable short receive timeout, used to avoid waiting
-    /// the full 5 seconds in "no reply" tests.
-    /// </summary>
-    private sealed class ShortTimeoutUdpTransport : INtpTransport
-    {
-        private readonly int _timeoutMs;
-        public ShortTimeoutUdpTransport(int timeoutMs) => _timeoutMs = timeoutMs;
-
-        public async Task<byte[]> ExchangeAsync(IPEndPoint endpoint, byte[] request, CancellationToken cancellationToken)
-        {
-            using var client = new UdpClient(endpoint.AddressFamily);
-            client.Connect(endpoint);
-
-            await client.SendAsync(request, request.Length).WaitAsync(cancellationToken).ConfigureAwait(false);
-
-            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeoutCts.CancelAfter(_timeoutMs);
-            try
-            {
-                UdpReceiveResult result = await client.ReceiveAsync(timeoutCts.Token).ConfigureAwait(false);
-                return result.Buffer;
-            }
-            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-            {
-                throw new SocketException((int)SocketError.TimedOut);
-            }
-        }
     }
 }
