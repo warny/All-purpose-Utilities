@@ -1,64 +1,120 @@
 name: Full release quality gates
-
 on:
     workflow_dispatch:
-    push:
-        tags: ['v*']
     schedule:
         - cron: '23 3 * * 1'
-
+    push:
+        branches: [master]
+        tags: ['v*']
 concurrency:
-    group: release-quality-${{ github.ref }}
-    cancel-in-progress: ${{ github.event_name != 'push' }}
-
+    # A tag gets its own authoritative run; cancel a still-running branch run for the same commit.
+    group: full-release-${{ github.sha }}
+    cancel-in-progress: true
 permissions:
     contents: read
 
 jobs:
-    full-validation:
-        name: Full validation (${{ matrix.os }})
-        runs-on: ${{ matrix.os }}
-        timeout-minutes: 120
+    canonical:
+        runs-on: ubuntu-latest
+        timeout-minutes: 90
+        steps:
+            - uses: actions/checkout@v4
+              with: { fetch-depth: 0 }
+            - uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: '9.0.x'
+                  cache: true
+                  cache-dependency-path: '**/*.csproj'
+            - name: Build, all tests, audits, and canonical package production
+              shell: pwsh
+              run: |
+                  dotnet restore Utils.sln
+                  dotnet build Utils.sln -c Release --no-restore -p:ContinuousIntegrationBuild=true
+                  dotnet test UtilsTest/UtilsTest.Unit.csproj -c Release --no-build
+                  dotnet test UtilsTest.Functional/UtilsTest.Functional.csproj -c Release --no-build
+                  ./eng/audit-dependencies.ps1 -ArtifactsPath artifacts
+                  ./eng/discover-release-projects.ps1 -Configuration Release -ArtifactsPath artifacts
+                  ./eng/pack-product-train.ps1 -Configuration Release -ArtifactsPath artifacts -NoBuild
+                  ./eng/inspect-packages.ps1 -ArtifactsPath artifacts
+                  ./eng/write-canonical-package-report.ps1 -ArtifactsPath artifacts
+            - uses: actions/upload-artifact@v4
+              with: { name: 'full-canonical-${{ github.sha }}', path: artifacts }
+
+    packaged-validation:
+        needs: canonical
         strategy:
             fail-fast: false
-            matrix:
-                os: [ubuntu-latest, windows-latest]
+            matrix: { os: [ubuntu-latest, windows-latest] }
+        runs-on: ${{ matrix.os }}
+        timeout-minutes: 120
         steps:
             - uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
+              with: { fetch-depth: 0 }
             - uses: actions/setup-dotnet@v4
-              with:
-                  dotnet-version: '9.0.x'
-            - name: Full build, tests, packages, remote SourceLink, and dependency audits
-              shell: pwsh
-              run: ./eng/run-release-quality-gates.ps1 -Mode FullRelease -Configuration Release -SkipReproducibility
-            - name: Upload all release diagnostics
+              with: { dotnet-version: '9.0.x' }
+            - uses: actions/download-artifact@v4
+              with: { name: 'full-canonical-${{ github.sha }}', path: artifacts }
+            - shell: pwsh
+              env:
+                  NUGET_PACKAGES: ${{ github.workspace }}/artifacts/packaged-acceptance/global-packages
+              run: ./eng/test-packaged-product-train.ps1 -ValidationTier FullRelease -Configuration Release -ArtifactsPath artifacts -UseExistingPackages -SkipBuild
+            - uses: actions/upload-artifact@v4
               if: always()
-              uses: actions/upload-artifact@v4
-              with:
-                  name: full-release-${{ matrix.os }}-${{ github.sha }}
-                  path: artifacts/**/*
-                  if-no-files-found: warn
+              with: { name: 'full-packaged-${{ matrix.os }}-${{ github.sha }}', path: artifacts/reports }
+
+    source-gates:
+        needs: canonical
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+              with: { fetch-depth: 0 }
+            - uses: actions/setup-dotnet@v4
+              with: { dotnet-version: '9.0.x' }
+            - uses: actions/download-artifact@v4
+              with: { name: 'full-canonical-${{ github.sha }}', path: artifacts }
+            - shell: pwsh
+              run: |
+                  dotnet restore Utils.sln
+                  ./eng/validate-public-api.ps1 -Configuration Release -ArtifactsPath artifacts
+                  ./eng/validate-release-warnings.ps1 -Configuration Release -ArtifactsPath artifacts -NoRestore
+                  ./eng/validate-sourcelink.ps1 -ArtifactsPath artifacts
+            - uses: actions/upload-artifact@v4
+              with: { name: 'full-source-gates-${{ github.sha }}', path: artifacts/reports }
 
     reproducibility:
-        name: Full reproducibility
+        needs: canonical
         runs-on: ubuntu-latest
-        timeout-minutes: 45
         steps:
             - uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
+              with: { fetch-depth: 0 }
             - uses: actions/setup-dotnet@v4
-              with:
-                  dotnet-version: '9.0.x'
-            - name: Two isolated package builds
-              shell: pwsh
+              with: { dotnet-version: '9.0.x' }
+            - shell: pwsh
               run: ./eng/test-package-reproducibility.ps1 -Configuration Release -ArtifactsPath artifacts
-            - name: Upload reproducibility diagnostics
-              if: always()
-              uses: actions/upload-artifact@v4
-              with:
-                  name: full-reproducibility-${{ github.sha }}
-                  path: artifacts/**/*
-                  if-no-files-found: warn
+            - uses: actions/upload-artifact@v4
+              with: { name: 'full-reproducibility-${{ github.sha }}', path: artifacts/reports }
+
+    candidate:
+        needs: [canonical, packaged-validation, source-gates, reproducibility]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+              with: { fetch-depth: 0 }
+            - uses: actions/setup-dotnet@v4
+              with: { dotnet-version: '9.0.x' }
+            - uses: actions/download-artifact@v4
+              with: { name: 'full-canonical-${{ github.sha }}', path: validated-inputs/canonical }
+            - uses: actions/download-artifact@v4
+              with: { name: 'full-packaged-ubuntu-latest-${{ github.sha }}', path: validated-inputs/ubuntu/reports }
+            - uses: actions/download-artifact@v4
+              with: { name: 'full-packaged-windows-latest-${{ github.sha }}', path: validated-inputs/windows/reports }
+            - uses: actions/download-artifact@v4
+              with: { name: 'full-source-gates-${{ github.sha }}', path: validated-inputs/ubuntu/reports }
+            - uses: actions/download-artifact@v4
+              with: { name: 'full-reproducibility-${{ github.sha }}', path: validated-inputs/reproducibility/reports }
+            - shell: pwsh
+              run: |
+                  ./eng/assemble-validated-product-train.ps1 -ValidationTier FullRelease -InputsPath validated-inputs -ArtifactsPath artifacts
+                  ./eng/publish-product-train.ps1 -ArtifactsPath artifacts -ValidateCandidateOnly
+            - uses: actions/upload-artifact@v4
+              with: { name: 'full-product-train-${{ github.sha }}', path: artifacts }

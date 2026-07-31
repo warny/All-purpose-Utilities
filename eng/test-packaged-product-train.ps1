@@ -2,6 +2,7 @@
 param(
     [ValidateNotNullOrEmpty()][string] $Configuration = "Release",
     [string] $ArtifactsPath = "artifacts",
+    [ValidateSet("PullRequest", "FullRelease")][string] $ValidationTier = "FullRelease",
     [switch] $SkipBuild,
     [switch] $SkipSourceLink,
     [switch] $KeepTemporaryProjects,
@@ -215,6 +216,16 @@ try {
 
     $consumerRoot = Join-Path $repoRoot "tests/PackagedAcceptance"
     $projects = @(Get-ChildItem $consumerRoot -Filter *.csproj -Recurse -File)
+    # Pull requests retain representative root, composition, generator, net8 and net9 scenarios.
+    $pullRequestConsumers = @(
+        "UtilsConsumer.csproj",
+        "ParserRuntimeConsumer.csproj",
+        "ParserGeneratorConsumer.csproj",
+        "DependencyInjectionGeneratorConsumer.csproj"
+    )
+    if ($ValidationTier -eq "PullRequest") {
+        $projects = @($projects | Where-Object Name -in $pullRequestConsumers)
+    }
     foreach ($project in $projects) {
         if ((Get-Content $project.FullName -Raw) -match "ProjectReference") { throw "$($project.FullName) contains a forbidden ProjectReference." }
         Write-Host "Restore: $($project.Name)"
@@ -234,8 +245,10 @@ try {
         if ($LASTEXITCODE -ne 0) { throw "Compile failed for $($project.FullName)." }
         & Invoke-AcceptanceDotNet run --project $project.FullName --configuration $Configuration --no-build
         if ($LASTEXITCODE -ne 0) { throw "Execute failed for $($project.FullName)." }
-        & Invoke-AcceptanceDotNet list $project.FullName package --vulnerable --include-transitive --config $configPath
-        if ($LASTEXITCODE -ne 0) { throw "Vulnerability audit failed for $($project.FullName)." }
+        if ($ValidationTier -eq "FullRelease") {
+            & Invoke-AcceptanceDotNet list $project.FullName package --vulnerable --include-transitive --config $configPath
+            if ($LASTEXITCODE -ne 0) { throw "Vulnerability audit failed for $($project.FullName)." }
+        }
     }
 
     # Every non-parser generator has a real consumer that executes generated behavior. Build
@@ -246,6 +259,9 @@ try {
         "IOSerializationGeneratorConsumer/IOSerializationGeneratorConsumer.csproj",
         "DependencyInjectionGeneratorConsumer/DependencyInjectionGeneratorConsumer.csproj"
     )
+    if ($ValidationTier -eq "PullRequest") {
+        $generatorConsumers = @("DependencyInjectionGeneratorConsumer/DependencyInjectionGeneratorConsumer.csproj")
+    }
     foreach ($relativeProject in $generatorConsumers) {
         $project = Join-Path $consumerRoot $relativeProject
         $projectDirectory = Split-Path -Parent $project
@@ -302,7 +318,8 @@ try {
         }
     }
 
-    $incrementalPath = Join-Path $temporaryPath "incremental-generator-consumer"
+    if ($ValidationTier -eq "FullRelease") {
+        $incrementalPath = Join-Path $temporaryPath "incremental-generator-consumer"
     New-Item (Join-Path $incrementalPath "Grammars") -ItemType Directory -Force | Out-Null
     Copy-Item (Join-Path $consumerRoot "ParserGeneratorConsumer/ParserGeneratorConsumer.csproj") $incrementalPath
     Copy-Item (Join-Path $consumerRoot "ParserGeneratorConsumer/Program.cs") $incrementalPath
@@ -367,6 +384,8 @@ try {
     & Invoke-AcceptanceDotNet build $incrementalProject --configuration $Configuration --no-restore 2>&1 | Tee-Object -FilePath $diagnosticLog
     if ($LASTEXITCODE -eq 0 -or -not (Select-String -Path $diagnosticLog -Pattern "UP0016" -Quiet)) { throw "Ambiguous packaged import did not fail with UP0016." }
 
+    }
+
     $specializedPackageIds = @($projects | ForEach-Object {
         $content = Get-Content $_.FullName -Raw
         [regex]::Matches($content, 'PackageReference Include="(omy\.[^"]+)"') | ForEach-Object { $_.Groups[1].Value }
@@ -374,7 +393,7 @@ try {
     $commit = (& git -C $repoRoot rev-parse HEAD).Trim()
     if ($LASTEXITCODE -ne 0) { throw "Unable to resolve the packaged-acceptance commit." }
     $validatedArtifacts = if ($null -ne $canonicalPackages) { @($canonicalPackages.packages | ForEach-Object { [ordered]@{ file = $_.file; sha256 = $_.sha256 } }) } else { @() }
-    $acceptanceReport = [ordered]@{ productTrain = [string]$manifest.productTrain; commit = $commit; version = [string]$manifest.version; platform = [Runtime.InteropServices.RuntimeInformation]::OSDescription; artifacts = $validatedArtifacts; packages = @($manifest.packages | ForEach-Object { [ordered]@{ packageId = $_.packageId; restored = $true; compiled = $true; executed = $true; audited = $true; assemblyLoaded = ($_.kind -ne 'analyzer'); publicTypeFound = ($_.kind -ne 'analyzer'); analyzerLoaded = ($_.kind -eq 'analyzer'); functionalScenarioExecuted = ($specializedPackageIds -contains $_.packageId); profile = $_.acceptanceProfile } }); specializedConsumers = @($projects.Name); passed = $true }
+    $acceptanceReport = [ordered]@{ productTrain = [string]$manifest.productTrain; commit = $commit; version = [string]$manifest.version; platform = [Runtime.InteropServices.RuntimeInformation]::OSDescription; artifacts = $validatedArtifacts; packages = @($manifest.packages | ForEach-Object { [ordered]@{ packageId = $_.packageId; restored = $true; compiled = $true; executed = $true; audited = ($ValidationTier -eq "FullRelease"); assemblyLoaded = ($_.kind -ne 'analyzer'); publicTypeFound = ($_.kind -ne 'analyzer'); analyzerLoaded = ($_.kind -eq 'analyzer'); functionalScenarioExecuted = ($specializedPackageIds -contains $_.packageId); profile = $_.acceptanceProfile } }); specializedConsumers = @($projects.Name); passed = $true }
     $reportDirectory = Join-Path $artifactsRoot "reports"
     New-Item $reportDirectory -ItemType Directory -Force | Out-Null
     $acceptanceReport | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $reportDirectory "packaged-acceptance.json")

@@ -28,6 +28,16 @@ if (($fullAuditPlan -join "|") -cne "AUDIT vulnerable|AUDIT deprecated|AUDIT out
     throw "Full dependency audits were flattened or ordered incorrectly: $($fullAuditPlan -join ', ')."
 }
 
+$packagedScript = Get-Content (Join-Path $PSScriptRoot 'test-packaged-product-train.ps1') -Raw
+if ($packagedScript -notmatch 'ValidateSet\("PullRequest", "FullRelease"\)' -or $packagedScript -notmatch '\$ValidationTier -eq "FullRelease"') {
+    throw 'Packaged validation does not expose deterministic tiers or guard per-consumer vulnerability audits.'
+}
+if ($packagedScript -notmatch 'UtilsConsumer\.csproj' -or $packagedScript -notmatch 'ParserGeneratorConsumer\.csproj') {
+    throw 'The pull-request representative consumer set is incomplete.'
+}
+
+& (Join-Path $PSScriptRoot 'test-validation-scope.ps1')
+
 $runnerArtifacts = Join-Path "artifacts" "packaged-runner-test-$([guid]::NewGuid().ToString('N'))"
 try {
     & (Join-Path $PSScriptRoot "test-packaged-product-train.ps1") -ArtifactsPath $runnerArtifacts -TestNativeRunnerOnly

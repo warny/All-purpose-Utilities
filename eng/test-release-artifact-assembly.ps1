@@ -70,6 +70,23 @@ try {
     if (-not (Test-Path -LiteralPath $candidateManifest -PathType Leaf)) { throw "Complete assembly did not produce the release-candidate manifest." }
     & (Join-Path $PSScriptRoot "publish-product-train.ps1") -ArtifactsPath $relativeOutput -ValidateCandidateOnly
 
+    # Candidate-only inspection accepts PR fixtures, but publication-capable modes
+    # reject them before contacting NuGet.
+    $fullCandidate = Get-Content $candidateManifest -Raw
+    $pullRequestCandidate = $fullCandidate | ConvertFrom-Json
+    $pullRequestCandidate.validationTier = 'pull-request'
+    $pullRequestCandidate.reproducibilityValidated = $false
+    foreach ($package in $pullRequestCandidate.packages) { $package.reproducibilityResult = @() }
+    Write-FixtureJson $pullRequestCandidate $candidateManifest
+    & (Join-Path $PSScriptRoot "publish-product-train.ps1") -ArtifactsPath $relativeOutput -ValidateCandidateOnly
+    try {
+        & (Join-Path $PSScriptRoot "publish-product-train.ps1") -ArtifactsPath $relativeOutput
+        throw 'A pull-request candidate reached publication planning.'
+    } catch {
+        if ($_.Exception.Message -notmatch 'Publication requires a full-release candidate') { throw }
+    }
+    Set-Content $candidateManifest $fullCandidate
+
     $windowsReportPath = Join-Path $root "windows/reports/packaged-acceptance.json"
     $windowsReport = Get-Content $windowsReportPath -Raw | ConvertFrom-Json
     $windowsReport.artifacts[0].sha256 = "incorrect-windows-hash"
