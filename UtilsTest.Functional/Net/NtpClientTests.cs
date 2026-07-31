@@ -158,6 +158,30 @@ public class NtpClientFunctionalTests
     }
 
     [TestMethod]
+    [Timeout(5000)]
+    public async Task UdpNtpTransport_ExchangeAsync_NoReply_ThrowsSocketExceptionTimedOut()
+    {
+        // Start a server that receives but never replies.
+        var (port, serverTask) = StartLoopbackServer(_ => null);
+
+        var endpoint = new IPEndPoint(IPAddress.Loopback, port);
+        byte[] request = new byte[48];
+        request[0] = (4 << 3) | 3; // VN=4, Mode=3 (client)
+
+        // Use the production UdpNtpTransport with a short timeout so the test doesn't wait 5 s.
+        var transport = new UdpNtpTransport(TimeSpan.FromMilliseconds(300));
+
+        var ex = await Assert.ThrowsExceptionAsync<SocketException>(
+            () => transport.ExchangeAsync(endpoint, request, CancellationToken.None))
+            .ConfigureAwait(false);
+
+        Assert.AreEqual(SocketError.TimedOut, ex.SocketErrorCode,
+            $"Expected TimedOut but got {ex.SocketErrorCode}.");
+
+        await serverTask.ConfigureAwait(false);
+    }
+
+    [TestMethod]
     [Timeout(10000)]
     public async Task NtpClient_ValidReply_ReturnsParsedUtcTime()
     {

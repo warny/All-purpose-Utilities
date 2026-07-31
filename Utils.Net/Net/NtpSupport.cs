@@ -114,6 +114,18 @@ namespace Utils.Net
         /// <param name="receiveTimeout">The maximum time to wait for a UDP reply.</param>
         internal UdpNtpTransport(TimeSpan receiveTimeout)
         {
+            if (receiveTimeout <= TimeSpan.Zero)
+                throw new ArgumentOutOfRangeException(
+                    nameof(receiveTimeout),
+                    receiveTimeout,
+                    "Receive timeout must be greater than zero.");
+
+            if (receiveTimeout == System.Threading.Timeout.InfiniteTimeSpan)
+                throw new ArgumentOutOfRangeException(
+                    nameof(receiveTimeout),
+                    receiveTimeout,
+                    "Receive timeout must not be infinite.");
+
             _receiveTimeout = receiveTimeout;
         }
 

@@ -67,22 +67,24 @@ Ensure `Operation` is set to `ArpOperation.Request` or `ArpOperation.Reply` befo
 
 ---
 
-## DNSHeader.Append — obsolete, prefer MergeRecordsFrom
+## DNSHeader.Append — removed in vNext
 
 ### What changed
 
-`DNSHeader.Append(DNSHeader)` is now marked `[Obsolete]`. Use `DNSHeader.MergeRecordsFrom(DNSHeader)`
-instead.
+`DNSHeader.Append(DNSHeader)` has been removed. Use `DNSHeader.MergeRecordsFrom(DNSHeader)` instead.
 
 ### Why
 
-`Append` has ambiguous semantics around flag handling. `MergeRecordsFrom` documents the precise
-merge policy: target flags (ID, ErrorCode, AuthoritativeAnswer, etc.) are always preserved; only
-distinct records from the source are added.
+`Append` had ambiguous semantics around flag handling. `MergeRecordsFrom` enforces a precise merge
+contract: both headers must agree on all semantic flag fields (QrBit, OpCode, ErrorCode,
+AuthoritativeAnswer, MessageTruncated, AuthenticDatas, CheckingDisabled, RecursionDesired,
+RecursionPossible, ReservedFlags). Only distinct records from the source are added to the target.
+The merge is atomic: all clones are prepared before any collection is mutated.
 
 ### How to migrate
 
-Replace `a.Append(b)` with `a.MergeRecordsFrom(b)`.
+Replace `a.Append(b)` with `a.MergeRecordsFrom(b)`. Ensure both headers carry identical flag values
+before calling `MergeRecordsFrom`, as differing flags now throw `InvalidOperationException`.
 
 ---
 

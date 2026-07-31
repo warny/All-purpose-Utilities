@@ -146,6 +146,41 @@ public class DNSHeaderMergeTests
     }
 
     [TestMethod]
+    public void MergeRecordsFrom_DifferentRecursionDesired_Throws()
+    {
+        var a = ResponseWithQuestion();
+        a.RecursionDesired = true;
+        var b = ResponseWithQuestion();
+        b.RecursionDesired = false;
+
+        Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
+    }
+
+    [TestMethod]
+    public void MergeRecordsFrom_DifferentRecursionPossible_Throws()
+    {
+        var a = ResponseWithQuestion();
+        a.RecursionPossible = true;
+        var b = ResponseWithQuestion();
+        b.RecursionPossible = false;
+
+        Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
+    }
+
+    [TestMethod]
+    public void MergeRecordsFrom_DifferentReservedFlags_Throws()
+    {
+        // DNSConstants.ReservedZ == 0x0040. The setter applies the mask, so we must pass 0x40
+        // (or any byte with bit 6 set) to get a non-zero effective ReservedFlags value.
+        var a = ResponseWithQuestion();
+        a.ReservedFlags = 0;
+        var b = ResponseWithQuestion();
+        b.ReservedFlags = 0x40; // bit 6 survives the ReservedZ mask (0x0040)
+
+        Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
+    }
+
+    [TestMethod]
     public void MergeRecordsFrom_AllFlagsIdentical_MergesRecords()
     {
         // When all checked flags are identical, the merge must succeed.
@@ -155,6 +190,9 @@ public class DNSHeaderMergeTests
         a.MessageTruncated = false;
         a.AuthenticDatas = false;
         a.CheckingDisabled = false;
+        a.RecursionDesired = true;
+        a.RecursionPossible = true;
+        a.ReservedFlags = 0;
         a.Responses.Add(ARecord("a.example.com", "192.0.2.1"));
 
         var b = ResponseWithQuestion();
@@ -163,6 +201,9 @@ public class DNSHeaderMergeTests
         b.MessageTruncated = false;
         b.AuthenticDatas = false;
         b.CheckingDisabled = false;
+        b.RecursionDesired = true;
+        b.RecursionPossible = true;
+        b.ReservedFlags = 0;
         b.Responses.Add(ARecord("b.example.com", "192.0.2.2"));
 
         a.MergeRecordsFrom(b);
@@ -183,26 +224,4 @@ public class DNSHeaderMergeTests
         Assert.AreEqual(originalId, a.ID);
     }
 
-    [TestMethod]
-    public void Append_CompatibilityBehavior_IsDocumentedAndTested()
-    {
-        // The obsolete Append still merges distinct records and rejects a shared ID.
-        var a = ResponseWithQuestion();
-        a.ID = 1;
-        a.Responses.Add(ARecord("a.example.com", "192.0.2.1"));
-
-        var b = ResponseWithQuestion();
-        b.ID = 2;
-        b.Responses.Add(ARecord("b.example.com", "192.0.2.2"));
-
-#pragma warning disable CS0618 // testing the obsolete member on purpose
-        a.Append(b);
-
-        var same = ResponseWithQuestion();
-        same.ID = 1;
-        Assert.ThrowsException<InvalidOperationException>(() => a.Append(same));
-#pragma warning restore CS0618
-
-        Assert.AreEqual(2, a.Responses.Count);
-    }
 }

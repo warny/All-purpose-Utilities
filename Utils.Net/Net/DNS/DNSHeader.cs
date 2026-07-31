@@ -244,14 +244,12 @@ public class DNSHeader : DNSElement
     /// </summary>
     /// <param name="other">The header whose records should be merged into this one.</param>
     /// <remarks>
-    /// <para>
-    /// This method has a well-defined contract that <see cref="Append(DNSHeader)"/> lacked:
-    /// </para>
     /// <list type="bullet">
     /// <item><description>Both headers must carry the same question section (same names, types and classes, in order).</description></item>
-    /// <item><description>Both headers must have the same <see cref="QrBit"/> and <see cref="OpCode"/>.</description></item>
+    /// <item><description>Both headers must have identical values for all semantic flag fields: <see cref="QrBit"/>, <see cref="OpCode"/>, <see cref="ErrorCode"/>, <see cref="AuthoritativeAnswer"/>, <see cref="MessageTruncated"/>, <see cref="AuthenticDatas"/>, <see cref="CheckingDisabled"/>, <see cref="RecursionDesired"/>, <see cref="RecursionPossible"/>, and <see cref="ReservedFlags"/>.</description></item>
     /// <item><description>The record-count fields are not touched here; they are derived from the collections when the header is serialised.</description></item>
     /// <item><description>The header <see cref="ID"/> and flag bits of this instance are preserved; merging never silently overwrites them.</description></item>
+    /// <item><description>The merge is atomic: all clones are prepared before any collection is mutated, so a failed clone cannot leave the header partially modified.</description></item>
     /// </list>
     /// <para>
     /// The question section of <paramref name="other"/> is not appended: it must already match, so
@@ -263,7 +261,9 @@ public class DNSHeader : DNSElement
     /// The two headers are not compatible for merging: their question sections differ, or any of
     /// <see cref="QrBit"/>, <see cref="OpCode"/>, <see cref="ErrorCode"/>,
     /// <see cref="AuthoritativeAnswer"/>, <see cref="MessageTruncated"/>,
-    /// <see cref="AuthenticDatas"/>, or <see cref="CheckingDisabled"/> differ.
+    /// <see cref="AuthenticDatas"/>, <see cref="CheckingDisabled"/>,
+    /// <see cref="RecursionDesired"/>, <see cref="RecursionPossible"/>, or
+    /// <see cref="ReservedFlags"/> differ.
     /// </exception>
     public void MergeRecordsFrom(DNSHeader other)
     {
@@ -297,13 +297,31 @@ public class DNSHeader : DNSElement
             throw new InvalidOperationException(
                 $"Cannot merge headers with different CheckingDisabled flags ({CheckingDisabled} vs {other.CheckingDisabled}).");
 
+        if (RecursionDesired != other.RecursionDesired)
+            throw new InvalidOperationException(
+                $"Cannot merge headers with different RecursionDesired flags ({RecursionDesired} vs {other.RecursionDesired}).");
+
+        if (RecursionPossible != other.RecursionPossible)
+            throw new InvalidOperationException(
+                $"Cannot merge headers with different RecursionPossible flags ({RecursionPossible} vs {other.RecursionPossible}).");
+
+        if (ReservedFlags != other.ReservedFlags)
+            throw new InvalidOperationException(
+                $"Cannot merge headers with different ReservedFlags values ({ReservedFlags} vs {other.ReservedFlags}).");
+
         if (!QuestionsMatch(this, other))
             throw new InvalidOperationException(
                 "Cannot merge headers whose question sections differ.");
 
-        MergeInto(Responses, other.Responses);
-        MergeInto(Authorities, other.Authorities);
-        MergeInto(Additionals, other.Additionals);
+        // Prepare all clones before any mutation so that a Clone() failure leaves the header
+        // in its original state (atomic read-then-write pattern).
+        var responsesToAdd = GetDistinctClones(Responses, other.Responses);
+        var authoritiesToAdd = GetDistinctClones(Authorities, other.Authorities);
+        var additionalsToAdd = GetDistinctClones(Additionals, other.Additionals);
+
+        foreach (var record in responsesToAdd) Responses.Add(record);
+        foreach (var record in authoritiesToAdd) Authorities.Add(record);
+        foreach (var record in additionalsToAdd) Additionals.Add(record);
     }
 
     private static bool QuestionsMatch(DNSHeader a, DNSHeader b)
@@ -318,45 +336,22 @@ public class DNSHeader : DNSElement
         return true;
     }
 
-    private static void MergeInto(IList<DNSResponseRecord> target, IList<DNSResponseRecord> source)
+    /// <summary>
+    /// Returns clones of records in <paramref name="source"/> that are not already present in
+    /// <paramref name="target"/>. All clones are created before any mutation occurs, ensuring that
+    /// a failed <see cref="DNSElement.Clone"/> cannot leave <paramref name="target"/> partially
+    /// modified.
+    /// </summary>
+    private static List<DNSResponseRecord> GetDistinctClones(
+        IList<DNSResponseRecord> target, IList<DNSResponseRecord> source)
     {
+        var result = new List<DNSResponseRecord>();
         foreach (var record in source)
         {
             if (!target.Contains(record, DNSElementsComparer.Default))
-                target.Add((DNSResponseRecord)record.Clone());
+                result.Add((DNSResponseRecord)record.Clone());
         }
-    }
-
-    /// <summary>
-    /// Merges (appends) the requests, responses, authority, and additional records from another
-    /// <see cref="DNSHeader"/> into the current one, provided the IDs do not match.
-    /// </summary>
-    /// <param name="header">Another <see cref="DNSHeader"/> to merge from.</param>
-    /// <exception cref="ArgumentNullException"><paramref name="header"/> is <see langword="null"/>.</exception>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown if <paramref name="header"/> has the same <see cref="ID"/> as the current header.
-    /// </exception>
-    [Obsolete("Use MergeRecordsFrom; Append had ambiguous ID and flag semantics.")]
-    public void Append(DNSHeader header)
-    {
-        ArgumentNullException.ThrowIfNull(header);
-
-        if (this.ID == header.ID)
-        {
-            throw new InvalidOperationException("Cannot append a header that shares the same ID.");
-        }
-
-        foreach (var request in header.Requests)
-        {
-            if (!Requests.Contains(request, DNSElementsComparer.Default))
-            {
-                Requests.Add((DNSRequestRecord)request.Clone());
-            }
-        }
-
-        MergeInto(Responses, header.Responses);
-        MergeInto(Authorities, header.Authorities);
-        MergeInto(Additionals, header.Additionals);
+        return result;
     }
 
     /// <summary>

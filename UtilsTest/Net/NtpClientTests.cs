@@ -228,6 +228,27 @@ public class NtpClientTests
     }
 
     [TestMethod]
+    public void UdpNtpTransport_ZeroTimeout_Throws()
+    {
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => new UdpNtpTransport(TimeSpan.Zero));
+    }
+
+    [TestMethod]
+    public void UdpNtpTransport_NegativeTimeout_Throws()
+    {
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => new UdpNtpTransport(TimeSpan.FromSeconds(-1)));
+    }
+
+    [TestMethod]
+    public void UdpNtpTransport_InfiniteTimeout_Throws()
+    {
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => new UdpNtpTransport(System.Threading.Timeout.InfiniteTimeSpan));
+    }
+
+    [TestMethod]
     public async Task GetTimeAsync_FractionConversion_IsAccurateWithinOneTickOrDocumentedTolerance()
     {
         DateTime baseTime = new(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc);
