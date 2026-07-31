@@ -97,12 +97,13 @@ namespace Utils.Net.DNS
         /// Creates a shallow copy of the current <see cref="DNSRequestRecord"/> object,
         /// preserving fields such as <see cref="Name"/>, <see cref="Type"/>, and <see cref="Class"/>.
         /// </summary>
-        /// <returns>A new, independent object with the same field values.</returns>
-        public object Clone() => new
+        /// <returns>A new, independent <see cref="DNSRequestRecord"/> with the same field values.</returns>
+        public object Clone() => new DNSRequestRecord
         {
-            Name,
-            Class,
-            Type
+            Name = Name,
+            Class = Class,
+            Type = Type,
+            RequestType = RequestType
         };
     }
 }

@@ -132,13 +132,27 @@ public sealed class DNSResponseRecord : DNSElement, ICloneable
     /// The <see cref="RData"/> is also cloned, calling <see cref="DNSResponseDetail.Clone"/> 
     /// to duplicate its content fields.
     /// </remarks>
-    /// <returns>A new object preserving the relevant data fields.</returns>
-    public object Clone() => new
+    /// <returns>A new <see cref="DNSResponseRecord"/> preserving the relevant data fields.</returns>
+    public object Clone()
     {
-        Name,
-        TTL,
-        ClassId,
-        RDLength,
-        RData = (DNSResponseDetail)rData?.Clone()
-    };
+        var clone = new DNSResponseRecord
+        {
+            Name = Name,
+            TTL = TTL,
+        };
+
+        if (rData is not null)
+        {
+            // Assigning RData also synchronises Class and ClassId from the detail.
+            clone.RData = (DNSResponseDetail)rData.Clone();
+        }
+        else
+        {
+            clone.Class = Class;
+            clone.ClassId = ClassId;
+        }
+
+        clone.RDLength = RDLength;
+        return clone;
+    }
 }
