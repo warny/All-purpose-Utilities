@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -18,13 +19,15 @@ public sealed class ReaderWriterGenerator : IIncrementalGenerator
     private static readonly DiagnosticDescriptor UnsupportedMember = Create("UIOSG003", "Unsupported member", "Member '{0}' must be an accessible instance member with both readable and writable access");
     private static readonly DiagnosticDescriptor DuplicateOrder = Create("UIOSG004", "Duplicate field order", "Member '{0}' duplicates field order {1}");
     private static readonly DiagnosticDescriptor AmbiguousConverter = Create("UIOSG005", "Ambiguous converter", "More than one exact {0} converter is available for '{1}'");
+    private static readonly DiagnosticDescriptor InitOnlyProperty = Create("UIOSG010", "Init-only property is not supported", "Property '{0}' on '{1}' is init-only and cannot be assigned by the generated reader");
 
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var candidates = context.SyntaxProvider.CreateSyntaxProvider(
-            static (node, _) => node is TypeDeclarationSyntax declaration && declaration.AttributeLists.Count > 0,
-            static (ctx, _) => (TypeDeclarationSyntax)ctx.Node).Collect();
+        var candidates = context.SyntaxProvider.ForAttributeWithMetadataName(
+            "Utils.IO.Serialization.GenerateReaderWriterAttribute",
+            static (node, _) => node is TypeDeclarationSyntax,
+            static (ctx, _) => (INamedTypeSymbol)ctx.TargetSymbol).Collect();
         context.RegisterSourceOutput(context.CompilationProvider.Combine(candidates),
             static (ctx, value) => Emit(ctx, value.Left, value.Right));
     }
@@ -34,7 +37,7 @@ public sealed class ReaderWriterGenerator : IIncrementalGenerator
         new(id, title, message, Category, DiagnosticSeverity.Error, true, title);
 
     /// <summary>Validates candidates and emits serializers only for complete contracts.</summary>
-    private static void Emit(SourceProductionContext context, Compilation compilation, IEnumerable<TypeDeclarationSyntax> candidates)
+    private static void Emit(SourceProductionContext context, Compilation compilation, ImmutableArray<INamedTypeSymbol> candidates)
     {
         INamedTypeSymbol? generateAttribute = compilation.GetTypeByMetadataName("Utils.IO.Serialization.GenerateReaderWriterAttribute");
         INamedTypeSymbol? fieldAttribute = compilation.GetTypeByMetadataName("Utils.IO.Serialization.FieldAttribute");
@@ -42,16 +45,24 @@ public sealed class ReaderWriterGenerator : IIncrementalGenerator
         INamedTypeSymbol? writerType = compilation.GetTypeByMetadataName("Utils.IO.Serialization.IWriter");
         if (generateAttribute is null || fieldAttribute is null || readerType is null || writerType is null) return;
 
-        foreach (TypeDeclarationSyntax syntax in candidates.Distinct())
+        var uniqueTypes = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+        foreach (INamedTypeSymbol type in candidates)
         {
-            if (compilation.GetSemanticModel(syntax.SyntaxTree).GetDeclaredSymbol(syntax) is not INamedTypeSymbol type ||
-                !HasAttribute(type, generateAttribute)) continue;
+            if (!uniqueTypes.Add(type) || !HasAttribute(type, generateAttribute)) continue;
+            SyntaxNode? declaration = type.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax(context.CancellationToken);
+            Location typeLocation = declaration?.GetLocation() ?? type.Locations.FirstOrDefault() ?? Location.None;
+            Location identifierLocation = declaration is TypeDeclarationSyntax typeDeclaration
+                ? typeDeclaration.Identifier.GetLocation()
+                : typeLocation;
 
             bool invalid = false;
-            if (type.TypeKind is not (TypeKind.Class or TypeKind.Struct) || type.IsAbstract || type.IsUnboundGenericType || type.TypeArguments.Any(a => a.TypeKind == TypeKind.TypeParameter))
-                invalid |= Report(context, UnsupportedType, syntax.GetLocation(), type.ToDisplayString());
+            ImmutableArray<ITypeParameterSymbol> methodTypeParameters = GetContainingTypeParameters(type);
+            bool unsupportedConstraints = methodTypeParameters.Any(parameter => parameter.HasConstructorConstraint || parameter.HasReferenceTypeConstraint ||
+                parameter.HasValueTypeConstraint || parameter.HasUnmanagedTypeConstraint || parameter.ConstraintTypes.Length > 0);
+            if (type.TypeKind is not (TypeKind.Class or TypeKind.Struct) || type.IsAbstract || type.IsUnboundGenericType || unsupportedConstraints)
+                invalid |= Report(context, UnsupportedType, typeLocation, type.ToDisplayString());
             if (type.TypeKind == TypeKind.Class && !type.InstanceConstructors.Any(c => c.Parameters.Length == 0 && IsAccessible(c.DeclaredAccessibility)))
-                invalid |= Report(context, MissingConstructor, syntax.Identifier.GetLocation(), type.ToDisplayString());
+                invalid |= Report(context, MissingConstructor, identifierLocation, type.ToDisplayString());
 
             var members = type.GetMembers().Select(m => new { Symbol = m, Attribute = m.GetAttributes().FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, fieldAttribute)) })
                 .Where(x => x.Attribute is not null)
@@ -59,6 +70,11 @@ public sealed class ReaderWriterGenerator : IIncrementalGenerator
 
             foreach (MemberContract member in members)
             {
+                if (member.Symbol is IPropertySymbol initProperty && initProperty.SetMethod?.IsInitOnly == true)
+                {
+                    invalid |= Report(context, InitOnlyProperty, initProperty.Locations.FirstOrDefault(), initProperty.Name, type.ToDisplayString());
+                    continue;
+                }
                 bool valid = member.Symbol switch
                 {
                     IFieldSymbol field => !field.IsStatic && !field.IsReadOnly && IsAccessible(field.DeclaredAccessibility),
@@ -85,37 +101,44 @@ public sealed class ReaderWriterGenerator : IIncrementalGenerator
             string identifier = Sanitize(identity) + "_" + StableHash(identity);
             string ns = type.ContainingNamespace.IsGlobalNamespace ? string.Empty : "namespace " + type.ContainingNamespace.ToDisplayString() + ";\n\n";
             string typeName = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            string genericDeclaration = methodTypeParameters.Length == 0
+                ? string.Empty
+                : "<" + string.Join(", ", methodTypeParameters.Select(parameter => parameter.Name)) + ">";
             var source = new StringBuilder("// <auto-generated/>\nusing Utils.IO.Serialization;\n").Append(ns)
                 .Append("public static class ").Append(identifier).Append("SerializationExtensions\n{\n")
                 .Append("    /// <summary>Reads the validated binary contract.</summary>\n")
-                .Append("    public static ").Append(typeName).Append(" Read").Append(type.Name).Append("(this IReader reader)\n    {\n")
+                .Append("    public static ").Append(typeName).Append(" Read").Append(identifier).Append(genericDeclaration).Append("(this IReader reader)\n    {\n")
                 .Append("        var result = new ").Append(typeName).Append("();\n");
             foreach (MemberContract member in members.OrderBy(m => m.Order))
-                source.Append("        result.").Append(member.Symbol.Name).Append(" = ").Append(ReadExpression(compilation, context, member.Type, readerType)).Append(";\n");
+                source.Append("        result.").Append(member.Symbol.Name).Append(" = ").Append(ReadExpression(compilation, context, member.Type, readerType, generateAttribute)).Append(";\n");
             source.Append("        return result;\n    }\n\n    /// <summary>Writes the validated binary contract.</summary>\n")
-                .Append("    public static void Write").Append(type.Name).Append("(this IWriter writer, ").Append(typeName).Append(" value)\n    {\n");
+                .Append("    public static void Write").Append(identifier).Append(genericDeclaration).Append("(this IWriter writer, ").Append(typeName).Append(" value)\n    {\n");
             foreach (MemberContract member in members.OrderBy(m => m.Order))
-                source.Append("        ").Append(WriteExpression(compilation, context, member.Type, writerType, "value." + member.Symbol.Name)).Append(";\n");
+                source.Append("        ").Append(WriteExpression(compilation, context, member.Type, writerType, generateAttribute, "value." + member.Symbol.Name)).Append(";\n");
             source.Append("    }\n}\n");
             context.AddSource(identifier + ".Serialization.g.cs", SourceText.From(source.ToString(), Encoding.UTF8));
         }
     }
 
     /// <summary>Resolves one exact reader converter and emits its fully qualified static call.</summary>
-    private static string ReadExpression(Compilation compilation, SourceProductionContext context, ITypeSymbol type, INamedTypeSymbol readerType)
+    private static string ReadExpression(Compilation compilation, SourceProductionContext context, ITypeSymbol type, INamedTypeSymbol readerType, INamedTypeSymbol generateAttribute)
     {
         IMethodSymbol[] methods = FindConverters(compilation, "Read" + type.Name, m => m.Parameters.Length == 1 && SymbolEqualityComparer.Default.Equals(m.Parameters[0].Type, readerType) && SymbolEqualityComparer.Default.Equals(m.ReturnType, type), context).ToArray();
         if (methods.Length == 1) return FullyQualifiedCall(methods[0], "reader");
         if (methods.Length > 1) context.ReportDiagnostic(Diagnostic.Create(AmbiguousConverter, type.Locations.FirstOrDefault(), "reader", type.ToDisplayString()));
+        if (type is INamedTypeSymbol namedType && HasAttribute(namedType, generateAttribute))
+            return GeneratedTypeName(namedType) + ".Read" + GeneratedIdentifier(namedType) + GeneratedTypeArguments(namedType) + "(reader)";
         return "reader.Read<" + type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) + ">()";
     }
 
     /// <summary>Resolves one exact writer converter and emits its fully qualified static call.</summary>
-    private static string WriteExpression(Compilation compilation, SourceProductionContext context, ITypeSymbol type, INamedTypeSymbol writerType, string value)
+    private static string WriteExpression(Compilation compilation, SourceProductionContext context, ITypeSymbol type, INamedTypeSymbol writerType, INamedTypeSymbol generateAttribute, string value)
     {
         IMethodSymbol[] methods = FindConverters(compilation, "Write" + type.Name, m => m.Parameters.Length == 2 && SymbolEqualityComparer.Default.Equals(m.Parameters[0].Type, writerType) && SymbolEqualityComparer.Default.Equals(m.Parameters[1].Type, type), context).ToArray();
         if (methods.Length == 1) return FullyQualifiedCall(methods[0], "writer, " + value);
         if (methods.Length > 1) context.ReportDiagnostic(Diagnostic.Create(AmbiguousConverter, type.Locations.FirstOrDefault(), "writer", type.ToDisplayString()));
+        if (type is INamedTypeSymbol namedType && HasAttribute(namedType, generateAttribute))
+            return GeneratedTypeName(namedType) + ".Write" + GeneratedIdentifier(namedType) + GeneratedTypeArguments(namedType) + "(writer, " + value + ")";
         return "writer.Write<" + type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) + ">(" + value + ")";
     }
 
@@ -135,6 +158,44 @@ public sealed class ReaderWriterGenerator : IIncrementalGenerator
 
     /// <summary>Escapes a stable identity for both C# identifiers and source hint names.</summary>
     private static string Sanitize(string value) => string.Concat(value.Select(c => char.IsLetterOrDigit(c) ? c : '_'));
+
+    /// <summary>Builds the common unique identifier used by generated classes, methods, and hint names.</summary>
+    private static string GeneratedIdentifier(INamedTypeSymbol type)
+    {
+        string identity = StableIdentity(type);
+        return Sanitize(identity) + "_" + StableHash(identity);
+    }
+
+    /// <summary>Builds the fully qualified generated extension class name for an attributed type.</summary>
+    private static string GeneratedTypeName(INamedTypeSymbol type)
+    {
+        string prefix = type.ContainingNamespace.IsGlobalNamespace
+            ? "global::"
+            : "global::" + type.ContainingNamespace.ToDisplayString() + ".";
+        return prefix + GeneratedIdentifier(type) + "SerializationExtensions";
+    }
+
+    /// <summary>Gets distinct generic parameters introduced by the type and its containing types.</summary>
+    private static ImmutableArray<ITypeParameterSymbol> GetContainingTypeParameters(INamedTypeSymbol type)
+    {
+        var chain = new Stack<INamedTypeSymbol>();
+        for (INamedTypeSymbol? current = type; current is not null; current = current.ContainingType) chain.Push(current);
+        var parameters = ImmutableArray.CreateBuilder<ITypeParameterSymbol>();
+        while (chain.Count > 0) parameters.AddRange(chain.Pop().TypeParameters);
+        return parameters.ToImmutable();
+    }
+
+    /// <summary>Formats generic arguments required when invoking another generated serializer.</summary>
+    private static string GeneratedTypeArguments(INamedTypeSymbol type)
+    {
+        var chain = new Stack<INamedTypeSymbol>();
+        for (INamedTypeSymbol? current = type; current is not null; current = current.ContainingType) chain.Push(current);
+        var arguments = new List<ITypeSymbol>();
+        while (chain.Count > 0) arguments.AddRange(chain.Pop().TypeArguments);
+        return arguments.Count == 0
+            ? string.Empty
+            : "<" + string.Join(", ", arguments.Select(argument => argument.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))) + ">";
+    }
 
     /// <summary>Computes a deterministic FNV-1a suffix; unlike GetHashCode it is stable between processes.</summary>
     private static string StableHash(string value)

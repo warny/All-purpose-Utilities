@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
@@ -45,10 +44,7 @@ public class Reader : IReader, IStreamMapping<Reader>
     private readonly IReadOnlyDictionary<Type, Delegate> readers;
 
     /// <summary>Coordinates one logical contract build for each type.</summary>
-    private readonly ConcurrentDictionary<Type, Lazy<Delegate>> contractCache = new();
-
-    /// <summary>Tracks the current dependency path so recursive contracts fail deterministically.</summary>
-    private readonly System.Threading.AsyncLocal<List<Type>?> buildPath = new();
+    private readonly ContractCache contractCache = new();
 
     /// <summary>
     /// Initializes a new instance of <see cref="Reader"/> using default converters.
@@ -213,36 +209,20 @@ public class Reader : IReader, IStreamMapping<Reader>
     private bool TryFindReaderFor(Type type, out Delegate reader)
     {
         if (readers.TryGetValue(type, out reader)) return true;
-        Delegate[] candidates = readers.Where(pair => pair.Key.IsAssignableFrom(type)).Select(pair => pair.Value).Distinct().ToArray();
-        if (candidates.Length == 1)
+        Type[] broaderRegistrations = readers.Keys.Where(registeredType => registeredType.IsAssignableFrom(type)).ToArray();
+        if (broaderRegistrations.Length > 0)
         {
-            reader = candidates[0];
-            return true;
+            string registrations = string.Join(", ", broaderRegistrations.Select(candidate => candidate.FullName ?? candidate.Name).OrderBy(name => name, StringComparer.Ordinal));
+            throw new SerializationContractException(type,
+                [new SerializationContractDiagnostic("UIORT005", $"Reader converter(s) registered for {registrations} cannot read {type.FullName ?? type.Name} because their return types do not guarantee that concrete result.")]);
         }
-        if (candidates.Length > 1) throw new SerializationContractException(type, [new("UIORT005", "Multiple equally applicable reader converters were found.")]);
         reader = null;
         return false;
     }
 
     /// <summary>Gets the shared result of the single logical contract build for a type.</summary>
     private Delegate GetOrCreateReader(Type type)
-    {
-        List<Type> path = buildPath.Value ??= [];
-        int cycleIndex = path.IndexOf(type);
-        if (cycleIndex >= 0)
-        {
-            string cycle = string.Join(" -> ", path.Skip(cycleIndex).Append(type).Select(t => t.FullName ?? t.Name));
-            throw new SerializationContractException(type, [new("UIORT007", $"Recursive serialization contract detected: {cycle}.")]);
-        }
-        Lazy<Delegate> entry = contractCache.GetOrAdd(type, key => new Lazy<Delegate>(() => CreateReaderFor(key), System.Threading.LazyThreadSafetyMode.ExecutionAndPublication));
-        path.Add(type);
-        try { return entry.Value; }
-        finally
-        {
-            path.RemoveAt(path.Count - 1);
-            if (path.Count == 0) buildPath.Value = null;
-        }
-    }
+        => contractCache.GetOrBuild(type, CreateReaderFor);
 
     /// <summary>
     /// Creates a reader for a given type dynamically using expression trees.

@@ -26,6 +26,9 @@
 		<ProjectReference Include="..\Utils\Utils.csproj" />
 	</ItemGroup>
 	<ItemGroup>
+		<InternalsVisibleTo Include="UtilsTest.Unit" />
+	</ItemGroup>
+	<ItemGroup>
 		<None Include="README.md" Pack="true" PackagePath="\"/>
 	</ItemGroup>
 

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
@@ -30,8 +29,7 @@ public class Writer : IWriter, IStreamMapping<Writer>
     /// Dictionary mapping a type to its associated writer delegate.
     /// </summary>
     private readonly IReadOnlyDictionary<Type, Delegate> writers;
-    private readonly ConcurrentDictionary<Type, Lazy<Delegate>> contractCache = new();
-    private readonly System.Threading.AsyncLocal<List<Type>?> buildPath = new();
+    private readonly ContractCache contractCache = new();
 
     /// <summary>
     /// Gets or sets the current position within the stream.
@@ -211,36 +209,40 @@ public class Writer : IWriter, IStreamMapping<Writer>
     private bool TryFindWriterFor(Type type, out Delegate writer)
     {
         if (writers.TryGetValue(type, out writer)) return true;
-        Delegate[] candidates = writers.Where(pair => pair.Key.IsAssignableFrom(type)).Select(pair => pair.Value).Distinct().ToArray();
-        if (candidates.Length == 1)
+        var candidates = writers.Where(pair => pair.Key.IsAssignableFrom(type)).ToArray();
+        var mostSpecific = candidates.Where(candidate => !candidates.Any(other =>
+            candidate.Key != other.Key && candidate.Key.IsAssignableFrom(other.Key))).ToArray();
+        if (mostSpecific.Length == 1)
         {
-            writer = candidates[0];
+            writer = CreateWriterAdapter(type, mostSpecific[0].Value);
             return true;
         }
-        if (candidates.Length > 1) throw new SerializationContractException(type, [new("UIORT005", "Multiple equally applicable writer converters were found.")]);
+        if (mostSpecific.Length > 1)
+        {
+            string registrations = string.Join(", ", mostSpecific.Select(candidate => candidate.Key.FullName ?? candidate.Key.Name).OrderBy(name => name, StringComparer.Ordinal));
+            throw new SerializationContractException(type,
+                [new SerializationContractDiagnostic("UIORT005", $"Writer converters registered for {registrations} are equally specific for {type.FullName ?? type.Name}.")]);
+        }
         writer = null;
         return false;
     }
 
+    /// <summary>Creates a strongly typed adapter for a contravariant base or interface writer.</summary>
+    private static Delegate CreateWriterAdapter(Type requestedType, Delegate converter)
+    {
+        MethodInfo invoke = converter.GetType().GetMethod("Invoke")!;
+        Type acceptedType = invoke.GetParameters()[1].ParameterType;
+        ParameterExpression writerParameter = Expression.Parameter(typeof(IWriter), "writer");
+        ParameterExpression valueParameter = Expression.Parameter(requestedType, "value");
+        MethodCallExpression call = Expression.Call(Expression.Constant(converter), invoke,
+            writerParameter, Expression.Convert(valueParameter, acceptedType));
+        Type adapterType = typeof(Action<,>).MakeGenericType(typeof(IWriter), requestedType);
+        return Expression.Lambda(adapterType, call, writerParameter, valueParameter).Compile();
+    }
+
     /// <summary>Gets the shared result of the single logical writer build for a type.</summary>
     private Delegate GetOrCreateWriter(Type type)
-    {
-        List<Type> path = buildPath.Value ??= [];
-        int cycleIndex = path.IndexOf(type);
-        if (cycleIndex >= 0)
-        {
-            string cycle = string.Join(" -> ", path.Skip(cycleIndex).Append(type).Select(t => t.FullName ?? t.Name));
-            throw new SerializationContractException(type, [new("UIORT007", $"Recursive serialization contract detected: {cycle}.")]);
-        }
-        Lazy<Delegate> entry = contractCache.GetOrAdd(type, key => new Lazy<Delegate>(() => CreateWriterFor(key), System.Threading.LazyThreadSafetyMode.ExecutionAndPublication));
-        path.Add(type);
-        try { return entry.Value; }
-        finally
-        {
-            path.RemoveAt(path.Count - 1);
-            if (path.Count == 0) buildPath.Value = null;
-        }
-    }
+        => contractCache.GetOrBuild(type, CreateWriterFor);
 
     /// <summary>
     /// Creates a writer for a given type dynamically using expression trees.

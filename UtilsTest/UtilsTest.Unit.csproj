@@ -68,7 +68,7 @@
 		<ProjectReference Include="..\Utils.Imaging\Utils.Imaging.csproj" />
 		<ProjectReference Include="..\Utils.DependencyInjection\Utils.DependencyInjection.csproj" />
 		<ProjectReference Include="..\Utils.DependencyInjection.Generators\Utils.DependencyInjection.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-		<ProjectReference Include="..\Utils.IO.Serialization.Generators\Utils.IO.Serialization.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+		<ProjectReference Include="..\Utils.IO.Serialization.Generators\Utils.IO.Serialization.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
 		<ProjectReference Include="..\Utils.Parser.Generators\Utils.Parser.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
 		<ProjectReference Include="..\Utils.Parser.Antlr4.Common\Utils.Parser.Antlr4.Common.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
 		<ProjectReference Include="..\Utils.Parser.Diagnostics\Utils.Parser.Diagnostics.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />

@@ -112,3 +112,7 @@ reproducibility report, then generates and self-validates
 `publish-validated-product-train.yml`; pull requests still never publish packages.
 The artifact contract can be checked locally without contacting NuGet by running
 `./eng/publish-product-train.ps1 -ArtifactsPath <path> -ValidateCandidateOnly`.
+
+## Versioned API breaking-change manifest
+
+The 2.0 product train points each published-baseline package to `eng/api-breaking-changes/2.0.0.json`. The public API gate compares exact normalized ApiCompat diagnostic IDs and messages with that manifest. Both undeclared diagnostics and stale manifest entries fail the gate; accepted entries require a reason and a checked-in migration anchor. Raw and Markdown comparison reports remain release artifacts. This keeps major-version breaks blocking unless they are explicitly reviewed rather than making APICompat informational.

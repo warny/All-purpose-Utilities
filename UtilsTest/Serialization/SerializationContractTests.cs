@@ -28,9 +28,13 @@ public sealed class SerializationContractTests
     {
         SerializationContractException direct = Assert.ThrowsException<SerializationContractException>(() => new Reader(new MemoryStream()).Read<DirectRecursiveModel>());
         SerializationContractException indirect = Assert.ThrowsException<SerializationContractException>(() => new Writer(new MemoryStream()).Write(new IndirectRecursiveA()));
+        SerializationContractException triple = Assert.ThrowsException<SerializationContractException>(() => new Reader(new MemoryStream()).Read<TripleRecursiveA>());
         StringAssert.Contains(direct.Message, "UIORT007");
         StringAssert.Contains(indirect.Message, nameof(IndirectRecursiveA));
         StringAssert.Contains(indirect.Message, nameof(IndirectRecursiveB));
+        StringAssert.Contains(triple.Message, nameof(TripleRecursiveA));
+        StringAssert.Contains(triple.Message, nameof(TripleRecursiveB));
+        StringAssert.Contains(triple.Message, nameof(TripleRecursiveC));
     }
 
     /// <summary>Ensures concurrent callers observe the failure cached by one logical build.</summary>
@@ -52,6 +56,15 @@ public sealed class SerializationContractTests
         EndOfStreamException error = Assert.ThrowsException<EndOfStreamException>(() => reader.Read<uint>());
         StringAssert.Contains(error.Message, "expected 4 bytes, received 3");
         Assert.ThrowsException<EndOfStreamException>(() => new Reader(new MemoryStream()).Read<byte>());
+    }
+
+    /// <summary>Ensures runtime and generated readers both reject post-construction init assignment.</summary>
+    [TestMethod]
+    public void InitOnlyProperty_IsRejectedByRuntimeContract()
+    {
+        SerializationContractException error = Assert.ThrowsException<SerializationContractException>(() =>
+            new Reader(new MemoryStream()).Read<InitOnlyModel>());
+        StringAssert.Contains(error.Message, "UIORT010");
     }
 
     /// <summary>Ensures a failed seek neither leaves a phantom stack entry nor a changed position.</summary>
@@ -90,12 +103,36 @@ public sealed class SerializationContractTests
         [Field(0)] public IndirectRecursiveA Parent { get; set; } = null!;
     }
 
+    /// <summary>First node of a three-contract cycle.</summary>
+    private sealed class TripleRecursiveA
+    {
+        [Field(0)] public TripleRecursiveB Value { get; set; } = null!;
+    }
+
+    /// <summary>Second node of a three-contract cycle.</summary>
+    private sealed class TripleRecursiveB
+    {
+        [Field(0)] public TripleRecursiveC Value { get; set; } = null!;
+    }
+
+    /// <summary>Third node of a three-contract cycle.</summary>
+    private sealed class TripleRecursiveC
+    {
+        [Field(0)] public TripleRecursiveA Value { get; set; } = null!;
+    }
+
     /// <summary>Invalid model without a parameterless constructor.</summary>
     private sealed class NoDefaultConstructorModel
     {
         /// <summary>Initializes the model with a required value.</summary>
         public NoDefaultConstructorModel(int value) => Value = value;
         [Field(0)] public int Value { get; set; }
+    }
+
+    /// <summary>Invalid model whose attributed property is init-only.</summary>
+    private sealed class InitOnlyModel
+    {
+        [Field(0)] public int Value { get; init; }
     }
 
     /// <summary>Seekable stream that mutates its position and then fails.</summary>

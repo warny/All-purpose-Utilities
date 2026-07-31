@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Utils.IO.Serialization;
 
@@ -60,6 +61,8 @@ internal static class ReflectionContractBuilder
             if (property.GetIndexParameters().Length != 0) diagnostics.Add(new("UIORT003", $"Property {property.Name} is an indexer."));
             MethodInfo? accessor = direction == SerializationDirection.Read ? property.SetMethod : property.GetMethod;
             if (accessor is null || !accessor.IsPublic) diagnostics.Add(new("UIORT003", $"Property {property.Name} has no accessible {(direction == SerializationDirection.Read ? "setter" : "getter")}."));
+            if (direction == SerializationDirection.Read && property.SetMethod?.ReturnParameter.GetRequiredCustomModifiers().Contains(typeof(IsExternalInit)) == true)
+                diagnostics.Add(new("UIORT010", $"Property {property.Name} is init-only and cannot be assigned during deserialization."));
             if (accessor?.IsStatic == true) diagnostics.Add(new("UIORT003", $"Property {property.Name} is static."));
             return new(property, property.PropertyType, order);
         }

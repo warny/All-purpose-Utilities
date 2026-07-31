@@ -90,10 +90,10 @@ public class SerializationGeneratorTests
         var original = new SampleMessage { Id = 42, Name = "Alice" };
         using var ms = new MemoryStream();
         var writer = new Writer(ms);
-        writer.WriteSampleMessage(original);
+        writer.WriteUtilsTest_Streams_SampleMessage_46ac6c6e(original);
         ms.Position = 0;
         var reader = new Reader(ms);
-        var copy = reader.ReadSampleMessage();
+        var copy = reader.ReadUtilsTest_Streams_SampleMessage_46ac6c6e();
         Assert.AreEqual(original.Id, copy.Id);
         Assert.AreEqual(original.Name, copy.Name);
     }
@@ -107,12 +107,11 @@ public class SerializationGeneratorTests
         var original = new ParentMessage { Child = new CustomChild { Value = 7 }, Extra = 3 };
         using var ms = new MemoryStream();
         var writer = new Writer(ms);
-        writer.WriteParentMessage(original);
+        writer.WriteUtilsTest_Streams_ParentMessage_b0dcf874(original);
         ms.Position = 0;
         var reader = new Reader(ms);
-        var copy = reader.ReadParentMessage();
+        var copy = reader.ReadUtilsTest_Streams_ParentMessage_b0dcf874();
         Assert.AreEqual(original.Child.Value, copy.Child.Value);
         Assert.AreEqual(original.Extra, copy.Extra);
     }
 }
-

@@ -150,3 +150,10 @@ All notable changes to this project will be documented in this file.
 ### Packaged product-train acceptance
 
 - Centralized the `omy.Utils` and parser-train candidate versions, made Antlr4.Common packable, embedded the DateFormula runtime configuration, and added manifest-driven package-only acceptance validation.
+
+### Utils.IO 2.0 breaking changes
+
+- Migrated `ReaderWriterGenerator` from `ISourceGenerator` to `IIncrementalGenerator` and made generated method identities collision-free.
+- Removed the declared 1.x stream/helper signatures recorded in `eng/api-breaking-changes/2.0.0.json`; no compatibility shims are provided.
+- Reader converters now require an exact return type, while base/interface writer converters use deterministic most-specific selection.
+- `PartialStream` now provides synchronized position, bounds, Span, and asynchronous semantics.

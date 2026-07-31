@@ -1,6 +1,6 @@
 # omy.Utils.IO.Serialization.Generators
 
-`omy.Utils.IO.Serialization.Generators` is a Roslyn source generator that produces strongly typed `Read{Type}` and `Write{Type}` extension methods for DTOs annotated with `[GenerateReaderWriter]`.
+`omy.Utils.IO.Serialization.Generators` is a Roslyn source generator that produces strongly typed, collision-free reader and writer extension methods for DTOs annotated with `[GenerateReaderWriter]`.
 
 ## Install
 ```bash
@@ -14,7 +14,7 @@ dotnet add package omy.Utils.IO.Serialization.Generators
 
 - Discovers classes, structs, and records decorated with `[GenerateReaderWriter]`.
 - Inspects members tagged with `[Field(order)]` to define binary wire ordering.
-- Emits `Read{Type}(this IReader)` and `Write{Type}(this IWriter, T value)` extension methods.
+- Emits uniquely named `Read<type-identity>_<hash>(this IReader)` and `Write<type-identity>_<hash>(this IWriter, T value)` extension methods.
 - Automatically reuses custom serializers when a member type already exposes matching `Read{Member}` / `Write{Member}` extensions.
 - Generates XML-documented, editor-friendly code.
 
@@ -58,11 +58,11 @@ using Utils.IO.Serialization;
 var buffer = new MemoryStream();
 var writer = new Writer(buffer);
 var entry  = new InventoryEntry { Id = 7, Name = "Sprocket", Price = new PriceTag { Amount = 19.95m, Currency = "USD" } };
-writer.WriteInventoryEntry(entry);
+writer.WriteInventoryEntry_db945a29(entry);
 
 buffer.Position = 0;
 var reader       = new Reader(buffer);
-InventoryEntry   roundTrip = reader.ReadInventoryEntry();
+InventoryEntry   roundTrip = reader.ReadInventoryEntry_db945a29();
 ```
 
 `Writer` and `Reader` are the concrete `IWriter`/`IReader` implementations from `omy.Utils.IO`.
@@ -85,7 +85,7 @@ public partial class Shipment
 }
 ```
 
-`WriteShipment` calls `WriteInventoryEntry` internally; `ReadShipment` calls `ReadInventoryEntry`.
+`WriteShipment_126422e3` calls `WriteInventoryEntry_db945a29` internally; `ReadShipment_126422e3` calls `ReadInventoryEntry_db945a29`.
 
 ### Reusing manual serializers
 
@@ -131,7 +131,7 @@ await using var stream = File.OpenWrite("report.bin");
 var writer = new Writer(stream);
 
 foreach (InventoryEntry item in inventory)
-    writer.WriteInventoryEntry(item);
+    writer.WriteInventoryEntry_db945a29(item);
 ```
 
 ## Related packages
@@ -140,3 +140,9 @@ foreach (InventoryEntry item in inventory)
 
 
 [Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)
+
+## Version 2 generated method names
+
+Version 2 uses the complete metadata identity for every generated class, hint name, reader, and writer. A method follows `Read<sanitized-full-identity>_<stable-hash>` / `Write<sanitized-full-identity>_<stable-hash>` rather than `Read<TypeName>` / `Write<TypeName>`. The readable prefix contains the namespace and containing types; the deterministic FNV-1a suffix prevents the remaining escaped-name collisions. This is an intentional 2.0 source-breaking change—use the generated member offered by IntelliSense rather than hard-coding a simple-name convention.
+
+Contracts containing init-only properties are rejected with `UIOSG010`; the generator emits no source for that type, so consumer compilations do not receive a secondary assignment error from a `.g.cs` file.
