@@ -24,7 +24,12 @@ jobs:
               with:
                   dotnet-version: '9.0.x'
                   cache: true
-                  cache-dependency-path: '**/*.csproj'
+                  cache-dependency-path: |
+                      global.json
+                      NuGet.config
+                      Directory.Packages.props
+                      **/*.csproj
+                      **/packages.lock.json
             - name: Build, all tests, audits, and canonical package production
               shell: pwsh
               run: |

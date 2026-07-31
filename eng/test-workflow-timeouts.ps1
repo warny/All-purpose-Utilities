@@ -19,11 +19,12 @@ function Assert-WorkflowTimeouts {
 Assert-WorkflowTimeouts '.github/workflows/dotnetcore.yml' @{
     changes = 5
     build = 20
-    tests = 25
+    'unit-tests' = 25
+    'functional-tests' = 25
     'canonical-packages' = 30
-    'packaged-validation' = 35
-    'source-gates' = 30
-    'assemble-pr-candidate' = 10
+    'packaged-validation-ubuntu' = 25
+    'packaged-validation-windows-light' = 25
+    'source-gates-ubuntu' = 25
     required = 5
 }
 Assert-WorkflowTimeouts '.github/workflows/release-quality-gates.yml' @{
@@ -32,5 +33,32 @@ Assert-WorkflowTimeouts '.github/workflows/release-quality-gates.yml' @{
     'source-gates' = 45
     reproducibility = 45
     candidate = 15
+}
+
+$pullRequestWorkflow = Get-Content (Join-Path $repoRoot '.github/workflows/dotnetcore.yml') -Raw
+foreach ($forbidden in @('assemble-pr-candidate', 'assemble-validated-product-train.ps1', 'publish-product-train.ps1', 'full-product-train-')) {
+    if ($pullRequestWorkflow.Contains($forbidden)) { throw "Pull-request workflow contains publication concern '$forbidden'." }
+}
+foreach ($requiredDependency in @('build', 'unit-tests', 'functional-tests', 'canonical-packages', 'packaged-validation-ubuntu', 'packaged-validation-windows-light', 'source-gates-ubuntu')) {
+    if ($pullRequestWorkflow -notmatch [regex]::Escape("needs.$requiredDependency.result")) {
+        throw "Required job does not enforce '$requiredDependency'."
+    }
+}
+foreach ($parallelRoot in @('build', 'unit-tests', 'functional-tests', 'canonical-packages')) {
+    if ($pullRequestWorkflow -notmatch "(?ms)^    $([regex]::Escape($parallelRoot)):\s+needs: changes\s") {
+        throw "Pull-request job '$parallelRoot' is not released directly by changes."
+    }
+}
+foreach ($canonicalDependent in @('packaged-validation-ubuntu', 'packaged-validation-windows-light', 'source-gates-ubuntu')) {
+    if ($pullRequestWorkflow -notmatch "(?ms)^    $([regex]::Escape($canonicalDependent)):\s+needs: canonical-packages\s") {
+        throw "Pull-request job '$canonicalDependent' does not start directly after canonical packaging."
+    }
+}
+if ($pullRequestWorkflow -notmatch '(?ms)name: Write measured phase summary\s+if: always\(\)\s+continue-on-error: true') {
+    throw 'Workflow timing collection is not explicitly best-effort.'
+}
+$fullReleaseWorkflow = Get-Content (Join-Path $repoRoot '.github/workflows/release-quality-gates.yml') -Raw
+foreach ($required in @('assemble-validated-product-train.ps1', 'publish-product-train.ps1', 'full-product-train-${{ github.sha }}')) {
+    if (-not $fullReleaseWorkflow.Contains($required)) { throw "FullRelease workflow lost '$required'." }
 }
 Write-Host 'Workflow timeout tests passed.'

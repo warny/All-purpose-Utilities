@@ -35,8 +35,11 @@ $consumers = @($selected | ForEach-Object {
     consumers = $consumers
     perConsumerVulnerabilityAudit = $ValidationTier -eq 'FullRelease'
     exhaustiveGeneratorMatrices = $ValidationTier -eq 'FullRelease'
+    automaticConsumerPerPackage = $ValidationTier -eq 'FullRelease'
     remoteSourceLink = $ValidationTier -eq 'FullRelease'
     reproducibility = $ValidationTier -eq 'FullRelease'
     deprecatedAudit = $ValidationTier -eq 'FullRelease'
     outdatedAudit = $ValidationTier -eq 'FullRelease'
+    candidateAssembly = $ValidationTier -eq 'FullRelease'
+    publicationValidation = $ValidationTier -eq 'FullRelease'
 } | ConvertTo-Json -Depth 6

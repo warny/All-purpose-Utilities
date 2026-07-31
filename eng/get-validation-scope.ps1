@@ -25,7 +25,11 @@ $codeOrPackages = @($normalized | Where-Object {
     $_ -in @('Directory.Packages.props', 'global.json', 'NuGet.config', 'eng/product-train-manifest.json', 'eng/release-warning-exceptions.json', 'eng/dependency-exceptions.json') -or
     $_ -like 'tests/PackagedAcceptance/*'
 })
-$documentationOnly = $normalized.Count -gt 0 -and @($normalized | Where-Object { $_ -notmatch '\.md$' -and $_ -notlike 'docs/*' }).Count -eq 0
+$documentationOnly = $normalized.Count -gt 0 -and @($normalized | Where-Object {
+    # Root README and the documentation tree are the only proven non-product inputs.
+    # A README beside a project may be packed, so it deliberately runs the train.
+    $_ -ne 'README.md' -and $_ -notlike 'docs/*'
+}).Count -eq 0
 $result = [ordered]@{
     paths = $normalized
     codeOrPackages = $codeOrPackages.Count -gt 0

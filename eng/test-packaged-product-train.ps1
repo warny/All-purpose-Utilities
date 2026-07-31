@@ -184,35 +184,37 @@ try {
 </configuration>
 "@ | Set-Content $configPath
 
-    # Level A: every manifested package is restored and compiled in isolation. Library
-    # packages are loaded by assembly name; analyzer packages must load in Roslyn without CS8032.
-    $automaticRoot = Join-Path $temporaryPath "automatic-consumers"
-    foreach ($package in $manifest.packages) {
-        $safeName = $package.packageId.Replace('.', '-')
-        $projectRoot = Join-Path $automaticRoot $safeName
-        New-Item $projectRoot -ItemType Directory -Force | Out-Null
-        $referenceMetadata = if ($package.kind -eq "analyzer") { ' OutputItemType="Analyzer" ReferenceOutputAssembly="false"' } else { '' }
-        @"
+    # FullRelease loads every package independently. PullRequest relies on package
+    # inspection plus the deterministic representative consumer graph.
+    if ($validationPlan.automaticConsumerPerPackage) {
+        $automaticRoot = Join-Path $temporaryPath "automatic-consumers"
+        foreach ($package in $manifest.packages) {
+            $safeName = $package.packageId.Replace('.', '-')
+            $projectRoot = Join-Path $automaticRoot $safeName
+            New-Item $projectRoot -ItemType Directory -Force | Out-Null
+            $referenceMetadata = if ($package.kind -eq "analyzer") { ' OutputItemType="Analyzer" ReferenceOutputAssembly="false"' } else { '' }
+            @"
 <Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net9.0</TargetFramework><EnablePreviewFeatures>false</EnablePreviewFeatures></PropertyGroup><ItemGroup><PackageReference Include="$($package.packageId)" Version="$($manifest.version)"$referenceMetadata /></ItemGroup></Project>
 "@ | Set-Content (Join-Path $projectRoot "Consumer.csproj")
-        if ($package.kind -eq "analyzer") {
-            'Console.WriteLine("analyzer-loaded");' | Set-Content (Join-Path $projectRoot "Program.cs")
-        } else {
-            $assemblyName = [IO.Path]::GetFileNameWithoutExtension($package.project)
-            "using System.Reflection; var assembly = Assembly.Load(`"$assemblyName`"); var representative = assembly.GetExportedTypes().FirstOrDefault() ?? throw new InvalidOperationException(`"No public type.`"); Console.WriteLine(`"assembly-loaded:${assemblyName}:`" + representative.FullName);" | Set-Content (Join-Path $projectRoot "Program.cs")
+            if ($package.kind -eq "analyzer") {
+                'Console.WriteLine("analyzer-loaded");' | Set-Content (Join-Path $projectRoot "Program.cs")
+            } else {
+                $assemblyName = [IO.Path]::GetFileNameWithoutExtension($package.project)
+                "using System.Reflection; var assembly = Assembly.Load(`"$assemblyName`"); var representative = assembly.GetExportedTypes().FirstOrDefault() ?? throw new InvalidOperationException(`"No public type.`"); Console.WriteLine(`"assembly-loaded:${assemblyName}:`" + representative.FullName);" | Set-Content (Join-Path $projectRoot "Program.cs")
+            }
+            $automaticProject = Join-Path $projectRoot "Consumer.csproj"
+            & Invoke-AcceptanceDotNet restore $automaticProject --configfile $configPath --packages $globalPackages
+            if ($LASTEXITCODE -ne 0) { throw "Automatic restore failed for $($package.packageId)." }
+            $automaticAssets = Get-Content (Join-Path $projectRoot "obj/project.assets.json") -Raw | ConvertFrom-Json
+            foreach ($library in $automaticAssets.libraries.PSObject.Properties | Where-Object Name -like "omy.*/*") {
+                $parts = $library.Name -split "/"
+                if (-not $expectedPackages.ContainsKey($parts[0]) -or $parts[1] -ne $manifest.version) { throw "$($package.packageId) restored divergent internal asset '$($library.Name)'." }
+            }
+            $buildOutput = & Invoke-AcceptanceDotNet build $automaticProject --configuration $Configuration --no-restore 2>&1
+            if ($LASTEXITCODE -ne 0 -or ($buildOutput -match "CS8032")) { $buildOutput | Write-Host; throw "Automatic compile/load gate failed for $($package.packageId)." }
+            & Invoke-AcceptanceDotNet run --project $automaticProject --configuration $Configuration --no-build
+            if ($LASTEXITCODE -ne 0) { throw "Automatic execution failed for $($package.packageId)." }
         }
-        $automaticProject = Join-Path $projectRoot "Consumer.csproj"
-        & Invoke-AcceptanceDotNet restore $automaticProject --configfile $configPath --packages $globalPackages
-        if ($LASTEXITCODE -ne 0) { throw "Automatic restore failed for $($package.packageId)." }
-        $automaticAssets = Get-Content (Join-Path $projectRoot "obj/project.assets.json") -Raw | ConvertFrom-Json
-        foreach ($library in $automaticAssets.libraries.PSObject.Properties | Where-Object Name -like "omy.*/*") {
-            $parts = $library.Name -split "/"
-            if (-not $expectedPackages.ContainsKey($parts[0]) -or $parts[1] -ne $manifest.version) { throw "$($package.packageId) restored divergent internal asset '$($library.Name)'." }
-        }
-        $buildOutput = & Invoke-AcceptanceDotNet build $automaticProject --configuration $Configuration --no-restore 2>&1
-        if ($LASTEXITCODE -ne 0 -or ($buildOutput -match "CS8032")) { $buildOutput | Write-Host; throw "Automatic compile/load gate failed for $($package.packageId)." }
-        & Invoke-AcceptanceDotNet run --project $automaticProject --configuration $Configuration --no-build
-        if ($LASTEXITCODE -ne 0) { throw "Automatic execution failed for $($package.packageId)." }
     }
 
     $consumerRoot = Join-Path $repoRoot "tests/PackagedAcceptance"
@@ -255,7 +257,9 @@ try {
         "DependencyInjectionGeneratorConsumer/DependencyInjectionGeneratorConsumer.csproj"
     )
     if (-not $validationPlan.exhaustiveGeneratorMatrices) {
-        $generatorConsumers = @("DependencyInjectionGeneratorConsumer/DependencyInjectionGeneratorConsumer.csproj")
+        # The representative projects were already restored, built, and executed above.
+        # Mutation and emission matrices are reserved for FullRelease.
+        $generatorConsumers = @()
     }
     foreach ($relativeProject in $generatorConsumers) {
         $project = Join-Path $consumerRoot $relativeProject
@@ -299,17 +303,21 @@ try {
         if ($LASTEXITCODE -ne 0) { throw "Generated behavior failed after incremental restoration for '$relativeProject'." }
     }
 
-    $utilsProject = Join-Path $consumerRoot "UtilsConsumer/UtilsConsumer.csproj"
-    & Invoke-AcceptanceDotNet publish $utilsProject --configuration $Configuration --no-restore --output (Join-Path $temporaryPath "published-utils")
-    if ($LASTEXITCODE -ne 0) { throw "Publish failed for the omy.Utils consumer." }
-    & Invoke-AcceptanceDotNet (Join-Path $temporaryPath "published-utils/UtilsConsumer.dll")
-    if ($LASTEXITCODE -ne 0) { throw "Published omy.Utils consumer execution failed." }
+    if ($validationPlan.exhaustiveGeneratorMatrices) {
+        $utilsProject = Join-Path $consumerRoot "UtilsConsumer/UtilsConsumer.csproj"
+        & Invoke-AcceptanceDotNet publish $utilsProject --configuration $Configuration --no-restore --output (Join-Path $temporaryPath "published-utils")
+        if ($LASTEXITCODE -ne 0) { throw "Publish failed for the omy.Utils consumer." }
+        & Invoke-AcceptanceDotNet (Join-Path $temporaryPath "published-utils/UtilsConsumer.dll")
+        if ($LASTEXITCODE -ne 0) { throw "Published omy.Utils consumer execution failed." }
+    }
 
-    $generatorProject = Join-Path $consumerRoot "ParserGeneratorConsumer/ParserGeneratorConsumer.csproj"
-    foreach ($emit in @("true", "false")) {
-        foreach ($attach in @("true", "false")) {
-            & Invoke-AcceptanceDotNet -Arguments @("build", $generatorProject, "--configuration", $Configuration, "--no-restore", "-p:EmitCompilerGeneratedFiles=$emit", "-p:UtilsParserAttachGeneratedFiles=$attach")
-            if ($LASTEXITCODE -ne 0) { throw "Generator matrix failed (Emit=$emit, Attach=$attach)." }
+    if ($validationPlan.exhaustiveGeneratorMatrices) {
+        $generatorProject = Join-Path $consumerRoot "ParserGeneratorConsumer/ParserGeneratorConsumer.csproj"
+        foreach ($emit in @("true", "false")) {
+            foreach ($attach in @("true", "false")) {
+                & Invoke-AcceptanceDotNet -Arguments @("build", $generatorProject, "--configuration", $Configuration, "--no-restore", "-p:EmitCompilerGeneratedFiles=$emit", "-p:UtilsParserAttachGeneratedFiles=$attach")
+                if ($LASTEXITCODE -ne 0) { throw "Generator matrix failed (Emit=$emit, Attach=$attach)." }
+            }
         }
     }
 

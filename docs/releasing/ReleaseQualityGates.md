@@ -30,16 +30,14 @@ Warning exceptions are project-and-code specific in `eng/release-warning-excepti
 | Tier | Trigger | Gates | Target | Artifact | Publishable |
 |---|---|---|---:|---|---|
 | Lightweight pull request | Ordinary documentation outside `docs/releasing` | Path classification and lightweight script checks | Under 2 minutes | None | No |
-| Code/package pull request | Code, package, `eng`, workflow, or release-doc change | Build, global vulnerability audit, tests, one canonical pack, package/hash inspection, representative and automatic consumers on Ubuntu and Windows, API, warnings, local SourceLink | 10–15 minutes | `pull-request-product-train-*` | **No** |
+| Ordinary code pull request | Code or test change | Parallel build, tests, one canonical pack, four representative consumers on Ubuntu and Windows, API, warnings, local SourceLink | 5–10 minutes | Diagnostic reports only | No |
+| Package pull request | Package or release-infrastructure change | Same fast gates with canonical package inspection and cross-platform consumers | 10–15 minutes maximum | Diagnostic reports only | No |
 | Full release | `master`, weekly, `v*`, or manual | Every consumer and matrix, reproducibility, remote SourceLink, vulnerable/deprecated/outdated audits, complete manifest | Recorded by Actions | `full-product-train-*` | Yes, after separate approval |
 
 The deterministic pull-request set contains `UtilsConsumer` (root package and net8),
 `ParserRuntimeConsumer` (complex composition and internal dependencies),
 `ParserGeneratorConsumer` (source generation), and
-`DependencyInjectionGeneratorConsumer` (analyzer composition and net9). Every package outside
-those specialized scenarios still receives the automatic minimal consumer: isolated
-restore, canonical-version graph inspection, compile, public type/analyzer load, and
-execution. FullRelease retains every consumer and specialized matrix.
+`DependencyInjectionGeneratorConsumer` (analyzer composition and net9). PullRequest restores, builds, and executes only these representative projects; canonical inspection still validates every archive and hash. FullRelease retains every consumer, the generated per-package consumers, and every specialized matrix.
 
 The framework coverage is derived from the selected consumer project files and tested
 offline: the PR subset currently covers both `net8.0` and `net9.0`. Selection and gate
@@ -50,13 +48,13 @@ The `changes` job uses `eng/get-validation-scope.ps1`, not a third-party path ac
 Ordinary non-release documentation skips package production and both platform runners.
 Changes below `eng`, `.github/workflows`, and `docs/releasing` run release-script tests.
 
-A pull-request candidate explicitly records `validationTier: pull-request` and
-`reproducibilityValidated: false`. Candidate-only inspection accepts it, but every
-publication-capable invocation rejects it before contacting NuGet. Only FullRelease
-sets `validationTier: full-release` and `reproducibilityValidated: true` after the
-two-build Ubuntu reproducibility gate.
+Pull requests do not assemble a publication candidate. Their final JSON is a small,
+explicitly non-publishable status summary. Only FullRelease assembles a candidate and
+sets `validationTier: full-release` with `reproducibilityValidated: true` after the
+two-build Ubuntu reproducibility gate. Publication-capable commands continue to reject
+anything else before contacting NuGet.
 
-Pull requests use `.github/workflows/dotnetcore.yml`. Build, the blocking global vulnerability check, unit and functional tests, and canonical packaging precede three parallel branches: Ubuntu packaged acceptance, Windows packaged acceptance, and Ubuntu-only source gates. Both platform jobs download and hash-check the same canonical package artifact; neither packs projects. API compatibility, warnings, and local SourceLink run once on Ubuntu. Reproducibility, remote SourceLink, deprecated/outdated audits, per-consumer vulnerability scans, and exhaustive specialized scenarios remain outside the PR critical path. Each package job uses an isolated `NUGET_PACKAGES` directory, so the ordinary NuGet cache cannot replace the canonical feed.
+Pull requests use `.github/workflows/dotnetcore.yml`. Build, unit tests, functional tests, and canonical packaging start in parallel immediately after path classification. Canonical packaging unlocks three parallel branches: Ubuntu packaged acceptance, Windows packaged acceptance, and Ubuntu-only source gates. Both platform jobs download and hash-check the same canonical package artifact; neither packs projects. API compatibility, warnings, and local SourceLink run once on Ubuntu. Reproducibility, remote SourceLink, deprecated/outdated audits, per-consumer vulnerability scans, and exhaustive specialized scenarios remain outside the PR critical path. Each package job uses an isolated `NUGET_PACKAGES` directory, so the ordinary NuGet cache cannot replace the canonical feed. The final `required` job only evaluates job results and emits best-effort timing plus a non-publishable status report; it downloads no validation artifacts. The previous PR run exceeded 30 minutes before failing during candidate assembly. That assembly has been removed; observed replacement timings are recorded per job in `workflow-timings.json` and should be added here after the first completed run.
 
 The full workflow, `.github/workflows/release-quality-gates.yml`, runs weekly, for
 `v*` tags, and on manual dispatch. It retains the remote SourceLink download, deprecated

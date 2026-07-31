@@ -16,6 +16,7 @@ Assert-Scope 'eng/tool.ps1' $true $true
 Assert-Scope '.github/workflows/ci.yml' $true $true
 Assert-Scope 'docs/releasing/guide.md' $true $true
 Assert-Scope @('README.md', 'src/unknown.build-input') $true
+Assert-Scope 'Utils/README.md' $true
 foreach ($path in @(
     'Utils.sln',
     'Utils.slnx',
