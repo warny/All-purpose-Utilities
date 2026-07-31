@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -53,7 +54,9 @@ namespace Utils.Net
         public NtpQueryException(string message, IReadOnlyList<NtpEndpointFailure> failures)
             : base(message)
         {
-            Failures = failures ?? Array.Empty<NtpEndpointFailure>();
+            Failures = failures is null
+                ? (IReadOnlyList<NtpEndpointFailure>)Array.Empty<NtpEndpointFailure>()
+                : failures.ToArray();
         }
     }
 

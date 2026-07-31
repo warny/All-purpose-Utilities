@@ -24,6 +24,17 @@ namespace Utils.Net.Arp;
 /// <see cref="ProtocolAddressLength"/>) because varying them would produce a packet that this
 /// implementation cannot serialise or parse.
 /// </para>
+/// <para>
+/// An <see cref="ArpPacket"/> is not immediately serialisable after construction. Before
+/// calling <see cref="ToBytes"/>, the caller must set <see cref="Operation"/>,
+/// <see cref="SenderHardwareAddress"/>, <see cref="SenderProtocolAddress"/>,
+/// <see cref="TargetHardwareAddress"/> and <see cref="TargetProtocolAddress"/> to valid
+/// Ethernet/IPv4 values. <see cref="ToBytes"/> performs final validation and throws
+/// <see cref="InvalidOperationException"/> when any constraint is violated.
+/// Only <see cref="ArpOperation.Request"/> (1) and <see cref="ArpOperation.Reply"/> (2) are
+/// supported; any other <see cref="Operation"/> value will also cause <see cref="ToBytes"/>
+/// to throw.
+/// </para>
 /// </remarks>
 public class ArpPacket
 {
@@ -98,6 +109,10 @@ public class ArpPacket
     /// </exception>
     public byte[] ToBytes()
     {
+        ushort operationValue = (ushort)Operation;
+        if (operationValue != 1 && operationValue != 2)
+            throw new InvalidOperationException($"Unsupported ARP operation value {operationValue}; only Request (1) and Reply (2) are supported.");
+
         byte[] senderMac = GetMacBytes(SenderHardwareAddress, nameof(SenderHardwareAddress));
         byte[] targetMac = GetMacBytes(TargetHardwareAddress, nameof(TargetHardwareAddress));
         byte[] senderIp = GetIpv4Bytes(SenderProtocolAddress, nameof(SenderProtocolAddress));
@@ -184,6 +199,10 @@ public class ArpPacket
         byte hardwareLength = data[4];
         byte protocolLength = data[5];
         ushort operation = BinaryPrimitives.ReadUInt16BigEndian(data.Slice(6, 2));
+
+        // Step 1b: validate the operation field.
+        if (operation != 1 && operation != 2)
+            throw new InvalidDataException($"Unsupported ARP operation value {operation}; only Request (1) and Reply (2) are supported.");
 
         // Step 2: validate that the declared body fits within the buffer, using checked
         // arithmetic so an oversized HLEN/PLEN cannot overflow the length computation.

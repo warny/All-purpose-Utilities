@@ -96,10 +96,18 @@ public static class NtpClient
         foreach (IPAddress address in addresses)
         {
             cancellationToken.ThrowIfCancellationRequested();
+
+            if (address is null)
+                continue;
+            if (address.Equals(IPAddress.Any) || address.Equals(IPAddress.IPv6Any)
+                || address.Equals(IPAddress.None) || address.Equals(IPAddress.IPv6None)
+                || IsMulticast(address))
+                continue;
+
             IPEndPoint endpoint = new(address, port);
 
             // A fresh, non-zero transmit timestamp per attempt lets us correlate the reply.
-            byte[] request = BuildRequest(out ulong transmitTimestamp);
+            byte[] request = BuildRequest(out ulong correlationTimestamp);
 
             byte[] response;
             try
@@ -123,7 +131,7 @@ public static class NtpClient
 
             try
             {
-                return ParseResponse(response, endpoint, transmitTimestamp);
+                return ParseResponse(response, endpoint, correlationTimestamp);
             }
             catch (InvalidDataException ex)
             {
@@ -135,7 +143,15 @@ public static class NtpClient
             $"All {addresses.Length} resolved endpoint(s) for '{host}' failed.", failures);
     }
 
-    private static byte[] BuildRequest(out ulong transmitTimestamp)
+    private static bool IsMulticast(IPAddress address)
+    {
+        if (address.AddressFamily == AddressFamily.InterNetworkV6)
+            return address.IsIPv6Multicast;
+        byte[] bytes = address.GetAddressBytes();
+        return bytes.Length == 4 && bytes[0] >= 224 && bytes[0] <= 239;
+    }
+
+    private static byte[] BuildRequest(out ulong correlationTimestamp)
     {
         byte[] request = new byte[NtpPacketLength];
         request[0] = 0x1B; // LI = 0, VN = 3, Mode = 3 (client)
@@ -145,11 +161,11 @@ public static class NtpClient
         do
         {
             RandomNumberGenerator.Fill(nonce);
-            transmitTimestamp = ((ulong)nonce[0] << 56) | ((ulong)nonce[1] << 48) | ((ulong)nonce[2] << 40)
+            correlationTimestamp = ((ulong)nonce[0] << 56) | ((ulong)nonce[1] << 48) | ((ulong)nonce[2] << 40)
                 | ((ulong)nonce[3] << 32) | ((ulong)nonce[4] << 24) | ((ulong)nonce[5] << 16)
                 | ((ulong)nonce[6] << 8) | nonce[7];
         }
-        while (transmitTimestamp == 0);
+        while (correlationTimestamp == 0);
 
         for (int i = 0; i < 8; i++)
             request[TransmitTimestampOffset + i] = nonce[i];

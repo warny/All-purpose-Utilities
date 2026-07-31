@@ -69,20 +69,10 @@ namespace Utils.Net
 
         private static int? TryGetMetric(IPInterfaceProperties ipProperties)
         {
-            // The routing metric is only meaningful on the IPv4/IPv6 interface properties and is
-            // not available on every platform. Treat any failure as "unknown metric".
-            try
-            {
-                IPv4InterfaceProperties v4 = ipProperties.GetIPv4Properties();
-                if (v4 is not null)
-                    return v4.Index;
-            }
-            catch (NetworkInformationException)
-            {
-            }
-            catch (PlatformNotSupportedException)
-            {
-            }
+            // A true routing metric is not reliably available via the managed API on all platforms.
+            // IPv4InterfaceProperties.Index is an interface identifier, not a routing priority.
+            // Returning null preserves the OS enumeration order as a tie-breaker, which is more
+            // meaningful than sorting by a value that does not represent routing preference.
             return null;
         }
 
@@ -96,7 +86,7 @@ namespace Utils.Net
         /// default gateway. This deliberately includes VPN and point-to-point interfaces that carry
         /// a resolver but advertise no gateway. Ordering is deterministic:
         /// interfaces that have at least one gateway are preferred over those without, then by
-        /// ascending metric (unknown metric last), then by OS enumeration order, then by DNS order
+        /// OS enumeration order (the order returned by the operating system), then by DNS order
         /// within an interface. Wildcard/unspecified and multicast resolver addresses are excluded,
         /// and duplicates are removed while preserving the first-seen priority.
         /// </remarks>

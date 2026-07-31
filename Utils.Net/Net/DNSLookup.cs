@@ -186,6 +186,9 @@ namespace Utils.Net
         /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
         public async Task<DNSHeader> RequestAsync(string type, string name, DNSClassId @class = DNSClassId.ALL, CancellationToken cancellationToken = default)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(type);
+            ArgumentException.ThrowIfNullOrWhiteSpace(name);
+
             DNSHeader request = new DNSHeader { RecursionDesired = true };
             request.Requests.Add(new DNSRequestRecord(type, name, @class));
 
@@ -359,6 +362,7 @@ namespace Utils.Net
         private sealed class SocketDnsTransport : IDnsTransport
         {
             private const int ReceiveTimeoutMs = 5000;
+            private static readonly TimeSpan TcpTimeout = TimeSpan.FromSeconds(5);
 
             public async Task<byte[]> QueryUdpAsync(IPEndPoint server, byte[] query, CancellationToken cancellationToken)
             {
@@ -392,28 +396,40 @@ namespace Utils.Net
 
             public async Task<byte[]> QueryTcpAsync(IPEndPoint server, byte[] query, CancellationToken cancellationToken)
             {
-                using var tcpSocket = new Socket(server.AddressFamily, SocketType.Stream, System.Net.Sockets.ProtocolType.Tcp);
-                await tcpSocket.ConnectAsync(server, cancellationToken).ConfigureAwait(false);
+                using CancellationTokenSource timeoutCts =
+                    CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                timeoutCts.CancelAfter(TcpTimeout);
+                CancellationToken effectiveToken = timeoutCts.Token;
 
-                // DNS over TCP prefixes each message with a 2-byte big-endian length field (RFC 1035 §4.2.2).
-                byte[] frame = new byte[2 + query.Length];
-                frame[0] = (byte)(query.Length >> 8);
-                frame[1] = (byte)(query.Length & 0xFF);
-                Array.Copy(query, 0, frame, 2, query.Length);
-                int sent = 0;
-                while (sent < frame.Length)
+                try
                 {
-                    int n = await tcpSocket.SendAsync(frame.AsMemory(sent), SocketFlags.None, cancellationToken).ConfigureAwait(false);
-                    if (n == 0) throw new IOException("DNS TCP connection closed during send.");
-                    sent += n;
+                    using var tcpSocket = new Socket(server.AddressFamily, SocketType.Stream, System.Net.Sockets.ProtocolType.Tcp);
+                    await tcpSocket.ConnectAsync(server, effectiveToken).ConfigureAwait(false);
+
+                    // DNS over TCP prefixes each message with a 2-byte big-endian length field (RFC 1035 §4.2.2).
+                    byte[] frame = new byte[2 + query.Length];
+                    frame[0] = (byte)(query.Length >> 8);
+                    frame[1] = (byte)(query.Length & 0xFF);
+                    Array.Copy(query, 0, frame, 2, query.Length);
+                    int sent = 0;
+                    while (sent < frame.Length)
+                    {
+                        int n = await tcpSocket.SendAsync(frame.AsMemory(sent), SocketFlags.None, effectiveToken).ConfigureAwait(false);
+                        if (n == 0) throw new IOException("DNS TCP connection closed during send.");
+                        sent += n;
+                    }
+
+                    byte[] lengthBytes = await ReceiveExactlyAsync(tcpSocket, 2, effectiveToken).ConfigureAwait(false);
+                    int responseLength = (lengthBytes[0] << 8) | lengthBytes[1];
+                    if (responseLength <= 0 || responseLength > 65535)
+                        throw new InvalidDataException($"DNS TCP response declared invalid length {responseLength}.");
+
+                    return await ReceiveExactlyAsync(tcpSocket, responseLength, effectiveToken).ConfigureAwait(false);
                 }
-
-                byte[] lengthBytes = await ReceiveExactlyAsync(tcpSocket, 2, cancellationToken).ConfigureAwait(false);
-                int responseLength = (lengthBytes[0] << 8) | lengthBytes[1];
-                if (responseLength <= 0 || responseLength > 65535)
-                    throw new InvalidDataException($"DNS TCP response declared invalid length {responseLength}.");
-
-                return await ReceiveExactlyAsync(tcpSocket, responseLength, cancellationToken).ConfigureAwait(false);
+                catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+                {
+                    throw new SocketException((int)SocketError.TimedOut);
+                }
             }
 
             private static async Task<byte[]> ReceiveExactlyAsync(Socket socket, int count, CancellationToken cancellationToken)

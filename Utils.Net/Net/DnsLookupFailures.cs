@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 
 namespace Utils.Net
@@ -90,7 +91,9 @@ namespace Utils.Net
         public DnsLookupException(IReadOnlyList<DnsServerFailure> failures)
             : base(BuildMessage(failures))
         {
-            Failures = failures ?? Array.Empty<DnsServerFailure>();
+            Failures = failures is null
+                ? (IReadOnlyList<DnsServerFailure>)Array.Empty<DnsServerFailure>()
+                : failures.ToArray();
         }
 
         private static string BuildMessage(IReadOnlyList<DnsServerFailure>? failures)
