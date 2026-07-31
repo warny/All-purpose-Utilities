@@ -47,6 +47,8 @@ tests, and packaged acceptance from maintaining separate lists.
 The `changes` job uses `eng/get-validation-scope.ps1`, not a third-party path action.
 Ordinary non-release documentation skips package production and both platform runners.
 Changes below `eng`, `.github/workflows`, and `docs/releasing` run release-script tests.
+Manual dispatch has no pull-request base SHA, so it explicitly uses `-ForceProductTrain`
+and always runs the complete PR validation rather than attempting an empty diff.
 
 Pull requests do not assemble a publication candidate. Their final JSON is a small,
 explicitly non-publishable status summary. Only FullRelease assembles a candidate and

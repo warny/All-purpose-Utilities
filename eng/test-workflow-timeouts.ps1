@@ -36,6 +36,9 @@ Assert-WorkflowTimeouts '.github/workflows/release-quality-gates.yml' @{
 }
 
 $pullRequestWorkflow = Get-Content (Join-Path $repoRoot '.github/workflows/dotnetcore.yml') -Raw
+if ($pullRequestWorkflow -notmatch "github\.event_name.*workflow_dispatch" -or $pullRequestWorkflow -notmatch 'get-validation-scope\.ps1 -ForceProductTrain') {
+    throw 'Manual pull-request workflow dispatch does not explicitly force the complete product train.'
+}
 foreach ($forbidden in @('assemble-pr-candidate', 'assemble-validated-product-train.ps1', 'publish-product-train.ps1', 'full-product-train-')) {
     if ($pullRequestWorkflow.Contains($forbidden)) { throw "Pull-request workflow contains publication concern '$forbidden'." }
 }

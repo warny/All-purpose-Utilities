@@ -8,10 +8,14 @@ Returns deterministic JSON and optional Actions outputs without using a third-pa
 param(
     [string[]] $Paths,
     [string] $BaseRef,
+    [switch] $ForceProductTrain,
     [switch] $WriteGitHubOutput
 )
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
+if ($ForceProductTrain) {
+    $Paths = @('manual-full-validation')
+}
 if (-not $Paths) {
     if ([string]::IsNullOrWhiteSpace($BaseRef)) { throw "Paths or BaseRef is required." }
     $Paths = @(& git -C $repoRoot diff --name-only "$BaseRef...HEAD")

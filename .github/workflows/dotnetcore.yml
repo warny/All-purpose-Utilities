@@ -33,7 +33,12 @@ jobs:
                   fetch-depth: 0
             - id: scope
               shell: pwsh
-              run: ./eng/get-validation-scope.ps1 -BaseRef '${{ github.event.pull_request.base.sha || github.event.before }}' -WriteGitHubOutput
+              run: |
+                  if ('${{ github.event_name }}' -eq 'workflow_dispatch') {
+                      ./eng/get-validation-scope.ps1 -ForceProductTrain -WriteGitHubOutput
+                  } else {
+                      ./eng/get-validation-scope.ps1 -BaseRef '${{ github.event.pull_request.base.sha }}' -WriteGitHubOutput
+                  }
             - name: Lightweight release-script tests
               if: steps.scope.outputs.runReleaseScriptTests == 'true'
               shell: pwsh

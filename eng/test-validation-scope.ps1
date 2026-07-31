@@ -17,6 +17,10 @@ Assert-Scope '.github/workflows/ci.yml' $true $true
 Assert-Scope 'docs/releasing/guide.md' $true $true
 Assert-Scope @('README.md', 'src/unknown.build-input') $true
 Assert-Scope 'Utils/README.md' $true
+$manualScope = & $script -ForceProductTrain | ConvertFrom-Json
+if (-not $manualScope.runProductTrain -or $manualScope.documentationOnly) {
+    throw 'A forced manual validation did not run the complete product train.'
+}
 foreach ($path in @(
     'Utils.sln',
     'Utils.slnx',
