@@ -5580,7 +5580,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.Net.Arp.ArpPacket",
-      "Summary": "<p sourcefile=\"api/Utils.Net.Arp.ArpPacket.yml\" sourcestartlinenumber=\"1\">Represents an Address Resolution Protocol packet.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.Net.Arp.ArpPacket.yml\" sourcestartlinenumber=\"1\">Represents an Address Resolution Protocol (ARP) packet, specialised for the\nEthernet / IPv4 binding defined in <a href=\"https://www.rfc-editor.org/rfc/rfc826\">RFC 826</a>.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -7152,6 +7152,62 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Net.DnsFailureKind.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Net.DnsFailureKind.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Net.DnsFailureKind",
+      "Summary": "<p sourcefile=\"api/Utils.Net.DnsFailureKind.yml\" sourcestartlinenumber=\"1\">Categorises why a single DNS server attempt failed.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Net.DnsLookupException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Net.DnsLookupException.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Net.DnsLookupException",
+      "Summary": "<p sourcefile=\"api/Utils.Net.DnsLookupException.yml\" sourcestartlinenumber=\"1\">Thrown when every configured DNS server failed to return a usable response. The individual\nper-server failures are preserved in <xref href=\"Utils.Net.DnsLookupException.Failures\" data-throw-if-not-resolved=\"false\"></xref>, in the order in which the\nservers were attempted.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Net.DnsServerFailure.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Net.DnsServerFailure.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Net.DnsServerFailure",
+      "Summary": "<p sourcefile=\"api/Utils.Net.DnsServerFailure.yml\" sourcestartlinenumber=\"1\">Describes a single failed DNS server attempt, preserving enough context to diagnose why\nthe attempt did not yield a usable response.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Net.DnsTransport.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Net.DnsTransport.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Net.DnsTransport",
+      "Summary": "<p sourcefile=\"api/Utils.Net.DnsTransport.yml\" sourcestartlinenumber=\"1\">Identifies the transport used for a DNS query attempt.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.Net.EchoClient.yml",
       "output": {
         ".html": {
@@ -7555,6 +7611,48 @@
       "IsMRef": true,
       "Title": "Utils.Net.NtpClient",
       "Summary": "<p sourcefile=\"api/Utils.Net.NtpClient.yml\" sourcestartlinenumber=\"1\">Client for the Network Time Protocol (RFC 5905).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Net.NtpEndpointFailure.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Net.NtpEndpointFailure.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Net.NtpEndpointFailure",
+      "Summary": "<p sourcefile=\"api/Utils.Net.NtpEndpointFailure.yml\" sourcestartlinenumber=\"1\">Describes a single failed NTP endpoint attempt.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Net.NtpPhase.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Net.NtpPhase.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Net.NtpPhase",
+      "Summary": "<p sourcefile=\"api/Utils.Net.NtpPhase.yml\" sourcestartlinenumber=\"1\">Identifies the phase in which an NTP endpoint attempt failed.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Net.NtpQueryException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Net.NtpQueryException.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Net.NtpQueryException",
+      "Summary": "<p sourcefile=\"api/Utils.Net.NtpQueryException.yml\" sourcestartlinenumber=\"1\">Thrown when an NTP query could not be satisfied by any resolved endpoint. The individual\nper-endpoint failures are preserved in <xref href=\"Utils.Net.NtpQueryException.Failures\" data-throw-if-not-resolved=\"false\"></xref>, in attempt order.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -14345,6 +14443,16 @@
       "output": {
         ".html": {
           "relative_path": "docs/github-about.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/migration/Utils.Net-vNext.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/migration/Utils.Net-vNext.html"
         }
       },
       "version": ""

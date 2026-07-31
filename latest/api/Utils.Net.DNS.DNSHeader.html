@@ -820,26 +820,27 @@ some of them were repurposed for AD/CD.</p>
 </h2>
 
 
-  <a id="Utils_Net_DNS_DNSHeader_Append_" data-uid="Utils.Net.DNS.DNSHeader.Append*"></a>
+  <a id="Utils_Net_DNS_DNSHeader_MergeRecordsFrom_" data-uid="Utils.Net.DNS.DNSHeader.MergeRecordsFrom*"></a>
 
-  <h3 id="Utils_Net_DNS_DNSHeader_Append_Utils_Net_DNS_DNSHeader_" data-uid="Utils.Net.DNS.DNSHeader.Append(Utils.Net.DNS.DNSHeader)">
-  Append(DNSHeader)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNS/DNSHeader.cs/#L246"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Net_DNS_DNSHeader_MergeRecordsFrom_Utils_Net_DNS_DNSHeader_" data-uid="Utils.Net.DNS.DNSHeader.MergeRecordsFrom(Utils.Net.DNS.DNSHeader)">
+  MergeRecordsFrom(DNSHeader)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNS/DNSHeader.cs/#L268"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Merges (appends) the requests, responses, authority, and additional records from another
-<a class="xref" href="Utils.Net.DNS.DNSHeader.html">DNSHeader</a> into the current one, provided the IDs do not match.</p>
+  <div class="markdown level1 summary"><p>Merges the answer, authority and additional records from another compatible
+<a class="xref" href="Utils.Net.DNS.DNSHeader.html">DNSHeader</a> into this one. Records are cloned before insertion and duplicates
+(as determined by <a class="xref" href="Utils.Net.DNS.DNSElementsComparer.html#Utils_Net_DNS_DNSElementsComparer_Default">Default</a>) are skipped.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void Append(DNSHeader header)</code></pre>
+    <pre><code class="lang-csharp hljs">public void MergeRecordsFrom(DNSHeader other)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
-    <dt><code>header</code> <a class="xref" href="Utils.Net.DNS.DNSHeader.html">DNSHeader</a></dt>
-    <dd><p>Another <a class="xref" href="Utils.Net.DNS.DNSHeader.html">DNSHeader</a> to merge from.</p>
+    <dt><code>other</code> <a class="xref" href="Utils.Net.DNS.DNSHeader.html">DNSHeader</a></dt>
+    <dd><p>The header whose records should be merged into this one.</p>
 </dd>
   </dl>
 
@@ -850,11 +851,26 @@ some of them were repurposed for AD/CD.</p>
 
 
 
+  <h4 class="section" id="Utils_Net_DNS_DNSHeader_MergeRecordsFrom_Utils_Net_DNS_DNSHeader__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><ul><li>Both headers must carry the same question section (same names, types and classes, in order).</li><li>Both headers must have identical values for all semantic flag fields: <a class="xref" href="Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_QrBit">QrBit</a>, <a class="xref" href="Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_OpCode">OpCode</a>, <a class="xref" href="Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_ErrorCode">ErrorCode</a>, <a class="xref" href="Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_AuthoritativeAnswer">AuthoritativeAnswer</a>, <a class="xref" href="Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_MessageTruncated">MessageTruncated</a>, <a class="xref" href="Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_AuthenticDatas">AuthenticDatas</a>, <a class="xref" href="Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_CheckingDisabled">CheckingDisabled</a>, <a class="xref" href="Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_RecursionDesired">RecursionDesired</a>, <a class="xref" href="Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_RecursionPossible">RecursionPossible</a>, and <a class="xref" href="Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_ReservedFlags">ReservedFlags</a>.</li><li>The record-count fields are not touched here; they are derived from the collections when the header is serialised.</li><li>The header <a class="xref" href="Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_ID">ID</a> and flag bits of this instance are preserved; merging never silently overwrites them.</li><li>The merge is atomic: all clones are prepared before any collection is mutated, so a failed clone cannot leave the header partially modified.</li></ul>
+<p>
+The question section of <code class="paramref">other</code> is not appended: it must already match, so
+only the answer/authority/additional record sets are combined.
+</p>
+</div>
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.exception">Exception</a></dt>
-    <dd><p>Thrown if the <code class="paramref">header</code> has the same <a class="xref" href="Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_ID">ID</a> as the current header.</p>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p><code class="paramref">other</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
+    <dd><p>The two headers are not compatible for merging: their question sections differ, or any of
+<a class="xref" href="Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_QrBit">QrBit</a>, <a class="xref" href="Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_OpCode">OpCode</a>, <a class="xref" href="Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_ErrorCode">ErrorCode</a>,
+<a class="xref" href="Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_AuthoritativeAnswer">AuthoritativeAnswer</a>, <a class="xref" href="Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_MessageTruncated">MessageTruncated</a>,
+<a class="xref" href="Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_AuthenticDatas">AuthenticDatas</a>, <a class="xref" href="Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_CheckingDisabled">CheckingDisabled</a>,
+<a class="xref" href="Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_RecursionDesired">RecursionDesired</a>, <a class="xref" href="Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_RecursionPossible">RecursionPossible</a>, or
+<a class="xref" href="Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_ReservedFlags">ReservedFlags</a> differ.</p>
 </dd>
   </dl>
 
@@ -864,7 +880,7 @@ some of them were repurposed for AD/CD.</p>
 
   <h3 id="Utils_Net_DNS_DNSHeader_ToString" data-uid="Utils.Net.DNS.DNSHeader.ToString">
   ToString()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNS/DNSHeader.cs/#L290"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNS/DNSHeader.cs/#L361"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a string describing the current header fields and associated request/response sets.</p>

@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class ArpPacket | omy.Utils Documentation ">
       
-      <meta name="description" content="Represents an Address Resolution Protocol packet.">
+      <meta name="description" content="Represents an Address Resolution Protocol (ARP) packet, specialised for the Ethernet / IPv4 binding defined in RFC 826.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Net_Arp_ArpPacket" data-uid="Utils.Net.Arp.ArpPacket" class="text-break">
-Class ArpPacket  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L10"><i class="bi bi-code-slash"></i></a>
+Class ArpPacket  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L39"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,7 +97,8 @@ Class ArpPacket  <a class="header-action link-secondary" title="View source" hre
   <dl><dt>Assembly</dt><dd>Utils.Net.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Represents an Address Resolution Protocol packet.</p>
+  <div class="markdown summary"><p>Represents an Address Resolution Protocol (ARP) packet, specialised for the
+Ethernet / IPv4 binding defined in <a href="https://www.rfc-editor.org/rfc/rfc826">RFC 826</a>.</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -238,6 +239,190 @@ Class ArpPacket  <a class="header-action link-secondary" title="View source" hre
 
 
 
+  <h2 id="Utils_Net_Arp_ArpPacket_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>
+This type only supports the classic Ethernet over IPv4 encoding: a hardware type of
+<code>1</code> (Ethernet), a protocol type of <code>0x0800</code> (IPv4), a 6-byte hardware address
+length and a 4-byte protocol address length. These invariants are enforced both when
+serialising (<a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_ToBytes">ToBytes()</a>) and when parsing (<a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_Read_System_ReadOnlySpan_System_Byte__">Read(ReadOnlySpan&lt;byte&gt;)</a>).
+</p>
+<p>
+The hardware/protocol type and length fields are exposed as read-only constants
+(<a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_HardwareType">HardwareType</a>, <a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_ProtocolType">ProtocolType</a>, <a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_HardwareAddressLength">HardwareAddressLength</a>,
+<a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_ProtocolAddressLength">ProtocolAddressLength</a>) because varying them would produce a packet that this
+implementation cannot serialise or parse.
+</p>
+<p>
+An <a class="xref" href="Utils.Net.Arp.ArpPacket.html">ArpPacket</a> is not immediately serialisable after construction. Before
+calling <a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_ToBytes">ToBytes()</a>, the caller must set <a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_Operation">Operation</a>,
+<a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_SenderHardwareAddress">SenderHardwareAddress</a>, <a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_SenderProtocolAddress">SenderProtocolAddress</a>,
+<a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_TargetHardwareAddress">TargetHardwareAddress</a> and <a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_TargetProtocolAddress">TargetProtocolAddress</a> to valid
+Ethernet/IPv4 values. <a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_ToBytes">ToBytes()</a> performs final validation and throws
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a> when any constraint is violated.
+Only <a class="xref" href="Utils.Net.Arp.ArpOperation.html#Utils_Net_Arp_ArpOperation_Request">Request</a> (1) and <a class="xref" href="Utils.Net.Arp.ArpOperation.html#Utils_Net_Arp_ArpOperation_Reply">Reply</a> (2) are
+supported; any other <a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_Operation">Operation</a> value will also cause <a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_ToBytes">ToBytes()</a>
+to throw.
+</p>
+</div>
+
+
+  <h2 class="section" id="fields">Fields
+</h2>
+
+
+
+  <h3 id="Utils_Net_Arp_ArpPacket_EthernetHardwareAddressLength" data-uid="Utils.Net.Arp.ArpPacket.EthernetHardwareAddressLength">
+  EthernetHardwareAddressLength
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L48"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ethernet hardware address length, in bytes.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const byte EthernetHardwareAddressLength = 6</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Net_Arp_ArpPacket_EthernetHardwareType" data-uid="Utils.Net.Arp.ArpPacket.EthernetHardwareType">
+  EthernetHardwareType
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L42"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ethernet hardware type value (RFC 826).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const ushort EthernetHardwareType = 1</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Net_Arp_ArpPacket_EthernetIpv4PacketLength" data-uid="Utils.Net.Arp.ArpPacket.EthernetIpv4PacketLength">
+  EthernetIpv4PacketLength
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L54"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Fixed on-the-wire length of an Ethernet/IPv4 ARP packet, in bytes.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const int EthernetIpv4PacketLength = 28</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Net_Arp_ArpPacket_Ipv4ProtocolAddressLength" data-uid="Utils.Net.Arp.ArpPacket.Ipv4ProtocolAddressLength">
+  Ipv4ProtocolAddressLength
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L51"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>IPv4 protocol address length, in bytes.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const byte Ipv4ProtocolAddressLength = 4</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Net_Arp_ArpPacket_Ipv4ProtocolType" data-uid="Utils.Net.Arp.ArpPacket.Ipv4ProtocolType">
+  Ipv4ProtocolType
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L45"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>IPv4 protocol type value (EtherType 0x0800).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const ushort Ipv4ProtocolType = 2048</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
 
 
   <h2 class="section" id="properties">Properties
@@ -248,15 +433,15 @@ Class ArpPacket  <a class="header-action link-secondary" title="View source" hre
 
   <h3 id="Utils_Net_Arp_ArpPacket_HardwareAddressLength" data-uid="Utils.Net.Arp.ArpPacket.HardwareAddressLength">
   HardwareAddressLength
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L25"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L69"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets or sets the hardware address length in bytes.</p>
+  <div class="markdown level1 summary"><p>Gets the hardware address length in bytes. Always <a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_EthernetHardwareAddressLength">EthernetHardwareAddressLength</a> (6).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public byte HardwareAddressLength { get; set; }</code></pre>
+    <pre><code class="lang-csharp hljs">public byte HardwareAddressLength { get; }</code></pre>
   </div>
 
 
@@ -280,15 +465,15 @@ Class ArpPacket  <a class="header-action link-secondary" title="View source" hre
 
   <h3 id="Utils_Net_Arp_ArpPacket_HardwareType" data-uid="Utils.Net.Arp.ArpPacket.HardwareType">
   HardwareType
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L15"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L59"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets or sets the hardware type (Ethernet = 1).</p>
+  <div class="markdown level1 summary"><p>Gets the hardware type. Always <a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_EthernetHardwareType">EthernetHardwareType</a> (Ethernet = 1).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public ushort HardwareType { get; set; }</code></pre>
+    <pre><code class="lang-csharp hljs">public ushort HardwareType { get; }</code></pre>
   </div>
 
 
@@ -312,7 +497,7 @@ Class ArpPacket  <a class="header-action link-secondary" title="View source" hre
 
   <h3 id="Utils_Net_Arp_ArpPacket_Operation" data-uid="Utils.Net.Arp.ArpPacket.Operation">
   Operation
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L35"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L79"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the ARP operation.</p>
@@ -344,15 +529,15 @@ Class ArpPacket  <a class="header-action link-secondary" title="View source" hre
 
   <h3 id="Utils_Net_Arp_ArpPacket_ProtocolAddressLength" data-uid="Utils.Net.Arp.ArpPacket.ProtocolAddressLength">
   ProtocolAddressLength
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L30"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L74"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets or sets the protocol address length in bytes.</p>
+  <div class="markdown level1 summary"><p>Gets the protocol address length in bytes. Always <a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_Ipv4ProtocolAddressLength">Ipv4ProtocolAddressLength</a> (4).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public byte ProtocolAddressLength { get; set; }</code></pre>
+    <pre><code class="lang-csharp hljs">public byte ProtocolAddressLength { get; }</code></pre>
   </div>
 
 
@@ -376,15 +561,15 @@ Class ArpPacket  <a class="header-action link-secondary" title="View source" hre
 
   <h3 id="Utils_Net_Arp_ArpPacket_ProtocolType" data-uid="Utils.Net.Arp.ArpPacket.ProtocolType">
   ProtocolType
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L20"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L64"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets or sets the protocol type (IPv4 = 0x0800).</p>
+  <div class="markdown level1 summary"><p>Gets the protocol type. Always <a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_Ipv4ProtocolType">Ipv4ProtocolType</a> (IPv4 = 0x0800).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public ushort ProtocolType { get; set; }</code></pre>
+    <pre><code class="lang-csharp hljs">public ushort ProtocolType { get; }</code></pre>
   </div>
 
 
@@ -408,10 +593,10 @@ Class ArpPacket  <a class="header-action link-secondary" title="View source" hre
 
   <h3 id="Utils_Net_Arp_ArpPacket_SenderHardwareAddress" data-uid="Utils.Net.Arp.ArpPacket.SenderHardwareAddress">
   SenderHardwareAddress
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L39"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L84"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets or sets the sender hardware address.</p>
+  <div class="markdown level1 summary"><p>Gets or sets the sender hardware (MAC) address. Must be exactly 6 bytes when serialising.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -440,10 +625,10 @@ Class ArpPacket  <a class="header-action link-secondary" title="View source" hre
 
   <h3 id="Utils_Net_Arp_ArpPacket_SenderProtocolAddress" data-uid="Utils.Net.Arp.ArpPacket.SenderProtocolAddress">
   SenderProtocolAddress
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L44"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L89"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets or sets the sender protocol address.</p>
+  <div class="markdown level1 summary"><p>Gets or sets the sender protocol (IPv4) address. Must be an IPv4 address when serialising.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -472,10 +657,10 @@ Class ArpPacket  <a class="header-action link-secondary" title="View source" hre
 
   <h3 id="Utils_Net_Arp_ArpPacket_TargetHardwareAddress" data-uid="Utils.Net.Arp.ArpPacket.TargetHardwareAddress">
   TargetHardwareAddress
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L49"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L94"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets or sets the target hardware address.</p>
+  <div class="markdown level1 summary"><p>Gets or sets the target hardware (MAC) address. Must be exactly 6 bytes when serialising.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -504,10 +689,10 @@ Class ArpPacket  <a class="header-action link-secondary" title="View source" hre
 
   <h3 id="Utils_Net_Arp_ArpPacket_TargetProtocolAddress" data-uid="Utils.Net.Arp.ArpPacket.TargetProtocolAddress">
   TargetProtocolAddress
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L54"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L99"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets or sets the target protocol address.</p>
+  <div class="markdown level1 summary"><p>Gets or sets the target protocol (IPv4) address. Must be an IPv4 address when serialising.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -540,10 +725,10 @@ Class ArpPacket  <a class="header-action link-secondary" title="View source" hre
 
   <h3 id="Utils_Net_Arp_ArpPacket_Read_System_ReadOnlySpan_System_Byte__" data-uid="Utils.Net.Arp.ArpPacket.Read(System.ReadOnlySpan{System.Byte})">
   Read(ReadOnlySpan&lt;byte&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L87"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L190"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Reads an ARP packet from raw bytes.</p>
+  <div class="markdown level1 summary"><p>Reads an Ethernet/IPv4 ARP packet from raw bytes.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -554,13 +739,15 @@ Class ArpPacket  <a class="header-action link-secondary" title="View source" hre
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>data</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.readonlyspan-1">ReadOnlySpan</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>&gt;</dt>
-    <dd></dd>
+    <dd><p>The raw packet bytes. May contain trailing padding after the packet.</p>
+</dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="Utils.Net.Arp.ArpPacket.html">ArpPacket</a></dt>
-    <dd></dd>
+    <dd><p>The parsed <a class="xref" href="Utils.Net.Arp.ArpPacket.html">ArpPacket</a>.</p>
+</dd>
   </dl>
 
 
@@ -569,7 +756,29 @@ Class ArpPacket  <a class="header-action link-secondary" title="View source" hre
 
 
 
+  <h4 class="section" id="Utils_Net_Arp_ArpPacket_Read_System_ReadOnlySpan_System_Byte___remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>
+Parsing proceeds in two steps. First the 8-byte fixed header (HTYPE, PTYPE, HLEN, PLEN,
+OPER) is read and the declared body length is computed as
+<code>8 + 2*HLEN + 2*PLEN</code>. The buffer must be at least that long. Only then are the
+Ethernet/IPv4 invariants checked (HTYPE == 1, PTYPE == 0x0800, HLEN == 6, PLEN == 4).
+</p>
+<p>
+Trailing bytes beyond the declared packet length are ignored. This is intentional:
+Ethernet frames pad payloads shorter than 46 bytes, so a 28-byte ARP packet routinely
+arrives with 18 padding bytes appended. The padding is not part of the ARP packet and is
+discarded.
+</p>
+</div>
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.invaliddataexception">InvalidDataException</a></dt>
+    <dd><p>Thrown when the header is shorter than 8 bytes, when the declared body length exceeds the
+buffer, or when the hardware/protocol type or length fields are not the supported
+Ethernet/IPv4 combination.</p>
+</dd>
+  </dl>
 
 
 
@@ -577,10 +786,10 @@ Class ArpPacket  <a class="header-action link-secondary" title="View source" hre
 
   <h3 id="Utils_Net_Arp_ArpPacket_ToBytes" data-uid="Utils.Net.Arp.ArpPacket.ToBytes">
   ToBytes()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L59"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L110"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Serializes the ARP packet into bytes.</p>
+  <div class="markdown level1 summary"><p>Serialises the ARP packet into its 28-byte Ethernet/IPv4 wire representation.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -592,7 +801,8 @@ Class ArpPacket  <a class="header-action link-secondary" title="View source" hre
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
-    <dd></dd>
+    <dd><p>A 28-byte array containing the serialised packet.</p>
+</dd>
   </dl>
 
 
@@ -602,6 +812,14 @@ Class ArpPacket  <a class="header-action link-secondary" title="View source" hre
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
+    <dd><p>Thrown when the packet cannot be represented as a valid Ethernet/IPv4 ARP packet: the
+hardware or protocol addresses have the wrong length or family (IPv6, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.networkinformation.physicaladdress.none">None</a>,
+a MAC that is not exactly 6 bytes, or a protocol address that is not IPv4).</p>
+</dd>
+  </dl>
 
 
 
@@ -609,7 +827,7 @@ Class ArpPacket  <a class="header-action link-secondary" title="View source" hre
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L10" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Arp/ArpPacket.cs/#L39" class="edit-link">Edit this page</a>
         </div>
 
 

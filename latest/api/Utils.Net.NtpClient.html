@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Net_NtpClient" data-uid="Utils.Net.NtpClient" class="text-break">
-Class NtpClient  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NtpClient.cs/#L18"><i class="bi bi-code-slash"></i></a>
+Class NtpClient  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NtpClient.cs/#L20"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -162,7 +162,7 @@ time comparisons (certificate expiry, replay-window checks, etc.).</p>
 
   <h3 id="Utils_Net_NtpClient_GetTimeAsync_System_String_System_Int32_System_Threading_CancellationToken_" data-uid="Utils.Net.NtpClient.GetTimeAsync(System.String,System.Int32,System.Threading.CancellationToken)">
   GetTimeAsync(string, int, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NtpClient.cs/#L40"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NtpClient.cs/#L55"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Retrieves the current time from an NTP server.</p>
@@ -202,8 +202,20 @@ time comparisons (certificate expiry, replay-window checks, etc.).</p>
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.invaliddataexception">InvalidDataException</a></dt>
-    <dd><p>Thrown when the server sends a malformed or unexpected NTP response.</p>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p><code class="paramref">host</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p><code class="paramref">host</code> is empty or whitespace.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p><code class="paramref">port</code> is outside 1–65535.</p>
+</dd>
+    <dt><a class="xref" href="Utils.Net.NtpQueryException.html">NtpQueryException</a></dt>
+    <dd><p>Thrown when the host resolves to no address, or when every resolved endpoint failed.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.operationcanceledexception">OperationCanceledException</a></dt>
+    <dd><p>The operation was cancelled.</p>
 </dd>
   </dl>
 
@@ -213,7 +225,7 @@ time comparisons (certificate expiry, replay-window checks, etc.).</p>
 
   <h3 id="Utils_Net_NtpClient_GetTimeAsync_System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.NtpClient.GetTimeAsync(System.String,System.Threading.CancellationToken)">
   GetTimeAsync(string, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NtpClient.cs/#L107"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NtpClient.cs/#L66"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Retrieves the current time from an NTP server on the default port (123).</p>
@@ -255,7 +267,7 @@ time comparisons (certificate expiry, replay-window checks, etc.).</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NtpClient.cs/#L18" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NtpClient.cs/#L20" class="edit-link">Edit this page</a>
         </div>
 
 

@@ -120,6 +120,19 @@ Classes
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DnsLookupException.html">DnsLookupException</a></dt>
+      <dd><p>Thrown when every configured DNS server failed to return a usable response. The individual
+per-server failures are preserved in <a class="xref" href="Utils.Net.DnsLookupException.html#Utils_Net_DnsLookupException_Failures">Failures</a>, in the order in which the
+servers were attempted.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DnsServerFailure.html">DnsServerFailure</a></dt>
+      <dd><p>Describes a single failed DNS server attempt, preserving enough context to diagnose why
+the attempt did not yield a usable response.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.Net.EchoClient.html">EchoClient</a></dt>
       <dd><p>Client for the TCP Echo protocol (RFC 862).</p>
 </dd>
@@ -194,6 +207,17 @@ prefix length. The range can be enumerated to list each address it contains.</p>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.Net.NtpClient.html">NtpClient</a></dt>
       <dd><p>Client for the Network Time Protocol (RFC 5905).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.NtpEndpointFailure.html">NtpEndpointFailure</a></dt>
+      <dd><p>Describes a single failed NTP endpoint attempt.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.NtpQueryException.html">NtpQueryException</a></dt>
+      <dd><p>Thrown when an NTP query could not be satisfied by any resolved endpoint. The individual
+per-endpoint failures are preserved in <a class="xref" href="Utils.Net.NtpQueryException.html#Utils_Net_NtpQueryException_Failures">Failures</a>, in attempt order.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -317,6 +341,21 @@ Interfaces
     <h3 id="enums">
 Enums
 </h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DnsFailureKind.html">DnsFailureKind</a></dt>
+      <dd><p>Categorises why a single DNS server attempt failed.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DnsTransport.html">DnsTransport</a></dt>
+      <dd><p>Identifies the transport used for a DNS query attempt.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.NtpPhase.html">NtpPhase</a></dt>
+      <dd><p>Identifies the phase in which an NTP endpoint attempt failed.</p>
+</dd>
+    </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.Net.ResponseSeverity.html">ResponseSeverity</a></dt>
       <dd><p>Indicates the severity of a server response.</p>

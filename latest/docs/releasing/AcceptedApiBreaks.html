@@ -233,8 +233,8 @@
 <h2 id="omyutilsnet">omy.Utils.Net</h2>
 <ul>
 <li>Published baseline: <code>1.2.1</code></li>
-<li>Accepted diagnostics: <strong>14</strong></li>
-<li>Diagnostic classes: <code>CP0002</code>: 14</li>
+<li>Accepted diagnostics: <strong>19</strong></li>
+<li>Diagnostic classes: <code>CP0002</code>: 19</li>
 </ul>
 <h3 id="removed-or-incompatible-published-surface-3">Removed or incompatible published surface</h3>
 <ul>
@@ -252,6 +252,11 @@
 <li><code>CP0002</code> — <code>System.Threading.Tasks.Task&lt;System.DateTime&gt; Utils.Net.TimeProtocolClient.GetTimeAsync(string, int)</code></li>
 <li><code>CP0002</code> — <code>System.Threading.Tasks.Task&lt;System.DateTime&gt; Utils.Net.TimeProtocolClient.GetTimeAsync(string)</code></li>
 <li><code>CP0002</code> — <code>System.Threading.Tasks.Task Utils.Net.WakeOnLan.SendMagicPacketAsync(System.Net.NetworkInformation.PhysicalAddress, System.Net.IPAddress?, int)</code></li>
+<li><code>CP0002</code> — <code>void Utils.Net.Arp.ArpPacket.HardwareType.set</code> — removed setter; property is now read-only (always returns 1, Ethernet)</li>
+<li><code>CP0002</code> — <code>void Utils.Net.Arp.ArpPacket.ProtocolType.set</code> — removed setter; property is now read-only (always returns 0x0800, IPv4)</li>
+<li><code>CP0002</code> — <code>void Utils.Net.Arp.ArpPacket.HardwareAddressLength.set</code> — removed setter; property is now read-only (always returns 6)</li>
+<li><code>CP0002</code> — <code>void Utils.Net.Arp.ArpPacket.ProtocolAddressLength.set</code> — removed setter; property is now read-only (always returns 4)</li>
+<li><code>CP0002</code> — <code>void Utils.Net.DNS.DNSHeader.Append(Utils.Net.DNS.DNSHeader)</code></li>
 </ul>
 <p><a id="omy-utils-data"></a></p>
 <h2 id="omyutilsdata">omy.Utils.Data</h2>

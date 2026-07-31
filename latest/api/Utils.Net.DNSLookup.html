@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Net_DNSLookup" data-uid="Utils.Net.DNSLookup" class="text-break">
-Class DNSLookup  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNSLookup.cs/#L12"><i class="bi bi-code-slash"></i></a>
+Class DNSLookup  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNSLookup.cs/#L15"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -248,10 +248,11 @@ Class DNSLookup  <a class="header-action link-secondary" title="View source" hre
 
   <h3 id="Utils_Net_DNSLookup__ctor" data-uid="Utils.Net.DNSLookup.#ctor">
   DNSLookup()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNSLookup.cs/#L24"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNSLookup.cs/#L33"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Net.DNSLookup.html">DNSLookup</a> class with default name servers.</p>
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Net.DNSLookup.html">DNSLookup</a> class with default name servers
+discovered from the local network configuration.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -268,6 +269,12 @@ Class DNSLookup  <a class="header-action link-secondary" title="View source" hre
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
+    <dd><p>Thrown when no usable DNS server could be discovered from the host configuration.</p>
+</dd>
+  </dl>
 
 
 
@@ -275,7 +282,7 @@ Class DNSLookup  <a class="header-action link-secondary" title="View source" hre
 
   <h3 id="Utils_Net_DNSLookup__ctor_System_Net_IPAddress___" data-uid="Utils.Net.DNSLookup.#ctor(System.Net.IPAddress[])">
   DNSLookup(params IPAddress[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNSLookup.cs/#L35"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNSLookup.cs/#L52"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Net.DNSLookup.html">DNSLookup</a> class with custom name servers.</p>
@@ -308,7 +315,7 @@ Class DNSLookup  <a class="header-action link-secondary" title="View source" hre
 
   <h3 id="Utils_Net_DNSLookup__ctor_Utils_Net_DNS_DNSFactory_System_Net_IPAddress___" data-uid="Utils.Net.DNSLookup.#ctor(Utils.Net.DNS.DNSFactory,System.Net.IPAddress[])">
   DNSLookup(DNSFactory, params IPAddress[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNSLookup.cs/#L47"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNSLookup.cs/#L65"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Net.DNSLookup.html">DNSLookup</a> class with custom name servers.</p>
@@ -348,7 +355,7 @@ Class DNSLookup  <a class="header-action link-secondary" title="View source" hre
 
   <h3 id="Utils_Net_DNSLookup_NameServers" data-uid="Utils.Net.DNSLookup.NameServers">
   NameServers
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNSLookup.cs/#L57"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNSLookup.cs/#L98"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the array of IP addresses representing DNS name servers.</p>
@@ -372,7 +379,25 @@ Class DNSLookup  <a class="header-action link-secondary" title="View source" hre
 
 
 
+  <h4 class="section" id="Utils_Net_DNSLookup_NameServers_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>The getter returns a defensive copy; mutating the returned array does not affect the
+configuration. The setter validates and copies its input: <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>, empty
+arrays, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> entries, wildcard/unspecified addresses
+(<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.ipaddress.any">Any</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.ipaddress.ipv6any">IPv6Any</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.ipaddress.none">None</a>,
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.ipaddress.ipv6none">IPv6None</a>) and multicast addresses are rejected. Duplicates are
+removed while preserving first-seen order. Loopback addresses are accepted (a local DNS
+resolver is valid).</p>
+</div>
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>The value or one of its entries is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>The value is empty or contains an invalid address.</p>
+</dd>
+  </dl>
 
 
 
@@ -384,10 +409,10 @@ Class DNSLookup  <a class="header-action link-secondary" title="View source" hre
 
   <h3 id="Utils_Net_DNSLookup_Request_System_String_System_String_Utils_Net_DNS_DNSClassId_" data-uid="Utils.Net.DNSLookup.Request(System.String,System.String,Utils.Net.DNS.DNSClassId)">
   Request(string, string, DNSClassId)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNSLookup.cs/#L66"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNSLookup.cs/#L168"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Sends a DNS query request to the specified name servers and returns the response.</p>
+  <div class="markdown level1 summary"><p>Sends a DNS query request to the configured name servers and returns the response.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -404,7 +429,7 @@ Class DNSLookup  <a class="header-action link-secondary" title="View source" hre
     <dd><p>Domain name to query.</p>
 </dd>
     <dt><code>class</code> <a class="xref" href="Utils.Net.DNS.DNSClassId.html">DNSClassId</a></dt>
-    <dd><p>DNS class (default is DNSClass.ALL).</p>
+    <dd><p>DNS class (default is <a class="xref" href="Utils.Net.DNS.DNSClassId.html#Utils_Net_DNS_DNSClassId_ALL">ALL</a>).</p>
 </dd>
   </dl>
 
@@ -422,6 +447,71 @@ Class DNSLookup  <a class="header-action link-secondary" title="View source" hre
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Net.DnsLookupException.html">DnsLookupException</a></dt>
+    <dd><p>Thrown when none of the configured servers returned a valid response. The individual
+failures are preserved in <a class="xref" href="Utils.Net.DnsLookupException.html#Utils_Net_DnsLookupException_Failures">Failures</a>.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Net_DNSLookup_RequestAsync_" data-uid="Utils.Net.DNSLookup.RequestAsync*"></a>
+
+  <h3 id="Utils_Net_DNSLookup_RequestAsync_System_String_System_String_Utils_Net_DNS_DNSClassId_System_Threading_CancellationToken_" data-uid="Utils.Net.DNSLookup.RequestAsync(System.String,System.String,Utils.Net.DNS.DNSClassId,System.Threading.CancellationToken)">
+  RequestAsync(string, string, DNSClassId, CancellationToken)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNSLookup.cs/#L187"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Asynchronously sends a DNS query request to the configured name servers and returns the response.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task&lt;DNSHeader&gt; RequestAsync(string type, string name, DNSClassId @class = DNSClassId.ALL, CancellationToken cancellationToken = default)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>type</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>DNS record type to query (e.g., &quot;A&quot; for IPv4 address).</p>
+</dd>
+    <dt><code>name</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Domain name to query.</p>
+</dd>
+    <dt><code>class</code> <a class="xref" href="Utils.Net.DNS.DNSClassId.html">DNSClassId</a></dt>
+    <dd><p>DNS class (default is <a class="xref" href="Utils.Net.DNS.DNSClassId.html#Utils_Net_DNS_DNSClassId_ALL">ALL</a>).</p>
+</dd>
+    <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
+    <dd><p>A token used to cancel the operation.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a class="xref" href="Utils.Net.DNS.DNSHeader.html">DNSHeader</a>&gt;</dt>
+    <dd><p>The DNS response header containing the query result.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Net.DnsLookupException.html">DnsLookupException</a></dt>
+    <dd><p>Thrown when none of the configured servers returned a valid response. The individual
+failures are preserved in <a class="xref" href="Utils.Net.DnsLookupException.html#Utils_Net_DnsLookupException_Failures">Failures</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.operationcanceledexception">OperationCanceledException</a></dt>
+    <dd><p>The operation was cancelled.</p>
+</dd>
+  </dl>
 
 
 
@@ -429,7 +519,7 @@ Class DNSLookup  <a class="header-action link-secondary" title="View source" hre
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNSLookup.cs/#L12" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNSLookup.cs/#L15" class="edit-link">Edit this page</a>
         </div>
 
 

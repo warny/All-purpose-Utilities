@@ -46990,6 +46990,24 @@ references:
   commentId: T:Utils.Net.Arp.ArpPacket
   fullName: Utils.Net.Arp.ArpPacket
   nameWithType: ArpPacket
+- uid: Utils.Net.Arp.ArpPacket.EthernetHardwareAddressLength
+  name: EthernetHardwareAddressLength
+  href: api/Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_EthernetHardwareAddressLength
+  commentId: F:Utils.Net.Arp.ArpPacket.EthernetHardwareAddressLength
+  fullName: Utils.Net.Arp.ArpPacket.EthernetHardwareAddressLength
+  nameWithType: ArpPacket.EthernetHardwareAddressLength
+- uid: Utils.Net.Arp.ArpPacket.EthernetHardwareType
+  name: EthernetHardwareType
+  href: api/Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_EthernetHardwareType
+  commentId: F:Utils.Net.Arp.ArpPacket.EthernetHardwareType
+  fullName: Utils.Net.Arp.ArpPacket.EthernetHardwareType
+  nameWithType: ArpPacket.EthernetHardwareType
+- uid: Utils.Net.Arp.ArpPacket.EthernetIpv4PacketLength
+  name: EthernetIpv4PacketLength
+  href: api/Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_EthernetIpv4PacketLength
+  commentId: F:Utils.Net.Arp.ArpPacket.EthernetIpv4PacketLength
+  fullName: Utils.Net.Arp.ArpPacket.EthernetIpv4PacketLength
+  nameWithType: ArpPacket.EthernetIpv4PacketLength
 - uid: Utils.Net.Arp.ArpPacket.HardwareAddressLength
   name: HardwareAddressLength
   href: api/Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_HardwareAddressLength
@@ -47016,6 +47034,18 @@ references:
   isSpec: "True"
   fullName: Utils.Net.Arp.ArpPacket.HardwareType
   nameWithType: ArpPacket.HardwareType
+- uid: Utils.Net.Arp.ArpPacket.Ipv4ProtocolAddressLength
+  name: Ipv4ProtocolAddressLength
+  href: api/Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_Ipv4ProtocolAddressLength
+  commentId: F:Utils.Net.Arp.ArpPacket.Ipv4ProtocolAddressLength
+  fullName: Utils.Net.Arp.ArpPacket.Ipv4ProtocolAddressLength
+  nameWithType: ArpPacket.Ipv4ProtocolAddressLength
+- uid: Utils.Net.Arp.ArpPacket.Ipv4ProtocolType
+  name: Ipv4ProtocolType
+  href: api/Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_Ipv4ProtocolType
+  commentId: F:Utils.Net.Arp.ArpPacket.Ipv4ProtocolType
+  fullName: Utils.Net.Arp.ArpPacket.Ipv4ProtocolType
+  nameWithType: ArpPacket.Ipv4ProtocolType
 - uid: Utils.Net.Arp.ArpPacket.Operation
   name: Operation
   href: api/Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_Operation
@@ -49014,19 +49044,6 @@ references:
   isSpec: "True"
   fullName: Utils.Net.DNS.DNSHeader.Additionals
   nameWithType: DNSHeader.Additionals
-- uid: Utils.Net.DNS.DNSHeader.Append(Utils.Net.DNS.DNSHeader)
-  name: Append(DNSHeader)
-  href: api/Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_Append_Utils_Net_DNS_DNSHeader_
-  commentId: M:Utils.Net.DNS.DNSHeader.Append(Utils.Net.DNS.DNSHeader)
-  fullName: Utils.Net.DNS.DNSHeader.Append(Utils.Net.DNS.DNSHeader)
-  nameWithType: DNSHeader.Append(DNSHeader)
-- uid: Utils.Net.DNS.DNSHeader.Append*
-  name: Append
-  href: api/Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_Append_
-  commentId: Overload:Utils.Net.DNS.DNSHeader.Append
-  isSpec: "True"
-  fullName: Utils.Net.DNS.DNSHeader.Append
-  nameWithType: DNSHeader.Append
 - uid: Utils.Net.DNS.DNSHeader.AuthenticDatas
   name: AuthenticDatas
   href: api/Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_AuthenticDatas
@@ -49105,6 +49122,19 @@ references:
   isSpec: "True"
   fullName: Utils.Net.DNS.DNSHeader.ID
   nameWithType: DNSHeader.ID
+- uid: Utils.Net.DNS.DNSHeader.MergeRecordsFrom(Utils.Net.DNS.DNSHeader)
+  name: MergeRecordsFrom(DNSHeader)
+  href: api/Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_MergeRecordsFrom_Utils_Net_DNS_DNSHeader_
+  commentId: M:Utils.Net.DNS.DNSHeader.MergeRecordsFrom(Utils.Net.DNS.DNSHeader)
+  fullName: Utils.Net.DNS.DNSHeader.MergeRecordsFrom(Utils.Net.DNS.DNSHeader)
+  nameWithType: DNSHeader.MergeRecordsFrom(DNSHeader)
+- uid: Utils.Net.DNS.DNSHeader.MergeRecordsFrom*
+  name: MergeRecordsFrom
+  href: api/Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_MergeRecordsFrom_
+  commentId: Overload:Utils.Net.DNS.DNSHeader.MergeRecordsFrom
+  isSpec: "True"
+  fullName: Utils.Net.DNS.DNSHeader.MergeRecordsFrom
+  nameWithType: DNSHeader.MergeRecordsFrom
 - uid: Utils.Net.DNS.DNSHeader.MessageTruncated
   name: MessageTruncated
   href: api/Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_MessageTruncated
@@ -52969,6 +52999,240 @@ references:
   isSpec: "True"
   fullName: Utils.Net.DNSLookup.Request
   nameWithType: DNSLookup.Request
+- uid: Utils.Net.DNSLookup.RequestAsync(System.String,System.String,Utils.Net.DNS.DNSClassId,System.Threading.CancellationToken)
+  name: RequestAsync(string, string, DNSClassId, CancellationToken)
+  href: api/Utils.Net.DNSLookup.html#Utils_Net_DNSLookup_RequestAsync_System_String_System_String_Utils_Net_DNS_DNSClassId_System_Threading_CancellationToken_
+  commentId: M:Utils.Net.DNSLookup.RequestAsync(System.String,System.String,Utils.Net.DNS.DNSClassId,System.Threading.CancellationToken)
+  name.vb: RequestAsync(String, String, DNSClassId, CancellationToken)
+  fullName: Utils.Net.DNSLookup.RequestAsync(string, string, Utils.Net.DNS.DNSClassId, System.Threading.CancellationToken)
+  fullName.vb: Utils.Net.DNSLookup.RequestAsync(String, String, Utils.Net.DNS.DNSClassId, System.Threading.CancellationToken)
+  nameWithType: DNSLookup.RequestAsync(string, string, DNSClassId, CancellationToken)
+  nameWithType.vb: DNSLookup.RequestAsync(String, String, DNSClassId, CancellationToken)
+- uid: Utils.Net.DNSLookup.RequestAsync*
+  name: RequestAsync
+  href: api/Utils.Net.DNSLookup.html#Utils_Net_DNSLookup_RequestAsync_
+  commentId: Overload:Utils.Net.DNSLookup.RequestAsync
+  isSpec: "True"
+  fullName: Utils.Net.DNSLookup.RequestAsync
+  nameWithType: DNSLookup.RequestAsync
+- uid: Utils.Net.DnsFailureKind
+  name: DnsFailureKind
+  href: api/Utils.Net.DnsFailureKind.html
+  commentId: T:Utils.Net.DnsFailureKind
+  fullName: Utils.Net.DnsFailureKind
+  nameWithType: DnsFailureKind
+- uid: Utils.Net.DnsFailureKind.ConnectionClosed
+  name: ConnectionClosed
+  href: api/Utils.Net.DnsFailureKind.html#Utils_Net_DnsFailureKind_ConnectionClosed
+  commentId: F:Utils.Net.DnsFailureKind.ConnectionClosed
+  fullName: Utils.Net.DnsFailureKind.ConnectionClosed
+  nameWithType: DnsFailureKind.ConnectionClosed
+- uid: Utils.Net.DnsFailureKind.MalformedResponse
+  name: MalformedResponse
+  href: api/Utils.Net.DnsFailureKind.html#Utils_Net_DnsFailureKind_MalformedResponse
+  commentId: F:Utils.Net.DnsFailureKind.MalformedResponse
+  fullName: Utils.Net.DnsFailureKind.MalformedResponse
+  nameWithType: DnsFailureKind.MalformedResponse
+- uid: Utils.Net.DnsFailureKind.NotAResponse
+  name: NotAResponse
+  href: api/Utils.Net.DnsFailureKind.html#Utils_Net_DnsFailureKind_NotAResponse
+  commentId: F:Utils.Net.DnsFailureKind.NotAResponse
+  fullName: Utils.Net.DnsFailureKind.NotAResponse
+  nameWithType: DnsFailureKind.NotAResponse
+- uid: Utils.Net.DnsFailureKind.OpcodeMismatch
+  name: OpcodeMismatch
+  href: api/Utils.Net.DnsFailureKind.html#Utils_Net_DnsFailureKind_OpcodeMismatch
+  commentId: F:Utils.Net.DnsFailureKind.OpcodeMismatch
+  fullName: Utils.Net.DnsFailureKind.OpcodeMismatch
+  nameWithType: DnsFailureKind.OpcodeMismatch
+- uid: Utils.Net.DnsFailureKind.ProtocolError
+  name: ProtocolError
+  href: api/Utils.Net.DnsFailureKind.html#Utils_Net_DnsFailureKind_ProtocolError
+  commentId: F:Utils.Net.DnsFailureKind.ProtocolError
+  fullName: Utils.Net.DnsFailureKind.ProtocolError
+  nameWithType: DnsFailureKind.ProtocolError
+- uid: Utils.Net.DnsFailureKind.QuestionMismatch
+  name: QuestionMismatch
+  href: api/Utils.Net.DnsFailureKind.html#Utils_Net_DnsFailureKind_QuestionMismatch
+  commentId: F:Utils.Net.DnsFailureKind.QuestionMismatch
+  fullName: Utils.Net.DnsFailureKind.QuestionMismatch
+  nameWithType: DnsFailureKind.QuestionMismatch
+- uid: Utils.Net.DnsFailureKind.SocketError
+  name: SocketError
+  href: api/Utils.Net.DnsFailureKind.html#Utils_Net_DnsFailureKind_SocketError
+  commentId: F:Utils.Net.DnsFailureKind.SocketError
+  fullName: Utils.Net.DnsFailureKind.SocketError
+  nameWithType: DnsFailureKind.SocketError
+- uid: Utils.Net.DnsFailureKind.TcpFallbackFailure
+  name: TcpFallbackFailure
+  href: api/Utils.Net.DnsFailureKind.html#Utils_Net_DnsFailureKind_TcpFallbackFailure
+  commentId: F:Utils.Net.DnsFailureKind.TcpFallbackFailure
+  fullName: Utils.Net.DnsFailureKind.TcpFallbackFailure
+  nameWithType: DnsFailureKind.TcpFallbackFailure
+- uid: Utils.Net.DnsFailureKind.Timeout
+  name: Timeout
+  href: api/Utils.Net.DnsFailureKind.html#Utils_Net_DnsFailureKind_Timeout
+  commentId: F:Utils.Net.DnsFailureKind.Timeout
+  fullName: Utils.Net.DnsFailureKind.Timeout
+  nameWithType: DnsFailureKind.Timeout
+- uid: Utils.Net.DnsFailureKind.TransactionIdMismatch
+  name: TransactionIdMismatch
+  href: api/Utils.Net.DnsFailureKind.html#Utils_Net_DnsFailureKind_TransactionIdMismatch
+  commentId: F:Utils.Net.DnsFailureKind.TransactionIdMismatch
+  fullName: Utils.Net.DnsFailureKind.TransactionIdMismatch
+  nameWithType: DnsFailureKind.TransactionIdMismatch
+- uid: Utils.Net.DnsFailureKind.UnexpectedEndpoint
+  name: UnexpectedEndpoint
+  href: api/Utils.Net.DnsFailureKind.html#Utils_Net_DnsFailureKind_UnexpectedEndpoint
+  commentId: F:Utils.Net.DnsFailureKind.UnexpectedEndpoint
+  fullName: Utils.Net.DnsFailureKind.UnexpectedEndpoint
+  nameWithType: DnsFailureKind.UnexpectedEndpoint
+- uid: Utils.Net.DnsLookupException
+  name: DnsLookupException
+  href: api/Utils.Net.DnsLookupException.html
+  commentId: T:Utils.Net.DnsLookupException
+  fullName: Utils.Net.DnsLookupException
+  nameWithType: DnsLookupException
+- uid: Utils.Net.DnsLookupException.#ctor(System.Collections.Generic.IReadOnlyList{Utils.Net.DnsServerFailure})
+  name: DnsLookupException(IReadOnlyList<DnsServerFailure>)
+  href: api/Utils.Net.DnsLookupException.html#Utils_Net_DnsLookupException__ctor_System_Collections_Generic_IReadOnlyList_Utils_Net_DnsServerFailure__
+  commentId: M:Utils.Net.DnsLookupException.#ctor(System.Collections.Generic.IReadOnlyList{Utils.Net.DnsServerFailure})
+  name.vb: New(IReadOnlyList(Of DnsServerFailure))
+  fullName: Utils.Net.DnsLookupException.DnsLookupException(System.Collections.Generic.IReadOnlyList<Utils.Net.DnsServerFailure>)
+  fullName.vb: Utils.Net.DnsLookupException.New(System.Collections.Generic.IReadOnlyList(Of Utils.Net.DnsServerFailure))
+  nameWithType: DnsLookupException.DnsLookupException(IReadOnlyList<DnsServerFailure>)
+  nameWithType.vb: DnsLookupException.New(IReadOnlyList(Of DnsServerFailure))
+- uid: Utils.Net.DnsLookupException.#ctor*
+  name: DnsLookupException
+  href: api/Utils.Net.DnsLookupException.html#Utils_Net_DnsLookupException__ctor_
+  commentId: Overload:Utils.Net.DnsLookupException.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.Net.DnsLookupException.DnsLookupException
+  fullName.vb: Utils.Net.DnsLookupException.New
+  nameWithType: DnsLookupException.DnsLookupException
+  nameWithType.vb: DnsLookupException.New
+- uid: Utils.Net.DnsLookupException.Failures
+  name: Failures
+  href: api/Utils.Net.DnsLookupException.html#Utils_Net_DnsLookupException_Failures
+  commentId: P:Utils.Net.DnsLookupException.Failures
+  fullName: Utils.Net.DnsLookupException.Failures
+  nameWithType: DnsLookupException.Failures
+- uid: Utils.Net.DnsLookupException.Failures*
+  name: Failures
+  href: api/Utils.Net.DnsLookupException.html#Utils_Net_DnsLookupException_Failures_
+  commentId: Overload:Utils.Net.DnsLookupException.Failures
+  isSpec: "True"
+  fullName: Utils.Net.DnsLookupException.Failures
+  nameWithType: DnsLookupException.Failures
+- uid: Utils.Net.DnsServerFailure
+  name: DnsServerFailure
+  href: api/Utils.Net.DnsServerFailure.html
+  commentId: T:Utils.Net.DnsServerFailure
+  fullName: Utils.Net.DnsServerFailure
+  nameWithType: DnsServerFailure
+- uid: Utils.Net.DnsServerFailure.#ctor(System.Net.IPEndPoint,Utils.Net.DnsTransport,Utils.Net.DnsFailureKind,System.Exception,System.String)
+  name: DnsServerFailure(IPEndPoint, DnsTransport, DnsFailureKind, Exception?, string)
+  href: api/Utils.Net.DnsServerFailure.html#Utils_Net_DnsServerFailure__ctor_System_Net_IPEndPoint_Utils_Net_DnsTransport_Utils_Net_DnsFailureKind_System_Exception_System_String_
+  commentId: M:Utils.Net.DnsServerFailure.#ctor(System.Net.IPEndPoint,Utils.Net.DnsTransport,Utils.Net.DnsFailureKind,System.Exception,System.String)
+  name.vb: New(IPEndPoint, DnsTransport, DnsFailureKind, Exception, String)
+  fullName: Utils.Net.DnsServerFailure.DnsServerFailure(System.Net.IPEndPoint, Utils.Net.DnsTransport, Utils.Net.DnsFailureKind, System.Exception?, string)
+  fullName.vb: Utils.Net.DnsServerFailure.New(System.Net.IPEndPoint, Utils.Net.DnsTransport, Utils.Net.DnsFailureKind, System.Exception, String)
+  nameWithType: DnsServerFailure.DnsServerFailure(IPEndPoint, DnsTransport, DnsFailureKind, Exception?, string)
+  nameWithType.vb: DnsServerFailure.New(IPEndPoint, DnsTransport, DnsFailureKind, Exception, String)
+- uid: Utils.Net.DnsServerFailure.#ctor*
+  name: DnsServerFailure
+  href: api/Utils.Net.DnsServerFailure.html#Utils_Net_DnsServerFailure__ctor_
+  commentId: Overload:Utils.Net.DnsServerFailure.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.Net.DnsServerFailure.DnsServerFailure
+  fullName.vb: Utils.Net.DnsServerFailure.New
+  nameWithType: DnsServerFailure.DnsServerFailure
+  nameWithType.vb: DnsServerFailure.New
+- uid: Utils.Net.DnsServerFailure.Endpoint
+  name: Endpoint
+  href: api/Utils.Net.DnsServerFailure.html#Utils_Net_DnsServerFailure_Endpoint
+  commentId: P:Utils.Net.DnsServerFailure.Endpoint
+  fullName: Utils.Net.DnsServerFailure.Endpoint
+  nameWithType: DnsServerFailure.Endpoint
+- uid: Utils.Net.DnsServerFailure.Endpoint*
+  name: Endpoint
+  href: api/Utils.Net.DnsServerFailure.html#Utils_Net_DnsServerFailure_Endpoint_
+  commentId: Overload:Utils.Net.DnsServerFailure.Endpoint
+  isSpec: "True"
+  fullName: Utils.Net.DnsServerFailure.Endpoint
+  nameWithType: DnsServerFailure.Endpoint
+- uid: Utils.Net.DnsServerFailure.Exception
+  name: Exception
+  href: api/Utils.Net.DnsServerFailure.html#Utils_Net_DnsServerFailure_Exception
+  commentId: P:Utils.Net.DnsServerFailure.Exception
+  fullName: Utils.Net.DnsServerFailure.Exception
+  nameWithType: DnsServerFailure.Exception
+- uid: Utils.Net.DnsServerFailure.Exception*
+  name: Exception
+  href: api/Utils.Net.DnsServerFailure.html#Utils_Net_DnsServerFailure_Exception_
+  commentId: Overload:Utils.Net.DnsServerFailure.Exception
+  isSpec: "True"
+  fullName: Utils.Net.DnsServerFailure.Exception
+  nameWithType: DnsServerFailure.Exception
+- uid: Utils.Net.DnsServerFailure.Kind
+  name: Kind
+  href: api/Utils.Net.DnsServerFailure.html#Utils_Net_DnsServerFailure_Kind
+  commentId: P:Utils.Net.DnsServerFailure.Kind
+  fullName: Utils.Net.DnsServerFailure.Kind
+  nameWithType: DnsServerFailure.Kind
+- uid: Utils.Net.DnsServerFailure.Kind*
+  name: Kind
+  href: api/Utils.Net.DnsServerFailure.html#Utils_Net_DnsServerFailure_Kind_
+  commentId: Overload:Utils.Net.DnsServerFailure.Kind
+  isSpec: "True"
+  fullName: Utils.Net.DnsServerFailure.Kind
+  nameWithType: DnsServerFailure.Kind
+- uid: Utils.Net.DnsServerFailure.Message
+  name: Message
+  href: api/Utils.Net.DnsServerFailure.html#Utils_Net_DnsServerFailure_Message
+  commentId: P:Utils.Net.DnsServerFailure.Message
+  fullName: Utils.Net.DnsServerFailure.Message
+  nameWithType: DnsServerFailure.Message
+- uid: Utils.Net.DnsServerFailure.Message*
+  name: Message
+  href: api/Utils.Net.DnsServerFailure.html#Utils_Net_DnsServerFailure_Message_
+  commentId: Overload:Utils.Net.DnsServerFailure.Message
+  isSpec: "True"
+  fullName: Utils.Net.DnsServerFailure.Message
+  nameWithType: DnsServerFailure.Message
+- uid: Utils.Net.DnsServerFailure.Transport
+  name: Transport
+  href: api/Utils.Net.DnsServerFailure.html#Utils_Net_DnsServerFailure_Transport
+  commentId: P:Utils.Net.DnsServerFailure.Transport
+  fullName: Utils.Net.DnsServerFailure.Transport
+  nameWithType: DnsServerFailure.Transport
+- uid: Utils.Net.DnsServerFailure.Transport*
+  name: Transport
+  href: api/Utils.Net.DnsServerFailure.html#Utils_Net_DnsServerFailure_Transport_
+  commentId: Overload:Utils.Net.DnsServerFailure.Transport
+  isSpec: "True"
+  fullName: Utils.Net.DnsServerFailure.Transport
+  nameWithType: DnsServerFailure.Transport
+- uid: Utils.Net.DnsTransport
+  name: DnsTransport
+  href: api/Utils.Net.DnsTransport.html
+  commentId: T:Utils.Net.DnsTransport
+  fullName: Utils.Net.DnsTransport
+  nameWithType: DnsTransport
+- uid: Utils.Net.DnsTransport.Tcp
+  name: Tcp
+  href: api/Utils.Net.DnsTransport.html#Utils_Net_DnsTransport_Tcp
+  commentId: F:Utils.Net.DnsTransport.Tcp
+  fullName: Utils.Net.DnsTransport.Tcp
+  nameWithType: DnsTransport.Tcp
+- uid: Utils.Net.DnsTransport.Udp
+  name: Udp
+  href: api/Utils.Net.DnsTransport.html#Utils_Net_DnsTransport_Udp
+  commentId: F:Utils.Net.DnsTransport.Udp
+  fullName: Utils.Net.DnsTransport.Udp
+  nameWithType: DnsTransport.Udp
 - uid: Utils.Net.EchoClient
   name: EchoClient
   href: api/Utils.Net.EchoClient.html
@@ -55570,6 +55834,152 @@ references:
   isSpec: "True"
   fullName: Utils.Net.NtpClient.GetTimeAsync
   nameWithType: NtpClient.GetTimeAsync
+- uid: Utils.Net.NtpEndpointFailure
+  name: NtpEndpointFailure
+  href: api/Utils.Net.NtpEndpointFailure.html
+  commentId: T:Utils.Net.NtpEndpointFailure
+  fullName: Utils.Net.NtpEndpointFailure
+  nameWithType: NtpEndpointFailure
+- uid: Utils.Net.NtpEndpointFailure.#ctor(System.Net.IPEndPoint,System.Net.Sockets.AddressFamily,Utils.Net.NtpPhase,System.Exception,System.String)
+  name: NtpEndpointFailure(IPEndPoint, AddressFamily, NtpPhase, Exception?, string)
+  href: api/Utils.Net.NtpEndpointFailure.html#Utils_Net_NtpEndpointFailure__ctor_System_Net_IPEndPoint_System_Net_Sockets_AddressFamily_Utils_Net_NtpPhase_System_Exception_System_String_
+  commentId: M:Utils.Net.NtpEndpointFailure.#ctor(System.Net.IPEndPoint,System.Net.Sockets.AddressFamily,Utils.Net.NtpPhase,System.Exception,System.String)
+  name.vb: New(IPEndPoint, AddressFamily, NtpPhase, Exception, String)
+  fullName: Utils.Net.NtpEndpointFailure.NtpEndpointFailure(System.Net.IPEndPoint, System.Net.Sockets.AddressFamily, Utils.Net.NtpPhase, System.Exception?, string)
+  fullName.vb: Utils.Net.NtpEndpointFailure.New(System.Net.IPEndPoint, System.Net.Sockets.AddressFamily, Utils.Net.NtpPhase, System.Exception, String)
+  nameWithType: NtpEndpointFailure.NtpEndpointFailure(IPEndPoint, AddressFamily, NtpPhase, Exception?, string)
+  nameWithType.vb: NtpEndpointFailure.New(IPEndPoint, AddressFamily, NtpPhase, Exception, String)
+- uid: Utils.Net.NtpEndpointFailure.#ctor*
+  name: NtpEndpointFailure
+  href: api/Utils.Net.NtpEndpointFailure.html#Utils_Net_NtpEndpointFailure__ctor_
+  commentId: Overload:Utils.Net.NtpEndpointFailure.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.Net.NtpEndpointFailure.NtpEndpointFailure
+  fullName.vb: Utils.Net.NtpEndpointFailure.New
+  nameWithType: NtpEndpointFailure.NtpEndpointFailure
+  nameWithType.vb: NtpEndpointFailure.New
+- uid: Utils.Net.NtpEndpointFailure.Endpoint
+  name: Endpoint
+  href: api/Utils.Net.NtpEndpointFailure.html#Utils_Net_NtpEndpointFailure_Endpoint
+  commentId: P:Utils.Net.NtpEndpointFailure.Endpoint
+  fullName: Utils.Net.NtpEndpointFailure.Endpoint
+  nameWithType: NtpEndpointFailure.Endpoint
+- uid: Utils.Net.NtpEndpointFailure.Endpoint*
+  name: Endpoint
+  href: api/Utils.Net.NtpEndpointFailure.html#Utils_Net_NtpEndpointFailure_Endpoint_
+  commentId: Overload:Utils.Net.NtpEndpointFailure.Endpoint
+  isSpec: "True"
+  fullName: Utils.Net.NtpEndpointFailure.Endpoint
+  nameWithType: NtpEndpointFailure.Endpoint
+- uid: Utils.Net.NtpEndpointFailure.Exception
+  name: Exception
+  href: api/Utils.Net.NtpEndpointFailure.html#Utils_Net_NtpEndpointFailure_Exception
+  commentId: P:Utils.Net.NtpEndpointFailure.Exception
+  fullName: Utils.Net.NtpEndpointFailure.Exception
+  nameWithType: NtpEndpointFailure.Exception
+- uid: Utils.Net.NtpEndpointFailure.Exception*
+  name: Exception
+  href: api/Utils.Net.NtpEndpointFailure.html#Utils_Net_NtpEndpointFailure_Exception_
+  commentId: Overload:Utils.Net.NtpEndpointFailure.Exception
+  isSpec: "True"
+  fullName: Utils.Net.NtpEndpointFailure.Exception
+  nameWithType: NtpEndpointFailure.Exception
+- uid: Utils.Net.NtpEndpointFailure.Family
+  name: Family
+  href: api/Utils.Net.NtpEndpointFailure.html#Utils_Net_NtpEndpointFailure_Family
+  commentId: P:Utils.Net.NtpEndpointFailure.Family
+  fullName: Utils.Net.NtpEndpointFailure.Family
+  nameWithType: NtpEndpointFailure.Family
+- uid: Utils.Net.NtpEndpointFailure.Family*
+  name: Family
+  href: api/Utils.Net.NtpEndpointFailure.html#Utils_Net_NtpEndpointFailure_Family_
+  commentId: Overload:Utils.Net.NtpEndpointFailure.Family
+  isSpec: "True"
+  fullName: Utils.Net.NtpEndpointFailure.Family
+  nameWithType: NtpEndpointFailure.Family
+- uid: Utils.Net.NtpEndpointFailure.Message
+  name: Message
+  href: api/Utils.Net.NtpEndpointFailure.html#Utils_Net_NtpEndpointFailure_Message
+  commentId: P:Utils.Net.NtpEndpointFailure.Message
+  fullName: Utils.Net.NtpEndpointFailure.Message
+  nameWithType: NtpEndpointFailure.Message
+- uid: Utils.Net.NtpEndpointFailure.Message*
+  name: Message
+  href: api/Utils.Net.NtpEndpointFailure.html#Utils_Net_NtpEndpointFailure_Message_
+  commentId: Overload:Utils.Net.NtpEndpointFailure.Message
+  isSpec: "True"
+  fullName: Utils.Net.NtpEndpointFailure.Message
+  nameWithType: NtpEndpointFailure.Message
+- uid: Utils.Net.NtpEndpointFailure.Phase
+  name: Phase
+  href: api/Utils.Net.NtpEndpointFailure.html#Utils_Net_NtpEndpointFailure_Phase
+  commentId: P:Utils.Net.NtpEndpointFailure.Phase
+  fullName: Utils.Net.NtpEndpointFailure.Phase
+  nameWithType: NtpEndpointFailure.Phase
+- uid: Utils.Net.NtpEndpointFailure.Phase*
+  name: Phase
+  href: api/Utils.Net.NtpEndpointFailure.html#Utils_Net_NtpEndpointFailure_Phase_
+  commentId: Overload:Utils.Net.NtpEndpointFailure.Phase
+  isSpec: "True"
+  fullName: Utils.Net.NtpEndpointFailure.Phase
+  nameWithType: NtpEndpointFailure.Phase
+- uid: Utils.Net.NtpPhase
+  name: NtpPhase
+  href: api/Utils.Net.NtpPhase.html
+  commentId: T:Utils.Net.NtpPhase
+  fullName: Utils.Net.NtpPhase
+  nameWithType: NtpPhase
+- uid: Utils.Net.NtpPhase.Exchange
+  name: Exchange
+  href: api/Utils.Net.NtpPhase.html#Utils_Net_NtpPhase_Exchange
+  commentId: F:Utils.Net.NtpPhase.Exchange
+  fullName: Utils.Net.NtpPhase.Exchange
+  nameWithType: NtpPhase.Exchange
+- uid: Utils.Net.NtpPhase.Validation
+  name: Validation
+  href: api/Utils.Net.NtpPhase.html#Utils_Net_NtpPhase_Validation
+  commentId: F:Utils.Net.NtpPhase.Validation
+  fullName: Utils.Net.NtpPhase.Validation
+  nameWithType: NtpPhase.Validation
+- uid: Utils.Net.NtpQueryException
+  name: NtpQueryException
+  href: api/Utils.Net.NtpQueryException.html
+  commentId: T:Utils.Net.NtpQueryException
+  fullName: Utils.Net.NtpQueryException
+  nameWithType: NtpQueryException
+- uid: Utils.Net.NtpQueryException.#ctor(System.String,System.Collections.Generic.IReadOnlyList{Utils.Net.NtpEndpointFailure})
+  name: NtpQueryException(string, IReadOnlyList<NtpEndpointFailure>)
+  href: api/Utils.Net.NtpQueryException.html#Utils_Net_NtpQueryException__ctor_System_String_System_Collections_Generic_IReadOnlyList_Utils_Net_NtpEndpointFailure__
+  commentId: M:Utils.Net.NtpQueryException.#ctor(System.String,System.Collections.Generic.IReadOnlyList{Utils.Net.NtpEndpointFailure})
+  name.vb: New(String, IReadOnlyList(Of NtpEndpointFailure))
+  fullName: Utils.Net.NtpQueryException.NtpQueryException(string, System.Collections.Generic.IReadOnlyList<Utils.Net.NtpEndpointFailure>)
+  fullName.vb: Utils.Net.NtpQueryException.New(String, System.Collections.Generic.IReadOnlyList(Of Utils.Net.NtpEndpointFailure))
+  nameWithType: NtpQueryException.NtpQueryException(string, IReadOnlyList<NtpEndpointFailure>)
+  nameWithType.vb: NtpQueryException.New(String, IReadOnlyList(Of NtpEndpointFailure))
+- uid: Utils.Net.NtpQueryException.#ctor*
+  name: NtpQueryException
+  href: api/Utils.Net.NtpQueryException.html#Utils_Net_NtpQueryException__ctor_
+  commentId: Overload:Utils.Net.NtpQueryException.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.Net.NtpQueryException.NtpQueryException
+  fullName.vb: Utils.Net.NtpQueryException.New
+  nameWithType: NtpQueryException.NtpQueryException
+  nameWithType.vb: NtpQueryException.New
+- uid: Utils.Net.NtpQueryException.Failures
+  name: Failures
+  href: api/Utils.Net.NtpQueryException.html#Utils_Net_NtpQueryException_Failures
+  commentId: P:Utils.Net.NtpQueryException.Failures
+  fullName: Utils.Net.NtpQueryException.Failures
+  nameWithType: NtpQueryException.Failures
+- uid: Utils.Net.NtpQueryException.Failures*
+  name: Failures
+  href: api/Utils.Net.NtpQueryException.html#Utils_Net_NtpQueryException_Failures_
+  commentId: Overload:Utils.Net.NtpQueryException.Failures
+  isSpec: "True"
+  fullName: Utils.Net.NtpQueryException.Failures
+  nameWithType: NtpQueryException.Failures
 - uid: Utils.Net.Pop3Client
   name: Pop3Client
   href: api/Utils.Net.Pop3Client.html
