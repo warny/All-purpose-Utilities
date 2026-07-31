@@ -238,49 +238,120 @@ public class DNSHeader : DNSElement
     }
 
     /// <summary>
-    /// Merges (appends) the requests, responses, authority, and additional records from another
-    /// <see cref="DNSHeader"/> into the current one, provided the IDs do not match.
+    /// Merges the answer, authority and additional records from another compatible
+    /// <see cref="DNSHeader"/> into this one. Records are cloned before insertion and duplicates
+    /// (as determined by <see cref="DNSElementsComparer.Default"/>) are skipped.
     /// </summary>
-    /// <param name="header">Another <see cref="DNSHeader"/> to merge from.</param>
-    /// <exception cref="Exception">Thrown if the <paramref name="header"/> has the same <see cref="ID"/> as the current header.</exception>
-    public void Append(DNSHeader header)
+    /// <param name="other">The header whose records should be merged into this one.</param>
+    /// <remarks>
+    /// <list type="bullet">
+    /// <item><description>Both headers must carry the same question section (same names, types and classes, in order).</description></item>
+    /// <item><description>Both headers must have identical values for all semantic flag fields: <see cref="QrBit"/>, <see cref="OpCode"/>, <see cref="ErrorCode"/>, <see cref="AuthoritativeAnswer"/>, <see cref="MessageTruncated"/>, <see cref="AuthenticDatas"/>, <see cref="CheckingDisabled"/>, <see cref="RecursionDesired"/>, <see cref="RecursionPossible"/>, and <see cref="ReservedFlags"/>.</description></item>
+    /// <item><description>The record-count fields are not touched here; they are derived from the collections when the header is serialised.</description></item>
+    /// <item><description>The header <see cref="ID"/> and flag bits of this instance are preserved; merging never silently overwrites them.</description></item>
+    /// <item><description>The merge is atomic: all clones are prepared before any collection is mutated, so a failed clone cannot leave the header partially modified.</description></item>
+    /// </list>
+    /// <para>
+    /// The question section of <paramref name="other"/> is not appended: it must already match, so
+    /// only the answer/authority/additional record sets are combined.
+    /// </para>
+    /// </remarks>
+    /// <exception cref="ArgumentNullException"><paramref name="other"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// The two headers are not compatible for merging: their question sections differ, or any of
+    /// <see cref="QrBit"/>, <see cref="OpCode"/>, <see cref="ErrorCode"/>,
+    /// <see cref="AuthoritativeAnswer"/>, <see cref="MessageTruncated"/>,
+    /// <see cref="AuthenticDatas"/>, <see cref="CheckingDisabled"/>,
+    /// <see cref="RecursionDesired"/>, <see cref="RecursionPossible"/>, or
+    /// <see cref="ReservedFlags"/> differ.
+    /// </exception>
+    public void MergeRecordsFrom(DNSHeader other)
     {
-        if (this.ID == header.ID)
-        {
-            throw new Exception("Mismatch headers");
-        }
+        ArgumentNullException.ThrowIfNull(other);
 
-        foreach (var request in header.Requests)
-        {
-            if (!Requests.Contains(request, DNSElementsComparer.Default))
-            {
-                Requests.Add((DNSRequestRecord)request.Clone());
-            }
-        }
+        if (QrBit != other.QrBit)
+            throw new InvalidOperationException(
+                $"Cannot merge a {other.QrBit} header into a {QrBit} header.");
 
-        foreach (var response in header.Responses)
-        {
-            if (!Responses.Contains(response))
-            {
-                Responses.Add((DNSResponseRecord)response.Clone());
-            }
-        }
+        if (OpCode != other.OpCode)
+            throw new InvalidOperationException(
+                $"Cannot merge headers with different opcodes ({OpCode} vs {other.OpCode}).");
 
-        foreach (var authority in header.Authorities)
-        {
-            if (!Authorities.Contains(authority))
-            {
-                Authorities.Add((DNSResponseRecord)authority.Clone());
-            }
-        }
+        if (ErrorCode != other.ErrorCode)
+            throw new InvalidOperationException(
+                $"Cannot merge headers with different error codes ({ErrorCode} vs {other.ErrorCode}).");
 
-        foreach (var additional in header.Additionals)
+        if (AuthoritativeAnswer != other.AuthoritativeAnswer)
+            throw new InvalidOperationException(
+                $"Cannot merge headers with different AuthoritativeAnswer flags ({AuthoritativeAnswer} vs {other.AuthoritativeAnswer}).");
+
+        if (MessageTruncated != other.MessageTruncated)
+            throw new InvalidOperationException(
+                $"Cannot merge headers with different MessageTruncated flags ({MessageTruncated} vs {other.MessageTruncated}).");
+
+        if (AuthenticDatas != other.AuthenticDatas)
+            throw new InvalidOperationException(
+                $"Cannot merge headers with different AuthenticDatas flags ({AuthenticDatas} vs {other.AuthenticDatas}).");
+
+        if (CheckingDisabled != other.CheckingDisabled)
+            throw new InvalidOperationException(
+                $"Cannot merge headers with different CheckingDisabled flags ({CheckingDisabled} vs {other.CheckingDisabled}).");
+
+        if (RecursionDesired != other.RecursionDesired)
+            throw new InvalidOperationException(
+                $"Cannot merge headers with different RecursionDesired flags ({RecursionDesired} vs {other.RecursionDesired}).");
+
+        if (RecursionPossible != other.RecursionPossible)
+            throw new InvalidOperationException(
+                $"Cannot merge headers with different RecursionPossible flags ({RecursionPossible} vs {other.RecursionPossible}).");
+
+        if (ReservedFlags != other.ReservedFlags)
+            throw new InvalidOperationException(
+                $"Cannot merge headers with different ReservedFlags values ({ReservedFlags} vs {other.ReservedFlags}).");
+
+        if (!QuestionsMatch(this, other))
+            throw new InvalidOperationException(
+                "Cannot merge headers whose question sections differ.");
+
+        // Prepare all clones before any mutation so that a Clone() failure leaves the header
+        // in its original state (atomic read-then-write pattern).
+        var responsesToAdd = GetDistinctClones(Responses, other.Responses);
+        var authoritiesToAdd = GetDistinctClones(Authorities, other.Authorities);
+        var additionalsToAdd = GetDistinctClones(Additionals, other.Additionals);
+
+        foreach (var record in responsesToAdd) Responses.Add(record);
+        foreach (var record in authoritiesToAdd) Authorities.Add(record);
+        foreach (var record in additionalsToAdd) Additionals.Add(record);
+    }
+
+    private static bool QuestionsMatch(DNSHeader a, DNSHeader b)
+    {
+        if (a.Requests.Count != b.Requests.Count)
+            return false;
+        for (int i = 0; i < a.Requests.Count; i++)
         {
-            if (!Additionals.Contains(additional))
-            {
-                Additionals.Add((DNSResponseRecord)additional.Clone());
-            }
+            if (!DNSElementsComparer.Default.Equals(a.Requests[i], b.Requests[i]))
+                return false;
         }
+        return true;
+    }
+
+    /// <summary>
+    /// Returns clones of records in <paramref name="source"/> that are not already present in
+    /// <paramref name="target"/>. All clones are created before any mutation occurs, ensuring that
+    /// a failed <see cref="DNSElement.Clone"/> cannot leave <paramref name="target"/> partially
+    /// modified.
+    /// </summary>
+    private static List<DNSResponseRecord> GetDistinctClones(
+        IList<DNSResponseRecord> target, IList<DNSResponseRecord> source)
+    {
+        var result = new List<DNSResponseRecord>();
+        foreach (var record in source)
+        {
+            if (!target.Contains(record, DNSElementsComparer.Default))
+                result.Add((DNSResponseRecord)record.Clone());
+        }
+        return result;
     }
 
     /// <summary>

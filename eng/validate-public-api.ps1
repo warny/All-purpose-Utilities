@@ -11,6 +11,11 @@ param(
 )
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "Release.Common.ps1")
+
+function Normalize-ApiMessage {
+    param([string]$Message)
+    return $Message.Trim().TrimEnd('.')
+}
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $manifest = Get-ProductTrainManifest $repoRoot
 $artifactRoot = Resolve-RepositoryPath $repoRoot $ArtifactsPath
@@ -73,7 +78,7 @@ foreach ($package in $manifest.packages) {
         $output = @($comparison.StandardOutput -split "\r?\n") + @($comparison.StandardError -split "\r?\n")
         $assemblyDiagnostics = @($output | Where-Object { $_ -match '^CP\d+:' })
         if ($exitCode -ne 0 -and -not $assemblyDiagnostics) { throw "$($package.packageId): ApiCompat failed without producing compatibility diagnostics. See '$log'." }
-        $actualKeys += @($assemblyDiagnostics | ForEach-Object { if ($_ -match '^(CP\d+):\s*(.*)$') { $message = $Matches[2].Replace($baselineDll.FullName, '{baselineAssembly}').Replace($candidateAssemblies[$index].FullName, '{candidateAssembly}'); "$($Matches[1])|$message" } })
+        $actualKeys += @($assemblyDiagnostics | ForEach-Object { if ($_ -match '^(CP\d+):\s*(.*)$') { $message = Normalize-ApiMessage ($Matches[2].Replace($baselineDll.FullName, '{baselineAssembly}').Replace($candidateAssemblies[$index].FullName, '{candidateAssembly}')); "$($Matches[1])|$message" } })
         $reverseLog = Join-Path $workRoot "$($package.packageId)-$index-reverse.txt"
         $reverseResult = Invoke-NativeCommand -FilePath $tool -ArgumentList @("-l", $candidateAssemblies[$index].FullName, "-r", $baselineDll.FullName) -Timeout $ComparisonTimeout -LogPath $reverseLog -IgnoreExitCode
         $reverse = @($reverseResult.StandardOutput -split "\r?\n") + @($reverseResult.StandardError -split "\r?\n")
@@ -87,11 +92,11 @@ foreach ($package in $manifest.packages) {
         if ($migrationParts.Count -ne 2 -or [string]::IsNullOrWhiteSpace($migrationParts[1])) { throw "$($package.packageId): migrationSection '$($_.migrationSection)' must identify a checked-in document anchor." }
         $migrationPath = Resolve-RepositoryPath $repoRoot $migrationParts[0]
         if (-not (Test-Path -LiteralPath $migrationPath -PathType Leaf) -or -not (Select-String -LiteralPath $migrationPath -SimpleMatch "id=`"$($migrationParts[1])`"" -Quiet)) { throw "$($package.packageId): migration section '$($_.migrationSection)' does not exist." }
-        "$($_.diagnosticId)|$($_.message)"
+        "$($_.diagnosticId)|$(Normalize-ApiMessage $_.message)"
     })
     if (($acceptedKeys | Sort-Object -Unique).Count -ne $acceptedKeys.Count) { throw "$($package.packageId): duplicate API acceptance diagnostics." }
     $difference = if ($acceptedKeys.Count -eq 0 -and $actualKeys.Count -eq 0) { @() } elseif ($acceptedKeys.Count -eq 0) { @($actualKeys | ForEach-Object { [pscustomobject]@{ InputObject=$_; SideIndicator='=>' } }) } elseif ($actualKeys.Count -eq 0) { @($acceptedKeys | ForEach-Object { [pscustomobject]@{ InputObject=$_; SideIndicator='<=' } }) } else { @(Compare-Object ($acceptedKeys | Sort-Object) ($actualKeys | Sort-Object)) }
-    if ($difference) { throw "$($package.packageId): API diagnostics differ from the exact allowlist (new or stale entries): $(($difference.InputObject) -join '; ')." }
+    if ($difference) { $formattedDifferences = $difference | ForEach-Object { "$($_.SideIndicator) $($_.InputObject)" }; throw "$($package.packageId): API diagnostics differ from the exact allowlist (new or stale entries):`n$($formattedDifferences -join "`n")" }
     $breaking = $actualKeys.Count
     $results += [ordered]@{ packageId=$package.packageId; latestStable=$latestStable; latestPrerelease=($versions | Where-Object {$_ -match '-'} | Select-Object -Last 1); baseline=$baselineVersion; result=if($breaking){'accepted-major-version-breaks'}else{'compatible'}; breakingChanges=$breaking; compatibleAdditions=$additions; candidateAssemblies=@($package.apiAssemblies); baselineAssemblies=@($package.baselineApiAssemblies); acceptance=[string]$package.apiBreakAcceptanceFile }
 }
