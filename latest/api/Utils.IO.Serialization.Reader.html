@@ -270,7 +270,7 @@ Class Reader  <a class="header-action link-secondary" title="View source" href="
 
   <h3 id="Utils_IO_Serialization_Reader__ctor_System_IO_Stream_" data-uid="Utils.IO.Serialization.Reader.#ctor(System.IO.Stream)">
   Reader(Stream)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Reader.cs/#L49"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Reader.cs/#L52"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of <a class="xref" href="Utils.IO.Serialization.Reader.html">Reader</a> using default converters.</p>
@@ -302,7 +302,7 @@ Class Reader  <a class="header-action link-secondary" title="View source" href="
 
   <h3 id="Utils_IO_Serialization_Reader__ctor_System_IO_Stream_System_Collections_Generic_IEnumerable_System_Collections_Generic_IEnumerable_System_Delegate___" data-uid="Utils.IO.Serialization.Reader.#ctor(System.IO.Stream,System.Collections.Generic.IEnumerable{System.Collections.Generic.IEnumerable{System.Delegate}})">
   Reader(Stream, params IEnumerable&lt;IEnumerable&lt;Delegate&gt;&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Reader.cs/#L81"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Reader.cs/#L113"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of <a class="xref" href="Utils.IO.Serialization.Reader.html">Reader</a> with multiple converter collections.</p>
@@ -336,7 +336,7 @@ Class Reader  <a class="header-action link-secondary" title="View source" href="
 
   <h3 id="Utils_IO_Serialization_Reader__ctor_System_IO_Stream_System_Collections_Generic_IEnumerable_System_Delegate__" data-uid="Utils.IO.Serialization.Reader.#ctor(System.IO.Stream,System.Collections.Generic.IEnumerable{System.Delegate})">
   Reader(Stream, params IEnumerable&lt;Delegate&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Reader.cs/#L65"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Reader.cs/#L95"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of <a class="xref" href="Utils.IO.Serialization.Reader.html">Reader</a> with custom converters.</p>
@@ -351,6 +351,81 @@ Class Reader  <a class="header-action link-secondary" title="View source" href="
   <dl class="parameters">
     <dt><code>stream</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a></dt>
     <dd><p>Stream to read from.</p>
+</dd>
+    <dt><code>converters</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.delegate">Delegate</a>&gt;</dt>
+    <dd><p>Reader delegates used to deserialize objects.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_IO_Serialization_Reader__ctor_" data-uid="Utils.IO.Serialization.Reader.#ctor*"></a>
+
+  <h3 id="Utils_IO_Serialization_Reader__ctor_System_IO_Stream_Utils_IO_Serialization_ReaderOptions_" data-uid="Utils.IO.Serialization.Reader.#ctor(System.IO.Stream,Utils.IO.Serialization.ReaderOptions)">
+  Reader(Stream, ReaderOptions)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Reader.cs/#L59"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a new instance of <a class="xref" href="Utils.IO.Serialization.Reader.html">Reader</a> using default converters and explicit payload options.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Reader(Stream stream, ReaderOptions options)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>stream</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a></dt>
+    <dd><p>Stream to read from.</p>
+</dd>
+    <dt><code>options</code> <a class="xref" href="Utils.IO.Serialization.ReaderOptions.html">ReaderOptions</a></dt>
+    <dd><p>Payload safety options; a null maximum preserves unlimited historical reads.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_IO_Serialization_Reader__ctor_" data-uid="Utils.IO.Serialization.Reader.#ctor*"></a>
+
+  <h3 id="Utils_IO_Serialization_Reader__ctor_System_IO_Stream_Utils_IO_Serialization_ReaderOptions_System_Collections_Generic_IEnumerable_System_Delegate__" data-uid="Utils.IO.Serialization.Reader.#ctor(System.IO.Stream,Utils.IO.Serialization.ReaderOptions,System.Collections.Generic.IEnumerable{System.Delegate})">
+  Reader(Stream, ReaderOptions, params IEnumerable&lt;Delegate&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Reader.cs/#L68"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a new instance of <a class="xref" href="Utils.IO.Serialization.Reader.html">Reader</a> with explicit payload options and custom converters.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Reader(Stream stream, ReaderOptions options, params IEnumerable&lt;Delegate&gt; converters)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>stream</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a></dt>
+    <dd><p>Stream to read from.</p>
+</dd>
+    <dt><code>options</code> <a class="xref" href="Utils.IO.Serialization.ReaderOptions.html">ReaderOptions</a></dt>
+    <dd><p>Payload safety options.</p>
 </dd>
     <dt><code>converters</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.delegate">Delegate</a>&gt;</dt>
     <dd><p>Reader delegates used to deserialize objects.</p>
@@ -476,7 +551,7 @@ Class Reader  <a class="header-action link-secondary" title="View source" href="
 
   <h3 id="Utils_IO_Serialization_Reader_Pop" data-uid="Utils.IO.Serialization.Reader.Pop">
   Pop()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Reader.cs/#L137"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Reader.cs/#L179"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Restores the last saved stream position.</p>
@@ -503,7 +578,7 @@ Class Reader  <a class="header-action link-secondary" title="View source" href="
 
   <h3 id="Utils_IO_Serialization_Reader_Push" data-uid="Utils.IO.Serialization.Reader.Push">
   Push()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Reader.cs/#L116"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Reader.cs/#L148"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Saves the current stream position onto the internal stack.</p>
@@ -530,7 +605,7 @@ Class Reader  <a class="header-action link-secondary" title="View source" href="
 
   <h3 id="Utils_IO_Serialization_Reader_Push_System_Int32_System_IO_SeekOrigin_" data-uid="Utils.IO.Serialization.Reader.Push(System.Int32,System.IO.SeekOrigin)">
   Push(int, SeekOrigin)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Reader.cs/#L127"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Reader.cs/#L159"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Saves the current position and seeks relative to the given offset.</p>
@@ -566,7 +641,7 @@ Class Reader  <a class="header-action link-secondary" title="View source" href="
 
   <h3 id="Utils_IO_Serialization_Reader_Read_System_Type_" data-uid="Utils.IO.Serialization.Reader.Read(System.Type)">
   Read(Type)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Reader.cs/#L89"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Reader.cs/#L121"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads an object dynamically by resolving the appropriate reader.</p>
@@ -604,7 +679,7 @@ Class Reader  <a class="header-action link-secondary" title="View source" href="
 
   <h3 id="Utils_IO_Serialization_Reader_ReadByte" data-uid="Utils.IO.Serialization.Reader.ReadByte">
   ReadByte()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Reader.cs/#L152"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Reader.cs/#L194"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Read one byte from the underlying <a class="xref" href="Utils.IO.Serialization.Reader.html#Utils_IO_Serialization_Reader_Stream">Stream</a></p>
@@ -637,7 +712,7 @@ Class Reader  <a class="header-action link-secondary" title="View source" href="
 
   <h3 id="Utils_IO_Serialization_Reader_ReadBytes_System_Int32_" data-uid="Utils.IO.Serialization.Reader.ReadBytes(System.Int32)">
   ReadBytes(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Reader.cs/#L159"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Reader.cs/#L201"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Read a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a> array from the <a class="xref" href="Utils.IO.Serialization.Reader.html#Utils_IO_Serialization_Reader_Stream">Stream</a> of <code class="paramref">length</code></p>
@@ -676,7 +751,7 @@ Class Reader  <a class="header-action link-secondary" title="View source" href="
 
   <h3 id="Utils_IO_Serialization_Reader_Read__1" data-uid="Utils.IO.Serialization.Reader.Read``1">
   Read&lt;T&gt;()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Reader.cs/#L103"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Reader.cs/#L135"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a strongly-typed object.</p>
@@ -714,7 +789,7 @@ Class Reader  <a class="header-action link-secondary" title="View source" href="
 
   <h3 id="Utils_IO_Serialization_Reader_Seek_System_Int32_System_IO_SeekOrigin_" data-uid="Utils.IO.Serialization.Reader.Seek(System.Int32,System.IO.SeekOrigin)">
   Seek(int, SeekOrigin)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Reader.cs/#L145"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Reader.cs/#L187"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Moves the stream position without saving it.</p>
@@ -748,7 +823,7 @@ Class Reader  <a class="header-action link-secondary" title="View source" href="
 
   <h3 id="Utils_IO_Serialization_Reader_Slice_System_Int64_System_Int64_" data-uid="Utils.IO.Serialization.Reader.Slice(System.Int64,System.Int64)">
   Slice(long, long)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Reader.cs/#L166"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Reader.cs/#L224"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates a new reader that is limited to a slice of the underlying stream.</p>
@@ -772,6 +847,43 @@ Class Reader  <a class="header-action link-secondary" title="View source" href="
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="Utils.IO.Serialization.Reader.html">Reader</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_IO_Serialization_Reader_TryGetBytesLeft_" data-uid="Utils.IO.Serialization.Reader.TryGetBytesLeft*"></a>
+
+  <h3 id="Utils_IO_Serialization_Reader_TryGetBytesLeft_System_Int64__" data-uid="Utils.IO.Serialization.Reader.TryGetBytesLeft(System.Int64@)">
+  TryGetBytesLeft(out long)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Reader.cs/#L204"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Attempts to obtain the number of readable bytes between the current position and stream length.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool TryGetBytesLeft(out long bytesLeft)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>bytesLeft</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
     <dd></dd>
   </dl>
 

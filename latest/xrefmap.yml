@@ -33381,6 +33381,19 @@ references:
   isSpec: "True"
   fullName: Utils.IO.PartialStream.Dispose
   nameWithType: PartialStream.Dispose
+- uid: Utils.IO.PartialStream.DisposeAsync
+  name: DisposeAsync()
+  href: api/Utils.IO.PartialStream.html#Utils_IO_PartialStream_DisposeAsync
+  commentId: M:Utils.IO.PartialStream.DisposeAsync
+  fullName: Utils.IO.PartialStream.DisposeAsync()
+  nameWithType: PartialStream.DisposeAsync()
+- uid: Utils.IO.PartialStream.DisposeAsync*
+  name: DisposeAsync
+  href: api/Utils.IO.PartialStream.html#Utils_IO_PartialStream_DisposeAsync_
+  commentId: Overload:Utils.IO.PartialStream.DisposeAsync
+  isSpec: "True"
+  fullName: Utils.IO.PartialStream.DisposeAsync
+  nameWithType: PartialStream.DisposeAsync
 - uid: Utils.IO.PartialStream.Flush
   name: Flush()
   href: api/Utils.IO.PartialStream.html#Utils_IO_PartialStream_Flush
@@ -33394,6 +33407,19 @@ references:
   isSpec: "True"
   fullName: Utils.IO.PartialStream.Flush
   nameWithType: PartialStream.Flush
+- uid: Utils.IO.PartialStream.FlushAsync(System.Threading.CancellationToken)
+  name: FlushAsync(CancellationToken)
+  href: api/Utils.IO.PartialStream.html#Utils_IO_PartialStream_FlushAsync_System_Threading_CancellationToken_
+  commentId: M:Utils.IO.PartialStream.FlushAsync(System.Threading.CancellationToken)
+  fullName: Utils.IO.PartialStream.FlushAsync(System.Threading.CancellationToken)
+  nameWithType: PartialStream.FlushAsync(CancellationToken)
+- uid: Utils.IO.PartialStream.FlushAsync*
+  name: FlushAsync
+  href: api/Utils.IO.PartialStream.html#Utils_IO_PartialStream_FlushAsync_
+  commentId: Overload:Utils.IO.PartialStream.FlushAsync
+  isSpec: "True"
+  fullName: Utils.IO.PartialStream.FlushAsync
+  nameWithType: PartialStream.FlushAsync
 - uid: Utils.IO.PartialStream.Length
   name: Length
   href: api/Utils.IO.PartialStream.html#Utils_IO_PartialStream_Length
@@ -33429,6 +33455,15 @@ references:
   fullName.vb: Utils.IO.PartialStream.Read(Byte(), Integer, Integer)
   nameWithType: PartialStream.Read(byte[], int, int)
   nameWithType.vb: PartialStream.Read(Byte(), Integer, Integer)
+- uid: Utils.IO.PartialStream.Read(System.Span{System.Byte})
+  name: Read(Span<byte>)
+  href: api/Utils.IO.PartialStream.html#Utils_IO_PartialStream_Read_System_Span_System_Byte__
+  commentId: M:Utils.IO.PartialStream.Read(System.Span{System.Byte})
+  name.vb: Read(Span(Of Byte))
+  fullName: Utils.IO.PartialStream.Read(System.Span<byte>)
+  fullName.vb: Utils.IO.PartialStream.Read(System.Span(Of Byte))
+  nameWithType: PartialStream.Read(Span<byte>)
+  nameWithType.vb: PartialStream.Read(Span(Of Byte))
 - uid: Utils.IO.PartialStream.Read*
   name: Read
   href: api/Utils.IO.PartialStream.html#Utils_IO_PartialStream_Read_
@@ -33436,6 +33471,22 @@ references:
   isSpec: "True"
   fullName: Utils.IO.PartialStream.Read
   nameWithType: PartialStream.Read
+- uid: Utils.IO.PartialStream.ReadAsync(System.Memory{System.Byte},System.Threading.CancellationToken)
+  name: ReadAsync(Memory<byte>, CancellationToken)
+  href: api/Utils.IO.PartialStream.html#Utils_IO_PartialStream_ReadAsync_System_Memory_System_Byte__System_Threading_CancellationToken_
+  commentId: M:Utils.IO.PartialStream.ReadAsync(System.Memory{System.Byte},System.Threading.CancellationToken)
+  name.vb: ReadAsync(Memory(Of Byte), CancellationToken)
+  fullName: Utils.IO.PartialStream.ReadAsync(System.Memory<byte>, System.Threading.CancellationToken)
+  fullName.vb: Utils.IO.PartialStream.ReadAsync(System.Memory(Of Byte), System.Threading.CancellationToken)
+  nameWithType: PartialStream.ReadAsync(Memory<byte>, CancellationToken)
+  nameWithType.vb: PartialStream.ReadAsync(Memory(Of Byte), CancellationToken)
+- uid: Utils.IO.PartialStream.ReadAsync*
+  name: ReadAsync
+  href: api/Utils.IO.PartialStream.html#Utils_IO_PartialStream_ReadAsync_
+  commentId: Overload:Utils.IO.PartialStream.ReadAsync
+  isSpec: "True"
+  fullName: Utils.IO.PartialStream.ReadAsync
+  nameWithType: PartialStream.ReadAsync
 - uid: Utils.IO.PartialStream.Seek(System.Int64,System.IO.SeekOrigin)
   name: Seek(long, SeekOrigin)
   href: api/Utils.IO.PartialStream.html#Utils_IO_PartialStream_Seek_System_Int64_System_IO_SeekOrigin_
@@ -33477,6 +33528,15 @@ references:
   fullName.vb: Utils.IO.PartialStream.Write(Byte(), Integer, Integer)
   nameWithType: PartialStream.Write(byte[], int, int)
   nameWithType.vb: PartialStream.Write(Byte(), Integer, Integer)
+- uid: Utils.IO.PartialStream.Write(System.ReadOnlySpan{System.Byte})
+  name: Write(ReadOnlySpan<byte>)
+  href: api/Utils.IO.PartialStream.html#Utils_IO_PartialStream_Write_System_ReadOnlySpan_System_Byte__
+  commentId: M:Utils.IO.PartialStream.Write(System.ReadOnlySpan{System.Byte})
+  name.vb: Write(ReadOnlySpan(Of Byte))
+  fullName: Utils.IO.PartialStream.Write(System.ReadOnlySpan<byte>)
+  fullName.vb: Utils.IO.PartialStream.Write(System.ReadOnlySpan(Of Byte))
+  nameWithType: PartialStream.Write(ReadOnlySpan<byte>)
+  nameWithType.vb: PartialStream.Write(ReadOnlySpan(Of Byte))
 - uid: Utils.IO.PartialStream.Write*
   name: Write
   href: api/Utils.IO.PartialStream.html#Utils_IO_PartialStream_Write_
@@ -33484,6 +33544,22 @@ references:
   isSpec: "True"
   fullName: Utils.IO.PartialStream.Write
   nameWithType: PartialStream.Write
+- uid: Utils.IO.PartialStream.WriteAsync(System.ReadOnlyMemory{System.Byte},System.Threading.CancellationToken)
+  name: WriteAsync(ReadOnlyMemory<byte>, CancellationToken)
+  href: api/Utils.IO.PartialStream.html#Utils_IO_PartialStream_WriteAsync_System_ReadOnlyMemory_System_Byte__System_Threading_CancellationToken_
+  commentId: M:Utils.IO.PartialStream.WriteAsync(System.ReadOnlyMemory{System.Byte},System.Threading.CancellationToken)
+  name.vb: WriteAsync(ReadOnlyMemory(Of Byte), CancellationToken)
+  fullName: Utils.IO.PartialStream.WriteAsync(System.ReadOnlyMemory<byte>, System.Threading.CancellationToken)
+  fullName.vb: Utils.IO.PartialStream.WriteAsync(System.ReadOnlyMemory(Of Byte), System.Threading.CancellationToken)
+  nameWithType: PartialStream.WriteAsync(ReadOnlyMemory<byte>, CancellationToken)
+  nameWithType.vb: PartialStream.WriteAsync(ReadOnlyMemory(Of Byte), CancellationToken)
+- uid: Utils.IO.PartialStream.WriteAsync*
+  name: WriteAsync
+  href: api/Utils.IO.PartialStream.html#Utils_IO_PartialStream_WriteAsync_
+  commentId: Overload:Utils.IO.PartialStream.WriteAsync
+  isSpec: "True"
+  fullName: Utils.IO.PartialStream.WriteAsync
+  nameWithType: PartialStream.WriteAsync
 - uid: Utils.IO.Serialization
   name: Utils.IO.Serialization
   href: api/Utils.IO.Serialization.html
@@ -33825,6 +33901,19 @@ references:
   isSpec: "True"
   fullName: Utils.IO.Serialization.RawReader.Encoding
   nameWithType: RawReader.Encoding
+- uid: Utils.IO.Serialization.RawReader.MaximumLength
+  name: MaximumLength
+  href: api/Utils.IO.Serialization.RawReader.html#Utils_IO_Serialization_RawReader_MaximumLength
+  commentId: P:Utils.IO.Serialization.RawReader.MaximumLength
+  fullName: Utils.IO.Serialization.RawReader.MaximumLength
+  nameWithType: RawReader.MaximumLength
+- uid: Utils.IO.Serialization.RawReader.MaximumLength*
+  name: MaximumLength
+  href: api/Utils.IO.Serialization.RawReader.html#Utils_IO_Serialization_RawReader_MaximumLength_
+  commentId: Overload:Utils.IO.Serialization.RawReader.MaximumLength
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.RawReader.MaximumLength
+  nameWithType: RawReader.MaximumLength
 - uid: Utils.IO.Serialization.RawReader.ReadBigInteger(Utils.IO.Serialization.IReader)
   name: ReadBigInteger(IReader)
   href: api/Utils.IO.Serialization.RawReader.html#Utils_IO_Serialization_RawReader_ReadBigInteger_Utils_IO_Serialization_IReader_
@@ -34633,6 +34722,24 @@ references:
   fullName.vb: Utils.IO.Serialization.Reader.New(System.IO.Stream, System.Collections.Generic.IEnumerable(Of System.Delegate))
   nameWithType: Reader.Reader(Stream, params IEnumerable<Delegate>)
   nameWithType.vb: Reader.New(Stream, IEnumerable(Of Delegate))
+- uid: Utils.IO.Serialization.Reader.#ctor(System.IO.Stream,Utils.IO.Serialization.ReaderOptions)
+  name: Reader(Stream, ReaderOptions)
+  href: api/Utils.IO.Serialization.Reader.html#Utils_IO_Serialization_Reader__ctor_System_IO_Stream_Utils_IO_Serialization_ReaderOptions_
+  commentId: M:Utils.IO.Serialization.Reader.#ctor(System.IO.Stream,Utils.IO.Serialization.ReaderOptions)
+  name.vb: New(Stream, ReaderOptions)
+  fullName: Utils.IO.Serialization.Reader.Reader(System.IO.Stream, Utils.IO.Serialization.ReaderOptions)
+  fullName.vb: Utils.IO.Serialization.Reader.New(System.IO.Stream, Utils.IO.Serialization.ReaderOptions)
+  nameWithType: Reader.Reader(Stream, ReaderOptions)
+  nameWithType.vb: Reader.New(Stream, ReaderOptions)
+- uid: Utils.IO.Serialization.Reader.#ctor(System.IO.Stream,Utils.IO.Serialization.ReaderOptions,System.Collections.Generic.IEnumerable{System.Delegate})
+  name: Reader(Stream, ReaderOptions, params IEnumerable<Delegate>)
+  href: api/Utils.IO.Serialization.Reader.html#Utils_IO_Serialization_Reader__ctor_System_IO_Stream_Utils_IO_Serialization_ReaderOptions_System_Collections_Generic_IEnumerable_System_Delegate__
+  commentId: M:Utils.IO.Serialization.Reader.#ctor(System.IO.Stream,Utils.IO.Serialization.ReaderOptions,System.Collections.Generic.IEnumerable{System.Delegate})
+  name.vb: New(Stream, ReaderOptions, IEnumerable(Of Delegate))
+  fullName: Utils.IO.Serialization.Reader.Reader(System.IO.Stream, Utils.IO.Serialization.ReaderOptions, params System.Collections.Generic.IEnumerable<System.Delegate>)
+  fullName.vb: Utils.IO.Serialization.Reader.New(System.IO.Stream, Utils.IO.Serialization.ReaderOptions, System.Collections.Generic.IEnumerable(Of System.Delegate))
+  nameWithType: Reader.Reader(Stream, ReaderOptions, params IEnumerable<Delegate>)
+  nameWithType.vb: Reader.New(Stream, ReaderOptions, IEnumerable(Of Delegate))
 - uid: Utils.IO.Serialization.Reader.#ctor*
   name: Reader
   href: api/Utils.IO.Serialization.Reader.html#Utils_IO_Serialization_Reader__ctor_
@@ -34800,6 +34907,41 @@ references:
   isSpec: "True"
   fullName: Utils.IO.Serialization.Reader.Stream
   nameWithType: Reader.Stream
+- uid: Utils.IO.Serialization.Reader.TryGetBytesLeft(System.Int64@)
+  name: TryGetBytesLeft(out long)
+  href: api/Utils.IO.Serialization.Reader.html#Utils_IO_Serialization_Reader_TryGetBytesLeft_System_Int64__
+  commentId: M:Utils.IO.Serialization.Reader.TryGetBytesLeft(System.Int64@)
+  name.vb: TryGetBytesLeft(Long)
+  fullName: Utils.IO.Serialization.Reader.TryGetBytesLeft(out long)
+  fullName.vb: Utils.IO.Serialization.Reader.TryGetBytesLeft(Long)
+  nameWithType: Reader.TryGetBytesLeft(out long)
+  nameWithType.vb: Reader.TryGetBytesLeft(Long)
+- uid: Utils.IO.Serialization.Reader.TryGetBytesLeft*
+  name: TryGetBytesLeft
+  href: api/Utils.IO.Serialization.Reader.html#Utils_IO_Serialization_Reader_TryGetBytesLeft_
+  commentId: Overload:Utils.IO.Serialization.Reader.TryGetBytesLeft
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.Reader.TryGetBytesLeft
+  nameWithType: Reader.TryGetBytesLeft
+- uid: Utils.IO.Serialization.ReaderOptions
+  name: ReaderOptions
+  href: api/Utils.IO.Serialization.ReaderOptions.html
+  commentId: T:Utils.IO.Serialization.ReaderOptions
+  fullName: Utils.IO.Serialization.ReaderOptions
+  nameWithType: ReaderOptions
+- uid: Utils.IO.Serialization.ReaderOptions.MaximumPayloadLength
+  name: MaximumPayloadLength
+  href: api/Utils.IO.Serialization.ReaderOptions.html#Utils_IO_Serialization_ReaderOptions_MaximumPayloadLength
+  commentId: P:Utils.IO.Serialization.ReaderOptions.MaximumPayloadLength
+  fullName: Utils.IO.Serialization.ReaderOptions.MaximumPayloadLength
+  nameWithType: ReaderOptions.MaximumPayloadLength
+- uid: Utils.IO.Serialization.ReaderOptions.MaximumPayloadLength*
+  name: MaximumPayloadLength
+  href: api/Utils.IO.Serialization.ReaderOptions.html#Utils_IO_Serialization_ReaderOptions_MaximumPayloadLength_
+  commentId: Overload:Utils.IO.Serialization.ReaderOptions.MaximumPayloadLength
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.ReaderOptions.MaximumPayloadLength
+  nameWithType: ReaderOptions.MaximumPayloadLength
 - uid: Utils.IO.Serialization.ReaderWriter
   name: ReaderWriter
   href: api/Utils.IO.Serialization.ReaderWriter.html
@@ -35101,6 +35243,108 @@ references:
   isSpec: "True"
   fullName: Utils.IO.Serialization.ReaderWriterExtensions.WriteVariableLengthString
   nameWithType: ReaderWriterExtensions.WriteVariableLengthString
+- uid: Utils.IO.Serialization.SerializationContractDiagnostic
+  name: SerializationContractDiagnostic
+  href: api/Utils.IO.Serialization.SerializationContractDiagnostic.html
+  commentId: T:Utils.IO.Serialization.SerializationContractDiagnostic
+  fullName: Utils.IO.Serialization.SerializationContractDiagnostic
+  nameWithType: SerializationContractDiagnostic
+- uid: Utils.IO.Serialization.SerializationContractDiagnostic.#ctor(System.String,System.String)
+  name: SerializationContractDiagnostic(string, string)
+  href: api/Utils.IO.Serialization.SerializationContractDiagnostic.html#Utils_IO_Serialization_SerializationContractDiagnostic__ctor_System_String_System_String_
+  commentId: M:Utils.IO.Serialization.SerializationContractDiagnostic.#ctor(System.String,System.String)
+  name.vb: New(String, String)
+  fullName: Utils.IO.Serialization.SerializationContractDiagnostic.SerializationContractDiagnostic(string, string)
+  fullName.vb: Utils.IO.Serialization.SerializationContractDiagnostic.New(String, String)
+  nameWithType: SerializationContractDiagnostic.SerializationContractDiagnostic(string, string)
+  nameWithType.vb: SerializationContractDiagnostic.New(String, String)
+- uid: Utils.IO.Serialization.SerializationContractDiagnostic.#ctor*
+  name: SerializationContractDiagnostic
+  href: api/Utils.IO.Serialization.SerializationContractDiagnostic.html#Utils_IO_Serialization_SerializationContractDiagnostic__ctor_
+  commentId: Overload:Utils.IO.Serialization.SerializationContractDiagnostic.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.IO.Serialization.SerializationContractDiagnostic.SerializationContractDiagnostic
+  fullName.vb: Utils.IO.Serialization.SerializationContractDiagnostic.New
+  nameWithType: SerializationContractDiagnostic.SerializationContractDiagnostic
+  nameWithType.vb: SerializationContractDiagnostic.New
+- uid: Utils.IO.Serialization.SerializationContractDiagnostic.Code
+  name: Code
+  href: api/Utils.IO.Serialization.SerializationContractDiagnostic.html#Utils_IO_Serialization_SerializationContractDiagnostic_Code
+  commentId: P:Utils.IO.Serialization.SerializationContractDiagnostic.Code
+  fullName: Utils.IO.Serialization.SerializationContractDiagnostic.Code
+  nameWithType: SerializationContractDiagnostic.Code
+- uid: Utils.IO.Serialization.SerializationContractDiagnostic.Code*
+  name: Code
+  href: api/Utils.IO.Serialization.SerializationContractDiagnostic.html#Utils_IO_Serialization_SerializationContractDiagnostic_Code_
+  commentId: Overload:Utils.IO.Serialization.SerializationContractDiagnostic.Code
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.SerializationContractDiagnostic.Code
+  nameWithType: SerializationContractDiagnostic.Code
+- uid: Utils.IO.Serialization.SerializationContractDiagnostic.Message
+  name: Message
+  href: api/Utils.IO.Serialization.SerializationContractDiagnostic.html#Utils_IO_Serialization_SerializationContractDiagnostic_Message
+  commentId: P:Utils.IO.Serialization.SerializationContractDiagnostic.Message
+  fullName: Utils.IO.Serialization.SerializationContractDiagnostic.Message
+  nameWithType: SerializationContractDiagnostic.Message
+- uid: Utils.IO.Serialization.SerializationContractDiagnostic.Message*
+  name: Message
+  href: api/Utils.IO.Serialization.SerializationContractDiagnostic.html#Utils_IO_Serialization_SerializationContractDiagnostic_Message_
+  commentId: Overload:Utils.IO.Serialization.SerializationContractDiagnostic.Message
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.SerializationContractDiagnostic.Message
+  nameWithType: SerializationContractDiagnostic.Message
+- uid: Utils.IO.Serialization.SerializationContractException
+  name: SerializationContractException
+  href: api/Utils.IO.Serialization.SerializationContractException.html
+  commentId: T:Utils.IO.Serialization.SerializationContractException
+  fullName: Utils.IO.Serialization.SerializationContractException
+  nameWithType: SerializationContractException
+- uid: Utils.IO.Serialization.SerializationContractException.#ctor(System.Type,System.Collections.Generic.IEnumerable{Utils.IO.Serialization.SerializationContractDiagnostic})
+  name: SerializationContractException(Type, IEnumerable<SerializationContractDiagnostic>)
+  href: api/Utils.IO.Serialization.SerializationContractException.html#Utils_IO_Serialization_SerializationContractException__ctor_System_Type_System_Collections_Generic_IEnumerable_Utils_IO_Serialization_SerializationContractDiagnostic__
+  commentId: M:Utils.IO.Serialization.SerializationContractException.#ctor(System.Type,System.Collections.Generic.IEnumerable{Utils.IO.Serialization.SerializationContractDiagnostic})
+  name.vb: New(Type, IEnumerable(Of SerializationContractDiagnostic))
+  fullName: Utils.IO.Serialization.SerializationContractException.SerializationContractException(System.Type, System.Collections.Generic.IEnumerable<Utils.IO.Serialization.SerializationContractDiagnostic>)
+  fullName.vb: Utils.IO.Serialization.SerializationContractException.New(System.Type, System.Collections.Generic.IEnumerable(Of Utils.IO.Serialization.SerializationContractDiagnostic))
+  nameWithType: SerializationContractException.SerializationContractException(Type, IEnumerable<SerializationContractDiagnostic>)
+  nameWithType.vb: SerializationContractException.New(Type, IEnumerable(Of SerializationContractDiagnostic))
+- uid: Utils.IO.Serialization.SerializationContractException.#ctor*
+  name: SerializationContractException
+  href: api/Utils.IO.Serialization.SerializationContractException.html#Utils_IO_Serialization_SerializationContractException__ctor_
+  commentId: Overload:Utils.IO.Serialization.SerializationContractException.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.IO.Serialization.SerializationContractException.SerializationContractException
+  fullName.vb: Utils.IO.Serialization.SerializationContractException.New
+  nameWithType: SerializationContractException.SerializationContractException
+  nameWithType.vb: SerializationContractException.New
+- uid: Utils.IO.Serialization.SerializationContractException.ContractType
+  name: ContractType
+  href: api/Utils.IO.Serialization.SerializationContractException.html#Utils_IO_Serialization_SerializationContractException_ContractType
+  commentId: P:Utils.IO.Serialization.SerializationContractException.ContractType
+  fullName: Utils.IO.Serialization.SerializationContractException.ContractType
+  nameWithType: SerializationContractException.ContractType
+- uid: Utils.IO.Serialization.SerializationContractException.ContractType*
+  name: ContractType
+  href: api/Utils.IO.Serialization.SerializationContractException.html#Utils_IO_Serialization_SerializationContractException_ContractType_
+  commentId: Overload:Utils.IO.Serialization.SerializationContractException.ContractType
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.SerializationContractException.ContractType
+  nameWithType: SerializationContractException.ContractType
+- uid: Utils.IO.Serialization.SerializationContractException.Diagnostics
+  name: Diagnostics
+  href: api/Utils.IO.Serialization.SerializationContractException.html#Utils_IO_Serialization_SerializationContractException_Diagnostics
+  commentId: P:Utils.IO.Serialization.SerializationContractException.Diagnostics
+  fullName: Utils.IO.Serialization.SerializationContractException.Diagnostics
+  nameWithType: SerializationContractException.Diagnostics
+- uid: Utils.IO.Serialization.SerializationContractException.Diagnostics*
+  name: Diagnostics
+  href: api/Utils.IO.Serialization.SerializationContractException.html#Utils_IO_Serialization_SerializationContractException_Diagnostics_
+  commentId: Overload:Utils.IO.Serialization.SerializationContractException.Diagnostics
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.SerializationContractException.Diagnostics
+  nameWithType: SerializationContractException.Diagnostics
 - uid: Utils.IO.Serialization.Writer
   name: Writer
   href: api/Utils.IO.Serialization.Writer.html
@@ -35250,6 +35494,22 @@ references:
   isSpec: "True"
   fullName: Utils.IO.Serialization.Writer.Stream
   nameWithType: Writer.Stream
+- uid: Utils.IO.Serialization.Writer.TryGetBytesUntilCurrentLength(System.Int64@)
+  name: TryGetBytesUntilCurrentLength(out long)
+  href: api/Utils.IO.Serialization.Writer.html#Utils_IO_Serialization_Writer_TryGetBytesUntilCurrentLength_System_Int64__
+  commentId: M:Utils.IO.Serialization.Writer.TryGetBytesUntilCurrentLength(System.Int64@)
+  name.vb: TryGetBytesUntilCurrentLength(Long)
+  fullName: Utils.IO.Serialization.Writer.TryGetBytesUntilCurrentLength(out long)
+  fullName.vb: Utils.IO.Serialization.Writer.TryGetBytesUntilCurrentLength(Long)
+  nameWithType: Writer.TryGetBytesUntilCurrentLength(out long)
+  nameWithType.vb: Writer.TryGetBytesUntilCurrentLength(Long)
+- uid: Utils.IO.Serialization.Writer.TryGetBytesUntilCurrentLength*
+  name: TryGetBytesUntilCurrentLength
+  href: api/Utils.IO.Serialization.Writer.html#Utils_IO_Serialization_Writer_TryGetBytesUntilCurrentLength_
+  commentId: Overload:Utils.IO.Serialization.Writer.TryGetBytesUntilCurrentLength
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.Writer.TryGetBytesUntilCurrentLength
+  nameWithType: Writer.TryGetBytesUntilCurrentLength
 - uid: Utils.IO.Serialization.Writer.Write(System.Object)
   name: Write(object)
   href: api/Utils.IO.Serialization.Writer.html#Utils_IO_Serialization_Writer_Write_System_Object_

@@ -4618,6 +4618,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.IO.Serialization.ReaderOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.IO.Serialization.ReaderOptions.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.IO.Serialization.ReaderOptions",
+      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.ReaderOptions.yml\" sourcestartlinenumber=\"1\">Configures safety limits applied by a <xref href=\"Utils.IO.Serialization.Reader\" data-throw-if-not-resolved=\"false\"></xref> to length-prefixed payloads.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.IO.Serialization.ReaderWriter.yml",
       "output": {
         ".html": {
@@ -4643,6 +4657,34 @@
       "IsMRef": true,
       "Title": "Utils.IO.Serialization.ReaderWriterExtensions",
       "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.ReaderWriterExtensions.yml\" sourcestartlinenumber=\"1\">Extension methods providing convenience helpers for <xref href=\"Utils.IO.Serialization.Reader\" data-throw-if-not-resolved=\"false\"></xref> and <xref href=\"Utils.IO.Serialization.Writer\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.IO.Serialization.SerializationContractDiagnostic.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.IO.Serialization.SerializationContractDiagnostic.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.IO.Serialization.SerializationContractDiagnostic",
+      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.SerializationContractDiagnostic.yml\" sourcestartlinenumber=\"1\">Describes a defect found while validating a serialization contract.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.IO.Serialization.SerializationContractException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.IO.Serialization.SerializationContractException.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.IO.Serialization.SerializationContractException",
+      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.SerializationContractException.yml\" sourcestartlinenumber=\"1\">Represents one or more defects in an attributed serialization contract.</p>\n"
     },
     {
       "type": "ManagedReference",
