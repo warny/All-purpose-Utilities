@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -19,11 +20,16 @@ namespace Utils.IO;
 /// </summary>
 public class PartialStream : Stream
 {
+    private static readonly ConditionalWeakTable<Stream, SemaphoreSlim> SharedOperationGates = new();
     private readonly Stream baseStream;
     private readonly long startOffset;
     private long partialLength;
     private long partialPosition;
-    private readonly SemaphoreSlim operationGate = new(1, 1);
+    private readonly SemaphoreSlim operationGate;
+
+    /// <summary>Gets the synchronization gate shared by every view over the same underlying stream.</summary>
+    private static SemaphoreSlim GetOperationGate(Stream stream) =>
+        SharedOperationGates.GetValue(stream, static _ => new SemaphoreSlim(1, 1));
 
     // Verifies that startOffset + length <= long.MaxValue so that any absolute position
     // within the segment (startOffset + partialPosition, with partialPosition <= partialLength)
@@ -51,11 +57,18 @@ public class PartialStream : Stream
         if (length < 0)
             throw new ArgumentOutOfRangeException(nameof(length), "Length must be non-negative.");
 
-        long position = baseStream.Position;
-        ValidateRange(position, length, nameof(length));
-
         this.baseStream = baseStream;
-        this.startOffset = position;
+        this.operationGate = GetOperationGate(baseStream);
+        operationGate.Wait();
+        try
+        {
+            this.startOffset = baseStream.Position;
+            ValidateRange(startOffset, length, nameof(length));
+        }
+        finally
+        {
+            operationGate.Release();
+        }
         this.partialLength = length;
         this.partialPosition = 0;
     }
@@ -81,6 +94,7 @@ public class PartialStream : Stream
         ValidateRange(position, length, nameof(length));
 
         this.baseStream = baseStream;
+        this.operationGate = GetOperationGate(baseStream);
         this.startOffset = position;
         this.partialLength = length;
         this.partialPosition = 0;
@@ -373,7 +387,7 @@ public class PartialStream : Stream
         // If you wish to close the base stream when this partial stream is disposed,
         // call baseStream.Dispose() or baseStream.Close() here.
         base.Dispose(disposing);
-        if (disposing) operationGate.Dispose();
+        // The gate belongs to the underlying stream and may still be used by another view.
     }
 
     /// <summary>Disposes this view asynchronously without disposing its underlying stream.</summary>

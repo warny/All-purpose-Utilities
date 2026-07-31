@@ -31,6 +31,27 @@ public sealed class PartialStreamConcurrencyTests
         Assert.AreEqual(6, partial.Position);
     }
 
+    /// <summary>Ensures distinct views coordinate position changes on their shared underlying stream.</summary>
+    [TestMethod]
+    public async Task DistinctViews_SharingBaseStream_SerializeUnderlyingAccess()
+    {
+        using var stream = new SequencedWriteStream(16);
+        await using var first = new PartialStream(stream, 0, 8);
+        await using var second = new PartialStream(stream, 8, 8);
+
+        Task firstWrite = first.WriteAsync(new byte[] { 1, 2, 3, 4 }).AsTask();
+        await stream.FirstWriteEntered.Task;
+        Task secondWrite = second.WriteAsync(new byte[] { 5, 6, 7, 8 }).AsTask();
+
+        Assert.IsFalse(stream.SecondWriteEntered.Task.IsCompleted, "The second view entered the base stream before the first view released it.");
+        stream.AllowFirstWrite.TrySetResult();
+        await Task.WhenAll(firstWrite, secondWrite);
+
+        CollectionAssert.AreEqual(new byte[] { 1, 2, 3, 4 }, stream.ToArray()[..4]);
+        CollectionAssert.AreEqual(new byte[] { 5, 6, 7, 8 }, stream.ToArray()[8..12]);
+        Assert.AreEqual(0, stream.Position);
+    }
+
     /// <summary>Ensures cancellation while waiting for the async operation gate is observed.</summary>
     [TestMethod]
     public async Task WriteAsync_CancellationBeforeGateAcquisitionIsObserved()
@@ -125,6 +146,41 @@ public sealed class PartialStreamConcurrencyTests
         {
             WriteEntered.TrySetResult();
             await AllowWrite.Task.WaitAsync(cancellationToken);
+            await base.WriteAsync(buffer, cancellationToken);
+        }
+    }
+
+    /// <summary>Instrumented stream that blocks its first write and observes entry into its second write.</summary>
+    private sealed class SequencedWriteStream : MemoryStream
+    {
+        private int writeCount;
+
+        /// <summary>Initializes a fixed-size writable stream.</summary>
+        internal SequencedWriteStream(int length) : base(new byte[length]) { }
+
+        /// <summary>Gets the signal published when the first write enters the underlying stream.</summary>
+        internal TaskCompletionSource FirstWriteEntered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        /// <summary>Gets the signal used to allow the first write to finish.</summary>
+        internal TaskCompletionSource AllowFirstWrite { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        /// <summary>Gets the signal published when a second write enters the underlying stream.</summary>
+        internal TaskCompletionSource SecondWriteEntered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        /// <summary>Controls the first async write so concurrent view access can be asserted deterministically.</summary>
+        public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            int sequence = Interlocked.Increment(ref writeCount);
+            if (sequence == 1)
+            {
+                FirstWriteEntered.TrySetResult();
+                await AllowFirstWrite.Task.WaitAsync(cancellationToken);
+            }
+            else
+            {
+                SecondWriteEntered.TrySetResult();
+            }
+
             await base.WriteAsync(buffer, cancellationToken);
         }
     }

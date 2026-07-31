@@ -41,7 +41,7 @@ public class RawReader
     public bool BigEndian { get; init; } = false;
 
     /// <summary>Gets or sets the maximum accepted payload length for length-prefixed values.</summary>
-    public int MaximumLength { get; init; } = 16 * 1024 * 1024;
+    public int MaximumLength { get; init; } = int.MaxValue;
 
     // Integer reading methods
     /// <summary>Reads a byte from the reader.</summary>

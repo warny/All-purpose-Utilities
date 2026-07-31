@@ -81,7 +81,7 @@ MemoryStream buffer = src.ReadToMemoryStream();
 
 ## PartialStream examples
 
-`PartialStream` exposes a bounded slice of a seekable stream without copying data. Disposing it does not close the underlying stream.
+`PartialStream` exposes a bounded slice of a seekable stream without copying data. Views over the same underlying stream share synchronization so their temporary seeks cannot interfere. Disposing a view does not close the underlying stream or invalidate the synchronization used by another view.
 
 ```csharp
 using Utils.IO;
@@ -96,6 +96,18 @@ byte[] chunk = slice.ReadBytes((int)slice.Length);
 fs.Position = 200;
 using var tail = new PartialStream(fs, length: 50);
 ```
+
+Length-prefixed strings and `BigInteger` values have no additional payload limit by default, preserving historical round trips. Set an explicit limit when reading untrusted input:
+
+```csharp
+using Utils.IO.Serialization;
+
+var options = new ReaderOptions { MaximumPayloadLength = 4 * 1024 * 1024 };
+var reader = new Reader(stream, options);
+string value = reader.Read<string>();
+```
+
+The limit is measured in payload bytes. `null` means unlimited, zero accepts only empty payloads, and negative limits are rejected when the reader is constructed.
 
 ## StreamCopier examples
 

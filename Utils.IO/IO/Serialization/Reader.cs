@@ -49,7 +49,24 @@ public class Reader : IReader, IStreamMapping<Reader>
     /// <summary>
     /// Initializes a new instance of <see cref="Reader"/> using default converters.
     /// </summary>
-    public Reader(Stream stream) : this(stream, new RawReader().ReaderDelegates) { }
+    public Reader(Stream stream) : this(stream, new ReaderOptions()) { }
+
+    /// <summary>
+    /// Initializes a new instance of <see cref="Reader"/> using default converters and explicit payload options.
+    /// </summary>
+    /// <param name="stream">Stream to read from.</param>
+    /// <param name="options">Payload safety options; a null maximum preserves unlimited historical reads.</param>
+    public Reader(Stream stream, ReaderOptions options)
+        : this(stream, CreateRawReader(options).ReaderDelegates) { }
+
+    /// <summary>
+    /// Initializes a new instance of <see cref="Reader"/> with explicit payload options and custom converters.
+    /// </summary>
+    /// <param name="stream">Stream to read from.</param>
+    /// <param name="options">Payload safety options.</param>
+    /// <param name="converters">Reader delegates used to deserialize objects.</param>
+    public Reader(Stream stream, ReaderOptions options, params IEnumerable<Delegate> converters)
+        : this(stream, converters.Union(CreateRawReader(options).ReaderDelegates)) { }
 
     /// <summary>
     /// Initializes a new instance of <see cref="Reader"/> copying converters.
@@ -58,6 +75,16 @@ public class Reader : IReader, IStreamMapping<Reader>
     {
         this.Stream = stream;
         this.readers = readers.ToDictionary();
+    }
+
+    /// <summary>Creates and validates the primitive reader configured for this reader instance.</summary>
+    private static RawReader CreateRawReader(ReaderOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        if (options.MaximumPayloadLength < 0)
+            throw new ArgumentOutOfRangeException(nameof(options), "MaximumPayloadLength must be non-negative or null.");
+
+        return new RawReader { MaximumLength = options.MaximumPayloadLength ?? int.MaxValue };
     }
 
     /// <summary>
