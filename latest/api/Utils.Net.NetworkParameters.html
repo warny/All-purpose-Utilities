@@ -248,7 +248,7 @@ Class NetworkParameters  <a class="header-action link-secondary" title="View sou
 
   <h3 id="Utils_Net_NetworkParameters__ctor" data-uid="Utils.Net.NetworkParameters.#ctor">
   NetworkParameters()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NetworkParameters.cs/#L20"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NetworkParameters.cs/#L22"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Net.NetworkParameters.html">NetworkParameters</a> class and snapshots network information.</p>
@@ -279,7 +279,7 @@ Class NetworkParameters  <a class="header-action link-secondary" title="View sou
 
   <h3 id="Utils_Net_NetworkParameters_DnsServers" data-uid="Utils.Net.NetworkParameters.DnsServers">
   DnsServers
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NetworkParameters.cs/#L48"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NetworkParameters.cs/#L53"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the collection of DNS servers discovered for the active network interfaces.</p>
@@ -314,15 +314,17 @@ Class NetworkParameters  <a class="header-action link-secondary" title="View sou
 
   <h3 id="Utils_Net_NetworkParameters_NetworkInterfaces" data-uid="Utils.Net.NetworkParameters.NetworkInterfaces">
   NetworkInterfaces
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NetworkParameters.cs/#L37"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NetworkParameters.cs/#L42"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets the network interfaces detected on the host at construction time.</p>
+  <div class="markdown level1 summary"><p>Gets the network interfaces detected on the host at construction time as a stable
+read-only view. The same instance is returned on every call; callers cannot replace
+or add elements.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public NetworkInterface[] NetworkInterfaces { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public IReadOnlyList&lt;NetworkInterface&gt; NetworkInterfaces { get; }</code></pre>
   </div>
 
 
@@ -331,7 +333,7 @@ Class NetworkParameters  <a class="header-action link-secondary" title="View sou
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.networkinformation.networkinterface">NetworkInterface</a>[]</dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.networkinformation.networkinterface">NetworkInterface</a>&gt;</dt>
     <dd></dd>
   </dl>
 
@@ -346,7 +348,7 @@ Class NetworkParameters  <a class="header-action link-secondary" title="View sou
 
   <h3 id="Utils_Net_NetworkParameters_PrimaryDns" data-uid="Utils.Net.NetworkParameters.PrimaryDns">
   PrimaryDns
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NetworkParameters.cs/#L42"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NetworkParameters.cs/#L47"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the preferred DNS server resolved from the network interfaces, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> if no DNS server was discovered.</p>

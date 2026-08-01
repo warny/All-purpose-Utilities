@@ -128,19 +128,40 @@ The merge is atomic: all clones are prepared before any collection is mutated.</
 <p>Replace <code>a.Append(b)</code> with <code>a.MergeRecordsFrom(b)</code>. Ensure both headers carry identical flag values
 before calling <code>MergeRecordsFrom</code>, as differing flags now throw <code>InvalidOperationException</code>.</p>
 <hr>
-<h2 id="networkparameters--dns-server-ordering-no-longer-uses-interface-index-as-metric">NetworkParameters — DNS server ordering no longer uses interface index as metric</h2>
+<h2 id="networkparameters--dns-server-ordering-follows-os-enumeration-order">NetworkParameters — DNS server ordering follows OS enumeration order</h2>
 <h3 id="what-changed-3">What changed</h3>
-<p><code>NetworkParameters.SelectDnsServers</code> previously sorted interfaces by <code>IPv4InterfaceProperties.Index</code>
-as a tiebreaker (labelled &quot;metric&quot;). This value is an interface identifier, not a routing priority.
-The sort key has been removed; interfaces with the same gateway status are now returned in OS
-enumeration order.</p>
+<p><code>NetworkParameters.SelectDnsServers</code> previously sorted active interfaces — favouring those with a
+default gateway and using <code>IPv4InterfaceProperties.Index</code> as a tiebreaker. Both of these sort
+keys have been removed.</p>
+<p>DNS servers are now collected in strict OS enumeration order:</p>
+<ol>
+<li>Iterate <code>NetworkInterface.GetAllNetworkInterfaces()</code> in the order the OS provides.</li>
+<li>Include every <code>OperationalStatus.Up</code> interface, regardless of whether it has a default gateway.</li>
+<li>Within each interface, preserve the order of <code>DnsAddresses</code>.</li>
+<li>Exclude wildcard/unspecified and multicast addresses.</li>
+<li>Deduplicate, keeping the first-seen occurrence.</li>
+</ol>
 <h3 id="why-3">Why</h3>
-<p>Using the interface index as a routing metric produced incorrect ordering on many systems.
-OS enumeration order is a more faithful representation of the system's DNS priority.</p>
+<p>The previous &quot;gateway-first&quot; heuristic silently broke split-DNS, VPN, and point-to-point
+configurations where the most specific resolver is reachable through an interface without a
+default gateway. A VPN resolver listed first by the OS would be moved after a public DNS server
+on an Ethernet interface that happened to have a default gateway, causing all internal names to
+resolve through the wrong server.</p>
+<p>OS enumeration order is the closest approximation to what the system administrator or
+VPN software intended.</p>
 <h3 id="impact">Impact</h3>
-<p>The relative order of DNS servers from interfaces with the same gateway status may change.
-In practice this only affects machines with multiple active network interfaces (e.g. Wi-Fi and
-Ethernet simultaneously) where the previously incorrect sort was already unreliable.</p>
+<p>The order of DNS servers returned by <code>DnsServers</code> and <code>PrimaryDns</code> may change on machines with
+multiple active network interfaces. If your application relied on the previous gateway-first
+ordering, review whether the new OS-enumeration order is correct for your network topology.</p>
+<h3 id="note-on-vpn-and-split-dns">Note on VPN and split-DNS</h3>
+<p>If a VPN interface appears first in OS enumeration, its resolver is now correctly prioritised.
+A negative DNS response from that resolver (NXDOMAIN) is a valid response and prevents fallback
+to a subsequent public resolver for the same name — which is the expected split-DNS behaviour.</p>
+<hr>
+<h2 id="ntp--internal-transport-changes-no-migration-required">NTP — internal transport changes (no migration required)</h2>
+<p>The UDP transport used by <code>NtpClient</code> (<code>UdpNtpTransport</code>) is an internal implementation detail.
+Its constructor and <code>ExchangeAsync</code> method are not part of the public API. No migration is required
+for callers of the public <code>NtpClient.GetTimeAsync</code> overloads.</p>
 <hr>
 <h2 id="dnslookupexception-and-ntpqueryexception--failure-list-is-now-defensively-copied">DnsLookupException and NtpQueryException — failure list is now defensively copied</h2>
 <h3 id="what-changed-4">What changed</h3>
