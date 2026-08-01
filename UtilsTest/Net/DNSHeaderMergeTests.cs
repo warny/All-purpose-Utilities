@@ -292,16 +292,17 @@ public class DNSHeaderMergeTests
         a.Responses.Add(ARecord("a.example.com", "192.0.2.1"));
 
         var b = ResponseWithQuestion();
-        b.Responses.Add(ARecord("b.example.com", "192.0.2.2"));
-        int sourceCountBefore = b.Responses.Count;
+        var sourceRecord = ARecord("b.example.com", "192.0.2.2");
+        b.Responses.Add(sourceRecord);
 
         a.MergeRecordsFrom(b);
 
-        Assert.AreEqual(sourceCountBefore, b.Responses.Count);
+        Assert.AreEqual(1, b.Responses.Count, "Source record count must not change.");
+        Assert.AreSame(sourceRecord, b.Responses[0], "Source record reference must not be replaced.");
     }
 
     [TestMethod]
-    public void MergeRecordsFrom_Failure_DoesNotModifyTarget()
+    public void MergeRecordsFrom_IncompatibleQuestions_DoesNotModifyTarget()
     {
         var a = ResponseWithQuestion("example.com");
         a.Responses.Add(ARecord("a.example.com", "192.0.2.1"));

@@ -126,6 +126,23 @@ public class NetworkParametersDiscoveryTests
     }
 
     [TestMethod]
+    public void NetworkInterfaces_GetterReturnsDefensiveCopy()
+    {
+        var parameters = new NetworkParameters();
+        NetworkInterface[] first = parameters.NetworkInterfaces;
+        NetworkInterface[] second = parameters.NetworkInterfaces;
+
+        Assert.AreNotSame(first, second);
+
+        if (first.Length > 0)
+        {
+            NetworkInterface original = first[0];
+            first[0] = null!;
+            Assert.AreSame(original, parameters.NetworkInterfaces[0]);
+        }
+    }
+
+    [TestMethod]
     public void SelectDnsServers_PreservesOsEnumerationOrder()
     {
         var result = NetworkParameters.SelectDnsServers(new[]

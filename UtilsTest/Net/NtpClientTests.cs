@@ -249,6 +249,27 @@ public class NtpClientTests
     }
 
     [TestMethod]
+    public async Task UdpNtpTransport_NullEndpoint_ThrowsArgumentNullException()
+    {
+        var transport = new UdpNtpTransport(TimeSpan.FromSeconds(1));
+
+        await Assert.ThrowsExceptionAsync<ArgumentNullException>(
+            () => transport.ExchangeAsync(null!, new byte[48], CancellationToken.None))
+            .ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task UdpNtpTransport_NullRequest_ThrowsArgumentNullException()
+    {
+        var transport = new UdpNtpTransport(TimeSpan.FromSeconds(1));
+        var endpoint = new IPEndPoint(IPAddress.Loopback, 123);
+
+        await Assert.ThrowsExceptionAsync<ArgumentNullException>(
+            () => transport.ExchangeAsync(endpoint, null!, CancellationToken.None))
+            .ConfigureAwait(false);
+    }
+
+    [TestMethod]
     public async Task UdpNtpTransport_EmptyRequest_ThrowsArgumentException()
     {
         var transport = new UdpNtpTransport(TimeSpan.FromSeconds(1));
