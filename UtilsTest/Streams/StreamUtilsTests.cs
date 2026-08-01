@@ -263,4 +263,31 @@ public class StreamUtilsTests
         using var src = new MemoryStream(new byte[] { 0xFF });
         Assert.ThrowsException<ArgumentOutOfRangeException>(() => src.ReadBlock(new byte[] { 0xFF }, maxBytes: -1));
     }
+
+    [TestMethod]
+    public void ReadBlock_Bounded_TwoConsecutiveCallsInSingleChunk_NoBytesLost()
+    {
+        // Two blocks and both separators fit within a single 4096-byte window.
+        // If ReadBlock over-reads (reads a full chunk and then scans it) it will swallow bytes from
+        // the second block. This test catches that regression.
+        var sep = new byte[] { 0xFF, 0xFE };
+        var data = new System.Collections.Generic.List<byte>();
+        data.AddRange(new byte[] { 10, 20, 30 });
+        data.AddRange(sep);
+        data.AddRange(new byte[] { 40, 50 });
+        data.AddRange(sep);
+        data.AddRange(new byte[] { 99 }); // trailing byte after all separators
+
+        using var src = new MemoryStream(data.ToArray());
+        var cmp = EnumerableEqualityComparer<byte>.Default;
+
+        byte[] first = src.ReadBlock(sep, maxBytes: 100);
+        Assert.IsTrue(cmp.Equals(new byte[] { 10, 20, 30 }, first), "first block must be [10, 20, 30]");
+
+        byte[] second = src.ReadBlock(sep, maxBytes: 100);
+        Assert.IsTrue(cmp.Equals(new byte[] { 40, 50 }, second), "second block must be [40, 50]");
+
+        // The trailing byte must still be readable — the two ReadBlock calls must not have over-consumed.
+        Assert.AreEqual(99, src.ReadByte(), "trailing byte must not have been consumed by ReadBlock");
+    }
 }

@@ -315,14 +315,16 @@ public static class StreamUtils
     /// <summary>
     /// Reads and returns the next "block" from the stream, delimited by the specified byte sequence,
     /// enforcing a maximum number of bytes scanned. The returned array does not include the delimiter.
-    /// The delimiter is located using the Knuth-Morris-Pratt algorithm over 4096-byte chunks rather than
-    /// reading one byte at a time.
+    /// The delimiter is located using the Knuth-Morris-Pratt algorithm applied one byte at a time so
+    /// no byte beyond the delimiter is ever consumed from the source stream.
     /// </summary>
     /// <remarks>
     /// Unlike the unbounded <see cref="ReadBlock(Stream, byte[])"/> overload, this method treats a missing
     /// delimiter as an error: if the stream reaches EOF before the delimiter is found, an
     /// <see cref="EndOfStreamException"/> is thrown. If more than <paramref name="maxBytes"/> bytes are read
     /// before the delimiter appears, an <see cref="InvalidOperationException"/> is thrown.
+    /// Because exactly one byte is consumed per loop iteration, the stream position after a successful call
+    /// points to the first byte after the delimiter, leaving subsequent data available for further reads.
     /// </remarks>
     /// <param name="s">The <see cref="Stream"/> from which to read the block.</param>
     /// <param name="blockSeparator">A byte array representing the block delimiter.</param>
@@ -347,41 +349,39 @@ public static class StreamUtils
         int sepLen = blockSeparator.Length;
         int[] failure = BuildKmpFailureTable(blockSeparator);
 
-        const int chunkSize = 4096;
-        byte[] chunk = new byte[chunkSize];
         using var ms = new MemoryStream();
         long totalRead = 0;
-        int matchLength = 0; // number of separator bytes currently matched
+        int matchLength = 0;
 
+        // Read exactly one byte at a time so the stream position never advances past the separator.
+        // KMP still gives O(n) amortised complexity despite the per-byte loop because the failure
+        // table bounds the total number of fallback steps across the entire input.
         while (true)
         {
-            int read = s.Read(chunk, 0, chunkSize);
-            if (read == 0)
+            int raw = s.ReadByte();
+            if (raw == -1)
                 throw new EndOfStreamException("End of stream reached before the block separator was found.");
 
-            for (int i = 0; i < read; i++)
+            byte b = (byte)raw;
+            totalRead++;
+            if (totalRead > maxBytes)
+                throw new InvalidOperationException($"Block exceeds the maximum allowed size of {maxBytes} bytes before the separator was found.");
+
+            ms.WriteByte(b);
+
+            // KMP transition: fall back on mismatch, advance on match.
+            while (matchLength > 0 && b != blockSeparator[matchLength])
+                matchLength = failure[matchLength - 1];
+            if (b == blockSeparator[matchLength])
+                matchLength++;
+
+            if (matchLength == sepLen)
             {
-                byte b = chunk[i];
-                totalRead++;
-                if (totalRead > maxBytes)
-                    throw new InvalidOperationException($"Block exceeds the maximum allowed size of {maxBytes} bytes before the separator was found.");
-
-                ms.WriteByte(b);
-
-                // KMP transition: fall back on mismatch, advance on match.
-                while (matchLength > 0 && b != blockSeparator[matchLength])
-                    matchLength = failure[matchLength - 1];
-                if (b == blockSeparator[matchLength])
-                    matchLength++;
-
-                if (matchLength == sepLen)
-                {
-                    // Strip the separator from the accumulated buffer and return the block.
-                    long newLength = ms.Length - sepLen;
-                    if (newLength < 0) newLength = 0;
-                    ms.SetLength(newLength);
-                    return ms.ToArray();
-                }
+                // Strip the separator from the accumulated buffer and return the block.
+                long newLength = ms.Length - sepLen;
+                if (newLength < 0) newLength = 0;
+                ms.SetLength(newLength);
+                return ms.ToArray();
             }
         }
     }

@@ -124,6 +124,7 @@ public class StreamCopier : Stream, IList<Stream>
     /// </summary>
     public override void Flush()
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
         List<Exception>? errors = null;
         foreach (Stream s in _targets)
         {
@@ -161,6 +162,7 @@ public class StreamCopier : Stream, IList<Stream>
     /// <param name="count">The number of bytes to write.</param>
     public override void Write(byte[] buffer, int offset, int count)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
         List<Exception>? errors = null;
         // Snapshot to guard against concurrent modification
         Stream[] snapshot = [.. _targets];
@@ -174,15 +176,22 @@ public class StreamCopier : Stream, IList<Stream>
     }
 
     /// <summary>
-    /// Writes a span of bytes to all target streams by copying the span into a temporary array and
-    /// delegating to the array-based fan-out <see cref="Write(byte[], int, int)"/>.
+    /// Writes a span of bytes to all target streams. Every target receives the same span without any
+    /// intermediate allocation. Errors are aggregated in the same way as <see cref="Write(byte[], int, int)"/>.
     /// </summary>
     /// <param name="buffer">The span of bytes to broadcast to every target.</param>
     public override void Write(ReadOnlySpan<byte> buffer)
     {
-        // Materialize once so all targets receive the identical payload; then reuse the fan-out policy.
-        byte[] copy = buffer.ToArray();
-        Write(copy, 0, copy.Length);
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        List<Exception>? errors = null;
+        Stream[] snapshot = [.. _targets];
+        foreach (Stream s in snapshot)
+        {
+            try { s.Write(buffer); }
+            catch (Exception ex) { (errors ??= []).Add(ex); }
+        }
+        if (errors is not null)
+            throw new AggregateException("One or more target streams failed to write.", errors);
     }
 
     /// <summary>
@@ -208,6 +217,7 @@ public class StreamCopier : Stream, IList<Stream>
     /// <returns>A task that completes when every target has been attempted.</returns>
     public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
         // Snapshot first so concurrent list mutations do not affect this operation.
         Stream[] snapshot = [.. _targets];
         // Cancellation observed before any target is touched aborts the whole operation.
@@ -232,6 +242,7 @@ public class StreamCopier : Stream, IList<Stream>
     /// <returns>A task that completes when every target has been attempted.</returns>
     public override async Task FlushAsync(CancellationToken cancellationToken)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
         Stream[] snapshot = [.. _targets];
         if (cancellationToken.IsCancellationRequested)
             throw new OperationCanceledException(cancellationToken);
@@ -296,6 +307,7 @@ public class StreamCopier : Stream, IList<Stream>
     /// Asynchronously disposes the current <see cref="StreamCopier"/>. If <see cref="closeAllTargetsOnDispose"/>
     /// is <see langword="true"/>, all target streams are asynchronously disposed; every target is attempted
     /// even if one fails and errors are aggregated. The method is idempotent.
+    /// After disposal all write and flush operations throw <see cref="ObjectDisposedException"/>.
     /// </summary>
     /// <returns>A task that completes once disposal has been attempted for every target.</returns>
     public override async ValueTask DisposeAsync()
@@ -306,9 +318,10 @@ public class StreamCopier : Stream, IList<Stream>
 
         GC.SuppressFinalize(this);
 
+        List<Exception>? errors = null;
+
         if (closeAllTargetsOnDispose)
         {
-            List<Exception>? errors = null;
             foreach (Stream s in _targets)
             {
                 try
@@ -319,9 +332,15 @@ public class StreamCopier : Stream, IList<Stream>
                 catch (Exception ex) { (errors ??= []).Add(ex); }
             }
             _targets.Clear();
-            if (errors is not null)
-                throw new AggregateException("One or more target streams failed to dispose.", errors);
         }
+
+        // Signal to the base Stream that this instance is disposed so that the runtime and
+        // callers using the base-class abstraction observe consistent disposed semantics.
+        try { await base.DisposeAsync().ConfigureAwait(false); }
+        catch (Exception ex) { (errors ??= []).Add(ex); }
+
+        if (errors is not null)
+            throw new AggregateException("One or more streams failed during asynchronous disposal.", errors);
     }
 
     #endregion

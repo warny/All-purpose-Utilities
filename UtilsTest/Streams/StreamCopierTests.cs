@@ -197,4 +197,31 @@ public class StreamCopierTests
         // Second dispose must not throw or re-run target disposal.
         copier.Dispose();
     }
+
+    // ---- item 30: operations after dispose/disposeAsync throw ObjectDisposedException ----
+
+    [TestMethod]
+    public void Write_AfterDispose_ThrowsObjectDisposedException()
+    {
+        var copier = new StreamCopier(new MemoryStream());
+        copier.Dispose();
+        Assert.ThrowsException<ObjectDisposedException>(() => copier.Write(new byte[] { 1 }, 0, 1));
+    }
+
+    [TestMethod]
+    public void Flush_AfterDispose_ThrowsObjectDisposedException()
+    {
+        var copier = new StreamCopier(new MemoryStream());
+        copier.Dispose();
+        Assert.ThrowsException<ObjectDisposedException>(() => copier.Flush());
+    }
+
+    [TestMethod]
+    public async Task WriteAsync_AfterDisposeAsync_ThrowsObjectDisposedException()
+    {
+        var copier = new StreamCopier(new MemoryStream());
+        await copier.DisposeAsync();
+        await Assert.ThrowsExceptionAsync<ObjectDisposedException>(
+            () => copier.WriteAsync(new byte[] { 1 }, 0, 1, CancellationToken.None));
+    }
 }

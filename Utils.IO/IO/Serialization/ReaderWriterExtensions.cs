@@ -236,9 +236,12 @@ public static class ReaderWriterExtensions
                     result |= -(1L << shift);
 
                 // Reject overlong encodings: a redundant final group that only repeats the sign already
-                // established by the previous group's high (0x40) bit. The tenth byte is never redundant
-                // because it carries the otherwise unrepresentable 64th bit.
-                if (byteCount > 1 && byteCount < Leb128MaxBytes)
+                // established by the previous group's high (0x40) bit.
+                // Applied to the tenth byte as well: long.MinValue and long.MaxValue both require the tenth
+                // byte because their bit-63 disagrees with what byte-9's sign would imply, so they are
+                // never flagged. Values that could terminate at byte 9 — zero, -1, and any value whose
+                // bit-62 already carries the correct bit-63 sign — are overlong if encoded with a tenth byte.
+                if (byteCount > 1)
                 {
                     bool previousSignSet = (previousPayload & 0x40) != 0;
                     if (payload == 0x00 && !previousSignSet)
