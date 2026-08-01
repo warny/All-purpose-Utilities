@@ -88,25 +88,51 @@ before calling `MergeRecordsFrom`, as differing flags now throw `InvalidOperatio
 
 ---
 
-## NetworkParameters — DNS server ordering no longer uses interface index as metric
+## NetworkParameters — DNS server ordering follows OS enumeration order
 
 ### What changed
 
-`NetworkParameters.SelectDnsServers` previously sorted interfaces by `IPv4InterfaceProperties.Index`
-as a tiebreaker (labelled "metric"). This value is an interface identifier, not a routing priority.
-The sort key has been removed; interfaces with the same gateway status are now returned in OS
-enumeration order.
+`NetworkParameters.SelectDnsServers` previously sorted active interfaces — favouring those with a
+default gateway and using `IPv4InterfaceProperties.Index` as a tiebreaker. Both of these sort
+keys have been removed.
+
+DNS servers are now collected in strict OS enumeration order:
+1. Iterate `NetworkInterface.GetAllNetworkInterfaces()` in the order the OS provides.
+2. Include every `OperationalStatus.Up` interface, regardless of whether it has a default gateway.
+3. Within each interface, preserve the order of `DnsAddresses`.
+4. Exclude wildcard/unspecified and multicast addresses.
+5. Deduplicate, keeping the first-seen occurrence.
 
 ### Why
 
-Using the interface index as a routing metric produced incorrect ordering on many systems.
-OS enumeration order is a more faithful representation of the system's DNS priority.
+The previous "gateway-first" heuristic silently broke split-DNS, VPN, and point-to-point
+configurations where the most specific resolver is reachable through an interface without a
+default gateway. A VPN resolver listed first by the OS would be moved after a public DNS server
+on an Ethernet interface that happened to have a default gateway, causing all internal names to
+resolve through the wrong server.
+
+OS enumeration order is the closest approximation to what the system administrator or
+VPN software intended.
 
 ### Impact
 
-The relative order of DNS servers from interfaces with the same gateway status may change.
-In practice this only affects machines with multiple active network interfaces (e.g. Wi-Fi and
-Ethernet simultaneously) where the previously incorrect sort was already unreliable.
+The order of DNS servers returned by `DnsServers` and `PrimaryDns` may change on machines with
+multiple active network interfaces. If your application relied on the previous gateway-first
+ordering, review whether the new OS-enumeration order is correct for your network topology.
+
+### Note on VPN and split-DNS
+
+If a VPN interface appears first in OS enumeration, its resolver is now correctly prioritised.
+A negative DNS response from that resolver (NXDOMAIN) is a valid response and prevents fallback
+to a subsequent public resolver for the same name — which is the expected split-DNS behaviour.
+
+---
+
+## NTP — internal transport changes (no migration required)
+
+The UDP transport used by `NtpClient` (`UdpNtpTransport`) is an internal implementation detail.
+Its constructor and `ExchangeAsync` method are not part of the public API. No migration is required
+for callers of the public `NtpClient.GetTimeAsync` overloads.
 
 ---
 

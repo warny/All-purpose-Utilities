@@ -125,6 +125,21 @@ public class NetworkParametersDiscoveryTests
         Assert.AreNotSame(first, second);
     }
 
+    /// <summary>
+    /// Verifies that <see cref="NetworkParameters.NetworkInterfaces"/> returns the same cached
+    /// <see cref="IReadOnlyList{T}"/> instance on every call.
+    /// </summary>
+    [TestMethod]
+    public void NetworkInterfaces_GetterReturnsReadOnlyView()
+    {
+        var parameters = new NetworkParameters();
+        IReadOnlyList<NetworkInterface> first = parameters.NetworkInterfaces;
+        IReadOnlyList<NetworkInterface> second = parameters.NetworkInterfaces;
+
+        Assert.IsNotNull(first);
+        Assert.AreSame(first, second);
+    }
+
     [TestMethod]
     public void SelectDnsServers_PreservesOsEnumerationOrder()
     {

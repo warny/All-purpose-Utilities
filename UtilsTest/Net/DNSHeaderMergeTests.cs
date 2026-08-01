@@ -224,4 +224,144 @@ public class DNSHeaderMergeTests
         Assert.AreEqual(originalId, a.ID);
     }
 
+    /// <summary>
+    /// Verifies that <see cref="DNSHeader.MergeRecordsFrom"/> throws when the two question
+    /// sections have the same name but different numeric record types.
+    /// </summary>
+    [TestMethod]
+    public void MergeRecordsFrom_DifferentQuestionType_Throws()
+    {
+        var reqA = new DNSRequestRecord("A", "example.com");
+        reqA.RequestType = 1;   // A record numeric type
+        var a = new DNSHeader { QrBit = DNSQRBit.Response };
+        a.Requests.Add(reqA);
+
+        var reqB = new DNSRequestRecord("AAAA", "example.com");
+        reqB.RequestType = 28;  // AAAA record numeric type
+        var b = new DNSHeader { QrBit = DNSQRBit.Response };
+        b.Requests.Add(reqB);
+
+        Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="DNSHeader.MergeRecordsFrom"/> throws when the two question
+    /// sections differ in DNS class (e.g., IN vs ALL).
+    /// </summary>
+    [TestMethod]
+    public void MergeRecordsFrom_DifferentQuestionClass_Throws()
+    {
+        var a = new DNSHeader { QrBit = DNSQRBit.Response };
+        a.Requests.Add(new DNSRequestRecord("A", "example.com", DNSClassId.IN));
+
+        var b = new DNSHeader { QrBit = DNSQRBit.Response };
+        b.Requests.Add(new DNSRequestRecord("A", "example.com", DNSClassId.ALL));
+
+        Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="DNSHeader.MergeRecordsFrom"/> throws when the two question
+    /// sections contain the same entries but in a different order.
+    /// </summary>
+    [TestMethod]
+    public void MergeRecordsFrom_DifferentQuestionOrder_Throws()
+    {
+        var q1 = new DNSRequestRecord("A", "alpha.example.com");
+        var q2 = new DNSRequestRecord("A", "beta.example.com");
+
+        var a = new DNSHeader { QrBit = DNSQRBit.Response };
+        a.Requests.Add(q1);
+        a.Requests.Add(q2);
+
+        var b = new DNSHeader { QrBit = DNSQRBit.Response };
+        b.Requests.Add((DNSRequestRecord)q2.Clone());
+        b.Requests.Add((DNSRequestRecord)q1.Clone());
+
+        Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="DNSHeader.MergeRecordsFrom"/> succeeds even when the two
+    /// headers carry different transaction IDs; the ID is not part of the compatibility check.
+    /// </summary>
+    [TestMethod]
+    public void MergeRecordsFrom_DifferentId_IsAllowed()
+    {
+        var a = ResponseWithQuestion();
+        a.ID = 100;
+
+        var b = ResponseWithQuestion();
+        b.ID = 200;
+        b.Responses.Add(ARecord("b.example.com", "192.0.2.2"));
+
+        a.MergeRecordsFrom(b);
+
+        Assert.AreEqual(1, a.Responses.Count);
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="DNSHeader.MergeRecordsFrom"/> does not alter the source header:
+    /// the record count stays the same and the existing record reference is unchanged.
+    /// </summary>
+    [TestMethod]
+    public void MergeRecordsFrom_DoesNotModifySource()
+    {
+        var a = ResponseWithQuestion();
+        a.Responses.Add(ARecord("a.example.com", "192.0.2.1"));
+
+        var b = ResponseWithQuestion();
+        var sourceRecord = ARecord("b.example.com", "192.0.2.2");
+        b.Responses.Add(sourceRecord);
+
+        a.MergeRecordsFrom(b);
+
+        Assert.AreEqual(1, b.Responses.Count, "Source record count must not change.");
+        Assert.AreSame(sourceRecord, b.Responses[0], "Source record reference must not be replaced.");
+    }
+
+    /// <summary>
+    /// Verifies that when <see cref="DNSHeader.MergeRecordsFrom"/> throws due to incompatible
+    /// question sections, the target header's response collection is left unmodified.
+    /// </summary>
+    [TestMethod]
+    public void MergeRecordsFrom_IncompatibleQuestions_DoesNotModifyTarget()
+    {
+        var a = ResponseWithQuestion("example.com");
+        a.Responses.Add(ARecord("a.example.com", "192.0.2.1"));
+        int countBefore = a.Responses.Count;
+
+        var b = ResponseWithQuestion("other.com");
+        b.Responses.Add(ARecord("b.example.com", "192.0.2.2"));
+
+        Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
+        Assert.AreEqual(countBefore, a.Responses.Count);
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="DNSHeader.MergeRecordsFrom"/> preserves the target header's
+    /// transaction ID and flag values after a successful merge.
+    /// </summary>
+    [TestMethod]
+    public void MergeRecordsFrom_PreservesTargetIdAndFlags()
+    {
+        var a = ResponseWithQuestion();
+        a.ID = 42;
+        a.AuthoritativeAnswer = true;
+        a.RecursionDesired = true;
+        ushort originalId = a.ID;
+
+        var b = ResponseWithQuestion();
+        b.ID = 99;
+        b.AuthoritativeAnswer = true;
+        b.RecursionDesired = true;
+        b.Responses.Add(ARecord("b.example.com", "192.0.2.2"));
+
+        a.MergeRecordsFrom(b);
+
+        Assert.AreEqual(originalId, a.ID, "ID must be preserved after merge.");
+        Assert.IsTrue(a.AuthoritativeAnswer, "AuthoritativeAnswer flag must be preserved.");
+        Assert.IsTrue(a.RecursionDesired, "RecursionDesired flag must be preserved.");
+    }
+
 }

@@ -12,6 +12,8 @@ namespace Utils.Net
     /// </summary>
     public class NetworkParameters
     {
+        private readonly NetworkInterface[] _networkInterfaces;
+        private readonly IReadOnlyList<NetworkInterface> _networkInterfacesView;
         private readonly IPAddress[] _dnsServers;
 
         /// <summary>
@@ -19,10 +21,11 @@ namespace Utils.Net
         /// </summary>
         public NetworkParameters()
         {
-            NetworkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
+            _networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
+            _networkInterfacesView = Array.AsReadOnly(_networkInterfaces);
 
-            var snapshots = new List<NetworkInterfaceSnapshot>(NetworkInterfaces.Length);
-            foreach (NetworkInterface networkInterface in NetworkInterfaces)
+            var snapshots = new List<NetworkInterfaceSnapshot>(_networkInterfaces.Length);
+            foreach (NetworkInterface networkInterface in _networkInterfaces)
             {
                 snapshots.Add(CreateSnapshot(networkInterface));
             }
@@ -32,9 +35,11 @@ namespace Utils.Net
         }
 
         /// <summary>
-        /// Gets the network interfaces detected on the host at construction time.
+        /// Gets the network interfaces detected on the host at construction time as a stable
+        /// read-only view. The same instance is returned on every call; callers cannot replace
+        /// or add elements.
         /// </summary>
-        public NetworkInterface[] NetworkInterfaces { get; private set; }
+        public IReadOnlyList<NetworkInterface> NetworkInterfaces => _networkInterfacesView;
 
         /// <summary>
         /// Gets the preferred DNS server resolved from the network interfaces, or <see langword="null"/> if no DNS server was discovered.

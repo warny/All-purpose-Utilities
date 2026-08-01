@@ -248,6 +248,50 @@ public class NtpClientTests
             () => new UdpNtpTransport(System.Threading.Timeout.InfiniteTimeSpan));
     }
 
+    /// <summary>
+    /// Verifies that <see cref="UdpNtpTransport.ExchangeAsync"/> throws
+    /// <see cref="ArgumentNullException"/> when <paramref name="endpoint"/> is <see langword="null"/>.
+    /// </summary>
+    [TestMethod]
+    public async Task UdpNtpTransport_NullEndpoint_ThrowsArgumentNullException()
+    {
+        var transport = new UdpNtpTransport(TimeSpan.FromSeconds(1));
+
+        await Assert.ThrowsExceptionAsync<ArgumentNullException>(
+            () => transport.ExchangeAsync(null!, new byte[48], CancellationToken.None))
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="UdpNtpTransport.ExchangeAsync"/> throws
+    /// <see cref="ArgumentNullException"/> when the request buffer is <see langword="null"/>.
+    /// </summary>
+    [TestMethod]
+    public async Task UdpNtpTransport_NullRequest_ThrowsArgumentNullException()
+    {
+        var transport = new UdpNtpTransport(TimeSpan.FromSeconds(1));
+        var endpoint = new IPEndPoint(IPAddress.Loopback, 123);
+
+        await Assert.ThrowsExceptionAsync<ArgumentNullException>(
+            () => transport.ExchangeAsync(endpoint, null!, CancellationToken.None))
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="UdpNtpTransport.ExchangeAsync"/> throws
+    /// <see cref="ArgumentException"/> when the request buffer is empty.
+    /// </summary>
+    [TestMethod]
+    public async Task UdpNtpTransport_EmptyRequest_ThrowsArgumentException()
+    {
+        var transport = new UdpNtpTransport(TimeSpan.FromSeconds(1));
+        var endpoint = new IPEndPoint(IPAddress.Loopback, 123);
+
+        await Assert.ThrowsExceptionAsync<ArgumentException>(
+            () => transport.ExchangeAsync(endpoint, new byte[0], CancellationToken.None))
+            .ConfigureAwait(false);
+    }
+
     [TestMethod]
     public async Task GetTimeAsync_FractionConversion_IsAccurateWithinOneTickOrDocumentedTolerance()
     {
