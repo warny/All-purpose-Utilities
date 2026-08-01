@@ -33,10 +33,10 @@ namespace Utils.Net
         }
 
         /// <summary>
-        /// Gets the network interfaces detected on the host at construction time.
+        /// Gets the network interfaces detected on the host at construction time as a read-only
+        /// view. The underlying collection is not copied; callers cannot replace or add elements.
         /// </summary>
-        /// <remarks>Returns a defensive copy; mutating the result does not affect this instance.</remarks>
-        public NetworkInterface[] NetworkInterfaces => (NetworkInterface[])_networkInterfaces.Clone();
+        public IReadOnlyList<NetworkInterface> NetworkInterfaces => _networkInterfaces.AsReadOnly();
 
         /// <summary>
         /// Gets the preferred DNS server resolved from the network interfaces, or <see langword="null"/> if no DNS server was discovered.

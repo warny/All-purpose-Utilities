@@ -126,20 +126,18 @@ public class NetworkParametersDiscoveryTests
     }
 
     [TestMethod]
-    public void NetworkInterfaces_GetterReturnsDefensiveCopy()
+    public void NetworkInterfaces_GetterReturnsReadOnlyView()
     {
         var parameters = new NetworkParameters();
-        NetworkInterface[] first = parameters.NetworkInterfaces;
-        NetworkInterface[] second = parameters.NetworkInterfaces;
+        IReadOnlyList<NetworkInterface> first = parameters.NetworkInterfaces;
+        IReadOnlyList<NetworkInterface> second = parameters.NetworkInterfaces;
 
+        Assert.IsNotNull(first);
+        // Each call produces a new wrapper object around the same internal array.
         Assert.AreNotSame(first, second);
-
-        if (first.Length > 0)
-        {
-            NetworkInterface original = first[0];
-            first[0] = null!;
-            Assert.AreSame(original, parameters.NetworkInterfaces[0]);
-        }
+        Assert.AreEqual(first.Count, second.Count);
+        for (int i = 0; i < first.Count; i++)
+            Assert.AreSame(first[i], second[i]);
     }
 
     [TestMethod]
