@@ -197,7 +197,7 @@ public class StreamUtilsTests
         // UTF-8 BOM followed by "abc"
         byte[] data = new byte[] { 0xEF, 0xBB, 0xBF, (byte)'a', (byte)'b', (byte)'c' };
         using var src = new MemoryStream(data);
-        Assert.AreEqual("abc", src.ReadAllText(maxBytes: 100));
+        Assert.AreEqual("abc", src.ReadAllText(encoding: null, maxBytes: 100));
     }
 
     [TestMethod]

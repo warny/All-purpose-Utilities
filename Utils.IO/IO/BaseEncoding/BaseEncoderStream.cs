@@ -105,6 +105,8 @@ public class BaseEncoderStream : Stream
     private int shift;
     private int dataWidth;
     private bool _closed;
+    // 0 = not disposed; 1 = disposed. Written atomically so DisposeAsync is idempotent under concurrency.
+    private int _disposeState;
 
     /// <summary>
     /// Serializes concurrent asynchronous writes so encoder state is never interleaved across awaits.
@@ -265,6 +267,10 @@ public class BaseEncoderStream : Stream
     /// <returns>A task that completes once finalization has run.</returns>
     public override async ValueTask DisposeAsync()
     {
+        // Atomically claim the dispose slot; any subsequent caller returns immediately.
+        if (Interlocked.Exchange(ref _disposeState, 1) != 0)
+            return;
+
         // Acquire the gate to ensure any concurrent async write completes before we finalize.
         // Close() itself is synchronous and idempotent; it must run while we hold the gate.
         await _asyncGate.WaitAsync().ConfigureAwait(false);

@@ -55,12 +55,22 @@ public static class StreamUtils
     /// and returns it as a byte array.
     /// </summary>
     /// <param name="s">The source <see cref="Stream"/> to read from.</param>
+    /// <returns>A byte array containing all bytes read from the stream.</returns>
+    public static byte[] ReadToEnd(this Stream s)
+        => ReadToEnd(s, maxBytes: null);
+
+    /// <summary>
+    /// Reads all remaining data from the given <see cref="Stream"/> until EOF
+    /// and returns it as a byte array, enforcing an optional byte limit.
+    /// </summary>
+    /// <param name="s">The source <see cref="Stream"/> to read from.</param>
     /// <param name="maxBytes">
     /// Optional maximum number of bytes to read. Throws <see cref="InvalidOperationException"/>
     /// if the stream contains more data than this limit. <see langword="null"/> means no limit.
     /// </param>
+    /// <returns>A byte array containing all bytes read from the stream.</returns>
     /// <exception cref="InvalidOperationException">Thrown when <paramref name="maxBytes"/> is exceeded.</exception>
-    public static byte[] ReadToEnd(this Stream s, int? maxBytes = null)
+    public static byte[] ReadToEnd(this Stream s, int? maxBytes)
     {
         const int bufferSize = 4096;
         byte[] buffer = new byte[bufferSize];
@@ -105,6 +115,17 @@ public static class StreamUtils
     /// The source stream is left open. The returned stream is positioned at 0 on success.
     /// </summary>
     /// <param name="s">The source <see cref="Stream"/> to read from.</param>
+    /// <returns>A <see cref="MemoryStream"/> that contains all bytes read from <paramref name="s"/>.</returns>
+    public static MemoryStream ReadToMemoryStream(this Stream s)
+        => ReadToMemoryStream(s, maxBytes: null);
+
+    /// <summary>
+    /// Reads all remaining data from the current <see cref="Stream"/>
+    /// and returns a new <see cref="MemoryStream"/> containing that data,
+    /// enforcing an optional byte limit. The source stream is left open.
+    /// The returned stream is positioned at 0 on success.
+    /// </summary>
+    /// <param name="s">The source <see cref="Stream"/> to read from.</param>
     /// <param name="maxBytes">
     /// Optional maximum number of bytes to read. When the source contains more data than this limit,
     /// an <see cref="InvalidOperationException"/> is thrown and the temporary buffer is disposed.
@@ -113,7 +134,7 @@ public static class StreamUtils
     /// <returns>A <see cref="MemoryStream"/> that contains all bytes read from <paramref name="s"/>.</returns>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="maxBytes"/> is negative.</exception>
     /// <exception cref="InvalidOperationException">Thrown when <paramref name="maxBytes"/> is exceeded.</exception>
-    public static MemoryStream ReadToMemoryStream(this Stream s, int? maxBytes = null)
+    public static MemoryStream ReadToMemoryStream(this Stream s, int? maxBytes)
     {
         if (s == null) throw new ArgumentNullException(nameof(s));
         if (maxBytes.HasValue && maxBytes.Value < 0)
@@ -143,8 +164,31 @@ public static class StreamUtils
     }
 
     /// <summary>
+    /// Reads all remaining bytes from the given <see cref="Stream"/> as UTF-8 text.
+    /// The source stream is left open.
+    /// </summary>
+    /// <param name="s">The source <see cref="Stream"/> to read from.</param>
+    /// <returns>A string containing all text read from the stream.</returns>
+    public static string ReadAllText(this Stream s)
+        => ReadAllText(s, encoding: null, maxBytes: null);
+
+    /// <summary>
     /// Reads all remaining bytes from the given <see cref="Stream"/> as text
     /// using the specified <see cref="Encoding"/>. The source stream is left open.
+    /// </summary>
+    /// <param name="s">The source <see cref="Stream"/> to read from.</param>
+    /// <param name="encoding">
+    /// The character encoding to use. If <c>null</c>, defaults to <see cref="Encoding.UTF8"/>.
+    /// Byte-order-mark detection remains enabled.
+    /// </param>
+    /// <returns>A string containing all text read from the stream.</returns>
+    public static string ReadAllText(this Stream s, Encoding encoding)
+        => ReadAllText(s, encoding, maxBytes: null);
+
+    /// <summary>
+    /// Reads all remaining bytes from the given <see cref="Stream"/> as text
+    /// using the specified <see cref="Encoding"/>, enforcing an optional byte limit.
+    /// The source stream is left open.
     /// </summary>
     /// <param name="s">The source <see cref="Stream"/> to read from.</param>
     /// <param name="encoding">
@@ -158,7 +202,7 @@ public static class StreamUtils
     /// <returns>A string containing all text read from the stream.</returns>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="maxBytes"/> is negative.</exception>
     /// <exception cref="InvalidOperationException">Thrown when <paramref name="maxBytes"/> is exceeded.</exception>
-    public static string ReadAllText(this Stream s, Encoding encoding = null, int? maxBytes = null)
+    public static string ReadAllText(this Stream s, Encoding encoding, int? maxBytes)
     {
         if (s == null) throw new ArgumentNullException(nameof(s));
         encoding ??= Encoding.UTF8;

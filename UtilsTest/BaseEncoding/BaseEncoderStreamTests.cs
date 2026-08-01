@@ -269,5 +269,16 @@ public class BaseEncoderStreamTests
             () => stream.WriteAsync(new byte[] { 1, 2, 3 }, 0, 3, cts.Token));
         Assert.AreEqual(0, sw.ToString().Length, "No output must be produced when cancelled before encoding.");
     }
+
+    [TestMethod]
+    public async Task DisposeAsync_IsIdempotent()
+    {
+        var sw = new StringWriter();
+        var stream = new BaseEncoderStream(sw, Bases.Base64);
+        stream.Write(new byte[] { 0x41 }, 0, 1);
+        await stream.DisposeAsync();
+        // Second call must not throw ObjectDisposedException or any other exception.
+        await stream.DisposeAsync();
+    }
 }
 
