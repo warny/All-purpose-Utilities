@@ -140,22 +140,21 @@ public class BaseDecoderStream : TextWriter
         {
             if (dataLength > 0)
             {
-                int targetLength = (int)Math.Floor(sourceLength * BaseDescriptor.BitsWidth / 8d);
-                if (actualTargetLength > targetLength)
+                // dataLength holds the leftover bits after all whole bytes were emitted, i.e.
+                // (sourceLength * BitsWidth) mod 8. A valid terminal quantum leaves fewer than one
+                // symbol worth of bits (dataLength < BitsWidth): those bits are discarded padding.
+                // When dataLength >= BitsWidth an extra, unusable symbol was supplied — for example a
+                // single Base16 or Base64 symbol — which can never complete a byte and is a format error.
+                int bitsWidth = BaseDescriptor.BitsWidth;
+                if (strict)
                 {
-                    if (strict)
-                    {
-                        // Verify trailing bits are zero
-                        int trailingBits = dataLength;
-                        int mask = (1 << trailingBits) - 1;
-                        if ((currentValue & mask) != 0)
-                            throw new FormatException("Non-zero trailing bits in final quantum.");
-                    }
+                    if (dataLength >= bitsWidth)
+                        throw new FormatException($"Incomplete final quantum: {dataLength} leftover bit(s) do not form a valid terminal group.");
 
-                    // Align remaining bits and write the last byte
-                    currentValue <<= BaseDescriptor.BitsWidth;
-                    dataLength += BaseDescriptor.BitsWidth - 8;
-                    Stream.WriteByte((byte)((currentValue >> dataLength) & 0xFF));
+                    // The leftover bits are padding and must all be zero.
+                    int mask = (1 << dataLength) - 1;
+                    if ((currentValue & mask) != 0)
+                        throw new FormatException("Non-zero trailing bits in final quantum.");
                 }
             }
 

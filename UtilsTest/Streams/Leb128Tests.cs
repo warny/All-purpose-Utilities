@@ -167,4 +167,142 @@ public class Leb128Tests
         using var ms = new MemoryStream([0x80]);
         Assert.ThrowsException<EndOfStreamException>(() => new SimpleReader(ms).ReadULEB128());
     }
+
+    // ── Overflow / overlong rejection (item 17) ──────────────────────────────
+
+    [TestMethod]
+    public void ReadULEB128_ElevenBytes_Throws()
+    {
+        // 11 continuation bytes: continuation bit stays set on the tenth byte → overflow.
+        using var ms = new MemoryStream([0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x01]);
+        Assert.ThrowsException<OverflowException>(() => new SimpleReader(ms).ReadULEB128());
+    }
+
+    [TestMethod]
+    public void ReadULEB128_TenthBytePayloadTooLarge_ThrowsOverflow()
+    {
+        // Nine continuation bytes then a tenth byte with payload > 0x01 → value would exceed 64 bits.
+        using var ms = new MemoryStream([0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x02]);
+        Assert.ThrowsException<OverflowException>(() => new SimpleReader(ms).ReadULEB128());
+    }
+
+    [TestMethod]
+    public void ReadULEB128_MaxValueEncoding_RoundTrips()
+    {
+        // ulong.MaxValue = ten bytes, the last being 0x01.
+        using var ms = new MemoryStream([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x01]);
+        Assert.AreEqual(ulong.MaxValue, new SimpleReader(ms).ReadULEB128());
+    }
+
+    [TestMethod]
+    [DataRow(new byte[] { 0x80, 0x00 })]        // overlong 0
+    [DataRow(new byte[] { 0x81, 0x00 })]        // overlong 1
+    [DataRow(new byte[] { 0xFF, 0x80, 0x00 })]  // overlong 127
+    public void ReadULEB128_Overlong_ThrowsFormatException(byte[] bytes)
+    {
+        using var ms = new MemoryStream(bytes);
+        Assert.ThrowsException<FormatException>(() => new SimpleReader(ms).ReadULEB128());
+    }
+
+    [TestMethod]
+    public void ReadSLEB128_ElevenBytes_Throws()
+    {
+        using var ms = new MemoryStream([0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00]);
+        Assert.ThrowsException<OverflowException>(() => new SimpleReader(ms).ReadSLEB128());
+    }
+
+    [TestMethod]
+    public void ReadSLEB128_BadSignExtensionOnTenthByte_ThrowsOverflow()
+    {
+        // Nine continuation bytes then a tenth byte whose high bits are not a valid sign extension.
+        using var ms = new MemoryStream([0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x40]);
+        Assert.ThrowsException<OverflowException>(() => new SimpleReader(ms).ReadSLEB128());
+    }
+
+    [TestMethod]
+    [DataRow(new byte[] { 0x80, 0x00 })]        // overlong 0
+    [DataRow(new byte[] { 0x81, 0x00 })]        // overlong 1
+    [DataRow(new byte[] { 0xFF, 0x7F })]        // overlong -1
+    public void ReadSLEB128_Overlong_ThrowsFormatException(byte[] bytes)
+    {
+        using var ms = new MemoryStream(bytes);
+        Assert.ThrowsException<FormatException>(() => new SimpleReader(ms).ReadSLEB128());
+    }
+
+    [TestMethod]
+    public void ReadULEB128_AfterError_PositionAdvancedOnlyByBytesConsumed()
+    {
+        // 0x80 0x00 (overlong) followed by a trailing marker byte.
+        using var ms = new MemoryStream([0x80, 0x00, 0x2A]);
+        var reader = new SimpleReader(ms);
+        try { reader.ReadULEB128(); Assert.Fail("Expected FormatException."); }
+        catch (FormatException) { }
+        // Exactly two bytes were consumed; the marker remains readable.
+        Assert.AreEqual(0x2A, ms.ReadByte());
+    }
+
+    [TestMethod]
+    public void ReadULEB128_TruncatedAtTenBytes_PositionMatchesConsumed()
+    {
+        // Ten continuation bytes with no terminator: overflow triggers on the tenth byte.
+        using var ms = new MemoryStream([0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80]);
+        var reader = new SimpleReader(ms);
+        Assert.ThrowsException<OverflowException>(() => reader.ReadULEB128());
+        Assert.AreEqual(10, ms.Position, "Reader must stop after consuming the tenth byte.");
+    }
+
+    // ── 10-byte overlong SLEB128 (regression for item 17 fix) ────────────────
+
+    [TestMethod]
+    public void ReadSLEB128_TenByteOverlongZero_ThrowsFormatException()
+    {
+        // Zero encoded with nine continuation bytes then a zero terminal byte:
+        // 80 80 80 80 80 80 80 80 80 00 — the ninth byte's payload (0x00) has sign bit 0x40 clear,
+        // so a terminal 0x00 on the tenth byte merely repeats the already-established sign and is overlong.
+        using var ms = new MemoryStream([0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00]);
+        Assert.ThrowsException<FormatException>(() => new SimpleReader(ms).ReadSLEB128());
+    }
+
+    [TestMethod]
+    public void ReadSLEB128_TenByteOverlongNegativeOne_ThrowsFormatException()
+    {
+        // -1 encoded with nine continuation bytes then a 0x7F terminal byte:
+        // FF FF FF FF FF FF FF FF FF 7F — the ninth byte's payload (0x7F) has sign bit 0x40 set,
+        // so a terminal 0x7F on the tenth byte merely repeats the negative sign and is overlong.
+        using var ms = new MemoryStream([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x7F]);
+        Assert.ThrowsException<FormatException>(() => new SimpleReader(ms).ReadSLEB128());
+    }
+
+    [TestMethod]
+    public void ReadULEB128_TenByteOverlongZero_ThrowsFormatException()
+    {
+        // Zero encoded with nine continuation bytes then a zero terminal byte:
+        // 80 80 80 80 80 80 80 80 80 00 — trailing zero payload is overlong (same check as byte-2 overlongs).
+        using var ms = new MemoryStream([0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00]);
+        Assert.ThrowsException<FormatException>(() => new SimpleReader(ms).ReadULEB128());
+    }
+
+    [TestMethod]
+    public void ReadSLEB128_LongMinValue_RoundTrips_NotOverlong()
+    {
+        // long.MinValue requires all 10 bytes; its canonical encoding must NOT be rejected as overlong.
+        // Encoding: 80 80 80 80 80 80 80 80 80 7F
+        using var ms = new MemoryStream();
+        new SimpleWriter(ms).WriteSLEB128(long.MinValue);
+        Assert.AreEqual(10, ms.Length, "long.MinValue must encode to exactly 10 bytes.");
+        ms.Position = 0;
+        Assert.AreEqual(long.MinValue, new SimpleReader(ms).ReadSLEB128());
+    }
+
+    [TestMethod]
+    public void ReadSLEB128_LongMaxValue_RoundTrips_NotOverlong()
+    {
+        // long.MaxValue also requires 10 bytes; its canonical encoding must NOT be rejected as overlong.
+        // Encoding: FF FF FF FF FF FF FF FF FF 00
+        using var ms = new MemoryStream();
+        new SimpleWriter(ms).WriteSLEB128(long.MaxValue);
+        Assert.AreEqual(10, ms.Length, "long.MaxValue must encode to exactly 10 bytes.");
+        ms.Position = 0;
+        Assert.AreEqual(long.MaxValue, new SimpleReader(ms).ReadSLEB128());
+    }
 }

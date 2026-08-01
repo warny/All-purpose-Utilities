@@ -1,5 +1,8 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using Utils.IO.BaseEncoding;
 
 namespace UtilsTest.BaseEncoding;
@@ -178,6 +181,104 @@ public class BaseEncoderStreamTests
         string[] lines = output.Split(System.Environment.NewLine, System.StringSplitOptions.RemoveEmptyEntries);
         foreach (var line in lines)
             Assert.IsTrue(line.Length <= 4, $"Line '{line}' exceeds maxDataWidth=4");
+    }
+
+    // ---- item 30: span, async, disposal ----
+
+    [TestMethod]
+    public void WriteSpan_ProducesSameOutputAsArray()
+    {
+        byte[] source = { 0x41, 0x42, 0x43, 0x44, 0x45 };
+        var sw = new StringWriter();
+        var stream = new BaseEncoderStream(sw, Bases.Base64);
+        stream.Write(new ReadOnlySpan<byte>(source));
+        stream.Close();
+        Assert.AreEqual("QUJDREU=", sw.ToString());
+    }
+
+    [TestMethod]
+    public async Task WriteAsync_ProducesSameOutputAsArray()
+    {
+        byte[] source = { 0x41, 0x42, 0x43, 0x44, 0x45 };
+        var sw = new StringWriter();
+        var stream = new BaseEncoderStream(sw, Bases.Base64);
+        await stream.WriteAsync(source, 0, source.Length, CancellationToken.None);
+        stream.Close();
+        Assert.AreEqual("QUJDREU=", sw.ToString());
+    }
+
+    [TestMethod]
+    public async Task FragmentedWrites_GiveSameOutputAsSingleWrite()
+    {
+        byte[] source = { 0x41, 0x42, 0x43, 0x44, 0x45 };
+
+        var swSingle = new StringWriter();
+        var single = new BaseEncoderStream(swSingle, Bases.Base64);
+        single.Write(source, 0, source.Length);
+        single.Close();
+
+        var swFragmented = new StringWriter();
+        var fragmented = new BaseEncoderStream(swFragmented, Bases.Base64);
+        await fragmented.WriteAsync(source, 0, 2, CancellationToken.None);
+        await fragmented.WriteAsync(source, 2, 3, CancellationToken.None);
+        fragmented.Close();
+
+        Assert.AreEqual(swSingle.ToString(), swFragmented.ToString());
+    }
+
+    [TestMethod]
+    public async Task FlushAsync_DoesNotThrow()
+    {
+        var sw = new StringWriter();
+        var stream = new BaseEncoderStream(sw, Bases.Base64);
+        await stream.WriteAsync(new byte[] { 1, 2, 3 }, 0, 3, CancellationToken.None);
+        await stream.FlushAsync(CancellationToken.None);
+        stream.Close();
+    }
+
+    [TestMethod]
+    public async Task DisposeAsync_FinalizesEncoding()
+    {
+        byte[] source = { 0x41, 0x42 };
+        var sw = new StringWriter();
+        var stream = new BaseEncoderStream(sw, Bases.Base64);
+        stream.Write(source, 0, source.Length);
+        await stream.DisposeAsync();
+        // DisposeAsync must have finalized (padded) the output through Close.
+        Assert.AreEqual("QUI=", sw.ToString());
+    }
+
+    [TestMethod]
+    public async Task WriteAsync_AfterClose_Throws()
+    {
+        var sw = new StringWriter();
+        var stream = new BaseEncoderStream(sw, Bases.Base64);
+        stream.Close();
+        await Assert.ThrowsExceptionAsync<ObjectDisposedException>(
+            () => stream.WriteAsync(new byte[] { 1 }, 0, 1, CancellationToken.None));
+    }
+
+    [TestMethod]
+    public async Task WriteAsync_CancelledBeforeCall_ThrowsAndLeavesStateUnchanged()
+    {
+        var sw = new StringWriter();
+        var stream = new BaseEncoderStream(sw, Bases.Base64);
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+        await Assert.ThrowsExceptionAsync<OperationCanceledException>(
+            () => stream.WriteAsync(new byte[] { 1, 2, 3 }, 0, 3, cts.Token));
+        Assert.AreEqual(0, sw.ToString().Length, "No output must be produced when cancelled before encoding.");
+    }
+
+    [TestMethod]
+    public async Task DisposeAsync_IsIdempotent()
+    {
+        var sw = new StringWriter();
+        var stream = new BaseEncoderStream(sw, Bases.Base64);
+        stream.Write(new byte[] { 0x41 }, 0, 1);
+        await stream.DisposeAsync();
+        // Second call must not throw ObjectDisposedException or any other exception.
+        await stream.DisposeAsync();
     }
 }
 
