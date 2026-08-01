@@ -157,7 +157,7 @@ Class ReaderWriterExtensions  <a class="header-action link-secondary" title="Vie
 
   <h3 id="Utils_IO_Serialization_ReaderWriterExtensions_ReadArray__1_Utils_IO_Serialization_Reader_System_Int32_" data-uid="Utils.IO.Serialization.ReaderWriterExtensions.ReadArray``1(Utils.IO.Serialization.Reader,System.Int32)">
   ReadArray&lt;T&gt;(Reader, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L48"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L94"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads an array of values from the reader using the reader's configured endianness.</p>
@@ -249,7 +249,7 @@ Class ReaderWriterExtensions  <a class="header-action link-secondary" title="Vie
 
   <h3 id="Utils_IO_Serialization_ReaderWriterExtensions_ReadSLEB128_Utils_IO_Serialization_IReader_" data-uid="Utils.IO.Serialization.ReaderWriterExtensions.ReadSLEB128(Utils.IO.Serialization.IReader)">
   ReadSLEB128(IReader)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L98"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L195"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a signed LEB128-encoded integer from the reader.</p>
@@ -280,11 +280,24 @@ Class ReaderWriterExtensions  <a class="header-action link-secondary" title="Vie
 
 
 
+  <h4 class="section" id="Utils_IO_Serialization_ReaderWriterExtensions_ReadSLEB128_Utils_IO_Serialization_IReader__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>The reader is bounded to 10 bytes for a 64-bit value. On the tenth byte the bits above the sign
+bit (bit 62 of the accumulated value) must be a valid sign extension: all zero for a non-negative
+value and all one for a negative value. Overlong encodings — a trailing <code>00</code> group extending a
+non-negative value or a trailing <code>7F</code> group extending a negative value — are rejected as
+non-canonical.</p>
+</div>
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.endofstreamexception">EndOfStreamException</a></dt>
     <dd><p>Thrown when the stream ends before the value is complete.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.formatexception">FormatException</a></dt>
+    <dd><p>Thrown when the encoding is non-canonical (overlong).</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.overflowexception">OverflowException</a></dt>
+    <dd><p>Thrown when the encoded value does not fit in a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a>.</p>
 </dd>
   </dl>
 
@@ -294,7 +307,7 @@ Class ReaderWriterExtensions  <a class="header-action link-secondary" title="Vie
 
   <h3 id="Utils_IO_Serialization_ReaderWriterExtensions_ReadULEB128_Utils_IO_Serialization_IReader_" data-uid="Utils.IO.Serialization.ReaderWriterExtensions.ReadULEB128(Utils.IO.Serialization.IReader)">
   ReadULEB128(IReader)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L76"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L135"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads an unsigned LEB128-encoded integer from the reader.</p>
@@ -325,11 +338,23 @@ Class ReaderWriterExtensions  <a class="header-action link-secondary" title="Vie
 
 
 
+  <h4 class="section" id="Utils_IO_Serialization_ReaderWriterExtensions_ReadULEB128_Utils_IO_Serialization_IReader__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>The reader is bounded to 10 bytes for a 64-bit value. The tenth byte must have its continuation
+bit clear and a payload of at most <code>0x01</code> (a single high bit), because 9 groups of 7 bits
+already cover 63 bits. Overlong encodings such as <code>80 00</code> for zero are rejected: a group whose
+payload is zero and whose continuation bit is clear is only valid when it is the first byte.</p>
+</div>
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.endofstreamexception">EndOfStreamException</a></dt>
     <dd><p>Thrown when the stream ends before the value is complete.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.formatexception">FormatException</a></dt>
+    <dd><p>Thrown when the encoding is non-canonical (overlong).</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.overflowexception">OverflowException</a></dt>
+    <dd><p>Thrown when the encoded value does not fit in a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint64">ulong</a>.</p>
 </dd>
   </dl>
 
@@ -339,7 +364,7 @@ Class ReaderWriterExtensions  <a class="header-action link-secondary" title="Vie
 
   <h3 id="Utils_IO_Serialization_ReaderWriterExtensions_ReadVariableLengthString_Utils_IO_Serialization_Reader_System_Text_Encoding_System_Int32_" data-uid="Utils.IO.Serialization.ReaderWriterExtensions.ReadVariableLengthString(Utils.IO.Serialization.Reader,System.Text.Encoding,System.Int32)">
   ReadVariableLengthString(Reader, Encoding, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L31"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L34"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a length-prefixed string from the reader.</p>
@@ -359,14 +384,15 @@ Class ReaderWriterExtensions  <a class="header-action link-secondary" title="Vie
     <dd><p>Encoding of the string.</p>
 </dd>
     <dt><code>sizeLength</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>Number of bytes used to store the length.</p>
+    <dd><p>Number of bytes used to store the length. Must be 1, 2, or 4.</p>
 </dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd></dd>
+    <dd><p>The decoded string.</p>
+</dd>
   </dl>
 
 
@@ -376,6 +402,74 @@ Class ReaderWriterExtensions  <a class="header-action link-secondary" title="Vie
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">sizeLength</code> is not 1, 2, or 4.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.formatexception">FormatException</a></dt>
+    <dd><p>Thrown when a four-byte prefix contains a negative length.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_IO_Serialization_ReaderWriterExtensions_ReadVariableLengthString_" data-uid="Utils.IO.Serialization.ReaderWriterExtensions.ReadVariableLengthString*"></a>
+
+  <h3 id="Utils_IO_Serialization_ReaderWriterExtensions_ReadVariableLengthString_Utils_IO_Serialization_Reader_System_Text_Encoding_System_Int32_System_Int32_" data-uid="Utils.IO.Serialization.ReaderWriterExtensions.ReadVariableLengthString(Utils.IO.Serialization.Reader,System.Text.Encoding,System.Int32,System.Int32)">
+  ReadVariableLengthString(Reader, Encoding, int, int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L53"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Reads a length-prefixed string from the reader, enforcing a maximum byte length before allocation.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static string ReadVariableLengthString(this Reader reader, Encoding encoding, int sizeLength, int maxByteLength)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>reader</code> <a class="xref" href="Utils.IO.Serialization.Reader.html">Reader</a></dt>
+    <dd><p>The reader to read from.</p>
+</dd>
+    <dt><code>encoding</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding">Encoding</a></dt>
+    <dd><p>Encoding of the string.</p>
+</dd>
+    <dt><code>sizeLength</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Number of bytes used to store the length. Must be 1, 2, or 4.</p>
+</dd>
+    <dt><code>maxByteLength</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The maximum number of encoded bytes accepted for the payload. A length read from the stream that
+exceeds this value is rejected before any payload allocation.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The decoded string.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">sizeLength</code> is not 1, 2, or 4, when <code class="paramref">maxByteLength</code> is negative,
+or when the length read from the stream exceeds <code class="paramref">maxByteLength</code>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.formatexception">FormatException</a></dt>
+    <dd><p>Thrown when a four-byte prefix contains a negative length.</p>
+</dd>
+  </dl>
 
 
 
@@ -383,7 +477,7 @@ Class ReaderWriterExtensions  <a class="header-action link-secondary" title="Vie
 
   <h3 id="Utils_IO_Serialization_ReaderWriterExtensions_WriteFixedLengthString_Utils_IO_Serialization_Writer_System_String_System_Int32_System_Text_Encoding_" data-uid="Utils.IO.Serialization.ReaderWriterExtensions.WriteFixedLengthString(Utils.IO.Serialization.Writer,System.String,System.Int32,System.Text.Encoding)">
   WriteFixedLengthString(Writer, string, int, Encoding)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L63"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L109"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes a fixed-length string using the provided encoding. The string is padded with zero bytes if necessary.</p>
@@ -425,7 +519,7 @@ Class ReaderWriterExtensions  <a class="header-action link-secondary" title="Vie
 
   <h3 id="Utils_IO_Serialization_ReaderWriterExtensions_WriteSLEB128_Utils_IO_Serialization_IWriter_System_Int64_" data-uid="Utils.IO.Serialization.ReaderWriterExtensions.WriteSLEB128(Utils.IO.Serialization.IWriter,System.Int64)">
   WriteSLEB128(IWriter, long)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L138"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L282"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes a signed LEB128-encoded integer to the writer.</p>
@@ -461,7 +555,7 @@ Class ReaderWriterExtensions  <a class="header-action link-secondary" title="Vie
 
   <h3 id="Utils_IO_Serialization_ReaderWriterExtensions_WriteULEB128_Utils_IO_Serialization_IWriter_System_UInt64_" data-uid="Utils.IO.Serialization.ReaderWriterExtensions.WriteULEB128(Utils.IO.Serialization.IWriter,System.UInt64)">
   WriteULEB128(IWriter, ulong)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L121"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L265"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes an unsigned LEB128-encoded integer to the writer.</p>
@@ -497,7 +591,7 @@ Class ReaderWriterExtensions  <a class="header-action link-secondary" title="Vie
 
   <h3 id="Utils_IO_Serialization_ReaderWriterExtensions_WriteVariableLengthString_Utils_IO_Serialization_Writer_System_String_System_Text_Encoding_System_Int32_" data-uid="Utils.IO.Serialization.ReaderWriterExtensions.WriteVariableLengthString(Utils.IO.Serialization.Writer,System.String,System.Text.Encoding,System.Int32)">
   WriteVariableLengthString(Writer, string, Encoding, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L159"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L307"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes a length-prefixed string to the writer using the writer's configured endianness.</p>
@@ -532,6 +626,13 @@ Class ReaderWriterExtensions  <a class="header-action link-secondary" title="Vie
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">sizeLength</code> is not 1, 2, or 4, or when the encoded byte length does not
+fit in the selected prefix width. No bytes are written when this exception is thrown.</p>
+</dd>
+  </dl>
 
 
 

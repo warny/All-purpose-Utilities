@@ -32906,6 +32906,19 @@ references:
   isSpec: "True"
   fullName: Utils.IO.BaseEncoding.BaseEncoderStream.Close
   nameWithType: BaseEncoderStream.Close
+- uid: Utils.IO.BaseEncoding.BaseEncoderStream.DisposeAsync
+  name: DisposeAsync()
+  href: api/Utils.IO.BaseEncoding.BaseEncoderStream.html#Utils_IO_BaseEncoding_BaseEncoderStream_DisposeAsync
+  commentId: M:Utils.IO.BaseEncoding.BaseEncoderStream.DisposeAsync
+  fullName: Utils.IO.BaseEncoding.BaseEncoderStream.DisposeAsync()
+  nameWithType: BaseEncoderStream.DisposeAsync()
+- uid: Utils.IO.BaseEncoding.BaseEncoderStream.DisposeAsync*
+  name: DisposeAsync
+  href: api/Utils.IO.BaseEncoding.BaseEncoderStream.html#Utils_IO_BaseEncoding_BaseEncoderStream_DisposeAsync_
+  commentId: Overload:Utils.IO.BaseEncoding.BaseEncoderStream.DisposeAsync
+  isSpec: "True"
+  fullName: Utils.IO.BaseEncoding.BaseEncoderStream.DisposeAsync
+  nameWithType: BaseEncoderStream.DisposeAsync
 - uid: Utils.IO.BaseEncoding.BaseEncoderStream.Flush
   name: Flush()
   href: api/Utils.IO.BaseEncoding.BaseEncoderStream.html#Utils_IO_BaseEncoding_BaseEncoderStream_Flush
@@ -32919,6 +32932,19 @@ references:
   isSpec: "True"
   fullName: Utils.IO.BaseEncoding.BaseEncoderStream.Flush
   nameWithType: BaseEncoderStream.Flush
+- uid: Utils.IO.BaseEncoding.BaseEncoderStream.FlushAsync(System.Threading.CancellationToken)
+  name: FlushAsync(CancellationToken)
+  href: api/Utils.IO.BaseEncoding.BaseEncoderStream.html#Utils_IO_BaseEncoding_BaseEncoderStream_FlushAsync_System_Threading_CancellationToken_
+  commentId: M:Utils.IO.BaseEncoding.BaseEncoderStream.FlushAsync(System.Threading.CancellationToken)
+  fullName: Utils.IO.BaseEncoding.BaseEncoderStream.FlushAsync(System.Threading.CancellationToken)
+  nameWithType: BaseEncoderStream.FlushAsync(CancellationToken)
+- uid: Utils.IO.BaseEncoding.BaseEncoderStream.FlushAsync*
+  name: FlushAsync
+  href: api/Utils.IO.BaseEncoding.BaseEncoderStream.html#Utils_IO_BaseEncoding_BaseEncoderStream_FlushAsync_
+  commentId: Overload:Utils.IO.BaseEncoding.BaseEncoderStream.FlushAsync
+  isSpec: "True"
+  fullName: Utils.IO.BaseEncoding.BaseEncoderStream.FlushAsync
+  nameWithType: BaseEncoderStream.FlushAsync
 - uid: Utils.IO.BaseEncoding.BaseEncoderStream.Indent
   name: Indent
   href: api/Utils.IO.BaseEncoding.BaseEncoderStream.html#Utils_IO_BaseEncoding_BaseEncoderStream_Indent
@@ -33041,6 +33067,15 @@ references:
   fullName.vb: Utils.IO.BaseEncoding.BaseEncoderStream.Write(Byte(), Integer, Integer)
   nameWithType: BaseEncoderStream.Write(byte[], int, int)
   nameWithType.vb: BaseEncoderStream.Write(Byte(), Integer, Integer)
+- uid: Utils.IO.BaseEncoding.BaseEncoderStream.Write(System.ReadOnlySpan{System.Byte})
+  name: Write(ReadOnlySpan<byte>)
+  href: api/Utils.IO.BaseEncoding.BaseEncoderStream.html#Utils_IO_BaseEncoding_BaseEncoderStream_Write_System_ReadOnlySpan_System_Byte__
+  commentId: M:Utils.IO.BaseEncoding.BaseEncoderStream.Write(System.ReadOnlySpan{System.Byte})
+  name.vb: Write(ReadOnlySpan(Of Byte))
+  fullName: Utils.IO.BaseEncoding.BaseEncoderStream.Write(System.ReadOnlySpan<byte>)
+  fullName.vb: Utils.IO.BaseEncoding.BaseEncoderStream.Write(System.ReadOnlySpan(Of Byte))
+  nameWithType: BaseEncoderStream.Write(ReadOnlySpan<byte>)
+  nameWithType.vb: BaseEncoderStream.Write(ReadOnlySpan(Of Byte))
 - uid: Utils.IO.BaseEncoding.BaseEncoderStream.Write*
   name: Write
   href: api/Utils.IO.BaseEncoding.BaseEncoderStream.html#Utils_IO_BaseEncoding_BaseEncoderStream_Write_
@@ -33048,6 +33083,31 @@ references:
   isSpec: "True"
   fullName: Utils.IO.BaseEncoding.BaseEncoderStream.Write
   nameWithType: BaseEncoderStream.Write
+- uid: Utils.IO.BaseEncoding.BaseEncoderStream.WriteAsync(System.Byte[],System.Int32,System.Int32,System.Threading.CancellationToken)
+  name: WriteAsync(byte[], int, int, CancellationToken)
+  href: api/Utils.IO.BaseEncoding.BaseEncoderStream.html#Utils_IO_BaseEncoding_BaseEncoderStream_WriteAsync_System_Byte___System_Int32_System_Int32_System_Threading_CancellationToken_
+  commentId: M:Utils.IO.BaseEncoding.BaseEncoderStream.WriteAsync(System.Byte[],System.Int32,System.Int32,System.Threading.CancellationToken)
+  name.vb: WriteAsync(Byte(), Integer, Integer, CancellationToken)
+  fullName: Utils.IO.BaseEncoding.BaseEncoderStream.WriteAsync(byte[], int, int, System.Threading.CancellationToken)
+  fullName.vb: Utils.IO.BaseEncoding.BaseEncoderStream.WriteAsync(Byte(), Integer, Integer, System.Threading.CancellationToken)
+  nameWithType: BaseEncoderStream.WriteAsync(byte[], int, int, CancellationToken)
+  nameWithType.vb: BaseEncoderStream.WriteAsync(Byte(), Integer, Integer, CancellationToken)
+- uid: Utils.IO.BaseEncoding.BaseEncoderStream.WriteAsync(System.ReadOnlyMemory{System.Byte},System.Threading.CancellationToken)
+  name: WriteAsync(ReadOnlyMemory<byte>, CancellationToken)
+  href: api/Utils.IO.BaseEncoding.BaseEncoderStream.html#Utils_IO_BaseEncoding_BaseEncoderStream_WriteAsync_System_ReadOnlyMemory_System_Byte__System_Threading_CancellationToken_
+  commentId: M:Utils.IO.BaseEncoding.BaseEncoderStream.WriteAsync(System.ReadOnlyMemory{System.Byte},System.Threading.CancellationToken)
+  name.vb: WriteAsync(ReadOnlyMemory(Of Byte), CancellationToken)
+  fullName: Utils.IO.BaseEncoding.BaseEncoderStream.WriteAsync(System.ReadOnlyMemory<byte>, System.Threading.CancellationToken)
+  fullName.vb: Utils.IO.BaseEncoding.BaseEncoderStream.WriteAsync(System.ReadOnlyMemory(Of Byte), System.Threading.CancellationToken)
+  nameWithType: BaseEncoderStream.WriteAsync(ReadOnlyMemory<byte>, CancellationToken)
+  nameWithType.vb: BaseEncoderStream.WriteAsync(ReadOnlyMemory(Of Byte), CancellationToken)
+- uid: Utils.IO.BaseEncoding.BaseEncoderStream.WriteAsync*
+  name: WriteAsync
+  href: api/Utils.IO.BaseEncoding.BaseEncoderStream.html#Utils_IO_BaseEncoding_BaseEncoderStream_WriteAsync_
+  commentId: Overload:Utils.IO.BaseEncoding.BaseEncoderStream.WriteAsync
+  isSpec: "True"
+  fullName: Utils.IO.BaseEncoding.BaseEncoderStream.WriteAsync
+  nameWithType: BaseEncoderStream.WriteAsync
 - uid: Utils.IO.BaseEncoding.Bases
   name: Bases
   href: api/Utils.IO.BaseEncoding.Bases.html
@@ -35172,6 +35232,15 @@ references:
   fullName.vb: Utils.IO.Serialization.ReaderWriterExtensions.ReadVariableLengthString(Utils.IO.Serialization.Reader, System.Text.Encoding, Integer)
   nameWithType: ReaderWriterExtensions.ReadVariableLengthString(Reader, Encoding, int)
   nameWithType.vb: ReaderWriterExtensions.ReadVariableLengthString(Reader, Encoding, Integer)
+- uid: Utils.IO.Serialization.ReaderWriterExtensions.ReadVariableLengthString(Utils.IO.Serialization.Reader,System.Text.Encoding,System.Int32,System.Int32)
+  name: ReadVariableLengthString(Reader, Encoding, int, int)
+  href: api/Utils.IO.Serialization.ReaderWriterExtensions.html#Utils_IO_Serialization_ReaderWriterExtensions_ReadVariableLengthString_Utils_IO_Serialization_Reader_System_Text_Encoding_System_Int32_System_Int32_
+  commentId: M:Utils.IO.Serialization.ReaderWriterExtensions.ReadVariableLengthString(Utils.IO.Serialization.Reader,System.Text.Encoding,System.Int32,System.Int32)
+  name.vb: ReadVariableLengthString(Reader, Encoding, Integer, Integer)
+  fullName: Utils.IO.Serialization.ReaderWriterExtensions.ReadVariableLengthString(Utils.IO.Serialization.Reader, System.Text.Encoding, int, int)
+  fullName.vb: Utils.IO.Serialization.ReaderWriterExtensions.ReadVariableLengthString(Utils.IO.Serialization.Reader, System.Text.Encoding, Integer, Integer)
+  nameWithType: ReaderWriterExtensions.ReadVariableLengthString(Reader, Encoding, int, int)
+  nameWithType.vb: ReaderWriterExtensions.ReadVariableLengthString(Reader, Encoding, Integer, Integer)
 - uid: Utils.IO.Serialization.ReaderWriterExtensions.ReadVariableLengthString*
   name: ReadVariableLengthString
   href: api/Utils.IO.Serialization.ReaderWriterExtensions.html#Utils_IO_Serialization_ReaderWriterExtensions_ReadVariableLengthString_
@@ -35733,6 +35802,19 @@ references:
   isSpec: "True"
   fullName: Utils.IO.StreamCopier.Dispose
   nameWithType: StreamCopier.Dispose
+- uid: Utils.IO.StreamCopier.DisposeAsync
+  name: DisposeAsync()
+  href: api/Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_DisposeAsync
+  commentId: M:Utils.IO.StreamCopier.DisposeAsync
+  fullName: Utils.IO.StreamCopier.DisposeAsync()
+  nameWithType: StreamCopier.DisposeAsync()
+- uid: Utils.IO.StreamCopier.DisposeAsync*
+  name: DisposeAsync
+  href: api/Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_DisposeAsync_
+  commentId: Overload:Utils.IO.StreamCopier.DisposeAsync
+  isSpec: "True"
+  fullName: Utils.IO.StreamCopier.DisposeAsync
+  nameWithType: StreamCopier.DisposeAsync
 - uid: Utils.IO.StreamCopier.Flush
   name: Flush()
   href: api/Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Flush
@@ -35746,6 +35828,19 @@ references:
   isSpec: "True"
   fullName: Utils.IO.StreamCopier.Flush
   nameWithType: StreamCopier.Flush
+- uid: Utils.IO.StreamCopier.FlushAsync(System.Threading.CancellationToken)
+  name: FlushAsync(CancellationToken)
+  href: api/Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_FlushAsync_System_Threading_CancellationToken_
+  commentId: M:Utils.IO.StreamCopier.FlushAsync(System.Threading.CancellationToken)
+  fullName: Utils.IO.StreamCopier.FlushAsync(System.Threading.CancellationToken)
+  nameWithType: StreamCopier.FlushAsync(CancellationToken)
+- uid: Utils.IO.StreamCopier.FlushAsync*
+  name: FlushAsync
+  href: api/Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_FlushAsync_
+  commentId: Overload:Utils.IO.StreamCopier.FlushAsync
+  isSpec: "True"
+  fullName: Utils.IO.StreamCopier.FlushAsync
+  nameWithType: StreamCopier.FlushAsync
 - uid: Utils.IO.StreamCopier.GetEnumerator
   name: GetEnumerator()
   href: api/Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_GetEnumerator
@@ -35932,6 +36027,15 @@ references:
   fullName.vb: Utils.IO.StreamCopier.Write(Byte(), Integer, Integer)
   nameWithType: StreamCopier.Write(byte[], int, int)
   nameWithType.vb: StreamCopier.Write(Byte(), Integer, Integer)
+- uid: Utils.IO.StreamCopier.Write(System.ReadOnlySpan{System.Byte})
+  name: Write(ReadOnlySpan<byte>)
+  href: api/Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Write_System_ReadOnlySpan_System_Byte__
+  commentId: M:Utils.IO.StreamCopier.Write(System.ReadOnlySpan{System.Byte})
+  name.vb: Write(ReadOnlySpan(Of Byte))
+  fullName: Utils.IO.StreamCopier.Write(System.ReadOnlySpan<byte>)
+  fullName.vb: Utils.IO.StreamCopier.Write(System.ReadOnlySpan(Of Byte))
+  nameWithType: StreamCopier.Write(ReadOnlySpan<byte>)
+  nameWithType.vb: StreamCopier.Write(ReadOnlySpan(Of Byte))
 - uid: Utils.IO.StreamCopier.Write*
   name: Write
   href: api/Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Write_
@@ -35939,6 +36043,31 @@ references:
   isSpec: "True"
   fullName: Utils.IO.StreamCopier.Write
   nameWithType: StreamCopier.Write
+- uid: Utils.IO.StreamCopier.WriteAsync(System.Byte[],System.Int32,System.Int32,System.Threading.CancellationToken)
+  name: WriteAsync(byte[], int, int, CancellationToken)
+  href: api/Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_WriteAsync_System_Byte___System_Int32_System_Int32_System_Threading_CancellationToken_
+  commentId: M:Utils.IO.StreamCopier.WriteAsync(System.Byte[],System.Int32,System.Int32,System.Threading.CancellationToken)
+  name.vb: WriteAsync(Byte(), Integer, Integer, CancellationToken)
+  fullName: Utils.IO.StreamCopier.WriteAsync(byte[], int, int, System.Threading.CancellationToken)
+  fullName.vb: Utils.IO.StreamCopier.WriteAsync(Byte(), Integer, Integer, System.Threading.CancellationToken)
+  nameWithType: StreamCopier.WriteAsync(byte[], int, int, CancellationToken)
+  nameWithType.vb: StreamCopier.WriteAsync(Byte(), Integer, Integer, CancellationToken)
+- uid: Utils.IO.StreamCopier.WriteAsync(System.ReadOnlyMemory{System.Byte},System.Threading.CancellationToken)
+  name: WriteAsync(ReadOnlyMemory<byte>, CancellationToken)
+  href: api/Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_WriteAsync_System_ReadOnlyMemory_System_Byte__System_Threading_CancellationToken_
+  commentId: M:Utils.IO.StreamCopier.WriteAsync(System.ReadOnlyMemory{System.Byte},System.Threading.CancellationToken)
+  name.vb: WriteAsync(ReadOnlyMemory(Of Byte), CancellationToken)
+  fullName: Utils.IO.StreamCopier.WriteAsync(System.ReadOnlyMemory<byte>, System.Threading.CancellationToken)
+  fullName.vb: Utils.IO.StreamCopier.WriteAsync(System.ReadOnlyMemory(Of Byte), System.Threading.CancellationToken)
+  nameWithType: StreamCopier.WriteAsync(ReadOnlyMemory<byte>, CancellationToken)
+  nameWithType.vb: StreamCopier.WriteAsync(ReadOnlyMemory(Of Byte), CancellationToken)
+- uid: Utils.IO.StreamCopier.WriteAsync*
+  name: WriteAsync
+  href: api/Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_WriteAsync_
+  commentId: Overload:Utils.IO.StreamCopier.WriteAsync
+  isSpec: "True"
+  fullName: Utils.IO.StreamCopier.WriteAsync
+  nameWithType: StreamCopier.WriteAsync
 - uid: Utils.IO.StreamUtils
   name: StreamUtils
   href: api/Utils.IO.StreamUtils.html
@@ -35961,12 +36090,27 @@ references:
   isSpec: "True"
   fullName: Utils.IO.StreamUtils.CopyToStream
   nameWithType: StreamUtils.CopyToStream
+- uid: Utils.IO.StreamUtils.ReadAllText(System.IO.Stream)
+  name: ReadAllText(Stream)
+  href: api/Utils.IO.StreamUtils.html#Utils_IO_StreamUtils_ReadAllText_System_IO_Stream_
+  commentId: M:Utils.IO.StreamUtils.ReadAllText(System.IO.Stream)
+  fullName: Utils.IO.StreamUtils.ReadAllText(System.IO.Stream)
+  nameWithType: StreamUtils.ReadAllText(Stream)
 - uid: Utils.IO.StreamUtils.ReadAllText(System.IO.Stream,System.Text.Encoding)
   name: ReadAllText(Stream, Encoding)
   href: api/Utils.IO.StreamUtils.html#Utils_IO_StreamUtils_ReadAllText_System_IO_Stream_System_Text_Encoding_
   commentId: M:Utils.IO.StreamUtils.ReadAllText(System.IO.Stream,System.Text.Encoding)
   fullName: Utils.IO.StreamUtils.ReadAllText(System.IO.Stream, System.Text.Encoding)
   nameWithType: StreamUtils.ReadAllText(Stream, Encoding)
+- uid: Utils.IO.StreamUtils.ReadAllText(System.IO.Stream,System.Text.Encoding,System.Nullable{System.Int32})
+  name: ReadAllText(Stream, Encoding, int?)
+  href: api/Utils.IO.StreamUtils.html#Utils_IO_StreamUtils_ReadAllText_System_IO_Stream_System_Text_Encoding_System_Nullable_System_Int32__
+  commentId: M:Utils.IO.StreamUtils.ReadAllText(System.IO.Stream,System.Text.Encoding,System.Nullable{System.Int32})
+  name.vb: ReadAllText(Stream, Encoding, Integer?)
+  fullName: Utils.IO.StreamUtils.ReadAllText(System.IO.Stream, System.Text.Encoding, int?)
+  fullName.vb: Utils.IO.StreamUtils.ReadAllText(System.IO.Stream, System.Text.Encoding, Integer?)
+  nameWithType: StreamUtils.ReadAllText(Stream, Encoding, int?)
+  nameWithType.vb: StreamUtils.ReadAllText(Stream, Encoding, Integer?)
 - uid: Utils.IO.StreamUtils.ReadAllText*
   name: ReadAllText
   href: api/Utils.IO.StreamUtils.html#Utils_IO_StreamUtils_ReadAllText_
@@ -35983,6 +36127,15 @@ references:
   fullName.vb: Utils.IO.StreamUtils.ReadBlock(System.IO.Stream, Byte())
   nameWithType: StreamUtils.ReadBlock(Stream, byte[])
   nameWithType.vb: StreamUtils.ReadBlock(Stream, Byte())
+- uid: Utils.IO.StreamUtils.ReadBlock(System.IO.Stream,System.Byte[],System.Int32)
+  name: ReadBlock(Stream, byte[], int)
+  href: api/Utils.IO.StreamUtils.html#Utils_IO_StreamUtils_ReadBlock_System_IO_Stream_System_Byte___System_Int32_
+  commentId: M:Utils.IO.StreamUtils.ReadBlock(System.IO.Stream,System.Byte[],System.Int32)
+  name.vb: ReadBlock(Stream, Byte(), Integer)
+  fullName: Utils.IO.StreamUtils.ReadBlock(System.IO.Stream, byte[], int)
+  fullName.vb: Utils.IO.StreamUtils.ReadBlock(System.IO.Stream, Byte(), Integer)
+  nameWithType: StreamUtils.ReadBlock(Stream, byte[], int)
+  nameWithType.vb: StreamUtils.ReadBlock(Stream, Byte(), Integer)
 - uid: Utils.IO.StreamUtils.ReadBlock*
   name: ReadBlock
   href: api/Utils.IO.StreamUtils.html#Utils_IO_StreamUtils_ReadBlock_
@@ -36019,6 +36172,12 @@ references:
   isSpec: "True"
   fullName: Utils.IO.StreamUtils.ReadLines
   nameWithType: StreamUtils.ReadLines
+- uid: Utils.IO.StreamUtils.ReadToEnd(System.IO.Stream)
+  name: ReadToEnd(Stream)
+  href: api/Utils.IO.StreamUtils.html#Utils_IO_StreamUtils_ReadToEnd_System_IO_Stream_
+  commentId: M:Utils.IO.StreamUtils.ReadToEnd(System.IO.Stream)
+  fullName: Utils.IO.StreamUtils.ReadToEnd(System.IO.Stream)
+  nameWithType: StreamUtils.ReadToEnd(Stream)
 - uid: Utils.IO.StreamUtils.ReadToEnd(System.IO.Stream,System.Nullable{System.Int32})
   name: ReadToEnd(Stream, int?)
   href: api/Utils.IO.StreamUtils.html#Utils_IO_StreamUtils_ReadToEnd_System_IO_Stream_System_Nullable_System_Int32__
@@ -36041,6 +36200,15 @@ references:
   commentId: M:Utils.IO.StreamUtils.ReadToMemoryStream(System.IO.Stream)
   fullName: Utils.IO.StreamUtils.ReadToMemoryStream(System.IO.Stream)
   nameWithType: StreamUtils.ReadToMemoryStream(Stream)
+- uid: Utils.IO.StreamUtils.ReadToMemoryStream(System.IO.Stream,System.Nullable{System.Int32})
+  name: ReadToMemoryStream(Stream, int?)
+  href: api/Utils.IO.StreamUtils.html#Utils_IO_StreamUtils_ReadToMemoryStream_System_IO_Stream_System_Nullable_System_Int32__
+  commentId: M:Utils.IO.StreamUtils.ReadToMemoryStream(System.IO.Stream,System.Nullable{System.Int32})
+  name.vb: ReadToMemoryStream(Stream, Integer?)
+  fullName: Utils.IO.StreamUtils.ReadToMemoryStream(System.IO.Stream, int?)
+  fullName.vb: Utils.IO.StreamUtils.ReadToMemoryStream(System.IO.Stream, Integer?)
+  nameWithType: StreamUtils.ReadToMemoryStream(Stream, int?)
+  nameWithType.vb: StreamUtils.ReadToMemoryStream(Stream, Integer?)
 - uid: Utils.IO.StreamUtils.ReadToMemoryStream*
   name: ReadToMemoryStream
   href: api/Utils.IO.StreamUtils.html#Utils_IO_StreamUtils_ReadToMemoryStream_

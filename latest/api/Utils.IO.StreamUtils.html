@@ -157,7 +157,7 @@ Class StreamUtils  <a class="header-action link-secondary" title="View source" h
 
   <h3 id="Utils_IO_StreamUtils_CopyToStream_System_IO_Stream_System_IO_Stream_System_Int32_" data-uid="Utils.IO.StreamUtils.CopyToStream(System.IO.Stream,System.IO.Stream,System.Int32)">
   CopyToStream(Stream, Stream, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L86"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L96"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Copies all remaining data from the current <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a> to the specified
@@ -195,27 +195,24 @@ destination <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.
 
   <a id="Utils_IO_StreamUtils_ReadAllText_" data-uid="Utils.IO.StreamUtils.ReadAllText*"></a>
 
-  <h3 id="Utils_IO_StreamUtils_ReadAllText_System_IO_Stream_System_Text_Encoding_" data-uid="Utils.IO.StreamUtils.ReadAllText(System.IO.Stream,System.Text.Encoding)">
-  ReadAllText(Stream, Encoding)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L125"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_IO_StreamUtils_ReadAllText_System_IO_Stream_" data-uid="Utils.IO.StreamUtils.ReadAllText(System.IO.Stream)">
+  ReadAllText(Stream)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L172"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Reads all remaining bytes from the given <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a> as text
-using the specified <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding">Encoding</a>.</p>
+  <div class="markdown level1 summary"><p>Reads all remaining bytes from the given <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a> as UTF-8 text.
+The source stream is left open.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static string ReadAllText(this Stream s, Encoding encoding = null)</code></pre>
+    <pre><code class="lang-csharp hljs">public static string ReadAllText(this Stream s)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>s</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a></dt>
     <dd><p>The source <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a> to read from.</p>
-</dd>
-    <dt><code>encoding</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding">Encoding</a></dt>
-    <dd><p>The character encoding to use. If <code>null</code>, defaults to <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding.utf8">UTF8</a>.</p>
 </dd>
   </dl>
 
@@ -236,11 +233,113 @@ using the specified <a class="xref" href="https://learn.microsoft.com/dotnet/api
 
 
 
+  <a id="Utils_IO_StreamUtils_ReadAllText_" data-uid="Utils.IO.StreamUtils.ReadAllText*"></a>
+
+  <h3 id="Utils_IO_StreamUtils_ReadAllText_System_IO_Stream_System_Text_Encoding_" data-uid="Utils.IO.StreamUtils.ReadAllText(System.IO.Stream,System.Text.Encoding)">
+  ReadAllText(Stream, Encoding)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L185"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Reads all remaining bytes from the given <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a> as text
+using the specified <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding">Encoding</a>. The source stream is left open.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static string ReadAllText(this Stream s, Encoding encoding)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>s</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a></dt>
+    <dd><p>The source <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a> to read from.</p>
+</dd>
+    <dt><code>encoding</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding">Encoding</a></dt>
+    <dd><p>The character encoding to use. If <code>null</code>, defaults to <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding.utf8">UTF8</a>.
+Byte-order-mark detection remains enabled.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>A string containing all text read from the stream.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_IO_StreamUtils_ReadAllText_" data-uid="Utils.IO.StreamUtils.ReadAllText*"></a>
+
+  <h3 id="Utils_IO_StreamUtils_ReadAllText_System_IO_Stream_System_Text_Encoding_System_Nullable_System_Int32__" data-uid="Utils.IO.StreamUtils.ReadAllText(System.IO.Stream,System.Text.Encoding,System.Nullable{System.Int32})">
+  ReadAllText(Stream, Encoding, int?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L205"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Reads all remaining bytes from the given <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a> as text
+using the specified <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding">Encoding</a>, enforcing an optional byte limit.
+The source stream is left open.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static string ReadAllText(this Stream s, Encoding encoding, int? maxBytes)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>s</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a></dt>
+    <dd><p>The source <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a> to read from.</p>
+</dd>
+    <dt><code>encoding</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding">Encoding</a></dt>
+    <dd><p>The character encoding to use. If <code>null</code>, defaults to <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding.utf8">UTF8</a>.
+Byte-order-mark detection remains enabled.</p>
+</dd>
+    <dt><code>maxBytes</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>?</dt>
+    <dd><p>Optional maximum number of encoded bytes to read from the source. When exceeded, an
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a> is thrown. <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> means no limit.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>A string containing all text read from the stream.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">maxBytes</code> is negative.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
+    <dd><p>Thrown when <code class="paramref">maxBytes</code> is exceeded.</p>
+</dd>
+  </dl>
+
+
+
   <a id="Utils_IO_StreamUtils_ReadBlock_" data-uid="Utils.IO.StreamUtils.ReadBlock*"></a>
 
   <h3 id="Utils_IO_StreamUtils_ReadBlock_System_IO_Stream_System_Byte___" data-uid="Utils.IO.StreamUtils.ReadBlock(System.IO.Stream,System.Byte[])">
   ReadBlock(Stream, byte[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L213"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L307"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads and returns the next &quot;block&quot; from the stream, delimited by the specified byte sequence.
@@ -286,6 +385,80 @@ If EOF is reached before finding the delimiter, returns all remaining data (whic
 </dd>
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
     <dd><p>Thrown if <code class="paramref">blockSeparator</code> is empty (cannot search for an empty delimiter).</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_IO_StreamUtils_ReadBlock_" data-uid="Utils.IO.StreamUtils.ReadBlock*"></a>
+
+  <h3 id="Utils_IO_StreamUtils_ReadBlock_System_IO_Stream_System_Byte___System_Int32_" data-uid="Utils.IO.StreamUtils.ReadBlock(System.IO.Stream,System.Byte[],System.Int32)">
+  ReadBlock(Stream, byte[], int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L382"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Reads and returns the next &quot;block&quot; from the stream, delimited by the specified byte sequence,
+enforcing a maximum number of bytes scanned. The returned array does not include the delimiter.
+The delimiter is located using the Knuth-Morris-Pratt algorithm applied one byte at a time so
+no byte beyond the delimiter is ever consumed from the source stream.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static byte[] ReadBlock(this Stream s, byte[] blockSeparator, int maxBytes)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>s</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a></dt>
+    <dd><p>The <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a> from which to read the block.</p>
+</dd>
+    <dt><code>blockSeparator</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd><p>A byte array representing the block delimiter.</p>
+</dd>
+    <dt><code>maxBytes</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The maximum number of bytes to read before the delimiter must appear.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd><p>A byte array containing the next block of data, not including the delimiter.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section" id="Utils_IO_StreamUtils_ReadBlock_System_IO_Stream_System_Byte___System_Int32__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Unlike the unbounded <a class="xref" href="Utils.IO.StreamUtils.html#Utils_IO_StreamUtils_ReadBlock_System_IO_Stream_System_Byte___">ReadBlock(Stream, byte[])</a> overload, this method treats a missing
+delimiter as an error: if the stream reaches EOF before the delimiter is found, an
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.endofstreamexception">EndOfStreamException</a> is thrown. If more than <code class="paramref">maxBytes</code> bytes are read
+before the delimiter appears, an <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a> is thrown.
+Because exactly one byte is consumed per loop iteration, the stream position after a successful call
+points to the first byte after the delimiter, leaving subsequent data available for further reads.</p>
+</div>
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown if <code class="paramref">blockSeparator</code> is <code>null</code>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown if <code class="paramref">blockSeparator</code> is empty.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown if <code class="paramref">maxBytes</code> is negative.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.endofstreamexception">EndOfStreamException</a></dt>
+    <dd><p>Thrown if EOF is reached before the delimiter is found.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
+    <dd><p>Thrown if <code class="paramref">maxBytes</code> is exceeded before the delimiter is found.</p>
 </dd>
   </dl>
 
@@ -353,7 +526,7 @@ when <code class="paramref">raiseException</code> is <a href="https://learn.micr
 
   <h3 id="Utils_IO_StreamUtils_ReadLines_System_IO_Stream_System_Text_Encoding_" data-uid="Utils.IO.StreamUtils.ReadLines(System.IO.Stream,System.Text.Encoding)">
   ReadLines(Stream, Encoding)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L179"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L273"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads line-by-line from a text-based stream until EOF.
@@ -395,9 +568,9 @@ The stream is read lazily; re-iterating this enumerable will not re-read the str
 
   <a id="Utils_IO_StreamUtils_ReadToEnd_" data-uid="Utils.IO.StreamUtils.ReadToEnd*"></a>
 
-  <h3 id="Utils_IO_StreamUtils_ReadToEnd_System_IO_Stream_System_Nullable_System_Int32__" data-uid="Utils.IO.StreamUtils.ReadToEnd(System.IO.Stream,System.Nullable{System.Int32})">
-  ReadToEnd(Stream, int?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L63"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_IO_StreamUtils_ReadToEnd_System_IO_Stream_" data-uid="Utils.IO.StreamUtils.ReadToEnd(System.IO.Stream)">
+  ReadToEnd(Stream)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L59"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads all remaining data from the given <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a> until EOF
@@ -406,7 +579,47 @@ and returns it as a byte array.</p>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static byte[] ReadToEnd(this Stream s, int? maxBytes = null)</code></pre>
+    <pre><code class="lang-csharp hljs">public static byte[] ReadToEnd(this Stream s)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>s</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a></dt>
+    <dd><p>The source <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a> to read from.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd><p>A byte array containing all bytes read from the stream.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_IO_StreamUtils_ReadToEnd_" data-uid="Utils.IO.StreamUtils.ReadToEnd*"></a>
+
+  <h3 id="Utils_IO_StreamUtils_ReadToEnd_System_IO_Stream_System_Nullable_System_Int32__" data-uid="Utils.IO.StreamUtils.ReadToEnd(System.IO.Stream,System.Nullable{System.Int32})">
+  ReadToEnd(Stream, int?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L73"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Reads all remaining data from the given <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a> until EOF
+and returns it as a byte array, enforcing an optional byte limit.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static byte[] ReadToEnd(this Stream s, int? maxBytes)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -423,7 +636,8 @@ if the stream contains more data than this limit. <a href="https://learn.microso
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
-    <dd></dd>
+    <dd><p>A byte array containing all bytes read from the stream.</p>
+</dd>
   </dl>
 
 
@@ -446,11 +660,12 @@ if the stream contains more data than this limit. <a href="https://learn.microso
 
   <h3 id="Utils_IO_StreamUtils_ReadToMemoryStream_System_IO_Stream_" data-uid="Utils.IO.StreamUtils.ReadToMemoryStream(System.IO.Stream)">
   ReadToMemoryStream(Stream)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L108"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L119"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads all remaining data from the current <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a>
-and returns a new <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.memorystream">MemoryStream</a> containing that data.</p>
+and returns a new <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.memorystream">MemoryStream</a> containing that data.
+The source stream is left open. The returned stream is positioned at 0 on success.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -482,11 +697,67 @@ and returns a new <a class="xref" href="https://learn.microsoft.com/dotnet/api/s
 
 
 
+  <a id="Utils_IO_StreamUtils_ReadToMemoryStream_" data-uid="Utils.IO.StreamUtils.ReadToMemoryStream*"></a>
+
+  <h3 id="Utils_IO_StreamUtils_ReadToMemoryStream_System_IO_Stream_System_Nullable_System_Int32__" data-uid="Utils.IO.StreamUtils.ReadToMemoryStream(System.IO.Stream,System.Nullable{System.Int32})">
+  ReadToMemoryStream(Stream, int?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L137"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Reads all remaining data from the current <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a>
+and returns a new <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.memorystream">MemoryStream</a> containing that data,
+enforcing an optional byte limit. The source stream is left open.
+The returned stream is positioned at 0 on success.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static MemoryStream ReadToMemoryStream(this Stream s, int? maxBytes)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>s</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a></dt>
+    <dd><p>The source <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a> to read from.</p>
+</dd>
+    <dt><code>maxBytes</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>?</dt>
+    <dd><p>Optional maximum number of bytes to read. When the source contains more data than this limit,
+an <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a> is thrown and the temporary buffer is disposed.
+<a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> means no limit.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.memorystream">MemoryStream</a></dt>
+    <dd><p>A <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.memorystream">MemoryStream</a> that contains all bytes read from <code class="paramref">s</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">maxBytes</code> is negative.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
+    <dd><p>Thrown when <code class="paramref">maxBytes</code> is exceeded.</p>
+</dd>
+  </dl>
+
+
+
   <a id="Utils_IO_StreamUtils_WriteAllText_" data-uid="Utils.IO.StreamUtils.WriteAllText*"></a>
 
   <h3 id="Utils_IO_StreamUtils_WriteAllText_System_IO_Stream_System_String_System_Text_Encoding_" data-uid="Utils.IO.StreamUtils.WriteAllText(System.IO.Stream,System.String,System.Text.Encoding)">
   WriteAllText(Stream, string, Encoding)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L155"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L249"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes the specified text to the stream using the given <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding">Encoding</a>.</p>
@@ -525,7 +796,7 @@ and returns a new <a class="xref" href="https://learn.microsoft.com/dotnet/api/s
 
   <h3 id="Utils_IO_StreamUtils_WriteBytes_System_IO_Stream_System_Byte___" data-uid="Utils.IO.StreamUtils.WriteBytes(System.IO.Stream,System.Byte[])">
   WriteBytes(Stream, byte[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L139"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L233"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes the specified data to the stream.</p>
