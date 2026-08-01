@@ -303,5 +303,111 @@ public class BaseDecoderStreamTests
         Assert.ThrowsException<FormatException>(() => decoder.Close(),
             "FormatException from validation must not be replaced by the IOException from Flush");
     }
+
+    // ---- item 27: strict terminal quantum validation ----
+
+    [TestMethod]
+    public void Base16_SingleSymbol_Strict_ThrowsFormatException()
+    {
+        // A single hex digit leaves 4 unresolved bits and can never form a byte.
+        Assert.ThrowsException<FormatException>(() => Decode("A", Bases.Base16));
+    }
+
+    [TestMethod]
+    public void Base16_TwoSymbols_Strict_Ok()
+    {
+        byte[] result = Decode("AB", Bases.Base16);
+        Assert.AreEqual(1, result.Length);
+        Assert.AreEqual(0xAB, result[0]);
+    }
+
+    [TestMethod]
+    public void Base16_ThreeSymbols_Strict_ThrowsFormatException()
+    {
+        // 3 hex digits = 12 bits = 1 byte + 4 leftover bits → invalid terminal.
+        Assert.ThrowsException<FormatException>(() => Decode("ABC", Bases.Base16));
+    }
+
+    // Base32: every possible terminal remainder (symbol counts 1..8, all-zero data).
+    // Valid data-symbol counts within a quantum are 2, 4, 5, 7 (and 8 = full quantum).
+
+    [TestMethod]
+    [DataRow("A", DisplayName = "1 symbol → 5 leftover bits, invalid")]
+    [DataRow("AAA", DisplayName = "3 symbols → 7 leftover bits, invalid")]
+    [DataRow("AAAAAA", DisplayName = "6 symbols → 6 leftover bits, invalid")]
+    public void Base32_InvalidTerminalRemainder_ThrowsFormatException(string source)
+    {
+        Assert.ThrowsException<FormatException>(() => Decode(source, Bases.Base32));
+    }
+
+    [TestMethod]
+    [DataRow("AA======", 1, DisplayName = "2 symbols → 1 byte")]
+    [DataRow("AAAA====", 2, DisplayName = "4 symbols → 2 bytes")]
+    [DataRow("AAAAA===", 3, DisplayName = "5 symbols → 3 bytes")]
+    [DataRow("AAAAAAA=", 4, DisplayName = "7 symbols → 4 bytes")]
+    [DataRow("AAAAAAAA", 5, DisplayName = "8 symbols → 5 bytes (full quantum)")]
+    public void Base32_ValidTerminalRemainder_Ok(string source, int expectedLength)
+    {
+        byte[] result = Decode(source, Bases.Base32);
+        Assert.AreEqual(expectedLength, result.Length);
+        foreach (byte b in result)
+            Assert.AreEqual(0, b);
+    }
+
+    [TestMethod]
+    public void Base64_SingleSymbol_Strict_ThrowsFormatException()
+    {
+        // A single base64 symbol leaves 6 unresolved bits → invalid.
+        Assert.ThrowsException<FormatException>(() => Decode("A===", Bases.Base64));
+    }
+
+    [TestMethod]
+    public void Base64_TwoSymbols_Strict_Ok()
+    {
+        // 2 symbols + 2 fillers → 1 byte.
+        byte[] result = Decode("AA==", Bases.Base64);
+        Assert.AreEqual(1, result.Length);
+        Assert.AreEqual(0, result[0]);
+    }
+
+    [TestMethod]
+    public void Base64_ThreeSymbols_Strict_Ok()
+    {
+        // 3 symbols + 1 filler → 2 bytes.
+        byte[] result = Decode("AAA=", Bases.Base64);
+        Assert.AreEqual(2, result.Length);
+        foreach (byte b in result) Assert.AreEqual(0, b);
+    }
+
+    [TestMethod]
+    public void Base16_NonZeroTrailingBits_ThrowsFormatException()
+    {
+        // Not applicable to Base16 (any leftover is invalid quantum), so use Base32:
+        // 2 symbols "AB" → 10 bits, byte = (A=0,B=1) => bits 00000 00001 => leftover 2 bits = "01" ≠ 0.
+        Assert.ThrowsException<FormatException>(() => Decode("AB======", Bases.Base32));
+    }
+
+    [TestMethod]
+    public void Base64_NonZeroTrailingBits_ThrowsFormatException()
+    {
+        // "AB==" : A=0, B=1 → 12 bits 000000 000001, first byte 0x00, leftover 4 bits = 0001 ≠ 0.
+        Assert.ThrowsException<FormatException>(() => Decode("AB==", Bases.Base64));
+    }
+
+    [TestMethod]
+    public void PermissiveMode_Base16SingleSymbol_Accepted()
+    {
+        // Permissive mode does not enforce terminal quantum validation.
+        byte[] result = Decode("A", Bases.Base16, strict: false);
+        // No complete byte is produced from a single nibble.
+        Assert.AreEqual(0, result.Length);
+    }
+
+    [TestMethod]
+    public void PermissiveMode_Base64SingleSymbol_Accepted()
+    {
+        byte[] result = Decode("A", Bases.Base64, strict: false);
+        Assert.AreEqual(0, result.Length);
+    }
 }
 

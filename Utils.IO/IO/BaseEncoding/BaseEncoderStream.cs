@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Utils.IO.BaseEncoding;
 
@@ -105,6 +107,11 @@ public class BaseEncoderStream : Stream
     private bool _closed;
 
     /// <summary>
+    /// Serializes concurrent asynchronous writes so encoder state is never interleaved across awaits.
+    /// </summary>
+    private readonly SemaphoreSlim _asyncGate = new(1, 1);
+
+    /// <summary>
     /// Encodes the provided byte buffer and writes the resulting characters.
     /// </summary>
     /// <param name="buffer">Source buffer.</param>
@@ -114,10 +121,32 @@ public class BaseEncoderStream : Stream
     public override void Write(byte[] buffer, int offset, int count)
     {
         ObjectDisposedException.ThrowIf(_closed, this);
-        int end = offset + count;
-        for (int idx = offset; idx < end; idx++)
+        Stream.ValidateBufferArguments(buffer, offset, count);
+        EncodeCore(new ReadOnlySpan<byte>(buffer, offset, count));
+    }
+
+    /// <summary>
+    /// Encodes the provided span of bytes and writes the resulting characters.
+    /// </summary>
+    /// <param name="buffer">Source span.</param>
+    /// <exception cref="ObjectDisposedException">Thrown when writing after the stream is closed.</exception>
+    public override void Write(ReadOnlySpan<byte> buffer)
+    {
+        ObjectDisposedException.ThrowIf(_closed, this);
+        EncodeCore(buffer);
+    }
+
+    /// <summary>
+    /// Core encoding loop shared by every synchronous and asynchronous write path. It consumes the source
+    /// bytes eight bits at a time, emits a base symbol whenever <see cref="Depth"/> bits are available, and
+    /// inserts the configured line separator and indentation when <see cref="MaxDataWidth"/> is reached.
+    /// </summary>
+    /// <param name="data">The binary data to encode.</param>
+    private void EncodeCore(ReadOnlySpan<byte> data)
+    {
+        for (int idx = 0; idx < data.Length; idx++)
         {
-            byte b = buffer[idx];
+            byte b = data[idx];
             position++;
             value = (value << 8) | b;
             shift += 8;
@@ -140,6 +169,64 @@ public class BaseEncoderStream : Stream
                     }
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Asynchronously encodes the specified buffer range. Encoding is CPU-bound and runs synchronously under
+    /// a serialization gate; the underlying writer is not flushed here. Cancellation observed before encoding
+    /// starts leaves the encoder state unchanged.
+    /// </summary>
+    /// <param name="buffer">The source buffer.</param>
+    /// <param name="offset">The offset of the first byte to encode.</param>
+    /// <param name="count">The number of bytes to encode.</param>
+    /// <param name="cancellationToken">A token observed before encoding begins.</param>
+    /// <returns>A task that completes when the data has been encoded.</returns>
+    public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        => WriteAsync(new ReadOnlyMemory<byte>(buffer, offset, count), cancellationToken).AsTask();
+
+    /// <summary>
+    /// Asynchronously encodes the specified memory buffer. Encoding is CPU-bound and runs synchronously under
+    /// a serialization gate; the underlying writer is not flushed here. Cancellation observed before encoding
+    /// starts leaves the encoder state unchanged.
+    /// </summary>
+    /// <param name="buffer">The source buffer.</param>
+    /// <param name="cancellationToken">A token observed before encoding begins.</param>
+    /// <returns>A task that completes when the data has been encoded.</returns>
+    public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_closed, this);
+        // A cancelled call must not modify state, so check before acquiring the gate or encoding.
+        cancellationToken.ThrowIfCancellationRequested();
+        await _asyncGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            ObjectDisposedException.ThrowIf(_closed, this);
+            cancellationToken.ThrowIfCancellationRequested();
+            EncodeCore(buffer.Span);
+        }
+        finally
+        {
+            _asyncGate.Release();
+        }
+    }
+
+    /// <summary>
+    /// Asynchronously flushes the underlying writer.
+    /// </summary>
+    /// <param name="cancellationToken">A token observed before flushing.</param>
+    /// <returns>A task that completes when the writer has been flushed.</returns>
+    public override async Task FlushAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        await _asyncGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await TargetWriter.FlushAsync().ConfigureAwait(false);
+        }
+        finally
+        {
+            _asyncGate.Release();
         }
     }
 
@@ -167,6 +254,20 @@ public class BaseEncoderStream : Stream
 
         Flush();
         base.Close();
+    }
+
+    /// <summary>
+    /// Asynchronously finalizes the encoding (flushing remaining bits and padding through <see cref="Close"/>)
+    /// and then releases base resources. Safe to call more than once.
+    /// </summary>
+    /// <returns>A task that completes once finalization has run.</returns>
+    public override async ValueTask DisposeAsync()
+    {
+        // Close() performs the padding/finalization and is idempotent.
+        Close();
+        await base.DisposeAsync().ConfigureAwait(false);
+        _asyncGate.Dispose();
+        GC.SuppressFinalize(this);
     }
 }
 

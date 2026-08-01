@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.IO;
+using System.Text;
 using Utils.Collections;
 using Utils.IO;
 
@@ -94,5 +95,172 @@ public class StreamUtilsTests
         using var ms = new MemoryStream(data);
         byte[] result = ms.ReadToEnd();
         Assert.AreEqual(4, result.Length);
+    }
+
+    // ---- item 26: bounded whole-stream helpers ----
+
+    /// <summary>
+    /// A stream that returns at most one byte per Read call, to exercise partial reads.
+    /// </summary>
+    private sealed class OneByteAtATimeStream : Stream
+    {
+        private readonly byte[] _data;
+        private int _pos;
+        public OneByteAtATimeStream(byte[] data) => _data = data;
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+        public override void Flush() { }
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            if (_pos >= _data.Length || count == 0) return 0;
+            buffer[offset] = _data[_pos++];
+            return 1;
+        }
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
+
+    [TestMethod]
+    public void ReadToMemoryStream_Empty_ReturnsEmpty()
+    {
+        using var src = new MemoryStream((byte[])[]);
+        using var ms = src.ReadToMemoryStream();
+        Assert.AreEqual(0, ms.Length);
+        Assert.AreEqual(0, ms.Position);
+    }
+
+    [TestMethod]
+    public void ReadToMemoryStream_ExactlyAtLimit_Succeeds()
+    {
+        byte[] data = new byte[10];
+        using var src = new MemoryStream(data);
+        using var ms = src.ReadToMemoryStream(maxBytes: 10);
+        Assert.AreEqual(10, ms.Length);
+        Assert.AreEqual(0, ms.Position);
+    }
+
+    [TestMethod]
+    public void ReadToMemoryStream_OneOverLimit_Throws()
+    {
+        byte[] data = new byte[11];
+        using var src = new MemoryStream(data);
+        Assert.ThrowsException<InvalidOperationException>(() => src.ReadToMemoryStream(maxBytes: 10));
+    }
+
+    [TestMethod]
+    public void ReadToMemoryStream_NonSeekableSource_Works()
+    {
+        var src = new OneByteAtATimeStream(new byte[] { 1, 2, 3, 4, 5 });
+        using var ms = src.ReadToMemoryStream();
+        var cmp = EnumerableEqualityComparer<byte>.Default;
+        Assert.IsTrue(cmp.Equals(new byte[] { 1, 2, 3, 4, 5 }, ms.ToArray()));
+    }
+
+    [TestMethod]
+    public void ReadToMemoryStream_PartialReads_ReadsAll()
+    {
+        var src = new OneByteAtATimeStream(new byte[] { 9, 8, 7 });
+        using var ms = src.ReadToMemoryStream(maxBytes: 3);
+        Assert.AreEqual(3, ms.Length);
+    }
+
+    [TestMethod]
+    public void ReadToMemoryStream_NegativeLimit_Throws()
+    {
+        using var src = new MemoryStream(new byte[] { 1 });
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => src.ReadToMemoryStream(maxBytes: -1));
+    }
+
+    [TestMethod]
+    public void ReadAllText_WithinLimit_ReturnsText()
+    {
+        byte[] data = Encoding.UTF8.GetBytes("hello");
+        using var src = new MemoryStream(data);
+        Assert.AreEqual("hello", src.ReadAllText(Encoding.UTF8, maxBytes: 100));
+    }
+
+    [TestMethod]
+    public void ReadAllText_OneOverLimit_Throws()
+    {
+        byte[] data = Encoding.UTF8.GetBytes("hello world");
+        using var src = new MemoryStream(data);
+        Assert.ThrowsException<InvalidOperationException>(() => src.ReadAllText(Encoding.UTF8, maxBytes: 5));
+    }
+
+    [TestMethod]
+    public void ReadAllText_BomStream_DetectsAndStripsBom()
+    {
+        // UTF-8 BOM followed by "abc"
+        byte[] data = new byte[] { 0xEF, 0xBB, 0xBF, (byte)'a', (byte)'b', (byte)'c' };
+        using var src = new MemoryStream(data);
+        Assert.AreEqual("abc", src.ReadAllText(maxBytes: 100));
+    }
+
+    [TestMethod]
+    public void ReadBlock_Bounded_SeparatorAtStart_ReturnsEmpty()
+    {
+        using var src = new MemoryStream(new byte[] { 0xFF, 1, 2, 3 });
+        byte[] block = src.ReadBlock(new byte[] { 0xFF }, maxBytes: 100);
+        Assert.AreEqual(0, block.Length);
+    }
+
+    [TestMethod]
+    public void ReadBlock_Bounded_SeparatorInMiddle_ReturnsPrefix()
+    {
+        using var src = new MemoryStream(new byte[] { 1, 2, 0xFF, 3, 4 });
+        byte[] block = src.ReadBlock(new byte[] { 0xFF }, maxBytes: 100);
+        var cmp = EnumerableEqualityComparer<byte>.Default;
+        Assert.IsTrue(cmp.Equals(new byte[] { 1, 2 }, block));
+    }
+
+    [TestMethod]
+    public void ReadBlock_Bounded_MultiByteSeparatorCrossingChunkBoundary()
+    {
+        // Build data where the 2-byte separator straddles the 4096-byte chunk boundary.
+        var list = new System.Collections.Generic.List<byte>();
+        for (int i = 0; i < 4095; i++) list.Add(0x00);
+        list.Add(0xAB); // index 4095 (last of first chunk)
+        list.Add(0xCD); // index 4096 (first of second chunk)
+        list.Add(0x99);
+        using var src = new MemoryStream(list.ToArray());
+        byte[] block = src.ReadBlock(new byte[] { 0xAB, 0xCD }, maxBytes: 10000);
+        Assert.AreEqual(4095, block.Length);
+    }
+
+    [TestMethod]
+    public void ReadBlock_Bounded_ABABAC_Pattern_UsesKmpCorrectly()
+    {
+        // Searching for "ABAC" in "ABABAC..." : the naive window would mismatch,
+        // KMP correctly finds the match ending after the 6th byte.
+        byte[] data = new byte[] { (byte)'A', (byte)'B', (byte)'A', (byte)'B', (byte)'A', (byte)'C', (byte)'X' };
+        using var src = new MemoryStream(data);
+        byte[] block = src.ReadBlock(new byte[] { (byte)'A', (byte)'B', (byte)'A', (byte)'C' }, maxBytes: 100);
+        var cmp = EnumerableEqualityComparer<byte>.Default;
+        Assert.IsTrue(cmp.Equals(new byte[] { (byte)'A', (byte)'B' }, block));
+    }
+
+    [TestMethod]
+    public void ReadBlock_Bounded_EofWithoutSeparator_Throws()
+    {
+        using var src = new MemoryStream(new byte[] { 1, 2, 3 });
+        Assert.ThrowsException<EndOfStreamException>(() => src.ReadBlock(new byte[] { 0xFF }, maxBytes: 100));
+    }
+
+    [TestMethod]
+    public void ReadBlock_Bounded_LimitExceededBeforeSeparator_Throws()
+    {
+        using var src = new MemoryStream(new byte[] { 1, 2, 3, 4, 5, 0xFF });
+        Assert.ThrowsException<InvalidOperationException>(() => src.ReadBlock(new byte[] { 0xFF }, maxBytes: 3));
+    }
+
+    [TestMethod]
+    public void ReadBlock_Bounded_NegativeMaxBytes_Throws()
+    {
+        using var src = new MemoryStream(new byte[] { 0xFF });
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => src.ReadBlock(new byte[] { 0xFF }, maxBytes: -1));
     }
 }
