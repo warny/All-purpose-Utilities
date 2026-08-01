@@ -125,6 +125,10 @@ public class NetworkParametersDiscoveryTests
         Assert.AreNotSame(first, second);
     }
 
+    /// <summary>
+    /// Verifies that <see cref="NetworkParameters.NetworkInterfaces"/> returns the same cached
+    /// <see cref="IReadOnlyList{T}"/> instance on every call.
+    /// </summary>
     [TestMethod]
     public void NetworkInterfaces_GetterReturnsReadOnlyView()
     {
@@ -133,11 +137,7 @@ public class NetworkParametersDiscoveryTests
         IReadOnlyList<NetworkInterface> second = parameters.NetworkInterfaces;
 
         Assert.IsNotNull(first);
-        // Each call produces a new wrapper object around the same internal array.
-        Assert.AreNotSame(first, second);
-        Assert.AreEqual(first.Count, second.Count);
-        for (int i = 0; i < first.Count; i++)
-            Assert.AreSame(first[i], second[i]);
+        Assert.AreSame(first, second);
     }
 
     [TestMethod]

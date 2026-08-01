@@ -224,6 +224,10 @@ public class DNSHeaderMergeTests
         Assert.AreEqual(originalId, a.ID);
     }
 
+    /// <summary>
+    /// Verifies that <see cref="DNSHeader.MergeRecordsFrom"/> throws when the two question
+    /// sections have the same name but different numeric record types.
+    /// </summary>
     [TestMethod]
     public void MergeRecordsFrom_DifferentQuestionType_Throws()
     {
@@ -240,6 +244,10 @@ public class DNSHeaderMergeTests
         Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
     }
 
+    /// <summary>
+    /// Verifies that <see cref="DNSHeader.MergeRecordsFrom"/> throws when the two question
+    /// sections differ in DNS class (e.g., IN vs ALL).
+    /// </summary>
     [TestMethod]
     public void MergeRecordsFrom_DifferentQuestionClass_Throws()
     {
@@ -252,6 +260,10 @@ public class DNSHeaderMergeTests
         Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
     }
 
+    /// <summary>
+    /// Verifies that <see cref="DNSHeader.MergeRecordsFrom"/> throws when the two question
+    /// sections contain the same entries but in a different order.
+    /// </summary>
     [TestMethod]
     public void MergeRecordsFrom_DifferentQuestionOrder_Throws()
     {
@@ -269,6 +281,10 @@ public class DNSHeaderMergeTests
         Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
     }
 
+    /// <summary>
+    /// Verifies that <see cref="DNSHeader.MergeRecordsFrom"/> succeeds even when the two
+    /// headers carry different transaction IDs; the ID is not part of the compatibility check.
+    /// </summary>
     [TestMethod]
     public void MergeRecordsFrom_DifferentId_IsAllowed()
     {
@@ -279,12 +295,15 @@ public class DNSHeaderMergeTests
         b.ID = 200;
         b.Responses.Add(ARecord("b.example.com", "192.0.2.2"));
 
-        // Different IDs must not prevent the merge.
         a.MergeRecordsFrom(b);
 
         Assert.AreEqual(1, a.Responses.Count);
     }
 
+    /// <summary>
+    /// Verifies that <see cref="DNSHeader.MergeRecordsFrom"/> does not alter the source header:
+    /// the record count stays the same and the existing record reference is unchanged.
+    /// </summary>
     [TestMethod]
     public void MergeRecordsFrom_DoesNotModifySource()
     {
@@ -301,6 +320,10 @@ public class DNSHeaderMergeTests
         Assert.AreSame(sourceRecord, b.Responses[0], "Source record reference must not be replaced.");
     }
 
+    /// <summary>
+    /// Verifies that when <see cref="DNSHeader.MergeRecordsFrom"/> throws due to incompatible
+    /// question sections, the target header's response collection is left unmodified.
+    /// </summary>
     [TestMethod]
     public void MergeRecordsFrom_IncompatibleQuestions_DoesNotModifyTarget()
     {
@@ -308,7 +331,6 @@ public class DNSHeaderMergeTests
         a.Responses.Add(ARecord("a.example.com", "192.0.2.1"));
         int countBefore = a.Responses.Count;
 
-        // Incompatible question section → merge must throw.
         var b = ResponseWithQuestion("other.com");
         b.Responses.Add(ARecord("b.example.com", "192.0.2.2"));
 
@@ -316,6 +338,10 @@ public class DNSHeaderMergeTests
         Assert.AreEqual(countBefore, a.Responses.Count);
     }
 
+    /// <summary>
+    /// Verifies that <see cref="DNSHeader.MergeRecordsFrom"/> preserves the target header's
+    /// transaction ID and flag values after a successful merge.
+    /// </summary>
     [TestMethod]
     public void MergeRecordsFrom_PreservesTargetIdAndFlags()
     {

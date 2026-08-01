@@ -13,6 +13,7 @@ namespace Utils.Net
     public class NetworkParameters
     {
         private readonly NetworkInterface[] _networkInterfaces;
+        private readonly IReadOnlyList<NetworkInterface> _networkInterfacesView;
         private readonly IPAddress[] _dnsServers;
 
         /// <summary>
@@ -21,6 +22,7 @@ namespace Utils.Net
         public NetworkParameters()
         {
             _networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
+            _networkInterfacesView = Array.AsReadOnly(_networkInterfaces);
 
             var snapshots = new List<NetworkInterfaceSnapshot>(_networkInterfaces.Length);
             foreach (NetworkInterface networkInterface in _networkInterfaces)
@@ -33,10 +35,11 @@ namespace Utils.Net
         }
 
         /// <summary>
-        /// Gets the network interfaces detected on the host at construction time as a read-only
-        /// view. The underlying collection is not copied; callers cannot replace or add elements.
+        /// Gets the network interfaces detected on the host at construction time as a stable
+        /// read-only view. The same instance is returned on every call; callers cannot replace
+        /// or add elements.
         /// </summary>
-        public IReadOnlyList<NetworkInterface> NetworkInterfaces => _networkInterfaces.AsReadOnly();
+        public IReadOnlyList<NetworkInterface> NetworkInterfaces => _networkInterfacesView;
 
         /// <summary>
         /// Gets the preferred DNS server resolved from the network interfaces, or <see langword="null"/> if no DNS server was discovered.

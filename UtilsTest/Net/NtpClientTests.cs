@@ -248,6 +248,10 @@ public class NtpClientTests
             () => new UdpNtpTransport(System.Threading.Timeout.InfiniteTimeSpan));
     }
 
+    /// <summary>
+    /// Verifies that <see cref="UdpNtpTransport.ExchangeAsync"/> throws
+    /// <see cref="ArgumentNullException"/> when <paramref name="endpoint"/> is <see langword="null"/>.
+    /// </summary>
     [TestMethod]
     public async Task UdpNtpTransport_NullEndpoint_ThrowsArgumentNullException()
     {
@@ -258,6 +262,10 @@ public class NtpClientTests
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Verifies that <see cref="UdpNtpTransport.ExchangeAsync"/> throws
+    /// <see cref="ArgumentNullException"/> when the request buffer is <see langword="null"/>.
+    /// </summary>
     [TestMethod]
     public async Task UdpNtpTransport_NullRequest_ThrowsArgumentNullException()
     {
@@ -269,6 +277,10 @@ public class NtpClientTests
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Verifies that <see cref="UdpNtpTransport.ExchangeAsync"/> throws
+    /// <see cref="ArgumentException"/> when the request buffer is empty.
+    /// </summary>
     [TestMethod]
     public async Task UdpNtpTransport_EmptyRequest_ThrowsArgumentException()
     {
