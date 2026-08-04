@@ -892,7 +892,7 @@ namespace Utils.NumberToString
                 {
                     if (repl.FormVariants?.Count > 0)
                     {
-                        foreach (var (c, form) in ExpandFormVariants(repl.FormVariants, parsedDimensions,
+                        foreach (var (c, form, _) in ExpandFormVariants(repl.FormVariants, parsedDimensions,
                             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)))
                         {
                             var key = ConstraintKey(c);
@@ -954,7 +954,7 @@ namespace Utils.NumberToString
                     if (dimType != null && dimValue.Length > 0)
                         constraints[dimType] = dimValue;
 
-                    result.Add(new NumberToStringConverter.VariantRule(constraints, replacements));
+                    result.Add(new NumberToStringConverter.VariantRule(constraints, replacements, variant.Priority));
 
                     foreach (var child in variant.NestedVariants ?? [])
                         CollectVariantRules(child, constraints, result);
@@ -971,7 +971,7 @@ namespace Utils.NumberToString
             // Intermediate nodes (variant attribute present, children present) add one constraint
             // and recurse; leaf nodes (forms attribute present) expand positional entries using the
             // matching Dimension declaration order.
-            IEnumerable<(Dictionary<string, string> Constraints, string Form)> ExpandFormVariants(
+            IEnumerable<(Dictionary<string, string> Constraints, string Form, int Priority)> ExpandFormVariants(
                 IEnumerable<FormVariantType> nodes,
                 IReadOnlyList<NumberToStringConverter.VariantDimension> dims,
                 IReadOnlyDictionary<string, string> inherited)
@@ -985,7 +985,7 @@ namespace Utils.NumberToString
                     if (!string.IsNullOrEmpty(node.Value))
                     {
                         // Single-value shorthand: variant="X" value="form" — yields exactly one (constraints, form) pair.
-                        yield return (constraints, node.Value);
+                        yield return (constraints, node.Value, node.Priority);
                     }
                     else if (!string.IsNullOrEmpty(node.Forms) && !string.IsNullOrEmpty(node.DimensionType))
                     {
@@ -1013,7 +1013,7 @@ namespace Utils.NumberToString
                                     $"use a named Variant element for partial mappings.");
                             var leafConstraints = new Dictionary<string, string>(constraints, StringComparer.OrdinalIgnoreCase)
                                 { [dimName] = dimValues[i] };
-                            yield return (leafConstraints, form);
+                            yield return (leafConstraints, form, node.Priority);
                         }
                     }
                     else
@@ -1086,7 +1086,7 @@ namespace Utils.NumberToString
                         bool needsDefault = exc.StringValue == null;
                         string? defaultForm = null;
 
-                        foreach (var (c, form) in ExpandFormVariants(exc.FormVariants, parsedDimensions,
+                        foreach (var (c, form, _) in ExpandFormVariants(exc.FormVariants, parsedDimensions,
                             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)))
                         {
                             if (needsDefault && defaultForm == null && MatchesDefaultQuery(c))
@@ -1112,7 +1112,7 @@ namespace Utils.NumberToString
                         bool needsDefault = rule.To == null;
                         string? defaultForm = null;
 
-                        foreach (var (c, form) in ExpandFormVariants(rule.FormVariants, parsedDimensions,
+                        foreach (var (c, form, _) in ExpandFormVariants(rule.FormVariants, parsedDimensions,
                             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)))
                         {
                             if (needsDefault && defaultForm == null && MatchesDefaultQuery(c))
@@ -1201,7 +1201,7 @@ namespace Utils.NumberToString
                         constraints[dimType] = dimValue;
 
                     result.Add(new NumberToStringConverter.OrdinalVariantRule(
-                        constraints, exceptions, wordRules, variant.Suffix, variant.RemoveTrailing));
+                        constraints, exceptions, wordRules, variant.Suffix, variant.RemoveTrailing, variant.Priority));
 
                     foreach (var child in variant.NestedVariants ?? [])
                         CollectOrdinalVariants(child, constraints, result);
@@ -1249,17 +1249,15 @@ namespace Utils.NumberToString
                     foreach (var replace in trigger.Replaces ?? [])
                     {
                         string? defaultTo = replace.To;
-                        var forms = new List<(IReadOnlyDictionary<string, string>, string)>();
+                        var forms = new List<NumberToStringConverter.TriggerReplacementForm>();
 
                         if (replace.FormVariants?.Count > 0)
                         {
-                            bool captureFirst = defaultTo == null;
-                            foreach (var (constraints, form) in ExpandFormVariants(
+                            foreach (var (constraints, form, priority) in ExpandFormVariants(
                                 replace.FormVariants, parsedDimensions,
                                 new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)))
                             {
-                                if (captureFirst) { defaultTo = form; captureFirst = false; }
-                                forms.Add((constraints, form));
+                                forms.Add(new NumberToStringConverter.TriggerReplacementForm(constraints, form, priority));
                             }
                         }
 
@@ -1378,9 +1376,9 @@ namespace Utils.NumberToString
             {
                 foreach (var replace in trigger.Replaces)
                 {
-                    foreach (var (constraints, _) in replace.Forms)
+                    foreach (var form in replace.Forms)
                     {
-                        foreach (var (key, value) in constraints)
+                        foreach (var (key, value) in form.Constraints)
                             ValidateKeyValue("TriggerReplace", key, value);
                     }
                 }

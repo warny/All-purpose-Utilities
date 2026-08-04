@@ -198,7 +198,7 @@ namespace Utils.NumberToString
 
             VariantDimensions = (options.VariantDimensions ?? []).ToImmutableArray();
             VariantRules = (options.VariantRules ?? []).ToImmutableArray();
-            _sortedVariantRules = [.. VariantRules.OrderBy(r => r.Specificity)];
+            _sortedVariantRules = [.. VariantRules.OrderBy(r => r.Specificity).ThenBy(r => r.Priority)];
             _hasScaleSpecificVariantRules = VariantRules.Any(r => r.Replacements.Any(rr => rr.OnScale is not null));
             Triggers = (options.Triggers ?? []).ToImmutableArray();
             _yearFormat = options.YearFormat;
@@ -225,6 +225,7 @@ namespace Utils.NumberToString
                     : [(d.Name, d), (d.LocalName, d)])
                 .ToImmutableDictionary(t => t.Item1, t => t.Item2, StringComparer.OrdinalIgnoreCase);
             ValidateVariantReferences(this, LanguageIdentifier.Length > 0 ? LanguageIdentifier : "programmatic");
+            CompileAndValidateRulePrecedence();
         }
 
         /// <summary>
@@ -508,7 +509,7 @@ namespace Utils.NumberToString
             public TriggerReplace(
                 string from,
                 bool isRegex,
-                IReadOnlyList<(IReadOnlyDictionary<string, string> Constraints, string To)> forms,
+                IReadOnlyList<TriggerReplacementForm> forms,
                 string? defaultTo)
             {
                 if (string.IsNullOrEmpty(from))
@@ -541,12 +542,7 @@ namespace Utils.NumberToString
                             $"Trigger pattern '{from}' is not a valid regular expression: {ex.Message}", nameof(from), ex);
                     }
                 }
-                Forms = forms
-                    .Select(static form => (
-                        Constraints: (IReadOnlyDictionary<string, string>)
-                            form.Constraints.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase),
-                        form.To))
-                    .ToImmutableArray();
+                Forms = forms.ToImmutableArray();
                 DefaultTo = defaultTo;
             }
             /// <summary>Gets the text or regex pattern to match.</summary>
@@ -556,12 +552,38 @@ namespace Utils.NumberToString
             /// <summary>Gets the pre-compiled regex when <see cref="IsRegex"/> is <see langword="true"/>; otherwise <see langword="null"/>.</summary>
             public Regex? CompiledRegex { get; }
             /// <summary>
-            /// Gets the variant-specific forms ordered by declaration order.
-            /// At runtime the most specific match (most constraints) wins.
+            /// Gets the variant-specific forms. Declaration order has no selection semantics;
+            /// specificity wins first and <see cref="TriggerReplacementForm.Priority"/> breaks lower-ranked ties.
             /// </summary>
-            public IReadOnlyList<(IReadOnlyDictionary<string, string> Constraints, string To)> Forms { get; }
+            public IReadOnlyList<TriggerReplacementForm> Forms { get; }
             /// <summary>Gets the unconditional default replacement used when no variant form matches.</summary>
             public string? DefaultTo { get; }
+        }
+
+        /// <summary>Represents one conditional replacement form in a trigger.</summary>
+        public sealed class TriggerReplacementForm
+        {
+            /// <summary>Initializes a conditional trigger replacement form.</summary>
+            public TriggerReplacementForm(IReadOnlyDictionary<string, string> constraints, string to, int priority = 0)
+            {
+                if (constraints is null)
+                    throw new ArgumentException("Trigger form constraints must not be null.", nameof(constraints));
+                if (to is null)
+                    throw new ArgumentException("Trigger form replacement text must not be null.", nameof(to));
+                Constraints = constraints.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
+                To = to;
+                Priority = priority;
+                NormalizedConstraints = new VariantConstraintSet(Constraints);
+            }
+
+            /// <summary>Gets the required variant values.</summary>
+            public IReadOnlyDictionary<string, string> Constraints { get; }
+            /// <summary>Gets the replacement text.</summary>
+            public string To { get; }
+            /// <summary>Gets explicit precedence; higher values win after specificity.</summary>
+            public int Priority { get; }
+            /// <summary>Gets constraints normalized by the owning converter.</summary>
+            internal VariantConstraintSet NormalizedConstraints { get; set; }
         }
 
         /// <summary>
@@ -1003,11 +1025,7 @@ namespace Utils.NumberToString
 
             foreach (var rule in _sortedVariantRules)
             {
-                bool matches = rule.Constraints.All(c =>
-                    query.TryGetValue(c.Key, out var v) &&
-                    string.Equals(v, c.Value, StringComparison.OrdinalIgnoreCase));
-
-                if (!matches) continue;
+                if (!VariantRulePrecedence.Matches(rule.NormalizedConstraints, query)) continue;
 
                 foreach (var replacement in rule.Replacements)
                 {
@@ -1093,22 +1111,12 @@ namespace Utils.NumberToString
         private static string ApplyTriggerReplace(string text, TriggerReplace replace, IReadOnlyDictionary<string, string>? query)
         {
             string? bestTo = null;
-            int bestScore = -1;
-
             if (query != null)
             {
-                foreach (var (constraints, to) in replace.Forms)
-                {
-                    bool matches = constraints.All(c =>
-                        query.TryGetValue(c.Key, out var v) &&
-                        string.Equals(v, c.Value, StringComparison.OrdinalIgnoreCase));
-
-                    if (matches && constraints.Count > bestScore)
-                    {
-                        bestTo = to;
-                        bestScore = constraints.Count;
-                    }
-                }
+                TriggerReplacementForm? form = VariantRulePrecedence.SelectBestUnique(
+                    replace.Forms, candidate => candidate.NormalizedConstraints, candidate => candidate.Priority,
+                    query, "TriggerReplace.Forms");
+                bestTo = form?.To;
             }
 
             string? effectiveTo = bestTo ?? replace.DefaultTo;
@@ -1128,6 +1136,94 @@ namespace Utils.NumberToString
                 }
             }
             return text.Replace(replace.From, effectiveTo, StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// Canonicalizes constraints once and rejects statically intersecting candidates of equal rank.
+        /// Pairwise construction-time validation is intentionally quadratic for the small rule lists.
+        /// </summary>
+        private void CompileAndValidateRulePrecedence()
+        {
+            VariantConstraintSet Normalize(IReadOnlyDictionary<string, string> constraints) =>
+                new(constraints.Select(pair => new KeyValuePair<string, string>(
+                    _dimensionIndex.TryGetValue(pair.Key, out VariantDimension? dimension) ? dimension.Name : pair.Key,
+                    pair.Value)));
+
+            foreach (VariantRule rule in VariantRules) rule.NormalizedConstraints = Normalize(rule.Constraints);
+            foreach (OrdinalVariantRule rule in OrdinalVariants) rule.NormalizedConstraints = Normalize(rule.Constraints);
+            foreach (TriggerRule trigger in Triggers)
+                foreach (TriggerReplace replace in trigger.Replaces)
+                    foreach (TriggerReplacementForm form in replace.Forms)
+                        form.NormalizedConstraints = Normalize(form.Constraints);
+
+            ValidatePairs(OrdinalVariants, rule => rule.NormalizedConstraints, rule => rule.Priority,
+                "UNTS002", "OrdinalVariant", "OrdinalVariants");
+            for (int triggerIndex = 0; triggerIndex < Triggers.Count; triggerIndex++)
+            {
+                TriggerRule trigger = Triggers[triggerIndex];
+                for (int replaceIndex = 0; replaceIndex < trigger.Replaces.Count; replaceIndex++)
+                {
+                    TriggerReplace replace = trigger.Replaces[replaceIndex];
+                    string path = $"Triggers[{triggerIndex}].Replaces[{replaceIndex}].Forms";
+                    ValidatePairs(replace.Forms, form => form.NormalizedConstraints, form => form.Priority,
+                        "UNTS003", $"Trigger form ({trigger.ExecuteAt}, from='{replace.From}', regex={replace.IsRegex})", path);
+                }
+            }
+            ValidateVariantRulePairs();
+        }
+
+        /// <summary>Rejects equal-ranked compatible candidates and emits stable indexed diagnostics.</summary>
+        private void ValidatePairs<T>(IReadOnlyList<T> candidates, Func<T, VariantConstraintSet> constraints,
+            Func<T, int> priority, string errorCode, string family, string path)
+        {
+            for (int leftIndex = 0; leftIndex < candidates.Count; leftIndex++)
+            {
+                VariantConstraintSet left = constraints(candidates[leftIndex]);
+                for (int rightIndex = leftIndex + 1; rightIndex < candidates.Count; rightIndex++)
+                {
+                    VariantConstraintSet right = constraints(candidates[rightIndex]);
+                    if (left.Specificity != right.Specificity
+                        || priority(candidates[leftIndex]) != priority(candidates[rightIndex])
+                        || !VariantRulePrecedence.CanMatchTogether(left, right)) continue;
+                    int candidatePriority = priority(candidates[leftIndex]);
+                    throw new NumberToStringConfigurationException(errorCode, LanguageIdentifier, path,
+                        $"Ambiguous {family} rules for culture '{LanguageIdentifier}': {path}[{leftIndex}] {left} and " +
+                        $"{path}[{rightIndex}] {right} can both match with specificity {left.Specificity} and priority " +
+                        $"{candidatePriority}. Assign distinct priorities or make the constraints mutually exclusive.");
+                }
+            }
+        }
+
+        /// <summary>Validates cumulative rules independently in global and scale evaluation spaces.</summary>
+        private void ValidateVariantRulePairs()
+        {
+            for (int leftIndex = 0; leftIndex < VariantRules.Count; leftIndex++)
+            for (int rightIndex = leftIndex + 1; rightIndex < VariantRules.Count; rightIndex++)
+            {
+                VariantRule left = VariantRules[leftIndex];
+                VariantRule right = VariantRules[rightIndex];
+                if (left.NormalizedConstraints.Specificity != right.NormalizedConstraints.Specificity
+                    || left.Priority != right.Priority
+                    || !VariantRulePrecedence.CanMatchTogether(left.NormalizedConstraints, right.NormalizedConstraints)) continue;
+                bool globalOverlap = left.Replacements.Any(IsGlobalReplacement) && right.Replacements.Any(IsGlobalReplacement);
+                bool scaleOverlap = left.Replacements.Any(a => right.Replacements.Any(b => ScaleScopesOverlap(a, b)));
+                if (!globalOverlap && !scaleOverlap) continue;
+                throw new NumberToStringConfigurationException("UNTS001", LanguageIdentifier, "VariantRules",
+                    $"Ambiguous VariantRule rules for culture '{LanguageIdentifier}': VariantRules[{leftIndex}] " +
+                    $"{left.NormalizedConstraints} and VariantRules[{rightIndex}] {right.NormalizedConstraints} can both match " +
+                    $"with specificity {left.NormalizedConstraints.Specificity} and priority {left.Priority}. " +
+                    "Assign distinct priorities or make the constraints or evaluation scopes mutually exclusive.");
+            }
+        }
+
+        /// <summary>Returns whether a replacement participates in global evaluation.</summary>
+        private static bool IsGlobalReplacement(ReplacementRule replacement) => replacement.OnScale is null;
+
+        /// <summary>Returns whether two scale-filtered replacements can run for the same scale and value.</summary>
+        private static bool ScaleScopesOverlap(ReplacementRule left, ReplacementRule right)
+        {
+            if (left.OnScale is null || right.OnScale is null || !left.OnScale.Intersect(right.OnScale).Any()) return false;
+            return left.OnValue is null || right.OnValue is null || left.OnValue.Intersect(right.OnValue).Any();
         }
 
         /// <summary>
@@ -1417,12 +1513,14 @@ namespace Utils.NumberToString
             /// </summary>
             /// <param name="constraints">Dimension name → required value pairs.</param>
             /// <param name="replacements">Replacement rules applied when this variant is active.</param>
-            public VariantRule(IReadOnlyDictionary<string, string> constraints, IReadOnlyList<ReplacementRule> replacements)
+            public VariantRule(IReadOnlyDictionary<string, string> constraints, IReadOnlyList<ReplacementRule> replacements, int priority = 0)
             {
                 ArgumentNullException.ThrowIfNull(constraints);
                 ArgumentNullException.ThrowIfNull(replacements);
                 Constraints = constraints.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
                 Replacements = replacements.ToImmutableArray();
+                Priority = priority;
+                NormalizedConstraints = new VariantConstraintSet(Constraints);
             }
 
             /// <summary>Gets the dimension constraints (name → required value).</summary>
@@ -1434,7 +1532,11 @@ namespace Utils.NumberToString
             /// <summary>
             /// Gets the number of dimension constraints. Used to order rules from least to most specific.
             /// </summary>
-            public int Specificity => Constraints.Count;
+            public int Specificity => NormalizedConstraints.Specificity;
+            /// <summary>Gets composition precedence; higher values are applied later after specificity.</summary>
+            public int Priority { get; }
+            /// <summary>Gets constraints normalized by the owning converter.</summary>
+            internal VariantConstraintSet NormalizedConstraints { get; set; }
         }
 
         /// <summary>
@@ -1452,7 +1554,8 @@ namespace Utils.NumberToString
                 IReadOnlyDictionary<long, string> exceptions,
                 IReadOnlyDictionary<string, string> wordRules,
                 string? suffix,
-                string? removeTrailing)
+                string? removeTrailing,
+                int priority = 0)
             {
                 ArgumentNullException.ThrowIfNull(constraints);
                 ArgumentNullException.ThrowIfNull(exceptions);
@@ -1462,6 +1565,8 @@ namespace Utils.NumberToString
                 WordRules = wordRules.ToImmutableDictionary();
                 Suffix = suffix;
                 RemoveTrailing = removeTrailing;
+                Priority = priority;
+                NormalizedConstraints = new VariantConstraintSet(Constraints);
             }
 
             /// <summary>Gets the dimension constraints that must all be satisfied for this variant to apply.</summary>
@@ -1475,7 +1580,11 @@ namespace Utils.NumberToString
             /// <summary>Gets the variant removeTrailing override, or <see langword="null"/> to inherit the base value.</summary>
             public string? RemoveTrailing { get; }
             /// <summary>Gets the number of dimension constraints (used for specificity ordering).</summary>
-            public int Specificity => Constraints.Count;
+            public int Specificity => NormalizedConstraints.Specificity;
+            /// <summary>Gets explicit precedence; higher values win after specificity.</summary>
+            public int Priority { get; }
+            /// <summary>Gets constraints normalized by the owning converter.</summary>
+            internal VariantConstraintSet NormalizedConstraints { get; set; }
         }
 
         /// <summary>
@@ -1617,18 +1726,9 @@ namespace Utils.NumberToString
         private OrdinalVariantRule? FindBestOrdinalVariant(IReadOnlyDictionary<string, string> query)
         {
             if (OrdinalVariants.Count == 0) return null;
-            OrdinalVariantRule? best = null;
-            int bestScore = -1;
-            foreach (var variant in OrdinalVariants)
-            {
-                bool allMatch = variant.Constraints.All(c =>
-                    query.TryGetValue(c.Key, out var v) &&
-                    string.Equals(v, c.Value, StringComparison.OrdinalIgnoreCase));
-                if (!allMatch) continue;
-                int score = variant.Specificity;
-                if (score > bestScore) { best = variant; bestScore = score; }
-            }
-            return best;
+            return VariantRulePrecedence.SelectBestUnique(
+                OrdinalVariants, rule => rule.NormalizedConstraints, rule => rule.Priority,
+                query, "OrdinalVariants");
         }
 
         /// <inheritdoc cref="INumberToStringConverter.ConvertOrdinal(BigInteger)"/>
