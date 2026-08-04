@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace Utils.Fonts.TTF.Parsing;
 
@@ -28,9 +29,14 @@ internal sealed class FontParsingContext
     public TrueTypeFontParsingOptions Options { get; }
 
     /// <summary>
-    /// Gets the diagnostics accumulated so far.
+    /// Gets the diagnostics accumulated so far, wrapped so that casting the result back to
+    /// <see cref="IList{T}"/> and calling a mutating member (<c>Add</c>, <c>Remove</c>, <c>Clear</c>,
+    /// ...) throws <see cref="System.NotSupportedException"/> instead of silently mutating the
+    /// internal list -- unlike returning <c>diagnostics</c> directly typed as
+    /// <see cref="IReadOnlyList{T}"/>, which only hides mutating members at compile time and does
+    /// nothing to stop a caller who casts back to the concrete <see cref="List{T}"/> or <see cref="IList{T}"/>.
     /// </summary>
-    public IReadOnlyList<FontDiagnostic> Diagnostics => diagnostics;
+    public IReadOnlyList<FontDiagnostic> Diagnostics => diagnostics.AsReadOnly();
 
     /// <summary>
     /// Reports a policy-level anomaly (duplicate tag, checksum mismatch, malformed subtable,

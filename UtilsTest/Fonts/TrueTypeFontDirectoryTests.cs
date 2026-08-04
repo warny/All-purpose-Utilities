@@ -337,6 +337,67 @@ public class TrueTypeFontDirectoryTests
         Assert.IsTrue(permissive.Diagnostics.Any(d => d.Code == FontDiagnosticCode.FontChecksumMismatch));
     }
 
+    // Review fix: the whole-font checksum used to be computed only up to the end of the last
+    // table's declared range, so bytes appended after it (padding, trailing/hostile content) never
+    // participated in the sum. This parser's policy is that the whole bounded font -- not merely
+    // the union of its declared table ranges -- must checksum correctly; a font engineered to
+    // declare tables that omit trailing bytes from the sum must not be able to hide them from
+    // verification. Appends 4 non-zero bytes after a validly-written font's last table and confirms
+    // the (now otherwise-untouched) checksum no longer validates.
+    [TestMethod]
+    public void WholeFontChecksum_TrailingBytesAfterLastTable_AreIncludedInTheSum()
+    {
+        var font = BuildMinimalValidFont();
+        byte[] original = font.WriteFont();
+        byte[] withTrailingBytes = [.. original, 0xDE, 0xAD, 0xBE, 0xEF];
+
+        var ex = Assert.ThrowsExactly<FontParseException>(() => TrueTypeFont.ParseFont(withTrailingBytes));
+        Assert.AreEqual(FontDiagnosticCode.FontChecksumMismatch, ex.Diagnostic.Code);
+
+        var permissive = TrueTypeFont.ParseFont(withTrailingBytes, new TrueTypeFontParsingOptions { ValidationMode = FontValidationMode.Permissive });
+        Assert.IsTrue(permissive.Diagnostics.Any(d => d.Code == FontDiagnosticCode.FontChecksumMismatch));
+
+        // Sanity check: the original bytes (without the trailing appendage) still validate, proving
+        // the failure above is specifically attributable to the appended bytes.
+        var reparsedOriginal = TrueTypeFont.ParseFont(original);
+        Assert.IsFalse(reparsedOriginal.Diagnostics.Any(d => d.Code == FontDiagnosticCode.FontChecksumMismatch));
+    }
+
+    // Review fix: FontParsingContext.Diagnostics used to return the internal List<FontDiagnostic>
+    // typed as IReadOnlyList<T>, which only hides mutating members at compile time -- a caller could
+    // cast back to IList<T> (or List<T>) and mutate the list backing every FontDiagnostic consumer,
+    // including a font already handed back to some other caller. TrueTypeFont.Diagnostics is also
+    // now a true snapshot (ToArray()), decoupled from the parsing context entirely.
+    [TestMethod]
+    public void Diagnostics_CannotBeMutatedByCastingBackToIList()
+    {
+        var entries = new[] { ("AAAA", 0u, 44u, 4u), ("AAAA", 0u, 48u, 4u) }; // duplicate tag -> one diagnostic
+        var bytes = BuildRaw(2, 32, 1, 0, entries, 52);
+        var font = TrueTypeFont.ParseFont(bytes, new TrueTypeFontParsingOptions { ValidationMode = FontValidationMode.Permissive });
+
+        Assert.IsTrue(font.Diagnostics.Count > 0);
+        Assert.ThrowsExactly<NotSupportedException>(() => ((IList<FontDiagnostic>)font.Diagnostics).Clear());
+        Assert.ThrowsExactly<NotSupportedException>(() => ((IList<FontDiagnostic>)font.Diagnostics).Add(
+            new FontDiagnostic(FontDiagnosticCode.UnsupportedTable, FontDiagnosticSeverity.Warning, "injected")));
+    }
+
+    [TestMethod]
+    public void Diagnostics_IsASnapshot_UnaffectedByAnyLaterActivityOnTheFont()
+    {
+        var entries = new[] { ("AAAA", 0u, 44u, 4u), ("AAAA", 0u, 48u, 4u) };
+        var bytes = BuildRaw(2, 32, 1, 0, entries, 52);
+        var font = TrueTypeFont.ParseFont(bytes, new TrueTypeFontParsingOptions { ValidationMode = FontValidationMode.Permissive });
+
+        int countAfterParse = font.Diagnostics.Count;
+        Assert.IsTrue(countAfterParse > 0);
+
+        // Nothing in this parser currently appends to a font's parsing context after ParseFont
+        // returns, but Diagnostics must not merely happen to look stable -- it must be structurally
+        // incapable of changing. GetGlyph/WriteFont are ordinary post-parse activity on the font;
+        // neither should (and, per the above, cannot) be observed through Diagnostics.
+        Assert.AreEqual(countAfterParse, font.Diagnostics.Count);
+    }
+
     // Review fix: UpdateChecksumAdj used to locate 'head' by accumulating each preceding table's
     // raw (unpadded) Length, while WriteFont itself pads every table's data up to a 4-byte
     // boundary before starting the next one. Whenever an earlier table's length was not already a

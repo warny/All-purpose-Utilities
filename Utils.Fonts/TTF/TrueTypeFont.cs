@@ -455,8 +455,12 @@ public class TrueTypeFont : IFont
         ValidateDerivedOffsetTableFields(context, numTables, declaredSearchRange, declaredEntrySelector, declaredRangeShift);
         var entries = ReadDirectoryEntries(data, numTables);
         var accepted = ValidateDirectory(context, entries, directoryLength, fontLength);
-        ParseDirectories(data, accepted, trueTypeFont, context);
-        trueTypeFont.Diagnostics = context.Diagnostics;
+        ParseDirectories(data, accepted, trueTypeFont, context, fontLength);
+        // A true snapshot, decoupled from `context` (which is otherwise kept alive for the font's
+        // lifetime -- see the ParsingContext property doc): TrueTypeFont.Diagnostics must reflect
+        // exactly what happened during this parse and never change afterward, even though nothing
+        // currently appends to `context` post-parse.
+        trueTypeFont.Diagnostics = context.Diagnostics.ToArray();
         return trueTypeFont;
     }
 
@@ -750,7 +754,8 @@ public class TrueTypeFont : IFont
     /// <param name="entries">The validated, deduplicated directory entries to read.</param>
     /// <param name="ttf">The TrueTypeFont instance to populate.</param>
     /// <param name="context">The active parsing context (options + diagnostics sink).</param>
-    private static void ParseDirectories(Reader data, List<TableDirectoryEntry> entries, TrueTypeFont ttf, FontParsingContext context)
+    /// <param name="fontLength">The full, bounded byte length of the font being parsed.</param>
+    private static void ParseDirectories(Reader data, List<TableDirectoryEntry> entries, TrueTypeFont ttf, FontParsingContext context, long fontLength)
     {
         var remaining = entries.ToDictionary(e => e.Tag);
 
@@ -796,26 +801,38 @@ public class TrueTypeFont : IFont
             ReadTable(remaining.Values.First());
         }
 
-        VerifyFontChecksum(data.Stream, ttf, entries, context);
+        VerifyFontChecksum(data.Stream, ttf, fontLength, context);
     }
 
     /// <summary>
-    /// Verifies the whole-font checksum: the sum of every 32-bit big-endian word in the font
-    /// (including 'head'.checksumAdjustment as stored, unmodified) must equal
-    /// <see cref="ChecksumMagicNumber"/>. Fonts with no 'head' table have no checksumAdjustment
-    /// slot to make this identity hold and are skipped rather than unconditionally failed.
+    /// Verifies the whole-font checksum: the sum of every 32-bit big-endian word across the
+    /// <em>entire</em> bounded font -- not merely up to the end of the last table -- (including
+    /// 'head'.checksumAdjustment as stored, unmodified) must equal <see cref="ChecksumMagicNumber"/>.
+    /// Fonts with no 'head' table have no checksumAdjustment slot to make this identity hold and
+    /// are skipped rather than unconditionally failed.
     /// </summary>
-    private static void VerifyFontChecksum(Stream fontStream, TrueTypeFont ttf, List<TableDirectoryEntry> entries, FontParsingContext context)
+    /// <remarks>
+    /// Deliberately covers every byte of <paramref name="fontLength"/>, including any trailing
+    /// bytes past the last table's declared end: this parser's policy is that such bytes are part
+    /// of the font (a font is exactly the bytes <see cref="ParseFontFromSeekableStream"/> bounded
+    /// via <see cref="TrueTypeFontParsingOptions.MaximumFontBytes"/>/the source length, not merely
+    /// the union of its declared table ranges), so they must participate in the checksum rather
+    /// than silently going unchecked. A font engineered to declare tables that omit trailing bytes
+    /// from this sum would otherwise let hostile trailing content hide from checksum verification
+    /// entirely.
+    /// </remarks>
+    private static void VerifyFontChecksum(Stream fontStream, TrueTypeFont ttf, long fontLength, FontParsingContext context)
     {
-        if (!ttf.ContainsTable(TableTypes.HEAD) || entries.Count == 0)
+        if (!ttf.ContainsTable(TableTypes.HEAD))
         {
             return;
         }
 
-        long directoryLength = OffsetTableSize + entries.Count * TableDirectoryEntrySize;
-        long fontExtent = entries.Aggregate(directoryLength, (max, e) => Math.Max(max, MathEx.Ceiling(e.End, TtfAlignment)));
-
-        uint computed = TableChecksum.ComputeTableChecksum(fontStream, 0, (uint)Math.Min(fontExtent, uint.MaxValue), zeroHeadChecksumAdjustment: false);
+        // A conformant SFNT file's length can never realistically approach uint.MaxValue (every
+        // table offset/length in the format is itself a UInt32), so clamping only guards a
+        // pathological MaximumFontBytes configuration far beyond any real font, not the common case.
+        uint checksummedLength = (uint)Math.Min(fontLength, uint.MaxValue);
+        uint computed = TableChecksum.ComputeTableChecksum(fontStream, 0, checksummedLength, zeroHeadChecksumAdjustment: false);
         if (computed != ChecksumMagicNumber)
         {
             context.ReportError(FontDiagnosticCode.FontChecksumMismatch,
