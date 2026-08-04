@@ -727,8 +727,8 @@
 			  Declension of "ein" (the only variable digit in German).
 			  Compound words (einundzwanzig…) are not declined.
 
-			  Rule order: genus=feminin must be declared FIRST because the
-			  single-constraint kasus=dativ/genitiv rules look for "ein".
+			  Priority contract: genus=feminin uses the normal priority 0 and the
+			  single-constraint kasus=dativ/genitiv rules use priority 100 because they refine "ein" later.
 			  If genus=feminin transforms "ein"→"eine" first, the two-constraint
 			  overrides (kasus+genus=feminin) correctly target "eine".
 
@@ -757,12 +757,12 @@
 
 			<!-- case=dativ (maskulin/neutrum): ein → "einem"
 			     (feminin+dativ is handled by the nested variant above) -->
-			<Variant type="case" variant="dativ">
+			<Variant type="case" variant="dativ" priority="100">
 				<Replacement oldValue="ein" newValue="einem" scope="LastWord" />
 			</Variant>
 
 			<!-- case=genitiv (maskulin/neutrum): ein → "eines" -->
-			<Variant type="case" variant="genitiv">
+			<Variant type="case" variant="genitiv" priority="100">
 				<Replacement oldValue="ein" newValue="eines" scope="LastWord" />
 			</Variant>
 

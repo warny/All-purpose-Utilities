@@ -886,19 +886,20 @@ namespace Utils.NumberToString
                 // one VariantRule entry holds all replacement rules for that combination.
                 var syntheticByKey =
                     new Dictionary<string, (Dictionary<string, string> Constraints,
-                                            List<NumberToStringConverter.ReplacementRule> Replacements)>(StringComparer.Ordinal);
+                                            List<NumberToStringConverter.ReplacementRule> Replacements,
+                                            int Priority)>(StringComparer.Ordinal);
 
                 foreach (var repl in language.Replacements?.Replacements ?? [])
                 {
                     if (repl.FormVariants?.Count > 0)
                     {
-                        foreach (var (c, form) in ExpandFormVariants(repl.FormVariants, parsedDimensions,
+                        foreach (var (c, form, priority) in ExpandFormVariants(repl.FormVariants, parsedDimensions,
                             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)))
                         {
-                            var key = ConstraintKey(c);
+                            var key = RankedConstraintKey(c, priority);
                             if (!syntheticByKey.TryGetValue(key, out var entry))
                             {
-                                entry = (c, []);
+                                entry = (c, [], priority);
                                 syntheticByKey[key] = entry;
                             }
                             entry.Replacements.Add(new NumberToStringConverter.ReplacementRule(repl.OldValue, form, repl.Scope, repl.OnScale,
@@ -907,8 +908,8 @@ namespace Utils.NumberToString
                     }
                 }
 
-                foreach (var (constraints, replacements) in syntheticByKey.Values)
-                    result.Add(new NumberToStringConverter.VariantRule(constraints, replacements));
+                foreach (var (constraints, replacements, priority) in syntheticByKey.Values)
+                    result.Add(new NumberToStringConverter.VariantRule(constraints, replacements, priority));
 
                 return result;
             }
@@ -954,7 +955,7 @@ namespace Utils.NumberToString
                     if (dimType != null && dimValue.Length > 0)
                         constraints[dimType] = dimValue;
 
-                    result.Add(new NumberToStringConverter.VariantRule(constraints, replacements));
+                    result.Add(new NumberToStringConverter.VariantRule(constraints, replacements, variant.Priority));
 
                     foreach (var child in variant.NestedVariants ?? [])
                         CollectVariantRules(child, constraints, result);
@@ -967,11 +968,15 @@ namespace Utils.NumberToString
                 string.Join("|", c.OrderBy(kvp => kvp.Key, StringComparer.OrdinalIgnoreCase)
                                    .Select(kvp => $"{kvp.Key}={kvp.Value}"));
 
+            // Keeps candidates with identical constraints but distinct explicit priorities separate.
+            static string RankedConstraintKey(IReadOnlyDictionary<string, string> constraints, int priority) =>
+                $"{ConstraintKey(constraints)}|priority={priority.ToString(CultureInfo.InvariantCulture)}";
+
             // Walks a FormVariantType tree and yields (constraints, form) pairs.
             // Intermediate nodes (variant attribute present, children present) add one constraint
             // and recurse; leaf nodes (forms attribute present) expand positional entries using the
             // matching Dimension declaration order.
-            IEnumerable<(Dictionary<string, string> Constraints, string Form)> ExpandFormVariants(
+            IEnumerable<(Dictionary<string, string> Constraints, string Form, int Priority)> ExpandFormVariants(
                 IEnumerable<FormVariantType> nodes,
                 IReadOnlyList<NumberToStringConverter.VariantDimension> dims,
                 IReadOnlyDictionary<string, string> inherited)
@@ -985,7 +990,7 @@ namespace Utils.NumberToString
                     if (!string.IsNullOrEmpty(node.Value))
                     {
                         // Single-value shorthand: variant="X" value="form" — yields exactly one (constraints, form) pair.
-                        yield return (constraints, node.Value);
+                        yield return (constraints, node.Value, node.Priority);
                     }
                     else if (!string.IsNullOrEmpty(node.Forms) && !string.IsNullOrEmpty(node.DimensionType))
                     {
@@ -1013,7 +1018,7 @@ namespace Utils.NumberToString
                                     $"use a named Variant element for partial mappings.");
                             var leafConstraints = new Dictionary<string, string>(constraints, StringComparer.OrdinalIgnoreCase)
                                 { [dimName] = dimValues[i] };
-                            yield return (leafConstraints, form);
+                            yield return (leafConstraints, form, node.Priority);
                         }
                     }
                     else
@@ -1045,14 +1050,15 @@ namespace Utils.NumberToString
                 var syntheticByKey =
                     new Dictionary<string, (Dictionary<string, string> Constraints,
                                             Dictionary<long, string> Exceptions,
-                                            Dictionary<string, string> WordRules)>(StringComparer.Ordinal);
+                                            Dictionary<string, string> WordRules,
+                                            int Priority)>(StringComparer.Ordinal);
 
-                (Dictionary<string, string> c, Dictionary<long, string> e, Dictionary<string, string> w)
-                    GetOrAddSynthetic(string key, Dictionary<string, string> constraints)
+                (Dictionary<string, string> c, Dictionary<long, string> e, Dictionary<string, string> w, int p)
+                    GetOrAddSynthetic(string key, Dictionary<string, string> constraints, int priority)
                 {
                     if (!syntheticByKey.TryGetValue(key, out var entry))
                     {
-                        entry = (constraints, new Dictionary<long, string>(), new Dictionary<string, string>());
+                        entry = (constraints, new Dictionary<long, string>(), new Dictionary<string, string>(), priority);
                         syntheticByKey[key] = entry;
                     }
                     return entry;
@@ -1086,12 +1092,12 @@ namespace Utils.NumberToString
                         bool needsDefault = exc.StringValue == null;
                         string? defaultForm = null;
 
-                        foreach (var (c, form) in ExpandFormVariants(exc.FormVariants, parsedDimensions,
+                        foreach (var (c, form, priority) in ExpandFormVariants(exc.FormVariants, parsedDimensions,
                             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)))
                         {
                             if (needsDefault && defaultForm == null && MatchesDefaultQuery(c))
                                 defaultForm = form;
-                            var entry = GetOrAddSynthetic(ConstraintKey(c), c);
+                            var entry = GetOrAddSynthetic(RankedConstraintKey(c, priority), c, priority);
                             entry.e[exc.Value] = form;
                         }
 
@@ -1112,12 +1118,12 @@ namespace Utils.NumberToString
                         bool needsDefault = rule.To == null;
                         string? defaultForm = null;
 
-                        foreach (var (c, form) in ExpandFormVariants(rule.FormVariants, parsedDimensions,
+                        foreach (var (c, form, priority) in ExpandFormVariants(rule.FormVariants, parsedDimensions,
                             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)))
                         {
                             if (needsDefault && defaultForm == null && MatchesDefaultQuery(c))
                                 defaultForm = form;
-                            var entry = GetOrAddSynthetic(ConstraintKey(c), c);
+                            var entry = GetOrAddSynthetic(RankedConstraintKey(c, priority), c, priority);
                             entry.w[rule.From] = form;
                         }
 
@@ -1137,11 +1143,11 @@ namespace Utils.NumberToString
                 // 3 and FindBestOrdinalVariant picks whichever appears first, losing the other's data.
                 var containerKeyToIndex = new Dictionary<string, int>(StringComparer.Ordinal);
                 for (int i = 0; i < result.Count; i++)
-                    containerKeyToIndex[ConstraintKey(result[i].Constraints)] = i;
+                    containerKeyToIndex[RankedConstraintKey(result[i].Constraints, result[i].Priority)] = i;
 
-                foreach (var (constraints, exceptions, wordRules) in syntheticByKey.Values)
+                foreach (var (constraints, exceptions, wordRules, priority) in syntheticByKey.Values)
                 {
-                    var key = ConstraintKey(constraints);
+                    var key = RankedConstraintKey(constraints, priority);
                     if (containerKeyToIndex.TryGetValue(key, out var idx))
                     {
                         var existing = result[idx];
@@ -1151,11 +1157,11 @@ namespace Utils.NumberToString
                         foreach (var kv in wordRules) mergedWr[kv.Key] = kv.Value;
                         result[idx] = new NumberToStringConverter.OrdinalVariantRule(
                             existing.Constraints, mergedExc, mergedWr,
-                            existing.Suffix, existing.RemoveTrailing);
+                            existing.Suffix, existing.RemoveTrailing, existing.Priority);
                     }
                     else
                     {
-                        result.Add(new NumberToStringConverter.OrdinalVariantRule(constraints, exceptions, wordRules, null, null));
+                        result.Add(new NumberToStringConverter.OrdinalVariantRule(constraints, exceptions, wordRules, null, null, priority));
                     }
                 }
 
@@ -1201,7 +1207,7 @@ namespace Utils.NumberToString
                         constraints[dimType] = dimValue;
 
                     result.Add(new NumberToStringConverter.OrdinalVariantRule(
-                        constraints, exceptions, wordRules, variant.Suffix, variant.RemoveTrailing));
+                        constraints, exceptions, wordRules, variant.Suffix, variant.RemoveTrailing, variant.Priority));
 
                     foreach (var child in variant.NestedVariants ?? [])
                         CollectOrdinalVariants(child, constraints, result);
@@ -1249,17 +1255,15 @@ namespace Utils.NumberToString
                     foreach (var replace in trigger.Replaces ?? [])
                     {
                         string? defaultTo = replace.To;
-                        var forms = new List<(IReadOnlyDictionary<string, string>, string)>();
+                        var forms = new List<NumberToStringConverter.TriggerReplacementForm>();
 
                         if (replace.FormVariants?.Count > 0)
                         {
-                            bool captureFirst = defaultTo == null;
-                            foreach (var (constraints, form) in ExpandFormVariants(
+                            foreach (var (constraints, form, priority) in ExpandFormVariants(
                                 replace.FormVariants, parsedDimensions,
                                 new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)))
                             {
-                                if (captureFirst) { defaultTo = form; captureFirst = false; }
-                                forms.Add((constraints, form));
+                                forms.Add(new NumberToStringConverter.TriggerReplacementForm(constraints, form, priority));
                             }
                         }
 
@@ -1378,9 +1382,9 @@ namespace Utils.NumberToString
             {
                 foreach (var replace in trigger.Replaces)
                 {
-                    foreach (var (constraints, _) in replace.Forms)
+                    foreach (var form in replace.Forms)
                     {
-                        foreach (var (key, value) in constraints)
+                        foreach (var (key, value) in form.Constraints)
                             ValidateKeyValue("TriggerReplace", key, value);
                     }
                 }

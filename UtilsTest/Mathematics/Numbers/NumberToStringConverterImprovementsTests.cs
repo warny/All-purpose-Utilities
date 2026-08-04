@@ -2036,10 +2036,10 @@ public class NumberToStringConverterImprovementsTests
         var options = new NumberToStringConverterOptions(en);
         options.VariantDimensions = [new NumberToStringConverter.VariantDimension("gender", ["masc", "fem"])];
         // Replace with variant forms: masc="one" (default, first form), fem="una"
-        var forms = new List<(IReadOnlyDictionary<string, string>, string)>
+        var forms = new List<NumberToStringConverter.TriggerReplacementForm>
         {
-            (new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["gender"] = "masc" }, "one"),
-            (new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["gender"] = "fem"  }, "una"),
+            new(new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["gender"] = "masc" }, "one"),
+            new(new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["gender"] = "fem"  }, "una"),
         };
         var replace = new NumberToStringConverter.TriggerReplace("one", false, forms, defaultTo: "one");
         options.Triggers = [new NumberToStringConverter.TriggerRule(NumberToStringConverter.TriggerAt.End, null, [replace])];
@@ -2058,9 +2058,9 @@ public class NumberToStringConverterImprovementsTests
         var en = NumberToStringConverter.GetConverter("EN");
         var options = new NumberToStringConverterOptions(en);
         options.VariantDimensions = [new NumberToStringConverter.VariantDimension("gender", ["masc", "fem"])];
-        var forms = new List<(IReadOnlyDictionary<string, string>, string)>
+        var forms = new List<NumberToStringConverter.TriggerReplacementForm>
         {
-            (new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["gender"] = "fem" }, "una"),
+            new(new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["gender"] = "fem" }, "una"),
         };
         // No DefaultTo → only fires for fem; masc and no-variant calls are unchanged
         var replace = new NumberToStringConverter.TriggerReplace("one", false, forms, defaultTo: null);

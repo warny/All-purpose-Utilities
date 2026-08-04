@@ -414,7 +414,10 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-    </xs:complexType>
+            <xs:attribute name="priority" type="xs:int" use="optional" default="0">
+            <xs:annotation><xs:documentation>Explicit precedence after specificity. Higher values win; cumulative Variant rules apply higher values later.</xs:documentation></xs:annotation>
+        </xs:attribute>
+</xs:complexType>
 
     <xs:complexType name="OrdinalExceptionType">
         <xs:annotation>
@@ -595,7 +598,10 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-    </xs:complexType>
+            <xs:attribute name="priority" type="xs:int" use="optional" default="0">
+            <xs:annotation><xs:documentation>Explicit precedence after specificity. Higher values win; cumulative Variant rules apply higher values later.</xs:documentation></xs:annotation>
+        </xs:attribute>
+</xs:complexType>
 
     <xs:complexType name="OrdinalsType">
         <xs:annotation>
@@ -810,7 +816,10 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:assert-->
-    </xs:complexType>
+            <xs:attribute name="priority" type="xs:int" use="optional" default="0">
+            <xs:annotation><xs:documentation>Explicit precedence after specificity. Higher values win; cumulative Variant rules apply higher values later.</xs:documentation></xs:annotation>
+        </xs:attribute>
+</xs:complexType>
 
     <xs:complexType name="VariantsType">
         <xs:annotation>
@@ -861,15 +870,15 @@
                   Intermediate node — type + variant (or values): adds a constraint and
                                delegates to nested Variant children.
 
-                When "to" is omitted and Variant children are present, the first form in
-                declaration order serves as the unconditional default.
+                When "to" is omitted and no Variant matches, the replacement is skipped.
+                Conditional forms never create an implicit fallback.
 
                 Example — German "ein" count form, feminine override:
                     &lt;Replace from="ein$" regex="true"&gt;
                         &lt;Variant type="genus" forms="eins,eine,eins" /&gt;
                     &lt;/Replace&gt;
                 creates: maskulin → "eins", feminin → "eine", neutrum → "eins",
-                         default (no variant) → "eins" (first form).
+                         no matching variant and no to attribute → no replacement.
 
                 Selection rule: the most specific matching variant (most constraints) wins.
                 When "to" is provided it is always used as the unconditional default.
@@ -891,7 +900,7 @@
             <xs:annotation>
                 <xs:documentation>
                     The unconditional default replacement. May be omitted when all cases are
-                    covered by Variant children (the first form then becomes the default).
+                    covered by Variant children. When absent, unmatched queries skip replacement.
                     May contain backreferences ($1, ${name}) when regex="true".
                 </xs:documentation>
             </xs:annotation>

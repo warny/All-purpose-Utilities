@@ -157,3 +157,9 @@ All notable changes to this project will be documented in this file.
 - Removed the declared 1.x stream/helper signatures recorded in `eng/api-breaking-changes/2.0.0.json`; no compatibility shims are provided.
 - Reader converters now require an exact return type, while base/interface writer converters use deterministic most-specific selection.
 - `PartialStream` now provides synchronized position, bounds, Span, and asynchronous semantics.
+
+### Number-to-string deterministic rules
+
+- **Breaking:** `VariantRule` and `OrdinalVariantRule` now expose immutable signed `Priority` values; trigger tuples were replaced by `TriggerReplacementForm`.
+- Canonical constraint sets, shared specificity/priority ranking, and construction-time `UNTS001`–`UNTS004` diagnostics reject unresolved intersections instead of using declaration order.
+- XML `priority` attributes default to zero and cumulative variants apply in ascending specificity and priority order.
