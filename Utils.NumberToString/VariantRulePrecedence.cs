@@ -53,6 +53,27 @@ internal readonly record struct VariantConstraintSet
 /// <summary>Represents the precedence rank of a variant candidate.</summary>
 internal readonly record struct VariantRuleRank(int Specificity, int Priority);
 
+/// <summary>Represents an immutable text candidate used while compiling XML variant forms.</summary>
+internal sealed class VariantTextCandidate
+{
+    /// <summary>Initializes a text candidate from canonical constraints.</summary>
+    internal VariantTextCandidate(IReadOnlyDictionary<string, string> constraints, string text, int priority)
+    {
+        Constraints = new VariantConstraintSet(constraints);
+        Text = text;
+        Priority = priority;
+    }
+
+    /// <summary>Gets the normalized constraints.</summary>
+    internal VariantConstraintSet Constraints { get; }
+
+    /// <summary>Gets the candidate text.</summary>
+    internal string Text { get; }
+
+    /// <summary>Gets the explicit candidate priority.</summary>
+    internal int Priority { get; }
+}
+
 /// <summary>Provides shared matching, ranking, and ambiguity operations for variant candidates.</summary>
 internal static class VariantRulePrecedence
 {

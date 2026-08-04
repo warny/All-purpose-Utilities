@@ -1205,7 +1205,7 @@ namespace Utils.NumberToString
                 if (left.NormalizedConstraints.Specificity != right.NormalizedConstraints.Specificity
                     || left.Priority != right.Priority
                     || !VariantRulePrecedence.CanMatchTogether(left.NormalizedConstraints, right.NormalizedConstraints)) continue;
-                bool globalOverlap = left.Replacements.Any(IsGlobalReplacement) && right.Replacements.Any(IsGlobalReplacement);
+                bool globalOverlap = left.Replacements.Any(a => right.Replacements.Any(b => GlobalScopesOverlap(a, b)));
                 bool scaleOverlap = left.Replacements.Any(a => right.Replacements.Any(b => ScaleScopesOverlap(a, b)));
                 if (!globalOverlap && !scaleOverlap) continue;
                 throw new NumberToStringConfigurationException("UNTS001", LanguageIdentifier, "VariantRules",
@@ -1216,8 +1216,12 @@ namespace Utils.NumberToString
             }
         }
 
-        /// <summary>Returns whether a replacement participates in global evaluation.</summary>
-        private static bool IsGlobalReplacement(ReplacementRule replacement) => replacement.OnScale is null;
+        /// <summary>Returns whether two global replacements can run for the same numeric value.</summary>
+        private static bool GlobalScopesOverlap(ReplacementRule left, ReplacementRule right)
+        {
+            if (left.OnScale is not null || right.OnScale is not null) return false;
+            return left.OnValue is null || right.OnValue is null || left.OnValue.Intersect(right.OnValue).Any();
+        }
 
         /// <summary>Returns whether two scale-filtered replacements can run for the same scale and value.</summary>
         private static bool ScaleScopesOverlap(ReplacementRule left, ReplacementRule right)
