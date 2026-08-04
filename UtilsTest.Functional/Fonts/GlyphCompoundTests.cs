@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Fonts;
 using Utils.Fonts.TTF;
+using Utils.Fonts.TTF.Parsing;
 using Utils.Fonts.TTF.Tables;
 using Utils.Fonts.TTF.Tables.Glyf;
 using Utils.IO.Serialization;
@@ -42,7 +43,8 @@ public class GlyphCompoundTests
         short translateX, short translateY,
         float m11, float m21, float m12, float m22,
         CompoundGlyfFlags extraFlags,
-        byte[] instructions = null)
+        byte[] instructions = null,
+        ushort targetGlyphIndex = 0)
     {
         using var ms = new MemoryStream();
         var w = new Writer(ms, BigEndianWriter.WriterDelegates);
@@ -51,7 +53,7 @@ public class GlyphCompoundTests
 
         var flags = CompoundGlyfFlags.ArgsAreWords | CompoundGlyfFlags.ArgsAreXY | CompoundGlyfFlags.HasTwoByTwo | extraFlags;
         w.Write<short>((short)flags);
-        w.Write<short>(0); // glyphIndex: references glyph 0
+        w.Write<ushort>(targetGlyphIndex);
         w.Write<short>(translateX);
         w.Write<short>(translateY);
         w.Write<short>((short)System.Math.Round(m11 * 16384f));
@@ -236,5 +238,95 @@ public class GlyphCompoundTests
 
         Assert.AreEqual(glyph.Length, outMs.ToArray().Length);
         CollectionAssert.AreEqual(original, outMs.ToArray());
+    }
+
+    // TODO-pass2 item 14.1/30: GlyphIndex is unsigned; GetGlyphIndex (renamed from getGlyphIndex)
+    // returns ushort so glyph IDs above 32767 are not misread as negative.
+    [TestMethod]
+    public void GetGlyphIndex_AboveShortMaxValue_ReturnsUnsignedValue()
+    {
+        byte[] bytes = BuildCompoundGlyphBytes(0, 0, 1f, 0f, 0f, 1f, default, targetGlyphIndex: 40000);
+        var glyph = (GlyphCompound)GlyphBase.CreateGlyf(MakeReader(bytes), null);
+
+        Assert.AreEqual((ushort)40000, glyph.GetGlyphIndex(0));
+    }
+
+    // TODO-pass2 item 14.3: mutually exclusive scale flags must be rejected rather than silently
+    // letting the last-read scale field win.
+    [TestMethod]
+    public void ConflictingScaleFlags_Throws()
+    {
+        using var ms = new MemoryStream();
+        var w = new Writer(ms, BigEndianWriter.WriterDelegates);
+        w.Write<short>(-1);
+        w.Write<short>(0); w.Write<short>(0); w.Write<short>(0); w.Write<short>(0);
+        var flags = CompoundGlyfFlags.ArgsAreXY | CompoundGlyfFlags.HasScale | CompoundGlyfFlags.HasXYScale;
+        w.Write<short>((short)flags);
+        w.Write<ushort>(0);
+        w.WriteByte(0); w.WriteByte(0);
+        w.Write<short>(16384); // HasScale field
+        w.Write<short>(16384); // HasXYScale field
+
+        Assert.ThrowsExactly<FontParseException>(() => GlyphBase.CreateGlyf(MakeReader(ms.ToArray()), null));
+    }
+
+    // TODO-pass2 item 14.5/36: Instructions must not be a mutable array callers can corrupt.
+    [TestMethod]
+    public void Instructions_IsReadOnlyMemory()
+    {
+        byte[] instructionBytes = [1, 2, 3];
+        byte[] bytes = BuildCompoundGlyphBytes(0, 0, 1f, 0f, 0f, 1f, CompoundGlyfFlags.HasInstructions, instructionBytes);
+        var glyph = (GlyphCompound)GlyphBase.CreateGlyf(MakeReader(bytes), null);
+
+        CollectionAssert.AreEqual(instructionBytes, glyph.Instructions.ToArray());
+    }
+
+    // TODO-pass2 item 14.6/31: a compound glyph that (directly or indirectly) references itself
+    // must be rejected rather than recursing without bound.
+    [TestMethod]
+    public void DirectSelfReference_ThrowsOnContoursResolution()
+    {
+        // Glyph index 1 is the first (and only) compound glyph after the origin glyph at index 0;
+        // making it reference itself (targetGlyphIndex: 1) creates a direct A -> A cycle.
+        byte[] compound = BuildCompoundGlyphBytes(0, 0, 1f, 0f, 0f, 1f, default, targetGlyphIndex: 1);
+        var glyf = BuildFontWithCompoundGlyphs(compound);
+
+        var glyph = (GlyphCompound)glyf.GetGlyph(1);
+        Assert.ThrowsExactly<FontParseException>(() => glyph.Contours.ToList());
+    }
+
+    [TestMethod]
+    public void IndirectCycle_ThrowsOnContoursResolution()
+    {
+        // Glyph 1 references glyph 2, glyph 2 references glyph 1: A -> B -> A.
+        byte[] compoundA = BuildCompoundGlyphBytes(0, 0, 1f, 0f, 0f, 1f, default, targetGlyphIndex: 2);
+        byte[] compoundB = BuildCompoundGlyphBytes(0, 0, 1f, 0f, 0f, 1f, default, targetGlyphIndex: 1);
+        var glyf = BuildFontWithCompoundGlyphs(compoundA, compoundB);
+
+        var glyphA = (GlyphCompound)glyf.GetGlyph(1);
+        Assert.ThrowsExactly<FontParseException>(() => glyphA.Contours.ToList());
+    }
+
+    // TODO-pass2 item 14.6/31: recursion depth is bounded even for a non-cyclic but excessively
+    // deep chain of compound glyphs (A -> B -> C -> ... ), using the default budget (64).
+    [TestMethod]
+    public void ExcessivelyDeepChain_ThrowsMaximumCompositeDepthExceeded()
+    {
+        var defaultOptions = new TrueTypeFontParsingOptions();
+        int chainLength = defaultOptions.MaximumCompositeDepth + 5;
+
+        // Build glyphs [1 .. chainLength] as compound glyphs where glyph i references glyph i+1,
+        // and the final glyph in the chain references glyph 0 (the simple origin-point glyph).
+        var compounds = new byte[chainLength][];
+        for (int i = 0; i < chainLength; i++)
+        {
+            ushort target = i + 1 == chainLength ? (ushort)0 : (ushort)(i + 2);
+            compounds[i] = BuildCompoundGlyphBytes(0, 0, 1f, 0f, 0f, 1f, default, targetGlyphIndex: target);
+        }
+        var glyf = BuildFontWithCompoundGlyphs(compounds);
+
+        var head = (GlyphCompound)glyf.GetGlyph(1);
+        var ex = Assert.ThrowsExactly<FontParseException>(() => head.Contours.ToList());
+        Assert.AreEqual(FontDiagnosticCode.ResourceLimitExceeded, ex.Diagnostic.Code);
     }
 }
