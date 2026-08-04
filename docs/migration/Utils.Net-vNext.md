@@ -155,3 +155,17 @@ after the exception was thrown.
 This is a behavioral fix, not a signature change. Code that reads `Failures` is unaffected.
 Code that relies on the exception reflecting post-construction mutations to the original list
 must be updated — though such patterns were never correct.
+
+---
+
+## SMTP, POP3, and NNTP protocol contracts in 2.0
+
+SMTP mailbox strings are now parsed strictly by `SmtpPath`. Angle brackets, whitespace, controls, source routes, and embedded ESMTP parameters are rejected. SMTPUTF8 requires opt-in both while parsing and in `SmtpMailOptions`. SASL PLAIN and LOGIN use strict UTF-8 and reject NUL in each credential field.
+
+An SMTP mail transaction and an AUTH LOGIN challenge sequence now hold one exclusive exchange lease. After `MAIL FROM`, a framed failure is recovered with verified `RSET` under `TransactionRecoveryTimeout` (five seconds by default). Failure after DATA acceptance or failed RSET poisons the session.
+
+`ProtocolResponseException` replaces generic response-message `IOException` failures and exposes protocol, sanitized verb, code, severity, immutable response lines, and enhanced status. A normal framed negative response does not poison the connection; cancellation, EOF, framing loss, streaming consumer failure, and multiline limit overruns do.
+
+POP3 STAT/LIST/UIDL and NNTP GROUP/LIST/STAT/NEXT now reject missing, extra, overflowing, negative, or duplicate mandatory values. `NextAsync` returns `null` only for NNTP 421. `NewNewsAsync` returns NNTP message-id strings rather than integers, and `INntpArticleStore.ListNewsSinceAsync` now supplies those message IDs directly.
+
+Streaming overloads accept `TextWriter` for POP3 RETR and NNTP ARTICLE/HEADER/BODY. Materializing wrappers use these bounded streaming paths. Defaults are 100,000 lines, 10 Mi characters, and 40 MiB (UTF-8 count).

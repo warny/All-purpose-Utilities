@@ -34,13 +34,13 @@ public interface INntpArticleStore
     Task<IReadOnlyDictionary<int, string>> ListAsync(string group, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Retrieves article numbers newer than the given time from the specified group.
+    /// Retrieves message identifiers newer than the given time from the specified group.
     /// </summary>
     /// <param name="group">Name of the newsgroup.</param>
     /// <param name="sinceUtc">Lower bound in UTC. Articles newer than this time are returned.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Collection of article numbers.</returns>
-    Task<IReadOnlyCollection<int>> ListNewsSinceAsync(string group, DateTime sinceUtc, CancellationToken cancellationToken = default);
+    /// <returns>Collection of RFC-style message identifiers.</returns>
+    Task<IReadOnlyCollection<string>> ListNewsSinceAsync(string group, DateTime sinceUtc, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Retrieves the full text of a single article.
@@ -60,4 +60,3 @@ public interface INntpArticleStore
     /// <returns>Number assigned to the new article.</returns>
     Task<int> AddAsync(string group, string article, CancellationToken cancellationToken = default);
 }
-

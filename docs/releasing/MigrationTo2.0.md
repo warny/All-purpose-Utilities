@@ -34,3 +34,7 @@ Runtime reader converters require an exact result type. A converter returning an
 Version 2.0 removes declaration order as an implicit tie-breaker. Add `priority="100"` (or another intentional signed `xs:int` value) when compatible rules have equal canonical specificity. Ordinal variants and trigger forms select the greatest specificity and then greatest priority. Cumulative variants apply the least specific and lowest-priority rules first.
 
 Programmatic trigger forms must migrate from `(Constraints, To)` tuples to `NumberToStringConverter.TriggerReplacementForm`. `VariantRule` and `OrdinalVariantRule` constructors accept an optional final `priority` argument. Configurations inherited through `baseOn` retain parent priorities; parent and child candidates are validated together and no implicit override occurs.
+
+## omy.Utils.Net protocol clients
+
+Use `SmtpPath` and `SmtpMailOptions` for SMTP envelopes, handle `ProtocolResponseException` for negative responses, and recreate a client after `ProtocolSessionPoisonedException`. POP3 STAT sizes are `long`; NNTP `NewNewsAsync` returns message-id strings; and `NextAsync` returns null only for response 421. Prefer the new `TextReader`/`TextWriter` streaming overloads for large payloads.

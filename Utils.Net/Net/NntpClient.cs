@@ -25,6 +25,9 @@ public class NntpClient : CommandResponseClient
     /// </summary>
     public int MaxMultilineChars { get; set; } = 10 * 1024 * 1024;
 
+    /// <summary>Gets or sets the maximum UTF-8 byte count for a multiline response.</summary>
+    public long MaxMultilineBytes { get; set; } = 40 * 1024 * 1024;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="NntpClient"/> class.
     /// </summary>
@@ -75,11 +78,10 @@ public class NntpClient : CommandResponseClient
     {
         ValidateCommandArgument(group, nameof(group));
         IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"GROUP {group}", cancellationToken).ConfigureAwait(false);
-        await EnsureCompletionAsync(responses).ConfigureAwait(false);
-        string[] parts = responses[0].Message?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
-        int count = parts.Length > 0 ? int.Parse(parts[0]) : 0;
-        int first = parts.Length > 1 ? int.Parse(parts[1]) : 0;
-        int last = parts.Length > 2 ? int.Parse(parts[2]) : 0;
+        ProtocolResponseValidator.RequireCode("NNTP", "GROUP", responses, "211");
+        string[] parts = ExactFields(responses[0].Message, 3, "GROUP", responses);
+        if (!TryNonNegative(parts[0], out int count) || !TryNonNegative(parts[1], out int first) || !TryNonNegative(parts[2], out int last) || (count > 0 && first > last))
+            throw new ProtocolResponseException("NNTP", "GROUP", responses);
         return (count, first, last);
     }
 
@@ -91,25 +93,14 @@ public class NntpClient : CommandResponseClient
     /// <returns>Article text.</returns>
     public async Task<string> ArticleAsync(int id, CancellationToken cancellationToken = default)
     {
-        var (status, body) = await SendMultilineCommandAsync(
-            $"ARTICLE {id}", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, cancellationToken).ConfigureAwait(false);
-        await EnsureCompletionAsync(status).ConfigureAwait(false);
         StringBuilder sb = new();
-        foreach (ServerResponse response in body)
-        {
-            string line = BodyLineToString(response);
-            if (line.StartsWith("..", StringComparison.Ordinal))
-            {
-                sb.Append(line.AsSpan(1));
-            }
-            else
-            {
-                sb.Append(line);
-            }
-            sb.Append("\r\n");
-        }
+        using StringWriter writer = new(sb, CultureInfo.InvariantCulture);
+        await ArticleAsync(id, writer, cancellationToken).ConfigureAwait(false);
         return sb.ToString();
     }
+
+    /// <summary>Streams a complete article while exclusively owning the exchange.</summary>
+    public Task ArticleAsync(int id, TextWriter destination, CancellationToken cancellationToken = default) => StreamArticlePartAsync("ARTICLE", "220", id, destination, cancellationToken);
 
     /// <summary>
     /// Lists available newsgroups.
@@ -119,17 +110,16 @@ public class NntpClient : CommandResponseClient
     public async Task<IReadOnlyList<(string group, int last, int first)>> ListAsync(CancellationToken cancellationToken = default)
     {
         var (status, body) = await SendMultilineCommandAsync(
-            "LIST", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, cancellationToken).ConfigureAwait(false);
-        await EnsureCompletionAsync(status).ConfigureAwait(false);
+            "LIST", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, MaxMultilineBytes, cancellationToken).ConfigureAwait(false);
+        ProtocolResponseValidator.RequireCode("NNTP", "LIST", status, "215");
         List<(string group, int last, int first)> result = new();
         foreach (ServerResponse response in body)
         {
             string line = BodyLineToString(response);
             string[] parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length >= 3)
-            {
-                result.Add((parts[0], int.Parse(parts[1]), int.Parse(parts[2])));
-            }
+            if (parts.Length is < 3 or > 4 || parts[0].Length == 0 || !TryNonNegative(parts[1], out int high) || !TryNonNegative(parts[2], out int low) || high < low)
+                throw new ProtocolResponseException("NNTP", "LIST", status);
+            result.Add((parts[0], high, low));
         }
         return result;
     }
@@ -146,7 +136,7 @@ public class NntpClient : CommandResponseClient
         string date = utc.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
         string time = utc.ToString("HHmmss", CultureInfo.InvariantCulture);
         var (status, body) = await SendMultilineCommandAsync(
-            $"NEWGROUPS {date} {time} GMT", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, cancellationToken).ConfigureAwait(false);
+            $"NEWGROUPS {date} {time} GMT", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, MaxMultilineBytes, cancellationToken).ConfigureAwait(false);
         await EnsureCompletionAsync(status).ConfigureAwait(false);
         List<string> result = new(body.Count);
         foreach (ServerResponse response in body)
@@ -161,22 +151,21 @@ public class NntpClient : CommandResponseClient
     /// <param name="sinceUtc">Lower bound in UTC.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Collection of article numbers.</returns>
-    public async Task<IReadOnlyList<int>> NewNewsAsync(string group, DateTime sinceUtc, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<string>> NewNewsAsync(string group, DateTime sinceUtc, CancellationToken cancellationToken = default)
     {
         ValidateCommandArgument(group, nameof(group));
         DateTime utc = sinceUtc.Kind == DateTimeKind.Local ? sinceUtc.ToUniversalTime() : DateTime.SpecifyKind(sinceUtc, DateTimeKind.Utc);
         string date = utc.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
         string time = utc.ToString("HHmmss", CultureInfo.InvariantCulture);
         var (status, body) = await SendMultilineCommandAsync(
-            $"NEWNEWS {group} {date} {time} GMT", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, cancellationToken).ConfigureAwait(false);
+            $"NEWNEWS {group} {date} {time} GMT", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, MaxMultilineBytes, cancellationToken).ConfigureAwait(false);
         await EnsureCompletionAsync(status).ConfigureAwait(false);
-        List<int> ids = new();
+        List<string> ids = new();
         foreach (ServerResponse response in body)
         {
-            if (int.TryParse(BodyLineToString(response), out int id))
-            {
-                ids.Add(id);
-            }
+            string id = BodyLineToString(response);
+            if (!IsMessageId(id)) throw new ProtocolResponseException("NNTP", "NEWNEWS", status);
+            ids.Add(id);
         }
         return ids;
     }
@@ -189,25 +178,14 @@ public class NntpClient : CommandResponseClient
     /// <returns>Header text.</returns>
     public async Task<string> HeaderAsync(int id, CancellationToken cancellationToken = default)
     {
-        var (status, body) = await SendMultilineCommandAsync(
-            $"HEADER {id}", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, cancellationToken).ConfigureAwait(false);
-        await EnsureCompletionAsync(status).ConfigureAwait(false);
-        StringBuilder sb = new();
-        foreach (ServerResponse response in body)
-        {
-            string line = BodyLineToString(response);
-            if (line.StartsWith("..", StringComparison.Ordinal))
-            {
-                sb.Append(line.AsSpan(1));
-            }
-            else
-            {
-                sb.Append(line);
-            }
-            sb.Append("\r\n");
-        }
-        return sb.ToString();
+        StringBuilder builder = new();
+        using StringWriter writer = new(builder, CultureInfo.InvariantCulture);
+        await HeaderAsync(id, writer, cancellationToken).ConfigureAwait(false);
+        return builder.ToString();
     }
+
+    /// <summary>Streams article headers while exclusively owning the exchange.</summary>
+    public Task HeaderAsync(int id, TextWriter destination, CancellationToken cancellationToken = default) => StreamArticlePartAsync("HEADER", "221", id, destination, cancellationToken);
 
     /// <summary>
     /// Retrieves only the body of an article.
@@ -217,25 +195,14 @@ public class NntpClient : CommandResponseClient
     /// <returns>Body text.</returns>
     public async Task<string> BodyAsync(int id, CancellationToken cancellationToken = default)
     {
-        var (status, body) = await SendMultilineCommandAsync(
-            $"BODY {id}", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, cancellationToken).ConfigureAwait(false);
-        await EnsureCompletionAsync(status).ConfigureAwait(false);
-        StringBuilder sb = new();
-        foreach (ServerResponse response in body)
-        {
-            string line = BodyLineToString(response);
-            if (line.StartsWith("..", StringComparison.Ordinal))
-            {
-                sb.Append(line.AsSpan(1));
-            }
-            else
-            {
-                sb.Append(line);
-            }
-            sb.Append("\r\n");
-        }
-        return sb.ToString();
+        StringBuilder builder = new();
+        using StringWriter writer = new(builder, CultureInfo.InvariantCulture);
+        await BodyAsync(id, writer, cancellationToken).ConfigureAwait(false);
+        return builder.ToString();
     }
+
+    /// <summary>Streams an article body while exclusively owning the exchange.</summary>
+    public Task BodyAsync(int id, TextWriter destination, CancellationToken cancellationToken = default) => StreamArticlePartAsync("BODY", "222", id, destination, cancellationToken);
 
     /// <summary>
     /// Retrieves article status information without returning content.
@@ -245,12 +212,10 @@ public class NntpClient : CommandResponseClient
     /// <returns>Tuple containing article number and message identifier.</returns>
     public async Task<(int id, string messageId)> StatAsync(int id, CancellationToken cancellationToken = default)
     {
+        ValidateId(id, nameof(id));
         IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"STAT {id}", cancellationToken).ConfigureAwait(false);
-        await EnsureCompletionAsync(responses).ConfigureAwait(false);
-        string[] parts = responses[0].Message?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
-        int articleId = parts.Length > 0 ? int.Parse(parts[0]) : 0;
-        string messageId = parts.Length > 1 ? parts[1] : string.Empty;
-        return (articleId, messageId);
+        ProtocolResponseValidator.RequireCode("NNTP", "STAT", responses, "223");
+        return ParseArticleStatus("STAT", responses);
     }
 
     /// <summary>
@@ -261,12 +226,10 @@ public class NntpClient : CommandResponseClient
     public async Task<int?> NextAsync(CancellationToken cancellationToken = default)
     {
         IReadOnlyList<ServerResponse> responses = await SendCommandAsync("NEXT", cancellationToken).ConfigureAwait(false);
-        if (responses.Count == 0 || responses[^1].Severity != ResponseSeverity.Completion)
-        {
-            return null;
-        }
-        string[] parts = responses[0].Message?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
-        return parts.Length > 0 ? int.Parse(parts[0]) : null;
+        if (responses.Count == 0) throw new ProtocolResponseException("NNTP", "NEXT", responses);
+        if (responses[^1].Code == "421") return null;
+        ProtocolResponseValidator.RequireCode("NNTP", "NEXT", responses, "223");
+        return ParseArticleStatus("NEXT", responses).id;
     }
 
     /// <summary>
@@ -321,6 +284,44 @@ public class NntpClient : CommandResponseClient
         }
         return Task.CompletedTask;
     }
+
+    /// <summary>Streams one dot-terminated article component.</summary>
+    private async Task StreamArticlePartAsync(string command, string expectedCode, int id, TextWriter destination, CancellationToken cancellationToken)
+    {
+        ValidateId(id, nameof(id));
+        ArgumentNullException.ThrowIfNull(destination);
+        IReadOnlyList<ServerResponse> status = await StreamMultilineCommandAsync($"{command} {id}", async (line, token) =>
+        {
+            await destination.WriteAsync(line, token).ConfigureAwait(false);
+            await destination.WriteAsync("\r\n".AsMemory(), token).ConfigureAwait(false);
+        }, new ProtocolPayloadLimits { MaximumLines = MaxMultilineLines, MaximumCharacters = MaxMultilineChars, MaximumBytes = MaxMultilineBytes }, cancellationToken).ConfigureAwait(false);
+        ProtocolResponseValidator.RequireCode("NNTP", command, status, expectedCode);
+    }
+
+    /// <summary>Parses a strict NNTP article-number and message-id response.</summary>
+    private static (int id, string messageId) ParseArticleStatus(string command, IReadOnlyList<ServerResponse> responses)
+    {
+        string[] fields = ExactFields(responses[0].Message, 2, command, responses);
+        if (!int.TryParse(fields[0], NumberStyles.None, CultureInfo.InvariantCulture, out int id) || id <= 0 || !IsMessageId(fields[1]))
+            throw new ProtocolResponseException("NNTP", command, responses);
+        return (id, fields[1]);
+    }
+
+    /// <summary>Requires an exact number of response fields.</summary>
+    private static string[] ExactFields(string? value, int count, string command, IReadOnlyList<ServerResponse> responses)
+    {
+        string[] fields = value?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? [];
+        return fields.Length == count ? fields : throw new ProtocolResponseException("NNTP", command, responses);
+    }
+
+    /// <summary>Parses a non-negative invariant integer.</summary>
+    private static bool TryNonNegative(string value, out int result) => int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out result) && result >= 0;
+
+    /// <summary>Validates an NNTP message-id token.</summary>
+    private static bool IsMessageId(string value) => value.Length is > 2 and <= 998 && value[0] == '<' && value[^1] == '>' && !value.Any(char.IsWhiteSpace) && !value.Any(char.IsControl);
+
+    /// <summary>Validates an article number before any command is written.</summary>
+    private static void ValidateId(int id, string name) { if (id <= 0) throw new ArgumentOutOfRangeException(name); }
 
 
 }

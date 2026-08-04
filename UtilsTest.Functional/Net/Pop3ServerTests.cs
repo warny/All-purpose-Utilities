@@ -41,7 +41,7 @@ public class Pop3ServerTests
         using Pop3Client client = new();
         await client.ConnectAsync("127.0.0.1", port);
         await client.AuthenticateAsync("user", "pass");
-        (int count, int size) stat = await client.GetStatAsync();
+        (int count, long size) stat = await client.GetStatAsync();
         Assert.AreEqual(2, stat.count);
         IReadOnlyDictionary<int, int> list = await client.ListAsync();
         Assert.AreEqual(2, list.Count);

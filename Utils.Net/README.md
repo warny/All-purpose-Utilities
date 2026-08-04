@@ -698,3 +698,21 @@ dotnet list package --vulnerable --include-transitive
 
 
 [Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)
+
+## Protocol safety in 2.0
+
+SMTP envelopes use `SmtpPath`; only `local-part@domain`, IPv4/IPv6 address literals, and the empty reverse-path are supported. ASCII is the default. International paths require `SmtpPath.Parse(value, allowUtf8: true)` **and** `SmtpMailOptions.SmtpUtf8 = true`. ESMTP parameters are represented by `SmtpMailOptions`, never appended to an address.
+
+`SendMailAsync` owns the connection from `MAIL FROM` through the final DATA response. Failures after an accepted envelope attempt `RSET` for at most five seconds by default; loss of DATA framing or failed recovery poisons and closes the session. A framed negative response throws `ProtocolResponseException` without closing an otherwise synchronized session.
+
+POP3 and NNTP dot-terminated payloads support `TextWriter` streaming. The defaults are 100,000 lines, 10 Mi UTF-16 characters, and 40 MiB of UTF-8 payload. Only an exact `.` terminates a body and only `..` is unstuffed. Cancellation, EOF, consumer failure, or a limit breach before the terminator poisons the session.
+
+```csharp
+var sender = SmtpPath.Parse("sender@example.com");
+var recipient = SmtpPath.Parse("recipient@example.com");
+await smtp.SendMailAsync(sender, [recipient], messageReader);
+await pop3.RetrieveAsync(1, destinationWriter);
+await nntp.ArticleAsync(1, destinationWriter);
+```
+
+Versioned API documentation: https://warny.github.io/All-purpose-Utilities/v2.0.0/
