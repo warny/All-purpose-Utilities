@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Fonts_TTF_Tables_CmapTable" data-uid="Utils.Fonts.TTF.Tables.CmapTable" class="text-break">
-Class CmapTable  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/CmapTable.cs/#L17"><i class="bi bi-code-slash"></i></a>
+Class CmapTable  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/CmapTable.cs/#L20"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -304,7 +304,7 @@ public class CmapTable : TrueTypeTable, IEnumerable&lt;CMapFormatBase&gt;, IEnum
 
   <h3 id="Utils_Fonts_TTF_Tables_CmapTable__ctor" data-uid="Utils.Fonts.TTF.Tables.CmapTable.#ctor">
   CmapTable()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/CmapTable.cs/#L131"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/CmapTable.cs/#L139"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Fonts.TTF.Tables.CmapTable.html">CmapTable</a> class.</p>
@@ -335,15 +335,19 @@ public class CmapTable : TrueTypeTable, IEnumerable&lt;CMapFormatBase&gt;, IEnum
 
   <h3 id="Utils_Fonts_TTF_Tables_CmapTable_CMaps" data-uid="Utils.Fonts.TTF.Tables.CmapTable.CMaps">
   CMaps
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/CmapTable.cs/#L94"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/CmapTable.cs/#L102"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets the array of cmap subtables.</p>
+  <div class="markdown level1 summary"><p>Gets the cmap subtables, in priority order (Microsoft Unicode first, see
+<a class="xref" href="Utils.Fonts.TTF.Tables.CmapTable.CmapSubtable.html#Utils_Fonts_TTF_Tables_CmapTable_CmapSubtable_CompareTo_Utils_Fonts_TTF_Tables_CmapTable_CmapSubtable_">CompareTo(CmapSubtable?)</a>). Backed by an immutable snapshot: mutating the
+returned list is not possible, and it never reflects a later <a class="xref" href="Utils.Fonts.TTF.Tables.CmapTable.html#Utils_Fonts_TTF_Tables_CmapTable_AddCMap_System_UInt16_System_UInt16_Utils_Fonts_TTF_Tables_CMap_CMapFormatBase_">AddCMap(ushort, ushort, CMapFormatBase)</a>/
+<a class="xref" href="Utils.Fonts.TTF.Tables.CmapTable.html#Utils_Fonts_TTF_Tables_CmapTable_RemoveCMap_System_UInt16_System_UInt16_">RemoveCMap(ushort, ushort)</a> call made after it was read -- call this property again to observe
+changes.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public virtual CMapFormatBase[] CMaps { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public virtual IReadOnlyList&lt;CMapFormatBase&gt; CMaps { get; }</code></pre>
   </div>
 
 
@@ -352,7 +356,7 @@ public class CmapTable : TrueTypeTable, IEnumerable&lt;CMapFormatBase&gt;, IEnum
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="Utils.Fonts.TTF.Tables.CMap.CMapFormatBase.html">CMapFormatBase</a>[]</dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="Utils.Fonts.TTF.Tables.CMap.CMapFormatBase.html">CMapFormatBase</a>&gt;</dt>
     <dd></dd>
   </dl>
 
@@ -367,7 +371,7 @@ public class CmapTable : TrueTypeTable, IEnumerable&lt;CMapFormatBase&gt;, IEnum
 
   <h3 id="Utils_Fonts_TTF_Tables_CmapTable_Length" data-uid="Utils.Fonts.TTF.Tables.CmapTable.Length">
   Length
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/CmapTable.cs/#L150"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/CmapTable.cs/#L158"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the total length (in bytes) of the cmap table data.</p>
@@ -399,7 +403,7 @@ public class CmapTable : TrueTypeTable, IEnumerable&lt;CMapFormatBase&gt;, IEnum
 
   <h3 id="Utils_Fonts_TTF_Tables_CmapTable_NumberSubtables" data-uid="Utils.Fonts.TTF.Tables.CmapTable.NumberSubtables">
   NumberSubtables
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/CmapTable.cs/#L145"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/CmapTable.cs/#L153"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the number of cmap subtables.</p>
@@ -407,7 +411,7 @@ public class CmapTable : TrueTypeTable, IEnumerable&lt;CMapFormatBase&gt;, IEnum
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public virtual short NumberSubtables { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public virtual ushort NumberSubtables { get; }</code></pre>
   </div>
 
 
@@ -416,7 +420,7 @@ public class CmapTable : TrueTypeTable, IEnumerable&lt;CMapFormatBase&gt;, IEnum
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
     <dd></dd>
   </dl>
 
@@ -431,7 +435,7 @@ public class CmapTable : TrueTypeTable, IEnumerable&lt;CMapFormatBase&gt;, IEnum
 
   <h3 id="Utils_Fonts_TTF_Tables_CmapTable_Version" data-uid="Utils.Fonts.TTF.Tables.CmapTable.Version">
   Version
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/CmapTable.cs/#L140"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/CmapTable.cs/#L148"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the version of the cmap table.</p>
@@ -439,7 +443,7 @@ public class CmapTable : TrueTypeTable, IEnumerable&lt;CMapFormatBase&gt;, IEnum
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public virtual short Version { get; set; }</code></pre>
+    <pre><code class="lang-csharp hljs">public virtual ushort Version { get; set; }</code></pre>
   </div>
 
 
@@ -448,7 +452,7 @@ public class CmapTable : TrueTypeTable, IEnumerable&lt;CMapFormatBase&gt;, IEnum
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
     <dd></dd>
   </dl>
 
@@ -465,9 +469,9 @@ public class CmapTable : TrueTypeTable, IEnumerable&lt;CMapFormatBase&gt;, IEnum
 
   <a id="Utils_Fonts_TTF_Tables_CmapTable_AddCMap_" data-uid="Utils.Fonts.TTF.Tables.CmapTable.AddCMap*"></a>
 
-  <h3 id="Utils_Fonts_TTF_Tables_CmapTable_AddCMap_System_Int16_System_Int16_Utils_Fonts_TTF_Tables_CMap_CMapFormatBase_" data-uid="Utils.Fonts.TTF.Tables.CmapTable.AddCMap(System.Int16,System.Int16,Utils.Fonts.TTF.Tables.CMap.CMapFormatBase)">
-  AddCMap(short, short, CMapFormatBase)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/CmapTable.cs/#L111"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Fonts_TTF_Tables_CmapTable_AddCMap_System_UInt16_System_UInt16_Utils_Fonts_TTF_Tables_CMap_CMapFormatBase_" data-uid="Utils.Fonts.TTF.Tables.CmapTable.AddCMap(System.UInt16,System.UInt16,Utils.Fonts.TTF.Tables.CMap.CMapFormatBase)">
+  AddCMap(ushort, ushort, CMapFormatBase)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/CmapTable.cs/#L119"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Adds a cmap subtable to the table.</p>
@@ -475,15 +479,15 @@ public class CmapTable : TrueTypeTable, IEnumerable&lt;CMapFormatBase&gt;, IEnum
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public virtual void AddCMap(short platformID, short platformSpecificID, CMapFormatBase cm)</code></pre>
+    <pre><code class="lang-csharp hljs">public virtual void AddCMap(ushort platformID, ushort platformSpecificID, CMapFormatBase cm)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
-    <dt><code>platformID</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dt><code>platformID</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
     <dd><p>The platform ID.</p>
 </dd>
-    <dt><code>platformSpecificID</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dt><code>platformSpecificID</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
     <dd><p>The platform-specific ID.</p>
 </dd>
     <dt><code>cm</code> <a class="xref" href="Utils.Fonts.TTF.Tables.CMap.CMapFormatBase.html">CMapFormatBase</a></dt>
@@ -504,9 +508,9 @@ public class CmapTable : TrueTypeTable, IEnumerable&lt;CMapFormatBase&gt;, IEnum
 
   <a id="Utils_Fonts_TTF_Tables_CmapTable_GetCMap_" data-uid="Utils.Fonts.TTF.Tables.CmapTable.GetCMap*"></a>
 
-  <h3 id="Utils_Fonts_TTF_Tables_CmapTable_GetCMap_System_Int16_System_Int16_" data-uid="Utils.Fonts.TTF.Tables.CmapTable.GetCMap(System.Int16,System.Int16)">
-  GetCMap(short, short)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/CmapTable.cs/#L102"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Fonts_TTF_Tables_CmapTable_GetCMap_System_UInt16_System_UInt16_" data-uid="Utils.Fonts.TTF.Tables.CmapTable.GetCMap(System.UInt16,System.UInt16)">
+  GetCMap(ushort, ushort)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/CmapTable.cs/#L110"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a cmap subtable based on the specified platform ID and platform-specific ID.</p>
@@ -514,15 +518,15 @@ public class CmapTable : TrueTypeTable, IEnumerable&lt;CMapFormatBase&gt;, IEnum
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public virtual CMapFormatBase GetCMap(short platformID, short platformSpecificID)</code></pre>
+    <pre><code class="lang-csharp hljs">public virtual CMapFormatBase GetCMap(ushort platformID, ushort platformSpecificID)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
-    <dt><code>platformID</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dt><code>platformID</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
     <dd><p>The platform ID.</p>
 </dd>
-    <dt><code>platformSpecificID</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dt><code>platformSpecificID</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
     <dd><p>The platform-specific ID.</p>
 </dd>
   </dl>
@@ -548,7 +552,7 @@ public class CmapTable : TrueTypeTable, IEnumerable&lt;CMapFormatBase&gt;, IEnum
 
   <h3 id="Utils_Fonts_TTF_Tables_CmapTable_GetEnumerator" data-uid="Utils.Fonts.TTF.Tables.CmapTable.GetEnumerator">
   GetEnumerator()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/CmapTable.cs/#L267"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/CmapTable.cs/#L332"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns an enumerator that iterates through the collection.</p>
@@ -581,7 +585,7 @@ public class CmapTable : TrueTypeTable, IEnumerable&lt;CMapFormatBase&gt;, IEnum
 
   <h3 id="Utils_Fonts_TTF_Tables_CmapTable_ReadData_Utils_IO_Serialization_Reader_" data-uid="Utils.Fonts.TTF.Tables.CmapTable.ReadData(Utils.IO.Serialization.Reader)">
   ReadData(Reader)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/CmapTable.cs/#L165"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/CmapTable.cs/#L175"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads the table data from the specified reader.</p>
@@ -612,9 +616,9 @@ public class CmapTable : TrueTypeTable, IEnumerable&lt;CMapFormatBase&gt;, IEnum
 
   <a id="Utils_Fonts_TTF_Tables_CmapTable_RemoveCMap_" data-uid="Utils.Fonts.TTF.Tables.CmapTable.RemoveCMap*"></a>
 
-  <h3 id="Utils_Fonts_TTF_Tables_CmapTable_RemoveCMap_System_Int16_System_Int16_" data-uid="Utils.Fonts.TTF.Tables.CmapTable.RemoveCMap(System.Int16,System.Int16)">
-  RemoveCMap(short, short)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/CmapTable.cs/#L122"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Fonts_TTF_Tables_CmapTable_RemoveCMap_System_UInt16_System_UInt16_" data-uid="Utils.Fonts.TTF.Tables.CmapTable.RemoveCMap(System.UInt16,System.UInt16)">
+  RemoveCMap(ushort, ushort)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/CmapTable.cs/#L130"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes a cmap subtable based on the specified platform IDs.</p>
@@ -622,15 +626,15 @@ public class CmapTable : TrueTypeTable, IEnumerable&lt;CMapFormatBase&gt;, IEnum
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public virtual void RemoveCMap(short platformID, short platformSpecificID)</code></pre>
+    <pre><code class="lang-csharp hljs">public virtual void RemoveCMap(ushort platformID, ushort platformSpecificID)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
-    <dt><code>platformID</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dt><code>platformID</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
     <dd><p>The platform ID.</p>
 </dd>
-    <dt><code>platformSpecificID</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dt><code>platformSpecificID</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
     <dd><p>The platform-specific ID.</p>
 </dd>
   </dl>
@@ -650,7 +654,7 @@ public class CmapTable : TrueTypeTable, IEnumerable&lt;CMapFormatBase&gt;, IEnum
 
   <h3 id="Utils_Fonts_TTF_Tables_CmapTable_ToString" data-uid="Utils.Fonts.TTF.Tables.CmapTable.ToString">
   ToString()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/CmapTable.cs/#L246"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/CmapTable.cs/#L316"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a string representation of the cmap table.</p>
@@ -683,7 +687,7 @@ public class CmapTable : TrueTypeTable, IEnumerable&lt;CMapFormatBase&gt;, IEnum
 
   <h3 id="Utils_Fonts_TTF_Tables_CmapTable_WriteData_Utils_IO_Serialization_Writer_" data-uid="Utils.Fonts.TTF.Tables.CmapTable.WriteData(Utils.IO.Serialization.Writer)">
   WriteData(Writer)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/CmapTable.cs/#L222"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/CmapTable.cs/#L286"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes the cmap table data to the specified writer.</p>
@@ -716,7 +720,7 @@ public class CmapTable : TrueTypeTable, IEnumerable&lt;CMapFormatBase&gt;, IEnum
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/CmapTable.cs/#L17" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/CmapTable.cs/#L20" class="edit-link">Edit this page</a>
         </div>
 
 

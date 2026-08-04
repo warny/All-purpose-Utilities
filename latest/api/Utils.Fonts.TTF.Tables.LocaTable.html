@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Fonts_TTF_Tables_LocaTable" data-uid="Utils.Fonts.TTF.Tables.LocaTable" class="text-break">
-Class LocaTable  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/LocaTable.cs/#L18"><i class="bi bi-code-slash"></i></a>
+Class LocaTable  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/LocaTable.cs/#L19"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -308,7 +308,7 @@ public class LocaTable : TrueTypeTable, IEnumerable&lt;LocaRecord&gt;, IEnumerab
 
   <h3 id="Utils_Fonts_TTF_Tables_LocaTable__ctor" data-uid="Utils.Fonts.TTF.Tables.LocaTable.#ctor">
   LocaTable()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/LocaTable.cs/#L51"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/LocaTable.cs/#L62"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Fonts.TTF.Tables.LocaTable.html">LocaTable</a> class.</p>
@@ -339,7 +339,7 @@ public class LocaTable : TrueTypeTable, IEnumerable&lt;LocaRecord&gt;, IEnumerab
 
   <h3 id="Utils_Fonts_TTF_Tables_LocaTable_GlyphCount" data-uid="Utils.Fonts.TTF.Tables.LocaTable.GlyphCount">
   GlyphCount
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/LocaTable.cs/#L41"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/LocaTable.cs/#L45"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the total number of glyphs in the font.</p>
@@ -371,7 +371,7 @@ public class LocaTable : TrueTypeTable, IEnumerable&lt;LocaRecord&gt;, IEnumerab
 
   <h3 id="Utils_Fonts_TTF_Tables_LocaTable_IsLongFormat" data-uid="Utils.Fonts.TTF.Tables.LocaTable.IsLongFormat">
   IsLongFormat
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/LocaTable.cs/#L46"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/LocaTable.cs/#L57"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a value indicating whether this is a long format loca table.</p>
@@ -403,7 +403,7 @@ public class LocaTable : TrueTypeTable, IEnumerable&lt;LocaRecord&gt;, IEnumerab
 
   <h3 id="Utils_Fonts_TTF_Tables_LocaTable_Item_System_Int32_" data-uid="Utils.Fonts.TTF.Tables.LocaTable.Item(System.Int32)">
   this[int]
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/LocaTable.cs/#L74"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/LocaTable.cs/#L85"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the offset and size of the glyph data for the glyph at the specified index.</p>
@@ -442,10 +442,12 @@ public class LocaTable : TrueTypeTable, IEnumerable&lt;LocaRecord&gt;, IEnumerab
 
   <h3 id="Utils_Fonts_TTF_Tables_LocaTable_Length" data-uid="Utils.Fonts.TTF.Tables.LocaTable.Length">
   Length
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/LocaTable.cs/#L86"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/LocaTable.cs/#L99"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets the length (in bytes) of the loca table data.</p>
+  <div class="markdown level1 summary"><p>Gets the length (in bytes) of the loca table data. Does not, by itself, recompute
+<span class="xref">Utils.Fonts.TTF.Tables.LocaTable.offsets</span> from 'glyf' -- see <span class="xref">Utils.Fonts.TTF.Tables.LocaTable.PrepareForSerialization()</span>, which must be
+called explicitly before this property is read for writing.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -474,7 +476,7 @@ public class LocaTable : TrueTypeTable, IEnumerable&lt;LocaRecord&gt;, IEnumerab
 
   <h3 id="Utils_Fonts_TTF_Tables_LocaTable_TrueTypeFont" data-uid="Utils.Fonts.TTF.Tables.LocaTable.TrueTypeFont">
   TrueTypeFont
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/LocaTable.cs/#L56"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/LocaTable.cs/#L67"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the owning <a class="xref" href="Utils.Fonts.TTF.Tables.LocaTable.html#Utils_Fonts_TTF_Tables_LocaTable_TrueTypeFont">TrueTypeFont</a>. When set, the required dependent tables are retrieved.</p>
@@ -510,7 +512,7 @@ public class LocaTable : TrueTypeTable, IEnumerable&lt;LocaRecord&gt;, IEnumerab
 
   <h3 id="Utils_Fonts_TTF_Tables_LocaTable_GetEnumerator" data-uid="Utils.Fonts.TTF.Tables.LocaTable.GetEnumerator">
   GetEnumerator()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/LocaTable.cs/#L172"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/LocaTable.cs/#L273"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns an enumerator that iterates through the loca records.</p>
@@ -543,7 +545,7 @@ public class LocaTable : TrueTypeTable, IEnumerable&lt;LocaRecord&gt;, IEnumerab
 
   <h3 id="Utils_Fonts_TTF_Tables_LocaTable_ReadData_Utils_IO_Serialization_Reader_" data-uid="Utils.Fonts.TTF.Tables.LocaTable.ReadData(Utils.IO.Serialization.Reader)">
   ReadData(Reader)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/LocaTable.cs/#L153"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/LocaTable.cs/#L189"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads the loca table data from the specified reader.</p>
@@ -569,6 +571,14 @@ public class LocaTable : TrueTypeTable, IEnumerable&lt;LocaRecord&gt;, IEnumerab
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.invaliddataexception">InvalidDataException</a></dt>
+    <dd><p>Thrown when the table does not contain exactly <a class="xref" href="Utils.Fonts.TTF.Tables.LocaTable.html#Utils_Fonts_TTF_Tables_LocaTable_GlyphCount">GlyphCount</a> + 1 entries, when
+offsets decrease, or when a long-format offset cannot be represented as a non-negative
+32-bit signed value.</p>
+</dd>
+  </dl>
 
 
 
@@ -576,10 +586,12 @@ public class LocaTable : TrueTypeTable, IEnumerable&lt;LocaRecord&gt;, IEnumerab
 
   <h3 id="Utils_Fonts_TTF_Tables_LocaTable_WriteData_Utils_IO_Serialization_Writer_" data-uid="Utils.Fonts.TTF.Tables.LocaTable.WriteData(Utils.IO.Serialization.Writer)">
   WriteData(Writer)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/LocaTable.cs/#L100"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/LocaTable.cs/#L109"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Writes the loca table data to the specified writer.</p>
+  <div class="markdown level1 summary"><p>Writes the loca table data to the specified writer, using the format selected by the most
+recent call to <span class="xref">Utils.Fonts.TTF.Tables.LocaTable.PrepareForSerialization()</span> (or, for a table that was only ever
+read, the format it was read in).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -609,7 +621,7 @@ public class LocaTable : TrueTypeTable, IEnumerable&lt;LocaRecord&gt;, IEnumerab
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/LocaTable.cs/#L18" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/LocaTable.cs/#L19" class="edit-link">Edit this page</a>
         </div>
 
 

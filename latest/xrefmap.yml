@@ -16164,6 +16164,496 @@ references:
   isSpec: "True"
   fullName: Utils.Fonts.TTF.NameTable.WriteData
   nameWithType: NameTable.WriteData
+- uid: Utils.Fonts.TTF.Parsing
+  name: Utils.Fonts.TTF.Parsing
+  href: api/Utils.Fonts.TTF.Parsing.html
+  commentId: N:Utils.Fonts.TTF.Parsing
+  fullName: Utils.Fonts.TTF.Parsing
+  nameWithType: Utils.Fonts.TTF.Parsing
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnostic
+  name: FontDiagnostic
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnostic.html
+  commentId: T:Utils.Fonts.TTF.Parsing.FontDiagnostic
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnostic
+  nameWithType: FontDiagnostic
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnostic.#ctor(Utils.Fonts.TTF.Parsing.FontDiagnosticCode,Utils.Fonts.TTF.Parsing.FontDiagnosticSeverity,System.String,System.Nullable{Utils.Fonts.TTF.Tag},System.Nullable{System.Int64},System.Nullable{System.Int64})
+  name: FontDiagnostic(FontDiagnosticCode, FontDiagnosticSeverity, string, Tag?, long?, long?)
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnostic.html#Utils_Fonts_TTF_Parsing_FontDiagnostic__ctor_Utils_Fonts_TTF_Parsing_FontDiagnosticCode_Utils_Fonts_TTF_Parsing_FontDiagnosticSeverity_System_String_System_Nullable_Utils_Fonts_TTF_Tag__System_Nullable_System_Int64__System_Nullable_System_Int64__
+  commentId: M:Utils.Fonts.TTF.Parsing.FontDiagnostic.#ctor(Utils.Fonts.TTF.Parsing.FontDiagnosticCode,Utils.Fonts.TTF.Parsing.FontDiagnosticSeverity,System.String,System.Nullable{Utils.Fonts.TTF.Tag},System.Nullable{System.Int64},System.Nullable{System.Int64})
+  name.vb: New(FontDiagnosticCode, FontDiagnosticSeverity, String, Tag?, Long?, Long?)
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnostic.FontDiagnostic(Utils.Fonts.TTF.Parsing.FontDiagnosticCode, Utils.Fonts.TTF.Parsing.FontDiagnosticSeverity, string, Utils.Fonts.TTF.Tag?, long?, long?)
+  fullName.vb: Utils.Fonts.TTF.Parsing.FontDiagnostic.New(Utils.Fonts.TTF.Parsing.FontDiagnosticCode, Utils.Fonts.TTF.Parsing.FontDiagnosticSeverity, String, Utils.Fonts.TTF.Tag?, Long?, Long?)
+  nameWithType: FontDiagnostic.FontDiagnostic(FontDiagnosticCode, FontDiagnosticSeverity, string, Tag?, long?, long?)
+  nameWithType.vb: FontDiagnostic.New(FontDiagnosticCode, FontDiagnosticSeverity, String, Tag?, Long?, Long?)
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnostic.#ctor*
+  name: FontDiagnostic
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnostic.html#Utils_Fonts_TTF_Parsing_FontDiagnostic__ctor_
+  commentId: Overload:Utils.Fonts.TTF.Parsing.FontDiagnostic.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnostic.FontDiagnostic
+  fullName.vb: Utils.Fonts.TTF.Parsing.FontDiagnostic.New
+  nameWithType: FontDiagnostic.FontDiagnostic
+  nameWithType.vb: FontDiagnostic.New
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnostic.Code
+  name: Code
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnostic.html#Utils_Fonts_TTF_Parsing_FontDiagnostic_Code
+  commentId: P:Utils.Fonts.TTF.Parsing.FontDiagnostic.Code
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnostic.Code
+  nameWithType: FontDiagnostic.Code
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnostic.Code*
+  name: Code
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnostic.html#Utils_Fonts_TTF_Parsing_FontDiagnostic_Code_
+  commentId: Overload:Utils.Fonts.TTF.Parsing.FontDiagnostic.Code
+  isSpec: "True"
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnostic.Code
+  nameWithType: FontDiagnostic.Code
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnostic.Length
+  name: Length
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnostic.html#Utils_Fonts_TTF_Parsing_FontDiagnostic_Length
+  commentId: P:Utils.Fonts.TTF.Parsing.FontDiagnostic.Length
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnostic.Length
+  nameWithType: FontDiagnostic.Length
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnostic.Length*
+  name: Length
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnostic.html#Utils_Fonts_TTF_Parsing_FontDiagnostic_Length_
+  commentId: Overload:Utils.Fonts.TTF.Parsing.FontDiagnostic.Length
+  isSpec: "True"
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnostic.Length
+  nameWithType: FontDiagnostic.Length
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnostic.Message
+  name: Message
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnostic.html#Utils_Fonts_TTF_Parsing_FontDiagnostic_Message
+  commentId: P:Utils.Fonts.TTF.Parsing.FontDiagnostic.Message
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnostic.Message
+  nameWithType: FontDiagnostic.Message
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnostic.Message*
+  name: Message
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnostic.html#Utils_Fonts_TTF_Parsing_FontDiagnostic_Message_
+  commentId: Overload:Utils.Fonts.TTF.Parsing.FontDiagnostic.Message
+  isSpec: "True"
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnostic.Message
+  nameWithType: FontDiagnostic.Message
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnostic.Offset
+  name: Offset
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnostic.html#Utils_Fonts_TTF_Parsing_FontDiagnostic_Offset
+  commentId: P:Utils.Fonts.TTF.Parsing.FontDiagnostic.Offset
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnostic.Offset
+  nameWithType: FontDiagnostic.Offset
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnostic.Offset*
+  name: Offset
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnostic.html#Utils_Fonts_TTF_Parsing_FontDiagnostic_Offset_
+  commentId: Overload:Utils.Fonts.TTF.Parsing.FontDiagnostic.Offset
+  isSpec: "True"
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnostic.Offset
+  nameWithType: FontDiagnostic.Offset
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnostic.Severity
+  name: Severity
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnostic.html#Utils_Fonts_TTF_Parsing_FontDiagnostic_Severity
+  commentId: P:Utils.Fonts.TTF.Parsing.FontDiagnostic.Severity
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnostic.Severity
+  nameWithType: FontDiagnostic.Severity
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnostic.Severity*
+  name: Severity
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnostic.html#Utils_Fonts_TTF_Parsing_FontDiagnostic_Severity_
+  commentId: Overload:Utils.Fonts.TTF.Parsing.FontDiagnostic.Severity
+  isSpec: "True"
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnostic.Severity
+  nameWithType: FontDiagnostic.Severity
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnostic.TableTag
+  name: TableTag
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnostic.html#Utils_Fonts_TTF_Parsing_FontDiagnostic_TableTag
+  commentId: P:Utils.Fonts.TTF.Parsing.FontDiagnostic.TableTag
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnostic.TableTag
+  nameWithType: FontDiagnostic.TableTag
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnostic.TableTag*
+  name: TableTag
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnostic.html#Utils_Fonts_TTF_Parsing_FontDiagnostic_TableTag_
+  commentId: Overload:Utils.Fonts.TTF.Parsing.FontDiagnostic.TableTag
+  isSpec: "True"
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnostic.TableTag
+  nameWithType: FontDiagnostic.TableTag
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnostic.ToString
+  name: ToString()
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnostic.html#Utils_Fonts_TTF_Parsing_FontDiagnostic_ToString
+  commentId: M:Utils.Fonts.TTF.Parsing.FontDiagnostic.ToString
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnostic.ToString()
+  nameWithType: FontDiagnostic.ToString()
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnostic.ToString*
+  name: ToString
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnostic.html#Utils_Fonts_TTF_Parsing_FontDiagnostic_ToString_
+  commentId: Overload:Utils.Fonts.TTF.Parsing.FontDiagnostic.ToString
+  isSpec: "True"
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnostic.ToString
+  nameWithType: FontDiagnostic.ToString
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnosticCode
+  name: FontDiagnosticCode
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnosticCode.html
+  commentId: T:Utils.Fonts.TTF.Parsing.FontDiagnosticCode
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnosticCode
+  nameWithType: FontDiagnosticCode
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnosticCode.AliasedTableRange
+  name: AliasedTableRange
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnosticCode.html#Utils_Fonts_TTF_Parsing_FontDiagnosticCode_AliasedTableRange
+  commentId: F:Utils.Fonts.TTF.Parsing.FontDiagnosticCode.AliasedTableRange
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnosticCode.AliasedTableRange
+  nameWithType: FontDiagnosticCode.AliasedTableRange
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnosticCode.DuplicateTableTag
+  name: DuplicateTableTag
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnosticCode.html#Utils_Fonts_TTF_Parsing_FontDiagnosticCode_DuplicateTableTag
+  commentId: F:Utils.Fonts.TTF.Parsing.FontDiagnosticCode.DuplicateTableTag
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnosticCode.DuplicateTableTag
+  nameWithType: FontDiagnosticCode.DuplicateTableTag
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnosticCode.FontChecksumMismatch
+  name: FontChecksumMismatch
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnosticCode.html#Utils_Fonts_TTF_Parsing_FontDiagnosticCode_FontChecksumMismatch
+  commentId: F:Utils.Fonts.TTF.Parsing.FontDiagnosticCode.FontChecksumMismatch
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnosticCode.FontChecksumMismatch
+  nameWithType: FontDiagnosticCode.FontChecksumMismatch
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnosticCode.InvalidCompositeGlyph
+  name: InvalidCompositeGlyph
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnosticCode.html#Utils_Fonts_TTF_Parsing_FontDiagnosticCode_InvalidCompositeGlyph
+  commentId: F:Utils.Fonts.TTF.Parsing.FontDiagnosticCode.InvalidCompositeGlyph
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnosticCode.InvalidCompositeGlyph
+  nameWithType: FontDiagnosticCode.InvalidCompositeGlyph
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnosticCode.InvalidDirectoryRange
+  name: InvalidDirectoryRange
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnosticCode.html#Utils_Fonts_TTF_Parsing_FontDiagnosticCode_InvalidDirectoryRange
+  commentId: F:Utils.Fonts.TTF.Parsing.FontDiagnosticCode.InvalidDirectoryRange
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnosticCode.InvalidDirectoryRange
+  nameWithType: FontDiagnosticCode.InvalidDirectoryRange
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnosticCode.InvalidLoca
+  name: InvalidLoca
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnosticCode.html#Utils_Fonts_TTF_Parsing_FontDiagnosticCode_InvalidLoca
+  commentId: F:Utils.Fonts.TTF.Parsing.FontDiagnosticCode.InvalidLoca
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnosticCode.InvalidLoca
+  nameWithType: FontDiagnosticCode.InvalidLoca
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnosticCode.InvalidOffsetTable
+  name: InvalidOffsetTable
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnosticCode.html#Utils_Fonts_TTF_Parsing_FontDiagnosticCode_InvalidOffsetTable
+  commentId: F:Utils.Fonts.TTF.Parsing.FontDiagnosticCode.InvalidOffsetTable
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnosticCode.InvalidOffsetTable
+  nameWithType: FontDiagnosticCode.InvalidOffsetTable
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnosticCode.MalformedCmapSubtable
+  name: MalformedCmapSubtable
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnosticCode.html#Utils_Fonts_TTF_Parsing_FontDiagnosticCode_MalformedCmapSubtable
+  commentId: F:Utils.Fonts.TTF.Parsing.FontDiagnosticCode.MalformedCmapSubtable
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnosticCode.MalformedCmapSubtable
+  nameWithType: FontDiagnosticCode.MalformedCmapSubtable
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnosticCode.OverlappingTableRange
+  name: OverlappingTableRange
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnosticCode.html#Utils_Fonts_TTF_Parsing_FontDiagnosticCode_OverlappingTableRange
+  commentId: F:Utils.Fonts.TTF.Parsing.FontDiagnosticCode.OverlappingTableRange
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnosticCode.OverlappingTableRange
+  nameWithType: FontDiagnosticCode.OverlappingTableRange
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnosticCode.ResourceLimitExceeded
+  name: ResourceLimitExceeded
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnosticCode.html#Utils_Fonts_TTF_Parsing_FontDiagnosticCode_ResourceLimitExceeded
+  commentId: F:Utils.Fonts.TTF.Parsing.FontDiagnosticCode.ResourceLimitExceeded
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnosticCode.ResourceLimitExceeded
+  nameWithType: FontDiagnosticCode.ResourceLimitExceeded
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnosticCode.TableChecksumMismatch
+  name: TableChecksumMismatch
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnosticCode.html#Utils_Fonts_TTF_Parsing_FontDiagnosticCode_TableChecksumMismatch
+  commentId: F:Utils.Fonts.TTF.Parsing.FontDiagnosticCode.TableChecksumMismatch
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnosticCode.TableChecksumMismatch
+  nameWithType: FontDiagnosticCode.TableChecksumMismatch
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnosticCode.UnsupportedTable
+  name: UnsupportedTable
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnosticCode.html#Utils_Fonts_TTF_Parsing_FontDiagnosticCode_UnsupportedTable
+  commentId: F:Utils.Fonts.TTF.Parsing.FontDiagnosticCode.UnsupportedTable
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnosticCode.UnsupportedTable
+  nameWithType: FontDiagnosticCode.UnsupportedTable
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnosticSeverity
+  name: FontDiagnosticSeverity
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnosticSeverity.html
+  commentId: T:Utils.Fonts.TTF.Parsing.FontDiagnosticSeverity
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnosticSeverity
+  nameWithType: FontDiagnosticSeverity
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnosticSeverity.Error
+  name: Error
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnosticSeverity.html#Utils_Fonts_TTF_Parsing_FontDiagnosticSeverity_Error
+  commentId: F:Utils.Fonts.TTF.Parsing.FontDiagnosticSeverity.Error
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnosticSeverity.Error
+  nameWithType: FontDiagnosticSeverity.Error
+- uid: Utils.Fonts.TTF.Parsing.FontDiagnosticSeverity.Warning
+  name: Warning
+  href: api/Utils.Fonts.TTF.Parsing.FontDiagnosticSeverity.html#Utils_Fonts_TTF_Parsing_FontDiagnosticSeverity_Warning
+  commentId: F:Utils.Fonts.TTF.Parsing.FontDiagnosticSeverity.Warning
+  fullName: Utils.Fonts.TTF.Parsing.FontDiagnosticSeverity.Warning
+  nameWithType: FontDiagnosticSeverity.Warning
+- uid: Utils.Fonts.TTF.Parsing.FontParseException
+  name: FontParseException
+  href: api/Utils.Fonts.TTF.Parsing.FontParseException.html
+  commentId: T:Utils.Fonts.TTF.Parsing.FontParseException
+  fullName: Utils.Fonts.TTF.Parsing.FontParseException
+  nameWithType: FontParseException
+- uid: Utils.Fonts.TTF.Parsing.FontParseException.#ctor(Utils.Fonts.TTF.Parsing.FontDiagnostic)
+  name: FontParseException(FontDiagnostic)
+  href: api/Utils.Fonts.TTF.Parsing.FontParseException.html#Utils_Fonts_TTF_Parsing_FontParseException__ctor_Utils_Fonts_TTF_Parsing_FontDiagnostic_
+  commentId: M:Utils.Fonts.TTF.Parsing.FontParseException.#ctor(Utils.Fonts.TTF.Parsing.FontDiagnostic)
+  name.vb: New(FontDiagnostic)
+  fullName: Utils.Fonts.TTF.Parsing.FontParseException.FontParseException(Utils.Fonts.TTF.Parsing.FontDiagnostic)
+  fullName.vb: Utils.Fonts.TTF.Parsing.FontParseException.New(Utils.Fonts.TTF.Parsing.FontDiagnostic)
+  nameWithType: FontParseException.FontParseException(FontDiagnostic)
+  nameWithType.vb: FontParseException.New(FontDiagnostic)
+- uid: Utils.Fonts.TTF.Parsing.FontParseException.#ctor(Utils.Fonts.TTF.Parsing.FontDiagnostic,System.Exception)
+  name: FontParseException(FontDiagnostic, Exception)
+  href: api/Utils.Fonts.TTF.Parsing.FontParseException.html#Utils_Fonts_TTF_Parsing_FontParseException__ctor_Utils_Fonts_TTF_Parsing_FontDiagnostic_System_Exception_
+  commentId: M:Utils.Fonts.TTF.Parsing.FontParseException.#ctor(Utils.Fonts.TTF.Parsing.FontDiagnostic,System.Exception)
+  name.vb: New(FontDiagnostic, Exception)
+  fullName: Utils.Fonts.TTF.Parsing.FontParseException.FontParseException(Utils.Fonts.TTF.Parsing.FontDiagnostic, System.Exception)
+  fullName.vb: Utils.Fonts.TTF.Parsing.FontParseException.New(Utils.Fonts.TTF.Parsing.FontDiagnostic, System.Exception)
+  nameWithType: FontParseException.FontParseException(FontDiagnostic, Exception)
+  nameWithType.vb: FontParseException.New(FontDiagnostic, Exception)
+- uid: Utils.Fonts.TTF.Parsing.FontParseException.#ctor*
+  name: FontParseException
+  href: api/Utils.Fonts.TTF.Parsing.FontParseException.html#Utils_Fonts_TTF_Parsing_FontParseException__ctor_
+  commentId: Overload:Utils.Fonts.TTF.Parsing.FontParseException.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.Fonts.TTF.Parsing.FontParseException.FontParseException
+  fullName.vb: Utils.Fonts.TTF.Parsing.FontParseException.New
+  nameWithType: FontParseException.FontParseException
+  nameWithType.vb: FontParseException.New
+- uid: Utils.Fonts.TTF.Parsing.FontParseException.Diagnostic
+  name: Diagnostic
+  href: api/Utils.Fonts.TTF.Parsing.FontParseException.html#Utils_Fonts_TTF_Parsing_FontParseException_Diagnostic
+  commentId: P:Utils.Fonts.TTF.Parsing.FontParseException.Diagnostic
+  fullName: Utils.Fonts.TTF.Parsing.FontParseException.Diagnostic
+  nameWithType: FontParseException.Diagnostic
+- uid: Utils.Fonts.TTF.Parsing.FontParseException.Diagnostic*
+  name: Diagnostic
+  href: api/Utils.Fonts.TTF.Parsing.FontParseException.html#Utils_Fonts_TTF_Parsing_FontParseException_Diagnostic_
+  commentId: Overload:Utils.Fonts.TTF.Parsing.FontParseException.Diagnostic
+  isSpec: "True"
+  fullName: Utils.Fonts.TTF.Parsing.FontParseException.Diagnostic
+  nameWithType: FontParseException.Diagnostic
+- uid: Utils.Fonts.TTF.Parsing.FontValidationMode
+  name: FontValidationMode
+  href: api/Utils.Fonts.TTF.Parsing.FontValidationMode.html
+  commentId: T:Utils.Fonts.TTF.Parsing.FontValidationMode
+  fullName: Utils.Fonts.TTF.Parsing.FontValidationMode
+  nameWithType: FontValidationMode
+- uid: Utils.Fonts.TTF.Parsing.FontValidationMode.Permissive
+  name: Permissive
+  href: api/Utils.Fonts.TTF.Parsing.FontValidationMode.html#Utils_Fonts_TTF_Parsing_FontValidationMode_Permissive
+  commentId: F:Utils.Fonts.TTF.Parsing.FontValidationMode.Permissive
+  fullName: Utils.Fonts.TTF.Parsing.FontValidationMode.Permissive
+  nameWithType: FontValidationMode.Permissive
+- uid: Utils.Fonts.TTF.Parsing.FontValidationMode.Strict
+  name: Strict
+  href: api/Utils.Fonts.TTF.Parsing.FontValidationMode.html#Utils_Fonts_TTF_Parsing_FontValidationMode_Strict
+  commentId: F:Utils.Fonts.TTF.Parsing.FontValidationMode.Strict
+  fullName: Utils.Fonts.TTF.Parsing.FontValidationMode.Strict
+  nameWithType: FontValidationMode.Strict
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions
+  name: TrueTypeFontParsingOptions
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html
+  commentId: T:Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions
+  nameWithType: TrueTypeFontParsingOptions
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.Default
+  name: Default
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_Default
+  commentId: P:Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.Default
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.Default
+  nameWithType: TrueTypeFontParsingOptions.Default
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.Default*
+  name: Default
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_Default_
+  commentId: Overload:Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.Default
+  isSpec: "True"
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.Default
+  nameWithType: TrueTypeFontParsingOptions.Default
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.LeaveOpen
+  name: LeaveOpen
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_LeaveOpen
+  commentId: P:Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.LeaveOpen
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.LeaveOpen
+  nameWithType: TrueTypeFontParsingOptions.LeaveOpen
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.LeaveOpen*
+  name: LeaveOpen
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_LeaveOpen_
+  commentId: Overload:Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.LeaveOpen
+  isSpec: "True"
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.LeaveOpen
+  nameWithType: TrueTypeFontParsingOptions.LeaveOpen
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCmapSubtables
+  name: MaximumCmapSubtables
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumCmapSubtables
+  commentId: P:Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCmapSubtables
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCmapSubtables
+  nameWithType: TrueTypeFontParsingOptions.MaximumCmapSubtables
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCmapSubtables*
+  name: MaximumCmapSubtables
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumCmapSubtables_
+  commentId: Overload:Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCmapSubtables
+  isSpec: "True"
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCmapSubtables
+  nameWithType: TrueTypeFontParsingOptions.MaximumCmapSubtables
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCompositeComponents
+  name: MaximumCompositeComponents
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumCompositeComponents
+  commentId: P:Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCompositeComponents
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCompositeComponents
+  nameWithType: TrueTypeFontParsingOptions.MaximumCompositeComponents
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCompositeComponents*
+  name: MaximumCompositeComponents
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumCompositeComponents_
+  commentId: Overload:Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCompositeComponents
+  isSpec: "True"
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCompositeComponents
+  nameWithType: TrueTypeFontParsingOptions.MaximumCompositeComponents
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCompositeDepth
+  name: MaximumCompositeDepth
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumCompositeDepth
+  commentId: P:Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCompositeDepth
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCompositeDepth
+  nameWithType: TrueTypeFontParsingOptions.MaximumCompositeDepth
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCompositeDepth*
+  name: MaximumCompositeDepth
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumCompositeDepth_
+  commentId: Overload:Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCompositeDepth
+  isSpec: "True"
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCompositeDepth
+  nameWithType: TrueTypeFontParsingOptions.MaximumCompositeDepth
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCompositeInstructionBytes
+  name: MaximumCompositeInstructionBytes
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumCompositeInstructionBytes
+  commentId: P:Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCompositeInstructionBytes
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCompositeInstructionBytes
+  nameWithType: TrueTypeFontParsingOptions.MaximumCompositeInstructionBytes
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCompositeInstructionBytes*
+  name: MaximumCompositeInstructionBytes
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumCompositeInstructionBytes_
+  commentId: Overload:Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCompositeInstructionBytes
+  isSpec: "True"
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCompositeInstructionBytes
+  nameWithType: TrueTypeFontParsingOptions.MaximumCompositeInstructionBytes
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumExpandedComponents
+  name: MaximumExpandedComponents
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumExpandedComponents
+  commentId: P:Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumExpandedComponents
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumExpandedComponents
+  nameWithType: TrueTypeFontParsingOptions.MaximumExpandedComponents
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumExpandedComponents*
+  name: MaximumExpandedComponents
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumExpandedComponents_
+  commentId: Overload:Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumExpandedComponents
+  isSpec: "True"
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumExpandedComponents
+  nameWithType: TrueTypeFontParsingOptions.MaximumExpandedComponents
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumExpandedPoints
+  name: MaximumExpandedPoints
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumExpandedPoints
+  commentId: P:Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumExpandedPoints
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumExpandedPoints
+  nameWithType: TrueTypeFontParsingOptions.MaximumExpandedPoints
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumExpandedPoints*
+  name: MaximumExpandedPoints
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumExpandedPoints_
+  commentId: Overload:Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumExpandedPoints
+  isSpec: "True"
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumExpandedPoints
+  nameWithType: TrueTypeFontParsingOptions.MaximumExpandedPoints
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumFontBytes
+  name: MaximumFontBytes
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumFontBytes
+  commentId: P:Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumFontBytes
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumFontBytes
+  nameWithType: TrueTypeFontParsingOptions.MaximumFontBytes
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumFontBytes*
+  name: MaximumFontBytes
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumFontBytes_
+  commentId: Overload:Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumFontBytes
+  isSpec: "True"
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumFontBytes
+  nameWithType: TrueTypeFontParsingOptions.MaximumFontBytes
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumTableBytes
+  name: MaximumTableBytes
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumTableBytes
+  commentId: P:Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumTableBytes
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumTableBytes
+  nameWithType: TrueTypeFontParsingOptions.MaximumTableBytes
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumTableBytes*
+  name: MaximumTableBytes
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumTableBytes_
+  commentId: Overload:Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumTableBytes
+  isSpec: "True"
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumTableBytes
+  nameWithType: TrueTypeFontParsingOptions.MaximumTableBytes
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumTables
+  name: MaximumTables
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumTables
+  commentId: P:Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumTables
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumTables
+  nameWithType: TrueTypeFontParsingOptions.MaximumTables
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumTables*
+  name: MaximumTables
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumTables_
+  commentId: Overload:Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumTables
+  isSpec: "True"
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumTables
+  nameWithType: TrueTypeFontParsingOptions.MaximumTables
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.ValidationMode
+  name: ValidationMode
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_ValidationMode
+  commentId: P:Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.ValidationMode
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.ValidationMode
+  nameWithType: TrueTypeFontParsingOptions.ValidationMode
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.ValidationMode*
+  name: ValidationMode
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_ValidationMode_
+  commentId: Overload:Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.ValidationMode
+  isSpec: "True"
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.ValidationMode
+  nameWithType: TrueTypeFontParsingOptions.ValidationMode
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions
+  name: TrueTypeFontWritingOptions
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.html
+  commentId: T:Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions
+  nameWithType: TrueTypeFontWritingOptions
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.Default
+  name: Default
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontWritingOptions_Default
+  commentId: P:Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.Default
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.Default
+  nameWithType: TrueTypeFontWritingOptions.Default
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.Default*
+  name: Default
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontWritingOptions_Default_
+  commentId: Overload:Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.Default
+  isSpec: "True"
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.Default
+  nameWithType: TrueTypeFontWritingOptions.Default
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.MaximumOutputBytes
+  name: MaximumOutputBytes
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontWritingOptions_MaximumOutputBytes
+  commentId: P:Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.MaximumOutputBytes
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.MaximumOutputBytes
+  nameWithType: TrueTypeFontWritingOptions.MaximumOutputBytes
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.MaximumOutputBytes*
+  name: MaximumOutputBytes
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontWritingOptions_MaximumOutputBytes_
+  commentId: Overload:Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.MaximumOutputBytes
+  isSpec: "True"
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.MaximumOutputBytes
+  nameWithType: TrueTypeFontWritingOptions.MaximumOutputBytes
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.ValidateBeforeWrite
+  name: ValidateBeforeWrite
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontWritingOptions_ValidateBeforeWrite
+  commentId: P:Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.ValidateBeforeWrite
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.ValidateBeforeWrite
+  nameWithType: TrueTypeFontWritingOptions.ValidateBeforeWrite
+- uid: Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.ValidateBeforeWrite*
+  name: ValidateBeforeWrite
+  href: api/Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontWritingOptions_ValidateBeforeWrite_
+  commentId: Overload:Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.ValidateBeforeWrite
+  isSpec: "True"
+  fullName: Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.ValidateBeforeWrite
+  nameWithType: TrueTypeFontWritingOptions.ValidateBeforeWrite
 - uid: Utils.Fonts.TTF.TTFPoint
   name: TTFPoint
   href: api/Utils.Fonts.TTF.TTFPoint.html
@@ -18891,15 +19381,15 @@ references:
   fullName.vb: Utils.Fonts.TTF.Tables.CmapTable.New
   nameWithType: CmapTable.CmapTable
   nameWithType.vb: CmapTable.New
-- uid: Utils.Fonts.TTF.Tables.CmapTable.AddCMap(System.Int16,System.Int16,Utils.Fonts.TTF.Tables.CMap.CMapFormatBase)
-  name: AddCMap(short, short, CMapFormatBase)
-  href: api/Utils.Fonts.TTF.Tables.CmapTable.html#Utils_Fonts_TTF_Tables_CmapTable_AddCMap_System_Int16_System_Int16_Utils_Fonts_TTF_Tables_CMap_CMapFormatBase_
-  commentId: M:Utils.Fonts.TTF.Tables.CmapTable.AddCMap(System.Int16,System.Int16,Utils.Fonts.TTF.Tables.CMap.CMapFormatBase)
-  name.vb: AddCMap(Short, Short, CMapFormatBase)
-  fullName: Utils.Fonts.TTF.Tables.CmapTable.AddCMap(short, short, Utils.Fonts.TTF.Tables.CMap.CMapFormatBase)
-  fullName.vb: Utils.Fonts.TTF.Tables.CmapTable.AddCMap(Short, Short, Utils.Fonts.TTF.Tables.CMap.CMapFormatBase)
-  nameWithType: CmapTable.AddCMap(short, short, CMapFormatBase)
-  nameWithType.vb: CmapTable.AddCMap(Short, Short, CMapFormatBase)
+- uid: Utils.Fonts.TTF.Tables.CmapTable.AddCMap(System.UInt16,System.UInt16,Utils.Fonts.TTF.Tables.CMap.CMapFormatBase)
+  name: AddCMap(ushort, ushort, CMapFormatBase)
+  href: api/Utils.Fonts.TTF.Tables.CmapTable.html#Utils_Fonts_TTF_Tables_CmapTable_AddCMap_System_UInt16_System_UInt16_Utils_Fonts_TTF_Tables_CMap_CMapFormatBase_
+  commentId: M:Utils.Fonts.TTF.Tables.CmapTable.AddCMap(System.UInt16,System.UInt16,Utils.Fonts.TTF.Tables.CMap.CMapFormatBase)
+  name.vb: AddCMap(UShort, UShort, CMapFormatBase)
+  fullName: Utils.Fonts.TTF.Tables.CmapTable.AddCMap(ushort, ushort, Utils.Fonts.TTF.Tables.CMap.CMapFormatBase)
+  fullName.vb: Utils.Fonts.TTF.Tables.CmapTable.AddCMap(UShort, UShort, Utils.Fonts.TTF.Tables.CMap.CMapFormatBase)
+  nameWithType: CmapTable.AddCMap(ushort, ushort, CMapFormatBase)
+  nameWithType.vb: CmapTable.AddCMap(UShort, UShort, CMapFormatBase)
 - uid: Utils.Fonts.TTF.Tables.CmapTable.AddCMap*
   name: AddCMap
   href: api/Utils.Fonts.TTF.Tables.CmapTable.html#Utils_Fonts_TTF_Tables_CmapTable_AddCMap_
@@ -19006,15 +19496,15 @@ references:
   isSpec: "True"
   fullName: Utils.Fonts.TTF.Tables.CmapTable.CmapSubtable.PlatformSpecificID
   nameWithType: CmapTable.CmapSubtable.PlatformSpecificID
-- uid: Utils.Fonts.TTF.Tables.CmapTable.GetCMap(System.Int16,System.Int16)
-  name: GetCMap(short, short)
-  href: api/Utils.Fonts.TTF.Tables.CmapTable.html#Utils_Fonts_TTF_Tables_CmapTable_GetCMap_System_Int16_System_Int16_
-  commentId: M:Utils.Fonts.TTF.Tables.CmapTable.GetCMap(System.Int16,System.Int16)
-  name.vb: GetCMap(Short, Short)
-  fullName: Utils.Fonts.TTF.Tables.CmapTable.GetCMap(short, short)
-  fullName.vb: Utils.Fonts.TTF.Tables.CmapTable.GetCMap(Short, Short)
-  nameWithType: CmapTable.GetCMap(short, short)
-  nameWithType.vb: CmapTable.GetCMap(Short, Short)
+- uid: Utils.Fonts.TTF.Tables.CmapTable.GetCMap(System.UInt16,System.UInt16)
+  name: GetCMap(ushort, ushort)
+  href: api/Utils.Fonts.TTF.Tables.CmapTable.html#Utils_Fonts_TTF_Tables_CmapTable_GetCMap_System_UInt16_System_UInt16_
+  commentId: M:Utils.Fonts.TTF.Tables.CmapTable.GetCMap(System.UInt16,System.UInt16)
+  name.vb: GetCMap(UShort, UShort)
+  fullName: Utils.Fonts.TTF.Tables.CmapTable.GetCMap(ushort, ushort)
+  fullName.vb: Utils.Fonts.TTF.Tables.CmapTable.GetCMap(UShort, UShort)
+  nameWithType: CmapTable.GetCMap(ushort, ushort)
+  nameWithType.vb: CmapTable.GetCMap(UShort, UShort)
 - uid: Utils.Fonts.TTF.Tables.CmapTable.GetCMap*
   name: GetCMap
   href: api/Utils.Fonts.TTF.Tables.CmapTable.html#Utils_Fonts_TTF_Tables_CmapTable_GetCMap_
@@ -19074,15 +19564,15 @@ references:
   isSpec: "True"
   fullName: Utils.Fonts.TTF.Tables.CmapTable.ReadData
   nameWithType: CmapTable.ReadData
-- uid: Utils.Fonts.TTF.Tables.CmapTable.RemoveCMap(System.Int16,System.Int16)
-  name: RemoveCMap(short, short)
-  href: api/Utils.Fonts.TTF.Tables.CmapTable.html#Utils_Fonts_TTF_Tables_CmapTable_RemoveCMap_System_Int16_System_Int16_
-  commentId: M:Utils.Fonts.TTF.Tables.CmapTable.RemoveCMap(System.Int16,System.Int16)
-  name.vb: RemoveCMap(Short, Short)
-  fullName: Utils.Fonts.TTF.Tables.CmapTable.RemoveCMap(short, short)
-  fullName.vb: Utils.Fonts.TTF.Tables.CmapTable.RemoveCMap(Short, Short)
-  nameWithType: CmapTable.RemoveCMap(short, short)
-  nameWithType.vb: CmapTable.RemoveCMap(Short, Short)
+- uid: Utils.Fonts.TTF.Tables.CmapTable.RemoveCMap(System.UInt16,System.UInt16)
+  name: RemoveCMap(ushort, ushort)
+  href: api/Utils.Fonts.TTF.Tables.CmapTable.html#Utils_Fonts_TTF_Tables_CmapTable_RemoveCMap_System_UInt16_System_UInt16_
+  commentId: M:Utils.Fonts.TTF.Tables.CmapTable.RemoveCMap(System.UInt16,System.UInt16)
+  name.vb: RemoveCMap(UShort, UShort)
+  fullName: Utils.Fonts.TTF.Tables.CmapTable.RemoveCMap(ushort, ushort)
+  fullName.vb: Utils.Fonts.TTF.Tables.CmapTable.RemoveCMap(UShort, UShort)
+  nameWithType: CmapTable.RemoveCMap(ushort, ushort)
+  nameWithType.vb: CmapTable.RemoveCMap(UShort, UShort)
 - uid: Utils.Fonts.TTF.Tables.CmapTable.RemoveCMap*
   name: RemoveCMap
   href: api/Utils.Fonts.TTF.Tables.CmapTable.html#Utils_Fonts_TTF_Tables_CmapTable_RemoveCMap_
@@ -20930,6 +21420,22 @@ references:
   isSpec: "True"
   fullName: Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.Contours
   nameWithType: GlyphCompound.Contours
+- uid: Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.GetGlyphIndex(System.Int32)
+  name: GetGlyphIndex(int)
+  href: api/Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.html#Utils_Fonts_TTF_Tables_Glyf_GlyphCompound_GetGlyphIndex_System_Int32_
+  commentId: M:Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.GetGlyphIndex(System.Int32)
+  name.vb: GetGlyphIndex(Integer)
+  fullName: Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.GetGlyphIndex(int)
+  fullName.vb: Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.GetGlyphIndex(Integer)
+  nameWithType: GlyphCompound.GetGlyphIndex(int)
+  nameWithType.vb: GlyphCompound.GetGlyphIndex(Integer)
+- uid: Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.GetGlyphIndex*
+  name: GetGlyphIndex
+  href: api/Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.html#Utils_Fonts_TTF_Tables_Glyf_GlyphCompound_GetGlyphIndex_
+  commentId: Overload:Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.GetGlyphIndex
+  isSpec: "True"
+  fullName: Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.GetGlyphIndex
+  nameWithType: GlyphCompound.GetGlyphIndex
 - uid: Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.Instructions
   name: Instructions
   href: api/Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.html#Utils_Fonts_TTF_Tables_Glyf_GlyphCompound_Instructions
@@ -20995,22 +21501,6 @@ references:
   isSpec: "True"
   fullName: Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.WriteData
   nameWithType: GlyphCompound.WriteData
-- uid: Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.getGlyphIndex(System.Int32)
-  name: getGlyphIndex(int)
-  href: api/Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.html#Utils_Fonts_TTF_Tables_Glyf_GlyphCompound_getGlyphIndex_System_Int32_
-  commentId: M:Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.getGlyphIndex(System.Int32)
-  name.vb: getGlyphIndex(Integer)
-  fullName: Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.getGlyphIndex(int)
-  fullName.vb: Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.getGlyphIndex(Integer)
-  nameWithType: GlyphCompound.getGlyphIndex(int)
-  nameWithType.vb: GlyphCompound.getGlyphIndex(Integer)
-- uid: Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.getGlyphIndex*
-  name: getGlyphIndex
-  href: api/Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.html#Utils_Fonts_TTF_Tables_Glyf_GlyphCompound_getGlyphIndex_
-  commentId: Overload:Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.getGlyphIndex
-  isSpec: "True"
-  fullName: Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.getGlyphIndex
-  nameWithType: GlyphCompound.getGlyphIndex
 - uid: Utils.Fonts.TTF.Tables.Glyf.GlyphSimple
   name: GlyphSimple
   href: api/Utils.Fonts.TTF.Tables.Glyf.GlyphSimple.html
@@ -21230,6 +21720,22 @@ references:
   isSpec: "True"
   fullName: Utils.Fonts.TTF.Tables.GlyfTable.TrueTypeFont
   nameWithType: GlyfTable.TrueTypeFont
+- uid: Utils.Fonts.TTF.Tables.GlyfTable.TryGetGlyph(System.Int32,Utils.Fonts.TTF.Tables.Glyf.GlyphBase@)
+  name: TryGetGlyph(int, out GlyphBase)
+  href: api/Utils.Fonts.TTF.Tables.GlyfTable.html#Utils_Fonts_TTF_Tables_GlyfTable_TryGetGlyph_System_Int32_Utils_Fonts_TTF_Tables_Glyf_GlyphBase__
+  commentId: M:Utils.Fonts.TTF.Tables.GlyfTable.TryGetGlyph(System.Int32,Utils.Fonts.TTF.Tables.Glyf.GlyphBase@)
+  name.vb: TryGetGlyph(Integer, GlyphBase)
+  fullName: Utils.Fonts.TTF.Tables.GlyfTable.TryGetGlyph(int, out Utils.Fonts.TTF.Tables.Glyf.GlyphBase)
+  fullName.vb: Utils.Fonts.TTF.Tables.GlyfTable.TryGetGlyph(Integer, Utils.Fonts.TTF.Tables.Glyf.GlyphBase)
+  nameWithType: GlyfTable.TryGetGlyph(int, out GlyphBase)
+  nameWithType.vb: GlyfTable.TryGetGlyph(Integer, GlyphBase)
+- uid: Utils.Fonts.TTF.Tables.GlyfTable.TryGetGlyph*
+  name: TryGetGlyph
+  href: api/Utils.Fonts.TTF.Tables.GlyfTable.html#Utils_Fonts_TTF_Tables_GlyfTable_TryGetGlyph_
+  commentId: Overload:Utils.Fonts.TTF.Tables.GlyfTable.TryGetGlyph
+  isSpec: "True"
+  fullName: Utils.Fonts.TTF.Tables.GlyfTable.TryGetGlyph
+  nameWithType: GlyfTable.TryGetGlyph
 - uid: Utils.Fonts.TTF.Tables.GlyfTable.WriteData(Utils.IO.Serialization.Writer)
   name: WriteData(Writer)
   href: api/Utils.Fonts.TTF.Tables.GlyfTable.html#Utils_Fonts_TTF_Tables_GlyfTable_WriteData_Utils_IO_Serialization_Writer_
@@ -25117,6 +25623,19 @@ references:
   isSpec: "True"
   fullName: Utils.Fonts.TTF.TrueTypeFont.CreateTable
   nameWithType: TrueTypeFont.CreateTable
+- uid: Utils.Fonts.TTF.TrueTypeFont.Diagnostics
+  name: Diagnostics
+  href: api/Utils.Fonts.TTF.TrueTypeFont.html#Utils_Fonts_TTF_TrueTypeFont_Diagnostics
+  commentId: P:Utils.Fonts.TTF.TrueTypeFont.Diagnostics
+  fullName: Utils.Fonts.TTF.TrueTypeFont.Diagnostics
+  nameWithType: TrueTypeFont.Diagnostics
+- uid: Utils.Fonts.TTF.TrueTypeFont.Diagnostics*
+  name: Diagnostics
+  href: api/Utils.Fonts.TTF.TrueTypeFont.html#Utils_Fonts_TTF_TrueTypeFont_Diagnostics_
+  commentId: Overload:Utils.Fonts.TTF.TrueTypeFont.Diagnostics
+  isSpec: "True"
+  fullName: Utils.Fonts.TTF.TrueTypeFont.Diagnostics
+  nameWithType: TrueTypeFont.Diagnostics
 - uid: Utils.Fonts.TTF.TrueTypeFont.EntrySelector
   name: EntrySelector
   href: api/Utils.Fonts.TTF.TrueTypeFont.html#Utils_Fonts_TTF_TrueTypeFont_EntrySelector
@@ -25178,21 +25697,30 @@ references:
   fullName.vb: Utils.Fonts.TTF.TrueTypeFont.GetTable(Of T)(Utils.Fonts.TTF.Tag)
   nameWithType: TrueTypeFont.GetTable<T>(Tag)
   nameWithType.vb: TrueTypeFont.GetTable(Of T)(Tag)
-- uid: Utils.Fonts.TTF.TrueTypeFont.ParseFont(System.Byte[])
-  name: ParseFont(byte[])
-  href: api/Utils.Fonts.TTF.TrueTypeFont.html#Utils_Fonts_TTF_TrueTypeFont_ParseFont_System_Byte___
-  commentId: M:Utils.Fonts.TTF.TrueTypeFont.ParseFont(System.Byte[])
-  name.vb: ParseFont(Byte())
-  fullName: Utils.Fonts.TTF.TrueTypeFont.ParseFont(byte[])
-  fullName.vb: Utils.Fonts.TTF.TrueTypeFont.ParseFont(Byte())
-  nameWithType: TrueTypeFont.ParseFont(byte[])
-  nameWithType.vb: TrueTypeFont.ParseFont(Byte())
-- uid: Utils.Fonts.TTF.TrueTypeFont.ParseFont(System.IO.Stream)
-  name: ParseFont(Stream)
-  href: api/Utils.Fonts.TTF.TrueTypeFont.html#Utils_Fonts_TTF_TrueTypeFont_ParseFont_System_IO_Stream_
-  commentId: M:Utils.Fonts.TTF.TrueTypeFont.ParseFont(System.IO.Stream)
-  fullName: Utils.Fonts.TTF.TrueTypeFont.ParseFont(System.IO.Stream)
-  nameWithType: TrueTypeFont.ParseFont(Stream)
+- uid: Utils.Fonts.TTF.TrueTypeFont.ParseFont(System.Byte[],Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions)
+  name: ParseFont(byte[], TrueTypeFontParsingOptions)
+  href: api/Utils.Fonts.TTF.TrueTypeFont.html#Utils_Fonts_TTF_TrueTypeFont_ParseFont_System_Byte___Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_
+  commentId: M:Utils.Fonts.TTF.TrueTypeFont.ParseFont(System.Byte[],Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions)
+  name.vb: ParseFont(Byte(), TrueTypeFontParsingOptions)
+  fullName: Utils.Fonts.TTF.TrueTypeFont.ParseFont(byte[], Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions)
+  fullName.vb: Utils.Fonts.TTF.TrueTypeFont.ParseFont(Byte(), Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions)
+  nameWithType: TrueTypeFont.ParseFont(byte[], TrueTypeFontParsingOptions)
+  nameWithType.vb: TrueTypeFont.ParseFont(Byte(), TrueTypeFontParsingOptions)
+- uid: Utils.Fonts.TTF.TrueTypeFont.ParseFont(System.IO.Stream,Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions)
+  name: ParseFont(Stream, TrueTypeFontParsingOptions)
+  href: api/Utils.Fonts.TTF.TrueTypeFont.html#Utils_Fonts_TTF_TrueTypeFont_ParseFont_System_IO_Stream_Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_
+  commentId: M:Utils.Fonts.TTF.TrueTypeFont.ParseFont(System.IO.Stream,Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions)
+  fullName: Utils.Fonts.TTF.TrueTypeFont.ParseFont(System.IO.Stream, Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions)
+  nameWithType: TrueTypeFont.ParseFont(Stream, TrueTypeFontParsingOptions)
+- uid: Utils.Fonts.TTF.TrueTypeFont.ParseFont(System.ReadOnlySpan{System.Byte},Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions)
+  name: ParseFont(ReadOnlySpan<byte>, TrueTypeFontParsingOptions)
+  href: api/Utils.Fonts.TTF.TrueTypeFont.html#Utils_Fonts_TTF_TrueTypeFont_ParseFont_System_ReadOnlySpan_System_Byte__Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_
+  commentId: M:Utils.Fonts.TTF.TrueTypeFont.ParseFont(System.ReadOnlySpan{System.Byte},Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions)
+  name.vb: ParseFont(ReadOnlySpan(Of Byte), TrueTypeFontParsingOptions)
+  fullName: Utils.Fonts.TTF.TrueTypeFont.ParseFont(System.ReadOnlySpan<byte>, Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions)
+  fullName.vb: Utils.Fonts.TTF.TrueTypeFont.ParseFont(System.ReadOnlySpan(Of Byte), Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions)
+  nameWithType: TrueTypeFont.ParseFont(ReadOnlySpan<byte>, TrueTypeFontParsingOptions)
+  nameWithType.vb: TrueTypeFont.ParseFont(ReadOnlySpan(Of Byte), TrueTypeFontParsingOptions)
 - uid: Utils.Fonts.TTF.TrueTypeFont.ParseFont*
   name: ParseFont
   href: api/Utils.Fonts.TTF.TrueTypeFont.html#Utils_Fonts_TTF_TrueTypeFont_ParseFont_
@@ -25200,6 +25728,19 @@ references:
   isSpec: "True"
   fullName: Utils.Fonts.TTF.TrueTypeFont.ParseFont
   nameWithType: TrueTypeFont.ParseFont
+- uid: Utils.Fonts.TTF.TrueTypeFont.ParseFontAsync(System.IO.Stream,Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions,System.Threading.CancellationToken)
+  name: ParseFontAsync(Stream, TrueTypeFontParsingOptions, CancellationToken)
+  href: api/Utils.Fonts.TTF.TrueTypeFont.html#Utils_Fonts_TTF_TrueTypeFont_ParseFontAsync_System_IO_Stream_Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_System_Threading_CancellationToken_
+  commentId: M:Utils.Fonts.TTF.TrueTypeFont.ParseFontAsync(System.IO.Stream,Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions,System.Threading.CancellationToken)
+  fullName: Utils.Fonts.TTF.TrueTypeFont.ParseFontAsync(System.IO.Stream, Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions, System.Threading.CancellationToken)
+  nameWithType: TrueTypeFont.ParseFontAsync(Stream, TrueTypeFontParsingOptions, CancellationToken)
+- uid: Utils.Fonts.TTF.TrueTypeFont.ParseFontAsync*
+  name: ParseFontAsync
+  href: api/Utils.Fonts.TTF.TrueTypeFont.html#Utils_Fonts_TTF_TrueTypeFont_ParseFontAsync_
+  commentId: Overload:Utils.Fonts.TTF.TrueTypeFont.ParseFontAsync
+  isSpec: "True"
+  fullName: Utils.Fonts.TTF.TrueTypeFont.ParseFontAsync
+  nameWithType: TrueTypeFont.ParseFontAsync
 - uid: Utils.Fonts.TTF.TrueTypeFont.RangeShift
   name: RangeShift
   href: api/Utils.Fonts.TTF.TrueTypeFont.html#Utils_Fonts_TTF_TrueTypeFont_RangeShift
@@ -25252,115 +25793,6 @@ references:
   isSpec: "True"
   fullName: Utils.Fonts.TTF.TrueTypeFont.SearchRange
   nameWithType: TrueTypeFont.SearchRange
-- uid: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration
-  name: TrueTypeFont.TableDeclaration
-  href: api/Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.html
-  commentId: T:Utils.Fonts.TTF.TrueTypeFont.TableDeclaration
-  fullName: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration
-  nameWithType: TrueTypeFont.TableDeclaration
-- uid: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.CheckSum
-  name: CheckSum
-  href: api/Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.html#Utils_Fonts_TTF_TrueTypeFont_TableDeclaration_CheckSum
-  commentId: P:Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.CheckSum
-  fullName: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.CheckSum
-  nameWithType: TrueTypeFont.TableDeclaration.CheckSum
-- uid: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.CheckSum*
-  name: CheckSum
-  href: api/Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.html#Utils_Fonts_TTF_TrueTypeFont_TableDeclaration_CheckSum_
-  commentId: Overload:Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.CheckSum
-  isSpec: "True"
-  fullName: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.CheckSum
-  nameWithType: TrueTypeFont.TableDeclaration.CheckSum
-- uid: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.CompareTo(System.Object)
-  name: CompareTo(object?)
-  href: api/Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.html#Utils_Fonts_TTF_TrueTypeFont_TableDeclaration_CompareTo_System_Object_
-  commentId: M:Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.CompareTo(System.Object)
-  name.vb: CompareTo(Object)
-  fullName: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.CompareTo(object?)
-  fullName.vb: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.CompareTo(Object)
-  nameWithType: TrueTypeFont.TableDeclaration.CompareTo(object?)
-  nameWithType.vb: TrueTypeFont.TableDeclaration.CompareTo(Object)
-- uid: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.CompareTo(Utils.Fonts.TTF.TrueTypeFont.TableDeclaration)
-  name: CompareTo(TableDeclaration?)
-  href: api/Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.html#Utils_Fonts_TTF_TrueTypeFont_TableDeclaration_CompareTo_Utils_Fonts_TTF_TrueTypeFont_TableDeclaration_
-  commentId: M:Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.CompareTo(Utils.Fonts.TTF.TrueTypeFont.TableDeclaration)
-  name.vb: CompareTo(TableDeclaration)
-  fullName: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.CompareTo(Utils.Fonts.TTF.TrueTypeFont.TableDeclaration?)
-  fullName.vb: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.CompareTo(Utils.Fonts.TTF.TrueTypeFont.TableDeclaration)
-  nameWithType: TrueTypeFont.TableDeclaration.CompareTo(TrueTypeFont.TableDeclaration?)
-  nameWithType.vb: TrueTypeFont.TableDeclaration.CompareTo(TrueTypeFont.TableDeclaration)
-- uid: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.CompareTo*
-  name: CompareTo
-  href: api/Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.html#Utils_Fonts_TTF_TrueTypeFont_TableDeclaration_CompareTo_
-  commentId: Overload:Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.CompareTo
-  isSpec: "True"
-  fullName: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.CompareTo
-  nameWithType: TrueTypeFont.TableDeclaration.CompareTo
-- uid: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.Data
-  name: Data
-  href: api/Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.html#Utils_Fonts_TTF_TrueTypeFont_TableDeclaration_Data
-  commentId: P:Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.Data
-  fullName: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.Data
-  nameWithType: TrueTypeFont.TableDeclaration.Data
-- uid: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.Data*
-  name: Data
-  href: api/Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.html#Utils_Fonts_TTF_TrueTypeFont_TableDeclaration_Data_
-  commentId: Overload:Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.Data
-  isSpec: "True"
-  fullName: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.Data
-  nameWithType: TrueTypeFont.TableDeclaration.Data
-- uid: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.DataLength
-  name: DataLength
-  href: api/Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.html#Utils_Fonts_TTF_TrueTypeFont_TableDeclaration_DataLength
-  commentId: P:Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.DataLength
-  fullName: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.DataLength
-  nameWithType: TrueTypeFont.TableDeclaration.DataLength
-- uid: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.DataLength*
-  name: DataLength
-  href: api/Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.html#Utils_Fonts_TTF_TrueTypeFont_TableDeclaration_DataLength_
-  commentId: Overload:Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.DataLength
-  isSpec: "True"
-  fullName: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.DataLength
-  nameWithType: TrueTypeFont.TableDeclaration.DataLength
-- uid: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.Offset
-  name: Offset
-  href: api/Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.html#Utils_Fonts_TTF_TrueTypeFont_TableDeclaration_Offset
-  commentId: P:Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.Offset
-  fullName: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.Offset
-  nameWithType: TrueTypeFont.TableDeclaration.Offset
-- uid: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.Offset*
-  name: Offset
-  href: api/Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.html#Utils_Fonts_TTF_TrueTypeFont_TableDeclaration_Offset_
-  commentId: Overload:Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.Offset
-  isSpec: "True"
-  fullName: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.Offset
-  nameWithType: TrueTypeFont.TableDeclaration.Offset
-- uid: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.Tag
-  name: Tag
-  href: api/Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.html#Utils_Fonts_TTF_TrueTypeFont_TableDeclaration_Tag
-  commentId: P:Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.Tag
-  fullName: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.Tag
-  nameWithType: TrueTypeFont.TableDeclaration.Tag
-- uid: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.Tag*
-  name: Tag
-  href: api/Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.html#Utils_Fonts_TTF_TrueTypeFont_TableDeclaration_Tag_
-  commentId: Overload:Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.Tag
-  isSpec: "True"
-  fullName: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.Tag
-  nameWithType: TrueTypeFont.TableDeclaration.Tag
-- uid: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.ToString
-  name: ToString()
-  href: api/Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.html#Utils_Fonts_TTF_TrueTypeFont_TableDeclaration_ToString
-  commentId: M:Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.ToString
-  fullName: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.ToString()
-  nameWithType: TrueTypeFont.TableDeclaration.ToString()
-- uid: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.ToString*
-  name: ToString
-  href: api/Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.html#Utils_Fonts_TTF_TrueTypeFont_TableDeclaration_ToString_
-  commentId: Overload:Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.ToString
-  isSpec: "True"
-  fullName: Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.ToString
-  nameWithType: TrueTypeFont.TableDeclaration.ToString
 - uid: Utils.Fonts.TTF.TrueTypeFont.TablesCount
   name: TablesCount
   href: api/Utils.Fonts.TTF.TrueTypeFont.html#Utils_Fonts_TTF_TrueTypeFont_TablesCount
@@ -25422,6 +25854,18 @@ references:
   commentId: M:Utils.Fonts.TTF.TrueTypeFont.WriteFont
   fullName: Utils.Fonts.TTF.TrueTypeFont.WriteFont()
   nameWithType: TrueTypeFont.WriteFont()
+- uid: Utils.Fonts.TTF.TrueTypeFont.WriteFont(System.IO.Stream,Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions)
+  name: WriteFont(Stream, TrueTypeFontWritingOptions)
+  href: api/Utils.Fonts.TTF.TrueTypeFont.html#Utils_Fonts_TTF_TrueTypeFont_WriteFont_System_IO_Stream_Utils_Fonts_TTF_Parsing_TrueTypeFontWritingOptions_
+  commentId: M:Utils.Fonts.TTF.TrueTypeFont.WriteFont(System.IO.Stream,Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions)
+  fullName: Utils.Fonts.TTF.TrueTypeFont.WriteFont(System.IO.Stream, Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions)
+  nameWithType: TrueTypeFont.WriteFont(Stream, TrueTypeFontWritingOptions)
+- uid: Utils.Fonts.TTF.TrueTypeFont.WriteFont(Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions)
+  name: WriteFont(TrueTypeFontWritingOptions)
+  href: api/Utils.Fonts.TTF.TrueTypeFont.html#Utils_Fonts_TTF_TrueTypeFont_WriteFont_Utils_Fonts_TTF_Parsing_TrueTypeFontWritingOptions_
+  commentId: M:Utils.Fonts.TTF.TrueTypeFont.WriteFont(Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions)
+  fullName: Utils.Fonts.TTF.TrueTypeFont.WriteFont(Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions)
+  nameWithType: TrueTypeFont.WriteFont(TrueTypeFontWritingOptions)
 - uid: Utils.Fonts.TTF.TrueTypeFont.WriteFont*
   name: WriteFont
   href: api/Utils.Fonts.TTF.TrueTypeFont.html#Utils_Fonts_TTF_TrueTypeFont_WriteFont_
@@ -25429,6 +25873,19 @@ references:
   isSpec: "True"
   fullName: Utils.Fonts.TTF.TrueTypeFont.WriteFont
   nameWithType: TrueTypeFont.WriteFont
+- uid: Utils.Fonts.TTF.TrueTypeFont.WriteFontAsync(System.IO.Stream,Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions,System.Threading.CancellationToken)
+  name: WriteFontAsync(Stream, TrueTypeFontWritingOptions, CancellationToken)
+  href: api/Utils.Fonts.TTF.TrueTypeFont.html#Utils_Fonts_TTF_TrueTypeFont_WriteFontAsync_System_IO_Stream_Utils_Fonts_TTF_Parsing_TrueTypeFontWritingOptions_System_Threading_CancellationToken_
+  commentId: M:Utils.Fonts.TTF.TrueTypeFont.WriteFontAsync(System.IO.Stream,Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions,System.Threading.CancellationToken)
+  fullName: Utils.Fonts.TTF.TrueTypeFont.WriteFontAsync(System.IO.Stream, Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions, System.Threading.CancellationToken)
+  nameWithType: TrueTypeFont.WriteFontAsync(Stream, TrueTypeFontWritingOptions, CancellationToken)
+- uid: Utils.Fonts.TTF.TrueTypeFont.WriteFontAsync*
+  name: WriteFontAsync
+  href: api/Utils.Fonts.TTF.TrueTypeFont.html#Utils_Fonts_TTF_TrueTypeFont_WriteFontAsync_
+  commentId: Overload:Utils.Fonts.TTF.TrueTypeFont.WriteFontAsync
+  isSpec: "True"
+  fullName: Utils.Fonts.TTF.TrueTypeFont.WriteFontAsync
+  nameWithType: TrueTypeFont.WriteFontAsync
 - uid: Utils.Fonts.TTF.TrueTypeFont.baseLineY
   name: baseLineY
   href: api/Utils.Fonts.TTF.TrueTypeFont.html#Utils_Fonts_TTF_TrueTypeFont_baseLineY

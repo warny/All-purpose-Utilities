@@ -2,9 +2,9 @@
 <html>
   <head>
     <meta charset="utf-8">
-      <title>Namespace Utils.Fonts.TTF | omy.Utils Documentation </title>
+      <title>Namespace Utils.Fonts.TTF.Parsing | omy.Utils Documentation </title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="title" content="Namespace Utils.Fonts.TTF | omy.Utils Documentation ">
+      <meta name="title" content="Namespace Utils.Fonts.TTF.Parsing | omy.Utils Documentation ">
       
       
       <link rel="icon" href="../favicon.ico">
@@ -84,9 +84,9 @@
           <nav id="breadcrumb"></nav>
         </div>
 
-        <article data-uid="Utils.Fonts.TTF">
+        <article data-uid="Utils.Fonts.TTF.Parsing">
 
-  <h1 id="Utils_Fonts_TTF" data-uid="Utils.Fonts.TTF" class="text-break">Namespace Utils.Fonts.TTF</h1>
+  <h1 id="Utils_Fonts_TTF_Parsing" data-uid="Utils.Fonts.TTF.Parsing" class="text-break">Namespace Utils.Fonts.TTF.Parsing</h1>
   <div class="markdown level0 summary"></div>
   <div class="markdown level0 conceptual"></div>
   <div class="markdown level0 remarks"></div>
@@ -95,86 +95,48 @@
 Classes
 </h3>
     <dl class="jumplist">
-      <dt><a class="xref" href="Utils.Fonts.TTF.HeadTable.html">HeadTable</a></dt>
-      <dd><p>The 'head' table contains global information about the font. It records facts such as the font version number, creation and modification dates,
-revision number, and basic typographic data that applies to the font as a whole. This includes the font bounding box, the primary writing direction,
-and other information regarding glyph placement within the em square. The checksum is used to verify the integrity of the font data and can help
-distinguish between similar fonts.</p>
+      <dt><a class="xref" href="Utils.Fonts.TTF.Parsing.FontDiagnostic.html">FontDiagnostic</a></dt>
+      <dd><p>Describes a single structural anomaly found while parsing a TrueType/OpenType font.</p>
 </dd>
     </dl>
     <dl class="jumplist">
-      <dt><a class="xref" href="Utils.Fonts.TTF.LocaRecord.html">LocaRecord</a></dt>
-      <dd><p>Represents a record from the 'loca' table of a TrueType font.</p>
+      <dt><a class="xref" href="Utils.Fonts.TTF.Parsing.FontParseException.html">FontParseException</a></dt>
+      <dd><p>Thrown when a TrueType/OpenType font fails to parse under
+<a class="xref" href="Utils.Fonts.TTF.Parsing.FontValidationMode.html#Utils_Fonts_TTF_Parsing_FontValidationMode_Strict">Strict</a>, or when a resource limit configured on
+<a class="xref" href="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html">TrueTypeFontParsingOptions</a> is exceeded (which is fatal in both validation modes).</p>
 </dd>
     </dl>
     <dl class="jumplist">
-      <dt><a class="xref" href="Utils.Fonts.TTF.NameTable.html">NameTable</a></dt>
-      <dd><p>The name table (tag: 'name') allows inclusion of human‑readable names for features and settings,
-copyright notices, font names, style names, and other information related to the font. These
-name strings can be provided in any language, and are referenced by other TrueType tables.</p>
+      <dt><a class="xref" href="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html">TrueTypeFontParsingOptions</a></dt>
+      <dd><p>Immutable set of limits and policy switches that govern how
+<a class="xref" href="Utils.Fonts.TTF.TrueTypeFont.html#Utils_Fonts_TTF_TrueTypeFont_ParseFont_System_ReadOnlySpan_System_Byte__Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_">ParseFont(ReadOnlySpan&lt;byte&gt;, TrueTypeFontParsingOptions)</a> and its
+overloads read a font. All limits are explicit, bounded, and validated before the corresponding
+data is allocated or read, so that a hostile font cannot force unbounded memory use or CPU time.</p>
 </dd>
     </dl>
     <dl class="jumplist">
-      <dt><a class="xref" href="Utils.Fonts.TTF.NameTable.NameRecord.html">NameTable.NameRecord</a></dt>
-      <dd><p>Represents a record in the name table, defined by the triplet
-(PlatformId, PlatformSpecificId, LanguageId) and a NameId.</p>
-</dd>
-    </dl>
-    <dl class="jumplist">
-      <dt><a class="xref" href="Utils.Fonts.TTF.TTFPoint.html">TTFPoint</a></dt>
-      <dd><p>Represents a point in the TrueType glyph space.</p>
-</dd>
-    </dl>
-    <dl class="jumplist">
-      <dt><a class="xref" href="Utils.Fonts.TTF.TTFTableAttribute.html">TTFTableAttribute</a></dt>
-      <dd><p>Indicates the TrueType table associated with a class and specifies its dependencies.</p>
-</dd>
-    </dl>
-    <dl class="jumplist">
-      <dt><a class="xref" href="Utils.Fonts.TTF.TableTypes.html">TableTypes</a></dt>
-      <dd><p>Provides constants for known OpenType table tags.
-Includes well-known system tables such as &quot;cmap&quot;, &quot;glyf&quot;, &quot;name&quot;, etc.</p>
-</dd>
-    </dl>
-    <dl class="jumplist">
-      <dt><a class="xref" href="Utils.Fonts.TTF.TrueTypeFont.html">TrueTypeFont</a></dt>
-      <dd><p>Represents a TrueType font.</p>
-</dd>
-    </dl>
-    <dl class="jumplist">
-      <dt><a class="xref" href="Utils.Fonts.TTF.TrueTypeGlyph.html">TrueTypeGlyph</a></dt>
-      <dd><p>Represents a TrueType glyph and implements the <a class="xref" href="Utils.Fonts.IGlyph.html">IGlyph</a> interface.
-This class acts as a wrapper around a <a class="xref" href="Utils.Fonts.TTF.Tables.Glyf.GlyphBase.html">GlyphBase</a> instance, delegating
-rendering and metric calculations.</p>
-</dd>
-    </dl>
-    <dl class="jumplist">
-      <dt><a class="xref" href="Utils.Fonts.TTF.TrueTypeTable.html">TrueTypeTable</a></dt>
-      <dd><p>Represents the base class for a TrueType table.</p>
-</dd>
-    </dl>
-    <dl class="jumplist">
-      <dt><a class="xref" href="Utils.Fonts.TTF.TtfEncoderFactory.html">TtfEncoderFactory</a></dt>
-      <dd><p>A factory for selecting the appropriate text encoding for TrueType name table entries.
-The encoding is determined by the triplet (PlatformId, PlatformSpecificId, LanguageId).</p>
-</dd>
-    </dl>
-    <h3 id="structs">
-Structs
-</h3>
-    <dl class="jumplist">
-      <dt><a class="xref" href="Utils.Fonts.TTF.Tag.html">Tag</a></dt>
-      <dd><p>Represents a 4-byte identifier used in font file formats such as TrueType (TTF).
-Encodes a string of up to 4 ASCII characters into a 32-bit integer.
-Provides implicit conversions and equality comparisons with strings, integers, and byte arrays.</p>
+      <dt><a class="xref" href="Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.html">TrueTypeFontWritingOptions</a></dt>
+      <dd><p>Immutable set of limits and policy switches that govern how
+<a class="xref" href="Utils.Fonts.TTF.TrueTypeFont.html#Utils_Fonts_TTF_TrueTypeFont_WriteFont">WriteFont()</a> and its stream-based overloads serialize a font.</p>
 </dd>
     </dl>
     <h3 id="enums">
 Enums
 </h3>
     <dl class="jumplist">
-      <dt><a class="xref" href="Utils.Fonts.TTF.TableTypes.Tags.html">TableTypes.Tags</a></dt>
-      <dd><p>Tags for OpenType font tables, using their 4-byte integer encodings.</p>
+      <dt><a class="xref" href="Utils.Fonts.TTF.Parsing.FontDiagnosticCode.html">FontDiagnosticCode</a></dt>
+      <dd><p>Identifies the kind of structural anomaly a <a class="xref" href="Utils.Fonts.TTF.Parsing.FontDiagnostic.html">FontDiagnostic</a> reports.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Fonts.TTF.Parsing.FontDiagnosticSeverity.html">FontDiagnosticSeverity</a></dt>
+      <dd><p>Severity of a <a class="xref" href="Utils.Fonts.TTF.Parsing.FontDiagnostic.html">FontDiagnostic</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Fonts.TTF.Parsing.FontValidationMode.html">FontValidationMode</a></dt>
+      <dd><p>Selects how a TrueType/OpenType parser reacts to structural anomalies found while
+reading a font. See <a class="xref" href="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_ValidationMode">ValidationMode</a>.</p>
 </dd>
     </dl>
 

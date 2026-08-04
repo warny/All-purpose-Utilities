@@ -275,8 +275,8 @@
 <h2 id="omyutilsfonts">omy.Utils.Fonts</h2>
 <ul>
 <li>Published baseline: <code>1.2.1</code></li>
-<li>Accepted diagnostics: <strong>22</strong></li>
-<li>Diagnostic classes: <code>CP0001</code>: 2, <code>CP0002</code>: 13, <code>CP0005</code>: 2, <code>CP0006</code>: 5</li>
+<li>Accepted diagnostics: <strong>41</strong> (22 from the first audit pass + 19 from the second, see below)</li>
+<li>Diagnostic classes: <code>CP0001</code>: 3, <code>CP0002</code>: 31, <code>CP0005</code>: 2, <code>CP0006</code>: 5</li>
 </ul>
 <h3 id="removed-or-incompatible-published-surface-5">Removed or incompatible published surface</h3>
 <ul>
@@ -305,6 +305,88 @@
 <li><code>CP0006</code> — Cannot add interface member 'void Utils.Fonts.IGraphicConverter.EndDrawGlyph()' to {candidateAssembly} because it does not exist on {baselineAssembly}</li>
 <li><code>CP0005</code> — Cannot add abstract member 'int Utils.Fonts.TTF.Tables.CMap.CMapFormatBase.Length.get' to {candidateAssembly} because it does not exist on {baselineAssembly}</li>
 <li><code>CP0005</code> — Cannot add abstract member 'int Utils.Fonts.TTF.Tables.CMap.CMapFormatBase.Length' to {candidateAssembly} because it does not exist on {baselineAssembly}</li>
+</ul>
+<h3 id="second-audit-pass-todo-2026-07-19-pass2md-items-21-39">Second audit pass (TODO-2026-07-19-pass2.md, items 21-39)</h3>
+<p>The 19 entries below are recorded in <code>eng/api-breaking-changes/2.0.0.json</code> (same file, same
+<code>omy.Utils.Fonts</code> package block as the first-pass entries above), authored by hand against the
+<code>1.2.1</code> baseline following the exact message conventions already used elsewhere in that manifest
+(member/type existence phrasing, <code>{baselineAssembly}</code>/<code>{candidateAssembly}</code> placeholders). They
+were <strong>not</strong> produced by an actual ApiCompat run in this environment -- there was no baseline NuGet
+package available to diff against here. Before the 2.0.0 release gate is trusted on this package,
+re-run the ApiCompat tool against the published <code>1.2.1</code> baseline and confirm these messages match
+byte-for-byte (the gate compares diagnostic message text exactly); adjust both this file and the
+manifest if the real tool output differs in wording, nested-type naming (<code>+</code> vs <code>.</code>), or otherwise.</p>
+<ul>
+<li><p><code>CP0002</code> — <code>short Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.getGlyphIndex(int)</code></p>
+</li>
+<li><p><code>CP0002</code> — <code>byte[] Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.Instructions.get</code></p>
+</li>
+<li><p><code>CP0002</code> — <code>Utils.Fonts.TTF.Tables.CMap.CMapFormatBase[] Utils.Fonts.TTF.Tables.CmapTable.CMaps.get</code></p>
+</li>
+<li><p><code>CP0002</code> — <code>short Utils.Fonts.TTF.Tables.CmapTable.Version.get</code></p>
+</li>
+<li><p><code>CP0002</code> — <code>void Utils.Fonts.TTF.Tables.CmapTable.Version.set</code></p>
+</li>
+<li><p><code>CP0002</code> — <code>short Utils.Fonts.TTF.Tables.CmapTable.NumberSubtables.get</code></p>
+</li>
+<li><p><code>CP0002</code> — <code>Utils.Fonts.TTF.Tables.CMap.CMapFormatBase Utils.Fonts.TTF.Tables.CmapTable.GetCMap(short, short)</code></p>
+</li>
+<li><p><code>CP0002</code> — <code>void Utils.Fonts.TTF.Tables.CmapTable.AddCMap(short, short, Utils.Fonts.TTF.Tables.CMap.CMapFormatBase)</code></p>
+</li>
+<li><p><code>CP0002</code> — <code>void Utils.Fonts.TTF.Tables.CmapTable.RemoveCMap(short, short)</code></p>
+</li>
+<li><p><code>CP0002</code> — <code>short Utils.Fonts.TTF.TrueTypeFont.TablesCount.get</code></p>
+</li>
+<li><p><code>CP0002</code> — <code>short Utils.Fonts.TTF.TrueTypeFont.SearchRange.get</code></p>
+</li>
+<li><p><code>CP0002</code> — <code>short Utils.Fonts.TTF.TrueTypeFont.EntrySelector.get</code></p>
+</li>
+<li><p><code>CP0002</code> — <code>short Utils.Fonts.TTF.TrueTypeFont.RangeShift.get</code></p>
+</li>
+<li><p><code>CP0002</code> — <code>short Utils.Fonts.TTF.Tables.Glyf.GlyphBase.Length.get</code></p>
+</li>
+<li><p><code>CP0002</code> — <code>short Utils.Fonts.TTF.Tables.Glyf.GlyphSimple.Length.get</code></p>
+</li>
+<li><p><code>CP0002</code> — <code>short Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.Length.get</code></p>
+</li>
+<li><p><code>CP0002</code> — <code>Utils.Fonts.TTF.TrueTypeFont Utils.Fonts.TTF.TrueTypeFont.ParseFont(byte[])</code></p>
+</li>
+<li><p><code>CP0002</code> — <code>Utils.Fonts.TTF.TrueTypeFont Utils.Fonts.TTF.TrueTypeFont.ParseFont(System.IO.Stream)</code></p>
+</li>
+<li><p><code>CP0001</code> — <code>Utils.Fonts.TTF.TrueTypeFont+TableDeclaration</code></p>
+</li>
+<li><p><code>GlyphCompound.getGlyphIndex(int)</code> renamed to <code>GetGlyphIndex(int)</code>, returning <code>ushort</code> instead of <code>short</code>.</p>
+</li>
+<li><p><code>GlyphCompound.Instructions</code> is <code>ReadOnlyMemory&lt;byte&gt;</code> instead of <code>byte[]</code>.</p>
+</li>
+<li><p><code>CmapTable.CMaps</code> is <code>IReadOnlyList&lt;CMapFormatBase&gt;</code> instead of <code>CMapFormatBase[]</code>.</p>
+</li>
+<li><p><code>CmapTable.AddCMap</code>/<code>RemoveCMap</code>/<code>GetCMap</code> take <code>ushort</code> platform/encoding IDs instead of <code>short</code>.</p>
+</li>
+<li><p><code>CmapTable.Version</code>/<code>NumberSubtables</code> are <code>ushort</code> instead of <code>short</code>.</p>
+</li>
+<li><p><code>TrueTypeFont.TablesCount</code>/<code>SearchRange</code>/<code>EntrySelector</code>/<code>RangeShift</code> are <code>ushort</code> instead of <code>short</code>.</p>
+</li>
+<li><p><code>GlyphBase.Length</code> (and the <code>GlyphSimple</code>/<code>GlyphCompound</code> overrides) is <code>int</code> instead of <code>short</code>.</p>
+</li>
+<li><p><code>TrueTypeFont.TableDeclaration</code> removed (replaced internally by <code>Parsing.TableDirectoryEntry</code>).</p>
+</li>
+<li><p><code>TrueTypeFont.ParseFont(byte[])</code>/<code>ParseFont(Stream)</code> gained an optional <code>TrueTypeFontParsingOptions</code>
+parameter (source-compatible; recompilation required for binary compatibility).</p>
+</li>
+<li><p><code>TrueTypeFont.WriteFont()</code> gained an optional <code>TrueTypeFontWritingOptions</code> parameter (same note).</p>
+</li>
+<li><p>New public types: <code>TrueTypeFontParsingOptions</code>, <code>TrueTypeFontWritingOptions</code>, <code>FontValidationMode</code>,
+<code>FontDiagnostic</code>, <code>FontDiagnosticCode</code>, <code>FontDiagnosticSeverity</code>, <code>FontParseException</code>.</p>
+</li>
+<li><p>New public members: <code>TrueTypeFont.Diagnostics</code>, <code>TrueTypeFont.ParseFontAsync</code>,
+<code>TrueTypeFont.WriteFont(Stream, ...)</code>, <code>TrueTypeFont.WriteFontAsync</code>, <code>GlyfTable.TryGetGlyph</code>.</p>
+</li>
+<li><p>Fonts with structural anomalies that previously parsed silently (duplicate table tags, checksum
+mismatches, malformed <code>cmap</code> subtables, out-of-range composite glyph references) now throw
+<code>FontParseException</code> by default (<code>FontValidationMode.Strict</code>); pass <code>FontValidationMode.Permissive</code>
+to restore a best-effort parse with diagnostics instead of an exception.</p>
+</li>
 </ul>
 <p><a id="omy-utils-imaging"></a></p>
 <h2 id="omyutilsimaging">omy.Utils.Imaging</h2>

@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Fonts_TTF_Tables_Glyf_GlyphBase" data-uid="Utils.Fonts.TTF.Tables.Glyf.GlyphBase" class="text-break">
-Class GlyphBase  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L11"><i class="bi bi-code-slash"></i></a>
+Class GlyphBase  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L12"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -255,7 +255,7 @@ Class GlyphBase  <a class="header-action link-secondary" title="View source" hre
 
   <h3 id="Utils_Fonts_TTF_Tables_Glyf_GlyphBase__ctor" data-uid="Utils.Fonts.TTF.Tables.Glyf.GlyphBase.#ctor">
   GlyphBase()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L55"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L85"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Fonts.TTF.Tables.Glyf.GlyphBase.html">GlyphBase</a> class.
@@ -287,7 +287,7 @@ Protected internal to allow instantiation by derived classes.</p>
 
   <h3 id="Utils_Fonts_TTF_Tables_Glyf_GlyphBase_Contours" data-uid="Utils.Fonts.TTF.Tables.Glyf.GlyphBase.Contours">
   Contours
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L49"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L50"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the contours of the glyph.
@@ -321,7 +321,7 @@ By default, this property is not initialized.</p>
 
   <h3 id="Utils_Fonts_TTF_Tables_Glyf_GlyphBase_IsCompound" data-uid="Utils.Fonts.TTF.Tables.Glyf.GlyphBase.IsCompound">
   IsCompound
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L17"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L18"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a value indicating whether this glyph is a compound glyph.
@@ -354,16 +354,16 @@ By default, a glyph is not compound.</p>
 
   <h3 id="Utils_Fonts_TTF_Tables_Glyf_GlyphBase_Length" data-uid="Utils.Fonts.TTF.Tables.Glyf.GlyphBase.Length">
   Length
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L66"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L103"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the length (in bytes) of the glyph data.
-The default value is 10.</p>
+The default value is 10 (the fixed-size glyph header: numberOfContours + the bounding box).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public virtual short Length { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public virtual int Length { get; }</code></pre>
   </div>
 
 
@@ -372,13 +372,20 @@ The default value is 10.</p>
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
     <dd></dd>
   </dl>
 
 
 
 
+  <h4 class="section" id="Utils_Fonts_TTF_Tables_Glyf_GlyphBase_Length_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Returns <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>, not <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a>: a glyph's serialized size (points,
+flags, coordinate deltas, instructions, or -- for a compound glyph -- components) can
+legitimately exceed <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16.maxvalue">MaxValue</a> bytes, and narrowing it to a signed 16-bit
+value would silently wrap to a smaller or negative length, corrupting 'glyf' layout and the
+'loca' offsets derived from it.</p>
+</div>
 
 
 
@@ -387,7 +394,7 @@ The default value is 10.</p>
 
   <h3 id="Utils_Fonts_TTF_Tables_Glyf_GlyphBase_MaxX" data-uid="Utils.Fonts.TTF.Tables.Glyf.GlyphBase.MaxX">
   MaxX
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L37"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L38"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the maximum X coordinate of the glyph.</p>
@@ -419,7 +426,7 @@ The default value is 10.</p>
 
   <h3 id="Utils_Fonts_TTF_Tables_Glyf_GlyphBase_MaxY" data-uid="Utils.Fonts.TTF.Tables.Glyf.GlyphBase.MaxY">
   MaxY
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L42"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L43"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the maximum Y coordinate of the glyph.</p>
@@ -451,7 +458,7 @@ The default value is 10.</p>
 
   <h3 id="Utils_Fonts_TTF_Tables_Glyf_GlyphBase_MinX" data-uid="Utils.Fonts.TTF.Tables.Glyf.GlyphBase.MinX">
   MinX
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L27"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L28"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the minimum X coordinate of the glyph.</p>
@@ -483,7 +490,7 @@ The default value is 10.</p>
 
   <h3 id="Utils_Fonts_TTF_Tables_Glyf_GlyphBase_MinY" data-uid="Utils.Fonts.TTF.Tables.Glyf.GlyphBase.MinY">
   MinY
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L32"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L33"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the minimum Y coordinate of the glyph.</p>
@@ -515,7 +522,7 @@ The default value is 10.</p>
 
   <h3 id="Utils_Fonts_TTF_Tables_Glyf_GlyphBase_NumContours" data-uid="Utils.Fonts.TTF.Tables.Glyf.GlyphBase.NumContours">
   NumContours
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L22"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L23"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the number of contours in the glyph.</p>
@@ -551,7 +558,7 @@ The default value is 10.</p>
 
   <h3 id="Utils_Fonts_TTF_Tables_Glyf_GlyphBase_CreateGlyf_Utils_IO_Serialization_Reader_Utils_Fonts_TTF_Tables_GlyfTable_" data-uid="Utils.Fonts.TTF.Tables.Glyf.GlyphBase.CreateGlyf(Utils.IO.Serialization.Reader,Utils.Fonts.TTF.Tables.GlyfTable)">
   CreateGlyf(Reader, GlyfTable)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L79"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L116"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates a new glyph from the provided data.</p>
@@ -599,7 +606,7 @@ The default value is 10.</p>
 
   <h3 id="Utils_Fonts_TTF_Tables_Glyf_GlyphBase_ReadData_Utils_IO_Serialization_Reader_" data-uid="Utils.Fonts.TTF.Tables.Glyf.GlyphBase.ReadData(Utils.IO.Serialization.Reader)">
   ReadData(Reader)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L108"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L145"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads additional glyph-specific data from the provided reader.
@@ -633,7 +640,7 @@ The default implementation does nothing; derived classes may override this.</p>
 
   <h3 id="Utils_Fonts_TTF_Tables_Glyf_GlyphBase_Render_Utils_Fonts_IGraphicConverter_" data-uid="Utils.Fonts.TTF.Tables.Glyf.GlyphBase.Render(Utils.Fonts.IGraphicConverter)">
   Render(IGraphicConverter)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L127"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L164"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Renders the glyph using the specified graphic converter.</p>
@@ -666,7 +673,7 @@ The default implementation does nothing; derived classes may override this.</p>
 
   <h3 id="Utils_Fonts_TTF_Tables_Glyf_GlyphBase_WriteData_Utils_IO_Serialization_Writer_" data-uid="Utils.Fonts.TTF.Tables.Glyf.GlyphBase.WriteData(Utils.IO.Serialization.Writer)">
   WriteData(Writer)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L114"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L151"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes the basic glyph data to the provided writer.</p>
@@ -699,7 +706,7 @@ The default implementation does nothing; derived classes may override this.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L11" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphBase.cs/#L12" class="edit-link">Edit this page</a>
         </div>
 
 

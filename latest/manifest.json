@@ -2728,6 +2728,118 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Fonts.TTF.Parsing.FontDiagnostic.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Fonts.TTF.Parsing.FontDiagnostic.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Fonts.TTF.Parsing.FontDiagnostic",
+      "Summary": "<p sourcefile=\"api/Utils.Fonts.TTF.Parsing.FontDiagnostic.yml\" sourcestartlinenumber=\"1\">Describes a single structural anomaly found while parsing a TrueType/OpenType font.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Fonts.TTF.Parsing.FontDiagnosticCode.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Fonts.TTF.Parsing.FontDiagnosticCode.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Fonts.TTF.Parsing.FontDiagnosticCode",
+      "Summary": "<p sourcefile=\"api/Utils.Fonts.TTF.Parsing.FontDiagnosticCode.yml\" sourcestartlinenumber=\"1\">Identifies the kind of structural anomaly a <xref href=\"Utils.Fonts.TTF.Parsing.FontDiagnostic\" data-throw-if-not-resolved=\"false\"></xref> reports.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Fonts.TTF.Parsing.FontDiagnosticSeverity.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Fonts.TTF.Parsing.FontDiagnosticSeverity.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Fonts.TTF.Parsing.FontDiagnosticSeverity",
+      "Summary": "<p sourcefile=\"api/Utils.Fonts.TTF.Parsing.FontDiagnosticSeverity.yml\" sourcestartlinenumber=\"1\">Severity of a <xref href=\"Utils.Fonts.TTF.Parsing.FontDiagnostic\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Fonts.TTF.Parsing.FontParseException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Fonts.TTF.Parsing.FontParseException.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Fonts.TTF.Parsing.FontParseException",
+      "Summary": "<p sourcefile=\"api/Utils.Fonts.TTF.Parsing.FontParseException.yml\" sourcestartlinenumber=\"1\">Thrown when a TrueType/OpenType font fails to parse under\n<xref href=\"Utils.Fonts.TTF.Parsing.FontValidationMode.Strict\" data-throw-if-not-resolved=\"false\"></xref>, or when a resource limit configured on\n<xref href=\"Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions\" data-throw-if-not-resolved=\"false\"></xref> is exceeded (which is fatal in both validation modes).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Fonts.TTF.Parsing.FontValidationMode.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Fonts.TTF.Parsing.FontValidationMode.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Fonts.TTF.Parsing.FontValidationMode",
+      "Summary": "<p sourcefile=\"api/Utils.Fonts.TTF.Parsing.FontValidationMode.yml\" sourcestartlinenumber=\"1\">Selects how a TrueType/OpenType parser reacts to structural anomalies found while\nreading a font. See <xref href=\"Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.ValidationMode\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions",
+      "Summary": "<p sourcefile=\"api/Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.yml\" sourcestartlinenumber=\"1\">Immutable set of limits and policy switches that govern how\n<xref href=\"Utils.Fonts.TTF.TrueTypeFont.ParseFont(System.ReadOnlySpan%7bSystem.Byte%7d%2cUtils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions)\" data-throw-if-not-resolved=\"false\"></xref> and its\noverloads read a font. All limits are explicit, bounded, and validated before the corresponding\ndata is allocated or read, so that a hostile font cannot force unbounded memory use or CPU time.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions",
+      "Summary": "<p sourcefile=\"api/Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.yml\" sourcestartlinenumber=\"1\">Immutable set of limits and policy switches that govern how\n<xref href=\"Utils.Fonts.TTF.TrueTypeFont.WriteFont\" data-throw-if-not-resolved=\"false\"></xref> and its stream-based overloads serialize a font.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Fonts.TTF.Parsing.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Fonts.TTF.Parsing.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Fonts.TTF.Parsing",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.Fonts.TTF.TTFPoint.yml",
       "output": {
         ".html": {
@@ -3719,20 +3831,6 @@
       "IsMRef": true,
       "Title": "Utils.Fonts.TTF.Tag",
       "Summary": "<p sourcefile=\"api/Utils.Fonts.TTF.Tag.yml\" sourcestartlinenumber=\"1\">Represents a 4-byte identifier used in font file formats such as TrueType (TTF).\nEncodes a string of up to 4 ASCII characters into a 32-bit integer.\nProvides implicit conversions and equality comparisons with strings, integers, and byte arrays.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Fonts.TTF.TrueTypeFont.TableDeclaration",
-      "Summary": "<p sourcefile=\"api/Utils.Fonts.TTF.TrueTypeFont.TableDeclaration.yml\" sourcestartlinenumber=\"1\">Represents a declaration of a table in the TrueType font.</p>\n"
     },
     {
       "type": "ManagedReference",

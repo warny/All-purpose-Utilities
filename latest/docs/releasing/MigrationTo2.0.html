@@ -95,6 +95,26 @@
 <h2 id="numbertostring-rule-precedence">NumberToString rule precedence</h2>
 <p>Version 2.0 removes declaration order as an implicit tie-breaker. Add <code>priority=&quot;100&quot;</code> (or another intentional signed <code>xs:int</code> value) when compatible rules have equal canonical specificity. Ordinal variants and trigger forms select the greatest specificity and then greatest priority. Cumulative variants apply the least specific and lowest-priority rules first.</p>
 <p>Programmatic trigger forms must migrate from <code>(Constraints, To)</code> tuples to <code>NumberToStringConverter.TriggerReplacementForm</code>. <code>VariantRule</code> and <code>OrdinalVariantRule</code> constructors accept an optional final <code>priority</code> argument. Configurations inherited through <code>baseOn</code> retain parent priorities; parent and child candidates are validated together and no implicit override occurs.</p>
+<p><a id="omy-utils-fonts-2"></a></p>
+<h2 id="utilsfonts-hostile-font-parsing-hardening">Utils.Fonts hostile-font parsing hardening</h2>
+<p><code>TrueTypeFont.ParseFont</code>/<code>ParseFontAsync</code> now accept an optional <code>TrueTypeFontParsingOptions</code>
+governing a <code>FontValidationMode</code> (<code>Strict</code>, the default, or <code>Permissive</code>), explicit resource limits
+(font/table size, table count, <code>cmap</code> subtable count, composite-glyph depth/component/point
+budgets), and stream-ownership (<code>LeaveOpen</code>). Strict mode rejects any structural anomaly by throwing
+<code>FontParseException</code>; permissive mode records <code>FontDiagnostic</code>s on <code>TrueTypeFont.Diagnostics</code> and
+continues whenever doing so remains memory-safe -- resource-limit violations always throw in both
+modes. Fonts that previously loaded silently despite duplicate table tags, checksum mismatches,
+malformed <code>cmap</code> subtables, or out-of-range composite glyph references now fail fast by default;
+pass <code>FontValidationMode.Permissive</code> to restore a best-effort parse. <code>TrueTypeFontParsingOptions.MaximumFontBytes</code>
+defaults to 64 MiB and cannot be configured above <code>uint.MaxValue</code> (4 GiB) -- SFNT table
+offsets/lengths are themselves unsigned 32-bit fields, so this library never supports a larger font
+regardless of this setting; a value above that ceiling throws <code>ArgumentOutOfRangeException</code>
+immediately when constructing the options.</p>
+<p>Several <code>short</code>-typed members were widened to their correct unsigned/wider wire type and are 2.0
+breaks requiring recompilation: see the &quot;Second audit pass&quot; entry under
+<a href="AcceptedApiBreaks.html#omy-utils-fonts"><code>omy.Utils.Fonts</code></a> for the full list, including the
+<code>GlyphCompound.getGlyphIndex</code> → <code>GetGlyphIndex</code> rename and the <code>CmapTable.CMaps</code>/
+<code>GlyphCompound.Instructions</code> immutability changes.</p>
 
 </article>
 

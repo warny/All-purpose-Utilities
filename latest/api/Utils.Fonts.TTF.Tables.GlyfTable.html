@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Fonts_TTF_Tables_GlyfTable" data-uid="Utils.Fonts.TTF.Tables.GlyfTable" class="text-break">
-Class GlyfTable  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L16"><i class="bi bi-code-slash"></i></a>
+Class GlyfTable  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L18"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -253,7 +253,7 @@ public class GlyfTable : TrueTypeTable</code></pre>
 
   <h3 id="Utils_Fonts_TTF_Tables_GlyfTable__ctor" data-uid="Utils.Fonts.TTF.Tables.GlyfTable.#ctor">
   GlyfTable()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L37"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L39"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Fonts.TTF.Tables.GlyfTable.html">GlyfTable</a> class.</p>
@@ -284,7 +284,7 @@ public class GlyfTable : TrueTypeTable</code></pre>
 
   <h3 id="Utils_Fonts_TTF_Tables_GlyfTable_Length" data-uid="Utils.Fonts.TTF.Tables.GlyfTable.Length">
   Length
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L62"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L64"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the total length (in bytes) of the glyf table, calculated as the sum of the lengths of all glyph data.</p>
@@ -322,7 +322,7 @@ instance -- see <a class="xref" href="Utils.Fonts.TTF.Tables.GlyfTable.html#Util
 
   <h3 id="Utils_Fonts_TTF_Tables_GlyfTable_TrueTypeFont" data-uid="Utils.Fonts.TTF.Tables.GlyfTable.TrueTypeFont">
   TrueTypeFont
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L42"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L44"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the owning TrueType font. When set, the dependent 'loca' and 'maxp' tables are retrieved.</p>
@@ -358,7 +358,7 @@ instance -- see <a class="xref" href="Utils.Fonts.TTF.Tables.GlyfTable.html#Util
 
   <h3 id="Utils_Fonts_TTF_Tables_GlyfTable_GetGlyph_System_Int32_" data-uid="Utils.Fonts.TTF.Tables.GlyfTable.GetGlyph(System.Int32)">
   GetGlyph(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L69"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L78"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Retrieves the glyph data for the glyph at the specified index.</p>
@@ -379,7 +379,7 @@ instance -- see <a class="xref" href="Utils.Fonts.TTF.Tables.GlyfTable.html#Util
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="Utils.Fonts.TTF.Tables.Glyf.GlyphBase.html">GlyphBase</a></dt>
-    <dd><p>The glyph data as a <a class="xref" href="Utils.Fonts.TTF.Tables.Glyf.GlyphBase.html">GlyphBase</a> instance.</p>
+    <dd><p>The glyph data as a <a class="xref" href="Utils.Fonts.TTF.Tables.Glyf.GlyphBase.html">GlyphBase</a> instance, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> if the glyph has no outline (e.g. space).</p>
 </dd>
   </dl>
 
@@ -390,6 +390,12 @@ instance -- see <a class="xref" href="Utils.Fonts.TTF.Tables.GlyfTable.html#Util
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown if <code class="paramref">i</code> is outside <code>[0, NumGlyphs)</code>.</p>
+</dd>
+  </dl>
 
 
 
@@ -397,7 +403,7 @@ instance -- see <a class="xref" href="Utils.Fonts.TTF.Tables.GlyfTable.html#Util
 
   <h3 id="Utils_Fonts_TTF_Tables_GlyfTable_ReadData_Utils_IO_Serialization_Reader_" data-uid="Utils.Fonts.TTF.Tables.GlyfTable.ReadData(Utils.IO.Serialization.Reader)">
   ReadData(Reader)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L89"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L127"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads the glyf table data from the specified reader.
@@ -432,7 +438,7 @@ creates the appropriate glyph instance.</p>
 
   <h3 id="Utils_Fonts_TTF_Tables_GlyfTable_ToString" data-uid="Utils.Fonts.TTF.Tables.GlyfTable.ToString">
   ToString()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L109"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L183"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a string representation of the glyf table.</p>
@@ -461,11 +467,56 @@ creates the appropriate glyph instance.</p>
 
 
 
+  <a id="Utils_Fonts_TTF_Tables_GlyfTable_TryGetGlyph_" data-uid="Utils.Fonts.TTF.Tables.GlyfTable.TryGetGlyph*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_GlyfTable_TryGetGlyph_System_Int32_Utils_Fonts_TTF_Tables_Glyf_GlyphBase__" data-uid="Utils.Fonts.TTF.Tables.GlyfTable.TryGetGlyph(System.Int32,Utils.Fonts.TTF.Tables.Glyf.GlyphBase@)">
+  TryGetGlyph(int, out GlyphBase)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L98"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Attempts to retrieve the glyph data for the glyph at the specified index, without throwing
+for an out-of-range index.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual bool TryGetGlyph(int i, out GlyphBase glyph)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>i</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The glyph index.</p>
+</dd>
+    <dt><code>glyph</code> <a class="xref" href="Utils.Fonts.TTF.Tables.Glyf.GlyphBase.html">GlyphBase</a></dt>
+    <dd><p>When this method returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>, the glyph at <code class="paramref">i</code> (which may
+itself be <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> for a glyph with no outline, e.g. space). Undefined when
+this method returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if <code class="paramref">i</code> is a valid glyph index; otherwise, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
   <a id="Utils_Fonts_TTF_Tables_GlyfTable_WriteData_" data-uid="Utils.Fonts.TTF.Tables.GlyfTable.WriteData*"></a>
 
   <h3 id="Utils_Fonts_TTF_Tables_GlyfTable_WriteData_Utils_IO_Serialization_Writer_" data-uid="Utils.Fonts.TTF.Tables.GlyfTable.WriteData(Utils.IO.Serialization.Writer)">
   WriteData(Writer)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L75"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L113"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes the glyf table data to the specified writer.</p>
@@ -498,7 +549,7 @@ creates the appropriate glyph instance.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L16" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L18" class="edit-link">Edit this page</a>
         </div>
 
 

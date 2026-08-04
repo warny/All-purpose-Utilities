@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Fonts_TTF_TrueTypeFont" data-uid="Utils.Fonts.TTF.TrueTypeFont" class="text-break">
-Class TrueTypeFont  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L20"><i class="bi bi-code-slash"></i></a>
+Class TrueTypeFont  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L24"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -254,7 +254,7 @@ Class TrueTypeFont  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Fonts_TTF_TrueTypeFont__ctor_System_Int32_" data-uid="Utils.Fonts.TTF.TrueTypeFont.#ctor(System.Int32)">
   TrueTypeFont(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L90"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L191"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Fonts.TTF.TrueTypeFont.html">TrueTypeFont</a> class.</p>
@@ -290,7 +290,7 @@ Class TrueTypeFont  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Fonts_TTF_TrueTypeFont_baseLineY" data-uid="Utils.Fonts.TTF.TrueTypeFont.baseLineY">
   baseLineY
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L59"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L163"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>lazy stores the font vertical baseline</p>
@@ -326,7 +326,7 @@ Class TrueTypeFont  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Fonts_TTF_TrueTypeFont_BaseLineY" data-uid="Utils.Fonts.TTF.TrueTypeFont.BaseLineY">
   BaseLineY
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L64"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L168"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Get the font vertical baseline from the font horizontal metric headers</p>
@@ -354,19 +354,21 @@ Class TrueTypeFont  <a class="header-action link-secondary" title="View source" 
 
 
 
-  <a id="Utils_Fonts_TTF_TrueTypeFont_EntrySelector_" data-uid="Utils.Fonts.TTF.TrueTypeFont.EntrySelector*"></a>
+  <a id="Utils_Fonts_TTF_TrueTypeFont_Diagnostics_" data-uid="Utils.Fonts.TTF.TrueTypeFont.Diagnostics*"></a>
 
-  <h3 id="Utils_Fonts_TTF_TrueTypeFont_EntrySelector" data-uid="Utils.Fonts.TTF.TrueTypeFont.EntrySelector">
-  EntrySelector
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L282"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Fonts_TTF_TrueTypeFont_Diagnostics" data-uid="Utils.Fonts.TTF.TrueTypeFont.Diagnostics">
+  Diagnostics
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L132"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets the entry selector used in the font header.</p>
+  <div class="markdown level1 summary"><p>Gets the diagnostics recorded while parsing this font. Always empty for a font that was
+constructed programmatically rather than parsed, and always empty in
+<a class="xref" href="Utils.Fonts.TTF.Parsing.FontValidationMode.html#Utils_Fonts_TTF_Parsing_FontValidationMode_Strict">Strict</a> (any anomaly throws instead of being recorded).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public virtual short EntrySelector { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public IReadOnlyList&lt;FontDiagnostic&gt; Diagnostics { get; }</code></pre>
   </div>
 
 
@@ -375,7 +377,39 @@ Class TrueTypeFont  <a class="header-action link-secondary" title="View source" 
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="Utils.Fonts.TTF.Parsing.FontDiagnostic.html">FontDiagnostic</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_TrueTypeFont_EntrySelector_" data-uid="Utils.Fonts.TTF.TrueTypeFont.EntrySelector*"></a>
+
+  <h3 id="Utils_Fonts_TTF_TrueTypeFont_EntrySelector" data-uid="Utils.Fonts.TTF.TrueTypeFont.EntrySelector">
+  EntrySelector
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L876"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the entry selector used in the font header. Explicitly zero for a font with no tables.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual ushort EntrySelector { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
     <dd></dd>
   </dl>
 
@@ -390,15 +424,15 @@ Class TrueTypeFont  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Fonts_TTF_TrueTypeFont_RangeShift" data-uid="Utils.Fonts.TTF.TrueTypeFont.RangeShift">
   RangeShift
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L288"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L882"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets the range shift used in the font header.</p>
+  <div class="markdown level1 summary"><p>Gets the range shift used in the font header. Explicitly zero for a font with no tables.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public virtual short RangeShift { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public virtual ushort RangeShift { get; }</code></pre>
   </div>
 
 
@@ -407,7 +441,7 @@ Class TrueTypeFont  <a class="header-action link-secondary" title="View source" 
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
     <dd></dd>
   </dl>
 
@@ -422,7 +456,7 @@ Class TrueTypeFont  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Fonts_TTF_TrueTypeFont_Scale" data-uid="Utils.Fonts.TTF.TrueTypeFont.Scale">
   Scale
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L51"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L155"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Get the font scale from the font header</p>
@@ -454,15 +488,16 @@ Class TrueTypeFont  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Fonts_TTF_TrueTypeFont_SearchRange" data-uid="Utils.Fonts.TTF.TrueTypeFont.SearchRange">
   SearchRange
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L276"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L870"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets the search range used in the font header.</p>
+  <div class="markdown level1 summary"><p>Gets the search range used in the font header. Explicitly zero for a font with no tables
+(rather than relying on <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.bitoperations.log2#system-numerics-bitoperations-log2(system-uint32)">Log2(uint)</a>'s behavior at zero).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public virtual short SearchRange { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public virtual ushort SearchRange { get; }</code></pre>
   </div>
 
 
@@ -471,7 +506,7 @@ Class TrueTypeFont  <a class="header-action link-secondary" title="View source" 
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
     <dd></dd>
   </dl>
 
@@ -486,7 +521,7 @@ Class TrueTypeFont  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Fonts_TTF_TrueTypeFont_TablesCount" data-uid="Utils.Fonts.TTF.TrueTypeFont.TablesCount">
   TablesCount
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L271"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L864"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the number of tables in the font.</p>
@@ -494,7 +529,7 @@ Class TrueTypeFont  <a class="header-action link-secondary" title="View source" 
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public virtual short TablesCount { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public virtual ushort TablesCount { get; }</code></pre>
   </div>
 
 
@@ -503,7 +538,7 @@ Class TrueTypeFont  <a class="header-action link-secondary" title="View source" 
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
     <dd></dd>
   </dl>
 
@@ -518,7 +553,7 @@ Class TrueTypeFont  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Fonts_TTF_TrueTypeFont_Type" data-uid="Utils.Fonts.TTF.TrueTypeFont.Type">
   Type
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L41"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L125"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the type value read from the font file.</p>
@@ -554,7 +589,7 @@ Class TrueTypeFont  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Fonts_TTF_TrueTypeFont_AddTable_Utils_Fonts_TTF_Tag_Utils_Fonts_TTF_TrueTypeTable_" data-uid="Utils.Fonts.TTF.TrueTypeFont.AddTable(Utils.Fonts.TTF.Tag,Utils.Fonts.TTF.TrueTypeTable)">
   AddTable(Tag, TrueTypeTable)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L390"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L950"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Adds a table to the font.</p>
@@ -590,7 +625,7 @@ Class TrueTypeFont  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Fonts_TTF_TrueTypeFont_ContainsTable_Utils_Fonts_TTF_Tag_" data-uid="Utils.Fonts.TTF.TrueTypeFont.ContainsTable(Utils.Fonts.TTF.Tag)">
   ContainsTable(Tag)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L401"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L961"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Indicates whether the font contains a table with the specified tag.</p>
@@ -629,7 +664,7 @@ Class TrueTypeFont  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Fonts_TTF_TrueTypeFont_CreateTable_Utils_Fonts_TTF_Tag_" data-uid="Utils.Fonts.TTF.TrueTypeFont.CreateTable(Utils.Fonts.TTF.Tag)">
   CreateTable(Tag)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L256"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L849"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates a new instance of a table corresponding to the specified tag.</p>
@@ -668,7 +703,7 @@ Class TrueTypeFont  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Fonts_TTF_TrueTypeFont_GetGlyph_System_Char_" data-uid="Utils.Fonts.TTF.TrueTypeFont.GetGlyph(System.Char)">
   GetGlyph(char)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L452"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L1012"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Retrieves the glyph corresponding to the specified character.</p>
@@ -707,7 +742,7 @@ Class TrueTypeFont  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Fonts_TTF_TrueTypeFont_GetSpacingCorrection_System_Char_System_Char_" data-uid="Utils.Fonts.TTF.TrueTypeFont.GetSpacingCorrection(System.Char,System.Char)">
   GetSpacingCorrection(char, char)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L479"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L1037"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the spacing correction (kerning) between two adjacent characters.
@@ -755,7 +790,7 @@ If a kern table is present, its value is returned; otherwise, 0 is returned.</p>
 
   <h3 id="Utils_Fonts_TTF_TrueTypeFont_GetTable__1_Utils_Fonts_TTF_Tag_" data-uid="Utils.Fonts.TTF.TrueTypeFont.GetTable``1(Utils.Fonts.TTF.Tag)">
   GetTable&lt;T&gt;(Tag)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L362"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L922"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Retrieves the table corresponding to the specified tag.</p>
@@ -798,9 +833,9 @@ If a kern table is present, its value is returned; otherwise, 0 is returned.</p>
 
   <a id="Utils_Fonts_TTF_TrueTypeFont_ParseFont_" data-uid="Utils.Fonts.TTF.TrueTypeFont.ParseFont*"></a>
 
-  <h3 id="Utils_Fonts_TTF_TrueTypeFont_ParseFont_System_Byte___" data-uid="Utils.Fonts.TTF.TrueTypeFont.ParseFont(System.Byte[])">
-  ParseFont(byte[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L101"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Fonts_TTF_TrueTypeFont_ParseFont_System_Byte___Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_" data-uid="Utils.Fonts.TTF.TrueTypeFont.ParseFont(System.Byte[],Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions)">
+  ParseFont(byte[], TrueTypeFontParsingOptions)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L228"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Parses a TrueType font from a byte array.</p>
@@ -808,13 +843,16 @@ If a kern table is present, its value is returned; otherwise, 0 is returned.</p>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static TrueTypeFont ParseFont(byte[] bytes)</code></pre>
+    <pre><code class="lang-csharp hljs">public static TrueTypeFont ParseFont(byte[] bytes, TrueTypeFontParsingOptions options = null)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>bytes</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
     <dd><p>The byte array containing the font data.</p>
+</dd>
+    <dt><code>options</code> <a class="xref" href="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html">TrueTypeFontParsingOptions</a></dt>
+    <dd><p>Parsing options, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> to use <a class="xref" href="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_Default">Default</a>.</p>
 </dd>
   </dl>
 
@@ -837,9 +875,9 @@ If a kern table is present, its value is returned; otherwise, 0 is returned.</p>
 
   <a id="Utils_Fonts_TTF_TrueTypeFont_ParseFont_" data-uid="Utils.Fonts.TTF.TrueTypeFont.ParseFont*"></a>
 
-  <h3 id="Utils_Fonts_TTF_TrueTypeFont_ParseFont_System_IO_Stream_" data-uid="Utils.Fonts.TTF.TrueTypeFont.ParseFont(System.IO.Stream)">
-  ParseFont(Stream)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L113"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Fonts_TTF_TrueTypeFont_ParseFont_System_IO_Stream_Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_" data-uid="Utils.Fonts.TTF.TrueTypeFont.ParseFont(System.IO.Stream,Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions)">
+  ParseFont(Stream, TrueTypeFontParsingOptions)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L253"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Parses a TrueType font from a stream.</p>
@@ -847,13 +885,69 @@ If a kern table is present, its value is returned; otherwise, 0 is returned.</p>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static TrueTypeFont ParseFont(Stream s)</code></pre>
+    <pre><code class="lang-csharp hljs">public static TrueTypeFont ParseFont(Stream s, TrueTypeFontParsingOptions options = null)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>s</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a></dt>
     <dd><p>The stream containing the font data.</p>
+</dd>
+    <dt><code>options</code> <a class="xref" href="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html">TrueTypeFontParsingOptions</a></dt>
+    <dd><p>Parsing options, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> to use <a class="xref" href="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_Default">Default</a>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Fonts.TTF.TrueTypeFont.html">TrueTypeFont</a></dt>
+    <dd><p>An instance of <a class="xref" href="Utils.Fonts.TTF.TrueTypeFont.html">TrueTypeFont</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section" id="Utils_Fonts_TTF_TrueTypeFont_ParseFont_System_IO_Stream_Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>For a seekable <code class="paramref">s</code>, the font is read starting at its current position
+(<code>fontStart</code>); every table offset in the SFNT directory is interpreted relative to
+that position, not to the start of the stream. On return, the stream position is left at
+<code>fontStart + 12 + numTables * 16</code> (the end of the table directory): reading table
+payloads uses bounded, independent views over the stream that do not otherwise move its
+position. For a non-seekable <code class="paramref">s</code>, the font is first copied, incrementally
+and under <a class="xref" href="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumFontBytes">MaximumFontBytes</a>, into an owned temporary
+buffer that is always disposed before this method returns (regardless of
+<a class="xref" href="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_LeaveOpen">LeaveOpen</a>, which only governs <code class="paramref">s</code> itself).</p>
+</div>
+
+
+
+
+  <a id="Utils_Fonts_TTF_TrueTypeFont_ParseFont_" data-uid="Utils.Fonts.TTF.TrueTypeFont.ParseFont*"></a>
+
+  <h3 id="Utils_Fonts_TTF_TrueTypeFont_ParseFont_System_ReadOnlySpan_System_Byte__Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_" data-uid="Utils.Fonts.TTF.TrueTypeFont.ParseFont(System.ReadOnlySpan{System.Byte},Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions)">
+  ParseFont(ReadOnlySpan&lt;byte&gt;, TrueTypeFontParsingOptions)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L207"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Parses a TrueType font from an in-memory buffer.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static TrueTypeFont ParseFont(ReadOnlySpan&lt;byte&gt; bytes, TrueTypeFontParsingOptions options = null)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>bytes</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.readonlyspan-1">ReadOnlySpan</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>&gt;</dt>
+    <dd><p>The bytes making up the font.</p>
+</dd>
+    <dt><code>options</code> <a class="xref" href="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html">TrueTypeFontParsingOptions</a></dt>
+    <dd><p>Parsing options, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> to use <a class="xref" href="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_Default">Default</a>.</p>
 </dd>
   </dl>
 
@@ -874,11 +968,57 @@ If a kern table is present, its value is returned; otherwise, 0 is returned.</p>
 
 
 
+  <a id="Utils_Fonts_TTF_TrueTypeFont_ParseFontAsync_" data-uid="Utils.Fonts.TTF.TrueTypeFont.ParseFontAsync*"></a>
+
+  <h3 id="Utils_Fonts_TTF_TrueTypeFont_ParseFontAsync_System_IO_Stream_Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_System_Threading_CancellationToken_" data-uid="Utils.Fonts.TTF.TrueTypeFont.ParseFontAsync(System.IO.Stream,Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions,System.Threading.CancellationToken)">
+  ParseFontAsync(Stream, TrueTypeFontParsingOptions, CancellationToken)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L296"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Asynchronously parses a TrueType font from a stream, supporting cancellation while copying
+a non-seekable source into a bounded temporary buffer.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ValueTask&lt;TrueTypeFont&gt; ParseFontAsync(Stream s, TrueTypeFontParsingOptions options = null, CancellationToken cancellationToken = default)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>s</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a></dt>
+    <dd><p>The stream containing the font data.</p>
+</dd>
+    <dt><code>options</code> <a class="xref" href="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html">TrueTypeFontParsingOptions</a></dt>
+    <dd><p>Parsing options, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> to use <a class="xref" href="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_Default">Default</a>.</p>
+</dd>
+    <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
+    <dd><p>A token used to cancel the incremental copy of a non-seekable stream.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1">ValueTask</a>&lt;<a class="xref" href="Utils.Fonts.TTF.TrueTypeFont.html">TrueTypeFont</a>&gt;</dt>
+    <dd><p>An instance of <a class="xref" href="Utils.Fonts.TTF.TrueTypeFont.html">TrueTypeFont</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
   <a id="Utils_Fonts_TTF_TrueTypeFont_RemoveTable_" data-uid="Utils.Fonts.TTF.TrueTypeFont.RemoveTable*"></a>
 
   <h3 id="Utils_Fonts_TTF_TrueTypeFont_RemoveTable_Utils_Fonts_TTF_Tag_" data-uid="Utils.Fonts.TTF.TrueTypeFont.RemoveTable(Utils.Fonts.TTF.Tag)">
   RemoveTable(Tag)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L407"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L967"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes the table with the specified tag from the font.</p>
@@ -911,7 +1051,7 @@ If a kern table is present, its value is returned; otherwise, 0 is returned.</p>
 
   <h3 id="Utils_Fonts_TTF_TrueTypeFont_ToString" data-uid="Utils.Fonts.TTF.TrueTypeFont.ToString">
   ToString()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L413"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L973"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a string representation of the font, including information from each table.</p>
@@ -944,7 +1084,7 @@ If a kern table is present, its value is returned; otherwise, 0 is returned.</p>
 
   <h3 id="Utils_Fonts_TTF_TrueTypeFont_TryGetTable__1_Utils_Fonts_TTF_Tag___0__" data-uid="Utils.Fonts.TTF.TrueTypeFont.TryGetTable``1(Utils.Fonts.TTF.Tag,``0@)">
   TryGetTable&lt;T&gt;(Tag, out T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L371"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L931"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Attempts to retrieve the table corresponding to the specified tag.</p>
@@ -992,10 +1132,10 @@ If a kern table is present, its value is returned; otherwise, 0 is returned.</p>
 
   <h3 id="Utils_Fonts_TTF_TrueTypeFont_WriteFont" data-uid="Utils.Fonts.TTF.TrueTypeFont.WriteFont">
   WriteFont()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L149"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L629"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Serializes the TrueType font into a byte array.</p>
+  <div class="markdown level1 summary"><p>Serializes the TrueType font into a byte array using the default writing options.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -1021,11 +1161,138 @@ If a kern table is present, its value is returned; otherwise, 0 is returned.</p>
 
 
 
+  <a id="Utils_Fonts_TTF_TrueTypeFont_WriteFont_" data-uid="Utils.Fonts.TTF.TrueTypeFont.WriteFont*"></a>
+
+  <h3 id="Utils_Fonts_TTF_TrueTypeFont_WriteFont_System_IO_Stream_Utils_Fonts_TTF_Parsing_TrueTypeFontWritingOptions_" data-uid="Utils.Fonts.TTF.TrueTypeFont.WriteFont(System.IO.Stream,Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions)">
+  WriteFont(Stream, TrueTypeFontWritingOptions)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L706"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Serializes the TrueType font directly to a destination stream.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual void WriteFont(Stream destination, TrueTypeFontWritingOptions options = null)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>destination</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a></dt>
+    <dd><p>The stream to write the serialized font to.</p>
+</dd>
+    <dt><code>options</code> <a class="xref" href="Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.html">TrueTypeFontWritingOptions</a></dt>
+    <dd><p>Writing options, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> to use <a class="xref" href="Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontWritingOptions_Default">Default</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section" id="Utils_Fonts_TTF_TrueTypeFont_WriteFont_System_IO_Stream_Utils_Fonts_TTF_Parsing_TrueTypeFontWritingOptions__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Implemented as a thin wrapper over <a class="xref" href="Utils.Fonts.TTF.TrueTypeFont.html#Utils_Fonts_TTF_TrueTypeFont_WriteFont_Utils_Fonts_TTF_Parsing_TrueTypeFontWritingOptions_">WriteFont(TrueTypeFontWritingOptions)</a>: the
+whole font is still assembled in memory first (so that a validation failure never leaves a
+partial font in the in-memory buffer), then copied to <code class="paramref">destination</code> in one
+write. If <code class="paramref">destination</code> itself fails partway through that write (an I/O
+error), it can be left holding a partial, invalid font -- this method only guarantees
+atomicity for the in-memory layout, not for the destination stream.</p>
+</div>
+
+
+
+
+  <a id="Utils_Fonts_TTF_TrueTypeFont_WriteFont_" data-uid="Utils.Fonts.TTF.TrueTypeFont.WriteFont*"></a>
+
+  <h3 id="Utils_Fonts_TTF_TrueTypeFont_WriteFont_Utils_Fonts_TTF_Parsing_TrueTypeFontWritingOptions_" data-uid="Utils.Fonts.TTF.TrueTypeFont.WriteFont(Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions)">
+  WriteFont(TrueTypeFontWritingOptions)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L638"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Serializes the TrueType font into a byte array.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual byte[] WriteFont(TrueTypeFontWritingOptions options)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>options</code> <a class="xref" href="Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.html">TrueTypeFontWritingOptions</a></dt>
+    <dd><p>Writing options, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> to use <a class="xref" href="Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontWritingOptions_Default">Default</a>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd><p>A byte array representing the font file.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_TrueTypeFont_WriteFontAsync_" data-uid="Utils.Fonts.TTF.TrueTypeFont.WriteFontAsync*"></a>
+
+  <h3 id="Utils_Fonts_TTF_TrueTypeFont_WriteFontAsync_System_IO_Stream_Utils_Fonts_TTF_Parsing_TrueTypeFontWritingOptions_System_Threading_CancellationToken_" data-uid="Utils.Fonts.TTF.TrueTypeFont.WriteFontAsync(System.IO.Stream,Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions,System.Threading.CancellationToken)">
+  WriteFontAsync(Stream, TrueTypeFontWritingOptions, CancellationToken)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L721"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Asynchronously serializes the TrueType font directly to a destination stream.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual ValueTask WriteFontAsync(Stream destination, TrueTypeFontWritingOptions options = null, CancellationToken cancellationToken = default)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>destination</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a></dt>
+    <dd><p>The stream to write the serialized font to.</p>
+</dd>
+    <dt><code>options</code> <a class="xref" href="Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.html">TrueTypeFontWritingOptions</a></dt>
+    <dd><p>Writing options, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> to use <a class="xref" href="Utils.Fonts.TTF.Parsing.TrueTypeFontWritingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontWritingOptions_Default">Default</a>.</p>
+</dd>
+    <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
+    <dd><p>A token used to cancel the write to <code class="paramref">destination</code>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask">ValueTask</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
 
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L20" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L24" class="edit-link">Edit this page</a>
         </div>
 
 
