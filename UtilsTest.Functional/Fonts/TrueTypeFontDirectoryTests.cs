@@ -89,6 +89,29 @@ public class TrueTypeFontDirectoryTests
         Assert.AreEqual(FontDiagnosticCode.InvalidDirectoryRange, ex.Diagnostic.Code);
     }
 
+    // Review fix: an out-of-file range must never be recoverable, in either validation mode -- it
+    // is a memory-safety hazard (it would seek/slice past the end of the source), not a policy
+    // choice like a duplicate tag or a checksum mismatch.
+    [TestMethod]
+    public void OffsetExceedsFontLength_AlwaysThrows_EvenInPermissiveMode()
+    {
+        var entries = new[] { ("AAAA", 0u, 1_000_000u, 4u) };
+        var bytes = BuildRaw(1, 16, 0, 0, entries, 32);
+        var options = new TrueTypeFontParsingOptions { ValidationMode = FontValidationMode.Permissive };
+        var ex = Assert.ThrowsExactly<FontParseException>(() => TrueTypeFont.ParseFont(bytes, options));
+        Assert.AreEqual(FontDiagnosticCode.InvalidDirectoryRange, ex.Diagnostic.Code);
+    }
+
+    [TestMethod]
+    public void OffsetPlusLength_OverflowsUInt32_AlwaysThrows_EvenInPermissiveMode()
+    {
+        var entries = new[] { ("AAAA", 0u, 0xFFFFFFF0u, 0xFFu) };
+        var bytes = BuildRaw(1, 16, 0, 0, entries, 12 + 16 + 4);
+        var options = new TrueTypeFontParsingOptions { ValidationMode = FontValidationMode.Permissive };
+        var ex = Assert.ThrowsExactly<FontParseException>(() => TrueTypeFont.ParseFont(bytes, options));
+        Assert.AreEqual(FontDiagnosticCode.InvalidDirectoryRange, ex.Diagnostic.Code);
+    }
+
     [TestMethod]
     public void TableOverlappingDirectory_IsRejectedInStrictMode()
     {
@@ -167,6 +190,30 @@ public class TrueTypeFontDirectoryTests
 
         var font = TrueTypeFont.ParseFont(bytes, new TrueTypeFontParsingOptions { ValidationMode = FontValidationMode.Permissive });
         Assert.IsTrue(font.Diagnostics.Any(d => d.Code == FontDiagnosticCode.OverlappingTableRange));
+    }
+
+    // Review fix: overlap detection must not be limited to comparing each entry only against the
+    // one immediately before it in offset order. A wide table containing two disjoint smaller
+    // tables (which therefore do not overlap each other) must still have both containments
+    // detected, not just the first one.
+    [TestMethod]
+    public void ContainedOverlap_AcrossNonAdjacentEntries_BothDetected()
+    {
+        // directoryEnd for 3 tables = 12 + 3*16 = 60.
+        var entries = new[]
+        {
+            ("AAAA", 0u, 60u, 200u),  // [60, 260) -- wide, contains both BBBB and CCCC
+            ("BBBB", 0u, 80u, 10u),   // [80, 90)  -- contained in AAAA
+            ("CCCC", 0u, 150u, 10u),  // [150, 160) -- contained in AAAA, but does NOT overlap BBBB
+        };
+        var bytes = BuildRaw(3, 32, 1, 16, entries, 260);
+        var strictEx = Assert.ThrowsExactly<FontParseException>(() => TrueTypeFont.ParseFont(bytes));
+        Assert.AreEqual(FontDiagnosticCode.OverlappingTableRange, strictEx.Diagnostic.Code);
+
+        var font = TrueTypeFont.ParseFont(bytes, new TrueTypeFontParsingOptions { ValidationMode = FontValidationMode.Permissive });
+        var overlaps = font.Diagnostics.Where(d => d.Code == FontDiagnosticCode.OverlappingTableRange).ToList();
+        Assert.IsTrue(overlaps.Any(d => d.TableTag?.Name == "BBBB"), "AAAA/BBBB overlap must be reported.");
+        Assert.IsTrue(overlaps.Any(d => d.TableTag?.Name == "CCCC"), "AAAA/CCCC overlap must be reported (previously missed once BBBB had 'moved past' AAAA in an adjacent-only scan).");
     }
 
     [TestMethod]
@@ -288,6 +335,92 @@ public class TrueTypeFontDirectoryTests
         var permissive = TrueTypeFont.ParseFont(bytes, new TrueTypeFontParsingOptions { ValidationMode = FontValidationMode.Permissive });
         Assert.IsFalse(permissive.Diagnostics.Any(d => d.Code == FontDiagnosticCode.TableChecksumMismatch));
         Assert.IsTrue(permissive.Diagnostics.Any(d => d.Code == FontDiagnosticCode.FontChecksumMismatch));
+    }
+
+    // Review fix: UpdateChecksumAdj used to locate 'head' by accumulating each preceding table's
+    // raw (unpadded) Length, while WriteFont itself pads every table's data up to a 4-byte
+    // boundary before starting the next one. Whenever an earlier table's length was not already a
+    // multiple of 4, the two calculations disagreed and checksumAdjustment was written to the
+    // wrong file position -- corrupting whatever byte actually lived there, while leaving 'head'
+    // itself with checksumAdjustment = 0, guaranteeing a whole-font checksum failure.
+    [TestMethod]
+    public void ChecksumAdjustment_AccountsForPaddingOfPrecedingOddLengthTable()
+    {
+        var font = new TrueTypeFont(0x00010000);
+
+        // "AAAA" is inserted before 'head' and has a 3-byte (non-multiple-of-4) payload, so its
+        // padded on-disk footprint (4 bytes) differs from its raw Length (3).
+        var oddLengthTable = new TrueTypeTable("AAAA");
+        oddLengthTable.ReadData(new Reader(new MemoryStream([1, 2, 3]), new RawReader { BigEndian = true }.ReaderDelegates));
+        font.AddTable("AAAA", oddLengthTable);
+
+        var head = (HeadTable)font.CreateTable(TableTypes.HEAD);
+        font.AddTable(TableTypes.HEAD, head);
+        var maxp = (MaxpTable)font.CreateTable(TableTypes.MAXP);
+        maxp.NumGlyphs = 0;
+        font.AddTable(TableTypes.MAXP, maxp);
+
+        byte[] bytes = font.WriteFont();
+
+        // Strict mode: a real ParseFont call throws on any checksum mismatch (table or whole-font),
+        // so simply not throwing already proves both checksums are self-consistent. "AAAA" is not a
+        // registered table tag, so an UnsupportedTable *warning* is expected and harmless here.
+        var reparsed = TrueTypeFont.ParseFont(bytes);
+        Assert.IsFalse(reparsed.Diagnostics.Any(d => d.Code is FontDiagnosticCode.TableChecksumMismatch or FontDiagnosticCode.FontChecksumMismatch));
+    }
+
+    // Review fix: composite glyph resolution budgets (MaximumCompositeDepth/Components/Points)
+    // configured through TrueTypeFontParsingOptions must still apply when GlyphCompound.Contours is
+    // accessed lazily, after TrueTypeFont.ParseFont has already returned -- not just during the
+    // initial ReadData pass.
+    [TestMethod]
+    public void ConcurrentParsing_MultipleFontsOnMultipleThreads_AllSucceed()
+    {
+        var fonts = Enumerable.Range(0, 8).Select(_ => BuildMinimalValidFont().WriteFont()).ToArray();
+
+        var results = new TrueTypeFont[fonts.Length];
+        System.Threading.Tasks.Parallel.For(0, fonts.Length, i =>
+        {
+            results[i] = TrueTypeFont.ParseFont(fonts[i]);
+        });
+
+        foreach (var result in results)
+        {
+            Assert.IsNotNull(result);
+            Assert.AreEqual(0, result.Diagnostics.Count);
+        }
+    }
+
+    // Review fix: misconfigured options (negative limits, an undefined ValidationMode) must fail
+    // fast with a plain ArgumentOutOfRangeException naming the offending property, instead of
+    // producing confusing downstream behavior or an exception that looks like a font-data problem.
+    [TestMethod]
+    public void ParsingOptions_NegativeMaximumFontBytes_ThrowsArgumentOutOfRangeException()
+    {
+        var options = new TrueTypeFontParsingOptions { MaximumFontBytes = -1 };
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => TrueTypeFont.ParseFont([], options));
+    }
+
+    [TestMethod]
+    public void ParsingOptions_NegativeMaximumCompositeDepth_ThrowsArgumentOutOfRangeException()
+    {
+        var options = new TrueTypeFontParsingOptions { MaximumCompositeDepth = -1 };
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => TrueTypeFont.ParseFont([], options));
+    }
+
+    [TestMethod]
+    public void ParsingOptions_UndefinedValidationMode_ThrowsArgumentOutOfRangeException()
+    {
+        var options = new TrueTypeFontParsingOptions { ValidationMode = (FontValidationMode)42 };
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => TrueTypeFont.ParseFont([], options));
+    }
+
+    [TestMethod]
+    public void WritingOptions_NegativeMaximumOutputBytes_ThrowsArgumentOutOfRangeException()
+    {
+        var font = BuildMinimalValidFont();
+        var options = new TrueTypeFontWritingOptions { MaximumOutputBytes = -1 };
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => font.WriteFont(options));
     }
 
     /// <summary>Builds a minimal, fully valid TrueTypeFont (head + maxp) suitable for a real WriteFont()/ParseFont() round trip.</summary>

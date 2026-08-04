@@ -103,17 +103,21 @@ public class LocaTableTests
     {
         using var ms = new MemoryStream();
         var w = new Writer(ms, BigEndianWriter.WriterDelegates);
-        // Two entries (GlyphCount=1): the boundary value, then itself again so size=0 and no
-        // monotonicity violation is introduced by the test fixture itself.
+        // Three entries (GlyphCount=2): offset[0] must be 0 (glyph 0 starts at the beginning of
+        // 'glyf'); the boundary value under test is offset[1], repeated as offset[2] so glyph 1
+        // has size 0 and no monotonicity violation is introduced by the test fixture itself.
+        w.Write<ushort>(0);
         w.Write<ushort>(encoded);
         w.Write<ushort>(encoded);
         byte[] original = ms.ToArray();
 
-        var table = NewTable(1, indexToLocFormat: 0);
+        var table = NewTable(2, indexToLocFormat: 0);
         table.ReadData(MakeReader(original));
 
-        Assert.AreEqual(expectedByteOffset, table[0].offset);
-        Assert.AreEqual(0, table[0].size);
+        Assert.AreEqual(0, table[0].offset);
+        Assert.AreEqual(expectedByteOffset, table[0].size);
+        Assert.AreEqual(expectedByteOffset, table[1].offset);
+        Assert.AreEqual(0, table[1].size);
     }
 
     [TestMethod]
@@ -138,6 +142,55 @@ public class LocaTableTests
 
         var table = NewTable(1, indexToLocFormat: 1);
         Assert.ThrowsExactly<FontParseException>(() => table.ReadData(MakeReader(ms.ToArray())));
+    }
+
+    // TODO-pass2 item 10.4: extra bytes beyond the expected GlyphCount + 1 entries must not be
+    // silently ignored. Outside a parsing context (as here), the policy-dependent anomaly always
+    // throws, matching the always-fatal anomalies above for callers with no options to consult.
+    [TestMethod]
+    public void ReadData_TrailingExtraBytes_Throws()
+    {
+        using var ms = new MemoryStream();
+        var w = new Writer(ms, BigEndianWriter.WriterDelegates);
+        w.Write<short>(0);
+        w.Write<short>(10);
+        w.Write<short>(0); // extra, unexpected trailing entry for GlyphCount=1 (2 entries expected)
+
+        var table = NewTable(1, indexToLocFormat: 0);
+        Assert.ThrowsExactly<InvalidDataException>(() => table.ReadData(MakeReader(ms.ToArray())));
+    }
+
+    [TestMethod]
+    public void ReadData_TrailingExtraBytes_DiagnosedAndIgnoredInPermissiveMode()
+    {
+        var table = NewTable(1, indexToLocFormat: 0);
+        table.TrueTypeFont.ParsingContext = new FontParsingContext(new TrueTypeFontParsingOptions { ValidationMode = FontValidationMode.Permissive });
+
+        using var ms = new MemoryStream();
+        var w = new Writer(ms, BigEndianWriter.WriterDelegates);
+        w.Write<short>(0);
+        w.Write<short>(10);
+        w.Write<short>(0);
+
+        table.ReadData(MakeReader(ms.ToArray()));
+
+        Assert.AreEqual(0, table[0].offset);
+        Assert.AreEqual(20, table[0].size);
+        Assert.IsTrue(table.TrueTypeFont.ParsingContext.Diagnostics.Any(d => d.Code == FontDiagnosticCode.InvalidLoca));
+    }
+
+    // TODO-pass2 item 10.5: offset[0] should be 0 "sauf justification documentée" -- policy-
+    // dependent, not memory-unsafe on its own.
+    [TestMethod]
+    public void ReadData_FirstOffsetNonZero_Throws()
+    {
+        using var ms = new MemoryStream();
+        var w = new Writer(ms, BigEndianWriter.WriterDelegates);
+        w.Write<short>(4); // offset[0] != 0
+        w.Write<short>(10);
+
+        var table = NewTable(1, indexToLocFormat: 0);
+        Assert.ThrowsExactly<InvalidDataException>(() => table.ReadData(MakeReader(ms.ToArray())));
     }
 
     // TODO-pass2 item 22 / section 10.6 / section 11: PrepareForSerialization recomputes offsets

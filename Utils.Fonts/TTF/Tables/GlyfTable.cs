@@ -149,6 +149,31 @@ public class GlyfTable : TrueTypeTable
             // Create a new glyph from the data slice.
             glyphs[index] = GlyphBase.CreateGlyf(data.Slice(offset, size), this);
         }
+
+        // Cross-table invariant (spec section 10.5): 'loca'.offsets[last] should equal the actual
+        // length of 'glyf'. A mismatch is not itself a memory-safety issue (every individual glyph
+        // range was already validated above), so it is policy-dependent rather than always fatal.
+        if (loca.TotalGlyphDataLength != glyfLength)
+        {
+            ReportOrReject(FontDiagnosticCode.InvalidLoca,
+                $"loca declares a total glyph data length of {loca.TotalGlyphDataLength}, but glyf is {glyfLength} bytes.");
+        }
+    }
+
+    /// <summary>
+    /// Reports a policy-level (non-memory-safety) 'loca'/'glyf' length mismatch through the active
+    /// parsing context when one is available (strict throws, permissive records and continues);
+    /// otherwise always throws, matching the always-fatal anomalies above for callers that never
+    /// opted into a parsing context.
+    /// </summary>
+    private void ReportOrReject(FontDiagnosticCode code, string message)
+    {
+        var context = TrueTypeFont?.ParsingContext;
+        if (context is null)
+        {
+            throw new InvalidDataException(message);
+        }
+        context.ReportError(code, message, TableTypes.GLYF);
     }
 
     /// <summary>

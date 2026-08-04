@@ -45,6 +45,13 @@ public class LocaTable : TrueTypeTable, IEnumerable<LocaRecord>
     public int GlyphCount => maxpTable.NumGlyphs;
 
     /// <summary>
+    /// Gets the final loca entry (<c>offsets[GlyphCount]</c>), i.e. the declared total byte length
+    /// of the 'glyf' table's glyph data. Used by <see cref="GlyfTable"/> to cross-check its own
+    /// length against what 'loca' declares.
+    /// </summary>
+    internal int TotalGlyphDataLength => offsets[^1];
+
+    /// <summary>
     /// Gets a value indicating whether this is a long format loca table.
     /// </summary>
     public virtual bool IsLongFormat => headTable.IndexToLocFormat == 1;
@@ -218,6 +225,20 @@ public class LocaTable : TrueTypeTable, IEnumerable<LocaRecord>
             }
         }
 
+        // Policy-dependent anomalies: neither risks an out-of-bounds read on its own (the entry
+        // count, and therefore every offset/size pair the indexer can produce, is already fixed at
+        // this point), so strict rejects while permissive records a diagnostic and continues.
+        if (data.BytesLeft != 0)
+        {
+            ReportOrReject(FontDiagnosticCode.InvalidLoca,
+                $"loca table declares {data.BytesLeft} extra byte(s) beyond the {expectedEntries} expected entries.");
+        }
+        if (read.Length > 0 && read[0] != 0)
+        {
+            ReportOrReject(FontDiagnosticCode.InvalidLoca,
+                $"loca table's first offset is {read[0]}, expected 0.");
+        }
+
         offsets = read;
     }
 
@@ -227,6 +248,23 @@ public class LocaTable : TrueTypeTable, IEnumerable<LocaRecord>
     /// fatal in both <see cref="FontValidationMode.Strict"/> and <see cref="FontValidationMode.Permissive"/>.
     /// </summary>
     private void Reject(string message) => FontParsingContext.Reject(FontDiagnosticCode.InvalidLoca, message, TableTypes.LOCA);
+
+    /// <summary>
+    /// Reports a policy-level (non-memory-safety) 'loca' anomaly through the active parsing
+    /// context when one is available (strict throws, permissive records and continues);
+    /// otherwise -- a <see cref="LocaTable"/> read directly, outside <see cref="TrueTypeFont.ParseFont(System.IO.Stream, Parsing.TrueTypeFontParsingOptions)"/>
+    /// -- always throws, matching the behavior of the always-fatal anomalies above for callers
+    /// that never opted into a parsing context.
+    /// </summary>
+    private void ReportOrReject(FontDiagnosticCode code, string message)
+    {
+        var context = TrueTypeFont?.ParsingContext;
+        if (context is null)
+        {
+            throw new InvalidDataException(message);
+        }
+        context.ReportError(code, message, TableTypes.LOCA);
+    }
 
     /// <summary>
     /// Returns an enumerator that iterates through the loca records.

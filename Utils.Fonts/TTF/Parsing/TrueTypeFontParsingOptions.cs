@@ -1,3 +1,5 @@
+using System;
+
 namespace Utils.Fonts.TTF.Parsing;
 
 /// <summary>
@@ -89,4 +91,40 @@ public sealed record TrueTypeFontParsingOptions
     /// passed in.
     /// </summary>
     public bool LeaveOpen { get; init; } = true;
+
+    /// <summary>
+    /// Validates this instance's own field values before it governs any parsing, so a
+    /// misconfigured caller (a negative limit, or an undefined <see cref="FontValidationMode"/>)
+    /// fails fast with a plain <see cref="ArgumentOutOfRangeException"/> naming the offending
+    /// property, instead of producing confusing downstream behavior or a misleading
+    /// <see cref="FontParseException"/> that looks like a font-data problem.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">A limit is negative, or <see cref="ValidationMode"/> is not a defined value.</exception>
+    internal void EnsureValid()
+    {
+        if (ValidationMode is not (FontValidationMode.Strict or FontValidationMode.Permissive))
+        {
+            throw new ArgumentOutOfRangeException(nameof(ValidationMode), ValidationMode, "ValidationMode must be a defined FontValidationMode value.");
+        }
+        if (MaximumFontBytes < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(MaximumFontBytes), MaximumFontBytes, "MaximumFontBytes must be non-negative.");
+        }
+        if (MaximumCompositeComponents < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(MaximumCompositeComponents), MaximumCompositeComponents, "MaximumCompositeComponents must be non-negative.");
+        }
+        if (MaximumCompositeDepth < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(MaximumCompositeDepth), MaximumCompositeDepth, "MaximumCompositeDepth must be non-negative.");
+        }
+        if (MaximumExpandedComponents < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(MaximumExpandedComponents), MaximumExpandedComponents, "MaximumExpandedComponents must be non-negative.");
+        }
+        if (MaximumExpandedPoints < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(MaximumExpandedPoints), MaximumExpandedPoints, "MaximumExpandedPoints must be non-negative.");
+        }
+    }
 }

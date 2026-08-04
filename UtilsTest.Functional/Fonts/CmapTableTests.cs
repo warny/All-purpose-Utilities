@@ -151,6 +151,32 @@ public class CmapTableTests
         Assert.ThrowsExactly<InvalidDataException>(() => table.ReadData(MakeReader(ms.ToArray())));
     }
 
+    // Regression test: a format-4 subtable whose own header declares a length consistent with its
+    // slice (so CMapFormatBase.GetMap's length check passes), but whose internal segCountX2 implies
+    // more segment data than actually fits in that slice, used to make ReadData's inner Reader.Read
+    // calls throw an uncaught EndOfStreamException (not in the CmapTable.ReadData catch filter),
+    // instead of being reported as a MalformedCmapSubtable diagnostic like every other malformed
+    // subtable shape.
+    [TestMethod]
+    public void TruncatedFormat4Payload_IsReportedAsMalformed_NotUncaughtEndOfStream()
+    {
+        using var ms = new MemoryStream();
+        var w = new Writer(ms, BigEndianWriter.WriterDelegates);
+        w.Write<ushort>(0);
+        w.Write<ushort>(1);
+        w.Write<ushort>(3); w.Write<ushort>(1);
+        w.Write<uint>(12); // directoryEnd for 1 subtable; subtable slice is exactly 14 bytes (offset 12..26)
+        // Format 4 header: format, length (== the whole 14-byte slice), language.
+        w.Write<short>(4); w.Write<short>(14); w.Write<short>(0);
+        // segCountX2=4 (segCount=2), searchRange/entrySelector/rangeShift: 8 bytes, filling the
+        // declared 14-byte slice exactly -- leaving no room for the endCode[2] array ReadData
+        // requires next, so the very next read runs off the end of the subtable's bounded slice.
+        w.Write<short>(4); w.Write<short>(0); w.Write<short>(0); w.Write<short>(0);
+
+        var table = NewTable();
+        Assert.ThrowsExactly<InvalidDataException>(() => table.ReadData(MakeReader(ms.ToArray())));
+    }
+
     // TODO-pass2 item 15.3: two platform/encoding records legitimately sharing the same offset must
     // be parsed once and share the same subtable instance, not be parsed (and materialized) twice.
     [TestMethod]

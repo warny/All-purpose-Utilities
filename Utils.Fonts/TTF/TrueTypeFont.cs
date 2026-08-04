@@ -132,12 +132,17 @@ public class TrueTypeFont : IFont
     public IReadOnlyList<FontDiagnostic> Diagnostics { get; private set; } = [];
 
     /// <summary>
-    /// Gets the parsing context active while this font is being constructed by <see cref="ParseDirectories"/>.
-    /// Nested table/glyph parsers (e.g. compound glyph resolution) read this to apply the same
-    /// options and diagnostics sink without an extra parameter on every <c>ReadData</c> override.
-    /// <see langword="null"/> for a font that is not currently being parsed.
+    /// Gets the parsing context this font was parsed with. Set once, at the start of parsing, and
+    /// kept for the lifetime of the font instance -- not just while <see cref="ParseDirectories"/>
+    /// is running. Nested table/glyph parsers (e.g. compound glyph resolution) read this to apply
+    /// the same options budgets after <c>ParseFont</c> has already returned, since composite-glyph
+    /// contour resolution is lazy: if this were cleared once parsing finished, a caller-supplied
+    /// <see cref="TrueTypeFontParsingOptions"/> (e.g. a tighter <c>MaximumCompositeDepth</c>) would
+    /// silently stop applying the first time <c>Contours</c> is accessed after <c>ParseFont</c>
+    /// returns, falling back to <see cref="TrueTypeFontParsingOptions.Default"/> instead.
+    /// <see langword="null"/> for a font that was constructed programmatically rather than parsed.
     /// </summary>
-    internal FontParsingContext ParsingContext { get; private set; }
+    internal FontParsingContext ParsingContext { get; set; }
 
     /// <summary>
     /// lazy stores the font scale
@@ -202,6 +207,7 @@ public class TrueTypeFont : IFont
     public static TrueTypeFont ParseFont(ReadOnlySpan<byte> bytes, TrueTypeFontParsingOptions options = null)
     {
         options ??= TrueTypeFontParsingOptions.Default;
+        options.EnsureValid();
         if (bytes.Length > options.MaximumFontBytes)
         {
             FontParsingContext.Reject(FontDiagnosticCode.ResourceLimitExceeded,
@@ -248,6 +254,7 @@ public class TrueTypeFont : IFont
     {
         ArgumentNullException.ThrowIfNull(s);
         options ??= TrueTypeFontParsingOptions.Default;
+        options.EnsureValid();
         if (!s.CanRead)
             throw new InvalidOperationException("The stream must be readable");
 
@@ -290,6 +297,7 @@ public class TrueTypeFont : IFont
     {
         ArgumentNullException.ThrowIfNull(s);
         options ??= TrueTypeFontParsingOptions.Default;
+        options.EnsureValid();
         if (!s.CanRead)
             throw new InvalidOperationException("The stream must be readable");
 
@@ -441,18 +449,13 @@ public class TrueTypeFont : IFont
 
         TrueTypeFont trueTypeFont = new TrueTypeFont(type);
         var context = new FontParsingContext(options);
+        // Kept for the lifetime of the font (not reset once parsing finishes): see the
+        // ParsingContext property doc for why lazy composite-glyph resolution needs it later.
         trueTypeFont.ParsingContext = context;
-        try
-        {
-            ValidateDerivedOffsetTableFields(context, numTables, declaredSearchRange, declaredEntrySelector, declaredRangeShift);
-            var entries = ReadDirectoryEntries(data, numTables);
-            var accepted = ValidateDirectory(context, entries, directoryLength, fontLength);
-            ParseDirectories(data, accepted, trueTypeFont, context);
-        }
-        finally
-        {
-            trueTypeFont.ParsingContext = null;
-        }
+        ValidateDerivedOffsetTableFields(context, numTables, declaredSearchRange, declaredEntrySelector, declaredRangeShift);
+        var entries = ReadDirectoryEntries(data, numTables);
+        var accepted = ValidateDirectory(context, entries, directoryLength, fontLength);
+        ParseDirectories(data, accepted, trueTypeFont, context);
         trueTypeFont.Diagnostics = context.Diagnostics;
         return trueTypeFont;
     }
@@ -526,18 +529,20 @@ public class TrueTypeFont : IFont
             }
             catch (OverflowException)
             {
-                context.ReportError(FontDiagnosticCode.InvalidDirectoryRange,
+                // Always fatal: an overflowing range calculation must never be used to seek/slice.
+                FontParsingContext.Reject(FontDiagnosticCode.InvalidDirectoryRange,
                     $"Table '{entry.Tag}' offset+length overflows a 64-bit range (offset={entry.Offset}, length={entry.Length}).",
                     entry.Tag, entry.Offset, entry.Length);
-                continue;
+                throw; // unreachable: Reject always throws, but keeps `end` definitely-assigned for the compiler.
             }
 
             if (end > fontLength)
             {
-                context.ReportError(FontDiagnosticCode.InvalidDirectoryRange,
+                // Always fatal, in both validation modes: an out-of-file range is a memory-safety
+                // hazard (it would seek/slice past the end of the source), not a policy choice.
+                FontParsingContext.Reject(FontDiagnosticCode.InvalidDirectoryRange,
                     $"Table '{entry.Tag}' range [{entry.Offset}, {end}) exceeds the font length ({fontLength}).",
                     entry.Tag, entry.Offset, entry.Length);
-                continue;
             }
 
             if (entry.Length > context.Options.MaximumTableBytes)
@@ -579,31 +584,37 @@ public class TrueTypeFont : IFont
 
     /// <summary>
     /// Walks the accepted entries sorted by offset and reports exact aliases, same-offset
-    /// conflicts, and partial overlaps. Two entries with identical offset and length are treated
-    /// as a suspicious alias and rejected in strict mode; every other overlap shape (same offset
-    /// with different lengths, or any partial/contained range) is always rejected in strict mode.
-    /// Neither shape is a memory-safety issue on its own (both ranges were already validated to
-    /// fit within the font), so permissive mode records a diagnostic and keeps both entries.
+    /// conflicts, and partial or containing overlaps -- against every earlier entry whose range
+    /// has not yet ended, not merely the immediately preceding one in offset order. A single wide
+    /// table can contain several disjoint smaller tables; comparing only adjacent pairs after
+    /// sorting would miss the later ones once a nearer, shorter overlap had already "moved past"
+    /// the wide table in the scan. Two entries with identical offset and length are treated as a
+    /// suspicious alias and rejected in strict mode; every other overlap shape (same offset with
+    /// different lengths, partial overlap, or full containment) is always rejected in strict mode.
+    /// Neither shape is a memory-safety issue on its own (both ranges were already validated to fit
+    /// within the font), so permissive mode records a diagnostic and keeps every entry.
     /// </summary>
     private static void DetectOverlaps(FontParsingContext context, List<TableDirectoryEntry> accepted)
     {
         var ordered = accepted.OrderBy(e => e.Offset).ThenBy(e => e.OriginalIndex).ToList();
-        for (int i = 1; i < ordered.Count; i++)
+        // Active entries whose range might still overlap a later one, ordered so the smallest End
+        // is first; entries whose End is at or before the current one's Offset are pruned before
+        // comparing, so this stays a simple growing list.
+        var active = new List<TableDirectoryEntry>();
+        foreach (var current in ordered)
         {
-            var previous = ordered[i - 1];
-            var current = ordered[i];
-            if (current.Offset >= previous.End)
+            active.RemoveAll(e => e.End <= current.Offset);
+            foreach (var previous in active)
             {
-                continue;
+                bool exactAlias = current.Offset == previous.Offset && current.Length == previous.Length;
+                var code = exactAlias ? FontDiagnosticCode.AliasedTableRange : FontDiagnosticCode.OverlappingTableRange;
+                context.ReportError(code,
+                    exactAlias
+                        ? $"Tables '{previous.Tag}' and '{current.Tag}' declare an identical range [{current.Offset}, {current.End}) (exact alias)."
+                        : $"Tables '{previous.Tag}' [{previous.Offset}, {previous.End}) and '{current.Tag}' [{current.Offset}, {current.End}) overlap.",
+                    current.Tag, current.Offset, current.Length);
             }
-
-            bool exactAlias = current.Offset == previous.Offset && current.Length == previous.Length;
-            var code = exactAlias ? FontDiagnosticCode.AliasedTableRange : FontDiagnosticCode.OverlappingTableRange;
-            context.ReportError(code,
-                exactAlias
-                    ? $"Tables '{previous.Tag}' and '{current.Tag}' declare an identical range [{current.Offset}, {current.End}) (exact alias)."
-                    : $"Tables '{previous.Tag}' [{previous.Offset}, {previous.End}) and '{current.Tag}' [{current.Offset}, {current.End}) overlap.",
-                current.Tag, current.Offset, current.Length);
+            active.Add(current);
         }
     }
 
@@ -623,6 +634,7 @@ public class TrueTypeFont : IFont
     public virtual byte[] WriteFont(TrueTypeFontWritingOptions options)
     {
         options ??= TrueTypeFontWritingOptions.Default;
+        options.EnsureValid();
         PrepareForSerialization();
 
         if (options.ValidateBeforeWrite && Length > options.MaximumOutputBytes)
@@ -874,11 +886,11 @@ public class TrueTypeFont : IFont
                     w.Write<UInt32>(checksumAdj);
                     break;
                 }
-                offset += table.Value.Length;
-                if ((offset % 4) != 0)
-                {
-                    offset += (4 - (offset % 4));
-                }
+                // Must mirror the padded layout WriteFont just produced (each table's data is
+                // padded up to a 4-byte boundary before the next table starts); using the raw,
+                // unpadded Length here would misplace 'head'.checksumAdjustment whenever an
+                // earlier table's length is not itself a multiple of 4.
+                offset += MathEx.Ceiling(table.Value.Length, TtfAlignment);
             }
         }
     }

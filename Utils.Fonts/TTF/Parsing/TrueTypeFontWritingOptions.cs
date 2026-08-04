@@ -1,3 +1,5 @@
+using System;
+
 namespace Utils.Fonts.TTF.Parsing;
 
 /// <summary>
@@ -28,4 +30,14 @@ public sealed record TrueTypeFontWritingOptions
     /// not for I/O against the destination stream itself.
     /// </summary>
     public bool ValidateBeforeWrite { get; init; } = true;
+
+    /// <summary>Validates this instance's own field values before it governs any write.</summary>
+    /// <exception cref="ArgumentOutOfRangeException"><see cref="MaximumOutputBytes"/> is negative.</exception>
+    internal void EnsureValid()
+    {
+        if (MaximumOutputBytes < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(MaximumOutputBytes), MaximumOutputBytes, "MaximumOutputBytes must be non-negative.");
+        }
+    }
 }

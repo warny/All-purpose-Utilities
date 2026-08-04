@@ -247,7 +247,8 @@ public class CmapTable : TrueTypeTable, IEnumerable<CMap.CMapFormatBase>
                 }
                 catch (Exception ex) when (ex is InvalidDataException or FormatException
                                                or NotSupportedException or ArgumentException
-                                               or OverflowException or IndexOutOfRangeException)
+                                               or OverflowException or IndexOutOfRangeException
+                                               or EndOfStreamException)
                 {
                     ReportOrReject(context, FontDiagnosticCode.MalformedCmapSubtable,
                         $"cmap subtable at offset {subTable.offset} (platformID={subTable.platformID}, platformSpecificID={subTable.platformSpecificID}) is malformed: {ex.Message}");

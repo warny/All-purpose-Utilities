@@ -531,16 +531,14 @@ public class GlyphCompound : GlyphBase
             context.Depth++;
             try
             {
+                // target.ResolveContours(context) already counts each point it yields against
+                // context.ExpandedPoints (and rejects once the budget is exceeded) at the leaf
+                // level (see GlyphBase.ResolveContours); transforming a contour afterwards does
+                // not create or destroy points, so counting again here would double-count every
+                // point contributed by a nested composite's own leaf glyphs.
                 foreach (var contour in target.ResolveContours(context))
                 {
-                    var transformed = contour.Select(component.Transform).ToList();
-                    context.ExpandedPoints += transformed.Count;
-                    if (context.ExpandedPoints > context.Options.MaximumExpandedPoints)
-                    {
-                        FontParsingContext.Reject(FontDiagnosticCode.ResourceLimitExceeded,
-                            $"Composite glyph resolution exceeds MaximumExpandedPoints ({context.Options.MaximumExpandedPoints}).");
-                    }
-                    result.Add(transformed);
+                    result.Add(contour.Select(component.Transform).ToList());
                 }
             }
             finally
