@@ -1,6 +1,8 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Text;
+using Utils.Fonts.TTF.Parsing;
 using Utils.IO.Serialization;
 using Utils.Fonts.TTF.Tables.Glyf;
 
@@ -62,11 +64,47 @@ public class GlyfTable : TrueTypeTable
     public override int Length => glyphs.Sum(g => g?.Length ?? 0);
 
     /// <summary>
+    /// Gets the total number of glyphs declared by 'maxp', used to validate composite glyph
+    /// component references.
+    /// </summary>
+    internal int NumGlyphs => maxp.NumGlyphs;
+
+    /// <summary>
     /// Retrieves the glyph data for the glyph at the specified index.
     /// </summary>
     /// <param name="i">The glyph index.</param>
-    /// <returns>The glyph data as a <see cref="GlyphBase"/> instance.</returns>
-    public virtual GlyphBase GetGlyph(int i) => glyphs[i];
+    /// <returns>The glyph data as a <see cref="GlyphBase"/> instance, or <see langword="null"/> if the glyph has no outline (e.g. space).</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="i"/> is outside <c>[0, NumGlyphs)</c>.</exception>
+    public virtual GlyphBase GetGlyph(int i)
+    {
+        if (i < 0 || i >= glyphs.Length)
+        {
+            throw new ArgumentOutOfRangeException(nameof(i), i, $"Glyph index must be in [0, {glyphs.Length}).");
+        }
+        return glyphs[i];
+    }
+
+    /// <summary>
+    /// Attempts to retrieve the glyph data for the glyph at the specified index, without throwing
+    /// for an out-of-range index.
+    /// </summary>
+    /// <param name="i">The glyph index.</param>
+    /// <param name="glyph">
+    /// When this method returns <see langword="true"/>, the glyph at <paramref name="i"/> (which may
+    /// itself be <see langword="null"/> for a glyph with no outline, e.g. space). Undefined when
+    /// this method returns <see langword="false"/>.
+    /// </param>
+    /// <returns><see langword="true"/> if <paramref name="i"/> is a valid glyph index; otherwise, <see langword="false"/>.</returns>
+    public virtual bool TryGetGlyph(int i, out GlyphBase glyph)
+    {
+        if (i < 0 || i >= glyphs.Length)
+        {
+            glyph = null;
+            return false;
+        }
+        glyph = glyphs[i];
+        return true;
+    }
 
     /// <summary>
     /// Writes the glyf table data to the specified writer.
@@ -90,15 +128,26 @@ public class GlyfTable : TrueTypeTable
     {
         // Allocate an array to hold all glyphs based on the number provided in the maxp table.
         glyphs = new GlyphBase[maxp.NumGlyphs];
+        long glyfLength = data.BytesLeft;
 
-        // Iterate over each loca record to retrieve glyph offset and size.
+        // Iterate over each loca record to retrieve glyph offset and size. 'loca' already validates
+        // monotonicity and non-negative sizes on read (see LocaTable.ReadData), but the offset+size
+        // <= glyf length relationship is cross-table and re-checked here as a local defense, in case
+        // 'loca' and 'glyf' were constructed independently of the normal parse pipeline.
         foreach ((int index, int offset, int size) in loca)
         {
-            if (size != 0)
+            if (size == 0)
             {
-                // Create a new glyph from the data slice.
-                glyphs[index] = GlyphBase.CreateGlyf(data.Slice(offset, size), this);
+                continue;
             }
+            if (offset < 0 || size < 0 || offset + (long)size > glyfLength)
+            {
+                FontParsingContext.Reject(FontDiagnosticCode.InvalidLoca,
+                    $"loca entry {index} range [{offset}, {offset + (long)size}) does not fit within the glyf table ({glyfLength} bytes).",
+                    TableTypes.GLYF, offset, size);
+            }
+            // Create a new glyph from the data slice.
+            glyphs[index] = GlyphBase.CreateGlyf(data.Slice(offset, size), this);
         }
     }
 

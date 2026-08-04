@@ -1,8 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
+using System.IO;
 using System.Text;
+using Utils.Fonts.TTF.Parsing;
 using Utils.IO.Serialization;
 using Utils.Objects;
 
@@ -32,6 +33,9 @@ public class LocaTable : TrueTypeTable, IEnumerable<LocaRecord>
     /// <summary>
     /// The glyph offsets into the 'glyf' table, always normalized to byte offsets regardless of
     /// whether they were read in short or long format. Has <see cref="GlyphCount"/> + 1 entries.
+    /// Every entry is non-negative: short-format entries are widened from <see cref="ushort"/>
+    /// before doubling (so <c>0x8000..0xFFFF</c> becomes <c>65536..131070</c>, not a negative
+    /// value), and long-format entries are rejected up front if they exceed <see cref="int.MaxValue"/>.
     /// </summary>
     private int[] offsets;
 
@@ -81,89 +85,148 @@ public class LocaTable : TrueTypeTable, IEnumerable<LocaRecord>
     }
 
     /// <summary>
-    /// Gets the length (in bytes) of the loca table data.
+    /// Gets the length (in bytes) of the loca table data. Does not, by itself, recompute
+    /// <see cref="offsets"/> from 'glyf' -- see <see cref="PrepareForSerialization"/>, which must be
+    /// called explicitly before this property is read for writing.
     /// </summary>
-    public override int Length
-    {
-        get
-        {
-            RefreshOffsetsFromGlyf();
-            // In short format each offset is stored as a 16-bit value; in long format as a 32-bit value.
-            return IsLongFormat ? offsets.Length << 2 : offsets.Length << 1;
-        }
-    }
+    public override int Length =>
+        // In short format each offset is stored as a 16-bit value; in long format as a 32-bit value.
+        IsLongFormat ? offsets.Length << 2 : offsets.Length << 1;
 
     /// <summary>
-    /// Writes the loca table data to the specified writer.
+    /// Writes the loca table data to the specified writer, using the format selected by the most
+    /// recent call to <see cref="PrepareForSerialization"/> (or, for a table that was only ever
+    /// read, the format it was read in).
     /// </summary>
     /// <param name="data">The writer to which the table data is written.</param>
     public override void WriteData(Writer data)
     {
-        RefreshOffsetsFromGlyf();
         if (IsLongFormat)
         {
             for (int i = 0; i < offsets.Length; i++)
             {
-                data.Write<Int32>(offsets[i]);
+                data.Write<UInt32>((uint)offsets[i]);
             }
         }
         else
         {
             for (int i = 0; i < offsets.Length; i++)
             {
-                data.Write<Int16>((short)(offsets[i] >> 1));
+                data.Write<UInt16>((ushort)(offsets[i] >> 1));
             }
         }
     }
 
     /// <summary>
-    /// Recomputes <see cref="offsets"/> from the actual, current lengths of the glyphs in the 'glyf'
-    /// table, rather than the possibly-stale offsets captured at <see cref="ReadData"/> time.
+    /// Recomputes <see cref="offsets"/> from the actual, current lengths of the glyphs in the
+    /// 'glyf' table, and selects the short or long 'loca' format accordingly, updating
+    /// <see cref="HeadTable.IndexToLocFormat"/> to match. Must be called exactly once, before this
+    /// table's <see cref="Length"/> is measured or its data is written, and before 'head' is
+    /// serialized -- see <see cref="TrueTypeFont"/>'s <c>PrepareForSerialization</c> phase, which
+    /// calls this up front so that no later property read has this side effect.
     /// </summary>
     /// <remarks>
-    /// Without this, writing a font whose glyph encoding changed size since it was read (e.g. a
-    /// component argument now encoded as a byte instead of a word) would serialize a 'glyf' table
-    /// whose actual layout no longer matches the offsets declared here, corrupting every glyph after
-    /// the first one whose size changed. Not declared as a dependency in this class's
-    /// <see cref="TTFTableAttribute"/> because 'glyf' itself depends on 'loca' to be read -- looking
-    /// the table up on demand here (only needed for writing, long after both tables exist) avoids the
-    /// circular read-time dependency that declaring it would create.
+    /// Without recomputing offsets, writing a font whose glyph encoding changed size since it was
+    /// read (e.g. a component argument now encoded as a byte instead of a word) would serialize a
+    /// 'glyf' table whose actual layout no longer matches the offsets declared here, corrupting
+    /// every glyph after the first one whose size changed. Not declared as a dependency in this
+    /// class's <see cref="TTFTableAttribute"/> because 'glyf' itself depends on 'loca' to be read --
+    /// looking the table up on demand here (only needed for writing, long after both tables exist)
+    /// avoids the circular read-time dependency that declaring it would create.
     /// </remarks>
-    private void RefreshOffsetsFromGlyf()
+    /// <exception cref="OverflowException">Thrown if the cumulative glyph data size overflows a 32-bit signed integer.</exception>
+    internal void PrepareForSerialization()
     {
         if (!TrueTypeFont.TryGetTable<GlyfTable>(TableTypes.GLYF, out var glyfTable))
         {
             return;
         }
-        var refreshed = new int[GlyphCount + 1];
-        int offset = 0;
-        for (int i = 0; i < GlyphCount; i++)
+
+        checked
         {
-            refreshed[i] = offset;
-            offset += glyfTable.GetGlyph(i)?.Length ?? 0;
+            var refreshed = new int[GlyphCount + 1];
+            int offset = 0;
+            for (int i = 0; i < GlyphCount; i++)
+            {
+                refreshed[i] = offset;
+                offset += glyfTable.GetGlyph(i)?.Length ?? 0;
+            }
+            refreshed[GlyphCount] = offset;
+            offsets = refreshed;
         }
-        refreshed[GlyphCount] = offset;
-        offsets = refreshed;
+
+        // Short format requires every offset to be even (it stores offset/2) and representable in
+        // 16 bits once halved; otherwise long format is required. Never throw here for a font that
+        // is representable in long format -- silently upgrading is always safe.
+        bool canUseShortFormat = true;
+        foreach (var value in offsets)
+        {
+            if ((value & 1) != 0 || (value >> 1) > ushort.MaxValue)
+            {
+                canUseShortFormat = false;
+                break;
+            }
+        }
+        headTable.IndexToLocFormat = (short)(canUseShortFormat ? 0 : 1);
     }
 
     /// <summary>
     /// Reads the loca table data from the specified reader.
     /// </summary>
     /// <param name="data">The reader from which the table data is read.</param>
+    /// <exception cref="InvalidDataException">
+    /// Thrown when the table does not contain exactly <see cref="GlyphCount"/> + 1 entries, when
+    /// offsets decrease, or when a long-format offset cannot be represented as a non-negative
+    /// 32-bit signed value.
+    /// </exception>
     public override void ReadData(Reader data)
     {
+        int expectedEntries = GlyphCount + 1;
+        int[] read;
         if (IsLongFormat)
         {
-            // Read GlyphCount + 1 offsets, each stored as an int.
-            offsets = data.ReadArray<int>(GlyphCount + 1);
+            // Offset32: read as UInt32 and reject values that would overflow Int32 before
+            // narrowing, rather than silently wrapping to a negative offset.
+            var raw = data.ReadArray<uint>(expectedEntries);
+            read = new int[raw.Length];
+            for (int i = 0; i < raw.Length; i++)
+            {
+                if (raw[i] > int.MaxValue)
+                {
+                    Reject($"Long-format loca offset {raw[i]} at index {i} exceeds this implementation's supported range.");
+                }
+                read[i] = (int)raw[i];
+            }
         }
         else
         {
-            // Read GlyphCount + 1 offsets, each stored as a short, and convert to long format.
-            var temp = data.ReadArray<short>(GlyphCount + 1);
-            offsets = temp.Select(o => o << 1).ToArray();
+            // Offset16: the wire value is unsigned and represents offset/2. Widen to UInt16 first
+            // -- not Int16 -- so 0x8000..0xFFFF map to 65536..131070 rather than negative offsets.
+            var raw = data.ReadArray<ushort>(expectedEntries);
+            read = new int[raw.Length];
+            for (int i = 0; i < raw.Length; i++)
+            {
+                read[i] = raw[i] << 1;
+            }
         }
+
+        for (int i = 1; i < read.Length; i++)
+        {
+            if (read[i] < read[i - 1])
+            {
+                Reject($"loca offsets must be non-decreasing; entry {i} ({read[i]}) is less than entry {i - 1} ({read[i - 1]}).");
+            }
+        }
+
+        offsets = read;
     }
+
+    /// <summary>
+    /// Always throws: a non-monotonic or unrepresentable 'loca' offset would let the indexer
+    /// return a negative size, which is a memory-safety hazard rather than a policy choice --
+    /// fatal in both <see cref="FontValidationMode.Strict"/> and <see cref="FontValidationMode.Permissive"/>.
+    /// </summary>
+    private void Reject(string message) => FontParsingContext.Reject(FontDiagnosticCode.InvalidLoca, message, TableTypes.LOCA);
 
     /// <summary>
     /// Returns an enumerator that iterates through the loca records.

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Utils.IO.Serialization;
 
 namespace Utils.Fonts.TTF.Tables.CMap;
@@ -83,9 +84,15 @@ public abstract class CMapFormatBase
     /// <returns>An instance of <see cref="CMapFormatBase"/> containing the parsed data.</returns>
     public static CMapFormatBase GetMap(Reader data)
     {
+        long subtableLength = data.BytesLeft;
         var format = data.Read<Int16>();
         var length = data.Read<Int16>();
         var language = data.Read<Int16>();
+        if (length < 0 || length > subtableLength)
+        {
+            throw new InvalidDataException(
+                $"cmap subtable declares length {length}, which does not fit within its {subtableLength}-byte slice.");
+        }
         CMapFormatBase cMap = CreateCMap(format, language);
         cMap?.ReadData(length, data);
         return cMap;

@@ -269,7 +269,7 @@ public class GlyphSimple : GlyphBase
     /// <summary>
     /// Gets the total length (in bytes) of the glyph data.
     /// </summary>
-    public override short Length
+    public override int Length
     {
         get
         {
@@ -302,7 +302,7 @@ public class GlyphSimple : GlyphBase
                 if ((flag & OutlineFlags.YIsByte) != 0) length++;
                 else if ((flag & OutlineFlags.YIsSame) == 0) length += 2;
             }
-            return (short)length;
+            return length;
         }
     }
 }

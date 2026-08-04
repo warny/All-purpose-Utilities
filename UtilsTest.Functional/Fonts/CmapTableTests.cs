@@ -47,7 +47,7 @@ public class CmapTableTests
 
         var (table, _) = RoundTrip(source);
 
-        Assert.AreEqual((short)2, table.NumberSubtables);
+        Assert.AreEqual((ushort)2, table.NumberSubtables);
 
         var readMac = (CMapFormat0)table.GetCMap(1, 0);
         var readWindows = (CMapFormat0)table.GetCMap(3, 1);
@@ -67,7 +67,7 @@ public class CmapTableTests
 
         var (table, _) = RoundTrip(source);
 
-        Assert.AreEqual((short)1, table.NumberSubtables);
+        Assert.AreEqual((ushort)1, table.NumberSubtables);
         var read = (CMapFormat0)table.GetCMap(1, 0);
         Assert.IsNotNull(read);
         Assert.AreEqual((short)42, read.Map('Z'));

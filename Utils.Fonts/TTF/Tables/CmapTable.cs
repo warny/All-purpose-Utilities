@@ -1,8 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Text;
+using Utils.Fonts.TTF.Parsing;
 using Utils.IO.Serialization;
 using Utils.Objects;
 
@@ -26,19 +29,19 @@ public class CmapTable : TrueTypeTable, IEnumerable<CMap.CMapFormatBase>
         /// <summary>
         /// Gets the platform ID.
         /// </summary>
-        public short PlatformID { get; }
+        public ushort PlatformID { get; }
 
         /// <summary>
         /// Gets the platform-specific ID.
         /// </summary>
-        public short PlatformSpecificID { get; }
+        public ushort PlatformSpecificID { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CmapSubtable"/> class.
         /// </summary>
         /// <param name="platformID">The platform ID.</param>
         /// <param name="platformSpecificID">The platform-specific ID.</param>
-        internal CmapSubtable(short platformID, short platformSpecificID)
+        internal CmapSubtable(ushort platformID, ushort platformSpecificID)
         {
             PlatformID = platformID;
             PlatformSpecificID = platformSpecificID;
@@ -87,11 +90,16 @@ public class CmapTable : TrueTypeTable, IEnumerable<CMap.CMapFormatBase>
     }
 
     private SortedDictionary<CmapSubtable, CMap.CMapFormatBase> subtables;
+    private IReadOnlyList<CMap.CMapFormatBase> cachedCMaps;
 
     /// <summary>
-    /// Gets the array of cmap subtables.
+    /// Gets the cmap subtables, in priority order (Microsoft Unicode first, see
+    /// <see cref="CmapSubtable.CompareTo"/>). Backed by an immutable snapshot: mutating the
+    /// returned list is not possible, and it never reflects a later <see cref="AddCMap"/>/
+    /// <see cref="RemoveCMap"/> call made after it was read -- call this property again to observe
+    /// changes.
     /// </summary>
-    public virtual CMap.CMapFormatBase[] CMaps { get; private set; }
+    public virtual IReadOnlyList<CMap.CMapFormatBase> CMaps => cachedCMaps ??= new ReadOnlyCollection<CMap.CMapFormatBase>(subtables.Values.ToArray());
 
     /// <summary>
     /// Gets a cmap subtable based on the specified platform ID and platform-specific ID.
@@ -99,7 +107,7 @@ public class CmapTable : TrueTypeTable, IEnumerable<CMap.CMapFormatBase>
     /// <param name="platformID">The platform ID.</param>
     /// <param name="platformSpecificID">The platform-specific ID.</param>
     /// <returns>The corresponding cmap format subtable if found; otherwise, null.</returns>
-    public virtual CMap.CMapFormatBase GetCMap(short platformID, short platformSpecificID)
+    public virtual CMap.CMapFormatBase GetCMap(ushort platformID, ushort platformSpecificID)
         => subtables.GetValueOrDefault(new CmapSubtable(platformID, platformSpecificID));
 
     /// <summary>
@@ -108,10 +116,10 @@ public class CmapTable : TrueTypeTable, IEnumerable<CMap.CMapFormatBase>
     /// <param name="platformID">The platform ID.</param>
     /// <param name="platformSpecificID">The platform-specific ID.</param>
     /// <param name="cm">The cmap format subtable.</param>
-    public virtual void AddCMap(short platformID, short platformSpecificID, CMap.CMapFormatBase cm)
+    public virtual void AddCMap(ushort platformID, ushort platformSpecificID, CMap.CMapFormatBase cm)
     {
-        subtables.Add(new CmapSubtable(platformID, platformSpecificID), cm);
-        SortMaps();
+        subtables[new CmapSubtable(platformID, platformSpecificID)] = cm;
+        cachedCMaps = null;
     }
 
     /// <summary>
@@ -119,10 +127,10 @@ public class CmapTable : TrueTypeTable, IEnumerable<CMap.CMapFormatBase>
     /// </summary>
     /// <param name="platformID">The platform ID.</param>
     /// <param name="platformSpecificID">The platform-specific ID.</param>
-    public virtual void RemoveCMap(short platformID, short platformSpecificID)
+    public virtual void RemoveCMap(ushort platformID, ushort platformSpecificID)
     {
         subtables.Remove(new CmapSubtable(platformID, platformSpecificID));
-        SortMaps();
+        cachedCMaps = null;
     }
 
     /// <summary>
@@ -137,12 +145,12 @@ public class CmapTable : TrueTypeTable, IEnumerable<CMap.CMapFormatBase>
     /// <summary>
     /// Gets or sets the version of the cmap table.
     /// </summary>
-    public virtual short Version { get; set; }
+    public virtual ushort Version { get; set; }
 
     /// <summary>
     /// Gets the number of cmap subtables.
     /// </summary>
-    public virtual short NumberSubtables => (short)subtables.Count;
+    public virtual ushort NumberSubtables => (ushort)subtables.Count;
 
     /// <summary>
     /// Gets the total length (in bytes) of the cmap table data.
@@ -153,9 +161,11 @@ public class CmapTable : TrueTypeTable, IEnumerable<CMap.CMapFormatBase>
         {
             int num = 4; // version (2 bytes) + numberSubtables (2 bytes)
             num += subtables.Count * 8; // Each subtable record is 8 bytes.
-            foreach (var cMap in subtables)
+            // Subtables that were parsed as a shared instance (multiple platform/encoding records
+            // pointing at the same offset) must only be counted once towards the payload length.
+            foreach (var cMap in subtables.Values.Distinct())
             {
-                num += cMap.Value.Length;
+                num += cMap.Length;
             }
             return num;
         }
@@ -164,55 +174,112 @@ public class CmapTable : TrueTypeTable, IEnumerable<CMap.CMapFormatBase>
     /// <inheritdoc/>
     public override void ReadData(Reader data)
     {
-        Version = data.Read<Int16>();
-        int numberSubtables = data.Read<Int16>();
+        var context = TrueTypeFont?.ParsingContext;
+        long cmapLength = data.BytesLeft;
+
+        Version = data.Read<UInt16>();
+        int numberSubtables = data.Read<UInt16>();
+
+        var options = context?.Options ?? Parsing.TrueTypeFontParsingOptions.Default;
+        if (numberSubtables > options.MaximumCmapSubtables)
+        {
+            FontParsingContext.Reject(FontDiagnosticCode.ResourceLimitExceeded,
+                $"cmap declares {numberSubtables} subtables, exceeding MaximumCmapSubtables ({options.MaximumCmapSubtables}).",
+                TableTypes.CMAP);
+        }
+
+        long directoryEnd = checked(4L + (long)numberSubtables * 8L);
+        if (directoryEnd > cmapLength)
+        {
+            FontParsingContext.Reject(FontDiagnosticCode.InvalidDirectoryRange,
+                $"cmap subtable directory ({directoryEnd} bytes for {numberSubtables} subtables) does not fit within the cmap table ({cmapLength} bytes).",
+                TableTypes.CMAP);
+        }
 
         // Read subtable directory records.
-        var subTables = new (short platformID, short platformSpecificID, int offset)[numberSubtables];
+        var subTables = new (ushort platformID, ushort platformSpecificID, uint offset)[numberSubtables];
         for (int i = 0; i < numberSubtables; i++)
         {
-            var platformID = data.Read<Int16>();
-            var platformSpecificID = data.Read<Int16>();
-            var offset = data.Read<Int32>();
+            var platformID = data.Read<UInt16>();
+            var platformSpecificID = data.Read<UInt16>();
+            var offset = data.Read<UInt32>();
+            if (offset < directoryEnd || offset >= cmapLength)
+            {
+                ReportOrReject(context, FontDiagnosticCode.InvalidDirectoryRange,
+                    $"cmap subtable record #{i} (platformID={platformID}, platformSpecificID={platformSpecificID}) declares offset {offset}, outside the cmap table (valid range [{directoryEnd}, {cmapLength})).");
+                continue;
+            }
             subTables[i] = (platformID, platformSpecificID, offset);
         }
 
         // A subtable's length is the distance to the next greater offset: subtables are stored
         // contiguously and sorted by offset per the TrueType spec, and several platform/encoding
         // records may legitimately share the same offset when they point at the same subtable.
-        var orderedOffsets = subTables.Select(s => s.offset).Distinct().OrderBy(o => o).ToArray();
-        int SubtableEnd(int offset)
+        // A zero offset can only mean "record dropped above" (every accepted offset is >=
+        // directoryEnd, which is always > 0), so it is excluded here.
+        var orderedOffsets = subTables.Select(s => s.offset).Where(o => o != 0).Distinct().OrderBy(o => o).ToArray();
+        long SubtableEnd(uint offset)
         {
             int index = Array.IndexOf(orderedOffsets, offset);
-            return index + 1 < orderedOffsets.Length ? orderedOffsets[index + 1] : (int)data.Stream.Length;
+            return index + 1 < orderedOffsets.Length ? orderedOffsets[index + 1] : cmapLength;
         }
+
+        // Subtables sharing the same offset (deliberately, per spec) are parsed exactly once and
+        // the resulting instance is reused across every platform/encoding record that points at it.
+        var parsedByOffset = new Dictionary<uint, CMap.CMapFormatBase>();
 
         // Read each subtable.
         for (int i = 0; i < numberSubtables; i++)
         {
             var subTable = subTables[i];
-            int length = SubtableEnd(subTable.offset) - subTable.offset;
-            Reader mapData = data.Slice(subTable.offset, length);
-            try
+            if (subTable.offset == 0)
             {
-                CMap.CMapFormatBase cMap = CMap.CMapFormatBase.GetMap(mapData);
+                continue; // Dropped above (out-of-range offset): never a valid offset (always >= directoryEnd > 0).
+            }
+
+            if (!parsedByOffset.TryGetValue(subTable.offset, out var cMap))
+            {
+                long length = SubtableEnd(subTable.offset) - subTable.offset;
+                Reader mapData = data.Slice(subTable.offset, length);
+                try
+                {
+                    cMap = CMap.CMapFormatBase.GetMap(mapData);
+                }
+                catch (Exception ex) when (ex is InvalidDataException or FormatException
+                                               or NotSupportedException or ArgumentException
+                                               or OverflowException or IndexOutOfRangeException)
+                {
+                    ReportOrReject(context, FontDiagnosticCode.MalformedCmapSubtable,
+                        $"cmap subtable at offset {subTable.offset} (platformID={subTable.platformID}, platformSpecificID={subTable.platformSpecificID}) is malformed: {ex.Message}");
+                    continue;
+                }
                 if (cMap is not null)
                 {
-                    AddCMap(subTable.platformID, subTable.platformSpecificID, cMap);
+                    parsedByOffset[subTable.offset] = cMap;
                 }
             }
-            catch (Exception ex) when (ex is InvalidDataException or FormatException
-                                           or NotSupportedException or ArgumentException
-                                           or OverflowException or IndexOutOfRangeException)
+
+            if (cMap is not null)
             {
-                // Skip unsupported or malformed cmap subtables rather than failing the entire font load.
-                // PlatformID and PlatformSpecificID are logged at debug level for diagnostics.
-                System.Diagnostics.Debug.WriteLine(
-                    $"Skipping cmap subtable PlatformID={subTable.platformID}, PlatformSpecificID={subTable.platformSpecificID}: {ex.Message}");
+                AddCMap(subTable.platformID, subTable.platformSpecificID, cMap);
             }
         }
+    }
 
-        SortMaps();
+    /// <summary>
+    /// Reports a diagnosable anomaly through <paramref name="context"/> when parsing runs under the
+    /// normal font-parsing pipeline (throwing in strict mode, recording in permissive mode);
+    /// otherwise -- a <see cref="CmapTable"/> read directly, outside <see cref="TrueTypeFont.ParseFont(System.IO.Stream, Parsing.TrueTypeFontParsingOptions)"/>
+    /// -- always throws, matching this table's previous unconditional behavior for callers that
+    /// never opted into a parsing context.
+    /// </summary>
+    private static void ReportOrReject(FontParsingContext context, FontDiagnosticCode code, string message)
+    {
+        if (context is null)
+        {
+            throw new InvalidDataException(message);
+        }
+        context.ReportError(code, message, TableTypes.CMAP);
     }
 
     /// <summary>
@@ -221,21 +288,27 @@ public class CmapTable : TrueTypeTable, IEnumerable<CMap.CMapFormatBase>
     /// <param name="data">The writer to which the data is written.</param>
     public override void WriteData(Writer data)
     {
-        data.Write<Int16>(Version);
-        data.Write<Int16>(NumberSubtables);
+        data.Write<UInt16>(Version);
+        data.Write<UInt16>(NumberSubtables);
         int length = 4 + NumberSubtables * 8;
+        var offsetsByMap = new Dictionary<CMap.CMapFormatBase, int>();
         foreach (var subTable in subtables)
         {
             CmapSubtable cmapSubtable = subTable.Key;
             CMap.CMapFormatBase cMap = subTable.Value;
-            data.Write<Int16>(cmapSubtable.PlatformID);
-            data.Write<Int16>(cmapSubtable.PlatformSpecificID);
-            data.Write<Int32>(length);
-            length += cMap.Length;
+            data.Write<UInt16>(cmapSubtable.PlatformID);
+            data.Write<UInt16>(cmapSubtable.PlatformSpecificID);
+            if (!offsetsByMap.TryGetValue(cMap, out int mapOffset))
+            {
+                mapOffset = length;
+                offsetsByMap[cMap] = mapOffset;
+                length += cMap.Length;
+            }
+            data.Write<UInt32>((uint)mapOffset);
         }
-        foreach (var cMapEntry in subtables)
+        foreach (var cMap in offsetsByMap.Keys)
         {
-            cMapEntry.Value.WriteData(data);
+            cMap.WriteData(data);
         }
     }
 
@@ -258,13 +331,8 @@ public class CmapTable : TrueTypeTable, IEnumerable<CMap.CMapFormatBase>
         return sb.ToString();
     }
 
-    /// <summary>
-    /// Sorts the cmap subtables and stores them in the CMaps array.
-    /// </summary>
-    private void SortMaps() => CMaps = subtables.Values.ToArray();
-
     /// <inheritdoc/>
-    public IEnumerator<CMap.CMapFormatBase> GetEnumerator() => ((IEnumerable<CMap.CMapFormatBase>)CMaps).GetEnumerator();
+    public IEnumerator<CMap.CMapFormatBase> GetEnumerator() => CMaps.GetEnumerator();
 
     /// <inheritdoc/>
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
