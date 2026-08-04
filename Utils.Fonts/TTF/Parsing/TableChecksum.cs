@@ -24,7 +24,17 @@ internal static class TableChecksum
     /// </summary>
     /// <param name="stream">The seekable stream to read from. Its position is saved and restored.</param>
     /// <param name="offset">The absolute byte offset, within <paramref name="stream"/>, of the range to checksum.</param>
-    /// <param name="length">The byte length of the range to checksum.</param>
+    /// <param name="length">
+    /// The byte length of the range to checksum. Deliberately <see cref="long"/>, not
+    /// <see cref="uint"/>: the whole-font checksum must cover every byte of a font bounded by
+    /// <see cref="TrueTypeFontParsingOptions.MaximumFontBytes"/> (itself a <see langword="long"/>),
+    /// and silently narrowing this parameter would truncate that coverage for any font/limit
+    /// configuration beyond 4 GiB, contradicting the documented "covers the entire bounded font"
+    /// contract without ever surfacing an error. The read loop below already walks the range one
+    /// 4-byte word at a time via a <see langword="long"/> counter, so accepting the full range costs
+    /// nothing extra: per-table SFNT checksums (bounded to <see cref="uint"/> by the format itself)
+    /// widen implicitly at the call site.
+    /// </param>
     /// <param name="zeroHeadChecksumAdjustment">
     /// When <see langword="true"/>, the 4-byte word at <see cref="HeadChecksumAdjustmentOffset"/>
     /// relative to <paramref name="offset"/> is treated as zero for the purpose of the sum, without
@@ -33,9 +43,13 @@ internal static class TableChecksum
     /// table's per-table checksum is computed).
     /// </param>
     /// <returns>The computed checksum.</returns>
-    public static uint ComputeTableChecksum(Stream stream, long offset, uint length, bool zeroHeadChecksumAdjustment)
+    public static uint ComputeTableChecksum(Stream stream, long offset, long length, bool zeroHeadChecksumAdjustment)
     {
         ArgumentNullException.ThrowIfNull(stream);
+        if (length < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(length), length, "length must be non-negative.");
+        }
         long originalPosition = stream.Position;
         try
         {

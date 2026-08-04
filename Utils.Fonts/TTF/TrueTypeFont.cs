@@ -668,7 +668,7 @@ public class TrueTypeFont : IFont
             data.WriteFixedLengthString(tag, TagLength, Encoding.ASCII);
             using (var tableStream = new MemoryStream(datas, writable: false))
             {
-                data.Write<UInt32>(TableChecksum.ComputeTableChecksum(tableStream, 0, (uint)dataLength, zeroHeadChecksumAdjustment: tag == TableTypes.HEAD));
+                data.Write<UInt32>(TableChecksum.ComputeTableChecksum(tableStream, 0, dataLength, zeroHeadChecksumAdjustment: tag == TableTypes.HEAD));
             }
             data.Write<UInt32>((uint)currentoffset);
             data.Write<UInt32>((uint)dataLength);
@@ -828,11 +828,12 @@ public class TrueTypeFont : IFont
             return;
         }
 
-        // A conformant SFNT file's length can never realistically approach uint.MaxValue (every
-        // table offset/length in the format is itself a UInt32), so clamping only guards a
-        // pathological MaximumFontBytes configuration far beyond any real font, not the common case.
-        uint checksummedLength = (uint)Math.Min(fontLength, uint.MaxValue);
-        uint computed = TableChecksum.ComputeTableChecksum(fontStream, 0, checksummedLength, zeroHeadChecksumAdjustment: false);
+        // The full bounded length, uncapped: TableChecksum.ComputeTableChecksum accepts a long
+        // range for exactly this reason (see its own doc comment) -- clamping to uint.MaxValue here
+        // would silently stop covering the font beyond 4 GiB whenever a caller configures
+        // MaximumFontBytes above that, contradicting the "covers the entire bounded font" contract
+        // without ever surfacing an error.
+        uint computed = TableChecksum.ComputeTableChecksum(fontStream, 0, fontLength, zeroHeadChecksumAdjustment: false);
         if (computed != ChecksumMagicNumber)
         {
             context.ReportError(FontDiagnosticCode.FontChecksumMismatch,
@@ -890,7 +891,7 @@ public class TrueTypeFont : IFont
     {
         unchecked
         {
-            uint checksum = TableChecksum.ComputeTableChecksum(fontStream, 0, (uint)fontStream.Length, zeroHeadChecksumAdjustment: false);
+            uint checksum = TableChecksum.ComputeTableChecksum(fontStream, 0, fontStream.Length, zeroHeadChecksumAdjustment: false);
             uint checksumAdj = ChecksumMagicNumber - checksum;
             int offset = OffsetTableSize + TablesCount * TableDirectoryEntrySize;
             foreach (var table in tables)
