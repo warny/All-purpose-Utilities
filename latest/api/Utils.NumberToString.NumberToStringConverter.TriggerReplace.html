@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_NumberToStringConverter_TriggerReplace" data-uid="Utils.NumberToString.NumberToStringConverter.TriggerReplace" class="text-break">
-Class NumberToStringConverter.TriggerReplace  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L505"><i class="bi bi-code-slash"></i></a>
+Class NumberToStringConverter.TriggerReplace  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L506"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -245,9 +245,9 @@ applied exactly once; <a class="xref" href="Utils.NumberToString.NumberToStringC
 
   <a id="Utils_NumberToString_NumberToStringConverter_TriggerReplace__ctor_" data-uid="Utils.NumberToString.NumberToStringConverter.TriggerReplace.#ctor*"></a>
 
-  <h3 id="Utils_NumberToString_NumberToStringConverter_TriggerReplace__ctor_System_String_System_Boolean_System_Collections_Generic_IReadOnlyList_System_ValueTuple_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String___System_String_" data-uid="Utils.NumberToString.NumberToStringConverter.TriggerReplace.#ctor(System.String,System.Boolean,System.Collections.Generic.IReadOnlyList{System.ValueTuple{System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String}},System.String)">
-  TriggerReplace(string, bool, IReadOnlyList&lt;(IReadOnlyDictionary&lt;string, string&gt; Constraints, string To)&gt;, string?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L508"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_NumberToString_NumberToStringConverter_TriggerReplace__ctor_System_String_System_Boolean_System_Collections_Generic_IReadOnlyList_Utils_NumberToString_NumberToStringConverter_TriggerReplacementForm__System_String_" data-uid="Utils.NumberToString.NumberToStringConverter.TriggerReplace.#ctor(System.String,System.Boolean,System.Collections.Generic.IReadOnlyList{Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm},System.String)">
+  TriggerReplace(string, bool, IReadOnlyList&lt;TriggerReplacementForm&gt;, string?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L509"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new <a class="xref" href="Utils.NumberToString.NumberToStringConverter.TriggerReplace.html">NumberToStringConverter.TriggerReplace</a>.</p>
@@ -255,7 +255,7 @@ applied exactly once; <a class="xref" href="Utils.NumberToString.NumberToStringC
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public TriggerReplace(string from, bool isRegex, IReadOnlyList&lt;(IReadOnlyDictionary&lt;string, string&gt; Constraints, string To)&gt; forms, string? defaultTo)</code></pre>
+    <pre><code class="lang-csharp hljs">public TriggerReplace(string from, bool isRegex, IReadOnlyList&lt;NumberToStringConverter.TriggerReplacementForm&gt; forms, string? defaultTo)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -264,7 +264,7 @@ applied exactly once; <a class="xref" href="Utils.NumberToString.NumberToStringC
     <dd></dd>
     <dt><code>isRegex</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
     <dd></dd>
-    <dt><code>forms</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;(<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt; <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.collections.generic.ireadonlydictionary-system.string,system.string-,system.string-.constraints">Constraints</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.collections.generic.ireadonlydictionary-system.string,system.string-,system.string-.to">To</a>)&gt;</dt>
+    <dt><code>forms</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="Utils.NumberToString.NumberToStringConverter.html">NumberToStringConverter</a>.<a class="xref" href="Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.html">TriggerReplacementForm</a>&gt;</dt>
     <dd></dd>
     <dt><code>defaultTo</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd></dd>
@@ -289,7 +289,7 @@ applied exactly once; <a class="xref" href="Utils.NumberToString.NumberToStringC
 
   <h3 id="Utils_NumberToString_NumberToStringConverter_TriggerReplace_CompiledRegex" data-uid="Utils.NumberToString.NumberToStringConverter.TriggerReplace.CompiledRegex">
   CompiledRegex
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L557"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L553"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the pre-compiled regex when <a class="xref" href="Utils.NumberToString.NumberToStringConverter.TriggerReplace.html#Utils_NumberToString_NumberToStringConverter_TriggerReplace_IsRegex">IsRegex</a> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>; otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
@@ -321,7 +321,7 @@ applied exactly once; <a class="xref" href="Utils.NumberToString.NumberToStringC
 
   <h3 id="Utils_NumberToString_NumberToStringConverter_TriggerReplace_DefaultTo" data-uid="Utils.NumberToString.NumberToStringConverter.TriggerReplace.DefaultTo">
   DefaultTo
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L564"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L560"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the unconditional default replacement used when no variant form matches.</p>
@@ -353,16 +353,16 @@ applied exactly once; <a class="xref" href="Utils.NumberToString.NumberToStringC
 
   <h3 id="Utils_NumberToString_NumberToStringConverter_TriggerReplace_Forms" data-uid="Utils.NumberToString.NumberToStringConverter.TriggerReplace.Forms">
   Forms
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L562"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L558"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets the variant-specific forms ordered by declaration order.
-At runtime the most specific match (most constraints) wins.</p>
+  <div class="markdown level1 summary"><p>Gets the variant-specific forms. Declaration order has no selection semantics;
+specificity wins first and <a class="xref" href="Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.html#Utils_NumberToString_NumberToStringConverter_TriggerReplacementForm_Priority">Priority</a> breaks lower-ranked ties.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public IReadOnlyList&lt;(IReadOnlyDictionary&lt;string, string&gt; Constraints, string To)&gt; Forms { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public IReadOnlyList&lt;NumberToStringConverter.TriggerReplacementForm&gt; Forms { get; }</code></pre>
   </div>
 
 
@@ -371,7 +371,7 @@ At runtime the most specific match (most constraints) wins.</p>
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;(<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt; <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.collections.generic.ireadonlydictionary-system.string,system.string-,system.string-.constraints">Constraints</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.collections.generic.ireadonlydictionary-system.string,system.string-,system.string-.to">To</a>)&gt;</dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="Utils.NumberToString.NumberToStringConverter.html">NumberToStringConverter</a>.<a class="xref" href="Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.html">TriggerReplacementForm</a>&gt;</dt>
     <dd></dd>
   </dl>
 
@@ -386,7 +386,7 @@ At runtime the most specific match (most constraints) wins.</p>
 
   <h3 id="Utils_NumberToString_NumberToStringConverter_TriggerReplace_From" data-uid="Utils.NumberToString.NumberToStringConverter.TriggerReplace.From">
   From
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L553"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L549"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the text or regex pattern to match.</p>
@@ -418,7 +418,7 @@ At runtime the most specific match (most constraints) wins.</p>
 
   <h3 id="Utils_NumberToString_NumberToStringConverter_TriggerReplace_IsRegex" data-uid="Utils.NumberToString.NumberToStringConverter.TriggerReplace.IsRegex">
   IsRegex
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L555"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L551"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets whether <a class="xref" href="Utils.NumberToString.NumberToStringConverter.TriggerReplace.html#Utils_NumberToString_NumberToStringConverter_TriggerReplace_From">From</a> is a .NET regular expression.</p>
@@ -450,7 +450,7 @@ At runtime the most specific match (most constraints) wins.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L505" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L506" class="edit-link">Edit this page</a>
         </div>
 
 

@@ -8244,6 +8244,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.NumberToStringConfigurationException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.NumberToStringConfigurationException.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.NumberToStringConfigurationException",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.NumberToStringConfigurationException.yml\" sourcestartlinenumber=\"1\">Represents configuration failures detected while compiling number-writing rules.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.yml",
       "output": {
         ".html": {
@@ -8297,6 +8311,20 @@
       "IsMRef": true,
       "Title": "Utils.NumberToString.NumberToStringConverter.TriggerReplace",
       "Summary": "<p sourcefile=\"api/Utils.NumberToString.NumberToStringConverter.TriggerReplace.yml\" sourcestartlinenumber=\"1\">A compiled text-replacement rule inside a <xref href=\"Utils.NumberToString.NumberToStringConverter.TriggerRule\" data-throw-if-not-resolved=\"false\"></xref>.\nWhen the trigger fires, the most specific matching variant form is selected and\napplied exactly once; <xref href=\"Utils.NumberToString.NumberToStringConverter.TriggerReplace.DefaultTo\" data-throw-if-not-resolved=\"false\"></xref> is used when nothing matches.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.yml\" sourcestartlinenumber=\"1\">Represents one conditional replacement form in a trigger.</p>\n"
     },
     {
       "type": "ManagedReference",

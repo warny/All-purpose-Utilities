@@ -58714,6 +58714,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.FormVariantType.NestedVariants
   nameWithType: FormVariantType.NestedVariants
+- uid: Utils.NumberToString.FormVariantType.Priority
+  name: Priority
+  href: api/Utils.NumberToString.FormVariantType.html#Utils_NumberToString_FormVariantType_Priority
+  commentId: P:Utils.NumberToString.FormVariantType.Priority
+  fullName: Utils.NumberToString.FormVariantType.Priority
+  nameWithType: FormVariantType.Priority
+- uid: Utils.NumberToString.FormVariantType.Priority*
+  name: Priority
+  href: api/Utils.NumberToString.FormVariantType.html#Utils_NumberToString_FormVariantType_Priority_
+  commentId: Overload:Utils.NumberToString.FormVariantType.Priority
+  isSpec: "True"
+  fullName: Utils.NumberToString.FormVariantType.Priority
+  nameWithType: FormVariantType.Priority
 - uid: Utils.NumberToString.FormVariantType.Value
   name: Value
   href: api/Utils.NumberToString.FormVariantType.html#Utils_NumberToString_FormVariantType_Value
@@ -60727,6 +60740,70 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberScaleXmlModel.VoidGroup
   nameWithType: NumberScaleXmlModel.VoidGroup
+- uid: Utils.NumberToString.NumberToStringConfigurationException
+  name: NumberToStringConfigurationException
+  href: api/Utils.NumberToString.NumberToStringConfigurationException.html
+  commentId: T:Utils.NumberToString.NumberToStringConfigurationException
+  fullName: Utils.NumberToString.NumberToStringConfigurationException
+  nameWithType: NumberToStringConfigurationException
+- uid: Utils.NumberToString.NumberToStringConfigurationException.#ctor(System.String,System.String,System.String,System.String)
+  name: NumberToStringConfigurationException(string, string?, string, string)
+  href: api/Utils.NumberToString.NumberToStringConfigurationException.html#Utils_NumberToString_NumberToStringConfigurationException__ctor_System_String_System_String_System_String_System_String_
+  commentId: M:Utils.NumberToString.NumberToStringConfigurationException.#ctor(System.String,System.String,System.String,System.String)
+  name.vb: New(String, String, String, String)
+  fullName: Utils.NumberToString.NumberToStringConfigurationException.NumberToStringConfigurationException(string, string?, string, string)
+  fullName.vb: Utils.NumberToString.NumberToStringConfigurationException.New(String, String, String, String)
+  nameWithType: NumberToStringConfigurationException.NumberToStringConfigurationException(string, string?, string, string)
+  nameWithType.vb: NumberToStringConfigurationException.New(String, String, String, String)
+- uid: Utils.NumberToString.NumberToStringConfigurationException.#ctor*
+  name: NumberToStringConfigurationException
+  href: api/Utils.NumberToString.NumberToStringConfigurationException.html#Utils_NumberToString_NumberToStringConfigurationException__ctor_
+  commentId: Overload:Utils.NumberToString.NumberToStringConfigurationException.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.NumberToString.NumberToStringConfigurationException.NumberToStringConfigurationException
+  fullName.vb: Utils.NumberToString.NumberToStringConfigurationException.New
+  nameWithType: NumberToStringConfigurationException.NumberToStringConfigurationException
+  nameWithType.vb: NumberToStringConfigurationException.New
+- uid: Utils.NumberToString.NumberToStringConfigurationException.ConfigurationPath
+  name: ConfigurationPath
+  href: api/Utils.NumberToString.NumberToStringConfigurationException.html#Utils_NumberToString_NumberToStringConfigurationException_ConfigurationPath
+  commentId: P:Utils.NumberToString.NumberToStringConfigurationException.ConfigurationPath
+  fullName: Utils.NumberToString.NumberToStringConfigurationException.ConfigurationPath
+  nameWithType: NumberToStringConfigurationException.ConfigurationPath
+- uid: Utils.NumberToString.NumberToStringConfigurationException.ConfigurationPath*
+  name: ConfigurationPath
+  href: api/Utils.NumberToString.NumberToStringConfigurationException.html#Utils_NumberToString_NumberToStringConfigurationException_ConfigurationPath_
+  commentId: Overload:Utils.NumberToString.NumberToStringConfigurationException.ConfigurationPath
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConfigurationException.ConfigurationPath
+  nameWithType: NumberToStringConfigurationException.ConfigurationPath
+- uid: Utils.NumberToString.NumberToStringConfigurationException.ErrorCode
+  name: ErrorCode
+  href: api/Utils.NumberToString.NumberToStringConfigurationException.html#Utils_NumberToString_NumberToStringConfigurationException_ErrorCode
+  commentId: P:Utils.NumberToString.NumberToStringConfigurationException.ErrorCode
+  fullName: Utils.NumberToString.NumberToStringConfigurationException.ErrorCode
+  nameWithType: NumberToStringConfigurationException.ErrorCode
+- uid: Utils.NumberToString.NumberToStringConfigurationException.ErrorCode*
+  name: ErrorCode
+  href: api/Utils.NumberToString.NumberToStringConfigurationException.html#Utils_NumberToString_NumberToStringConfigurationException_ErrorCode_
+  commentId: Overload:Utils.NumberToString.NumberToStringConfigurationException.ErrorCode
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConfigurationException.ErrorCode
+  nameWithType: NumberToStringConfigurationException.ErrorCode
+- uid: Utils.NumberToString.NumberToStringConfigurationException.LanguageIdentifier
+  name: LanguageIdentifier
+  href: api/Utils.NumberToString.NumberToStringConfigurationException.html#Utils_NumberToString_NumberToStringConfigurationException_LanguageIdentifier
+  commentId: P:Utils.NumberToString.NumberToStringConfigurationException.LanguageIdentifier
+  fullName: Utils.NumberToString.NumberToStringConfigurationException.LanguageIdentifier
+  nameWithType: NumberToStringConfigurationException.LanguageIdentifier
+- uid: Utils.NumberToString.NumberToStringConfigurationException.LanguageIdentifier*
+  name: LanguageIdentifier
+  href: api/Utils.NumberToString.NumberToStringConfigurationException.html#Utils_NumberToString_NumberToStringConfigurationException_LanguageIdentifier_
+  commentId: Overload:Utils.NumberToString.NumberToStringConfigurationException.LanguageIdentifier
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConfigurationException.LanguageIdentifier
+  nameWithType: NumberToStringConfigurationException.LanguageIdentifier
 - uid: Utils.NumberToString.NumberToStringConverter
   name: NumberToStringConverter
   href: api/Utils.NumberToString.NumberToStringConverter.html
@@ -61507,15 +61584,15 @@ references:
   commentId: T:Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule
   fullName: Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule
   nameWithType: NumberToStringConverter.OrdinalVariantRule
-- uid: Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.#ctor(System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.Collections.Generic.IReadOnlyDictionary{System.Int64,System.String},System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String,System.String)
-  name: OrdinalVariantRule(IReadOnlyDictionary<string, string>, IReadOnlyDictionary<long, string>, IReadOnlyDictionary<string, string>, string?, string?)
-  href: api/Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.html#Utils_NumberToString_NumberToStringConverter_OrdinalVariantRule__ctor_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_Collections_Generic_IReadOnlyDictionary_System_Int64_System_String__System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String_System_String_
-  commentId: M:Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.#ctor(System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.Collections.Generic.IReadOnlyDictionary{System.Int64,System.String},System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String,System.String)
-  name.vb: New(IReadOnlyDictionary(Of String, String), IReadOnlyDictionary(Of Long, String), IReadOnlyDictionary(Of String, String), String, String)
-  fullName: Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.OrdinalVariantRule(System.Collections.Generic.IReadOnlyDictionary<string, string>, System.Collections.Generic.IReadOnlyDictionary<long, string>, System.Collections.Generic.IReadOnlyDictionary<string, string>, string?, string?)
-  fullName.vb: Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.New(System.Collections.Generic.IReadOnlyDictionary(Of String, String), System.Collections.Generic.IReadOnlyDictionary(Of Long, String), System.Collections.Generic.IReadOnlyDictionary(Of String, String), String, String)
-  nameWithType: NumberToStringConverter.OrdinalVariantRule.OrdinalVariantRule(IReadOnlyDictionary<string, string>, IReadOnlyDictionary<long, string>, IReadOnlyDictionary<string, string>, string?, string?)
-  nameWithType.vb: NumberToStringConverter.OrdinalVariantRule.New(IReadOnlyDictionary(Of String, String), IReadOnlyDictionary(Of Long, String), IReadOnlyDictionary(Of String, String), String, String)
+- uid: Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.#ctor(System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.Collections.Generic.IReadOnlyDictionary{System.Int64,System.String},System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String,System.String,System.Int32)
+  name: OrdinalVariantRule(IReadOnlyDictionary<string, string>, IReadOnlyDictionary<long, string>, IReadOnlyDictionary<string, string>, string?, string?, int)
+  href: api/Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.html#Utils_NumberToString_NumberToStringConverter_OrdinalVariantRule__ctor_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_Collections_Generic_IReadOnlyDictionary_System_Int64_System_String__System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String_System_String_System_Int32_
+  commentId: M:Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.#ctor(System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.Collections.Generic.IReadOnlyDictionary{System.Int64,System.String},System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String,System.String,System.Int32)
+  name.vb: New(IReadOnlyDictionary(Of String, String), IReadOnlyDictionary(Of Long, String), IReadOnlyDictionary(Of String, String), String, String, Integer)
+  fullName: Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.OrdinalVariantRule(System.Collections.Generic.IReadOnlyDictionary<string, string>, System.Collections.Generic.IReadOnlyDictionary<long, string>, System.Collections.Generic.IReadOnlyDictionary<string, string>, string?, string?, int)
+  fullName.vb: Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.New(System.Collections.Generic.IReadOnlyDictionary(Of String, String), System.Collections.Generic.IReadOnlyDictionary(Of Long, String), System.Collections.Generic.IReadOnlyDictionary(Of String, String), String, String, Integer)
+  nameWithType: NumberToStringConverter.OrdinalVariantRule.OrdinalVariantRule(IReadOnlyDictionary<string, string>, IReadOnlyDictionary<long, string>, IReadOnlyDictionary<string, string>, string?, string?, int)
+  nameWithType.vb: NumberToStringConverter.OrdinalVariantRule.New(IReadOnlyDictionary(Of String, String), IReadOnlyDictionary(Of Long, String), IReadOnlyDictionary(Of String, String), String, String, Integer)
 - uid: Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.#ctor*
   name: OrdinalVariantRule
   href: api/Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.html#Utils_NumberToString_NumberToStringConverter_OrdinalVariantRule__ctor_
@@ -61552,6 +61629,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.Exceptions
   nameWithType: NumberToStringConverter.OrdinalVariantRule.Exceptions
+- uid: Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.Priority
+  name: Priority
+  href: api/Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.html#Utils_NumberToString_NumberToStringConverter_OrdinalVariantRule_Priority
+  commentId: P:Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.Priority
+  fullName: Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.Priority
+  nameWithType: NumberToStringConverter.OrdinalVariantRule.Priority
+- uid: Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.Priority*
+  name: Priority
+  href: api/Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.html#Utils_NumberToString_NumberToStringConverter_OrdinalVariantRule_Priority_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.Priority
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.Priority
+  nameWithType: NumberToStringConverter.OrdinalVariantRule.Priority
 - uid: Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.RemoveTrailing
   name: RemoveTrailing
   href: api/Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.html#Utils_NumberToString_NumberToStringConverter_OrdinalVariantRule_RemoveTrailing
@@ -61997,15 +62087,15 @@ references:
   commentId: T:Utils.NumberToString.NumberToStringConverter.TriggerReplace
   fullName: Utils.NumberToString.NumberToStringConverter.TriggerReplace
   nameWithType: NumberToStringConverter.TriggerReplace
-- uid: Utils.NumberToString.NumberToStringConverter.TriggerReplace.#ctor(System.String,System.Boolean,System.Collections.Generic.IReadOnlyList{System.ValueTuple{System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String}},System.String)
-  name: TriggerReplace(string, bool, IReadOnlyList<(IReadOnlyDictionary<string, string> Constraints, string To)>, string?)
-  href: api/Utils.NumberToString.NumberToStringConverter.TriggerReplace.html#Utils_NumberToString_NumberToStringConverter_TriggerReplace__ctor_System_String_System_Boolean_System_Collections_Generic_IReadOnlyList_System_ValueTuple_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String___System_String_
-  commentId: M:Utils.NumberToString.NumberToStringConverter.TriggerReplace.#ctor(System.String,System.Boolean,System.Collections.Generic.IReadOnlyList{System.ValueTuple{System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String}},System.String)
-  name.vb: New(String, Boolean, IReadOnlyList(Of (Constraints As IReadOnlyDictionary(Of String, String), To As String)), String)
-  fullName: Utils.NumberToString.NumberToStringConverter.TriggerReplace.TriggerReplace(string, bool, System.Collections.Generic.IReadOnlyList<(System.Collections.Generic.IReadOnlyDictionary<string, string> Constraints, string To)>, string?)
-  fullName.vb: Utils.NumberToString.NumberToStringConverter.TriggerReplace.New(String, Boolean, System.Collections.Generic.IReadOnlyList(Of (Constraints As System.Collections.Generic.IReadOnlyDictionary(Of String, String), To As String)), String)
-  nameWithType: NumberToStringConverter.TriggerReplace.TriggerReplace(string, bool, IReadOnlyList<(IReadOnlyDictionary<string, string> Constraints, string To)>, string?)
-  nameWithType.vb: NumberToStringConverter.TriggerReplace.New(String, Boolean, IReadOnlyList(Of (Constraints As IReadOnlyDictionary(Of String, String), To As String)), String)
+- uid: Utils.NumberToString.NumberToStringConverter.TriggerReplace.#ctor(System.String,System.Boolean,System.Collections.Generic.IReadOnlyList{Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm},System.String)
+  name: TriggerReplace(string, bool, IReadOnlyList<TriggerReplacementForm>, string?)
+  href: api/Utils.NumberToString.NumberToStringConverter.TriggerReplace.html#Utils_NumberToString_NumberToStringConverter_TriggerReplace__ctor_System_String_System_Boolean_System_Collections_Generic_IReadOnlyList_Utils_NumberToString_NumberToStringConverter_TriggerReplacementForm__System_String_
+  commentId: M:Utils.NumberToString.NumberToStringConverter.TriggerReplace.#ctor(System.String,System.Boolean,System.Collections.Generic.IReadOnlyList{Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm},System.String)
+  name.vb: New(String, Boolean, IReadOnlyList(Of TriggerReplacementForm), String)
+  fullName: Utils.NumberToString.NumberToStringConverter.TriggerReplace.TriggerReplace(string, bool, System.Collections.Generic.IReadOnlyList<Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm>, string?)
+  fullName.vb: Utils.NumberToString.NumberToStringConverter.TriggerReplace.New(String, Boolean, System.Collections.Generic.IReadOnlyList(Of Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm), String)
+  nameWithType: NumberToStringConverter.TriggerReplace.TriggerReplace(string, bool, IReadOnlyList<NumberToStringConverter.TriggerReplacementForm>, string?)
+  nameWithType.vb: NumberToStringConverter.TriggerReplace.New(String, Boolean, IReadOnlyList(Of NumberToStringConverter.TriggerReplacementForm), String)
 - uid: Utils.NumberToString.NumberToStringConverter.TriggerReplace.#ctor*
   name: TriggerReplace
   href: api/Utils.NumberToString.NumberToStringConverter.TriggerReplace.html#Utils_NumberToString_NumberToStringConverter_TriggerReplace__ctor_
@@ -62081,6 +62171,70 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.TriggerReplace.IsRegex
   nameWithType: NumberToStringConverter.TriggerReplace.IsRegex
+- uid: Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm
+  name: NumberToStringConverter.TriggerReplacementForm
+  href: api/Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.html
+  commentId: T:Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm
+  fullName: Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm
+  nameWithType: NumberToStringConverter.TriggerReplacementForm
+- uid: Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.#ctor(System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String,System.Int32)
+  name: TriggerReplacementForm(IReadOnlyDictionary<string, string>, string, int)
+  href: api/Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.html#Utils_NumberToString_NumberToStringConverter_TriggerReplacementForm__ctor_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String_System_Int32_
+  commentId: M:Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.#ctor(System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String,System.Int32)
+  name.vb: New(IReadOnlyDictionary(Of String, String), String, Integer)
+  fullName: Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.TriggerReplacementForm(System.Collections.Generic.IReadOnlyDictionary<string, string>, string, int)
+  fullName.vb: Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.New(System.Collections.Generic.IReadOnlyDictionary(Of String, String), String, Integer)
+  nameWithType: NumberToStringConverter.TriggerReplacementForm.TriggerReplacementForm(IReadOnlyDictionary<string, string>, string, int)
+  nameWithType.vb: NumberToStringConverter.TriggerReplacementForm.New(IReadOnlyDictionary(Of String, String), String, Integer)
+- uid: Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.#ctor*
+  name: TriggerReplacementForm
+  href: api/Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.html#Utils_NumberToString_NumberToStringConverter_TriggerReplacementForm__ctor_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.TriggerReplacementForm
+  fullName.vb: Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.New
+  nameWithType: NumberToStringConverter.TriggerReplacementForm.TriggerReplacementForm
+  nameWithType.vb: NumberToStringConverter.TriggerReplacementForm.New
+- uid: Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.Constraints
+  name: Constraints
+  href: api/Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.html#Utils_NumberToString_NumberToStringConverter_TriggerReplacementForm_Constraints
+  commentId: P:Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.Constraints
+  fullName: Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.Constraints
+  nameWithType: NumberToStringConverter.TriggerReplacementForm.Constraints
+- uid: Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.Constraints*
+  name: Constraints
+  href: api/Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.html#Utils_NumberToString_NumberToStringConverter_TriggerReplacementForm_Constraints_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.Constraints
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.Constraints
+  nameWithType: NumberToStringConverter.TriggerReplacementForm.Constraints
+- uid: Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.Priority
+  name: Priority
+  href: api/Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.html#Utils_NumberToString_NumberToStringConverter_TriggerReplacementForm_Priority
+  commentId: P:Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.Priority
+  fullName: Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.Priority
+  nameWithType: NumberToStringConverter.TriggerReplacementForm.Priority
+- uid: Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.Priority*
+  name: Priority
+  href: api/Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.html#Utils_NumberToString_NumberToStringConverter_TriggerReplacementForm_Priority_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.Priority
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.Priority
+  nameWithType: NumberToStringConverter.TriggerReplacementForm.Priority
+- uid: Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.To
+  name: To
+  href: api/Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.html#Utils_NumberToString_NumberToStringConverter_TriggerReplacementForm_To
+  commentId: P:Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.To
+  fullName: Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.To
+  nameWithType: NumberToStringConverter.TriggerReplacementForm.To
+- uid: Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.To*
+  name: To
+  href: api/Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.html#Utils_NumberToString_NumberToStringConverter_TriggerReplacementForm_To_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.To
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.To
+  nameWithType: NumberToStringConverter.TriggerReplacementForm.To
 - uid: Utils.NumberToString.NumberToStringConverter.TriggerRule
   name: NumberToStringConverter.TriggerRule
   href: api/Utils.NumberToString.NumberToStringConverter.TriggerRule.html
@@ -62279,15 +62433,15 @@ references:
   commentId: T:Utils.NumberToString.NumberToStringConverter.VariantRule
   fullName: Utils.NumberToString.NumberToStringConverter.VariantRule
   nameWithType: NumberToStringConverter.VariantRule
-- uid: Utils.NumberToString.NumberToStringConverter.VariantRule.#ctor(System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.Collections.Generic.IReadOnlyList{Utils.NumberToString.NumberToStringConverter.ReplacementRule})
-  name: VariantRule(IReadOnlyDictionary<string, string>, IReadOnlyList<ReplacementRule>)
-  href: api/Utils.NumberToString.NumberToStringConverter.VariantRule.html#Utils_NumberToString_NumberToStringConverter_VariantRule__ctor_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_Collections_Generic_IReadOnlyList_Utils_NumberToString_NumberToStringConverter_ReplacementRule__
-  commentId: M:Utils.NumberToString.NumberToStringConverter.VariantRule.#ctor(System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.Collections.Generic.IReadOnlyList{Utils.NumberToString.NumberToStringConverter.ReplacementRule})
-  name.vb: New(IReadOnlyDictionary(Of String, String), IReadOnlyList(Of ReplacementRule))
-  fullName: Utils.NumberToString.NumberToStringConverter.VariantRule.VariantRule(System.Collections.Generic.IReadOnlyDictionary<string, string>, System.Collections.Generic.IReadOnlyList<Utils.NumberToString.NumberToStringConverter.ReplacementRule>)
-  fullName.vb: Utils.NumberToString.NumberToStringConverter.VariantRule.New(System.Collections.Generic.IReadOnlyDictionary(Of String, String), System.Collections.Generic.IReadOnlyList(Of Utils.NumberToString.NumberToStringConverter.ReplacementRule))
-  nameWithType: NumberToStringConverter.VariantRule.VariantRule(IReadOnlyDictionary<string, string>, IReadOnlyList<NumberToStringConverter.ReplacementRule>)
-  nameWithType.vb: NumberToStringConverter.VariantRule.New(IReadOnlyDictionary(Of String, String), IReadOnlyList(Of NumberToStringConverter.ReplacementRule))
+- uid: Utils.NumberToString.NumberToStringConverter.VariantRule.#ctor(System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.Collections.Generic.IReadOnlyList{Utils.NumberToString.NumberToStringConverter.ReplacementRule},System.Int32)
+  name: VariantRule(IReadOnlyDictionary<string, string>, IReadOnlyList<ReplacementRule>, int)
+  href: api/Utils.NumberToString.NumberToStringConverter.VariantRule.html#Utils_NumberToString_NumberToStringConverter_VariantRule__ctor_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_Collections_Generic_IReadOnlyList_Utils_NumberToString_NumberToStringConverter_ReplacementRule__System_Int32_
+  commentId: M:Utils.NumberToString.NumberToStringConverter.VariantRule.#ctor(System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.Collections.Generic.IReadOnlyList{Utils.NumberToString.NumberToStringConverter.ReplacementRule},System.Int32)
+  name.vb: New(IReadOnlyDictionary(Of String, String), IReadOnlyList(Of ReplacementRule), Integer)
+  fullName: Utils.NumberToString.NumberToStringConverter.VariantRule.VariantRule(System.Collections.Generic.IReadOnlyDictionary<string, string>, System.Collections.Generic.IReadOnlyList<Utils.NumberToString.NumberToStringConverter.ReplacementRule>, int)
+  fullName.vb: Utils.NumberToString.NumberToStringConverter.VariantRule.New(System.Collections.Generic.IReadOnlyDictionary(Of String, String), System.Collections.Generic.IReadOnlyList(Of Utils.NumberToString.NumberToStringConverter.ReplacementRule), Integer)
+  nameWithType: NumberToStringConverter.VariantRule.VariantRule(IReadOnlyDictionary<string, string>, IReadOnlyList<NumberToStringConverter.ReplacementRule>, int)
+  nameWithType.vb: NumberToStringConverter.VariantRule.New(IReadOnlyDictionary(Of String, String), IReadOnlyList(Of NumberToStringConverter.ReplacementRule), Integer)
 - uid: Utils.NumberToString.NumberToStringConverter.VariantRule.#ctor*
   name: VariantRule
   href: api/Utils.NumberToString.NumberToStringConverter.VariantRule.html#Utils_NumberToString_NumberToStringConverter_VariantRule__ctor_
@@ -62311,6 +62465,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.VariantRule.Constraints
   nameWithType: NumberToStringConverter.VariantRule.Constraints
+- uid: Utils.NumberToString.NumberToStringConverter.VariantRule.Priority
+  name: Priority
+  href: api/Utils.NumberToString.NumberToStringConverter.VariantRule.html#Utils_NumberToString_NumberToStringConverter_VariantRule_Priority
+  commentId: P:Utils.NumberToString.NumberToStringConverter.VariantRule.Priority
+  fullName: Utils.NumberToString.NumberToStringConverter.VariantRule.Priority
+  nameWithType: NumberToStringConverter.VariantRule.Priority
+- uid: Utils.NumberToString.NumberToStringConverter.VariantRule.Priority*
+  name: Priority
+  href: api/Utils.NumberToString.NumberToStringConverter.VariantRule.html#Utils_NumberToString_NumberToStringConverter_VariantRule_Priority_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.VariantRule.Priority
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.VariantRule.Priority
+  nameWithType: NumberToStringConverter.VariantRule.Priority
 - uid: Utils.NumberToString.NumberToStringConverter.VariantRule.Replacements
   name: Replacements
   href: api/Utils.NumberToString.NumberToStringConverter.VariantRule.html#Utils_NumberToString_NumberToStringConverter_VariantRule_Replacements
@@ -63144,6 +63311,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.OrdinalVariantElementType.NestedVariants
   nameWithType: OrdinalVariantElementType.NestedVariants
+- uid: Utils.NumberToString.OrdinalVariantElementType.Priority
+  name: Priority
+  href: api/Utils.NumberToString.OrdinalVariantElementType.html#Utils_NumberToString_OrdinalVariantElementType_Priority
+  commentId: P:Utils.NumberToString.OrdinalVariantElementType.Priority
+  fullName: Utils.NumberToString.OrdinalVariantElementType.Priority
+  nameWithType: OrdinalVariantElementType.Priority
+- uid: Utils.NumberToString.OrdinalVariantElementType.Priority*
+  name: Priority
+  href: api/Utils.NumberToString.OrdinalVariantElementType.html#Utils_NumberToString_OrdinalVariantElementType_Priority_
+  commentId: Overload:Utils.NumberToString.OrdinalVariantElementType.Priority
+  isSpec: "True"
+  fullName: Utils.NumberToString.OrdinalVariantElementType.Priority
+  nameWithType: OrdinalVariantElementType.Priority
 - uid: Utils.NumberToString.OrdinalVariantElementType.RemoveTrailing
   name: RemoveTrailing
   href: api/Utils.NumberToString.OrdinalVariantElementType.html#Utils_NumberToString_OrdinalVariantElementType_RemoveTrailing
@@ -63810,6 +63990,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.VariantType.NestedVariants
   nameWithType: VariantType.NestedVariants
+- uid: Utils.NumberToString.VariantType.Priority
+  name: Priority
+  href: api/Utils.NumberToString.VariantType.html#Utils_NumberToString_VariantType_Priority
+  commentId: P:Utils.NumberToString.VariantType.Priority
+  fullName: Utils.NumberToString.VariantType.Priority
+  nameWithType: VariantType.Priority
+- uid: Utils.NumberToString.VariantType.Priority*
+  name: Priority
+  href: api/Utils.NumberToString.VariantType.html#Utils_NumberToString_VariantType_Priority_
+  commentId: Overload:Utils.NumberToString.VariantType.Priority
+  isSpec: "True"
+  fullName: Utils.NumberToString.VariantType.Priority
+  nameWithType: VariantType.Priority
 - uid: Utils.NumberToString.VariantType.Replacements
   name: Replacements
   href: api/Utils.NumberToString.VariantType.html#Utils_NumberToString_VariantType_Replacements

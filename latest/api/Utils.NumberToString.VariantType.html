@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_VariantType" data-uid="Utils.NumberToString.VariantType" class="text-break">
-Class VariantType  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L493"><i class="bi bi-code-slash"></i></a>
+Class VariantType  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L499"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -250,7 +250,7 @@ replacement rules and optional nested sub-variants for cascaded constraints.</p>
 
   <h3 id="Utils_NumberToString_VariantType_DimensionType" data-uid="Utils.NumberToString.VariantType.DimensionType">
   DimensionType
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L496"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L505"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>The canonical dimension name this variant constrains (e.g. &quot;gender&quot;, &quot;case&quot;).</p>
@@ -282,7 +282,7 @@ replacement rules and optional nested sub-variants for cascaded constraints.</p>
 
   <h3 id="Utils_NumberToString_VariantType_NestedVariants" data-uid="Utils.NumberToString.VariantType.NestedVariants">
   NestedVariants
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L519"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L528"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Nested sub-variants that inherit this variant's constraint and add further constraints.
@@ -311,11 +311,43 @@ Used to express multi-dimension combinations without listing flat attribute perm
 
 
 
+  <a id="Utils_NumberToString_VariantType_Priority_" data-uid="Utils.NumberToString.VariantType.Priority*"></a>
+
+  <h3 id="Utils_NumberToString_VariantType_Priority" data-uid="Utils.NumberToString.VariantType.Priority">
+  Priority
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L502"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets composition precedence after specificity.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int Priority { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_NumberToString_VariantType_Replacements_" data-uid="Utils.NumberToString.VariantType.Replacements*"></a>
 
   <h3 id="Utils_NumberToString_VariantType_Replacements" data-uid="Utils.NumberToString.VariantType.Replacements">
   Replacements
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L512"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L521"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the replacement rules applied when this variant is active.</p>
@@ -347,7 +379,7 @@ Used to express multi-dimension combinations without listing flat attribute perm
 
   <h3 id="Utils_NumberToString_VariantType_VariantValue" data-uid="Utils.NumberToString.VariantType.VariantValue">
   VariantValue
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L500"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L509"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>The value that must be active for this variant to apply (e.g. &quot;feminin&quot;).</p>
@@ -379,7 +411,7 @@ Used to express multi-dimension combinations without listing flat attribute perm
 
   <h3 id="Utils_NumberToString_VariantType_VariantValues" data-uid="Utils.NumberToString.VariantType.VariantValues">
   VariantValues
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L508"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L517"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Comma-separated list of dimension values; alternative to <a class="xref" href="Utils.NumberToString.VariantType.html#Utils_NumberToString_VariantType_VariantValue">VariantValue</a>.
@@ -413,7 +445,7 @@ Takes priority over <a class="xref" href="Utils.NumberToString.VariantType.html#
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L493" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L499" class="edit-link">Edit this page</a>
         </div>
 
 

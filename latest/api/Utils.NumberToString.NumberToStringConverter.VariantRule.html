@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_NumberToStringConverter_VariantRule" data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule" class="text-break">
-Class NumberToStringConverter.VariantRule  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L1413"><i class="bi bi-code-slash"></i></a>
+Class NumberToStringConverter.VariantRule  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L1509"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -244,9 +244,9 @@ when all constraints are satisfied.</p>
 
   <a id="Utils_NumberToString_NumberToStringConverter_VariantRule__ctor_" data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule.#ctor*"></a>
 
-  <h3 id="Utils_NumberToString_NumberToStringConverter_VariantRule__ctor_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_Collections_Generic_IReadOnlyList_Utils_NumberToString_NumberToStringConverter_ReplacementRule__" data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule.#ctor(System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.Collections.Generic.IReadOnlyList{Utils.NumberToString.NumberToStringConverter.ReplacementRule})">
-  VariantRule(IReadOnlyDictionary&lt;string, string&gt;, IReadOnlyList&lt;ReplacementRule&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L1420"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_NumberToString_NumberToStringConverter_VariantRule__ctor_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_Collections_Generic_IReadOnlyList_Utils_NumberToString_NumberToStringConverter_ReplacementRule__System_Int32_" data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule.#ctor(System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.Collections.Generic.IReadOnlyList{Utils.NumberToString.NumberToStringConverter.ReplacementRule},System.Int32)">
+  VariantRule(IReadOnlyDictionary&lt;string, string&gt;, IReadOnlyList&lt;ReplacementRule&gt;, int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L1516"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.NumberToString.NumberToStringConverter.VariantRule.html">NumberToStringConverter.VariantRule</a> class.</p>
@@ -254,7 +254,7 @@ when all constraints are satisfied.</p>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public VariantRule(IReadOnlyDictionary&lt;string, string&gt; constraints, IReadOnlyList&lt;NumberToStringConverter.ReplacementRule&gt; replacements)</code></pre>
+    <pre><code class="lang-csharp hljs">public VariantRule(IReadOnlyDictionary&lt;string, string&gt; constraints, IReadOnlyList&lt;NumberToStringConverter.ReplacementRule&gt; replacements, int priority = 0)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -265,6 +265,8 @@ when all constraints are satisfied.</p>
     <dt><code>replacements</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="Utils.NumberToString.NumberToStringConverter.html">NumberToStringConverter</a>.<a class="xref" href="Utils.NumberToString.NumberToStringConverter.ReplacementRule.html">ReplacementRule</a>&gt;</dt>
     <dd><p>Replacement rules applied when this variant is active.</p>
 </dd>
+    <dt><code>priority</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
   </dl>
 
 
@@ -286,7 +288,7 @@ when all constraints are satisfied.</p>
 
   <h3 id="Utils_NumberToString_NumberToStringConverter_VariantRule_Constraints" data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule.Constraints">
   Constraints
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L1429"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L1527"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the dimension constraints (name → required value).</p>
@@ -314,11 +316,43 @@ when all constraints are satisfied.</p>
 
 
 
+  <a id="Utils_NumberToString_NumberToStringConverter_VariantRule_Priority_" data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule.Priority*"></a>
+
+  <h3 id="Utils_NumberToString_NumberToStringConverter_VariantRule_Priority" data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule.Priority">
+  Priority
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L1537"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets composition precedence; higher values are applied later after specificity.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int Priority { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_NumberToString_NumberToStringConverter_VariantRule_Replacements_" data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule.Replacements*"></a>
 
   <h3 id="Utils_NumberToString_NumberToStringConverter_VariantRule_Replacements" data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule.Replacements">
   Replacements
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L1432"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L1530"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the replacement rules applied when all constraints are satisfied.</p>
@@ -350,7 +384,7 @@ when all constraints are satisfied.</p>
 
   <h3 id="Utils_NumberToString_NumberToStringConverter_VariantRule_Specificity" data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule.Specificity">
   Specificity
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L1437"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L1535"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the number of dimension constraints. Used to order rules from least to most specific.</p>
@@ -382,7 +416,7 @@ when all constraints are satisfied.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L1413" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L1509" class="edit-link">Edit this page</a>
         </div>
 
 
