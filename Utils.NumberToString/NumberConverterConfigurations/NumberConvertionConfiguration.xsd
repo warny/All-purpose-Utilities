@@ -414,7 +414,10 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-    </xs:complexType>
+            <xs:attribute name="priority" type="xs:int" use="optional" default="0">
+            <xs:annotation><xs:documentation>Explicit precedence after specificity. Higher values win; cumulative Variant rules apply higher values later.</xs:documentation></xs:annotation>
+        </xs:attribute>
+</xs:complexType>
 
     <xs:complexType name="OrdinalExceptionType">
         <xs:annotation>
@@ -595,7 +598,10 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-    </xs:complexType>
+            <xs:attribute name="priority" type="xs:int" use="optional" default="0">
+            <xs:annotation><xs:documentation>Explicit precedence after specificity. Higher values win; cumulative Variant rules apply higher values later.</xs:documentation></xs:annotation>
+        </xs:attribute>
+</xs:complexType>
 
     <xs:complexType name="OrdinalsType">
         <xs:annotation>
@@ -810,7 +816,10 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:assert-->
-    </xs:complexType>
+            <xs:attribute name="priority" type="xs:int" use="optional" default="0">
+            <xs:annotation><xs:documentation>Explicit precedence after specificity. Higher values win; cumulative Variant rules apply higher values later.</xs:documentation></xs:annotation>
+        </xs:attribute>
+</xs:complexType>
 
     <xs:complexType name="VariantsType">
         <xs:annotation>

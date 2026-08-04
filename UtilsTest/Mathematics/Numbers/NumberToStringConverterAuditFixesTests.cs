@@ -739,7 +739,7 @@ public class NumberToStringConverterAuditFixesTests
         Assert.ThrowsException<ArgumentException>(
             () => new NumberToStringConverter.TriggerReplace(
                 "word", false,
-                [(null!, "replacement")],
+                [new NumberToStringConverter.TriggerReplacementForm(null!, "replacement")],
                 null),
             "A form with null Constraints must be rejected at construction time");
     }
@@ -750,7 +750,7 @@ public class NumberToStringConverterAuditFixesTests
         Assert.ThrowsException<ArgumentException>(
             () => new NumberToStringConverter.TriggerReplace(
                 "word", false,
-                [(new System.Collections.Generic.Dictionary<string, string>(), null!)],
+                [new NumberToStringConverter.TriggerReplacementForm(new System.Collections.Generic.Dictionary<string, string>(), null!)],
                 null),
             "A form with null To value must be rejected at construction time");
     }
@@ -812,9 +812,9 @@ public class NumberToStringConverterAuditFixesTests
     public void TriggerReplace_MutatingSourceFormsList_DoesNotAffectStoredForms()
     {
         var constraints = new System.Collections.Generic.Dictionary<string, string>();
-        var formsList = new System.Collections.Generic.List<(IReadOnlyDictionary<string, string> Constraints, string To)>
+        var formsList = new System.Collections.Generic.List<NumberToStringConverter.TriggerReplacementForm>
         {
-            (constraints, "uno")
+            new(constraints, "uno")
         };
         var replace = new NumberToStringConverter.TriggerReplace("one", false, formsList, null);
         formsList.Clear();
@@ -827,7 +827,7 @@ public class NumberToStringConverterAuditFixesTests
     {
         var constraints = new System.Collections.Generic.Dictionary<string, string> { ["gender"] = "m" };
         var replace = new NumberToStringConverter.TriggerReplace(
-            "one", false, [(constraints, "uno")], null);
+            "one", false, [new NumberToStringConverter.TriggerReplacementForm(constraints, "uno")], null);
         constraints["gender"] = "mutated";
         // The stored snapshot must still reflect the original value.
         Assert.AreEqual("m", replace.Forms[0].Constraints["gender"],

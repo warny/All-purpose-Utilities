@@ -58,6 +58,9 @@ public class NumberType
 /// </summary>
 public class FormVariantType
 {
+    /// <summary>Gets or sets explicit precedence for the generated conditional form.</summary>
+    [XmlAttribute("priority")]
+    public int Priority { get; set; }
     /// <summary>Canonical dimension name this node targets (e.g. <c>"gender"</c>, <c>"case"</c>).</summary>
     [XmlAttribute("type")]
     public string? DimensionType { get; set; }
@@ -204,6 +207,9 @@ public class OrdinalVariants
 /// </summary>
 public class OrdinalVariantElementType
 {
+    /// <summary>Gets or sets explicit precedence after specificity.</summary>
+    [XmlAttribute("priority")]
+    public int Priority { get; set; }
     /// <summary>The canonical dimension name this constraint targets (e.g. "gender", "case").</summary>
     [XmlAttribute("type")]
     public string? DimensionType { get; set; }
@@ -492,6 +498,9 @@ public class VariantDimensionType
 /// </summary>
 public class VariantType
 {
+    /// <summary>Gets or sets composition precedence after specificity.</summary>
+    [XmlAttribute("priority")]
+    public int Priority { get; set; }
     /// <summary>The canonical dimension name this variant constrains (e.g. "gender", "case").</summary>
     [XmlAttribute("type")]
     public string? DimensionType { get; set; }

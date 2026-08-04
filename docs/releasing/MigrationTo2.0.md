@@ -28,3 +28,9 @@ Version 2.0 intentionally removes the legacy `StreamCopier`, `StreamValidator`, 
 Runtime reader converters require an exact result type. A converter returning an interface or base class is not used for a concrete `Read<T>` because it cannot guarantee `T`. Writers may use a base/interface converter; the most specific applicable registration wins and equal-specificity candidates are rejected.
 
 `PartialStream` serializes reads, writes, position changes, seeking, and length changes through one sync/async-compatible gate. Bounds are evaluated while holding that gate, async wait and I/O honor cancellation, failed writes do not advance the logical position, and each operation restores the underlying stream position.
+
+## NumberToString rule precedence
+
+Version 2.0 removes declaration order as an implicit tie-breaker. Add `priority="100"` (or another intentional signed `xs:int` value) when compatible rules have equal canonical specificity. Ordinal variants and trigger forms select the greatest specificity and then greatest priority. Cumulative variants apply the least specific and lowest-priority rules first.
+
+Programmatic trigger forms must migrate from `(Constraints, To)` tuples to `NumberToStringConverter.TriggerReplacementForm`. `VariantRule` and `OrdinalVariantRule` constructors accept an optional final `priority` argument. Configurations inherited through `baseOn` retain parent priorities; parent and child candidates are validated together and no implicit override occurs.

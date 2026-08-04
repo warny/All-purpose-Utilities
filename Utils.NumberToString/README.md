@@ -1390,3 +1390,19 @@ strict `dimension=value` syntax and reject unknown dimensions, values, and dupli
 Language-specific finalization is applied to the complete public conversion result. Ordinal and
 multiplicative bodies, including configured exceptions, pass through adjustment, final triggers, and
 the language finalizer before their type prefix and sign are applied.
+
+## Deterministic rule precedence
+
+Variant constraints are normalized to canonical dimension names and compared case-insensitively. **Specificity** is the number of canonical dimensions constrained by a rule. **Priority** is any signed 32-bit integer and defaults to `0`; specificity is always considered before priority.
+
+Unique ordinal and trigger-form selection uses specificity descending, then priority descending. An equal-ranked pair whose constraints do not contradict each other is rejected because both can match the same query. For example, `gender=female` and `number=plural` intersect and need different priorities, while `gender=female` and `gender=male` are mutually exclusive.
+
+Cumulative `VariantRule` transformations run by specificity ascending and then priority ascending, so more specific transformations refine general ones and a higher priority runs later at equal specificity. Replacement order inside one rule remains an intentional sequence.
+
+```xml
+<OrdinalVariants>
+    <Variant type="gender" variant="female" priority="100" suffix="th" />
+</OrdinalVariants>
+```
+
+The `priority` attribute is optional and accepts the full `xs:int` range. During `baseOn`, inherited rules retain their priorities and child rules remain distinct. The merged configuration is rejected if inheritance creates an unresolved equal-rank intersection. Declaration order is never a tie-breaker in 2.0.

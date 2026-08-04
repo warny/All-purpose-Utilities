@@ -158,13 +158,15 @@ Configuration references are validated, but `BuildVariantQuery` silently accepts
 
 **Priority: P2 API ergonomics.**
 
-### 59. Trigger and ordinal tie-breaking depends on declaration order
+### ✅ 59. Trigger and ordinal tie-breaking depends on declaration order
 
-For equally specific matching trigger forms or ordinal variants, the first declared item wins. Overlapping constraints of equal specificity are not rejected, so configuration reordering can silently change output.
+**Status:** resolved on 2026-08-04. All functional defects identified by this audit are now closed; the separately documented Zulu, Arabic, Greek, and Slavic noun-agreement linguistic limitations remain open and are not claimed as fixed here.
 
-**Fix:** detect ambiguous equal-specificity matches during validation unless an explicit priority is supplied. Add deterministic precedence metadata if intentional overlap is needed.
+The implementation uses one canonical `VariantConstraintSet`, shared rank comparison, and unique-candidate selection. Specificity is the canonical constraint count. Unique ordinal and trigger selection ranks specificity descending then signed `Priority` descending. Cumulative variants apply specificity ascending then priority ascending. Compatible equal-specificity/equal-priority pairs are rejected; contradictory values on a shared canonical dimension are exclusive. Global and scale evaluation spaces are validated separately, including comparable `OnScale` and `OnValue` filters.
 
-**Priority: P2 determinism.**
+Public 2.0 breaks add immutable `Priority` to `VariantRule` and `OrdinalVariantRule`, replace trigger tuples with `TriggerReplacementForm`, and reject formerly order-dependent configurations. XML and XSD accept optional `xs:int` priority values with zero default, including inherited rules. Diagnostics `UNTS001`–`UNTS004` report culture, family, paths, normalized constraints, specificity, and priority.
+
+Implementation files include `NumberToStringConverter.cs`, `VariantRulePrecedence.cs`, configuration models/loader, and the XSD. Tests in `NumberToStringRulePrecedenceTests.cs` cover selection, rejection, fallback, signed priorities, and reversed declaration order. Documentation and the 2.0 migration/changelog describe the new contract. The construction-time pair scan is intentionally quadratic for the small immutable rule collections; no remaining order-based tie-break is known.
 
 ### ✅ 60. `RegisterLanguageSpecifics` stores shared mutable instances globally
 
