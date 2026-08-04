@@ -92,6 +92,42 @@ byte[] modified = font.WriteFont();
 File.WriteAllBytes("modified.ttf", modified);
 ```
 
+### Parsing options: strict vs. permissive, and resource limits
+
+`TrueTypeFont.ParseFont`/`ParseFontAsync` accept an optional `TrueTypeFontParsingOptions`. The
+default (`Strict`) mode rejects any structural anomaly -- invalid fields, out-of-range offsets,
+checksum mismatches, duplicate tags, disallowed overlaps, malformed `cmap` subtables, composite
+glyph cycles, and out-of-range glyph references -- by throwing `FontParseException`. `Permissive`
+mode records anomalies as structured diagnostics on `TrueTypeFont.Diagnostics` and continues
+parsing whenever doing so remains memory-safe; resource-limit violations (`MaximumFontBytes`,
+`MaximumTableBytes`, `MaximumTables`, `MaximumCmapSubtables`, composite-glyph depth/component/point
+budgets) always throw, in both modes.
+
+```csharp
+using Utils.Fonts.TTF;
+using Utils.Fonts.TTF.Parsing;
+
+var options = new TrueTypeFontParsingOptions
+{
+    ValidationMode = FontValidationMode.Permissive,
+    MaximumFontBytes = 16 * 1024 * 1024,
+};
+
+TrueTypeFont font = TrueTypeFont.ParseFont(untrustedBytes, options);
+foreach (FontDiagnostic diagnostic in font.Diagnostics)
+{
+    Console.WriteLine(diagnostic); // e.g. "[Error] TableChecksumMismatch (name): ..."
+}
+```
+
+A non-seekable stream is copied incrementally, under `MaximumFontBytes`, into an owned temporary
+buffer; `ParseFontAsync` supports cancellation for that copy:
+
+```csharp
+using var stream = someNetworkStream; // CanSeek == false
+TrueTypeFont font = await TrueTypeFont.ParseFontAsync(stream, options, cancellationToken);
+```
+
 ## IGraphicConverter example
 
 Implement `IGraphicConverter` to feed glyph outlines into any graphics backend:
