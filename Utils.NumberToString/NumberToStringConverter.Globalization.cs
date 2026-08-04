@@ -1082,6 +1082,18 @@ namespace Utils.NumberToString
                         string.Equals(actual, kv.Value, StringComparison.OrdinalIgnoreCase));
                 }
 
+                string SelectDefaultForm(IReadOnlyList<VariantTextCandidate> candidates, string context)
+                {
+                    VariantTextCandidate? selected = VariantRulePrecedence.SelectBestUnique(
+                        candidates,
+                        candidate => candidate.Constraints,
+                        candidate => candidate.Priority,
+                        defaultVariantQuery,
+                        context);
+                    return selected?.Text ?? throw new InvalidOperationException(
+                        $"[{languageIdentifier}] {context} has no form matching the declared default variant values.");
+                }
+
                 var fallbackExceptions = new Dictionary<long, string>();
                 var fallbackWordRules  = new Dictionary<string, string>();
 
@@ -1090,22 +1102,21 @@ namespace Utils.NumberToString
                     if (exc.FormVariants?.Count > 0)
                     {
                         bool needsDefault = exc.StringValue == null;
-                        string? defaultForm = null;
+                        var defaultCandidates = new List<VariantTextCandidate>();
 
                         foreach (var (c, form, priority) in ExpandFormVariants(exc.FormVariants, parsedDimensions,
                             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)))
                         {
-                            if (needsDefault && defaultForm == null && MatchesDefaultQuery(c))
-                                defaultForm = form;
+                            if (needsDefault && MatchesDefaultQuery(c))
+                                defaultCandidates.Add(new VariantTextCandidate(c, form, priority));
                             var entry = GetOrAddSynthetic(RankedConstraintKey(c, priority), c, priority);
                             entry.e[exc.Value] = form;
                         }
 
                         if (needsDefault)
                         {
-                            if (defaultForm == null)
-                                throw new InvalidOperationException(
-                                    $"[{languageIdentifier}] Ordinal exception '{exc.Value}' has no explicit base form and no variant matching the declared default values.");
+                            string defaultForm = SelectDefaultForm(
+                                defaultCandidates, $"OrdinalException[{exc.Value}].DefaultForm");
                             fallbackExceptions.TryAdd(exc.Value, defaultForm);
                         }
                     }
@@ -1116,22 +1127,21 @@ namespace Utils.NumberToString
                     if (rule.FormVariants?.Count > 0)
                     {
                         bool needsDefault = rule.To == null;
-                        string? defaultForm = null;
+                        var defaultCandidates = new List<VariantTextCandidate>();
 
                         foreach (var (c, form, priority) in ExpandFormVariants(rule.FormVariants, parsedDimensions,
                             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)))
                         {
-                            if (needsDefault && defaultForm == null && MatchesDefaultQuery(c))
-                                defaultForm = form;
+                            if (needsDefault && MatchesDefaultQuery(c))
+                                defaultCandidates.Add(new VariantTextCandidate(c, form, priority));
                             var entry = GetOrAddSynthetic(RankedConstraintKey(c, priority), c, priority);
                             entry.w[rule.From] = form;
                         }
 
                         if (needsDefault)
                         {
-                            if (defaultForm == null)
-                                throw new InvalidOperationException(
-                                    $"[{languageIdentifier}] Ordinal rule '{rule.From}' has no explicit base form and no variant matching the declared default values.");
+                            string defaultForm = SelectDefaultForm(
+                                defaultCandidates, $"Ordinal[{rule.From}].DefaultForm");
                             fallbackWordRules.TryAdd(rule.From, defaultForm);
                         }
                     }

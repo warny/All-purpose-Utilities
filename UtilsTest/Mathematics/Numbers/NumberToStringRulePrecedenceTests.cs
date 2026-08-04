@@ -229,6 +229,37 @@ public sealed class NumberToStringRulePrecedenceTests
         CollectionAssert.AreEquivalent(new[] { 10, 20 }, converter.OrdinalVariants.Select(rule => rule.Priority).ToArray());
     }
 
+    /// <summary>Verifies that ordinal fallbacks select priority rather than XML declaration order.</summary>
+    [TestMethod]
+    public void XmlOrdinalFallbackUsesHighestPriorityForExceptionAndWordRule()
+    {
+        foreach (string element in new[] { "exception", "rule" })
+        foreach (bool reverse in new[] { false, true })
+        {
+            string culture = $"precedence-default-{element}-{reverse}";
+            NumberToStringConverter.RegisterConfigurations(
+                [CreateOrdinalFallbackXml(culture, element, reverse, equalPriority: false)],
+                DuplicateCulturePolicy.Replace);
+            Assert.AreEqual("high", NumberToStringConverter.GetConverter(culture).ConvertOrdinal(1));
+        }
+    }
+
+    /// <summary>Verifies that an unresolved equal-rank ordinal fallback is rejected for both XML forms.</summary>
+    [TestMethod]
+    public void XmlOrdinalFallbackEqualRankIsRejectedForExceptionAndWordRule()
+    {
+        foreach (string element in new[] { "exception", "rule" })
+        {
+            string culture = $"precedence-default-ambiguous-{element}";
+            NumberToStringConfigurationException exception =
+                Assert.ThrowsException<NumberToStringConfigurationException>(() =>
+                    NumberToStringConverter.RegisterConfigurations(
+                        [CreateOrdinalFallbackXml(culture, element, reverse: false, equalPriority: true)],
+                        DuplicateCulturePolicy.Replace));
+            StringAssert.Contains(exception.ConfigurationPath, "DefaultForm");
+        }
+    }
+
     /// <summary>Creates an isolated English-derived converter for precedence tests.</summary>
     private static NumberToStringConverter Create(
         IReadOnlyList<NumberToStringConverter.OrdinalVariantRule>? ordinalVariants = null,
@@ -299,4 +330,34 @@ public sealed class NumberToStringRulePrecedenceTests
             </Language>
         </Numbers>
         """;
+
+    /// <summary>Creates XML with two full-default ordinal forms in a selected declaration order.</summary>
+    private static string CreateOrdinalFallbackXml(string culture, string element, bool reverse, bool equalPriority)
+    {
+        int lowPriority = equalPriority ? 100 : 0;
+        string low = $"<Variant type=\"gender\" variant=\"female\"><Variant type=\"number\" variant=\"singular\" value=\"low\" priority=\"{lowPriority}\" /></Variant>";
+        const string high = "<Variant type=\"gender\" variant=\"female\"><Variant type=\"number\" variant=\"singular\" value=\"high\" priority=\"100\" /></Variant>";
+        string forms = reverse ? high + low : low + high;
+        string ordinalElement = element == "exception"
+            ? $"<OrdinalException value=\"1\">{forms}</OrdinalException>"
+            : $"<Ordinal from=\"one\">{forms}</Ordinal>";
+        return $$"""
+            <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+                <Language groupSize="3" separator=" " groupSeparator="" zero="zero" minus="minus *" decimalSeparator="point" maxNumber="9">
+                    <Culture>{{culture}}</Culture>
+                    <Groups><Group level="1">
+                        <Digit digit="0" string="" /><Digit digit="1" string="one" /><Digit digit="2" string="two" />
+                        <Digit digit="3" string="three" /><Digit digit="4" string="four" /><Digit digit="5" string="five" />
+                        <Digit digit="6" string="six" /><Digit digit="7" string="seven" /><Digit digit="8" string="eight" />
+                        <Digit digit="9" string="nine" />
+                    </Group></Groups>
+                    <Ordinals suffix="th">{{ordinalElement}}</Ordinals>
+                    <Variants>
+                        <Dimension name="gender" values="female,male" />
+                        <Dimension name="number" values="singular,plural" />
+                    </Variants>
+                </Language>
+            </Numbers>
+            """;
+    }
 }
