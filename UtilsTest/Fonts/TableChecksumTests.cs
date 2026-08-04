@@ -6,46 +6,16 @@ using Utils.Fonts.TTF.Parsing;
 namespace UtilsTest.Fonts;
 
 /// <summary>
-/// Regression tests for <see cref="TableChecksum.ComputeTableChecksum"/>'s support for ranges
-/// beyond <see cref="uint.MaxValue"/> bytes (TODO-2026-07-19-pass2.md item 26 review follow-up).
+/// Regression tests for <see cref="TableChecksum.ComputeTableChecksum"/>'s block-based reading
+/// (TODO-2026-07-19-pass2.md item 26, review follow-up rounds 4-5). Fonts larger than
+/// <see cref="uint.MaxValue"/> are rejected well before a checksum is ever computed (see
+/// <c>TrueTypeFontDirectoryTests</c>), so these tests exercise realistic, bounded ranges -- proving
+/// the pooled-buffer block reader produces exactly the same result as the byte-at-a-time algorithm
+/// it replaced, including at block boundaries, without ever materializing the whole range at once.
 /// </summary>
 [TestClass]
 public class TableChecksumTests
 {
-    // Review fix: ComputeTableChecksum used to accept `uint length`, and TrueTypeFont.VerifyFontChecksum
-    // clamped the whole-font range to Math.Min(fontLength, uint.MaxValue) before calling it -- silently
-    // dropping any bytes beyond the first 4 GiB from the whole-font checksum, contradicting the
-    // documented "covers the entire bounded font" contract for any TrueTypeFontParsingOptions.MaximumFontBytes
-    // configuration above uint.MaxValue. `length` is now `long`, and this test proves the full range is
-    // actually read: a synthetic stream (no real 4+ GiB backing buffer) reports a length just past
-    // uint.MaxValue, is all-zero except for a single non-zero final word placed beyond the old 4 GiB
-    // truncation point. Summing all-zero words never changes the running checksum, so the correct result
-    // is exactly that final word's value (1) -- if the old truncation bug were still present, that word
-    // would never be read and the result would incorrectly be 0.
-    [TestMethod]
-    [Timeout(180_000)]
-    public void ComputeTableChecksum_RangeBeyondUInt32MaxValue_ReadsTheFullRange()
-    {
-        // The smallest word-aligned length past uint.MaxValue: uint.MaxValue itself is not a
-        // multiple of 4 (4294967295 mod 4 == 3), so uint.MaxValue + 1 is the first multiple of 4
-        // beyond it. The final 4-byte word, at [length-4, length), then starts exactly at
-        // uint.MaxValue - 3 and ends at uint.MaxValue + 1 -- its very last byte (at index
-        // uint.MaxValue, the first byte the old `Math.Min(fontLength, uint.MaxValue)` truncation
-        // would have dropped) is the only non-zero byte in the whole stream.
-        long length = (long)uint.MaxValue + 1;
-        long finalWordOffset = length - 4;
-        using var stream = new SparseZeroStream(length, finalWordOffset, [0, 0, 0, 1]); // big-endian value 1
-
-        uint result = TableChecksum.ComputeTableChecksum(stream, offset: 0, length: length, zeroHeadChecksumAdjustment: false);
-
-        // Every other word is all-zero, which never changes the running sum, so the correct result
-        // is exactly this final word's value. Under the old bug, the length would have been
-        // silently capped to uint.MaxValue, which is not a multiple of 4: the algorithm would then
-        // have treated bytes [4294967292, 4294967295) as an incomplete final word, zero-padding the
-        // 4th byte instead of reading the real (non-zero) one -- producing 0, not 1.
-        Assert.AreEqual(1u, result);
-    }
-
     [TestMethod]
     public void ComputeTableChecksum_NegativeLength_Throws()
     {
@@ -53,70 +23,144 @@ public class TableChecksumTests
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => TableChecksum.ComputeTableChecksum(stream, 0, -1, false));
     }
 
-    // Companion check: fixing the checksum's own range support (rather than capping the option) means
-    // TrueTypeFontParsingOptions never needed an artificial uint.MaxValue ceiling on MaximumFontBytes.
     [TestMethod]
-    public void ParsingOptions_MaximumFontBytesAboveUInt32MaxValue_IsNotRejectedByEnsureValid()
+    public void ComputeTableChecksum_LengthAboveUInt32MaxValue_Throws()
     {
-        var options = new TrueTypeFontParsingOptions { MaximumFontBytes = (long)uint.MaxValue + 1_000_000 };
-        // EnsureValid is internal; exercised indirectly through a real parse that must fail for an
-        // unrelated reason (too-small buffer) rather than an options-validation error.
-        var ex = Assert.ThrowsExactly<FontParseException>(() => Utils.Fonts.TTF.TrueTypeFont.ParseFont(ReadOnlySpan<byte>.Empty, options));
-        Assert.AreEqual(FontDiagnosticCode.InvalidOffsetTable, ex.Diagnostic.Code);
+        using var stream = new MemoryStream();
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
+            TableChecksum.ComputeTableChecksum(stream, 0, (long)uint.MaxValue + 1, false));
     }
 
-    /// <summary>
-    /// A read-only, seekable stream that reports an arbitrary (potentially huge) <see cref="Length"/>
-    /// without allocating a real backing buffer: every byte reads as zero, except for a single
-    /// caller-specified byte range.
-    /// </summary>
-    private sealed class SparseZeroStream(long length, long nonZeroOffset, byte[] nonZeroBytes) : Stream
+    [TestMethod]
+    public void ComputeTableChecksum_LengthMultipleOfFour_SumsEachWordExactly()
     {
-        private long position;
+        byte[] data = [0, 0, 0, 1, 0, 0, 0, 2]; // two words: 1, 2
+        using var stream = new MemoryStream(data);
 
+        uint result = TableChecksum.ComputeTableChecksum(stream, 0, data.Length, false);
+
+        Assert.AreEqual(3u, result);
+    }
+
+    [TestMethod]
+    public void ComputeTableChecksum_LengthNotMultipleOfFour_ZeroPadsFinalWord()
+    {
+        byte[] data = [0, 0, 0, 1, 0, 0, 0, 2, 0xFF]; // two full words (1, 2) + one dangling byte
+        using var stream = new MemoryStream(data);
+
+        uint result = TableChecksum.ComputeTableChecksum(stream, 0, data.Length, false);
+
+        // The final word is [0xFF, 0, 0, 0] once zero-padded => 0xFF000000.
+        Assert.AreEqual(3u + 0xFF000000u, result);
+    }
+
+    [TestMethod]
+    public void ComputeTableChecksum_NonZeroOffset_StartsAtTheRequestedPosition()
+    {
+        byte[] data = [0xAA, 0xAA, 0xAA, 0xAA, 0, 0, 0, 5]; // junk word, then the real word (5)
+        using var stream = new MemoryStream(data);
+
+        uint result = TableChecksum.ComputeTableChecksum(stream, offset: 4, length: 4, false);
+
+        Assert.AreEqual(5u, result);
+    }
+
+    [TestMethod]
+    public void ComputeTableChecksum_PartialUnderlyingReads_StillProducesTheCorrectSum()
+    {
+        byte[] data = [0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3];
+        using var stream = new OneOrTwoBytesAtATimeStream(data);
+
+        uint result = TableChecksum.ComputeTableChecksum(stream, 0, data.Length, false);
+
+        Assert.AreEqual(6u, result);
+    }
+
+    [TestMethod]
+    public void ComputeTableChecksum_RestoresStreamPositionAfterSuccess()
+    {
+        byte[] data = [0, 0, 0, 1, 0, 0, 0, 2];
+        using var stream = new MemoryStream(data) { Position = 3 };
+
+        TableChecksum.ComputeTableChecksum(stream, offset: 0, length: data.Length, false);
+
+        Assert.AreEqual(3, stream.Position);
+    }
+
+    [TestMethod]
+    public void ComputeTableChecksum_RestoresStreamPositionAfterException()
+    {
+        byte[] data = [0, 0, 0, 1]; // shorter than the requested length
+        using var stream = new MemoryStream(data) { Position = 2 };
+
+        Assert.ThrowsExactly<EndOfStreamException>(() =>
+            TableChecksum.ComputeTableChecksum(stream, offset: 0, length: 100, false));
+
+        Assert.AreEqual(2, stream.Position);
+    }
+
+    [TestMethod]
+    public void ComputeTableChecksum_ZeroesHeadChecksumAdjustmentVirtually_WithoutMutatingSource()
+    {
+        // 'head' layout: 8 bytes of other fields, then the 4-byte checksumAdjustment (here: a
+        // deliberately "wrong-looking" non-zero value, to prove it is excluded from the sum without
+        // ever being overwritten), then 4 more bytes of other fields.
+        byte[] data = [0, 0, 0, 1, 0, 0, 0, 2, 0xDE, 0xAD, 0xBE, 0xEF, 0, 0, 0, 3];
+        byte[] originalCopy = (byte[])data.Clone();
+        using var stream = new MemoryStream(data);
+
+        uint result = TableChecksum.ComputeTableChecksum(stream, 0, data.Length, zeroHeadChecksumAdjustment: true);
+
+        Assert.AreEqual(1u + 2u + 3u, result); // the checksumAdjustment word contributes 0, not 0xDEADBEEF
+        CollectionAssert.AreEqual(originalCopy, data); // and the source bytes are untouched
+    }
+
+    [TestMethod]
+    public void ComputeTableChecksum_MultipleBlocks_MatchesNaiveWordByWordReference()
+    {
+        // Larger than the internal pooled block size (64 KiB) and not a multiple of 4, so this
+        // exercises both multiple block reads and the final zero-padded partial word, cross-checked
+        // against an independent, straightforward reference implementation.
+        var random = new Random(20260804);
+        byte[] data = new byte[200_003];
+        random.NextBytes(data);
+        using var stream = new MemoryStream(data);
+
+        uint result = TableChecksum.ComputeTableChecksum(stream, 0, data.Length, false);
+
+        Assert.AreEqual(NaiveWordSum(data), result);
+    }
+
+    /// <summary>Reference implementation: sum every 4-byte big-endian word, zero-padding the final partial word.</summary>
+    private static uint NaiveWordSum(byte[] data)
+    {
+        unchecked
+        {
+            uint sum = 0;
+            for (int i = 0; i < data.Length; i += 4)
+            {
+                uint b0 = data[i];
+                uint b1 = i + 1 < data.Length ? data[i + 1] : 0u;
+                uint b2 = i + 2 < data.Length ? data[i + 2] : 0u;
+                uint b3 = i + 3 < data.Length ? data[i + 3] : 0u;
+                sum += (b0 << 24) | (b1 << 16) | (b2 << 8) | b3;
+            }
+            return sum;
+        }
+    }
+
+    /// <summary>A stream that never returns more than 2 bytes from a single <see cref="Read(byte[], int, int)"/> call, to exercise <c>ComputeTableChecksum</c>'s tolerance of partial underlying reads (including reads smaller than a single 4-byte word).</summary>
+    private sealed class OneOrTwoBytesAtATimeStream(byte[] data) : Stream
+    {
+        private readonly MemoryStream inner = new(data);
         public override bool CanRead => true;
         public override bool CanSeek => true;
         public override bool CanWrite => false;
-        public override long Length { get; } = length;
-        public override long Position { get => position; set => position = value; }
-
-        public override int Read(byte[] buffer, int offset, int count) => Read(buffer.AsSpan(offset, count));
-
-        // Overridden directly (not just the byte[] overload) so TableChecksum's per-word
-        // Stream.Read(Span<byte>) calls avoid the base Stream implementation's array-pool
-        // rent/copy/return round trip -- otherwise negligible, but this stream is read roughly
-        // (uint.MaxValue + 1) / 4 times by the boundary test above, where that overhead adds up.
-        public override int Read(Span<byte> buffer)
-        {
-            long remaining = Length - position;
-            int n = (int)Math.Min(buffer.Length, Math.Max(0, remaining));
-            for (int i = 0; i < n; i++)
-            {
-                long absolute = position + i;
-                byte value = 0;
-                if (absolute >= nonZeroOffset && absolute < nonZeroOffset + nonZeroBytes.Length)
-                {
-                    value = nonZeroBytes[absolute - nonZeroOffset];
-                }
-                buffer[i] = value;
-            }
-            position += n;
-            return n;
-        }
-
-        public override long Seek(long offset, SeekOrigin origin)
-        {
-            position = origin switch
-            {
-                SeekOrigin.Begin => offset,
-                SeekOrigin.Current => position + offset,
-                SeekOrigin.End => Length + offset,
-                _ => throw new ArgumentOutOfRangeException(nameof(origin)),
-            };
-            return position;
-        }
-
-        public override void Flush() { }
+        public override long Length => inner.Length;
+        public override long Position { get => inner.Position; set => inner.Position = value; }
+        public override void Flush() => inner.Flush();
+        public override int Read(byte[] buffer, int offset, int count) => inner.Read(buffer, offset, Math.Min(count, 2));
+        public override long Seek(long offset, SeekOrigin origin) => inner.Seek(offset, origin);
         public override void SetLength(long value) => throw new NotSupportedException();
         public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }

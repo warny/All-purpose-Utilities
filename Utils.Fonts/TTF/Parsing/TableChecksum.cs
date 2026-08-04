@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.IO;
 
 namespace Utils.Fonts.TTF.Parsing;
@@ -17,23 +18,31 @@ internal static class TableChecksum
     private const int HeadChecksumAdjustmentOffset = 8;
 
     /// <summary>
-    /// Computes the checksum of <paramref name="length"/> bytes starting at <paramref name="offset"/>
-    /// in <paramref name="stream"/>, per the TrueType/OpenType algorithm: the sum, as an unsigned
-    /// 32-bit big-endian word accumulator, of every 4-byte word in the range, with the final partial
-    /// word (if any) padded with zero bytes.
+    /// Size of the pooled read buffer. Chosen well within the 32-128 KiB range: large enough that
+    /// even a multi-megabyte table/font is read in a small, bounded number of <see cref="Stream.Read(Span{byte})"/>
+    /// calls, small enough to stay a trivial, short-lived rental regardless of how many checksums a
+    /// single font parse computes.
     /// </summary>
-    /// <param name="stream">The seekable stream to read from. Its position is saved and restored.</param>
+    private const int BlockSize = 64 * 1024;
+
+    /// <summary>
+    /// Computes the checksum of <paramref name="length"/> bytes starting at <paramref name="offset"/>
+    /// in <paramref name="stream"/>, per the TrueType/OpenType algorithm: the sum, as an unchecked
+    /// (intentionally wrapping) unsigned 32-bit big-endian word accumulator, of every 4-byte word in
+    /// the range, with the final partial word (if any) padded with zero bytes. Reads in bounded
+    /// <see cref="BlockSize"/> blocks via a pooled buffer -- never the whole range at once -- so
+    /// callers can safely checksum a multi-megabyte table or an entire font without a matching
+    /// multi-megabyte allocation.
+    /// </summary>
+    /// <param name="stream">The seekable stream to read from. Its position is saved and restored, even if reading throws.</param>
     /// <param name="offset">The absolute byte offset, within <paramref name="stream"/>, of the range to checksum.</param>
     /// <param name="length">
-    /// The byte length of the range to checksum. Deliberately <see cref="long"/>, not
-    /// <see cref="uint"/>: the whole-font checksum must cover every byte of a font bounded by
-    /// <see cref="TrueTypeFontParsingOptions.MaximumFontBytes"/> (itself a <see langword="long"/>),
-    /// and silently narrowing this parameter would truncate that coverage for any font/limit
-    /// configuration beyond 4 GiB, contradicting the documented "covers the entire bounded font"
-    /// contract without ever surfacing an error. The read loop below already walks the range one
-    /// 4-byte word at a time via a <see langword="long"/> counter, so accepting the full range costs
-    /// nothing extra: per-table SFNT checksums (bounded to <see cref="uint"/> by the format itself)
-    /// widen implicitly at the call site.
+    /// The byte length of the range to checksum. Must be in <c>[0, uint.MaxValue]</c>: the SFNT
+    /// checksum algorithm is only ever applied to UInt32-addressable ranges (an individual table's
+    /// length is itself a UInt32 field, and callers must reject a font longer than
+    /// <see cref="uint.MaxValue"/> before ever computing a whole-font checksum over it -- see
+    /// <see cref="TrueTypeFontParsingOptions.MaximumFontBytes"/>). A caller passing a longer range
+    /// has a bug upstream; this throws rather than silently truncating it.
     /// </param>
     /// <param name="zeroHeadChecksumAdjustment">
     /// When <see langword="true"/>, the 4-byte word at <see cref="HeadChecksumAdjustmentOffset"/>
@@ -43,14 +52,19 @@ internal static class TableChecksum
     /// table's per-table checksum is computed).
     /// </param>
     /// <returns>The computed checksum.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="length"/> is negative or exceeds <see cref="uint.MaxValue"/>.</exception>
+    /// <exception cref="EndOfStreamException"><paramref name="stream"/> has fewer than <paramref name="offset"/> + <paramref name="length"/> bytes available.</exception>
     public static uint ComputeTableChecksum(Stream stream, long offset, long length, bool zeroHeadChecksumAdjustment)
     {
         ArgumentNullException.ThrowIfNull(stream);
-        if (length < 0)
+        if (length < 0 || length > uint.MaxValue)
         {
-            throw new ArgumentOutOfRangeException(nameof(length), length, "length must be non-negative.");
+            throw new ArgumentOutOfRangeException(nameof(length), length,
+                $"length must be in the range [0, {uint.MaxValue}] (UInt32-addressable, per the SFNT checksum algorithm).");
         }
+
         long originalPosition = stream.Position;
+        byte[] buffer = ArrayPool<byte>.Shared.Rent(BlockSize);
         try
         {
             stream.Position = offset;
@@ -58,29 +72,73 @@ internal static class TableChecksum
             {
                 uint result = 0;
                 long remaining = length;
-                long wordOffset = 0;
-                Span<byte> word = stackalloc byte[4];
+                long consumed = 0; // Byte offset (relative to `offset`) of the word currently being assembled.
+                Span<byte> carry = stackalloc byte[4];
+                int carryCount = 0; // Valid leftover bytes in carry[0..carryCount), not yet a full word.
+
                 while (remaining > 0)
                 {
-                    int toRead = (int)Math.Min(4, remaining);
-                    word.Clear();
-                    ReadExactly(stream, word[..toRead]);
-                    if (zeroHeadChecksumAdjustment && wordOffset == HeadChecksumAdjustmentOffset)
+                    int blockLength = (int)Math.Min(BlockSize, remaining);
+                    ReadExactly(stream, buffer.AsSpan(0, blockLength));
+                    remaining -= blockLength;
+
+                    int i = 0;
+                    if (carryCount > 0)
                     {
-                        word.Clear();
+                        // Complete the word left over from the previous block using bytes from the
+                        // start of this one -- a UInt32 word may straddle a block boundary.
+                        int need = Math.Min(4 - carryCount, blockLength);
+                        buffer.AsSpan(0, need).CopyTo(carry[carryCount..]);
+                        carryCount += need;
+                        i = need;
+                        if (carryCount == 4)
+                        {
+                            result += ShouldZero(zeroHeadChecksumAdjustment, consumed) ? 0u : WordValue(carry);
+                            consumed += 4;
+                            carryCount = 0;
+                        }
                     }
-                    result += (uint)((word[0] << 24) | (word[1] << 16) | (word[2] << 8) | word[3]);
-                    remaining -= toRead;
-                    wordOffset += 4;
+
+                    while (i + 4 <= blockLength)
+                    {
+                        var word = buffer.AsSpan(i, 4);
+                        result += ShouldZero(zeroHeadChecksumAdjustment, consumed) ? 0u : WordValue(word);
+                        consumed += 4;
+                        i += 4;
+                    }
+
+                    int leftover = blockLength - i;
+                    if (leftover > 0)
+                    {
+                        buffer.AsSpan(i, leftover).CopyTo(carry);
+                        carryCount = leftover;
+                    }
                 }
+
+                if (carryCount > 0)
+                {
+                    // Final partial word: complete with zero padding, per the algorithm.
+                    carry[carryCount..].Clear();
+                    result += ShouldZero(zeroHeadChecksumAdjustment, consumed) ? 0u : WordValue(carry);
+                }
+
                 return result;
             }
         }
         finally
         {
+            ArrayPool<byte>.Shared.Return(buffer);
             stream.Position = originalPosition;
         }
     }
+
+    /// <summary>Interprets a 4-byte span as a big-endian <see cref="uint"/>.</summary>
+    private static uint WordValue(ReadOnlySpan<byte> word) =>
+        unchecked((uint)((word[0] << 24) | (word[1] << 16) | (word[2] << 8) | word[3]));
+
+    /// <summary>Whether the word currently being assembled is the virtual 'head'.checksumAdjustment word.</summary>
+    private static bool ShouldZero(bool zeroHeadChecksumAdjustment, long wordOffset) =>
+        zeroHeadChecksumAdjustment && wordOffset == HeadChecksumAdjustmentOffset;
 
     /// <summary>Reads exactly <paramref name="buffer"/>.Length bytes, tolerating partial underlying reads.</summary>
     private static void ReadExactly(Stream stream, Span<byte> buffer)

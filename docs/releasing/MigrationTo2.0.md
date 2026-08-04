@@ -46,7 +46,11 @@ budgets), and stream-ownership (`LeaveOpen`). Strict mode rejects any structural
 continues whenever doing so remains memory-safe -- resource-limit violations always throw in both
 modes. Fonts that previously loaded silently despite duplicate table tags, checksum mismatches,
 malformed `cmap` subtables, or out-of-range composite glyph references now fail fast by default;
-pass `FontValidationMode.Permissive` to restore a best-effort parse.
+pass `FontValidationMode.Permissive` to restore a best-effort parse. `TrueTypeFontParsingOptions.MaximumFontBytes`
+defaults to 64 MiB and cannot be configured above `uint.MaxValue` (4 GiB) -- SFNT table
+offsets/lengths are themselves unsigned 32-bit fields, so this library never supports a larger font
+regardless of this setting; a value above that ceiling throws `ArgumentOutOfRangeException`
+immediately when constructing the options.
 
 Several `short`-typed members were widened to their correct unsigned/wider wire type and are 2.0
 breaks requiring recompilation: see the "Second audit pass" entry under

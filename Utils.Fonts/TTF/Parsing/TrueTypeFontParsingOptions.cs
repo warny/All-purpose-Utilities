@@ -34,6 +34,16 @@ public sealed record TrueTypeFontParsingOptions
     /// byte array, a seekable stream, or copied incrementally from a non-seekable stream).
     /// Defaults to 64 MiB. Exceeding this limit always throws, in both validation modes.
     /// </summary>
+    /// <remarks>
+    /// Typed <see cref="long"/> to avoid a second breaking API change, but the effective ceiling is
+    /// <see cref="uint.MaxValue"/> (4 GiB): the SFNT format addresses every table offset and length
+    /// with an unsigned 32-bit field, so this library does not attempt to support fonts larger than
+    /// that regardless of this setting. <see cref="EnsureValid"/> rejects a configured value above
+    /// <see cref="uint.MaxValue"/> outright (<see cref="ArgumentOutOfRangeException"/>) rather than
+    /// silently clamping it down -- a caller who asks for a larger limit than this library can ever
+    /// honor should find out immediately, not discover that fonts near their configured limit are
+    /// silently rejected earlier than requested.
+    /// </remarks>
     public long MaximumFontBytes { get; init; } = 64L * 1024 * 1024;
 
     /// <summary>
@@ -108,7 +118,7 @@ public sealed record TrueTypeFontParsingOptions
     /// property, instead of producing confusing downstream behavior or a misleading
     /// <see cref="FontParseException"/> that looks like a font-data problem.
     /// </summary>
-    /// <exception cref="ArgumentOutOfRangeException">A limit is negative, or <see cref="ValidationMode"/> is not a defined value.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">A limit is negative, <see cref="MaximumFontBytes"/> exceeds <see cref="uint.MaxValue"/>, or <see cref="ValidationMode"/> is not a defined value.</exception>
     internal void EnsureValid()
     {
         if (ValidationMode is not (FontValidationMode.Strict or FontValidationMode.Permissive))
@@ -118,6 +128,11 @@ public sealed record TrueTypeFontParsingOptions
         if (MaximumFontBytes < 0)
         {
             throw new ArgumentOutOfRangeException(nameof(MaximumFontBytes), MaximumFontBytes, "MaximumFontBytes must be non-negative.");
+        }
+        if (MaximumFontBytes > uint.MaxValue)
+        {
+            throw new ArgumentOutOfRangeException(nameof(MaximumFontBytes), MaximumFontBytes,
+                $"MaximumFontBytes must not exceed {uint.MaxValue} (4 GiB): SFNT table offsets and lengths are UInt32-addressable, so this library never supports fonts larger than that.");
         }
         if (MaximumCompositeComponents < 0)
         {

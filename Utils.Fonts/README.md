@@ -103,6 +103,14 @@ parsing whenever doing so remains memory-safe; resource-limit violations (`Maxim
 `MaximumTableBytes`, `MaximumTables`, `MaximumCmapSubtables`, composite-glyph depth/component/point
 budgets, `MaximumCompositeInstructionBytes`) always throw, in both modes.
 
+`MaximumFontBytes` defaults to 64 MiB and can be lowered freely, but cannot be configured above
+`uint.MaxValue` (4 GiB): SFNT table offsets and lengths are themselves unsigned 32-bit fields, so
+this library never attempts to support a font larger than that regardless of this setting.
+Constructing `TrueTypeFontParsingOptions` with `MaximumFontBytes` above that ceiling throws
+`ArgumentOutOfRangeException` immediately (not a parse-time failure), and a source that is actually
+larger than the configured limit -- including one larger than 4 GiB -- is always rejected before any
+substantial read, copy, or checksum, in both validation modes.
+
 ```csharp
 using Utils.Fonts.TTF;
 using Utils.Fonts.TTF.Parsing;

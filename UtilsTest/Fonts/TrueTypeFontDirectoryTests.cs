@@ -269,6 +269,47 @@ public class TrueTypeFontDirectoryTests
         Assert.AreEqual(0, font.TablesCount);
     }
 
+    // Review fix: fonts larger than uint.MaxValue (4 GiB) are never supported -- SFNT table
+    // offsets/lengths are UInt32-addressable -- so MaximumFontBytes cannot be configured above that
+    // ceiling, and a seekable source actually that large is rejected before any substantial read,
+    // copy, or checksum. None of these tests allocate anywhere near 4 GiB.
+    [TestMethod]
+    public void MaximumFontBytes_ExactlyUInt32MaxValue_IsAcceptedByEnsureValid()
+    {
+        var options = new TrueTypeFontParsingOptions { MaximumFontBytes = uint.MaxValue };
+        // EnsureValid is internal; exercised indirectly: a real parse must fail for an unrelated
+        // reason (too-small buffer), not an options-validation error, proving EnsureValid accepted it.
+        var ex = Assert.ThrowsExactly<FontParseException>(() => TrueTypeFont.ParseFont(ReadOnlySpan<byte>.Empty, options));
+        Assert.AreEqual(FontDiagnosticCode.InvalidOffsetTable, ex.Diagnostic.Code);
+    }
+
+    [TestMethod]
+    public void MaximumFontBytes_AboveUInt32MaxValue_ThrowsArgumentOutOfRangeException()
+    {
+        var options = new TrueTypeFontParsingOptions { MaximumFontBytes = (long)uint.MaxValue + 1 };
+        var ex = Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => TrueTypeFont.ParseFont(ReadOnlySpan<byte>.Empty, options));
+        Assert.AreEqual("MaximumFontBytes", ex.ParamName);
+    }
+
+    [TestMethod]
+    public void SeekableStream_LargerThanUInt32MaxValue_IsRejectedBeforeParsing()
+    {
+        using var huge = new HugeSeekableStream((long)uint.MaxValue + 1);
+        var ex = Assert.ThrowsExactly<FontParseException>(() => TrueTypeFont.ParseFont(huge));
+        Assert.AreEqual(FontDiagnosticCode.ResourceLimitExceeded, ex.Diagnostic.Code);
+        // Nothing was ever read from the stream: rejection happens from Length/Position alone.
+        Assert.AreEqual(0, huge.ReadCallCount);
+    }
+
+    [TestMethod]
+    public void SeekableStream_LargerThanConfiguredLimit_IsRejectedInPermissiveModeToo()
+    {
+        using var huge = new HugeSeekableStream((long)uint.MaxValue + 1);
+        var options = new TrueTypeFontParsingOptions { ValidationMode = FontValidationMode.Permissive };
+        var ex = Assert.ThrowsExactly<FontParseException>(() => TrueTypeFont.ParseFont(huge, options));
+        Assert.AreEqual(FontDiagnosticCode.ResourceLimitExceeded, ex.Diagnostic.Code);
+    }
+
     [TestMethod]
     public void ZeroTableFont_HasExplicitZeroDerivedHeaderValues()
     {
@@ -552,6 +593,39 @@ public class TrueTypeFontDirectoryTests
         public override void Flush() => inner.Flush();
         public override int Read(byte[] buffer, int offset, int count) => inner.Read(buffer, offset, count);
         public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
+
+    /// <summary>A seekable stream that reports an arbitrary (potentially huge) <see cref="Length"/> without any real backing buffer, for testing that an oversized source is rejected purely from its declared length -- before any read is attempted.</summary>
+    private sealed class HugeSeekableStream(long length) : Stream
+    {
+        private long position;
+
+        public int ReadCallCount { get; private set; }
+
+        public override bool CanRead => true;
+        public override bool CanSeek => true;
+        public override bool CanWrite => false;
+        public override long Length { get; } = length;
+        public override long Position { get => position; set => position = value; }
+        public override void Flush() { }
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            ReadCallCount++;
+            throw new InvalidOperationException("This stream should never be read from: the font must be rejected from its declared Length alone.");
+        }
+        public override long Seek(long offset, SeekOrigin origin)
+        {
+            position = origin switch
+            {
+                SeekOrigin.Begin => offset,
+                SeekOrigin.Current => position + offset,
+                SeekOrigin.End => Length + offset,
+                _ => throw new ArgumentOutOfRangeException(nameof(origin)),
+            };
+            return position;
+        }
         public override void SetLength(long value) => throw new NotSupportedException();
         public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
