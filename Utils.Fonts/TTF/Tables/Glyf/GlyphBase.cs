@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Utils.Fonts.TTF.Parsing;
 using Utils.IO.Serialization;
 
 namespace Utils.Fonts.TTF.Tables.Glyf;
@@ -49,6 +50,35 @@ public class GlyphBase
     public virtual IEnumerable<IEnumerable<TTFPoint>> Contours { get; }
 
     /// <summary>
+    /// Resolves this glyph's contours as a leaf of a (possibly compound) glyph expansion, counting
+    /// its points against the shared <paramref name="context"/> budget. The default implementation
+    /// (used by every non-compound glyph) simply returns <see cref="Contours"/> after accounting
+    /// for its points; <see cref="GlyphCompound"/> overrides this to recurse into its components
+    /// instead, sharing the same context so depth/component/point budgets apply across the whole
+    /// expansion rather than being reset at each level.
+    /// </summary>
+    /// <param name="context">The shared resolution context for the current top-level glyph expansion.</param>
+    internal virtual IEnumerable<IEnumerable<TTFPoint>> ResolveContours(CompositeGlyphResolutionContext context)
+    {
+        var contours = Contours;
+        if (contours is null)
+        {
+            yield break;
+        }
+        foreach (var contour in contours)
+        {
+            var points = contour.ToList();
+            context.ExpandedPoints += points.Count;
+            if (context.ExpandedPoints > context.Options.MaximumExpandedPoints)
+            {
+                FontParsingContext.Reject(FontDiagnosticCode.ResourceLimitExceeded,
+                    $"Composite glyph resolution exceeds MaximumExpandedPoints ({context.Options.MaximumExpandedPoints}).");
+            }
+            yield return points;
+        }
+    }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="GlyphBase"/> class.
     /// Protected internal to allow instantiation by derived classes.
     /// </summary>
@@ -61,9 +91,16 @@ public class GlyphBase
 
     /// <summary>
     /// Gets the length (in bytes) of the glyph data.
-    /// The default value is 10.
+    /// The default value is 10 (the fixed-size glyph header: numberOfContours + the bounding box).
     /// </summary>
-    public virtual short Length => 10;
+    /// <remarks>
+    /// Returns <see cref="int"/>, not <see cref="short"/>: a glyph's serialized size (points,
+    /// flags, coordinate deltas, instructions, or -- for a compound glyph -- components) can
+    /// legitimately exceed <see cref="short.MaxValue"/> bytes, and narrowing it to a signed 16-bit
+    /// value would silently wrap to a smaller or negative length, corrupting 'glyf' layout and the
+    /// 'loca' offsets derived from it.
+    /// </remarks>
+    public virtual int Length => 10;
 
     /// <summary>
     /// Creates a new glyph from the provided data.

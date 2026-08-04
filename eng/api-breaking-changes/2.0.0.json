@@ -1001,6 +1001,120 @@
           "message": "Cannot add abstract member 'int Utils.Fonts.TTF.Tables.CMap.CMapFormatBase.Length' to {candidateAssembly} because it does not exist on {baselineAssembly}",
           "reason": "The CP0005 compatibility change is deliberately accepted for the 2.0 major-version candidate.",
           "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-fonts"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'short Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.getGlyphIndex(int)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Renamed to GetGlyphIndex(int) returning ushort (TODO-2026-07-19-pass2.md item 30); the published member is deliberately absent in the 2.0 candidate and is retained as an enumerated major-version break.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-fonts"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'byte[] Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.Instructions.get' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Instructions is now ReadOnlyMemory<byte> instead of a mutable byte[] (TODO-2026-07-19-pass2.md item 36); the published member is deliberately absent or signature-incompatible in the 2.0 candidate and is retained as an enumerated major-version break.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-fonts"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Fonts.TTF.Tables.CMap.CMapFormatBase[] Utils.Fonts.TTF.Tables.CmapTable.CMaps.get' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "CMaps is now IReadOnlyList<CMapFormatBase> instead of a mutable array (TODO-2026-07-19-pass2.md item 36); the published member is deliberately absent or signature-incompatible in the 2.0 candidate and is retained as an enumerated major-version break.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-fonts"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'short Utils.Fonts.TTF.Tables.CmapTable.Version.get' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Version is now ushort instead of short (TODO-2026-07-19-pass2.md item 34); the published member is deliberately absent or signature-incompatible in the 2.0 candidate and is retained as an enumerated major-version break.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-fonts"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.Fonts.TTF.Tables.CmapTable.Version.set' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Version is now ushort instead of short (TODO-2026-07-19-pass2.md item 34); the published member is deliberately absent or signature-incompatible in the 2.0 candidate and is retained as an enumerated major-version break.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-fonts"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'short Utils.Fonts.TTF.Tables.CmapTable.NumberSubtables.get' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "NumberSubtables is now ushort instead of short (TODO-2026-07-19-pass2.md item 34); the published member is deliberately absent or signature-incompatible in the 2.0 candidate and is retained as an enumerated major-version break.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-fonts"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Fonts.TTF.Tables.CMap.CMapFormatBase Utils.Fonts.TTF.Tables.CmapTable.GetCMap(short, short)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Platform/encoding IDs are now ushort instead of short (TODO-2026-07-19-pass2.md item 34); the published member is deliberately absent or signature-incompatible in the 2.0 candidate and is retained as an enumerated major-version break.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-fonts"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.Fonts.TTF.Tables.CmapTable.AddCMap(short, short, Utils.Fonts.TTF.Tables.CMap.CMapFormatBase)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Platform/encoding IDs are now ushort instead of short (TODO-2026-07-19-pass2.md item 34); the published member is deliberately absent or signature-incompatible in the 2.0 candidate and is retained as an enumerated major-version break.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-fonts"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'void Utils.Fonts.TTF.Tables.CmapTable.RemoveCMap(short, short)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Platform/encoding IDs are now ushort instead of short (TODO-2026-07-19-pass2.md item 34); the published member is deliberately absent or signature-incompatible in the 2.0 candidate and is retained as an enumerated major-version break.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-fonts"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'short Utils.Fonts.TTF.TrueTypeFont.TablesCount.get' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "TablesCount is now ushort instead of short (TODO-2026-07-19-pass2.md item 23); the published member is deliberately absent or signature-incompatible in the 2.0 candidate and is retained as an enumerated major-version break.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-fonts"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'short Utils.Fonts.TTF.TrueTypeFont.SearchRange.get' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "SearchRange is now ushort instead of short (TODO-2026-07-19-pass2.md item 23); the published member is deliberately absent or signature-incompatible in the 2.0 candidate and is retained as an enumerated major-version break.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-fonts"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'short Utils.Fonts.TTF.TrueTypeFont.EntrySelector.get' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "EntrySelector is now ushort instead of short (TODO-2026-07-19-pass2.md item 23); the published member is deliberately absent or signature-incompatible in the 2.0 candidate and is retained as an enumerated major-version break.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-fonts"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'short Utils.Fonts.TTF.TrueTypeFont.RangeShift.get' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "RangeShift is now ushort instead of short (TODO-2026-07-19-pass2.md item 23); the published member is deliberately absent or signature-incompatible in the 2.0 candidate and is retained as an enumerated major-version break.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-fonts"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'short Utils.Fonts.TTF.Tables.Glyf.GlyphBase.Length.get' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Length is now int instead of short, removing the narrowing cast that could wrap oversized glyph data to a negative length (TODO-2026-07-19-pass2.md item 32); the published member is deliberately absent or signature-incompatible in the 2.0 candidate and is retained as an enumerated major-version break.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-fonts"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'short Utils.Fonts.TTF.Tables.Glyf.GlyphSimple.Length.get' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Overrides GlyphBase.Length, now int instead of short (TODO-2026-07-19-pass2.md item 32); the published member is deliberately absent or signature-incompatible in the 2.0 candidate and is retained as an enumerated major-version break.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-fonts"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'short Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.Length.get' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Overrides GlyphBase.Length, now int instead of short (TODO-2026-07-19-pass2.md item 32); the published member is deliberately absent or signature-incompatible in the 2.0 candidate and is retained as an enumerated major-version break.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-fonts"
+        },
+        {
+          "diagnosticId": "CP0001",
+          "message": "Type 'Utils.Fonts.TTF.TrueTypeFont+TableDeclaration' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Replaced internally by Parsing.TableDirectoryEntry, which preserves every directory record instead of silently dropping same-offset duplicates (TODO-2026-07-19-pass2.md item 24); the published type is deliberately absent from the 2.0 candidate and is retained as an enumerated major-version removal.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-fonts"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Fonts.TTF.TrueTypeFont Utils.Fonts.TTF.TrueTypeFont.ParseFont(byte[])' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Gained an optional TrueTypeFontParsingOptions parameter (TODO-2026-07-19-pass2.md item 23); source-compatible but binary-incompatible, so the published single-argument overload is retained as an enumerated major-version break.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-fonts"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Fonts.TTF.TrueTypeFont Utils.Fonts.TTF.TrueTypeFont.ParseFont(System.IO.Stream)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Gained an optional TrueTypeFontParsingOptions parameter (TODO-2026-07-19-pass2.md item 27); source-compatible but binary-incompatible, so the published single-argument overload is retained as an enumerated major-version break.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-fonts"
         }
       ]
     },

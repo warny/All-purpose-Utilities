@@ -5,7 +5,11 @@ using System.Linq;
 using System.Numerics;
 using System.Reflection;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using Utils.Fonts.TTF.Parsing;
 using Utils.Fonts.TTF.Tables;
+using Utils.IO;
 using Utils.IO.Serialization;
 using Utils.Mathematics;
 
@@ -22,16 +26,96 @@ public class TrueTypeFont : IFont
     private static readonly RawReader rawReader = new RawReader() { BigEndian = true };
     private static readonly RawWriter rawWriter = new RawWriter() { BigEndian = true };
 
-    // Dictionary associating a table tag with its descriptor and type.
-    private static readonly Dictionary<Tag, (TTFTableAttribute Descriptor, Type TableType)> TablesType = [];
+    // Dictionary associating a table tag with its descriptor and type. RawReader/RawWriter and
+    // this dictionary are configuration-only after construction (a fixed set of delegates built
+    // once from stateless conversion logic): every ReadData/WriteData call constructs its own
+    // Reader/Writer instance from these delegate lists, so concurrent parsing/writing of different
+    // fonts on different threads shares no mutable state. See TableRegistryTests and
+    // ConcurrentParsingTests for regression coverage.
+    private static readonly Dictionary<Tag, (TTFTableAttribute Descriptor, Type TableType)> TablesType;
 
     static TrueTypeFont()
     {
-        foreach (var t in typeof(TrueTypeTable).Assembly.GetTypes().Where(t => t.IsSubclassOf(typeof(TrueTypeTable))))
+        TablesType = BuildTablesTypeRegistry();
+    }
+
+    /// <summary>
+    /// Builds the table-type registry by scanning every concrete <see cref="TrueTypeTable"/>
+    /// subclass in this assembly for a <see cref="TTFTableAttribute"/>. Exposed as a standalone,
+    /// side-effect-free method (rather than folding this logic directly into the static
+    /// constructor) so a duplicate-tag or unconstructible-type failure can be asserted directly in
+    /// a test, instead of being observed only as an opaque <see cref="TypeInitializationException"/>
+    /// on first use of <see cref="TrueTypeFont"/>.
+    /// </summary>
+    /// <returns>The tag-to-(descriptor,type) registry.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when two types declare the same table tag, when a declared type is abstract, or when
+    /// a declared type has no accessible parameterless constructor.
+    /// </exception>
+    internal static Dictionary<Tag, (TTFTableAttribute Descriptor, Type TableType)> BuildTablesTypeRegistry()
+    {
+        var registry = new Dictionary<Tag, (TTFTableAttribute Descriptor, Type TableType)>();
+        foreach (var type in typeof(TrueTypeTable).Assembly.GetTypes().Where(t => t.IsSubclassOf(typeof(TrueTypeTable))))
         {
-            TTFTableAttribute descriptor = t.GetCustomAttribute<TTFTableAttribute>();
+            var descriptor = type.GetCustomAttribute<TTFTableAttribute>();
             if (descriptor is null) { continue; }
-            TablesType.Add(descriptor.TableTag, (descriptor, t));
+
+            if (type.IsAbstract)
+            {
+                throw new InvalidOperationException(
+                    $"Table type '{type.FullName}' is declared abstract but carries a {nameof(TTFTableAttribute)} for tag '{descriptor.TableTag}'; a concrete type is required.");
+            }
+
+            var ctor = type.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, System.Type.EmptyTypes, null);
+            if (ctor is null)
+            {
+                throw new InvalidOperationException(
+                    $"Table type '{type.FullName}' for tag '{descriptor.TableTag}' has no accessible parameterless constructor.");
+            }
+
+            if (registry.TryGetValue(descriptor.TableTag, out var existing))
+            {
+                throw new InvalidOperationException(
+                    $"Duplicate table tag '{descriptor.TableTag}' declared by both '{existing.TableType.FullName}' and '{type.FullName}'.");
+            }
+
+            registry.Add(descriptor.TableTag, (descriptor, type));
+        }
+
+        ValidateNoDependencyCycles(registry);
+        return registry;
+    }
+
+    /// <summary>
+    /// Verifies that the declared <see cref="TTFTableAttribute.DependsOn"/> graph across every
+    /// registered table type contains no cycle, which would otherwise cause unbounded recursion
+    /// while resolving read order in <see cref="ParseDirectories"/>.
+    /// </summary>
+    private static void ValidateNoDependencyCycles(Dictionary<Tag, (TTFTableAttribute Descriptor, Type TableType)> registry)
+    {
+        var state = new Dictionary<Tag, int>(); // 0 = unvisited, 1 = visiting, 2 = done
+        foreach (var tag in registry.Keys)
+        {
+            Visit(tag);
+        }
+
+        void Visit(Tag tag)
+        {
+            if (!registry.TryGetValue(tag, out var entry)) { return; }
+            if (state.TryGetValue(tag, out var s))
+            {
+                if (s == 1)
+                {
+                    throw new InvalidOperationException($"Table dependency cycle detected involving tag '{tag}'.");
+                }
+                if (s == 2) { return; }
+            }
+            state[tag] = 1;
+            foreach (var dependency in entry.Descriptor.DependsOn)
+            {
+                Visit(dependency);
+            }
+            state[tag] = 2;
         }
     }
 
@@ -41,6 +125,26 @@ public class TrueTypeFont : IFont
     public int Type { get; }
 
     /// <summary>
+    /// Gets the diagnostics recorded while parsing this font. Always empty for a font that was
+    /// constructed programmatically rather than parsed, and always empty in
+    /// <see cref="FontValidationMode.Strict"/> (any anomaly throws instead of being recorded).
+    /// </summary>
+    public IReadOnlyList<FontDiagnostic> Diagnostics { get; private set; } = [];
+
+    /// <summary>
+    /// Gets the parsing context this font was parsed with. Set once, at the start of parsing, and
+    /// kept for the lifetime of the font instance -- not just while <see cref="ParseDirectories"/>
+    /// is running. Nested table/glyph parsers (e.g. compound glyph resolution) read this to apply
+    /// the same options budgets after <c>ParseFont</c> has already returned, since composite-glyph
+    /// contour resolution is lazy: if this were cleared once parsing finished, a caller-supplied
+    /// <see cref="TrueTypeFontParsingOptions"/> (e.g. a tighter <c>MaximumCompositeDepth</c>) would
+    /// silently stop applying the first time <c>Contours</c> is accessed after <c>ParseFont</c>
+    /// returns, falling back to <see cref="TrueTypeFontParsingOptions.Default"/> instead.
+    /// <see langword="null"/> for a font that was constructed programmatically rather than parsed.
+    /// </summary>
+    internal FontParsingContext ParsingContext { get; set; }
+
+    /// <summary>
     /// lazy stores the font scale
     /// </summary>
     private float? scale = null;
@@ -48,8 +152,8 @@ public class TrueTypeFont : IFont
     /// <summary>
     /// Get the font scale from the font header
     /// </summary>
-    public float Scale 
-        => scale 
+    public float Scale
+        => scale
         ?? (scale = (100f / GetTable<HeadTable>(TableTypes.HEAD).UnitsPerEm))
         ?? 1f;
 
@@ -61,8 +165,8 @@ public class TrueTypeFont : IFont
     /// <summary>
     /// Get the font vertical baseline from the font horizontal metric headers
     /// </summary>
-    public float BaseLineY 
-        => baseLineY 
+    public float BaseLineY
+        => baseLineY
         ?? (baseLineY = (70f + GetTable<HheaTable>(TableTypes.HHEA).Ascent * Scale))
         ?? 70f;
 
@@ -72,16 +176,13 @@ public class TrueTypeFont : IFont
     private const int TableDirectoryEntrySize = 16;   // tag(4) + checkSum(4) + offset(4) + length(4)
     private const int TtfAlignment = 4;               // all table data must be 4-byte aligned
     private const int TagLength = 4;                  // TrueType table tags are always 4 ASCII characters
-    // Offset of checksumAdjustment within the 'head' table data — see TrueType spec §head.
-    private const int HeadChecksumAdjOffset = 8;
     // Required magic value: sum of all UInt32 words in the font file must equal 0xB1B0AFBA — see TrueType spec §head.
-    private const long ChecksumMagicNumber = 0xB1B0AFBAL;
+    private const uint ChecksumMagicNumber = 0xB1B0AFBAU;
 
     // Dictionary of tables present in the font.
     private readonly Dictionary<Tag, TrueTypeTable> tables;
 
     private int Length => OffsetTableSize + tables.Count * TableDirectoryEntrySize + tables.Values.Sum(t => MathEx.Ceiling(t.Length, TtfAlignment));
-
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TrueTypeFont"/> class.
@@ -93,69 +194,466 @@ public class TrueTypeFont : IFont
         tables = []; // Using target-typed new empty dictionary syntax.
     }
 
+    #region Parsing entry points
+
+    /// <summary>
+    /// Parses a TrueType font from an in-memory buffer.
+    /// </summary>
+    /// <param name="bytes">The bytes making up the font.</param>
+    /// <param name="options">
+    /// Parsing options, or <see langword="null"/> to use <see cref="TrueTypeFontParsingOptions.Default"/>.
+    /// </param>
+    /// <returns>An instance of <see cref="TrueTypeFont"/>.</returns>
+    public static TrueTypeFont ParseFont(ReadOnlySpan<byte> bytes, TrueTypeFontParsingOptions options = null)
+    {
+        options ??= TrueTypeFontParsingOptions.Default;
+        options.EnsureValid();
+        if (bytes.Length > options.MaximumFontBytes)
+        {
+            FontParsingContext.Reject(FontDiagnosticCode.ResourceLimitExceeded,
+                $"Font size {bytes.Length} exceeds MaximumFontBytes ({options.MaximumFontBytes}).");
+        }
+        using var ms = new MemoryStream(bytes.ToArray(), writable: false);
+        return ParseFontFromSeekableStream(ms, options);
+    }
+
     /// <summary>
     /// Parses a TrueType font from a byte array.
     /// </summary>
     /// <param name="bytes">The byte array containing the font data.</param>
+    /// <param name="options">
+    /// Parsing options, or <see langword="null"/> to use <see cref="TrueTypeFontParsingOptions.Default"/>.
+    /// </param>
     /// <returns>An instance of <see cref="TrueTypeFont"/>.</returns>
-    public static TrueTypeFont ParseFont(byte[] bytes)
+    public static TrueTypeFont ParseFont(byte[] bytes, TrueTypeFontParsingOptions options = null)
     {
-        using var ms = new MemoryStream(bytes);
-        var data = new Reader(ms, rawReader.ReaderDelegates);
-        return ParseFont(data);
+        ArgumentNullException.ThrowIfNull(bytes);
+        return ParseFont((ReadOnlySpan<byte>)bytes, options);
     }
 
     /// <summary>
     /// Parses a TrueType font from a stream.
     /// </summary>
+    /// <remarks>
+    /// For a seekable <paramref name="s"/>, the font is read starting at its current position
+    /// (<c>fontStart</c>); every table offset in the SFNT directory is interpreted relative to
+    /// that position, not to the start of the stream. On return, the stream position is left at
+    /// <c>fontStart + 12 + numTables * 16</c> (the end of the table directory): reading table
+    /// payloads uses bounded, independent views over the stream that do not otherwise move its
+    /// position. For a non-seekable <paramref name="s"/>, the font is first copied, incrementally
+    /// and under <see cref="TrueTypeFontParsingOptions.MaximumFontBytes"/>, into an owned temporary
+    /// buffer that is always disposed before this method returns (regardless of
+    /// <see cref="TrueTypeFontParsingOptions.LeaveOpen"/>, which only governs <paramref name="s"/> itself).
+    /// </remarks>
     /// <param name="s">The stream containing the font data.</param>
+    /// <param name="options">
+    /// Parsing options, or <see langword="null"/> to use <see cref="TrueTypeFontParsingOptions.Default"/>.
+    /// </param>
     /// <returns>An instance of <see cref="TrueTypeFont"/>.</returns>
-    public static TrueTypeFont ParseFont(Stream s)
+    public static TrueTypeFont ParseFont(Stream s, TrueTypeFontParsingOptions options = null)
     {
+        ArgumentNullException.ThrowIfNull(s);
+        options ??= TrueTypeFontParsingOptions.Default;
+        options.EnsureValid();
         if (!s.CanRead)
             throw new InvalidOperationException("The stream must be readable");
-        if (!s.CanSeek)
+
+        try
         {
-            var ms = new MemoryStream();
-            s.CopyTo(ms);
-            s = ms;
+            if (!s.CanSeek)
+            {
+                using var buffered = CopyToBoundedSeekableStream(s, options.MaximumFontBytes);
+                return ParseFontFromSeekableStream(buffered, options);
+            }
+
+            long available = s.Length - s.Position;
+            if (available > options.MaximumFontBytes)
+            {
+                FontParsingContext.Reject(FontDiagnosticCode.ResourceLimitExceeded,
+                    $"Font size {available} exceeds MaximumFontBytes ({options.MaximumFontBytes}).");
+            }
+            return ParseFontFromSeekableStream(s, options);
         }
-        var reader = new Reader(s, rawReader.ReaderDelegates);
-        return ParseFont(reader);
+        finally
+        {
+            if (!options.LeaveOpen)
+            {
+                s.Dispose();
+            }
+        }
     }
 
     /// <summary>
-    /// Parses a TrueType font from a Reader.
+    /// Asynchronously parses a TrueType font from a stream, supporting cancellation while copying
+    /// a non-seekable source into a bounded temporary buffer.
     /// </summary>
-    /// <param name="data">The reader containing the font data.</param>
+    /// <param name="s">The stream containing the font data.</param>
+    /// <param name="options">
+    /// Parsing options, or <see langword="null"/> to use <see cref="TrueTypeFontParsingOptions.Default"/>.
+    /// </param>
+    /// <param name="cancellationToken">A token used to cancel the incremental copy of a non-seekable stream.</param>
     /// <returns>An instance of <see cref="TrueTypeFont"/>.</returns>
-    private static TrueTypeFont ParseFont(Reader data)
+    public static async ValueTask<TrueTypeFont> ParseFontAsync(Stream s, TrueTypeFontParsingOptions options = null, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(s);
+        options ??= TrueTypeFontParsingOptions.Default;
+        options.EnsureValid();
+        if (!s.CanRead)
+            throw new InvalidOperationException("The stream must be readable");
+
+        try
+        {
+            if (!s.CanSeek)
+            {
+                await using var buffered = await CopyToBoundedSeekableStreamAsync(s, options.MaximumFontBytes, cancellationToken).ConfigureAwait(false);
+                return ParseFontFromSeekableStream(buffered, options);
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            long available = s.Length - s.Position;
+            if (available > options.MaximumFontBytes)
+            {
+                FontParsingContext.Reject(FontDiagnosticCode.ResourceLimitExceeded,
+                    $"Font size {available} exceeds MaximumFontBytes ({options.MaximumFontBytes}).");
+            }
+            return ParseFontFromSeekableStream(s, options);
+        }
+        finally
+        {
+            if (!options.LeaveOpen)
+            {
+                await s.DisposeAsync().ConfigureAwait(false);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Copies a non-seekable stream into an owned, seekable <see cref="MemoryStream"/>, in bounded
+    /// blocks, rejecting the input as soon as it would exceed <paramref name="maximumBytes"/>
+    /// rather than after buffering it in full.
+    /// </summary>
+    private static MemoryStream CopyToBoundedSeekableStream(Stream source, long maximumBytes)
+    {
+        var buffer = new byte[81920];
+        var destination = new MemoryStream();
+        try
+        {
+            long total = 0;
+            int read;
+            while ((read = source.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                total += read;
+                if (total > maximumBytes)
+                {
+                    FontParsingContext.Reject(FontDiagnosticCode.ResourceLimitExceeded,
+                        $"Font stream exceeds MaximumFontBytes ({maximumBytes}).");
+                }
+                destination.Write(buffer, 0, read);
+            }
+            destination.Position = 0;
+            return destination;
+        }
+        catch
+        {
+            destination.Dispose();
+            throw;
+        }
+    }
+
+    /// <summary>Asynchronous, cancellable counterpart to <see cref="CopyToBoundedSeekableStream"/>.</summary>
+    private static async Task<MemoryStream> CopyToBoundedSeekableStreamAsync(Stream source, long maximumBytes, CancellationToken cancellationToken)
+    {
+        var buffer = new byte[81920];
+        var destination = new MemoryStream();
+        try
+        {
+            long total = 0;
+            int read;
+            while ((read = await source.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false)) > 0)
+            {
+                total += read;
+                if (total > maximumBytes)
+                {
+                    FontParsingContext.Reject(FontDiagnosticCode.ResourceLimitExceeded,
+                        $"Font stream exceeds MaximumFontBytes ({maximumBytes}).");
+                }
+                await destination.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
+            }
+            destination.Position = 0;
+            return destination;
+        }
+        catch
+        {
+            await destination.DisposeAsync().ConfigureAwait(false);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Parses a font whose bytes are fully available through a seekable stream, starting at the
+    /// stream's current position. This is the single entry point every public overload converges
+    /// on once it holds a bounded, seekable source.
+    /// </summary>
+    private static TrueTypeFont ParseFontFromSeekableStream(Stream seekableStream, TrueTypeFontParsingOptions options)
+    {
+        long fontStart = seekableStream.Position;
+        long available = seekableStream.Length - fontStart;
+        if (available > options.MaximumFontBytes)
+        {
+            FontParsingContext.Reject(FontDiagnosticCode.ResourceLimitExceeded,
+                $"Font size {available} exceeds MaximumFontBytes ({options.MaximumFontBytes}).");
+        }
+        // A PartialStream view remaps position 0 to fontStart, so every SFNT offset (already
+        // relative to the start of the font per spec) can be used directly as a position/Slice
+        // argument without an extra "fontStart +" at each call site.
+        var view = new PartialStream(seekableStream, fontStart, available);
+        var data = new Reader(view, rawReader.ReaderDelegates);
+        return ParseFont(data, options);
+    }
+
+    #endregion
+
+    /// <summary>
+    /// Parses a TrueType font from a Reader bounded to exactly the font's own bytes.
+    /// </summary>
+    /// <param name="data">The reader from which to read the font data.</param>
+    /// <param name="options">The active parsing options.</param>
+    /// <returns>An instance of <see cref="TrueTypeFont"/>.</returns>
+    private static TrueTypeFont ParseFont(Reader data, TrueTypeFontParsingOptions options)
+    {
+        long fontLength = data.Stream.Length;
+        if (fontLength < OffsetTableSize)
+        {
+            FontParsingContext.Reject(FontDiagnosticCode.InvalidOffsetTable,
+                $"Font is too small ({fontLength} bytes) to contain an SFNT offset table.");
+        }
+
         int type = data.Read<Int32>();
-        int numTables = data.Read<Int16>();
-        // Skip searchRange, entrySelector and rangeShift.
-        data.Read<Int16>();
-        data.Read<Int16>();
-        data.Read<Int16>();
+        ushort numTables = data.Read<UInt16>();
+        ushort declaredSearchRange = data.Read<UInt16>();
+        ushort declaredEntrySelector = data.Read<UInt16>();
+        ushort declaredRangeShift = data.Read<UInt16>();
+
+        if (numTables > options.MaximumTables)
+        {
+            FontParsingContext.Reject(FontDiagnosticCode.ResourceLimitExceeded,
+                $"numTables ({numTables}) exceeds MaximumTables ({options.MaximumTables}).");
+        }
+
+        long directoryLength = checked(OffsetTableSize + (long)numTables * TableDirectoryEntrySize);
+        if (directoryLength > fontLength)
+        {
+            FontParsingContext.Reject(FontDiagnosticCode.InvalidDirectoryRange,
+                $"Table directory ({directoryLength} bytes for {numTables} tables) does not fit within the font ({fontLength} bytes).");
+        }
+
         TrueTypeFont trueTypeFont = new TrueTypeFont(type);
-        ParseDirectories(data, numTables, trueTypeFont);
+        var context = new FontParsingContext(options);
+        // Kept for the lifetime of the font (not reset once parsing finishes): see the
+        // ParsingContext property doc for why lazy composite-glyph resolution needs it later.
+        trueTypeFont.ParsingContext = context;
+        ValidateDerivedOffsetTableFields(context, numTables, declaredSearchRange, declaredEntrySelector, declaredRangeShift);
+        var entries = ReadDirectoryEntries(data, numTables);
+        var accepted = ValidateDirectory(context, entries, directoryLength, fontLength);
+        ParseDirectories(data, accepted, trueTypeFont, context, fontLength);
+        // A true snapshot, decoupled from `context` (which is otherwise kept alive for the font's
+        // lifetime -- see the ParsingContext property doc): TrueTypeFont.Diagnostics must reflect
+        // exactly what happened during this parse and never change afterward, even though nothing
+        // currently appends to `context` post-parse.
+        trueTypeFont.Diagnostics = context.Diagnostics.ToArray();
         return trueTypeFont;
     }
 
     /// <summary>
-    /// Serializes the TrueType font into a byte array.
+    /// Validates the header's derived fields (searchRange/entrySelector/rangeShift) against the
+    /// values implied by <paramref name="numTables"/>, per the TrueType spec's binary-search
+    /// layout contract. A mismatch does not affect correctness of this parser (the directory is
+    /// still read explicitly, in full), but signals a font that was not produced by a conformant
+    /// tool, which is itself worth surfacing.
+    /// </summary>
+    private static void ValidateDerivedOffsetTableFields(FontParsingContext context, ushort numTables, ushort searchRange, ushort entrySelector, ushort rangeShift)
+    {
+        ushort expectedSearchRange, expectedEntrySelector, expectedRangeShift;
+        if (numTables == 0)
+        {
+            expectedSearchRange = 0;
+            expectedEntrySelector = 0;
+            expectedRangeShift = 0;
+        }
+        else
+        {
+            int maxPowerOfTwo = 1 << BitOperations.Log2(numTables);
+            expectedSearchRange = (ushort)(maxPowerOfTwo * TableDirectoryEntrySize);
+            expectedEntrySelector = (ushort)BitOperations.Log2((uint)maxPowerOfTwo);
+            expectedRangeShift = (ushort)(numTables * TableDirectoryEntrySize - expectedSearchRange);
+        }
+
+        if (searchRange != expectedSearchRange || entrySelector != expectedEntrySelector || rangeShift != expectedRangeShift)
+        {
+            context.ReportError(FontDiagnosticCode.InvalidOffsetTable,
+                $"Offset table declares searchRange={searchRange}, entrySelector={entrySelector}, rangeShift={rangeShift}; " +
+                $"expected {expectedSearchRange}, {expectedEntrySelector}, {expectedRangeShift} for numTables={numTables}.");
+        }
+    }
+
+    /// <summary>Reads the raw directory entries, preserving every record (no de-duplication yet).</summary>
+    private static List<TableDirectoryEntry> ReadDirectoryEntries(Reader data, ushort numTables)
+    {
+        var entries = new List<TableDirectoryEntry>(numTables);
+        for (int i = 0; i < numTables; i++)
+        {
+            Tag tag = data.ReadFixedLengthString(TagLength, Encoding.ASCII);
+            uint checksum = data.Read<UInt32>();
+            uint offset = data.Read<UInt32>();
+            uint length = data.Read<UInt32>();
+            entries.Add(new TableDirectoryEntry(tag, checksum, offset, length, i));
+        }
+        return entries;
+    }
+
+    /// <summary>
+    /// Validates every directory entry's range, tag uniqueness, and overlap/alias policy, and
+    /// returns the entries accepted for table parsing. Range and allocation-limit violations
+    /// always drop just that one entry (never dereferenced, so always safe); in
+    /// <see cref="FontValidationMode.Strict"/> any dropped entry aborts the whole parse via
+    /// <see cref="FontParsingContext.ReportError"/> throwing, while in
+    /// <see cref="FontValidationMode.Permissive"/> the font is parsed without it.
+    /// </summary>
+    private static List<TableDirectoryEntry> ValidateDirectory(FontParsingContext context, List<TableDirectoryEntry> entries, long directoryLength, long fontLength)
+    {
+        var accepted = new List<TableDirectoryEntry>(entries.Count);
+        var seenTags = new HashSet<Tag>();
+
+        foreach (var entry in entries)
+        {
+            long end;
+            try
+            {
+                end = entry.End;
+            }
+            catch (OverflowException)
+            {
+                // Always fatal: an overflowing range calculation must never be used to seek/slice.
+                FontParsingContext.Reject(FontDiagnosticCode.InvalidDirectoryRange,
+                    $"Table '{entry.Tag}' offset+length overflows a 64-bit range (offset={entry.Offset}, length={entry.Length}).",
+                    entry.Tag, entry.Offset, entry.Length);
+                throw; // unreachable: Reject always throws, but keeps `end` definitely-assigned for the compiler.
+            }
+
+            if (end > fontLength)
+            {
+                // Always fatal, in both validation modes: an out-of-file range is a memory-safety
+                // hazard (it would seek/slice past the end of the source), not a policy choice.
+                FontParsingContext.Reject(FontDiagnosticCode.InvalidDirectoryRange,
+                    $"Table '{entry.Tag}' range [{entry.Offset}, {end}) exceeds the font length ({fontLength}).",
+                    entry.Tag, entry.Offset, entry.Length);
+            }
+
+            if (entry.Length > context.Options.MaximumTableBytes)
+            {
+                // Always fatal: this is an allocation-limit violation, not a policy choice.
+                FontParsingContext.Reject(FontDiagnosticCode.ResourceLimitExceeded,
+                    $"Table '{entry.Tag}' length ({entry.Length}) exceeds MaximumTableBytes ({context.Options.MaximumTableBytes}).",
+                    entry.Tag, entry.Offset, entry.Length);
+            }
+
+            if (entry.Length > 0 && entry.Offset < directoryLength)
+            {
+                context.ReportError(FontDiagnosticCode.OverlappingTableRange,
+                    $"Table '{entry.Tag}' at offset {entry.Offset} starts before the end of the table directory ({directoryLength}).",
+                    entry.Tag, entry.Offset, entry.Length);
+                continue;
+            }
+
+            if (entry.Offset % TtfAlignment != 0)
+            {
+                context.ReportWarning(FontDiagnosticCode.InvalidDirectoryRange,
+                    $"Table '{entry.Tag}' offset {entry.Offset} is not 4-byte aligned.", entry.Tag, entry.Offset, entry.Length);
+            }
+
+            if (!seenTags.Add(entry.Tag))
+            {
+                context.ReportError(FontDiagnosticCode.DuplicateTableTag,
+                    $"Duplicate table tag '{entry.Tag}' (directory entry #{entry.OriginalIndex}); keeping the first occurrence.",
+                    entry.Tag, entry.Offset, entry.Length);
+                continue;
+            }
+
+            accepted.Add(entry);
+        }
+
+        DetectOverlaps(context, accepted);
+        return accepted;
+    }
+
+    /// <summary>
+    /// Walks the accepted entries sorted by offset and reports exact aliases, same-offset
+    /// conflicts, and partial or containing overlaps -- against every earlier entry whose range
+    /// has not yet ended, not merely the immediately preceding one in offset order. A single wide
+    /// table can contain several disjoint smaller tables; comparing only adjacent pairs after
+    /// sorting would miss the later ones once a nearer, shorter overlap had already "moved past"
+    /// the wide table in the scan. Two entries with identical offset and length are treated as a
+    /// suspicious alias and rejected in strict mode; every other overlap shape (same offset with
+    /// different lengths, partial overlap, or full containment) is always rejected in strict mode.
+    /// Neither shape is a memory-safety issue on its own (both ranges were already validated to fit
+    /// within the font), so permissive mode records a diagnostic and keeps every entry.
+    /// </summary>
+    private static void DetectOverlaps(FontParsingContext context, List<TableDirectoryEntry> accepted)
+    {
+        var ordered = accepted.OrderBy(e => e.Offset).ThenBy(e => e.OriginalIndex).ToList();
+        // Active entries whose range might still overlap a later one, ordered so the smallest End
+        // is first; entries whose End is at or before the current one's Offset are pruned before
+        // comparing, so this stays a simple growing list.
+        var active = new List<TableDirectoryEntry>();
+        foreach (var current in ordered)
+        {
+            active.RemoveAll(e => e.End <= current.Offset);
+            foreach (var previous in active)
+            {
+                bool exactAlias = current.Offset == previous.Offset && current.Length == previous.Length;
+                var code = exactAlias ? FontDiagnosticCode.AliasedTableRange : FontDiagnosticCode.OverlappingTableRange;
+                context.ReportError(code,
+                    exactAlias
+                        ? $"Tables '{previous.Tag}' and '{current.Tag}' declare an identical range [{current.Offset}, {current.End}) (exact alias)."
+                        : $"Tables '{previous.Tag}' [{previous.Offset}, {previous.End}) and '{current.Tag}' [{current.Offset}, {current.End}) overlap.",
+                    current.Tag, current.Offset, current.Length);
+            }
+            active.Add(current);
+        }
+    }
+
+    /// <summary>
+    /// Serializes the TrueType font into a byte array using the default writing options.
     /// </summary>
     /// <returns>A byte array representing the font file.</returns>
-    public virtual byte[] WriteFont()
+    public virtual byte[] WriteFont() => WriteFont(TrueTypeFontWritingOptions.Default);
+
+    /// <summary>
+    /// Serializes the TrueType font into a byte array.
+    /// </summary>
+    /// <param name="options">
+    /// Writing options, or <see langword="null"/> to use <see cref="TrueTypeFontWritingOptions.Default"/>.
+    /// </param>
+    /// <returns>A byte array representing the font file.</returns>
+    public virtual byte[] WriteFont(TrueTypeFontWritingOptions options)
     {
+        options ??= TrueTypeFontWritingOptions.Default;
+        options.EnsureValid();
+        PrepareForSerialization();
+
+        if (options.ValidateBeforeWrite && Length > options.MaximumOutputBytes)
+        {
+            throw new InvalidOperationException($"Serialized font length ({Length}) exceeds MaximumOutputBytes ({options.MaximumOutputBytes}).");
+        }
+
         using var ms = new MemoryStream(Length);
         var data = new Writer(ms, rawWriter.WriterDelegates);
 
         data.Write<Int32>(Type);
-        data.Write<Int16>(TablesCount);
-        data.Write<Int16>(SearchRange);
-        data.Write<Int16>(EntrySelector);
-        data.Write<Int16>(RangeShift);
+        data.Write<UInt16>(TablesCount);
+        data.Write<UInt16>(SearchRange);
+        data.Write<UInt16>(EntrySelector);
+        data.Write<UInt16>(RangeShift);
         int currentoffset = OffsetTableSize + TablesCount * TableDirectoryEntrySize;
         foreach (var tagTable in tables)
         {
@@ -168,9 +666,12 @@ public class TrueTypeFont : IFont
             var datas = datasStream.ToArray();
             int dataLength = datas.Length;
             data.WriteFixedLengthString(tag, TagLength, Encoding.ASCII);
-            data.Write<Int32>(ComputeChecksum(tag, new ReaderWriter(new MemoryStream(datas))));
-            data.Write<Int32>(currentoffset);
-            data.Write<Int32>(dataLength);
+            using (var tableStream = new MemoryStream(datas, writable: false))
+            {
+                data.Write<UInt32>(TableChecksum.ComputeTableChecksum(tableStream, 0, dataLength, zeroHeadChecksumAdjustment: tag == TableTypes.HEAD));
+            }
+            data.Write<UInt32>((uint)currentoffset);
+            data.Write<UInt32>((uint)dataLength);
             data.Push();
             data.Seek(currentoffset, SeekOrigin.Begin);
             data.Write<byte[]>(datas);
@@ -183,68 +684,160 @@ public class TrueTypeFont : IFont
             data.Pop();
         }
         data.Position = 0;
-        UpdateChecksumAdj(new ReaderWriter(ms));
+        UpdateChecksumAdj(ms);
         return ms.ToArray();
     }
 
     /// <summary>
-    /// Parses the directory of tables from the font data.
+    /// Serializes the TrueType font directly to a destination stream.
+    /// </summary>
+    /// <remarks>
+    /// Implemented as a thin wrapper over <see cref="WriteFont(TrueTypeFontWritingOptions)"/>: the
+    /// whole font is still assembled in memory first (so that a validation failure never leaves a
+    /// partial font in the in-memory buffer), then copied to <paramref name="destination"/> in one
+    /// write. If <paramref name="destination"/> itself fails partway through that write (an I/O
+    /// error), it can be left holding a partial, invalid font -- this method only guarantees
+    /// atomicity for the in-memory layout, not for the destination stream.
+    /// </remarks>
+    /// <param name="destination">The stream to write the serialized font to.</param>
+    /// <param name="options">
+    /// Writing options, or <see langword="null"/> to use <see cref="TrueTypeFontWritingOptions.Default"/>.
+    /// </param>
+    public virtual void WriteFont(Stream destination, TrueTypeFontWritingOptions options = null)
+    {
+        ArgumentNullException.ThrowIfNull(destination);
+        byte[] bytes = WriteFont(options);
+        destination.Write(bytes, 0, bytes.Length);
+    }
+
+    /// <summary>
+    /// Asynchronously serializes the TrueType font directly to a destination stream.
+    /// </summary>
+    /// <param name="destination">The stream to write the serialized font to.</param>
+    /// <param name="options">
+    /// Writing options, or <see langword="null"/> to use <see cref="TrueTypeFontWritingOptions.Default"/>.
+    /// </param>
+    /// <param name="cancellationToken">A token used to cancel the write to <paramref name="destination"/>.</param>
+    public virtual async ValueTask WriteFontAsync(Stream destination, TrueTypeFontWritingOptions options = null, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(destination);
+        byte[] bytes = WriteFont(options);
+        await destination.WriteAsync(bytes.AsMemory(), cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Runs every preparation step required before the font's layout can be measured or written:
+    /// currently, freezing the 'loca' table's offsets and short/long format decision (see
+    /// <see cref="LocaTable.PrepareForSerialization"/>). Idempotent and safe to call multiple times.
+    /// </summary>
+    /// <remarks>
+    /// Previously, <c>LocaTable.Length</c> silently recomputed 'loca' offsets from 'glyf' as a side
+    /// effect of being read (<c>RefreshOffsetsFromGlyf()</c> called from the property getter),
+    /// which meant a mere property read could change what a subsequent <c>WriteData</c> call
+    /// serialized depending on call order. This method makes that step explicit and single-shot,
+    /// invoked once up front by every serialization entry point.
+    /// </remarks>
+    private void PrepareForSerialization()
+    {
+        if (TryGetTable<LocaTable>(TableTypes.LOCA, out var loca))
+        {
+            loca.PrepareForSerialization();
+        }
+    }
+
+    /// <summary>
+    /// Parses the directory of tables from the font data, resolving each table's declared
+    /// dependencies before it is read, using a bounded slice of the source stream for each
+    /// table's payload rather than copying every table into a separate in-memory buffer up front.
     /// </summary>
     /// <param name="data">The reader from which to read the table directory.</param>
-    /// <param name="numTables">The number of tables.</param>
+    /// <param name="entries">The validated, deduplicated directory entries to read.</param>
     /// <param name="ttf">The TrueTypeFont instance to populate.</param>
-    private static void ParseDirectories(Reader data, int numTables, TrueTypeFont ttf)
+    /// <param name="context">The active parsing context (options + diagnostics sink).</param>
+    /// <param name="fontLength">The full, bounded byte length of the font being parsed.</param>
+    private static void ParseDirectories(Reader data, List<TableDirectoryEntry> entries, TrueTypeFont ttf, FontParsingContext context, long fontLength)
     {
-        var tables = new SortedSet<TableDeclaration>();
+        var remaining = entries.ToDictionary(e => e.Tag);
 
-        for (int i = 0; i < numTables; i++)
+        void ReadTable(TableDirectoryEntry entry)
         {
-            tables.Add(new TableDeclaration()
-            {
-                Tag = data.ReadFixedLengthString(4, Encoding.ASCII),
-                CheckSum = data.Read<Int32>(),
-                Offset = data.Read<Int32>(),
-                DataLength = data.Read<Int32>(),
-            });
-        }
+            if (ttf.ContainsTable(entry.Tag)) { return; }
+            remaining.Remove(entry.Tag);
 
-        foreach (var td in tables)
-        {
-            data.Position = td.Offset;
-            td.Data = new MemoryStream(data.ReadBytes(td.DataLength));
-            var checkSum = ComputeChecksum(td.Tag, new ReaderWriter(td.Data));
-            if (checkSum != td.CheckSum)
-            {
-                System.Diagnostics.Debug.WriteLine($"Declared Checksum {td.CheckSum:X4} is different from {checkSum:X4}");
-            }
-        }
-
-        void ReadTable(TableDeclaration table)
-        {
-            if (ttf.ContainsTable(table.Tag)) { return; }
-
-            tables.Remove(table);
             TrueTypeTable ttt;
-            if (TablesType.TryGetValue(table.Tag, out var d))
+            if (TablesType.TryGetValue(entry.Tag, out var d))
             {
                 foreach (var dependency in d.Descriptor.DependsOn)
                 {
-                    var tableDependency = tables.FirstOrDefault(t => t.Tag == dependency);
-                    if (tableDependency != null) { ReadTable(tableDependency); }
+                    if (remaining.TryGetValue(dependency, out var dependencyEntry))
+                    {
+                        ReadTable(dependencyEntry);
+                    }
                 }
                 ttt = (TrueTypeTable)Activator.CreateInstance(d.TableType, true);
             }
             else
             {
-                ttt = new TrueTypeTable(table.Tag);
+                context.ReportWarning(FontDiagnosticCode.UnsupportedTable,
+                    $"Table '{entry.Tag}' has no known implementation; its data is preserved verbatim.",
+                    entry.Tag, entry.Offset, entry.Length);
+                ttt = new TrueTypeTable(entry.Tag);
             }
-            ttf.AddTable(table.Tag, ttt);
-            ttt.ReadData(new Reader(table.Data, rawReader.ReaderDelegates));
+
+            uint computed = TableChecksum.ComputeTableChecksum(data.Stream, entry.Offset, entry.Length, zeroHeadChecksumAdjustment: entry.Tag == TableTypes.HEAD);
+            if (computed != entry.Checksum)
+            {
+                context.ReportError(FontDiagnosticCode.TableChecksumMismatch,
+                    $"Table '{entry.Tag}' declared checksum {entry.Checksum:X8} does not match computed checksum {computed:X8}.",
+                    entry.Tag, entry.Offset, entry.Length);
+            }
+
+            ttf.AddTable(entry.Tag, ttt);
+            ttt.ReadData(data.Slice(entry.Offset, entry.Length));
         }
 
-        while (tables.Count > 0)
+        while (remaining.Count > 0)
         {
-            ReadTable(tables.First());
+            ReadTable(remaining.Values.First());
+        }
+
+        VerifyFontChecksum(data.Stream, ttf, fontLength, context);
+    }
+
+    /// <summary>
+    /// Verifies the whole-font checksum: the sum of every 32-bit big-endian word across the
+    /// <em>entire</em> bounded font -- not merely up to the end of the last table -- (including
+    /// 'head'.checksumAdjustment as stored, unmodified) must equal <see cref="ChecksumMagicNumber"/>.
+    /// Fonts with no 'head' table have no checksumAdjustment slot to make this identity hold and
+    /// are skipped rather than unconditionally failed.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately covers every byte of <paramref name="fontLength"/>, including any trailing
+    /// bytes past the last table's declared end: this parser's policy is that such bytes are part
+    /// of the font (a font is exactly the bytes <see cref="ParseFontFromSeekableStream"/> bounded
+    /// via <see cref="TrueTypeFontParsingOptions.MaximumFontBytes"/>/the source length, not merely
+    /// the union of its declared table ranges), so they must participate in the checksum rather
+    /// than silently going unchecked. A font engineered to declare tables that omit trailing bytes
+    /// from this sum would otherwise let hostile trailing content hide from checksum verification
+    /// entirely.
+    /// </remarks>
+    private static void VerifyFontChecksum(Stream fontStream, TrueTypeFont ttf, long fontLength, FontParsingContext context)
+    {
+        if (!ttf.ContainsTable(TableTypes.HEAD))
+        {
+            return;
+        }
+
+        // The full bounded length, uncapped: TableChecksum.ComputeTableChecksum accepts a long
+        // range for exactly this reason (see its own doc comment) -- clamping to uint.MaxValue here
+        // would silently stop covering the font beyond 4 GiB whenever a caller configures
+        // MaximumFontBytes above that, contradicting the "covers the entire bounded font" contract
+        // without ever surfacing an error.
+        uint computed = TableChecksum.ComputeTableChecksum(fontStream, 0, fontLength, zeroHeadChecksumAdjustment: false);
+        if (computed != ChecksumMagicNumber)
+        {
+            context.ReportError(FontDiagnosticCode.FontChecksumMismatch,
+                $"Whole-font checksum {computed:X8} does not equal the required magic number {ChecksumMagicNumber:X8}.");
         }
     }
 
@@ -268,87 +861,54 @@ public class TrueTypeFont : IFont
     /// <summary>
     /// Gets the number of tables in the font.
     /// </summary>
-    public virtual short TablesCount => (short)tables.Count;
+    public virtual ushort TablesCount => (ushort)tables.Count;
 
     /// <summary>
-    /// Gets the search range used in the font header.
+    /// Gets the search range used in the font header. Explicitly zero for a font with no tables
+    /// (rather than relying on <see cref="BitOperations.Log2(uint)"/>'s behavior at zero).
     /// </summary>
-    public virtual short SearchRange =>
-        (short)(TableDirectoryEntrySize * (1 << BitOperations.Log2((uint)TablesCount)));
+    public virtual ushort SearchRange =>
+        TablesCount == 0 ? (ushort)0 : (ushort)(TableDirectoryEntrySize * (1 << BitOperations.Log2((uint)TablesCount)));
 
     /// <summary>
-    /// Gets the entry selector used in the font header.
+    /// Gets the entry selector used in the font header. Explicitly zero for a font with no tables.
     /// </summary>
-    public virtual short EntrySelector =>
-        (short)BitOperations.Log2((uint)TablesCount);
+    public virtual ushort EntrySelector =>
+        TablesCount == 0 ? (ushort)0 : (ushort)BitOperations.Log2((uint)TablesCount);
 
     /// <summary>
-    /// Gets the range shift used in the font header.
+    /// Gets the range shift used in the font header. Explicitly zero for a font with no tables.
     /// </summary>
-    public virtual short RangeShift =>
+    public virtual ushort RangeShift =>
         // TTF spec: rangeShift = numTables * 16 - searchRange
-        (short)(TablesCount * TableDirectoryEntrySize - SearchRange);
-
-    /// <summary>
-    /// Computes the checksum for the data associated with the specified table tag.
-    /// </summary>
-    /// <param name="tagString">The table tag string.</param>
-    /// <param name="data">The ReaderWriter wrapping the data.</param>
-    /// <returns>The computed checksum.</returns>
-    private static int ComputeChecksum(string tagString, ReaderWriter data)
-    {
-        unchecked
-        {
-            int result = 0;
-            data.Push();
-            if (tagString == "head")
-            {
-                data.Position = HeadChecksumAdjOffset;
-                data.Writer.Write<Int32>(0);
-            }
-            int nLongs = ((int)data.BytesLeft + TtfAlignment - 1) / TtfAlignment;
-            while (nLongs-- > 0)
-            {
-                if (data.BytesLeft > 3)
-                {
-                    result += data.Reader.Read<Int32>();
-                    continue;
-                }
-                int b0 = (data.BytesLeft > 0) ? data.Reader.ReadByte() : 0;
-                int b1 = (data.BytesLeft > 0) ? data.Reader.ReadByte() : 0;
-                int b2 = (data.BytesLeft > 0) ? data.Reader.ReadByte() : 0;
-                result += ((0xFF & b0) << 24) | ((0xFF & b1) << 16) | ((0xFF & b2) << 8);
-            }
-            data.Pop();
-            return result;
-        }
-    }
+        TablesCount == 0 ? (ushort)0 : (ushort)(TablesCount * TableDirectoryEntrySize - SearchRange);
 
     /// <summary>
     /// Updates the checksum adjustment value in the 'head' table.
     /// </summary>
-    /// <param name="data">The ReaderWriter wrapping the font data.</param>
-    private void UpdateChecksumAdj(ReaderWriter data)
+    /// <param name="fontStream">The freshly written, fully-owned in-memory font buffer.</param>
+    private void UpdateChecksumAdj(MemoryStream fontStream)
     {
         unchecked
         {
-            long checksum = ComputeChecksum("", data);
-            long checksumAdj = ChecksumMagicNumber - checksum;
+            uint checksum = TableChecksum.ComputeTableChecksum(fontStream, 0, fontStream.Length, zeroHeadChecksumAdjustment: false);
+            uint checksumAdj = ChecksumMagicNumber - checksum;
             int offset = OffsetTableSize + TablesCount * TableDirectoryEntrySize;
             foreach (var table in tables)
             {
                 var tag = table.Key;
                 if (tag == TableTypes.HEAD)
                 {
-                    data.Seek(offset + HeadChecksumAdjOffset);
-                    data.Writer.Write<UInt32>((uint)checksumAdj);
+                    fontStream.Position = offset + HeadTable.ChecksumAdjustmentOffset;
+                    var w = new Writer(fontStream, rawWriter.WriterDelegates);
+                    w.Write<UInt32>(checksumAdj);
                     break;
                 }
-                offset += table.Value.Length;
-                if ((offset % 4) != 0)
-                {
-                    offset += (4 - (offset % 4));
-                }
+                // Must mirror the padded layout WriteFont just produced (each table's data is
+                // padded up to a 4-byte boundary before the next table starts); using the raw,
+                // unpadded Length here would misplace 'head'.checksumAdjustment whenever an
+                // earlier table's length is not itself a multiple of 4.
+                offset += MathEx.Ceiling(table.Value.Length, TtfAlignment);
             }
         }
     }
@@ -455,11 +1015,9 @@ public class TrueTypeFont : IFont
         var glyf = GetTable<GlyfTable>(TableTypes.GLYF);
         var hmtx = GetTable<HmtxTable>(TableTypes.HMTX);
         int index = ResolveGlyphIndex(cmap, c);
-        if (index > 0)
+        if (index > 0 && glyf.TryGetGlyph(index, out var glyphBase) && glyphBase is not null)
         {
-            var glyphBase = glyf.GetGlyph(index);
-            if (glyphBase != null)
-                return new TrueTypeGlyph(glyphBase, hmtx.GetAdvance(index));
+            return new TrueTypeGlyph(glyphBase, hmtx.GetAdvance(index));
         }
         return null;
     }
@@ -488,41 +1046,5 @@ public class TrueTypeFont : IFont
             return kernTable.GetSpacingCorrection(beforeGlyph, afterGlyph);
         }
         return 0f;
-    }
-
-    /// <summary>
-    /// Represents a declaration of a table in the TrueType font.
-    /// </summary>
-    public sealed class TableDeclaration : IComparable<TableDeclaration>, IComparable
-    {
-        /// <summary>
-        /// Gets or sets the table tag.
-        /// </summary>
-        public Tag Tag { get; set; }
-        /// <summary>
-        /// Gets or sets the declared checksum.
-        /// </summary>
-        public int CheckSum { get; set; }
-        /// <summary>
-        /// Gets or sets the offset to the table data.
-        /// </summary>
-        public int Offset { get; set; }
-        /// <summary>
-        /// Gets or sets the length of the table data.
-        /// </summary>
-        public int DataLength { get; set; }
-        /// <summary>
-        /// Gets or sets the table data as a MemoryStream.
-        /// </summary>
-        public MemoryStream Data { get; set; }
-
-        /// <inheritdoc/>
-        public override string ToString() => $"{Tag} - CheckSum={CheckSum:X4} - Offset={Offset} - DataLength={DataLength}";
-
-        /// <inheritdoc/>
-        public int CompareTo(TableDeclaration? other) => Offset.CompareTo(other?.Offset);
-
-        /// <inheritdoc/>
-        public int CompareTo(object? obj) => obj is TableDeclaration td ? CompareTo(td) : -1;
     }
 }

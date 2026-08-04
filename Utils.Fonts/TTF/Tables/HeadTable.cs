@@ -15,6 +15,13 @@ namespace Utils.Fonts.TTF;
 public class HeadTable : TrueTypeTable
 {
     /// <summary>
+    /// Byte offset of <see cref="ChecksumAdjustment"/> within this table's own data, per the
+    /// TrueType spec. Used by <see cref="Parsing.TableChecksum"/> to compute a table checksum
+    /// without ever writing the zeroed value back to the source.
+    /// </summary>
+    internal const int ChecksumAdjustmentOffset = 8;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="HeadTable"/> class.
     /// </summary>
     protected internal HeadTable() : base(TableTypes.HEAD) { }

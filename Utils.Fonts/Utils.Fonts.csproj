@@ -3,8 +3,7 @@
 	<PropertyGroup>
         <IsProductTrainProject>true</IsProductTrainProject>
 		<TargetFramework>net8.0</TargetFramework>
-		<EnablePreviewFeatures>True</EnablePreviewFeatures>
-		<LangVersion>Latest</LangVersion>
+		<LangVersion>13.0</LangVersion>
 		<Copyright>Olivier MARTY 2025</Copyright>
 		<Authors>Olivier MARTY</Authors>
 		<Company>Olivier MARTY</Company>
@@ -27,6 +26,10 @@
 	</ItemGroup>
 	<ItemGroup>
 		<None Include="README.md" Pack="true" PackagePath="\"/>
+	</ItemGroup>
+	<ItemGroup>
+		<InternalsVisibleTo Include="UtilsTest.Unit" />
+		<InternalsVisibleTo Include="UtilsTest.Functional" />
 	</ItemGroup>
 
 </Project>

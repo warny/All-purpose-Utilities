@@ -203,8 +203,8 @@ This human-review index summarizes the exact machine-enforced diagnostics in `en
 ## omy.Utils.Fonts
 
 - Published baseline: `1.2.1`
-- Accepted diagnostics: **22**
-- Diagnostic classes: `CP0001`: 2, `CP0002`: 13, `CP0005`: 2, `CP0006`: 5
+- Accepted diagnostics: **41** (22 from the first audit pass + 19 from the second, see below)
+- Diagnostic classes: `CP0001`: 3, `CP0002`: 31, `CP0005`: 2, `CP0006`: 5
 
 ### Removed or incompatible published surface
 
@@ -233,6 +233,58 @@ This human-review index summarizes the exact machine-enforced diagnostics in `en
 - `CP0006` — Cannot add interface member 'void Utils.Fonts.IGraphicConverter.EndDrawGlyph()' to {candidateAssembly} because it does not exist on {baselineAssembly}
 - `CP0005` — Cannot add abstract member 'int Utils.Fonts.TTF.Tables.CMap.CMapFormatBase.Length.get' to {candidateAssembly} because it does not exist on {baselineAssembly}
 - `CP0005` — Cannot add abstract member 'int Utils.Fonts.TTF.Tables.CMap.CMapFormatBase.Length' to {candidateAssembly} because it does not exist on {baselineAssembly}
+
+### Second audit pass (TODO-2026-07-19-pass2.md, items 21-39)
+
+The 19 entries below are recorded in `eng/api-breaking-changes/2.0.0.json` (same file, same
+`omy.Utils.Fonts` package block as the first-pass entries above), authored by hand against the
+`1.2.1` baseline following the exact message conventions already used elsewhere in that manifest
+(member/type existence phrasing, `{baselineAssembly}`/`{candidateAssembly}` placeholders). They
+were **not** produced by an actual ApiCompat run in this environment -- there was no baseline NuGet
+package available to diff against here. Before the 2.0.0 release gate is trusted on this package,
+re-run the ApiCompat tool against the published `1.2.1` baseline and confirm these messages match
+byte-for-byte (the gate compares diagnostic message text exactly); adjust both this file and the
+manifest if the real tool output differs in wording, nested-type naming (`+` vs `.`), or otherwise.
+
+- `CP0002` — `short Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.getGlyphIndex(int)`
+- `CP0002` — `byte[] Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.Instructions.get`
+- `CP0002` — `Utils.Fonts.TTF.Tables.CMap.CMapFormatBase[] Utils.Fonts.TTF.Tables.CmapTable.CMaps.get`
+- `CP0002` — `short Utils.Fonts.TTF.Tables.CmapTable.Version.get`
+- `CP0002` — `void Utils.Fonts.TTF.Tables.CmapTable.Version.set`
+- `CP0002` — `short Utils.Fonts.TTF.Tables.CmapTable.NumberSubtables.get`
+- `CP0002` — `Utils.Fonts.TTF.Tables.CMap.CMapFormatBase Utils.Fonts.TTF.Tables.CmapTable.GetCMap(short, short)`
+- `CP0002` — `void Utils.Fonts.TTF.Tables.CmapTable.AddCMap(short, short, Utils.Fonts.TTF.Tables.CMap.CMapFormatBase)`
+- `CP0002` — `void Utils.Fonts.TTF.Tables.CmapTable.RemoveCMap(short, short)`
+- `CP0002` — `short Utils.Fonts.TTF.TrueTypeFont.TablesCount.get`
+- `CP0002` — `short Utils.Fonts.TTF.TrueTypeFont.SearchRange.get`
+- `CP0002` — `short Utils.Fonts.TTF.TrueTypeFont.EntrySelector.get`
+- `CP0002` — `short Utils.Fonts.TTF.TrueTypeFont.RangeShift.get`
+- `CP0002` — `short Utils.Fonts.TTF.Tables.Glyf.GlyphBase.Length.get`
+- `CP0002` — `short Utils.Fonts.TTF.Tables.Glyf.GlyphSimple.Length.get`
+- `CP0002` — `short Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.Length.get`
+- `CP0002` — `Utils.Fonts.TTF.TrueTypeFont Utils.Fonts.TTF.TrueTypeFont.ParseFont(byte[])`
+- `CP0002` — `Utils.Fonts.TTF.TrueTypeFont Utils.Fonts.TTF.TrueTypeFont.ParseFont(System.IO.Stream)`
+- `CP0001` — `Utils.Fonts.TTF.TrueTypeFont+TableDeclaration`
+
+- `GlyphCompound.getGlyphIndex(int)` renamed to `GetGlyphIndex(int)`, returning `ushort` instead of `short`.
+- `GlyphCompound.Instructions` is `ReadOnlyMemory<byte>` instead of `byte[]`.
+- `CmapTable.CMaps` is `IReadOnlyList<CMapFormatBase>` instead of `CMapFormatBase[]`.
+- `CmapTable.AddCMap`/`RemoveCMap`/`GetCMap` take `ushort` platform/encoding IDs instead of `short`.
+- `CmapTable.Version`/`NumberSubtables` are `ushort` instead of `short`.
+- `TrueTypeFont.TablesCount`/`SearchRange`/`EntrySelector`/`RangeShift` are `ushort` instead of `short`.
+- `GlyphBase.Length` (and the `GlyphSimple`/`GlyphCompound` overrides) is `int` instead of `short`.
+- `TrueTypeFont.TableDeclaration` removed (replaced internally by `Parsing.TableDirectoryEntry`).
+- `TrueTypeFont.ParseFont(byte[])`/`ParseFont(Stream)` gained an optional `TrueTypeFontParsingOptions`
+  parameter (source-compatible; recompilation required for binary compatibility).
+- `TrueTypeFont.WriteFont()` gained an optional `TrueTypeFontWritingOptions` parameter (same note).
+- New public types: `TrueTypeFontParsingOptions`, `TrueTypeFontWritingOptions`, `FontValidationMode`,
+  `FontDiagnostic`, `FontDiagnosticCode`, `FontDiagnosticSeverity`, `FontParseException`.
+- New public members: `TrueTypeFont.Diagnostics`, `TrueTypeFont.ParseFontAsync`,
+  `TrueTypeFont.WriteFont(Stream, ...)`, `TrueTypeFont.WriteFontAsync`, `GlyfTable.TryGetGlyph`.
+- Fonts with structural anomalies that previously parsed silently (duplicate table tags, checksum
+  mismatches, malformed `cmap` subtables, out-of-range composite glyph references) now throw
+  `FontParseException` by default (`FontValidationMode.Strict`); pass `FontValidationMode.Permissive`
+  to restore a best-effort parse with diagnostics instead of an exception.
 
 <a id="omy-utils-imaging"></a>
 ## omy.Utils.Imaging

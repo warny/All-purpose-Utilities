@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Fonts;
 using Utils.Fonts.TTF;
+using Utils.Fonts.TTF.Parsing;
 using Utils.Fonts.TTF.Tables;
 using Utils.Fonts.TTF.Tables.Glyf;
 using Utils.IO.Serialization;
@@ -42,7 +43,8 @@ public class GlyphCompoundTests
         short translateX, short translateY,
         float m11, float m21, float m12, float m22,
         CompoundGlyfFlags extraFlags,
-        byte[] instructions = null)
+        byte[] instructions = null,
+        ushort targetGlyphIndex = 0)
     {
         using var ms = new MemoryStream();
         var w = new Writer(ms, BigEndianWriter.WriterDelegates);
@@ -51,7 +53,7 @@ public class GlyphCompoundTests
 
         var flags = CompoundGlyfFlags.ArgsAreWords | CompoundGlyfFlags.ArgsAreXY | CompoundGlyfFlags.HasTwoByTwo | extraFlags;
         w.Write<short>((short)flags);
-        w.Write<short>(0); // glyphIndex: references glyph 0
+        w.Write<ushort>(targetGlyphIndex);
         w.Write<short>(translateX);
         w.Write<short>(translateY);
         w.Write<short>((short)System.Math.Round(m11 * 16384f));
@@ -75,6 +77,16 @@ public class GlyphCompoundTests
     // Wires up a minimal TrueTypeFont (maxp/head/loca/glyf) containing the origin-point glyph at
     // index 0 followed by the given compound glyphs, and returns the GlyfTable to query.
     private static GlyfTable BuildFontWithCompoundGlyphs(params byte[][] compoundGlyphBytes)
+        => BuildFontWithCompoundGlyphs(null, compoundGlyphBytes);
+
+    /// <summary>
+    /// Same as the params-only overload, but wires <paramref name="context"/> onto the font before
+    /// 'glyf' is read, so tests can exercise strict/permissive policy and custom
+    /// <see cref="TrueTypeFontParsingOptions"/> (e.g. a smaller-than-default composite budget)
+    /// without going through a full <see cref="TrueTypeFont.ParseFont(System.ReadOnlySpan{byte}, TrueTypeFontParsingOptions)"/>
+    /// round trip.
+    /// </summary>
+    private static GlyfTable BuildFontWithCompoundGlyphs(FontParsingContext context, params byte[][] compoundGlyphBytes)
     {
         byte[] originGlyph = BuildOriginPointGlyphBytes();
         byte[][] allGlyphs = new byte[compoundGlyphBytes.Length + 1][];
@@ -85,6 +97,7 @@ public class GlyphCompoundTests
         }
 
         var font = new TrueTypeFont(0);
+        font.ParsingContext = context;
 
         var maxp = (MaxpTable)font.CreateTable(TableTypes.MAXP);
         maxp.NumGlyphs = (short)allGlyphs.Length;
@@ -236,5 +249,194 @@ public class GlyphCompoundTests
 
         Assert.AreEqual(glyph.Length, outMs.ToArray().Length);
         CollectionAssert.AreEqual(original, outMs.ToArray());
+    }
+
+    // TODO-pass2 item 14.1/30: GlyphIndex is unsigned; GetGlyphIndex (renamed from getGlyphIndex)
+    // returns ushort so glyph IDs above 32767 are not misread as negative.
+    [TestMethod]
+    public void GetGlyphIndex_AboveShortMaxValue_ReturnsUnsignedValue()
+    {
+        byte[] bytes = BuildCompoundGlyphBytes(0, 0, 1f, 0f, 0f, 1f, default, targetGlyphIndex: 40000);
+        var glyph = (GlyphCompound)GlyphBase.CreateGlyf(MakeReader(bytes), null);
+
+        Assert.AreEqual((ushort)40000, glyph.GetGlyphIndex(0));
+    }
+
+    // TODO-pass2 item 14.3: mutually exclusive scale flags must be rejected rather than silently
+    // letting the last-read scale field win.
+    [TestMethod]
+    public void ConflictingScaleFlags_Throws()
+    {
+        using var ms = new MemoryStream();
+        var w = new Writer(ms, BigEndianWriter.WriterDelegates);
+        w.Write<short>(-1);
+        w.Write<short>(0); w.Write<short>(0); w.Write<short>(0); w.Write<short>(0);
+        var flags = CompoundGlyfFlags.ArgsAreXY | CompoundGlyfFlags.HasScale | CompoundGlyfFlags.HasXYScale;
+        w.Write<short>((short)flags);
+        w.Write<ushort>(0);
+        w.WriteByte(0); w.WriteByte(0);
+        w.Write<short>(16384); // HasScale field
+        w.Write<short>(16384); // HasXYScale field
+
+        Assert.ThrowsExactly<FontParseException>(() => GlyphBase.CreateGlyf(MakeReader(ms.ToArray()), null));
+    }
+
+    // TODO-pass2 item 14.5/36: Instructions must not be a mutable array callers can corrupt.
+    [TestMethod]
+    public void Instructions_IsReadOnlyMemory()
+    {
+        byte[] instructionBytes = [1, 2, 3];
+        byte[] bytes = BuildCompoundGlyphBytes(0, 0, 1f, 0f, 0f, 1f, CompoundGlyfFlags.HasInstructions, instructionBytes);
+        var glyph = (GlyphCompound)GlyphBase.CreateGlyf(MakeReader(bytes), null);
+
+        CollectionAssert.AreEqual(instructionBytes, glyph.Instructions.ToArray());
+    }
+
+    // TODO-pass2 item 14.5: instruction length is read exactly as declared (UInt16), and a
+    // configurable limit -- independent of the coarser whole-table MaximumTableBytes bound -- is
+    // enforced before those bytes are read.
+    [TestMethod]
+    public void Instructions_ExactlyAtCustomLimit_Succeeds()
+    {
+        byte[] instructions = new byte[10];
+        byte[] compound = BuildCompoundGlyphBytes(0, 0, 1f, 0f, 0f, 1f, CompoundGlyfFlags.HasInstructions, instructions);
+        var context = new FontParsingContext(new TrueTypeFontParsingOptions { MaximumCompositeInstructionBytes = 10 });
+
+        var glyf = BuildFontWithCompoundGlyphs(context, compound);
+        var glyph = (GlyphCompound)glyf.GetGlyph(1);
+
+        Assert.AreEqual(10, glyph.Instructions.Length);
+    }
+
+    [TestMethod]
+    public void Instructions_OneByteAboveCustomLimit_Throws()
+    {
+        byte[] instructions = new byte[11];
+        byte[] compound = BuildCompoundGlyphBytes(0, 0, 1f, 0f, 0f, 1f, CompoundGlyfFlags.HasInstructions, instructions);
+        var context = new FontParsingContext(new TrueTypeFontParsingOptions { MaximumCompositeInstructionBytes = 10 });
+
+        var ex = Assert.ThrowsExactly<FontParseException>(() => BuildFontWithCompoundGlyphs(context, compound));
+        Assert.AreEqual(FontDiagnosticCode.ResourceLimitExceeded, ex.Diagnostic.Code);
+    }
+
+    [TestMethod]
+    public void Instructions_TruncatedRead_Throws()
+    {
+        // Declares 100 instruction bytes (well within the default 64 KiB limit) but supplies none.
+        using var ms = new MemoryStream();
+        var w = new Writer(ms, BigEndianWriter.WriterDelegates);
+        w.Write<short>(-1);
+        w.Write<short>(0); w.Write<short>(0); w.Write<short>(0); w.Write<short>(0);
+        var flags = CompoundGlyfFlags.ArgsAreXY | CompoundGlyfFlags.HasInstructions;
+        w.Write<short>((short)flags);
+        w.Write<ushort>(0);
+        w.WriteByte(0); w.WriteByte(0);
+        w.Write<ushort>(100); // instruction length, but no instruction bytes follow
+
+        var ex = Assert.ThrowsExactly<FontParseException>(() => GlyphBase.CreateGlyf(MakeReader(ms.ToArray()), null));
+        Assert.AreEqual(FontDiagnosticCode.InvalidCompositeGlyph, ex.Diagnostic.Code);
+    }
+
+    // TODO-pass2 item 14.6/31: a compound glyph that (directly or indirectly) references itself
+    // must be rejected rather than recursing without bound.
+    [TestMethod]
+    public void DirectSelfReference_ThrowsOnContoursResolution()
+    {
+        // Glyph index 1 is the first (and only) compound glyph after the origin glyph at index 0;
+        // making it reference itself (targetGlyphIndex: 1) creates a direct A -> A cycle.
+        byte[] compound = BuildCompoundGlyphBytes(0, 0, 1f, 0f, 0f, 1f, default, targetGlyphIndex: 1);
+        var glyf = BuildFontWithCompoundGlyphs(compound);
+
+        var glyph = (GlyphCompound)glyf.GetGlyph(1);
+        Assert.ThrowsExactly<FontParseException>(() => glyph.Contours.ToList());
+    }
+
+    [TestMethod]
+    public void IndirectCycle_ThrowsOnContoursResolution()
+    {
+        // Glyph 1 references glyph 2, glyph 2 references glyph 1: A -> B -> A.
+        byte[] compoundA = BuildCompoundGlyphBytes(0, 0, 1f, 0f, 0f, 1f, default, targetGlyphIndex: 2);
+        byte[] compoundB = BuildCompoundGlyphBytes(0, 0, 1f, 0f, 0f, 1f, default, targetGlyphIndex: 1);
+        var glyf = BuildFontWithCompoundGlyphs(compoundA, compoundB);
+
+        var glyphA = (GlyphCompound)glyf.GetGlyph(1);
+        Assert.ThrowsExactly<FontParseException>(() => glyphA.Contours.ToList());
+    }
+
+    // TODO-pass2 item 14.6/31: recursion depth is bounded even for a non-cyclic but excessively
+    // deep chain of compound glyphs (A -> B -> C -> ... ), using the default budget (64).
+    [TestMethod]
+    public void ExcessivelyDeepChain_ThrowsMaximumCompositeDepthExceeded()
+    {
+        var defaultOptions = new TrueTypeFontParsingOptions();
+        int chainLength = defaultOptions.MaximumCompositeDepth + 5;
+
+        // Build glyphs [1 .. chainLength] as compound glyphs where glyph i references glyph i+1,
+        // and the final glyph in the chain references glyph 0 (the simple origin-point glyph).
+        var compounds = new byte[chainLength][];
+        for (int i = 0; i < chainLength; i++)
+        {
+            ushort target = i + 1 == chainLength ? (ushort)0 : (ushort)(i + 2);
+            compounds[i] = BuildCompoundGlyphBytes(0, 0, 1f, 0f, 0f, 1f, default, targetGlyphIndex: target);
+        }
+        var glyf = BuildFontWithCompoundGlyphs(compounds);
+
+        var head = (GlyphCompound)glyf.GetGlyph(1);
+        var ex = Assert.ThrowsExactly<FontParseException>(() => head.Contours.ToList());
+        Assert.AreEqual(FontDiagnosticCode.ResourceLimitExceeded, ex.Diagnostic.Code);
+    }
+
+    // Review fix: TrueTypeFont.ParsingContext used to be cleared once ParseFont returned. Because
+    // compound-glyph Contours resolution is lazy, the *first* access after ParseFont returned would
+    // silently fall back to TrueTypeFontParsingOptions.Default instead of the caller's own options
+    // -- so a caller-configured MaximumCompositeDepth smaller than the default (64) would stop being
+    // enforced. Verifies the opposite: a 3-level chain (well within the default budget) must still
+    // be rejected once a custom, smaller MaximumCompositeDepth is wired onto the font.
+    [TestMethod]
+    public void CustomMaximumCompositeDepth_IsStillEnforced_WhenContoursAccessedAfterParsing()
+    {
+        byte[] compoundA = BuildCompoundGlyphBytes(0, 0, 1f, 0f, 0f, 1f, default, targetGlyphIndex: 2); // -> glyph 2
+        byte[] compoundB = BuildCompoundGlyphBytes(0, 0, 1f, 0f, 0f, 1f, default, targetGlyphIndex: 3); // -> glyph 3
+        byte[] compoundC = BuildCompoundGlyphBytes(0, 0, 1f, 0f, 0f, 1f, default, targetGlyphIndex: 0); // -> origin (simple)
+
+        // Sanity check: with the default budget (64), a 3-level chain resolves without error.
+        var withDefaults = BuildFontWithCompoundGlyphs(compoundA, compoundB, compoundC);
+        ((GlyphCompound)withDefaults.GetGlyph(1)).Contours.ToList();
+
+        // With a custom MaximumCompositeDepth of 2, the same 3-level chain must now be rejected --
+        // proving the smaller, caller-supplied limit is actually the one being consulted.
+        var context = new FontParsingContext(new TrueTypeFontParsingOptions { MaximumCompositeDepth = 2 });
+        var withCustomLimit = BuildFontWithCompoundGlyphs(context, compoundA, compoundB, compoundC);
+        var ex = Assert.ThrowsExactly<FontParseException>(() => ((GlyphCompound)withCustomLimit.GetGlyph(1)).Contours.ToList());
+        Assert.AreEqual(FontDiagnosticCode.ResourceLimitExceeded, ex.Diagnostic.Code);
+    }
+
+    // TODO-pass2 item 30: composite glyph component references beyond maxp.NumGlyphs must be
+    // rejected in strict mode and diagnosed (component treated as empty) in permissive mode, end to
+    // end through the same ValidateComponentReferences path a full TrueTypeFont.ParseFont exercises.
+    [TestMethod]
+    public void OutOfRangeComponentReference_IsRejectedInStrictMode()
+    {
+        // NumGlyphs will be 2 (origin + this one compound glyph); referencing glyph 5 is out of range.
+        byte[] compound = BuildCompoundGlyphBytes(0, 0, 1f, 0f, 0f, 1f, default, targetGlyphIndex: 5);
+        var context = new FontParsingContext(new TrueTypeFontParsingOptions { ValidationMode = FontValidationMode.Strict });
+
+        var ex = Assert.ThrowsExactly<FontParseException>(() => BuildFontWithCompoundGlyphs(context, compound));
+        Assert.AreEqual(FontDiagnosticCode.InvalidCompositeGlyph, ex.Diagnostic.Code);
+    }
+
+    [TestMethod]
+    public void OutOfRangeComponentReference_IsDiagnosedAndTreatedAsEmptyInPermissiveMode()
+    {
+        byte[] compound = BuildCompoundGlyphBytes(0, 0, 1f, 0f, 0f, 1f, default, targetGlyphIndex: 5);
+        var context = new FontParsingContext(new TrueTypeFontParsingOptions { ValidationMode = FontValidationMode.Permissive });
+
+        var glyf = BuildFontWithCompoundGlyphs(context, compound);
+
+        Assert.IsTrue(context.Diagnostics.Any(d => d.Code == FontDiagnosticCode.InvalidCompositeGlyph));
+        // The out-of-range component contributes no contours (GlyfTable.TryGetGlyph fails for it),
+        // rather than throwing again -- or crashing -- at resolution time.
+        var contours = ((GlyphCompound)glyf.GetGlyph(1)).Contours.ToList();
+        Assert.AreEqual(0, contours.Count);
     }
 }
