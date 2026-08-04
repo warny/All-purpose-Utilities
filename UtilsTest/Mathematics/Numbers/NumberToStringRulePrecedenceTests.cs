@@ -1,5 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
+using System.Linq;
 using Utils.NumberToString;
 
 namespace UtilsTest.Mathematics.Numbers;
@@ -161,6 +162,104 @@ public sealed class NumberToStringRulePrecedenceTests
         Assert.AreEqual("UNTS004", exception.ErrorCode);
     }
 
+    /// <summary>Verifies that disjoint global value filters are not reported as concurrent.</summary>
+    [TestMethod]
+    public void EqualRankGlobalRulesWithDisjointOnValueRangesAreAccepted()
+    {
+        var constraints = new Dictionary<string, string> { ["gender"] = "female" };
+        var one = new NumberToStringConverter.VariantRule(constraints,
+        [
+            new NumberToStringConverter.ReplacementRule("one", "first", ReplacementScope.Anywhere,
+                null, NumberToStringConverter.ParseRangeExpression("1"))
+        ]);
+        var two = new NumberToStringConverter.VariantRule(constraints,
+        [
+            new NumberToStringConverter.ReplacementRule("two", "second", ReplacementScope.Anywhere,
+                null, NumberToStringConverter.ParseRangeExpression("2"))
+        ]);
+        NumberToStringConverter converter = Create(variantRules: [one, two]);
+        Assert.AreEqual("first", converter.Convert(1, "gender=female"));
+        Assert.AreEqual("second", converter.Convert(2, "gender=female"));
+    }
+
+    /// <summary>Verifies that XML replacement forms retain priority during synthetic aggregation.</summary>
+    [TestMethod]
+    public void XmlReplacementFormsPreservePriority()
+    {
+        const string culture = "precedence-xml-replacement-priority";
+        const string configuration = """
+            <Replacements>
+                <Replacement oldValue="one" scope="Anywhere">
+                    <Variant type="gender" variant="female" value="first" priority="10" />
+                </Replacement>
+                <Replacement oldValue="first" scope="Anywhere">
+                    <Variant type="number" variant="plural" value="final" priority="20" />
+                </Replacement>
+            </Replacements>
+            """;
+        NumberToStringConverter.RegisterConfigurations(
+            [CreatePriorityXml(culture, configuration)], DuplicateCulturePolicy.Replace);
+        NumberToStringConverter converter = NumberToStringConverter.GetConverter(culture);
+        Assert.AreEqual("final", converter.Convert(1, "gender=female", "number=plural"));
+        CollectionAssert.AreEquivalent(new[] { 10, 20 }, converter.VariantRules.Select(rule => rule.Priority).ToArray());
+    }
+
+    /// <summary>Verifies that XML ordinal forms retain priority through aggregation and structural merging.</summary>
+    [TestMethod]
+    public void XmlOrdinalFormsPreservePriorityAndStructuralMergeRank()
+    {
+        const string culture = "precedence-xml-ordinal-priority";
+        const string configuration = """
+            <Ordinals suffix="th">
+                <OrdinalException value="1" string="first">
+                    <Variant type="gender" variant="female" value="low" priority="10" />
+                </OrdinalException>
+                <Ordinal from="two" to="second">
+                    <Variant type="number" variant="plural" value="high" priority="20" />
+                </Ordinal>
+                <OrdinalVariants>
+                    <Variant type="gender" variant="female" suffix="th" priority="10" />
+                </OrdinalVariants>
+            </Ordinals>
+            """;
+        NumberToStringConverter.RegisterConfigurations(
+            [CreatePriorityXml(culture, configuration)], DuplicateCulturePolicy.Replace);
+        NumberToStringConverter converter = NumberToStringConverter.GetConverter(culture);
+        Assert.AreEqual("high", converter.ConvertOrdinal(2, "gender=female", "number=plural"));
+        CollectionAssert.AreEquivalent(new[] { 10, 20 }, converter.OrdinalVariants.Select(rule => rule.Priority).ToArray());
+    }
+
+    /// <summary>Verifies that ordinal fallbacks select priority rather than XML declaration order.</summary>
+    [TestMethod]
+    public void XmlOrdinalFallbackUsesHighestPriorityForExceptionAndWordRule()
+    {
+        foreach (string element in new[] { "exception", "rule" })
+        foreach (bool reverse in new[] { false, true })
+        {
+            string culture = $"precedence-default-{element}-{reverse}";
+            NumberToStringConverter.RegisterConfigurations(
+                [CreateOrdinalFallbackXml(culture, element, reverse, equalPriority: false)],
+                DuplicateCulturePolicy.Replace);
+            Assert.AreEqual("high", NumberToStringConverter.GetConverter(culture).ConvertOrdinal(1));
+        }
+    }
+
+    /// <summary>Verifies that an unresolved equal-rank ordinal fallback is rejected for both XML forms.</summary>
+    [TestMethod]
+    public void XmlOrdinalFallbackEqualRankIsRejectedForExceptionAndWordRule()
+    {
+        foreach (string element in new[] { "exception", "rule" })
+        {
+            string culture = $"precedence-default-ambiguous-{element}";
+            NumberToStringConfigurationException exception =
+                Assert.ThrowsException<NumberToStringConfigurationException>(() =>
+                    NumberToStringConverter.RegisterConfigurations(
+                        [CreateOrdinalFallbackXml(culture, element, reverse: false, equalPriority: true)],
+                        DuplicateCulturePolicy.Replace));
+            StringAssert.Contains(exception.ConfigurationPath, "DefaultForm");
+        }
+    }
+
     /// <summary>Creates an isolated English-derived converter for precedence tests.</summary>
     private static NumberToStringConverter Create(
         IReadOnlyList<NumberToStringConverter.OrdinalVariantRule>? ordinalVariants = null,
@@ -211,4 +310,54 @@ public sealed class NumberToStringRulePrecedenceTests
             </Language>
         </Numbers>
         """;
+
+    /// <summary>Creates XML configuration for priority-preservation loader tests.</summary>
+    private static string CreatePriorityXml(string culture, string configuration) => $$"""
+        <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+            <Language groupSize="3" separator=" " groupSeparator="" zero="zero" minus="minus *" decimalSeparator="point" maxNumber="9">
+                <Culture>{{culture}}</Culture>
+                <Groups><Group level="1">
+                    <Digit digit="0" string="" /><Digit digit="1" string="one" /><Digit digit="2" string="two" />
+                    <Digit digit="3" string="three" /><Digit digit="4" string="four" /><Digit digit="5" string="five" />
+                    <Digit digit="6" string="six" /><Digit digit="7" string="seven" /><Digit digit="8" string="eight" />
+                    <Digit digit="9" string="nine" />
+                </Group></Groups>
+                {{configuration}}
+                <Variants>
+                    <Dimension name="gender" values="male,female" />
+                    <Dimension name="number" values="singular,plural" />
+                </Variants>
+            </Language>
+        </Numbers>
+        """;
+
+    /// <summary>Creates XML with two full-default ordinal forms in a selected declaration order.</summary>
+    private static string CreateOrdinalFallbackXml(string culture, string element, bool reverse, bool equalPriority)
+    {
+        int lowPriority = equalPriority ? 100 : 0;
+        string low = $"<Variant type=\"gender\" variant=\"female\"><Variant type=\"number\" variant=\"singular\" value=\"low\" priority=\"{lowPriority}\" /></Variant>";
+        const string high = "<Variant type=\"gender\" variant=\"female\"><Variant type=\"number\" variant=\"singular\" value=\"high\" priority=\"100\" /></Variant>";
+        string forms = reverse ? high + low : low + high;
+        string ordinalElement = element == "exception"
+            ? $"<OrdinalException value=\"1\">{forms}</OrdinalException>"
+            : $"<Ordinal from=\"one\">{forms}</Ordinal>";
+        return $$"""
+            <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+                <Language groupSize="3" separator=" " groupSeparator="" zero="zero" minus="minus *" decimalSeparator="point" maxNumber="9">
+                    <Culture>{{culture}}</Culture>
+                    <Groups><Group level="1">
+                        <Digit digit="0" string="" /><Digit digit="1" string="one" /><Digit digit="2" string="two" />
+                        <Digit digit="3" string="three" /><Digit digit="4" string="four" /><Digit digit="5" string="five" />
+                        <Digit digit="6" string="six" /><Digit digit="7" string="seven" /><Digit digit="8" string="eight" />
+                        <Digit digit="9" string="nine" />
+                    </Group></Groups>
+                    <Ordinals suffix="th">{{ordinalElement}}</Ordinals>
+                    <Variants>
+                        <Dimension name="gender" values="female,male" />
+                        <Dimension name="number" values="singular,plural" />
+                    </Variants>
+                </Language>
+            </Numbers>
+            """;
+    }
 }
