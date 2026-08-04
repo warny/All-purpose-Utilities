@@ -290,12 +290,14 @@ public class NntpClient : CommandResponseClient
     {
         ValidateId(id, nameof(id));
         ArgumentNullException.ThrowIfNull(destination);
-        IReadOnlyList<ServerResponse> status = await StreamMultilineCommandAsync($"{command} {id}", async (line, token) =>
+        await StreamMultilineCommandAsync($"{command} {id}", async (line, token) =>
         {
             await destination.WriteAsync(line, token).ConfigureAwait(false);
             await destination.WriteAsync("\r\n".AsMemory(), token).ConfigureAwait(false);
-        }, new ProtocolPayloadLimits { MaximumLines = MaxMultilineLines, MaximumCharacters = MaxMultilineChars, MaximumBytes = MaxMultilineBytes }, cancellationToken).ConfigureAwait(false);
-        ProtocolResponseValidator.RequireCode("NNTP", command, status, expectedCode);
+        },
+        new ProtocolPayloadLimits { MaximumLines = MaxMultilineLines, MaximumCharacters = MaxMultilineChars, MaximumBytes = MaxMultilineBytes },
+        cancellationToken,
+        validateOpeningResponse: status => ProtocolResponseValidator.RequireCode("NNTP", command, status, expectedCode)).ConfigureAwait(false);
     }
 
     /// <summary>Parses a strict NNTP article-number and message-id response.</summary>

@@ -192,6 +192,96 @@ public class NetClientProtocolTests
         await server;
     }
 
+
+    /// <summary>Verifies a complete AUTH LOGIN rejection does not poison the synchronized SMTP session.</summary>
+    [TestMethod]
+    public async Task SmtpClient_AuthLoginRejected_DoesNotPoisonSession()
+    {
+        (DuplexStream stream, StreamWriter writer, StreamReader reader) = CreateTestPair();
+        Task server = Task.Run(async () =>
+        {
+            await writer.WriteLineAsync("220 ready");
+            Assert.AreEqual("AUTH LOGIN", await reader.ReadLineAsync());
+            await writer.WriteLineAsync("535 authentication failed");
+            Assert.AreEqual("HELP", await reader.ReadLineAsync());
+            await writer.WriteLineAsync("214 help text");
+        });
+        SmtpClient client = new();
+        await client.ConnectAsync(stream);
+        ProtocolResponseException error = await Assert.ThrowsExceptionAsync<ProtocolResponseException>(() =>
+            client.AuthenticateAsync("user", "password", SmtpAuthenticationMechanism.Login));
+        Assert.AreEqual("535", error.ResponseCode);
+        Assert.IsTrue(client.IsConnected);
+        CollectionAssert.AreEqual(new[] { "help text" }, (await client.HelpAsync()).ToArray());
+        await server;
+    }
+
+    /// <summary>Verifies cancellation while an SMTP RCPT response is pending poisons without sending RSET.</summary>
+    [TestMethod]
+    public async Task SmtpClient_SendMailAsync_CancelDuringRcptResponse_PoisonsWithoutRset()
+    {
+        (DuplexStream stream, StreamWriter writer, StreamReader reader) = CreateTestPair();
+        List<string> commands = [];
+        Task server = Task.Run(async () =>
+        {
+            await writer.WriteLineAsync("220 ready");
+            commands.Add((await reader.ReadLineAsync())!);
+            await writer.WriteLineAsync("250 sender accepted");
+            commands.Add((await reader.ReadLineAsync())!);
+            await Task.Delay(300);
+            while (reader.Peek() >= 0)
+                commands.Add((await reader.ReadLineAsync())!);
+        });
+        SmtpClient client = new();
+        await client.ConnectAsync(stream);
+        using CancellationTokenSource cancellation = new(100);
+        await Assert.ThrowsExceptionAsync<OperationCanceledException>(() =>
+            client.SendMailAsync(SmtpPath.Parse("sender@example.com"), [SmtpPath.Parse("recipient@example.com")], new StringReader("body"), cancellationToken: cancellation.Token));
+        Assert.IsFalse(client.IsConnected);
+        Assert.IsFalse(commands.Contains("RSET"));
+        await server;
+    }
+
+    /// <summary>Verifies an AUTH PLAIN transport failure after writing the command poisons the session.</summary>
+    [TestMethod]
+    public async Task SmtpClient_AuthPlainTransportFailure_PoisonsSession()
+    {
+        (DuplexStream stream, StreamWriter writer, StreamReader reader) = CreateTestPair();
+        Task server = Task.Run(async () =>
+        {
+            await writer.WriteLineAsync("220 ready");
+            _ = await reader.ReadLineAsync();
+            writer.Dispose();
+        });
+        SmtpClient client = new();
+        await client.ConnectAsync(stream);
+        await Assert.ThrowsExceptionAsync<IOException>(() => client.AuthenticateAsync(new SmtpPlainCredentials("user", "password")));
+        Assert.IsFalse(client.IsConnected);
+        Assert.IsNotNull(client.SessionFailure);
+        await server;
+    }
+
+    /// <summary>Verifies NNTP article commands reject unexpected positive status before reading a payload.</summary>
+    [TestMethod]
+    public async Task NntpClient_ArticleUnexpectedPositiveCode_DoesNotEnterPayloadOrPoison()
+    {
+        (DuplexStream stream, StreamWriter writer, StreamReader reader) = CreateTestPair();
+        Task server = Task.Run(async () =>
+        {
+            await writer.WriteLineAsync("200 ready");
+            Assert.AreEqual("ARTICLE 1", await reader.ReadLineAsync());
+            await writer.WriteLineAsync("200 posting allowed");
+            Assert.AreEqual("GROUP comp.test", await reader.ReadLineAsync());
+            await writer.WriteLineAsync("211 0 0 0");
+        });
+        NntpClient client = new();
+        await client.ConnectAsync(stream);
+        await Assert.ThrowsExceptionAsync<ProtocolResponseException>(() => client.ArticleAsync(1));
+        Assert.IsTrue(client.IsConnected);
+        Assert.AreEqual((0, 0, 0), await client.GroupAsync("comp.test"));
+        await server;
+    }
+
     // ──────────────────────────────────────────────────────────────
     // Item 40 — NetworkParameters.PrimaryDns null-safe
     // ──────────────────────────────────────────────────────────────

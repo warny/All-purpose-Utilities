@@ -463,12 +463,16 @@ public class CommandResponseClient : IDisposable
         /// <summary>Gets the sanitized command verb.</summary>
         public string Command { get; }
 
-        /// <summary>Writes one validated protocol line.</summary>
+        /// <summary>Gets a value indicating whether the last written command is waiting for its status response.</summary>
+        public bool AwaitingResponse { get; private set; }
+
+        /// <summary>Writes one validated protocol line and marks the following status response as owned by this exchange.</summary>
         public async ValueTask WriteLineAsync(string line, CancellationToken cancellationToken)
         {
             ValidateCommandArgument(line, nameof(line));
             _owner.Logger?.LogDebug("Sending: {Command}", _owner.RedactCommandForLog(line));
             await _owner._writer!.WriteLineAsync(line.AsMemory(), cancellationToken).ConfigureAwait(false);
+            AwaitingResponse = true;
         }
 
         /// <summary>Reads the next framed response line.</summary>
@@ -503,12 +507,24 @@ public class CommandResponseClient : IDisposable
                     throw error;
                 }
                 if (response.Severity >= ResponseSeverity.Completion || response.Severity == ResponseSeverity.Unknown)
+                {
+                    AwaitingResponse = false;
                     return responses.AsReadOnly();
+                }
             }
         }
 
         /// <summary>Marks the session unusable.</summary>
         public void Poison(Exception cause) => _owner.PoisonSession(cause);
+
+        /// <summary>Marks the session unusable when an exchange ended before the owned response was fully consumed.</summary>
+        public bool PoisonIfResponseAmbiguous(Exception cause)
+        {
+            if (!AwaitingResponse || cause is ProtocolResponseException)
+                return false;
+            Poison(cause);
+            return true;
+        }
     }
 
     /// <summary>
@@ -619,7 +635,8 @@ public class CommandResponseClient : IDisposable
         Func<ReadOnlyMemory<char>, CancellationToken, ValueTask> consumeLine,
         ProtocolPayloadLimits limits,
         CancellationToken cancellationToken = default,
-        Func<ServerResponse, bool>? isBodyTerminator = null)
+        Func<ServerResponse, bool>? isBodyTerminator = null,
+        Action<IReadOnlyList<ServerResponse>>? validateOpeningResponse = null)
     {
         ArgumentNullException.ThrowIfNull(consumeLine);
         ArgumentNullException.ThrowIfNull(limits);
@@ -632,6 +649,7 @@ public class CommandResponseClient : IDisposable
             {
                 await context.WriteLineAsync(command, token).ConfigureAwait(false);
                 IReadOnlyList<ServerResponse> status = await context.ReadResponsesAsync(token).ConfigureAwait(false);
+                validateOpeningResponse?.Invoke(status);
                 if (status[^1].Severity is ResponseSeverity.TransientNegative or ResponseSeverity.PermanentNegative)
                     return status;
 

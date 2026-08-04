@@ -45,9 +45,9 @@ public class SmtpClient : CommandResponseClient
                 ProtocolResponseValidator.RequireCompletion("SMTP", "AUTH", responses);
                 return true;
             }
-            catch (Exception ex) when (started && ex is OperationCanceledException)
+            catch (Exception ex) when (started && ex is OperationCanceledException or IOException)
             {
-                context.Poison(ex);
+                context.PoisonIfResponseAmbiguous(ex);
                 throw;
             }
         }, cancellationToken);
@@ -78,7 +78,7 @@ public class SmtpClient : CommandResponseClient
             }
             catch (Exception ex) when (started && ex is OperationCanceledException or IOException)
             {
-                context.Poison(ex);
+                context.PoisonIfResponseAmbiguous(ex);
                 throw;
             }
         }, cancellationToken);
@@ -197,7 +197,7 @@ public class SmtpClient : CommandResponseClient
             }
             catch (Exception primary)
             {
-                if (dataAccepted && !dataFramed)
+                if (context.PoisonIfResponseAmbiguous(primary) || (dataAccepted && !dataFramed))
                 {
                     context.Poison(primary);
                     throw;
