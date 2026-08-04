@@ -57,7 +57,9 @@ public class CommandResponseClient : IDisposable
     private const int StateConnecting = 1;
     private const int StateConnected = 2;
     private const int StateDisposed = 3;
+    private const int StatePoisoned = 4;
     private int _state = StateNotConnected;
+    private Exception? _poisonCause;
 
     private int _maxLineLength = 8192;
 
@@ -208,6 +210,11 @@ public class CommandResponseClient : IDisposable
     /// rely on the property to reflect the fully-initialised connection state.
     /// </remarks>
     public bool IsConnected => _state == StateConnected;
+
+    /// <summary>
+    /// Gets the first error that made the protocol session unusable, or <see langword="null"/>.
+    /// </summary>
+    public Exception? SessionFailure => Volatile.Read(ref _poisonCause);
 
     /// <summary>
     /// Default port used by the protocol.
@@ -367,6 +374,121 @@ public class CommandResponseClient : IDisposable
     }
 
     /// <summary>
+    /// Executes one complete protocol exchange while exclusively owning the connection.
+    /// </summary>
+    /// <typeparam name="TResult">Result produced by the exchange.</typeparam>
+    /// <param name="command">Sanitized command name used for diagnostics.</param>
+    /// <param name="exchange">Exchange implementation.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The exchange result.</returns>
+    protected async Task<TResult> ExecuteExclusiveExchangeAsync<TResult>(
+        string command,
+        Func<ProtocolExchangeContext, CancellationToken, ValueTask<TResult>> exchange,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(exchange);
+        ThrowIfUnavailable();
+        CancellationToken sessionToken = _listenTokenSource?.Token ?? CancellationToken.None;
+        using CancellationTokenSource linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, sessionToken);
+        await _sendLock.WaitAsync(linked.Token).ConfigureAwait(false);
+        try
+        {
+            ThrowIfUnavailable();
+            DrainPendingResponses();
+            Interlocked.Increment(ref _activeCommandWaiters);
+            try
+            {
+                return await exchange(new ProtocolExchangeContext(this, command), linked.Token).ConfigureAwait(false);
+            }
+            finally
+            {
+                Interlocked.Decrement(ref _activeCommandWaiters);
+            }
+        }
+        finally
+        {
+            _sendLock.Release();
+        }
+    }
+
+    /// <summary>
+    /// Marks this session unusable after protocol framing is lost.
+    /// </summary>
+    /// <param name="cause">The primary failure.</param>
+    protected void PoisonSession(Exception cause)
+    {
+        ArgumentNullException.ThrowIfNull(cause);
+        if (Interlocked.CompareExchange(ref _poisonCause, cause, null) is not null)
+            return;
+        Interlocked.Exchange(ref _state, StatePoisoned);
+        _disconnected = true;
+        try { _listenTokenSource?.Cancel(); } catch (ObjectDisposedException) { }
+        try { _reader?.Dispose(); } catch (Exception ex) { Logger?.LogDebug(ex, "Error closing poisoned session reader"); }
+        try { _writer?.Dispose(); } catch (Exception ex) { Logger?.LogDebug(ex, "Error closing poisoned session writer"); }
+        try { if (!_leaveOpen) _stream?.Dispose(); } catch (Exception ex) { Logger?.LogDebug(ex, "Error closing poisoned session transport"); }
+        _responseSignal.Release();
+    }
+
+    /// <summary>
+    /// Throws when this client cannot start another protocol operation.
+    /// </summary>
+    private void ThrowIfUnavailable()
+    {
+        if (_disposed != 0 || _state == StateDisposed)
+            throw new ObjectDisposedException(GetType().Name);
+        if (_state == StatePoisoned)
+            throw new ProtocolSessionPoisonedException("The protocol session is unusable.", _poisonCause);
+        if (_disconnected)
+            throw new IOException("Connection closed.");
+        if (_state != StateConnected)
+            throw new InvalidOperationException("Client is not connected.");
+    }
+
+    /// <summary>
+    /// Provides controlled access to a connection during an exclusive protocol exchange.
+    /// </summary>
+    protected sealed class ProtocolExchangeContext
+    {
+        private readonly CommandResponseClient _owner;
+
+        /// <summary>
+        /// Initializes a context owned by one client exchange.
+        /// </summary>
+        internal ProtocolExchangeContext(CommandResponseClient owner, string command)
+        {
+            _owner = owner;
+            Command = command;
+        }
+
+        /// <summary>Gets the sanitized command verb.</summary>
+        public string Command { get; }
+
+        /// <summary>Writes one validated protocol line.</summary>
+        public async ValueTask WriteLineAsync(string line, CancellationToken cancellationToken)
+        {
+            ValidateCommandArgument(line, nameof(line));
+            _owner.Logger?.LogDebug("Sending: {Command}", _owner.RedactCommandForLog(line));
+            await _owner._writer!.WriteLineAsync(line.AsMemory(), cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>Reads the next framed response line.</summary>
+        public async ValueTask<ServerResponse> ReadLineAsync(CancellationToken cancellationToken)
+        {
+            while (true)
+            {
+                await _owner._responseSignal.WaitAsync(cancellationToken).ConfigureAwait(false);
+                if (_owner._responseQueue.TryDequeue(out ServerResponse response))
+                    return response;
+                if (_owner._disconnected)
+                    throw new IOException("Connection closed before the response completed.");
+            }
+        }
+
+        /// <summary>Marks the session unusable.</summary>
+        public void Poison(Exception cause) => _owner.PoisonSession(cause);
+    }
+
+    /// <summary>
     /// Sends a command and collects responses until a response with at least completion severity is received.
     /// </summary>
     /// <param name="command">Command to send.</param>
@@ -398,9 +520,12 @@ public class CommandResponseClient : IDisposable
             // the command so that a response arriving immediately after (or during) the write
             // is routed to the queue rather than raised as unsolicited.
             Interlocked.Increment(ref _activeCommandWaiters);
+            bool commandWritten = false;
+            bool responseComplete = false;
             try
             {
                 await _writer.WriteLineAsync(command.AsMemory(), cancellationToken).ConfigureAwait(false);
+                commandWritten = true;
                 List<ServerResponse> responses = new();
                 while (true)
                 {
@@ -416,15 +541,23 @@ public class CommandResponseClient : IDisposable
                     responses.Add(response);
                     if (MaxResponseCount > 0 && responses.Count > MaxResponseCount)
                     {
-                        throw new InvalidDataException($"Server sent more than {MaxResponseCount} response lines for a single command.");
+                        InvalidDataException error = new($"Server sent more than {MaxResponseCount} response lines for a single command.");
+                        PoisonSession(error);
+                        throw error;
                     }
                     if (response.Severity >= ResponseSeverity.Completion || response.Severity == ResponseSeverity.Unknown)
                     {
                         break;
                     }
                 }
+                responseComplete = true;
                 ResetKeepAlive();
                 return responses;
+            }
+            catch (Exception ex) when (commandWritten && !responseComplete && ex is OperationCanceledException or IOException)
+            {
+                PoisonSession(ex);
+                throw;
             }
             finally
             {
@@ -450,6 +583,75 @@ public class CommandResponseClient : IDisposable
     /// </returns>
     protected static string BodyLineToString(ServerResponse response) =>
         response.Message is null ? response.Code : $"{response.Code} {response.Message}";
+
+    /// <summary>Removes one dot from a correctly dot-stuffed payload line.</summary>
+    internal static ReadOnlyMemory<char> UnstuffDotLine(ReadOnlyMemory<char> line) =>
+        line.Span.StartsWith("..".AsSpan(), StringComparison.Ordinal) ? line[1..] : line;
+
+    /// <summary>
+    /// Streams a complete dot-terminated exchange while retaining exclusive connection ownership.
+    /// </summary>
+    protected Task<IReadOnlyList<ServerResponse>> StreamMultilineCommandAsync(
+        string command,
+        Func<ReadOnlyMemory<char>, CancellationToken, ValueTask> consumeLine,
+        ProtocolPayloadLimits limits,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(consumeLine);
+        ArgumentNullException.ThrowIfNull(limits);
+        ValidateCommandArgument(command, nameof(command));
+        return ExecuteExclusiveExchangeAsync<IReadOnlyList<ServerResponse>>(command, async (context, token) =>
+        {
+            bool payloadStarted = false;
+            bool terminated = false;
+            try
+            {
+                await context.WriteLineAsync(command, token).ConfigureAwait(false);
+                List<ServerResponse> status = [];
+                while (true)
+                {
+                    ServerResponse response = await context.ReadLineAsync(token).ConfigureAwait(false);
+                    status.Add(response);
+                    if (MaxResponseCount > 0 && status.Count > MaxResponseCount)
+                        throw new InvalidDataException($"Server sent more than {MaxResponseCount} status lines.");
+                    if (response.Severity >= ResponseSeverity.Completion || response.Severity == ResponseSeverity.Unknown)
+                        break;
+                }
+                if (status[^1].Severity is ResponseSeverity.TransientNegative or ResponseSeverity.PermanentNegative)
+                    return status;
+
+                payloadStarted = true;
+                int lines = 0;
+                long characters = 0;
+                long bytes = 0;
+                while (true)
+                {
+                    ServerResponse response = await context.ReadLineAsync(token).ConfigureAwait(false);
+                    string raw = BodyLineToString(response);
+                    if (raw == ".")
+                    {
+                        terminated = true;
+                        break;
+                    }
+                    lines = checked(lines + 1);
+                    characters = checked(characters + raw.Length);
+                    bytes = checked(bytes + Encoding.UTF8.GetByteCount(raw));
+                    if ((limits.MaximumLines > 0 && lines > limits.MaximumLines) ||
+                        (limits.MaximumCharacters > 0 && characters > limits.MaximumCharacters) ||
+                        (limits.MaximumBytes > 0 && bytes > limits.MaximumBytes))
+                        throw new InvalidDataException("The dot-terminated payload exceeded its configured limit.");
+                    await consumeLine(UnstuffDotLine(raw.AsMemory()), token).ConfigureAwait(false);
+                }
+                ResetKeepAlive();
+                return status;
+            }
+            catch (Exception ex) when (payloadStarted && !terminated)
+            {
+                context.Poison(ex);
+                throw;
+            }
+        }, cancellationToken);
+    }
 
     /// <summary>
     /// Sends a command, receives the opening status response(s), then reads all body lines
@@ -490,91 +692,24 @@ public class CommandResponseClient : IDisposable
         int maxBodyChars = 0,
         CancellationToken cancellationToken = default)
     {
-        if (_disposed != 0) throw new ObjectDisposedException(GetType().Name);
-        if (_state == StateDisposed || _disconnected) throw new IOException("Connection closed.");
-        if (_state != StateConnected) throw new InvalidOperationException("Client is not connected.");
-
-        await _sendLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
+        ArgumentNullException.ThrowIfNull(isBodyTerminator);
+        List<ServerResponse> body = [];
+        ProtocolPayloadLimits limits = new()
         {
-            if (_disconnected) throw new IOException("Connection closed.");
-            DrainPendingResponses();
-            Logger?.LogDebug("Sending: {Command}", RedactCommandForLog(command));
-
-            Interlocked.Increment(ref _activeCommandWaiters);
-            try
+            MaximumLines = maxBodyLines,
+            MaximumCharacters = maxBodyChars,
+            MaximumBytes = 0
+        };
+        IReadOnlyList<ServerResponse> status = await StreamMultilineCommandAsync(
+            command,
+            (line, _) =>
             {
-                await _writer.WriteLineAsync(command.AsMemory(), cancellationToken).ConfigureAwait(false);
-
-                // Phase 1: status line(s) — same break condition as SendCommandAsync.
-                var statusLines = new List<ServerResponse>();
-                while (true)
-                {
-                    await _responseSignal.WaitAsync(cancellationToken).ConfigureAwait(false);
-                    if (!_responseQueue.TryDequeue(out ServerResponse response))
-                    {
-                        if (_disconnected) throw new IOException("Connection closed.");
-                        continue;
-                    }
-                    statusLines.Add(response);
-                    if (MaxResponseCount > 0 && statusLines.Count > MaxResponseCount)
-                        throw new InvalidDataException($"Server sent more than {MaxResponseCount} response lines for a single command.");
-                    if (response.Severity >= ResponseSeverity.Completion || response.Severity == ResponseSeverity.Unknown)
-                        break;
-                }
-
-                // Phase 2: body lines. _activeCommandWaiters remains > 0 so the listener
-                // routes all body lines to the queue rather than raising them as unsolicited.
-                // Skip body when the last status is a negative response (4xx/5xx).
-                List<ServerResponse> bodyLines;
-                ServerResponse lastStatus = statusLines[^1];
-                if (lastStatus.Severity == ResponseSeverity.TransientNegative ||
-                    lastStatus.Severity == ResponseSeverity.PermanentNegative)
-                {
-                    bodyLines = [];
-                }
-                else
-                {
-                    int totalBodyChars = 0;
-                    bodyLines = new List<ServerResponse>();
-                    while (true)
-                    {
-                        await _responseSignal.WaitAsync(cancellationToken).ConfigureAwait(false);
-                        if (!_responseQueue.TryDequeue(out ServerResponse response))
-                        {
-                            if (_disconnected) throw new IOException("Connection closed.");
-                            continue;
-                        }
-                        if (isBodyTerminator(response))
-                            break;
-                        bodyLines.Add(response);
-                        if (MaxResponseCount > 0 && bodyLines.Count > MaxResponseCount)
-                            throw new InvalidDataException($"Server sent more than {MaxResponseCount} body lines for a single command.");
-                        if (maxBodyLines > 0 && bodyLines.Count > maxBodyLines)
-                            throw new InvalidDataException($"Multi-line response exceeded the line limit of {maxBodyLines}.");
-                        if (maxBodyChars > 0)
-                        {
-                            totalBodyChars += response.Message is null
-                                ? response.Code.Length
-                                : response.Code.Length + 1 + response.Message.Length;
-                            if (totalBodyChars > maxBodyChars)
-                                throw new InvalidDataException($"Multi-line response exceeded the character limit of {maxBodyChars}.");
-                        }
-                    }
-                }
-
-                ResetKeepAlive();
-                return (statusLines, bodyLines);
-            }
-            finally
-            {
-                Interlocked.Decrement(ref _activeCommandWaiters);
-            }
-        }
-        finally
-        {
-            _sendLock.Release();
-        }
+                body.Add(ParseResponseLine(line.ToString()));
+                return ValueTask.CompletedTask;
+            },
+            limits,
+            cancellationToken).ConfigureAwait(false);
+        return (status, body);
     }
 
     /// <summary>
@@ -1257,4 +1392,3 @@ public class CommandResponseClient : IDisposable
     // Item 50: no finalizer — all resources are managed. A finalizer that joins threads or
     // disposes managed semaphores from the finalizer thread can deadlock the GC.
 }
-

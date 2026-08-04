@@ -1,286 +1,274 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Utils.Net;
 
-/// <summary>
-/// Client for the Simple Mail Transfer Protocol (SMTP).
-/// </summary>
+/// <summary>Client for the Simple Mail Transfer Protocol (SMTP).</summary>
 public class SmtpClient : CommandResponseClient
 {
+    private static readonly UTF8Encoding StrictUtf8 = new(false, true);
+    private TimeSpan _transactionRecoveryTimeout = TimeSpan.FromSeconds(5);
+
     /// <inheritdoc/>
     public override int DefaultPort { get; } = 25;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="SmtpClient"/> class.
-    /// </summary>
-    public SmtpClient()
+    /// <summary>Gets or sets the bounded timeout used to recover an envelope with RSET.</summary>
+    public TimeSpan TransactionRecoveryTimeout
     {
+        get => _transactionRecoveryTimeout;
+        set => _transactionRecoveryTimeout = value > TimeSpan.Zero && value != Timeout.InfiniteTimeSpan ? value : throw new ArgumentOutOfRangeException(nameof(value));
     }
 
-    /// <summary>
-    /// Authenticates using the specified mechanism.
-    /// </summary>
-    /// <param name="user">User name.</param>
-    /// <param name="password">User password.</param>
-    /// <param name="mechanism">Authentication mechanism to use.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <remarks>
-    /// SMTP authentication mechanisms such as <c>AUTH PLAIN</c> and <c>AUTH LOGIN</c> should be
-    /// used only when the underlying transport is already protected by TLS.
-    /// This method is marked as obsolete to produce a compile-time warning and reduce
-    /// accidental credential usage on unencrypted channels.
-    /// </remarks>
-    [Obsolete("SMTP AUTH may expose credentials on unencrypted connections. Use a TLS-protected stream before calling AuthenticateAsync.", false)]
-    public async Task AuthenticateAsync(string user, string password, SmtpAuthenticationMechanism mechanism = SmtpAuthenticationMechanism.Plain, CancellationToken cancellationToken = default)
+    /// <summary>Initializes an SMTP client.</summary>
+    public SmtpClient() { }
+
+    /// <summary>Authenticates with SASL PLAIN credentials using strict UTF-8.</summary>
+    [Obsolete("SMTP AUTH may expose credentials on unencrypted connections. Use a TLS-protected stream.", false)]
+    public Task AuthenticateAsync(SmtpPlainCredentials credentials, CancellationToken cancellationToken = default)
     {
-        switch (mechanism)
+        ArgumentNullException.ThrowIfNull(credentials);
+        string value = $"{credentials.AuthorizationIdentity}\0{credentials.AuthenticationIdentity}\0{credentials.Password}";
+        string payload = Convert.ToBase64String(StrictUtf8.GetBytes(value));
+        return ExecuteExclusiveExchangeAsync("AUTH", async (context, token) =>
         {
-            case SmtpAuthenticationMechanism.Plain:
-                string payload = "\0" + user + "\0" + password;
-                string encoded = Convert.ToBase64String(Encoding.ASCII.GetBytes(payload));
-                IReadOnlyList<ServerResponse> plainResult = await SendCommandAsync($"AUTH PLAIN {encoded}", cancellationToken).ConfigureAwait(false);
-                await EnsureCompletionAsync(plainResult).ConfigureAwait(false);
-                break;
-
-            case SmtpAuthenticationMechanism.Login:
-                IReadOnlyList<ServerResponse> loginResult = await SendCommandAsync("AUTH LOGIN", cancellationToken).ConfigureAwait(false);
-                await EnsureIntermediateAsync(loginResult).ConfigureAwait(false);
-                string userEncoded = Convert.ToBase64String(Encoding.ASCII.GetBytes(user));
-                IReadOnlyList<ServerResponse> userResponse = await SendCommandAsync(userEncoded, cancellationToken).ConfigureAwait(false);
-                await EnsureIntermediateAsync(userResponse).ConfigureAwait(false);
-                string passEncoded = Convert.ToBase64String(Encoding.ASCII.GetBytes(password));
-                IReadOnlyList<ServerResponse> passResponse = await SendCommandAsync(passEncoded, cancellationToken).ConfigureAwait(false);
-                await EnsureCompletionAsync(passResponse).ConfigureAwait(false);
-                break;
-
-            default:
-                throw new NotSupportedException("Unsupported authentication mechanism.");
-        }
+            bool started = false;
+            try
+            {
+                started = true;
+                await context.WriteLineAsync($"AUTH PLAIN {payload}", token).ConfigureAwait(false);
+                IReadOnlyList<ServerResponse> responses = await ReadResponsesAsync(context, token).ConfigureAwait(false);
+                ProtocolResponseValidator.RequireCompletion("SMTP", "AUTH", responses);
+                return true;
+            }
+            catch (Exception ex) when (started && ex is OperationCanceledException)
+            {
+                context.Poison(ex);
+                throw;
+            }
+        }, cancellationToken);
     }
 
-    /// <summary>
-    /// Authenticates using the <c>AUTH PLAIN</c> mechanism.
-    /// </summary>
-    /// <param name="user">User name.</param>
-    /// <param name="password">User password.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <remarks>
-    /// This overload maps to <c>AUTH PLAIN</c> and should only be used over TLS-protected transports.
-    /// </remarks>
-    [Obsolete("SMTP AUTH PLAIN may expose credentials on unencrypted connections. Use a TLS-protected stream before calling AuthenticateAsync.", false)]
-    public Task AuthenticateAsync(string user, string password, CancellationToken cancellationToken)
+    /// <summary>Authenticates with PLAIN or LOGIN using strict UTF-8.</summary>
+    [Obsolete("SMTP AUTH may expose credentials on unencrypted connections. Use a TLS-protected stream.", false)]
+    public Task AuthenticateAsync(string user, string password, SmtpAuthenticationMechanism mechanism = SmtpAuthenticationMechanism.Plain, CancellationToken cancellationToken = default)
     {
-        return AuthenticateAsync(user, password, SmtpAuthenticationMechanism.Plain, cancellationToken);
+        SmtpPlainCredentials credentials = new(user, password);
+        if (mechanism == SmtpAuthenticationMechanism.Plain) return AuthenticateAsync(credentials, cancellationToken);
+        if (mechanism != SmtpAuthenticationMechanism.Login) throw new NotSupportedException("Unsupported authentication mechanism.");
+        string encodedUser = Convert.ToBase64String(StrictUtf8.GetBytes(credentials.AuthenticationIdentity));
+        string encodedPassword = Convert.ToBase64String(StrictUtf8.GetBytes(credentials.Password));
+        return ExecuteExclusiveExchangeAsync("AUTH", async (context, token) =>
+        {
+            bool started = false;
+            try
+            {
+                started = true;
+                await context.WriteLineAsync("AUTH LOGIN", token).ConfigureAwait(false);
+                ProtocolResponseValidator.RequireIntermediate("SMTP", "AUTH", await ReadResponsesAsync(context, token).ConfigureAwait(false));
+                await context.WriteLineAsync(encodedUser, token).ConfigureAwait(false);
+                ProtocolResponseValidator.RequireIntermediate("SMTP", "AUTH", await ReadResponsesAsync(context, token).ConfigureAwait(false));
+                await context.WriteLineAsync(encodedPassword, token).ConfigureAwait(false);
+                ProtocolResponseValidator.RequireCompletion("SMTP", "AUTH", await ReadResponsesAsync(context, token).ConfigureAwait(false));
+                return true;
+            }
+            catch (Exception ex) when (started && ex is OperationCanceledException or IOException)
+            {
+                context.Poison(ex);
+                throw;
+            }
+        }, cancellationToken);
     }
 
-    /// <summary>
-    /// Executes SMTP specific initialization when a connection is established.
-    /// </summary>
-    /// <param name="stream">Connected stream used to send commands and receive responses.</param>
-    /// <param name="leaveOpen">True to leave the stream open when disposing the client.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A task that completes when the server greeting has been processed.</returns>
+    /// <summary>Authenticates with SASL PLAIN.</summary>
+    [Obsolete("SMTP AUTH may expose credentials on unencrypted connections. Use a TLS-protected stream.", false)]
+    public Task AuthenticateAsync(string user, string password, CancellationToken cancellationToken) => AuthenticateAsync(user, password, SmtpAuthenticationMechanism.Plain, cancellationToken);
+
+    /// <inheritdoc/>
     protected override async Task OnConnect(Stream stream, bool leaveOpen, CancellationToken cancellationToken)
     {
         await base.OnConnect(stream, leaveOpen, cancellationToken).ConfigureAwait(false);
-        IReadOnlyList<ServerResponse> greeting = await ReadAsync(cancellationToken).ConfigureAwait(false);
-        await EnsureCompletionAsync(greeting).ConfigureAwait(false);
+        ProtocolResponseValidator.RequireCompletion("SMTP", "CONNECT", await ReadAsync(cancellationToken).ConfigureAwait(false));
     }
 
-    /// <summary>
-    /// Sends the EHLO command and returns the advertised extensions.
-    /// </summary>
-    /// <param name="domain">Client domain name.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>List of server extensions.</returns>
+    /// <summary>Sends EHLO and returns all advertised extension lines after the identity line.</summary>
     public async Task<IReadOnlyList<string>> EhloAsync(string domain, CancellationToken cancellationToken = default)
     {
         ValidateCommandArgument(domain, nameof(domain));
         IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"EHLO {domain}", cancellationToken).ConfigureAwait(false);
-        List<string> extensions = new();
-        for (int i = 1; i < responses.Count; i++)
-        {
-            if (!string.IsNullOrEmpty(responses[i].Message))
-            {
-                extensions.Add(responses[i].Message);
-            }
-        }
-        await EnsureCompletionAsync(responses).ConfigureAwait(false);
-        return extensions;
+        ProtocolResponseValidator.RequireCompletion("SMTP", "EHLO", responses);
+        return responses.Skip(1).Select(r => r.Message).Where(m => !string.IsNullOrEmpty(m)).Cast<string>().ToArray();
     }
 
-    /// <summary>
-    /// Sends the HELO command.
-    /// </summary>
-    /// <param name="domain">Client domain name.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <summary>Sends HELO.</summary>
     public async Task HeloAsync(string domain, CancellationToken cancellationToken = default)
     {
         ValidateCommandArgument(domain, nameof(domain));
-        await EnsureCompletionAsync(await SendCommandAsync($"HELO {domain}", cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+        ProtocolResponseValidator.RequireCompletion("SMTP", "HELO", await SendCommandAsync($"HELO {domain}", cancellationToken).ConfigureAwait(false));
     }
 
-    /// <summary>
-    /// Sends the VRFY command to verify an address.
-    /// </summary>
-    /// <param name="address">Address to verify.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Server response message.</returns>
+    /// <summary>Verifies an address.</summary>
     public async Task<string?> VrfyAsync(string address, CancellationToken cancellationToken = default)
     {
         ValidateCommandArgument(address, nameof(address));
         IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"VRFY {address}", cancellationToken).ConfigureAwait(false);
-        await EnsureCompletionAsync(responses).ConfigureAwait(false);
+        ProtocolResponseValidator.RequireCompletion("SMTP", "VRFY", responses);
         return responses[^1].Message;
     }
 
-    /// <summary>
-    /// Sends the EXPN command to expand a mailing list.
-    /// </summary>
-    /// <param name="list">List name.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Expanded entries returned by the server.</returns>
+    /// <summary>Expands a mailing list.</summary>
     public async Task<IReadOnlyList<string>> ExpnAsync(string list, CancellationToken cancellationToken = default)
     {
         ValidateCommandArgument(list, nameof(list));
         IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"EXPN {list}", cancellationToken).ConfigureAwait(false);
-        List<string> entries = new();
-        for (int i = 0; i < responses.Count - 1; i++)
-        {
-            if (!string.IsNullOrEmpty(responses[i].Message))
-            {
-                entries.Add(responses[i].Message);
-            }
-        }
-        await EnsureCompletionAsync(responses).ConfigureAwait(false);
-        return entries;
+        ProtocolResponseValidator.RequireCompletion("SMTP", "EXPN", responses);
+        return responses.Select(r => r.Message).Where(m => !string.IsNullOrEmpty(m)).Cast<string>().ToArray();
     }
 
-    /// <summary>
-    /// Sends the HELP command optionally for a specific subject.
-    /// </summary>
-    /// <param name="subject">Command or subject to request help for.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Help text returned by the server.</returns>
+    /// <summary>Requests SMTP help.</summary>
     public async Task<IReadOnlyList<string>> HelpAsync(string? subject = null, CancellationToken cancellationToken = default)
     {
         if (subject is not null) ValidateCommandArgument(subject, nameof(subject));
-        string command = subject is null ? "HELP" : $"HELP {subject}";
-        IReadOnlyList<ServerResponse> responses = await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-        List<string> lines = new();
-        foreach (ServerResponse response in responses)
-        {
-            if (!string.IsNullOrEmpty(response.Message))
-            {
-                lines.Add(response.Message);
-            }
-        }
-        await EnsureCompletionAsync(responses).ConfigureAwait(false);
-        return lines;
+        IReadOnlyList<ServerResponse> responses = await SendCommandAsync(subject is null ? "HELP" : $"HELP {subject}", cancellationToken).ConfigureAwait(false);
+        ProtocolResponseValidator.RequireCompletion("SMTP", "HELP", responses);
+        return responses.Select(r => r.Message).Where(m => !string.IsNullOrEmpty(m)).Cast<string>().ToArray();
     }
 
-    /// <summary>
-    /// Sends a mail message.
-    /// </summary>
-    /// <param name="from">Sender address.</param>
-    /// <param name="recipients">Recipient addresses.</param>
-    /// <param name="data">Raw message data.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    public async Task SendMailAsync(string from, IEnumerable<string> recipients, string data, CancellationToken cancellationToken = default)
+    /// <summary>Sends a materialized message after strict path validation.</summary>
+    public Task SendMailAsync(string from, IEnumerable<string> recipients, string data, CancellationToken cancellationToken = default)
     {
-        ValidateCommandArgument(from, nameof(from));
-        if (recipients is null) throw new ArgumentNullException(nameof(recipients));
-        List<string> recipientList = new(recipients);
-        if (recipientList.Count == 0) throw new ArgumentException("At least one recipient is required.", nameof(recipients));
-        foreach (string rcpt in recipientList) ValidateCommandArgument(rcpt, nameof(recipients));
-
-        await EnsureCompletionAsync(await SendCommandAsync($"MAIL FROM:<{from}>", cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
-        foreach (string rcpt in recipientList)
+        ArgumentNullException.ThrowIfNull(recipients);
+        ArgumentNullException.ThrowIfNull(data);
+        SmtpPath sender;
+        SmtpPath[] snapshot;
+        try
         {
-            await EnsureCompletionAsync(await SendCommandAsync($"RCPT TO:<{rcpt}>", cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+            sender = SmtpPath.Parse(from);
+            snapshot = recipients.Select(value => SmtpPath.Parse(value ?? throw new ArgumentException("Recipients cannot contain null.", nameof(recipients)))).ToArray();
         }
-        await EnsureIntermediateAsync(await SendCommandAsync("DATA", cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
-        List<string> lines = new();
-        using StringReader reader = new(data);
-        string? line;
-        while ((line = await reader.ReadLineAsync().ConfigureAwait(false)) is not null)
+        catch (FormatException error)
         {
-            if (line.StartsWith('.'))
-            {
-                lines.Add("." + line);
-            }
-            else
-            {
-                lines.Add(line);
-            }
+            throw new ArgumentException("The sender or a recipient is not a valid SMTP path.", nameof(recipients), error);
         }
-        lines.Add(".");
-        IReadOnlyList<ServerResponse> result = await SendBodyAndReadAsync(lines, cancellationToken).ConfigureAwait(false);
-        await EnsureCompletionAsync(result).ConfigureAwait(false);
+        return SendMailAsync(sender, snapshot, new StringReader(data), null, cancellationToken);
     }
 
-    /// <summary>
-    /// Sends the QUIT command and closes the connection.
-    /// </summary>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    public Task QuitAsync(CancellationToken cancellationToken = default)
+    /// <summary>Streams a message through one exclusive SMTP transaction.</summary>
+    public Task SendMailAsync(SmtpPath from, IReadOnlyList<SmtpPath> recipients, TextReader data, SmtpMailOptions? options = null, CancellationToken cancellationToken = default)
     {
-        return DisconnectAsync("QUIT", TimeSpan.FromSeconds(5), cancellationToken);
+        ArgumentNullException.ThrowIfNull(from);
+        ArgumentNullException.ThrowIfNull(recipients);
+        ArgumentNullException.ThrowIfNull(data);
+        SmtpPath[] snapshot = recipients.ToArray();
+        if (snapshot.Length == 0) throw new ArgumentException("At least one recipient is required.", nameof(recipients));
+        if (snapshot.Any(p => p is null || p.Value.Length == 0)) throw new ArgumentException("Recipients must be non-empty paths.", nameof(recipients));
+        options ??= new SmtpMailOptions();
+        if (!options.SmtpUtf8 && (from.AllowsUtf8 || snapshot.Any(p => p.AllowsUtf8))) throw new ArgumentException("SMTPUTF8 paths require SmtpUtf8=true.", nameof(options));
+        string mailOptions = FormatOptions(options);
+        return ExecuteExclusiveExchangeAsync("MAIL", async (context, token) =>
+        {
+            bool mailAccepted = false;
+            bool dataAccepted = false;
+            bool dataFramed = false;
+            try
+            {
+                await context.WriteLineAsync($"MAIL FROM:<{from.Value}>{mailOptions}", token).ConfigureAwait(false);
+                ProtocolResponseValidator.RequireCompletion("SMTP", "MAIL", await ReadResponsesAsync(context, token).ConfigureAwait(false));
+                mailAccepted = true;
+                foreach (SmtpPath recipient in snapshot)
+                {
+                    await context.WriteLineAsync($"RCPT TO:<{recipient.Value}>", token).ConfigureAwait(false);
+                    ProtocolResponseValidator.RequireCompletion("SMTP", "RCPT", await ReadResponsesAsync(context, token).ConfigureAwait(false));
+                }
+                await context.WriteLineAsync("DATA", token).ConfigureAwait(false);
+                ProtocolResponseValidator.RequireIntermediate("SMTP", "DATA", await ReadResponsesAsync(context, token).ConfigureAwait(false));
+                dataAccepted = true;
+                string? line;
+                while ((line = await data.ReadLineAsync(token).ConfigureAwait(false)) is not null)
+                    await context.WriteLineAsync(line.StartsWith(".", StringComparison.Ordinal) ? "." + line : line, token).ConfigureAwait(false);
+                await context.WriteLineAsync(".", token).ConfigureAwait(false);
+                dataFramed = true;
+                ProtocolResponseValidator.RequireCompletion("SMTP", "DATA", await ReadResponsesAsync(context, token).ConfigureAwait(false));
+                return true;
+            }
+            catch (Exception primary)
+            {
+                if (dataAccepted && !dataFramed)
+                {
+                    context.Poison(primary);
+                    throw;
+                }
+                if (!mailAccepted) throw;
+                try
+                {
+                    using CancellationTokenSource recovery = new(TransactionRecoveryTimeout);
+                    await context.WriteLineAsync("RSET", recovery.Token).ConfigureAwait(false);
+                    ProtocolResponseValidator.RequireCompletion("SMTP", "RSET", await ReadResponsesAsync(context, recovery.Token).ConfigureAwait(false));
+                }
+                catch (Exception recoveryError)
+                {
+                    SmtpTransactionException combined = new(primary, recoveryError);
+                    context.Poison(combined);
+                    throw combined;
+                }
+                throw;
+            }
+        }, cancellationToken);
     }
 
-    /// <summary>
-    /// Parses a single response line using SMTP semantics where a hyphen after the status code
-    /// indicates that more lines will follow.
-    /// </summary>
-    /// <param name="line">Response line from the server.</param>
-    /// <returns>Parsed response.</returns>
+    /// <summary>Streams message bytes by decoding them strictly with the supplied encoding.</summary>
+    public Task SendMailAsync(SmtpPath from, IReadOnlyList<SmtpPath> recipients, Stream data, Encoding encoding, SmtpMailOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(data);
+        ArgumentNullException.ThrowIfNull(encoding);
+        StreamReader reader = new(data, encoding, true, 1024, true);
+        return SendMailAsync(from, recipients, reader, options, cancellationToken);
+    }
+
+    /// <summary>Sends QUIT and closes the connection.</summary>
+    public Task QuitAsync(CancellationToken cancellationToken = default) => DisconnectAsync("QUIT", TimeSpan.FromSeconds(5), cancellationToken);
+
+    /// <inheritdoc/>
     protected override ServerResponse ParseResponseLine(string line)
     {
-        if (line.Length >= 4 && char.IsDigit(line[0]) && char.IsDigit(line[1]) && char.IsDigit(line[2]))
+        if (line.Length >= 3 && int.TryParse(line.AsSpan(0, 3), out int code))
         {
-            string code = line.Substring(0, 3);
-            char separator = line[3];
-            string message = line.Length > 4 ? line[4..] : string.Empty;
-            int digit = code[0] - '0';
-            ResponseSeverity severity = digit >= 0 && digit <= 5 ? (ResponseSeverity)digit : ResponseSeverity.Unknown;
-            if (separator == '-')
-            {
-                severity = ResponseSeverity.Preliminary;
-            }
-            return new ServerResponse(code, severity, message);
+            char separator = line.Length > 3 ? line[3] : ' ';
+            ResponseSeverity severity = separator == '-' ? ResponseSeverity.Preliminary : (ResponseSeverity)(code / 100);
+            return new ServerResponse(line[..3], severity, line.Length > 4 ? line[4..] : string.Empty);
         }
-
         return base.ParseResponseLine(line);
     }
 
-    /// <summary>
-    /// Ensures that the final response has completion severity.
-    /// </summary>
-    /// <param name="responses">Responses to check.</param>
-    private static Task EnsureCompletionAsync(IReadOnlyList<ServerResponse> responses)
+    /// <summary>Reads one complete SMTP status response.</summary>
+    private static async ValueTask<IReadOnlyList<ServerResponse>> ReadResponsesAsync(ProtocolExchangeContext context, CancellationToken token)
     {
-        if (responses.Count == 0 || responses[^1].Severity != ResponseSeverity.Completion)
-        {
-            throw new IOException(responses.Count > 0 ? responses[^1].Message : "Server closed connection");
-        }
-        return Task.CompletedTask;
+        List<ServerResponse> responses = [];
+        do { responses.Add(await context.ReadLineAsync(token).ConfigureAwait(false)); }
+        while (responses[^1].Severity == ResponseSeverity.Preliminary);
+        return responses;
     }
 
-    /// <summary>
-    /// Ensures that the final response has intermediate severity.
-    /// </summary>
-    /// <param name="responses">Responses to check.</param>
-    private static Task EnsureIntermediateAsync(IReadOnlyList<ServerResponse> responses)
+    /// <summary>Formats typed ESMTP parameters.</summary>
+    private static string FormatOptions(SmtpMailOptions options)
     {
-        if (responses.Count == 0 || responses[^1].Severity != ResponseSeverity.Intermediate)
-        {
-            throw new IOException(responses.Count > 0 ? responses[^1].Message : "Server closed connection");
-        }
-        return Task.CompletedTask;
+        StringBuilder value = new();
+        if (options.Size is long size) value.Append(" SIZE=").Append(size);
+        if (options.Body is SmtpBodyKind body) value.Append(" BODY=").Append(body == SmtpBodyKind.SevenBit ? "7BIT" : "8BITMIME");
+        if (options.SmtpUtf8) value.Append(" SMTPUTF8");
+        return value.ToString();
     }
+}
+
+/// <summary>Preserves both an SMTP transaction failure and its failed recovery.</summary>
+public sealed class SmtpTransactionException : IOException
+{
+    /// <summary>Initializes a combined SMTP transaction exception.</summary>
+    public SmtpTransactionException(Exception operationException, Exception recoveryException) : base("SMTP transaction failed and RSET recovery also failed.", operationException) => RecoveryException = recoveryException;
+    /// <summary>Gets the failed RSET exception.</summary>
+    public Exception RecoveryException { get; }
 }

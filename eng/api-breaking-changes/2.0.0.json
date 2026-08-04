@@ -840,6 +840,13 @@
           "reason": "The published member is deliberately absent or signature-incompatible in the 2.0 candidate and is retained as an enumerated major-version break.",
           "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-net"
         }
+      ],
+      "declaredBreakingChanges": [
+        "POP3 STAT mailbox sizes now use long and malformed mandatory fields throw ProtocolResponseException.",
+        "POP3 UIDL single-message success no longer returns null for malformed responses.",
+        "NNTP NEWNEWS now returns message-id strings rather than artificial integers.",
+        "NNTP NEXT returns null only for 421 and throws ProtocolResponseException for other failures.",
+        "SMTP envelope strings are parsed as strict SmtpPath values and protocol failures are structured."
       ]
     },
     {
