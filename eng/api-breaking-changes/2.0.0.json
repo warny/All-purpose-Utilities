@@ -844,7 +844,7 @@
       "declaredBreakingChanges": [
         "POP3 STAT mailbox sizes now use long and malformed mandatory fields throw ProtocolResponseException.",
         "POP3 UIDL single-message success no longer returns null for malformed responses.",
-        "NNTP NEWNEWS now returns message-id strings rather than artificial integers.",
+        "NNTP NEWNEWS now returns message-id strings rather than artificial integers. and INntpArticleStore.ListNewsSinceAsync supplies those message IDs.",
         "NNTP NEXT returns null only for 421 and throws ProtocolResponseException for other failures.",
         "SMTP envelope strings are parsed as strict SmtpPath values and protocol failures are structured."
       ]

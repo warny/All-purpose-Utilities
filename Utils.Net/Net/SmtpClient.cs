@@ -41,7 +41,7 @@ public class SmtpClient : CommandResponseClient
             {
                 started = true;
                 await context.WriteLineAsync($"AUTH PLAIN {payload}", token).ConfigureAwait(false);
-                IReadOnlyList<ServerResponse> responses = await ReadResponsesAsync(context, token).ConfigureAwait(false);
+                IReadOnlyList<ServerResponse> responses = await context.ReadResponsesAsync(token).ConfigureAwait(false);
                 ProtocolResponseValidator.RequireCompletion("SMTP", "AUTH", responses);
                 return true;
             }
@@ -69,11 +69,11 @@ public class SmtpClient : CommandResponseClient
             {
                 started = true;
                 await context.WriteLineAsync("AUTH LOGIN", token).ConfigureAwait(false);
-                ProtocolResponseValidator.RequireIntermediate("SMTP", "AUTH", await ReadResponsesAsync(context, token).ConfigureAwait(false));
+                ProtocolResponseValidator.RequireIntermediate("SMTP", "AUTH", await context.ReadResponsesAsync(token).ConfigureAwait(false));
                 await context.WriteLineAsync(encodedUser, token).ConfigureAwait(false);
-                ProtocolResponseValidator.RequireIntermediate("SMTP", "AUTH", await ReadResponsesAsync(context, token).ConfigureAwait(false));
+                ProtocolResponseValidator.RequireIntermediate("SMTP", "AUTH", await context.ReadResponsesAsync(token).ConfigureAwait(false));
                 await context.WriteLineAsync(encodedPassword, token).ConfigureAwait(false);
-                ProtocolResponseValidator.RequireCompletion("SMTP", "AUTH", await ReadResponsesAsync(context, token).ConfigureAwait(false));
+                ProtocolResponseValidator.RequireCompletion("SMTP", "AUTH", await context.ReadResponsesAsync(token).ConfigureAwait(false));
                 return true;
             }
             catch (Exception ex) when (started && ex is OperationCanceledException or IOException)
@@ -126,7 +126,7 @@ public class SmtpClient : CommandResponseClient
         ValidateCommandArgument(list, nameof(list));
         IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"EXPN {list}", cancellationToken).ConfigureAwait(false);
         ProtocolResponseValidator.RequireCompletion("SMTP", "EXPN", responses);
-        return responses.Select(r => r.Message).Where(m => !string.IsNullOrEmpty(m)).Cast<string>().ToArray();
+        return responses.Take(responses.Count - 1).Select(r => r.Message).Where(m => !string.IsNullOrEmpty(m)).Cast<string>().ToArray();
     }
 
     /// <summary>Requests SMTP help.</summary>
@@ -177,22 +177,22 @@ public class SmtpClient : CommandResponseClient
             try
             {
                 await context.WriteLineAsync($"MAIL FROM:<{from.Value}>{mailOptions}", token).ConfigureAwait(false);
-                ProtocolResponseValidator.RequireCompletion("SMTP", "MAIL", await ReadResponsesAsync(context, token).ConfigureAwait(false));
+                ProtocolResponseValidator.RequireCompletion("SMTP", "MAIL", await context.ReadResponsesAsync(token).ConfigureAwait(false));
                 mailAccepted = true;
                 foreach (SmtpPath recipient in snapshot)
                 {
                     await context.WriteLineAsync($"RCPT TO:<{recipient.Value}>", token).ConfigureAwait(false);
-                    ProtocolResponseValidator.RequireCompletion("SMTP", "RCPT", await ReadResponsesAsync(context, token).ConfigureAwait(false));
+                    ProtocolResponseValidator.RequireCompletion("SMTP", "RCPT", await context.ReadResponsesAsync(token).ConfigureAwait(false));
                 }
                 await context.WriteLineAsync("DATA", token).ConfigureAwait(false);
-                ProtocolResponseValidator.RequireIntermediate("SMTP", "DATA", await ReadResponsesAsync(context, token).ConfigureAwait(false));
+                ProtocolResponseValidator.RequireIntermediate("SMTP", "DATA", await context.ReadResponsesAsync(token).ConfigureAwait(false));
                 dataAccepted = true;
                 string? line;
                 while ((line = await data.ReadLineAsync(token).ConfigureAwait(false)) is not null)
                     await context.WriteLineAsync(line.StartsWith(".", StringComparison.Ordinal) ? "." + line : line, token).ConfigureAwait(false);
                 await context.WriteLineAsync(".", token).ConfigureAwait(false);
                 dataFramed = true;
-                ProtocolResponseValidator.RequireCompletion("SMTP", "DATA", await ReadResponsesAsync(context, token).ConfigureAwait(false));
+                ProtocolResponseValidator.RequireCompletion("SMTP", "DATA", await context.ReadResponsesAsync(token).ConfigureAwait(false));
                 return true;
             }
             catch (Exception primary)
@@ -207,7 +207,7 @@ public class SmtpClient : CommandResponseClient
                 {
                     using CancellationTokenSource recovery = new(TransactionRecoveryTimeout);
                     await context.WriteLineAsync("RSET", recovery.Token).ConfigureAwait(false);
-                    ProtocolResponseValidator.RequireCompletion("SMTP", "RSET", await ReadResponsesAsync(context, recovery.Token).ConfigureAwait(false));
+                    ProtocolResponseValidator.RequireCompletion("SMTP", "RSET", await context.ReadResponsesAsync(recovery.Token).ConfigureAwait(false));
                 }
                 catch (Exception recoveryError)
                 {
@@ -242,15 +242,6 @@ public class SmtpClient : CommandResponseClient
             return new ServerResponse(line[..3], severity, line.Length > 4 ? line[4..] : string.Empty);
         }
         return base.ParseResponseLine(line);
-    }
-
-    /// <summary>Reads one complete SMTP status response.</summary>
-    private static async ValueTask<IReadOnlyList<ServerResponse>> ReadResponsesAsync(ProtocolExchangeContext context, CancellationToken token)
-    {
-        List<ServerResponse> responses = [];
-        do { responses.Add(await context.ReadLineAsync(token).ConfigureAwait(false)); }
-        while (responses[^1].Severity == ResponseSeverity.Preliminary);
-        return responses;
     }
 
     /// <summary>Formats typed ESMTP parameters.</summary>

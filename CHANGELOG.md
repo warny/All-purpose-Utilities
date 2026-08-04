@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Changed — `omy.Utils.Net` (BREAKING)
 - Added exclusive protocol exchanges, fail-closed poisoned sessions, structured response exceptions, and bounded streaming POP3/NNTP payload APIs.
 - Added strict SMTP paths/options, strict UTF-8 SASL, exclusive mail transactions, and bounded verified RSET recovery.
-- POP3 and NNTP mandatory numeric responses are strict; NEWNEWS returns message IDs and NEXT returns null only for 421.
+- POP3 and NNTP mandatory numeric responses are strict; NEWNEWS and `INntpArticleStore.ListNewsSinceAsync` use message IDs, and NEXT returns null only for 421.
 
 ## [2.0.0-rc.1] - Release candidate
 

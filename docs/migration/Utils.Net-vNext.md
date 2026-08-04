@@ -166,6 +166,6 @@ An SMTP mail transaction and an AUTH LOGIN challenge sequence now hold one exclu
 
 `ProtocolResponseException` replaces generic response-message `IOException` failures and exposes protocol, sanitized verb, code, severity, immutable response lines, and enhanced status. A normal framed negative response does not poison the connection; cancellation, EOF, framing loss, streaming consumer failure, and multiline limit overruns do.
 
-POP3 STAT/LIST/UIDL and NNTP GROUP/LIST/STAT/NEXT now reject missing, extra, overflowing, negative, or duplicate mandatory values. `NextAsync` returns `null` only for NNTP 421. `NewNewsAsync` returns NNTP message-id strings rather than integers.
+POP3 STAT/LIST/UIDL and NNTP GROUP/LIST/STAT/NEXT now reject missing, extra, overflowing, negative, or duplicate mandatory values. `NextAsync` returns `null` only for NNTP 421. `NewNewsAsync` returns NNTP message-id strings rather than integers, and `INntpArticleStore.ListNewsSinceAsync` now supplies those message IDs directly.
 
 Streaming overloads accept `TextWriter` for POP3 RETR and NNTP ARTICLE/HEADER/BODY. Materializing wrappers use these bounded streaming paths. Defaults are 100,000 lines, 10 Mi characters, and 40 MiB (UTF-8 count).

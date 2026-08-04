@@ -111,7 +111,7 @@ public class Pop3Client : CommandResponseClient
     {
         IReadOnlyList<ServerResponse> responses = await SendCommandAsync("STAT", cancellationToken).ConfigureAwait(false);
         EnsureOk(responses, "STAT");
-        string[] parts = SplitExact(responses[0].Message, 2, "STAT");
+        string[] parts = SplitExact(responses[0].Message, 2, "STAT", responses);
         if (!int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out int count) || count < 0 ||
             !long.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out long size) || size < 0)
             throw Malformed("STAT", responses);
@@ -126,13 +126,13 @@ public class Pop3Client : CommandResponseClient
     public async Task<IReadOnlyDictionary<int, int>> ListAsync(CancellationToken cancellationToken = default)
     {
         var (status, body) = await SendMultilineCommandAsync(
-            "LIST", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, cancellationToken).ConfigureAwait(false);
+            "LIST", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, MaxMultilineBytes, cancellationToken).ConfigureAwait(false);
         EnsureOk(status, "LIST");
         Dictionary<int, int> result = new();
         foreach (ServerResponse response in body)
         {
             string line = BodyLineToString(response);
-            string[] parts = SplitExact(line, 2, "LIST");
+            string[] parts = SplitExact(line, 2, "LIST", status);
             if (!int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out int id) || id <= 0 ||
                 !int.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out int size) || size < 0 || !result.TryAdd(id, size))
                 throw Malformed("LIST", status);
@@ -213,8 +213,8 @@ public class Pop3Client : CommandResponseClient
     public async Task<IReadOnlyList<string>> GetCapabilitiesAsync(CancellationToken cancellationToken = default)
     {
         var (status, body) = await SendMultilineCommandAsync(
-            "CAPA", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, cancellationToken).ConfigureAwait(false);
-        EnsureOk(status, "UIDL");
+            "CAPA", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, MaxMultilineBytes, cancellationToken).ConfigureAwait(false);
+        EnsureOk(status, "CAPA");
         List<string> result = new(body.Count);
         foreach (ServerResponse response in body)
             result.Add(BodyLineToString(response));
@@ -229,13 +229,13 @@ public class Pop3Client : CommandResponseClient
     public async Task<IReadOnlyDictionary<int, string>> ListUniqueIdsAsync(CancellationToken cancellationToken = default)
     {
         var (status, body) = await SendMultilineCommandAsync(
-            "UIDL", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, cancellationToken).ConfigureAwait(false);
+            "UIDL", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, MaxMultilineBytes, cancellationToken).ConfigureAwait(false);
         await EnsureOkAsync(status).ConfigureAwait(false);
         Dictionary<int, string> result = new();
         foreach (ServerResponse response in body)
         {
             string line = BodyLineToString(response);
-            string[] parts = SplitExact(line, 2, "UIDL");
+            string[] parts = SplitExact(line, 2, "UIDL", status);
             if (!int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out int id) || id <= 0 ||
                 !IsValidUniqueId(parts[1]) || !result.TryAdd(id, parts[1])) throw Malformed("UIDL", status);
         }
@@ -253,7 +253,7 @@ public class Pop3Client : CommandResponseClient
         ValidateId(id, nameof(id));
         IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"UIDL {id}", cancellationToken).ConfigureAwait(false);
         EnsureOk(responses, "UIDL");
-        string[] parts = SplitExact(responses[0].Message, 2, "UIDL");
+        string[] parts = SplitExact(responses[0].Message, 2, "UIDL", responses);
         if (!int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out int responseId) || responseId != id || !IsValidUniqueId(parts[1]))
             throw Malformed("UIDL", responses);
         return parts[1];
@@ -279,10 +279,10 @@ public class Pop3Client : CommandResponseClient
     private ProtocolPayloadLimits CreateLimits() => new() { MaximumLines = MaxMultilineLines, MaximumCharacters = MaxMultilineChars, MaximumBytes = MaxMultilineBytes };
 
     /// <summary>Requires an exact field count.</summary>
-    private static string[] SplitExact(string? value, int count, string command)
+    private static string[] SplitExact(string? value, int count, string command, IReadOnlyList<ServerResponse> responses)
     {
         string[] parts = value?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? [];
-        return parts.Length == count ? parts : throw new InvalidDataException($"Malformed POP3 {command} response.");
+        return parts.Length == count ? parts : throw Malformed(command, responses);
     }
 
     /// <summary>Creates a structured malformed-response exception.</summary>

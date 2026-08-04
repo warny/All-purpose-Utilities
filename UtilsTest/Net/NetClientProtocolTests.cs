@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipelines;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
@@ -57,6 +58,21 @@ public class NetClientProtocolTests
         }
     }
 
+    /// <summary>Exposes protected multiline behavior for focused framing tests.</summary>
+    private sealed class MultilineTestClient : CommandResponseClient
+    {
+        /// <summary>Reads a body terminated by a caller-defined marker.</summary>
+        public async Task<IReadOnlyList<string>> ReadUntilEndAsync(CancellationToken cancellationToken = default)
+        {
+            var (_, body) = await SendMultilineCommandAsync(
+                "MULTI", response => response.Code == "END", 10, 100, 100, cancellationToken);
+            List<string> result = [];
+            foreach (ServerResponse response in body)
+                result.Add(BodyLineToString(response));
+            return result;
+        }
+    }
+
     /// <summary>
     /// Creates an in-process bidirectional pipe pair so that a fake server task and a
     /// real protocol client can exchange lines without a real TCP connection.
@@ -78,6 +94,102 @@ public class NetClientProtocolTests
         StreamReader serverReader = new StreamReader(clientToServer.Reader.AsStream(), Encoding.ASCII);
 
         return (clientStream, serverWriter, serverReader);
+    }
+
+    /// <summary>Verifies the legacy protected multiline callback remains authoritative.</summary>
+    [TestMethod]
+    public async Task CommandResponseClient_Multiline_UsesCustomTerminator()
+    {
+        (DuplexStream stream, StreamWriter writer, StreamReader reader) = CreateTestPair();
+        Task server = Task.Run(async () =>
+        {
+            _ = await reader.ReadLineAsync();
+            await writer.WriteLineAsync("200 body follows");
+            await writer.WriteLineAsync("first");
+            await writer.WriteLineAsync("END");
+            await writer.WriteLineAsync("orphan");
+        });
+        MultilineTestClient client = new();
+        await client.ConnectAsync(stream);
+        IReadOnlyList<string> body = await client.ReadUntilEndAsync();
+        CollectionAssert.AreEqual(new[] { "first" }, body.ToArray());
+        await server;
+    }
+
+    /// <summary>Verifies SMTP exchange status collection enforces MaxResponseCount and poisons framing.</summary>
+    [TestMethod]
+    public async Task SmtpClient_ExclusiveStatusReader_EnforcesMaxResponseCount()
+    {
+        (DuplexStream stream, StreamWriter writer, StreamReader reader) = CreateTestPair();
+        Task server = Task.Run(async () =>
+        {
+            await writer.WriteLineAsync("220 ready");
+            _ = await reader.ReadLineAsync();
+            await writer.WriteLineAsync("250-first");
+            await writer.WriteLineAsync("250 second");
+        });
+        SmtpClient client = new() { MaxResponseCount = 1 };
+        await client.ConnectAsync(stream);
+        await Assert.ThrowsExceptionAsync<InvalidDataException>(() => client.EhloAsync("example.test"));
+        Assert.IsFalse(client.IsConnected);
+        Assert.IsNotNull(client.SessionFailure);
+        await server;
+    }
+
+    /// <summary>Verifies malformed POP3 mandatory fields produce structured diagnostics.</summary>
+    [TestMethod]
+    public async Task Pop3Client_MalformedStat_ThrowsProtocolResponseException()
+    {
+        (DuplexStream stream, StreamWriter writer, StreamReader reader) = CreateTestPair();
+        Task server = Task.Run(async () =>
+        {
+            await writer.WriteLineAsync("+OK ready");
+            _ = await reader.ReadLineAsync();
+            await writer.WriteLineAsync("+OK 12");
+        });
+        Pop3Client client = new();
+        await client.ConnectAsync(stream);
+        ProtocolResponseException error = await Assert.ThrowsExceptionAsync<ProtocolResponseException>(() => client.GetStatAsync());
+        Assert.AreEqual("STAT", error.Command);
+        await server;
+    }
+
+    /// <summary>Verifies POP3 CAPA failures retain the correct sanitized command context.</summary>
+    [TestMethod]
+    public async Task Pop3Client_CapabilityFailure_UsesCapaCommandContext()
+    {
+        (DuplexStream stream, StreamWriter writer, StreamReader reader) = CreateTestPair();
+        Task server = Task.Run(async () =>
+        {
+            await writer.WriteLineAsync("+OK ready");
+            _ = await reader.ReadLineAsync();
+            await writer.WriteLineAsync("-ERR unsupported");
+        });
+        Pop3Client client = new();
+        await client.ConnectAsync(stream);
+        ProtocolResponseException error = await Assert.ThrowsExceptionAsync<ProtocolResponseException>(() => client.GetCapabilitiesAsync());
+        Assert.AreEqual("CAPA", error.Command);
+        await server;
+    }
+
+    /// <summary>Verifies materializing multiline commands also apply the byte limit.</summary>
+    [TestMethod]
+    public async Task Pop3Client_List_ByteLimitExceeded_PoisonsSession()
+    {
+        (DuplexStream stream, StreamWriter writer, StreamReader reader) = CreateTestPair();
+        Task server = Task.Run(async () =>
+        {
+            await writer.WriteLineAsync("+OK ready");
+            _ = await reader.ReadLineAsync();
+            await writer.WriteLineAsync("+OK list follows");
+            await writer.WriteLineAsync("1 12345");
+            await writer.WriteLineAsync(".");
+        });
+        Pop3Client client = new() { MaxMultilineBytes = 2 };
+        await client.ConnectAsync(stream);
+        await Assert.ThrowsExceptionAsync<InvalidDataException>(() => client.ListAsync());
+        Assert.IsFalse(client.IsConnected);
+        await server;
     }
 
     // ──────────────────────────────────────────────────────────────

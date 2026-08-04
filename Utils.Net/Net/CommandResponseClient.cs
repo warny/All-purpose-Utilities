@@ -484,6 +484,29 @@ public class CommandResponseClient : IDisposable
             }
         }
 
+        /// <summary>
+        /// Reads one complete status response and enforces the client's response-count limit.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>An immutable snapshot of the status response lines.</returns>
+        public async ValueTask<IReadOnlyList<ServerResponse>> ReadResponsesAsync(CancellationToken cancellationToken)
+        {
+            List<ServerResponse> responses = [];
+            while (true)
+            {
+                ServerResponse response = await ReadLineAsync(cancellationToken).ConfigureAwait(false);
+                responses.Add(response);
+                if (_owner.MaxResponseCount > 0 && responses.Count > _owner.MaxResponseCount)
+                {
+                    InvalidDataException error = new($"Server sent more than {_owner.MaxResponseCount} status lines for one exchange.");
+                    Poison(error);
+                    throw error;
+                }
+                if (response.Severity >= ResponseSeverity.Completion || response.Severity == ResponseSeverity.Unknown)
+                    return responses.AsReadOnly();
+            }
+        }
+
         /// <summary>Marks the session unusable.</summary>
         public void Poison(Exception cause) => _owner.PoisonSession(cause);
     }
@@ -595,7 +618,8 @@ public class CommandResponseClient : IDisposable
         string command,
         Func<ReadOnlyMemory<char>, CancellationToken, ValueTask> consumeLine,
         ProtocolPayloadLimits limits,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        Func<ServerResponse, bool>? isBodyTerminator = null)
     {
         ArgumentNullException.ThrowIfNull(consumeLine);
         ArgumentNullException.ThrowIfNull(limits);
@@ -607,16 +631,7 @@ public class CommandResponseClient : IDisposable
             try
             {
                 await context.WriteLineAsync(command, token).ConfigureAwait(false);
-                List<ServerResponse> status = [];
-                while (true)
-                {
-                    ServerResponse response = await context.ReadLineAsync(token).ConfigureAwait(false);
-                    status.Add(response);
-                    if (MaxResponseCount > 0 && status.Count > MaxResponseCount)
-                        throw new InvalidDataException($"Server sent more than {MaxResponseCount} status lines.");
-                    if (response.Severity >= ResponseSeverity.Completion || response.Severity == ResponseSeverity.Unknown)
-                        break;
-                }
+                IReadOnlyList<ServerResponse> status = await context.ReadResponsesAsync(token).ConfigureAwait(false);
                 if (status[^1].Severity is ResponseSeverity.TransientNegative or ResponseSeverity.PermanentNegative)
                     return status;
 
@@ -628,7 +643,7 @@ public class CommandResponseClient : IDisposable
                 {
                     ServerResponse response = await context.ReadLineAsync(token).ConfigureAwait(false);
                     string raw = BodyLineToString(response);
-                    if (raw == ".")
+                    if ((isBodyTerminator?.Invoke(response) ?? raw == "."))
                     {
                         terminated = true;
                         break;
@@ -675,6 +690,10 @@ public class CommandResponseClient : IDisposable
     /// Maximum total characters across all body lines. <see cref="InvalidDataException"/> is
     /// thrown when the limit is exceeded. Set to 0 to disable.
     /// </param>
+    /// <param name="maxBodyBytes">
+    /// Maximum total UTF-8 bytes across all body lines. <see cref="InvalidDataException"/> is
+    /// thrown when the limit is exceeded. Set to 0 to disable.
+    /// </param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>
     /// A tuple of <c>StatusLines</c> (the opening response line(s), including the final
@@ -690,6 +709,7 @@ public class CommandResponseClient : IDisposable
         Func<ServerResponse, bool> isBodyTerminator,
         int maxBodyLines = 0,
         int maxBodyChars = 0,
+        long maxBodyBytes = 0,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(isBodyTerminator);
@@ -698,7 +718,7 @@ public class CommandResponseClient : IDisposable
         {
             MaximumLines = maxBodyLines,
             MaximumCharacters = maxBodyChars,
-            MaximumBytes = 0
+            MaximumBytes = maxBodyBytes
         };
         IReadOnlyList<ServerResponse> status = await StreamMultilineCommandAsync(
             command,
@@ -708,7 +728,8 @@ public class CommandResponseClient : IDisposable
                 return ValueTask.CompletedTask;
             },
             limits,
-            cancellationToken).ConfigureAwait(false);
+            cancellationToken,
+            isBodyTerminator).ConfigureAwait(false);
         return (status, body);
     }
 

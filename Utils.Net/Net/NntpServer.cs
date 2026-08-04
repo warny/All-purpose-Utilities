@@ -124,7 +124,7 @@ public sealed class NntpServer : IDisposable
         ctx.Add("GROUP");
         _currentGroup = group;
         _currentArticle = null;
-        return new[] { new ServerResponse("211", ResponseSeverity.Completion, $"{articles.Count} {first} {last} {group}") };
+        return new[] { new ServerResponse("211", ResponseSeverity.Completion, $"{articles.Count} {first} {last}") };
     }
 
     /// <summary>
@@ -250,14 +250,14 @@ public sealed class NntpServer : IDisposable
             return new[] { new ServerResponse("501", ResponseSeverity.PermanentNegative, "syntax error") };
         }
         string group = args[0];
-        IReadOnlyCollection<int> ids = await _store.ListNewsSinceAsync(group, since, cancellationToken).ConfigureAwait(false);
+        IReadOnlyCollection<string> ids = await _store.ListNewsSinceAsync(group, since, cancellationToken).ConfigureAwait(false);
         List<ServerResponse> responses = new()
         {
             new ServerResponse("230", ResponseSeverity.Completion, "list of new articles follows")
         };
-        foreach (int id in ids)
+        foreach (string id in ids)
         {
-            responses.Add(new ServerResponse(id.ToString(), ResponseSeverity.Preliminary, null));
+            responses.Add(new ServerResponse(id, ResponseSeverity.Preliminary, null));
         }
         responses.Add(new ServerResponse(".", ResponseSeverity.Completion, null));
         return responses;

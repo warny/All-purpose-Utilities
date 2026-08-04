@@ -79,7 +79,7 @@ public class NntpClient : CommandResponseClient
         ValidateCommandArgument(group, nameof(group));
         IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"GROUP {group}", cancellationToken).ConfigureAwait(false);
         ProtocolResponseValidator.RequireCode("NNTP", "GROUP", responses, "211");
-        string[] parts = ExactFields(responses[0].Message, 3, "GROUP");
+        string[] parts = ExactFields(responses[0].Message, 3, "GROUP", responses);
         if (!TryNonNegative(parts[0], out int count) || !TryNonNegative(parts[1], out int first) || !TryNonNegative(parts[2], out int last) || (count > 0 && first > last))
             throw new ProtocolResponseException("NNTP", "GROUP", responses);
         return (count, first, last);
@@ -110,7 +110,7 @@ public class NntpClient : CommandResponseClient
     public async Task<IReadOnlyList<(string group, int last, int first)>> ListAsync(CancellationToken cancellationToken = default)
     {
         var (status, body) = await SendMultilineCommandAsync(
-            "LIST", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, cancellationToken).ConfigureAwait(false);
+            "LIST", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, MaxMultilineBytes, cancellationToken).ConfigureAwait(false);
         ProtocolResponseValidator.RequireCode("NNTP", "LIST", status, "215");
         List<(string group, int last, int first)> result = new();
         foreach (ServerResponse response in body)
@@ -136,7 +136,7 @@ public class NntpClient : CommandResponseClient
         string date = utc.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
         string time = utc.ToString("HHmmss", CultureInfo.InvariantCulture);
         var (status, body) = await SendMultilineCommandAsync(
-            $"NEWGROUPS {date} {time} GMT", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, cancellationToken).ConfigureAwait(false);
+            $"NEWGROUPS {date} {time} GMT", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, MaxMultilineBytes, cancellationToken).ConfigureAwait(false);
         await EnsureCompletionAsync(status).ConfigureAwait(false);
         List<string> result = new(body.Count);
         foreach (ServerResponse response in body)
@@ -158,7 +158,7 @@ public class NntpClient : CommandResponseClient
         string date = utc.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
         string time = utc.ToString("HHmmss", CultureInfo.InvariantCulture);
         var (status, body) = await SendMultilineCommandAsync(
-            $"NEWNEWS {group} {date} {time} GMT", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, cancellationToken).ConfigureAwait(false);
+            $"NEWNEWS {group} {date} {time} GMT", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, MaxMultilineBytes, cancellationToken).ConfigureAwait(false);
         await EnsureCompletionAsync(status).ConfigureAwait(false);
         List<string> ids = new();
         foreach (ServerResponse response in body)
@@ -301,17 +301,17 @@ public class NntpClient : CommandResponseClient
     /// <summary>Parses a strict NNTP article-number and message-id response.</summary>
     private static (int id, string messageId) ParseArticleStatus(string command, IReadOnlyList<ServerResponse> responses)
     {
-        string[] fields = ExactFields(responses[0].Message, 2, command);
+        string[] fields = ExactFields(responses[0].Message, 2, command, responses);
         if (!int.TryParse(fields[0], NumberStyles.None, CultureInfo.InvariantCulture, out int id) || id <= 0 || !IsMessageId(fields[1]))
             throw new ProtocolResponseException("NNTP", command, responses);
         return (id, fields[1]);
     }
 
     /// <summary>Requires an exact number of response fields.</summary>
-    private static string[] ExactFields(string? value, int count, string command)
+    private static string[] ExactFields(string? value, int count, string command, IReadOnlyList<ServerResponse> responses)
     {
         string[] fields = value?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? [];
-        return fields.Length == count ? fields : throw new InvalidDataException($"Malformed NNTP {command} response.");
+        return fields.Length == count ? fields : throw new ProtocolResponseException("NNTP", command, responses);
     }
 
     /// <summary>Parses a non-negative invariant integer.</summary>
