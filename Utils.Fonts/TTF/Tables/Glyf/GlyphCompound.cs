@@ -245,8 +245,26 @@ public class GlyphCompound : GlyphBase
         byte[] instructions;
         if (hasInstructions)
         {
+            // The wire length is always a UInt16 (so it can never itself request more than 65,535
+            // bytes), but a configurable, independently-checked limit is enforced before reading --
+            // rather than relying only on the coarser whole-table MaximumTableBytes bound -- so a
+            // hostile font cannot force a large read purely to serve a single glyph's instructions.
             int instructionsCount = data.Read<UInt16>();
+            if (instructionsCount > options.MaximumCompositeInstructionBytes)
+            {
+                FontParsingContext.Reject(FontDiagnosticCode.ResourceLimitExceeded,
+                    $"Compound glyph instructions ({instructionsCount} bytes) exceed MaximumCompositeInstructionBytes ({options.MaximumCompositeInstructionBytes}).");
+            }
             instructions = data.ReadBytes(instructionsCount);
+            if (instructions.Length != instructionsCount)
+            {
+                // Reader.ReadBytes does not throw on a short read by default -- it silently
+                // returns whatever was available. A truncated instruction block means the glyph's
+                // own data does not actually contain what it declared, which is always fatal
+                // (there is no shorter-but-still-valid instruction block to fall back to).
+                FontParsingContext.Reject(FontDiagnosticCode.InvalidCompositeGlyph,
+                    $"Compound glyph declares {instructionsCount} instruction byte(s) but only {instructions.Length} were available.");
+            }
         }
         else
         {

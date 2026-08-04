@@ -212,18 +212,6 @@ public class CmapTable : TrueTypeTable, IEnumerable<CMap.CMapFormatBase>
             subTables[i] = (platformID, platformSpecificID, offset);
         }
 
-        // A subtable's length is the distance to the next greater offset: subtables are stored
-        // contiguously and sorted by offset per the TrueType spec, and several platform/encoding
-        // records may legitimately share the same offset when they point at the same subtable.
-        // A zero offset can only mean "record dropped above" (every accepted offset is >=
-        // directoryEnd, which is always > 0), so it is excluded here.
-        var orderedOffsets = subTables.Select(s => s.offset).Where(o => o != 0).Distinct().OrderBy(o => o).ToArray();
-        long SubtableEnd(uint offset)
-        {
-            int index = Array.IndexOf(orderedOffsets, offset);
-            return index + 1 < orderedOffsets.Length ? orderedOffsets[index + 1] : cmapLength;
-        }
-
         // Subtables sharing the same offset (deliberately, per spec) are parsed exactly once and
         // the resulting instance is reused across every platform/encoding record that points at it.
         var parsedByOffset = new Dictionary<uint, CMap.CMapFormatBase>();
@@ -239,8 +227,16 @@ public class CmapTable : TrueTypeTable, IEnumerable<CMap.CMapFormatBase>
 
             if (!parsedByOffset.TryGetValue(subTable.offset, out var cMap))
             {
-                long length = SubtableEnd(subTable.offset) - subTable.offset;
-                Reader mapData = data.Slice(subTable.offset, length);
+                // Bounded only by "the rest of cmap from this offset" -- never by the next
+                // directory record's offset. Subtables are not guaranteed to be laid out
+                // contiguously in offset order (padding, or a genuinely non-contiguous layout, can
+                // sit between them), so a next-offset-derived bound could let a malformed or
+                // hostile subtable's own reads run past its真 declared length into padding or an
+                // unrelated subtable's bytes without ever failing. CMapFormatBase.GetMap reads the
+                // format's own declared length from the wire and re-bounds to exactly that length
+                // before dispatching to the format-specific reader.
+                long available = cmapLength - subTable.offset;
+                Reader mapData = data.Slice(subTable.offset, available);
                 try
                 {
                     cMap = CMap.CMapFormatBase.GetMap(mapData);

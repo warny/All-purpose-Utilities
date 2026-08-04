@@ -63,6 +63,15 @@ public sealed record TrueTypeFontParsingOptions
     public int MaximumCompositeComponents { get; init; } = 4096;
 
     /// <summary>
+    /// Gets the maximum number of instruction bytes accepted for a single compound glyph's
+    /// trailing instruction block. Defaults to 64 KiB. The declared instruction length is always
+    /// read as a <see cref="ushort"/> (so it can never itself request more than 65,535 bytes), but
+    /// this limit is checked and enforced independently, before those bytes are read, rather than
+    /// relying only on the coarser whole-table <see cref="MaximumTableBytes"/> bound.
+    /// </summary>
+    public int MaximumCompositeInstructionBytes { get; init; } = 64 * 1024;
+
+    /// <summary>
     /// Gets the maximum recursion depth allowed while resolving compound glyphs that reference
     /// other compound glyphs. Defaults to 64.
     /// </summary>
@@ -113,6 +122,10 @@ public sealed record TrueTypeFontParsingOptions
         if (MaximumCompositeComponents < 0)
         {
             throw new ArgumentOutOfRangeException(nameof(MaximumCompositeComponents), MaximumCompositeComponents, "MaximumCompositeComponents must be non-negative.");
+        }
+        if (MaximumCompositeInstructionBytes < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(MaximumCompositeInstructionBytes), MaximumCompositeInstructionBytes, "MaximumCompositeInstructionBytes must be non-negative.");
         }
         if (MaximumCompositeDepth < 0)
         {

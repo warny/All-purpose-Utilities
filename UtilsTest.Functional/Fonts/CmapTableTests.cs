@@ -177,6 +177,60 @@ public class CmapTableTests
         Assert.ThrowsExactly<InvalidDataException>(() => table.ReadData(MakeReader(ms.ToArray())));
     }
 
+    // Review fix: subtable bounds must come only from the format's own declared length, never from
+    // "distance to the next directory offset" -- subtables are not guaranteed contiguous, and
+    // padding (or any other gap) between them must not be treated as if it belonged to the earlier
+    // subtable. Builds two non-contiguous subtables with a 20-byte padding gap between them: A
+    // (format 4) declares a length that only covers its own fixed header, with no room for the
+    // segment arrays its segCountX2 implies; if the parser incorrectly bounded A by "distance to
+    // B's offset" (which spans the padding), reading A's segments would succeed by consuming
+    // padding bytes as if they were segment data. Bounding A strictly to its own declared length
+    // makes that read run out of bytes instead, and B (unaffected by A's failure) must still parse
+    // correctly on its own.
+    [TestMethod]
+    public void NonContiguousSubtablesWithPadding_EachBoundedByOwnDeclaredLength()
+    {
+        const int directoryEnd = 4 + 2 * 8; // 20
+        const int aOffset = directoryEnd;
+        const int aDeclaredLength = 14; // fixed format-4 header only: no room for endCode[segCount=1]
+        const int paddingBytes = 20;
+        const int bOffset = aOffset + aDeclaredLength + paddingBytes; // 54
+
+        using var ms = new MemoryStream();
+        var w = new Writer(ms, BigEndianWriter.WriterDelegates);
+        w.Write<ushort>(0);
+        w.Write<ushort>(2);
+        w.Write<ushort>(1); w.Write<ushort>(0); w.Write<uint>(aOffset);
+        w.Write<ushort>(3); w.Write<ushort>(1); w.Write<uint>(bOffset);
+
+        // Subtable A (format 4) at offset 20: declares length=14 but its segCountX2 implies more.
+        w.Write<short>(4); w.Write<short>(aDeclaredLength); w.Write<short>(0);
+        w.Write<short>(2); w.Write<short>(0); w.Write<short>(0); w.Write<short>(0); // segCountX2=2 (segCount=1)
+
+        // Padding: bytes that, under the old "next offset" bound, would have been readable as if
+        // they were A's own endCode/startCode/idDelta/idRangeOffset array. Non-zero so a wrongly
+        // "successful" read of them would not coincidentally look like valid all-zero segment data.
+        for (int i = 0; i < paddingBytes; i++) w.WriteByte(0xAA);
+
+        // Subtable B (format 0) at offset 54, fully valid.
+        w.Write<short>(0); w.Write<short>(262); w.Write<short>(0);
+        for (int i = 0; i < 256; i++) w.WriteByte((byte)i);
+
+        var strictTable = NewTable();
+        Assert.ThrowsExactly<InvalidDataException>(() => strictTable.ReadData(MakeReader(ms.ToArray())));
+
+        var permissiveFont = new TrueTypeFont(0);
+        var context = new FontParsingContext(new TrueTypeFontParsingOptions { ValidationMode = FontValidationMode.Permissive });
+        permissiveFont.ParsingContext = context;
+        var permissiveTable = (CmapTable)permissiveFont.CreateTable(TableTypes.CMAP);
+        permissiveFont.AddTable(TableTypes.CMAP, permissiveTable);
+        permissiveTable.ReadData(MakeReader(ms.ToArray()));
+
+        Assert.IsNull(permissiveTable.GetCMap(1, 0)); // A: malformed, dropped
+        Assert.IsNotNull(permissiveTable.GetCMap(3, 1)); // B: parses correctly, unaffected by A
+        Assert.IsTrue(context.Diagnostics.Any(d => d.Code == FontDiagnosticCode.MalformedCmapSubtable));
+    }
+
     // TODO-pass2 item 15.3: two platform/encoding records legitimately sharing the same offset must
     // be parsed once and share the same subtable instance, not be parsed (and materialized) twice.
     [TestMethod]

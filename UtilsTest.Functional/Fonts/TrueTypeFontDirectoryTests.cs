@@ -409,6 +409,13 @@ public class TrueTypeFontDirectoryTests
     }
 
     [TestMethod]
+    public void ParsingOptions_NegativeMaximumCompositeInstructionBytes_ThrowsArgumentOutOfRangeException()
+    {
+        var options = new TrueTypeFontParsingOptions { MaximumCompositeInstructionBytes = -1 };
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => TrueTypeFont.ParseFont([], options));
+    }
+
+    [TestMethod]
     public void ParsingOptions_UndefinedValidationMode_ThrowsArgumentOutOfRangeException()
     {
         var options = new TrueTypeFontParsingOptions { ValidationMode = (FontValidationMode)42 };

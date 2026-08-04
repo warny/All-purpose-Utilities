@@ -292,6 +292,51 @@ public class GlyphCompoundTests
         CollectionAssert.AreEqual(instructionBytes, glyph.Instructions.ToArray());
     }
 
+    // TODO-pass2 item 14.5: instruction length is read exactly as declared (UInt16), and a
+    // configurable limit -- independent of the coarser whole-table MaximumTableBytes bound -- is
+    // enforced before those bytes are read.
+    [TestMethod]
+    public void Instructions_ExactlyAtCustomLimit_Succeeds()
+    {
+        byte[] instructions = new byte[10];
+        byte[] compound = BuildCompoundGlyphBytes(0, 0, 1f, 0f, 0f, 1f, CompoundGlyfFlags.HasInstructions, instructions);
+        var context = new FontParsingContext(new TrueTypeFontParsingOptions { MaximumCompositeInstructionBytes = 10 });
+
+        var glyf = BuildFontWithCompoundGlyphs(context, compound);
+        var glyph = (GlyphCompound)glyf.GetGlyph(1);
+
+        Assert.AreEqual(10, glyph.Instructions.Length);
+    }
+
+    [TestMethod]
+    public void Instructions_OneByteAboveCustomLimit_Throws()
+    {
+        byte[] instructions = new byte[11];
+        byte[] compound = BuildCompoundGlyphBytes(0, 0, 1f, 0f, 0f, 1f, CompoundGlyfFlags.HasInstructions, instructions);
+        var context = new FontParsingContext(new TrueTypeFontParsingOptions { MaximumCompositeInstructionBytes = 10 });
+
+        var ex = Assert.ThrowsExactly<FontParseException>(() => BuildFontWithCompoundGlyphs(context, compound));
+        Assert.AreEqual(FontDiagnosticCode.ResourceLimitExceeded, ex.Diagnostic.Code);
+    }
+
+    [TestMethod]
+    public void Instructions_TruncatedRead_Throws()
+    {
+        // Declares 100 instruction bytes (well within the default 64 KiB limit) but supplies none.
+        using var ms = new MemoryStream();
+        var w = new Writer(ms, BigEndianWriter.WriterDelegates);
+        w.Write<short>(-1);
+        w.Write<short>(0); w.Write<short>(0); w.Write<short>(0); w.Write<short>(0);
+        var flags = CompoundGlyfFlags.ArgsAreXY | CompoundGlyfFlags.HasInstructions;
+        w.Write<short>((short)flags);
+        w.Write<ushort>(0);
+        w.WriteByte(0); w.WriteByte(0);
+        w.Write<ushort>(100); // instruction length, but no instruction bytes follow
+
+        var ex = Assert.ThrowsExactly<FontParseException>(() => GlyphBase.CreateGlyf(MakeReader(ms.ToArray()), null));
+        Assert.AreEqual(FontDiagnosticCode.InvalidCompositeGlyph, ex.Diagnostic.Code);
+    }
+
     // TODO-pass2 item 14.6/31: a compound glyph that (directly or indirectly) references itself
     // must be rejected rather than recursing without bound.
     [TestMethod]

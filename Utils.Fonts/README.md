@@ -101,7 +101,7 @@ glyph cycles, and out-of-range glyph references -- by throwing `FontParseExcepti
 mode records anomalies as structured diagnostics on `TrueTypeFont.Diagnostics` and continues
 parsing whenever doing so remains memory-safe; resource-limit violations (`MaximumFontBytes`,
 `MaximumTableBytes`, `MaximumTables`, `MaximumCmapSubtables`, composite-glyph depth/component/point
-budgets) always throw, in both modes.
+budgets, `MaximumCompositeInstructionBytes`) always throw, in both modes.
 
 ```csharp
 using Utils.Fonts.TTF;
