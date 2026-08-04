@@ -1354,7 +1354,7 @@ default used when no form matches the active variant query.
 | Attribute | Required | Description |
 |-----------|----------|-------------|
 | `from` | ✓ | Text or regex pattern to match. |
-| `to` | | Unconditional default replacement. May contain backreferences (`$1`, `${name}`) when `regex="true"`. When absent, the first expanded `<Variant>` form is used as default. |
+| `to` | | Explicit unconditional fallback. May contain backreferences (`$1`, `${name}`) when `regex="true"`. When absent, an unmatched query performs no replacement. |
 | `regex` | | `"true"` to treat `from` as a .NET regular expression. Default: `"false"` (literal match). |
 
 The `<Variant>` children use the same `FormVariantType` syntax as `<Replacement>`, `<Ordinal>`,

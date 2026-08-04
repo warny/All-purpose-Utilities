@@ -1530,6 +1530,18 @@
           "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils-dependencyinjection-generators"
         }
       ]
+    },
+    {
+      "packageId": "omy.Utils.NumberToString",
+      "baselineVersion": "first-candidate",
+      "acceptedDiagnostics": [],
+      "declaredBreakingChanges": [
+        "VariantRule constructor adds the optional priority parameter and Priority property.",
+        "OrdinalVariantRule constructor adds the optional priority parameter and Priority property.",
+        "TriggerReplace replaces tuple forms with TriggerReplacementForm and its immutable Priority property.",
+        "Equal-ranked intersecting configurations are rejected instead of using declaration order."
+      ],
+      "reason": "The package uses the first-candidate API policy, so no published binary exists from which ApiCompat can emit CP diagnostics; these source-level 2.0 breaks are recorded explicitly."
     }
   ]
 }

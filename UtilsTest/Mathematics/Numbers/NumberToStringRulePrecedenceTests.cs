@@ -68,6 +68,99 @@ public sealed class NumberToStringRulePrecedenceTests
         Assert.AreEqual("fallback", converter.Convert(1, "gender=male"));
     }
 
+    /// <summary>Verifies that canonical and local dimension names have identical runtime semantics.</summary>
+    [TestMethod]
+    public void CumulativeRuleAndQueryAliasesAreCanonicalizedAtRuntime()
+    {
+        foreach (string ruleName in new[] { "gender", "GeNrE" })
+        foreach (string queryName in new[] { "gender", "GENRE" })
+        {
+            var rule = new NumberToStringConverter.VariantRule(
+                new Dictionary<string, string> { [ruleName] = "FeMaLe" },
+                [new NumberToStringConverter.ReplacementRule("one", "canonical-match", ReplacementScope.Anywhere)]);
+            Assert.AreEqual("canonical-match", Create(variantRules: [rule]).Convert(1, $"{queryName}=female"));
+        }
+    }
+
+    /// <summary>Verifies that XML-style conditional forms never synthesize an order-based fallback.</summary>
+    [TestMethod]
+    public void TriggerWithoutDefaultSkipsUnmatchedQueryRegardlessOfFormOrder()
+    {
+        var female = new NumberToStringConverter.TriggerReplacementForm(
+            new Dictionary<string, string> { ["gender"] = "female" }, "female", 100);
+        var plural = new NumberToStringConverter.TriggerReplacementForm(
+            new Dictionary<string, string> { ["number"] = "plural" }, "plural", -100);
+        foreach (IReadOnlyList<NumberToStringConverter.TriggerReplacementForm> forms in
+            new[] { new[] { female, plural }, new[] { plural, female } })
+        {
+            NumberToStringConverter converter = Create(triggers:
+            [
+                new NumberToStringConverter.TriggerRule(NumberToStringConverter.TriggerAt.End, null,
+                [new NumberToStringConverter.TriggerReplace("one", false, forms, null)])
+            ]);
+            Assert.AreEqual("one", converter.Convert(1, "gender=male", "number=singular"));
+        }
+    }
+
+    /// <summary>Verifies that XML parsing has the same explicit-fallback contract as programmatic construction.</summary>
+    [TestMethod]
+    public void XmlTriggerWithoutToDoesNotUseFirstFormAsFallback()
+    {
+        const string culture = "precedence-xml-trigger";
+        foreach (bool reverse in new[] { false, true })
+        {
+            string forms = reverse
+                ? "<Variant type=\"number\" variant=\"plural\" value=\"plural\" priority=\"-10\" /><Variant type=\"gender\" variant=\"female\" value=\"female\" priority=\"10\" />"
+                : "<Variant type=\"gender\" variant=\"female\" value=\"female\" priority=\"10\" /><Variant type=\"number\" variant=\"plural\" value=\"plural\" priority=\"-10\" />";
+            NumberToStringConverter.RegisterConfigurations([CreateTriggerXml(culture, forms)], DuplicateCulturePolicy.Replace);
+            NumberToStringConverter converter = NumberToStringConverter.GetConverter(culture);
+            Assert.AreEqual("one", converter.Convert(1, "gender=male", "number=singular"));
+            Assert.AreEqual("female", converter.Convert(1, "gender=female", "number=singular"));
+        }
+    }
+
+    /// <summary>Verifies the cumulative-rule ambiguity diagnostic.</summary>
+    [TestMethod]
+    public void EqualRankCumulativeIntersectionReportsUnts001()
+    {
+        var exception = Assert.ThrowsException<NumberToStringConfigurationException>(() => Create(variantRules:
+        [
+            Variant("female", "one", "a", 0),
+            new NumberToStringConverter.VariantRule(
+                new Dictionary<string, string> { ["number"] = "plural" },
+                [new NumberToStringConverter.ReplacementRule("one", "b", ReplacementScope.Anywhere)])
+        ]));
+        Assert.AreEqual("UNTS001", exception.ErrorCode);
+    }
+
+    /// <summary>Verifies the trigger-form ambiguity diagnostic.</summary>
+    [TestMethod]
+    public void EqualRankTriggerIntersectionReportsUnts003()
+    {
+        var forms = new[]
+        {
+            new NumberToStringConverter.TriggerReplacementForm(new Dictionary<string, string> { ["gender"] = "female" }, "a"),
+            new NumberToStringConverter.TriggerReplacementForm(new Dictionary<string, string> { ["number"] = "plural" }, "b")
+        };
+        var exception = Assert.ThrowsException<NumberToStringConfigurationException>(() => Create(triggers:
+        [
+            new NumberToStringConverter.TriggerRule(NumberToStringConverter.TriggerAt.End, null,
+            [new NumberToStringConverter.TriggerReplace("one", false, forms, null)])
+        ]));
+        Assert.AreEqual("UNTS003", exception.ErrorCode);
+    }
+
+    /// <summary>Verifies that canonical and alias keys cannot duplicate one logical dimension.</summary>
+    [TestMethod]
+    public void CanonicalAndAliasConstraintDuplicateReportsUnts004()
+    {
+        var rule = new NumberToStringConverter.VariantRule(
+            new Dictionary<string, string> { ["gender"] = "female", ["genre"] = "female" },
+            [new NumberToStringConverter.ReplacementRule("one", "a", ReplacementScope.Anywhere)]);
+        var exception = Assert.ThrowsException<NumberToStringConfigurationException>(() => Create(variantRules: [rule]));
+        Assert.AreEqual("UNTS004", exception.ErrorCode);
+    }
+
     /// <summary>Creates an isolated English-derived converter for precedence tests.</summary>
     private static NumberToStringConverter Create(
         IReadOnlyList<NumberToStringConverter.OrdinalVariantRule>? ordinalVariants = null,
@@ -98,4 +191,24 @@ public sealed class NumberToStringRulePrecedenceTests
     private static NumberToStringConverter.VariantRule Variant(string gender, string from, string to, int priority) =>
         new(new Dictionary<string, string> { ["gender"] = gender },
             [new NumberToStringConverter.ReplacementRule(from, to, ReplacementScope.Anywhere)], priority);
+
+    /// <summary>Creates a deterministic single-digit XML configuration containing conditional trigger forms.</summary>
+    private static string CreateTriggerXml(string culture, string forms) => $$"""
+        <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+            <Language groupSize="3" separator=" " groupSeparator="" zero="zero" minus="minus *" decimalSeparator="point" maxNumber="9">
+                <Culture>{{culture}}</Culture>
+                <Groups><Group level="1">
+                    <Digit digit="0" string="" /><Digit digit="1" string="one" /><Digit digit="2" string="two" />
+                    <Digit digit="3" string="three" /><Digit digit="4" string="four" /><Digit digit="5" string="five" />
+                    <Digit digit="6" string="six" /><Digit digit="7" string="seven" /><Digit digit="8" string="eight" />
+                    <Digit digit="9" string="nine" />
+                </Group></Groups>
+                <Variants>
+                    <Dimension name="gender" values="male,female" />
+                    <Dimension name="number" values="singular,plural" />
+                </Variants>
+                <Trigger executeAt="end"><Replace from="one">{{forms}}</Replace></Trigger>
+            </Language>
+        </Numbers>
+        """;
 }

@@ -869,8 +869,7 @@ public class TriggerReplaceType
 
     /// <summary>
     /// Gets or sets the unconditional default replacement.
-    /// May be omitted when all cases are covered by <see cref="FormVariants"/>;
-    /// the first expanded form then serves as default.
+    /// When omitted, no replacement occurs if no conditional form matches.
     /// May contain backreferences ($1, ${name}) when <see cref="IsRegex"/> is true.
     /// </summary>
     [XmlAttribute("to")]

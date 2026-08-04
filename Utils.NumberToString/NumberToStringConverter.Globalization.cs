@@ -1253,12 +1253,10 @@ namespace Utils.NumberToString
 
                         if (replace.FormVariants?.Count > 0)
                         {
-                            bool captureFirst = defaultTo == null;
                             foreach (var (constraints, form, priority) in ExpandFormVariants(
                                 replace.FormVariants, parsedDimensions,
                                 new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)))
                             {
-                                if (captureFirst) { defaultTo = form; captureFirst = false; }
                                 forms.Add(new NumberToStringConverter.TriggerReplacementForm(constraints, form, priority));
                             }
                         }

@@ -1025,11 +1025,7 @@ namespace Utils.NumberToString
 
             foreach (var rule in _sortedVariantRules)
             {
-                bool matches = rule.Constraints.All(c =>
-                    query.TryGetValue(c.Key, out var v) &&
-                    string.Equals(v, c.Value, StringComparison.OrdinalIgnoreCase));
-
-                if (!matches) continue;
+                if (!VariantRulePrecedence.Matches(rule.NormalizedConstraints, query)) continue;
 
                 foreach (var replacement in rule.Replacements)
                 {
