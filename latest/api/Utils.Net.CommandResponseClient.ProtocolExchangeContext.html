@@ -2,11 +2,11 @@
 <html>
   <head>
     <meta charset="utf-8">
-      <title>Interface INntpArticleStore | omy.Utils Documentation </title>
+      <title>Class CommandResponseClient.ProtocolExchangeContext | omy.Utils Documentation </title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="title" content="Interface INntpArticleStore | omy.Utils Documentation ">
+      <meta name="title" content="Class CommandResponseClient.ProtocolExchangeContext | omy.Utils Documentation ">
       
-      <meta name="description" content="Provides access to newsgroup articles for the NNTP server.">
+      <meta name="description" content="Provides controlled access to a connection during an exclusive protocol exchange.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -16,7 +16,7 @@
       <meta name="docfx:rel" content="../">
       
       
-      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Net_INntpArticleStore.md&amp;value=---%0Auid%3A%20Utils.Net.INntpArticleStore%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Net_CommandResponseClient_ProtocolExchangeContext.md&amp;value=---%0Auid%3A%20Utils.Net.CommandResponseClient.ProtocolExchangeContext%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
       <meta name="loc:inThisArticle" content="In this article">
       <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
       <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
@@ -84,12 +84,12 @@
           <nav id="breadcrumb"></nav>
         </div>
 
-        <article data-uid="Utils.Net.INntpArticleStore">
+        <article data-uid="Utils.Net.CommandResponseClient.ProtocolExchangeContext">
 
 
 
-  <h1 id="Utils_Net_INntpArticleStore" data-uid="Utils.Net.INntpArticleStore" class="text-break">
-Interface INntpArticleStore  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/INntpArticleStore.cs/#L11"><i class="bi bi-code-slash"></i></a>
+  <h1 id="Utils_Net_CommandResponseClient_ProtocolExchangeContext" data-uid="Utils.Net.CommandResponseClient.ProtocolExchangeContext" class="text-break">
+Class CommandResponseClient.ProtocolExchangeContext  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L450"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,20 +97,49 @@ Interface INntpArticleStore  <a class="header-action link-secondary" title="View
   <dl><dt>Assembly</dt><dd>Utils.Net.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Provides access to newsgroup articles for the NNTP server.</p>
+  <div class="markdown summary"><p>Provides controlled access to a connection during an exclusive protocol exchange.</p>
 </div>
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public interface INntpArticleStore</code></pre>
+    <pre><code class="lang-csharp hljs">protected sealed class CommandResponseClient.ProtocolExchangeContext</code></pre>
   </div>
 
 
 
 
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><span class="xref">CommandResponseClient.ProtocolExchangeContext</span></div>
+    </dd>
+  </dl>
 
 
 
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+  </dd></dl>
 
   <dl class="typelist extensionMethods">
     <dt>Extension Methods</dt>
@@ -208,43 +237,129 @@ Interface INntpArticleStore  <a class="header-action link-secondary" title="View
 
 
 
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="Utils_Net_CommandResponseClient_ProtocolExchangeContext_AwaitingResponse_" data-uid="Utils.Net.CommandResponseClient.ProtocolExchangeContext.AwaitingResponse*"></a>
+
+  <h3 id="Utils_Net_CommandResponseClient_ProtocolExchangeContext_AwaitingResponse" data-uid="Utils.Net.CommandResponseClient.ProtocolExchangeContext.AwaitingResponse">
+  AwaitingResponse
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L470"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a value indicating whether the last written command is waiting for its status response.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool AwaitingResponse { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_CommandResponseClient_ProtocolExchangeContext_Command_" data-uid="Utils.Net.CommandResponseClient.ProtocolExchangeContext.Command*"></a>
+
+  <h3 id="Utils_Net_CommandResponseClient_ProtocolExchangeContext_Command" data-uid="Utils.Net.CommandResponseClient.ProtocolExchangeContext.Command">
+  Command
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L464"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the sanitized command verb.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string Command { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_CommandResponseClient_ProtocolExchangeContext_WriteStarted_" data-uid="Utils.Net.CommandResponseClient.ProtocolExchangeContext.WriteStarted*"></a>
+
+  <h3 id="Utils_Net_CommandResponseClient_ProtocolExchangeContext_WriteStarted" data-uid="Utils.Net.CommandResponseClient.ProtocolExchangeContext.WriteStarted">
+  WriteStarted
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L467"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a value indicating whether a command line write has begun and has not yet completed.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool WriteStarted { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <h2 class="section" id="methods">Methods
 </h2>
 
 
-  <a id="Utils_Net_INntpArticleStore_AddAsync_" data-uid="Utils.Net.INntpArticleStore.AddAsync*"></a>
+  <a id="Utils_Net_CommandResponseClient_ProtocolExchangeContext_Poison_" data-uid="Utils.Net.CommandResponseClient.ProtocolExchangeContext.Poison*"></a>
 
-  <h3 id="Utils_Net_INntpArticleStore_AddAsync_System_String_System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.INntpArticleStore.AddAsync(System.String,System.String,System.Threading.CancellationToken)">
-  AddAsync(string, string, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/INntpArticleStore.cs/#L61"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Net_CommandResponseClient_ProtocolExchangeContext_Poison_System_Exception_" data-uid="Utils.Net.CommandResponseClient.ProtocolExchangeContext.Poison(System.Exception)">
+  Poison(Exception)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L538"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Adds a new article to the specified group.</p>
+  <div class="markdown level1 summary"><p>Marks the session unusable.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">Task&lt;int&gt; AddAsync(string group, string article, CancellationToken cancellationToken = default)</code></pre>
+    <pre><code class="lang-csharp hljs">public void Poison(Exception cause)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
-    <dt><code>group</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Name of the newsgroup.</p>
-</dd>
-    <dt><code>article</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Full article text including headers.</p>
-</dd>
-    <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
-    <dd><p>Cancellation token.</p>
-</dd>
-  </dl>
-
-  <h4 class="section">Returns</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>&gt;</dt>
-    <dd><p>Number assigned to the new article.</p>
-</dd>
+    <dt><code>cause</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.exception">Exception</a></dt>
+    <dd></dd>
   </dl>
 
 
@@ -257,36 +372,32 @@ Interface INntpArticleStore  <a class="header-action link-secondary" title="View
 
 
 
-  <a id="Utils_Net_INntpArticleStore_GetGroupCreationDateAsync_" data-uid="Utils.Net.INntpArticleStore.GetGroupCreationDateAsync*"></a>
 
-  <h3 id="Utils_Net_INntpArticleStore_GetGroupCreationDateAsync_System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.INntpArticleStore.GetGroupCreationDateAsync(System.String,System.Threading.CancellationToken)">
-  GetGroupCreationDateAsync(string, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/INntpArticleStore.cs/#L26"><i class="bi bi-code-slash"></i></a>
+  <a id="Utils_Net_CommandResponseClient_ProtocolExchangeContext_PoisonIfResponseAmbiguous_" data-uid="Utils.Net.CommandResponseClient.ProtocolExchangeContext.PoisonIfResponseAmbiguous*"></a>
+
+  <h3 id="Utils_Net_CommandResponseClient_ProtocolExchangeContext_PoisonIfResponseAmbiguous_System_Exception_" data-uid="Utils.Net.CommandResponseClient.ProtocolExchangeContext.PoisonIfResponseAmbiguous(System.Exception)">
+  PoisonIfResponseAmbiguous(Exception)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L541"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Retrieves the creation time of the specified newsgroup in UTC.</p>
+  <div class="markdown level1 summary"><p>Marks the session unusable when an exchange ended before the owned response was fully consumed.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">Task&lt;DateTime?&gt; GetGroupCreationDateAsync(string group, CancellationToken cancellationToken = default)</code></pre>
+    <pre><code class="lang-csharp hljs">public bool PoisonIfResponseAmbiguous(Exception cause)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
-    <dt><code>group</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Name of the newsgroup.</p>
-</dd>
-    <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
-    <dd><p>Cancellation token.</p>
-</dd>
+    <dt><code>cause</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.exception">Exception</a></dt>
+    <dd></dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>?&gt;</dt>
-    <dd><p>Creation time or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> if the group does not exist.</p>
-</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
   </dl>
 
 
@@ -299,36 +410,31 @@ Interface INntpArticleStore  <a class="header-action link-secondary" title="View
 
 
 
-  <a id="Utils_Net_INntpArticleStore_ListAsync_" data-uid="Utils.Net.INntpArticleStore.ListAsync*"></a>
+  <a id="Utils_Net_CommandResponseClient_ProtocolExchangeContext_ReadLineAsync_" data-uid="Utils.Net.CommandResponseClient.ProtocolExchangeContext.ReadLineAsync*"></a>
 
-  <h3 id="Utils_Net_INntpArticleStore_ListAsync_System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.INntpArticleStore.ListAsync(System.String,System.Threading.CancellationToken)">
-  ListAsync(string, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/INntpArticleStore.cs/#L34"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Net_CommandResponseClient_ProtocolExchangeContext_ReadLineAsync_System_Threading_CancellationToken_" data-uid="Utils.Net.CommandResponseClient.ProtocolExchangeContext.ReadLineAsync(System.Threading.CancellationToken)">
+  ReadLineAsync(CancellationToken)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L499"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Retrieves all articles available in the specified group.</p>
+  <div class="markdown level1 summary"><p>Reads the next framed response line.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">Task&lt;IReadOnlyDictionary&lt;int, string&gt;&gt; ListAsync(string group, CancellationToken cancellationToken = default)</code></pre>
+    <pre><code class="lang-csharp hljs">public ValueTask&lt;ServerResponse&gt; ReadLineAsync(CancellationToken cancellationToken)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
-    <dt><code>group</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Name of the newsgroup.</p>
-</dd>
     <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
-    <dd><p>Cancellation token.</p>
-</dd>
+    <dd></dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;&gt;</dt>
-    <dd><p>Dictionary mapping article numbers to their text.</p>
-</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1">ValueTask</a>&lt;<a class="xref" href="Utils.Net.ServerResponse.html">ServerResponse</a>&gt;</dt>
+    <dd></dd>
   </dl>
 
 
@@ -341,19 +447,19 @@ Interface INntpArticleStore  <a class="header-action link-secondary" title="View
 
 
 
-  <a id="Utils_Net_INntpArticleStore_ListGroupsAsync_" data-uid="Utils.Net.INntpArticleStore.ListGroupsAsync*"></a>
+  <a id="Utils_Net_CommandResponseClient_ProtocolExchangeContext_ReadResponsesAsync_" data-uid="Utils.Net.CommandResponseClient.ProtocolExchangeContext.ReadResponsesAsync*"></a>
 
-  <h3 id="Utils_Net_INntpArticleStore_ListGroupsAsync_System_Threading_CancellationToken_" data-uid="Utils.Net.INntpArticleStore.ListGroupsAsync(System.Threading.CancellationToken)">
-  ListGroupsAsync(CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/INntpArticleStore.cs/#L18"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Net_CommandResponseClient_ProtocolExchangeContext_ReadResponsesAsync_System_Threading_CancellationToken_" data-uid="Utils.Net.CommandResponseClient.ProtocolExchangeContext.ReadResponsesAsync(System.Threading.CancellationToken)">
+  ReadResponsesAsync(CancellationToken)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L516"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Retrieves the names of all available newsgroups.</p>
+  <div class="markdown level1 summary"><p>Reads one complete status response and enforces the client's response-count limit.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">Task&lt;IReadOnlyCollection&lt;string&gt;&gt; ListGroupsAsync(CancellationToken cancellationToken = default)</code></pre>
+    <pre><code class="lang-csharp hljs">public ValueTask&lt;IReadOnlyList&lt;ServerResponse&gt;&gt; ReadResponsesAsync(CancellationToken cancellationToken)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -365,8 +471,8 @@ Interface INntpArticleStore  <a class="header-action link-secondary" title="View
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlycollection-1">IReadOnlyCollection</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;&gt;</dt>
-    <dd><p>Collection of group names.</p>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1">ValueTask</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="Utils.Net.ServerResponse.html">ServerResponse</a>&gt;&gt;</dt>
+    <dd><p>An immutable snapshot of the status response lines.</p>
 </dd>
   </dl>
 
@@ -380,84 +486,33 @@ Interface INntpArticleStore  <a class="header-action link-secondary" title="View
 
 
 
-  <a id="Utils_Net_INntpArticleStore_ListNewsSinceAsync_" data-uid="Utils.Net.INntpArticleStore.ListNewsSinceAsync*"></a>
+  <a id="Utils_Net_CommandResponseClient_ProtocolExchangeContext_WriteLineAsync_" data-uid="Utils.Net.CommandResponseClient.ProtocolExchangeContext.WriteLineAsync*"></a>
 
-  <h3 id="Utils_Net_INntpArticleStore_ListNewsSinceAsync_System_String_System_DateTime_System_Threading_CancellationToken_" data-uid="Utils.Net.INntpArticleStore.ListNewsSinceAsync(System.String,System.DateTime,System.Threading.CancellationToken)">
-  ListNewsSinceAsync(string, DateTime, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/INntpArticleStore.cs/#L43"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Net_CommandResponseClient_ProtocolExchangeContext_WriteLineAsync_System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.CommandResponseClient.ProtocolExchangeContext.WriteLineAsync(System.String,System.Threading.CancellationToken)">
+  WriteLineAsync(string, CancellationToken)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L476"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Retrieves message identifiers newer than the given time from the specified group.</p>
+  <div class="markdown level1 summary"><p>Writes one validated protocol line and marks the following status response as owned by this exchange.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">Task&lt;IReadOnlyCollection&lt;string&gt;&gt; ListNewsSinceAsync(string group, DateTime sinceUtc, CancellationToken cancellationToken = default)</code></pre>
+    <pre><code class="lang-csharp hljs">public ValueTask WriteLineAsync(string line, CancellationToken cancellationToken)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
-    <dt><code>group</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Name of the newsgroup.</p>
-</dd>
-    <dt><code>sinceUtc</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></dt>
-    <dd><p>Lower bound in UTC. Articles newer than this time are returned.</p>
-</dd>
+    <dt><code>line</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
     <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
-    <dd><p>Cancellation token.</p>
-</dd>
+    <dd></dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlycollection-1">IReadOnlyCollection</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;&gt;</dt>
-    <dd><p>Collection of RFC-style message identifiers.</p>
-</dd>
-  </dl>
-
-
-
-
-
-
-
-
-
-
-
-  <a id="Utils_Net_INntpArticleStore_RetrieveAsync_" data-uid="Utils.Net.INntpArticleStore.RetrieveAsync*"></a>
-
-  <h3 id="Utils_Net_INntpArticleStore_RetrieveAsync_System_String_System_Int32_System_Threading_CancellationToken_" data-uid="Utils.Net.INntpArticleStore.RetrieveAsync(System.String,System.Int32,System.Threading.CancellationToken)">
-  RetrieveAsync(string, int, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/INntpArticleStore.cs/#L52"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Retrieves the full text of a single article.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">Task&lt;string?&gt; RetrieveAsync(string group, int id, CancellationToken cancellationToken = default)</code></pre>
-  </div>
-
-  <h4 class="section">Parameters</h4>
-  <dl class="parameters">
-    <dt><code>group</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Name of the newsgroup.</p>
-</dd>
-    <dt><code>id</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>Article number.</p>
-</dd>
-    <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
-    <dd><p>Cancellation token.</p>
-</dd>
-  </dl>
-
-  <h4 class="section">Returns</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
-    <dd><p>Article text or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> if not found.</p>
-</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask">ValueTask</a></dt>
+    <dd></dd>
   </dl>
 
 
@@ -474,7 +529,7 @@ Interface INntpArticleStore  <a class="header-action link-secondary" title="View
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/INntpArticleStore.cs/#L11" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L450" class="edit-link">Edit this page</a>
         </div>
 
 

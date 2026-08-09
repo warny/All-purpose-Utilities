@@ -2,11 +2,11 @@
 <html>
   <head>
     <meta charset="utf-8">
-      <title>Interface INntpArticleStore | omy.Utils Documentation </title>
+      <title>Class SmtpPath | omy.Utils Documentation </title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="title" content="Interface INntpArticleStore | omy.Utils Documentation ">
+      <meta name="title" content="Class SmtpPath | omy.Utils Documentation ">
       
-      <meta name="description" content="Provides access to newsgroup articles for the NNTP server.">
+      <meta name="description" content="Represents a validated SMTP reverse-path or forward-path.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -16,7 +16,7 @@
       <meta name="docfx:rel" content="../">
       
       
-      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Net_INntpArticleStore.md&amp;value=---%0Auid%3A%20Utils.Net.INntpArticleStore%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Net_SmtpPath.md&amp;value=---%0Auid%3A%20Utils.Net.SmtpPath%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
       <meta name="loc:inThisArticle" content="In this article">
       <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
       <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
@@ -84,12 +84,12 @@
           <nav id="breadcrumb"></nav>
         </div>
 
-        <article data-uid="Utils.Net.INntpArticleStore">
+        <article data-uid="Utils.Net.SmtpPath">
 
 
 
-  <h1 id="Utils_Net_INntpArticleStore" data-uid="Utils.Net.INntpArticleStore" class="text-break">
-Interface INntpArticleStore  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/INntpArticleStore.cs/#L11"><i class="bi bi-code-slash"></i></a>
+  <h1 id="Utils_Net_SmtpPath" data-uid="Utils.Net.SmtpPath" class="text-break">
+Class SmtpPath  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpModels.cs/#L9"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,20 +97,55 @@ Interface INntpArticleStore  <a class="header-action link-secondary" title="View
   <dl><dt>Assembly</dt><dd>Utils.Net.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Provides access to newsgroup articles for the NNTP server.</p>
+  <div class="markdown summary"><p>Represents a validated SMTP reverse-path or forward-path.</p>
 </div>
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public interface INntpArticleStore</code></pre>
+    <pre><code class="lang-csharp hljs">public sealed record SmtpPath : IEquatable&lt;SmtpPath&gt;</code></pre>
   </div>
 
 
 
 
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><span class="xref">SmtpPath</span></div>
+    </dd>
+  </dl>
+
+  <dl class="typelist implements">
+    <dt>Implements</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a class="xref" href="Utils.Net.SmtpPath.html">SmtpPath</a>&gt;</div>
+    </dd>
+  </dl>
 
 
-
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+  </dd></dl>
 
   <dl class="typelist extensionMethods">
     <dt>Extension Methods</dt>
@@ -208,43 +243,103 @@ Interface INntpArticleStore  <a class="header-action link-secondary" title="View
 
 
 
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="Utils_Net_SmtpPath_AllowsUtf8_" data-uid="Utils.Net.SmtpPath.AllowsUtf8*"></a>
+
+  <h3 id="Utils_Net_SmtpPath_AllowsUtf8" data-uid="Utils.Net.SmtpPath.AllowsUtf8">
+  AllowsUtf8
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpModels.cs/#L16"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets whether non-ASCII characters were explicitly permitted.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool AllowsUtf8 { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_SmtpPath_Value_" data-uid="Utils.Net.SmtpPath.Value*"></a>
+
+  <h3 id="Utils_Net_SmtpPath_Value" data-uid="Utils.Net.SmtpPath.Value">
+  Value
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpModels.cs/#L14"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the path without surrounding angle brackets.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string Value { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <h2 class="section" id="methods">Methods
 </h2>
 
 
-  <a id="Utils_Net_INntpArticleStore_AddAsync_" data-uid="Utils.Net.INntpArticleStore.AddAsync*"></a>
+  <a id="Utils_Net_SmtpPath_Parse_" data-uid="Utils.Net.SmtpPath.Parse*"></a>
 
-  <h3 id="Utils_Net_INntpArticleStore_AddAsync_System_String_System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.INntpArticleStore.AddAsync(System.String,System.String,System.Threading.CancellationToken)">
-  AddAsync(string, string, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/INntpArticleStore.cs/#L61"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Net_SmtpPath_Parse_System_String_" data-uid="Utils.Net.SmtpPath.Parse(System.String)">
+  Parse(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpModels.cs/#L19"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Adds a new article to the specified group.</p>
+  <div class="markdown level1 summary"><p>Parses an ASCII SMTP path. An empty value is a valid reverse-path.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">Task&lt;int&gt; AddAsync(string group, string article, CancellationToken cancellationToken = default)</code></pre>
+    <pre><code class="lang-csharp hljs">public static SmtpPath Parse(string value)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
-    <dt><code>group</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Name of the newsgroup.</p>
-</dd>
-    <dt><code>article</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Full article text including headers.</p>
-</dd>
-    <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
-    <dd><p>Cancellation token.</p>
-</dd>
+    <dt><code>value</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>&gt;</dt>
-    <dd><p>Number assigned to the new article.</p>
-</dd>
+    <dt><a class="xref" href="Utils.Net.SmtpPath.html">SmtpPath</a></dt>
+    <dd></dd>
   </dl>
 
 
@@ -257,36 +352,33 @@ Interface INntpArticleStore  <a class="header-action link-secondary" title="View
 
 
 
-  <a id="Utils_Net_INntpArticleStore_GetGroupCreationDateAsync_" data-uid="Utils.Net.INntpArticleStore.GetGroupCreationDateAsync*"></a>
+  <a id="Utils_Net_SmtpPath_Parse_" data-uid="Utils.Net.SmtpPath.Parse*"></a>
 
-  <h3 id="Utils_Net_INntpArticleStore_GetGroupCreationDateAsync_System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.INntpArticleStore.GetGroupCreationDateAsync(System.String,System.Threading.CancellationToken)">
-  GetGroupCreationDateAsync(string, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/INntpArticleStore.cs/#L26"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Net_SmtpPath_Parse_System_String_System_Boolean_" data-uid="Utils.Net.SmtpPath.Parse(System.String,System.Boolean)">
+  Parse(string, bool)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpModels.cs/#L22"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Retrieves the creation time of the specified newsgroup in UTC.</p>
+  <div class="markdown level1 summary"><p>Parses an SMTP path with an explicit SMTPUTF8 policy.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">Task&lt;DateTime?&gt; GetGroupCreationDateAsync(string group, CancellationToken cancellationToken = default)</code></pre>
+    <pre><code class="lang-csharp hljs">public static SmtpPath Parse(string value, bool allowUtf8)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
-    <dt><code>group</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Name of the newsgroup.</p>
-</dd>
-    <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
-    <dd><p>Cancellation token.</p>
-</dd>
+    <dt><code>value</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+    <dt><code>allowUtf8</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>?&gt;</dt>
-    <dd><p>Creation time or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> if the group does not exist.</p>
-</dd>
+    <dt><a class="xref" href="Utils.Net.SmtpPath.html">SmtpPath</a></dt>
+    <dd></dd>
   </dl>
 
 
@@ -299,36 +391,35 @@ Interface INntpArticleStore  <a class="header-action link-secondary" title="View
 
 
 
-  <a id="Utils_Net_INntpArticleStore_ListAsync_" data-uid="Utils.Net.INntpArticleStore.ListAsync*"></a>
+  <a id="Utils_Net_SmtpPath_TryParse_" data-uid="Utils.Net.SmtpPath.TryParse*"></a>
 
-  <h3 id="Utils_Net_INntpArticleStore_ListAsync_System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.INntpArticleStore.ListAsync(System.String,System.Threading.CancellationToken)">
-  ListAsync(string, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/INntpArticleStore.cs/#L34"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Net_SmtpPath_TryParse_System_String_System_Boolean_Utils_Net_SmtpPath__" data-uid="Utils.Net.SmtpPath.TryParse(System.String,System.Boolean,Utils.Net.SmtpPath@)">
+  TryParse(string?, bool, out SmtpPath?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpModels.cs/#L34"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Retrieves all articles available in the specified group.</p>
+  <div class="markdown level1 summary"><p>Attempts to parse an SMTP path with an explicit SMTPUTF8 policy.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">Task&lt;IReadOnlyDictionary&lt;int, string&gt;&gt; ListAsync(string group, CancellationToken cancellationToken = default)</code></pre>
+    <pre><code class="lang-csharp hljs">public static bool TryParse(string? value, bool allowUtf8, out SmtpPath? path)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
-    <dt><code>group</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Name of the newsgroup.</p>
-</dd>
-    <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
-    <dd><p>Cancellation token.</p>
-</dd>
+    <dt><code>value</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+    <dt><code>allowUtf8</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+    <dt><code>path</code> <a class="xref" href="Utils.Net.SmtpPath.html">SmtpPath</a></dt>
+    <dd></dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;&gt;</dt>
-    <dd><p>Dictionary mapping article numbers to their text.</p>
-</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
   </dl>
 
 
@@ -341,123 +432,33 @@ Interface INntpArticleStore  <a class="header-action link-secondary" title="View
 
 
 
-  <a id="Utils_Net_INntpArticleStore_ListGroupsAsync_" data-uid="Utils.Net.INntpArticleStore.ListGroupsAsync*"></a>
+  <a id="Utils_Net_SmtpPath_TryParse_" data-uid="Utils.Net.SmtpPath.TryParse*"></a>
 
-  <h3 id="Utils_Net_INntpArticleStore_ListGroupsAsync_System_Threading_CancellationToken_" data-uid="Utils.Net.INntpArticleStore.ListGroupsAsync(System.Threading.CancellationToken)">
-  ListGroupsAsync(CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/INntpArticleStore.cs/#L18"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Net_SmtpPath_TryParse_System_String_Utils_Net_SmtpPath__" data-uid="Utils.Net.SmtpPath.TryParse(System.String,Utils.Net.SmtpPath@)">
+  TryParse(string, out SmtpPath?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpModels.cs/#L31"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Retrieves the names of all available newsgroups.</p>
+  <div class="markdown level1 summary"><p>Attempts to parse an ASCII SMTP path.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">Task&lt;IReadOnlyCollection&lt;string&gt;&gt; ListGroupsAsync(CancellationToken cancellationToken = default)</code></pre>
+    <pre><code class="lang-csharp hljs">public static bool TryParse(string value, out SmtpPath? path)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
-    <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
-    <dd><p>Cancellation token.</p>
-</dd>
+    <dt><code>value</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+    <dt><code>path</code> <a class="xref" href="Utils.Net.SmtpPath.html">SmtpPath</a></dt>
+    <dd></dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlycollection-1">IReadOnlyCollection</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;&gt;</dt>
-    <dd><p>Collection of group names.</p>
-</dd>
-  </dl>
-
-
-
-
-
-
-
-
-
-
-
-  <a id="Utils_Net_INntpArticleStore_ListNewsSinceAsync_" data-uid="Utils.Net.INntpArticleStore.ListNewsSinceAsync*"></a>
-
-  <h3 id="Utils_Net_INntpArticleStore_ListNewsSinceAsync_System_String_System_DateTime_System_Threading_CancellationToken_" data-uid="Utils.Net.INntpArticleStore.ListNewsSinceAsync(System.String,System.DateTime,System.Threading.CancellationToken)">
-  ListNewsSinceAsync(string, DateTime, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/INntpArticleStore.cs/#L43"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Retrieves message identifiers newer than the given time from the specified group.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">Task&lt;IReadOnlyCollection&lt;string&gt;&gt; ListNewsSinceAsync(string group, DateTime sinceUtc, CancellationToken cancellationToken = default)</code></pre>
-  </div>
-
-  <h4 class="section">Parameters</h4>
-  <dl class="parameters">
-    <dt><code>group</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Name of the newsgroup.</p>
-</dd>
-    <dt><code>sinceUtc</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></dt>
-    <dd><p>Lower bound in UTC. Articles newer than this time are returned.</p>
-</dd>
-    <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
-    <dd><p>Cancellation token.</p>
-</dd>
-  </dl>
-
-  <h4 class="section">Returns</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlycollection-1">IReadOnlyCollection</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;&gt;</dt>
-    <dd><p>Collection of RFC-style message identifiers.</p>
-</dd>
-  </dl>
-
-
-
-
-
-
-
-
-
-
-
-  <a id="Utils_Net_INntpArticleStore_RetrieveAsync_" data-uid="Utils.Net.INntpArticleStore.RetrieveAsync*"></a>
-
-  <h3 id="Utils_Net_INntpArticleStore_RetrieveAsync_System_String_System_Int32_System_Threading_CancellationToken_" data-uid="Utils.Net.INntpArticleStore.RetrieveAsync(System.String,System.Int32,System.Threading.CancellationToken)">
-  RetrieveAsync(string, int, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/INntpArticleStore.cs/#L52"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Retrieves the full text of a single article.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">Task&lt;string?&gt; RetrieveAsync(string group, int id, CancellationToken cancellationToken = default)</code></pre>
-  </div>
-
-  <h4 class="section">Parameters</h4>
-  <dl class="parameters">
-    <dt><code>group</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Name of the newsgroup.</p>
-</dd>
-    <dt><code>id</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>Article number.</p>
-</dd>
-    <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
-    <dd><p>Cancellation token.</p>
-</dd>
-  </dl>
-
-  <h4 class="section">Returns</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
-    <dd><p>Article text or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> if not found.</p>
-</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
   </dl>
 
 
@@ -474,7 +475,7 @@ Interface INntpArticleStore  <a class="header-action link-secondary" title="View
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/INntpArticleStore.cs/#L11" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpModels.cs/#L9" class="edit-link">Edit this page</a>
         </div>
 
 

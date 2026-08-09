@@ -587,6 +587,14 @@ to restore a best-effort parse with diagnostics instead of an exception.</p>
 <ul>
 <li><code>CP0008</code> — Type 'Utils.DependencyInjection.Generators.StaticAutoGenerator' does not implement interface 'Microsoft.CodeAnalysis.ISourceGenerator' on {candidateAssembly} but it does on {baselineAssembly}</li>
 </ul>
+<h3 id="20-protocol-correctness-additions">2.0 protocol-correctness additions</h3>
+<ul>
+<li>POP3 STAT mailbox size changes from <code>int</code> to <code>long</code>; malformed STAT/LIST/UIDL is no longer tolerated.</li>
+<li>POP3 single UIDL no longer returns nullable data after a positive malformed response.</li>
+<li>NNTP NEWNEWS returns message-id strings, and NEXT returns null only for code 421.</li>
+<li>SMTP string envelopes are parsed strictly and typed overloads separate paths from ESMTP options.</li>
+<li>Negative responses use <code>ProtocolResponseException</code>; lost framing makes the session permanently unusable.</li>
+</ul>
 
 </article>
 

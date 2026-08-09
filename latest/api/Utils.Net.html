@@ -110,6 +110,11 @@ Classes
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.CommandResponseClient.ProtocolExchangeContext.html">CommandResponseClient.ProtocolExchangeContext</a></dt>
+      <dd><p>Provides controlled access to a connection during an exclusive protocol exchange.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.Net.CommandResponseServer.html">CommandResponseServer</a></dt>
       <dd><p>Provides a base server for text based command/response protocols.</p>
 </dd>
@@ -231,6 +236,21 @@ per-endpoint failures are preserved in <a class="xref" href="Utils.Net.NtpQueryE
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.ProtocolPayloadLimits.html">ProtocolPayloadLimits</a></dt>
+      <dd><p>Defines hard limits for a dot-terminated protocol payload.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.ProtocolResponseException.html">ProtocolResponseException</a></dt>
+      <dd><p>Represents a complete, negatively framed response from a text protocol server.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.ProtocolSessionPoisonedException.html">ProtocolSessionPoisonedException</a></dt>
+      <dd><p>Indicates that protocol framing was lost and the connection cannot be reused.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.Net.QueryString.html">QueryString</a></dt>
       <dd><p>A collection class representing the key-value pairs in a query string,
 allowing multiple values per key and intuitive syntax for manipulation.</p>
@@ -258,13 +278,33 @@ It can be used like a list or implicitly converted to a comma-separated string.<
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.SmtpMailOptions.html">SmtpMailOptions</a></dt>
+      <dd><p>Defines validated ESMTP MAIL parameters separately from a mailbox path.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.Net.SmtpMessage.html">SmtpMessage</a></dt>
       <dd><p>Represents a message exchanged via SMTP.</p>
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.SmtpPath.html">SmtpPath</a></dt>
+      <dd><p>Represents a validated SMTP reverse-path or forward-path.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.SmtpPlainCredentials.html">SmtpPlainCredentials</a></dt>
+      <dd><p>Contains the three independently validated SASL PLAIN credential fields.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.Net.SmtpServer.html">SmtpServer</a></dt>
       <dd><p>Simple server implementation for the Simple Mail Transfer Protocol (SMTP).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.SmtpTransactionException.html">SmtpTransactionException</a></dt>
+      <dd><p>Preserves both an SMTP transaction failure and its failed recovery.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -364,6 +404,11 @@ Enums
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.Net.SmtpAuthenticationMechanism.html">SmtpAuthenticationMechanism</a></dt>
       <dd><p>Specifies the authentication mechanism used with the <a class="xref" href="Utils.Net.SmtpClient.html">SmtpClient</a> and <a class="xref" href="Utils.Net.SmtpServer.html">SmtpServer</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.SmtpBodyKind.html">SmtpBodyKind</a></dt>
+      <dd><p>Identifies the SMTP BODY parameter.</p>
 </dd>
     </dl>
 

@@ -47975,6 +47975,22 @@ references:
   isSpec: "True"
   fullName: Utils.Net.CommandResponseClient.Dispose
   nameWithType: CommandResponseClient.Dispose
+- uid: Utils.Net.CommandResponseClient.ExecuteExclusiveExchangeAsync*
+  name: ExecuteExclusiveExchangeAsync
+  href: api/Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_ExecuteExclusiveExchangeAsync_
+  commentId: Overload:Utils.Net.CommandResponseClient.ExecuteExclusiveExchangeAsync
+  isSpec: "True"
+  fullName: Utils.Net.CommandResponseClient.ExecuteExclusiveExchangeAsync
+  nameWithType: CommandResponseClient.ExecuteExclusiveExchangeAsync
+- uid: Utils.Net.CommandResponseClient.ExecuteExclusiveExchangeAsync``1(System.String,System.Func{Utils.Net.CommandResponseClient.ProtocolExchangeContext,System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{``0}},System.Threading.CancellationToken)
+  name: ExecuteExclusiveExchangeAsync<TResult>(string, Func<ProtocolExchangeContext, CancellationToken, ValueTask<TResult>>, CancellationToken)
+  href: api/Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_ExecuteExclusiveExchangeAsync__1_System_String_System_Func_Utils_Net_CommandResponseClient_ProtocolExchangeContext_System_Threading_CancellationToken_System_Threading_Tasks_ValueTask___0___System_Threading_CancellationToken_
+  commentId: M:Utils.Net.CommandResponseClient.ExecuteExclusiveExchangeAsync``1(System.String,System.Func{Utils.Net.CommandResponseClient.ProtocolExchangeContext,System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{``0}},System.Threading.CancellationToken)
+  name.vb: ExecuteExclusiveExchangeAsync(Of TResult)(String, Func(Of ProtocolExchangeContext, CancellationToken, ValueTask(Of TResult)), CancellationToken)
+  fullName: Utils.Net.CommandResponseClient.ExecuteExclusiveExchangeAsync<TResult>(string, System.Func<Utils.Net.CommandResponseClient.ProtocolExchangeContext, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>, System.Threading.CancellationToken)
+  fullName.vb: Utils.Net.CommandResponseClient.ExecuteExclusiveExchangeAsync(Of TResult)(String, System.Func(Of Utils.Net.CommandResponseClient.ProtocolExchangeContext, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask(Of TResult)), System.Threading.CancellationToken)
+  nameWithType: CommandResponseClient.ExecuteExclusiveExchangeAsync<TResult>(string, Func<CommandResponseClient.ProtocolExchangeContext, CancellationToken, ValueTask<TResult>>, CancellationToken)
+  nameWithType.vb: CommandResponseClient.ExecuteExclusiveExchangeAsync(Of TResult)(String, Func(Of CommandResponseClient.ProtocolExchangeContext, CancellationToken, ValueTask(Of TResult)), CancellationToken)
 - uid: Utils.Net.CommandResponseClient.IsConnected
   name: IsConnected
   href: api/Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_IsConnected
@@ -48098,6 +48114,132 @@ references:
   isSpec: "True"
   fullName: Utils.Net.CommandResponseClient.ParseResponseLine
   nameWithType: CommandResponseClient.ParseResponseLine
+- uid: Utils.Net.CommandResponseClient.PoisonSession(System.Exception)
+  name: PoisonSession(Exception)
+  href: api/Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_PoisonSession_System_Exception_
+  commentId: M:Utils.Net.CommandResponseClient.PoisonSession(System.Exception)
+  fullName: Utils.Net.CommandResponseClient.PoisonSession(System.Exception)
+  nameWithType: CommandResponseClient.PoisonSession(Exception)
+- uid: Utils.Net.CommandResponseClient.PoisonSession*
+  name: PoisonSession
+  href: api/Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_PoisonSession_
+  commentId: Overload:Utils.Net.CommandResponseClient.PoisonSession
+  isSpec: "True"
+  fullName: Utils.Net.CommandResponseClient.PoisonSession
+  nameWithType: CommandResponseClient.PoisonSession
+- uid: Utils.Net.CommandResponseClient.ProtocolExchangeContext
+  name: CommandResponseClient.ProtocolExchangeContext
+  href: api/Utils.Net.CommandResponseClient.ProtocolExchangeContext.html
+  commentId: T:Utils.Net.CommandResponseClient.ProtocolExchangeContext
+  fullName: Utils.Net.CommandResponseClient.ProtocolExchangeContext
+  nameWithType: CommandResponseClient.ProtocolExchangeContext
+- uid: Utils.Net.CommandResponseClient.ProtocolExchangeContext.AwaitingResponse
+  name: AwaitingResponse
+  href: api/Utils.Net.CommandResponseClient.ProtocolExchangeContext.html#Utils_Net_CommandResponseClient_ProtocolExchangeContext_AwaitingResponse
+  commentId: P:Utils.Net.CommandResponseClient.ProtocolExchangeContext.AwaitingResponse
+  fullName: Utils.Net.CommandResponseClient.ProtocolExchangeContext.AwaitingResponse
+  nameWithType: CommandResponseClient.ProtocolExchangeContext.AwaitingResponse
+- uid: Utils.Net.CommandResponseClient.ProtocolExchangeContext.AwaitingResponse*
+  name: AwaitingResponse
+  href: api/Utils.Net.CommandResponseClient.ProtocolExchangeContext.html#Utils_Net_CommandResponseClient_ProtocolExchangeContext_AwaitingResponse_
+  commentId: Overload:Utils.Net.CommandResponseClient.ProtocolExchangeContext.AwaitingResponse
+  isSpec: "True"
+  fullName: Utils.Net.CommandResponseClient.ProtocolExchangeContext.AwaitingResponse
+  nameWithType: CommandResponseClient.ProtocolExchangeContext.AwaitingResponse
+- uid: Utils.Net.CommandResponseClient.ProtocolExchangeContext.Command
+  name: Command
+  href: api/Utils.Net.CommandResponseClient.ProtocolExchangeContext.html#Utils_Net_CommandResponseClient_ProtocolExchangeContext_Command
+  commentId: P:Utils.Net.CommandResponseClient.ProtocolExchangeContext.Command
+  fullName: Utils.Net.CommandResponseClient.ProtocolExchangeContext.Command
+  nameWithType: CommandResponseClient.ProtocolExchangeContext.Command
+- uid: Utils.Net.CommandResponseClient.ProtocolExchangeContext.Command*
+  name: Command
+  href: api/Utils.Net.CommandResponseClient.ProtocolExchangeContext.html#Utils_Net_CommandResponseClient_ProtocolExchangeContext_Command_
+  commentId: Overload:Utils.Net.CommandResponseClient.ProtocolExchangeContext.Command
+  isSpec: "True"
+  fullName: Utils.Net.CommandResponseClient.ProtocolExchangeContext.Command
+  nameWithType: CommandResponseClient.ProtocolExchangeContext.Command
+- uid: Utils.Net.CommandResponseClient.ProtocolExchangeContext.Poison(System.Exception)
+  name: Poison(Exception)
+  href: api/Utils.Net.CommandResponseClient.ProtocolExchangeContext.html#Utils_Net_CommandResponseClient_ProtocolExchangeContext_Poison_System_Exception_
+  commentId: M:Utils.Net.CommandResponseClient.ProtocolExchangeContext.Poison(System.Exception)
+  fullName: Utils.Net.CommandResponseClient.ProtocolExchangeContext.Poison(System.Exception)
+  nameWithType: CommandResponseClient.ProtocolExchangeContext.Poison(Exception)
+- uid: Utils.Net.CommandResponseClient.ProtocolExchangeContext.Poison*
+  name: Poison
+  href: api/Utils.Net.CommandResponseClient.ProtocolExchangeContext.html#Utils_Net_CommandResponseClient_ProtocolExchangeContext_Poison_
+  commentId: Overload:Utils.Net.CommandResponseClient.ProtocolExchangeContext.Poison
+  isSpec: "True"
+  fullName: Utils.Net.CommandResponseClient.ProtocolExchangeContext.Poison
+  nameWithType: CommandResponseClient.ProtocolExchangeContext.Poison
+- uid: Utils.Net.CommandResponseClient.ProtocolExchangeContext.PoisonIfResponseAmbiguous(System.Exception)
+  name: PoisonIfResponseAmbiguous(Exception)
+  href: api/Utils.Net.CommandResponseClient.ProtocolExchangeContext.html#Utils_Net_CommandResponseClient_ProtocolExchangeContext_PoisonIfResponseAmbiguous_System_Exception_
+  commentId: M:Utils.Net.CommandResponseClient.ProtocolExchangeContext.PoisonIfResponseAmbiguous(System.Exception)
+  fullName: Utils.Net.CommandResponseClient.ProtocolExchangeContext.PoisonIfResponseAmbiguous(System.Exception)
+  nameWithType: CommandResponseClient.ProtocolExchangeContext.PoisonIfResponseAmbiguous(Exception)
+- uid: Utils.Net.CommandResponseClient.ProtocolExchangeContext.PoisonIfResponseAmbiguous*
+  name: PoisonIfResponseAmbiguous
+  href: api/Utils.Net.CommandResponseClient.ProtocolExchangeContext.html#Utils_Net_CommandResponseClient_ProtocolExchangeContext_PoisonIfResponseAmbiguous_
+  commentId: Overload:Utils.Net.CommandResponseClient.ProtocolExchangeContext.PoisonIfResponseAmbiguous
+  isSpec: "True"
+  fullName: Utils.Net.CommandResponseClient.ProtocolExchangeContext.PoisonIfResponseAmbiguous
+  nameWithType: CommandResponseClient.ProtocolExchangeContext.PoisonIfResponseAmbiguous
+- uid: Utils.Net.CommandResponseClient.ProtocolExchangeContext.ReadLineAsync(System.Threading.CancellationToken)
+  name: ReadLineAsync(CancellationToken)
+  href: api/Utils.Net.CommandResponseClient.ProtocolExchangeContext.html#Utils_Net_CommandResponseClient_ProtocolExchangeContext_ReadLineAsync_System_Threading_CancellationToken_
+  commentId: M:Utils.Net.CommandResponseClient.ProtocolExchangeContext.ReadLineAsync(System.Threading.CancellationToken)
+  fullName: Utils.Net.CommandResponseClient.ProtocolExchangeContext.ReadLineAsync(System.Threading.CancellationToken)
+  nameWithType: CommandResponseClient.ProtocolExchangeContext.ReadLineAsync(CancellationToken)
+- uid: Utils.Net.CommandResponseClient.ProtocolExchangeContext.ReadLineAsync*
+  name: ReadLineAsync
+  href: api/Utils.Net.CommandResponseClient.ProtocolExchangeContext.html#Utils_Net_CommandResponseClient_ProtocolExchangeContext_ReadLineAsync_
+  commentId: Overload:Utils.Net.CommandResponseClient.ProtocolExchangeContext.ReadLineAsync
+  isSpec: "True"
+  fullName: Utils.Net.CommandResponseClient.ProtocolExchangeContext.ReadLineAsync
+  nameWithType: CommandResponseClient.ProtocolExchangeContext.ReadLineAsync
+- uid: Utils.Net.CommandResponseClient.ProtocolExchangeContext.ReadResponsesAsync(System.Threading.CancellationToken)
+  name: ReadResponsesAsync(CancellationToken)
+  href: api/Utils.Net.CommandResponseClient.ProtocolExchangeContext.html#Utils_Net_CommandResponseClient_ProtocolExchangeContext_ReadResponsesAsync_System_Threading_CancellationToken_
+  commentId: M:Utils.Net.CommandResponseClient.ProtocolExchangeContext.ReadResponsesAsync(System.Threading.CancellationToken)
+  fullName: Utils.Net.CommandResponseClient.ProtocolExchangeContext.ReadResponsesAsync(System.Threading.CancellationToken)
+  nameWithType: CommandResponseClient.ProtocolExchangeContext.ReadResponsesAsync(CancellationToken)
+- uid: Utils.Net.CommandResponseClient.ProtocolExchangeContext.ReadResponsesAsync*
+  name: ReadResponsesAsync
+  href: api/Utils.Net.CommandResponseClient.ProtocolExchangeContext.html#Utils_Net_CommandResponseClient_ProtocolExchangeContext_ReadResponsesAsync_
+  commentId: Overload:Utils.Net.CommandResponseClient.ProtocolExchangeContext.ReadResponsesAsync
+  isSpec: "True"
+  fullName: Utils.Net.CommandResponseClient.ProtocolExchangeContext.ReadResponsesAsync
+  nameWithType: CommandResponseClient.ProtocolExchangeContext.ReadResponsesAsync
+- uid: Utils.Net.CommandResponseClient.ProtocolExchangeContext.WriteLineAsync(System.String,System.Threading.CancellationToken)
+  name: WriteLineAsync(string, CancellationToken)
+  href: api/Utils.Net.CommandResponseClient.ProtocolExchangeContext.html#Utils_Net_CommandResponseClient_ProtocolExchangeContext_WriteLineAsync_System_String_System_Threading_CancellationToken_
+  commentId: M:Utils.Net.CommandResponseClient.ProtocolExchangeContext.WriteLineAsync(System.String,System.Threading.CancellationToken)
+  name.vb: WriteLineAsync(String, CancellationToken)
+  fullName: Utils.Net.CommandResponseClient.ProtocolExchangeContext.WriteLineAsync(string, System.Threading.CancellationToken)
+  fullName.vb: Utils.Net.CommandResponseClient.ProtocolExchangeContext.WriteLineAsync(String, System.Threading.CancellationToken)
+  nameWithType: CommandResponseClient.ProtocolExchangeContext.WriteLineAsync(string, CancellationToken)
+  nameWithType.vb: CommandResponseClient.ProtocolExchangeContext.WriteLineAsync(String, CancellationToken)
+- uid: Utils.Net.CommandResponseClient.ProtocolExchangeContext.WriteLineAsync*
+  name: WriteLineAsync
+  href: api/Utils.Net.CommandResponseClient.ProtocolExchangeContext.html#Utils_Net_CommandResponseClient_ProtocolExchangeContext_WriteLineAsync_
+  commentId: Overload:Utils.Net.CommandResponseClient.ProtocolExchangeContext.WriteLineAsync
+  isSpec: "True"
+  fullName: Utils.Net.CommandResponseClient.ProtocolExchangeContext.WriteLineAsync
+  nameWithType: CommandResponseClient.ProtocolExchangeContext.WriteLineAsync
+- uid: Utils.Net.CommandResponseClient.ProtocolExchangeContext.WriteStarted
+  name: WriteStarted
+  href: api/Utils.Net.CommandResponseClient.ProtocolExchangeContext.html#Utils_Net_CommandResponseClient_ProtocolExchangeContext_WriteStarted
+  commentId: P:Utils.Net.CommandResponseClient.ProtocolExchangeContext.WriteStarted
+  fullName: Utils.Net.CommandResponseClient.ProtocolExchangeContext.WriteStarted
+  nameWithType: CommandResponseClient.ProtocolExchangeContext.WriteStarted
+- uid: Utils.Net.CommandResponseClient.ProtocolExchangeContext.WriteStarted*
+  name: WriteStarted
+  href: api/Utils.Net.CommandResponseClient.ProtocolExchangeContext.html#Utils_Net_CommandResponseClient_ProtocolExchangeContext_WriteStarted_
+  commentId: Overload:Utils.Net.CommandResponseClient.ProtocolExchangeContext.WriteStarted
+  isSpec: "True"
+  fullName: Utils.Net.CommandResponseClient.ProtocolExchangeContext.WriteStarted
+  nameWithType: CommandResponseClient.ProtocolExchangeContext.WriteStarted
 - uid: Utils.Net.CommandResponseClient.ReadAsync(System.Threading.CancellationToken)
   name: ReadAsync(CancellationToken)
   href: api/Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_ReadAsync_System_Threading_CancellationToken_
@@ -48204,15 +48346,15 @@ references:
   isSpec: "True"
   fullName: Utils.Net.CommandResponseClient.SendLinesAsync
   nameWithType: CommandResponseClient.SendLinesAsync
-- uid: Utils.Net.CommandResponseClient.SendMultilineCommandAsync(System.String,System.Func{Utils.Net.ServerResponse,System.Boolean},System.Int32,System.Int32,System.Threading.CancellationToken)
-  name: SendMultilineCommandAsync(string, Func<ServerResponse, bool>, int, int, CancellationToken)
-  href: api/Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SendMultilineCommandAsync_System_String_System_Func_Utils_Net_ServerResponse_System_Boolean__System_Int32_System_Int32_System_Threading_CancellationToken_
-  commentId: M:Utils.Net.CommandResponseClient.SendMultilineCommandAsync(System.String,System.Func{Utils.Net.ServerResponse,System.Boolean},System.Int32,System.Int32,System.Threading.CancellationToken)
-  name.vb: SendMultilineCommandAsync(String, Func(Of ServerResponse, Boolean), Integer, Integer, CancellationToken)
-  fullName: Utils.Net.CommandResponseClient.SendMultilineCommandAsync(string, System.Func<Utils.Net.ServerResponse, bool>, int, int, System.Threading.CancellationToken)
-  fullName.vb: Utils.Net.CommandResponseClient.SendMultilineCommandAsync(String, System.Func(Of Utils.Net.ServerResponse, Boolean), Integer, Integer, System.Threading.CancellationToken)
-  nameWithType: CommandResponseClient.SendMultilineCommandAsync(string, Func<ServerResponse, bool>, int, int, CancellationToken)
-  nameWithType.vb: CommandResponseClient.SendMultilineCommandAsync(String, Func(Of ServerResponse, Boolean), Integer, Integer, CancellationToken)
+- uid: Utils.Net.CommandResponseClient.SendMultilineCommandAsync(System.String,System.Func{Utils.Net.ServerResponse,System.Boolean},System.Int32,System.Int32,System.Int64,System.Threading.CancellationToken)
+  name: SendMultilineCommandAsync(string, Func<ServerResponse, bool>, int, int, long, CancellationToken)
+  href: api/Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SendMultilineCommandAsync_System_String_System_Func_Utils_Net_ServerResponse_System_Boolean__System_Int32_System_Int32_System_Int64_System_Threading_CancellationToken_
+  commentId: M:Utils.Net.CommandResponseClient.SendMultilineCommandAsync(System.String,System.Func{Utils.Net.ServerResponse,System.Boolean},System.Int32,System.Int32,System.Int64,System.Threading.CancellationToken)
+  name.vb: SendMultilineCommandAsync(String, Func(Of ServerResponse, Boolean), Integer, Integer, Long, CancellationToken)
+  fullName: Utils.Net.CommandResponseClient.SendMultilineCommandAsync(string, System.Func<Utils.Net.ServerResponse, bool>, int, int, long, System.Threading.CancellationToken)
+  fullName.vb: Utils.Net.CommandResponseClient.SendMultilineCommandAsync(String, System.Func(Of Utils.Net.ServerResponse, Boolean), Integer, Integer, Long, System.Threading.CancellationToken)
+  nameWithType: CommandResponseClient.SendMultilineCommandAsync(string, Func<ServerResponse, bool>, int, int, long, CancellationToken)
+  nameWithType.vb: CommandResponseClient.SendMultilineCommandAsync(String, Func(Of ServerResponse, Boolean), Integer, Integer, Long, CancellationToken)
 - uid: Utils.Net.CommandResponseClient.SendMultilineCommandAsync*
   name: SendMultilineCommandAsync
   href: api/Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SendMultilineCommandAsync_
@@ -48220,6 +48362,19 @@ references:
   isSpec: "True"
   fullName: Utils.Net.CommandResponseClient.SendMultilineCommandAsync
   nameWithType: CommandResponseClient.SendMultilineCommandAsync
+- uid: Utils.Net.CommandResponseClient.SessionFailure
+  name: SessionFailure
+  href: api/Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SessionFailure
+  commentId: P:Utils.Net.CommandResponseClient.SessionFailure
+  fullName: Utils.Net.CommandResponseClient.SessionFailure
+  nameWithType: CommandResponseClient.SessionFailure
+- uid: Utils.Net.CommandResponseClient.SessionFailure*
+  name: SessionFailure
+  href: api/Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SessionFailure_
+  commentId: Overload:Utils.Net.CommandResponseClient.SessionFailure
+  isSpec: "True"
+  fullName: Utils.Net.CommandResponseClient.SessionFailure
+  nameWithType: CommandResponseClient.SessionFailure
 - uid: Utils.Net.CommandResponseClient.SplitCodeAndMessage(System.String)
   name: SplitCodeAndMessage(string)
   href: api/Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SplitCodeAndMessage_System_String_
@@ -48236,6 +48391,22 @@ references:
   isSpec: "True"
   fullName: Utils.Net.CommandResponseClient.SplitCodeAndMessage
   nameWithType: CommandResponseClient.SplitCodeAndMessage
+- uid: Utils.Net.CommandResponseClient.StreamMultilineCommandAsync(System.String,System.Func{System.ReadOnlyMemory{System.Char},System.Threading.CancellationToken,System.Threading.Tasks.ValueTask},Utils.Net.ProtocolPayloadLimits,System.Threading.CancellationToken,System.Func{Utils.Net.ServerResponse,System.Boolean},System.Action{System.Collections.Generic.IReadOnlyList{Utils.Net.ServerResponse}})
+  name: StreamMultilineCommandAsync(string, Func<ReadOnlyMemory<char>, CancellationToken, ValueTask>, ProtocolPayloadLimits, CancellationToken, Func<ServerResponse, bool>?, Action<IReadOnlyList<ServerResponse>>?)
+  href: api/Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_StreamMultilineCommandAsync_System_String_System_Func_System_ReadOnlyMemory_System_Char__System_Threading_CancellationToken_System_Threading_Tasks_ValueTask__Utils_Net_ProtocolPayloadLimits_System_Threading_CancellationToken_System_Func_Utils_Net_ServerResponse_System_Boolean__System_Action_System_Collections_Generic_IReadOnlyList_Utils_Net_ServerResponse___
+  commentId: M:Utils.Net.CommandResponseClient.StreamMultilineCommandAsync(System.String,System.Func{System.ReadOnlyMemory{System.Char},System.Threading.CancellationToken,System.Threading.Tasks.ValueTask},Utils.Net.ProtocolPayloadLimits,System.Threading.CancellationToken,System.Func{Utils.Net.ServerResponse,System.Boolean},System.Action{System.Collections.Generic.IReadOnlyList{Utils.Net.ServerResponse}})
+  name.vb: StreamMultilineCommandAsync(String, Func(Of ReadOnlyMemory(Of Char), CancellationToken, ValueTask), ProtocolPayloadLimits, CancellationToken, Func(Of ServerResponse, Boolean), Action(Of IReadOnlyList(Of ServerResponse)))
+  fullName: Utils.Net.CommandResponseClient.StreamMultilineCommandAsync(string, System.Func<System.ReadOnlyMemory<char>, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>, Utils.Net.ProtocolPayloadLimits, System.Threading.CancellationToken, System.Func<Utils.Net.ServerResponse, bool>?, System.Action<System.Collections.Generic.IReadOnlyList<Utils.Net.ServerResponse>>?)
+  fullName.vb: Utils.Net.CommandResponseClient.StreamMultilineCommandAsync(String, System.Func(Of System.ReadOnlyMemory(Of Char), System.Threading.CancellationToken, System.Threading.Tasks.ValueTask), Utils.Net.ProtocolPayloadLimits, System.Threading.CancellationToken, System.Func(Of Utils.Net.ServerResponse, Boolean), System.Action(Of System.Collections.Generic.IReadOnlyList(Of Utils.Net.ServerResponse)))
+  nameWithType: CommandResponseClient.StreamMultilineCommandAsync(string, Func<ReadOnlyMemory<char>, CancellationToken, ValueTask>, ProtocolPayloadLimits, CancellationToken, Func<ServerResponse, bool>?, Action<IReadOnlyList<ServerResponse>>?)
+  nameWithType.vb: CommandResponseClient.StreamMultilineCommandAsync(String, Func(Of ReadOnlyMemory(Of Char), CancellationToken, ValueTask), ProtocolPayloadLimits, CancellationToken, Func(Of ServerResponse, Boolean), Action(Of IReadOnlyList(Of ServerResponse)))
+- uid: Utils.Net.CommandResponseClient.StreamMultilineCommandAsync*
+  name: StreamMultilineCommandAsync
+  href: api/Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_StreamMultilineCommandAsync_
+  commentId: Overload:Utils.Net.CommandResponseClient.StreamMultilineCommandAsync
+  isSpec: "True"
+  fullName: Utils.Net.CommandResponseClient.StreamMultilineCommandAsync
+  nameWithType: CommandResponseClient.StreamMultilineCommandAsync
 - uid: Utils.Net.CommandResponseClient.UnsolicitedResponseReceived
   name: UnsolicitedResponseReceived
   href: api/Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_UnsolicitedResponseReceived
@@ -56097,6 +56268,15 @@ references:
   fullName.vb: Utils.Net.NntpClient.New
   nameWithType: NntpClient.NntpClient
   nameWithType.vb: NntpClient.New
+- uid: Utils.Net.NntpClient.ArticleAsync(System.Int32,System.IO.TextWriter,System.Threading.CancellationToken)
+  name: ArticleAsync(int, TextWriter, CancellationToken)
+  href: api/Utils.Net.NntpClient.html#Utils_Net_NntpClient_ArticleAsync_System_Int32_System_IO_TextWriter_System_Threading_CancellationToken_
+  commentId: M:Utils.Net.NntpClient.ArticleAsync(System.Int32,System.IO.TextWriter,System.Threading.CancellationToken)
+  name.vb: ArticleAsync(Integer, TextWriter, CancellationToken)
+  fullName: Utils.Net.NntpClient.ArticleAsync(int, System.IO.TextWriter, System.Threading.CancellationToken)
+  fullName.vb: Utils.Net.NntpClient.ArticleAsync(Integer, System.IO.TextWriter, System.Threading.CancellationToken)
+  nameWithType: NntpClient.ArticleAsync(int, TextWriter, CancellationToken)
+  nameWithType.vb: NntpClient.ArticleAsync(Integer, TextWriter, CancellationToken)
 - uid: Utils.Net.NntpClient.ArticleAsync(System.Int32,System.Threading.CancellationToken)
   name: ArticleAsync(int, CancellationToken)
   href: api/Utils.Net.NntpClient.html#Utils_Net_NntpClient_ArticleAsync_System_Int32_System_Threading_CancellationToken_
@@ -56113,6 +56293,15 @@ references:
   isSpec: "True"
   fullName: Utils.Net.NntpClient.ArticleAsync
   nameWithType: NntpClient.ArticleAsync
+- uid: Utils.Net.NntpClient.BodyAsync(System.Int32,System.IO.TextWriter,System.Threading.CancellationToken)
+  name: BodyAsync(int, TextWriter, CancellationToken)
+  href: api/Utils.Net.NntpClient.html#Utils_Net_NntpClient_BodyAsync_System_Int32_System_IO_TextWriter_System_Threading_CancellationToken_
+  commentId: M:Utils.Net.NntpClient.BodyAsync(System.Int32,System.IO.TextWriter,System.Threading.CancellationToken)
+  name.vb: BodyAsync(Integer, TextWriter, CancellationToken)
+  fullName: Utils.Net.NntpClient.BodyAsync(int, System.IO.TextWriter, System.Threading.CancellationToken)
+  fullName.vb: Utils.Net.NntpClient.BodyAsync(Integer, System.IO.TextWriter, System.Threading.CancellationToken)
+  nameWithType: NntpClient.BodyAsync(int, TextWriter, CancellationToken)
+  nameWithType.vb: NntpClient.BodyAsync(Integer, TextWriter, CancellationToken)
 - uid: Utils.Net.NntpClient.BodyAsync(System.Int32,System.Threading.CancellationToken)
   name: BodyAsync(int, CancellationToken)
   href: api/Utils.Net.NntpClient.html#Utils_Net_NntpClient_BodyAsync_System_Int32_System_Threading_CancellationToken_
@@ -56158,6 +56347,15 @@ references:
   isSpec: "True"
   fullName: Utils.Net.NntpClient.GroupAsync
   nameWithType: NntpClient.GroupAsync
+- uid: Utils.Net.NntpClient.HeaderAsync(System.Int32,System.IO.TextWriter,System.Threading.CancellationToken)
+  name: HeaderAsync(int, TextWriter, CancellationToken)
+  href: api/Utils.Net.NntpClient.html#Utils_Net_NntpClient_HeaderAsync_System_Int32_System_IO_TextWriter_System_Threading_CancellationToken_
+  commentId: M:Utils.Net.NntpClient.HeaderAsync(System.Int32,System.IO.TextWriter,System.Threading.CancellationToken)
+  name.vb: HeaderAsync(Integer, TextWriter, CancellationToken)
+  fullName: Utils.Net.NntpClient.HeaderAsync(int, System.IO.TextWriter, System.Threading.CancellationToken)
+  fullName.vb: Utils.Net.NntpClient.HeaderAsync(Integer, System.IO.TextWriter, System.Threading.CancellationToken)
+  nameWithType: NntpClient.HeaderAsync(int, TextWriter, CancellationToken)
+  nameWithType.vb: NntpClient.HeaderAsync(Integer, TextWriter, CancellationToken)
 - uid: Utils.Net.NntpClient.HeaderAsync(System.Int32,System.Threading.CancellationToken)
   name: HeaderAsync(int, CancellationToken)
   href: api/Utils.Net.NntpClient.html#Utils_Net_NntpClient_HeaderAsync_System_Int32_System_Threading_CancellationToken_
@@ -56187,6 +56385,19 @@ references:
   isSpec: "True"
   fullName: Utils.Net.NntpClient.ListAsync
   nameWithType: NntpClient.ListAsync
+- uid: Utils.Net.NntpClient.MaxMultilineBytes
+  name: MaxMultilineBytes
+  href: api/Utils.Net.NntpClient.html#Utils_Net_NntpClient_MaxMultilineBytes
+  commentId: P:Utils.Net.NntpClient.MaxMultilineBytes
+  fullName: Utils.Net.NntpClient.MaxMultilineBytes
+  nameWithType: NntpClient.MaxMultilineBytes
+- uid: Utils.Net.NntpClient.MaxMultilineBytes*
+  name: MaxMultilineBytes
+  href: api/Utils.Net.NntpClient.html#Utils_Net_NntpClient_MaxMultilineBytes_
+  commentId: Overload:Utils.Net.NntpClient.MaxMultilineBytes
+  isSpec: "True"
+  fullName: Utils.Net.NntpClient.MaxMultilineBytes
+  nameWithType: NntpClient.MaxMultilineBytes
 - uid: Utils.Net.NntpClient.MaxMultilineChars
   name: MaxMultilineChars
   href: api/Utils.Net.NntpClient.html#Utils_Net_NntpClient_MaxMultilineChars
@@ -56759,6 +56970,19 @@ references:
   isSpec: "True"
   fullName: Utils.Net.Pop3Client.ListUniqueIdsAsync
   nameWithType: Pop3Client.ListUniqueIdsAsync
+- uid: Utils.Net.Pop3Client.MaxMultilineBytes
+  name: MaxMultilineBytes
+  href: api/Utils.Net.Pop3Client.html#Utils_Net_Pop3Client_MaxMultilineBytes
+  commentId: P:Utils.Net.Pop3Client.MaxMultilineBytes
+  fullName: Utils.Net.Pop3Client.MaxMultilineBytes
+  nameWithType: Pop3Client.MaxMultilineBytes
+- uid: Utils.Net.Pop3Client.MaxMultilineBytes*
+  name: MaxMultilineBytes
+  href: api/Utils.Net.Pop3Client.html#Utils_Net_Pop3Client_MaxMultilineBytes_
+  commentId: Overload:Utils.Net.Pop3Client.MaxMultilineBytes
+  isSpec: "True"
+  fullName: Utils.Net.Pop3Client.MaxMultilineBytes
+  nameWithType: Pop3Client.MaxMultilineBytes
 - uid: Utils.Net.Pop3Client.MaxMultilineChars
   name: MaxMultilineChars
   href: api/Utils.Net.Pop3Client.html#Utils_Net_Pop3Client_MaxMultilineChars
@@ -56856,6 +57080,15 @@ references:
   isSpec: "True"
   fullName: Utils.Net.Pop3Client.ResetAsync
   nameWithType: Pop3Client.ResetAsync
+- uid: Utils.Net.Pop3Client.RetrieveAsync(System.Int32,System.IO.TextWriter,System.Threading.CancellationToken)
+  name: RetrieveAsync(int, TextWriter, CancellationToken)
+  href: api/Utils.Net.Pop3Client.html#Utils_Net_Pop3Client_RetrieveAsync_System_Int32_System_IO_TextWriter_System_Threading_CancellationToken_
+  commentId: M:Utils.Net.Pop3Client.RetrieveAsync(System.Int32,System.IO.TextWriter,System.Threading.CancellationToken)
+  name.vb: RetrieveAsync(Integer, TextWriter, CancellationToken)
+  fullName: Utils.Net.Pop3Client.RetrieveAsync(int, System.IO.TextWriter, System.Threading.CancellationToken)
+  fullName.vb: Utils.Net.Pop3Client.RetrieveAsync(Integer, System.IO.TextWriter, System.Threading.CancellationToken)
+  nameWithType: Pop3Client.RetrieveAsync(int, TextWriter, CancellationToken)
+  nameWithType.vb: Pop3Client.RetrieveAsync(Integer, TextWriter, CancellationToken)
 - uid: Utils.Net.Pop3Client.RetrieveAsync(System.Int32,System.Threading.CancellationToken)
   name: RetrieveAsync(int, CancellationToken)
   href: api/Utils.Net.Pop3Client.html#Utils_Net_Pop3Client_RetrieveAsync_System_Int32_System_Threading_CancellationToken_
@@ -56952,6 +57185,179 @@ references:
   isSpec: "True"
   fullName: Utils.Net.Pop3Server.StartAsync
   nameWithType: Pop3Server.StartAsync
+- uid: Utils.Net.ProtocolPayloadLimits
+  name: ProtocolPayloadLimits
+  href: api/Utils.Net.ProtocolPayloadLimits.html
+  commentId: T:Utils.Net.ProtocolPayloadLimits
+  fullName: Utils.Net.ProtocolPayloadLimits
+  nameWithType: ProtocolPayloadLimits
+- uid: Utils.Net.ProtocolPayloadLimits.MaximumBytes
+  name: MaximumBytes
+  href: api/Utils.Net.ProtocolPayloadLimits.html#Utils_Net_ProtocolPayloadLimits_MaximumBytes
+  commentId: P:Utils.Net.ProtocolPayloadLimits.MaximumBytes
+  fullName: Utils.Net.ProtocolPayloadLimits.MaximumBytes
+  nameWithType: ProtocolPayloadLimits.MaximumBytes
+- uid: Utils.Net.ProtocolPayloadLimits.MaximumBytes*
+  name: MaximumBytes
+  href: api/Utils.Net.ProtocolPayloadLimits.html#Utils_Net_ProtocolPayloadLimits_MaximumBytes_
+  commentId: Overload:Utils.Net.ProtocolPayloadLimits.MaximumBytes
+  isSpec: "True"
+  fullName: Utils.Net.ProtocolPayloadLimits.MaximumBytes
+  nameWithType: ProtocolPayloadLimits.MaximumBytes
+- uid: Utils.Net.ProtocolPayloadLimits.MaximumCharacters
+  name: MaximumCharacters
+  href: api/Utils.Net.ProtocolPayloadLimits.html#Utils_Net_ProtocolPayloadLimits_MaximumCharacters
+  commentId: P:Utils.Net.ProtocolPayloadLimits.MaximumCharacters
+  fullName: Utils.Net.ProtocolPayloadLimits.MaximumCharacters
+  nameWithType: ProtocolPayloadLimits.MaximumCharacters
+- uid: Utils.Net.ProtocolPayloadLimits.MaximumCharacters*
+  name: MaximumCharacters
+  href: api/Utils.Net.ProtocolPayloadLimits.html#Utils_Net_ProtocolPayloadLimits_MaximumCharacters_
+  commentId: Overload:Utils.Net.ProtocolPayloadLimits.MaximumCharacters
+  isSpec: "True"
+  fullName: Utils.Net.ProtocolPayloadLimits.MaximumCharacters
+  nameWithType: ProtocolPayloadLimits.MaximumCharacters
+- uid: Utils.Net.ProtocolPayloadLimits.MaximumLines
+  name: MaximumLines
+  href: api/Utils.Net.ProtocolPayloadLimits.html#Utils_Net_ProtocolPayloadLimits_MaximumLines
+  commentId: P:Utils.Net.ProtocolPayloadLimits.MaximumLines
+  fullName: Utils.Net.ProtocolPayloadLimits.MaximumLines
+  nameWithType: ProtocolPayloadLimits.MaximumLines
+- uid: Utils.Net.ProtocolPayloadLimits.MaximumLines*
+  name: MaximumLines
+  href: api/Utils.Net.ProtocolPayloadLimits.html#Utils_Net_ProtocolPayloadLimits_MaximumLines_
+  commentId: Overload:Utils.Net.ProtocolPayloadLimits.MaximumLines
+  isSpec: "True"
+  fullName: Utils.Net.ProtocolPayloadLimits.MaximumLines
+  nameWithType: ProtocolPayloadLimits.MaximumLines
+- uid: Utils.Net.ProtocolResponseException
+  name: ProtocolResponseException
+  href: api/Utils.Net.ProtocolResponseException.html
+  commentId: T:Utils.Net.ProtocolResponseException
+  fullName: Utils.Net.ProtocolResponseException
+  nameWithType: ProtocolResponseException
+- uid: Utils.Net.ProtocolResponseException.#ctor(System.String,System.String,System.Collections.Generic.IReadOnlyList{Utils.Net.ServerResponse},System.String,System.Exception)
+  name: ProtocolResponseException(string, string, IReadOnlyList<ServerResponse>, string?, Exception?)
+  href: api/Utils.Net.ProtocolResponseException.html#Utils_Net_ProtocolResponseException__ctor_System_String_System_String_System_Collections_Generic_IReadOnlyList_Utils_Net_ServerResponse__System_String_System_Exception_
+  commentId: M:Utils.Net.ProtocolResponseException.#ctor(System.String,System.String,System.Collections.Generic.IReadOnlyList{Utils.Net.ServerResponse},System.String,System.Exception)
+  name.vb: New(String, String, IReadOnlyList(Of ServerResponse), String, Exception)
+  fullName: Utils.Net.ProtocolResponseException.ProtocolResponseException(string, string, System.Collections.Generic.IReadOnlyList<Utils.Net.ServerResponse>, string?, System.Exception?)
+  fullName.vb: Utils.Net.ProtocolResponseException.New(String, String, System.Collections.Generic.IReadOnlyList(Of Utils.Net.ServerResponse), String, System.Exception)
+  nameWithType: ProtocolResponseException.ProtocolResponseException(string, string, IReadOnlyList<ServerResponse>, string?, Exception?)
+  nameWithType.vb: ProtocolResponseException.New(String, String, IReadOnlyList(Of ServerResponse), String, Exception)
+- uid: Utils.Net.ProtocolResponseException.#ctor*
+  name: ProtocolResponseException
+  href: api/Utils.Net.ProtocolResponseException.html#Utils_Net_ProtocolResponseException__ctor_
+  commentId: Overload:Utils.Net.ProtocolResponseException.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.Net.ProtocolResponseException.ProtocolResponseException
+  fullName.vb: Utils.Net.ProtocolResponseException.New
+  nameWithType: ProtocolResponseException.ProtocolResponseException
+  nameWithType.vb: ProtocolResponseException.New
+- uid: Utils.Net.ProtocolResponseException.Command
+  name: Command
+  href: api/Utils.Net.ProtocolResponseException.html#Utils_Net_ProtocolResponseException_Command
+  commentId: P:Utils.Net.ProtocolResponseException.Command
+  fullName: Utils.Net.ProtocolResponseException.Command
+  nameWithType: ProtocolResponseException.Command
+- uid: Utils.Net.ProtocolResponseException.Command*
+  name: Command
+  href: api/Utils.Net.ProtocolResponseException.html#Utils_Net_ProtocolResponseException_Command_
+  commentId: Overload:Utils.Net.ProtocolResponseException.Command
+  isSpec: "True"
+  fullName: Utils.Net.ProtocolResponseException.Command
+  nameWithType: ProtocolResponseException.Command
+- uid: Utils.Net.ProtocolResponseException.EnhancedStatusCode
+  name: EnhancedStatusCode
+  href: api/Utils.Net.ProtocolResponseException.html#Utils_Net_ProtocolResponseException_EnhancedStatusCode
+  commentId: P:Utils.Net.ProtocolResponseException.EnhancedStatusCode
+  fullName: Utils.Net.ProtocolResponseException.EnhancedStatusCode
+  nameWithType: ProtocolResponseException.EnhancedStatusCode
+- uid: Utils.Net.ProtocolResponseException.EnhancedStatusCode*
+  name: EnhancedStatusCode
+  href: api/Utils.Net.ProtocolResponseException.html#Utils_Net_ProtocolResponseException_EnhancedStatusCode_
+  commentId: Overload:Utils.Net.ProtocolResponseException.EnhancedStatusCode
+  isSpec: "True"
+  fullName: Utils.Net.ProtocolResponseException.EnhancedStatusCode
+  nameWithType: ProtocolResponseException.EnhancedStatusCode
+- uid: Utils.Net.ProtocolResponseException.Protocol
+  name: Protocol
+  href: api/Utils.Net.ProtocolResponseException.html#Utils_Net_ProtocolResponseException_Protocol
+  commentId: P:Utils.Net.ProtocolResponseException.Protocol
+  fullName: Utils.Net.ProtocolResponseException.Protocol
+  nameWithType: ProtocolResponseException.Protocol
+- uid: Utils.Net.ProtocolResponseException.Protocol*
+  name: Protocol
+  href: api/Utils.Net.ProtocolResponseException.html#Utils_Net_ProtocolResponseException_Protocol_
+  commentId: Overload:Utils.Net.ProtocolResponseException.Protocol
+  isSpec: "True"
+  fullName: Utils.Net.ProtocolResponseException.Protocol
+  nameWithType: ProtocolResponseException.Protocol
+- uid: Utils.Net.ProtocolResponseException.ResponseCode
+  name: ResponseCode
+  href: api/Utils.Net.ProtocolResponseException.html#Utils_Net_ProtocolResponseException_ResponseCode
+  commentId: P:Utils.Net.ProtocolResponseException.ResponseCode
+  fullName: Utils.Net.ProtocolResponseException.ResponseCode
+  nameWithType: ProtocolResponseException.ResponseCode
+- uid: Utils.Net.ProtocolResponseException.ResponseCode*
+  name: ResponseCode
+  href: api/Utils.Net.ProtocolResponseException.html#Utils_Net_ProtocolResponseException_ResponseCode_
+  commentId: Overload:Utils.Net.ProtocolResponseException.ResponseCode
+  isSpec: "True"
+  fullName: Utils.Net.ProtocolResponseException.ResponseCode
+  nameWithType: ProtocolResponseException.ResponseCode
+- uid: Utils.Net.ProtocolResponseException.Responses
+  name: Responses
+  href: api/Utils.Net.ProtocolResponseException.html#Utils_Net_ProtocolResponseException_Responses
+  commentId: P:Utils.Net.ProtocolResponseException.Responses
+  fullName: Utils.Net.ProtocolResponseException.Responses
+  nameWithType: ProtocolResponseException.Responses
+- uid: Utils.Net.ProtocolResponseException.Responses*
+  name: Responses
+  href: api/Utils.Net.ProtocolResponseException.html#Utils_Net_ProtocolResponseException_Responses_
+  commentId: Overload:Utils.Net.ProtocolResponseException.Responses
+  isSpec: "True"
+  fullName: Utils.Net.ProtocolResponseException.Responses
+  nameWithType: ProtocolResponseException.Responses
+- uid: Utils.Net.ProtocolResponseException.Severity
+  name: Severity
+  href: api/Utils.Net.ProtocolResponseException.html#Utils_Net_ProtocolResponseException_Severity
+  commentId: P:Utils.Net.ProtocolResponseException.Severity
+  fullName: Utils.Net.ProtocolResponseException.Severity
+  nameWithType: ProtocolResponseException.Severity
+- uid: Utils.Net.ProtocolResponseException.Severity*
+  name: Severity
+  href: api/Utils.Net.ProtocolResponseException.html#Utils_Net_ProtocolResponseException_Severity_
+  commentId: Overload:Utils.Net.ProtocolResponseException.Severity
+  isSpec: "True"
+  fullName: Utils.Net.ProtocolResponseException.Severity
+  nameWithType: ProtocolResponseException.Severity
+- uid: Utils.Net.ProtocolSessionPoisonedException
+  name: ProtocolSessionPoisonedException
+  href: api/Utils.Net.ProtocolSessionPoisonedException.html
+  commentId: T:Utils.Net.ProtocolSessionPoisonedException
+  fullName: Utils.Net.ProtocolSessionPoisonedException
+  nameWithType: ProtocolSessionPoisonedException
+- uid: Utils.Net.ProtocolSessionPoisonedException.#ctor(System.String,System.Exception)
+  name: ProtocolSessionPoisonedException(string, Exception?)
+  href: api/Utils.Net.ProtocolSessionPoisonedException.html#Utils_Net_ProtocolSessionPoisonedException__ctor_System_String_System_Exception_
+  commentId: M:Utils.Net.ProtocolSessionPoisonedException.#ctor(System.String,System.Exception)
+  name.vb: New(String, Exception)
+  fullName: Utils.Net.ProtocolSessionPoisonedException.ProtocolSessionPoisonedException(string, System.Exception?)
+  fullName.vb: Utils.Net.ProtocolSessionPoisonedException.New(String, System.Exception)
+  nameWithType: ProtocolSessionPoisonedException.ProtocolSessionPoisonedException(string, Exception?)
+  nameWithType.vb: ProtocolSessionPoisonedException.New(String, Exception)
+- uid: Utils.Net.ProtocolSessionPoisonedException.#ctor*
+  name: ProtocolSessionPoisonedException
+  href: api/Utils.Net.ProtocolSessionPoisonedException.html#Utils_Net_ProtocolSessionPoisonedException__ctor_
+  commentId: Overload:Utils.Net.ProtocolSessionPoisonedException.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.Net.ProtocolSessionPoisonedException.ProtocolSessionPoisonedException
+  fullName.vb: Utils.Net.ProtocolSessionPoisonedException.New
+  nameWithType: ProtocolSessionPoisonedException.ProtocolSessionPoisonedException
+  nameWithType.vb: ProtocolSessionPoisonedException.New
 - uid: Utils.Net.QueryString
   name: QueryString
   href: api/Utils.Net.QueryString.html
@@ -57663,6 +58069,24 @@ references:
   isSpec: "True"
   fullName: Utils.Net.SmtpAuthenticationResult.IsAuthenticated
   nameWithType: SmtpAuthenticationResult.IsAuthenticated
+- uid: Utils.Net.SmtpBodyKind
+  name: SmtpBodyKind
+  href: api/Utils.Net.SmtpBodyKind.html
+  commentId: T:Utils.Net.SmtpBodyKind
+  fullName: Utils.Net.SmtpBodyKind
+  nameWithType: SmtpBodyKind
+- uid: Utils.Net.SmtpBodyKind.EightBitMime
+  name: EightBitMime
+  href: api/Utils.Net.SmtpBodyKind.html#Utils_Net_SmtpBodyKind_EightBitMime
+  commentId: F:Utils.Net.SmtpBodyKind.EightBitMime
+  fullName: Utils.Net.SmtpBodyKind.EightBitMime
+  nameWithType: SmtpBodyKind.EightBitMime
+- uid: Utils.Net.SmtpBodyKind.SevenBit
+  name: SevenBit
+  href: api/Utils.Net.SmtpBodyKind.html#Utils_Net_SmtpBodyKind_SevenBit
+  commentId: F:Utils.Net.SmtpBodyKind.SevenBit
+  fullName: Utils.Net.SmtpBodyKind.SevenBit
+  nameWithType: SmtpBodyKind.SevenBit
 - uid: Utils.Net.SmtpClient
   name: SmtpClient
   href: api/Utils.Net.SmtpClient.html
@@ -57706,6 +58130,12 @@ references:
   fullName.vb: Utils.Net.SmtpClient.AuthenticateAsync(String, String, Utils.Net.SmtpAuthenticationMechanism, System.Threading.CancellationToken)
   nameWithType: SmtpClient.AuthenticateAsync(string, string, SmtpAuthenticationMechanism, CancellationToken)
   nameWithType.vb: SmtpClient.AuthenticateAsync(String, String, SmtpAuthenticationMechanism, CancellationToken)
+- uid: Utils.Net.SmtpClient.AuthenticateAsync(Utils.Net.SmtpPlainCredentials,System.Threading.CancellationToken)
+  name: AuthenticateAsync(SmtpPlainCredentials, CancellationToken)
+  href: api/Utils.Net.SmtpClient.html#Utils_Net_SmtpClient_AuthenticateAsync_Utils_Net_SmtpPlainCredentials_System_Threading_CancellationToken_
+  commentId: M:Utils.Net.SmtpClient.AuthenticateAsync(Utils.Net.SmtpPlainCredentials,System.Threading.CancellationToken)
+  fullName: Utils.Net.SmtpClient.AuthenticateAsync(Utils.Net.SmtpPlainCredentials, System.Threading.CancellationToken)
+  nameWithType: SmtpClient.AuthenticateAsync(SmtpPlainCredentials, CancellationToken)
 - uid: Utils.Net.SmtpClient.AuthenticateAsync*
   name: AuthenticateAsync
   href: api/Utils.Net.SmtpClient.html#Utils_Net_SmtpClient_AuthenticateAsync_
@@ -57844,6 +58274,24 @@ references:
   fullName.vb: Utils.Net.SmtpClient.SendMailAsync(String, System.Collections.Generic.IEnumerable(Of String), String, System.Threading.CancellationToken)
   nameWithType: SmtpClient.SendMailAsync(string, IEnumerable<string>, string, CancellationToken)
   nameWithType.vb: SmtpClient.SendMailAsync(String, IEnumerable(Of String), String, CancellationToken)
+- uid: Utils.Net.SmtpClient.SendMailAsync(Utils.Net.SmtpPath,System.Collections.Generic.IReadOnlyList{Utils.Net.SmtpPath},System.IO.Stream,System.Text.Encoding,Utils.Net.SmtpMailOptions,System.Threading.CancellationToken)
+  name: SendMailAsync(SmtpPath, IReadOnlyList<SmtpPath>, Stream, Encoding, SmtpMailOptions?, CancellationToken)
+  href: api/Utils.Net.SmtpClient.html#Utils_Net_SmtpClient_SendMailAsync_Utils_Net_SmtpPath_System_Collections_Generic_IReadOnlyList_Utils_Net_SmtpPath__System_IO_Stream_System_Text_Encoding_Utils_Net_SmtpMailOptions_System_Threading_CancellationToken_
+  commentId: M:Utils.Net.SmtpClient.SendMailAsync(Utils.Net.SmtpPath,System.Collections.Generic.IReadOnlyList{Utils.Net.SmtpPath},System.IO.Stream,System.Text.Encoding,Utils.Net.SmtpMailOptions,System.Threading.CancellationToken)
+  name.vb: SendMailAsync(SmtpPath, IReadOnlyList(Of SmtpPath), Stream, Encoding, SmtpMailOptions, CancellationToken)
+  fullName: Utils.Net.SmtpClient.SendMailAsync(Utils.Net.SmtpPath, System.Collections.Generic.IReadOnlyList<Utils.Net.SmtpPath>, System.IO.Stream, System.Text.Encoding, Utils.Net.SmtpMailOptions?, System.Threading.CancellationToken)
+  fullName.vb: Utils.Net.SmtpClient.SendMailAsync(Utils.Net.SmtpPath, System.Collections.Generic.IReadOnlyList(Of Utils.Net.SmtpPath), System.IO.Stream, System.Text.Encoding, Utils.Net.SmtpMailOptions, System.Threading.CancellationToken)
+  nameWithType: SmtpClient.SendMailAsync(SmtpPath, IReadOnlyList<SmtpPath>, Stream, Encoding, SmtpMailOptions?, CancellationToken)
+  nameWithType.vb: SmtpClient.SendMailAsync(SmtpPath, IReadOnlyList(Of SmtpPath), Stream, Encoding, SmtpMailOptions, CancellationToken)
+- uid: Utils.Net.SmtpClient.SendMailAsync(Utils.Net.SmtpPath,System.Collections.Generic.IReadOnlyList{Utils.Net.SmtpPath},System.IO.TextReader,Utils.Net.SmtpMailOptions,System.Threading.CancellationToken)
+  name: SendMailAsync(SmtpPath, IReadOnlyList<SmtpPath>, TextReader, SmtpMailOptions?, CancellationToken)
+  href: api/Utils.Net.SmtpClient.html#Utils_Net_SmtpClient_SendMailAsync_Utils_Net_SmtpPath_System_Collections_Generic_IReadOnlyList_Utils_Net_SmtpPath__System_IO_TextReader_Utils_Net_SmtpMailOptions_System_Threading_CancellationToken_
+  commentId: M:Utils.Net.SmtpClient.SendMailAsync(Utils.Net.SmtpPath,System.Collections.Generic.IReadOnlyList{Utils.Net.SmtpPath},System.IO.TextReader,Utils.Net.SmtpMailOptions,System.Threading.CancellationToken)
+  name.vb: SendMailAsync(SmtpPath, IReadOnlyList(Of SmtpPath), TextReader, SmtpMailOptions, CancellationToken)
+  fullName: Utils.Net.SmtpClient.SendMailAsync(Utils.Net.SmtpPath, System.Collections.Generic.IReadOnlyList<Utils.Net.SmtpPath>, System.IO.TextReader, Utils.Net.SmtpMailOptions?, System.Threading.CancellationToken)
+  fullName.vb: Utils.Net.SmtpClient.SendMailAsync(Utils.Net.SmtpPath, System.Collections.Generic.IReadOnlyList(Of Utils.Net.SmtpPath), System.IO.TextReader, Utils.Net.SmtpMailOptions, System.Threading.CancellationToken)
+  nameWithType: SmtpClient.SendMailAsync(SmtpPath, IReadOnlyList<SmtpPath>, TextReader, SmtpMailOptions?, CancellationToken)
+  nameWithType.vb: SmtpClient.SendMailAsync(SmtpPath, IReadOnlyList(Of SmtpPath), TextReader, SmtpMailOptions, CancellationToken)
 - uid: Utils.Net.SmtpClient.SendMailAsync*
   name: SendMailAsync
   href: api/Utils.Net.SmtpClient.html#Utils_Net_SmtpClient_SendMailAsync_
@@ -57851,6 +58299,19 @@ references:
   isSpec: "True"
   fullName: Utils.Net.SmtpClient.SendMailAsync
   nameWithType: SmtpClient.SendMailAsync
+- uid: Utils.Net.SmtpClient.TransactionRecoveryTimeout
+  name: TransactionRecoveryTimeout
+  href: api/Utils.Net.SmtpClient.html#Utils_Net_SmtpClient_TransactionRecoveryTimeout
+  commentId: P:Utils.Net.SmtpClient.TransactionRecoveryTimeout
+  fullName: Utils.Net.SmtpClient.TransactionRecoveryTimeout
+  nameWithType: SmtpClient.TransactionRecoveryTimeout
+- uid: Utils.Net.SmtpClient.TransactionRecoveryTimeout*
+  name: TransactionRecoveryTimeout
+  href: api/Utils.Net.SmtpClient.html#Utils_Net_SmtpClient_TransactionRecoveryTimeout_
+  commentId: Overload:Utils.Net.SmtpClient.TransactionRecoveryTimeout
+  isSpec: "True"
+  fullName: Utils.Net.SmtpClient.TransactionRecoveryTimeout
+  nameWithType: SmtpClient.TransactionRecoveryTimeout
 - uid: Utils.Net.SmtpClient.VrfyAsync(System.String,System.Threading.CancellationToken)
   name: VrfyAsync(string, CancellationToken)
   href: api/Utils.Net.SmtpClient.html#Utils_Net_SmtpClient_VrfyAsync_System_String_System_Threading_CancellationToken_
@@ -57867,6 +58328,51 @@ references:
   isSpec: "True"
   fullName: Utils.Net.SmtpClient.VrfyAsync
   nameWithType: SmtpClient.VrfyAsync
+- uid: Utils.Net.SmtpMailOptions
+  name: SmtpMailOptions
+  href: api/Utils.Net.SmtpMailOptions.html
+  commentId: T:Utils.Net.SmtpMailOptions
+  fullName: Utils.Net.SmtpMailOptions
+  nameWithType: SmtpMailOptions
+- uid: Utils.Net.SmtpMailOptions.Body
+  name: Body
+  href: api/Utils.Net.SmtpMailOptions.html#Utils_Net_SmtpMailOptions_Body
+  commentId: P:Utils.Net.SmtpMailOptions.Body
+  fullName: Utils.Net.SmtpMailOptions.Body
+  nameWithType: SmtpMailOptions.Body
+- uid: Utils.Net.SmtpMailOptions.Body*
+  name: Body
+  href: api/Utils.Net.SmtpMailOptions.html#Utils_Net_SmtpMailOptions_Body_
+  commentId: Overload:Utils.Net.SmtpMailOptions.Body
+  isSpec: "True"
+  fullName: Utils.Net.SmtpMailOptions.Body
+  nameWithType: SmtpMailOptions.Body
+- uid: Utils.Net.SmtpMailOptions.Size
+  name: Size
+  href: api/Utils.Net.SmtpMailOptions.html#Utils_Net_SmtpMailOptions_Size
+  commentId: P:Utils.Net.SmtpMailOptions.Size
+  fullName: Utils.Net.SmtpMailOptions.Size
+  nameWithType: SmtpMailOptions.Size
+- uid: Utils.Net.SmtpMailOptions.Size*
+  name: Size
+  href: api/Utils.Net.SmtpMailOptions.html#Utils_Net_SmtpMailOptions_Size_
+  commentId: Overload:Utils.Net.SmtpMailOptions.Size
+  isSpec: "True"
+  fullName: Utils.Net.SmtpMailOptions.Size
+  nameWithType: SmtpMailOptions.Size
+- uid: Utils.Net.SmtpMailOptions.SmtpUtf8
+  name: SmtpUtf8
+  href: api/Utils.Net.SmtpMailOptions.html#Utils_Net_SmtpMailOptions_SmtpUtf8
+  commentId: P:Utils.Net.SmtpMailOptions.SmtpUtf8
+  fullName: Utils.Net.SmtpMailOptions.SmtpUtf8
+  nameWithType: SmtpMailOptions.SmtpUtf8
+- uid: Utils.Net.SmtpMailOptions.SmtpUtf8*
+  name: SmtpUtf8
+  href: api/Utils.Net.SmtpMailOptions.html#Utils_Net_SmtpMailOptions_SmtpUtf8_
+  commentId: Overload:Utils.Net.SmtpMailOptions.SmtpUtf8
+  isSpec: "True"
+  fullName: Utils.Net.SmtpMailOptions.SmtpUtf8
+  nameWithType: SmtpMailOptions.SmtpUtf8
 - uid: Utils.Net.SmtpMessage
   name: SmtpMessage
   href: api/Utils.Net.SmtpMessage.html
@@ -57931,6 +58437,152 @@ references:
   isSpec: "True"
   fullName: Utils.Net.SmtpMessage.Recipients
   nameWithType: SmtpMessage.Recipients
+- uid: Utils.Net.SmtpPath
+  name: SmtpPath
+  href: api/Utils.Net.SmtpPath.html
+  commentId: T:Utils.Net.SmtpPath
+  fullName: Utils.Net.SmtpPath
+  nameWithType: SmtpPath
+- uid: Utils.Net.SmtpPath.AllowsUtf8
+  name: AllowsUtf8
+  href: api/Utils.Net.SmtpPath.html#Utils_Net_SmtpPath_AllowsUtf8
+  commentId: P:Utils.Net.SmtpPath.AllowsUtf8
+  fullName: Utils.Net.SmtpPath.AllowsUtf8
+  nameWithType: SmtpPath.AllowsUtf8
+- uid: Utils.Net.SmtpPath.AllowsUtf8*
+  name: AllowsUtf8
+  href: api/Utils.Net.SmtpPath.html#Utils_Net_SmtpPath_AllowsUtf8_
+  commentId: Overload:Utils.Net.SmtpPath.AllowsUtf8
+  isSpec: "True"
+  fullName: Utils.Net.SmtpPath.AllowsUtf8
+  nameWithType: SmtpPath.AllowsUtf8
+- uid: Utils.Net.SmtpPath.Parse(System.String)
+  name: Parse(string)
+  href: api/Utils.Net.SmtpPath.html#Utils_Net_SmtpPath_Parse_System_String_
+  commentId: M:Utils.Net.SmtpPath.Parse(System.String)
+  name.vb: Parse(String)
+  fullName: Utils.Net.SmtpPath.Parse(string)
+  fullName.vb: Utils.Net.SmtpPath.Parse(String)
+  nameWithType: SmtpPath.Parse(string)
+  nameWithType.vb: SmtpPath.Parse(String)
+- uid: Utils.Net.SmtpPath.Parse(System.String,System.Boolean)
+  name: Parse(string, bool)
+  href: api/Utils.Net.SmtpPath.html#Utils_Net_SmtpPath_Parse_System_String_System_Boolean_
+  commentId: M:Utils.Net.SmtpPath.Parse(System.String,System.Boolean)
+  name.vb: Parse(String, Boolean)
+  fullName: Utils.Net.SmtpPath.Parse(string, bool)
+  fullName.vb: Utils.Net.SmtpPath.Parse(String, Boolean)
+  nameWithType: SmtpPath.Parse(string, bool)
+  nameWithType.vb: SmtpPath.Parse(String, Boolean)
+- uid: Utils.Net.SmtpPath.Parse*
+  name: Parse
+  href: api/Utils.Net.SmtpPath.html#Utils_Net_SmtpPath_Parse_
+  commentId: Overload:Utils.Net.SmtpPath.Parse
+  isSpec: "True"
+  fullName: Utils.Net.SmtpPath.Parse
+  nameWithType: SmtpPath.Parse
+- uid: Utils.Net.SmtpPath.TryParse(System.String,System.Boolean,Utils.Net.SmtpPath@)
+  name: TryParse(string?, bool, out SmtpPath?)
+  href: api/Utils.Net.SmtpPath.html#Utils_Net_SmtpPath_TryParse_System_String_System_Boolean_Utils_Net_SmtpPath__
+  commentId: M:Utils.Net.SmtpPath.TryParse(System.String,System.Boolean,Utils.Net.SmtpPath@)
+  name.vb: TryParse(String, Boolean, SmtpPath)
+  fullName: Utils.Net.SmtpPath.TryParse(string?, bool, out Utils.Net.SmtpPath?)
+  fullName.vb: Utils.Net.SmtpPath.TryParse(String, Boolean, Utils.Net.SmtpPath)
+  nameWithType: SmtpPath.TryParse(string?, bool, out SmtpPath?)
+  nameWithType.vb: SmtpPath.TryParse(String, Boolean, SmtpPath)
+- uid: Utils.Net.SmtpPath.TryParse(System.String,Utils.Net.SmtpPath@)
+  name: TryParse(string, out SmtpPath?)
+  href: api/Utils.Net.SmtpPath.html#Utils_Net_SmtpPath_TryParse_System_String_Utils_Net_SmtpPath__
+  commentId: M:Utils.Net.SmtpPath.TryParse(System.String,Utils.Net.SmtpPath@)
+  name.vb: TryParse(String, SmtpPath)
+  fullName: Utils.Net.SmtpPath.TryParse(string, out Utils.Net.SmtpPath?)
+  fullName.vb: Utils.Net.SmtpPath.TryParse(String, Utils.Net.SmtpPath)
+  nameWithType: SmtpPath.TryParse(string, out SmtpPath?)
+  nameWithType.vb: SmtpPath.TryParse(String, SmtpPath)
+- uid: Utils.Net.SmtpPath.TryParse*
+  name: TryParse
+  href: api/Utils.Net.SmtpPath.html#Utils_Net_SmtpPath_TryParse_
+  commentId: Overload:Utils.Net.SmtpPath.TryParse
+  isSpec: "True"
+  fullName: Utils.Net.SmtpPath.TryParse
+  nameWithType: SmtpPath.TryParse
+- uid: Utils.Net.SmtpPath.Value
+  name: Value
+  href: api/Utils.Net.SmtpPath.html#Utils_Net_SmtpPath_Value
+  commentId: P:Utils.Net.SmtpPath.Value
+  fullName: Utils.Net.SmtpPath.Value
+  nameWithType: SmtpPath.Value
+- uid: Utils.Net.SmtpPath.Value*
+  name: Value
+  href: api/Utils.Net.SmtpPath.html#Utils_Net_SmtpPath_Value_
+  commentId: Overload:Utils.Net.SmtpPath.Value
+  isSpec: "True"
+  fullName: Utils.Net.SmtpPath.Value
+  nameWithType: SmtpPath.Value
+- uid: Utils.Net.SmtpPlainCredentials
+  name: SmtpPlainCredentials
+  href: api/Utils.Net.SmtpPlainCredentials.html
+  commentId: T:Utils.Net.SmtpPlainCredentials
+  fullName: Utils.Net.SmtpPlainCredentials
+  nameWithType: SmtpPlainCredentials
+- uid: Utils.Net.SmtpPlainCredentials.#ctor(System.String,System.String,System.String)
+  name: SmtpPlainCredentials(string, string, string)
+  href: api/Utils.Net.SmtpPlainCredentials.html#Utils_Net_SmtpPlainCredentials__ctor_System_String_System_String_System_String_
+  commentId: M:Utils.Net.SmtpPlainCredentials.#ctor(System.String,System.String,System.String)
+  name.vb: New(String, String, String)
+  fullName: Utils.Net.SmtpPlainCredentials.SmtpPlainCredentials(string, string, string)
+  fullName.vb: Utils.Net.SmtpPlainCredentials.New(String, String, String)
+  nameWithType: SmtpPlainCredentials.SmtpPlainCredentials(string, string, string)
+  nameWithType.vb: SmtpPlainCredentials.New(String, String, String)
+- uid: Utils.Net.SmtpPlainCredentials.#ctor*
+  name: SmtpPlainCredentials
+  href: api/Utils.Net.SmtpPlainCredentials.html#Utils_Net_SmtpPlainCredentials__ctor_
+  commentId: Overload:Utils.Net.SmtpPlainCredentials.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.Net.SmtpPlainCredentials.SmtpPlainCredentials
+  fullName.vb: Utils.Net.SmtpPlainCredentials.New
+  nameWithType: SmtpPlainCredentials.SmtpPlainCredentials
+  nameWithType.vb: SmtpPlainCredentials.New
+- uid: Utils.Net.SmtpPlainCredentials.AuthenticationIdentity
+  name: AuthenticationIdentity
+  href: api/Utils.Net.SmtpPlainCredentials.html#Utils_Net_SmtpPlainCredentials_AuthenticationIdentity
+  commentId: P:Utils.Net.SmtpPlainCredentials.AuthenticationIdentity
+  fullName: Utils.Net.SmtpPlainCredentials.AuthenticationIdentity
+  nameWithType: SmtpPlainCredentials.AuthenticationIdentity
+- uid: Utils.Net.SmtpPlainCredentials.AuthenticationIdentity*
+  name: AuthenticationIdentity
+  href: api/Utils.Net.SmtpPlainCredentials.html#Utils_Net_SmtpPlainCredentials_AuthenticationIdentity_
+  commentId: Overload:Utils.Net.SmtpPlainCredentials.AuthenticationIdentity
+  isSpec: "True"
+  fullName: Utils.Net.SmtpPlainCredentials.AuthenticationIdentity
+  nameWithType: SmtpPlainCredentials.AuthenticationIdentity
+- uid: Utils.Net.SmtpPlainCredentials.AuthorizationIdentity
+  name: AuthorizationIdentity
+  href: api/Utils.Net.SmtpPlainCredentials.html#Utils_Net_SmtpPlainCredentials_AuthorizationIdentity
+  commentId: P:Utils.Net.SmtpPlainCredentials.AuthorizationIdentity
+  fullName: Utils.Net.SmtpPlainCredentials.AuthorizationIdentity
+  nameWithType: SmtpPlainCredentials.AuthorizationIdentity
+- uid: Utils.Net.SmtpPlainCredentials.AuthorizationIdentity*
+  name: AuthorizationIdentity
+  href: api/Utils.Net.SmtpPlainCredentials.html#Utils_Net_SmtpPlainCredentials_AuthorizationIdentity_
+  commentId: Overload:Utils.Net.SmtpPlainCredentials.AuthorizationIdentity
+  isSpec: "True"
+  fullName: Utils.Net.SmtpPlainCredentials.AuthorizationIdentity
+  nameWithType: SmtpPlainCredentials.AuthorizationIdentity
+- uid: Utils.Net.SmtpPlainCredentials.Password
+  name: Password
+  href: api/Utils.Net.SmtpPlainCredentials.html#Utils_Net_SmtpPlainCredentials_Password
+  commentId: P:Utils.Net.SmtpPlainCredentials.Password
+  fullName: Utils.Net.SmtpPlainCredentials.Password
+  nameWithType: SmtpPlainCredentials.Password
+- uid: Utils.Net.SmtpPlainCredentials.Password*
+  name: Password
+  href: api/Utils.Net.SmtpPlainCredentials.html#Utils_Net_SmtpPlainCredentials_Password_
+  commentId: Overload:Utils.Net.SmtpPlainCredentials.Password
+  isSpec: "True"
+  fullName: Utils.Net.SmtpPlainCredentials.Password
+  nameWithType: SmtpPlainCredentials.Password
 - uid: Utils.Net.SmtpServer
   name: SmtpServer
   href: api/Utils.Net.SmtpServer.html
@@ -58037,6 +58689,44 @@ references:
   isSpec: "True"
   fullName: Utils.Net.SmtpServer.StartAsync
   nameWithType: SmtpServer.StartAsync
+- uid: Utils.Net.SmtpTransactionException
+  name: SmtpTransactionException
+  href: api/Utils.Net.SmtpTransactionException.html
+  commentId: T:Utils.Net.SmtpTransactionException
+  fullName: Utils.Net.SmtpTransactionException
+  nameWithType: SmtpTransactionException
+- uid: Utils.Net.SmtpTransactionException.#ctor(System.Exception,System.Exception)
+  name: SmtpTransactionException(Exception, Exception)
+  href: api/Utils.Net.SmtpTransactionException.html#Utils_Net_SmtpTransactionException__ctor_System_Exception_System_Exception_
+  commentId: M:Utils.Net.SmtpTransactionException.#ctor(System.Exception,System.Exception)
+  name.vb: New(Exception, Exception)
+  fullName: Utils.Net.SmtpTransactionException.SmtpTransactionException(System.Exception, System.Exception)
+  fullName.vb: Utils.Net.SmtpTransactionException.New(System.Exception, System.Exception)
+  nameWithType: SmtpTransactionException.SmtpTransactionException(Exception, Exception)
+  nameWithType.vb: SmtpTransactionException.New(Exception, Exception)
+- uid: Utils.Net.SmtpTransactionException.#ctor*
+  name: SmtpTransactionException
+  href: api/Utils.Net.SmtpTransactionException.html#Utils_Net_SmtpTransactionException__ctor_
+  commentId: Overload:Utils.Net.SmtpTransactionException.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.Net.SmtpTransactionException.SmtpTransactionException
+  fullName.vb: Utils.Net.SmtpTransactionException.New
+  nameWithType: SmtpTransactionException.SmtpTransactionException
+  nameWithType.vb: SmtpTransactionException.New
+- uid: Utils.Net.SmtpTransactionException.RecoveryException
+  name: RecoveryException
+  href: api/Utils.Net.SmtpTransactionException.html#Utils_Net_SmtpTransactionException_RecoveryException
+  commentId: P:Utils.Net.SmtpTransactionException.RecoveryException
+  fullName: Utils.Net.SmtpTransactionException.RecoveryException
+  nameWithType: SmtpTransactionException.RecoveryException
+- uid: Utils.Net.SmtpTransactionException.RecoveryException*
+  name: RecoveryException
+  href: api/Utils.Net.SmtpTransactionException.html#Utils_Net_SmtpTransactionException_RecoveryException_
+  commentId: Overload:Utils.Net.SmtpTransactionException.RecoveryException
+  isSpec: "True"
+  fullName: Utils.Net.SmtpTransactionException.RecoveryException
+  nameWithType: SmtpTransactionException.RecoveryException
 - uid: Utils.Net.Structures
   name: Utils.Net.Structures
   href: api/Utils.Net.Structures.html

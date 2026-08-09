@@ -5724,6 +5724,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Net.CommandResponseClient.ProtocolExchangeContext.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Net.CommandResponseClient.ProtocolExchangeContext.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Net.CommandResponseClient.ProtocolExchangeContext",
+      "Summary": "<p sourcefile=\"api/Utils.Net.CommandResponseClient.ProtocolExchangeContext.yml\" sourcestartlinenumber=\"1\">Provides controlled access to a connection during an exclusive protocol exchange.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.Net.CommandResponseClient.yml",
       "output": {
         ".html": {
@@ -7782,6 +7796,48 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Net.ProtocolPayloadLimits.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Net.ProtocolPayloadLimits.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Net.ProtocolPayloadLimits",
+      "Summary": "<p sourcefile=\"api/Utils.Net.ProtocolPayloadLimits.yml\" sourcestartlinenumber=\"1\">Defines hard limits for a dot-terminated protocol payload.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Net.ProtocolResponseException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Net.ProtocolResponseException.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Net.ProtocolResponseException",
+      "Summary": "<p sourcefile=\"api/Utils.Net.ProtocolResponseException.yml\" sourcestartlinenumber=\"1\">Represents a complete, negatively framed response from a text protocol server.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Net.ProtocolSessionPoisonedException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Net.ProtocolSessionPoisonedException.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Net.ProtocolSessionPoisonedException",
+      "Summary": "<p sourcefile=\"api/Utils.Net.ProtocolSessionPoisonedException.yml\" sourcestartlinenumber=\"1\">Indicates that protocol framing was lost and the connection cannot be reused.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.Net.QueryString.QueryValues.yml",
       "output": {
         ".html": {
@@ -7880,6 +7936,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Net.SmtpBodyKind.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Net.SmtpBodyKind.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Net.SmtpBodyKind",
+      "Summary": "<p sourcefile=\"api/Utils.Net.SmtpBodyKind.yml\" sourcestartlinenumber=\"1\">Identifies the SMTP BODY parameter.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.Net.SmtpClient.yml",
       "output": {
         ".html": {
@@ -7891,6 +7961,20 @@
       "IsMRef": true,
       "Title": "Utils.Net.SmtpClient",
       "Summary": "<p sourcefile=\"api/Utils.Net.SmtpClient.yml\" sourcestartlinenumber=\"1\">Client for the Simple Mail Transfer Protocol (SMTP).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Net.SmtpMailOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Net.SmtpMailOptions.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Net.SmtpMailOptions",
+      "Summary": "<p sourcefile=\"api/Utils.Net.SmtpMailOptions.yml\" sourcestartlinenumber=\"1\">Defines validated ESMTP MAIL parameters separately from a mailbox path.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -7908,6 +7992,34 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Net.SmtpPath.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Net.SmtpPath.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Net.SmtpPath",
+      "Summary": "<p sourcefile=\"api/Utils.Net.SmtpPath.yml\" sourcestartlinenumber=\"1\">Represents a validated SMTP reverse-path or forward-path.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Net.SmtpPlainCredentials.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Net.SmtpPlainCredentials.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Net.SmtpPlainCredentials",
+      "Summary": "<p sourcefile=\"api/Utils.Net.SmtpPlainCredentials.yml\" sourcestartlinenumber=\"1\">Contains the three independently validated SASL PLAIN credential fields.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.Net.SmtpServer.yml",
       "output": {
         ".html": {
@@ -7919,6 +8031,20 @@
       "IsMRef": true,
       "Title": "Utils.Net.SmtpServer",
       "Summary": "<p sourcefile=\"api/Utils.Net.SmtpServer.yml\" sourcestartlinenumber=\"1\">Simple server implementation for the Simple Mail Transfer Protocol (SMTP).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Net.SmtpTransactionException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Net.SmtpTransactionException.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Net.SmtpTransactionException",
+      "Summary": "<p sourcefile=\"api/Utils.Net.SmtpTransactionException.yml\" sourcestartlinenumber=\"1\">Preserves both an SMTP transaction failure and its failed recovery.</p>\n"
     },
     {
       "type": "ManagedReference",

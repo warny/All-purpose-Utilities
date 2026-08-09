@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Net_Pop3Client" data-uid="Utils.Net.Pop3Client" class="text-break">
-Class Pop3Client  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L13"><i class="bi bi-code-slash"></i></a>
+Class Pop3Client  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L15"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -156,10 +156,19 @@ Class Pop3Client  <a class="header-action link-secondary" title="View source" hr
       <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_IsConnected">CommandResponseClient.IsConnected</a>
     </div>
     <div>
+      <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SessionFailure">CommandResponseClient.SessionFailure</a>
+    </div>
+    <div>
       <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_ConnectAsync_System_String_System_Int32_System_Threading_CancellationToken_">CommandResponseClient.ConnectAsync(string, int, CancellationToken)</a>
     </div>
     <div>
       <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_ConnectAsync_System_IO_Stream_System_Boolean_System_Threading_CancellationToken_">CommandResponseClient.ConnectAsync(Stream, bool, CancellationToken)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_ExecuteExclusiveExchangeAsync__1_System_String_System_Func_Utils_Net_CommandResponseClient_ProtocolExchangeContext_System_Threading_CancellationToken_System_Threading_Tasks_ValueTask___0___System_Threading_CancellationToken_">CommandResponseClient.ExecuteExclusiveExchangeAsync&lt;TResult&gt;(string, Func&lt;CommandResponseClient.ProtocolExchangeContext, CancellationToken, ValueTask&lt;TResult&gt;&gt;, CancellationToken)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_PoisonSession_System_Exception_">CommandResponseClient.PoisonSession(Exception)</a>
     </div>
     <div>
       <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SendCommandAsync_System_String_System_Threading_CancellationToken_">CommandResponseClient.SendCommandAsync(string, CancellationToken)</a>
@@ -168,7 +177,10 @@ Class Pop3Client  <a class="header-action link-secondary" title="View source" hr
       <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_BodyLineToString_Utils_Net_ServerResponse_">CommandResponseClient.BodyLineToString(ServerResponse)</a>
     </div>
     <div>
-      <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SendMultilineCommandAsync_System_String_System_Func_Utils_Net_ServerResponse_System_Boolean__System_Int32_System_Int32_System_Threading_CancellationToken_">CommandResponseClient.SendMultilineCommandAsync(string, Func&lt;ServerResponse, bool&gt;, int, int, CancellationToken)</a>
+      <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_StreamMultilineCommandAsync_System_String_System_Func_System_ReadOnlyMemory_System_Char__System_Threading_CancellationToken_System_Threading_Tasks_ValueTask__Utils_Net_ProtocolPayloadLimits_System_Threading_CancellationToken_System_Func_Utils_Net_ServerResponse_System_Boolean__System_Action_System_Collections_Generic_IReadOnlyList_Utils_Net_ServerResponse___">CommandResponseClient.StreamMultilineCommandAsync(string, Func&lt;ReadOnlyMemory&lt;char&gt;, CancellationToken, ValueTask&gt;, ProtocolPayloadLimits, CancellationToken, Func&lt;ServerResponse, bool&gt;, Action&lt;IReadOnlyList&lt;ServerResponse&gt;&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SendMultilineCommandAsync_System_String_System_Func_Utils_Net_ServerResponse_System_Boolean__System_Int32_System_Int32_System_Int64_System_Threading_CancellationToken_">CommandResponseClient.SendMultilineCommandAsync(string, Func&lt;ServerResponse, bool&gt;, int, int, long, CancellationToken)</a>
     </div>
     <div>
       <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_ReadAsync_System_Threading_CancellationToken_">CommandResponseClient.ReadAsync(CancellationToken)</a>
@@ -327,7 +339,7 @@ Class Pop3Client  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_Pop3Client__ctor" data-uid="Utils.Net.Pop3Client.#ctor">
   Pop3Client()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L32"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L37"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Net.Pop3Client.html">Pop3Client</a> class.</p>
@@ -358,7 +370,7 @@ Class Pop3Client  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_Pop3Client_DefaultPort" data-uid="Utils.Net.Pop3Client.DefaultPort">
   DefaultPort
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L37"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L42"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Default port used by the protocol.</p>
@@ -386,11 +398,43 @@ Class Pop3Client  <a class="header-action link-secondary" title="View source" hr
 
 
 
+  <a id="Utils_Net_Pop3Client_MaxMultilineBytes_" data-uid="Utils.Net.Pop3Client.MaxMultilineBytes*"></a>
+
+  <h3 id="Utils_Net_Pop3Client_MaxMultilineBytes" data-uid="Utils.Net.Pop3Client.MaxMultilineBytes">
+  MaxMultilineBytes
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L32"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the byte limit for POP3 payloads.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public long MaxMultilineBytes { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_Net_Pop3Client_MaxMultilineChars_" data-uid="Utils.Net.Pop3Client.MaxMultilineChars*"></a>
 
   <h3 id="Utils_Net_Pop3Client_MaxMultilineChars" data-uid="Utils.Net.Pop3Client.MaxMultilineChars">
   MaxMultilineChars
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L27"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L29"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the maximum total number of characters accepted across all lines in a single
@@ -423,7 +467,7 @@ POP3 multi-line response. Default is 10 MiB worth of characters. Set to 0 to dis
 
   <h3 id="Utils_Net_Pop3Client_MaxMultilineLines" data-uid="Utils.Net.Pop3Client.MaxMultilineLines">
   MaxMultilineLines
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L21"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L23"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the maximum number of lines accepted in a single POP3 multi-line response.
@@ -460,7 +504,7 @@ Default is 100 000. Set to 0 to disable.</p>
 
   <h3 id="Utils_Net_Pop3Client_AuthenticateApopAsync_System_String_System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.Pop3Client.AuthenticateApopAsync(System.String,System.String,System.Threading.CancellationToken)">
   AuthenticateApopAsync(string, string, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L86"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L91"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Authenticates the user using the APOP challenge-response mechanism.</p>
@@ -510,7 +554,7 @@ stream with USER/PASS or a modern SASL mechanism regardless of authentication me
 
   <h3 id="Utils_Net_Pop3Client_AuthenticateAsync_System_String_System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.Pop3Client.AuthenticateAsync(System.String,System.String,System.Threading.CancellationToken)">
   AuthenticateAsync(string, string, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L66"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L71"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Authenticates the user with the POP3 server.</p>
@@ -561,7 +605,7 @@ accidental usage on unencrypted channels.</p>
 
   <h3 id="Utils_Net_Pop3Client_DeleteAsync_System_Int32_System_Threading_CancellationToken_" data-uid="Utils.Net.Pop3Client.DeleteAsync(System.Int32,System.Threading.CancellationToken)">
   DeleteAsync(int, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L164"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L175"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Marks the specified message for deletion.</p>
@@ -602,7 +646,7 @@ accidental usage on unencrypted channels.</p>
 
   <h3 id="Utils_Net_Pop3Client_GetCapabilitiesAsync_System_Threading_CancellationToken_" data-uid="Utils.Net.Pop3Client.GetCapabilitiesAsync(System.Threading.CancellationToken)">
   GetCapabilitiesAsync(CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L201"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L213"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Retrieves the server capabilities.</p>
@@ -641,7 +685,7 @@ accidental usage on unencrypted channels.</p>
 
   <h3 id="Utils_Net_Pop3Client_GetStatAsync_System_Threading_CancellationToken_" data-uid="Utils.Net.Pop3Client.GetStatAsync(System.Threading.CancellationToken)">
   GetStatAsync(CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L105"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L110"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Retrieves mailbox statistics.</p>
@@ -649,7 +693,7 @@ accidental usage on unencrypted channels.</p>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Task&lt;(int messageCount, int mailboxSize)&gt; GetStatAsync(CancellationToken cancellationToken = default)</code></pre>
+    <pre><code class="lang-csharp hljs">public Task&lt;(int messageCount, long mailboxSize)&gt; GetStatAsync(CancellationToken cancellationToken = default)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -661,7 +705,7 @@ accidental usage on unencrypted channels.</p>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;(<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.int32,system.int32-.messagecount">messageCount</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.int32,system.int32-.mailboxsize">mailboxSize</a>)&gt;</dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;(<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.int32,system.int64-.messagecount">messageCount</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.int32,system.int64-.mailboxsize">mailboxSize</a>)&gt;</dt>
     <dd><p>Tuple containing number of messages and total mailbox size.</p>
 </dd>
   </dl>
@@ -680,7 +724,7 @@ accidental usage on unencrypted channels.</p>
 
   <h3 id="Utils_Net_Pop3Client_GetUniqueIdAsync_System_Int32_System_Threading_CancellationToken_" data-uid="Utils.Net.Pop3Client.GetUniqueIdAsync(System.Int32,System.Threading.CancellationToken)">
   GetUniqueIdAsync(int, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L241"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L251"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Retrieves the unique identifier for a single message.</p>
@@ -688,7 +732,7 @@ accidental usage on unencrypted channels.</p>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Task&lt;string?&gt; GetUniqueIdAsync(int id, CancellationToken cancellationToken = default)</code></pre>
+    <pre><code class="lang-csharp hljs">public Task&lt;string&gt; GetUniqueIdAsync(int id, CancellationToken cancellationToken = default)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -722,7 +766,7 @@ accidental usage on unencrypted channels.</p>
 
   <h3 id="Utils_Net_Pop3Client_ListAsync_System_Threading_CancellationToken_" data-uid="Utils.Net.Pop3Client.ListAsync(System.Threading.CancellationToken)">
   ListAsync(CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L120"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L126"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Retrieves a list of messages with their sizes.</p>
@@ -761,7 +805,7 @@ accidental usage on unencrypted channels.</p>
 
   <h3 id="Utils_Net_Pop3Client_ListUniqueIdsAsync_System_Threading_CancellationToken_" data-uid="Utils.Net.Pop3Client.ListUniqueIdsAsync(System.Threading.CancellationToken)">
   ListUniqueIdsAsync(CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L217"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L229"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Retrieves unique identifiers for all messages.</p>
@@ -800,7 +844,7 @@ accidental usage on unencrypted channels.</p>
 
   <h3 id="Utils_Net_Pop3Client_NoOpAsync_System_Threading_CancellationToken_" data-uid="Utils.Net.Pop3Client.NoOpAsync(System.Threading.CancellationToken)">
   NoOpAsync(CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L182"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L194"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Sends the NOOP command.</p>
@@ -838,7 +882,7 @@ accidental usage on unencrypted channels.</p>
 
   <h3 id="Utils_Net_Pop3Client_OnConnect_System_IO_Stream_System_Boolean_System_Threading_CancellationToken_" data-uid="Utils.Net.Pop3Client.OnConnect(System.IO.Stream,System.Boolean,System.Threading.CancellationToken)">
   OnConnect(Stream, bool, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L46"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L51"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Executes POP3 specific initialization when a connection is established.</p>
@@ -883,7 +927,7 @@ accidental usage on unencrypted channels.</p>
 
   <h3 id="Utils_Net_Pop3Client_ParseResponseLine_System_String_" data-uid="Utils.Net.Pop3Client.ParseResponseLine(System.String)">
   ParseResponseLine(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L267"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L302"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Parses POP3 response lines.</p>
@@ -922,7 +966,7 @@ accidental usage on unencrypted channels.</p>
 
   <h3 id="Utils_Net_Pop3Client_QuitAsync_System_Threading_CancellationToken_" data-uid="Utils.Net.Pop3Client.QuitAsync(System.Threading.CancellationToken)">
   QuitAsync(CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L191"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L203"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Sends the QUIT command and closes the connection.</p>
@@ -960,7 +1004,7 @@ accidental usage on unencrypted channels.</p>
 
   <h3 id="Utils_Net_Pop3Client_ResetAsync_System_Threading_CancellationToken_" data-uid="Utils.Net.Pop3Client.ResetAsync(System.Threading.CancellationToken)">
   ResetAsync(CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L173"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L185"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Resets the deletion marks for all messages.</p>
@@ -996,9 +1040,50 @@ accidental usage on unencrypted channels.</p>
 
   <a id="Utils_Net_Pop3Client_RetrieveAsync_" data-uid="Utils.Net.Pop3Client.RetrieveAsync*"></a>
 
+  <h3 id="Utils_Net_Pop3Client_RetrieveAsync_System_Int32_System_IO_TextWriter_System_Threading_CancellationToken_" data-uid="Utils.Net.Pop3Client.RetrieveAsync(System.Int32,System.IO.TextWriter,System.Threading.CancellationToken)">
+  RetrieveAsync(int, TextWriter, CancellationToken)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L158"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Streams a retrieved message to a writer without materializing its payload.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task RetrieveAsync(int id, TextWriter destination, CancellationToken cancellationToken = default)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>id</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+    <dt><code>destination</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.textwriter">TextWriter</a></dt>
+    <dd></dd>
+    <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task">Task</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Pop3Client_RetrieveAsync_" data-uid="Utils.Net.Pop3Client.RetrieveAsync*"></a>
+
   <h3 id="Utils_Net_Pop3Client_RetrieveAsync_System_Int32_System_Threading_CancellationToken_" data-uid="Utils.Net.Pop3Client.RetrieveAsync(System.Int32,System.Threading.CancellationToken)">
   RetrieveAsync(int, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L144"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L149"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Retrieves the full text of a message.</p>
@@ -1040,7 +1125,7 @@ accidental usage on unencrypted channels.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L13" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Client.cs/#L15" class="edit-link">Edit this page</a>
         </div>
 
 

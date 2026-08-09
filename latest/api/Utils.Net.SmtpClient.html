@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Net_SmtpClient" data-uid="Utils.Net.SmtpClient" class="text-break">
-Class SmtpClient  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L13"><i class="bi bi-code-slash"></i></a>
+Class SmtpClient  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L12"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -156,10 +156,19 @@ Class SmtpClient  <a class="header-action link-secondary" title="View source" hr
       <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_IsConnected">CommandResponseClient.IsConnected</a>
     </div>
     <div>
+      <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SessionFailure">CommandResponseClient.SessionFailure</a>
+    </div>
+    <div>
       <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_ConnectAsync_System_String_System_Int32_System_Threading_CancellationToken_">CommandResponseClient.ConnectAsync(string, int, CancellationToken)</a>
     </div>
     <div>
       <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_ConnectAsync_System_IO_Stream_System_Boolean_System_Threading_CancellationToken_">CommandResponseClient.ConnectAsync(Stream, bool, CancellationToken)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_ExecuteExclusiveExchangeAsync__1_System_String_System_Func_Utils_Net_CommandResponseClient_ProtocolExchangeContext_System_Threading_CancellationToken_System_Threading_Tasks_ValueTask___0___System_Threading_CancellationToken_">CommandResponseClient.ExecuteExclusiveExchangeAsync&lt;TResult&gt;(string, Func&lt;CommandResponseClient.ProtocolExchangeContext, CancellationToken, ValueTask&lt;TResult&gt;&gt;, CancellationToken)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_PoisonSession_System_Exception_">CommandResponseClient.PoisonSession(Exception)</a>
     </div>
     <div>
       <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SendCommandAsync_System_String_System_Threading_CancellationToken_">CommandResponseClient.SendCommandAsync(string, CancellationToken)</a>
@@ -168,7 +177,10 @@ Class SmtpClient  <a class="header-action link-secondary" title="View source" hr
       <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_BodyLineToString_Utils_Net_ServerResponse_">CommandResponseClient.BodyLineToString(ServerResponse)</a>
     </div>
     <div>
-      <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SendMultilineCommandAsync_System_String_System_Func_Utils_Net_ServerResponse_System_Boolean__System_Int32_System_Int32_System_Threading_CancellationToken_">CommandResponseClient.SendMultilineCommandAsync(string, Func&lt;ServerResponse, bool&gt;, int, int, CancellationToken)</a>
+      <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_StreamMultilineCommandAsync_System_String_System_Func_System_ReadOnlyMemory_System_Char__System_Threading_CancellationToken_System_Threading_Tasks_ValueTask__Utils_Net_ProtocolPayloadLimits_System_Threading_CancellationToken_System_Func_Utils_Net_ServerResponse_System_Boolean__System_Action_System_Collections_Generic_IReadOnlyList_Utils_Net_ServerResponse___">CommandResponseClient.StreamMultilineCommandAsync(string, Func&lt;ReadOnlyMemory&lt;char&gt;, CancellationToken, ValueTask&gt;, ProtocolPayloadLimits, CancellationToken, Func&lt;ServerResponse, bool&gt;, Action&lt;IReadOnlyList&lt;ServerResponse&gt;&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SendMultilineCommandAsync_System_String_System_Func_Utils_Net_ServerResponse_System_Boolean__System_Int32_System_Int32_System_Int64_System_Threading_CancellationToken_">CommandResponseClient.SendMultilineCommandAsync(string, Func&lt;ServerResponse, bool&gt;, int, int, long, CancellationToken)</a>
     </div>
     <div>
       <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_ReadAsync_System_Threading_CancellationToken_">CommandResponseClient.ReadAsync(CancellationToken)</a>
@@ -327,10 +339,10 @@ Class SmtpClient  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_SmtpClient__ctor" data-uid="Utils.Net.SmtpClient.#ctor">
   SmtpClient()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L21"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L28"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Net.SmtpClient.html">SmtpClient</a> class.</p>
+  <div class="markdown level1 summary"><p>Initializes an SMTP client.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -358,7 +370,7 @@ Class SmtpClient  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_SmtpClient_DefaultPort" data-uid="Utils.Net.SmtpClient.DefaultPort">
   DefaultPort
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L16"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L18"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Default port used by the protocol.</p>
@@ -386,6 +398,38 @@ Class SmtpClient  <a class="header-action link-secondary" title="View source" hr
 
 
 
+  <a id="Utils_Net_SmtpClient_TransactionRecoveryTimeout_" data-uid="Utils.Net.SmtpClient.TransactionRecoveryTimeout*"></a>
+
+  <h3 id="Utils_Net_SmtpClient_TransactionRecoveryTimeout" data-uid="Utils.Net.SmtpClient.TransactionRecoveryTimeout">
+  TransactionRecoveryTimeout
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L21"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the bounded timeout used to recover an envelope with RSET.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public TimeSpan TransactionRecoveryTimeout { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.timespan">TimeSpan</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <h2 class="section" id="methods">Methods
 </h2>
 
@@ -394,29 +438,26 @@ Class SmtpClient  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_SmtpClient_AuthenticateAsync_System_String_System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.SmtpClient.AuthenticateAsync(System.String,System.String,System.Threading.CancellationToken)">
   AuthenticateAsync(string, string, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L75"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L88"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Authenticates using the <code>AUTH PLAIN</code> mechanism.</p>
+  <div class="markdown level1 summary"><p>Authenticates with SASL PLAIN.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">[Obsolete(&quot;SMTP AUTH PLAIN may expose credentials on unencrypted connections. Use a TLS-protected stream before calling AuthenticateAsync.&quot;, false)]
+    <pre><code class="lang-csharp hljs">[Obsolete(&quot;SMTP AUTH may expose credentials on unencrypted connections. Use a TLS-protected stream.&quot;, false)]
 public Task AuthenticateAsync(string user, string password, CancellationToken cancellationToken)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>user</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>User name.</p>
-</dd>
+    <dd></dd>
     <dt><code>password</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>User password.</p>
-</dd>
+    <dd></dd>
     <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
-    <dd><p>Cancellation token.</p>
-</dd>
+    <dd></dd>
   </dl>
 
   <h4 class="section">Returns</h4>
@@ -431,9 +472,6 @@ public Task AuthenticateAsync(string user, string password, CancellationToken ca
 
 
 
-  <h4 class="section" id="Utils_Net_SmtpClient_AuthenticateAsync_System_String_System_String_System_Threading_CancellationToken__remarks">Remarks</h4>
-  <div class="markdown level1 remarks"><p>This overload maps to <code>AUTH PLAIN</code> and should only be used over TLS-protected transports.</p>
-</div>
 
 
 
@@ -442,32 +480,28 @@ public Task AuthenticateAsync(string user, string password, CancellationToken ca
 
   <h3 id="Utils_Net_SmtpClient_AuthenticateAsync_System_String_System_String_Utils_Net_SmtpAuthenticationMechanism_System_Threading_CancellationToken_" data-uid="Utils.Net.SmtpClient.AuthenticateAsync(System.String,System.String,Utils.Net.SmtpAuthenticationMechanism,System.Threading.CancellationToken)">
   AuthenticateAsync(string, string, SmtpAuthenticationMechanism, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L38"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L57"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Authenticates using the specified mechanism.</p>
+  <div class="markdown level1 summary"><p>Authenticates with PLAIN or LOGIN using strict UTF-8.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">[Obsolete(&quot;SMTP AUTH may expose credentials on unencrypted connections. Use a TLS-protected stream before calling AuthenticateAsync.&quot;, false)]
+    <pre><code class="lang-csharp hljs">[Obsolete(&quot;SMTP AUTH may expose credentials on unencrypted connections. Use a TLS-protected stream.&quot;, false)]
 public Task AuthenticateAsync(string user, string password, SmtpAuthenticationMechanism mechanism = SmtpAuthenticationMechanism.Plain, CancellationToken cancellationToken = default)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>user</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>User name.</p>
-</dd>
+    <dd></dd>
     <dt><code>password</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>User password.</p>
-</dd>
+    <dd></dd>
     <dt><code>mechanism</code> <a class="xref" href="Utils.Net.SmtpAuthenticationMechanism.html">SmtpAuthenticationMechanism</a></dt>
-    <dd><p>Authentication mechanism to use.</p>
-</dd>
+    <dd></dd>
     <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
-    <dd><p>Cancellation token.</p>
-</dd>
+    <dd></dd>
   </dl>
 
   <h4 class="section">Returns</h4>
@@ -482,12 +516,46 @@ public Task AuthenticateAsync(string user, string password, SmtpAuthenticationMe
 
 
 
-  <h4 class="section" id="Utils_Net_SmtpClient_AuthenticateAsync_System_String_System_String_Utils_Net_SmtpAuthenticationMechanism_System_Threading_CancellationToken__remarks">Remarks</h4>
-  <div class="markdown level1 remarks"><p>SMTP authentication mechanisms such as <code>AUTH PLAIN</code> and <code>AUTH LOGIN</code> should be
-used only when the underlying transport is already protected by TLS.
-This method is marked as obsolete to produce a compile-time warning and reduce
-accidental credential usage on unencrypted channels.</p>
+
+
+
+
+  <a id="Utils_Net_SmtpClient_AuthenticateAsync_" data-uid="Utils.Net.SmtpClient.AuthenticateAsync*"></a>
+
+  <h3 id="Utils_Net_SmtpClient_AuthenticateAsync_Utils_Net_SmtpPlainCredentials_System_Threading_CancellationToken_" data-uid="Utils.Net.SmtpClient.AuthenticateAsync(Utils.Net.SmtpPlainCredentials,System.Threading.CancellationToken)">
+  AuthenticateAsync(SmtpPlainCredentials, CancellationToken)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L31"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Authenticates with SASL PLAIN credentials using strict UTF-8.</p>
 </div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">[Obsolete(&quot;SMTP AUTH may expose credentials on unencrypted connections. Use a TLS-protected stream.&quot;, false)]
+public Task AuthenticateAsync(SmtpPlainCredentials credentials, CancellationToken cancellationToken = default)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>credentials</code> <a class="xref" href="Utils.Net.SmtpPlainCredentials.html">SmtpPlainCredentials</a></dt>
+    <dd></dd>
+    <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task">Task</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
 
 
 
@@ -496,10 +564,10 @@ accidental credential usage on unencrypted channels.</p>
 
   <h3 id="Utils_Net_SmtpClient_EhloAsync_System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.SmtpClient.EhloAsync(System.String,System.Threading.CancellationToken)">
   EhloAsync(string, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L101"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L99"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Sends the EHLO command and returns the advertised extensions.</p>
+  <div class="markdown level1 summary"><p>Sends EHLO and returns all advertised extension lines after the identity line.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -510,18 +578,15 @@ accidental credential usage on unencrypted channels.</p>
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>domain</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Client domain name.</p>
-</dd>
+    <dd></dd>
     <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
-    <dd><p>Cancellation token.</p>
-</dd>
+    <dd></dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;&gt;</dt>
-    <dd><p>List of server extensions.</p>
-</dd>
+    <dd></dd>
   </dl>
 
 
@@ -538,10 +603,10 @@ accidental credential usage on unencrypted channels.</p>
 
   <h3 id="Utils_Net_SmtpClient_ExpnAsync_System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.SmtpClient.ExpnAsync(System.String,System.Threading.CancellationToken)">
   ExpnAsync(string, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L148"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L124"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Sends the EXPN command to expand a mailing list.</p>
+  <div class="markdown level1 summary"><p>Expands a mailing list.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -552,18 +617,15 @@ accidental credential usage on unencrypted channels.</p>
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>list</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>List name.</p>
-</dd>
+    <dd></dd>
     <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
-    <dd><p>Cancellation token.</p>
-</dd>
+    <dd></dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;&gt;</dt>
-    <dd><p>Expanded entries returned by the server.</p>
-</dd>
+    <dd></dd>
   </dl>
 
 
@@ -580,10 +642,10 @@ accidental credential usage on unencrypted channels.</p>
 
   <h3 id="Utils_Net_SmtpClient_HeloAsync_System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.SmtpClient.HeloAsync(System.String,System.Threading.CancellationToken)">
   HeloAsync(string, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L122"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L108"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Sends the HELO command.</p>
+  <div class="markdown level1 summary"><p>Sends HELO.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -594,11 +656,9 @@ accidental credential usage on unencrypted channels.</p>
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>domain</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Client domain name.</p>
-</dd>
+    <dd></dd>
     <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
-    <dd><p>Cancellation token.</p>
-</dd>
+    <dd></dd>
   </dl>
 
   <h4 class="section">Returns</h4>
@@ -621,10 +681,10 @@ accidental credential usage on unencrypted channels.</p>
 
   <h3 id="Utils_Net_SmtpClient_HelpAsync_System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.SmtpClient.HelpAsync(System.String,System.Threading.CancellationToken)">
   HelpAsync(string?, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L170"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L133"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Sends the HELP command optionally for a specific subject.</p>
+  <div class="markdown level1 summary"><p>Requests SMTP help.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -635,18 +695,15 @@ accidental credential usage on unencrypted channels.</p>
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>subject</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Command or subject to request help for.</p>
-</dd>
+    <dd></dd>
     <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
-    <dd><p>Cancellation token.</p>
-</dd>
+    <dd></dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;&gt;</dt>
-    <dd><p>Help text returned by the server.</p>
-</dd>
+    <dd></dd>
   </dl>
 
 
@@ -663,10 +720,10 @@ accidental credential usage on unencrypted channels.</p>
 
   <h3 id="Utils_Net_SmtpClient_OnConnect_System_IO_Stream_System_Boolean_System_Threading_CancellationToken_" data-uid="Utils.Net.SmtpClient.OnConnect(System.IO.Stream,System.Boolean,System.Threading.CancellationToken)">
   OnConnect(Stream, bool, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L88"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L92"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Executes SMTP specific initialization when a connection is established.</p>
+  <div class="markdown level1 summary"><p>Called after the client has attached to the provided <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -690,7 +747,7 @@ accidental credential usage on unencrypted channels.</p>
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task">Task</a></dt>
-    <dd><p>A task that completes when the server greeting has been processed.</p>
+    <dd><p>A task that completes when post-connection logic has executed.</p>
 </dd>
   </dl>
 
@@ -708,11 +765,12 @@ accidental credential usage on unencrypted channels.</p>
 
   <h3 id="Utils_Net_SmtpClient_ParseResponseLine_System_String_" data-uid="Utils.Net.SmtpClient.ParseResponseLine(System.String)">
   ParseResponseLine(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L242"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L236"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Parses a single response line using SMTP semantics where a hyphen after the status code
-indicates that more lines will follow.</p>
+  <div class="markdown level1 summary"><p>Parses a single response line. The default implementation expects a three-digit
+numeric status code followed by an optional text message. Lines that do not start
+with a numeric code are treated as raw text payloads.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -748,10 +806,10 @@ indicates that more lines will follow.</p>
 
   <h3 id="Utils_Net_SmtpClient_QuitAsync_System_Threading_CancellationToken_" data-uid="Utils.Net.SmtpClient.QuitAsync(System.Threading.CancellationToken)">
   QuitAsync(CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L231"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L233"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Sends the QUIT command and closes the connection.</p>
+  <div class="markdown level1 summary"><p>Sends QUIT and closes the connection.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -762,8 +820,7 @@ indicates that more lines will follow.</p>
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
-    <dd><p>Cancellation token.</p>
-</dd>
+    <dd></dd>
   </dl>
 
   <h4 class="section">Returns</h4>
@@ -786,10 +843,10 @@ indicates that more lines will follow.</p>
 
   <h3 id="Utils_Net_SmtpClient_SendMailAsync_System_String_System_Collections_Generic_IEnumerable_System_String__System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.SmtpClient.SendMailAsync(System.String,System.Collections.Generic.IEnumerable{System.String},System.String,System.Threading.CancellationToken)">
   SendMailAsync(string, IEnumerable&lt;string&gt;, string, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L194"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L142"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Sends a mail message.</p>
+  <div class="markdown level1 summary"><p>Sends a materialized message after strict path validation.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -800,17 +857,105 @@ indicates that more lines will follow.</p>
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>from</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Sender address.</p>
-</dd>
+    <dd></dd>
     <dt><code>recipients</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
-    <dd><p>Recipient addresses.</p>
-</dd>
+    <dd></dd>
     <dt><code>data</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Raw message data.</p>
-</dd>
+    <dd></dd>
     <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
-    <dd><p>Cancellation token.</p>
-</dd>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task">Task</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_SmtpClient_SendMailAsync_" data-uid="Utils.Net.SmtpClient.SendMailAsync*"></a>
+
+  <h3 id="Utils_Net_SmtpClient_SendMailAsync_Utils_Net_SmtpPath_System_Collections_Generic_IReadOnlyList_Utils_Net_SmtpPath__System_IO_Stream_System_Text_Encoding_Utils_Net_SmtpMailOptions_System_Threading_CancellationToken_" data-uid="Utils.Net.SmtpClient.SendMailAsync(Utils.Net.SmtpPath,System.Collections.Generic.IReadOnlyList{Utils.Net.SmtpPath},System.IO.Stream,System.Text.Encoding,Utils.Net.SmtpMailOptions,System.Threading.CancellationToken)">
+  SendMailAsync(SmtpPath, IReadOnlyList&lt;SmtpPath&gt;, Stream, Encoding, SmtpMailOptions?, CancellationToken)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L224"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Streams message bytes by decoding them strictly with the supplied encoding.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task SendMailAsync(SmtpPath from, IReadOnlyList&lt;SmtpPath&gt; recipients, Stream data, Encoding encoding, SmtpMailOptions? options = null, CancellationToken cancellationToken = default)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>from</code> <a class="xref" href="Utils.Net.SmtpPath.html">SmtpPath</a></dt>
+    <dd></dd>
+    <dt><code>recipients</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="Utils.Net.SmtpPath.html">SmtpPath</a>&gt;</dt>
+    <dd></dd>
+    <dt><code>data</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a></dt>
+    <dd></dd>
+    <dt><code>encoding</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding">Encoding</a></dt>
+    <dd></dd>
+    <dt><code>options</code> <a class="xref" href="Utils.Net.SmtpMailOptions.html">SmtpMailOptions</a></dt>
+    <dd></dd>
+    <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task">Task</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_SmtpClient_SendMailAsync_" data-uid="Utils.Net.SmtpClient.SendMailAsync*"></a>
+
+  <h3 id="Utils_Net_SmtpClient_SendMailAsync_Utils_Net_SmtpPath_System_Collections_Generic_IReadOnlyList_Utils_Net_SmtpPath__System_IO_TextReader_Utils_Net_SmtpMailOptions_System_Threading_CancellationToken_" data-uid="Utils.Net.SmtpClient.SendMailAsync(Utils.Net.SmtpPath,System.Collections.Generic.IReadOnlyList{Utils.Net.SmtpPath},System.IO.TextReader,Utils.Net.SmtpMailOptions,System.Threading.CancellationToken)">
+  SendMailAsync(SmtpPath, IReadOnlyList&lt;SmtpPath&gt;, TextReader, SmtpMailOptions?, CancellationToken)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L161"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Streams a message through one exclusive SMTP transaction.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task SendMailAsync(SmtpPath from, IReadOnlyList&lt;SmtpPath&gt; recipients, TextReader data, SmtpMailOptions? options = null, CancellationToken cancellationToken = default)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>from</code> <a class="xref" href="Utils.Net.SmtpPath.html">SmtpPath</a></dt>
+    <dd></dd>
+    <dt><code>recipients</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="Utils.Net.SmtpPath.html">SmtpPath</a>&gt;</dt>
+    <dd></dd>
+    <dt><code>data</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.textreader">TextReader</a></dt>
+    <dd></dd>
+    <dt><code>options</code> <a class="xref" href="Utils.Net.SmtpMailOptions.html">SmtpMailOptions</a></dt>
+    <dd></dd>
+    <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
+    <dd></dd>
   </dl>
 
   <h4 class="section">Returns</h4>
@@ -833,10 +978,10 @@ indicates that more lines will follow.</p>
 
   <h3 id="Utils_Net_SmtpClient_VrfyAsync_System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.SmtpClient.VrfyAsync(System.String,System.Threading.CancellationToken)">
   VrfyAsync(string, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L134"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L115"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Sends the VRFY command to verify an address.</p>
+  <div class="markdown level1 summary"><p>Verifies an address.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -847,18 +992,15 @@ indicates that more lines will follow.</p>
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>address</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Address to verify.</p>
-</dd>
+    <dd></dd>
     <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
-    <dd><p>Cancellation token.</p>
-</dd>
+    <dd></dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
-    <dd><p>Server response message.</p>
-</dd>
+    <dd></dd>
   </dl>
 
 
@@ -875,7 +1017,7 @@ indicates that more lines will follow.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L13" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L12" class="edit-link">Edit this page</a>
         </div>
 
 
