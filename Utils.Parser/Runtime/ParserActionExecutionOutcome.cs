@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Utils.Parser.Diagnostics;
 
 namespace Utils.Parser.Runtime;
@@ -23,7 +24,7 @@ public sealed record ParserActionExecutionOutcome
         Status = status;
         Diagnostic = diagnostic;
         Exception = exception;
-        DiagnosticArguments = diagnosticArguments ?? [];
+        DiagnosticArguments = diagnosticArguments?.ToImmutableArray() ?? ImmutableArray<object?>.Empty;
     }
 
     /// <summary>

@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace Utils.Parser.Runtime;
 
 /// <summary>
@@ -33,9 +35,21 @@ internal readonly record struct ParserSharedPrefixPlanValidationIssue(
 /// otherwise, <see langword="false"/>.
 /// </param>
 /// <param name="Issues">Ordered structural metadata issues emitted during validation.</param>
-internal readonly record struct ParserSharedPrefixPlanValidationResult(
-    bool IsValid,
-    IReadOnlyList<ParserSharedPrefixPlanValidationIssue> Issues);
+internal readonly record struct ParserSharedPrefixPlanValidationResult
+{
+    /// <summary>Initializes a validation result and captures its ordered issues.</summary>
+    public ParserSharedPrefixPlanValidationResult(bool isValid, IReadOnlyList<ParserSharedPrefixPlanValidationIssue> issues)
+    {
+        IsValid = isValid;
+        Issues = issues.ToImmutableArray();
+    }
+
+    /// <summary>Gets whether the plan passed validation.</summary>
+    public bool IsValid { get; }
+
+    /// <summary>Gets the immutable ordered issue snapshot.</summary>
+    public IReadOnlyList<ParserSharedPrefixPlanValidationIssue> Issues { get; }
+}
 
 /// <summary>
 /// Validates shared-prefix planning metadata conservatively without executing parser logic.

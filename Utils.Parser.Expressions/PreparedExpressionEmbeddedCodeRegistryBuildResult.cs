@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 namespace Utils.Parser.Expressions;
 
 /// <summary>
@@ -25,12 +26,12 @@ public sealed record PreparedExpressionEmbeddedCodeRegistryBuildResult
         IReadOnlyList<PreparedExpressionEmbeddedCodeRegistryBuildEntry> allEntries)
     {
         Registry = registry ?? throw new ArgumentNullException(nameof(registry));
-        SuccessfulSemanticPredicates = successfulSemanticPredicates?.ToArray() ?? throw new ArgumentNullException(nameof(successfulSemanticPredicates));
-        SuccessfulParserActions = successfulParserActions?.ToArray() ?? throw new ArgumentNullException(nameof(successfulParserActions));
-        NonSuccessEntries = nonSuccessEntries?.ToArray() ?? throw new ArgumentNullException(nameof(nonSuccessEntries));
-        DuplicateEntries = duplicateEntries?.ToArray() ?? throw new ArgumentNullException(nameof(duplicateEntries));
-        SkippedEntries = skippedEntries?.ToArray() ?? throw new ArgumentNullException(nameof(skippedEntries));
-        AllEntries = allEntries?.ToArray() ?? throw new ArgumentNullException(nameof(allEntries));
+        SuccessfulSemanticPredicates = successfulSemanticPredicates?.ToImmutableArray() ?? throw new ArgumentNullException(nameof(successfulSemanticPredicates));
+        SuccessfulParserActions = successfulParserActions?.ToImmutableArray() ?? throw new ArgumentNullException(nameof(successfulParserActions));
+        NonSuccessEntries = nonSuccessEntries?.ToImmutableArray() ?? throw new ArgumentNullException(nameof(nonSuccessEntries));
+        DuplicateEntries = duplicateEntries?.ToImmutableArray() ?? throw new ArgumentNullException(nameof(duplicateEntries));
+        SkippedEntries = skippedEntries?.ToImmutableArray() ?? throw new ArgumentNullException(nameof(skippedEntries));
+        AllEntries = allEntries?.ToImmutableArray() ?? throw new ArgumentNullException(nameof(allEntries));
     }
 
     /// <summary>
