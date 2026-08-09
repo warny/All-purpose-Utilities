@@ -38,3 +38,26 @@ Programmatic trigger forms must migrate from `(Constraints, To)` tuples to `Numb
 ## omy.Utils.Net protocol clients
 
 Use `SmtpPath` and `SmtpMailOptions` for SMTP envelopes, handle `ProtocolResponseException` for negative responses, and recreate a client after `ProtocolSessionPoisonedException`. POP3 STAT sizes are `long`; NNTP `NewNewsAsync` returns message-id strings; and `NextAsync` returns null only for response 421. Prefer the new `TextReader`/`TextWriter` streaming overloads for large payloads.
+
+<a id="omy-utils-fonts-2"></a>
+## Utils.Fonts hostile-font parsing hardening
+
+`TrueTypeFont.ParseFont`/`ParseFontAsync` now accept an optional `TrueTypeFontParsingOptions`
+governing a `FontValidationMode` (`Strict`, the default, or `Permissive`), explicit resource limits
+(font/table size, table count, `cmap` subtable count, composite-glyph depth/component/point
+budgets), and stream-ownership (`LeaveOpen`). Strict mode rejects any structural anomaly by throwing
+`FontParseException`; permissive mode records `FontDiagnostic`s on `TrueTypeFont.Diagnostics` and
+continues whenever doing so remains memory-safe -- resource-limit violations always throw in both
+modes. Fonts that previously loaded silently despite duplicate table tags, checksum mismatches,
+malformed `cmap` subtables, or out-of-range composite glyph references now fail fast by default;
+pass `FontValidationMode.Permissive` to restore a best-effort parse. `TrueTypeFontParsingOptions.MaximumFontBytes`
+defaults to 64 MiB and cannot be configured above `uint.MaxValue` (4 GiB) -- SFNT table
+offsets/lengths are themselves unsigned 32-bit fields, so this library never supports a larger font
+regardless of this setting; a value above that ceiling throws `ArgumentOutOfRangeException`
+immediately when constructing the options.
+
+Several `short`-typed members were widened to their correct unsigned/wider wire type and are 2.0
+breaks requiring recompilation: see the "Second audit pass" entry under
+[`omy.Utils.Fonts`](AcceptedApiBreaks.md#omy-utils-fonts) for the full list, including the
+`GlyphCompound.getGlyphIndex` → `GetGlyphIndex` rename and the `CmapTable.CMaps`/
+`GlyphCompound.Instructions` immutability changes.
