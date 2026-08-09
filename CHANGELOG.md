@@ -9,6 +9,31 @@ All notable changes to this project will be documented in this file.
 - Added strict SMTP paths/options, strict UTF-8 SASL, exclusive mail transactions, and bounded verified RSET recovery.
 - POP3 and NNTP mandatory numeric responses are strict; NEWNEWS and `INntpArticleStore.ListNewsSinceAsync` use message IDs, and NEXT returns null only for 421.
 
+### `omy.Utils.Fonts`
+
+- **Breaking:** hardened SFNT/TrueType parsing against hostile input (second quality/security audit
+  pass, items 21-39 of `Utils.Fonts/TODO-2026-07-19-pass2.md`). Unsigned wire types throughout
+  (`numTables`, table offsets/lengths/checksums, `loca` Offset16/32, `cmap` counts/offsets, composite
+  glyph indices); new `TrueTypeFontParsingOptions`/`FontValidationMode` (strict/permissive) with
+  structured `FontDiagnostic`s and `FontParseException`; bounded resource limits (font/table size,
+  table count, `cmap` subtable count, composite glyph depth/components/points) enforced before
+  allocation; SFNT directory entries preserved in an ordered list instead of a lossy `SortedSet`
+  (duplicate tags, aliases, and overlaps are now detected and policy-driven instead of silently
+  dropped); read-only table/font checksum computation instead of temporarily zeroing bytes in the
+  source stream; bounded per-table stream slices instead of eagerly duplicating every table into a
+  fresh buffer; cycle- and budget-guarded compound glyph resolution; immutable `CmapTable.CMaps` and
+  `GlyphCompound.Instructions`.
+- **Breaking:** `GlyphCompound.getGlyphIndex(int)` renamed to `GetGlyphIndex(int)` and returns
+  `ushort`; `GlyphCompound.Instructions` is `ReadOnlyMemory<byte>` instead of `byte[]`;
+  `CmapTable.CMaps` is `IReadOnlyList<CMapFormatBase>` instead of an array; several `short`-typed
+  fields widened to `ushort`/`int` (`TrueTypeFont.TablesCount`/`SearchRange`/`EntrySelector`/
+  `RangeShift`, `CmapTable.Version`/`NumberSubtables`, `GlyphBase.Length`).
+- New: `TrueTypeFont.ParseFont`/`ParseFontAsync` overloads taking `TrueTypeFontParsingOptions`;
+  `TrueTypeFont.Diagnostics`; `WriteFont(Stream, TrueTypeFontWritingOptions)`/`WriteFontAsync`.
+- Preview language features disabled and `LangVersion` pinned for the package (was not actually
+  relying on any preview-only feature).
+- See `docs/releasing/MigrationTo2.0.md` and `docs/releasing/AcceptedApiBreaks.md#omy-utils-fonts`.
+
 ## [2.0.0-rc.1] - Release candidate
 
 ### `omy.Utils`
@@ -147,7 +172,7 @@ All notable changes to this project will be documented in this file.
 - Added `omy.Utils.Parser` (v0.1.0): self-describing universal parser framework. Tokenizes and parses any ANTLR4 grammar at runtime without code generation. Includes `LexerEngine`, `ParserEngine`, `Antlr4GrammarConverter`, and `RuleResolver`.
 - Added XML documentation (English) to all `Utils.Parser` public and private members.
 - Added `PackageTags`, `PackageReadmeFile`, `RepositoryUrl`, `RepositoryType`, and `PackageProjectUrl` to `omy.Utils.Parser.csproj`.
-- Added `RepositoryUrl`, `RepositoryType`, and `PackageProjectUrl` to all other packable project files.
+- Added `RepositoryUrl`, `RepositoryType`, and `RepositoryUrl` to all other packable project files.
 - Added consumer-focused documentation, getting started guide, GitHub About proposal, and release process notes.
 - Marked internal projects (`Utils.Expressions.CSyntax`, `Utils.Parser.VisualStudio.Worker`) as non-packable to keep NuGet metadata scope limited to published packages.
 - Documented package family overview and usage in the root README and base package README.
