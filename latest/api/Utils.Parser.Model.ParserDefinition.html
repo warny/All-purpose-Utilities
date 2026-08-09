@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Parser_Model_ParserDefinition" data-uid="Utils.Parser.Model.ParserDefinition" class="text-break">
-Class ParserDefinition  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L20"><i class="bi bi-code-slash"></i></a>
+Class ParserDefinition  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L22"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -262,7 +262,7 @@ A <a class="xref" href="Utils.Parser.Model.ParserDefinition.html">ParserDefiniti
 
   <h3 id="Utils_Parser_Model_ParserDefinition__ctor_System_String_Utils_Parser_Model_GrammarType_Utils_Parser_Model_GrammarOptions_System_Collections_Generic_IReadOnlyList_Utils_Parser_Model_GrammarAction__System_Collections_Generic_IReadOnlyList_Utils_Parser_Model_GrammarImport__System_Collections_Generic_IReadOnlyList_Utils_Parser_Model_LexerMode__System_Collections_Generic_IReadOnlyList_Utils_Parser_Model_Rule__Utils_Parser_Model_Rule_" data-uid="Utils.Parser.Model.ParserDefinition.#ctor(System.String,Utils.Parser.Model.GrammarType,Utils.Parser.Model.GrammarOptions,System.Collections.Generic.IReadOnlyList{Utils.Parser.Model.GrammarAction},System.Collections.Generic.IReadOnlyList{Utils.Parser.Model.GrammarImport},System.Collections.Generic.IReadOnlyList{Utils.Parser.Model.LexerMode},System.Collections.Generic.IReadOnlyList{Utils.Parser.Model.Rule},Utils.Parser.Model.Rule)">
   ParserDefinition(string, GrammarType, GrammarOptions?, IReadOnlyList&lt;GrammarAction&gt;, IReadOnlyList&lt;GrammarImport&gt;, IReadOnlyList&lt;LexerMode&gt;, IReadOnlyList&lt;Rule&gt;, Rule?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L51"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L93"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Backward-compatible constructor used by generated code that does not provide extension metadata.</p>
@@ -308,7 +308,7 @@ A <a class="xref" href="Utils.Parser.Model.ParserDefinition.html">ParserDefiniti
 
   <h3 id="Utils_Parser_Model_ParserDefinition__ctor_System_String_Utils_Parser_Model_GrammarType_Utils_Parser_Model_GrammarOptions_System_Collections_Generic_IReadOnlyList_Utils_Parser_Model_GrammarAction__System_Collections_Generic_IReadOnlyList_Utils_Parser_Model_GrammarImport__System_Collections_Generic_IReadOnlyList_Utils_Parser_Model_LexerMode__System_Collections_Generic_IReadOnlySet_System_String__System_Collections_Generic_IReadOnlySet_System_String__System_Collections_Generic_IReadOnlyList_Utils_Parser_Model_GrammarExtensionBinding__System_Collections_Generic_IReadOnlyList_Utils_Parser_Model_Rule__Utils_Parser_Model_Rule_" data-uid="Utils.Parser.Model.ParserDefinition.#ctor(System.String,Utils.Parser.Model.GrammarType,Utils.Parser.Model.GrammarOptions,System.Collections.Generic.IReadOnlyList{Utils.Parser.Model.GrammarAction},System.Collections.Generic.IReadOnlyList{Utils.Parser.Model.GrammarImport},System.Collections.Generic.IReadOnlyList{Utils.Parser.Model.LexerMode},System.Collections.Generic.IReadOnlySet{System.String},System.Collections.Generic.IReadOnlySet{System.String},System.Collections.Generic.IReadOnlyList{Utils.Parser.Model.GrammarExtensionBinding},System.Collections.Generic.IReadOnlyList{Utils.Parser.Model.Rule},Utils.Parser.Model.Rule)">
   ParserDefinition(string, GrammarType, GrammarOptions?, IReadOnlyList&lt;GrammarAction&gt;, IReadOnlyList&lt;GrammarImport&gt;, IReadOnlyList&lt;LexerMode&gt;, IReadOnlySet&lt;string&gt;?, IReadOnlySet&lt;string&gt;?, IReadOnlyList&lt;GrammarExtensionBinding&gt;?, IReadOnlyList&lt;Rule&gt;, Rule?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L20"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L22"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Complete, immutable description of a grammar produced either by loading a <code>.g4</code>
@@ -372,10 +372,11 @@ A <a class="xref" href="Utils.Parser.Model.ParserDefinition.html">ParserDefiniti
 
   <h3 id="Utils_Parser_Model_ParserDefinition_Actions" data-uid="Utils.Parser.Model.ParserDefinition.Actions">
   Actions
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L28"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L54"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary"><p>Gets the immutable snapshot of top-level action blocks.</p>
+</div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
@@ -403,11 +404,10 @@ A <a class="xref" href="Utils.Parser.Model.ParserDefinition.html">ParserDefiniti
 
   <h3 id="Utils_Parser_Model_ParserDefinition_AllRules" data-uid="Utils.Parser.Model.ParserDefinition.AllRules">
   AllRules
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L102"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L169"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Flat lookup of all rules (both lexer and parser) by name.
-Populated during the resolution pass by <code>RuleResolver.Resolve</code>.</p>
+  <div class="markdown level1 summary"><p>Gets the immutable ordinal lookup of all rules.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -436,7 +436,7 @@ Populated during the resolution pass by <code>RuleResolver.Resolve</code>.</p>
 
   <h3 id="Utils_Parser_Model_ParserDefinition_AllowExternalLexerRules" data-uid="Utils.Parser.Model.ParserDefinition.AllowExternalLexerRules">
   AllowExternalLexerRules
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L96"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L159"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Allows parser grammars to include external lexer rules provided by project-level compilation.</p>
@@ -468,10 +468,10 @@ Populated during the resolution pass by <code>RuleResolver.Resolve</code>.</p>
 
   <h3 id="Utils_Parser_Model_ParserDefinition_DeclaredChannels" data-uid="Utils.Parser.Model.ParserDefinition.DeclaredChannels">
   DeclaredChannels
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L80"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L133"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Channel names declared in optional <code>channels { ... }</code> blocks.</p>
+  <div class="markdown level1 summary"><p>Gets the immutable ordinal set of declared channels.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -500,10 +500,10 @@ Populated during the resolution pass by <code>RuleResolver.Resolve</code>.</p>
 
   <h3 id="Utils_Parser_Model_ParserDefinition_DeclaredTokens" data-uid="Utils.Parser.Model.ParserDefinition.DeclaredTokens">
   DeclaredTokens
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L76"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L122"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Token names declared in optional <code>tokens { ... }</code> blocks.</p>
+  <div class="markdown level1 summary"><p>Gets the immutable ordinal set of declared tokens.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -532,7 +532,7 @@ Populated during the resolution pass by <code>RuleResolver.Resolve</code>.</p>
 
   <h3 id="Utils_Parser_Model_ParserDefinition_EffectiveOptions" data-uid="Utils.Parser.Model.ParserDefinition.EffectiveOptions">
   EffectiveOptions
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L91"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L154"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Normalized effective options derived from <a class="xref" href="Utils.Parser.Model.ParserDefinition.html#Utils_Parser_Model_ParserDefinition_Options">Options</a> and <a class="xref" href="Utils.Parser.Model.ParserDefinition.html#Utils_Parser_Model_ParserDefinition_Type">Type</a>.
@@ -565,10 +565,10 @@ Populated by <code>RuleResolver.Resolve</code>.</p>
 
   <h3 id="Utils_Parser_Model_ParserDefinition_ExtensionBindings" data-uid="Utils.Parser.Model.ParserDefinition.ExtensionBindings">
   ExtensionBindings
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L84"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L144"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Grammar-superClass extension bindings discovered during compilation.</p>
+  <div class="markdown level1 summary"><p>Gets the immutable snapshot of extension bindings.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -597,10 +597,11 @@ Populated by <code>RuleResolver.Resolve</code>.</p>
 
   <h3 id="Utils_Parser_Model_ParserDefinition_Imports" data-uid="Utils.Parser.Model.ParserDefinition.Imports">
   Imports
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L30"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L64"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary"><p>Gets the immutable snapshot of grammar imports.</p>
+</div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
@@ -628,11 +629,10 @@ Populated by <code>RuleResolver.Resolve</code>.</p>
 
   <h3 id="Utils_Parser_Model_ParserDefinition_LeftRecursiveRules" data-uid="Utils.Parser.Model.ParserDefinition.LeftRecursiveRules">
   LeftRecursiveRules
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L109"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L183"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Lookup table of direct left-recursive parser rules computed during
-resolution.</p>
+  <div class="markdown level1 summary"><p>Gets the immutable ordinal lookup of left-recursive rules.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -661,10 +661,11 @@ resolution.</p>
 
   <h3 id="Utils_Parser_Model_ParserDefinition_Modes" data-uid="Utils.Parser.Model.ParserDefinition.Modes">
   Modes
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L35"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L74"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary"><p>Gets the immutable snapshot of lexer modes.</p>
+</div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
@@ -692,7 +693,7 @@ resolution.</p>
 
   <h3 id="Utils_Parser_Model_ParserDefinition_Name" data-uid="Utils.Parser.Model.ParserDefinition.Name">
   Name
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L22"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L24"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"></div>
@@ -723,7 +724,7 @@ resolution.</p>
 
   <h3 id="Utils_Parser_Model_ParserDefinition_Options" data-uid="Utils.Parser.Model.ParserDefinition.Options">
   Options
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L26"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L28"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"></div>
@@ -754,10 +755,11 @@ resolution.</p>
 
   <h3 id="Utils_Parser_Model_ParserDefinition_ParserRules" data-uid="Utils.Parser.Model.ParserDefinition.ParserRules">
   ParserRules
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L43"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L84"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary"><p>Gets the immutable snapshot of parser rules.</p>
+</div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
@@ -785,7 +787,7 @@ resolution.</p>
 
   <h3 id="Utils_Parser_Model_ParserDefinition_RootRule" data-uid="Utils.Parser.Model.ParserDefinition.RootRule">
   RootRule
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L45"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L47"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"></div>
@@ -816,7 +818,7 @@ resolution.</p>
 
   <h3 id="Utils_Parser_Model_ParserDefinition_Type" data-uid="Utils.Parser.Model.ParserDefinition.Type">
   Type
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L24"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L26"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"></div>
@@ -847,7 +849,7 @@ resolution.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L20" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Model/ParserDefinition.cs/#L22" class="edit-link">Edit this page</a>
         </div>
 
 

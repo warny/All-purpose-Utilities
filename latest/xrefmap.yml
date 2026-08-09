@@ -83997,6 +83997,35 @@ references:
   isSpec: "True"
   fullName: Utils.Parser.Runtime.ParserNode.Children
   nameWithType: ParserNode.Children
+- uid: Utils.Parser.Runtime.ParserNode.Equals(Utils.Parser.Runtime.ParserNode)
+  name: Equals(ParserNode?)
+  href: api/Utils.Parser.Runtime.ParserNode.html#Utils_Parser_Runtime_ParserNode_Equals_Utils_Parser_Runtime_ParserNode_
+  commentId: M:Utils.Parser.Runtime.ParserNode.Equals(Utils.Parser.Runtime.ParserNode)
+  name.vb: Equals(ParserNode)
+  fullName: Utils.Parser.Runtime.ParserNode.Equals(Utils.Parser.Runtime.ParserNode?)
+  fullName.vb: Utils.Parser.Runtime.ParserNode.Equals(Utils.Parser.Runtime.ParserNode)
+  nameWithType: ParserNode.Equals(ParserNode?)
+  nameWithType.vb: ParserNode.Equals(ParserNode)
+- uid: Utils.Parser.Runtime.ParserNode.Equals*
+  name: Equals
+  href: api/Utils.Parser.Runtime.ParserNode.html#Utils_Parser_Runtime_ParserNode_Equals_
+  commentId: Overload:Utils.Parser.Runtime.ParserNode.Equals
+  isSpec: "True"
+  fullName: Utils.Parser.Runtime.ParserNode.Equals
+  nameWithType: ParserNode.Equals
+- uid: Utils.Parser.Runtime.ParserNode.GetHashCode
+  name: GetHashCode()
+  href: api/Utils.Parser.Runtime.ParserNode.html#Utils_Parser_Runtime_ParserNode_GetHashCode
+  commentId: M:Utils.Parser.Runtime.ParserNode.GetHashCode
+  fullName: Utils.Parser.Runtime.ParserNode.GetHashCode()
+  nameWithType: ParserNode.GetHashCode()
+- uid: Utils.Parser.Runtime.ParserNode.GetHashCode*
+  name: GetHashCode
+  href: api/Utils.Parser.Runtime.ParserNode.html#Utils_Parser_Runtime_ParserNode_GetHashCode_
+  commentId: Overload:Utils.Parser.Runtime.ParserNode.GetHashCode
+  isSpec: "True"
+  fullName: Utils.Parser.Runtime.ParserNode.GetHashCode
+  nameWithType: ParserNode.GetHashCode
 - uid: Utils.Parser.Runtime.ParserRawArgumentParameterMapping
   name: ParserRawArgumentParameterMapping
   href: api/Utils.Parser.Runtime.ParserRawArgumentParameterMapping.html

@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Parser_Runtime_ParserNode" data-uid="Utils.Parser.Runtime.ParserNode" class="text-break">
-Class ParserNode  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseNode.cs/#L37"><i class="bi bi-code-slash"></i></a>
+Class ParserNode  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseNode.cs/#L38"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -149,9 +149,6 @@ Class ParserNode  <a class="header-action link-secondary" title="View source" hr
     </div>
     <div>
       <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
     </div>
     <div>
       <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
@@ -271,7 +268,7 @@ Class ParserNode  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Parser_Runtime_ParserNode__ctor_Utils_Parser_Source_SourceSpan_System_String_Utils_Parser_Model_Rule_System_Collections_Generic_IReadOnlyList_Utils_Parser_Runtime_ParseNode__" data-uid="Utils.Parser.Runtime.ParserNode.#ctor(Utils.Parser.Source.SourceSpan,System.String,Utils.Parser.Model.Rule,System.Collections.Generic.IReadOnlyList{Utils.Parser.Runtime.ParseNode})">
   ParserNode(SourceSpan, string, Rule, IReadOnlyList&lt;ParseNode&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseNode.cs/#L37"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseNode.cs/#L38"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>An interior node produced by a parser rule, containing zero or more child nodes.</p>
@@ -313,14 +310,15 @@ Class ParserNode  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Parser_Runtime_ParserNode_Children" data-uid="Utils.Parser.Runtime.ParserNode.Children">
   Children
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseNode.cs/#L45"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseNode.cs/#L53"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary"><p>Gets the immutable ordered snapshot of child nodes.</p>
+</div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public IReadOnlyList&lt;ParseNode&gt; Children { get; init; }</code></pre>
+    <pre><code class="lang-csharp hljs">public virtual IReadOnlyList&lt;ParseNode&gt; Children { get; init; }</code></pre>
   </div>
 
 
@@ -340,11 +338,87 @@ Class ParserNode  <a class="header-action link-secondary" title="View source" hr
 
 
 
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_Parser_Runtime_ParserNode_Equals_" data-uid="Utils.Parser.Runtime.ParserNode.Equals*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserNode_Equals_Utils_Parser_Runtime_ParserNode_" data-uid="Utils.Parser.Runtime.ParserNode.Equals(Utils.Parser.Runtime.ParserNode)">
+  Equals(ParserNode?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseNode.cs/#L62"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether another parser node has the same value and ordered children.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual bool Equals(ParserNode? other)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>other</code> <a class="xref" href="Utils.Parser.Runtime.ParserNode.html">ParserNode</a></dt>
+    <dd><p>The parser node to compare with this instance.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when the node values and ordered children are equal; otherwise, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Runtime_ParserNode_GetHashCode_" data-uid="Utils.Parser.Runtime.ParserNode.GetHashCode*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserNode_GetHashCode" data-uid="Utils.Parser.Runtime.ParserNode.GetHashCode">
+  GetHashCode()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseNode.cs/#L71"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns a hash code based on the node value and its ordered children.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override int GetHashCode()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>A hash code for this parser node.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
 
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseNode.cs/#L37" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseNode.cs/#L38" class="edit-link">Edit this page</a>
         </div>
 
 
