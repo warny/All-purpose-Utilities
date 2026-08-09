@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace Utils.Parser.Model;
 
 /// <summary>
@@ -12,4 +14,15 @@ public record LexerMode(
     string Name,
     /// <summary>Lexer rules belonging to this mode, ordered by declaration order.</summary>
     IReadOnlyList<Rule> Rules
-);
+)
+{
+    /// <summary>Stores the immutable ordered snapshot of lexer rules.</summary>
+    private IReadOnlyList<Rule> _rules = Rules.ToImmutableArray();
+
+    /// <summary>Gets the immutable ordered snapshot of lexer rules.</summary>
+    public IReadOnlyList<Rule> Rules
+    {
+        get => _rules;
+        init => _rules = value.ToImmutableArray();
+    }
+}

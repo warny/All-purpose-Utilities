@@ -136,6 +136,17 @@ Pour chaque type corrigé :
 
 ## `ParserDefinition`
 
+**Status: DONE (first tranche).**
+
+**Resolution:** External collections are normalized at construction and in collection `init` setters into immutable snapshots; ordinal comparers and source order are preserved.
+
+**Files:** Public model files in `Utils.Parser/Model`, `Utils.Parser/Runtime/ParseNode.cs`, and `Utils.Parser.Antlr4.Common`.
+
+**Tests:** `UtilsTest/Parser/ParserModelImmutabilityTests.cs` covers source mutation, mutable-type recasts, and `with`/object-initializer normalization.
+
+**API impact:** Existing collection interface signatures and record construction patterns are retained; `init` assignments now normalize rather than retain the assigned instance.
+
+
 Le type est explicitement documenté comme une description immutable de la grammaire.
 
 Auditer et corriger au minimum :
@@ -177,6 +188,17 @@ Si nécessaire, remplacer certaines propriétés `init` par une construction con
 
 ## `Rule` et métadonnées associées
 
+**Status: DONE (first tranche).**
+
+**Resolution:** External collections are normalized at construction and in collection `init` setters into immutable snapshots; ordinal comparers and source order are preserved.
+
+**Files:** Public model files in `Utils.Parser/Model`, `Utils.Parser/Runtime/ParseNode.cs`, and `Utils.Parser.Antlr4.Common`.
+
+**Tests:** `UtilsTest/Parser/ParserModelImmutabilityTests.cs` covers source mutation, mutable-type recasts, and `with`/object-initializer normalization.
+
+**API impact:** Existing collection interface signatures and record construction patterns are retained; `init` assignments now normalize rather than retain the assigned instance.
+
+
 ### `Rule`
 
 Auditer et corriger au minimum :
@@ -211,6 +233,17 @@ vers un dictionnaire immutable préservant le comparateur existant.
 ---
 
 # P1 — Arbre `RuleContent`
+
+**Status: DONE (first tranche).**
+
+**Resolution:** External collections are normalized at construction and in collection `init` setters into immutable snapshots; ordinal comparers and source order are preserved.
+
+**Files:** Public model files in `Utils.Parser/Model`, `Utils.Parser/Runtime/ParseNode.cs`, and `Utils.Parser.Antlr4.Common`.
+
+**Tests:** `UtilsTest/Parser/ParserModelImmutabilityTests.cs` covers source mutation, mutable-type recasts, and `with`/object-initializer normalization.
+
+**API impact:** Existing collection interface signatures and record construction patterns are retained; `init` assignments now normalize rather than retain the assigned instance.
+
 
 Auditer tous les records dérivant de `RuleContent`.
 
@@ -254,6 +287,17 @@ Passer en revue tous les autres descendants de `RuleContent` pour identifier d�
 
 # P1 — `LexerMode`
 
+**Status: DONE (first tranche).**
+
+**Resolution:** External collections are normalized at construction and in collection `init` setters into immutable snapshots; ordinal comparers and source order are preserved.
+
+**Files:** Public model files in `Utils.Parser/Model`, `Utils.Parser/Runtime/ParseNode.cs`, and `Utils.Parser.Antlr4.Common`.
+
+**Tests:** `UtilsTest/Parser/ParserModelImmutabilityTests.cs` covers source mutation, mutable-type recasts, and `with`/object-initializer normalization.
+
+**API impact:** Existing collection interface signatures and record construction patterns are retained; `init` assignments now normalize rather than retain the assigned instance.
+
+
 Corriger :
 
 ```text
@@ -265,6 +309,17 @@ Le tableau ou la liste fourni au constructeur ne doit plus pouvoir modifier le `
 ---
 
 # P1 — Arbre de parsing
+
+**Status: DONE (first tranche).**
+
+**Resolution:** External collections are normalized at construction and in collection `init` setters into immutable snapshots; ordinal comparers and source order are preserved.
+
+**Files:** Public model files in `Utils.Parser/Model`, `Utils.Parser/Runtime/ParseNode.cs`, and `Utils.Parser.Antlr4.Common`.
+
+**Tests:** `UtilsTest/Parser/ParserModelImmutabilityTests.cs` covers source mutation, mutable-type recasts, and `with`/object-initializer normalization.
+
+**API impact:** Existing collection interface signatures and record construction patterns are retained; `init` assignments now normalize rather than retain the assigned instance.
+
 
 ## `ParserNode`
 
@@ -294,6 +349,17 @@ Un parse tree produit par le moteur doit être stable. Une modification externe 
 
 # P1 — `LeftRecursiveRuleInfo`
 
+**Status: DONE (first tranche).**
+
+**Resolution:** External collections are normalized at construction and in collection `init` setters into immutable snapshots; ordinal comparers and source order are preserved.
+
+**Files:** Public model files in `Utils.Parser/Model`, `Utils.Parser/Runtime/ParseNode.cs`, and `Utils.Parser.Antlr4.Common`.
+
+**Tests:** `UtilsTest/Parser/ParserModelImmutabilityTests.cs` covers source mutation, mutable-type recasts, and `with`/object-initializer normalization.
+
+**API impact:** Existing collection interface signatures and record construction patterns are retained; `init` assignments now normalize rather than retain the assigned instance.
+
+
 Corriger :
 
 ```text
@@ -306,6 +372,17 @@ Les propriétés `required init` ne constituent pas une protection contre une co
 ---
 
 # P1 — `GrammarExtensionBinding`
+
+**Status: DONE (first tranche).**
+
+**Resolution:** External collections are normalized at construction and in collection `init` setters into immutable snapshots; ordinal comparers and source order are preserved.
+
+**Files:** Public model files in `Utils.Parser/Model`, `Utils.Parser/Runtime/ParseNode.cs`, and `Utils.Parser.Antlr4.Common`.
+
+**Tests:** `UtilsTest/Parser/ParserModelImmutabilityTests.cs` covers source mutation, mutable-type recasts, and `with`/object-initializer normalization.
+
+**API impact:** Existing collection interface signatures and record construction patterns are retained; `init` assignments now normalize rather than retain the assigned instance.
+
 
 Corriger :
 
@@ -320,6 +397,17 @@ Utiliser des sets immutables et préserver `StringComparer.Ordinal` lorsque c’
 ---
 
 # P1 — `Utils.Parser.Antlr4.Common`
+
+**Status: DONE (first tranche).**
+
+**Resolution:** External collections are normalized at construction and in collection `init` setters into immutable snapshots; ordinal comparers and source order are preserved.
+
+**Files:** Public model files in `Utils.Parser/Model`, `Utils.Parser/Runtime/ParseNode.cs`, and `Utils.Parser.Antlr4.Common`.
+
+**Tests:** `UtilsTest/Parser/ParserModelImmutabilityTests.cs` covers source mutation, mutable-type recasts, and `with`/object-initializer normalization.
+
+**API impact:** Existing collection interface signatures and record construction patterns are retained; `init` assignments now normalize rather than retain the assigned instance.
+
 
 ## `Antlr4PrequelModel`
 
@@ -357,6 +445,8 @@ vers un snapshot immutable.
 ---
 
 # P1 — `Utils.Parser.Expressions`
+
+**Status: OPEN — reserved for a subsequent PR.**
 
 ## `PreparedExpressionEmbeddedCodeRegistryBuildResult`
 
@@ -401,6 +491,8 @@ Le tableau issu de `ToArray()` ne doit plus rester recastable.
 
 # P1 — Résultats d’exécution
 
+**Status: OPEN — reserved for a subsequent PR.**
+
 ## `ParserActionExecutionOutcome`
 
 Corriger :
@@ -416,6 +508,8 @@ Le cas `params object?[] diagnosticArguments` doit faire l’objet d’un test s
 ---
 
 # P1/P2 — Résumés runtime publics
+
+**Status: OPEN — reserved for a subsequent PR.**
 
 ## `RuntimeTraceSummary`
 
@@ -443,6 +537,8 @@ vers un dictionnaire immutable.
 ---
 
 # P2 — Modèles internes du scheduler/runtime
+
+**Status: OPEN — reserved for a subsequent PR.**
 
 Même si ces types sont internes, ils sont souvent explicitement documentés comme immuables et servent de snapshots entre phases du parser.
 
@@ -511,6 +607,8 @@ ExpectedTokenNames
 ---
 
 # P2 — `GrammarImportCompositionPlanner`
+
+**Status: OPEN — reserved for a subsequent PR.**
 
 Auditer tous les records internes représentant le résultat de composition.
 

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Utils.Parser.Model;
 using Utils.Parser.Source;
 
@@ -43,7 +44,18 @@ public record ParserNode(
     Rule Rule,
     /// <summary>Ordered list of child nodes matched by this rule's alternative.</summary>
     IReadOnlyList<ParseNode> Children
-) : ParseNode(Span, ModeName, Rule);
+) : ParseNode(Span, ModeName, Rule)
+{
+    /// <summary>Stores the immutable child snapshot.</summary>
+    private IReadOnlyList<ParseNode> _children = Children.ToImmutableArray();
+
+    /// <summary>Gets the immutable ordered snapshot of child nodes.</summary>
+    public virtual IReadOnlyList<ParseNode> Children
+    {
+        get => _children;
+        init => _children = value.ToImmutableArray();
+    }
+}
 
 /// <summary>
 /// A synthetic wrapper node produced by a quantifier (<c>?</c>, <c>*</c>, <c>+</c>)
@@ -67,7 +79,18 @@ public record QuantifierNode(
     Rule Rule,
     /// <summary>One child per matched repetition of the quantifier body.</summary>
     IReadOnlyList<ParseNode> Children
-) : ParserNode(Span, ModeName, Rule, Children);
+) : ParserNode(Span, ModeName, Rule, Children)
+{
+    /// <summary>Stores the immutable repetition child snapshot.</summary>
+    private IReadOnlyList<ParseNode> _children = Children.ToImmutableArray();
+
+    /// <summary>Gets the immutable ordered snapshot of repetition children.</summary>
+    public override IReadOnlyList<ParseNode> Children
+    {
+        get => _children;
+        init => _children = value.ToImmutableArray();
+    }
+}
 
 /// <summary>
 /// A synthetic node inserted when parsing fails at a given position.
