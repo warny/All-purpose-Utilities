@@ -58,6 +58,65 @@ public class NetClientProtocolTests
         }
     }
 
+
+    /// <summary>Wraps an outgoing stream and throws after partially accepting one selected write.</summary>
+    private sealed class PartialFailingWriteStream : Stream
+    {
+        private readonly Stream _inner;
+        private readonly int _failOnWriteCall;
+        private readonly int _bytesBeforeFailure;
+        private int _writeCalls;
+
+        public PartialFailingWriteStream(Stream inner, int failOnWriteCall, int bytesBeforeFailure)
+        {
+            _inner = inner;
+            _failOnWriteCall = failOnWriteCall;
+            _bytesBeforeFailure = bytesBeforeFailure;
+        }
+
+        public override bool CanRead => false;
+        public override bool CanWrite => true;
+        public override bool CanSeek => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            _writeCalls++;
+            if (_writeCalls == _failOnWriteCall)
+            {
+                int accepted = Math.Min(_bytesBeforeFailure, count);
+                if (accepted > 0)
+                    _inner.Write(buffer, offset, accepted);
+                throw new IOException("Simulated partial write failure.");
+            }
+            _inner.Write(buffer, offset, count);
+        }
+
+        public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            _writeCalls++;
+            if (_writeCalls == _failOnWriteCall)
+            {
+                int accepted = Math.Min(_bytesBeforeFailure, buffer.Length);
+                if (accepted > 0)
+                    await _inner.WriteAsync(buffer[..accepted], cancellationToken).ConfigureAwait(false);
+                throw new IOException("Simulated partial write failure.");
+            }
+            await _inner.WriteAsync(buffer, cancellationToken).ConfigureAwait(false);
+        }
+
+        public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) =>
+            WriteAsync(buffer.AsMemory(offset, count), cancellationToken).AsTask();
+
+        public override void Flush() => _inner.Flush();
+        public override Task FlushAsync(CancellationToken cancellationToken) => _inner.FlushAsync(cancellationToken);
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+    }
+
     /// <summary>Exposes protected multiline behavior for focused framing tests.</summary>
     private sealed class MultilineTestClient : CommandResponseClient
     {
@@ -259,6 +318,46 @@ public class NetClientProtocolTests
         Assert.IsFalse(client.IsConnected);
         Assert.IsNotNull(client.SessionFailure);
         await server;
+    }
+
+
+    /// <summary>Verifies a partial SMTP transaction write poisons immediately and never attempts RSET recovery.</summary>
+    [TestMethod]
+    public async Task SmtpClient_SendMailAsync_PartialRcptWriteFailure_PoisonsWithoutRset()
+    {
+        Pipe serverToClient = new();
+        Pipe clientToServer = new();
+        PartialFailingWriteStream failingWrites = new(clientToServer.Writer.AsStream(), failOnWriteCall: 2, bytesBeforeFailure: 8);
+        DuplexStream stream = new(serverToClient.Reader.AsStream(), failingWrites);
+        StreamWriter writer = new(serverToClient.Writer.AsStream(), Encoding.ASCII)
+        {
+            NewLine = "\r\n",
+            AutoFlush = true
+        };
+        StreamReader reader = new(clientToServer.Reader.AsStream(), Encoding.ASCII);
+        StringBuilder transcript = new();
+        Task server = Task.Run(async () =>
+        {
+            await writer.WriteLineAsync("220 ready");
+            string? mail = await reader.ReadLineAsync();
+            transcript.AppendLine(mail);
+            await writer.WriteLineAsync("250 sender accepted");
+            await Task.Delay(200);
+            while (clientToServer.Reader.TryRead(out ReadResult result))
+            {
+                foreach (ReadOnlyMemory<byte> segment in result.Buffer)
+                    transcript.Append(Encoding.ASCII.GetString(segment.Span));
+                clientToServer.Reader.AdvanceTo(result.Buffer.End);
+            }
+        });
+        SmtpClient client = new();
+        await client.ConnectAsync(stream);
+        await Assert.ThrowsExceptionAsync<IOException>(() =>
+            client.SendMailAsync(SmtpPath.Parse("sender@example.com"), [SmtpPath.Parse("recipient@example.com")], new StringReader("body")));
+        Assert.IsFalse(client.IsConnected);
+        Assert.IsNotNull(client.SessionFailure);
+        await server;
+        Assert.IsFalse(transcript.ToString().Contains("RSET", StringComparison.Ordinal));
     }
 
     /// <summary>Verifies NNTP article commands reject unexpected positive status before reading a payload.</summary>

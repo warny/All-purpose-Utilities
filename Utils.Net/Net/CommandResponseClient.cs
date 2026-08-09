@@ -463,16 +463,36 @@ public class CommandResponseClient : IDisposable
         /// <summary>Gets the sanitized command verb.</summary>
         public string Command { get; }
 
+        /// <summary>Gets a value indicating whether a command line write has begun and has not yet completed.</summary>
+        public bool WriteStarted { get; private set; }
+
         /// <summary>Gets a value indicating whether the last written command is waiting for its status response.</summary>
         public bool AwaitingResponse { get; private set; }
+
+        /// <summary>Gets a value indicating whether a write failure already made this exchange unrecoverable.</summary>
+        private bool WriteFailedAmbiguously { get; set; }
 
         /// <summary>Writes one validated protocol line and marks the following status response as owned by this exchange.</summary>
         public async ValueTask WriteLineAsync(string line, CancellationToken cancellationToken)
         {
             ValidateCommandArgument(line, nameof(line));
             _owner.Logger?.LogDebug("Sending: {Command}", _owner.RedactCommandForLog(line));
-            await _owner._writer!.WriteLineAsync(line.AsMemory(), cancellationToken).ConfigureAwait(false);
-            AwaitingResponse = true;
+            WriteStarted = true;
+            try
+            {
+                await _owner._writer!.WriteLineAsync(line.AsMemory(), cancellationToken).ConfigureAwait(false);
+                AwaitingResponse = true;
+            }
+            catch (Exception ex) when (ex is OperationCanceledException or IOException)
+            {
+                WriteFailedAmbiguously = true;
+                Poison(ex);
+                throw;
+            }
+            finally
+            {
+                WriteStarted = false;
+            }
         }
 
         /// <summary>Reads the next framed response line.</summary>
@@ -520,7 +540,9 @@ public class CommandResponseClient : IDisposable
         /// <summary>Marks the session unusable when an exchange ended before the owned response was fully consumed.</summary>
         public bool PoisonIfResponseAmbiguous(Exception cause)
         {
-            if (!AwaitingResponse || cause is ProtocolResponseException)
+            if (cause is ProtocolResponseException)
+                return false;
+            if (!WriteFailedAmbiguously && !WriteStarted && !AwaitingResponse)
                 return false;
             Poison(cause);
             return true;

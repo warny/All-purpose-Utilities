@@ -154,6 +154,10 @@ namespace Utils.Net
 
                 return result.Buffer;
             }
+            catch (OperationCanceledException ex) when (cancellationToken.IsCancellationRequested)
+            {
+                throw new OperationCanceledException("The NTP exchange was canceled by the caller.", ex, cancellationToken);
+            }
             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
                 throw new SocketException((int)SocketError.TimedOut);
