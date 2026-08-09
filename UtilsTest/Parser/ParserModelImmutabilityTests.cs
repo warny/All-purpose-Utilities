@@ -143,6 +143,28 @@ public sealed class ParserModelImmutabilityTests
         Assert.IsFalse(node.Children is List<ParseNode>);
     }
 
+    /// <summary>Verifies quantifier-node with expressions use the inherited immutable child storage.</summary>
+    [TestMethod]
+    public void QuantifierNode_WithChildren_PreservesImmutabilityAndRecordEquality()
+    {
+        Rule rule = CreateRule("rule");
+        SourceSpan span = new(0, 0);
+        ParseNode first = new ErrorNode(span, "DEFAULT_MODE", "first", rule);
+        ParseNode second = new ErrorNode(span, "DEFAULT_MODE", "second", rule);
+        ParseNode third = new ErrorNode(span, "DEFAULT_MODE", "third", rule);
+        var original = new QuantifierNode(span, "DEFAULT_MODE", rule, [first]);
+        ParseNode[] replacement = [second];
+
+        QuantifierNode copy = original with { Children = replacement };
+        replacement[0] = third;
+        var expected = new QuantifierNode(span, "DEFAULT_MODE", rule, [second]);
+
+        Assert.AreSame(second, copy.Children[0]);
+        Assert.IsFalse(copy.Children is ParseNode[]);
+        Assert.AreEqual(expected, copy);
+        Assert.AreEqual(expected.GetHashCode(), copy.GetHashCode());
+    }
+
     /// <summary>Verifies ANTLR prequel models capture lists, sets, dictionaries, and diagnostics.</summary>
     [TestMethod]
     public void AntlrPrequelModels_CaptureImmutableSnapshots()
