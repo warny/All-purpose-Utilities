@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace Utils.Parser.Model;
 
 /// <summary>
@@ -20,7 +22,18 @@ public enum RuleKind
 /// Key/value options attached to an individual rule:
 /// <c>options { greedy=false; }</c>.
 /// </summary>
-public record RuleOptions(IReadOnlyDictionary<string, string> Values);
+public record RuleOptions(IReadOnlyDictionary<string, string> Values)
+{
+    /// <summary>Gets an immutable snapshot of the rule option values.</summary>
+    private IReadOnlyDictionary<string, string> _values = Values.ToImmutableDictionary(StringComparer.Ordinal);
+
+    /// <summary>Gets an immutable snapshot of the rule option values.</summary>
+    public IReadOnlyDictionary<string, string> Values
+    {
+        get => _values;
+        init => _values = value.ToImmutableDictionary(StringComparer.Ordinal);
+    }
+}
 
 /// <summary>
 /// A typed parameter declared on a parser rule:
@@ -72,7 +85,28 @@ public record RuleExceptionMetadata(
     IReadOnlyList<RuleCatchClause> CatchClauses,
     /// <summary>Raw finally action body, or <c>null</c> when absent.</summary>
     string? FinallyAction
-);
+)
+{
+    /// <summary>Stores the immutable snapshot of declared exception names.</summary>
+    private IReadOnlyList<string> _throws = Throws.ToImmutableArray();
+
+    /// <summary>Gets the immutable snapshot of declared exception names.</summary>
+    public IReadOnlyList<string> Throws
+    {
+        get => _throws;
+        init => _throws = value.ToImmutableArray();
+    }
+
+    /// <summary>Stores the immutable snapshot of declared catch clauses.</summary>
+    private IReadOnlyList<RuleCatchClause> _catchClauses = CatchClauses.ToImmutableArray();
+
+    /// <summary>Gets the immutable snapshot of declared catch clauses.</summary>
+    public IReadOnlyList<RuleCatchClause> CatchClauses
+    {
+        get => _catchClauses;
+        init => _catchClauses = value.ToImmutableArray();
+    }
+}
 
 /// <summary>
 /// A single grammar rule — either a lexer rule (upper-case name by convention)
@@ -113,4 +147,35 @@ public record Rule(
     IReadOnlyList<RuleLocal>? Locals = null,
     /// <summary>Rule-level exception metadata preserved as passive metadata, or <c>null</c> when absent.</summary>
     RuleExceptionMetadata? ExceptionMetadata = null
-);
+)
+{
+    /// <summary>Stores the immutable snapshot of parameters, or <c>null</c> when absent.</summary>
+    private IReadOnlyList<RuleParameter>? _parameters = Parameters?.ToImmutableArray();
+
+    /// <summary>Gets the immutable snapshot of parameters, or <c>null</c> when absent.</summary>
+    public IReadOnlyList<RuleParameter>? Parameters
+    {
+        get => _parameters;
+        init => _parameters = value?.ToImmutableArray();
+    }
+
+    /// <summary>Stores the immutable snapshot of returns, or <c>null</c> when absent.</summary>
+    private IReadOnlyList<RuleReturn>? _returns = Returns?.ToImmutableArray();
+
+    /// <summary>Gets the immutable snapshot of returns, or <c>null</c> when absent.</summary>
+    public IReadOnlyList<RuleReturn>? Returns
+    {
+        get => _returns;
+        init => _returns = value?.ToImmutableArray();
+    }
+
+    /// <summary>Stores the immutable snapshot of locals, or <c>null</c> when absent.</summary>
+    private IReadOnlyList<RuleLocal>? _locals = Locals?.ToImmutableArray();
+
+    /// <summary>Gets the immutable snapshot of locals, or <c>null</c> when absent.</summary>
+    public IReadOnlyList<RuleLocal>? Locals
+    {
+        get => _locals;
+        init => _locals = value?.ToImmutableArray();
+    }
+}

@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 
 namespace Utils.Parser.Model;
 
@@ -45,6 +47,46 @@ public record ParserDefinition(
     Rule? RootRule
 )
 {
+    /// <summary>Top-level action blocks captured as an immutable snapshot.</summary>
+    private IReadOnlyList<GrammarAction> _actions = Actions.ToImmutableArray();
+
+    /// <summary>Gets the immutable snapshot of top-level action blocks.</summary>
+    public IReadOnlyList<GrammarAction> Actions
+    {
+        get => _actions;
+        init => _actions = value.ToImmutableArray();
+    }
+
+    /// <summary>Grammar imports captured as an immutable snapshot.</summary>
+    private IReadOnlyList<GrammarImport> _imports = Imports.ToImmutableArray();
+
+    /// <summary>Gets the immutable snapshot of grammar imports.</summary>
+    public IReadOnlyList<GrammarImport> Imports
+    {
+        get => _imports;
+        init => _imports = value.ToImmutableArray();
+    }
+
+    /// <summary>Lexer modes captured as an immutable snapshot.</summary>
+    private IReadOnlyList<LexerMode> _modes = Modes.ToImmutableArray();
+
+    /// <summary>Gets the immutable snapshot of lexer modes.</summary>
+    public IReadOnlyList<LexerMode> Modes
+    {
+        get => _modes;
+        init => _modes = value.ToImmutableArray();
+    }
+
+    /// <summary>Parser rules captured as an immutable snapshot.</summary>
+    private IReadOnlyList<Rule> _parserRules = ParserRules.ToImmutableArray();
+
+    /// <summary>Gets the immutable snapshot of parser rules.</summary>
+    public IReadOnlyList<Rule> ParserRules
+    {
+        get => _parserRules;
+        init => _parserRules = value.ToImmutableArray();
+    }
+
     /// <summary>
     /// Backward-compatible constructor used by generated code that does not provide extension metadata.
     /// </summary>
@@ -73,16 +115,37 @@ public record ParserDefinition(
     }
 
     /// <summary>Token names declared in optional <c>tokens { ... }</c> blocks.</summary>
-    public IReadOnlySet<string> DeclaredTokens { get; init; } =
-        DeclaredTokens ?? new HashSet<string>(StringComparer.Ordinal);
+    private IReadOnlySet<string> _declaredTokens =
+        (DeclaredTokens ?? Enumerable.Empty<string>()).ToImmutableHashSet(StringComparer.Ordinal);
+
+    /// <summary>Gets the immutable ordinal set of declared tokens.</summary>
+    public IReadOnlySet<string> DeclaredTokens
+    {
+        get => _declaredTokens;
+        init => _declaredTokens = (value ?? Enumerable.Empty<string>()).ToImmutableHashSet(StringComparer.Ordinal);
+    }
 
     /// <summary>Channel names declared in optional <c>channels { ... }</c> blocks.</summary>
-    public IReadOnlySet<string> DeclaredChannels { get; init; } =
-        DeclaredChannels ?? new HashSet<string>(StringComparer.Ordinal);
+    private IReadOnlySet<string> _declaredChannels =
+        (DeclaredChannels ?? Enumerable.Empty<string>()).ToImmutableHashSet(StringComparer.Ordinal);
+
+    /// <summary>Gets the immutable ordinal set of declared channels.</summary>
+    public IReadOnlySet<string> DeclaredChannels
+    {
+        get => _declaredChannels;
+        init => _declaredChannels = (value ?? Enumerable.Empty<string>()).ToImmutableHashSet(StringComparer.Ordinal);
+    }
 
     /// <summary>Grammar-superClass extension bindings discovered during compilation.</summary>
-    public IReadOnlyList<GrammarExtensionBinding> ExtensionBindings { get; init; } =
-        ExtensionBindings ?? [];
+    private IReadOnlyList<GrammarExtensionBinding> _extensionBindings =
+        (ExtensionBindings ?? []).ToImmutableArray();
+
+    /// <summary>Gets the immutable snapshot of extension bindings.</summary>
+    public IReadOnlyList<GrammarExtensionBinding> ExtensionBindings
+    {
+        get => _extensionBindings;
+        init => _extensionBindings = (value ?? []).ToImmutableArray();
+    }
 
     /// <summary>
     /// Normalized effective options derived from <see cref="Options"/> and <see cref="Type"/>.
@@ -99,13 +162,27 @@ public record ParserDefinition(
     /// Flat lookup of all rules (both lexer and parser) by name.
     /// Populated during the resolution pass by <c>RuleResolver.Resolve</c>.
     /// </summary>
-    public IReadOnlyDictionary<string, Rule> AllRules { get; init; }
-        = new Dictionary<string, Rule>();
+    private IReadOnlyDictionary<string, Rule> _allRules =
+        ImmutableDictionary<string, Rule>.Empty.WithComparers(StringComparer.Ordinal);
+
+    /// <summary>Gets the immutable ordinal lookup of all rules.</summary>
+    public IReadOnlyDictionary<string, Rule> AllRules
+    {
+        get => _allRules;
+        init => _allRules = value.ToImmutableDictionary(StringComparer.Ordinal);
+    }
 
     /// <summary>
     /// Lookup table of direct left-recursive parser rules computed during
     /// resolution.
     /// </summary>
-    public IReadOnlyDictionary<string, LeftRecursiveRuleInfo> LeftRecursiveRules { get; init; }
-        = new Dictionary<string, LeftRecursiveRuleInfo>();
+    private IReadOnlyDictionary<string, LeftRecursiveRuleInfo> _leftRecursiveRules =
+        ImmutableDictionary<string, LeftRecursiveRuleInfo>.Empty.WithComparers(StringComparer.Ordinal);
+
+    /// <summary>Gets the immutable ordinal lookup of left-recursive rules.</summary>
+    public IReadOnlyDictionary<string, LeftRecursiveRuleInfo> LeftRecursiveRules
+    {
+        get => _leftRecursiveRules;
+        init => _leftRecursiveRules = value.ToImmutableDictionary(StringComparer.Ordinal);
+    }
 }

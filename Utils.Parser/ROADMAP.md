@@ -81,6 +81,7 @@ Current capabilities and responsibilities:
 - ANTLR4 grammar bootstrap/conversion support is present.
 - Syntax colorisation descriptor DTO public contracts are hardened to read-only collection exposure (`IReadOnlyList<T>`), with mutation remaining internal to parser conversion flow.
 - Visual Studio syntax colorization descriptor DTO public contracts are hardened to read-only collection exposure (`IReadOnlyList<T>`), with descriptor-population mutation remaining internal to conversion flow.
+- Public structural grammar, parse-tree, and ANTLR prequel model collections capture immutable construction-time snapshots while preserving their existing read-only interface contracts, ordering, null normalization, and ordinal name comparison.
 - `Rule.Kind` is now an immutable part of the public `Rule` record; mutable resolution state is kept inside internal `RuleResolutionBuilder` instances so `RuleResolver` produces final resolved rule projections without mutating public rule objects in place.
 - Runtime invariant documentation exists.
 - Branch outcome documentation exists.

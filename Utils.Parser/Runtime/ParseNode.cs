@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Utils.Parser.Model;
 using Utils.Parser.Source;
 
@@ -43,7 +44,42 @@ public record ParserNode(
     Rule Rule,
     /// <summary>Ordered list of child nodes matched by this rule's alternative.</summary>
     IReadOnlyList<ParseNode> Children
-) : ParseNode(Span, ModeName, Rule);
+) : ParseNode(Span, ModeName, Rule)
+{
+    /// <summary>Stores the immutable child snapshot.</summary>
+    private IReadOnlyList<ParseNode> _children = Children.ToImmutableArray();
+
+    /// <summary>Gets the immutable ordered snapshot of child nodes.</summary>
+    public virtual IReadOnlyList<ParseNode> Children
+    {
+        get => _children;
+        init => _children = value.ToImmutableArray();
+    }
+
+    /// <summary>Determines whether another parser node has the same value and ordered children.</summary>
+    /// <param name="other">The parser node to compare with this instance.</param>
+    /// <returns><see langword="true"/> when the node values and ordered children are equal; otherwise, <see langword="false"/>.</returns>
+    public virtual bool Equals(ParserNode? other)
+    {
+        return other is not null
+            && base.Equals(other)
+            && Children.SequenceEqual(other.Children);
+    }
+
+    /// <summary>Returns a hash code based on the node value and its ordered children.</summary>
+    /// <returns>A hash code for this parser node.</returns>
+    public override int GetHashCode()
+    {
+        HashCode hash = new();
+        hash.Add(base.GetHashCode());
+        foreach (ParseNode child in Children)
+        {
+            hash.Add(child);
+        }
+
+        return hash.ToHashCode();
+    }
+}
 
 /// <summary>
 /// A synthetic wrapper node produced by a quantifier (<c>?</c>, <c>*</c>, <c>+</c>)

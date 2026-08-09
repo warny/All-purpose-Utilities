@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace Utils.Parser.Model;
 
 /// <summary>
@@ -43,7 +45,18 @@ public record CharSetMatch(
     IReadOnlySet<char> Chars,
     /// <summary><c>true</c> when the <c>^</c> negation prefix is present.</summary>
     bool Negated
-) : TokenizerContent;
+) : TokenizerContent
+{
+    /// <summary>Stores the immutable character set captured at construction time.</summary>
+    private IReadOnlySet<char> _chars = Chars.ToImmutableHashSet();
+
+    /// <summary>Gets the immutable character set captured at construction time.</summary>
+    public IReadOnlySet<char> Chars
+    {
+        get => _chars;
+        init => _chars = value.ToImmutableHashSet();
+    }
+}
 
 /// <summary>
 /// Matches any single character (the <c>.</c> wildcard in lexer rules).
@@ -200,7 +213,18 @@ public record EmbeddedAction(
     ActionPosition Position,
     /// <summary>Label references extracted from <see cref="RawCode"/>.</summary>
     IReadOnlyList<LabelRef> Labels
-) : RuleContent;
+) : RuleContent
+{
+    /// <summary>Stores the immutable snapshot of label references.</summary>
+    private IReadOnlyList<LabelRef> _labels = Labels.ToImmutableArray();
+
+    /// <summary>Gets the immutable snapshot of label references.</summary>
+    public IReadOnlyList<LabelRef> Labels
+    {
+        get => _labels;
+        init => _labels = value.ToImmutableArray();
+    }
+}
 
 /// <summary>
 /// A structured lexer command such as <c>-> skip</c>, <c>-> channel(HIDDEN)</c>,
@@ -241,7 +265,18 @@ public enum LexerCommandType
 /// <summary>
 /// An ordered sequence of grammar elements that must all match in order: <c>A B C</c>.
 /// </summary>
-public record Sequence(IReadOnlyList<RuleContent> Items) : RuleContent;
+public record Sequence(IReadOnlyList<RuleContent> Items) : RuleContent
+{
+    /// <summary>Stores the immutable ordered snapshot of sequence items.</summary>
+    private IReadOnlyList<RuleContent> _items = Items.ToImmutableArray();
+
+    /// <summary>Gets the immutable ordered snapshot of sequence items.</summary>
+    public IReadOnlyList<RuleContent> Items
+    {
+        get => _items;
+        init => _items = value.ToImmutableArray();
+    }
+}
 
 /// <summary>
 /// A quantified repetition: <c>*</c>, <c>+</c>, <c>?</c>, or <c>{n,m}</c>.
@@ -284,7 +319,18 @@ public record Alternative(
 /// A set of mutually exclusive alternatives: <c>A | B | C</c>.
 /// This is the top-level content of every <see cref="Rule"/>.
 /// </summary>
-public record Alternation(IReadOnlyList<Alternative> Alternatives) : RuleContent;
+public record Alternation(IReadOnlyList<Alternative> Alternatives) : RuleContent
+{
+    /// <summary>Stores the immutable ordered snapshot of alternatives.</summary>
+    private IReadOnlyList<Alternative> _alternatives = Alternatives.ToImmutableArray();
+
+    /// <summary>Gets the immutable ordered snapshot of alternatives.</summary>
+    public IReadOnlyList<Alternative> Alternatives
+    {
+        get => _alternatives;
+        init => _alternatives = value.ToImmutableArray();
+    }
+}
 
 /// <summary>
 /// Left/right/no associativity for an alternative, used when resolving

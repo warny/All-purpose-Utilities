@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace Utils.Parser.Model;
 
 /// <summary>
@@ -5,6 +7,10 @@ namespace Utils.Parser.Model;
 /// </summary>
 public sealed record GrammarExtensionBinding
 {
+    private IReadOnlySet<string> _lexerRuleNames = ImmutableHashSet<string>.Empty.WithComparer(StringComparer.Ordinal);
+    private IReadOnlySet<string> _declaredTokens = ImmutableHashSet<string>.Empty.WithComparer(StringComparer.Ordinal);
+    private IReadOnlySet<string> _declaredChannels = ImmutableHashSet<string>.Empty.WithComparer(StringComparer.Ordinal);
+
     /// <summary>Grammar name declaring the binding.</summary>
     public string GrammarName { get; init; } = string.Empty;
 
@@ -14,12 +20,24 @@ public sealed record GrammarExtensionBinding
     /// <summary>Name of the declared ANTLR <c>superClass</c>.</summary>
     public string SuperClassName { get; init; } = string.Empty;
 
-    /// <summary>Lexer rules declared by the grammar owning the binding.</summary>
-    public IReadOnlySet<string> LexerRuleNames { get; init; } = new HashSet<string>(StringComparer.Ordinal);
+    /// <summary>Gets an immutable ordinal set of lexer rules declared by the grammar.</summary>
+    public IReadOnlySet<string> LexerRuleNames
+    {
+        get => _lexerRuleNames;
+        init => _lexerRuleNames = value.ToImmutableHashSet(StringComparer.Ordinal);
+    }
 
-    /// <summary>Tokens declared in <c>tokens { ... }</c>.</summary>
-    public IReadOnlySet<string> DeclaredTokens { get; init; } = new HashSet<string>(StringComparer.Ordinal);
+    /// <summary>Gets an immutable ordinal set of declared tokens.</summary>
+    public IReadOnlySet<string> DeclaredTokens
+    {
+        get => _declaredTokens;
+        init => _declaredTokens = value.ToImmutableHashSet(StringComparer.Ordinal);
+    }
 
-    /// <summary>Channels declared in <c>channels { ... }</c>.</summary>
-    public IReadOnlySet<string> DeclaredChannels { get; init; } = new HashSet<string>(StringComparer.Ordinal);
+    /// <summary>Gets an immutable ordinal set of declared channels.</summary>
+    public IReadOnlySet<string> DeclaredChannels
+    {
+        get => _declaredChannels;
+        init => _declaredChannels = value.ToImmutableHashSet(StringComparer.Ordinal);
+    }
 }

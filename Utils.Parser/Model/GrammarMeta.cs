@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace Utils.Parser.Model;
 
 /// <summary>
@@ -17,7 +19,17 @@ public enum GrammarType
 /// Represents the key/value pairs declared in an <c>options { ... }</c> block,
 /// such as <c>tokenVocab=MyLexer</c> or <c>superClass=MyBase</c>.
 /// </summary>
-public record GrammarOptions(IReadOnlyDictionary<string, string> Values);
+public record GrammarOptions(IReadOnlyDictionary<string, string> Values)
+{
+    private IReadOnlyDictionary<string, string> _values = Values.ToImmutableDictionary(StringComparer.Ordinal);
+
+    /// <summary>Gets an immutable ordinal snapshot of grammar option values.</summary>
+    public IReadOnlyDictionary<string, string> Values
+    {
+        get => _values;
+        init => _values = value.ToImmutableDictionary(StringComparer.Ordinal);
+    }
+}
 
 /// <summary>
 /// Represents normalized and runtime-consumable grammar options.
