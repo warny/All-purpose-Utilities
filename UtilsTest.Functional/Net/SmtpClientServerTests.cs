@@ -71,7 +71,7 @@ public class SmtpClientServerTests
         using SmtpClient client = new() { NoOpInterval = Timeout.InfiniteTimeSpan };
         await client.ConnectAsync("127.0.0.1", port);
         await client.EhloAsync("localhost");
-        await Assert.ThrowsExceptionAsync<IOException>(() =>
+        await Assert.ThrowsExceptionAsync<ProtocolResponseException>(() =>
             client.SendMailAsync("alice@example.com", new[] { "bob@other.com" }, "Subject: Test\r\n\r\nBody"));
         await client.QuitAsync();
         await serverTask;

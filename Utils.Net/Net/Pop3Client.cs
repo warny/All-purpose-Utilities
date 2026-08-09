@@ -4,6 +4,8 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Globalization;
+using System.Linq;
 
 namespace Utils.Net;
 
@@ -25,6 +27,9 @@ public class Pop3Client : CommandResponseClient
     /// POP3 multi-line response. Default is 10 MiB worth of characters. Set to 0 to disable.
     /// </summary>
     public int MaxMultilineChars { get; set; } = 10 * 1024 * 1024;
+
+    /// <summary>Gets or sets the byte limit for POP3 payloads.</summary>
+    public long MaxMultilineBytes { get; set; } = 40 * 1024 * 1024;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Pop3Client"/> class.
@@ -102,13 +107,14 @@ public class Pop3Client : CommandResponseClient
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Tuple containing number of messages and total mailbox size.</returns>
-    public async Task<(int messageCount, int mailboxSize)> GetStatAsync(CancellationToken cancellationToken = default)
+    public async Task<(int messageCount, long mailboxSize)> GetStatAsync(CancellationToken cancellationToken = default)
     {
         IReadOnlyList<ServerResponse> responses = await SendCommandAsync("STAT", cancellationToken).ConfigureAwait(false);
-        await EnsureOkAsync(responses).ConfigureAwait(false);
-        string[] parts = responses[0].Message?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
-        int count = parts.Length > 0 ? int.Parse(parts[0]) : 0;
-        int size = parts.Length > 1 ? int.Parse(parts[1]) : 0;
+        EnsureOk(responses, "STAT");
+        string[] parts = SplitExact(responses[0].Message, 2, "STAT", responses);
+        if (!int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out int count) || count < 0 ||
+            !long.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out long size) || size < 0)
+            throw Malformed("STAT", responses);
         return (count, size);
     }
 
@@ -120,17 +126,16 @@ public class Pop3Client : CommandResponseClient
     public async Task<IReadOnlyDictionary<int, int>> ListAsync(CancellationToken cancellationToken = default)
     {
         var (status, body) = await SendMultilineCommandAsync(
-            "LIST", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, cancellationToken).ConfigureAwait(false);
-        await EnsureOkAsync(status).ConfigureAwait(false);
+            "LIST", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, MaxMultilineBytes, cancellationToken).ConfigureAwait(false);
+        EnsureOk(status, "LIST");
         Dictionary<int, int> result = new();
         foreach (ServerResponse response in body)
         {
             string line = BodyLineToString(response);
-            string[] parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length >= 2 && int.TryParse(parts[0], out int id) && int.TryParse(parts[1], out int size))
-            {
-                result[id] = size;
-            }
+            string[] parts = SplitExact(line, 2, "LIST", status);
+            if (!int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out int id) || id <= 0 ||
+                !int.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out int size) || size < 0 || !result.TryAdd(id, size))
+                throw Malformed("LIST", status);
         }
         return result;
     }
@@ -143,17 +148,23 @@ public class Pop3Client : CommandResponseClient
     /// <returns>Text of the message with dot-stuffing removed.</returns>
     public async Task<string> RetrieveAsync(int id, CancellationToken cancellationToken = default)
     {
-        var (status, body) = await SendMultilineCommandAsync(
-            $"RETR {id}", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, cancellationToken).ConfigureAwait(false);
-        await EnsureOkAsync(status).ConfigureAwait(false);
         StringBuilder builder = new();
-        foreach (ServerResponse response in body)
-        {
-            string line = BodyLineToString(response);
-            string content = line.StartsWith("..", StringComparison.Ordinal) ? line[1..] : line;
-            builder.Append(content).Append("\r\n");
-        }
+        using StringWriter writer = new(builder, CultureInfo.InvariantCulture);
+        await RetrieveAsync(id, writer, cancellationToken).ConfigureAwait(false);
         return builder.ToString();
+    }
+
+    /// <summary>Streams a retrieved message to a writer without materializing its payload.</summary>
+    public async Task RetrieveAsync(int id, TextWriter destination, CancellationToken cancellationToken = default)
+    {
+        ValidateId(id, nameof(id));
+        ArgumentNullException.ThrowIfNull(destination);
+        IReadOnlyList<ServerResponse> status = await StreamMultilineCommandAsync($"RETR {id}", async (line, token) =>
+        {
+            await destination.WriteAsync(line, token).ConfigureAwait(false);
+            await destination.WriteAsync("\r\n".AsMemory(), token).ConfigureAwait(false);
+        }, CreateLimits(), cancellationToken).ConfigureAwait(false);
+        EnsureOk(status, "RETR");
     }
 
     /// <summary>
@@ -163,6 +174,7 @@ public class Pop3Client : CommandResponseClient
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
+        ValidateId(id, nameof(id));
         await EnsureOkAsync(await SendCommandAsync($"DELE {id}", cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
     }
 
@@ -201,8 +213,8 @@ public class Pop3Client : CommandResponseClient
     public async Task<IReadOnlyList<string>> GetCapabilitiesAsync(CancellationToken cancellationToken = default)
     {
         var (status, body) = await SendMultilineCommandAsync(
-            "CAPA", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, cancellationToken).ConfigureAwait(false);
-        await EnsureOkAsync(status).ConfigureAwait(false);
+            "CAPA", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, MaxMultilineBytes, cancellationToken).ConfigureAwait(false);
+        EnsureOk(status, "CAPA");
         List<string> result = new(body.Count);
         foreach (ServerResponse response in body)
             result.Add(BodyLineToString(response));
@@ -217,17 +229,15 @@ public class Pop3Client : CommandResponseClient
     public async Task<IReadOnlyDictionary<int, string>> ListUniqueIdsAsync(CancellationToken cancellationToken = default)
     {
         var (status, body) = await SendMultilineCommandAsync(
-            "UIDL", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, cancellationToken).ConfigureAwait(false);
+            "UIDL", r => r.Code == ".", MaxMultilineLines, MaxMultilineChars, MaxMultilineBytes, cancellationToken).ConfigureAwait(false);
         await EnsureOkAsync(status).ConfigureAwait(false);
         Dictionary<int, string> result = new();
         foreach (ServerResponse response in body)
         {
             string line = BodyLineToString(response);
-            string[] parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length >= 2 && int.TryParse(parts[0], out int id))
-            {
-                result[id] = parts[1];
-            }
+            string[] parts = SplitExact(line, 2, "UIDL", status);
+            if (!int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out int id) || id <= 0 ||
+                !IsValidUniqueId(parts[1]) || !result.TryAdd(id, parts[1])) throw Malformed("UIDL", status);
         }
         return result;
     }
@@ -238,12 +248,15 @@ public class Pop3Client : CommandResponseClient
     /// <param name="id">Message identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Unique identifier or <see langword="null"/> if not found.</returns>
-    public async Task<string?> GetUniqueIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<string> GetUniqueIdAsync(int id, CancellationToken cancellationToken = default)
     {
+        ValidateId(id, nameof(id));
         IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"UIDL {id}", cancellationToken).ConfigureAwait(false);
-        await EnsureOkAsync(responses).ConfigureAwait(false);
-        string[] parts = responses[0].Message?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
-        return parts.Length > 1 ? parts[1] : null;
+        EnsureOk(responses, "UIDL");
+        string[] parts = SplitExact(responses[0].Message, 2, "UIDL", responses);
+        if (!int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out int responseId) || responseId != id || !IsValidUniqueId(parts[1]))
+            throw Malformed("UIDL", responses);
+        return parts[1];
     }
 
     /// <summary>
@@ -258,6 +271,28 @@ public class Pop3Client : CommandResponseClient
         }
         return Task.CompletedTask;
     }
+
+    /// <summary>Validates a POP3 completion response.</summary>
+    private static void EnsureOk(IReadOnlyList<ServerResponse> responses, string command) => ProtocolResponseValidator.RequireCode("POP3", command, responses, "+OK");
+
+    /// <summary>Creates configured multiline limits.</summary>
+    private ProtocolPayloadLimits CreateLimits() => new() { MaximumLines = MaxMultilineLines, MaximumCharacters = MaxMultilineChars, MaximumBytes = MaxMultilineBytes };
+
+    /// <summary>Requires an exact field count.</summary>
+    private static string[] SplitExact(string? value, int count, string command, IReadOnlyList<ServerResponse> responses)
+    {
+        string[] parts = value?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? [];
+        return parts.Length == count ? parts : throw Malformed(command, responses);
+    }
+
+    /// <summary>Creates a structured malformed-response exception.</summary>
+    private static ProtocolResponseException Malformed(string command, IReadOnlyList<ServerResponse> responses) => new("POP3", command, responses);
+
+    /// <summary>Validates a public POP3 message number before any network write.</summary>
+    private static void ValidateId(int id, string name) { if (id <= 0) throw new ArgumentOutOfRangeException(name); }
+
+    /// <summary>Validates the bounded POP3 unique-id token.</summary>
+    private static bool IsValidUniqueId(string value) => value.Length is > 0 and <= 1024 && value.AsSpan().IndexOfAnyInRange('\0', ' ') < 0 && !value.Any(char.IsControl);
 
     /// <summary>
     /// Parses POP3 response lines.

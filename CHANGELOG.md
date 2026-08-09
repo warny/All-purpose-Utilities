@@ -188,3 +188,8 @@ All notable changes to this project will be documented in this file.
 - **Breaking:** `VariantRule` and `OrdinalVariantRule` now expose immutable signed `Priority` values; trigger tuples were replaced by `TriggerReplacementForm`.
 - Canonical constraint sets, shared specificity/priority ranking, and construction-time `UNTS001`–`UNTS004` diagnostics reject unresolved intersections instead of using declaration order.
 - XML `priority` attributes default to zero and cumulative variants apply in ascending specificity and priority order.
+
+### Changed — `omy.Utils.Net` (BREAKING)
+- Added exclusive protocol exchanges, fail-closed poisoned sessions, structured response exceptions, and bounded streaming POP3/NNTP payload APIs.
+- Added strict SMTP paths/options, strict UTF-8 SASL, exclusive mail transactions, and bounded verified RSET recovery.
+- POP3 and NNTP mandatory numeric responses are strict; NEWNEWS and `INntpArticleStore.ListNewsSinceAsync` use message IDs, and NEXT returns null only for 421.

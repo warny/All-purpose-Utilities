@@ -43,8 +43,8 @@ public class NntpClientServerTests
         IReadOnlyList<string> newGroups = await client.NewGroupsAsync(DateTime.UtcNow.AddDays(-4));
         CollectionAssert.Contains((System.Collections.ICollection)newGroups, "comp.test");
         // Uses a margin larger than one day to avoid boundary timing flakiness with strict "> since" filtering.
-        IReadOnlyList<int> newNews = await client.NewNewsAsync("comp.test", DateTime.UtcNow.AddDays(-2));
-        CollectionAssert.Contains((System.Collections.ICollection)newNews, 1);
+        IReadOnlyList<string> newNews = await client.NewNewsAsync("comp.test", DateTime.UtcNow.AddDays(-2));
+        CollectionAssert.Contains((System.Collections.ICollection)newNews, "<1@comp.test>");
         (int count, int first, int last) info = await client.GroupAsync("comp.test");
         Assert.AreEqual(1, info.count);
         int? nextId = await client.NextAsync();
@@ -56,8 +56,8 @@ public class NntpClientServerTests
         (int id, string messageId) stat = await client.StatAsync(1);
         Assert.AreEqual(1, stat.id);
         await client.PostAsync("From: test@example.com\r\nNewsgroups: comp.test\r\nSubject: Test post\r\n\r\nposted\r\n");
-        IReadOnlyList<int> newNews2 = await client.NewNewsAsync("comp.test", DateTime.UtcNow.AddMinutes(-1));
-        CollectionAssert.Contains((System.Collections.ICollection)newNews2, 2);
+        IReadOnlyList<string> newNews2 = await client.NewNewsAsync("comp.test", DateTime.UtcNow.AddMinutes(-1));
+        CollectionAssert.Contains((System.Collections.ICollection)newNews2, "<2@comp.test>");
         await client.QuitAsync();
         await serverTask;
     }
@@ -124,21 +124,21 @@ public class NntpClientServerTests
             return Task.FromResult<IReadOnlyDictionary<int, string>>(new Dictionary<int, string>());
         }
 
-        public Task<IReadOnlyCollection<int>> ListNewsSinceAsync(string group, DateTime sinceUtc, CancellationToken cancellationToken = default)
+        public Task<IReadOnlyCollection<string>> ListNewsSinceAsync(string group, DateTime sinceUtc, CancellationToken cancellationToken = default)
         {
             if (_groups.TryGetValue(group, out Group? g))
             {
-                List<int> ids = new();
+                List<string> ids = new();
                 foreach (KeyValuePair<int, Article> kvp in g.Articles)
                 {
                     if (kvp.Value.Date > sinceUtc)
                     {
-                        ids.Add(kvp.Key);
+                        ids.Add($"<{kvp.Key}@comp.test>");
                     }
                 }
-                return Task.FromResult<IReadOnlyCollection<int>>(ids);
+                return Task.FromResult<IReadOnlyCollection<string>>(ids);
             }
-            return Task.FromResult<IReadOnlyCollection<int>>(System.Array.Empty<int>());
+            return Task.FromResult<IReadOnlyCollection<string>>(System.Array.Empty<string>());
         }
 
         public Task<string?> RetrieveAsync(string group, int id, CancellationToken cancellationToken = default)
@@ -163,4 +163,3 @@ public class NntpClientServerTests
         }
     }
 }
-

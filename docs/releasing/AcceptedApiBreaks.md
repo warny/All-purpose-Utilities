@@ -485,3 +485,11 @@ manifest if the real tool output differs in wording, nested-type naming (`+` vs 
 
 - `CP0008` — Type 'Utils.DependencyInjection.Generators.StaticAutoGenerator' does not implement interface 'Microsoft.CodeAnalysis.ISourceGenerator' on {candidateAssembly} but it does on {baselineAssembly}
 
+
+### 2.0 protocol-correctness additions
+
+- POP3 STAT mailbox size changes from `int` to `long`; malformed STAT/LIST/UIDL is no longer tolerated.
+- POP3 single UIDL no longer returns nullable data after a positive malformed response.
+- NNTP NEWNEWS returns message-id strings, and NEXT returns null only for code 421.
+- SMTP string envelopes are parsed strictly and typed overloads separate paths from ESMTP options.
+- Negative responses use `ProtocolResponseException`; lost framing makes the session permanently unusable.

@@ -42,8 +42,8 @@ public class NntpServerLimitTests
             return Task.FromResult<IReadOnlyDictionary<int, string>>(new Dictionary<int, string>(_articles));
         }
 
-        public Task<IReadOnlyCollection<int>> ListNewsSinceAsync(string group, DateTime since, CancellationToken ct = default)
-            => Task.FromResult<IReadOnlyCollection<int>>(Array.Empty<int>());
+        public Task<IReadOnlyCollection<string>> ListNewsSinceAsync(string group, DateTime since, CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyCollection<string>>(Array.Empty<string>());
 
         public Task<string?> RetrieveAsync(string group, int id, CancellationToken ct = default)
             => Task.FromResult(_articles.TryGetValue(id, out string? a) ? a : null);

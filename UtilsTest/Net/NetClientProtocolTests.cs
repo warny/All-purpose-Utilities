@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipelines;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
@@ -57,6 +58,80 @@ public class NetClientProtocolTests
         }
     }
 
+
+    /// <summary>Wraps an outgoing stream and throws after partially accepting one selected write.</summary>
+    private sealed class PartialFailingWriteStream : Stream
+    {
+        private readonly Stream _inner;
+        private readonly int _failOnWriteCall;
+        private readonly int _bytesBeforeFailure;
+        private int _writeCalls;
+
+        public PartialFailingWriteStream(Stream inner, int failOnWriteCall, int bytesBeforeFailure)
+        {
+            _inner = inner;
+            _failOnWriteCall = failOnWriteCall;
+            _bytesBeforeFailure = bytesBeforeFailure;
+        }
+
+        public override bool CanRead => false;
+        public override bool CanWrite => true;
+        public override bool CanSeek => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            _writeCalls++;
+            if (_writeCalls == _failOnWriteCall)
+            {
+                int accepted = Math.Min(_bytesBeforeFailure, count);
+                if (accepted > 0)
+                    _inner.Write(buffer, offset, accepted);
+                throw new IOException("Simulated partial write failure.");
+            }
+            _inner.Write(buffer, offset, count);
+        }
+
+        public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            _writeCalls++;
+            if (_writeCalls == _failOnWriteCall)
+            {
+                int accepted = Math.Min(_bytesBeforeFailure, buffer.Length);
+                if (accepted > 0)
+                    await _inner.WriteAsync(buffer[..accepted], cancellationToken).ConfigureAwait(false);
+                throw new IOException("Simulated partial write failure.");
+            }
+            await _inner.WriteAsync(buffer, cancellationToken).ConfigureAwait(false);
+        }
+
+        public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) =>
+            WriteAsync(buffer.AsMemory(offset, count), cancellationToken).AsTask();
+
+        public override void Flush() => _inner.Flush();
+        public override Task FlushAsync(CancellationToken cancellationToken) => _inner.FlushAsync(cancellationToken);
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+    }
+
+    /// <summary>Exposes protected multiline behavior for focused framing tests.</summary>
+    private sealed class MultilineTestClient : CommandResponseClient
+    {
+        /// <summary>Reads a body terminated by a caller-defined marker.</summary>
+        public async Task<IReadOnlyList<string>> ReadUntilEndAsync(CancellationToken cancellationToken = default)
+        {
+            var (_, body) = await SendMultilineCommandAsync(
+                "MULTI", response => response.Code == "END", 10, 100, 100, cancellationToken);
+            List<string> result = [];
+            foreach (ServerResponse response in body)
+                result.Add(BodyLineToString(response));
+            return result;
+        }
+    }
+
     /// <summary>
     /// Creates an in-process bidirectional pipe pair so that a fake server task and a
     /// real protocol client can exchange lines without a real TCP connection.
@@ -78,6 +153,232 @@ public class NetClientProtocolTests
         StreamReader serverReader = new StreamReader(clientToServer.Reader.AsStream(), Encoding.ASCII);
 
         return (clientStream, serverWriter, serverReader);
+    }
+
+    /// <summary>Verifies the legacy protected multiline callback remains authoritative.</summary>
+    [TestMethod]
+    public async Task CommandResponseClient_Multiline_UsesCustomTerminator()
+    {
+        (DuplexStream stream, StreamWriter writer, StreamReader reader) = CreateTestPair();
+        Task server = Task.Run(async () =>
+        {
+            _ = await reader.ReadLineAsync();
+            await writer.WriteLineAsync("200 body follows");
+            await writer.WriteLineAsync("first");
+            await writer.WriteLineAsync("END");
+            await writer.WriteLineAsync("orphan");
+        });
+        MultilineTestClient client = new();
+        await client.ConnectAsync(stream);
+        IReadOnlyList<string> body = await client.ReadUntilEndAsync();
+        CollectionAssert.AreEqual(new[] { "first" }, body.ToArray());
+        await server;
+    }
+
+    /// <summary>Verifies SMTP exchange status collection enforces MaxResponseCount and poisons framing.</summary>
+    [TestMethod]
+    public async Task SmtpClient_ExclusiveStatusReader_EnforcesMaxResponseCount()
+    {
+        (DuplexStream stream, StreamWriter writer, StreamReader reader) = CreateTestPair();
+        Task server = Task.Run(async () =>
+        {
+            await writer.WriteLineAsync("220 ready");
+            _ = await reader.ReadLineAsync();
+            await writer.WriteLineAsync("250-first");
+            await writer.WriteLineAsync("250 second");
+        });
+        SmtpClient client = new() { MaxResponseCount = 1 };
+        await client.ConnectAsync(stream);
+        await Assert.ThrowsExceptionAsync<InvalidDataException>(() => client.EhloAsync("example.test"));
+        Assert.IsFalse(client.IsConnected);
+        Assert.IsNotNull(client.SessionFailure);
+        await server;
+    }
+
+    /// <summary>Verifies malformed POP3 mandatory fields produce structured diagnostics.</summary>
+    [TestMethod]
+    public async Task Pop3Client_MalformedStat_ThrowsProtocolResponseException()
+    {
+        (DuplexStream stream, StreamWriter writer, StreamReader reader) = CreateTestPair();
+        Task server = Task.Run(async () =>
+        {
+            await writer.WriteLineAsync("+OK ready");
+            _ = await reader.ReadLineAsync();
+            await writer.WriteLineAsync("+OK 12");
+        });
+        Pop3Client client = new();
+        await client.ConnectAsync(stream);
+        ProtocolResponseException error = await Assert.ThrowsExceptionAsync<ProtocolResponseException>(() => client.GetStatAsync());
+        Assert.AreEqual("STAT", error.Command);
+        await server;
+    }
+
+    /// <summary>Verifies POP3 CAPA failures retain the correct sanitized command context.</summary>
+    [TestMethod]
+    public async Task Pop3Client_CapabilityFailure_UsesCapaCommandContext()
+    {
+        (DuplexStream stream, StreamWriter writer, StreamReader reader) = CreateTestPair();
+        Task server = Task.Run(async () =>
+        {
+            await writer.WriteLineAsync("+OK ready");
+            _ = await reader.ReadLineAsync();
+            await writer.WriteLineAsync("-ERR unsupported");
+        });
+        Pop3Client client = new();
+        await client.ConnectAsync(stream);
+        ProtocolResponseException error = await Assert.ThrowsExceptionAsync<ProtocolResponseException>(() => client.GetCapabilitiesAsync());
+        Assert.AreEqual("CAPA", error.Command);
+        await server;
+    }
+
+    /// <summary>Verifies materializing multiline commands also apply the byte limit.</summary>
+    [TestMethod]
+    public async Task Pop3Client_List_ByteLimitExceeded_PoisonsSession()
+    {
+        (DuplexStream stream, StreamWriter writer, StreamReader reader) = CreateTestPair();
+        Task server = Task.Run(async () =>
+        {
+            await writer.WriteLineAsync("+OK ready");
+            _ = await reader.ReadLineAsync();
+            await writer.WriteLineAsync("+OK list follows");
+            await writer.WriteLineAsync("1 12345");
+            await writer.WriteLineAsync(".");
+        });
+        Pop3Client client = new() { MaxMultilineBytes = 2 };
+        await client.ConnectAsync(stream);
+        await Assert.ThrowsExceptionAsync<InvalidDataException>(() => client.ListAsync());
+        Assert.IsFalse(client.IsConnected);
+        await server;
+    }
+
+
+    /// <summary>Verifies a complete AUTH LOGIN rejection does not poison the synchronized SMTP session.</summary>
+    [TestMethod]
+    public async Task SmtpClient_AuthLoginRejected_DoesNotPoisonSession()
+    {
+        (DuplexStream stream, StreamWriter writer, StreamReader reader) = CreateTestPair();
+        Task server = Task.Run(async () =>
+        {
+            await writer.WriteLineAsync("220 ready");
+            Assert.AreEqual("AUTH LOGIN", await reader.ReadLineAsync());
+            await writer.WriteLineAsync("535 authentication failed");
+            Assert.AreEqual("HELP", await reader.ReadLineAsync());
+            await writer.WriteLineAsync("214 help text");
+        });
+        SmtpClient client = new();
+        await client.ConnectAsync(stream);
+        ProtocolResponseException error = await Assert.ThrowsExceptionAsync<ProtocolResponseException>(() =>
+            client.AuthenticateAsync("user", "password", SmtpAuthenticationMechanism.Login));
+        Assert.AreEqual("535", error.ResponseCode);
+        Assert.IsTrue(client.IsConnected);
+        CollectionAssert.AreEqual(new[] { "help text" }, (await client.HelpAsync()).ToArray());
+        await server;
+    }
+
+    /// <summary>Verifies cancellation while an SMTP RCPT response is pending poisons without sending RSET.</summary>
+    [TestMethod]
+    public async Task SmtpClient_SendMailAsync_CancelDuringRcptResponse_PoisonsWithoutRset()
+    {
+        (DuplexStream stream, StreamWriter writer, StreamReader reader) = CreateTestPair();
+        List<string> commands = [];
+        Task server = Task.Run(async () =>
+        {
+            await writer.WriteLineAsync("220 ready");
+            commands.Add((await reader.ReadLineAsync())!);
+            await writer.WriteLineAsync("250 sender accepted");
+            commands.Add((await reader.ReadLineAsync())!);
+            await Task.Delay(300);
+            while (reader.Peek() >= 0)
+                commands.Add((await reader.ReadLineAsync())!);
+        });
+        SmtpClient client = new();
+        await client.ConnectAsync(stream);
+        using CancellationTokenSource cancellation = new(100);
+        await Assert.ThrowsExceptionAsync<OperationCanceledException>(() =>
+            client.SendMailAsync(SmtpPath.Parse("sender@example.com"), [SmtpPath.Parse("recipient@example.com")], new StringReader("body"), cancellationToken: cancellation.Token));
+        Assert.IsFalse(client.IsConnected);
+        Assert.IsFalse(commands.Contains("RSET"));
+        await server;
+    }
+
+    /// <summary>Verifies an AUTH PLAIN transport failure after writing the command poisons the session.</summary>
+    [TestMethod]
+    public async Task SmtpClient_AuthPlainTransportFailure_PoisonsSession()
+    {
+        (DuplexStream stream, StreamWriter writer, StreamReader reader) = CreateTestPair();
+        Task server = Task.Run(async () =>
+        {
+            await writer.WriteLineAsync("220 ready");
+            _ = await reader.ReadLineAsync();
+            writer.Dispose();
+        });
+        SmtpClient client = new();
+        await client.ConnectAsync(stream);
+        await Assert.ThrowsExceptionAsync<IOException>(() => client.AuthenticateAsync(new SmtpPlainCredentials("user", "password")));
+        Assert.IsFalse(client.IsConnected);
+        Assert.IsNotNull(client.SessionFailure);
+        await server;
+    }
+
+
+    /// <summary>Verifies a partial SMTP transaction write poisons immediately and never attempts RSET recovery.</summary>
+    [TestMethod]
+    public async Task SmtpClient_SendMailAsync_PartialRcptWriteFailure_PoisonsWithoutRset()
+    {
+        Pipe serverToClient = new();
+        Pipe clientToServer = new();
+        PartialFailingWriteStream failingWrites = new(clientToServer.Writer.AsStream(), failOnWriteCall: 2, bytesBeforeFailure: 8);
+        DuplexStream stream = new(serverToClient.Reader.AsStream(), failingWrites);
+        StreamWriter writer = new(serverToClient.Writer.AsStream(), Encoding.ASCII)
+        {
+            NewLine = "\r\n",
+            AutoFlush = true
+        };
+        StreamReader reader = new(clientToServer.Reader.AsStream(), Encoding.ASCII);
+        StringBuilder transcript = new();
+        Task server = Task.Run(async () =>
+        {
+            await writer.WriteLineAsync("220 ready");
+            string? mail = await reader.ReadLineAsync();
+            transcript.AppendLine(mail);
+            await writer.WriteLineAsync("250 sender accepted");
+            await Task.Delay(200);
+            while (clientToServer.Reader.TryRead(out ReadResult result))
+            {
+                foreach (ReadOnlyMemory<byte> segment in result.Buffer)
+                    transcript.Append(Encoding.ASCII.GetString(segment.Span));
+                clientToServer.Reader.AdvanceTo(result.Buffer.End);
+            }
+        });
+        SmtpClient client = new();
+        await client.ConnectAsync(stream);
+        await Assert.ThrowsExceptionAsync<IOException>(() =>
+            client.SendMailAsync(SmtpPath.Parse("sender@example.com"), [SmtpPath.Parse("recipient@example.com")], new StringReader("body")));
+        Assert.IsFalse(client.IsConnected);
+        Assert.IsNotNull(client.SessionFailure);
+        await server;
+        Assert.IsFalse(transcript.ToString().Contains("RSET", StringComparison.Ordinal));
+    }
+
+    /// <summary>Verifies NNTP article commands reject unexpected positive status before reading a payload.</summary>
+    [TestMethod]
+    public async Task NntpClient_ArticleUnexpectedPositiveCode_DoesNotEnterPayloadOrPoison()
+    {
+        (DuplexStream stream, StreamWriter writer, StreamReader reader) = CreateTestPair();
+        Task server = Task.Run(async () =>
+        {
+            await writer.WriteLineAsync("200 ready");
+            Assert.AreEqual("ARTICLE 1", await reader.ReadLineAsync());
+            await writer.WriteLineAsync("200 posting allowed");
+            Assert.AreEqual("GROUP comp.test", await reader.ReadLineAsync());
+            await writer.WriteLineAsync("211 0 0 0");
+        });
+        NntpClient client = new();
+        await client.ConnectAsync(stream);
+        await Assert.ThrowsExceptionAsync<ProtocolResponseException>(() => client.ArticleAsync(1));
+        Assert.IsTrue(client.IsConnected);
+        Assert.AreEqual((0, 0, 0), await client.GroupAsync("comp.test"));
+        await server;
     }
 
     // ──────────────────────────────────────────────────────────────
