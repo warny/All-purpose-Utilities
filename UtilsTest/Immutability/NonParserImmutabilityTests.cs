@@ -151,6 +151,20 @@ public sealed class NonParserImmutabilityTests
         Assert.AreEqual((byte)1, value[0]);
     }
 
+    /// <summary>Verifies the distinct copying and intentional aliasing byte-array extension contracts.</summary>
+    [TestMethod]
+    public void Bytes_ToBytesCopiesWhileAsBytesRetainsAliasingContract()
+    {
+        byte[] source = [1, 2, 3];
+        Bytes copy = source.ToBytes();
+        Bytes view = source.AsBytes();
+
+        source[0] = 9;
+
+        Assert.AreEqual((byte)1, copy[0]);
+        Assert.AreEqual((byte)9, view[0]);
+    }
+
     /// <summary>Verifies the existing empty, null, and default Bytes contracts.</summary>
     [TestMethod]
     public void Bytes_EmptyNullAndDefaultRemainEmpty()
