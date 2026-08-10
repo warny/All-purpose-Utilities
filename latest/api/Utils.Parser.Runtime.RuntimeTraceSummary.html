@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Parser_Runtime_RuntimeTraceSummary" data-uid="Utils.Parser.Runtime.RuntimeTraceSummary" class="text-break">
-Class RuntimeTraceSummary  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/RuntimeTraceSummary.cs/#L11"><i class="bi bi-code-slash"></i></a>
+Class RuntimeTraceSummary  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/RuntimeTraceSummary.cs/#L13"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -251,7 +251,7 @@ Class RuntimeTraceSummary  <a class="header-action link-secondary" title="View s
 
   <h3 id="Utils_Parser_Runtime_RuntimeTraceSummary__ctor_System_Int32_System_Collections_Generic_IReadOnlyDictionary_Utils_Parser_Runtime_ParserRuntimeObservationKind_System_Int32__System_Collections_Generic_IReadOnlyDictionary_Utils_Parser_Runtime_ParserRuntimeObservationStatus_System_Int32__System_Collections_Generic_IReadOnlyDictionary_System_String_System_Int32__System_Collections_Generic_IReadOnlyDictionary_System_Int32_System_Int32__" data-uid="Utils.Parser.Runtime.RuntimeTraceSummary.#ctor(System.Int32,System.Collections.Generic.IReadOnlyDictionary{Utils.Parser.Runtime.ParserRuntimeObservationKind,System.Int32},System.Collections.Generic.IReadOnlyDictionary{Utils.Parser.Runtime.ParserRuntimeObservationStatus,System.Int32},System.Collections.Generic.IReadOnlyDictionary{System.String,System.Int32},System.Collections.Generic.IReadOnlyDictionary{System.Int32,System.Int32})">
   RuntimeTraceSummary(int, IReadOnlyDictionary&lt;ParserRuntimeObservationKind, int&gt;, IReadOnlyDictionary&lt;ParserRuntimeObservationStatus, int&gt;, IReadOnlyDictionary&lt;string, int&gt;, IReadOnlyDictionary&lt;int, int&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/RuntimeTraceSummary.cs/#L11"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/RuntimeTraceSummary.cs/#L13"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Represents a deterministic, read-only summary of a runtime observation sequence.</p>
@@ -300,10 +300,10 @@ Class RuntimeTraceSummary  <a class="header-action link-secondary" title="View s
 
   <h3 id="Utils_Parser_Runtime_RuntimeTraceSummary_AlternativeDistribution" data-uid="Utils.Parser.Runtime.RuntimeTraceSummary.AlternativeDistribution">
   AlternativeDistribution
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/RuntimeTraceSummary.cs/#L16"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/RuntimeTraceSummary.cs/#L58"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Count per observed alternative index.</p>
+  <div class="markdown level1 summary"><p>Gets the immutable alternative distribution.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -332,10 +332,10 @@ Class RuntimeTraceSummary  <a class="header-action link-secondary" title="View s
 
   <h3 id="Utils_Parser_Runtime_RuntimeTraceSummary_EventDistribution" data-uid="Utils.Parser.Runtime.RuntimeTraceSummary.EventDistribution">
   EventDistribution
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/RuntimeTraceSummary.cs/#L13"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/RuntimeTraceSummary.cs/#L37"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Count per observation kind.</p>
+  <div class="markdown level1 summary"><p>Gets the immutable event distribution.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -364,10 +364,10 @@ Class RuntimeTraceSummary  <a class="header-action link-secondary" title="View s
 
   <h3 id="Utils_Parser_Runtime_RuntimeTraceSummary_RuleDistribution" data-uid="Utils.Parser.Runtime.RuntimeTraceSummary.RuleDistribution">
   RuleDistribution
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/RuntimeTraceSummary.cs/#L15"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/RuntimeTraceSummary.cs/#L51"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Count per observed rule name.</p>
+  <div class="markdown level1 summary"><p>Gets the immutable ordinal rule distribution.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -396,10 +396,10 @@ Class RuntimeTraceSummary  <a class="header-action link-secondary" title="View s
 
   <h3 id="Utils_Parser_Runtime_RuntimeTraceSummary_StatusDistribution" data-uid="Utils.Parser.Runtime.RuntimeTraceSummary.StatusDistribution">
   StatusDistribution
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/RuntimeTraceSummary.cs/#L14"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/RuntimeTraceSummary.cs/#L44"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Count per observation status.</p>
+  <div class="markdown level1 summary"><p>Gets the immutable status distribution.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -428,7 +428,7 @@ Class RuntimeTraceSummary  <a class="header-action link-secondary" title="View s
 
   <h3 id="Utils_Parser_Runtime_RuntimeTraceSummary_TotalObservations" data-uid="Utils.Parser.Runtime.RuntimeTraceSummary.TotalObservations">
   TotalObservations
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/RuntimeTraceSummary.cs/#L12"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/RuntimeTraceSummary.cs/#L14"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Total number of observations in the analyzed sequence.</p>
@@ -460,7 +460,7 @@ Class RuntimeTraceSummary  <a class="header-action link-secondary" title="View s
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/RuntimeTraceSummary.cs/#L11" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/RuntimeTraceSummary.cs/#L13" class="edit-link">Edit this page</a>
         </div>
 
 
