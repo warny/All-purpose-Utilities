@@ -11,15 +11,22 @@ namespace Utils.Parser.Runtime;
 /// <param name="FirstTotalObservations">Observation count in the first sequence.</param>
 /// <param name="SecondTotalObservations">Observation count in the second sequence.</param>
 /// <param name="EventCountDelta">Per-event-kind count deltas computed as first minus second.</param>
-public sealed record RuntimeTraceComparison
+public sealed record RuntimeTraceComparison(
+    bool AreSummariesEquivalent,
+    bool AreTextExportsIdentical,
+    bool AreJsonExportsIdentical,
+    int FirstTotalObservations,
+    int SecondTotalObservations,
+    IReadOnlyDictionary<ParserRuntimeObservationKind, int> EventCountDelta)
 {
-    /// <summary>Initializes a comparison by capturing an immutable delta snapshot.</summary>
-    public RuntimeTraceComparison(bool areSummariesEquivalent, bool areTextExportsIdentical, bool areJsonExportsIdentical, int firstTotalObservations, int secondTotalObservations, IReadOnlyDictionary<ParserRuntimeObservationKind, int> eventCountDelta)
-    { AreSummariesEquivalent = areSummariesEquivalent; AreTextExportsIdentical = areTextExportsIdentical; AreJsonExportsIdentical = areJsonExportsIdentical; FirstTotalObservations = firstTotalObservations; SecondTotalObservations = secondTotalObservations; EventCountDelta = eventCountDelta.ToImmutableDictionary(); }
-    public bool AreSummariesEquivalent { get; }
-    public bool AreTextExportsIdentical { get; }
-    public bool AreJsonExportsIdentical { get; }
-    public int FirstTotalObservations { get; }
-    public int SecondTotalObservations { get; }
-    public IReadOnlyDictionary<ParserRuntimeObservationKind, int> EventCountDelta { get; }
+    /// <summary>Event-count deltas captured as an immutable snapshot.</summary>
+    private IReadOnlyDictionary<ParserRuntimeObservationKind, int> _eventCountDelta =
+        EventCountDelta.ToImmutableDictionary();
+
+    /// <summary>Gets the immutable event-count delta snapshot.</summary>
+    public IReadOnlyDictionary<ParserRuntimeObservationKind, int> EventCountDelta
+    {
+        get => _eventCountDelta;
+        init => _eventCountDelta = value.ToImmutableDictionary();
+    }
 }

@@ -44,6 +44,54 @@ public sealed class ParserInternalImmutabilityTests
         Assert.AreEqual(1, comparison.EventCountDelta[ParserRuntimeObservationKind.AlternativeStarted]);
     }
 
+    /// <summary>Verifies record cloning normalizes mutable dictionaries assigned to trace results.</summary>
+    [TestMethod]
+    public void RuntimeTraceResults_WithExpressionsCaptureMutableDictionaries()
+    {
+        var summary = new RuntimeTraceSummary(0, new Dictionary<ParserRuntimeObservationKind, int>(), new Dictionary<ParserRuntimeObservationStatus, int>(), new Dictionary<string, int>(), new Dictionary<int, int>());
+        var events = new Dictionary<ParserRuntimeObservationKind, int>
+        {
+            [ParserRuntimeObservationKind.AlternativeStarted] = 1
+        };
+        var summaryCopy = summary with { EventDistribution = events };
+
+        var comparison = new RuntimeTraceComparison(false, false, false, 0, 0, new Dictionary<ParserRuntimeObservationKind, int>());
+        var comparisonCopy = comparison with { EventCountDelta = events };
+        events.Clear();
+
+        Assert.AreEqual(1, summaryCopy.EventDistribution[ParserRuntimeObservationKind.AlternativeStarted]);
+        Assert.AreEqual(1, comparisonCopy.EventCountDelta[ParserRuntimeObservationKind.AlternativeStarted]);
+        Assert.IsFalse(summaryCopy.EventDistribution is Dictionary<ParserRuntimeObservationKind, int>);
+        Assert.IsFalse(comparisonCopy.EventCountDelta is Dictionary<ParserRuntimeObservationKind, int>);
+    }
+
+    /// <summary>Verifies positional trace records retain their public deconstruction contract.</summary>
+    [TestMethod]
+    public void RuntimeTraceResults_RetainDeconstructionContract()
+    {
+        var events = new Dictionary<ParserRuntimeObservationKind, int>();
+        var statuses = new Dictionary<ParserRuntimeObservationStatus, int>();
+        var rules = new Dictionary<string, int>();
+        var alternatives = new Dictionary<int, int>();
+        var summary = new RuntimeTraceSummary(3, events, statuses, rules, alternatives);
+        var comparison = new RuntimeTraceComparison(true, false, true, 3, 2, events);
+
+        var (total, deconstructedEvents, deconstructedStatuses, deconstructedRules, deconstructedAlternatives) = summary;
+        var (equivalent, textIdentical, jsonIdentical, firstTotal, secondTotal, eventDelta) = comparison;
+
+        Assert.AreEqual(3, total);
+        Assert.AreSame(summary.EventDistribution, deconstructedEvents);
+        Assert.AreSame(summary.StatusDistribution, deconstructedStatuses);
+        Assert.AreSame(summary.RuleDistribution, deconstructedRules);
+        Assert.AreSame(summary.AlternativeDistribution, deconstructedAlternatives);
+        Assert.IsTrue(equivalent);
+        Assert.IsFalse(textIdentical);
+        Assert.IsTrue(jsonIdentical);
+        Assert.AreEqual(3, firstTotal);
+        Assert.AreEqual(2, secondTotal);
+        Assert.AreSame(comparison.EventCountDelta, eventDelta);
+    }
+
     /// <summary>Verifies params diagnostic arguments are captured rather than retained.</summary>
     [TestMethod]
     public void ParserActionOutcome_CapturesParamsArguments()
