@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Immutable;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -13,7 +14,17 @@ internal enum SerializationDirection { Read, Write }
 internal sealed record SerializableMemberContract(MemberInfo Member, Type ValueType, int Order);
 
 /// <summary>Holds the reflection-independent decisions needed by delegate generation.</summary>
-internal sealed record ReflectionSerializationContract(Type Type, IReadOnlyList<SerializableMemberContract> Members);
+internal sealed record ReflectionSerializationContract(Type Type, IReadOnlyList<SerializableMemberContract> Members)
+{
+    private IReadOnlyList<SerializableMemberContract> _members = Members.ToImmutableArray();
+
+    /// <summary>Gets the serializable members as an immutable, stably ordered snapshot.</summary>
+    internal IReadOnlyList<SerializableMemberContract> Members
+    {
+        get => _members;
+        init => _members = value.ToImmutableArray();
+    }
+}
 
 /// <summary>Discovers and validates reflection serialization contracts before expressions are created.</summary>
 internal static class ReflectionContractBuilder
@@ -43,7 +54,7 @@ internal static class ReflectionContractBuilder
         }
 
         if (diagnostics.Count > 0) throw new SerializationContractException(type, diagnostics);
-        return new(type, members.OrderBy(member => member.Order).ThenBy(member => member.Member.Name, StringComparer.Ordinal).ToArray());
+        return new(type, members.OrderBy(member => member.Order).ThenBy(member => member.Member.Name, StringComparer.Ordinal).ToImmutableArray());
     }
 
     /// <summary>Validates one attributed member and returns its executable description.</summary>

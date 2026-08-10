@@ -11,6 +11,28 @@ Corriger les types immuables ou utilisés comme snapshots dans les autres projet
 
 Une interface `IReadOnly*` n’est pas une garantie d’immutabilité.
 
+## Première tranche terminée (2026-08-10)
+
+Les cas suivants sont corrigés et couverts par des tests de non-aliasing :
+
+- [x] `SmtpMessage.Recipients` (construction et affectation par `with`) ;
+- [x] `DnsLookupException.Failures` ;
+- [x] `NtpQueryException.Failures` ;
+- [x] `NetworkInterfaceSnapshot.DnsAddresses` ;
+- [x] `SqlSyntaxOptions.IdentifierPrefixes` ;
+- [x] `ReflectionSerializationContract.Members` ;
+- [x] `Bytes` lors de la construction depuis un `byte[]`.
+
+Les collections séquentielles ci-dessus utilisent désormais des snapshots `ImmutableArray`,
+à l’exception de `Bytes`, qui conserve volontairement son tableau strictement privé après en
+avoir effectué une copie défensive. `SqlSyntaxOptions` utilise un `ImmutableHashSet<char>`.
+
+## Remaining work
+
+- Auditer et corriger les prochaines tranches hors Parser qui ne faisaient pas partie de cette PR.
+- Traiter séparément `VirtualProcess<TAddress>.Mappings`, amélioration P3 de contrat/performance
+  qui ne permet actuellement pas de modifier l’état interne du processus.
+
 ---
 
 ## Principe cible commun

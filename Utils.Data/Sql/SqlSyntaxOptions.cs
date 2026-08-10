@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Immutable;
 using System.Collections.Generic;
 
 namespace Utils.Data.Sql;
@@ -10,7 +11,7 @@ public sealed class SqlSyntaxOptions
 {
     private static readonly char[] DefaultIdentifierPrefixes = { '@', '#', '$' };
 
-    private readonly HashSet<char> identifierPrefixes;
+    private readonly ImmutableHashSet<char> identifierPrefixes;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SqlSyntaxOptions"/> class.
@@ -30,7 +31,7 @@ public sealed class SqlSyntaxOptions
 
         resolvedPrefixes.Add(autoParameterPrefix);
 
-        this.identifierPrefixes = resolvedPrefixes;
+        this.identifierPrefixes = resolvedPrefixes.ToImmutableHashSet(resolvedPrefixes.Comparer);
         AutoParameterPrefix = autoParameterPrefix;
     }
 

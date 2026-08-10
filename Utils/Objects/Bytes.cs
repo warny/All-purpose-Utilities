@@ -42,7 +42,8 @@ public readonly struct Bytes :
     /// <param name="byteArray">The byte array to store in the struct.</param>
     internal Bytes(params byte[] byteArray)
     {
-        _innerBytes = byteArray ?? [];
+        // Keep the private array representation, but never retain an array owned by the caller.
+        _innerBytes = byteArray is null ? [] : (byte[])byteArray.Clone();
     }
 
     /// <summary>
