@@ -11,6 +11,9 @@ namespace Utils.Parser.Runtime;
 /// </summary>
 internal readonly record struct AlternativeStructuralDescriptor
 {
+    /// <summary>Initializes a structural descriptor and captures its ordered token snapshot.</summary>
+    /// <param name="alternativeIndex">Zero-based alternative index.</param>
+    /// <param name="structuralTokens">Ordered structural token names.</param>
     public AlternativeStructuralDescriptor(int alternativeIndex, IReadOnlyList<string> structuralTokens)
     {
         AlternativeIndex = alternativeIndex;

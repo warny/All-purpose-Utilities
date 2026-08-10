@@ -56,6 +56,7 @@ internal interface IGrammarCompositionSource
 /// <summary>Describes one dependency edge, its declared and effective kinds, and its import path.</summary>
 internal sealed record GrammarDependencyEdge
 {
+    /// <summary>Initializes a dependency edge and captures its ordered import path.</summary>
     internal GrammarDependencyEdge(GrammarIdentity importer, GrammarDependency declaredDependency, GrammarDependencyKind effectiveKind, GrammarIdentity? imported, IReadOnlyList<GrammarIdentity> importPath) { Importer = importer; DeclaredDependency = declaredDependency; EffectiveKind = effectiveKind; Imported = imported; ImportPath = importPath.ToImmutableArray(); }
     internal GrammarIdentity Importer { get; }
     internal GrammarDependency DeclaredDependency { get; }
@@ -70,6 +71,7 @@ internal sealed record MissingGrammarDependency(GrammarDependencyEdge Edge);
 /// <summary>Describes a dependency that resolved to multiple stable sources.</summary>
 internal sealed record AmbiguousGrammarDependency
 {
+    /// <summary>Initializes an ambiguous dependency and captures its ordered candidates.</summary>
     internal AmbiguousGrammarDependency(GrammarDependencyEdge edge, IReadOnlyList<GrammarIdentity> candidates) { Edge = edge; Candidates = candidates.ToImmutableArray(); }
     internal GrammarDependencyEdge Edge { get; }
     internal IReadOnlyList<GrammarIdentity> Candidates { get; }
@@ -78,6 +80,7 @@ internal sealed record AmbiguousGrammarDependency
 /// <summary>Describes a deterministic cycle path.</summary>
 internal sealed record GrammarImportCycle
 {
+    /// <summary>Initializes a cycle and captures its ordered diagnostic path.</summary>
     internal GrammarImportCycle(IReadOnlyList<GrammarIdentity> path) => Path = path.ToImmutableArray();
     internal IReadOnlyList<GrammarIdentity> Path { get; }
 }
@@ -85,6 +88,7 @@ internal sealed record GrammarImportCycle
 /// <summary>Describes an effective rule and its provenance.</summary>
 internal sealed record EffectiveGrammarRule
 {
+    /// <summary>Initializes an effective rule and captures its ordered provenance path.</summary>
     internal EffectiveGrammarRule(GrammarIdentity origin, GrammarRuleDescriptor rule, IReadOnlyList<GrammarIdentity> importPath, GrammarDependencyKind? introducedBy) { Origin = origin; Rule = rule; ImportPath = importPath.ToImmutableArray(); IntroducedBy = introducedBy; }
     internal GrammarIdentity Origin { get; }
     internal GrammarRuleDescriptor Rule { get; }
@@ -98,6 +102,7 @@ internal sealed record MaskedGrammarRule(EffectiveGrammarRule Rule, EffectiveGra
 /// <summary>Describes distinct imported declarations competing for one unqualified rule name.</summary>
 internal sealed record GrammarRuleCollision
 {
+    /// <summary>Initializes a rule collision and captures its ordered candidates.</summary>
     internal GrammarRuleCollision(string ruleName, IReadOnlyList<EffectiveGrammarRule> candidates) { RuleName = ruleName; Candidates = candidates.ToImmutableArray(); }
     internal string RuleName { get; }
     internal IReadOnlyList<EffectiveGrammarRule> Candidates { get; }
@@ -106,6 +111,7 @@ internal sealed record GrammarRuleCollision
 /// <summary>Contains the immutable result of dependency graph construction and effective-rule selection.</summary>
 internal sealed record GrammarImportCompositionPlan
 {
+    /// <summary>Initializes the immutable result of grammar import composition.</summary>
     internal GrammarImportCompositionPlan(IGrammarCompositionSource entry, IReadOnlyList<IGrammarCompositionSource> grammars, IReadOnlyList<GrammarDependencyEdge> dependencies, IReadOnlyList<GrammarImportCycle> cycles, IReadOnlyList<MissingGrammarDependency> missingDependencies, IReadOnlyList<AmbiguousGrammarDependency> ambiguousDependencies, IReadOnlyList<EffectiveGrammarRule> effectiveRules, IReadOnlyList<MaskedGrammarRule> maskedRules, IReadOnlyList<EffectiveGrammarRule> ignoredRules, IReadOnlyList<GrammarRuleCollision> collisions, object? rootRulePayload, IReadOnlyList<EffectiveGrammarRule> tokenVocabLexerRules) { Entry = entry; Grammars = grammars.ToImmutableArray(); Dependencies = dependencies.ToImmutableArray(); Cycles = cycles.ToImmutableArray(); MissingDependencies = missingDependencies.ToImmutableArray(); AmbiguousDependencies = ambiguousDependencies.ToImmutableArray(); EffectiveRules = effectiveRules.ToImmutableArray(); MaskedRules = maskedRules.ToImmutableArray(); IgnoredRules = ignoredRules.ToImmutableArray(); Collisions = collisions.ToImmutableArray(); RootRulePayload = rootRulePayload; TokenVocabLexerRules = tokenVocabLexerRules.ToImmutableArray(); }
     internal IGrammarCompositionSource Entry { get; }
     internal IReadOnlyList<IGrammarCompositionSource> Grammars { get; }

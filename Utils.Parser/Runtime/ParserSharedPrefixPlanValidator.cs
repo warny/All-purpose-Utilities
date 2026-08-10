@@ -30,14 +30,11 @@ internal readonly record struct ParserSharedPrefixPlanValidationIssue(
 /// <summary>
 /// Represents the immutable result of validating one shared-prefix plan.
 /// </summary>
-/// <param name="IsValid">
-/// <see langword="true"/> when no invalidating structural metadata was detected;
-/// otherwise, <see langword="false"/>.
-/// </param>
-/// <param name="Issues">Ordered structural metadata issues emitted during validation.</param>
 internal readonly record struct ParserSharedPrefixPlanValidationResult
 {
     /// <summary>Initializes a validation result and captures its ordered issues.</summary>
+    /// <param name="isValid"><see langword="true"/> when no invalidating structural metadata was detected; otherwise, <see langword="false"/>.</param>
+    /// <param name="issues">Ordered structural metadata issues emitted during validation.</param>
     public ParserSharedPrefixPlanValidationResult(bool isValid, IReadOnlyList<ParserSharedPrefixPlanValidationIssue> issues)
     {
         IsValid = isValid;
