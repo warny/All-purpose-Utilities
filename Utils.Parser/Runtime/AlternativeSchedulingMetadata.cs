@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace Utils.Parser.Runtime;
 
 /// <summary>
@@ -7,8 +9,14 @@ namespace Utils.Parser.Runtime;
 /// </summary>
 internal sealed class AlternativeSchedulingMetadata
 {
+    private IReadOnlyList<ParserSharedPrefixPlan> _sharedPrefixPlans = ImmutableArray<ParserSharedPrefixPlan>.Empty;
+
     /// <summary>
     /// Gets structural shared-prefix plans computed from shallow look-ahead observations.
     /// </summary>
-    public IReadOnlyList<ParserSharedPrefixPlan> SharedPrefixPlans { get; init; } = [];
+    public IReadOnlyList<ParserSharedPrefixPlan> SharedPrefixPlans
+    {
+        get => _sharedPrefixPlans;
+        init => _sharedPrefixPlans = value?.ToImmutableArray() ?? ImmutableArray<ParserSharedPrefixPlan>.Empty;
+    }
 }

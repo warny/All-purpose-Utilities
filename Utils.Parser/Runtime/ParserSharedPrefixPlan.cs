@@ -1,17 +1,16 @@
+using System.Collections.Immutable;
 namespace Utils.Parser.Runtime;
-
-/// <summary>
-/// Represents structural shared-prefix planning metadata that associates a shallow shared token
-/// with the participating alternatives and their continuation descriptors.
-/// This plan is observable orchestration metadata only: it can guide diagnostics/audit workflows,
-/// but it cannot authorize parse acceptance, diagnostics authority, replay, or branch merging.
-/// </summary>
-/// <param name="SharedTokenName">Shallow shared token identifier observed during look-ahead.</param>
-/// <param name="AlternativeIndexes">Stable alternative indexes participating in this plan.</param>
-/// <param name="Continuations">Continuation descriptors associated with participating alternatives.</param>
-/// <param name="Segment">Explicit shared-prefix segment and conservative boundary metadata.</param>
-internal readonly record struct ParserSharedPrefixPlan(
-    string SharedTokenName,
-    IReadOnlyList<int> AlternativeIndexes,
-    IReadOnlyList<ParserContinuationDescriptor> Continuations,
-    ParserSharedPrefixSegment Segment);
+/// <summary>Represents immutable structural shared-prefix planning metadata.</summary>
+internal readonly record struct ParserSharedPrefixPlan
+{
+    /// <summary>Initializes a plan and captures its ordered collection snapshots.</summary>
+    /// <param name="sharedTokenName">Shared shallow token name.</param>
+    /// <param name="alternativeIndexes">Ordered participating alternative indexes.</param>
+    /// <param name="continuations">Ordered continuation descriptors.</param>
+    /// <param name="segment">Shared-prefix segment and boundary metadata.</param>
+    public ParserSharedPrefixPlan(string sharedTokenName, IReadOnlyList<int> alternativeIndexes, IReadOnlyList<ParserContinuationDescriptor> continuations, ParserSharedPrefixSegment segment) { SharedTokenName = sharedTokenName; AlternativeIndexes = alternativeIndexes.ToImmutableArray(); Continuations = continuations.ToImmutableArray(); Segment = segment; }
+    public string SharedTokenName { get; }
+    public IReadOnlyList<int> AlternativeIndexes { get; }
+    public IReadOnlyList<ParserContinuationDescriptor> Continuations { get; }
+    public ParserSharedPrefixSegment Segment { get; }
+}

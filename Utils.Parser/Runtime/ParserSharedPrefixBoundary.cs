@@ -1,14 +1,12 @@
+using System.Collections.Immutable;
 namespace Utils.Parser.Runtime;
-
-/// <summary>
-/// Represents a structural continuation boundary for shared-prefix planning metadata.
-/// This boundary is informational only and does not capture runtime parser state.
-/// </summary>
-/// <param name="SequencePosition">Conservative resumption position within meaningful sequence items.</param>
-/// <param name="ExpectedTokenNames">
-/// Optional shallow expected-token snapshot at this structural boundary.
-/// This value is intentionally <see langword="null"/> for now to avoid implying FOLLOW/restart semantics.
-/// </param>
-internal readonly record struct ParserSharedPrefixBoundary(
-    int SequencePosition,
-    IReadOnlyList<string>? ExpectedTokenNames);
+/// <summary>Represents an immutable structural continuation boundary.</summary>
+internal readonly record struct ParserSharedPrefixBoundary
+{
+    /// <summary>Initializes a boundary and captures its optional expected-token snapshot.</summary>
+    /// <param name="sequencePosition">Conservative structural sequence position.</param>
+    /// <param name="expectedTokenNames">Optional expected-token names; <see langword="null"/> when unavailable.</param>
+    public ParserSharedPrefixBoundary(int sequencePosition, IReadOnlyList<string>? expectedTokenNames) { SequencePosition = sequencePosition; ExpectedTokenNames = expectedTokenNames?.ToImmutableArray(); }
+    public int SequencePosition { get; }
+    public IReadOnlyList<string>? ExpectedTokenNames { get; }
+}

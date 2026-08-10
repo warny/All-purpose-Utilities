@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Utils.Parser.Diagnostics;
 using Utils.Parser.EmbeddedCode;
 
@@ -43,7 +44,7 @@ public sealed record PreparedExpressionEmbeddedCodeRegistryBuildEntry
         Status = status;
         DiagnosticDescriptor = diagnosticDescriptor;
         Exception = exception;
-        DiagnosticArguments = diagnosticArguments?.ToArray() ?? [];
+        DiagnosticArguments = diagnosticArguments?.ToImmutableArray() ?? ImmutableArray<object?>.Empty;
         WasAddedToRegistry = wasAddedToRegistry;
         IsDuplicate = isDuplicate;
         IsSkipped = isSkipped;

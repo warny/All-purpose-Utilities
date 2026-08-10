@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace Utils.Parser.Runtime;
 
 /// <summary>
@@ -15,4 +17,16 @@ public sealed record RuntimeTraceComparison(
     bool AreJsonExportsIdentical,
     int FirstTotalObservations,
     int SecondTotalObservations,
-    IReadOnlyDictionary<ParserRuntimeObservationKind, int> EventCountDelta);
+    IReadOnlyDictionary<ParserRuntimeObservationKind, int> EventCountDelta)
+{
+    /// <summary>Event-count deltas captured as an immutable snapshot.</summary>
+    private IReadOnlyDictionary<ParserRuntimeObservationKind, int> _eventCountDelta =
+        EventCountDelta.ToImmutableDictionary();
+
+    /// <summary>Gets the immutable event-count delta snapshot.</summary>
+    public IReadOnlyDictionary<ParserRuntimeObservationKind, int> EventCountDelta
+    {
+        get => _eventCountDelta;
+        init => _eventCountDelta = value.ToImmutableDictionary();
+    }
+}

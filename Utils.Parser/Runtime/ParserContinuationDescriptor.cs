@@ -1,17 +1,16 @@
+using System.Collections.Immutable;
 namespace Utils.Parser.Runtime;
-
-/// <summary>
-/// Describes shallow continuation metadata captured during parser exploration.
-/// This descriptor is descriptive-only runtime metadata: it is non-authoritative and non-executable.
-/// It does not grant parse acceptance, branch selection, replay, continuation execution,
-/// resumable parsing, frame restoration, rollback safety, or semantic-equivalence guarantees.
-/// </summary>
-/// <param name="Key">Stable continuation identity.</param>
-/// <param name="Category">Descriptive continuation category.</param>
-/// <param name="ExpectedTokenNames">Optional shallow expected token names at this continuation point.</param>
-/// <param name="IsSharedPrefixCandidate">Indicates whether this continuation originated from a shared-prefix observation.</param>
-internal readonly record struct ParserContinuationDescriptor(
-    ParserContinuationKey Key,
-    ParserContinuationCategory Category,
-    IReadOnlyList<string>? ExpectedTokenNames,
-    bool IsSharedPrefixCandidate);
+/// <summary>Describes immutable shallow continuation metadata captured during parser exploration.</summary>
+internal readonly record struct ParserContinuationDescriptor
+{
+    /// <summary>Initializes a descriptor and captures its optional expected-token snapshot.</summary>
+    /// <param name="key">Stable continuation identity.</param>
+    /// <param name="category">Descriptive continuation category.</param>
+    /// <param name="expectedTokenNames">Optional expected-token names; <see langword="null"/> when unavailable.</param>
+    /// <param name="isSharedPrefixCandidate">Whether the continuation originated from a shared-prefix observation.</param>
+    public ParserContinuationDescriptor(ParserContinuationKey key, ParserContinuationCategory category, IReadOnlyList<string>? expectedTokenNames, bool isSharedPrefixCandidate) { Key = key; Category = category; ExpectedTokenNames = expectedTokenNames?.ToImmutableArray(); IsSharedPrefixCandidate = isSharedPrefixCandidate; }
+    public ParserContinuationKey Key { get; }
+    public ParserContinuationCategory Category { get; }
+    public IReadOnlyList<string>? ExpectedTokenNames { get; }
+    public bool IsSharedPrefixCandidate { get; }
+}
