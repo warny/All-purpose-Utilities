@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Immutable;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -54,9 +55,7 @@ namespace Utils.Net
         public NtpQueryException(string message, IReadOnlyList<NtpEndpointFailure> failures)
             : base(message)
         {
-            Failures = failures is null
-                ? (IReadOnlyList<NtpEndpointFailure>)Array.Empty<NtpEndpointFailure>()
-                : failures.ToArray();
+            Failures = failures?.ToImmutableArray() ?? ImmutableArray<NtpEndpointFailure>.Empty;
         }
     }
 

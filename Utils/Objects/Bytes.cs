@@ -41,8 +41,24 @@ public readonly struct Bytes :
     /// </summary>
     /// <param name="byteArray">The byte array to store in the struct.</param>
     internal Bytes(params byte[] byteArray)
+        : this(byteArray, copy: true)
     {
-        _innerBytes = byteArray ?? [];
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Bytes"/> struct, optionally retaining the
+    /// supplied array for the explicitly aliasing <see cref="BytesExtensions.AsBytes(byte[])"/> contract.
+    /// </summary>
+    /// <param name="byteArray">The byte array to store in the struct.</param>
+    /// <param name="copy"><see langword="true"/> to copy the array; otherwise, to retain the exact array.</param>
+    internal Bytes(byte[] byteArray, bool copy)
+    {
+        // Only AsBytes requests the intentional alias; all ordinary construction copies caller data.
+        _innerBytes = byteArray is null
+            ? []
+            : copy
+                ? (byte[])byteArray.Clone()
+                : byteArray;
     }
 
     /// <summary>
@@ -515,10 +531,7 @@ public static class BytesExtensions
     public static Bytes ToBytes(this byte[] byteArray)
     {
         if (byteArray.IsNullOrEmptyCollection()) return Bytes.Empty;
-
-        var copy = new byte[byteArray.Length];
-        Array.Copy(byteArray, 0, copy, 0, byteArray.Length);
-        return new Bytes(copy);
+        return new Bytes(byteArray);
     }
 
     /// <summary>
@@ -538,7 +551,7 @@ public static class BytesExtensions
     /// </summary>
     /// <param name="byteArray">The byte array to wrap in a <see cref="Bytes"/>.</param>
     /// <returns>A <see cref="Bytes"/> referencing the exact array.</returns>
-    public static Bytes AsBytes(this byte[] byteArray) => byteArray is not null ? new Bytes(byteArray) : Bytes.Empty;
+    public static Bytes AsBytes(this byte[] byteArray) => byteArray is not null ? new Bytes(byteArray, copy: false) : Bytes.Empty;
 
     /// <summary>
     /// Concatenates all the byte arrays into a single <see cref="Bytes"/> instance.

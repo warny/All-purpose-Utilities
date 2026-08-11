@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Immutable;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -128,5 +129,17 @@ namespace Utils.Net
     /// <param name="DnsAddresses">The DNS resolver addresses configured on the interface.</param>
     internal sealed record NetworkInterfaceSnapshot(
         OperationalStatus Status,
-        IReadOnlyList<IPAddress> DnsAddresses);
+        IReadOnlyList<IPAddress> DnsAddresses)
+    {
+        private IReadOnlyList<IPAddress> _dnsAddresses = DnsAddresses.ToImmutableArray();
+
+        /// <summary>
+        /// Gets the DNS resolver addresses as an immutable snapshot.
+        /// </summary>
+        internal IReadOnlyList<IPAddress> DnsAddresses
+        {
+            get => _dnsAddresses;
+            init => _dnsAddresses = value.ToImmutableArray();
+        }
+    }
 }
