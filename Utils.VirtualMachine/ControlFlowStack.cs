@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -19,6 +20,7 @@ public class ControlFlowStack
     public const int DefaultMaxDepth = 1024;
 
     private readonly Stack<IControlFlowBlock> _blocks = new();
+    private readonly IEnumerable<IControlFlowBlock> _blocksView;
 
     /// <summary>
     /// Gets the maximum number of blocks that may be open simultaneously.
@@ -39,7 +41,7 @@ public class ControlFlowStack
     /// Gets all currently open blocks from innermost (top of stack) to outermost (bottom),
     /// as a live enumerable. Useful for diagnostics and post-execution assertions.
     /// </summary>
-    public IEnumerable<IControlFlowBlock> Blocks => _blocks;
+    public IEnumerable<IControlFlowBlock> Blocks => _blocksView;
 
     /// <summary>
     /// Initializes a new <see cref="ControlFlowStack"/> with the specified maximum nesting depth.
@@ -51,6 +53,7 @@ public class ControlFlowStack
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="maxDepth"/> is less than one.</exception>
     public ControlFlowStack(int maxDepth = DefaultMaxDepth)
     {
+        _blocksView = new ReadOnlyEnumerable<IControlFlowBlock>(_blocks);
         if (maxDepth < 1)
             throw new ArgumentOutOfRangeException(nameof(maxDepth), "Maximum depth must be at least 1.");
         MaxDepth = maxDepth;
@@ -65,6 +68,33 @@ public class ControlFlowStack
     public ControlFlowStack(VirtualMachineLimits limits)
         : this((limits ?? throw new ArgumentNullException(nameof(limits))).MaxControlFlowDepth)
     {
+    }
+
+    /// <summary>
+    /// Provides a persistent live enumerable view without exposing its backing collection.
+    /// </summary>
+    /// <typeparam name="T">The type of item exposed by the view.</typeparam>
+    private sealed class ReadOnlyEnumerable<T> : IEnumerable<T>
+    {
+        private readonly IEnumerable<T> _source;
+
+        /// <summary>
+        /// Initializes a live view over the specified enumerable.
+        /// </summary>
+        /// <param name="source">The backing enumerable whose current contents are exposed.</param>
+        public ReadOnlyEnumerable(IEnumerable<T> source) => _source = source;
+
+        /// <summary>
+        /// Returns an enumerator over the current contents of the backing enumerable.
+        /// </summary>
+        /// <returns>An enumerator over the live view.</returns>
+        public IEnumerator<T> GetEnumerator() => _source.GetEnumerator();
+
+        /// <summary>
+        /// Returns a non-generic enumerator over the current contents of the backing enumerable.
+        /// </summary>
+        /// <returns>An enumerator over the live view.</returns>
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 
     /// <summary>Opens a conditional (if/else) block.</summary>

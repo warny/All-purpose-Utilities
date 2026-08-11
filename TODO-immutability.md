@@ -30,9 +30,6 @@ avoir effectué une copie défensive. `SqlSyntaxOptions` utilise un `ImmutableHa
 ## Remaining work
 
 - Auditer et corriger les prochaines tranches hors Parser qui ne faisaient pas partie de cette PR.
-- Auditer `ControlFlowStack.Blocks` : cette vue live est exposée sous `IEnumerable<T>`, mais le
-  `Stack<T>` interne reste récupérable par cast. Une correction doit préserver l'ordre
-  d'énumération et éviter une allocation à chaque lecture.
 
 ## Deuxième tranche terminée (2026-08-11)
 
@@ -42,6 +39,8 @@ Les cas suivants sont corrigés et couverts par des tests d'encapsulation :
 - [x] `VirtualMemory<TAddress>.Processes` : vue read-only live créée une fois ;
 - [x] `Scheduler<T>.Processes` : vue read-only live créée une fois ;
 - [x] `CallFrame.Locals` : `ReadOnlyDictionary` live créé une fois ;
+- [x] `ControlFlowStack.Blocks` : vue enumerable live créée une fois, préservant l'ordre de pile
+  sans exposer le `Stack<T>` interne ;
 - [x] `VirtualProcess<TAddress>.Mappings` : snapshot `ImmutableArray` mis en cache avec
   invalidation lazy après chaque mutation de la table des pages ;
 - [x] `TransactionException.RollbackExceptions` : copie défensive immutable à la construction.
