@@ -60,6 +60,21 @@ public class SchedulerTests
     }
 
     [TestMethod]
+    public void Processes_IsLiveReadOnlyView()
+    {
+        var scheduler = new Scheduler<DefaultContext>();
+        var view = scheduler.Processes;
+
+        var process = scheduler.AddProcess(Ctx(0x00), Proc());
+
+        Assert.AreEqual(1, view.Count);
+        Assert.IsFalse(view is List<ScheduledProcess<DefaultContext>>);
+        var collection = (ICollection<ScheduledProcess<DefaultContext>>)view;
+        Assert.IsTrue(collection.IsReadOnly);
+        Assert.ThrowsException<NotSupportedException>(() => collection.Add(process));
+    }
+
+    [TestMethod]
     public void AddProcess_AssignsUniqueIds()
     {
         var scheduler = new Scheduler<DefaultContext>();

@@ -29,6 +29,8 @@ public class VirtualMemory<TAddress> where TAddress : IBinaryInteger<TAddress>
 {
     private readonly List<VirtualPage> _pages = [];
     private readonly List<VirtualProcess<TAddress>> _processes = [];
+    private readonly IReadOnlyList<VirtualPage> _pagesView;
+    private readonly IReadOnlyList<VirtualProcess<TAddress>> _processesView;
     private int _nextPageId;
     private int _nextProcessId;
     private TAddress _masterNextVirtualIndex = TAddress.Zero;
@@ -50,7 +52,7 @@ public class VirtualMemory<TAddress> where TAddress : IBinaryInteger<TAddress>
     /// <remarks>This is a live view over the internal page list. Allocating new pages while
     /// enumerating may modify the list; take a snapshot (<c>.ToList()</c>) for stable enumeration.
     /// </remarks>
-    public IReadOnlyList<VirtualPage> Pages => _pages;
+    public IReadOnlyList<VirtualPage> Pages => _pagesView;
 
     /// <summary>
     /// Gets the list of all processes, including the master process.
@@ -59,7 +61,7 @@ public class VirtualMemory<TAddress> where TAddress : IBinaryInteger<TAddress>
     /// while enumerating may modify the list; take a snapshot (<c>.ToList()</c>) for stable
     /// enumeration.
     /// </remarks>
-    public IReadOnlyList<VirtualProcess<TAddress>> Processes => _processes;
+    public IReadOnlyList<VirtualProcess<TAddress>> Processes => _processesView;
 
     /// <summary>
     /// Initializes a new <see cref="VirtualMemory{TAddress}"/> and creates the master process.
@@ -68,6 +70,8 @@ public class VirtualMemory<TAddress> where TAddress : IBinaryInteger<TAddress>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="pageSize"/> is less than one.</exception>
     public VirtualMemory(int pageSize = 4096)
     {
+        _pagesView = _pages.AsReadOnly();
+        _processesView = _processes.AsReadOnly();
         if (pageSize < 1) throw new ArgumentOutOfRangeException(nameof(pageSize), "Page size must be at least 1.");
         PageSize = pageSize;
         _maxPhysicalPages = int.MaxValue;
@@ -86,6 +90,8 @@ public class VirtualMemory<TAddress> where TAddress : IBinaryInteger<TAddress>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="pageSize"/> is less than one.</exception>
     public VirtualMemory(int pageSize, VirtualMachineLimits limits)
     {
+        _pagesView = _pages.AsReadOnly();
+        _processesView = _processes.AsReadOnly();
         ArgumentNullException.ThrowIfNull(limits);
         if (pageSize < 1) throw new ArgumentOutOfRangeException(nameof(pageSize), "Page size must be at least 1.");
         PageSize = pageSize;

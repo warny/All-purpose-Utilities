@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace Utils.VirtualMachine;
 
@@ -10,6 +11,7 @@ namespace Utils.VirtualMachine;
 public sealed class CallFrame
 {
     private readonly Dictionary<string, object?> _locals = [];
+    private readonly IReadOnlyDictionary<string, object?> _localsView;
 
     /// <summary>Gets the instruction-stream offset to resume when this frame is popped.</summary>
     public int ReturnAddress { get; }
@@ -22,9 +24,18 @@ public sealed class CallFrame
     /// property while the frame is being modified concurrently or re-entrantly is not safe.
     /// For stable diagnostic snapshots, copy the result: <c>frame.Locals.ToDictionary(...)</c>.
     /// </remarks>
-    public IReadOnlyDictionary<string, object?> Locals => _locals;
+    public IReadOnlyDictionary<string, object?> Locals => _localsView;
 
-    internal CallFrame(int returnAddress) => ReturnAddress = returnAddress;
+    /// <summary>
+    /// Initializes a frame with the specified return address and a persistent read-only view of
+    /// its local-variable storage.
+    /// </summary>
+    /// <param name="returnAddress">The instruction-stream offset to resume when this frame is popped.</param>
+    internal CallFrame(int returnAddress)
+    {
+        ReturnAddress = returnAddress;
+        _localsView = new ReadOnlyDictionary<string, object?>(_locals);
+    }
 
     /// <summary>
     /// Stores a local variable, overwriting any previous value under the same name.

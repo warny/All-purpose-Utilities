@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 
 namespace Utils.Transactions;
 
@@ -127,9 +128,15 @@ public sealed class TransactionException : Exception
         : base(BuildMessage(primaryException, rollbackExceptions), primaryException)
     {
         PrimaryException = primaryException;
-        RollbackExceptions = rollbackExceptions;
+        RollbackExceptions = rollbackExceptions.ToImmutableArray();
     }
 
+    /// <summary>
+    /// Builds the diagnostic message from the primary failure and the number of rollback failures.
+    /// </summary>
+    /// <param name="primary">The original transaction failure.</param>
+    /// <param name="rollbacks">The rollback failures included in the diagnostic.</param>
+    /// <returns>The complete transaction failure message.</returns>
     private static string BuildMessage(Exception primary, IReadOnlyList<Exception> rollbacks)
     {
         if (rollbacks.Count == 0)

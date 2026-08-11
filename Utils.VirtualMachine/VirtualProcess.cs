@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Numerics;
 
@@ -49,6 +50,9 @@ namespace Utils.VirtualMachine;
 public class VirtualProcess<TAddress> where TAddress : IBinaryInteger<TAddress>
 {
     private readonly Dictionary<TAddress, (VirtualPage Page, PageAccess Access)> _pageTable = [];
+    private IReadOnlyList<(TAddress VirtualPageIndex, VirtualPage Page, PageAccess Access)> _mappingsSnapshot
+        = ImmutableArray<(TAddress, VirtualPage, PageAccess)>.Empty;
+    private bool _mappingsSnapshotDirty = true;
     private readonly int _pageSize;
     private bool _isFreed;
 
@@ -84,7 +88,14 @@ public class VirtualProcess<TAddress> where TAddress : IBinaryInteger<TAddress>
         get
         {
             ThrowIfFreed();
-            return _pageTable.Select(kv => (kv.Key, kv.Value.Page, kv.Value.Access)).ToArray();
+            if (_mappingsSnapshotDirty)
+            {
+                _mappingsSnapshot = _pageTable
+                    .Select(kv => (kv.Key, kv.Value.Page, kv.Value.Access))
+                    .ToImmutableArray();
+                _mappingsSnapshotDirty = false;
+            }
+            return _mappingsSnapshot;
         }
     }
 
@@ -98,7 +109,11 @@ public class VirtualProcess<TAddress> where TAddress : IBinaryInteger<TAddress>
     internal void MarkFreed() => _isFreed = true;
 
     /// <summary>Clears all page-table entries without checking <see cref="IsFreed"/>. For use by <see cref="VirtualMemory{TAddress}.FreeProcess"/> only.</summary>
-    internal void ClearAllMappings() => _pageTable.Clear();
+    internal void ClearAllMappings()
+    {
+        _pageTable.Clear();
+        InvalidateMappingsSnapshot();
+    }
 
     /// <summary>
     /// Removes all virtual page table entries that reference <paramref name="page"/>, without
@@ -112,6 +127,7 @@ public class VirtualProcess<TAddress> where TAddress : IBinaryInteger<TAddress>
             .ToList();
         foreach (var key in keysToRemove)
             _pageTable.Remove(key);
+        InvalidateMappingsSnapshot();
     }
 
     /// <summary>Returns <see langword="true"/> when <paramref name="page"/> is mapped into this process with at least <see cref="PageAccess.ReadOnly"/> access.</summary>
@@ -122,13 +138,20 @@ public class VirtualProcess<TAddress> where TAddress : IBinaryInteger<TAddress>
     {
         ThrowIfFreed();
         _pageTable[virtualPageIndex] = (page, access);
+        InvalidateMappingsSnapshot();
     }
 
     internal void UnmapPage(TAddress virtualPageIndex)
     {
         ThrowIfFreed();
         _pageTable.Remove(virtualPageIndex);
+        InvalidateMappingsSnapshot();
     }
+
+    /// <summary>
+    /// Marks the cached immutable mappings snapshot for rebuilding after page-table mutation.
+    /// </summary>
+    private void InvalidateMappingsSnapshot() => _mappingsSnapshotDirty = true;
 
     private void ThrowIfFreed()
     {
