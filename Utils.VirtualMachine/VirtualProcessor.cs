@@ -264,16 +264,19 @@ public abstract class VirtualProcessor<T> where T : Context
     {
         foreach (var key in existing.Keys)
         {
-            int minLen = Math.Min(key.Count, newOpcode.Count);
+            // Processor-owned opcodes already provide O(1) indexed access. Materialize only a
+            // foreign key inserted directly by a derived class, keeping every comparison O(n).
+            IReadOnlyList<byte> keyList = key as IReadOnlyList<byte> ?? key.ToArray();
+            int minLen = Math.Min(keyList.Count, newOpcode.Count);
             bool sharedPrefix = true;
             for (int i = 0; i < minLen; i++)
             {
-                if (key.ElementAt(i) != newOpcode[i]) { sharedPrefix = false; break; }
+                if (keyList[i] != newOpcode[i]) { sharedPrefix = false; break; }
             }
-            if (sharedPrefix && key.Count != newOpcode.Count)
+            if (sharedPrefix && keyList.Count != newOpcode.Count)
                 throw new ArgumentException(
                     $"Opcode [{string.Join(", ", newOpcode.Select(b => $"0x{b:X2}"))}] conflicts with " +
-                    $"already-registered opcode [{string.Join(", ", key.Select(b => $"0x{b:X2}"))}]: " +
+                    $"already-registered opcode [{string.Join(", ", keyList.Select(b => $"0x{b:X2}"))}]: " +
                     "one is a proper prefix of the other. Prefix conflicts make the longer opcode unreachable.",
                     "opcode");
         }

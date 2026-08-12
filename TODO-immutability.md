@@ -47,7 +47,8 @@ Les cas suivants sont corrigés et couverts par des tests d'encapsulation :
 
 ### Audit ciblé `Utils.VirtualMachine` et `Utils.Transactions`
 
-- [x] `VirtualProcessor<T>.Instructions` : chaque opcode pris en charge est copié une fois dans
+- [x] `VirtualProcessor<T>.Instructions` : chaque opcode enregistré par `VirtualProcessor` via un
+  attribut ou `RegisterInstruction` est copié une fois dans
   une classe privée immutable et indexable, puis la même instance est utilisée comme clé et dans
   la vue publique live. `ArrayEqualityComparers.Byte` conserve l'égalité et le hash par contenu ;
   le getter ne crée aucune copie, et la détection des préfixes, la table rapide ainsi que le
