@@ -30,8 +30,36 @@ avoir effectué une copie défensive. `SqlSyntaxOptions` utilise un `ImmutableHa
 ## Remaining work
 
 - Auditer et corriger les prochaines tranches hors Parser qui ne faisaient pas partie de cette PR.
-- Traiter séparément `VirtualProcess<TAddress>.Mappings`, amélioration P3 de contrat/performance
-  qui ne permet actuellement pas de modifier l’état interne du processus.
+
+## Deuxième tranche terminée (2026-08-11)
+
+Les cas suivants sont corrigés et couverts par des tests d'encapsulation :
+
+- [x] `VirtualMemory<TAddress>.Pages` : vue read-only live créée une fois ;
+- [x] `VirtualMemory<TAddress>.Processes` : vue read-only live créée une fois ;
+- [x] `Scheduler<T>.Processes` : vue read-only live créée une fois ;
+- [x] `CallFrame.Locals` : `ReadOnlyDictionary` live créé une fois ;
+- [x] `ControlFlowStack.Blocks` : vue enumerable live créée une fois, préservant l'ordre de pile
+  sans exposer le `Stack<T>` interne ;
+- [x] `VirtualProcess<TAddress>.Mappings` : snapshot `ImmutableArray` mis en cache avec
+  invalidation lazy après chaque mutation de la table des pages ;
+- [x] `TransactionException.RollbackExceptions` : copie défensive immutable à la construction.
+
+### Audit ciblé `Utils.VirtualMachine` et `Utils.Transactions`
+
+- `VirtualProcessor<T>.Instructions` expose bien les tableaux possédés servant de clés au
+  dictionnaire : un consommateur peut recaster `Opcode` en `byte[]` et modifier la clé après son
+  insertion. Le stockage clone les sources externes, mais ce clone interne reste exposé. Ce
+  finding est volontairement reporté : corriger le type de clé exige d'adapter et de tester le
+  comparateur de séquences, la détection des préfixes, la table rapide et le dispatch sans changer
+  leur sémantique.
+- `VirtualProcessor<T>.Breakpoints` reste volontairement mutable : la collection constitue l'API
+  publique de mutation.
+- `ReadOnlyRange<T>` reste volontairement une vue live sur la liste fournie par l'appelant.
+- Les tableaux privés statiques réellement encapsulés sont des faux positifs et ne nécessitent
+  pas de conversion.
+- Les modèles de protocole DNS à propriétés `byte[]` restent des DTO mutables hors périmètre ;
+  aucun invariant d'objet immutable n'a été établi pendant cette tranche.
 
 ---
 

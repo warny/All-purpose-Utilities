@@ -167,6 +167,23 @@ public class CallStackTests
     }
 
     [TestMethod]
+    public void CallFrame_Locals_IsLiveReadOnlyView()
+    {
+        var callStack = new CallStack();
+        callStack.Call(0);
+        var frame = callStack.CurrentFrame!;
+        var view = frame.Locals;
+
+        frame.SetLocal("x", 42);
+
+        Assert.AreEqual(42, view["x"]);
+        Assert.IsFalse(view is Dictionary<string, object?>);
+        var dictionary = (IDictionary<string, object?>)view;
+        Assert.IsTrue(dictionary.IsReadOnly);
+        Assert.ThrowsException<NotSupportedException>(() => dictionary.Clear());
+    }
+
+    [TestMethod]
     public void CallFrame_Locals_ArePerFrame()
     {
         var cs = new CallStack();

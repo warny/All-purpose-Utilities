@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.VirtualMachine;
@@ -30,6 +31,21 @@ public class VirtualMemoryTests
     }
 
     [TestMethod]
+    public void Pages_IsLiveReadOnlyView()
+    {
+        var memory = new VirtualMemory<int>(pageSize: 16);
+        var view = memory.Pages;
+
+        var page = memory.AllocatePage();
+
+        Assert.AreEqual(1, view.Count);
+        Assert.IsFalse(view is List<VirtualPage>);
+        var collection = (ICollection<VirtualPage>)view;
+        Assert.IsTrue(collection.IsReadOnly);
+        Assert.ThrowsException<NotSupportedException>(() => collection.Add(page));
+    }
+
+    [TestMethod]
     public void AllocatePage_MasterAutoMapped_ReadWrite()
     {
         var mem = new VirtualMemory<int>(pageSize: 16);
@@ -58,6 +74,47 @@ public class VirtualMemoryTests
         var mem = new VirtualMemory<int>(pageSize: 16);
         var proc = mem.CreateProcess();
         Assert.IsTrue(mem.Processes.Contains(proc));
+    }
+
+    [TestMethod]
+    public void Processes_IsLiveReadOnlyView()
+    {
+        var memory = new VirtualMemory<int>(pageSize: 16);
+        var view = memory.Processes;
+
+        var process = memory.CreateProcess();
+
+        Assert.IsTrue(view.Contains(process));
+        Assert.IsFalse(view is List<VirtualProcess<int>>);
+        var collection = (ICollection<VirtualProcess<int>>)view;
+        Assert.IsTrue(collection.IsReadOnly);
+        Assert.ThrowsException<NotSupportedException>(() => collection.Add(process));
+    }
+
+    [TestMethod]
+    public void Mappings_AreCachedImmutableHistoricalSnapshots()
+    {
+        var memory = new VirtualMemory<int>(pageSize: 16);
+        var process = memory.CreateProcess();
+        var snapshot = process.Mappings;
+        var repeatedSnapshot = process.Mappings;
+        var page = memory.AllocatePage();
+
+        memory.MapPage(process, page, 0, PageAccess.ReadOnly);
+        var updated = process.Mappings;
+
+        Assert.AreSame(snapshot, repeatedSnapshot);
+        Assert.AreEqual(0, snapshot.Count);
+        Assert.AreEqual(1, updated.Count);
+        Assert.IsFalse(updated is (int VirtualPageIndex, VirtualPage Page, PageAccess Access)[]);
+        Assert.IsFalse(updated is List<(int VirtualPageIndex, VirtualPage Page, PageAccess Access)>);
+        var collection = (ICollection<(int VirtualPageIndex, VirtualPage Page, PageAccess Access)>)updated;
+        Assert.IsTrue(collection.IsReadOnly);
+        Assert.ThrowsException<NotSupportedException>(() => collection.Clear());
+
+        memory.FreeProcess(process);
+        Assert.AreEqual(1, updated.Count);
+        Assert.ThrowsException<ObjectDisposedException>(() => _ = process.Mappings);
     }
 
     [TestMethod]

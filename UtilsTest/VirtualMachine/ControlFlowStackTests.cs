@@ -95,6 +95,22 @@ public class ControlFlowTestMachine : VirtualProcessor<ControlFlowContext>
 [TestClass]
 public class ControlFlowStackTests
 {
+    [TestMethod]
+    public void Blocks_IsPersistentLiveViewWithoutExposingStack()
+    {
+        var controlFlow = new ControlFlowStack();
+        var view = controlFlow.Blocks;
+
+        controlFlow.PushLoop(10, 20);
+        controlFlow.PushConditional(11, 19);
+
+        Assert.AreSame(view, controlFlow.Blocks);
+        Assert.AreEqual(2, view.Count());
+        Assert.IsFalse(view is Stack<IControlFlowBlock>);
+        Assert.IsInstanceOfType<ConditionalBlock>(view.ElementAt(0));
+        Assert.IsInstanceOfType<LoopBlock>(view.ElementAt(1));
+    }
+
     // â"€â"€ ConditionalBlock â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
     [TestMethod]

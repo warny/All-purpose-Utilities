@@ -19,6 +19,7 @@ namespace Utils.VirtualMachine;
 public class Scheduler<T> where T : Context
 {
     private readonly List<ScheduledProcess<T>> _processes = [];
+    private readonly IReadOnlyList<ScheduledProcess<T>> _processesView;
     private int _nextId;
     private readonly int _maxScheduledProcesses;
 
@@ -32,8 +33,8 @@ public class Scheduler<T> where T : Context
     /// </summary>
     public long InstructionsExecuted { get; private set; }
 
-    /// <summary>Gets the list of all processes registered with this scheduler.</summary>
-    public IReadOnlyList<ScheduledProcess<T>> Processes => _processes;
+    /// <summary>Gets a live read-only view of all processes registered with this scheduler.</summary>
+    public IReadOnlyList<ScheduledProcess<T>> Processes => _processesView;
 
     /// <summary>
     /// Initializes a new <see cref="Scheduler{T}"/> with the specified quantum size.
@@ -46,6 +47,7 @@ public class Scheduler<T> where T : Context
     /// </exception>
     public Scheduler(int quantumSteps = 100)
     {
+        _processesView = _processes.AsReadOnly();
         if (quantumSteps < 1)
             throw new ArgumentOutOfRangeException(nameof(quantumSteps), "Quantum must be at least 1.");
         QuantumSteps = quantumSteps;
@@ -61,6 +63,7 @@ public class Scheduler<T> where T : Context
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="limits"/> is <see langword="null"/>.</exception>
     public Scheduler(VirtualMachineLimits limits)
     {
+        _processesView = _processes.AsReadOnly();
         ArgumentNullException.ThrowIfNull(limits);
         if (limits.SchedulerQuantumSteps < 1)
             throw new ArgumentOutOfRangeException(nameof(limits), "Quantum must be at least 1.");
