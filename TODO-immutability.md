@@ -1,457 +1,287 @@
-# TODO — Collections réellement immuables hors `Utils.Parser`
+# TODO — Immutabilité et encapsulation des collections
 
-## Objectif
+## État au 2026-08-12
 
-Corriger les types immuables ou utilisés comme snapshots dans les autres projets de la solution lorsqu’ils :
+Un audit transversal a été refait sur `master` après les PR #533 à #537. Il couvre les collections reçues de l'extérieur, les tableaux exposés, les propriétés `IReadOnly*`, les collections internes possédées par leur classe, les snapshots construits au getter, les propriétés `init`, les tables statiques et les comparateurs associés aux collections immutables.
 
-- exposent directement un tableau ;
-- conservent un tableau derrière `IReadOnlyList<T>` ou `IReadOnlyCollection<T>` ;
-- conservent directement un `List<T>`, `Dictionary<TKey,TValue>`, `HashSet<T>` ou autre collection mutable derrière une interface read-only ;
-- ne réalisent pas de copie défensive lors de la construction.
+Le chantier n'est **pas terminé** : huit findings concrets restent à traiter. Le fichier reste donc un `TODO`.
 
-Une interface `IReadOnly*` n’est pas une garantie d’immutabilité.
+## Principe cible
 
-## Première tranche terminée (2026-08-10)
+### Objet immutable / résultat / snapshot
 
-Les cas suivants sont corrigés et couverts par des tests de non-aliasing :
+Lorsqu'un objet prend possession d'une collection externe, faire une copie défensive **une seule fois**, au moment de la construction ou de la prise de possession, puis conserver une représentation immutable :
 
-- [x] `SmtpMessage.Recipients` (construction et affectation par `with`) ;
+- séquence compacte : `ToImmutableArray()` ou l'équivalent read-only standard du projet s'il copie réellement ;
+- liste : `ToImmutableList()` ;
+- dictionnaire : `ToImmutableDictionary(...)` en préservant impérativement le comparer ;
+- set : `ToImmutableHashSet(...)` en préservant le comparer ;
+- autre forme : `ToImmutable...` correspondant à la sémantique.
+
+Ne pas stocker `source.ToArray()` derrière `IReadOnlyList<T>` / `IReadOnlyCollection<T>` si ce tableau reste récupérable par cast.
+
+### Collection mutable possédée par sa classe
+
+Si la classe possède un `List<T>`, `Dictionary<TKey,TValue>`, `Stack<T>`, etc. et fournit elle-même les opérations de mutation, conserver le stockage mutable mais exposer une **vue read-only persistante créée une seule fois**. La vue peut être live ; elle ne doit pas permettre de récupérer le backing mutable et ne doit pas être recréée à chaque getter.
+
+### Snapshot d'un état mutable
+
+Si le contrat exige un snapshot historique, le snapshot doit être réellement immutable. Quand le propriétaire peut changer, préférer un cache invalidé/reconstruit lors des mutations plutôt qu'une copie à chaque lecture.
+
+### Sémantique à préserver
+
+Toujours préserver : ordre, unicité, comparer, sensibilité à la casse, déterminisme et API publique autant que possible.
+
+---
+
+# Findings restants
+
+## P1 — `Utils.Fonts.FontSupport` expose des tables globales mutables
+
+`FontSupport` expose directement plusieurs tableaux statiques get-only utilisés comme tables de référence globales, notamment :
+
+- `StdNames` ;
+- `StdValues` ;
+- `Type1CExpertCharset` ;
+- `Type1CExpertSubCharset` ;
+- `MacExtras` ;
+- `MacRomanEncoding` ;
+- `IsoLatin1Encoding` ;
+- `WinAnsiEncoding` ;
+- `StandardEncoding`.
+
+Un appelant peut modifier ces tableaux en place. Cela modifie l'état global observable du composant. Le cas `StdNames` est particulièrement dangereux : `StdNameIndexMap` est construit séparément, donc une mutation de `StdNames` peut rendre `GetName(...)` et `GetStrIndex(...)` incohérents.
+
+### À faire
+
+Stocker les tables une seule fois sous une représentation réellement immutable/read-only. Éviter une copie à chaque getter. Si conserver les signatures publiques `T[]` impose une allocation défensive à chaque lecture, évaluer explicitement le breaking change vers `IReadOnlyList<T>` / une représentation immutable dans le cadre de la version majeure en cours plutôt que de laisser un état global mutable.
+
+### Tests
+
+Vérifier qu'un consommateur ne peut plus modifier les tables globales et que les lookups dérivés restent cohérents.
+
+---
+
+## P1 — `Utils.Objects.Types` expose des classifications globales comme `Type[]`
+
+Les propriétés statiques suivantes sont des tableaux globaux directement modifiables :
+
+- `Number` ;
+- `UnsignedNumber` ;
+- `SignedNumber` ;
+- `FloatingPointNumber` ;
+- `_8BitsNumberI` ;
+- `_16BitsNumberI` ;
+- `_32BitsNumberI` ;
+- `_32BitsNumberF` ;
+- `_64BitsNumberI` ;
+- `_64BitsNumberIF` ;
+- `_128BitsNumberIF`.
+
+Elles représentent des classifications constantes et ne constituent pas une API de mutation volontaire.
+
+### À faire
+
+Créer une représentation immutable une seule fois et l'exposer sans permettre de mutation. Comme pour `FontSupport`, traiter explicitement la contrainte de compatibilité liée aux signatures publiques `Type[]` ; ne pas remplacer le problème par une allocation cachée à chaque getter sans décision consciente.
+
+### Tests
+
+Vérifier que les groupes ne peuvent plus être modifiés par un appelant et que les usages de classification restent inchangés.
+
+---
+
+## P1 — `CMapFormat4.TableMap` conserve le `short[]` fourni par l'appelant
+
+`CMapFormat4.TableMap` reçoit un `short[] map`, affecte directement `Map = map`, puis construit `reverseMap` à partir du même contenu.
+
+L'appelant peut modifier `map` après construction : l'indexation caractère → glyph utilise alors les nouvelles valeurs de `Map`, tandis que `reverseMap` conserve les anciennes valeurs. L'objet devient structurellement incohérent.
+
+### À faire
+
+Faire une copie defensive une seule fois à la construction, idéalement sous `ImmutableArray<short>` ou équivalent indexable immutable, puis construire `reverseMap` depuis cette même représentation possédée.
+
+Ne pas recopier au getter/indexeur.
+
+### Tests
+
+Construire un `TableMap` depuis un tableau, modifier la source, puis vérifier que les deux sens de mapping restent cohérents et basés sur l'état initial.
+
+---
+
+## P1 — `DateFormulaLanguage.Days` reste aliasé malgré une API `init`-only
+
+`DateFormulaLanguage` est un type de configuration dont les propriétés sont `required ... { get; init; }`. `Days` est déclaré :
+
+```csharp
+public required IReadOnlyDictionary<string, DayOfWeek> Days { get; init; }
+```
+
+Un `Dictionary<string, DayOfWeek>` fourni dans l'initializer reste donc mutable après construction et change l'état observable de l'objet.
+
+### À faire
+
+Introduire un backing field et normaliser dans l'`init` vers un dictionnaire immutable. Préserver le comparer de la collection source lorsque sa sémantique est significative. Conserver la possibilité d'object initializer si l'API le requiert.
+
+### Tests
+
+Modifier le dictionnaire source après l'initialisation et vérifier que `Days` ne change pas ; vérifier aussi qu'un `with` n'est pas pertinent ici (`DateFormulaLanguage` n'est pas un record) et que la propriété exposée n'est pas un `Dictionary` mutable.
+
+---
+
+## P1 — `SerializationContractException.Diagnostics` expose son tableau interne
+
+Le constructeur fait actuellement :
+
+```csharp
+Diagnostics = diagnostics.ToArray();
+```
+
+alors que la propriété est :
+
+```csharp
+public IReadOnlyList<SerializationContractDiagnostic> Diagnostics { get; }
+```
+
+Le snapshot est donc détaché de la source mais reste mutable par cast vers `SerializationContractDiagnostic[]`.
+
+### À faire
+
+Matérialiser une seule fois vers `ImmutableArray<SerializationContractDiagnostic>` (ou représentation équivalente) et exposer directement cette valeur sous l'API existante.
+
+### Tests
+
+Vérifier mutation de la source après construction et impossibilité de récupérer un tableau mutable depuis `Diagnostics`.
+
+---
+
+## P1 — `ODataQueryCompilation.Filters` et `Expansions` exposent des tableaux internes
+
+Le constructeur fait :
+
+```csharp
+Filters = filters.ToArray();
+Expansions = (expansions ?? Array.Empty<string>()).ToArray();
+```
+
+et expose les deux valeurs sous `IReadOnlyList<string>`. `ODataQueryCompilation` est un résultat de compilation à getters seuls ; les tableaux peuvent néanmoins être recastés et modifiés après construction.
+
+### À faire
+
+Convertir une seule fois à la construction avec `ToImmutableArray()` et conserver les signatures publiques `IReadOnlyList<string>`.
+
+### Tests
+
+Vérifier non-aliasing avec les sources et impossibilité de modifier `Filters` / `Expansions` par cast.
+
+---
+
+## P2 — `AcntTable.AccentDescription.Multiple.Extensions` conserve directement la liste source
+
+`AccentDescription.Multiple` reçoit :
+
+```csharp
+IReadOnlyList<ExtensionEntry> extensions
+```
+
+puis fait directement :
+
+```csharp
+Extensions = extensions;
+```
+
+La classe `Multiple` n'expose aucune opération de mutation et se comporte comme une description construite ; une `List<ExtensionEntry>` externe peut pourtant modifier ultérieurement son contenu et donc la taille/sérialisation de la table qui la contient.
+
+### À faire
+
+Faire une copie défensive une seule fois, par exemple `extensions.ToImmutableArray()`.
+
+### Tests
+
+Modifier la liste source après construction et vérifier que `Extensions` et la sérialisation restent stables.
+
+---
+
+## P2 — `ParserOptions.NumberSuffixes` perd le comparer lors de l'immuabilisation
+
+`NumberSuffixes` est construit depuis un `Dictionary<string, Func<string, object>>` configuré avec `StringComparer.CurrentCultureIgnoreCase`, puis converti avec :
+
+```csharp
+.ToImmutableDictionary()
+```
+
+sans passer explicitement le comparer. L'immuabilité est correcte, mais la conversion ne doit pas changer la sémantique de comparaison qui était explicitement demandée par le dictionnaire source.
+
+### À faire
+
+Construire l'`ImmutableDictionary` avec le comparer attendu explicitement (ou utiliser un builder configuré avec ce comparer). Vérifier la sémantique souhaitée entre `CurrentCultureIgnoreCase` et une éventuelle politique plus stable telle qu'`OrdinalIgnoreCase` avant de modifier le comportement.
+
+### Tests
+
+Tester au minimum la résolution des suffixes en casse différente et, si `CurrentCultureIgnoreCase` est conservé, un scénario de culture pertinent.
+
+---
+
+# Audit transversal — cas classés corrects / volontaires
+
+Les cas suivants ont été revérifiés et ne doivent pas être modifiés mécaniquement :
+
+- `ProtocolResponseException.Responses` : copie puis `ReadOnlyCollection<T>` persistante ;
+- `DateFormulaExpression.Steps` : snapshot copié puis `Array.AsReadOnly(...)` ;
+- `ArraysDifference<T>` : la classe encapsule son stockage et implémente elle-même `IReadOnlyList<T>` ; `ArraysChange<T>.Value` est immutable ;
+- `InterpolatedStringParser` : la liste privée est encapsulée par `AsReadOnly()` une seule fois ;
+- `GeoPointList<T>` / `GeoPointList2<T>` : `IList<T>` est volontairement l'API de mutation ;
+- `QueryString.QueryValues` : vue mutable volontaire faisant partie de l'API de modification du query string ;
+- `ExpressionCompilerContext.Symbols` : dictionnaire publiquement mutable par conception ;
+- `VirtualProcessor<T>.Breakpoints` : set publiquement mutable par conception ;
+- `ReadOnlyRange<T>` : vue live volontaire sur une collection externe ;
+- `ExternalResource.DiagnosticMessages` : vue live read-only persistante sur un état interne évolutif ;
+- `LRUCache` : vues read-only persistantes déjà créées une seule fois ;
+- `CMapFormat0.MapBytes`, `FvarTable` et les autres DTO/tables de fontes à propriétés tableau `get; set;` : modèles explicitement mutables, à distinguer des sous-objets get-only ci-dessus ;
+- modèles DNS à propriétés `byte[]` : DTO de protocole mutables, pas des snapshots immuables ;
+- méthodes telles que `SmtpClient.EhloAsync/ExpnAsync/HelpAsync` qui retournent un nouveau tableau sans le conserver : le résultat appartient au caller et ne constitue pas une fuite d'état interne ;
+- `Brackets.All` : retourne explicitement une nouvelle copie à chaque accès, donc aucune donnée globale mutable n'est exposée ;
+- tableaux privés statiques non exposés : aucun changement nécessaire.
+
+---
+
+# Travaux déjà terminés
+
+## Tranche 1
+
+- [x] `SmtpMessage.Recipients` ;
 - [x] `DnsLookupException.Failures` ;
 - [x] `NtpQueryException.Failures` ;
 - [x] `NetworkInterfaceSnapshot.DnsAddresses` ;
 - [x] `SqlSyntaxOptions.IdentifierPrefixes` ;
 - [x] `ReflectionSerializationContract.Members` ;
-- [x] `Bytes` lors de la construction depuis un `byte[]`.
+- [x] `Bytes` pour les constructions qui doivent copier (l'alias volontaire `AsBytes(byte[])` reste son contrat explicite).
 
-Les collections séquentielles ci-dessus utilisent désormais des snapshots `ImmutableArray`,
-à l’exception de `Bytes`, qui conserve volontairement son tableau strictement privé après en
-avoir effectué une copie défensive. `SqlSyntaxOptions` utilise un `ImmutableHashSet<char>`.
+## Tranche 2
 
-## Remaining work
+- [x] `VirtualMemory<TAddress>.Pages` ;
+- [x] `VirtualMemory<TAddress>.Processes` ;
+- [x] `Scheduler<T>.Processes` ;
+- [x] `CallFrame.Locals` ;
+- [x] `ControlFlowStack.Blocks` ;
+- [x] `VirtualProcess<TAddress>.Mappings` ;
+- [x] `TransactionException.RollbackExceptions`.
 
-- Auditer et corriger les prochaines tranches hors Parser qui ne faisaient pas partie de cette PR.
+## Tranche 3
 
-## Deuxième tranche terminée (2026-08-11)
+- [x] `VirtualProcessor<T>.Instructions` : opcode copié une seule fois dans un stockage privé immutable, même instance réutilisée dans la vue publique et comme clé ; comparer de contenu conservé.
 
-Les cas suivants sont corrigés et couverts par des tests d'encapsulation :
-
-- [x] `VirtualMemory<TAddress>.Pages` : vue read-only live créée une fois ;
-- [x] `VirtualMemory<TAddress>.Processes` : vue read-only live créée une fois ;
-- [x] `Scheduler<T>.Processes` : vue read-only live créée une fois ;
-- [x] `CallFrame.Locals` : `ReadOnlyDictionary` live créé une fois ;
-- [x] `ControlFlowStack.Blocks` : vue enumerable live créée une fois, préservant l'ordre de pile
-  sans exposer le `Stack<T>` interne ;
-- [x] `VirtualProcess<TAddress>.Mappings` : snapshot `ImmutableArray` mis en cache avec
-  invalidation lazy après chaque mutation de la table des pages ;
-- [x] `TransactionException.RollbackExceptions` : copie défensive immutable à la construction.
-
-### Audit ciblé `Utils.VirtualMachine` et `Utils.Transactions`
-
-- [x] `VirtualProcessor<T>.Instructions` : chaque opcode enregistré par `VirtualProcessor` via un
-  attribut ou `RegisterInstruction` est copié une fois dans
-  une classe privée immutable et indexable, puis la même instance est utilisée comme clé et dans
-  la vue publique live. `ArrayEqualityComparers.Byte` conserve l'égalité et le hash par contenu ;
-  le getter ne crée aucune copie, et la détection des préfixes, la table rapide ainsi que le
-  dispatch conservent leur sémantique.
-- `VirtualProcessor<T>.Breakpoints` reste volontairement mutable : la collection constitue l'API
-  publique de mutation.
-- `ReadOnlyRange<T>` reste volontairement une vue live sur la liste fournie par l'appelant.
-- Les tableaux privés statiques réellement encapsulés sont des faux positifs et ne nécessitent
-  pas de conversion.
-- Les modèles de protocole DNS à propriétés `byte[]` restent des DTO mutables hors périmètre ;
-  aucun invariant d'objet immutable n'a été établi pendant cette tranche.
+`Utils.Parser` a son audit/remédiation séparé déjà terminé ; les recherches transversales ont néanmoins été croisées avec ses patterns pour éviter de réintroduire un faux positif dans ce fichier.
 
 ---
 
-## Principe cible commun
-
-Lorsqu’un objet immutable reçoit une collection, effectuer immédiatement une copie défensive et affecter à la propriété une représentation immutable.
-
-### Tableaux / séquences compactes
-
-Utiliser :
-
-```csharp
-source.AsReadOnlyArray()
-```
-
-lorsque cette extension fournit la représentation read-only standard du projet et effectue bien une copie défensive.
-
-Lorsque le type le permet, préférer directement :
-
-```csharp
-source.ToImmutableArray()
-```
-
-Ne pas exposer directement le résultat de :
-
-```csharp
-source.ToArray()
-```
-
-sous `IReadOnlyList<T>` ou `IReadOnlyCollection<T>`.
-
-### Listes
-
-Utiliser :
-
-```csharp
-source.ToImmutableList()
-```
-
-### Dictionnaires
-
-Utiliser :
-
-```csharp
-source.ToImmutableDictionary()
-```
-
-avec conservation impérative du comparateur existant.
-
-### Sets
-
-Utiliser :
-
-```csharp
-source.ToImmutableHashSet()
-```
-
-avec conservation du comparateur existant.
-
-### Autres collections
-
-Utiliser la forme immutable correspondant à la sémantique de la collection :
-
-- `ToImmutableSortedSet`
-- `ToImmutableSortedDictionary`
-- `ToImmutableQueue`
-- `ToImmutableStack`
-- etc.
-
-Préserver :
-
-- ordre ;
-- unicité ;
-- comparateur ;
-- sensibilité à la casse ;
-- déterminisme.
-
----
-
-# P1 — `Utils.Net`
-
-## `SmtpMessage`
-
-Actuellement :
-
-```csharp
-public sealed record SmtpMessage(
-    string From,
-    IReadOnlyList<string> Recipients,
-    string Data);
-```
-
-`Recipients` peut être un tableau ou une liste appartenant à l’appelant. Une modification postérieure de cette collection modifie donc l’état observable du message.
-
-### À faire
-
-Remplacer le record positionnel ou introduire un constructeur contrôlé permettant une copie défensive, par exemple :
-
-```csharp
-Recipients = recipients.ToImmutableArray();
-```
-
-ou `AsReadOnlyArray()` selon la représentation standard retenue.
-
-### Tests
-
-Vérifier qu’une modification de la collection source après construction ne modifie pas `Recipients` et que la propriété ne permet pas de récupérer le tableau mutable source par cast.
-
----
-
-## `DnsLookupException.Failures`
-
-La classe effectue déjà :
-
-```csharp
-Failures = failures.ToArray();
-```
-
-mais expose ensuite le tableau sous `IReadOnlyList<DnsServerFailure>`, ce qui permet de le recaster.
-
-### À faire
-
-Remplacer par :
-
-```csharp
-Failures = failures.ToImmutableArray();
-```
-
-ou :
-
-```csharp
-Failures = failures.AsReadOnlyArray();
-```
-
-### Tests
-
-Vérifier :
-
-- la mutation de la source n’affecte pas l’exception ;
-- la collection exposée n’est pas un tableau mutable recastable.
-
----
-
-## `NtpQueryException.Failures`
-
-Même problème que `DnsLookupException`.
-
-Remplacer le `ToArray()` stocké sous `IReadOnlyList<T>` par une représentation immutable.
-
----
-
-# P1 — `Utils.Data`
-
-## `SqlSyntaxOptions.IdentifierPrefixes`
-
-Actuellement :
-
-```csharp
-private readonly HashSet<char> identifierPrefixes;
-
-public IReadOnlyCollection<char> IdentifierPrefixes
-    => identifierPrefixes;
-```
-
-Le `HashSet<char>` interne peut être récupéré par cast puis modifié, ce qui modifie ensuite le résultat de `IsIdentifierPrefix(...)`.
-
-### À faire
-
-Stocker une collection réellement immutable, par exemple :
-
-```csharp
-private readonly ImmutableHashSet<char> identifierPrefixes;
-```
-
-et construire avec :
-
-```csharp
-identifierPrefixes = resolvedPrefixes.ToImmutableHashSet();
-```
-
-Préserver la logique ajoutant automatiquement `AutoParameterPrefix` à l’ensemble.
-
-### Tests
-
-Vérifier qu’une tentative de mutation externe ne peut plus modifier le comportement de `IsIdentifierPrefix`.
-
----
-
-# P1 — cœur `Utils`
-
-## `Utils.Objects.Bytes`
-
-`Bytes` est un `readonly struct` présenté comme une vue read-only sur des octets.
-
-Le constructeur interne conserve actuellement directement le tableau fourni :
-
-```csharp
-internal Bytes(params byte[] byteArray)
-{
-    _innerBytes = byteArray ?? [];
-}
-```
-
-et l’opérateur public :
-
-```csharp
-public static implicit operator Bytes(byte[] bytes)
-    => new Bytes(bytes);
-```
-
-permet donc à l’appelant de conserver et modifier la référence mutable après construction.
-
-### À faire
-
-Effectuer une copie défensive lors de la construction.
-
-Ici, un tableau privé peut rester acceptable si celui-ci n’est jamais exposé directement :
-
-```csharp
-_innerBytes = byteArray?.ToArray() ?? [];
-```
-
-Si cela reste performant et cohérent avec le type, `ImmutableArray<byte>` peut également être envisagé.
-
-Le point obligatoire est que la source mutable de l’appelant ne soit jamais conservée.
-
-### Tests
-
-Ajouter notamment :
-
-```csharp
-byte[] source = [1, 2, 3];
-Bytes bytes = source;
-source[0] = 42;
-Assert.AreEqual(1, bytes[0]);
-```
-
----
-
-# P3 — `Utils.VirtualMachine`
-
-## `VirtualProcess<TAddress>.Mappings`
-
-La propriété construit actuellement un nouveau tableau avec `ToArray()` puis le retourne sous `IReadOnlyList<...>`.
-
-La mutation de ce tableau ne modifie pas `_pageTable`, donc il ne s’agit pas d’une rupture d’encapsulation du `VirtualProcess`. En revanche, la documentation parle d’un `immutable snapshot` alors que le snapshot retourné reste lui-même mutable.
-
-### À faire
-
-Pour rendre le contrat strictement conforme à la documentation, retourner :
-
-```csharp
-.ToImmutableArray()
-```
-
-ou :
-
-```csharp
-.AsReadOnlyArray()
-```
-
-### Priorité
-
-P3 : amélioration de contrat plutôt que défaut fonctionnel.
-
----
-
-# Recherche complémentaire obligatoire sur toute la solution
-
-La liste ci-dessus correspond aux cas déjà confirmés pendant l’audit initial. La correction ne doit pas s’y limiter.
-
-Effectuer une recherche systématique dans tous les projets hors Parser avec notamment :
-
-```text
-IReadOnlyList<
-IReadOnlyCollection<
-IReadOnlySet<
-IReadOnlyDictionary<
-ToArray()
-new List<
-new Dictionary<
-new HashSet<
-params ...[]
-```
-
-Identifier en priorité les types :
-
-- `record` ;
-- `readonly record struct` ;
-- `readonly struct` ;
-- options/configuration avec getters uniquement ;
-- résultats d’opération ;
-- snapshots ;
-- diagnostics ;
-- exceptions transportant une liste de causes ;
-- DTO explicitement documentés immutable/read-only.
-
-Pour chaque résultat, déterminer si la collection mutable peut modifier l’état observable du type après construction ou être récupérée par cast.
-
----
-
-# Faux positifs à ne pas modifier mécaniquement
-
-Ne pas remplacer les implémentations qui assurent déjà correctement l’immutabilité ou l’encapsulation.
-
-## `ProtocolResponseException.Responses`
-
-Le pattern copie puis enveloppe dans une `ReadOnlyCollection<T>`. Le tableau n’est pas exposé directement.
-
-## `NetworkParameters.NetworkInterfaces`
-
-Utilise `Array.AsReadOnly(...)` : le tableau interne n’est pas directement récupérable via la propriété.
-
-## `NetworkParameters.DnsServers`
-
-Retourne volontairement un tableau, mais une copie défensive différente à chaque appel.
-
-## `CmapTable.CMaps`
-
-Utilise une `ReadOnlyCollection<T>` construite à partir d’un snapshot.
-
-## `ExternalResource.DiagnosticMessages`
-
-Utilise `AsReadOnly()` sur une collection interne volontairement évolutive ; il s’agit d’une vue live et non d’un objet immutable.
-
-## `ArraysChange<T>.Value`
-
-Le stockage est créé avec `ToImmutableArray()` et ne nécessite pas de correction.
-
----
-
-# Tests génériques
-
-Pour chaque type corrigé, ajouter au minimum les scénarios suivants.
-
-## Tableau source
-
-```csharp
-T[] source = [...];
-var value = new Model(source);
-source[0] = other;
-Assert.AreNotEqual(other, value.Items[0]);
-```
-
-## Liste source
-
-```csharp
-var source = new List<T> { initial };
-var value = new Model(source);
-source[0] = other;
-Assert.AreEqual(initial, value.Items[0]);
-```
-
-## Dictionnaire source
-
-```csharp
-var source = new Dictionary<TKey, TValue>
-{
-    [key] = value1
-};
-
-var model = new Model(source);
-source[key] = value2;
-Assert.AreEqual(value1, model.Values[key]);
-```
-
-## Set source
-
-```csharp
-var source = new HashSet<T> { value1 };
-var model = new Model(source);
-source.Add(value2);
-Assert.IsFalse(model.Values.Contains(value2));
-```
-
-## Cast vers une collection mutable
-
-Lorsque la propriété est exposée sous une interface read-only, vérifier qu’elle ne correspond plus directement au tableau, à la liste, au dictionnaire ou au set mutable utilisé comme stockage.
-
----
-
-# Critères d’acceptation
-
-Le TODO est terminé lorsque :
-
-- toutes les classes réellement immuables de la solution hors Parser ont été auditées ;
-- toutes les collections fournies par l’appelant sont copiées défensivement ;
-- les collections conservées sont réellement immutables ;
-- aucun tableau interne n’est directement exposé sous une interface read-only ;
-- aucun `List<T>`, `Dictionary<TKey,TValue>`, `HashSet<T>` ou autre collection mutable interne n’est exposé derrière une interface read-only ;
-- les comparateurs et règles d’ordre existants sont conservés ;
-- les tests prouvent l’absence d’alias avec les collections sources ;
-- les snapshots documentés comme immuables le sont effectivement ;
-- les implémentations déjà correctes ne sont pas modifiées inutilement ;
-- tous les tests des projets concernés restent verts.
+# Critères de clôture
+
+Renommer ce fichier en `DONE-immutability-YYYY-MM-DD.md` uniquement lorsque :
+
+- les huit findings ci-dessus sont corrigés ;
+- chaque correction possède un test de non-aliasing / impossibilité de mutation adapté ;
+- aucune vue live possédée n'alloue un wrapper ou snapshot à chaque getter ;
+- les tables statiques globales ne sont plus modifiables par les callers ;
+- les comparateurs, ordres et règles de casse sont préservés explicitement ;
+- les signatures publiques sont conservées ou les éventuels breaking changes sont assumés/documentés dans le cadre de la version majeure ;
+- les tests des projets concernés et les quality gates applicables restent verts.
