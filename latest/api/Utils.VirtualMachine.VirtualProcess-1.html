@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_VirtualMachine_VirtualProcess_1" data-uid="Utils.VirtualMachine.VirtualProcess`1" class="text-break">
-Class VirtualProcess&lt;TAddress&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L49"><i class="bi bi-code-slash"></i></a>
+Class VirtualProcess&lt;TAddress&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L50"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -289,7 +289,7 @@ or <a class="xref" href="Utils.VirtualMachine.VirtualMemory-1.html">VirtualMemor
 
   <h3 id="Utils_VirtualMachine_VirtualProcess_1_IsFreed" data-uid="Utils.VirtualMachine.VirtualProcess`1.IsFreed">
   IsFreed
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L70"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L74"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a value indicating whether this process has been freed via
@@ -323,7 +323,7 @@ memory operations.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualProcess_1_IsMaster" data-uid="Utils.VirtualMachine.VirtualProcess`1.IsMaster">
   IsMaster
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L63"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L67"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a value indicating whether this is the master process. The master process receives
@@ -357,7 +357,7 @@ automatic <a class="xref" href="Utils.VirtualMachine.PageAccess.html#Utils_Virtu
 
   <h3 id="Utils_VirtualMachine_VirtualProcess_1_Mappings" data-uid="Utils.VirtualMachine.VirtualProcess`1.Mappings">
   Mappings
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L82"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L86"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a snapshot of all current page mappings for this process as a list of
@@ -401,7 +401,7 @@ Subsequent calls to <a class="xref" href="Utils.VirtualMachine.VirtualPage.html"
 
   <h3 id="Utils_VirtualMachine_VirtualProcess_1_ProcessId" data-uid="Utils.VirtualMachine.VirtualProcess`1.ProcessId">
   ProcessId
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L56"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L60"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the unique identifier assigned to this process.</p>
@@ -437,7 +437,7 @@ Subsequent calls to <a class="xref" href="Utils.VirtualMachine.VirtualPage.html"
 
   <h3 id="Utils_VirtualMachine_VirtualProcess_1_GetAccess__0_" data-uid="Utils.VirtualMachine.VirtualProcess`1.GetAccess(`0)">
   GetAccess(TAddress)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L223"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L246"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the access rights for the page that contains <code class="paramref">virtualAddress</code>,
@@ -484,7 +484,7 @@ or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keyword
 
   <h3 id="Utils_VirtualMachine_VirtualProcess_1_IsAccessible__0_" data-uid="Utils.VirtualMachine.VirtualProcess`1.IsAccessible(`0)">
   IsAccessible(TAddress)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L210"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L233"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if <code class="paramref">virtualAddress</code> falls within a mapped page.</p>
@@ -530,7 +530,7 @@ or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keyword
 
   <h3 id="Utils_VirtualMachine_VirtualProcess_1_Read__0_System_Span_System_Byte__" data-uid="Utils.VirtualMachine.VirtualProcess`1.Read(`0,System.Span{System.Byte})">
   Read(TAddress, Span&lt;byte&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L159"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L182"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads <code class="paramref">destination</code><code>.Length</code> bytes starting at
@@ -584,7 +584,7 @@ No bytes are copied in this case.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualProcess_1_Write__0_System_ReadOnlySpan_System_Byte__" data-uid="Utils.VirtualMachine.VirtualProcess`1.Write(`0,System.ReadOnlySpan{System.Byte})">
   Write(TAddress, ReadOnlySpan&lt;byte&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L192"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L215"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes <code class="paramref">source</code> bytes starting at <code class="paramref">virtualAddress</code>.
@@ -639,7 +639,7 @@ No bytes are written in this case.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L49" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L50" class="edit-link">Edit this page</a>
         </div>
 
 

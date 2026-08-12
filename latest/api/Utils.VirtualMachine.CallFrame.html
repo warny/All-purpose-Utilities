@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_VirtualMachine_CallFrame" data-uid="Utils.VirtualMachine.CallFrame" class="text-break">
-Class CallFrame  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/CallFrame.cs/#L10"><i class="bi bi-code-slash"></i></a>
+Class CallFrame  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/CallFrame.cs/#L11"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -246,7 +246,7 @@ and a per-frame local-variable store keyed by name.</p>
 
   <h3 id="Utils_VirtualMachine_CallFrame_Locals" data-uid="Utils.VirtualMachine.CallFrame.Locals">
   Locals
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/CallFrame.cs/#L25"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/CallFrame.cs/#L27"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a read-only view of all local variables stored in this frame.</p>
@@ -283,7 +283,7 @@ For stable diagnostic snapshots, copy the result: <code>frame.Locals.ToDictionar
 
   <h3 id="Utils_VirtualMachine_CallFrame_ReturnAddress" data-uid="Utils.VirtualMachine.CallFrame.ReturnAddress">
   ReturnAddress
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/CallFrame.cs/#L15"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/CallFrame.cs/#L17"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the instruction-stream offset to resume when this frame is popped.</p>
@@ -319,7 +319,7 @@ For stable diagnostic snapshots, copy the result: <code>frame.Locals.ToDictionar
 
   <h3 id="Utils_VirtualMachine_CallFrame_ContainsLocal_System_String_" data-uid="Utils.VirtualMachine.CallFrame.ContainsLocal(System.String)">
   ContainsLocal(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/CallFrame.cs/#L45"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/CallFrame.cs/#L56"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when a local variable with the given name has been stored,
@@ -358,7 +358,7 @@ regardless of its value or type.</p>
 
   <h3 id="Utils_VirtualMachine_CallFrame_GetLocal__1_System_String_" data-uid="Utils.VirtualMachine.CallFrame.GetLocal``1(System.String)">
   GetLocal&lt;T&gt;(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/CallFrame.cs/#L94"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/CallFrame.cs/#L105"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Retrieves a typed local variable, throwing if the variable is absent or has an incompatible type.</p>
@@ -412,7 +412,7 @@ regardless of its value or type.</p>
 
   <h3 id="Utils_VirtualMachine_CallFrame_SetLocal_System_String_System_Object_" data-uid="Utils.VirtualMachine.CallFrame.SetLocal(System.String,System.Object)">
   SetLocal(string, object?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/CallFrame.cs/#L34"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/CallFrame.cs/#L45"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Stores a local variable, overwriting any previous value under the same name.</p>
@@ -448,7 +448,7 @@ regardless of its value or type.</p>
 
   <h3 id="Utils_VirtualMachine_CallFrame_TryGetLocal__1_System_String___0__" data-uid="Utils.VirtualMachine.CallFrame.TryGetLocal``1(System.String,``0@)">
   TryGetLocal&lt;T&gt;(string, out T?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/CallFrame.cs/#L64"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/CallFrame.cs/#L75"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Attempts to retrieve a typed local variable.
@@ -502,7 +502,7 @@ otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/CallFrame.cs/#L10" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/CallFrame.cs/#L11" class="edit-link">Edit this page</a>
         </div>
 
 
