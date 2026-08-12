@@ -324,6 +324,61 @@ namespace UtilsTest.VirtualMachine
             Assert.IsTrue(executed, "Handler must still dispatch via the original opcode 0xAB.");
         }
 
+        [TestMethod]
+        public void Instructions_AttributeOpcode_CannotBeMutatedThroughPublicView()
+        {
+            var machine = new TestMachine();
+
+            IReadOnlyCollection<byte> opcode = machine.Instructions
+                .Single(instruction => instruction.Name == "POP")
+                .Opcode;
+
+            Assert.IsFalse(opcode is byte[]);
+            Assert.IsFalse(opcode is IList<byte>);
+            Assert.IsFalse(opcode is ICollection<byte>);
+            CollectionAssert.AreEqual(new byte[] { 0x02 }, opcode.ToArray());
+        }
+
+        [TestMethod]
+        public void Instructions_RuntimeOpcode_ReusesImmutableObjectAndRemainsLive()
+        {
+            var machine = new TestMachine();
+            IEnumerable<(IReadOnlyCollection<byte> Opcode, string Name)> view = machine.Instructions;
+            byte[] source = [0xAB, 0xCD];
+
+            machine.RegisterInstruction(source, "RUNTIME", _ => { });
+            IReadOnlyCollection<byte> firstRead = view.Single(instruction => instruction.Name == "RUNTIME").Opcode;
+            source[0] = 0xFF;
+            IReadOnlyCollection<byte> secondRead = machine.Instructions
+                .Single(instruction => instruction.Name == "RUNTIME")
+                .Opcode;
+
+            Assert.AreSame(firstRead, secondRead, "The getter must reuse the registered immutable opcode.");
+            Assert.IsFalse(firstRead is byte[]);
+            Assert.IsFalse(firstRead is IList<byte>);
+            Assert.IsFalse(firstRead is ICollection<byte>);
+            CollectionAssert.AreEqual(new byte[] { 0xAB, 0xCD }, firstRead.ToArray());
+        }
+
+        [TestMethod]
+        public void Instructions_PublicInspection_DoesNotChangeLookupOrDispatch()
+        {
+            var machine = new TestMachine();
+            bool executed = false;
+            machine.RegisterInstruction([0xAB, 0xCD], "RUNTIME", _ => executed = true);
+
+            IReadOnlyCollection<byte> opcode = machine.Instructions
+                .Single(instruction => instruction.Name == "RUNTIME")
+                .Opcode;
+            int hashBefore = ArrayEqualityComparers.Byte.GetHashCode(opcode);
+            int hashAfter = ArrayEqualityComparers.Byte.GetHashCode(
+                machine.Instructions.Single(instruction => instruction.Name == "RUNTIME").Opcode);
+            machine.Execute(new DefaultContext(new byte[] { 0xAB, 0xCD }));
+
+            Assert.AreEqual(hashBefore, hashAfter);
+            Assert.IsTrue(executed);
+        }
+
         // ── Item 1: prefix-conflicting opcodes are rejected ───────────────────
 
         [TestMethod]

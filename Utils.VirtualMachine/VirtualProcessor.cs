@@ -24,6 +24,37 @@ namespace Utils.VirtualMachine;
 /// </remarks>
 public abstract class VirtualProcessor<T> where T : Context
 {
+    /// <summary>
+    /// Stores an opcode in immutable, indexable storage. The source is copied exactly once when
+    /// the processor takes ownership, and the private array is never exposed.
+    /// </summary>
+    private sealed class ImmutableOpcode : IReadOnlyList<byte>
+    {
+        /// <summary>The private, immutable-after-construction opcode storage.</summary>
+        private readonly byte[] _bytes;
+
+        /// <summary>Initializes an opcode by taking a defensive copy of external storage.</summary>
+        /// <param name="source">The externally owned opcode bytes to copy.</param>
+        public ImmutableOpcode(byte[] source)
+        {
+            _bytes = (byte[])source.Clone();
+        }
+
+        /// <inheritdoc />
+        public int Count => _bytes.Length;
+
+        /// <inheritdoc />
+        public byte this[int index] => _bytes[index];
+
+        /// <inheritdoc />
+        public IEnumerator<byte> GetEnumerator()
+            => ((IEnumerable<byte>)_bytes).GetEnumerator();
+
+        /// <inheritdoc />
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+            => _bytes.GetEnumerator();
+    }
+
     // INumberReader methods never change; cache per-type avoids rebuilding on every instantiation.
     // IsAbstract filters to fixed-width methods only; default-implementation methods (LEB128) share
     // return types with ulong/long and would cause duplicate-key conflicts in the dictionary.
@@ -59,7 +90,8 @@ public abstract class VirtualProcessor<T> where T : Context
 
     /// <summary>
     /// A dictionary mapping each instruction byte sequence to a (name, delegate) pair.
-    /// The equality comparer for keys is configured to handle byte-array comparison.
+    /// Processor-owned keys use immutable storage. The equality comparer retains content-based
+    /// comparison while the interface key type preserves compatibility for derived classes.
     /// </summary>
     protected Dictionary<IReadOnlyCollection<byte>, (string Name, InstructionDelegate Handler)> InstructionsSet { get; }
 
@@ -208,12 +240,12 @@ public abstract class VirtualProcessor<T> where T : Context
 
             foreach (InstructionAttribute attr in instructionAttributes.OfType<InstructionAttribute>())
             {
-                // Clone the attribute's opcode into owned immutable storage so that external
-                // mutations of the source array cannot corrupt the dictionary's hash buckets.
-                byte[] ownedOpcode = (byte[])attr.Instruction.Clone();
+                // Copy the attribute's mutable array once into storage that cannot be exposed or
+                // mutated, keeping the dictionary key's content and hash stable after insertion.
+                var ownedOpcode = new ImmutableOpcode(attr.Instruction);
                 CheckPrefixConflict(result, ownedOpcode);
                 result.Add(ownedOpcode, (attr.Name, instructionDelegate));
-                _maxInstructionSize = Math.Max(_maxInstructionSize, ownedOpcode.Length);
+                _maxInstructionSize = Math.Max(_maxInstructionSize, ownedOpcode.Count);
             }
         }
 
@@ -228,21 +260,20 @@ public abstract class VirtualProcessor<T> where T : Context
     /// </summary>
     private static void CheckPrefixConflict(
         Dictionary<IReadOnlyCollection<byte>, (string Name, InstructionDelegate Handler)> existing,
-        byte[] newOpcode)
+        ImmutableOpcode newOpcode)
     {
         foreach (var key in existing.Keys)
         {
-            var keyList = key.ToList();
-            int minLen = Math.Min(keyList.Count, newOpcode.Length);
+            int minLen = Math.Min(key.Count, newOpcode.Count);
             bool sharedPrefix = true;
             for (int i = 0; i < minLen; i++)
             {
-                if (keyList[i] != newOpcode[i]) { sharedPrefix = false; break; }
+                if (key.ElementAt(i) != newOpcode[i]) { sharedPrefix = false; break; }
             }
-            if (sharedPrefix && keyList.Count != newOpcode.Length)
+            if (sharedPrefix && key.Count != newOpcode.Count)
                 throw new ArgumentException(
                     $"Opcode [{string.Join(", ", newOpcode.Select(b => $"0x{b:X2}"))}] conflicts with " +
-                    $"already-registered opcode [{string.Join(", ", keyList.Select(b => $"0x{b:X2}"))}]: " +
+                    $"already-registered opcode [{string.Join(", ", key.Select(b => $"0x{b:X2}"))}]: " +
                     "one is a proper prefix of the other. Prefix conflicts make the longer opcode unreachable.",
                     "opcode");
         }
@@ -503,18 +534,18 @@ public abstract class VirtualProcessor<T> where T : Context
                 $"An instruction with opcode [{string.Join(", ", opcode.Select(b => $"0x{b:X2}"))}] is already registered.",
                 nameof(opcode));
 
-        // Clone into owned storage so that external mutations of the source array cannot corrupt
-        // dictionary hash buckets or dispatch tables after registration.
-        byte[] ownedOpcode = (byte[])opcode.Clone();
+        // Copy once into immutable owned storage so external mutations cannot corrupt dictionary
+        // hash buckets or dispatch tables after registration.
+        var ownedOpcode = new ImmutableOpcode(opcode);
         // Always enforce prefix-conflict rules. CheckPrefixConflict only throws when lengths differ,
         // so replacing an exact opcode (overwrite: true) is allowed while cross-length conflicts are
         // still rejected — a conflict with a different-length opcode is invalid regardless of overwrite.
         CheckPrefixConflict(InstructionsSet, ownedOpcode);
 
         InstructionsSet[ownedOpcode] = (name, ctx => handler(ctx));
-        if (ownedOpcode.Length > _maxInstructionSize)
+        if (ownedOpcode.Count > _maxInstructionSize)
         {
-            _maxInstructionSize = ownedOpcode.Length;
+            _maxInstructionSize = ownedOpcode.Count;
             Array.Resize(ref _buffer, _maxInstructionSize);
         }
         RebuildFastLookup();
