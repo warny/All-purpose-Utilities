@@ -105,6 +105,51 @@ namespace UtilsTest.VirtualMachine
     [TestClass]
     public class VirtualMachineTests
     {
+        /// <summary>
+        /// Exposes insertion of a non-indexable key to model a derived class using the protected
+        /// instruction dictionary directly.
+        /// </summary>
+        private sealed class ForeignKeyMachine : VirtualProcessor<DefaultContext>
+        {
+            /// <summary>Adds a foreign opcode key directly to the protected instruction set.</summary>
+            /// <param name="opcode">The foreign opcode collection.</param>
+            public void AddForeignOpcode(IReadOnlyCollection<byte> opcode)
+            {
+                InstructionsSet.Add(opcode, ("FOREIGN", _ => { }));
+            }
+        }
+
+        /// <summary>Counts enumerations while providing no indexed collection interface.</summary>
+        private sealed class CountingOpcodeCollection : IReadOnlyCollection<byte>
+        {
+            /// <summary>The bytes returned by each enumeration.</summary>
+            private readonly byte[] _bytes;
+
+            /// <summary>Initializes the collection with the supplied bytes.</summary>
+            /// <param name="bytes">The bytes to expose through enumeration.</param>
+            public CountingOpcodeCollection(params byte[] bytes)
+            {
+                _bytes = bytes;
+            }
+
+            /// <inheritdoc />
+            public int Count => _bytes.Length;
+
+            /// <summary>Gets the number of enumerators requested from this collection.</summary>
+            public int EnumerationCount { get; private set; }
+
+            /// <inheritdoc />
+            public IEnumerator<byte> GetEnumerator()
+            {
+                EnumerationCount++;
+                return ((IEnumerable<byte>)_bytes).GetEnumerator();
+            }
+
+            /// <inheritdoc />
+            System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+                => GetEnumerator();
+        }
+
         [TestMethod]
         public void Test1()
         {
@@ -324,6 +369,61 @@ namespace UtilsTest.VirtualMachine
             Assert.IsTrue(executed, "Handler must still dispatch via the original opcode 0xAB.");
         }
 
+        [TestMethod]
+        public void Instructions_AttributeOpcode_CannotBeMutatedThroughPublicView()
+        {
+            var machine = new TestMachine();
+
+            IReadOnlyCollection<byte> opcode = machine.Instructions
+                .Single(instruction => instruction.Name == "POP")
+                .Opcode;
+
+            Assert.IsFalse(opcode is byte[]);
+            Assert.IsFalse(opcode is IList<byte>);
+            Assert.IsFalse(opcode is ICollection<byte>);
+            CollectionAssert.AreEqual(new byte[] { 0x02 }, opcode.ToArray());
+        }
+
+        [TestMethod]
+        public void Instructions_RuntimeOpcode_ReusesImmutableObjectAndRemainsLive()
+        {
+            var machine = new TestMachine();
+            IEnumerable<(IReadOnlyCollection<byte> Opcode, string Name)> view = machine.Instructions;
+            byte[] source = [0xAB, 0xCD];
+
+            machine.RegisterInstruction(source, "RUNTIME", _ => { });
+            IReadOnlyCollection<byte> firstRead = view.Single(instruction => instruction.Name == "RUNTIME").Opcode;
+            source[0] = 0xFF;
+            IReadOnlyCollection<byte> secondRead = machine.Instructions
+                .Single(instruction => instruction.Name == "RUNTIME")
+                .Opcode;
+
+            Assert.AreSame(firstRead, secondRead, "The getter must reuse the registered immutable opcode.");
+            Assert.IsFalse(firstRead is byte[]);
+            Assert.IsFalse(firstRead is IList<byte>);
+            Assert.IsFalse(firstRead is ICollection<byte>);
+            CollectionAssert.AreEqual(new byte[] { 0xAB, 0xCD }, firstRead.ToArray());
+        }
+
+        [TestMethod]
+        public void Instructions_PublicInspection_DoesNotChangeLookupOrDispatch()
+        {
+            var machine = new TestMachine();
+            bool executed = false;
+            machine.RegisterInstruction([0xAB, 0xCD], "RUNTIME", _ => executed = true);
+
+            IReadOnlyCollection<byte> opcode = machine.Instructions
+                .Single(instruction => instruction.Name == "RUNTIME")
+                .Opcode;
+            int hashBefore = ArrayEqualityComparers.Byte.GetHashCode(opcode);
+            int hashAfter = ArrayEqualityComparers.Byte.GetHashCode(
+                machine.Instructions.Single(instruction => instruction.Name == "RUNTIME").Opcode);
+            machine.Execute(new DefaultContext(new byte[] { 0xAB, 0xCD }));
+
+            Assert.AreEqual(hashBefore, hashAfter);
+            Assert.IsTrue(executed);
+        }
+
         // ── Item 1: prefix-conflicting opcodes are rejected ───────────────────
 
         [TestMethod]
@@ -344,6 +444,22 @@ namespace UtilsTest.VirtualMachine
             machine.RegisterInstruction([0xBB, 0x01], "LONG", _ => { });
             Assert.ThrowsException<ArgumentException>(
                 () => machine.RegisterInstruction([0xBB], "SHORT", _ => { }));
+        }
+
+        [TestMethod]
+        public void RegisterInstruction_ForeignNonIndexableKey_IsMaterializedOnceForPrefixCheck()
+        {
+            var machine = new ForeignKeyMachine();
+            var foreignOpcode = new CountingOpcodeCollection(0xAB, 0xCE);
+            machine.AddForeignOpcode(foreignOpcode);
+            int enumerationsBeforeRegistration = foreignOpcode.EnumerationCount;
+
+            machine.RegisterInstruction([0xAB, 0xCD], "RUNTIME", _ => { }, overwrite: true);
+
+            Assert.AreEqual(
+                enumerationsBeforeRegistration + 2,
+                foreignOpcode.EnumerationCount,
+                "Prefix checking must enumerate once; rebuilding fast lookup performs the other enumeration.");
         }
 
         [TestMethod]

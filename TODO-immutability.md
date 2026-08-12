@@ -47,12 +47,12 @@ Les cas suivants sont corrigés et couverts par des tests d'encapsulation :
 
 ### Audit ciblé `Utils.VirtualMachine` et `Utils.Transactions`
 
-- `VirtualProcessor<T>.Instructions` expose bien les tableaux possédés servant de clés au
-  dictionnaire : un consommateur peut recaster `Opcode` en `byte[]` et modifier la clé après son
-  insertion. Le stockage clone les sources externes, mais ce clone interne reste exposé. Ce
-  finding est volontairement reporté : corriger le type de clé exige d'adapter et de tester le
-  comparateur de séquences, la détection des préfixes, la table rapide et le dispatch sans changer
-  leur sémantique.
+- [x] `VirtualProcessor<T>.Instructions` : chaque opcode enregistré par `VirtualProcessor` via un
+  attribut ou `RegisterInstruction` est copié une fois dans
+  une classe privée immutable et indexable, puis la même instance est utilisée comme clé et dans
+  la vue publique live. `ArrayEqualityComparers.Byte` conserve l'égalité et le hash par contenu ;
+  le getter ne crée aucune copie, et la détection des préfixes, la table rapide ainsi que le
+  dispatch conservent leur sémantique.
 - `VirtualProcessor<T>.Breakpoints` reste volontairement mutable : la collection constitue l'API
   publique de mutation.
 - `ReadOnlyRange<T>` reste volontairement une vue live sur la liste fournie par l'appelant.
