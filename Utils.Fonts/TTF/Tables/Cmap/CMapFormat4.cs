@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -88,7 +89,7 @@ public class CMapFormat4 : CMapFormatBase
         /// </summary>
         internal IReadOnlyList<short> Map { get; }
 
-        private Dictionary<short, char> reverseMap;
+        private readonly IReadOnlyDictionary<short, char> reverseMap;
 
         /// <inheritdoc/>
         internal override bool HasMap => true;
@@ -109,14 +110,13 @@ public class CMapFormat4 : CMapFormatBase
         public TableMap(char startCode, char endCode, short[] map)
             : base(startCode, endCode)
         {
-            Map = map;
+            Map = map.ToImmutableArray();
             // Build a reverse mapping from glyph index to character.
-            reverseMap = new Dictionary<short, char>(
-                map.Select((s, i) => new KeyValuePair<short, char>(s, (char)(i + startCode)))
-                   .Where(kvp => kvp.Key != 0)
-                   .GroupBy(kvp => kvp.Key)
-                   .Select(g => g.First())
-            );
+            reverseMap = Map.Select((s, i) => new KeyValuePair<short, char>(s, (char)(i + startCode)))
+                .Where(kvp => kvp.Key != 0)
+                .GroupBy(kvp => kvp.Key)
+                .Select(g => g.First())
+                .ToImmutableDictionary();
         }
 
         /// <inheritdoc/>

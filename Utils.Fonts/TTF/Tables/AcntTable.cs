@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using Utils.IO.Serialization;
@@ -69,7 +70,7 @@ public class AcntTable : TrueTypeTable
             public Multiple(ushort primaryGlyphIndex, IReadOnlyList<ExtensionEntry> extensions)
                 : base(primaryGlyphIndex)
             {
-                Extensions = extensions;
+                Extensions = extensions.ToImmutableArray();
             }
         }
     }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Text;
 
 namespace Utils.Objects;
@@ -97,57 +98,57 @@ public static class Types
     /// <summary>
     /// Gets the collection of numeric types, both signed and unsigned.
     /// </summary>
-    public static Type[] Number { get; } = { Byte, UInt16, UInt32, UInt64, SByte, Int16, Int32, Int64, Decimal, Single, Double };
+    public static IReadOnlyList<Type> Number { get; } = ImmutableArray.Create(Byte, UInt16, UInt32, UInt64, SByte, Int16, Int32, Int64, Decimal, Single, Double);
 
     /// <summary>
     /// Gets the collection of unsigned numeric types.
     /// </summary>
-    public static Type[] UnsignedNumber { get; } = { Byte, UInt16, UInt32, UInt64 };
+    public static IReadOnlyList<Type> UnsignedNumber { get; } = ImmutableArray.Create(Byte, UInt16, UInt32, UInt64);
 
     /// <summary>
     /// Gets the collection of signed numeric types.
     /// </summary>
-    public static Type[] SignedNumber { get; } = { SByte, Int16, Int32, Int64 };
+    public static IReadOnlyList<Type> SignedNumber { get; } = ImmutableArray.Create(SByte, Int16, Int32, Int64);
 
     /// <summary>
     /// Gets the collection of floating-point numeric types.
     /// </summary>
-    public static Type[] FloatingPointNumber { get; } = { Decimal, Single, Double };
+    public static IReadOnlyList<Type> FloatingPointNumber { get; } = ImmutableArray.Create(Decimal, Single, Double);
 
     /// <summary>
     /// Gets the collection of integer numeric types limited to eight bits.
     /// </summary>
-    public static Type[] _8BitsNumberI { get; } = { SByte, Byte };
+    public static IReadOnlyList<Type> _8BitsNumberI { get; } = ImmutableArray.Create(SByte, Byte);
 
     /// <summary>
     /// Gets the collection of integer numeric types limited to sixteen bits.
     /// </summary>
-    public static Type[] _16BitsNumberI { get; } = { Int16, UInt16 };
+    public static IReadOnlyList<Type> _16BitsNumberI { get; } = ImmutableArray.Create(Int16, UInt16);
 
     /// <summary>
     /// Gets the collection of integer numeric types limited to thirty-two bits.
     /// </summary>
-    public static Type[] _32BitsNumberI { get; } = { Int32, UInt32 };
+    public static IReadOnlyList<Type> _32BitsNumberI { get; } = ImmutableArray.Create(Int32, UInt32);
 
     /// <summary>
     /// Gets the collection of numeric types that may represent thirty-two-bit integers or floats.
     /// </summary>
-    public static Type[] _32BitsNumberF { get; } = { Int32, UInt32, Single };
+    public static IReadOnlyList<Type> _32BitsNumberF { get; } = ImmutableArray.Create(Int32, UInt32, Single);
 
     /// <summary>
     /// Gets the collection of integer numeric types limited to sixty-four bits.
     /// </summary>
-    public static Type[] _64BitsNumberI { get; } = { Int64, UInt64 };
+    public static IReadOnlyList<Type> _64BitsNumberI { get; } = ImmutableArray.Create(Int64, UInt64);
 
     /// <summary>
     /// Gets the collection of numeric types that may represent sixty-four-bit integers or floats.
     /// </summary>
-    public static Type[] _64BitsNumberIF { get; } = { Int64, UInt64, Double };
+    public static IReadOnlyList<Type> _64BitsNumberIF { get; } = ImmutableArray.Create(Int64, UInt64, Double);
 
     /// <summary>
     /// Gets the collection of numeric types that may represent one-hundred-and-twenty-eight-bit numbers or floats.
     /// </summary>
-    public static Type[] _128BitsNumberIF { get; } = { Decimal };
+    public static IReadOnlyList<Type> _128BitsNumberIF { get; } = ImmutableArray.Create(Decimal);
 
     /// <summary>
     /// Creates a nullable wrapper type for the provided value type.

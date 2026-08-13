@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 
@@ -35,8 +36,8 @@ public sealed class ODataQueryCompilation
         }
 
         EntitySetName = entitySetName;
-        Filters = (filters ?? throw new ArgumentNullException(nameof(filters))).ToArray();
-        Expansions = (expansions ?? Array.Empty<string>()).ToArray();
+        Filters = (filters ?? throw new ArgumentNullException(nameof(filters))).ToImmutableArray();
+        Expansions = (expansions ?? Array.Empty<string>()).ToImmutableArray();
     }
 
     /// <summary>

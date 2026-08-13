@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace Utils.Dates;
 
 /// <summary>
@@ -5,6 +7,8 @@ namespace Utils.Dates;
 /// </summary>
 public sealed class DateFormulaLanguage
 {
+    private IReadOnlyDictionary<string, DayOfWeek> days = ImmutableDictionary<string, DayOfWeek>.Empty;
+
     /// <summary>Token indicating the start of a period.</summary>
     public required char Start { get; init; }
     /// <summary>Token indicating the end of a period.</summary>
@@ -21,6 +25,28 @@ public sealed class DateFormulaLanguage
     public required char Year { get; init; }
     /// <summary>Token representing a working day unit.</summary>
     public required char WorkingDay { get; init; }
-    /// <summary>Mapping between two-letter day names and <see cref="DayOfWeek"/>.</summary>
-    public required IReadOnlyDictionary<string, DayOfWeek> Days { get; init; }
+    /// <summary>Gets the immutable mapping between two-letter day names and <see cref="DayOfWeek"/>.</summary>
+    public required IReadOnlyDictionary<string, DayOfWeek> Days
+    {
+        get => days;
+        init => days = CreateDaysSnapshot(value);
+    }
+
+    /// <summary>Creates an immutable snapshot while retaining a known string equality comparer.</summary>
+    private static IReadOnlyDictionary<string, DayOfWeek> CreateDaysSnapshot(
+        IReadOnlyDictionary<string, DayOfWeek> source)
+    {
+        IEqualityComparer<string> comparer = source switch
+        {
+            Dictionary<string, DayOfWeek> dictionary => dictionary.Comparer,
+            ImmutableDictionary<string, DayOfWeek> dictionary => dictionary.KeyComparer,
+            SortedDictionary<string, DayOfWeek> dictionary
+                when dictionary.Comparer is IEqualityComparer<string> equalityComparer => equalityComparer,
+            ImmutableSortedDictionary<string, DayOfWeek> dictionary
+                when dictionary.KeyComparer is IEqualityComparer<string> equalityComparer => equalityComparer,
+            _ => EqualityComparer<string>.Default
+        };
+
+        return source.ToImmutableDictionary(comparer);
+    }
 }

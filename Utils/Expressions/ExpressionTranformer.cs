@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using static System.Reflection.BindingFlags;
-using System.Collections.Immutable;
 using Utils.Objects;
 using Utils.Reflection;
 
@@ -576,7 +576,7 @@ public class ConstantNumericAttribute : ExpressionSignatureAttribute
     /// <summary>
     /// The allowed numeric values, if any. If null, any numeric constant is allowed.
     /// </summary>
-    public double[] Values { get; }
+    public IReadOnlyList<double>? Values { get; }
 
     /// <summary>
     /// Creates a new instance allowing any numeric constant.
@@ -594,7 +594,7 @@ public class ConstantNumericAttribute : ExpressionSignatureAttribute
     public ConstantNumericAttribute(params double[] values)
         : base(ExpressionType.Constant)
     {
-        Values = values;
+        Values = values.ToImmutableArray();
     }
 
     /// <inheritdoc />

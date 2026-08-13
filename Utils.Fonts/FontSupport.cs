@@ -14,45 +14,45 @@ public static class FontSupport
     /// <summary>
     /// Gets the table of standard glyph names defined by Adobe for Type 1 fonts.
     /// </summary>
-    public static string[] StdNames { get; } = LoadStdNames();
+    public static IReadOnlyList<string> StdNames { get; } = LoadStdNames().ToImmutableArray();
     /// <summary>
     /// Gets the Unicode string values corresponding to <see cref="StdNames"/>.
     /// </summary>
-    public static string[] StdValues { get; } = LoadStdValues();
+    public static IReadOnlyList<string> StdValues { get; } = LoadStdValues().ToImmutableArray();
     /// <summary>
     /// Gets the expert glyph charset indexes used by Type 1C fonts.
     /// </summary>
-    public static int[] Type1CExpertCharset { get; } = LoadType1CExpertCharset();
+    public static IReadOnlyList<int> Type1CExpertCharset { get; } = LoadType1CExpertCharset().ToImmutableArray();
     /// <summary>
     /// Gets the expert subset charset indexes used by Type 1C fonts.
     /// </summary>
-    public static int[] Type1CExpertSubCharset { get; } = LoadType1CExpertSubCharset();
+    public static IReadOnlyList<int> Type1CExpertSubCharset { get; } = LoadType1CExpertSubCharset().ToImmutableArray();
     /// <summary>
     /// Gets the additional glyph names specific to Mac OS encodings.
     /// </summary>
-    public static string[] MacExtras { get; } = LoadMacExtras();
+    public static IReadOnlyList<string> MacExtras { get; } = LoadMacExtras().ToImmutableArray();
     /// <summary>
     /// Gets the MacRoman encoding table mapping character codes to glyph indexes.
     /// </summary>
-    public static int[] MacRomanEncoding { get; } = LoadMacRomanEncoding();
+    public static IReadOnlyList<int> MacRomanEncoding { get; } = LoadMacRomanEncoding().ToImmutableArray();
     /// <summary>
     /// Gets the ISO Latin 1 encoding table mapping character codes to glyph indexes.
     /// </summary>
-    public static int[] IsoLatin1Encoding { get; } = LoadIsoLatin1Encoding();
+    public static IReadOnlyList<int> IsoLatin1Encoding { get; } = LoadIsoLatin1Encoding().ToImmutableArray();
     /// <summary>
     /// Gets the Windows ANSI encoding table mapping character codes to glyph indexes.
     /// </summary>
-    public static int[] WinAnsiEncoding { get; } = LoadWinAnsiEncoding();
+    public static IReadOnlyList<int> WinAnsiEncoding { get; } = LoadWinAnsiEncoding().ToImmutableArray();
     /// <summary>
     /// Gets the Adobe standard encoding table mapping character codes to glyph indexes.
     /// </summary>
-    public static int[] StandardEncoding { get; } = LoadStandardEncoding();
+    public static IReadOnlyList<int> StandardEncoding { get; } = LoadStandardEncoding().ToImmutableArray();
 
     /// <summary>
     /// Provides a lookup map from glyph name to its index in <see cref="StdNames"/>.
     /// </summary>
     private static IReadOnlyDictionary<string, int> StdNameIndexMap { get; } =
-            LoadStdNames()
+            StdNames
                     .Select((value, index) => (value, index))
                     .ToImmutableDictionary(vi => vi.value, vi => vi.index);
 
@@ -63,11 +63,11 @@ public static class FontSupport
     /// <returns>The glyph name, or ".notdef" if the index is out of bounds.</returns>
     public static string GetName(int index)
     {
-        if (index < StdNames.Length)
+        if (index < StdNames.Count)
             return StdNames[index];
 
-        int offset = index - StdNames.Length;
-        if (offset < MacExtras.Length)
+        int offset = index - StdNames.Count;
+        if (offset < MacExtras.Count)
             return MacExtras[offset];
 
         return ".notdef";
@@ -400,5 +400,4 @@ public static class FontSupport
             148, 149, 0, 0, 0, 0
     ];
 }
-
 
