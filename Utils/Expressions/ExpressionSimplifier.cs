@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -257,7 +257,7 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Add)]
         protected Expression AdditionOfEqualsElements(BinaryExpression e, Expression left, Expression right)
         {
-            if (!left.Type.In(Types.Number) || !right.Type.In(Types.Number))
+            if (!Types.Number.Contains(left.Type) || !Types.Number.Contains(right.Type))
             {
                 return null;
             }
@@ -338,7 +338,7 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Subtract)]
         protected Expression SubstractionOfEqualsElements(BinaryExpression e, Expression left, Expression right)
         {
-            if (!left.Type.In(Types.Number) || !right.Type.In(Types.Number))
+            if (!Types.Number.Contains(left.Type) || !Types.Number.Contains(right.Type))
             {
                 return null;
             }
@@ -974,7 +974,7 @@ namespace Utils.Mathematics.Expressions
         private static bool CanCanonicalizeCommutativeBinary(BinaryExpression binaryExpression)
         {
             return binaryExpression.Method is null
-                && binaryExpression.Type.In(Types.Number);
+                && Types.Number.Contains(binaryExpression.Type);
         }
     }
 }

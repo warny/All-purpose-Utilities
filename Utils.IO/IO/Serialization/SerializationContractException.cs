@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace Utils.IO.Serialization;
@@ -18,10 +19,18 @@ public sealed class SerializationContractException : InvalidOperationException
 
     /// <summary>Initializes an aggregated contract exception.</summary>
     public SerializationContractException(Type contractType, IEnumerable<SerializationContractDiagnostic> diagnostics)
+        : this(contractType, diagnostics.ToImmutableArray())
+    {
+    }
+
+    /// <summary>Initializes an aggregated contract exception from a materialized immutable snapshot.</summary>
+    private SerializationContractException(
+        Type contractType,
+        ImmutableArray<SerializationContractDiagnostic> diagnostics)
         : base(CreateMessage(contractType, diagnostics))
     {
         ContractType = contractType;
-        Diagnostics = diagnostics.ToArray();
+        Diagnostics = diagnostics;
     }
 
     /// <summary>Builds the stable, human-readable aggregate message.</summary>

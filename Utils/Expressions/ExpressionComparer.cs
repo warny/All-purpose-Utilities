@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using System.Runtime.InteropServices;
 using Utils.Objects;
 
@@ -79,7 +79,7 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         if (x is ConstantExpression xco && y is ConstantExpression yco)
         {
             // If not numeric, compare by direct value
-            if (!xco.Type.In(Types.Number) || !yco.Type.In(Types.Number))
+            if (!Types.Number.Contains(xco.Type) || !Types.Number.Contains(yco.Type))
             {
                 return xco.Value.Equals(yco.Value);
             }

@@ -128,12 +128,13 @@ public class ParserOptions
             { "string", typeof(string) },
         }.ToImmutableDictionary();
 
-        NumberSuffixes = new Dictionary<string, Func<string, object>>(StringComparer.CurrentCultureIgnoreCase)
+        var numberSuffixes = new Dictionary<string, Func<string, object>>(StringComparer.CurrentCultureIgnoreCase)
         {
             { "l", s => long.Parse(s) },
             { "m", s => decimal.Parse(s) },
             { "f", s => float.Parse(s) },
             { "d", s => double.Parse(s) },
-        }.ToImmutableDictionary();
+        };
+        NumberSuffixes = numberSuffixes.ToImmutableDictionary(numberSuffixes.Comparer);
     }
 }

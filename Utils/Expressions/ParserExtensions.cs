@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -543,7 +543,7 @@ internal static class ParserExtensions
             {
                 result[i] = Expression.Convert(result[i], methodParams[i].ParameterType);
             }
-            if (methodParams[i].ParameterType.In(Types.Number))
+            if (Types.Number.Contains(methodParams[i].ParameterType))
             {
                 if (result[i] is ConstantExpression ce)
                 {
