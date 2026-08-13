@@ -124,6 +124,37 @@ public sealed class RemainingCollectionImmutabilityTests
             ((ImmutableDictionary<string, DayOfWeek>)language.Days).KeyComparer);
     }
 
+    /// <summary>Verifies that mutable sorted day mappings retain compatible equality comparers.</summary>
+    [TestMethod]
+    public void DateFormulaLanguage_DaysPreserveSortedDictionaryComparer()
+    {
+        var source = new SortedDictionary<string, DayOfWeek>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["MO"] = DayOfWeek.Monday
+        };
+        DateFormulaLanguage language = CreateLanguage(source);
+
+        source["MO"] = DayOfWeek.Friday;
+
+        Assert.AreEqual(DayOfWeek.Monday, language.Days["mo"]);
+        Assert.AreSame(StringComparer.OrdinalIgnoreCase,
+            ((ImmutableDictionary<string, DayOfWeek>)language.Days).KeyComparer);
+    }
+
+    /// <summary>Verifies that immutable sorted day mappings retain compatible equality comparers.</summary>
+    [TestMethod]
+    public void DateFormulaLanguage_DaysPreserveImmutableSortedDictionaryComparer()
+    {
+        ImmutableSortedDictionary<string, DayOfWeek> source =
+            ImmutableSortedDictionary.Create<string, DayOfWeek>(StringComparer.OrdinalIgnoreCase)
+                .Add("MO", DayOfWeek.Monday);
+        DateFormulaLanguage language = CreateLanguage(source);
+
+        Assert.AreEqual(DayOfWeek.Monday, language.Days["mo"]);
+        Assert.AreSame(StringComparer.OrdinalIgnoreCase,
+            ((ImmutableDictionary<string, DayOfWeek>)language.Days).KeyComparer);
+    }
+
     /// <summary>Verifies that serialization diagnostics are enumerated once into immutable storage.</summary>
     [TestMethod]
     public void SerializationContractException_DiagnosticsAreSingleImmutableSnapshot()

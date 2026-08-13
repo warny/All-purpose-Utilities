@@ -13,7 +13,7 @@ La passe finale a couvert les tableaux et tables statiques publics, les proprié
 - `FontSupport` conserve toutes ses tables de noms et tables numériques sous forme d’instances immutables uniques. `StdNameIndexMap` est désormais construit depuis la même table possédée, ce qui garantit la cohérence de `GetName` et `GetStrIndex`.
 - `Types` expose ses onze classifications numériques sous forme de listes réellement immutables uniques. Les usages internes ont été adaptés à l’interface de collection sans copie supplémentaire.
 - `CMapFormat4.TableMap` copie le tableau source une seule fois et construit son reverse mapping immutable depuis ce snapshot.
-- `DateFormulaLanguage.Days` normalise la valeur fournie au `init` vers un dictionnaire immutable, en conservant le comparer des `Dictionary` et `ImmutableDictionary` connus.
+- `DateFormulaLanguage.Days` normalise la valeur fournie au `init` vers un dictionnaire immutable, en conservant les comparateurs d’égalité des dictionnaires standards, y compris leurs variantes triées mutables et immutables.
 - `SerializationContractException.Diagnostics` matérialise une seule fois les énumérables, y compris one-shot, puis utilise ce même snapshot immutable pour le message et la propriété.
 - `ODataQueryCompilation.Filters` et `Expansions` sont des snapshots immutables stables et `ToUriString()` conserve sa sortie.
 - `AcntTable.AccentDescription.Multiple.Extensions` conserve un snapshot immutable ordonné.

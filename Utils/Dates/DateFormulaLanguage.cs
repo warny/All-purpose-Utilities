@@ -40,6 +40,10 @@ public sealed class DateFormulaLanguage
         {
             Dictionary<string, DayOfWeek> dictionary => dictionary.Comparer,
             ImmutableDictionary<string, DayOfWeek> dictionary => dictionary.KeyComparer,
+            SortedDictionary<string, DayOfWeek> dictionary
+                when dictionary.Comparer is IEqualityComparer<string> equalityComparer => equalityComparer,
+            ImmutableSortedDictionary<string, DayOfWeek> dictionary
+                when dictionary.KeyComparer is IEqualityComparer<string> equalityComparer => equalityComparer,
             _ => EqualityComparer<string>.Default
         };
 
