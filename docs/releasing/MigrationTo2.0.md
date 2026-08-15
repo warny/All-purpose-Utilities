@@ -14,9 +14,20 @@ ApiCompat findings are accepted only for this coordinated major candidate and re
 
 ## Reviewed API compatibility changes
 
-The repository-wide ApiCompat run against verified latest stable packages reports the following accepted major-version incompatibility counts: Core 114; IO 7; XML 1; Net 14; Data 3; Fonts 22; Imaging 7; Geography 23; Reflection 3; Mathematics 19; OData 10; VirtualMachine 7; and three each for the OData, IO serialization, and dependency-injection generators. DependencyInjection runtime is binary compatible in the automated comparison. Collections, NumberToString, and parser packages establish first candidate baselines.
+The repository-wide ApiCompat run against verified latest stable packages reports the following accepted major-version incompatibility counts: Core 126; IO 6; XML 1; Net 24; Data 3; Fonts 49; Imaging 7; Geography 23; Reflection 3; Mathematics 19; OData 10; VirtualMachine 7; OData generators 3; IO serialization generators 4; and dependency-injection generators 3. DependencyInjection runtime is binary compatible in the automated comparison. Collections, NumberToString, and parser packages establish first candidate baselines.
 
 Each accepted diagnostic is pinned by diagnostic ID and exact message in `eng/api-breaking-changes/2.0.0.json`. The human-review inventory in [Accepted API breaks](AcceptedApiBreaks.md) groups the exact removed or incompatible surface by package and links every acceptance back to its package section. New diagnostics, stale acceptances, and missing migration anchors all fail the gate. The counts include removed types/members and changed signatures or constraints; they are not behavioral guarantees or rename inference. The package-specific raw reports under `artifacts/api-compat` and structured `public-api-comparison.json` are the authoritative review inputs; consumers must recompile and exercise their own usage.
+
+## Core read-only collections
+
+The numeric classification tables under `Utils.Objects.Types` changed from mutable `Type[]` values
+to immutable `IReadOnlyList<Type>` values. Use collection operations directly; for example,
+`type.In(Types.Number)` may become `Types.Number.Contains(type)`. If an API specifically requires an
+array, materialize an explicit copy with `Types.Number.ToArray()`.
+
+`ConstantNumericAttribute.Values` changed from `double[]` to `IReadOnlyList<double>?`. Use `Count`
+instead of `Length`, retain the existing null handling, and call `ToArray()` only when a mutable copy
+is genuinely required.
 
 <a id="utils-io-serialization-2"></a>
 ## Utils.IO serialization and stream changes
@@ -60,4 +71,13 @@ Several `short`-typed members were widened to their correct unsigned/wider wire 
 breaks requiring recompilation: see the "Second audit pass" entry under
 [`omy.Utils.Fonts`](AcceptedApiBreaks.md#omy-utils-fonts) for the full list, including the
 `GlyphCompound.getGlyphIndex` → `GetGlyphIndex` rename and the `CmapTable.CMaps`/
-`GlyphCompound.Instructions` immutability changes.
+`GlyphCompound.Instructions` immutability changes. This also includes `CmapSubtable.PlatformID` and
+`PlatformSpecificID`, which now use `ushort` to match their unsigned 16-bit wire fields.
+
+The static `FontSupport` name, charset, and encoding tables now expose `IReadOnlyList<string>` or
+`IReadOnlyList<int>` rather than mutable arrays. Continue to use indexing and enumeration, replace
+`Length` with `Count`, and make any required mutable copy explicit, for example:
+
+```csharp
+var copy = FontSupport.StdNames.ToArray();
+```
