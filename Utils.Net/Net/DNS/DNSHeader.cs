@@ -339,7 +339,7 @@ public class DNSHeader : DNSElement
     /// <summary>
     /// Returns clones of records in <paramref name="source"/> that are not already present in
     /// <paramref name="target"/>. All clones are created before any mutation occurs, ensuring that
-    /// a failed <see cref="DNSElement.Clone"/> cannot leave <paramref name="target"/> partially
+    /// a failed <see cref="DNSResponseRecord.Clone()"/> cannot leave <paramref name="target"/> partially
     /// modified.
     /// </summary>
     private static List<DNSResponseRecord> GetDistinctClones(
