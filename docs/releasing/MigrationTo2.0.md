@@ -32,7 +32,7 @@ is genuinely required.
 <a id="utils-io-serialization-2"></a>
 ## Utils.IO serialization and stream changes
 
-Version 2.0 intentionally removes the legacy `StreamCopier`, `StreamValidator`, `BaseDecoderStream`, `ReadToEnd`, `ReadArray`, and `WriteVariableLengthString` signatures listed in the versioned API-breaking-change manifest. Consumers should migrate to the bounded/configurable overloads described by the current API documentation rather than restore 1.x shims.
+Version 2.0 intentionally removes the legacy `StreamCopier`, `StreamValidator`, `BaseDecoderStream`, `ReadArray`, and `WriteVariableLengthString` signatures listed in the versioned API-breaking-change manifest. Consumers should migrate to the bounded/configurable overloads described by the current API documentation rather than restore 1.x shims.
 
 `ReaderWriterGenerator` is now an `IIncrementalGenerator`. Generated extension methods no longer use a type's simple name: their deterministic name contains the namespace, containing types, metadata arity, and a stable FNV-1a suffix. Call sites must use the newly generated method name visible in IntelliSense.
 
