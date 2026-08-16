@@ -107,16 +107,17 @@ public abstract class BaseDescriptorBase : IBaseDescriptor, IBaseConverter
             throw new ArgumentOutOfRangeException(nameof(chars), "Transformation characters length must be less than or equal to 256.");
         }
 
-        // Ensure the number of characters is a power of two.
+        if (length <= 1 || (length & (length - 1)) != 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(chars), "Transformation characters length must be a power of two.");
+        }
+
+        // Each encoded character must represent an integral number of bits, so calculate the
+        // width only after verifying that the alphabet length is an exact power of two.
         while (length > 1)
         {
             length >>= 1;
             depth++;
-        }
-
-        if (length != 1)
-        {
-            throw new ArgumentOutOfRangeException(nameof(chars), "Transformation characters length must be a power of two.");
         }
 
         BitsWidth = depth;

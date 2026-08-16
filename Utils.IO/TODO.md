@@ -4,14 +4,6 @@ Re-audited on 2026-08-16 against `master` `6bcb7aed0a0afa45b07b82f442511becc5036
 
 The July audit text had become partially stale after PRs #526 and #528. This file contains only the residual work that is still reproducible in the current implementation. See `docs/releasing/TodoAudit-2026-08-16.md` for repository-wide classification, overlap analysis and PR sequencing.
 
-## P0
-
-### IO-01 — Base alphabet power-of-two validation is incorrect
-
-`BaseDescriptorBase` repeatedly right-shifts the alphabet length until it reaches one. Non-powers of two such as 3, 5, 6 or 7 therefore pass and produce `BitsWidth = floor(log2(length))`.
-
-**Fix:** validate a real power of two (`length > 1 && (length & (length - 1)) == 0`) and test all lengths 0–257.
-
 ## P1
 
 ### IO-02 — Base descriptor invariants are incomplete
@@ -111,6 +103,7 @@ Each format must define its exact units/epoch, valid range, `DateTimeKind` seman
 
 ## Closed since the July audit
 
+- IO-01 — base alphabet validation: fixed by requiring lengths from 2 through 256 to be exact powers of two; exhaustive regression coverage checks every length from 0 through 257 and verifies `BitsWidth` for valid alphabets.
 - Old item 6 — unpadded incomplete final groups: fixed by PR #528; current `BaseDecoderStream.Close()` rejects invalid terminal quanta.
 - Old item 9 — locking on externally visible `baseStream`: fixed by PR #526 with a shared per-base-stream `SemaphoreSlim`.
 - Old item 10 — unsynchronized `Position`/`Seek`/`SetLength`: fixed for state transitions by PR #526; only the flush-policy residual remains as IO-09.
