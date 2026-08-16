@@ -805,12 +805,13 @@ Calling this method more than once is safe; subsequent calls are no-ops.</p>
 
   <h3 id="Utils_IO_BaseEncoding_BaseEncoderStream_DisposeAsync" data-uid="Utils.IO.BaseEncoding.BaseEncoderStream.DisposeAsync">
   DisposeAsync()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L268"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L269"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Asynchronously finalizes the encoding (flushing remaining bits and padding through <a class="xref" href="Utils.IO.BaseEncoding.BaseEncoderStream.html#Utils_IO_BaseEncoding_BaseEncoderStream_Close">Close()</a>)
 and then releases base resources. Safe to call more than once.
-The gate is acquired before finalization so that a concurrent <a class="xref" href="Utils.IO.BaseEncoding.BaseEncoderStream.html#Utils_IO_BaseEncoding_BaseEncoderStream_WriteAsync_System_Byte___System_Int32_System_Int32_System_Threading_CancellationToken_">WriteAsync(byte[], int, int, CancellationToken)</a> in progress
+The gate is acquired before finalization so that a concurrent
+<a class="xref" href="Utils.IO.BaseEncoding.BaseEncoderStream.html#Utils_IO_BaseEncoding_BaseEncoderStream_WriteAsync_System_ReadOnlyMemory_System_Byte__System_Threading_CancellationToken_">WriteAsync(ReadOnlyMemory&lt;byte&gt;, CancellationToken)</a> in progress
 completes before the padding and the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.semaphoreslim">SemaphoreSlim</a> are disposed.</p>
 </div>
   <div class="markdown level1 conceptual"></div>

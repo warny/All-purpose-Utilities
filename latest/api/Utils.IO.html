@@ -116,7 +116,8 @@ control is provided; if multiple threads write concurrently, external locking ma
 Calling <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Write_System_Byte___System_Int32_System_Int32_">Write(byte[], int, int)</a> will broadcast the provided data to all
 underlying streams in the targets collection.</p>
 <remarks>
-<b>Best-effort fan-out:</b> <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Write_System_Byte___System_Int32_System_Int32_">Write(byte[], int, int)</a> and <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Flush">Flush()</a> attempt the operation
+<b>Best-effort fan-out:</b> <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Write_System_Byte___System_Int32_System_Int32_">Write(byte[], int, int)</a>,
+<a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Write_System_ReadOnlySpan_System_Byte__">Write(ReadOnlySpan&lt;byte&gt;)</a>, and <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Flush">Flush()</a> attempt the operation
 on every target stream even if earlier ones throw. All exceptions are collected and rethrown as
 an <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.aggregateexception">AggregateException</a> so no target is silently skipped.
 This means targets that were reached before a failure already hold the written data while later

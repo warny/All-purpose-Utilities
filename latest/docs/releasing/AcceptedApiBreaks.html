@@ -73,13 +73,13 @@
         <article data-uid="">
 <h1 id="accepted-api-breaks-for-200-rc1">Accepted API breaks for 2.0.0-rc.1</h1>
 
-<p>This human-review index summarizes the exact machine-enforced diagnostics in <code>eng/api-baselines/accepted-api-breaks.json</code>. The JSON file remains authoritative; every addition or stale acceptance fails the API gate.</p>
+<p>This human-review index summarizes the exact machine-enforced diagnostics in <code>eng/api-breaking-changes/2.0.0.json</code>. That JSON file remains authoritative; every addition or stale acceptance fails the API gate.</p>
 <p><a id="omy-utils"></a></p>
 <h2 id="omyutils">omy.Utils</h2>
 <ul>
 <li>Published baseline: <code>1.2.1</code></li>
-<li>Accepted diagnostics: <strong>114</strong></li>
-<li>Diagnostic classes: <code>CP0001</code>: 70, <code>CP0002</code>: 34, <code>CP0006</code>: 3, <code>CP0008</code>: 2, <code>CP0009</code>: 1, <code>CP0021</code>: 4</li>
+<li>Accepted diagnostics: <strong>126</strong></li>
+<li>Diagnostic classes: <code>CP0001</code>: 70, <code>CP0002</code>: 46, <code>CP0006</code>: 3, <code>CP0008</code>: 2, <code>CP0009</code>: 1, <code>CP0021</code>: 4</li>
 </ul>
 <h3 id="removed-or-incompatible-published-surface">Removed or incompatible published surface</h3>
 <ul>
@@ -98,6 +98,7 @@
 <li><code>CP0001</code> — <code>Utils.Expressions.IFollowUpExpressionBuilder</code></li>
 <li><code>CP0001</code> — <code>Utils.Expressions.IAdditionalTokens</code></li>
 <li><code>CP0002</code> — <code>void Utils.Expressions.LiteralPart.Append(string)</code></li>
+<li><code>CP0002</code> — <code>double[] Utils.Expressions.ConstantNumericAttribute.Values.get</code> — replaced by an immutable <code>IReadOnlyList&lt;double&gt;?</code> snapshot</li>
 <li><code>CP0001</code> — <code>Utils.Expressions.IParserOptions</code></li>
 <li><code>CP0001</code> — <code>Utils.Expressions.ParserContext</code></li>
 <li><code>CP0001</code> — <code>Utils.Expressions.Tokenizer</code></li>
@@ -131,6 +132,17 @@
 <li><code>CP0002</code> — <code>Utils.Objects.Bytes Utils.Objects.BytesExtensions.Join(params byte[][])</code></li>
 <li><code>CP0002</code> — <code>Utils.Objects.Bytes Utils.Objects.BytesExtensions.Join(params Utils.Objects.Bytes[])</code></li>
 <li><code>CP0002</code> — <code>int Utils.Objects.ObjectUtils.ComputeHash&lt;T&gt;(System.Func&lt;T, int&gt;, params T[])</code></li>
+<li><code>CP0002</code> — <code>System.Type[] Utils.Objects.Types.Number.get</code></li>
+<li><code>CP0002</code> — <code>System.Type[] Utils.Objects.Types.UnsignedNumber.get</code></li>
+<li><code>CP0002</code> — <code>System.Type[] Utils.Objects.Types.SignedNumber.get</code></li>
+<li><code>CP0002</code> — <code>System.Type[] Utils.Objects.Types.FloatingPointNumber.get</code></li>
+<li><code>CP0002</code> — <code>System.Type[] Utils.Objects.Types._8BitsNumberI.get</code></li>
+<li><code>CP0002</code> — <code>System.Type[] Utils.Objects.Types._16BitsNumberI.get</code></li>
+<li><code>CP0002</code> — <code>System.Type[] Utils.Objects.Types._32BitsNumberI.get</code></li>
+<li><code>CP0002</code> — <code>System.Type[] Utils.Objects.Types._32BitsNumberF.get</code></li>
+<li><code>CP0002</code> — <code>System.Type[] Utils.Objects.Types._64BitsNumberI.get</code></li>
+<li><code>CP0002</code> — <code>System.Type[] Utils.Objects.Types._64BitsNumberIF.get</code></li>
+<li><code>CP0002</code> — <code>System.Type[] Utils.Objects.Types._128BitsNumberIF.get</code></li>
 <li><code>CP0001</code> — <code>Utils.Randomization.RandomEx</code></li>
 <li><code>CP0002</code> — <code>System.Collections.Generic.IReadOnlyList&lt;Utils.Range.Range&lt;T&gt;&gt; Utils.Range.Ranges&lt;T&gt;.Intervals.get</code></li>
 <li><code>CP0002</code> — <code>System.Collections.Generic.IEnumerable&lt;Utils.Range.Range&lt;T1&gt;&gt; Utils.Range.Ranges&lt;T&gt;.InnerParse&lt;T1&gt;(string, string, System.Collections.Generic.IEnumerable&lt;string&gt;, System.Func&lt;string, T1&gt;)</code></li>
@@ -205,14 +217,13 @@
 <h2 id="omyutilsio">omy.Utils.IO</h2>
 <ul>
 <li>Published baseline: <code>1.2.1</code></li>
-<li>Accepted diagnostics: <strong>7</strong></li>
-<li>Diagnostic classes: <code>CP0002</code>: 7</li>
+<li>Accepted diagnostics: <strong>6</strong></li>
+<li>Diagnostic classes: <code>CP0002</code>: 6</li>
 </ul>
 <h3 id="removed-or-incompatible-published-surface-1">Removed or incompatible published surface</h3>
 <ul>
 <li><code>CP0002</code> — <code>Utils.IO.StreamCopier.StreamCopier(bool, System.Collections.Generic.IEnumerable&lt;System.IO.Stream&gt;)</code></li>
 <li><code>CP0002</code> — <code>Utils.IO.StreamCopier.StreamCopier(System.Collections.Generic.IEnumerable&lt;System.IO.Stream&gt;)</code></li>
-<li><code>CP0002</code> — <code>byte[] Utils.IO.StreamUtils.ReadToEnd(this System.IO.Stream)</code></li>
 <li><code>CP0002</code> — <code>Utils.IO.StreamValidator.StreamValidator(System.IO.Stream)</code></li>
 <li><code>CP0002</code> — <code>Utils.IO.BaseEncoding.BaseDecoderStream.BaseDecoderStream(System.IO.Stream, Utils.IO.BaseEncoding.IBaseDescriptor)</code></li>
 <li><code>CP0002</code> — <code>T[] Utils.IO.Serialization.ReaderWriterExtensions.ReadArray&lt;T&gt;(this Utils.IO.Serialization.Reader, int, bool)</code></li>
@@ -233,8 +244,8 @@
 <h2 id="omyutilsnet">omy.Utils.Net</h2>
 <ul>
 <li>Published baseline: <code>1.2.1</code></li>
-<li>Accepted diagnostics: <strong>19</strong></li>
-<li>Diagnostic classes: <code>CP0002</code>: 19</li>
+<li>Accepted diagnostics: <strong>24</strong></li>
+<li>Diagnostic classes: <code>CP0002</code>: 23, <code>CP0006</code>: 1</li>
 </ul>
 <h3 id="removed-or-incompatible-published-surface-3">Removed or incompatible published surface</h3>
 <ul>
@@ -257,6 +268,14 @@
 <li><code>CP0002</code> — <code>void Utils.Net.Arp.ArpPacket.HardwareAddressLength.set</code> — removed setter; property is now read-only (always returns 6)</li>
 <li><code>CP0002</code> — <code>void Utils.Net.Arp.ArpPacket.ProtocolAddressLength.set</code> — removed setter; property is now read-only (always returns 4)</li>
 <li><code>CP0002</code> — <code>void Utils.Net.DNS.DNSHeader.Append(Utils.Net.DNS.DNSHeader)</code></li>
+<li><code>CP0002</code> — <code>System.Net.NetworkInformation.NetworkInterface[] Utils.Net.NetworkParameters.NetworkInterfaces.get</code> — replaced by a read-only snapshot</li>
+<li><code>CP0002</code> — <code>System.Threading.Tasks.Task&lt;(int, int)&gt; Utils.Net.Pop3Client.GetStatAsync(System.Threading.CancellationToken)</code> — mailbox size is now <code>long</code></li>
+<li><code>CP0002</code> — <code>System.Threading.Tasks.Task&lt;System.Collections.Generic.IReadOnlyCollection&lt;int&gt;&gt; Utils.Net.INntpArticleStore.ListNewsSinceAsync(string, System.DateTime, System.Threading.CancellationToken)</code> — message IDs are now strings</li>
+<li><code>CP0002</code> — <code>System.Threading.Tasks.Task&lt;System.Collections.Generic.IReadOnlyList&lt;int&gt;&gt; Utils.Net.NntpClient.NewNewsAsync(string, System.DateTime, System.Threading.CancellationToken)</code> — message IDs are now strings</li>
+</ul>
+<h3 id="other-binary-compatibility-changes-1">Other binary compatibility changes</h3>
+<ul>
+<li><code>CP0006</code> — Cannot add interface member 'System.Threading.Tasks.Task&lt;System.Collections.Generic.IReadOnlyCollection<string>&gt; Utils.Net.INntpArticleStore.ListNewsSinceAsync(string, System.DateTime, System.Threading.CancellationToken)' to {candidateAssembly} because it does not exist on {baselineAssembly}</string></li>
 </ul>
 <p><a id="omy-utils-data"></a></p>
 <h2 id="omyutilsdata">omy.Utils.Data</h2>
@@ -275,10 +294,24 @@
 <h2 id="omyutilsfonts">omy.Utils.Fonts</h2>
 <ul>
 <li>Published baseline: <code>1.2.1</code></li>
-<li>Accepted diagnostics: <strong>41</strong> (22 from the first audit pass + 19 from the second, see below)</li>
-<li>Diagnostic classes: <code>CP0001</code>: 3, <code>CP0002</code>: 31, <code>CP0005</code>: 2, <code>CP0006</code>: 5</li>
+<li>Accepted diagnostics: <strong>49</strong></li>
+<li>Diagnostic classes: <code>CP0001</code>: 3, <code>CP0002</code>: 39, <code>CP0005</code>: 2, <code>CP0006</code>: 5</li>
 </ul>
 <h3 id="removed-or-incompatible-published-surface-5">Removed or incompatible published surface</h3>
+<ul>
+<li><code>CP0002</code> — <code>string[] Utils.Fonts.FontSupport.StdNames.get</code></li>
+<li><code>CP0002</code> — <code>string[] Utils.Fonts.FontSupport.StdValues.get</code></li>
+<li><code>CP0002</code> — <code>int[] Utils.Fonts.FontSupport.Type1CExpertCharset.get</code></li>
+<li><code>CP0002</code> — <code>int[] Utils.Fonts.FontSupport.Type1CExpertSubCharset.get</code></li>
+<li><code>CP0002</code> — <code>string[] Utils.Fonts.FontSupport.MacExtras.get</code></li>
+<li><code>CP0002</code> — <code>int[] Utils.Fonts.FontSupport.MacRomanEncoding.get</code></li>
+<li><code>CP0002</code> — <code>int[] Utils.Fonts.FontSupport.IsoLatin1Encoding.get</code></li>
+<li><code>CP0002</code> — <code>int[] Utils.Fonts.FontSupport.WinAnsiEncoding.get</code></li>
+<li><code>CP0002</code> — <code>int[] Utils.Fonts.FontSupport.StandardEncoding.get</code></li>
+</ul>
+<p>These nine process-wide reference and encoding tables now expose immutable <code>IReadOnlyList&lt;string&gt;</code>
+or <code>IReadOnlyList&lt;int&gt;</code> views, preventing callers from corrupting shared font lookup state or
+desynchronizing <code>StdNames</code> from <code>StdNameIndexMap</code>.</p>
 <ul>
 <li><code>CP0002</code> — <code>Utils.Fonts.TTF.TrueTypeGlyph.TrueTypeGlyph(Utils.Fonts.TTF.Tables.Glyf.GlyphBase)</code></li>
 <li><code>CP0002</code> — <code>short Utils.Fonts.TTF.Tables.AcntTable.Version.get</code></li>
@@ -296,7 +329,7 @@
 <li><code>CP0001</code> — <code>Utils.Fonts.TTF.Tables.Acnt.AcntFormatBase</code></li>
 <li><code>CP0002</code> — <code>short Utils.Fonts.TTF.Tables.CMap.CMapFormatBase.Length.get</code></li>
 </ul>
-<h3 id="other-binary-compatibility-changes-1">Other binary compatibility changes</h3>
+<h3 id="other-binary-compatibility-changes-2">Other binary compatibility changes</h3>
 <ul>
 <li><code>CP0006</code> — Cannot add interface member 'float Utils.Fonts.IFont.Scale' to {candidateAssembly} because it does not exist on {baselineAssembly}</li>
 <li><code>CP0006</code> — Cannot add interface member 'float Utils.Fonts.IFont.BaseLineY' to {candidateAssembly} because it does not exist on {baselineAssembly}</li>
@@ -307,15 +340,7 @@
 <li><code>CP0005</code> — Cannot add abstract member 'int Utils.Fonts.TTF.Tables.CMap.CMapFormatBase.Length' to {candidateAssembly} because it does not exist on {baselineAssembly}</li>
 </ul>
 <h3 id="second-audit-pass-todo-2026-07-19-pass2md-items-21-39">Second audit pass (TODO-2026-07-19-pass2.md, items 21-39)</h3>
-<p>The 19 entries below are recorded in <code>eng/api-breaking-changes/2.0.0.json</code> (same file, same
-<code>omy.Utils.Fonts</code> package block as the first-pass entries above), authored by hand against the
-<code>1.2.1</code> baseline following the exact message conventions already used elsewhere in that manifest
-(member/type existence phrasing, <code>{baselineAssembly}</code>/<code>{candidateAssembly}</code> placeholders). They
-were <strong>not</strong> produced by an actual ApiCompat run in this environment -- there was no baseline NuGet
-package available to diff against here. Before the 2.0.0 release gate is trusted on this package,
-re-run the ApiCompat tool against the published <code>1.2.1</code> baseline and confirm these messages match
-byte-for-byte (the gate compares diagnostic message text exactly); adjust both this file and the
-manifest if the real tool output differs in wording, nested-type naming (<code>+</code> vs <code>.</code>), or otherwise.</p>
+<p>The entries below were verified byte-for-byte by ApiCompat against the published <code>1.2.1</code> package.</p>
 <ul>
 <li><p><code>CP0002</code> — <code>short Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.getGlyphIndex(int)</code></p>
 </li>
@@ -325,9 +350,11 @@ manifest if the real tool output differs in wording, nested-type naming (<code>+
 </li>
 <li><p><code>CP0002</code> — <code>short Utils.Fonts.TTF.Tables.CmapTable.Version.get</code></p>
 </li>
-<li><p><code>CP0002</code> — <code>void Utils.Fonts.TTF.Tables.CmapTable.Version.set</code></p>
-</li>
 <li><p><code>CP0002</code> — <code>short Utils.Fonts.TTF.Tables.CmapTable.NumberSubtables.get</code></p>
+</li>
+<li><p><code>CP0002</code> — <code>short Utils.Fonts.TTF.Tables.CmapTable.CmapSubtable.PlatformID.get</code></p>
+</li>
+<li><p><code>CP0002</code> — <code>short Utils.Fonts.TTF.Tables.CmapTable.CmapSubtable.PlatformSpecificID.get</code></p>
 </li>
 <li><p><code>CP0002</code> — <code>Utils.Fonts.TTF.Tables.CMap.CMapFormatBase Utils.Fonts.TTF.Tables.CmapTable.GetCMap(short, short)</code></p>
 </li>
@@ -345,15 +372,11 @@ manifest if the real tool output differs in wording, nested-type naming (<code>+
 </li>
 <li><p><code>CP0002</code> — <code>short Utils.Fonts.TTF.Tables.Glyf.GlyphBase.Length.get</code></p>
 </li>
-<li><p><code>CP0002</code> — <code>short Utils.Fonts.TTF.Tables.Glyf.GlyphSimple.Length.get</code></p>
-</li>
-<li><p><code>CP0002</code> — <code>short Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.Length.get</code></p>
-</li>
 <li><p><code>CP0002</code> — <code>Utils.Fonts.TTF.TrueTypeFont Utils.Fonts.TTF.TrueTypeFont.ParseFont(byte[])</code></p>
 </li>
 <li><p><code>CP0002</code> — <code>Utils.Fonts.TTF.TrueTypeFont Utils.Fonts.TTF.TrueTypeFont.ParseFont(System.IO.Stream)</code></p>
 </li>
-<li><p><code>CP0001</code> — <code>Utils.Fonts.TTF.TrueTypeFont+TableDeclaration</code></p>
+<li><p><code>CP0001</code> — <code>Utils.Fonts.TTF.TrueTypeFont.TableDeclaration</code></p>
 </li>
 <li><p><code>GlyphCompound.getGlyphIndex(int)</code> renamed to <code>GetGlyphIndex(int)</code>, returning <code>ushort</code> instead of <code>short</code>.</p>
 </li>
@@ -404,7 +427,7 @@ to restore a best-effort parse with diagnostics instead of an exception.</p>
 <li><code>CP0002</code> — <code>Utils.Imaging.IColorArgb&lt;ushort&gt; Utils.Imaging.ColorArgb64.Substract(Utils.Imaging.IColorArgb&lt;ushort&gt;)</code></li>
 <li><code>CP0002</code> — <code>Utils.Imaging.IColorArgb&lt;T&gt; Utils.Imaging.IColorArgb&lt;T&gt;.Substract(Utils.Imaging.IColorArgb&lt;T&gt;)</code></li>
 </ul>
-<h3 id="other-binary-compatibility-changes-2">Other binary compatibility changes</h3>
+<h3 id="other-binary-compatibility-changes-3">Other binary compatibility changes</h3>
 <ul>
 <li><code>CP0006</code> — Cannot add interface member 'Utils.Imaging.IColorArgb<t> Utils.Imaging.IColorArgb<t>.Subtract(Utils.Imaging.IColorArgb<t>)' to {candidateAssembly} because it does not exist on {baselineAssembly}</t></t></t></li>
 </ul>
@@ -434,7 +457,7 @@ to restore a best-effort parse with diagnostics instead of an exception.</p>
 <li><code>CP0002</code> — <code>void Utils.Geography.Model.MapPosition&lt;T&gt;.GeoPoint.set</code></li>
 <li><code>CP0002</code> — <code>void Utils.Geography.Model.MapPosition&lt;T&gt;.ZoomLevel.set</code></li>
 </ul>
-<h3 id="other-binary-compatibility-changes-3">Other binary compatibility changes</h3>
+<h3 id="other-binary-compatibility-changes-4">Other binary compatibility changes</h3>
 <ul>
 <li><code>CP0007</code> — Type 'Utils.Geography.Model.GeoPoint<t>' does not inherit from base type 'System.Object' on {candidateAssembly} but it does on {baselineAssembly}</t></li>
 <li><code>CP0009</code> — Type 'Utils.Geography.Model.GeoPoint<t>' has the sealed modifier on {candidateAssembly} but not on {baselineAssembly}</t></li>
@@ -485,7 +508,7 @@ to restore a best-effort parse with diagnostics instead of an exception.</p>
 <li><code>CP0002</code> — <code>Utils.Mathematics.LinearAlgebra.Vector&lt;T&gt; Utils.Mathematics.LinearAlgebra.Vector&lt;T&gt;.Normalize()</code></li>
 <li><code>CP0002</code> — <code>Utils.Mathematics.LinearAlgebra.Vector&lt;T&gt; Utils.Mathematics.LinearAlgebra.Vector&lt;T&gt;.FromNormalSpace()</code></li>
 </ul>
-<h3 id="other-binary-compatibility-changes-4">Other binary compatibility changes</h3>
+<h3 id="other-binary-compatibility-changes-5">Other binary compatibility changes</h3>
 <ul>
 <li><code>CP0021</code> — Cannot remove constraint '!:System.Numerics.ITrigonometricFunctions{`0}' on type parameter 'T' of 'Utils.Mathematics.LinearAlgebra.Line<t>'.</t></li>
 </ul>
@@ -506,7 +529,7 @@ to restore a best-effort parse with diagnostics instead of an exception.</p>
 <li><code>CP0002</code> — <code>Utils.OData.ErrorReturnValue.ErrorReturnValue(Utils.OData.ErrorReturnValue)</code></li>
 <li><code>CP0002</code> — <code>void Utils.OData.ErrorReturnValue.Deconstruct(out int, out string)</code></li>
 </ul>
-<h3 id="other-binary-compatibility-changes-5">Other binary compatibility changes</h3>
+<h3 id="other-binary-compatibility-changes-6">Other binary compatibility changes</h3>
 <ul>
 <li><code>CP0009</code> — Type 'Utils.OData.ErrorReturnValue' has the sealed modifier on {candidateAssembly} but not on {baselineAssembly}</li>
 <li><code>CP0012</code> — Cannot remove 'virtual' keyword from member 'Utils.OData.ErrorReturnValue.Equals(Utils.OData.ErrorReturnValue?)'.</li>
@@ -528,7 +551,7 @@ to restore a best-effort parse with diagnostics instead of an exception.</p>
 <li><code>CP0002</code> — <code>System.Collections.Generic.Stack&lt;object&gt; Utils.VirtualMachine.DefaultContext.Stack.get</code></li>
 <li><code>CP0002</code> — <code>Utils.VirtualMachine.VirtualProcessorException.VirtualProcessorException(System.Runtime.Serialization.SerializationInfo, System.Runtime.Serialization.StreamingContext)</code></li>
 </ul>
-<h3 id="other-binary-compatibility-changes-6">Other binary compatibility changes</h3>
+<h3 id="other-binary-compatibility-changes-7">Other binary compatibility changes</h3>
 <ul>
 <li><code>CP0006</code> — Cannot add interface member 'sbyte Utils.VirtualMachine.INumberReader.ReadSByte(Utils.VirtualMachine.Context)' to {candidateAssembly} because it does not exist on {baselineAssembly}</li>
 </ul>
@@ -551,7 +574,7 @@ to restore a best-effort parse with diagnostics instead of an exception.</p>
 <li><code>CP0002</code> — <code>void Utils.OData.Generators.ODataEntityGenerator.Initialize(Microsoft.CodeAnalysis.GeneratorInitializationContext)</code></li>
 <li><code>CP0002</code> — <code>void Utils.OData.Generators.ODataEntityGenerator.Execute(Microsoft.CodeAnalysis.GeneratorExecutionContext)</code></li>
 </ul>
-<h3 id="other-binary-compatibility-changes-7">Other binary compatibility changes</h3>
+<h3 id="other-binary-compatibility-changes-8">Other binary compatibility changes</h3>
 <ul>
 <li><code>CP0008</code> — Type 'Utils.OData.Generators.ODataEntityGenerator' does not implement interface 'Microsoft.CodeAnalysis.ISourceGenerator' on {candidateAssembly} but it does on {baselineAssembly}</li>
 </ul>
@@ -559,17 +582,18 @@ to restore a best-effort parse with diagnostics instead of an exception.</p>
 <h2 id="omyutilsioserializationgenerators">omy.Utils.IO.Serialization.Generators</h2>
 <ul>
 <li>Published baseline: <code>1.2.1</code></li>
-<li>Accepted diagnostics: <strong>3</strong></li>
-<li>Diagnostic classes: <code>CP0002</code>: 2, <code>CP0008</code>: 1</li>
+<li>Accepted diagnostics: <strong>4</strong></li>
+<li>Diagnostic classes: <code>CP0002</code>: 2, <code>CP0008</code>: 1, <code>CP0009</code>: 1</li>
 </ul>
 <h3 id="removed-or-incompatible-published-surface-13">Removed or incompatible published surface</h3>
 <ul>
 <li><code>CP0002</code> — <code>void Utils.IO.Serialization.Generators.ReaderWriterGenerator.Initialize(Microsoft.CodeAnalysis.GeneratorInitializationContext)</code></li>
 <li><code>CP0002</code> — <code>void Utils.IO.Serialization.Generators.ReaderWriterGenerator.Execute(Microsoft.CodeAnalysis.GeneratorExecutionContext)</code></li>
 </ul>
-<h3 id="other-binary-compatibility-changes-8">Other binary compatibility changes</h3>
+<h3 id="other-binary-compatibility-changes-9">Other binary compatibility changes</h3>
 <ul>
 <li><code>CP0008</code> — Type 'Utils.IO.Serialization.Generators.ReaderWriterGenerator' does not implement interface 'Microsoft.CodeAnalysis.ISourceGenerator' on {candidateAssembly} but it does on {baselineAssembly}</li>
+<li><code>CP0009</code> — Type 'Utils.IO.Serialization.Generators.ReaderWriterGenerator' has the sealed modifier on {candidateAssembly} but not on {baselineAssembly}</li>
 </ul>
 <p><a id="omy-utils-dependencyinjection-generators"></a></p>
 <h2 id="omyutilsdependencyinjectiongenerators">omy.Utils.DependencyInjection.Generators</h2>
@@ -583,7 +607,7 @@ to restore a best-effort parse with diagnostics instead of an exception.</p>
 <li><code>CP0002</code> — <code>void Utils.DependencyInjection.Generators.StaticAutoGenerator.Initialize(Microsoft.CodeAnalysis.GeneratorInitializationContext)</code></li>
 <li><code>CP0002</code> — <code>void Utils.DependencyInjection.Generators.StaticAutoGenerator.Execute(Microsoft.CodeAnalysis.GeneratorExecutionContext)</code></li>
 </ul>
-<h3 id="other-binary-compatibility-changes-9">Other binary compatibility changes</h3>
+<h3 id="other-binary-compatibility-changes-10">Other binary compatibility changes</h3>
 <ul>
 <li><code>CP0008</code> — Type 'Utils.DependencyInjection.Generators.StaticAutoGenerator' does not implement interface 'Microsoft.CodeAnalysis.ISourceGenerator' on {candidateAssembly} but it does on {baselineAssembly}</li>
 </ul>
