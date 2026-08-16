@@ -1,222 +1,60 @@
-# Utils.NumberToString — Quality and correctness audit
+# Utils.NumberToString — Current 2.0 backlog
 
-Static review of `Utils.NumberToString`, including integer, decimal, floating-point, currency, fraction, ordinal, date/time conversion, XML configuration loading, variants, replacements, triggers and language-specific extensions.
+Re-audited on 2026-08-16 against `master` `6bcb7aed0a0afa45b07b82f442511becc5036da4`.
 
-## Previous implementation log
+The former items 47–61 in this file are all resolved. Residual work from the historical pass-2 and pass-4 audits is consolidated here so there is one active source of truth. Full history remains available in Git and the archived audit files.
 
-The earlier backlog items 1–46 have been implemented, documented, rejected intentionally, or recorded as architectural limitations. Completed work includes:
+See `docs/releasing/TodoAudit-2026-08-16.md` for repository-wide classification and PR order.
 
-- decimal, currency, significant-digit, ordinal, fraction, multiplicative and temporal overloads;
-- additional languages and language-specific ordinal plugins;
-- compiled trigger regexes, variant validation and pre-sorted variant rules;
-- thread-safe configuration/specifics dictionaries;
-- recursive BCP-47 fallback and negative-year formatting;
-- configurable group, intra-group and scale connectors;
-- broader tests for languages, decimals, dates, fractions and variants;
-- targeted linguistic fixes for Spanish, Italian, Finnish, Korean, Japanese, Romanian and other configurations.
+## P1
 
-Known linguistic limitations retained from the previous backlog:
+### NTS-01 — Configuration XML is not validated against the published XSD
 
-- full Zulu ordinal support requires noun-class-aware language logic;
-- Arabic ordinal gender polarity and dual forms require a dedicated plugin;
-- Greek cardinal and ordinal gender defaults cannot currently differ within one shared variant dimension;
-- counted-noun agreement for Slavic languages is outside the current number-only model.
+`BuildConfiguration` creates an `XmlSerializer` and deserializes a `StringReader` directly. The string `"Utils/NumberConvertionConfiguration.xsd"` is used as the serializer namespace; it does not create schema validation.
 
-The findings below are newly identified and remain open.
+**Risk:** schema-invalid or misspelled XML can reach semantic validation/deserialization behavior instead of failing with a precise line/position diagnostic.
 
-## Critical and high-priority findings
+**Fix:** validate with a securely configured schema-validating `XmlReader` before deserialization, then keep the existing semantic validation phase for cross-field rules that XSD cannot express.
 
-### 47. ✅ `decimal.MinValue` overflows in decimal and currency conversion
+**Tests:** unknown/misspelled elements and attributes, invalid restricted values, missing required structure, line/position diagnostics, XXE/DTD-disabled behavior, and every built-in resource through the validation path.
 
-Both decimal conversion and currency conversion compute an absolute value with unary negation:
+### NTS-02 — One invalid built-in configuration can poison static initialization
 
-```csharp
-if (number < 0) number = -number;
-decimal absAmount = isNegative ? -amount : amount;
-```
+The static constructor still calls `InitializeConfigurations(...)` for the entire built-in locale set. Any exception escaping that path becomes a `TypeInitializationException` and makes the type unusable for the process lifetime.
 
-Negating `decimal.MinValue` throws `OverflowException`, so the public API cannot convert the full declared `decimal` domain.
+**Fix:** make built-in validation a release/CI gate and separate validation/build from publication. Prefer an explicit initialization result/aggregate diagnostic or a guaranteed-safe core registry rather than allowing one optional locale to poison every locale.
 
-**Fix:** avoid taking a positive decimal absolute value when the minimum value cannot be represented. Split the integral/fractional components while preserving the sign, or convert through an unsigned magnitude representation. Add explicit `decimal.MinValue`, `decimal.MaxValue` and values adjacent to both endpoints.
+**Dependency:** implement NTS-01 first so initialization failures have precise diagnostics.
 
-**Priority: P1 numeric correctness.**
+## P2 — prove before refactoring
 
-### 48. ✅ Currency conversion is restricted to `long` without declaring that limit
+### NTS-03 — Composite phrase finalization may still be applied inconsistently
 
-`ConvertCurrency` casts the truncated unit amount to `long`. Valid decimal values outside `long` range therefore throw even though the API accepts `decimal` and the cardinal converter supports `BigInteger`.
+Historical item 65 identified composite methods that assemble results from public `Convert(...)` calls and later apply adjustment/finalization at phrase level. Many adjacent paths were subsequently fixed, so the old prose must not be treated as proof that the defect still exists in every conversion kind.
 
-**Fix:** use `BigInteger` for units and subunits throughout currency conversion. Validate the converter's configured `MaxNumber` before formatting and document any deliberate currency-specific range.
+**Required first step:** add a deliberately non-idempotent `INumberToStringLanguageSpecifics` finalizer and a matrix covering decimal, fraction, currency, duration/time and date composition. Count and observe finalization of subparts and final phrases.
 
-**Priority: P1 API correctness.**
+**Fix only if reproduced:** split raw typed-fragment generation from one final phrase-render stage. Do not perform a broad linguistic-pipeline refactor without a failing behavioral test.
 
-### 49. ✅ `CurrencyDefinition.SubunitDigits` is unvalidated and uses floating-point arithmetic
+## P3 — design feature, not generic bug
 
-The subunit factor is calculated through `Math.Pow(10, SubunitDigits)`, converted to `long`, and the decimal fraction is converted to `double` before rounding. Negative values can produce a zero factor and division by zero; large values overflow or produce invalid factors; conversion through `double` can round monetary values incorrectly.
+### NTS-04 — Units/connectors/month forms are not fully variant-aware
 
-**Fix:** validate `SubunitDigits` against an explicit supported range and calculate the factor exactly with decimal/`BigInteger` arithmetic. Round using `decimal.Round` with a documented midpoint policy. Never route currency through `double`.
+Historical item 74 describes a real extensibility limitation for languages requiring case/gender agreement outside the numeral itself. It is not a generic correctness defect for currently supported outputs by itself.
 
-**Priority: P1 financial correctness.**
+**Decision:** only extend the configuration/phrase model when a concrete supported-language test demonstrates the requirement. Keep this item as an architectural limitation rather than a mandatory 2.0 blocker.
 
-### 50. ✅ Minimum signed values overflow in ordinal, year and duration conversion
+## Closed / superseded historical findings
 
-- `ConvertOrdinal(long)` uses `Math.Abs(long)`, which throws for `long.MinValue`.
-- `ConvertYear(int)` uses `Math.Abs(int)`, which throws for `int.MinValue`.
-- `Convert(TimeSpan)` negates negative durations, which throws for `TimeSpan.MinValue`.
+- Items 47–61: resolved in current code/history (signed numeric boundaries, exact currency arithmetic, regex timeout, configuration validation, transactional registration, inheritance-cycle/presence handling, variant strictness/precedence, language-specifics registration, strict culture lookup, etc.).
+- Pass-2 items 62–64 and 66–73: resolved or intentionally documented.
+- Pass-4 item 92: superseded by the internal presence-aware `LanguageDefinition` / `Optional<T>` model. Explicit zero/false and absent values are no longer conflated for the presence-sensitive fields.
+- Pass-4 item 95: fraction-key validation is implemented; generic "all digits must exist" validation remains intentionally deferred because partial digit fixtures/configurations are supported by the current model.
+- Historical Zulu/Arabic/Greek/Slavic agreement notes are linguistic-model limitations, not regressions to fix speculatively.
 
-**Fix:** derive magnitudes through wider or unsigned representations (`BigInteger`, `ulong`, ticks handled without unary negation). Ensure all signed public input domains have deterministic behavior.
+## Recommended implementation order
 
-**Priority: P1 numeric correctness.**
-
-### 51. ✅ The `BigInteger` ordinal API only supports the `long` range
-
-`ConvertOrdinal(BigInteger)` immediately performs `checked((long)number)`. The overload therefore suggests arbitrary-precision support while rejecting values outside `Int64`, unlike cardinal conversion.
-
-**Fix:** either implement the ordinal pipeline on `BigInteger`, or replace/deprecate the overload and document the actual range explicitly. Do not expose a wider type solely to narrow it at entry.
-
-**Priority: P1 API contract.**
-
-### 52. ✅ Large finite `double`/`float` values silently lose their fractional part
-
-When a finite floating-point value cannot be parsed as `decimal`, conversion falls back to:
-
-```csharp
-Convert(new BigInteger(Math.Truncate(number)), variants)
-```
-
-This silently discards the complete fractional part. The same method can therefore preserve decimals for smaller values but change semantics solely because the magnitude crossed the decimal range.
-
-**Fix:** define an explicit contract. Prefer throwing `ArgumentOutOfRangeException` when an exact supported decimal representation is unavailable, or provide a separate scientific/significant-digit conversion path. Silent truncation should not be the fallback.
-
-**Priority: P1 numeric correctness.**
-
-### 53. ✅ Configurable regular expressions have no execution timeout
-
-Trigger patterns are compiled with `new Regex(pattern, RegexOptions.Compiled)` and later applied to generated text without a timeout. Programmatic or externally registered configurations can provide catastrophic-backtracking patterns.
-
-**Risk:** CPU denial of service during converter construction or conversion.
-
-**Fix:** compile with a finite, configurable timeout and convert `RegexMatchTimeoutException` into a configuration/runtime diagnostic that identifies the language and pattern. Consider `RegexOptions.NonBacktracking` for compatible patterns.
-
-**Priority: P1 robustness/security.**
-
-### ✅ 54. Core grouping configuration is not structurally validated
-
-**Fix:** Added aggregate validation of the fully resolved `LanguageType`, including cultures, group size, zero/minus, contiguous groups, complete digit tables, nulls, duplicates, time units, and scale structure. Diagnostics include culture and logical paths.
-
-The constructor checks that `Groups` and `Scale` are non-null but does not ensure that:
-
-- the group size is positive and within the supported integer arithmetic range;
-- groups are non-empty and contiguous;
-- every required digit exists;
-- `Groups.Keys.Max()` is safe;
-- `10^groupSize` fits the subsequent `long` remainder cast;
-- each `DigitType.BuildString` has a coherent placeholder contract.
-
-> **Partially addressed (PR #504):** `Group` is now validated in the range `[1, _decimalPowersOfTen.Length - 1]`. The Groups dictionary is now validated before LINQ materialisation: structure (non-empty, contiguous positive keys, max key ≤ 19), null `DigitListType`/`Digits`/`DigitType` entries, and duplicate digit values are all caught eagerly. Digit completeness (every required value 0–9 present) remains deferred: test fixtures legitimately use partial digit sets, and a generic "required digits" check would need to know the full number domain.
-
-Malformed programmatic/XML configuration can therefore fail later with `DivideByZeroException`, `OverflowException`, `InvalidOperationException` or `KeyNotFoundException`, sometimes after partial registration.
-
-**Fix:** add one comprehensive immutable configuration-validation phase before creating or registering a converter. Reject unsupported group sizes explicitly and report the exact language/group/digit path.
-
-**Priority: P1 configuration safety.**
-
-## Medium-priority findings
-
-### 55. ✅ Fraction conversion accepts a zero or negative denominator without normalization
-
-`ConvertFraction` delegates directly to `BuildFractionText`; denominator zero becomes spoken text such as “one / zero” rather than an error. Negative denominators can place the sign in the denominator text instead of normalizing it onto the numerator. Fractions are not reduced, making named-form selection and pluralization dependent on the caller's unreduced representation.
-
-**Fix:** reject a zero denominator, normalize the denominator to positive, and decide/document whether fractions are reduced by `GCD` before formatting. Add tests for `1/0`, `1/-2`, `-1/-2`, and reducible fractions.
-
-**Priority: P2 semantic correctness.**
-
-### ✅ 56. Configuration registration is non-transactional and duplicate cultures are silently ignored
-
-**Fix:** Registration now builds the complete multi-document batch before a single locked commit, normalizes and rejects intra-batch collisions, and exposes `DuplicateCulturePolicy` for existing-registry collisions.
-
-`RegisterConfigurations` reads and registers each document sequentially. If a later document fails, earlier cultures remain globally registered. `TryAdd` silently keeps the first culture, so typos, conflicting versions or intended overrides are not observable.
-
-**Fix:** parse and validate the entire batch into temporary structures, detect all collisions, then commit atomically. Expose an explicit duplicate policy (`Reject`, `KeepExisting`, `Replace`) rather than always using first-wins behavior.
-
-**Priority: P2 lifecycle/configuration.**
-
-### ✅ 57. `baseOn` inheritance is global, order-dependent and has no cycle detection
-
-Resolved language definitions are stored in a process-wide cache while documents are parsed. A child can therefore inherit from whichever definition of a culture was cached first in an earlier call. Recursive `baseOn` chains do not maintain a visited set, so cycles can recurse until stack overflow.
-
-**Fix:** `ResolveLanguage` uses both a `HashSet<string> visiting` (case-insensitive, for O(1) cycle detection) and a `List<string> resolutionPath` (for ordered path in error messages). The child's own key is added to `visiting` before resolving any of its bases; a `finally` block always removes it so the set remains accurate after backtracking. Cycle detection is case-insensitive (`OrdinalIgnoreCase`). Multiple bases (`baseOn="B,C,D"`) are supported: each base is resolved independently and merged left-to-right with later bases having higher priority than earlier ones, and the child having highest priority. The resolution lookup order is: (1) local document cache (already-resolved entries within this document), (2) raw document entries resolved recursively (document-local definitions always shadow the global cache, preventing a cached entry from masking a cycle in the current document), (3) global cache (_cachedLanguageTypes — definitions from previously loaded documents). Atomicity: `ReadConfiguration` performs all resolutions into local temporary structures before committing anything to `_cachedLanguageTypes`, so a cycle or missing-base error in any language rolls back the entire document without publishing partial state.
-
-**Model split (public API preserved):** Presence/absence tracking is confined to an internal serialization/definition layer so the public configuration types keep their historical shape. Three layers now exist: (1) internal XML models (`NumbersXmlModel`, `LanguageXmlModel`, `NumberScaleXmlModel`) that carry the `[XmlSerializer]` attributes and the `Specified` companions for the presence-sensitive value-type attributes (`groupSize`, `firstLetterUpperCase`, `startIndex`); these are `public` only because `XmlSerializer` requires public types; (2) internal mergeable definitions (`LanguageDefinition`, `NumberScaleDefinition`) that use `Optional<T>` for those three fields and plain nullable reference fields elsewhere, on which `baseOn` inheritance and deterministic left-to-right merging run (`MergeLanguageDefinition`/`MergeNumberScaleDefinition` via `MergeOptional`); (3) the restored public types `LanguageType`/`NumberScaleType`, built by `BuildResolvedLanguage`/`BuildNumberScale` with the historical public API — `int GroupSize`, `bool FirstLetterUpperCase`, `int StartIndex` (no nullable, no `*Xml`/`*XmlSpecified` members). `Optional<T>` distinguishes an explicit `0`/`false` (which overrides an inherited value) from an absent attribute (which inherits); absent value-type fields collapse to the historical defaults (`GroupSize` = 3, `StartIndex` = 0, `FirstLetterUpperCase` = false) when the public type is built. Cycle blocking, deterministic merge, ordered multiple inheritance, and atomic loading are all preserved. Addressed in PR fix/Utils.NumberToString-todo-items-57-60-61.
-
-### ✅ 58. Runtime variants are permissive while configuration variants are strict
-
-**Fix:** Runtime arguments now require strict `dimension=value` syntax and validate aliases, declared dimensions and values, empty components, and duplicate dimensions before defaults are injected.
-
-Configuration references are validated, but `BuildVariantQuery` silently accepts malformed strings, unknown dimension names and undeclared values. These entries either do nothing or prevent expected rules from matching, making caller mistakes difficult to diagnose.
-
-**Fix:** provide a strict default that validates every `dimension=value` pair against `_dimensionIndex` and the dimension's declared values. If backward compatibility requires permissive behavior, expose it as an explicit option and offer a typed variant-query API.
-
-**Priority: P2 API ergonomics.**
-
-### ✅ 59. Trigger and ordinal tie-breaking depends on declaration order
-
-**Status:** resolved on 2026-08-04. All functional defects identified by this audit are now closed; the separately documented Zulu, Arabic, Greek, and Slavic noun-agreement linguistic limitations remain open and are not claimed as fixed here.
-
-The implementation uses one canonical `VariantConstraintSet`, shared rank comparison, and unique-candidate selection. Specificity is the canonical constraint count. Unique ordinal and trigger selection ranks specificity descending then signed `Priority` descending. Cumulative variants apply specificity ascending then priority ascending. Compatible equal-specificity/equal-priority pairs are rejected; contradictory values on a shared canonical dimension are exclusive. Global and scale evaluation spaces are validated separately, including comparable `OnScale` and `OnValue` filters.
-
-Public 2.0 breaks add immutable `Priority` to `VariantRule` and `OrdinalVariantRule`, replace trigger tuples with `TriggerReplacementForm`, and reject formerly order-dependent configurations. XML and XSD accept optional `xs:int` priority values with zero default, including inherited rules. Diagnostics `UNTS001`–`UNTS004` report culture, family, paths, normalized constraints, specificity, and priority.
-
-Implementation files include `NumberToStringConverter.cs`, `VariantRulePrecedence.cs`, configuration models/loader, and the XSD. Tests in `NumberToStringRulePrecedenceTests.cs` cover selection, rejection, fallback, signed priorities, and reversed declaration order. Documentation and the 2.0 migration/changelog describe the new contract. The construction-time pair scan is intentionally quadratic for the small immutable rule collections; no remaining order-based tie-break is known.
-
-### ✅ 60. `RegisterLanguageSpecifics` stores shared mutable instances globally
-
-A single registered `INumberToStringLanguageSpecifics` instance may be reused by many immutable converters and concurrent calls. The API does not require implementations to be stateless/thread-safe and allows silent replacement under the same key.
-
-**Fix:** `RegisterLanguageSpecifics` now validates `typeName` with `ArgumentException.ThrowIfNullOrWhiteSpace` (null → `ArgumentNullException`, empty/whitespace → `ArgumentException`) and `instance` with `ArgumentNullException.ThrowIfNull`. XML documentation clarified: the registered instance is shared and must be stateless or thread-safe; duplicate keys are silently replaced. Addressed in PR fix/Utils.NumberToString-todo-items-57-60-61.
-
-> **Completed:** type names, shared instances, factories, null factory results, and enriched creation failures are validated. The shared-instance overload retains its documented thread-safety contract, while the factory overload creates one instance per converter.
-
-### ✅ 61. Unknown cultures silently fall back to English
-
-After recursively stripping BCP-47 subtags, `GetConverter` returns the English converter for any unresolved culture. A spelling error can therefore produce valid but wrong-language business text without any diagnostic.
-
-**Fix:** two overloads `TryGetConverter(string?, out NumberToStringConverter?)` and `TryGetConverter(CultureInfo?, out NumberToStringConverter?)` return `false` (and `null`) without falling back to English when the culture cannot be resolved. The `string` overload returns `false` immediately for null, empty or whitespace input. The `CultureInfo` overload returns `false` immediately for a null argument. BCP-47 subtag stripping is applied the same way as `GetConverter`. `GetConverter` XML doc updated to mention the fallback and link to `TryGetConverter`. Addressed in PR fix/Utils.NumberToString-todo-items-57-60-61.
-
-## Duplications of intent to reduce
-
-- Absolute-value/sign handling is independently implemented for decimal, currency, ordinal, year, duration and rational conversion. Centralize signed-magnitude extraction per numeric family.
-- Decimal and currency rounding use different arithmetic and midpoint paths. Centralize exact decimal decomposition and rounding.
-- Variant matching logic is repeated across variant rules, ordinal variants and trigger forms. Build one validated rule-selection component with explicit ambiguity handling.
-- Configuration validation is split between XML deserialization, `ReadConverter`, constructor checks and variant-reference validation. Produce one complete validated configuration model before constructing a converter.
-- Global registration, inheritance resolution and cache mutation are intertwined. Separate parsing, graph resolution, validation and atomic registry commit.
-
-## Required tests
-
-- Full signed endpoints: `decimal.MinValue`, `long.MinValue`, `int.MinValue`, `TimeSpan.MinValue`.
-- Currency values beyond `long`, invalid `SubunitDigits`, exact carry behavior, and midpoint rounding without `double`.
-- Finite `double`/`float` values just inside and outside decimal range, asserting no silent fractional truncation.
-- Regex catastrophic-backtracking patterns with enforced timeout.
-- Empty/sparse/non-contiguous groups, zero or oversized group size, missing digits and invalid scale definitions.
-- Zero/negative/reducible denominators.
-- Atomic multi-document registration rollback and every duplicate-culture policy.
-- Direct and indirect `baseOn` cycles, same culture defined in multiple batches, and parallel registration.
-- Malformed, unknown and duplicate runtime variants plus ambiguous equal-specificity rules.
-- Unknown-culture behavior under strict and explicit fallback policies.
-
-## Recommended order
-
-| Priority | Action |
-|---|---|
-| P1 | Correct signed-minimum handling across all numeric APIs |
-| P1 | Rework currency around exact decimal/`BigInteger` arithmetic and validate `SubunitDigits` |
-| P1 | Remove silent floating-point fractional truncation |
-| P1 | Add regex timeouts and comprehensive configuration validation |
-| P1 | Align or narrow the `BigInteger` ordinal contract |
-| P2 | Normalize and validate fractions |
-| P2 | Make registration transactional and inheritance cycle-safe |
-| P2 | Make runtime variants and tie-breaking deterministic |
-| P2 | Define language-specific instance lifecycle and culture fallback policy |
-
-## Deployment warning
-
-Until items 47–54 are fixed, avoid using this package for unbounded decimals, financial values with custom subunit precision, signed minimum values, untrusted regex/configuration input, or floating-point values outside decimal range. Current behavior can throw unexpectedly, silently truncate fractional data, apply imprecise monetary rounding, or consume unbounded CPU on a pathological regex.
+1. NTS-01 — schema validation and built-in resource validation tests.
+2. NTS-02 — initialization isolation/aggregate diagnostics.
+3. NTS-03 — behavioral proof first; refactor only if the matrix reproduces inconsistent finalization.
+4. NTS-04 — only with a concrete language requirement.
