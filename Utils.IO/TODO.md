@@ -111,7 +111,7 @@ Each format must define its exact units/epoch, valid range, `DateTimeKind` seman
 
 ## Recommended implementation order
 
-1. IO-01 + IO-02 — descriptor correctness and validation.
+1. IO-02 — descriptor invariant validation.
 2. IO-03 + IO-04 + IO-10 + IO-11 — serialization/wire contract hardening using the decisions recorded above.
 3. IO-06 + IO-07 + IO-08 + IO-09 + IO-12 + IO-13 — stream lifecycle/API cleanup.
 4. IO-05 — documentation and regression tests for the intentionally non-transactional streaming contract; no transactional implementation is currently planned.
