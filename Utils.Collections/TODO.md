@@ -14,9 +14,13 @@ The deterministic adaptive index and lookup-driven promotion are intentional des
 
 This duplicates first-pass item 6 and second-pass item 20.
 
-**Fix:** create a single-traversal insertion result / `TryAdd` primitive. Decide the public `ICollection<T>.Add` behavior for duplicates (throw vs idempotent) before implementation. `SkipListDictionary.Add` should reuse the same primitive instead of searching twice.
+**Decision (2026-08-16):** follow the .NET BCL policy of the closest equivalent sorted collections. `SkipList<T>` has set-like comparer uniqueness, matching `SortedSet<T>`: `Add(T)` returns `true` when the item is inserted and `false` when a comparer-equal item already exists. It must not throw merely for a duplicate. `SkipListDictionary<TKey,TValue>.Add` follows `Dictionary`/`SortedDictionary`: a comparer-equal existing key causes `ArgumentException`, while the indexer updates an existing key and inserts a missing key.
 
-**Breaking change:** yes, current duplicate behavior changes.
+Comparer equality (`Comparer.Compare(a, b) == 0`) defines duplicate identity for the sorted structure.
+
+**Fix:** make insertion a single traversal returning whether a new node was inserted. Use that result directly for `SkipList<T>.Add`; have `SkipListDictionary.Add` translate a duplicate result into `ArgumentException` instead of doing a preliminary `Contains` traversal.
+
+**Breaking change:** yes, current duplicate behavior changes, but the new behavior aligns with the corresponding .NET collection contracts.
 
 ### COL-02 — Concurrent readers can race during adaptive promotion
 
@@ -64,7 +68,7 @@ Current tests can verify sorted bottom-level values while missing orphaned/cycli
 
 `SkipListDictionary.Add` performs `Contains` followed by `Add`.
 
-**Fix:** consume COL-01's single-traversal insertion result.
+**Fix:** consume COL-01's single-traversal insertion result and translate a duplicate into the BCL-compatible `ArgumentException` required by dictionary `Add`.
 
 ### COL-09 — Threshold semantics and diagnostics are inconsistent
 
@@ -99,6 +103,6 @@ The production XML summary still calls `SkipList<T>` "probabilistic" although co
 
 ## Recommended implementation order
 
-1. COL-01 + COL-06 + COL-08 — uniqueness and single-traversal insertion foundation.
+1. COL-01 + COL-06 + COL-08 — BCL-compatible uniqueness and single-traversal insertion foundation.
 2. COL-05 first, then COL-02 + COL-03 + COL-04 — invariants, concurrency policy and enumeration behavior.
 3. COL-07 + COL-09 + COL-10 + COL-11 + COL-12 — contract compliance, tooling and documentation.
