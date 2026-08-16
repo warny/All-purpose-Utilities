@@ -20,11 +20,17 @@ Duplicate alphabet symbols currently fail incidentally through `ToDictionary`, w
 
 **Fix:** one deterministic descriptor validator covering uniqueness, separator/filler collisions and padding configuration.
 
-### IO-03 — Extended numeric types do not honor `BigEndian`
+### IO-03 — Extended numeric wire formats must honor the selected endianness
 
-Primitive integer/floating converters honor `BigEndian`, but `BigInteger`, `Int128`, `UInt128` and `Guid` currently use fixed/framework layouts.
+Primitive integer/floating converters honor `BigEndian`, but `BigInteger`, `Int128` and `UInt128` currently use fixed/framework layouts. `Guid` is not numeric and must not be controlled by the numeric endianness setting.
 
-**Fix:** first define the 2.0 wire contract, then add big/little-endian golden vectors. Changing existing representations is a wire-format break and must be documented.
+**Decision (2026-08-16):**
+
+- `Int128` and `UInt128` must support both little-endian and big-endian and follow `BigEndian`, exactly like the other integer types. These APIs are new in 2.0, so there is no legacy 1.x wire format to preserve.
+- `BigInteger` must support both little-endian and big-endian payloads so `RawReader`/`RawWriter` can interoperate with external systems. Use a documented signed two's-complement representation and make the byte order follow `BigEndian`.
+- `Guid` is an identifier, not a number. Its binary representation must be explicitly standardized and platform-interoperable, and must remain independent of `BigEndian`. Reading and writing must use the same documented standard byte layout.
+
+**Fix:** implement those contracts and add golden byte vectors for both endian modes and for the chosen standard GUID representation. Tests must assert bytes directly, not only writer→reader round-trips.
 
 ### IO-04 — Length-prefixed parsing is bounded only when callers opt in
 
@@ -40,11 +46,13 @@ PR #526 added `RawReader.MaximumLength` and negative/over-limit validation befor
 
 ## P2
 
-### IO-05 — Strict base decoding is not transactional
+### IO-05 — Strict base decoding is intentionally non-transactional
 
 `BaseDecoderStream` emits decoded bytes as input arrives and validates final padding/completeness in `Close()`. A malformed final quantum can therefore be reported after the destination has already changed.
 
-This is not automatically a streaming-decoder bug. **Decision required:** document non-atomic semantics as the contract, or add a separate bounded staging/transactional API for callers that need atomic decode.
+**Decision (2026-08-16):** keep the classical streaming policy. `BaseDecoderStream` is non-transactional: already-emitted decoded bytes are not rolled back if a later or terminal validation error occurs. Do not introduce implicit whole-stream buffering or staging.
+
+**Fix:** document this contract explicitly and add regression tests demonstrating that terminal validation remains strict while previously emitted bytes can remain in the destination. A separate transactional API should only be added in the future for a concrete requirement.
 
 ### IO-07 — `StreamCopier` post-dispose semantics are only partially coherent
 
@@ -64,11 +72,24 @@ PR #526 replaced `lock(baseStream)` with a `ConditionalWeakTable<Stream, Semapho
 
 **Fix:** either gate flush operations as well or document why they are intentionally outside slice-state synchronization.
 
-### IO-10 — `DateTime` serialization loses `Kind`
+### IO-10 — `DateTime` wire format must be selectable
 
-`RawWriter.WriteDateTime` writes `Ticks`; `RawReader.ReadDateTime` calls `new DateTime(ticks)`, producing `DateTimeKind.Unspecified`.
+`RawWriter.WriteDateTime` currently writes `Ticks`; `RawReader.ReadDateTime` reconstructs `new DateTime(ticks)`, which loses `DateTimeKind` and hard-codes one representation even though this library must read formats produced by heterogeneous external systems.
 
-**Fix:** choose `ToBinary`/`FromBinary` or a documented canonical kind. A representation change is a wire-format compatibility decision.
+**Decision (2026-08-16):** make the `DateTime` wire representation a strategy rather than hard-coding one encoding. The default in 2.0 is the native .NET binary representation (`DateTime.ToBinary()` / `DateTime.FromBinary()`), because there are currently no released users whose existing wire data must be preserved.
+
+Provide an extensible format interface/strategy and built-in implementations for the main interoperable representations, initially including:
+
+- .NET binary (`ToBinary` / `FromBinary`) — default;
+- .NET ticks;
+- Unix epoch seconds;
+- Unix epoch milliseconds;
+- OLE Automation date;
+- Windows FILETIME.
+
+Each format must define its exact units/epoch, valid range, `DateTimeKind` semantics and how it uses the primitive reader/writer. Formats backed by integer/floating primitives should naturally inherit `BigEndian` through those primitive operations rather than reimplement byte-order handling.
+
+**Fix:** introduce the strategy contract, select the .NET binary strategy by default, implement the principal formats above, and add external golden vectors plus round-trip/range/kind tests for each format.
 
 ### IO-11 — Boolean decoding accepts malformed bytes
 
@@ -98,6 +119,6 @@ PR #526 replaced `lock(baseStream)` with a `ConditionalWeakTable<Stream, Semapho
 ## Recommended implementation order
 
 1. IO-01 + IO-02 — descriptor correctness and validation.
-2. IO-03 + IO-04 + IO-10 + IO-11 — serialization/wire contract hardening.
+2. IO-03 + IO-04 + IO-10 + IO-11 — serialization/wire contract hardening using the decisions recorded above.
 3. IO-06 + IO-07 + IO-08 + IO-09 + IO-12 + IO-13 — stream lifecycle/API cleanup.
-4. IO-05 only after explicitly choosing whether a transactional decoder API is required.
+4. IO-05 — documentation and regression tests for the intentionally non-transactional streaming contract; no transactional implementation is currently planned.
