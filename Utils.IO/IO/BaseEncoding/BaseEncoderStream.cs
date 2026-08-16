@@ -261,7 +261,8 @@ public class BaseEncoderStream : Stream
     /// <summary>
     /// Asynchronously finalizes the encoding (flushing remaining bits and padding through <see cref="Close"/>)
     /// and then releases base resources. Safe to call more than once.
-    /// The gate is acquired before finalization so that a concurrent <see cref="WriteAsync"/> in progress
+    /// The gate is acquired before finalization so that a concurrent
+    /// <see cref="WriteAsync(ReadOnlyMemory{byte}, CancellationToken)"/> in progress
     /// completes before the padding and the <see cref="SemaphoreSlim"/> are disposed.
     /// </summary>
     /// <returns>A task that completes once finalization has run.</returns>
@@ -287,4 +288,3 @@ public class BaseEncoderStream : Stream
         GC.SuppressFinalize(this);
     }
 }
-

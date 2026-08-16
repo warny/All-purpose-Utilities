@@ -1,13 +1,13 @@
 # Accepted API breaks for 2.0.0-rc.1
 
-This human-review index summarizes the exact machine-enforced diagnostics in `eng/api-baselines/accepted-api-breaks.json`. The JSON file remains authoritative; every addition or stale acceptance fails the API gate.
+This human-review index summarizes the exact machine-enforced diagnostics in `eng/api-breaking-changes/2.0.0.json`. That JSON file remains authoritative; every addition or stale acceptance fails the API gate.
 
 <a id="omy-utils"></a>
 ## omy.Utils
 
 - Published baseline: `1.2.1`
-- Accepted diagnostics: **114**
-- Diagnostic classes: `CP0001`: 70, `CP0002`: 34, `CP0006`: 3, `CP0008`: 2, `CP0009`: 1, `CP0021`: 4
+- Accepted diagnostics: **126**
+- Diagnostic classes: `CP0001`: 70, `CP0002`: 46, `CP0006`: 3, `CP0008`: 2, `CP0009`: 1, `CP0021`: 4
 
 ### Removed or incompatible published surface
 
@@ -26,6 +26,7 @@ This human-review index summarizes the exact machine-enforced diagnostics in `en
 - `CP0001` — `Utils.Expressions.IFollowUpExpressionBuilder`
 - `CP0001` — `Utils.Expressions.IAdditionalTokens`
 - `CP0002` — `void Utils.Expressions.LiteralPart.Append(string)`
+- `CP0002` — `double[] Utils.Expressions.ConstantNumericAttribute.Values.get` — replaced by an immutable `IReadOnlyList<double>?` snapshot
 - `CP0001` — `Utils.Expressions.IParserOptions`
 - `CP0001` — `Utils.Expressions.ParserContext`
 - `CP0001` — `Utils.Expressions.Tokenizer`
@@ -59,6 +60,17 @@ This human-review index summarizes the exact machine-enforced diagnostics in `en
 - `CP0002` — `Utils.Objects.Bytes Utils.Objects.BytesExtensions.Join(params byte[][])`
 - `CP0002` — `Utils.Objects.Bytes Utils.Objects.BytesExtensions.Join(params Utils.Objects.Bytes[])`
 - `CP0002` — `int Utils.Objects.ObjectUtils.ComputeHash<T>(System.Func<T, int>, params T[])`
+- `CP0002` — `System.Type[] Utils.Objects.Types.Number.get`
+- `CP0002` — `System.Type[] Utils.Objects.Types.UnsignedNumber.get`
+- `CP0002` — `System.Type[] Utils.Objects.Types.SignedNumber.get`
+- `CP0002` — `System.Type[] Utils.Objects.Types.FloatingPointNumber.get`
+- `CP0002` — `System.Type[] Utils.Objects.Types._8BitsNumberI.get`
+- `CP0002` — `System.Type[] Utils.Objects.Types._16BitsNumberI.get`
+- `CP0002` — `System.Type[] Utils.Objects.Types._32BitsNumberI.get`
+- `CP0002` — `System.Type[] Utils.Objects.Types._32BitsNumberF.get`
+- `CP0002` — `System.Type[] Utils.Objects.Types._64BitsNumberI.get`
+- `CP0002` — `System.Type[] Utils.Objects.Types._64BitsNumberIF.get`
+- `CP0002` — `System.Type[] Utils.Objects.Types._128BitsNumberIF.get`
 - `CP0001` — `Utils.Randomization.RandomEx`
 - `CP0002` — `System.Collections.Generic.IReadOnlyList<Utils.Range.Range<T>> Utils.Range.Ranges<T>.Intervals.get`
 - `CP0002` — `System.Collections.Generic.IEnumerable<Utils.Range.Range<T1>> Utils.Range.Ranges<T>.InnerParse<T1>(string, string, System.Collections.Generic.IEnumerable<string>, System.Func<string, T1>)`
@@ -133,14 +145,13 @@ This human-review index summarizes the exact machine-enforced diagnostics in `en
 ## omy.Utils.IO
 
 - Published baseline: `1.2.1`
-- Accepted diagnostics: **7**
-- Diagnostic classes: `CP0002`: 7
+- Accepted diagnostics: **6**
+- Diagnostic classes: `CP0002`: 6
 
 ### Removed or incompatible published surface
 
 - `CP0002` — `Utils.IO.StreamCopier.StreamCopier(bool, System.Collections.Generic.IEnumerable<System.IO.Stream>)`
 - `CP0002` — `Utils.IO.StreamCopier.StreamCopier(System.Collections.Generic.IEnumerable<System.IO.Stream>)`
-- `CP0002` — `byte[] Utils.IO.StreamUtils.ReadToEnd(this System.IO.Stream)`
 - `CP0002` — `Utils.IO.StreamValidator.StreamValidator(System.IO.Stream)`
 - `CP0002` — `Utils.IO.BaseEncoding.BaseDecoderStream.BaseDecoderStream(System.IO.Stream, Utils.IO.BaseEncoding.IBaseDescriptor)`
 - `CP0002` — `T[] Utils.IO.Serialization.ReaderWriterExtensions.ReadArray<T>(this Utils.IO.Serialization.Reader, int, bool)`
@@ -161,8 +172,8 @@ This human-review index summarizes the exact machine-enforced diagnostics in `en
 ## omy.Utils.Net
 
 - Published baseline: `1.2.1`
-- Accepted diagnostics: **19**
-- Diagnostic classes: `CP0002`: 19
+- Accepted diagnostics: **24**
+- Diagnostic classes: `CP0002`: 23, `CP0006`: 1
 
 ### Removed or incompatible published surface
 
@@ -185,6 +196,14 @@ This human-review index summarizes the exact machine-enforced diagnostics in `en
 - `CP0002` — `void Utils.Net.Arp.ArpPacket.HardwareAddressLength.set` — removed setter; property is now read-only (always returns 6)
 - `CP0002` — `void Utils.Net.Arp.ArpPacket.ProtocolAddressLength.set` — removed setter; property is now read-only (always returns 4)
 - `CP0002` — `void Utils.Net.DNS.DNSHeader.Append(Utils.Net.DNS.DNSHeader)`
+- `CP0002` — `System.Net.NetworkInformation.NetworkInterface[] Utils.Net.NetworkParameters.NetworkInterfaces.get` — replaced by a read-only snapshot
+- `CP0002` — `System.Threading.Tasks.Task<(int, int)> Utils.Net.Pop3Client.GetStatAsync(System.Threading.CancellationToken)` — mailbox size is now `long`
+- `CP0002` — `System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyCollection<int>> Utils.Net.INntpArticleStore.ListNewsSinceAsync(string, System.DateTime, System.Threading.CancellationToken)` — message IDs are now strings
+- `CP0002` — `System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<int>> Utils.Net.NntpClient.NewNewsAsync(string, System.DateTime, System.Threading.CancellationToken)` — message IDs are now strings
+
+### Other binary compatibility changes
+
+- `CP0006` — Cannot add interface member 'System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyCollection<string>> Utils.Net.INntpArticleStore.ListNewsSinceAsync(string, System.DateTime, System.Threading.CancellationToken)' to {candidateAssembly} because it does not exist on {baselineAssembly}
 
 <a id="omy-utils-data"></a>
 ## omy.Utils.Data
@@ -203,10 +222,24 @@ This human-review index summarizes the exact machine-enforced diagnostics in `en
 ## omy.Utils.Fonts
 
 - Published baseline: `1.2.1`
-- Accepted diagnostics: **41** (22 from the first audit pass + 19 from the second, see below)
-- Diagnostic classes: `CP0001`: 3, `CP0002`: 31, `CP0005`: 2, `CP0006`: 5
+- Accepted diagnostics: **49**
+- Diagnostic classes: `CP0001`: 3, `CP0002`: 39, `CP0005`: 2, `CP0006`: 5
 
 ### Removed or incompatible published surface
+
+- `CP0002` — `string[] Utils.Fonts.FontSupport.StdNames.get`
+- `CP0002` — `string[] Utils.Fonts.FontSupport.StdValues.get`
+- `CP0002` — `int[] Utils.Fonts.FontSupport.Type1CExpertCharset.get`
+- `CP0002` — `int[] Utils.Fonts.FontSupport.Type1CExpertSubCharset.get`
+- `CP0002` — `string[] Utils.Fonts.FontSupport.MacExtras.get`
+- `CP0002` — `int[] Utils.Fonts.FontSupport.MacRomanEncoding.get`
+- `CP0002` — `int[] Utils.Fonts.FontSupport.IsoLatin1Encoding.get`
+- `CP0002` — `int[] Utils.Fonts.FontSupport.WinAnsiEncoding.get`
+- `CP0002` — `int[] Utils.Fonts.FontSupport.StandardEncoding.get`
+
+These nine process-wide reference and encoding tables now expose immutable `IReadOnlyList<string>`
+or `IReadOnlyList<int>` views, preventing callers from corrupting shared font lookup state or
+desynchronizing `StdNames` from `StdNameIndexMap`.
 
 - `CP0002` — `Utils.Fonts.TTF.TrueTypeGlyph.TrueTypeGlyph(Utils.Fonts.TTF.Tables.Glyf.GlyphBase)`
 - `CP0002` — `short Utils.Fonts.TTF.Tables.AcntTable.Version.get`
@@ -236,22 +269,15 @@ This human-review index summarizes the exact machine-enforced diagnostics in `en
 
 ### Second audit pass (TODO-2026-07-19-pass2.md, items 21-39)
 
-The 19 entries below are recorded in `eng/api-breaking-changes/2.0.0.json` (same file, same
-`omy.Utils.Fonts` package block as the first-pass entries above), authored by hand against the
-`1.2.1` baseline following the exact message conventions already used elsewhere in that manifest
-(member/type existence phrasing, `{baselineAssembly}`/`{candidateAssembly}` placeholders). They
-were **not** produced by an actual ApiCompat run in this environment -- there was no baseline NuGet
-package available to diff against here. Before the 2.0.0 release gate is trusted on this package,
-re-run the ApiCompat tool against the published `1.2.1` baseline and confirm these messages match
-byte-for-byte (the gate compares diagnostic message text exactly); adjust both this file and the
-manifest if the real tool output differs in wording, nested-type naming (`+` vs `.`), or otherwise.
+The entries below were verified byte-for-byte by ApiCompat against the published `1.2.1` package.
 
 - `CP0002` — `short Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.getGlyphIndex(int)`
 - `CP0002` — `byte[] Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.Instructions.get`
 - `CP0002` — `Utils.Fonts.TTF.Tables.CMap.CMapFormatBase[] Utils.Fonts.TTF.Tables.CmapTable.CMaps.get`
 - `CP0002` — `short Utils.Fonts.TTF.Tables.CmapTable.Version.get`
-- `CP0002` — `void Utils.Fonts.TTF.Tables.CmapTable.Version.set`
 - `CP0002` — `short Utils.Fonts.TTF.Tables.CmapTable.NumberSubtables.get`
+- `CP0002` — `short Utils.Fonts.TTF.Tables.CmapTable.CmapSubtable.PlatformID.get`
+- `CP0002` — `short Utils.Fonts.TTF.Tables.CmapTable.CmapSubtable.PlatformSpecificID.get`
 - `CP0002` — `Utils.Fonts.TTF.Tables.CMap.CMapFormatBase Utils.Fonts.TTF.Tables.CmapTable.GetCMap(short, short)`
 - `CP0002` — `void Utils.Fonts.TTF.Tables.CmapTable.AddCMap(short, short, Utils.Fonts.TTF.Tables.CMap.CMapFormatBase)`
 - `CP0002` — `void Utils.Fonts.TTF.Tables.CmapTable.RemoveCMap(short, short)`
@@ -260,11 +286,9 @@ manifest if the real tool output differs in wording, nested-type naming (`+` vs 
 - `CP0002` — `short Utils.Fonts.TTF.TrueTypeFont.EntrySelector.get`
 - `CP0002` — `short Utils.Fonts.TTF.TrueTypeFont.RangeShift.get`
 - `CP0002` — `short Utils.Fonts.TTF.Tables.Glyf.GlyphBase.Length.get`
-- `CP0002` — `short Utils.Fonts.TTF.Tables.Glyf.GlyphSimple.Length.get`
-- `CP0002` — `short Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.Length.get`
 - `CP0002` — `Utils.Fonts.TTF.TrueTypeFont Utils.Fonts.TTF.TrueTypeFont.ParseFont(byte[])`
 - `CP0002` — `Utils.Fonts.TTF.TrueTypeFont Utils.Fonts.TTF.TrueTypeFont.ParseFont(System.IO.Stream)`
-- `CP0001` — `Utils.Fonts.TTF.TrueTypeFont+TableDeclaration`
+- `CP0001` — `Utils.Fonts.TTF.TrueTypeFont.TableDeclaration`
 
 - `GlyphCompound.getGlyphIndex(int)` renamed to `GetGlyphIndex(int)`, returning `ushort` instead of `short`.
 - `GlyphCompound.Instructions` is `ReadOnlyMemory<byte>` instead of `byte[]`.
@@ -457,8 +481,8 @@ manifest if the real tool output differs in wording, nested-type naming (`+` vs 
 ## omy.Utils.IO.Serialization.Generators
 
 - Published baseline: `1.2.1`
-- Accepted diagnostics: **3**
-- Diagnostic classes: `CP0002`: 2, `CP0008`: 1
+- Accepted diagnostics: **4**
+- Diagnostic classes: `CP0002`: 2, `CP0008`: 1, `CP0009`: 1
 
 ### Removed or incompatible published surface
 
@@ -468,6 +492,7 @@ manifest if the real tool output differs in wording, nested-type naming (`+` vs 
 ### Other binary compatibility changes
 
 - `CP0008` — Type 'Utils.IO.Serialization.Generators.ReaderWriterGenerator' does not implement interface 'Microsoft.CodeAnalysis.ISourceGenerator' on {candidateAssembly} but it does on {baselineAssembly}
+- `CP0009` — Type 'Utils.IO.Serialization.Generators.ReaderWriterGenerator' has the sealed modifier on {candidateAssembly} but not on {baselineAssembly}
 
 <a id="omy-utils-dependencyinjection-generators"></a>
 ## omy.Utils.DependencyInjection.Generators

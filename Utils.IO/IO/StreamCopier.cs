@@ -20,7 +20,8 @@ namespace Utils.IO;
 /// underlying streams in the targets collection.
 ///
 /// <remarks>
-/// <b>Best-effort fan-out:</b> <see cref="Write"/> and <see cref="Flush"/> attempt the operation
+/// <b>Best-effort fan-out:</b> <see cref="Write(byte[], int, int)"/>,
+/// <see cref="Write(ReadOnlySpan{byte})"/>, and <see cref="Flush"/> attempt the operation
 /// on every target stream even if earlier ones throw. All exceptions are collected and rethrown as
 /// an <see cref="AggregateException"/> so no target is silently skipped.
 /// This means targets that were reached before a failure already hold the written data while later

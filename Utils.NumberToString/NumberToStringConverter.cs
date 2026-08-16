@@ -2270,7 +2270,9 @@ namespace Utils.NumberToString
             StartIndex = startIndex;
             FirstLetterUppercase = firstLetterUppercase;
 
-            VoidGroup = voidGroup.ToDefaultIfNullOrEmpty("ni");
+            VoidGroup = string.IsNullOrEmpty(voidGroup)
+                ? "ni"
+                : voidGroup;
             // null (not set in XML) → default "lli"; explicit "" → no separator between prefix and suffix
             GroupSeparator = groupSeparator ?? "lli";
 
