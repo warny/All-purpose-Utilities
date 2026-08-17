@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Utils.Collections;
@@ -28,6 +29,47 @@ namespace UtilsTest.Lists
         public void AddTest()
         {
             TestAdd(10, [2, 3, 1]);
+        }
+
+        [TestMethod]
+        public void Add_DefaultComparer_RejectsDuplicateAndRemainsUsable()
+        {
+            SkipList<string> list = new();
+
+            Assert.IsTrue(list.Add("value"));
+            Assert.IsFalse(list.Add("value"));
+            Assert.AreEqual(1, list.Count);
+            CollectionAssert.AreEqual(new[] { "value" }, list.ToArray());
+            Assert.IsTrue(list.Contains("value"));
+            Assert.IsTrue(list.Remove("value"));
+            Assert.AreEqual(0, list.Count);
+        }
+
+        [TestMethod]
+        public void Add_CustomComparer_RejectsDistinctComparerEqualItem()
+        {
+            SkipList<string> list = new(StringComparer.OrdinalIgnoreCase);
+
+            Assert.IsTrue(list.Add("abc"));
+            Assert.IsFalse(list.Add("ABC"));
+            Assert.AreEqual(1, list.Count);
+            CollectionAssert.AreEqual(new[] { "abc" }, list.ToArray());
+            Assert.IsTrue(list.Contains("ABC"));
+            Assert.IsTrue(list.Remove("ABC"));
+            Assert.AreEqual(0, list.Count);
+        }
+
+        [TestMethod]
+        public void ICollectionAdd_RejectsComparerEqualDuplicate()
+        {
+            SkipList<string> list = new(StringComparer.OrdinalIgnoreCase);
+            ICollection<string> collection = list;
+
+            collection.Add("abc");
+            collection.Add("ABC");
+
+            Assert.AreEqual(1, collection.Count);
+            CollectionAssert.AreEqual(new[] { "abc" }, collection.ToArray());
         }
 
         [TestMethod]

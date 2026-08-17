@@ -68,6 +68,7 @@ public class SkipListDictionary<K, V> : IDictionary<K, V>
         }
         set
         {
+            ArgumentNullException.ThrowIfNull(key);
             var probe = Entry.Probe(key);
             if (_skipList.TryGet(probe, out var found))
                 found.Value = value;
@@ -79,16 +80,20 @@ public class SkipListDictionary<K, V> : IDictionary<K, V>
     /// <inheritdoc />
     public void Add(K key, V value)
     {
-        if (_skipList.Contains(Entry.Probe(key)))
+        ArgumentNullException.ThrowIfNull(key);
+        if (!_skipList.Add(new Entry(key, value)))
             throw new ArgumentException("An element with the same key already exists.", nameof(key));
-        _skipList.Add(new Entry(key, value));
     }
 
     /// <inheritdoc />
     public void Add(KeyValuePair<K, V> item) => Add(item.Key, item.Value);
 
     /// <inheritdoc />
-    public bool ContainsKey(K key) => _skipList.Contains(Entry.Probe(key));
+    public bool ContainsKey(K key)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+        return _skipList.Contains(Entry.Probe(key));
+    }
 
     /// <inheritdoc />
     public bool Contains(KeyValuePair<K, V> item)
@@ -97,6 +102,7 @@ public class SkipListDictionary<K, V> : IDictionary<K, V>
     /// <inheritdoc />
     public bool TryGetValue(K key, [MaybeNullWhen(false)] out V value)
     {
+        ArgumentNullException.ThrowIfNull(key);
         if (_skipList.TryGet(Entry.Probe(key), out var found))
         {
             value = found.Value;
@@ -107,7 +113,11 @@ public class SkipListDictionary<K, V> : IDictionary<K, V>
     }
 
     /// <inheritdoc />
-    public bool Remove(K key) => _skipList.Remove(Entry.Probe(key));
+    public bool Remove(K key)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+        return _skipList.Remove(Entry.Probe(key));
+    }
 
     /// <inheritdoc />
     public bool Remove(KeyValuePair<K, V> item)

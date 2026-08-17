@@ -90,6 +90,50 @@ namespace UtilsTest.Lists
         }
 
         [TestMethod]
+        public void ComparerEqualKeys_UseDictionaryAddAndIndexerContracts()
+        {
+            var dict = new SkipListDictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            dict.Add("abc", 1);
+
+            Assert.ThrowsException<ArgumentException>(() => dict.Add("abc", 2));
+            Assert.ThrowsException<ArgumentException>(() => dict.Add("ABC", 3));
+            Assert.AreEqual(1, dict.Count);
+            Assert.AreEqual(1, dict["ABC"]);
+
+            dict["ABC"] = 4;
+            Assert.AreEqual(1, dict.Count);
+            Assert.AreEqual(4, dict["abc"]);
+
+            dict["missing"] = 5;
+            Assert.AreEqual(2, dict.Count);
+            Assert.AreEqual(5, dict["MISSING"]);
+        }
+
+        [TestMethod]
+        public void NullKeys_DefaultComparer_AreRejectedAtEveryPublicBoundary()
+        {
+            AssertNullKeysAreRejected(new SkipListDictionary<string, int>());
+        }
+
+        [TestMethod]
+        public void NullKeys_NullCapableComparer_AreRejectedBeforeComparison()
+        {
+            var comparer = Comparer<string>.Create((x, y) => string.Compare(x, y, StringComparison.Ordinal));
+            AssertNullKeysAreRejected(new SkipListDictionary<string, int>(comparer));
+        }
+
+        private static void AssertNullKeysAreRejected(SkipListDictionary<string, int> dict)
+        {
+            Assert.ThrowsException<ArgumentNullException>(() => dict.Add(null!, 1));
+            Assert.ThrowsException<ArgumentNullException>(() => dict.ContainsKey(null!));
+            Assert.ThrowsException<ArgumentNullException>(() => dict.TryGetValue(null!, out _));
+            Assert.ThrowsException<ArgumentNullException>(() => dict.Remove(null!));
+            Assert.ThrowsException<ArgumentNullException>(() => _ = dict[null!]);
+            Assert.ThrowsException<ArgumentNullException>(() => dict[null!] = 1);
+            Assert.AreEqual(0, dict.Count);
+        }
+
+        [TestMethod]
         public void TryGetValue_ExistingKey_ReturnsTrue()
         {
             var dict = new SkipListDictionary<string, int>();

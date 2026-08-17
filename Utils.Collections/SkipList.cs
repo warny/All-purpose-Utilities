@@ -84,9 +84,11 @@ public class SkipList<T> : ICollection<T>
     /// If the element is inserted before <see cref="_firstElement"/>, it becomes the new first.
     /// If it's inserted after <see cref="_lastElement"/>, it becomes the new last.
     /// Otherwise, it is inserted in between two existing nodes at the bottom level.
+    /// A comparer-equal element is treated as an existing element and is not inserted again.
     /// </summary>
     /// <param name="item">The element to add.</param>
-    public void Add(T item)
+    /// <returns><see langword="true"/> if the element was inserted; otherwise, <see langword="false"/>.</returns>
+    public bool Add(T item)
     {
         var newElement = new Element(item);
         if (_firstElement is null)
@@ -94,10 +96,15 @@ public class SkipList<T> : ICollection<T>
             _firstElement = newElement;
             _lastElement = newElement;
             Count = 1;
-            return;
+            return true;
         }
 
         var (elementBefore, elementAfter) = FindElementPosition(item);
+        if (elementBefore is not null && elementBefore == elementAfter)
+        {
+            return false;
+        }
+
         if (elementBefore is null)
         {
             // add the new element before the first element
@@ -128,7 +135,11 @@ public class SkipList<T> : ICollection<T>
             elementBefore.InsertAfter(newElement);
         }
         Count++;
+        return true;
     }
+
+    /// <inheritdoc />
+    void ICollection<T>.Add(T item) => Add(item);
 
     /// <summary>
     /// Removes all elements from the skip list.
