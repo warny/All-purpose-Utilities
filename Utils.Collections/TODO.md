@@ -30,12 +30,6 @@ Lookup-only upper-level promotion does not change the bottom sequence and should
 
 **Fix:** defer maintenance until required comparisons succeed, or explicitly document/test best-effort maintenance on comparer failure.
 
-### COL-05 — The adaptive structure has no invariant checker
-
-Current tests can verify sorted bottom-level values while missing orphaned/cyclic/non-reciprocal upper links.
-
-**Fix:** an internal test-visible validator covering horizontal/vertical reciprocity, sorted levels, boundary towers, reachability, bottom count and comparer uniqueness. Use it after every step in model/property tests and boundary-removal scenarios.
-
 ### COL-07 — `CopyTo` methods do not preflight collection-contract arguments
 
 `SkipList<T>`, dictionary, key-view and value-view `CopyTo` implementations enumerate and assign directly. Null arrays, invalid indices and insufficient capacity can fail after partial copying with incidental exceptions.
@@ -77,11 +71,15 @@ The production XML summary still calls `SkipList<T>` "probabilistic" although co
 
 ## Closed work
 
+### COL-05 — Adaptive structure invariant checker (2026-08-17)
+
+`SkipList<T>` now has an internal, test-visible invariant checker covering horizontal and vertical reciprocity, comparer-based ordering and uniqueness, cycles and reachability, coherent boundary towers, and the bottom-level node count. Deterministic insertion, boundary and middle removal, duplicate, lookup-promotion, clear, threshold, and fixed-seed model scenarios invoke the checker after mutations and adaptive promotions.
+
 ### COL-01 + COL-06 + COL-08 — BCL-compatible insertion and key guards (2026-08-16)
 
 `SkipList<T>.Add` now returns whether its single adaptive traversal inserted an element and rejects comparer-equal duplicates without changing content. Its explicit `ICollection<T>.Add` implementation preserves the interface contract. `SkipListDictionary.Add` consumes that result directly, throwing `ArgumentException` for comparer-equal keys without a preliminary lookup, while the indexer continues to update comparer-equal keys and insert missing keys. All public dictionary key boundaries reject `null` before constructing a probe or invoking the configured comparer.
 
 ## Recommended implementation order
 
-1. COL-05 first, then COL-02 + COL-03 + COL-04 — invariants, concurrency policy and enumeration behavior.
+1. COL-02 + COL-03 + COL-04 — concurrency policy, enumeration behavior and comparer exception safety.
 2. COL-07 + COL-09 + COL-10 + COL-11 + COL-12 — contract compliance, tooling and documentation.

@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace Utils.Collections;
 
@@ -249,6 +250,179 @@ public class SkipList<T> : ICollection<T>
     public IEnumerator<T> GetEnumerator() => Enumerate().GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    /// <summary>
+    /// Validates the complete linked structure without changing it.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The skip list violates a structural invariant.</exception>
+    internal void ValidateInvariants()
+    {
+        if (Count < 0)
+        {
+            throw new InvalidOperationException("Count cannot be negative.");
+        }
+
+        if (Count == 0)
+        {
+            if (_firstElement is not null || _lastElement is not null)
+            {
+                throw new InvalidOperationException("An empty skip list must have null root boundaries.");
+            }
+            return;
+        }
+
+        if (_firstElement is null || _lastElement is null)
+        {
+            throw new InvalidOperationException("A non-empty skip list must have both root boundaries.");
+        }
+        if (_firstElement.Previous is not null)
+        {
+            throw new InvalidOperationException("Top-level first node has a Previous link.");
+        }
+        if (_lastElement.Next is not null)
+        {
+            throw new InvalidOperationException("Top-level last node has a Next link.");
+        }
+
+        Element first = _firstElement;
+        Element last = _lastElement;
+        HashSet<Element> upperLevel = null;
+        HashSet<Element> allReachableNodes = new(ReferenceEqualityComparer.Instance);
+        int depth = 0;
+
+        while (true)
+        {
+            HashSet<Element> currentLevel = ValidateLevel(first, last, upperLevel, allReachableNodes, depth);
+            if (first.Sub is null || last.Sub is null)
+            {
+                if (first.Sub is not null || last.Sub is not null)
+                {
+                    throw new InvalidOperationException("Left and right boundary depths differ.");
+                }
+
+                if (currentLevel.Any(node => node.Sub is not null))
+                {
+                    throw new InvalidOperationException("Bottom-level nodes must not have Sub links.");
+                }
+                if (currentLevel.Count != Count)
+                {
+                    throw new InvalidOperationException($"Bottom-level node count {currentLevel.Count} does not match Count {Count}.");
+                }
+                return;
+            }
+
+            if (currentLevel.Any(node => node.Sub is null))
+            {
+                throw new InvalidOperationException("An upper-level node has no Sub node.");
+            }
+
+            upperLevel = currentLevel;
+            first = first.Sub;
+            last = last.Sub;
+            depth++;
+        }
+    }
+
+    /// <summary>
+    /// Validates one horizontal level and its links to the level immediately above it.
+    /// </summary>
+    /// <param name="first">The expected left boundary for the level.</param>
+    /// <param name="last">The expected right boundary for the level.</param>
+    /// <param name="upperLevel">The reachable nodes in the level immediately above, or <see langword="null"/> for the top.</param>
+    /// <param name="allReachableNodes">The identity set of nodes already reached from the root boundaries.</param>
+    /// <param name="depth">The zero-based depth used in diagnostic messages.</param>
+    /// <returns>The identity set containing every node in the validated level.</returns>
+    private HashSet<Element> ValidateLevel(Element first, Element last, HashSet<Element> upperLevel,
+        HashSet<Element> allReachableNodes, int depth)
+    {
+        if (first.Previous is not null || last.Next is not null)
+        {
+            throw new InvalidOperationException($"Level {depth} boundary nodes are not horizontally bounded.");
+        }
+
+        HashSet<Element> level = new(ReferenceEqualityComparer.Instance);
+        Element previous = null;
+        for (Element node = first; node is not null; node = node.Next)
+        {
+            if (!level.Add(node))
+            {
+                throw new InvalidOperationException($"Horizontal cycle detected at level {depth}.");
+            }
+            if (!allReachableNodes.Add(node))
+            {
+                throw new InvalidOperationException("A node is reachable at more than one structural level.");
+            }
+            if (node.Next == node || node.Previous == node)
+            {
+                throw new InvalidOperationException($"A horizontal self-reference exists at level {depth}.");
+            }
+            if (node.Previous != previous || (previous is not null && previous.Next != node))
+            {
+                throw new InvalidOperationException($"Horizontal Next/Previous reciprocity is broken at level {depth}.");
+            }
+            if (previous is not null)
+            {
+                int comparison = comparer.Compare(previous.Value, node.Value);
+                if (comparison == 0)
+                {
+                    throw new InvalidOperationException($"Comparer-equal duplicate detected at level {depth}.");
+                }
+                if (comparison > 0)
+                {
+                    throw new InvalidOperationException($"Level {depth} is not strictly ordered.");
+                }
+            }
+
+            ValidateVerticalLinks(node, upperLevel, depth);
+            previous = node;
+        }
+
+        if (previous != last)
+        {
+            throw new InvalidOperationException($"Right boundary is not reachable from the left boundary at level {depth}.");
+        }
+        if (upperLevel is not null && upperLevel.Any(node => !level.Contains(node.Sub)))
+        {
+            throw new InvalidOperationException($"An upper node points outside the reachable level {depth}.");
+        }
+        return level;
+    }
+
+    /// <summary>
+    /// Validates a node's vertical reciprocity, reachability, and comparer-defined identity.
+    /// </summary>
+    /// <param name="node">The node whose vertical links are validated.</param>
+    /// <param name="upperLevel">The reachable nodes in the level immediately above, or <see langword="null"/> for the top.</param>
+    /// <param name="depth">The zero-based depth used in diagnostic messages.</param>
+    private void ValidateVerticalLinks(Element node, HashSet<Element> upperLevel, int depth)
+    {
+        if (node.Up == node || node.Sub == node)
+        {
+            throw new InvalidOperationException($"A vertical self-reference exists at level {depth}.");
+        }
+        if (upperLevel is null)
+        {
+            if (node.Up is not null)
+            {
+                throw new InvalidOperationException("A top-level node has an Up link.");
+            }
+        }
+        else if (node.Up is not null && (!upperLevel.Contains(node.Up) || node.Up.Sub != node))
+        {
+            throw new InvalidOperationException($"Vertical Up/Sub reciprocity or reachability is broken at level {depth}.");
+        }
+        if (node.Sub is not null)
+        {
+            if (node.Sub.Up != node)
+            {
+                throw new InvalidOperationException($"Vertical Sub/Up reciprocity is broken at level {depth}.");
+            }
+            if (comparer.Compare(node.Value, node.Sub.Value) != 0)
+            {
+                throw new InvalidOperationException($"A vertical tower contains comparer-distinct values at level {depth}.");
+            }
+        }
+    }
 
     /// <summary>
     /// Finds the position where 'value' should be inserted:
