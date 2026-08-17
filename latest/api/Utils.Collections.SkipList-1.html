@@ -474,7 +474,7 @@ Must be &gt;= 2.</p>
 
   <h3 id="Utils_Collections_SkipList_1_Add__0_" data-uid="Utils.Collections.SkipList`1.Add(`0)">
   Add(T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L89"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L91"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Adds an element to the skip list at the appropriate position.
@@ -482,12 +482,13 @@ If the list is empty, the element becomes the first and last element.
 Otherwise, we locate the insertion point and insert accordingly.
 If the element is inserted before <span class="xref">Utils.Collections.SkipList&lt;T&gt;._firstElement</span>, it becomes the new first.
 If it's inserted after <span class="xref">Utils.Collections.SkipList&lt;T&gt;._lastElement</span>, it becomes the new last.
-Otherwise, it is inserted in between two existing nodes at the bottom level.</p>
+Otherwise, it is inserted in between two existing nodes at the bottom level.
+A comparer-equal element is treated as an existing element and is not inserted again.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void Add(T item)</code></pre>
+    <pre><code class="lang-csharp hljs">public bool Add(T item)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -497,6 +498,12 @@ Otherwise, it is inserted in between two existing nodes at the bottom level.</p>
 </dd>
   </dl>
 
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the element was inserted; otherwise, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+</dd>
+  </dl>
 
 
 
@@ -512,7 +519,7 @@ Otherwise, it is inserted in between two existing nodes at the bottom level.</p>
 
   <h3 id="Utils_Collections_SkipList_1_Clear" data-uid="Utils.Collections.SkipList`1.Clear">
   Clear()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L136"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L147"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes all elements from the skip list.</p>
@@ -539,7 +546,7 @@ Otherwise, it is inserted in between two existing nodes at the bottom level.</p>
 
   <h3 id="Utils_Collections_SkipList_1_Contains__0_" data-uid="Utils.Collections.SkipList`1.Contains(`0)">
   Contains(T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L148"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L159"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether the skip list contains a specific element.</p>
@@ -578,7 +585,7 @@ Otherwise, it is inserted in between two existing nodes at the bottom level.</p>
 
   <h3 id="Utils_Collections_SkipList_1_CopyTo__0___System_Int32_" data-uid="Utils.Collections.SkipList`1.CopyTo(`0[],System.Int32)">
   CopyTo(T[], int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L183"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L194"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Copies the elements of the skip list to an array, starting at a particular array index.</p>
@@ -614,7 +621,7 @@ Otherwise, it is inserted in between two existing nodes at the bottom level.</p>
 
   <h3 id="Utils_Collections_SkipList_1_GetEnumerator" data-uid="Utils.Collections.SkipList`1.GetEnumerator">
   GetEnumerator()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L238"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L249"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns an enumerator that iterates through the collection.</p>
@@ -647,7 +654,7 @@ Otherwise, it is inserted in between two existing nodes at the bottom level.</p>
 
   <h3 id="Utils_Collections_SkipList_1_Remove__0_" data-uid="Utils.Collections.SkipList`1.Remove(`0)">
   Remove(T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L196"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L207"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes a specific element from the skip list.</p>
@@ -686,7 +693,7 @@ Otherwise, it is inserted in between two existing nodes at the bottom level.</p>
 
   <h3 id="Utils_Collections_SkipList_1_TryGet__0__0__" data-uid="Utils.Collections.SkipList`1.TryGet(`0,`0@)">
   TryGet(T, out T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L166"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L177"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Searches for an element that compares equal to <code class="paramref">item</code> and returns
