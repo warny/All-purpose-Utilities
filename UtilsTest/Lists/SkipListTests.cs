@@ -32,6 +32,9 @@ namespace UtilsTest.Lists
         }
 
         [TestMethod]
+        /// <summary>
+        /// Verifies that the default comparer rejects a duplicate without making the list unusable.
+        /// </summary>
         public void Add_DefaultComparer_RejectsDuplicateAndRemainsUsable()
         {
             SkipList<string> list = new();
@@ -46,6 +49,9 @@ namespace UtilsTest.Lists
         }
 
         [TestMethod]
+        /// <summary>
+        /// Verifies that distinct values considered equal by a custom comparer are not inserted twice.
+        /// </summary>
         public void Add_CustomComparer_RejectsDistinctComparerEqualItem()
         {
             SkipList<string> list = new(StringComparer.OrdinalIgnoreCase);
@@ -60,6 +66,9 @@ namespace UtilsTest.Lists
         }
 
         [TestMethod]
+        /// <summary>
+        /// Verifies that adding comparer-equal values through <see cref="ICollection{T}"/> preserves uniqueness.
+        /// </summary>
         public void ICollectionAdd_RejectsComparerEqualDuplicate()
         {
             SkipList<string> list = new(StringComparer.OrdinalIgnoreCase);
@@ -79,10 +88,13 @@ namespace UtilsTest.Lists
         }
 
         [TestMethod]
+        /// <summary>
+        /// Verifies insertion and ordering for a large, deterministically shuffled set of unique values.
+        /// </summary>
         public void AddTestLargeArray()
         {
-            Random rng = new Random();
-            int[] result = rng.RandomArray(10000, (i) => rng.RandomInt());
+            Random rng = new Random(0);
+            int[] result = Enumerable.Range(0, 10000).OrderBy(_ => rng.Next()).ToArray();
             TestAdd(5, result);
         }
 

@@ -90,6 +90,9 @@ namespace UtilsTest.Lists
         }
 
         [TestMethod]
+        /// <summary>
+        /// Verifies comparer-based duplicate detection and update-or-insert indexer behavior.
+        /// </summary>
         public void ComparerEqualKeys_UseDictionaryAddAndIndexerContracts()
         {
             var dict = new SkipListDictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -110,18 +113,28 @@ namespace UtilsTest.Lists
         }
 
         [TestMethod]
+        /// <summary>
+        /// Verifies that every public key boundary rejects null when using the default comparer.
+        /// </summary>
         public void NullKeys_DefaultComparer_AreRejectedAtEveryPublicBoundary()
         {
             AssertNullKeysAreRejected(new SkipListDictionary<string, int>());
         }
 
         [TestMethod]
+        /// <summary>
+        /// Verifies that public key validation rejects null before invoking a null-capable comparer.
+        /// </summary>
         public void NullKeys_NullCapableComparer_AreRejectedBeforeComparison()
         {
             var comparer = Comparer<string>.Create((x, y) => string.Compare(x, y, StringComparison.Ordinal));
             AssertNullKeysAreRejected(new SkipListDictionary<string, int>(comparer));
         }
 
+        /// <summary>
+        /// Verifies null-key rejection for every public key operation on the supplied dictionary.
+        /// </summary>
+        /// <param name="dict">The dictionary whose public key boundaries are tested.</param>
         private static void AssertNullKeysAreRejected(SkipListDictionary<string, int> dict)
         {
             Assert.ThrowsException<ArgumentNullException>(() => dict.Add(null!, 1));
