@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Utils.Collections;
@@ -31,16 +32,69 @@ namespace UtilsTest.Lists
         }
 
         [TestMethod]
+        /// <summary>
+        /// Verifies that the default comparer rejects a duplicate without making the list unusable.
+        /// </summary>
+        public void Add_DefaultComparer_RejectsDuplicateAndRemainsUsable()
+        {
+            SkipList<string> list = new();
+
+            Assert.IsTrue(list.Add("value"));
+            Assert.IsFalse(list.Add("value"));
+            Assert.AreEqual(1, list.Count);
+            CollectionAssert.AreEqual(new[] { "value" }, list.ToArray());
+            Assert.IsTrue(list.Contains("value"));
+            Assert.IsTrue(list.Remove("value"));
+            Assert.AreEqual(0, list.Count);
+        }
+
+        [TestMethod]
+        /// <summary>
+        /// Verifies that distinct values considered equal by a custom comparer are not inserted twice.
+        /// </summary>
+        public void Add_CustomComparer_RejectsDistinctComparerEqualItem()
+        {
+            SkipList<string> list = new(StringComparer.OrdinalIgnoreCase);
+
+            Assert.IsTrue(list.Add("abc"));
+            Assert.IsFalse(list.Add("ABC"));
+            Assert.AreEqual(1, list.Count);
+            CollectionAssert.AreEqual(new[] { "abc" }, list.ToArray());
+            Assert.IsTrue(list.Contains("ABC"));
+            Assert.IsTrue(list.Remove("ABC"));
+            Assert.AreEqual(0, list.Count);
+        }
+
+        [TestMethod]
+        /// <summary>
+        /// Verifies that adding comparer-equal values through <see cref="ICollection{T}"/> preserves uniqueness.
+        /// </summary>
+        public void ICollectionAdd_RejectsComparerEqualDuplicate()
+        {
+            SkipList<string> list = new(StringComparer.OrdinalIgnoreCase);
+            ICollection<string> collection = list;
+
+            collection.Add("abc");
+            collection.Add("ABC");
+
+            Assert.AreEqual(1, collection.Count);
+            CollectionAssert.AreEqual(new[] { "abc" }, collection.ToArray());
+        }
+
+        [TestMethod]
         public void AddTestWithLevels()
         {
             TestAdd(3, [5, 6, 1, 2, 0, 3, 4, 7]);
         }
 
         [TestMethod]
+        /// <summary>
+        /// Verifies insertion and ordering for a large, deterministically shuffled set of unique values.
+        /// </summary>
         public void AddTestLargeArray()
         {
-            Random rng = new Random();
-            int[] result = rng.RandomArray(10000, (i) => rng.RandomInt());
+            Random rng = new Random(0);
+            int[] result = Enumerable.Range(0, 10000).OrderBy(_ => rng.Next()).ToArray();
             TestAdd(5, result);
         }
 
