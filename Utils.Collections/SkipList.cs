@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 
 namespace Utils.Collections;
 
@@ -10,6 +11,11 @@ namespace Utils.Collections;
 /// Represents a skip list, which is a probabilistic data structure that allows for fast search, insertion, and deletion operations.
 /// </summary>
 /// <typeparam name="T">The type of elements in the skip list.</typeparam>
+/// <remarks>
+/// Instance members are not thread-safe. Callers must synchronize access when the same instance is
+/// shared between threads, including access through lookup operations such as <see cref="Contains"/>
+/// and <see cref="TryGet"/>, because lookups may maintain the adaptive index.
+/// </remarks>
 public class SkipList<T> : ICollection<T>
 {
     private readonly IComparer<T> comparer;
@@ -33,6 +39,11 @@ public class SkipList<T> : ICollection<T>
     /// leftwards or do other operations if needed.
     /// </summary>
     private Element _lastElement;
+
+    /// <summary>
+    /// Tracks changes to the logical bottom-level content, excluding adaptive index maintenance.
+    /// </summary>
+    private int _version;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SkipList{T}"/> class
@@ -97,6 +108,7 @@ public class SkipList<T> : ICollection<T>
             _firstElement = newElement;
             _lastElement = newElement;
             Count = 1;
+            _version++;
             return true;
         }
 
@@ -136,6 +148,7 @@ public class SkipList<T> : ICollection<T>
             elementBefore.InsertAfter(newElement);
         }
         Count++;
+        _version++;
         return true;
     }
 
@@ -147,9 +160,14 @@ public class SkipList<T> : ICollection<T>
     /// </summary>
     public void Clear()
     {
+        if (Count == 0)
+        {
+            return;
+        }
         _firstElement = null;
         _lastElement = null;
         Count = 0;
+        _version++;
     }
 
     /// <summary>
@@ -238,6 +256,7 @@ public class SkipList<T> : ICollection<T>
             _lastElement.Up.Remove();
         }
         Count--;
+        _version++;
         if (Count == 0)
         {
             _firstElement = null;
@@ -247,9 +266,58 @@ public class SkipList<T> : ICollection<T>
     }
 
     /// <inheritdoc />
-    public IEnumerator<T> GetEnumerator() => Enumerate().GetEnumerator();
+    public IEnumerator<T> GetEnumerator() => new Enumerator(this);
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    /// <summary>
+    /// Signals that the observable state of an item stored by reference changed without changing its node.
+    /// </summary>
+    internal void NotifyItemChanged() => _version++;
+
+    /// <summary>
+    /// Creates a deterministic, read-only signature of the adaptive topology for diagnostics and tests.
+    /// </summary>
+    /// <returns>A signature containing the bottom-level positions represented at each level.</returns>
+    internal string GetStructureSignature()
+    {
+        if (_firstElement is null)
+        {
+            return "empty";
+        }
+
+        Element bottomFirst = GetBottomFirstElement();
+        Dictionary<Element, int> bottomPositions = new(ReferenceEqualityComparer.Instance);
+        int position = 0;
+        for (Element node = bottomFirst; node is not null; node = node.Next)
+        {
+            bottomPositions.Add(node, position++);
+        }
+
+        StringBuilder signature = new();
+        int level = 0;
+        for (Element first = _firstElement; first is not null; first = first.Sub)
+        {
+            if (level++ > 0)
+            {
+                signature.Append('|');
+            }
+            for (Element node = first; node is not null; node = node.Next)
+            {
+                Element bottom = node;
+                while (bottom.Sub is not null)
+                {
+                    bottom = bottom.Sub;
+                }
+                if (node != first)
+                {
+                    signature.Append(',');
+                }
+                signature.Append(bottomPositions[bottom]);
+            }
+        }
+        return signature.ToString();
+    }
 
     /// <summary>
     /// Validates the complete linked structure without changing it.
@@ -434,11 +502,23 @@ public class SkipList<T> : ICollection<T>
     {
         Element startElement = _firstElement;
         Element endElement = _lastElement;
+        List<MaintenancePlan> maintenancePlans = null;
 
         while (true)
         {
-            (startElement, endElement) = FindElementPositionAtLevel(startElement, endElement, value);
-            if (startElement?.Sub == null && endElement?.Sub == null) return (startElement, endElement);
+            (Element before, Element after, MaintenancePlan plan) = FindElementPositionAtLevel(startElement, endElement, value);
+            if (plan is not null)
+            {
+                maintenancePlans ??= [];
+                maintenancePlans.Add(plan);
+            }
+            startElement = before;
+            endElement = after;
+            if (startElement?.Sub == null && endElement?.Sub == null)
+            {
+                ApplyMaintenancePlans(maintenancePlans);
+                return (startElement, endElement);
+            }
             startElement = startElement?.Sub;
             endElement = endElement?.Sub;
         }
@@ -453,33 +533,58 @@ public class SkipList<T> : ICollection<T>
     /// Along the way, if we traverse more than 'threshold' nodes
     /// without encountering a skip node, we create a new skip node in the upper level.
     /// </summary>
-    private (Element ElementBefore, Element ElementAfter) FindElementPositionAtLevel(Element startElement, Element endElement, T value)
+    private (Element ElementBefore, Element ElementAfter, MaintenancePlan Plan) FindElementPositionAtLevel(Element startElement, Element endElement, T value)
     {
-        if (startElement == null) return (startElement, endElement);
+        if (startElement == null) return (startElement, endElement, null);
 
         Element currentElement;
         Element previousElement = startElement?.Previous;
         int counter = 0;
-        Element lastUpperNode = startElement.Up;
+        List<Element> candidates = null;
 
         for (currentElement = startElement; currentElement != null; currentElement = currentElement.Next)
         {
-            if (currentElement.Up is not null) { counter = 0; lastUpperNode = currentElement.Up; }
+            if (currentElement.Up is not null) counter = 0;
             if (counter > _threshold && currentElement.Next is not null && currentElement.Next?.Up is null)
             {
-                lastUpperNode = CreateNewSkipNode(startElement, endElement, currentElement, lastUpperNode);
+                candidates ??= [];
+                candidates.Add(currentElement);
                 counter = 0;
             }
             int comparison = comparer.Compare(value, currentElement.Value);
-            if (comparison == 0) return (currentElement, currentElement);
+            if (comparison == 0) return (currentElement, currentElement, CreateMaintenancePlan());
             if (comparison < 0)
             {
-                return (currentElement.Previous, currentElement);
+                return (currentElement.Previous, currentElement, CreateMaintenancePlan());
             }
             previousElement = currentElement;
             counter++;
         }
-        return (previousElement, null);
+        return (previousElement, null, CreateMaintenancePlan());
+
+        MaintenancePlan CreateMaintenancePlan()
+            => candidates is null ? null : new MaintenancePlan(startElement, endElement, candidates);
+    }
+
+    /// <summary>
+    /// Commits adaptive promotions only after every comparison required by the lookup has succeeded.
+    /// </summary>
+    /// <param name="plans">The ordered per-level plans, or <see langword="null"/> when no maintenance is required.</param>
+    private void ApplyMaintenancePlans(List<MaintenancePlan> plans)
+    {
+        if (plans is null)
+        {
+            return;
+        }
+
+        foreach (MaintenancePlan plan in plans)
+        {
+            Element lastUpperNode = plan.StartElement.Up;
+            foreach (Element candidate in plan.Candidates)
+            {
+                lastUpperNode = CreateNewSkipNode(plan.StartElement, plan.EndElement, candidate, lastUpperNode);
+            }
+        }
     }
 
     private Element CreateNewSkipNode(Element startElement, Element endElement, Element currentElement, Element lastUpperNode)
@@ -504,14 +609,104 @@ public class SkipList<T> : ICollection<T>
         return currentElement.CreateUp(previousUp, nextUp);
     }
 
-    private IEnumerable<T> Enumerate()
+    /// <summary>
+    /// Gets the first node at the content-bearing bottom level.
+    /// </summary>
+    /// <returns>The first bottom-level node, or <see langword="null"/> for an empty list.</returns>
+    private Element GetBottomFirstElement()
     {
         var element = _firstElement;
         while (element?.Sub is not null) element = element.Sub;
-        while (element is not null)
+        return element;
+    }
+
+    /// <summary>
+    /// Describes the promotions discovered while traversing one structural level.
+    /// </summary>
+    private sealed class MaintenancePlan
+    {
+        /// <summary>Initializes a per-level adaptive maintenance plan.</summary>
+        /// <param name="startElement">The left search boundary at this level.</param>
+        /// <param name="endElement">The right search boundary at this level.</param>
+        /// <param name="candidates">Nodes to promote in traversal order.</param>
+        public MaintenancePlan(Element startElement, Element endElement, List<Element> candidates)
         {
-            yield return element.Value;
-            element = element.Next;
+            StartElement = startElement;
+            EndElement = endElement;
+            Candidates = candidates;
+        }
+
+        /// <summary>Gets the left search boundary.</summary>
+        public Element StartElement { get; }
+
+        /// <summary>Gets the right search boundary.</summary>
+        public Element EndElement { get; }
+
+        /// <summary>Gets nodes to promote in traversal order.</summary>
+        public List<Element> Candidates { get; }
+    }
+
+    /// <summary>
+    /// Enumerates bottom-level content and fails fast when observable content changes.
+    /// </summary>
+    private sealed class Enumerator : IEnumerator<T>
+    {
+        private readonly SkipList<T> _owner;
+        private readonly int _capturedVersion;
+        private Element _next;
+        private T _current = default!;
+        private bool _hasCurrent;
+
+        /// <summary>Initializes an enumerator and captures the owner's current content version.</summary>
+        /// <param name="owner">The list to enumerate.</param>
+        public Enumerator(SkipList<T> owner)
+        {
+            _owner = owner;
+            _capturedVersion = owner._version;
+            _next = owner.GetBottomFirstElement();
+        }
+
+        /// <inheritdoc />
+        public T Current => _hasCurrent ? _current : throw new InvalidOperationException("The enumerator is not positioned on an element.");
+
+        /// <inheritdoc />
+        object IEnumerator.Current => Current!;
+
+        /// <inheritdoc />
+        public bool MoveNext()
+        {
+            EnsureVersion();
+            if (_next is null)
+            {
+                _hasCurrent = false;
+                _current = default!;
+                return false;
+            }
+            _current = _next.Value;
+            _next = _next.Next;
+            _hasCurrent = true;
+            return true;
+        }
+
+        /// <inheritdoc />
+        public void Reset()
+        {
+            EnsureVersion();
+            _next = _owner.GetBottomFirstElement();
+            _current = default!;
+            _hasCurrent = false;
+        }
+
+        /// <inheritdoc />
+        public void Dispose() { }
+
+        /// <summary>Throws when the owner's observable content changed after this enumerator was created.</summary>
+        private void EnsureVersion()
+        {
+            if (_capturedVersion != _owner._version)
+            {
+                throw new InvalidOperationException("Collection was modified; enumeration operation may not execute.");
+            }
         }
     }
 

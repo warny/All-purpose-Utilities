@@ -8,28 +8,6 @@ The deterministic adaptive index and lookup-driven promotion are intentional des
 
 ## P1
 
-### COL-02 — Concurrent readers can race during adaptive promotion
-
-`Contains`/`TryGet` intentionally call the adaptive traversal. `CreateUp` publishes several reciprocal links without synchronization, so two readers can race while promoting the same region.
-
-This consolidates first-pass item 1 and second-pass item 15.
-
-**Fix:** prefer an explicit non-thread-safe/single-threaded public contract unless concurrent reads are a required feature. If concurrent reads are required, promotion needs a real publication protocol or synchronization.
-
-### COL-03 — Content mutation does not invalidate enumerators
-
-Enumeration walks the bottom linked list with `yield` and there is no content version. `Add`, `Remove` and `Clear` can therefore silently change an active enumeration.
-
-Lookup-only upper-level promotion does not change the bottom sequence and should not automatically invalidate enumeration if that invariant is proved by tests.
-
-**Fix:** content versioning and a dedicated fail-fast enumerator.
-
-### COL-04 — Comparer exceptions can leave hidden promotion side effects
-
-`FindElementPositionAtLevel` may promote a node before calling `comparer.Compare` for that node. If the comparer then throws, the public lookup fails after changing upper-level structure.
-
-**Fix:** defer maintenance until required comparisons succeed, or explicitly document/test best-effort maintenance on comparer failure.
-
 ### COL-07 — `CopyTo` methods do not preflight collection-contract arguments
 
 `SkipList<T>`, dictionary, key-view and value-view `CopyTo` implementations enumerate and assign directly. Null arrays, invalid indices and insufficient capacity can fail after partial copying with incidental exceptions.
@@ -71,6 +49,18 @@ The production XML summary still calls `SkipList<T>` "probabilistic" although co
 
 ## Closed work
 
+### COL-02 — Explicit concurrency contract (2026-08-17)
+
+`SkipList<T>` and `SkipListDictionary<TKey, TValue>` now explicitly document that instance members are not thread-safe and shared instances require external synchronization. This includes lookup operations because they may perform intentional adaptive index maintenance.
+
+### COL-03 — Content-versioned fail-fast enumeration (2026-08-17)
+
+`SkipList<T>` now tracks logical content changes and uses a dedicated enumerator that captures the version at creation and checks every `MoveNext`. Successful additions, removals, non-empty clears, and dictionary value replacements invalidate active enumerators; failed/no-op operations and pure adaptive promotions do not. Dictionary, key, and value enumeration all share this version contract.
+
+### COL-04 — Exception-safe deferred adaptive maintenance (2026-08-17)
+
+Adaptive promotions are now planned as explicit per-level data during comparison and committed in deterministic traversal order only after the complete search succeeds. If a comparer throws, the local plan is abandoned and the topology remains unchanged.
+
 ### COL-05 — Adaptive structure invariant checker (2026-08-17)
 
 `SkipList<T>` now has an internal, test-visible invariant checker covering horizontal and vertical reciprocity, comparer-based ordering and uniqueness, cycles and reachability, coherent boundary towers, and the bottom-level node count. Deterministic insertion, boundary and middle removal, duplicate, lookup-promotion, clear, threshold, and fixed-seed model scenarios invoke the checker after mutations and adaptive promotions.
@@ -81,5 +71,4 @@ The production XML summary still calls `SkipList<T>` "probabilistic" although co
 
 ## Recommended implementation order
 
-1. COL-02 + COL-03 + COL-04 — concurrency policy, enumeration behavior and comparer exception safety.
-2. COL-07 + COL-09 + COL-10 + COL-11 + COL-12 — contract compliance, tooling and documentation.
+1. COL-07 + COL-09 + COL-10 + COL-11 + COL-12 — contract compliance, tooling and documentation.
