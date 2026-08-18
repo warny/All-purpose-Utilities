@@ -286,10 +286,10 @@ public class SkipList<T> : ICollection<T>
             return "empty";
         }
 
-        Element bottomFirst = GetBottomFirstElement();
+        Element? bottomFirst = GetBottomFirstElement();
         Dictionary<Element, int> bottomPositions = new(ReferenceEqualityComparer.Instance);
         int position = 0;
-        for (Element node = bottomFirst; node is not null; node = node.Next)
+        for (Element? node = bottomFirst; node is not null; node = node.Next)
         {
             bottomPositions.Add(node, position++);
         }
@@ -502,11 +502,11 @@ public class SkipList<T> : ICollection<T>
     {
         Element startElement = _firstElement;
         Element endElement = _lastElement;
-        List<MaintenancePlan> maintenancePlans = null;
+        List<MaintenancePlan>? maintenancePlans = null;
 
         while (true)
         {
-            (Element before, Element after, MaintenancePlan plan) = FindElementPositionAtLevel(startElement, endElement, value);
+            (Element before, Element after, MaintenancePlan? plan) = FindElementPositionAtLevel(startElement, endElement, value);
             if (plan is not null)
             {
                 maintenancePlans ??= [];
@@ -533,7 +533,7 @@ public class SkipList<T> : ICollection<T>
     /// Along the way, if we traverse more than 'threshold' nodes
     /// without encountering a skip node, we create a new skip node in the upper level.
     /// </summary>
-    private (Element ElementBefore, Element ElementAfter, MaintenancePlan Plan) FindElementPositionAtLevel(Element startElement, Element endElement, T value)
+    private (Element ElementBefore, Element ElementAfter, MaintenancePlan? Plan) FindElementPositionAtLevel(Element startElement, Element endElement, T value)
     {
         if (startElement == null) return (startElement, endElement, null);
 
@@ -562,7 +562,8 @@ public class SkipList<T> : ICollection<T>
         }
         return (previousElement, null, CreateMaintenancePlan());
 
-        MaintenancePlan CreateMaintenancePlan()
+        // Materializes the deferred promotion candidates discovered at the current level.
+        MaintenancePlan? CreateMaintenancePlan()
             => candidates is null ? null : new MaintenancePlan(startElement, endElement, candidates);
     }
 
@@ -570,7 +571,7 @@ public class SkipList<T> : ICollection<T>
     /// Commits adaptive promotions only after every comparison required by the lookup has succeeded.
     /// </summary>
     /// <param name="plans">The ordered per-level plans, or <see langword="null"/> when no maintenance is required.</param>
-    private void ApplyMaintenancePlans(List<MaintenancePlan> plans)
+    private void ApplyMaintenancePlans(List<MaintenancePlan>? plans)
     {
         if (plans is null)
         {
@@ -613,7 +614,7 @@ public class SkipList<T> : ICollection<T>
     /// Gets the first node at the content-bearing bottom level.
     /// </summary>
     /// <returns>The first bottom-level node, or <see langword="null"/> for an empty list.</returns>
-    private Element GetBottomFirstElement()
+    private Element? GetBottomFirstElement()
     {
         var element = _firstElement;
         while (element?.Sub is not null) element = element.Sub;
@@ -653,7 +654,7 @@ public class SkipList<T> : ICollection<T>
     {
         private readonly SkipList<T> _owner;
         private readonly int _capturedVersion;
-        private Element _next;
+        private Element? _next;
         private T _current = default!;
         private bool _hasCurrent;
 
