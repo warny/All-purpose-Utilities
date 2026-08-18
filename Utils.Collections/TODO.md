@@ -49,15 +49,15 @@ The production XML summary still calls `SkipList<T>` "probabilistic" although co
 
 ## Closed work
 
-### COL-02 — Explicit concurrency contract (2026-08-17)
+### COL-02 — Explicit concurrency contract (2026-08-18)
 
 `SkipList<T>` and `SkipListDictionary<TKey, TValue>` now explicitly document that instance members are not thread-safe and shared instances require external synchronization. This includes lookup operations because they may perform intentional adaptive index maintenance.
 
-### COL-03 — Content-versioned fail-fast enumeration (2026-08-17)
+### COL-03 — Content-versioned fail-fast enumeration (2026-08-18)
 
 `SkipList<T>` now tracks logical content changes and uses a dedicated enumerator that captures the version at creation and checks every `MoveNext`. Successful additions, removals, non-empty clears, and dictionary value replacements invalidate active enumerators; failed/no-op operations and pure adaptive promotions do not. Dictionary, key, and value enumeration all share this version contract.
 
-### COL-04 — Exception-safe deferred adaptive maintenance (2026-08-17)
+### COL-04 — Exception-safe deferred adaptive maintenance (2026-08-18)
 
 Adaptive promotions are now planned as explicit per-level data during comparison and committed in deterministic traversal order only after the complete search succeeds. If a comparer throws, the local plan is abandoned and the topology remains unchanged.
 

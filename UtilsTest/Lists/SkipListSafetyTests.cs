@@ -123,19 +123,17 @@ public class SkipListSafetyTests
     [DataRow(SearchOperation.Remove)]
     public void ComparerException_SearchPlanIsAbandoned(SearchOperation operation)
     {
+        PromotingSearchScenario scenario = FindPromotingSearchScenario();
         ControlledComparer comparer = new();
-        SkipList<int> list = new(comparer, 2);
-        foreach (int value in Enumerable.Range(0, 120))
-        {
-            Assert.IsTrue(list.Add(value));
-        }
+        SkipList<int> list = CreateComparisonList(comparer);
         list.ValidateInvariants();
         string before = list.GetStructureSignature();
         int[] contentBefore = list.ToArray();
         int countBefore = list.Count;
-        comparer.ThrowOnComparisonNumber = comparer.ComparisonCount + 4;
+        comparer.ThrowOnComparisonNumber = comparer.ComparisonCount + scenario.ComparisonCount;
 
-        ComparerTestException exception = Assert.ThrowsException<ComparerTestException>(() => Execute(operation, list));
+        ComparerTestException exception = Assert.ThrowsException<ComparerTestException>(
+            () => Execute(operation, list, scenario.Target));
 
         Assert.AreSame(comparer.Exception, exception);
         comparer.ThrowOnComparisonNumber = null;
@@ -143,6 +141,49 @@ public class SkipListSafetyTests
         Assert.AreEqual(countBefore, list.Count);
         CollectionAssert.AreEqual(contentBefore, list.ToArray());
         list.ValidateInvariants();
+    }
+
+    /// <summary>
+    /// Finds a lookup that provably commits adaptive maintenance on an identically constructed list.
+    /// </summary>
+    /// <returns>The lookup target and the number of comparisons required to complete its traversal.</returns>
+    private static PromotingSearchScenario FindPromotingSearchScenario()
+    {
+        foreach (int target in Enumerable.Range(0, 120))
+        {
+            ControlledComparer comparer = new();
+            SkipList<int> list = CreateComparisonList(comparer);
+            string before = list.GetStructureSignature();
+            int comparisonsBefore = comparer.ComparisonCount;
+
+            bool found = list.Contains(target);
+            int comparisonCount = comparer.ComparisonCount - comparisonsBefore;
+
+            Assert.IsTrue(found);
+            if (list.GetStructureSignature() != before)
+            {
+                Assert.IsTrue(comparisonCount > 1,
+                    "The comparer must throw after at least one successful comparison.");
+                list.ValidateInvariants();
+                return new PromotingSearchScenario(target, comparisonCount);
+            }
+        }
+
+        Assert.Fail("The deterministic scenario must contain a lookup that commits adaptive maintenance.");
+        return null!;
+    }
+
+    /// <summary>Creates the deterministic multi-level list used by comparer exception tests.</summary>
+    /// <param name="comparer">The controlled comparer to associate with the list.</param>
+    /// <returns>A list containing the integers from zero through 119.</returns>
+    private static SkipList<int> CreateComparisonList(ControlledComparer comparer)
+    {
+        SkipList<int> list = new(comparer, 2);
+        foreach (int value in Enumerable.Range(0, 120))
+        {
+            Assert.IsTrue(list.Add(value));
+        }
+        return list;
     }
 
     /// <summary>Creates a threshold-two list containing the supplied values.</summary>
@@ -183,23 +224,43 @@ public class SkipListSafetyTests
     /// <summary>Executes the requested public operation against a comparison path of several nodes.</summary>
     /// <param name="operation">The operation to execute.</param>
     /// <param name="list">The target list.</param>
-    private static void Execute(SearchOperation operation, SkipList<int> list)
+    /// <param name="target">The value whose traversal provably plans adaptive maintenance.</param>
+    private static void Execute(SearchOperation operation, SkipList<int> list, int target)
     {
         switch (operation)
         {
             case SearchOperation.Contains:
-                list.Contains(119);
+                list.Contains(target);
                 break;
             case SearchOperation.TryGet:
-                list.TryGet(119, out _);
+                list.TryGet(target, out _);
                 break;
             case SearchOperation.Add:
-                list.Add(121);
+                list.Add(target);
                 break;
             case SearchOperation.Remove:
-                list.Remove(119);
+                list.Remove(target);
                 break;
         }
+    }
+
+    /// <summary>Describes a lookup known to commit at least one adaptive promotion when it succeeds.</summary>
+    private sealed class PromotingSearchScenario
+    {
+        /// <summary>Initializes a promoting lookup scenario.</summary>
+        /// <param name="target">The lookup target.</param>
+        /// <param name="comparisonCount">The number of comparisons in the complete traversal.</param>
+        public PromotingSearchScenario(int target, int comparisonCount)
+        {
+            Target = target;
+            ComparisonCount = comparisonCount;
+        }
+
+        /// <summary>Gets the lookup target.</summary>
+        public int Target { get; }
+
+        /// <summary>Gets the number of comparisons in the complete traversal.</summary>
+        public int ComparisonCount { get; }
     }
 
     /// <summary>Identifies a public traversal operation used by exception-safety tests.</summary>
