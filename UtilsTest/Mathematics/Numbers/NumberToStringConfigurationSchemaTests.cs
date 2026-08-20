@@ -29,6 +29,42 @@ public class NumberToStringConfigurationSchemaTests
             NumberToStringConverter.ValidateConfigurationSchemaForTesting(configuration);
     }
 
+    /// <summary>Ensures inherited language documents may omit schema-level inheritable fields.</summary>
+    [TestMethod]
+    public void InheritedLanguage_MayOmitInheritedFields()
+    {
+        string document = ValidConfiguration.Replace(
+            "</Language>",
+            "</Language><Language baseOn=\"SCHEMA-TEST\"><Culture>SCHEMA-CHILD</Culture></Language>",
+            StringComparison.Ordinal);
+
+        NumberToStringConverter.ValidateConfigurationSchemaForTesting(document);
+    }
+
+    /// <summary>Ensures a standalone language missing an effective required value is rejected semantically.</summary>
+    [TestMethod]
+    public void StandaloneLanguage_MissingZero_IsRejectedSemantically()
+    {
+        string document = ValidConfiguration.Replace(" zero=\"zero\"", "", StringComparison.Ordinal);
+
+        InvalidOperationException exception = Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.ReadConfiguration(document));
+        StringAssert.Contains(exception.Message, "Zero");
+    }
+
+    /// <summary>Documents that repeated order-independent sections are rejected by semantic parsing.</summary>
+    [TestMethod]
+    public void ExternalConfiguration_DuplicatePostProcessingSection_IsRejected()
+    {
+        string replacements = "<Replacements><Replacement oldValue=\"one\" newValue=\"uno\"/></Replacements>";
+        string document = ValidConfiguration.Replace("</NumberScale>", $"</NumberScale>{replacements}{replacements}", StringComparison.Ordinal);
+
+        XmlSchemaValidationException exception = Assert.ThrowsException<XmlSchemaValidationException>(
+            () => NumberToStringConverter.ReadConfiguration(document));
+        Assert.IsTrue(exception.LineNumber > 0);
+        Assert.IsTrue(exception.LinePosition > 0);
+    }
+
     /// <summary>Ensures unknown elements are rejected by external configuration parsing.</summary>
     [TestMethod]
     public void ExternalConfiguration_UnknownElement_IsRejected()

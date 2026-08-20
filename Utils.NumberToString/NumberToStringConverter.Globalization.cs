@@ -240,6 +240,8 @@ namespace Utils.NumberToString
         private static NumbersXmlModel DeserializeConfiguration(string configuration, ConfigurationSchemaValidation schemaValidation)
         {
             ArgumentNullException.ThrowIfNull(configuration);
+            if (schemaValidation == ConfigurationSchemaValidation.Validate)
+                EnsureUniquePostProcessingSections(configuration);
             XmlReaderSettings settings = new()
             {
                 DtdProcessing = DtdProcessing.Prohibit,
@@ -262,6 +264,48 @@ namespace Utils.NumberToString
             {
                 ExceptionDispatchInfo.Capture(schemaException).Throw();
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// Rejects repeated order-independent language sections that XSD 1.0 cannot constrain
+        /// individually inside a repeating <c>xs:choice</c>.
+        /// </summary>
+        /// <param name="configuration">The XML configuration document.</param>
+        private static void EnsureUniquePostProcessingSections(string configuration)
+        {
+            HashSet<string> orderIndependentSections =
+            [
+                "Replacements", "Exceptions", "LanguageSpecifics", "Fractions", "Ordinals",
+                "Variants", "YearFormat", "Multiplicatives", "TimeUnits", "DateFormat"
+            ];
+            HashSet<string>? seenSections = null;
+            using StringReader textReader = new(configuration);
+            using XmlReader reader = XmlReader.Create(textReader, new XmlReaderSettings
+            {
+                DtdProcessing = DtdProcessing.Prohibit,
+                XmlResolver = null
+            });
+            while (reader.Read())
+            {
+                if (reader.NodeType != XmlNodeType.Element)
+                    continue;
+                if (reader.Depth == 1 && reader.LocalName == "Language")
+                {
+                    seenSections = new HashSet<string>(StringComparer.Ordinal);
+                    continue;
+                }
+                if (reader.Depth != 2 || seenSections is null || !orderIndependentSections.Contains(reader.LocalName))
+                    continue;
+                if (seenSections.Add(reader.LocalName))
+                    continue;
+
+                IXmlLineInfo lineInfo = (IXmlLineInfo)reader;
+                throw new XmlSchemaValidationException(
+                    $"The language section '{reader.LocalName}' may occur only once.",
+                    null,
+                    lineInfo.LineNumber,
+                    lineInfo.LinePosition);
             }
         }
 

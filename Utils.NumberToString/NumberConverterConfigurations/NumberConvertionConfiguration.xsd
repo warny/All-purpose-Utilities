@@ -1019,6 +1019,9 @@
                                 </xs:annotation>
                             </xs:element>
 
+                            <!-- Optional at schema level because an inherited Language may omit this
+                                 section. Groups is required on the effective language after baseOn
+                                 resolution and is enforced by C# semantic validation. -->
                             <xs:element name="Groups" minOccurs="0">
                                 <xs:annotation>
                                     <xs:documentation>
@@ -1063,6 +1066,9 @@
                                 </xs:complexType>
                             </xs:element>
 
+                            <!-- Optional at schema level because an inherited Language may omit this
+                                 section. NumberScale is required on the effective language after baseOn
+                                 resolution and is enforced by C# semantic validation. -->
                             <xs:element name="NumberScale" minOccurs="0">
                                 <xs:annotation>
                                     <xs:documentation>
@@ -1163,6 +1169,8 @@
                                                 When true, the first letter of generated scale names is
                                                 capitalised. Set to true for languages that capitalise nouns
                                                 (German: "Million", "Milliarde").
+                                                Optional at schema level for inherited NumberScale definitions;
+                                                the effective value is resolved and validated semantically.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:attribute>
@@ -1484,6 +1492,8 @@
                                 <xs:documentation>
                                     Number of digits per chunk. Typically 3 (thousands grouping).
                                     Must match the highest level defined in Groups.
+                                    Optional at schema level for inherited languages; required on the
+                                    effective language after baseOn resolution by semantic validation.
                                 </xs:documentation>
                             </xs:annotation>
                         </xs:attribute>
@@ -1492,6 +1502,8 @@
                                 <xs:documentation>
                                     Word separator inserted between parts of a number name within a chunk.
                                     Typically a single space " ". May be empty for agglutinative languages.
+                                    Optional at schema level for inherited languages; the effective value
+                                    is resolved and validated semantically.
                                 </xs:documentation>
                             </xs:annotation>
                         </xs:attribute>
@@ -1501,12 +1513,18 @@
                                     Text inserted between chunk groups (thousands, millions, …).
                                     English: "," giving "one thousand, two hundred …"
                                     French: "" (no separator between groups).
+                                    Optional at schema level for inherited languages; the effective value
+                                    is resolved and validated semantically.
                                 </xs:documentation>
                             </xs:annotation>
                         </xs:attribute>
                         <xs:attribute name="zero" type="xs:string" use="optional">
                             <xs:annotation>
-                                <xs:documentation>Literal text for the value zero (not passed through Replacements).</xs:documentation>
+                                <xs:documentation>
+                                    Literal text for the value zero (not passed through Replacements).
+                                    Optional at schema level for inherited languages; required on the
+                                    effective language after baseOn resolution by semantic validation.
+                                </xs:documentation>
                             </xs:annotation>
                         </xs:attribute>
                         <xs:attribute name="minus" type="xs:string" use="optional">
@@ -1514,6 +1532,8 @@
                                 <xs:documentation>
                                     Template for negative numbers. "*" is replaced by the absolute-value text.
                                     Examples: "minus *" (EN), "moins *" (FR), "minus *" (DE).
+                                    Optional at schema level for inherited languages; required on the
+                                    effective language after baseOn resolution by semantic validation.
                                 </xs:documentation>
                             </xs:annotation>
                         </xs:attribute>
