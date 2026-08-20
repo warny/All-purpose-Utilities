@@ -36,8 +36,8 @@ public class SkipListDictionary<K, V> : IDictionary<K, V>
     /// Initializes a new instance using the default key comparer and the specified threshold.
     /// </summary>
     /// <param name="threshold">
-    /// The maximum number of nodes to traverse at a given skip level before creating a
-    /// structure node. Must be &gt;= 2.
+    /// The traversal count that must be exceeded before a subsequent unindexed node becomes
+    /// eligible for promotion. Must be &gt;= 2.
     /// </param>
     public SkipListDictionary(int threshold) : this(Comparer<K>.Default, threshold) { }
 
@@ -46,8 +46,8 @@ public class SkipListDictionary<K, V> : IDictionary<K, V>
     /// </summary>
     /// <param name="keyComparer">The comparer used to order keys.</param>
     /// <param name="threshold">
-    /// The maximum number of nodes to traverse at a given skip level before creating a
-    /// structure node. Must be &gt;= 2.
+    /// The traversal count that must be exceeded before a subsequent unindexed node becomes
+    /// eligible for promotion. Must be &gt;= 2.
     /// </param>
     public SkipListDictionary(IComparer<K> keyComparer, int threshold = 10)
     {

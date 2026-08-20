@@ -99,13 +99,13 @@ public class SkipListContractTests
     /// <summary>
     /// Verifies exact insertion and lookup-driven topology for each supported threshold scenario.
     /// </summary>
-    /// <param name="threshold">The maximum consecutive traversal count.</param>
+    /// <param name="threshold">The traversal count that must be exceeded before promotion eligibility.</param>
     /// <param name="insertionSignature">The expected signature after insertion.</param>
     /// <param name="lookupSignature">The expected signature after deterministic lookups.</param>
     [DataTestMethod]
-    [DataRow(2, "0,2,23|0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23", "0,8,23|0,4,8,12,23|0,2,4,6,8,10,12,14,16,23|0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23")]
-    [DataRow(3, "0,3,23|0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23", "0,9,23|0,3,6,9,12,15,23|0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23")]
-    [DataRow(10, "0,10,23|0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23", "0,10,23|0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23")]
+    [DataRow(2, "0,3,23|0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23", "0,9,23|0,3,6,9,12,15,23|0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23")]
+    [DataRow(3, "0,4,23|0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23", "0,16,23|0,4,8,12,16,23|0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23")]
+    [DataRow(10, "0,11,23|0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23", "0,11,23|0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23")]
     public void Threshold_ProducesExactDeterministicTopology(int threshold, string insertionSignature, string lookupSignature)
     {
         SkipList<int> list = new(threshold);

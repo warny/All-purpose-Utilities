@@ -24,8 +24,8 @@ public class SkipList<T> : ICollection<T>
     private readonly IComparer<T> comparer;
 
     /// <summary>
-    /// Maximum number of consecutive nodes that may be traversed at a level without encountering
-    /// an indexed node before a promotion is planned (if the next node has no Up link).
+    /// Number of consecutive unindexed nodes that may be traversed before a subsequent node becomes
+    /// eligible for promotion (if that following node also has no Up link).
     /// </summary>
     private readonly int _threshold;
 
@@ -59,7 +59,7 @@ public class SkipList<T> : ICollection<T>
     /// with the specified threshold.
     /// </summary>
     /// <param name="threshold">
-    /// The maximum consecutive traversal count at a level before planning a promotion.
+    /// The traversal count that must be exceeded before a subsequent node becomes eligible for promotion.
     /// Must be &gt;= 2.
     /// </param>
     public SkipList(int threshold) : this(Comparer<T>.Default, threshold) { }
@@ -70,8 +70,8 @@ public class SkipList<T> : ICollection<T>
     /// </summary>
     /// <param name="comparer">The comparer to use when comparing elements.</param>
     /// <param name="threshold">
-    /// The maximum number of consecutive nodes that may be traversed at a level without encountering
-    /// an indexed node before planning a promotion. Must be &gt;= 2.
+    /// The number of consecutive unindexed nodes that may be traversed before a subsequent node becomes
+    /// eligible for promotion. Must be &gt;= 2.
     /// </param>
     public SkipList(IComparer<T> comparer, int threshold = 10)
     {
@@ -542,8 +542,8 @@ public class SkipList<T> : ICollection<T>
     /// the two nodes that sandwich 'value'. If 'value' matches one node's Value,
     /// that node is returned in both 'ElementBefore' and 'ElementAfter'.
     /// 
-    /// Along the way, if we traverse 'threshold' consecutive nodes
-    /// without encountering a skip node, we create a new skip node in the upper level.
+    /// Along the way, after the traversal counter exceeds 'threshold' without encountering an indexed
+    /// node, the subsequent eligible node is planned for promotion into the upper level.
     /// </summary>
     private (Element? ElementBefore, Element? ElementAfter, MaintenancePlan? Plan) FindElementPositionAtLevel(Element? startElement, Element? endElement, T value)
     {
@@ -557,7 +557,7 @@ public class SkipList<T> : ICollection<T>
         for (currentElement = startElement; currentElement != null; currentElement = currentElement.Next)
         {
             if (currentElement.Up is not null) counter = 0;
-            if (counter >= _threshold && currentElement.Next is not null && currentElement.Next.Up is null)
+            if (counter > _threshold && currentElement.Next is not null && currentElement.Next.Up is null)
             {
                 candidates ??= [];
                 candidates.Add(currentElement);
