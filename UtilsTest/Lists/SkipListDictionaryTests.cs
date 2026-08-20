@@ -268,6 +268,55 @@ namespace UtilsTest.Lists
             Assert.IsFalse(dict.Values.Contains("world"));
         }
 
+        /// <summary>
+        /// Verifies that replacing an existing value invalidates dictionary, key, and value enumerators.
+        /// </summary>
+        [TestMethod]
+        public void IndexerValueReplacement_InvalidatesAllEnumeratorViews()
+        {
+            var dict = new SkipListDictionary<string, int>();
+            dict.Add("a", 1);
+            dict.Add("b", 2);
+            IEnumerator<KeyValuePair<string, int>> entries = dict.GetEnumerator();
+            IEnumerator<string> keys = dict.Keys.GetEnumerator();
+            IEnumerator<int> values = dict.Values.GetEnumerator();
+            Assert.IsTrue(entries.MoveNext());
+            Assert.IsTrue(keys.MoveNext());
+            Assert.IsTrue(values.MoveNext());
+
+            dict["a"] = 42;
+
+            Assert.ThrowsException<InvalidOperationException>(() => entries.MoveNext());
+            Assert.ThrowsException<InvalidOperationException>(() => keys.MoveNext());
+            Assert.ThrowsException<InvalidOperationException>(() => values.MoveNext());
+        }
+
+        /// <summary>
+        /// Verifies that each successful dictionary content mutation invalidates its main enumerator.
+        /// </summary>
+        /// <param name="mutation">The mutation to execute.</param>
+        [DataTestMethod]
+        [DataRow("Add")]
+        [DataRow("Remove")]
+        [DataRow("Clear")]
+        public void ContentMutation_InvalidatesDictionaryEnumerator(string mutation)
+        {
+            var dict = new SkipListDictionary<string, int>();
+            dict.Add("a", 1);
+            dict.Add("b", 2);
+            IEnumerator<KeyValuePair<string, int>> enumerator = dict.GetEnumerator();
+            Assert.IsTrue(enumerator.MoveNext());
+
+            if (mutation == "Add")
+                dict.Add("c", 3);
+            else if (mutation == "Remove")
+                Assert.IsTrue(dict.Remove("b"));
+            else
+                dict.Clear();
+
+            Assert.ThrowsException<InvalidOperationException>(() => enumerator.MoveNext());
+        }
+
         [TestMethod]
         public void CustomComparer_ReversedOrder()
         {

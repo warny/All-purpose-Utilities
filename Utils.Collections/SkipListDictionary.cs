@@ -13,6 +13,11 @@ namespace Utils.Collections;
 /// </summary>
 /// <typeparam name="K">The type of keys. Must be non-null.</typeparam>
 /// <typeparam name="V">The type of values.</typeparam>
+/// <remarks>
+/// Instance members are not thread-safe. Callers must synchronize access when the same instance is
+/// shared between threads, including lookup operations, because the underlying skip list may maintain
+/// its adaptive index during a lookup.
+/// </remarks>
 public class SkipListDictionary<K, V> : IDictionary<K, V>
     where K : notnull
 {
@@ -71,7 +76,10 @@ public class SkipListDictionary<K, V> : IDictionary<K, V>
             ArgumentNullException.ThrowIfNull(key);
             var probe = Entry.Probe(key);
             if (_skipList.TryGet(probe, out var found))
+            {
                 found.Value = value;
+                _skipList.NotifyItemChanged();
+            }
             else
                 _skipList.Add(new Entry(key, value));
         }
@@ -139,7 +147,7 @@ public class SkipListDictionary<K, V> : IDictionary<K, V>
 
     /// <inheritdoc />
     public IEnumerator<KeyValuePair<K, V>> GetEnumerator()
-        => _skipList.Select(e => new KeyValuePair<K, V>(e.Key, e.Value)).GetEnumerator();
+        => new ProjectingEnumerator<KeyValuePair<K, V>>(_skipList.GetEnumerator(), e => new KeyValuePair<K, V>(e.Key, e.Value));
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
@@ -171,6 +179,40 @@ public class SkipListDictionary<K, V> : IDictionary<K, V>
         public int Compare(Entry? x, Entry? y) => _keyComparer.Compare(x!.Key, y!.Key);
     }
 
+    /// <summary>
+    /// Projects an already-created skip-list enumerator so version capture is not deferred by LINQ.
+    /// </summary>
+    /// <typeparam name="TResult">The projected element type.</typeparam>
+    private sealed class ProjectingEnumerator<TResult> : IEnumerator<TResult>
+    {
+        private readonly IEnumerator<Entry> _entries;
+        private readonly Func<Entry, TResult> _selector;
+
+        /// <summary>Initializes a projecting enumerator.</summary>
+        /// <param name="entries">The underlying enumerator, already created to capture its version.</param>
+        /// <param name="selector">The projection applied to the current entry.</param>
+        public ProjectingEnumerator(IEnumerator<Entry> entries, Func<Entry, TResult> selector)
+        {
+            _entries = entries;
+            _selector = selector;
+        }
+
+        /// <inheritdoc />
+        public TResult Current => _selector(_entries.Current);
+
+        /// <inheritdoc />
+        object IEnumerator.Current => Current!;
+
+        /// <inheritdoc />
+        public bool MoveNext() => _entries.MoveNext();
+
+        /// <inheritdoc />
+        public void Reset() => _entries.Reset();
+
+        /// <inheritdoc />
+        public void Dispose() => _entries.Dispose();
+    }
+
     private sealed class KeyCollection : ICollection<K>
     {
         private readonly SkipListDictionary<K, V> _owner;
@@ -186,7 +228,7 @@ public class SkipListDictionary<K, V> : IDictionary<K, V>
         }
 
         public IEnumerator<K> GetEnumerator()
-            => _owner._skipList.Select(e => e.Key).GetEnumerator();
+            => new ProjectingEnumerator<K>(_owner._skipList.GetEnumerator(), e => e.Key);
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
@@ -211,7 +253,7 @@ public class SkipListDictionary<K, V> : IDictionary<K, V>
         }
 
         public IEnumerator<V> GetEnumerator()
-            => _owner._skipList.Select(e => e.Value).GetEnumerator();
+            => new ProjectingEnumerator<V>(_owner._skipList.GetEnumerator(), e => e.Value);
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
