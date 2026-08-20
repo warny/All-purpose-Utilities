@@ -8,23 +8,13 @@ See `docs/releasing/TodoAudit-2026-08-16.md` for repository-wide classification 
 
 ## P1
 
-### NTS-01 — Configuration XML is not validated against the published XSD
-
-`BuildConfiguration` creates an `XmlSerializer` and deserializes a `StringReader` directly. The string `"Utils/NumberConvertionConfiguration.xsd"` is used as the serializer namespace; it does not create schema validation.
-
-**Risk:** schema-invalid or misspelled XML can reach semantic validation/deserialization behavior instead of failing with a precise line/position diagnostic.
-
-**Fix:** validate with a securely configured schema-validating `XmlReader` before deserialization, then keep the existing semantic validation phase for cross-field rules that XSD cannot express.
-
-**Tests:** unknown/misspelled elements and attributes, invalid restricted values, missing required structure, line/position diagnostics, XXE/DTD-disabled behavior, and every built-in resource through the validation path.
-
 ### NTS-02 — One invalid built-in configuration can poison static initialization
 
 The static constructor still calls `InitializeConfigurations(...)` for the entire built-in locale set. Any exception escaping that path becomes a `TypeInitializationException` and makes the type unusable for the process lifetime.
 
 **Fix:** make built-in validation a release/CI gate and separate validation/build from publication. Prefer an explicit initialization result/aggregate diagnostic or a guaranteed-safe core registry rather than allowing one optional locale to poison every locale.
 
-**Dependency:** implement NTS-01 first so initialization failures have precise diagnostics.
+**Dependency:** NTS-01 completed: built-in schema validity is now a CI/release invariant.
 
 ## P2 — prove before refactoring
 
@@ -46,6 +36,8 @@ Historical item 74 describes a real extensibility limitation for languages requi
 
 ## Closed / superseded historical findings
 
+- NTS-01: External/user-supplied configurations are schema-validated before deserialization. Built-in configurations use the same secure parsing and semantic-validation pipeline but skip runtime XSD validation because the complete built-in resource set is schema-validated by unit/CI tests.
+
 - Items 47–61: resolved in current code/history (signed numeric boundaries, exact currency arithmetic, regex timeout, configuration validation, transactional registration, inheritance-cycle/presence handling, variant strictness/precedence, language-specifics registration, strict culture lookup, etc.).
 - Pass-2 items 62–64 and 66–73: resolved or intentionally documented.
 - Pass-4 item 92: superseded by the internal presence-aware `LanguageDefinition` / `Optional<T>` model. Explicit zero/false and absent values are no longer conflated for the presence-sensitive fields.
@@ -54,7 +46,6 @@ Historical item 74 describes a real extensibility limitation for languages requi
 
 ## Recommended implementation order
 
-1. NTS-01 — schema validation and built-in resource validation tests.
-2. NTS-02 — initialization isolation/aggregate diagnostics.
-3. NTS-03 — behavioral proof first; refactor only if the matrix reproduces inconsistent finalization.
-4. NTS-04 — only with a concrete language requirement.
+1. NTS-02 — initialization isolation/aggregate diagnostics.
+2. NTS-03 — behavioral proof first; refactor only if the matrix reproduces inconsistent finalization.
+3. NTS-04 — only with a concrete language requirement.

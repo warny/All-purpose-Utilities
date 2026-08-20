@@ -1019,7 +1019,7 @@
                                 </xs:annotation>
                             </xs:element>
 
-                            <xs:element name="Groups">
+                            <xs:element name="Groups" minOccurs="0">
                                 <xs:annotation>
                                     <xs:documentation>
                                         Digit tables for each positional level within a chunk.
@@ -1063,7 +1063,7 @@
                                 </xs:complexType>
                             </xs:element>
 
-                            <xs:element name="NumberScale">
+                            <xs:element name="NumberScale" minOccurs="0">
                                 <xs:annotation>
                                     <xs:documentation>
                                         Configures the names of large-number scale levels
@@ -1157,7 +1157,7 @@
                                             </xs:annotation>
                                         </xs:element>
                                     </xs:sequence>
-                                    <xs:attribute name="firstLetterUpperCase" type="xs:boolean" use="required">
+                                    <xs:attribute name="firstLetterUpperCase" type="xs:boolean" use="optional">
                                         <xs:annotation>
                                             <xs:documentation>
                                                 When true, the first letter of generated scale names is
@@ -1193,6 +1193,10 @@
                                 </xs:complexType>
                             </xs:element>
 
+                            <!-- Post-processing sections are order-independent. This preserves the
+                                 historical serializer contract while the core Culture/Groups/NumberScale
+                                 structure above remains sequenced. -->
+                            <xs:choice minOccurs="0" maxOccurs="unbounded">
                             <xs:element name="Replacements" type="ReplacementsListType"
                                         minOccurs="0" maxOccurs="1">
                                 <xs:annotation>
@@ -1440,6 +1444,7 @@
                                     </xs:attribute>
                                 </xs:complexType>
                             </xs:element>
+                            </xs:choice>
 
                         </xs:sequence>
 
@@ -1474,7 +1479,7 @@
                                 </xs:documentation>
                             </xs:annotation>
                         </xs:attribute>
-                        <xs:attribute name="groupSize" type="xs:long" use="required">
+                        <xs:attribute name="groupSize" type="xs:long" use="optional">
                             <xs:annotation>
                                 <xs:documentation>
                                     Number of digits per chunk. Typically 3 (thousands grouping).
@@ -1482,7 +1487,7 @@
                                 </xs:documentation>
                             </xs:annotation>
                         </xs:attribute>
-                        <xs:attribute name="separator" type="xs:string" use="required">
+                        <xs:attribute name="separator" type="xs:string" use="optional">
                             <xs:annotation>
                                 <xs:documentation>
                                     Word separator inserted between parts of a number name within a chunk.
@@ -1490,7 +1495,7 @@
                                 </xs:documentation>
                             </xs:annotation>
                         </xs:attribute>
-                        <xs:attribute name="groupSeparator" type="xs:string" use="required">
+                        <xs:attribute name="groupSeparator" type="xs:string" use="optional">
                             <xs:annotation>
                                 <xs:documentation>
                                     Text inserted between chunk groups (thousands, millions, …).
@@ -1499,12 +1504,12 @@
                                 </xs:documentation>
                             </xs:annotation>
                         </xs:attribute>
-                        <xs:attribute name="zero" type="xs:string" use="required">
+                        <xs:attribute name="zero" type="xs:string" use="optional">
                             <xs:annotation>
                                 <xs:documentation>Literal text for the value zero (not passed through Replacements).</xs:documentation>
                             </xs:annotation>
                         </xs:attribute>
-                        <xs:attribute name="minus" type="xs:string" use="required">
+                        <xs:attribute name="minus" type="xs:string" use="optional">
                             <xs:annotation>
                                 <xs:documentation>
                                     Template for negative numbers. "*" is replaced by the absolute-value text.

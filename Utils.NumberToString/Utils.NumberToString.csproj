@@ -38,6 +38,8 @@
             <Generator>ResXFileCodeGenerator</Generator>
             <LastGenOutput>NumberConverterResources.Designer.cs</LastGenOutput>
         </EmbeddedResource>
+        <EmbeddedResource Include="NumberConverterConfigurations/NumberConvertionConfiguration.xsd"
+                          LogicalName="Utils.NumberToString.NumberConvertionConfiguration.xsd" />
     </ItemGroup>
 
     <ItemGroup>
