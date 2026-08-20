@@ -470,7 +470,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.Collections.SkipList<T>",
-      "Summary": "<p sourcefile=\"api/Utils.Collections.SkipList-1.yml\" sourcestartlinenumber=\"1\">Represents a skip list, which is a probabilistic data structure that allows for fast search, insertion, and deletion operations.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.Collections.SkipList-1.yml\" sourcestartlinenumber=\"1\">Represents a deterministic adaptive skip list that supports fast search, insertion, and deletion operations.</p>\n"
     },
     {
       "type": "ManagedReference",
