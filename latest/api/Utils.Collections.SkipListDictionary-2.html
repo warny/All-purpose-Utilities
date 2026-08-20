@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Collections_SkipListDictionary_2" data-uid="Utils.Collections.SkipListDictionary`2" class="text-break">
-Class SkipListDictionary&lt;K, V&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L21"><i class="bi bi-code-slash"></i></a>
+Class SkipListDictionary&lt;K, V&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L23"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -303,7 +303,9 @@ Iteration yields entries in ascending key order.</p>
   <h2 id="Utils_Collections_SkipListDictionary_2_remarks">Remarks</h2>
   <div class="markdown level0 remarks"><p>Instance members are not thread-safe. Callers must synchronize access when the same instance is
 shared between threads, including lookup operations, because the underlying skip list may maintain
-its adaptive index during a lookup.</p>
+its adaptive index during a lookup.
+Keys must not be mutated in a way that changes their ordering or identity under
+<a class="xref" href="Utils.Collections.SkipListDictionary-2.html#Utils_Collections_SkipListDictionary_2_Comparer">Comparer</a>, because doing so can invalidate the dictionary's logical organization.</p>
 </div>
 
 
@@ -315,7 +317,7 @@ its adaptive index during a lookup.</p>
 
   <h3 id="Utils_Collections_SkipListDictionary_2__ctor" data-uid="Utils.Collections.SkipListDictionary`2.#ctor">
   SkipListDictionary()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L29"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L33"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance using the default key comparer and a threshold of 10.</p>
@@ -342,7 +344,7 @@ its adaptive index during a lookup.</p>
 
   <h3 id="Utils_Collections_SkipListDictionary_2__ctor_System_Collections_Generic_IComparer__0__System_Int32_" data-uid="Utils.Collections.SkipListDictionary`2.#ctor(System.Collections.Generic.IComparer{`0},System.Int32)">
   SkipListDictionary(IComparer&lt;K&gt;, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L48"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L52"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance using the specified key comparer and threshold.</p>
@@ -359,8 +361,8 @@ its adaptive index during a lookup.</p>
     <dd><p>The comparer used to order keys.</p>
 </dd>
     <dt><code>threshold</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>The maximum number of nodes to traverse at a given skip level before creating a
-structure node. Must be &gt;= 2.</p>
+    <dd><p>The traversal count that must be exceeded before a subsequent unindexed node becomes
+eligible for promotion. Must be &gt;= 2.</p>
 </dd>
   </dl>
 
@@ -379,7 +381,7 @@ structure node. Must be &gt;= 2.</p>
 
   <h3 id="Utils_Collections_SkipListDictionary_2__ctor_System_Int32_" data-uid="Utils.Collections.SkipListDictionary`2.#ctor(System.Int32)">
   SkipListDictionary(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L38"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L42"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance using the default key comparer and the specified threshold.</p>
@@ -393,8 +395,8 @@ structure node. Must be &gt;= 2.</p>
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>threshold</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>The maximum number of nodes to traverse at a given skip level before creating a
-structure node. Must be &gt;= 2.</p>
+    <dd><p>The traversal count that must be exceeded before a subsequent unindexed node becomes
+eligible for promotion. Must be &gt;= 2.</p>
 </dd>
   </dl>
 
@@ -413,11 +415,43 @@ structure node. Must be &gt;= 2.</p>
 </h2>
 
 
+  <a id="Utils_Collections_SkipListDictionary_2_Comparer_" data-uid="Utils.Collections.SkipListDictionary`2.Comparer*"></a>
+
+  <h3 id="Utils_Collections_SkipListDictionary_2_Comparer" data-uid="Utils.Collections.SkipListDictionary`2.Comparer">
+  Comparer
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L69"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the comparer that defines key ordering and identity.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IComparer&lt;K&gt; Comparer { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icomparer-1">IComparer</a>&lt;K&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_Collections_SkipListDictionary_2_Count_" data-uid="Utils.Collections.SkipListDictionary`2.Count*"></a>
 
   <h3 id="Utils_Collections_SkipListDictionary_2_Count" data-uid="Utils.Collections.SkipListDictionary`2.Count">
   Count
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L54"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L61"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the number of elements contained in the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a>.</p>
@@ -450,7 +484,7 @@ structure node. Must be &gt;= 2.</p>
 
   <h3 id="Utils_Collections_SkipListDictionary_2_IsReadOnly" data-uid="Utils.Collections.SkipListDictionary`2.IsReadOnly">
   IsReadOnly
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L57"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L64"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a value indicating whether the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a> is read-only.</p>
@@ -483,7 +517,7 @@ structure node. Must be &gt;= 2.</p>
 
   <h3 id="Utils_Collections_SkipListDictionary_2_Item__0_" data-uid="Utils.Collections.SkipListDictionary`2.Item(`0)">
   this[K]
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L66"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L82"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the element with the specified key.</p>
@@ -534,10 +568,10 @@ structure node. Must be &gt;= 2.</p>
 
   <h3 id="Utils_Collections_SkipListDictionary_2_Keys" data-uid="Utils.Collections.SkipListDictionary`2.Keys">
   Keys
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L60"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L74"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets an <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a> containing the keys of the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.idictionary-2">IDictionary&lt;TKey, TValue&gt;</a>.</p>
+  <div class="markdown level1 summary"><p>Gets the cached, read-only live view of keys. Its enumerators fail fast on dictionary content changes.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -552,8 +586,7 @@ structure node. Must be &gt;= 2.</p>
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection</a>&lt;K&gt;</dt>
-    <dd><p>An <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a> containing the keys of the object that implements <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.idictionary-2">IDictionary&lt;TKey, TValue&gt;</a>.</p>
-</dd>
+    <dd></dd>
   </dl>
 
 
@@ -567,10 +600,10 @@ structure node. Must be &gt;= 2.</p>
 
   <h3 id="Utils_Collections_SkipListDictionary_2_Values" data-uid="Utils.Collections.SkipListDictionary`2.Values">
   Values
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L63"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L79"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets an <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a> containing the values in the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.idictionary-2">IDictionary&lt;TKey, TValue&gt;</a>.</p>
+  <div class="markdown level1 summary"><p>Gets the cached, read-only live view of values. Its enumerators fail fast on dictionary content changes.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -585,8 +618,7 @@ structure node. Must be &gt;= 2.</p>
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection</a>&lt;V&gt;</dt>
-    <dd><p>An <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a> containing the values in the object that implements <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.idictionary-2">IDictionary&lt;TKey, TValue&gt;</a>.</p>
-</dd>
+    <dd></dd>
   </dl>
 
 
@@ -604,7 +636,7 @@ structure node. Must be &gt;= 2.</p>
 
   <h3 id="Utils_Collections_SkipListDictionary_2_Add_System_Collections_Generic_KeyValuePair__0__1__" data-uid="Utils.Collections.SkipListDictionary`2.Add(System.Collections.Generic.KeyValuePair{`0,`1})">
   Add(KeyValuePair&lt;K, V&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L97"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L113"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Adds an item to the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a>.</p>
@@ -643,7 +675,7 @@ structure node. Must be &gt;= 2.</p>
 
   <h3 id="Utils_Collections_SkipListDictionary_2_Add__0__1_" data-uid="Utils.Collections.SkipListDictionary`2.Add(`0,`1)">
   Add(K, V)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L89"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L105"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Adds an element with the provided key and value to the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.idictionary-2">IDictionary&lt;TKey, TValue&gt;</a>.</p>
@@ -691,7 +723,7 @@ structure node. Must be &gt;= 2.</p>
 
   <h3 id="Utils_Collections_SkipListDictionary_2_Clear" data-uid="Utils.Collections.SkipListDictionary`2.Clear">
   Clear()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L139"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L155"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes all items from the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a>.</p>
@@ -724,7 +756,7 @@ structure node. Must be &gt;= 2.</p>
 
   <h3 id="Utils_Collections_SkipListDictionary_2_Contains_System_Collections_Generic_KeyValuePair__0__1__" data-uid="Utils.Collections.SkipListDictionary`2.Contains(System.Collections.Generic.KeyValuePair{`0,`1})">
   Contains(KeyValuePair&lt;K, V&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L107"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L123"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a> contains a specific value.</p>
@@ -763,7 +795,7 @@ structure node. Must be &gt;= 2.</p>
 
   <h3 id="Utils_Collections_SkipListDictionary_2_ContainsKey__0_" data-uid="Utils.Collections.SkipListDictionary`2.ContainsKey(`0)">
   ContainsKey(K)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L100"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L116"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.idictionary-2">IDictionary&lt;TKey, TValue&gt;</a> contains an element with the specified key.</p>
@@ -808,7 +840,7 @@ structure node. Must be &gt;= 2.</p>
 
   <h3 id="Utils_Collections_SkipListDictionary_2_CopyTo_System_Collections_Generic_KeyValuePair__0__1____System_Int32_" data-uid="Utils.Collections.SkipListDictionary`2.CopyTo(System.Collections.Generic.KeyValuePair{`0,`1}[],System.Int32)">
   CopyTo(KeyValuePair&lt;K, V&gt;[], int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L142"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L158"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Copies the elements of the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a> to an <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.array">Array</a>, starting at a particular <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.array">Array</a> index.</p>
@@ -856,7 +888,7 @@ structure node. Must be &gt;= 2.</p>
 
   <h3 id="Utils_Collections_SkipListDictionary_2_GetEnumerator" data-uid="Utils.Collections.SkipListDictionary`2.GetEnumerator">
   GetEnumerator()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L149"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L166"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns an enumerator that iterates through the collection.</p>
@@ -889,7 +921,7 @@ structure node. Must be &gt;= 2.</p>
 
   <h3 id="Utils_Collections_SkipListDictionary_2_Remove_System_Collections_Generic_KeyValuePair__0__1__" data-uid="Utils.Collections.SkipListDictionary`2.Remove(System.Collections.Generic.KeyValuePair{`0,`1})">
   Remove(KeyValuePair&lt;K, V&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L131"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L147"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes the first occurrence of a specific object from the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a>.</p>
@@ -934,7 +966,7 @@ structure node. Must be &gt;= 2.</p>
 
   <h3 id="Utils_Collections_SkipListDictionary_2_Remove__0_" data-uid="Utils.Collections.SkipListDictionary`2.Remove(`0)">
   Remove(K)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L124"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L140"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes the element with the specified key from the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.idictionary-2">IDictionary&lt;TKey, TValue&gt;</a>.</p>
@@ -982,7 +1014,7 @@ structure node. Must be &gt;= 2.</p>
 
   <h3 id="Utils_Collections_SkipListDictionary_2_TryGetValue__0__1__" data-uid="Utils.Collections.SkipListDictionary`2.TryGetValue(`0,`1@)">
   TryGetValue(K, out V)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L111"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L127"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the value associated with the specified key.</p>
@@ -1030,7 +1062,7 @@ structure node. Must be &gt;= 2.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L21" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipListDictionary.cs/#L23" class="edit-link">Edit this page</a>
         </div>
 
 

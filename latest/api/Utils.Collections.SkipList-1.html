@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Collections_SkipList_1" data-uid="Utils.Collections.SkipList`1" class="text-break">
-Class SkipList&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L19"><i class="bi bi-code-slash"></i></a>
+Class SkipList&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L22"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -294,7 +294,10 @@ Class SkipList&lt;T&gt;  <a class="header-action link-secondary" title="View sou
   <h2 id="Utils_Collections_SkipList_1_remarks">Remarks</h2>
   <div class="markdown level0 remarks"><p>Instance members are not thread-safe. Callers must synchronize access when the same instance is
 shared between threads, including access through lookup operations such as <a class="xref" href="Utils.Collections.SkipList-1.html#Utils_Collections_SkipList_1_Contains__0_">Contains(T)</a>
-and <a class="xref" href="Utils.Collections.SkipList-1.html#Utils_Collections_SkipList_1_TryGet__0__0__">TryGet(T, out T)</a>, because lookups may maintain the adaptive index.</p>
+and <a class="xref" href="Utils.Collections.SkipList-1.html#Utils_Collections_SkipList_1_TryGet__0__0__">TryGet(T, out T)</a>, because lookups may maintain the adaptive index.
+As with other comparer-based sorted collections, an inserted value must not be mutated in a way
+that changes its ordering or identity under <a class="xref" href="Utils.Collections.SkipList-1.html#Utils_Collections_SkipList_1_Comparer">Comparer</a>; doing so can invalidate the
+collection's logical organization.</p>
 </div>
 
 
@@ -306,7 +309,7 @@ and <a class="xref" href="Utils.Collections.SkipList-1.html#Utils_Collections_Sk
 
   <h3 id="Utils_Collections_SkipList_1__ctor" data-uid="Utils.Collections.SkipList`1.#ctor">
   SkipList()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L52"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L55"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Collections.SkipList-1.html">SkipList&lt;T&gt;</a> class
@@ -334,7 +337,7 @@ using the default comparer and a threshold of 10.</p>
 
   <h3 id="Utils_Collections_SkipList_1__ctor_System_Collections_Generic_IComparer__0__System_Int32_" data-uid="Utils.Collections.SkipList`1.#ctor(System.Collections.Generic.IComparer{`0},System.Int32)">
   SkipList(IComparer&lt;T&gt;, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L73"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L76"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Collections.SkipList-1.html">SkipList&lt;T&gt;</a> class
@@ -352,8 +355,8 @@ with the specified comparer and threshold.</p>
     <dd><p>The comparer to use when comparing elements.</p>
 </dd>
     <dt><code>threshold</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>The maximum number of nodes to traverse at a given level before forcing
-the creation of a structure node. Must be &gt;= 2.</p>
+    <dd><p>The number of consecutive unindexed nodes that may be traversed before a subsequent node becomes
+eligible for promotion. Must be &gt;= 2.</p>
 </dd>
   </dl>
 
@@ -372,7 +375,7 @@ the creation of a structure node. Must be &gt;= 2.</p>
 
   <h3 id="Utils_Collections_SkipList_1__ctor_System_Int32_" data-uid="Utils.Collections.SkipList`1.#ctor(System.Int32)">
   SkipList(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L62"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L65"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Collections.SkipList-1.html">SkipList&lt;T&gt;</a> class
@@ -387,7 +390,7 @@ with the specified threshold.</p>
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>threshold</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>The maximum distance at a given level before forcing the creation of a structure node.
+    <dd><p>The traversal count that must be exceeded before a subsequent node becomes eligible for promotion.
 Must be &gt;= 2.</p>
 </dd>
   </dl>
@@ -407,11 +410,43 @@ Must be &gt;= 2.</p>
 </h2>
 
 
+  <a id="Utils_Collections_SkipList_1_Comparer_" data-uid="Utils.Collections.SkipList`1.Comparer*"></a>
+
+  <h3 id="Utils_Collections_SkipList_1_Comparer" data-uid="Utils.Collections.SkipList`1.Comparer">
+  Comparer
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L93"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the comparer that defines element ordering and identity.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IComparer&lt;T&gt; Comparer { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icomparer-1">IComparer</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_Collections_SkipList_1_Count_" data-uid="Utils.Collections.SkipList`1.Count*"></a>
 
   <h3 id="Utils_Collections_SkipList_1_Count" data-uid="Utils.Collections.SkipList`1.Count">
   Count
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L85"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L88"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the number of elements contained in the skip list.</p>
@@ -443,7 +478,7 @@ Must be &gt;= 2.</p>
 
   <h3 id="Utils_Collections_SkipList_1_IsReadOnly" data-uid="Utils.Collections.SkipList`1.IsReadOnly">
   IsReadOnly
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L90"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L98"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a value indicating whether the skip list is read-only (always <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>).</p>
@@ -479,7 +514,7 @@ Must be &gt;= 2.</p>
 
   <h3 id="Utils_Collections_SkipList_1_Add__0_" data-uid="Utils.Collections.SkipList`1.Add(`0)">
   Add(T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L103"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L111"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Adds an element to the skip list at the appropriate position.
@@ -524,7 +559,7 @@ A comparer-equal element is treated as an existing element and is not inserted a
 
   <h3 id="Utils_Collections_SkipList_1_Clear" data-uid="Utils.Collections.SkipList`1.Clear">
   Clear()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L161"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L173"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes all elements from the skip list.</p>
@@ -551,7 +586,7 @@ A comparer-equal element is treated as an existing element and is not inserted a
 
   <h3 id="Utils_Collections_SkipList_1_Contains__0_" data-uid="Utils.Collections.SkipList`1.Contains(`0)">
   Contains(T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L178"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L190"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether the skip list contains a specific element.</p>
@@ -590,7 +625,7 @@ A comparer-equal element is treated as an existing element and is not inserted a
 
   <h3 id="Utils_Collections_SkipList_1_CopyTo__0___System_Int32_" data-uid="Utils.Collections.SkipList`1.CopyTo(`0[],System.Int32)">
   CopyTo(T[], int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L213"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L225"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Copies the elements of the skip list to an array, starting at a particular array index.</p>
@@ -626,7 +661,7 @@ A comparer-equal element is treated as an existing element and is not inserted a
 
   <h3 id="Utils_Collections_SkipList_1_GetEnumerator" data-uid="Utils.Collections.SkipList`1.GetEnumerator">
   GetEnumerator()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L269"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L281"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns an enumerator that iterates through the collection.</p>
@@ -659,7 +694,7 @@ A comparer-equal element is treated as an existing element and is not inserted a
 
   <h3 id="Utils_Collections_SkipList_1_Remove__0_" data-uid="Utils.Collections.SkipList`1.Remove(`0)">
   Remove(T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L226"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L239"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes a specific element from the skip list.</p>
@@ -698,7 +733,7 @@ A comparer-equal element is treated as an existing element and is not inserted a
 
   <h3 id="Utils_Collections_SkipList_1_TryGet__0__0__" data-uid="Utils.Collections.SkipList`1.TryGet(`0,`0@)">
   TryGet(T, out T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L196"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L208"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Searches for an element that compares equal to <code class="paramref">item</code> and returns
@@ -744,7 +779,7 @@ matched <code class="paramref">item</code>; otherwise the default value.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L19" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Collections/SkipList.cs/#L22" class="edit-link">Edit this page</a>
         </div>
 
 

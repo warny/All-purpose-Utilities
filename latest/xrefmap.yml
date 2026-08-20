@@ -3852,6 +3852,23 @@ references:
   fullName.vb: Utils.Collections.SkipListDictionary(Of K, V).Clear
   nameWithType: SkipListDictionary<K, V>.Clear
   nameWithType.vb: SkipListDictionary(Of K, V).Clear
+- uid: Utils.Collections.SkipListDictionary`2.Comparer
+  name: Comparer
+  href: api/Utils.Collections.SkipListDictionary-2.html#Utils_Collections_SkipListDictionary_2_Comparer
+  commentId: P:Utils.Collections.SkipListDictionary`2.Comparer
+  fullName: Utils.Collections.SkipListDictionary<K, V>.Comparer
+  fullName.vb: Utils.Collections.SkipListDictionary(Of K, V).Comparer
+  nameWithType: SkipListDictionary<K, V>.Comparer
+  nameWithType.vb: SkipListDictionary(Of K, V).Comparer
+- uid: Utils.Collections.SkipListDictionary`2.Comparer*
+  name: Comparer
+  href: api/Utils.Collections.SkipListDictionary-2.html#Utils_Collections_SkipListDictionary_2_Comparer_
+  commentId: Overload:Utils.Collections.SkipListDictionary`2.Comparer
+  isSpec: "True"
+  fullName: Utils.Collections.SkipListDictionary<K, V>.Comparer
+  fullName.vb: Utils.Collections.SkipListDictionary(Of K, V).Comparer
+  nameWithType: SkipListDictionary<K, V>.Comparer
+  nameWithType.vb: SkipListDictionary(Of K, V).Comparer
 - uid: Utils.Collections.SkipListDictionary`2.Contains(System.Collections.Generic.KeyValuePair{`0,`1})
   name: Contains(KeyValuePair<K, V>)
   href: api/Utils.Collections.SkipListDictionary-2.html#Utils_Collections_SkipListDictionary_2_Contains_System_Collections_Generic_KeyValuePair__0__1__
@@ -4133,6 +4150,23 @@ references:
   fullName.vb: Utils.Collections.SkipList(Of T).Clear
   nameWithType: SkipList<T>.Clear
   nameWithType.vb: SkipList(Of T).Clear
+- uid: Utils.Collections.SkipList`1.Comparer
+  name: Comparer
+  href: api/Utils.Collections.SkipList-1.html#Utils_Collections_SkipList_1_Comparer
+  commentId: P:Utils.Collections.SkipList`1.Comparer
+  fullName: Utils.Collections.SkipList<T>.Comparer
+  fullName.vb: Utils.Collections.SkipList(Of T).Comparer
+  nameWithType: SkipList<T>.Comparer
+  nameWithType.vb: SkipList(Of T).Comparer
+- uid: Utils.Collections.SkipList`1.Comparer*
+  name: Comparer
+  href: api/Utils.Collections.SkipList-1.html#Utils_Collections_SkipList_1_Comparer_
+  commentId: Overload:Utils.Collections.SkipList`1.Comparer
+  isSpec: "True"
+  fullName: Utils.Collections.SkipList<T>.Comparer
+  fullName.vb: Utils.Collections.SkipList(Of T).Comparer
+  nameWithType: SkipList<T>.Comparer
+  nameWithType.vb: SkipList(Of T).Comparer
 - uid: Utils.Collections.SkipList`1.Contains(`0)
   name: Contains(T)
   href: api/Utils.Collections.SkipList-1.html#Utils_Collections_SkipList_1_Contains__0_
