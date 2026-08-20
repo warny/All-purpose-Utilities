@@ -17,11 +17,15 @@ namespace Utils.Collections;
 /// Instance members are not thread-safe. Callers must synchronize access when the same instance is
 /// shared between threads, including lookup operations, because the underlying skip list may maintain
 /// its adaptive index during a lookup.
+/// Keys must not be mutated in a way that changes their ordering or identity under
+/// <see cref="Comparer"/>, because doing so can invalidate the dictionary's logical organization.
 /// </remarks>
 public class SkipListDictionary<K, V> : IDictionary<K, V>
     where K : notnull
 {
     private readonly SkipList<Entry> _skipList;
+    private readonly KeyCollection _keys;
+    private readonly ValueCollection _values;
 
     /// <summary>
     /// Initializes a new instance using the default key comparer and a threshold of 10.
@@ -47,7 +51,10 @@ public class SkipListDictionary<K, V> : IDictionary<K, V>
     /// </param>
     public SkipListDictionary(IComparer<K> keyComparer, int threshold = 10)
     {
-        _skipList = new SkipList<Entry>(new EntryComparer(keyComparer ?? throw new ArgumentNullException(nameof(keyComparer))), threshold);
+        Comparer = keyComparer ?? throw new ArgumentNullException(nameof(keyComparer));
+        _skipList = new SkipList<Entry>(new EntryComparer(Comparer), threshold);
+        _keys = new KeyCollection(this);
+        _values = new ValueCollection(this);
     }
 
     /// <inheritdoc />
@@ -56,11 +63,20 @@ public class SkipListDictionary<K, V> : IDictionary<K, V>
     /// <inheritdoc />
     public bool IsReadOnly => false;
 
-    /// <inheritdoc />
-    public ICollection<K> Keys => new KeyCollection(this);
+    /// <summary>
+    /// Gets the comparer that defines key ordering and identity.
+    /// </summary>
+    public IComparer<K> Comparer { get; }
 
-    /// <inheritdoc />
-    public ICollection<V> Values => new ValueCollection(this);
+    /// <summary>
+    /// Gets the cached, read-only live view of keys. Its enumerators fail fast on dictionary content changes.
+    /// </summary>
+    public ICollection<K> Keys => _keys;
+
+    /// <summary>
+    /// Gets the cached, read-only live view of values. Its enumerators fail fast on dictionary content changes.
+    /// </summary>
+    public ICollection<V> Values => _values;
 
     /// <inheritdoc />
     public V this[K key]
@@ -141,6 +157,7 @@ public class SkipListDictionary<K, V> : IDictionary<K, V>
     /// <inheritdoc />
     public void CopyTo(KeyValuePair<K, V>[] array, int arrayIndex)
     {
+        CollectionCopyValidation.Validate(array, arrayIndex, Count);
         foreach (var kvp in this)
             array[arrayIndex++] = kvp;
     }
@@ -224,6 +241,7 @@ public class SkipListDictionary<K, V> : IDictionary<K, V>
 
         public void CopyTo(K[] array, int arrayIndex)
         {
+            CollectionCopyValidation.Validate(array, arrayIndex, Count);
             foreach (var key in this) array[arrayIndex++] = key;
         }
 
@@ -249,6 +267,7 @@ public class SkipListDictionary<K, V> : IDictionary<K, V>
 
         public void CopyTo(V[] array, int arrayIndex)
         {
+            CollectionCopyValidation.Validate(array, arrayIndex, Count);
             foreach (var value in this) array[arrayIndex++] = value;
         }
 
