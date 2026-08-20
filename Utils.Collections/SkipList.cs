@@ -8,7 +8,7 @@ using System.Text;
 namespace Utils.Collections;
 
 /// <summary>
-/// Represents a skip list, which is a probabilistic data structure that allows for fast search, insertion, and deletion operations.
+/// Represents a deterministic adaptive skip list that supports fast search, insertion, and deletion operations.
 /// </summary>
 /// <typeparam name="T">The type of elements in the skip list.</typeparam>
 /// <remarks>

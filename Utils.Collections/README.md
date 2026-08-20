@@ -1,6 +1,6 @@
 # omy.Utils.Collections
 
-`omy.Utils.Collections` provides `SkipList<T>` — a probabilistic sorted collection with O(log n) average-case insertion, removal, and lookup.
+`omy.Utils.Collections` provides `SkipList<T>` — a deterministic adaptive sorted collection with O(log n) average-case insertion, removal, and lookup.
 
 ## Install
 
@@ -18,7 +18,7 @@ access externally whenever the same instance is shared between threads. This req
 to lookups such as `Contains` and `TryGet`, because lookups may maintain the adaptive index.
 
 ## Features
-- `SkipList<T>` — sorted `ICollection<T>` backed by a probabilistic skip structure.
+- `SkipList<T>` — sorted `ICollection<T>` backed by a deterministic adaptive skip structure. The adaptive index is maintained from traversal patterns and the configured threshold rather than random level assignment.
 - Configurable `threshold` to tune skip level density.
 - Custom `IComparer<T>` support.
 

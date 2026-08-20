@@ -36,7 +36,7 @@ Neither collection exposes the comparer defining ordering/key identity. `Keys` a
 
 ### COL-12 — Tests and package documentation do not yet prove the custom algorithm's contract
 
-The production XML summary still calls `SkipList<T>` "probabilistic" although construction/promotion is deterministic and adaptive. Test coverage needs reproducible seeds, invariant/model checks, mutation-during-enumeration coverage and promotion scenarios. Mutable comparer-relevant key state should be documented as the ordinary restriction of sorted/indexed collections.
+The README and production XML summary now describe `SkipList<T>` as deterministic and adaptive. Remaining test coverage needs reproducible seeds, invariant/model checks, mutation-during-enumeration coverage and promotion scenarios. Mutable comparer-relevant key state should be documented as the ordinary restriction of sorted/indexed collections.
 
 **Fix:** deterministic model/stress tests plus README/XML documentation aligned with the actual algorithm. Avoid strict timing assertions in normal unit tests; preserve historical timeout-sensitive workloads in an optional performance/stress job.
 
