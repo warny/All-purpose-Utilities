@@ -15,14 +15,17 @@ namespace Utils.Collections;
 /// Instance members are not thread-safe. Callers must synchronize access when the same instance is
 /// shared between threads, including access through lookup operations such as <see cref="Contains"/>
 /// and <see cref="TryGet"/>, because lookups may maintain the adaptive index.
+/// As with other comparer-based sorted collections, an inserted value must not be mutated in a way
+/// that changes its ordering or identity under <see cref="Comparer"/>; doing so can invalidate the
+/// collection's logical organization.
 /// </remarks>
 public class SkipList<T> : ICollection<T>
 {
     private readonly IComparer<T> comparer;
 
     /// <summary>
-    /// Maximum number of nodes we traverse at a given level before forcing a new
-    /// structure node to be created in the upper level (if the next node has no Up link).
+    /// Number of consecutive unindexed nodes that may be traversed before a subsequent node becomes
+    /// eligible for promotion (if that following node also has no Up link).
     /// </summary>
     private readonly int _threshold;
 
@@ -31,14 +34,14 @@ public class SkipList<T> : ICollection<T>
     /// Once we get to the bottom level (following Sub links), we can traverse horizontally
     /// to enumerate all items in ascending order.
     /// </summary>
-    private Element _firstElement;
+    private Element? _firstElement;
 
     /// <summary>
     /// Points to the rightmost element in the top level.
     /// Once we get to the bottom level (following Sub links), we can traverse horizontally
     /// leftwards or do other operations if needed.
     /// </summary>
-    private Element _lastElement;
+    private Element? _lastElement;
 
     /// <summary>
     /// Tracks changes to the logical bottom-level content, excluding adaptive index maintenance.
@@ -56,7 +59,7 @@ public class SkipList<T> : ICollection<T>
     /// with the specified threshold.
     /// </summary>
     /// <param name="threshold">
-    /// The maximum distance at a given level before forcing the creation of a structure node.
+    /// The traversal count that must be exceeded before a subsequent node becomes eligible for promotion.
     /// Must be &gt;= 2.
     /// </param>
     public SkipList(int threshold) : this(Comparer<T>.Default, threshold) { }
@@ -67,13 +70,13 @@ public class SkipList<T> : ICollection<T>
     /// </summary>
     /// <param name="comparer">The comparer to use when comparing elements.</param>
     /// <param name="threshold">
-    /// The maximum number of nodes to traverse at a given level before forcing
-    /// the creation of a structure node. Must be &gt;= 2.
+    /// The number of consecutive unindexed nodes that may be traversed before a subsequent node becomes
+    /// eligible for promotion. Must be &gt;= 2.
     /// </param>
     public SkipList(IComparer<T> comparer, int threshold = 10)
     {
         if (threshold < 2)
-            throw new ArgumentOutOfRangeException(nameof(threshold), "Density must be between 0.001 and 0.5.");
+            throw new ArgumentOutOfRangeException(nameof(threshold), "Threshold must be greater than or equal to 2.");
 
         this.comparer = comparer ?? throw new ArgumentNullException(nameof(comparer));
         this._threshold = threshold;
@@ -83,6 +86,11 @@ public class SkipList<T> : ICollection<T>
     /// Gets the number of elements contained in the skip list.
     /// </summary>
     public int Count { get; private set; }
+
+    /// <summary>
+    /// Gets the comparer that defines element ordering and identity.
+    /// </summary>
+    public IComparer<T> Comparer => comparer;
 
     /// <summary>
     /// Gets a value indicating whether the skip list is read-only (always <see langword="false"/>).
@@ -120,6 +128,10 @@ public class SkipList<T> : ICollection<T>
 
         if (elementBefore is null)
         {
+            if (elementAfter is null)
+            {
+                throw new InvalidOperationException("A non-empty list must provide an insertion boundary.");
+            }
             // add the new element before the first element
             elementAfter.InsertBefore(newElement);
 
@@ -212,6 +224,7 @@ public class SkipList<T> : ICollection<T>
     /// <param name="arrayIndex">The zero-based index in the destination array.</param>
     public void CopyTo(T[] array, int arrayIndex)
     {
+        CollectionCopyValidation.Validate(array, arrayIndex, Count);
         foreach (var item in this)
         {
             array[arrayIndex++] = item;
@@ -226,13 +239,12 @@ public class SkipList<T> : ICollection<T>
     public bool Remove(T item)
     {
         var (elementBefore, elementAfter) = FindElementPosition(item);
-        if (elementBefore is null || elementBefore != elementAfter) return false;
-        var element = elementBefore;
+        if (elementBefore is not Element element || !ReferenceEquals(element, elementAfter)) return false;
 
         if (element.Previous is null && element.Next is not null)
         {
             var next = element.Next;
-            for (var levelElement = element?.Up; levelElement != null; levelElement = levelElement.Up)
+            for (var levelElement = element.Up; levelElement != null; levelElement = levelElement.Up)
             {
                 next = next.CreateUp(levelElement, levelElement.Next);
             }
@@ -241,7 +253,7 @@ public class SkipList<T> : ICollection<T>
         else if (element.Next is null && element.Previous is not null)
         {
             var previous = element.Previous;
-            for (var levelElement = element?.Up; levelElement != null; levelElement = levelElement.Up)
+            for (var levelElement = element.Up; levelElement != null; levelElement = levelElement.Up)
             {
                 previous = previous.CreateUp(levelElement.Previous, levelElement);
             }
@@ -252,8 +264,8 @@ public class SkipList<T> : ICollection<T>
         {
             _firstElement = _firstElement.Sub;
             _lastElement = _lastElement.Sub;
-            _firstElement.Up.Remove();
-            _lastElement.Up.Remove();
+            _firstElement.Up?.Remove();
+            _lastElement.Up?.Remove();
         }
         Count--;
         _version++;
@@ -296,13 +308,13 @@ public class SkipList<T> : ICollection<T>
 
         StringBuilder signature = new();
         int level = 0;
-        for (Element first = _firstElement; first is not null; first = first.Sub)
+        for (Element? first = _firstElement; first is not null; first = first.Sub)
         {
             if (level++ > 0)
             {
                 signature.Append('|');
             }
-            for (Element node = first; node is not null; node = node.Next)
+            for (Element? node = first; node is not null; node = node.Next)
             {
                 Element bottom = node;
                 while (bottom.Sub is not null)
@@ -354,7 +366,7 @@ public class SkipList<T> : ICollection<T>
 
         Element first = _firstElement;
         Element last = _lastElement;
-        HashSet<Element> upperLevel = null;
+        HashSet<Element>? upperLevel = null;
         HashSet<Element> allReachableNodes = new(ReferenceEqualityComparer.Instance);
         int depth = 0;
 
@@ -400,7 +412,7 @@ public class SkipList<T> : ICollection<T>
     /// <param name="allReachableNodes">The identity set of nodes already reached from the root boundaries.</param>
     /// <param name="depth">The zero-based depth used in diagnostic messages.</param>
     /// <returns>The identity set containing every node in the validated level.</returns>
-    private HashSet<Element> ValidateLevel(Element first, Element last, HashSet<Element> upperLevel,
+    private HashSet<Element> ValidateLevel(Element first, Element last, HashSet<Element>? upperLevel,
         HashSet<Element> allReachableNodes, int depth)
     {
         if (first.Previous is not null || last.Next is not null)
@@ -409,8 +421,8 @@ public class SkipList<T> : ICollection<T>
         }
 
         HashSet<Element> level = new(ReferenceEqualityComparer.Instance);
-        Element previous = null;
-        for (Element node = first; node is not null; node = node.Next)
+        Element? previous = null;
+        for (Element? node = first; node is not null; node = node.Next)
         {
             if (!level.Add(node))
             {
@@ -449,7 +461,7 @@ public class SkipList<T> : ICollection<T>
         {
             throw new InvalidOperationException($"Right boundary is not reachable from the left boundary at level {depth}.");
         }
-        if (upperLevel is not null && upperLevel.Any(node => !level.Contains(node.Sub)))
+        if (upperLevel is not null && upperLevel.Any(node => node.Sub is null || !level.Contains(node.Sub)))
         {
             throw new InvalidOperationException($"An upper node points outside the reachable level {depth}.");
         }
@@ -462,7 +474,7 @@ public class SkipList<T> : ICollection<T>
     /// <param name="node">The node whose vertical links are validated.</param>
     /// <param name="upperLevel">The reachable nodes in the level immediately above, or <see langword="null"/> for the top.</param>
     /// <param name="depth">The zero-based depth used in diagnostic messages.</param>
-    private void ValidateVerticalLinks(Element node, HashSet<Element> upperLevel, int depth)
+    private void ValidateVerticalLinks(Element node, HashSet<Element>? upperLevel, int depth)
     {
         if (node.Up == node || node.Sub == node)
         {
@@ -498,15 +510,15 @@ public class SkipList<T> : ICollection<T>
     /// a match for 'value'. If 'ElementBefore' is null =&gt; insertion is at the front.
     /// If 'ElementAfter' is null =&gt; insertion is at the end.
     /// </summary>
-    private (Element ElementBefore, Element ElementAfter) FindElementPosition(T value)
+    private (Element? ElementBefore, Element? ElementAfter) FindElementPosition(T value)
     {
-        Element startElement = _firstElement;
-        Element endElement = _lastElement;
+        Element? startElement = _firstElement;
+        Element? endElement = _lastElement;
         List<MaintenancePlan>? maintenancePlans = null;
 
         while (true)
         {
-            (Element before, Element after, MaintenancePlan? plan) = FindElementPositionAtLevel(startElement, endElement, value);
+            (Element? before, Element? after, MaintenancePlan? plan) = FindElementPositionAtLevel(startElement, endElement, value);
             if (plan is not null)
             {
                 maintenancePlans ??= [];
@@ -530,22 +542,22 @@ public class SkipList<T> : ICollection<T>
     /// the two nodes that sandwich 'value'. If 'value' matches one node's Value,
     /// that node is returned in both 'ElementBefore' and 'ElementAfter'.
     /// 
-    /// Along the way, if we traverse more than 'threshold' nodes
-    /// without encountering a skip node, we create a new skip node in the upper level.
+    /// Along the way, after the traversal counter exceeds 'threshold' without encountering an indexed
+    /// node, the subsequent eligible node is planned for promotion into the upper level.
     /// </summary>
-    private (Element ElementBefore, Element ElementAfter, MaintenancePlan? Plan) FindElementPositionAtLevel(Element startElement, Element endElement, T value)
+    private (Element? ElementBefore, Element? ElementAfter, MaintenancePlan? Plan) FindElementPositionAtLevel(Element? startElement, Element? endElement, T value)
     {
         if (startElement == null) return (startElement, endElement, null);
 
-        Element currentElement;
-        Element previousElement = startElement?.Previous;
+        Element? currentElement;
+        Element? previousElement = startElement.Previous;
         int counter = 0;
-        List<Element> candidates = null;
+        List<Element>? candidates = null;
 
         for (currentElement = startElement; currentElement != null; currentElement = currentElement.Next)
         {
             if (currentElement.Up is not null) counter = 0;
-            if (counter > _threshold && currentElement.Next is not null && currentElement.Next?.Up is null)
+            if (counter > _threshold && currentElement.Next is not null && currentElement.Next.Up is null)
             {
                 candidates ??= [];
                 candidates.Add(currentElement);
@@ -580,7 +592,7 @@ public class SkipList<T> : ICollection<T>
 
         foreach (MaintenancePlan plan in plans)
         {
-            Element lastUpperNode = plan.StartElement.Up;
+            Element? lastUpperNode = plan.StartElement.Up;
             foreach (Element candidate in plan.Candidates)
             {
                 lastUpperNode = CreateNewSkipNode(plan.StartElement, plan.EndElement, candidate, lastUpperNode);
@@ -588,16 +600,21 @@ public class SkipList<T> : ICollection<T>
         }
     }
 
-    private Element CreateNewSkipNode(Element startElement, Element endElement, Element currentElement, Element lastUpperNode)
+    private Element CreateNewSkipNode(Element startElement, Element? endElement, Element currentElement, Element? lastUpperNode)
     {
-        Element previousUp, nextUp;
+        Element previousUp;
+        Element? nextUp;
 
         if (startElement.Up is null)
         {
             // create new upper level
-            previousUp = _firstElement.CreateUp(null, null);
+            Element firstElement = _firstElement
+                ?? throw new InvalidOperationException("Adaptive maintenance requires a left root boundary.");
+            Element lastElement = _lastElement
+                ?? throw new InvalidOperationException("Adaptive maintenance requires a right root boundary.");
+            previousUp = firstElement.CreateUp(null, null);
             _firstElement = previousUp;
-            nextUp = _lastElement.CreateUp(null, null);
+            nextUp = lastElement.CreateUp(null, null);
             _lastElement = nextUp;
             _firstElement.InsertAfter(_lastElement);
         }
@@ -605,7 +622,7 @@ public class SkipList<T> : ICollection<T>
         {
             // use lastUpperNode as left anchor to avoid overwriting links from previously created skip nodes
             previousUp = lastUpperNode ?? startElement.Up;
-            nextUp = endElement.Up;
+            nextUp = endElement?.Up;
         }
         return currentElement.CreateUp(previousUp, nextUp);
     }
@@ -630,7 +647,7 @@ public class SkipList<T> : ICollection<T>
         /// <param name="startElement">The left search boundary at this level.</param>
         /// <param name="endElement">The right search boundary at this level.</param>
         /// <param name="candidates">Nodes to promote in traversal order.</param>
-        public MaintenancePlan(Element startElement, Element endElement, List<Element> candidates)
+        public MaintenancePlan(Element startElement, Element? endElement, List<Element> candidates)
         {
             StartElement = startElement;
             EndElement = endElement;
@@ -641,7 +658,7 @@ public class SkipList<T> : ICollection<T>
         public Element StartElement { get; }
 
         /// <summary>Gets the right search boundary.</summary>
-        public Element EndElement { get; }
+        public Element? EndElement { get; }
 
         /// <summary>Gets nodes to promote in traversal order.</summary>
         public List<Element> Candidates { get; }
@@ -718,10 +735,10 @@ public class SkipList<T> : ICollection<T>
     private sealed class Element
     {
         public T Value { get; }
-        public Element Next { get; private set; } = null;
-        public Element Previous { get; private set; } = null;
-        public Element Sub { get; private set; } = null;
-        public Element Up { get; private set; } = null;
+        public Element? Next { get; private set; }
+        public Element? Previous { get; private set; }
+        public Element? Sub { get; private set; }
+        public Element? Up { get; private set; }
 
         public Element(T value)
         {
@@ -768,7 +785,7 @@ public class SkipList<T> : ICollection<T>
             element.Next = this;
         }
 
-        public Element CreateUp(Element elementBefore, Element elementAfter)
+        public Element CreateUp(Element? elementBefore, Element? elementAfter)
         {
             if (Up is not null) return Up;
             Element element = new(Value, this);

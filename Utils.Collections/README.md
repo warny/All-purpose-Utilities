@@ -22,6 +22,10 @@ to lookups such as `Contains` and `TryGet`, because lookups may maintain the ada
 - Configurable `threshold` to tune skip level density.
 - Custom `IComparer<T>` support.
 
+Like other comparer-based sorted collections, stored values and dictionary keys must not be mutated
+in a way that changes their ordering or identity under the configured comparer. Such a mutation can
+invalidate the collection's logical organization.
+
 ## Quick usage
 
 ```csharp
