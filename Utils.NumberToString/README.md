@@ -836,6 +836,9 @@ on the same language register the same converter under several codes.
 the differences. The base must appear earlier in the same file or in a previously loaded file.
 Inheritance chains (A → B → C) are fully supported.
 
+Definitions loaded by `ReadConfiguration` can be reused by later `ReadConfiguration` calls, but
+they are not globally registered converters and are not visible to `RegisterConfigurations`.
+
 ```xml
 <!-- Standard German -->
 <Language groupSize="3" …>

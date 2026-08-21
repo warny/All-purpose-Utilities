@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Threading;
+using System.Xml;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.NumberToString;
 
@@ -103,6 +104,169 @@ public class NumberToStringReviewTests
         Assert.AreEqual("replacement", NumberToStringConverter.GetConverter(culture).Zero);
     }
 
+    /// <summary>Verifies that reading a configuration returns but does not register its converter.</summary>
+    [TestMethod]
+    public void ReadConfiguration_DoesNotPublishConverter()
+    {
+        string culture = "READ-CONVERTER-" + Guid.NewGuid().ToString("N");
+
+        var converters = NumberToStringConverter.ReadConfiguration(CreateConfiguration(culture, "read"));
+
+        Assert.IsTrue(converters.ContainsKey(culture));
+        Assert.IsFalse(NumberToStringConverter.TryGetConverter(culture, out _));
+    }
+
+    /// <summary>Verifies that a previously read definition remains available to later reads.</summary>
+    [TestMethod]
+    public void ReadConfiguration_PreviouslyReadDefinitionCanBeUsedAsBase()
+    {
+        string baseCulture = "READ-BASE-" + Guid.NewGuid().ToString("N");
+        string childCulture = "READ-CHILD-" + Guid.NewGuid().ToString("N");
+        NumberToStringConverter.ReadConfiguration(CreateConfiguration(baseCulture, "read"));
+
+        var converters = NumberToStringConverter.ReadConfiguration(CreateChildConfiguration(childCulture, baseCulture));
+
+        Assert.AreEqual("read", converters[childCulture].Zero);
+    }
+
+    /// <summary>Verifies that a read definition is isolated from the registration registry.</summary>
+    [TestMethod]
+    public void ReadConfiguration_DefinitionIsNotVisibleToRegistration()
+    {
+        string baseCulture = "READ-ISOLATED-BASE-" + Guid.NewGuid().ToString("N");
+        string childCulture = "READ-ISOLATED-CHILD-" + Guid.NewGuid().ToString("N");
+        NumberToStringConverter.ReadConfiguration(CreateConfiguration(baseCulture, "read"));
+
+        var exception = Assert.ThrowsException<InvalidOperationException>(() =>
+            NumberToStringConverter.RegisterConfigurations([CreateChildConfiguration(childCulture, baseCulture)]));
+
+        StringAssert.Contains(exception.Message, "was not found");
+        Assert.IsFalse(NumberToStringConverter.TryGetConverter(baseCulture, out _));
+        Assert.IsFalse(NumberToStringConverter.TryGetConverter(childCulture, out _));
+    }
+
+    /// <summary>Verifies that a failed read publishes none of its otherwise valid definitions.</summary>
+    [TestMethod]
+    public void ReadConfiguration_InvalidDocumentDoesNotPublishDefinitions()
+    {
+        string baseCulture = "READ-INVALID-BASE-" + Guid.NewGuid().ToString("N");
+        string invalidCulture = "READ-INVALID-LANGUAGE-" + Guid.NewGuid().ToString("N");
+        string childCulture = "READ-INVALID-CHILD-" + Guid.NewGuid().ToString("N");
+        string invalidDocument = CreateConfiguration(baseCulture, "valid").Replace(
+            "</Numbers>",
+            $"<Language><Culture>{invalidCulture}</Culture></Language></Numbers>",
+            StringComparison.Ordinal);
+
+        Assert.ThrowsException<InvalidOperationException>(() =>
+            NumberToStringConverter.ReadConfiguration(invalidDocument));
+        Assert.ThrowsException<InvalidOperationException>(() =>
+            NumberToStringConverter.ReadConfiguration(CreateChildConfiguration(childCulture, baseCulture)));
+    }
+
+    /// <summary>Verifies that KeepExisting resolves a child against the registered definition.</summary>
+    [TestMethod]
+    public void RegisterConfigurations_KeepExisting_ChildUsesExistingGlobalBaseDefinition()
+    {
+        string baseCulture = "KEEP-BASE-" + Guid.NewGuid().ToString("N");
+        string childCulture = "KEEP-CHILD-" + Guid.NewGuid().ToString("N");
+        NumberToStringConverter.RegisterConfigurations([CreateConfiguration(baseCulture, "existing")]);
+
+        NumberToStringConverter.RegisterConfigurations(
+            [CreateConfiguration(baseCulture, "candidate"), CreateChildConfiguration(childCulture, baseCulture)],
+            DuplicateCulturePolicy.KeepExisting);
+
+        Assert.AreEqual("existing", NumberToStringConverter.GetConverter(baseCulture).Zero);
+        Assert.AreEqual("existing", NumberToStringConverter.GetConverter(childCulture).Zero);
+    }
+
+    /// <summary>Verifies that KeepExisting makes the first definition in a batch authoritative.</summary>
+    [TestMethod]
+    public void RegisterConfigurations_KeepExisting_EarlierBatchDefinitionRemainsAuthoritative()
+    {
+        string baseCulture = "KEEP-BATCH-BASE-" + Guid.NewGuid().ToString("N");
+        string childCulture = "KEEP-BATCH-CHILD-" + Guid.NewGuid().ToString("N");
+        string secondDocument = CreateConfiguration(baseCulture, "second").Replace(
+            "</Numbers>",
+            $"<Language baseOn=\"{baseCulture}\"><Culture>{childCulture}</Culture></Language></Numbers>",
+            StringComparison.Ordinal);
+
+        NumberToStringConverter.RegisterConfigurations(
+            [CreateConfiguration(baseCulture, "first"), secondDocument],
+            DuplicateCulturePolicy.KeepExisting);
+
+        Assert.AreEqual("first", NumberToStringConverter.GetConverter(baseCulture).Zero);
+        Assert.AreEqual("first", NumberToStringConverter.GetConverter(childCulture).Zero);
+    }
+
+    /// <summary>Verifies multi-base inheritance uses the effective global and batch definitions.</summary>
+    [TestMethod]
+    public void RegisterConfigurations_KeepExisting_MultipleBasesUseEffectiveDefinitions()
+    {
+        string cultureA = "KEEP-MULTI-A-" + Guid.NewGuid().ToString("N");
+        string cultureB = "KEEP-MULTI-B-" + Guid.NewGuid().ToString("N");
+        string childCulture = "KEEP-MULTI-CHILD-" + Guid.NewGuid().ToString("N");
+        NumberToStringConverter.RegisterConfigurations([CreateConfiguration(cultureA, "existing-a")]);
+        string baseB = $"<Numbers xmlns=\"Utils/NumberConvertionConfiguration.xsd\"><Language baseOn=\"{cultureA}\" minus=\"minus-b *\"><Culture>{cultureB}</Culture></Language></Numbers>";
+        string child = $"<Numbers xmlns=\"Utils/NumberConvertionConfiguration.xsd\"><Language baseOn=\"{cultureA}, {cultureB}\"><Culture>{childCulture}</Culture></Language></Numbers>";
+
+        NumberToStringConverter.RegisterConfigurations(
+            [CreateConfiguration(cultureA, "candidate-a"), baseB, child],
+            DuplicateCulturePolicy.KeepExisting);
+
+        NumberToStringConverter converter = NumberToStringConverter.GetConverter(childCulture);
+        Assert.AreEqual("existing-a", converter.Zero);
+        Assert.AreEqual("minus-b *", converter.Minus);
+    }
+
+    /// <summary>Verifies that Replace resolves a child against the replacement definition.</summary>
+    [TestMethod]
+    public void RegisterConfigurations_Replace_ChildUsesReplacementBaseDefinition()
+    {
+        string baseCulture = "REPLACE-BASE-" + Guid.NewGuid().ToString("N");
+        string childCulture = "REPLACE-CHILD-" + Guid.NewGuid().ToString("N");
+        NumberToStringConverter.RegisterConfigurations([CreateConfiguration(baseCulture, "existing")]);
+
+        NumberToStringConverter.RegisterConfigurations(
+            [CreateConfiguration(baseCulture, "replacement"), CreateChildConfiguration(childCulture, baseCulture)],
+            DuplicateCulturePolicy.Replace);
+
+        Assert.AreEqual("replacement", NumberToStringConverter.GetConverter(baseCulture).Zero);
+        Assert.AreEqual("replacement", NumberToStringConverter.GetConverter(childCulture).Zero);
+    }
+
+    /// <summary>Verifies that Reject publishes neither converters nor hidden definitions after a collision.</summary>
+    [TestMethod]
+    public void RegisterConfigurations_Reject_CollisionPublishesNothing()
+    {
+        string collisionCulture = "REJECT-BASE-" + Guid.NewGuid().ToString("N");
+        string stagedCulture = "REJECT-STAGED-" + Guid.NewGuid().ToString("N");
+        string probeCulture = "REJECT-PROBE-" + Guid.NewGuid().ToString("N");
+        NumberToStringConverter.RegisterConfigurations([CreateConfiguration(collisionCulture, "existing")]);
+
+        Assert.ThrowsException<InvalidOperationException>(() => NumberToStringConverter.RegisterConfigurations(
+            [CreateConfiguration(stagedCulture, "staged"), CreateConfiguration(collisionCulture, "candidate")]));
+
+        Assert.IsFalse(NumberToStringConverter.TryGetConverter(stagedCulture, out _));
+        Assert.ThrowsException<InvalidOperationException>(() =>
+            NumberToStringConverter.RegisterConfigurations([CreateChildConfiguration(probeCulture, stagedCulture)]));
+        Assert.IsFalse(NumberToStringConverter.TryGetConverter(probeCulture, out _));
+    }
+
+    /// <summary>Verifies that an invalid multi-document batch leaves no converter or base definition.</summary>
+    [TestMethod]
+    public void RegisterConfigurations_InvalidBatchPublishesNoDefinitions()
+    {
+        string validCulture = "INVALID-STAGED-" + Guid.NewGuid().ToString("N");
+        string probeCulture = "INVALID-PROBE-" + Guid.NewGuid().ToString("N");
+
+        Assert.ThrowsException<XmlException>(() => NumberToStringConverter.RegisterConfigurations(
+            [CreateConfiguration(validCulture, "valid"), "<Numbers>"]));
+
+        Assert.IsFalse(NumberToStringConverter.TryGetConverter(validCulture, out _));
+        Assert.ThrowsException<InvalidOperationException>(() =>
+            NumberToStringConverter.RegisterConfigurations([CreateChildConfiguration(probeCulture, validCulture)]));
+    }
+
     /// <summary>Verifies that a child in a replacing document inherits that document's replacement base.</summary>
     [TestMethod]
     public void RegisterConfigurations_ReplaceUsesCurrentDocumentBaseForChild()
@@ -186,6 +350,10 @@ public class NumberToStringReviewTests
     /// <summary>Creates a complete bounded configuration document.</summary>
     private static string CreateConfiguration(string culture, string zero, string? specifics = null)
         => $"<Numbers xmlns=\"Utils/NumberConvertionConfiguration.xsd\">{CreateLanguage(culture, zero, specifics)}</Numbers>";
+
+    /// <summary>Creates a configuration containing one language that inherits a registered base.</summary>
+    private static string CreateChildConfiguration(string culture, string baseCulture)
+        => $"<Numbers xmlns=\"Utils/NumberConvertionConfiguration.xsd\"><Language baseOn=\"{baseCulture}\"><Culture>{culture}</Culture></Language></Numbers>";
 
     /// <summary>Creates one complete bounded language element.</summary>
     private static string CreateLanguage(string culture, string zero, string? specifics)

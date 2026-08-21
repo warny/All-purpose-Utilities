@@ -133,6 +133,10 @@ namespace Utils.NumberToString
         // document still sees which fields the base declared explicitly versus inherited.
         private static readonly ConcurrentDictionary<string, LanguageDefinition> _cachedLanguageTypes = new(StringComparer.OrdinalIgnoreCase);
 
+        // Stores definitions produced by successful ReadConfiguration calls. This compatibility
+        // cache supports later reads without exposing those definitions to registration paths.
+        private static readonly ConcurrentDictionary<string, LanguageDefinition> _readConfigurationDefinitions = new(StringComparer.OrdinalIgnoreCase);
+
         /// <summary>
         /// Initializes built-in documents sequentially and atomically per document. Successful
         /// documents become bases for later <c>baseOn</c> references, while ordinary configuration
@@ -158,7 +162,6 @@ namespace Utils.NumberToString
                     string configuration = source.ConfigurationFactory();
                     ConfigurationBatch batch = BuildConfiguration(
                         configuration,
-                        commitDefinitions: false,
                         definitions,
                         ConfigurationSchemaValidation.Skip,
                         definitions);
@@ -250,7 +253,13 @@ namespace Utils.NumberToString
         public static void RegisterConfigurations(IEnumerable<string> configs)
             => RegisterConfigurations(configs, DuplicateCulturePolicy.Reject);
 
-        /// <summary>Atomically registers configuration documents using an explicit collision policy.</summary>
+        /// <summary>
+        /// Atomically registers configuration documents using an explicit collision policy.
+        /// <see cref="DuplicateCulturePolicy.Reject"/> rejects the whole batch on a collision,
+        /// <see cref="DuplicateCulturePolicy.KeepExisting"/> keeps both the existing converter and
+        /// its definition authoritative, and <see cref="DuplicateCulturePolicy.Replace"/> publishes
+        /// the candidate converter and definition.
+        /// </summary>
         /// <param name="configs">The XML documents to register.</param>
         /// <param name="duplicateCulturePolicy">The collision policy.</param>
         public static void RegisterConfigurations(IEnumerable<string> configs, DuplicateCulturePolicy duplicateCulturePolicy)
@@ -269,22 +278,37 @@ namespace Utils.NumberToString
             {
                 var converters = new Dictionary<string, NumberToStringConverter>(StringComparer.OrdinalIgnoreCase);
                 var definitions = new Dictionary<string, LanguageDefinition>(StringComparer.OrdinalIgnoreCase);
+                Dictionary<string, LanguageDefinition>? authoritativeBaseDefinitions = null;
+                if (duplicateCulturePolicy == DuplicateCulturePolicy.KeepExisting)
+                {
+                    authoritativeBaseDefinitions = new Dictionary<string, LanguageDefinition>(StringComparer.OrdinalIgnoreCase);
+                    foreach (string culture in CachedConfigurations.Keys)
+                        if (_cachedLanguageTypes.TryGetValue(culture, out LanguageDefinition? definition))
+                            authoritativeBaseDefinitions.Add(culture, definition);
+                }
                 foreach (var configuration in configs)
                 {
-                    var batch = BuildConfiguration(configuration, commitDefinitions: false, definitions, schemaValidation);
+                    var batch = BuildConfiguration(
+                        configuration,
+                        definitions,
+                        schemaValidation,
+                        authoritativeBaseDefinitions: authoritativeBaseDefinitions);
                     foreach (var language in batch.Converters)
                     {
-                        if (converters.TryAdd(language.Key, language.Value)) continue;
+                        if (converters.TryAdd(language.Key, language.Value))
+                        {
+                            LanguageDefinition definition = batch.Definitions[language.Key];
+                            definitions.Add(language.Key, definition);
+                            authoritativeBaseDefinitions?.TryAdd(language.Key, definition);
+                            continue;
+                        }
                         if (duplicateCulturePolicy == DuplicateCulturePolicy.Reject)
                             throw new InvalidOperationException($"Duplicate normalized culture '{language.Key}' in configuration batch.");
                         if (duplicateCulturePolicy == DuplicateCulturePolicy.Replace)
+                        {
                             converters[language.Key] = language.Value;
-                    }
-                    foreach (var definition in batch.Definitions)
-                    {
-                        if (definitions.TryAdd(definition.Key, definition.Value)) continue;
-                        if (duplicateCulturePolicy == DuplicateCulturePolicy.Replace)
-                            definitions[definition.Key] = definition.Value;
+                            definitions[language.Key] = batch.Definitions[language.Key];
+                        }
                     }
                 }
 
@@ -305,28 +329,44 @@ namespace Utils.NumberToString
         private static string NormalizeCulture(string culture) => culture.Trim();
 
         /// <summary>
-        /// Parses a configuration document into converter instances keyed by culture name.
-        /// Proceeds in three phases to guarantee atomicity:
+        /// Parses and builds converter instances keyed by culture name without registering them in
+        /// the global converter registry. Proceeds in two phases to guarantee atomicity:
         /// <list type="number">
         ///   <item><description>Resolve all <c>baseOn</c> inheritance chains (throws on cycle or missing base — nothing is committed).</description></item>
         ///   <item><description>Build converters from the resolved definitions (throws on invalid config — nothing is committed).</description></item>
-        ///   <item><description>Commit all resolved types to <see cref="_cachedLanguageTypes"/> for cross-document inheritance.</description></item>
         /// </list>
-        /// If any phase throws, no partial state is published to the shared caches.
+        /// Successfully read definitions may be reused by subsequent <see cref="ReadConfiguration"/>
+        /// calls for cross-document inheritance, but are not visible to <see cref="RegisterConfigurations(IEnumerable{string})"/>.
+        /// Definition resolution and publication are serialized with registration so a complete
+        /// document becomes visible to later reads atomically.
         /// </summary>
         /// <param name="configuration">The XML configuration document.</param>
         /// <returns>A dictionary mapping culture names to converters.</returns>
         public static Dictionary<string, NumberToStringConverter> ReadConfiguration(string configuration)
         {
-            var batch = BuildConfiguration(configuration, commitDefinitions: true, schemaValidation: ConfigurationSchemaValidation.Validate);
-            return batch.Converters;
+            lock (ConfigurationLock)
+            {
+                var previouslyLoadedDefinitions = new Dictionary<string, LanguageDefinition>(
+                    _cachedLanguageTypes,
+                    StringComparer.OrdinalIgnoreCase);
+                foreach (var definition in _readConfigurationDefinitions)
+                    previouslyLoadedDefinitions[definition.Key] = definition.Value;
+
+                ConfigurationBatch batch = BuildConfiguration(
+                    configuration,
+                    schemaValidation: ConfigurationSchemaValidation.Validate,
+                    previouslyLoadedDefinitions: previouslyLoadedDefinitions);
+                foreach (var definition in batch.Definitions)
+                    _readConfigurationDefinitions.TryAdd(definition.Key, definition.Value);
+                return batch.Converters;
+            }
         }
 
         /// <summary>Builds a configuration with an explicit schema policy for unit verification.</summary>
         /// <param name="configuration">The XML configuration document.</param>
         /// <param name="schemaValidation">The schema-validation policy.</param>
         internal static void BuildConfigurationForTesting(string configuration, ConfigurationSchemaValidation schemaValidation)
-            => BuildConfiguration(configuration, commitDefinitions: false, schemaValidation: schemaValidation);
+            => BuildConfiguration(configuration, schemaValidation: schemaValidation);
 
         /// <summary>Validates and deserializes one document without running cross-document semantic resolution.</summary>
         /// <param name="configuration">The XML configuration document.</param>
@@ -426,10 +466,10 @@ namespace Utils.NumberToString
         /// <summary>Builds one configuration document without publishing converters.</summary>
         private static ConfigurationBatch BuildConfiguration(
             string configuration,
-            bool commitDefinitions,
             IReadOnlyDictionary<string, LanguageDefinition>? inheritedBatchDefinitions = null,
             ConfigurationSchemaValidation schemaValidation = ConfigurationSchemaValidation.Validate,
-            IReadOnlyDictionary<string, LanguageDefinition>? previouslyLoadedDefinitions = null)
+            IReadOnlyDictionary<string, LanguageDefinition>? previouslyLoadedDefinitions = null,
+            IReadOnlyDictionary<string, LanguageDefinition>? authoritativeBaseDefinitions = null)
         {
             NumbersXmlModel obj = DeserializeConfiguration(configuration, schemaValidation);
 
@@ -474,6 +514,7 @@ namespace Utils.NumberToString
                         docLanguages,
                         localCacheAdditions,
                         previouslyLoadedDefinitions ?? _cachedLanguageTypes,
+                        authoritativeBaseDefinitions,
                         new HashSet<string>(StringComparer.OrdinalIgnoreCase),
                         new List<string>());
                 }
@@ -508,13 +549,6 @@ namespace Utils.NumberToString
                 }
             }
 
-            // Phase 3 — all converters built successfully; commit resolved definitions to the global cache.
-            if (commitDefinitions)
-                lock (ConfigurationLock)
-                    foreach (var resolved in resolvedDefinitions)
-                        foreach (var culture in resolved.Cultures)
-                            _cachedLanguageTypes.TryAdd(NormalizeCulture(culture), resolved);
-
             return new ConfigurationBatch(result, currentDefinitions);
         }
 
@@ -546,6 +580,8 @@ namespace Utils.NumberToString
         /// <param name="child">The language to resolve.</param>
         /// <param name="docLanguages">All raw (unresolved) languages in the current document.</param>
         /// <param name="localCache">Resolved languages accumulated so far within this document.</param>
+        /// <param name="previouslyLoadedDefinitions">Definitions registered before this document.</param>
+        /// <param name="authoritativeBaseDefinitions">Effective definitions that must take priority over later batch candidates.</param>
         /// <param name="visiting">Culture keys currently on the resolution stack (cycle detection).</param>
         /// <param name="resolutionPath">Ordered list of keys on the stack (for error messages).</param>
         /// <returns>A fully resolved <see cref="LanguageType"/> with all inherited settings merged in.</returns>
@@ -554,6 +590,7 @@ namespace Utils.NumberToString
             IReadOnlyDictionary<string, LanguageDefinition> docLanguages,
             IReadOnlyDictionary<string, LanguageDefinition> localCache,
             IReadOnlyDictionary<string, LanguageDefinition> previouslyLoadedDefinitions,
+            IReadOnlyDictionary<string, LanguageDefinition>? authoritativeBaseDefinitions,
             HashSet<string> visiting,
             List<string> resolutionPath)
         {
@@ -582,7 +619,8 @@ namespace Utils.NumberToString
                     foreach (var baseKey in baseKeys)
                     {
                         LanguageDefinition resolvedBase = FindAndResolveBase(
-                            baseKey, docLanguages, localCache, previouslyLoadedDefinitions, visiting, resolutionPath);
+                            baseKey, docLanguages, localCache, previouslyLoadedDefinitions,
+                            authoritativeBaseDefinitions, visiting, resolutionPath);
                         accumulated = MergeLanguageDefinition(inherited: accumulated, overriding: resolvedBase);
                     }
                 }
@@ -599,7 +637,7 @@ namespace Utils.NumberToString
         /// <summary>
         /// Locates a base language by its culture key and returns it fully resolved.
         /// <para>
-        /// Lookup order (document-local definitions always take priority over the global cache):
+        /// Lookup order (except for registered cultures made authoritative by KeepExisting):
         /// <list type="number">
         ///   <item><description><paramref name="docLanguages"/> — declared raw in this document; resolved recursively with full cycle detection.</description></item>
         ///   <item><description><paramref name="localCache"/> — already resolved in an earlier document of the current batch.</description></item>
@@ -609,20 +647,34 @@ namespace Utils.NumberToString
         /// prevents a cached definition from masking a cycle that exists in the current document.
         /// </para>
         /// </summary>
+        /// <param name="baseKey">The normalized culture key to locate.</param>
+        /// <param name="docLanguages">Raw definitions in the current document.</param>
+        /// <param name="localCache">Resolved definitions staged by the current batch.</param>
+        /// <param name="previouslyLoadedDefinitions">Definitions registered before the current batch.</param>
+        /// <param name="authoritativeBaseDefinitions">Effective definitions that take priority over later candidates.</param>
+        /// <param name="visiting">Culture keys on the current resolution path.</param>
+        /// <param name="resolutionPath">Ordered culture keys used for cycle diagnostics.</param>
+        /// <returns>The fully resolved base definition.</returns>
         private static LanguageDefinition FindAndResolveBase(
             string baseKey,
             IReadOnlyDictionary<string, LanguageDefinition> docLanguages,
             IReadOnlyDictionary<string, LanguageDefinition> localCache,
             IReadOnlyDictionary<string, LanguageDefinition> previouslyLoadedDefinitions,
+            IReadOnlyDictionary<string, LanguageDefinition>? authoritativeBaseDefinitions,
             HashSet<string> visiting,
             List<string> resolutionPath)
         {
+            // KeepExisting makes the effective global or earlier-batch definition authoritative
+            // during resolution, so dependants cannot inherit a discarded candidate.
+            if (authoritativeBaseDefinitions?.TryGetValue(baseKey, out LanguageDefinition? authoritativeBase) == true)
+                return authoritativeBase;
+
             // 1. Declared raw in this document — resolve recursively.
             //    Document-local definitions take priority over the global cache so that a local
             //    definition of a same-named culture is used (and cycles are always detected even
             //    when an older version of the same culture exists in _cachedLanguageTypes).
             if (docLanguages.TryGetValue(baseKey, out LanguageDefinition? rawBase))
-                return ResolveLanguage(rawBase, docLanguages, localCache, previouslyLoadedDefinitions, visiting, resolutionPath);
+                return ResolveLanguage(rawBase, docLanguages, localCache, previouslyLoadedDefinitions, authoritativeBaseDefinitions, visiting, resolutionPath);
 
             // 2. Resolved in an earlier document of the current batch.
             if (localCache.TryGetValue(baseKey, out LanguageDefinition? cachedInBatch))
