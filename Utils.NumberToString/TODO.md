@@ -8,13 +8,9 @@ See `docs/releasing/TodoAudit-2026-08-16.md` for repository-wide classification 
 
 ## P2 — prove before refactoring
 
-### NTS-03 — Composite phrase finalization may still be applied inconsistently
+### NTS-03 — Fixed: composite phrase finalization boundary
 
-Historical item 65 identified composite methods that assemble results from public `Convert(...)` calls and later apply adjustment/finalization at phrase level. Many adjacent paths were subsequently fixed, so the old prose must not be treated as proof that the defect still exists in every conversion kind.
-
-**Required first step:** add a deliberately non-idempotent `INumberToStringLanguageSpecifics` finalizer and a matrix covering decimal, fraction, currency, duration/time and date composition. Count and observe finalization of subparts and final phrases.
-
-**Fix only if reproduced:** split raw typed-fragment generation from one final phrase-render stage. Do not perform a broad linguistic-pipeline refactor without a failing behavioral test.
+Composite conversions now build unfinalized typed fragments and apply language finalization exactly once at the public phrase boundary. Regression coverage includes decimal, `Number`/fraction, currency, year, time/duration, and date composition with a deliberately non-idempotent finalizer.
 
 ## P3 — design feature, not generic bug
 
@@ -37,5 +33,4 @@ Historical item 74 describes a real extensibility limitation for languages requi
 
 ## Recommended implementation order
 
-1. NTS-03 — behavioral proof first; refactor only if the matrix reproduces inconsistent finalization.
-2. NTS-04 — only with a concrete language requirement.
+1. NTS-04 — only with a concrete language requirement.
