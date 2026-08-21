@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_NumberToStringConverter" data-uid="Utils.NumberToString.NumberToStringConverter" class="text-break">
-Class NumberToStringConverter  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Globalization.cs/#L15"><i class="bi bi-code-slash"></i></a>
+Class NumberToStringConverter  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Globalization.cs/#L17"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -3533,7 +3533,7 @@ missing culture should be distinguished from the English fallback.</p>
 
   <h3 id="Utils_NumberToString_NumberToStringConverter_InitializeConfigurations_System_String___" data-uid="Utils.NumberToString.NumberToStringConverter.InitializeConfigurations(System.String[])">
   InitializeConfigurations(params string[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Globalization.cs/#L122"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Globalization.cs/#L145"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Loads number-to-string configurations embedded as XML strings.
@@ -3620,7 +3620,7 @@ an <a class="xref" href="Utils.Range.IntRange-1.html">IntRange&lt;long&gt;</a> t
 
   <h3 id="Utils_NumberToString_NumberToStringConverter_ReadConfiguration_System_String_" data-uid="Utils.NumberToString.NumberToStringConverter.ReadConfiguration(System.String)">
   ReadConfiguration(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Globalization.cs/#L195"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Globalization.cs/#L222"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Parses a configuration document into converter instances keyed by culture name.
@@ -3662,7 +3662,7 @@ Proceeds in three phases to guarantee atomicity:</p>
 
   <h3 id="Utils_NumberToString_NumberToStringConverter_RegisterConfigurations_System_Collections_Generic_IEnumerable_System_String__" data-uid="Utils.NumberToString.NumberToStringConverter.RegisterConfigurations(System.Collections.Generic.IEnumerable{System.String})">
   RegisterConfigurations(IEnumerable&lt;string&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Globalization.cs/#L130"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Globalization.cs/#L153"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Registers the provided language configurations for later lookup.
@@ -3696,7 +3696,7 @@ Duplicate normalized culture keys are rejected by default.</p>
 
   <h3 id="Utils_NumberToString_NumberToStringConverter_RegisterConfigurations_System_Collections_Generic_IEnumerable_System_String__Utils_NumberToString_DuplicateCulturePolicy_" data-uid="Utils.NumberToString.NumberToStringConverter.RegisterConfigurations(System.Collections.Generic.IEnumerable{System.String},Utils.NumberToString.DuplicateCulturePolicy)">
   RegisterConfigurations(IEnumerable&lt;string&gt;, DuplicateCulturePolicy)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Globalization.cs/#L136"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Globalization.cs/#L159"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Atomically registers configuration documents using an explicit collision policy.</p>
@@ -3732,7 +3732,7 @@ Duplicate normalized culture keys are rejected by default.</p>
 
   <h3 id="Utils_NumberToString_NumberToStringConverter_RegisterLanguageSpecifics_System_String_System_Func_Utils_NumberToString_INumberToStringLanguageSpecifics__" data-uid="Utils.NumberToString.NumberToStringConverter.RegisterLanguageSpecifics(System.String,System.Func{Utils.NumberToString.INumberToStringLanguageSpecifics})">
   RegisterLanguageSpecifics(string, Func&lt;INumberToStringLanguageSpecifics&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Globalization.cs/#L108"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Globalization.cs/#L131"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Registers a factory that creates a language-specific implementation for each converter.</p>
@@ -3768,7 +3768,7 @@ Duplicate normalized culture keys are rejected by default.</p>
 
   <h3 id="Utils_NumberToString_NumberToStringConverter_RegisterLanguageSpecifics_System_String_Utils_NumberToString_INumberToStringLanguageSpecifics_" data-uid="Utils.NumberToString.NumberToStringConverter.RegisterLanguageSpecifics(System.String,Utils.NumberToString.INumberToStringLanguageSpecifics)">
   RegisterLanguageSpecifics(string, INumberToStringLanguageSpecifics)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Globalization.cs/#L98"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Globalization.cs/#L121"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Registers an <a class="xref" href="Utils.NumberToString.INumberToStringLanguageSpecifics.html">INumberToStringLanguageSpecifics</a> instance under a given type name
@@ -3917,7 +3917,7 @@ otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Globalization.cs/#L15" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Globalization.cs/#L17" class="edit-link">Edit this page</a>
         </div>
 
 
