@@ -1019,7 +1019,10 @@
                                 </xs:annotation>
                             </xs:element>
 
-                            <xs:element name="Groups">
+                            <!-- Optional at schema level because an inherited Language may omit this
+                                 section. Groups is required on the effective language after baseOn
+                                 resolution and is enforced by C# semantic validation. -->
+                            <xs:element name="Groups" minOccurs="0">
                                 <xs:annotation>
                                     <xs:documentation>
                                         Digit tables for each positional level within a chunk.
@@ -1063,7 +1066,10 @@
                                 </xs:complexType>
                             </xs:element>
 
-                            <xs:element name="NumberScale">
+                            <!-- Optional at schema level because an inherited Language may omit this
+                                 section. NumberScale is required on the effective language after baseOn
+                                 resolution and is enforced by C# semantic validation. -->
+                            <xs:element name="NumberScale" minOccurs="0">
                                 <xs:annotation>
                                     <xs:documentation>
                                         Configures the names of large-number scale levels
@@ -1086,13 +1092,16 @@
                                 </xs:annotation>
                                 <xs:complexType>
                                     <xs:sequence>
-                                        <xs:element name="StaticNames">
+                                        <xs:element name="StaticNames" minOccurs="0" maxOccurs="1">
                                             <xs:annotation>
                                                 <xs:documentation>
                                                     Fixed scale names for the first levels, ordered by value.
                                                     value="0" must be an empty string (units chunk produces no scale suffix).
                                                     value="1" is typically "thousand" / "mille" / "tausend".
                                                     Higher static levels (million, milliard, …) may also be listed here.
+                                                    Optional for a partial NumberScale override on an inherited
+                                                    language. The effective scale inherits StaticNames from its
+                                                    base and is validated after baseOn resolution.
                                                 </xs:documentation>
                                             </xs:annotation>
                                             <xs:complexType>
@@ -1157,12 +1166,14 @@
                                             </xs:annotation>
                                         </xs:element>
                                     </xs:sequence>
-                                    <xs:attribute name="firstLetterUpperCase" type="xs:boolean" use="required">
+                                    <xs:attribute name="firstLetterUpperCase" type="xs:boolean" use="optional">
                                         <xs:annotation>
                                             <xs:documentation>
                                                 When true, the first letter of generated scale names is
                                                 capitalised. Set to true for languages that capitalise nouns
                                                 (German: "Million", "Milliarde").
+                                                Optional at schema level for inherited NumberScale definitions;
+                                                the effective value is resolved and validated semantically.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:attribute>
@@ -1193,6 +1204,10 @@
                                 </xs:complexType>
                             </xs:element>
 
+                            <!-- Post-processing sections are order-independent. This preserves the
+                                 historical serializer contract while the core Culture/Groups/NumberScale
+                                 structure above remains sequenced. -->
+                            <xs:choice minOccurs="0" maxOccurs="unbounded">
                             <xs:element name="Replacements" type="ReplacementsListType"
                                         minOccurs="0" maxOccurs="1">
                                 <xs:annotation>
@@ -1440,6 +1455,7 @@
                                     </xs:attribute>
                                 </xs:complexType>
                             </xs:element>
+                            </xs:choice>
 
                         </xs:sequence>
 
@@ -1474,41 +1490,53 @@
                                 </xs:documentation>
                             </xs:annotation>
                         </xs:attribute>
-                        <xs:attribute name="groupSize" type="xs:long" use="required">
+                        <xs:attribute name="groupSize" type="xs:long" use="optional">
                             <xs:annotation>
                                 <xs:documentation>
                                     Number of digits per chunk. Typically 3 (thousands grouping).
                                     Must match the highest level defined in Groups.
+                                    Optional at schema level for inherited languages; required on the
+                                    effective language after baseOn resolution by semantic validation.
                                 </xs:documentation>
                             </xs:annotation>
                         </xs:attribute>
-                        <xs:attribute name="separator" type="xs:string" use="required">
+                        <xs:attribute name="separator" type="xs:string" use="optional">
                             <xs:annotation>
                                 <xs:documentation>
                                     Word separator inserted between parts of a number name within a chunk.
                                     Typically a single space " ". May be empty for agglutinative languages.
+                                    Optional at schema level for inherited languages; the effective value
+                                    is resolved and validated semantically.
                                 </xs:documentation>
                             </xs:annotation>
                         </xs:attribute>
-                        <xs:attribute name="groupSeparator" type="xs:string" use="required">
+                        <xs:attribute name="groupSeparator" type="xs:string" use="optional">
                             <xs:annotation>
                                 <xs:documentation>
                                     Text inserted between chunk groups (thousands, millions, …).
                                     English: "," giving "one thousand, two hundred …"
                                     French: "" (no separator between groups).
+                                    Optional at schema level for inherited languages; the effective value
+                                    is resolved and validated semantically.
                                 </xs:documentation>
                             </xs:annotation>
                         </xs:attribute>
-                        <xs:attribute name="zero" type="xs:string" use="required">
+                        <xs:attribute name="zero" type="xs:string" use="optional">
                             <xs:annotation>
-                                <xs:documentation>Literal text for the value zero (not passed through Replacements).</xs:documentation>
+                                <xs:documentation>
+                                    Literal text for the value zero (not passed through Replacements).
+                                    Optional at schema level for inherited languages; required on the
+                                    effective language after baseOn resolution by semantic validation.
+                                </xs:documentation>
                             </xs:annotation>
                         </xs:attribute>
-                        <xs:attribute name="minus" type="xs:string" use="required">
+                        <xs:attribute name="minus" type="xs:string" use="optional">
                             <xs:annotation>
                                 <xs:documentation>
                                     Template for negative numbers. "*" is replaced by the absolute-value text.
                                     Examples: "minus *" (EN), "moins *" (FR), "minus *" (DE).
+                                    Optional at schema level for inherited languages; required on the
+                                    effective language after baseOn resolution by semantic validation.
                                 </xs:documentation>
                             </xs:annotation>
                         </xs:attribute>

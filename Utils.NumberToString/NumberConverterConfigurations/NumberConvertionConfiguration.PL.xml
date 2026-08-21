@@ -12,7 +12,6 @@
                 maxNumber="999999"
         >
         <Culture>PL</Culture>
-        <LanguageSpecifics>PolishOrdinalLanguageSpecifics</LanguageSpecifics>
         <Groups>
             <Group level="1">
                 <Digit digit="0" string="" />
@@ -60,6 +59,7 @@
                 <Suffix>milion</Suffix>
             </Suffixes>
         </NumberScale>
+        <LanguageSpecifics>PolishOrdinalLanguageSpecifics</LanguageSpecifics>
         <Replacements>
             <Replacement oldValue="jeden tysiąc" newValue="tysiąc" onScale="1" onValue="1" />
         </Replacements>

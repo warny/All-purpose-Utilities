@@ -6,7 +6,9 @@ using System.Linq;
 using System.Globalization;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 using System.Xml;
+using System.Xml.Schema;
 using System.Xml.Serialization;
 using Utils.Range;
 
@@ -14,53 +16,74 @@ namespace Utils.NumberToString
 {
     public partial class NumberToStringConverter
     {
+        /// <summary>Controls whether an XML configuration is validated against the embedded schema.</summary>
+        internal enum ConfigurationSchemaValidation
+        {
+            /// <summary>Skips schema validation while retaining secure XML parsing and semantic validation.</summary>
+            Skip,
+
+            /// <summary>Validates the document against the embedded configuration schema.</summary>
+            Validate
+        }
+
+        /// <summary>
+        /// Gets the ordered configuration documents distributed with the package. Scale bases must
+        /// precede languages that inherit from them.
+        /// </summary>
+        internal static IReadOnlyList<string> BuiltInConfigurations { get; } =
+        [
+            NumberConverterResources.NumberConvertionConfiguration_SCALE,
+            NumberConverterResources.NumberConvertionConfiguration_FR_fr_ca,
+            NumberConverterResources.NumberConvertionConfiguration_FR_be_ch,
+            NumberConverterResources.NumberConvertionConfiguration_DE,
+            NumberConverterResources.NumberConvertionConfiguration_DE_ch,
+            NumberConverterResources.NumberConvertionConfiguration_DA,
+            NumberConverterResources.NumberConvertionConfiguration_EN,
+            NumberConverterResources.NumberConvertionConfiguration_EN_GB,
+            NumberConverterResources.NumberConvertionConfiguration_ES,
+            NumberConverterResources.NumberConvertionConfiguration_BG,
+            NumberConverterResources.NumberConvertionConfiguration_CA,
+            NumberConverterResources.NumberConvertionConfiguration_EU,
+            NumberConverterResources.NumberConvertionConfiguration_FA,
+            NumberConverterResources.NumberConvertionConfiguration_GL,
+            NumberConverterResources.NumberConvertionConfiguration_IT,
+            NumberConverterResources.NumberConvertionConfiguration_CS,
+            NumberConverterResources.NumberConvertionConfiguration_SK,
+            NumberConverterResources.NumberConvertionConfiguration_FI,
+            NumberConverterResources.NumberConvertionConfiguration_AR,
+            NumberConverterResources.NumberConvertionConfiguration_HE,
+            NumberConverterResources.NumberConvertionConfiguration_HR,
+            NumberConverterResources.NumberConvertionConfiguration_HU,
+            NumberConverterResources.NumberConvertionConfiguration_ZH,
+            NumberConverterResources.NumberConvertionConfiguration_KO,
+            NumberConverterResources.NumberConvertionConfiguration_JA,
+            NumberConverterResources.NumberConvertionConfiguration_PT,
+            NumberConverterResources.NumberConvertionConfiguration_PL,
+            NumberConverterResources.NumberConvertionConfiguration_HI,
+            NumberConverterResources.NumberConvertionConfiguration_ID,
+            NumberConverterResources.NumberConvertionConfiguration_EL,
+            NumberConverterResources.NumberConvertionConfiguration_NL,
+            NumberConverterResources.NumberConvertionConfiguration_NO,
+            NumberConverterResources.NumberConvertionConfiguration_RO,
+            NumberConverterResources.NumberConvertionConfiguration_RU,
+            NumberConverterResources.NumberConvertionConfiguration_SV,
+            NumberConverterResources.NumberConvertionConfiguration_SW,
+            NumberConverterResources.NumberConvertionConfiguration_TR,
+            NumberConverterResources.NumberConvertionConfiguration_UK,
+            NumberConverterResources.NumberConvertionConfiguration_VN,
+            NumberConverterResources.NumberConvertionConfiguration_ZU,
+            NumberConverterResources.NumberConvertionConfiguration_EE,
+            NumberConverterResources.NumberConvertionConfiguration_WO
+        ];
+
+        private static readonly XmlSerializer ConfigurationSerializer =
+            new(typeof(NumbersXmlModel), "Utils/NumberConvertionConfiguration.xsd");
+
+        private static readonly Lazy<XmlSchemaSet> ConfigurationSchemas = new(CreateConfigurationSchemas);
+
         static NumberToStringConverter()
         {
-            InitializeConfigurations(
-                // Scale bases must be loaded before any language that uses baseOn to reference them.
-                NumberConverterResources.NumberConvertionConfiguration_SCALE,
-                NumberConverterResources.NumberConvertionConfiguration_FR_fr_ca,
-                NumberConverterResources.NumberConvertionConfiguration_FR_be_ch,
-                NumberConverterResources.NumberConvertionConfiguration_DE,
-                NumberConverterResources.NumberConvertionConfiguration_DE_ch,
-                NumberConverterResources.NumberConvertionConfiguration_DA,
-                NumberConverterResources.NumberConvertionConfiguration_EN,
-                NumberConverterResources.NumberConvertionConfiguration_EN_GB,
-                NumberConverterResources.NumberConvertionConfiguration_ES,
-                NumberConverterResources.NumberConvertionConfiguration_BG,
-                NumberConverterResources.NumberConvertionConfiguration_CA,
-                NumberConverterResources.NumberConvertionConfiguration_EU,
-                NumberConverterResources.NumberConvertionConfiguration_FA,
-                NumberConverterResources.NumberConvertionConfiguration_GL,
-                NumberConverterResources.NumberConvertionConfiguration_IT,
-                NumberConverterResources.NumberConvertionConfiguration_CS,
-                NumberConverterResources.NumberConvertionConfiguration_SK,
-                NumberConverterResources.NumberConvertionConfiguration_FI,
-                NumberConverterResources.NumberConvertionConfiguration_AR,
-                NumberConverterResources.NumberConvertionConfiguration_HE,
-                NumberConverterResources.NumberConvertionConfiguration_HR,
-                NumberConverterResources.NumberConvertionConfiguration_HU,
-                NumberConverterResources.NumberConvertionConfiguration_ZH,
-                NumberConverterResources.NumberConvertionConfiguration_KO,
-                NumberConverterResources.NumberConvertionConfiguration_JA,
-                NumberConverterResources.NumberConvertionConfiguration_PT,
-                NumberConverterResources.NumberConvertionConfiguration_PL,
-                NumberConverterResources.NumberConvertionConfiguration_HI,
-                NumberConverterResources.NumberConvertionConfiguration_ID,
-                NumberConverterResources.NumberConvertionConfiguration_EL,
-                NumberConverterResources.NumberConvertionConfiguration_NL,
-                NumberConverterResources.NumberConvertionConfiguration_NO,
-                NumberConverterResources.NumberConvertionConfiguration_RO,
-                NumberConverterResources.NumberConvertionConfiguration_RU,
-                NumberConverterResources.NumberConvertionConfiguration_SV,
-                NumberConverterResources.NumberConvertionConfiguration_SW,
-                NumberConverterResources.NumberConvertionConfiguration_TR,
-                NumberConverterResources.NumberConvertionConfiguration_UK,
-                NumberConverterResources.NumberConvertionConfiguration_VN,
-                NumberConverterResources.NumberConvertionConfiguration_ZU,
-                NumberConverterResources.NumberConvertionConfiguration_EE,
-                NumberConverterResources.NumberConvertionConfiguration_WO
-            );
+            RegisterConfigurations(BuiltInConfigurations, DuplicateCulturePolicy.Reject, ConfigurationSchemaValidation.Skip);
         }
 
         // Caches configurations for different cultures — ConcurrentDictionary for thread-safety
@@ -134,6 +157,10 @@ namespace Utils.NumberToString
         /// <param name="configs">The XML documents to register.</param>
         /// <param name="duplicateCulturePolicy">The collision policy.</param>
         public static void RegisterConfigurations(IEnumerable<string> configs, DuplicateCulturePolicy duplicateCulturePolicy)
+            => RegisterConfigurations(configs, duplicateCulturePolicy, ConfigurationSchemaValidation.Validate);
+
+        /// <summary>Atomically registers configuration documents using the specified schema policy.</summary>
+        private static void RegisterConfigurations(IEnumerable<string> configs, DuplicateCulturePolicy duplicateCulturePolicy, ConfigurationSchemaValidation schemaValidation)
         {
             ArgumentNullException.ThrowIfNull(configs);
             if (!Enum.IsDefined(duplicateCulturePolicy))
@@ -147,7 +174,7 @@ namespace Utils.NumberToString
                 var definitions = new Dictionary<string, LanguageDefinition>(StringComparer.OrdinalIgnoreCase);
                 foreach (var configuration in configs)
                 {
-                    var batch = BuildConfiguration(configuration, commitDefinitions: false, definitions);
+                    var batch = BuildConfiguration(configuration, commitDefinitions: false, definitions, schemaValidation);
                     foreach (var language in batch.Converters)
                     {
                         if (converters.TryAdd(language.Key, language.Value)) continue;
@@ -194,23 +221,119 @@ namespace Utils.NumberToString
         /// <returns>A dictionary mapping culture names to converters.</returns>
         public static Dictionary<string, NumberToStringConverter> ReadConfiguration(string configuration)
         {
-            var batch = BuildConfiguration(configuration, commitDefinitions: true);
+            var batch = BuildConfiguration(configuration, commitDefinitions: true, schemaValidation: ConfigurationSchemaValidation.Validate);
             return batch.Converters;
+        }
+
+        /// <summary>Builds a configuration with an explicit schema policy for unit verification.</summary>
+        /// <param name="configuration">The XML configuration document.</param>
+        /// <param name="schemaValidation">The schema-validation policy.</param>
+        internal static void BuildConfigurationForTesting(string configuration, ConfigurationSchemaValidation schemaValidation)
+            => BuildConfiguration(configuration, commitDefinitions: false, schemaValidation: schemaValidation);
+
+        /// <summary>Validates and deserializes one document without running cross-document semantic resolution.</summary>
+        /// <param name="configuration">The XML configuration document.</param>
+        internal static void ValidateConfigurationSchemaForTesting(string configuration)
+            => DeserializeConfiguration(configuration, ConfigurationSchemaValidation.Validate);
+
+        /// <summary>Deserializes a configuration through a secure, optionally schema-validating XML reader.</summary>
+        private static NumbersXmlModel DeserializeConfiguration(string configuration, ConfigurationSchemaValidation schemaValidation)
+        {
+            ArgumentNullException.ThrowIfNull(configuration);
+            if (schemaValidation == ConfigurationSchemaValidation.Validate)
+                EnsureUniquePostProcessingSections(configuration);
+            XmlReaderSettings settings = new()
+            {
+                DtdProcessing = DtdProcessing.Prohibit,
+                XmlResolver = null
+            };
+            if (schemaValidation == ConfigurationSchemaValidation.Validate)
+            {
+                settings.ValidationType = ValidationType.Schema;
+                settings.Schemas = ConfigurationSchemas.Value;
+            }
+
+            using StringReader textReader = new(configuration);
+            using XmlReader xmlReader = XmlReader.Create(textReader, settings);
+            try
+            {
+                return (NumbersXmlModel?)ConfigurationSerializer.Deserialize(xmlReader)
+                    ?? throw new InvalidOperationException("The configuration document did not produce a model.");
+            }
+            catch (InvalidOperationException exception) when (exception.InnerException is XmlSchemaValidationException schemaException)
+            {
+                ExceptionDispatchInfo.Capture(schemaException).Throw();
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Rejects repeated order-independent language sections that XSD 1.0 cannot constrain
+        /// individually inside a repeating <c>xs:choice</c>.
+        /// </summary>
+        /// <param name="configuration">The XML configuration document.</param>
+        private static void EnsureUniquePostProcessingSections(string configuration)
+        {
+            HashSet<string> orderIndependentSections =
+            [
+                "Replacements", "Exceptions", "LanguageSpecifics", "Fractions", "Ordinals",
+                "Variants", "YearFormat", "Multiplicatives", "TimeUnits", "DateFormat"
+            ];
+            HashSet<string>? seenSections = null;
+            using StringReader textReader = new(configuration);
+            using XmlReader reader = XmlReader.Create(textReader, new XmlReaderSettings
+            {
+                DtdProcessing = DtdProcessing.Prohibit,
+                XmlResolver = null
+            });
+            while (reader.Read())
+            {
+                if (reader.NodeType != XmlNodeType.Element)
+                    continue;
+                if (reader.Depth == 1 && reader.LocalName == "Language")
+                {
+                    seenSections = new HashSet<string>(StringComparer.Ordinal);
+                    continue;
+                }
+                if (reader.Depth != 2 || seenSections is null || !orderIndependentSections.Contains(reader.LocalName))
+                    continue;
+                if (seenSections.Add(reader.LocalName))
+                    continue;
+
+                IXmlLineInfo lineInfo = (IXmlLineInfo)reader;
+                throw new XmlSchemaValidationException(
+                    $"The language section '{reader.LocalName}' may occur only once.",
+                    null,
+                    lineInfo.LineNumber,
+                    lineInfo.LinePosition);
+            }
+        }
+
+        /// <summary>Loads and compiles the embedded number-conversion schema.</summary>
+        private static XmlSchemaSet CreateConfigurationSchemas()
+        {
+            const string resourceName = "Utils.NumberToString.NumberConvertionConfiguration.xsd";
+            using Stream schemaStream = typeof(NumberToStringConverter).Assembly.GetManifestResourceStream(resourceName)
+                ?? throw new InvalidOperationException($"Embedded configuration schema '{resourceName}' was not found.");
+            using XmlReader schemaReader = XmlReader.Create(schemaStream, new XmlReaderSettings
+            {
+                DtdProcessing = DtdProcessing.Prohibit,
+                XmlResolver = null
+            });
+            XmlSchemaSet schemas = new() { XmlResolver = null };
+            schemas.Add("Utils/NumberConvertionConfiguration.xsd", schemaReader);
+            schemas.Compile();
+            return schemas;
         }
 
         /// <summary>Builds one configuration document without publishing converters.</summary>
         private static ConfigurationBatch BuildConfiguration(
             string configuration,
             bool commitDefinitions,
-            IReadOnlyDictionary<string, LanguageDefinition>? inheritedBatchDefinitions = null)
+            IReadOnlyDictionary<string, LanguageDefinition>? inheritedBatchDefinitions = null,
+            ConfigurationSchemaValidation schemaValidation = ConfigurationSchemaValidation.Validate)
         {
-            XmlSerializer serializer = new XmlSerializer(typeof(NumbersXmlModel), "Utils/NumberConvertionConfiguration.xsd");
-
-            NumbersXmlModel obj;
-            using (StringReader reader = new StringReader(configuration))
-            {
-                obj = (NumbersXmlModel)serializer.Deserialize(reader);
-            }
+            NumbersXmlModel obj = DeserializeConfiguration(configuration, schemaValidation);
 
             var languageModels = obj.Languages ?? new List<LanguageXmlModel>();
 
