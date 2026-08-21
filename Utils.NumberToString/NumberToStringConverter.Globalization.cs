@@ -32,54 +32,54 @@ namespace Utils.NumberToString
         /// </summary>
         internal static IReadOnlyList<BuiltInConfigurationSource> BuiltInConfigurations { get; } =
         [
-            new("SCALE", NumberConverterResources.NumberConvertionConfiguration_SCALE),
-            new("FR-fr-ca", NumberConverterResources.NumberConvertionConfiguration_FR_fr_ca),
-            new("FR-be-ch", NumberConverterResources.NumberConvertionConfiguration_FR_be_ch),
-            new("DE", NumberConverterResources.NumberConvertionConfiguration_DE),
-            new("DE-ch", NumberConverterResources.NumberConvertionConfiguration_DE_ch),
-            new("DA", NumberConverterResources.NumberConvertionConfiguration_DA),
-            new("EN", NumberConverterResources.NumberConvertionConfiguration_EN),
-            new("EN-GB", NumberConverterResources.NumberConvertionConfiguration_EN_GB),
-            new("ES", NumberConverterResources.NumberConvertionConfiguration_ES),
-            new("BG", NumberConverterResources.NumberConvertionConfiguration_BG),
-            new("CA", NumberConverterResources.NumberConvertionConfiguration_CA),
-            new("EU", NumberConverterResources.NumberConvertionConfiguration_EU),
-            new("FA", NumberConverterResources.NumberConvertionConfiguration_FA),
-            new("GL", NumberConverterResources.NumberConvertionConfiguration_GL),
-            new("IT", NumberConverterResources.NumberConvertionConfiguration_IT),
-            new("CS", NumberConverterResources.NumberConvertionConfiguration_CS),
-            new("SK", NumberConverterResources.NumberConvertionConfiguration_SK),
-            new("FI", NumberConverterResources.NumberConvertionConfiguration_FI),
-            new("AR", NumberConverterResources.NumberConvertionConfiguration_AR),
-            new("HE", NumberConverterResources.NumberConvertionConfiguration_HE),
-            new("HR", NumberConverterResources.NumberConvertionConfiguration_HR),
-            new("HU", NumberConverterResources.NumberConvertionConfiguration_HU),
-            new("ZH", NumberConverterResources.NumberConvertionConfiguration_ZH),
-            new("KO", NumberConverterResources.NumberConvertionConfiguration_KO),
-            new("JA", NumberConverterResources.NumberConvertionConfiguration_JA),
-            new("PT", NumberConverterResources.NumberConvertionConfiguration_PT),
-            new("PL", NumberConverterResources.NumberConvertionConfiguration_PL),
-            new("HI", NumberConverterResources.NumberConvertionConfiguration_HI),
-            new("ID", NumberConverterResources.NumberConvertionConfiguration_ID),
-            new("EL", NumberConverterResources.NumberConvertionConfiguration_EL),
-            new("NL", NumberConverterResources.NumberConvertionConfiguration_NL),
-            new("NO", NumberConverterResources.NumberConvertionConfiguration_NO),
-            new("RO", NumberConverterResources.NumberConvertionConfiguration_RO),
-            new("RU", NumberConverterResources.NumberConvertionConfiguration_RU),
-            new("SV", NumberConverterResources.NumberConvertionConfiguration_SV),
-            new("SW", NumberConverterResources.NumberConvertionConfiguration_SW),
-            new("TR", NumberConverterResources.NumberConvertionConfiguration_TR),
-            new("UK", NumberConverterResources.NumberConvertionConfiguration_UK),
-            new("VN", NumberConverterResources.NumberConvertionConfiguration_VN),
-            new("ZU", NumberConverterResources.NumberConvertionConfiguration_ZU),
-            new("EE", NumberConverterResources.NumberConvertionConfiguration_EE),
-            new("WO", NumberConverterResources.NumberConvertionConfiguration_WO)
+            new("SCALE", () => NumberConverterResources.NumberConvertionConfiguration_SCALE),
+            new("FR-fr-ca", () => NumberConverterResources.NumberConvertionConfiguration_FR_fr_ca),
+            new("FR-be-ch", () => NumberConverterResources.NumberConvertionConfiguration_FR_be_ch),
+            new("DE", () => NumberConverterResources.NumberConvertionConfiguration_DE),
+            new("DE-ch", () => NumberConverterResources.NumberConvertionConfiguration_DE_ch),
+            new("DA", () => NumberConverterResources.NumberConvertionConfiguration_DA),
+            new("EN", () => NumberConverterResources.NumberConvertionConfiguration_EN),
+            new("EN-GB", () => NumberConverterResources.NumberConvertionConfiguration_EN_GB),
+            new("ES", () => NumberConverterResources.NumberConvertionConfiguration_ES),
+            new("BG", () => NumberConverterResources.NumberConvertionConfiguration_BG),
+            new("CA", () => NumberConverterResources.NumberConvertionConfiguration_CA),
+            new("EU", () => NumberConverterResources.NumberConvertionConfiguration_EU),
+            new("FA", () => NumberConverterResources.NumberConvertionConfiguration_FA),
+            new("GL", () => NumberConverterResources.NumberConvertionConfiguration_GL),
+            new("IT", () => NumberConverterResources.NumberConvertionConfiguration_IT),
+            new("CS", () => NumberConverterResources.NumberConvertionConfiguration_CS),
+            new("SK", () => NumberConverterResources.NumberConvertionConfiguration_SK),
+            new("FI", () => NumberConverterResources.NumberConvertionConfiguration_FI),
+            new("AR", () => NumberConverterResources.NumberConvertionConfiguration_AR),
+            new("HE", () => NumberConverterResources.NumberConvertionConfiguration_HE),
+            new("HR", () => NumberConverterResources.NumberConvertionConfiguration_HR),
+            new("HU", () => NumberConverterResources.NumberConvertionConfiguration_HU),
+            new("ZH", () => NumberConverterResources.NumberConvertionConfiguration_ZH),
+            new("KO", () => NumberConverterResources.NumberConvertionConfiguration_KO),
+            new("JA", () => NumberConverterResources.NumberConvertionConfiguration_JA),
+            new("PT", () => NumberConverterResources.NumberConvertionConfiguration_PT),
+            new("PL", () => NumberConverterResources.NumberConvertionConfiguration_PL),
+            new("HI", () => NumberConverterResources.NumberConvertionConfiguration_HI),
+            new("ID", () => NumberConverterResources.NumberConvertionConfiguration_ID),
+            new("EL", () => NumberConverterResources.NumberConvertionConfiguration_EL),
+            new("NL", () => NumberConverterResources.NumberConvertionConfiguration_NL),
+            new("NO", () => NumberConverterResources.NumberConvertionConfiguration_NO),
+            new("RO", () => NumberConverterResources.NumberConvertionConfiguration_RO),
+            new("RU", () => NumberConverterResources.NumberConvertionConfiguration_RU),
+            new("SV", () => NumberConverterResources.NumberConvertionConfiguration_SV),
+            new("SW", () => NumberConverterResources.NumberConvertionConfiguration_SW),
+            new("TR", () => NumberConverterResources.NumberConvertionConfiguration_TR),
+            new("UK", () => NumberConverterResources.NumberConvertionConfiguration_UK),
+            new("VN", () => NumberConverterResources.NumberConvertionConfiguration_VN),
+            new("ZU", () => NumberConverterResources.NumberConvertionConfiguration_ZU),
+            new("EE", () => NumberConverterResources.NumberConvertionConfiguration_EE),
+            new("WO", () => NumberConverterResources.NumberConvertionConfiguration_WO)
         ];
 
         /// <summary>Identifies one ordered built-in XML configuration document.</summary>
         /// <param name="Name">The diagnostic resource name.</param>
-        /// <param name="Configuration">The XML configuration content.</param>
-        internal sealed record BuiltInConfigurationSource(string Name, string Configuration);
+        /// <param name="ConfigurationFactory">Retrieves the XML configuration content.</param>
+        internal sealed record BuiltInConfigurationSource(string Name, Func<string> ConfigurationFactory);
 
         /// <summary>Describes a built-in document that could not be initialized.</summary>
         /// <param name="Name">The diagnostic resource name.</param>
@@ -155,8 +155,9 @@ namespace Utils.NumberToString
             {
                 try
                 {
+                    string configuration = source.ConfigurationFactory();
                     ConfigurationBatch batch = BuildConfiguration(
-                        source.Configuration,
+                        configuration,
                         commitDefinitions: false,
                         definitions,
                         ConfigurationSchemaValidation.Skip,

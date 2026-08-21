@@ -2,6 +2,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Resources;
 using System.Xml;
 using System.Xml.Schema;
 using Utils.NumberToString;
@@ -28,7 +29,7 @@ public class NumberToStringConfigurationSchemaTests
     public void BuiltInConfigurations_AreSchemaValid()
     {
         foreach (NumberToStringConverter.BuiltInConfigurationSource configuration in NumberToStringConverter.BuiltInConfigurations)
-            NumberToStringConverter.ValidateConfigurationSchemaForTesting(configuration.Configuration);
+            NumberToStringConverter.ValidateConfigurationSchemaForTesting(configuration.ConfigurationFactory());
     }
 
     /// <summary>Ensures every distributed built-in completes semantic and runtime initialization.</summary>
@@ -41,14 +42,31 @@ public class NumberToStringConfigurationSchemaTests
     public void BuiltInInitialization_BadDocument_DoesNotStopLaterDocuments()
     {
         NumberToStringConverter.BuiltInInitializationResult result = InitializeBuiltIns(
-            new("SCALE", GetBuiltIn("SCALE")),
-            new("VALID-A", GetBuiltIn("DE")),
-            new("INVALID", "<not-xml"),
-            new("VALID-B", GetBuiltIn("EN")));
+            new("SCALE", () => GetBuiltIn("SCALE")),
+            new("VALID-A", () => GetBuiltIn("DE")),
+            new("INVALID", () => "<not-xml"),
+            new("VALID-B", () => GetBuiltIn("EN")));
 
         Assert.AreEqual(1, result.Failures.Count, FormatFailures(result));
         Assert.AreEqual("INVALID", result.Failures[0].Name);
         Assert.IsNotNull(result.Failures[0].Exception);
+        Assert.IsTrue(result.Converters.ContainsKey("DE"));
+        Assert.IsTrue(result.Converters.ContainsKey("EN"));
+    }
+
+    /// <summary>Ensures an embedded-resource retrieval failure is isolated before later factories run.</summary>
+    [TestMethod]
+    public void BuiltInInitialization_ResourceFactoryFailure_DoesNotStopLaterResources()
+    {
+        NumberToStringConverter.BuiltInInitializationResult result = InitializeBuiltIns(
+            new("SCALE", () => GetBuiltIn("SCALE")),
+            new("VALID-A", () => GetBuiltIn("DE")),
+            new("BROKEN-RESOURCE", () => throw new MissingManifestResourceException("test")),
+            new("VALID-B", () => GetBuiltIn("EN")));
+
+        Assert.AreEqual(1, result.Failures.Count, FormatFailures(result));
+        Assert.AreEqual("BROKEN-RESOURCE", result.Failures[0].Name);
+        Assert.IsInstanceOfType<MissingManifestResourceException>(result.Failures[0].Exception);
         Assert.IsTrue(result.Converters.ContainsKey("DE"));
         Assert.IsTrue(result.Converters.ContainsKey("EN"));
     }
@@ -58,9 +76,9 @@ public class NumberToStringConfigurationSchemaTests
     public void BuiltInInitialization_PreservesCrossDocumentInheritance()
     {
         NumberToStringConverter.BuiltInInitializationResult result = InitializeBuiltIns(
-            new("SCALE", GetBuiltIn("SCALE")),
-            new("EN", GetBuiltIn("EN")),
-            new("EN-GB", GetBuiltIn("EN-GB")));
+            new("SCALE", () => GetBuiltIn("SCALE")),
+            new("EN", () => GetBuiltIn("EN")),
+            new("EN-GB", () => GetBuiltIn("EN-GB")));
 
         Assert.AreEqual(0, result.Failures.Count, FormatFailures(result));
         Assert.IsTrue(result.Converters.ContainsKey("EN-GB"));
@@ -71,10 +89,10 @@ public class NumberToStringConfigurationSchemaTests
     public void BuiltInInitialization_FailedBaseDoesNotPoisonIndependentLanguages()
     {
         NumberToStringConverter.BuiltInInitializationResult result = InitializeBuiltIns(
-            new("SCALE", GetBuiltIn("SCALE")),
-            new("BROKEN-BASE", "<not-xml"),
-            new("CHILD", GetBuiltIn("EN-GB")),
-            new("INDEPENDENT", GetBuiltIn("DE")));
+            new("SCALE", () => GetBuiltIn("SCALE")),
+            new("BROKEN-BASE", () => "<not-xml"),
+            new("CHILD", () => GetBuiltIn("EN-GB")),
+            new("INDEPENDENT", () => GetBuiltIn("DE")));
 
         Assert.AreEqual(2, result.Failures.Count, FormatFailures(result));
         Assert.AreEqual("BROKEN-BASE", result.Failures[0].Name);
@@ -221,7 +239,7 @@ public class NumberToStringConfigurationSchemaTests
     {
         foreach (NumberToStringConverter.BuiltInConfigurationSource source in NumberToStringConverter.BuiltInConfigurations)
             if (source.Name == name)
-                return source.Configuration;
+                return source.ConfigurationFactory();
         throw new InvalidOperationException($"Built-in configuration '{name}' was not found.");
     }
 
