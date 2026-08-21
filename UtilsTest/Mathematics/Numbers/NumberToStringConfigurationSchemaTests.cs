@@ -1,5 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Schema;
 using Utils.NumberToString;
@@ -39,6 +40,20 @@ public class NumberToStringConfigurationSchemaTests
             StringComparison.Ordinal);
 
         NumberToStringConverter.ValidateConfigurationSchemaForTesting(document);
+    }
+
+    /// <summary>Ensures an inherited language may override only one NumberScale field.</summary>
+    [TestMethod]
+    public void InheritedLanguage_PartialNumberScaleOverride_IsAccepted()
+    {
+        string document = ValidConfiguration.Replace(
+            "</Numbers>",
+            "<Language baseOn=\"SCHEMA-TEST\"><Culture>SCHEMA-SCALE-CHILD</Culture><NumberScale firstLetterUpperCase=\"true\"/></Language></Numbers>",
+            StringComparison.Ordinal);
+
+        Dictionary<string, NumberToStringConverter> converters = NumberToStringConverter.ReadConfiguration(document);
+
+        Assert.IsTrue(converters.ContainsKey("SCHEMA-SCALE-CHILD"));
     }
 
     /// <summary>Ensures a standalone language missing an effective required value is rejected semantically.</summary>

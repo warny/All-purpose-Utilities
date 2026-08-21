@@ -1092,13 +1092,16 @@
                                 </xs:annotation>
                                 <xs:complexType>
                                     <xs:sequence>
-                                        <xs:element name="StaticNames">
+                                        <xs:element name="StaticNames" minOccurs="0" maxOccurs="1">
                                             <xs:annotation>
                                                 <xs:documentation>
                                                     Fixed scale names for the first levels, ordered by value.
                                                     value="0" must be an empty string (units chunk produces no scale suffix).
                                                     value="1" is typically "thousand" / "mille" / "tausend".
                                                     Higher static levels (million, milliard, …) may also be listed here.
+                                                    Optional for a partial NumberScale override on an inherited
+                                                    language. The effective scale inherits StaticNames from its
+                                                    base and is validated after baseOn resolution.
                                                 </xs:documentation>
                                             </xs:annotation>
                                             <xs:complexType>
