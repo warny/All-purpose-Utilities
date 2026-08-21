@@ -711,7 +711,10 @@ namespace Utils.NumberToString
             decimal integerPart = decimal.Truncate(number);
             decimal fraction = number - integerPart;
 
-            var result = new StringBuilder(Convert((BigInteger)integerPart, variants));
+            if (MaxNumber.HasValue && (BigInteger)integerPart > MaxNumber.Value)
+                throw new ArgumentOutOfRangeException(nameof(number), $"The integer part exceeds the maximum supported number ({MaxNumber.Value}).");
+
+            var result = new StringBuilder(BuildCardinalFragment((BigInteger)integerPart, variants));
 
             string digits = fraction != 0
                 ? fraction.ToString(System.Globalization.CultureInfo.InvariantCulture).Split('.')[1]
@@ -739,7 +742,7 @@ namespace Utils.NumberToString
                 {
                     BigInteger fracNumerator = BigInteger.Parse(digits);
                     // Fractional numerator is a sub-expression; do not check MaxNumber for it.
-                    var valueText = ConvertCardinalUnchecked(fracNumerator, variants);
+                    var valueText = BuildCardinalFragment(fracNumerator, variants);
                     // Use BigInteger to avoid long overflow when fractional digits exceed 18.
                     long fracPluralProxy = fracNumerator <= 1 ? (long)fracNumerator : 2L;
                     result.Append(valueText).Append(Separator).Append(activeSuffix.ToPlural(fracPluralProxy));
@@ -754,8 +757,7 @@ namespace Utils.NumberToString
                 }
             }
 
-            string final = AdjustFunction(result.ToString().Trim());
-            return isNegative ? Minus.Replace("*", final) : final;
+            return FinalizePhrase(ApplyRawAdjustment(result.ToString().Trim()), isNegative);
         }
 
         /// <summary>
@@ -778,8 +780,7 @@ namespace Utils.NumberToString
                 absoluteValue.Denominator,
                 allowFractionNames: false);
 
-            string adjusted = AdjustFunction(final.Trim());
-            return isNegative ? Minus.Replace("*", adjusted) : adjusted;
+            return FinalizePhrase(ApplyRawAdjustment(final.Trim()), isNegative);
         }
 
         /// <inheritdoc cref="INumberToStringConverter.Convert(double)"/>
@@ -895,6 +896,43 @@ namespace Utils.NumberToString
 
             return isNegative ? Minus.Replace("*", final) : final;
         }
+
+        /// <summary>
+        /// Builds a cardinal fragment with its historical adjustment, morphology, and end-trigger
+        /// pipeline, but without language finalization or an outer sign.
+        /// </summary>
+        /// <param name="number">The non-negative numeric value to render.</param>
+        /// <param name="variants">The morphological variants to apply to the fragment.</param>
+        /// <returns>An unfinalized cardinal fragment.</returns>
+        private string BuildCardinalFragment(BigInteger number, string[] variants)
+        {
+            if (number.Sign < 0)
+                throw new ArgumentOutOfRangeException(nameof(number), "Cardinal fragments must be non-negative.");
+
+            var query = BuildVariantQuery(variants);
+            string raw = number.IsZero ? Zero : ConvertRaw(number, query);
+            raw = ApplyRawAdjustment(raw);
+            raw = ApplyVariantRules(raw, query, number);
+            return ApplyTriggers(raw, TriggerAt.End, null, query);
+        }
+
+        /// <summary>
+        /// Applies language finalization and an optional outer sign to an assembled phrase.
+        /// Language finalization is deliberately performed once, after all fragments have been assembled.
+        /// </summary>
+        /// <param name="text">The fully assembled, unfinalized phrase.</param>
+        /// <param name="isNegative">Whether to apply the configured minus form to the finalized phrase.</param>
+        /// <returns>The finalized public conversion result.</returns>
+        private string FinalizePhrase(string text, bool isNegative = false)
+        {
+            string final = LanguageSpecifics.FinalizeWriting(LanguageIdentifier, text);
+            return isNegative ? Minus.Replace("*", final) : final;
+        }
+
+        /// <summary>Applies the user-supplied raw adjustment without language finalization.</summary>
+        /// <param name="text">The text to adjust.</param>
+        /// <returns>The adjusted text, or the original text when no adjustment is configured.</returns>
+        private string ApplyRawAdjustment(string text) => _rawAdjustFunction == null ? text : _rawAdjustFunction(text);
 
         /// <summary>
         /// Produces the raw text for a positive number without any adjustment or finalization.
@@ -1659,13 +1697,13 @@ namespace Utils.NumberToString
                 BigInteger.Abs(numerator) <= long.MaxValue)
             {
                 // Numerator is a sub-expression; do not apply MaxNumber guard.
-                string valueText = ConvertCardinalUnchecked(numerator, v);
+                string valueText = BuildCardinalFragment(numerator, v);
                 return string.Concat(valueText, Separator, suffix.ToPlural((long)BigInteger.Abs(numerator))).Trim();
             }
 
             // Numerator and denominator are sub-expressions; do not apply MaxNumber guard.
-            string numeratorText = ConvertCardinalUnchecked(numerator, v);
-            string denominatorText = ConvertCardinalUnchecked(denominator, v);
+            string numeratorText = BuildCardinalFragment(numerator, v);
+            string denominatorText = BuildCardinalFragment(denominator, v);
 
             string connector = FractionSeparator;
             return string.Concat(numeratorText, Separator, connector, Separator, denominatorText).Trim();
@@ -1689,10 +1727,24 @@ namespace Utils.NumberToString
             bool isNegative = number < 0;
             long absNumber = Math.Abs(number);
             var activeVariants = BuildVariantQuery(variants);
+            string ordinal = BuildOrdinalFragment(absNumber, variants, activeVariants);
+            string final = LanguageSpecifics.FinalizeWriting(LanguageIdentifier, ordinal);
+            if (!string.IsNullOrEmpty(OrdinalPrefix))
+                final = OrdinalPrefix + final;
+            return isNegative ? Minus.Replace("*", final) : final;
+        }
 
+        /// <summary>Builds an unsigned ordinal fragment through adjustment and end triggers, without language finalization.</summary>
+        /// <param name="number">The non-negative ordinal value.</param>
+        /// <param name="variants">The caller-supplied variants.</param>
+        /// <param name="activeVariants">The resolved variant query.</param>
+        /// <returns>The unfinalized ordinal fragment.</returns>
+        private string BuildOrdinalFragment(long number, string[] variants, IReadOnlyDictionary<string, string>? activeVariants = null)
+        {
+            activeVariants ??= BuildVariantQuery(variants);
             string ordinal;
             if (LanguageSpecifics is IOrdinalLanguageSpecifics ordinalPlugin
-                && ordinalPlugin.TryConvertOrdinal(absNumber, activeVariants, out var pluginResult))
+                && ordinalPlugin.TryConvertOrdinal(number, activeVariants, out var pluginResult))
                 ordinal = pluginResult!;
             else
             {
@@ -1704,27 +1756,23 @@ namespace Utils.NumberToString
             // defaults (e.g. {gender=masculine}), which would incorrectly select a variant
             // exception over the explicit string= base form. Check OrdinalExceptions first
             // so that string="form" is treated as the true no-variant fallback.
-            if (variants.Length == 0 && OrdinalExceptions.TryGetValue(absNumber, out var baseException))
+            if (variants.Length == 0 && OrdinalExceptions.TryGetValue(number, out var baseException))
                 ordinal = baseException;
 
             // Exceptions: variant first, then base
-            else if (activeVariant?.Exceptions.TryGetValue(absNumber, out var varException) == true)
+            else if (activeVariant?.Exceptions.TryGetValue(number, out var varException) == true)
                 ordinal = varException;
-            else if (OrdinalExceptions.TryGetValue(absNumber, out var exception))
+            else if (OrdinalExceptions.TryGetValue(number, out var exception))
                 ordinal = exception;
             else
             {
-                string raw = absNumber == 0 ? Zero : ConvertRaw((BigInteger)absNumber, activeVariants);
-                raw = ApplyVariantRules(raw, activeVariants, absNumber);
+                string raw = number == 0 ? Zero : ConvertRaw((BigInteger)number, activeVariants);
+                raw = ApplyVariantRules(raw, activeVariants, number);
                 ordinal = ApplyOrdinalTransform(raw, activeVariant, noExplicitVariants: variants.Length == 0);
             }
             }
-            if (_rawAdjustFunction != null) ordinal = _rawAdjustFunction(ordinal);
-            ordinal = ApplyTriggers(ordinal, TriggerAt.End, null, activeVariants);
-            string final = LanguageSpecifics.FinalizeWriting(LanguageIdentifier, ordinal);
-            if (!string.IsNullOrEmpty(OrdinalPrefix))
-                final = OrdinalPrefix + final;
-            return isNegative ? Minus.Replace("*", final) : final;
+            ordinal = ApplyRawAdjustment(ordinal);
+            return ApplyTriggers(ordinal, TriggerAt.End, null, activeVariants);
         }
 
         private OrdinalVariantRule? FindBestOrdinalVariant(IReadOnlyDictionary<string, string> query)
@@ -1783,18 +1831,24 @@ namespace Utils.NumberToString
             units += subunits / subunitFactor;
             subunits %= subunitFactor;
 
+            // The whole-currency component retains the public cardinal limit after rounding carry;
+            // subunits remain exempt because they are an internal sub-expression.
+            if (MaxNumber.HasValue && units > MaxNumber.Value)
+                throw new ArgumentOutOfRangeException(nameof(amount),
+                    $"The units component exceeds the maximum supported number ({MaxNumber.Value}).");
+
             string unitName = units == BigInteger.One ? currency.UnitSingular : currency.UnitPlural;
-            string result = Convert(units, variants) + Separator + unitName;
+            string result = BuildCardinalFragment(units, variants) + Separator + unitName;
 
             if (subunits > 0)
             {
                 string subunitName = subunits == 1 ? currency.SubunitSingular : currency.SubunitPlural;
                 // Subunits are a sub-expression; do not check MaxNumber for them.
-                string subunitsText = ConvertCardinalUnchecked(subunits, variants) + Separator + subunitName;
+                string subunitsText = BuildCardinalFragment(subunits, variants) + Separator + subunitName;
                 result = result + Separator + currency.Connector + Separator + subunitsText;
             }
 
-            return isNegative ? Minus.Replace("*", result) : result;
+            return FinalizePhrase(result, isNegative);
         }
 
         /// <summary>
@@ -1867,27 +1921,37 @@ namespace Utils.NumberToString
             // Use long to safely compute abs of any int value including int.MinValue+1..int.MaxValue.
             int abs = (int)Math.Abs((long)year);
 
+            string body = BuildYearFragment(abs, variants);
+
+            if (isNegative && _yearFormat?.BeforeChristSuffix != null)
+                return FinalizePhrase(body + Separator + _yearFormat.BeforeChristSuffix);
+            return FinalizePhrase(body, isNegative);
+        }
+
+        /// <summary>Builds an unsigned, unfinalized year phrase from cardinal fragments.</summary>
+        /// <param name="year">The non-negative year to render.</param>
+        /// <param name="variants">The variants applied to numeric fragments.</param>
+        /// <returns>The unfinalized year phrase.</returns>
+        private string BuildYearFragment(int year, string[] variants)
+        {
             string body;
-            if (_yearFormat?.SplitRanges?.Contains(abs) == true)
+            if (_yearFormat?.SplitRanges?.Contains(year) == true)
             {
-                int centuries = abs / 100;
-                int remainder = abs % 100;
+                int centuries = year / 100;
+                int remainder = year % 100;
 
                 if (remainder == 0 && _yearFormat.HundredWord != null)
-                    body = Convert(centuries, variants) + Separator + _yearFormat.HundredWord;
+                    body = BuildCardinalFragment(centuries, variants) + Separator + _yearFormat.HundredWord;
                 else if (remainder is > 0 and < 10 && _yearFormat.ZeroConnector != null)
-                    body = Convert(centuries, variants) + Separator + _yearFormat.ZeroConnector + Separator + Convert(remainder, variants);
+                    body = BuildCardinalFragment(centuries, variants) + Separator + _yearFormat.ZeroConnector + Separator + BuildCardinalFragment(remainder, variants);
                 else
-                    body = Convert(centuries, variants) + Separator + Convert(remainder, variants);
+                    body = BuildCardinalFragment(centuries, variants) + Separator + BuildCardinalFragment(remainder, variants);
             }
             else
             {
-                body = Convert(abs, variants);
+                body = BuildCardinalFragment(year, variants);
             }
-
-            if (isNegative && _yearFormat?.BeforeChristSuffix != null)
-                return body + Separator + _yearFormat.BeforeChristSuffix;
-            return isNegative ? Minus.Replace("*", body) : body;
+            return body;
         }
 
         /// <inheritdoc cref="INumberToStringConverter.ConvertFraction(BigInteger, BigInteger, string[])"/>
@@ -1903,7 +1967,9 @@ namespace Utils.NumberToString
                 denominator = BigInteger.Negate(denominator);
             }
 
-            return BuildFractionText(numerator, denominator, allowFractionNames: true, variants);
+            bool isNegative = numerator.Sign < 0;
+            string phrase = BuildFractionText(BigInteger.Abs(numerator), denominator, allowFractionNames: true, variants);
+            return FinalizePhrase(phrase, isNegative);
         }
 
         /// <inheritdoc cref="INumberToStringConverter.ConvertFraction(int, int, string[])"/>
@@ -1938,7 +2004,7 @@ namespace Utils.NumberToString
         private string FormatTimeUnit(int count, (string Singular, string Plural, string? Count1Form) unit, string[] variants)
         {
             string word = count == 1 ? unit.Singular : unit.Plural;
-            string numeral = (count == 1 && unit.Count1Form != null) ? unit.Count1Form : Convert(count, variants);
+            string numeral = (count == 1 && unit.Count1Form != null) ? unit.Count1Form : BuildCardinalFragment(count, variants);
             return numeral + Separator + word;
         }
 
@@ -1952,8 +2018,17 @@ namespace Utils.NumberToString
                 throw new ArgumentOutOfRangeException(nameof(duration),
                     "TimeSpan.MinValue cannot be converted because its negation overflows.");
             var abs = duration < TimeSpan.Zero ? -duration : duration;
+            return FinalizePhrase(BuildDurationFragment(abs, variants), duration < TimeSpan.Zero);
+        }
+
+        /// <summary>Builds an unfinalized phrase for a non-negative duration.</summary>
+        /// <param name="duration">The non-negative duration to render.</param>
+        /// <param name="variants">The variants applied to numeric fragments.</param>
+        /// <returns>The assembled duration phrase.</returns>
+        private string BuildDurationFragment(TimeSpan duration, string[] variants)
+        {
             var parts = new List<string>();
-            int totalHours = (int)(abs.Days * 24 + abs.Hours);
+            int totalHours = (int)(duration.Days * 24 + duration.Hours);
 
             if (totalHours > 0)
             {
@@ -1962,23 +2037,23 @@ namespace Utils.NumberToString
                         $"Language '{LanguageIdentifier}' has a non-zero hours component but no 'hour' unit configured in <TimeUnits>.");
                 parts.Add(FormatTimeUnit(totalHours, h, variants));
             }
-            if (abs.Minutes > 0)
+            if (duration.Minutes > 0)
             {
                 if (!_timeUnits.TryGetValue("minute", out var m))
                     throw new InvalidOperationException(
                         $"Language '{LanguageIdentifier}' has a non-zero minutes component but no 'minute' unit configured in <TimeUnits>.");
-                parts.Add(FormatTimeUnit(abs.Minutes, m, variants));
+                parts.Add(FormatTimeUnit(duration.Minutes, m, variants));
             }
-            if (abs.Seconds > 0)
+            if (duration.Seconds > 0)
             {
                 if (!_timeUnits.TryGetValue("second", out var s))
                     throw new InvalidOperationException(
                         $"Language '{LanguageIdentifier}' has a non-zero seconds component but no 'second' unit configured in <TimeUnits>.");
-                parts.Add(FormatTimeUnit(abs.Seconds, s, variants));
+                parts.Add(FormatTimeUnit(duration.Seconds, s, variants));
             }
 
             string body = parts.Count > 0 ? string.Join(Separator, parts) : Zero;
-            return duration < TimeSpan.Zero ? Minus.Replace("*", body) : body;
+            return body;
         }
 
         /// <inheritdoc cref="INumberToStringConverter.Convert(TimeOnly, string[])"/>
@@ -1987,6 +2062,15 @@ namespace Utils.NumberToString
             if (!SupportsTimeConversion)
                 throw new NotSupportedException($"Language '{LanguageIdentifier}' has no <TimeUnits> configuration.");
 
+            return FinalizePhrase(BuildTimeFragment(time, variants));
+        }
+
+        /// <summary>Builds an unfinalized time-of-day phrase.</summary>
+        /// <param name="time">The time to render.</param>
+        /// <param name="variants">The variants applied to numeric fragments.</param>
+        /// <returns>The assembled time phrase.</returns>
+        private string BuildTimeFragment(TimeOnly time, string[] variants)
+        {
             var parts = new List<string>();
             if (_timeUnits.TryGetValue("hour", out var h))
                 parts.Add(FormatTimeUnit(time.Hour, h, variants));
@@ -2063,15 +2147,24 @@ namespace Utils.NumberToString
             if (!SupportsDateConversion)
                 throw new NotSupportedException($"Language '{LanguageIdentifier}' has no <DateFormat> configuration.");
 
+            return FinalizePhrase(BuildDateFragment(date, variants));
+        }
+
+        /// <summary>Builds an unfinalized date phrase from date and numeric fragments.</summary>
+        /// <param name="date">The date to render.</param>
+        /// <param name="variants">The variants applied to numeric fragments.</param>
+        /// <returns>The assembled date phrase.</returns>
+        private string BuildDateFragment(DateOnly date, string[] variants)
+        {
             string month = GetMonthName(date.Month);
             // _dateFirstDay overrides {ordinal-day} for day 1; _dateFirstCardinalDay overrides {cardinal-day} for day 1.
             string cardinalDay = (date.Day == 1 && _dateFirstCardinalDay != null)
                 ? _dateFirstCardinalDay
-                : Convert(date.Day, variants);
+                : BuildCardinalFragment(date.Day, variants);
             string ordinalDay = (date.Day == 1 && _dateFirstDay != null)
                 ? _dateFirstDay
-                : (SupportsOrdinals ? ConvertOrdinal(date.Day, variants) : cardinalDay);
-            string year = ConvertYear(date.Year, variants);
+                : (SupportsOrdinals ? OrdinalPrefix + BuildOrdinalFragment(date.Day, variants) : cardinalDay);
+            string year = BuildYearFragment(date.Year, variants);
 
             var values = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -2129,11 +2222,14 @@ namespace Utils.NumberToString
 
             string connector = _dateTimeConnector ?? Separator;
 
+            string phrase;
             if (SupportsDateConversion && SupportsTimeConversion)
-                return Convert(DateOnly.FromDateTime(dateTime), variants) + connector + Convert(TimeOnly.FromDateTime(dateTime), variants);
-            if (SupportsDateConversion)
-                return Convert(DateOnly.FromDateTime(dateTime), variants);
-            return Convert(TimeOnly.FromDateTime(dateTime), variants);
+                phrase = BuildDateFragment(DateOnly.FromDateTime(dateTime), variants) + connector + BuildTimeFragment(TimeOnly.FromDateTime(dateTime), variants);
+            else if (SupportsDateConversion)
+                phrase = BuildDateFragment(DateOnly.FromDateTime(dateTime), variants);
+            else
+                phrase = BuildTimeFragment(TimeOnly.FromDateTime(dateTime), variants);
+            return FinalizePhrase(phrase);
         }
 
         /// <summary>

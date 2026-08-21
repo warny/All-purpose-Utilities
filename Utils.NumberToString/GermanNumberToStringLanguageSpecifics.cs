@@ -25,7 +25,14 @@ public sealed class GermanNumberToStringLanguageSpecifics : INumberToStringLangu
         // (firstLetterUpperCase="true"); this regex handles all generated levels (Billion,
         // Trillion …) without an explicit enumeration. Only this hook can cover compound
         // endings like "zweihundertein" → "zweihunderteins" (LastWord scope cannot).
-        string finalized = Regex.Replace(text, @"\bein (?<l>[A-Z])", "eine ${l}");
+        string finalized = Regex.Replace(
+            text,
+            @"\bein (?<scale>[A-ZÄÖÜ][a-zäöüß]*(?:illion|illiarde)(?:en)?)\b",
+            "eine ${scale}");
+        // Composite phrases are finalized as a whole. Preserve the established standalone
+        // cardinal form before capitalized currency units and before the decimal separator.
+        finalized = Regex.Replace(finalized, @"\bein (?=[A-ZÄÖÜ])", "eins ");
+        finalized = Regex.Replace(finalized, @"\bein komma\b", "eins komma");
         if (finalized.EndsWith("ein", StringComparison.Ordinal))
             finalized += "s";
         return finalized;
