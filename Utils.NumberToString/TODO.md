@@ -6,16 +6,6 @@ The former items 47–61 in this file are all resolved. Residual work from the h
 
 See `docs/releasing/TodoAudit-2026-08-16.md` for repository-wide classification and PR order.
 
-## P1
-
-### NTS-02 — One invalid built-in configuration can poison static initialization
-
-The static constructor still calls `InitializeConfigurations(...)` for the entire built-in locale set. Any exception escaping that path becomes a `TypeInitializationException` and makes the type unusable for the process lifetime.
-
-**Fix:** make built-in validation a release/CI gate and separate validation/build from publication. Prefer an explicit initialization result/aggregate diagnostic or a guaranteed-safe core registry rather than allowing one optional locale to poison every locale.
-
-**Dependency:** NTS-01 completed: built-in schema validity is now a CI/release invariant.
-
 ## P2 — prove before refactoring
 
 ### NTS-03 — Composite phrase finalization may still be applied inconsistently
@@ -37,6 +27,7 @@ Historical item 74 describes a real extensibility limitation for languages requi
 ## Closed / superseded historical findings
 
 - NTS-01: External/user-supplied configurations are schema-validated before deserialization. Built-in configurations use the same secure parsing and semantic-validation pipeline but skip runtime XSD validation because the complete built-in resource set is schema-validated by unit/CI tests.
+- NTS-02: Built-in initialization is isolated per configuration document. A failing built-in no longer escapes the static initializer or prevents independent valid built-ins from loading. Failures are retained as initialization diagnostics, while built-in XSD and semantic validity remain CI/release invariants.
 
 - Items 47–61: resolved in current code/history (signed numeric boundaries, exact currency arithmetic, regex timeout, configuration validation, transactional registration, inheritance-cycle/presence handling, variant strictness/precedence, language-specifics registration, strict culture lookup, etc.).
 - Pass-2 items 62–64 and 66–73: resolved or intentionally documented.
@@ -46,6 +37,5 @@ Historical item 74 describes a real extensibility limitation for languages requi
 
 ## Recommended implementation order
 
-1. NTS-02 — initialization isolation/aggregate diagnostics.
-2. NTS-03 — behavioral proof first; refactor only if the matrix reproduces inconsistent finalization.
-3. NTS-04 — only with a concrete language requirement.
+1. NTS-03 — behavioral proof first; refactor only if the matrix reproduces inconsistent finalization.
+2. NTS-04 — only with a concrete language requirement.

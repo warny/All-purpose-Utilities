@@ -30,51 +30,82 @@ namespace Utils.NumberToString
         /// Gets the ordered configuration documents distributed with the package. Scale bases must
         /// precede languages that inherit from them.
         /// </summary>
-        internal static IReadOnlyList<string> BuiltInConfigurations { get; } =
+        internal static IReadOnlyList<BuiltInConfigurationSource> BuiltInConfigurations { get; } =
         [
-            NumberConverterResources.NumberConvertionConfiguration_SCALE,
-            NumberConverterResources.NumberConvertionConfiguration_FR_fr_ca,
-            NumberConverterResources.NumberConvertionConfiguration_FR_be_ch,
-            NumberConverterResources.NumberConvertionConfiguration_DE,
-            NumberConverterResources.NumberConvertionConfiguration_DE_ch,
-            NumberConverterResources.NumberConvertionConfiguration_DA,
-            NumberConverterResources.NumberConvertionConfiguration_EN,
-            NumberConverterResources.NumberConvertionConfiguration_EN_GB,
-            NumberConverterResources.NumberConvertionConfiguration_ES,
-            NumberConverterResources.NumberConvertionConfiguration_BG,
-            NumberConverterResources.NumberConvertionConfiguration_CA,
-            NumberConverterResources.NumberConvertionConfiguration_EU,
-            NumberConverterResources.NumberConvertionConfiguration_FA,
-            NumberConverterResources.NumberConvertionConfiguration_GL,
-            NumberConverterResources.NumberConvertionConfiguration_IT,
-            NumberConverterResources.NumberConvertionConfiguration_CS,
-            NumberConverterResources.NumberConvertionConfiguration_SK,
-            NumberConverterResources.NumberConvertionConfiguration_FI,
-            NumberConverterResources.NumberConvertionConfiguration_AR,
-            NumberConverterResources.NumberConvertionConfiguration_HE,
-            NumberConverterResources.NumberConvertionConfiguration_HR,
-            NumberConverterResources.NumberConvertionConfiguration_HU,
-            NumberConverterResources.NumberConvertionConfiguration_ZH,
-            NumberConverterResources.NumberConvertionConfiguration_KO,
-            NumberConverterResources.NumberConvertionConfiguration_JA,
-            NumberConverterResources.NumberConvertionConfiguration_PT,
-            NumberConverterResources.NumberConvertionConfiguration_PL,
-            NumberConverterResources.NumberConvertionConfiguration_HI,
-            NumberConverterResources.NumberConvertionConfiguration_ID,
-            NumberConverterResources.NumberConvertionConfiguration_EL,
-            NumberConverterResources.NumberConvertionConfiguration_NL,
-            NumberConverterResources.NumberConvertionConfiguration_NO,
-            NumberConverterResources.NumberConvertionConfiguration_RO,
-            NumberConverterResources.NumberConvertionConfiguration_RU,
-            NumberConverterResources.NumberConvertionConfiguration_SV,
-            NumberConverterResources.NumberConvertionConfiguration_SW,
-            NumberConverterResources.NumberConvertionConfiguration_TR,
-            NumberConverterResources.NumberConvertionConfiguration_UK,
-            NumberConverterResources.NumberConvertionConfiguration_VN,
-            NumberConverterResources.NumberConvertionConfiguration_ZU,
-            NumberConverterResources.NumberConvertionConfiguration_EE,
-            NumberConverterResources.NumberConvertionConfiguration_WO
+            new("SCALE", NumberConverterResources.NumberConvertionConfiguration_SCALE),
+            new("FR-fr-ca", NumberConverterResources.NumberConvertionConfiguration_FR_fr_ca),
+            new("FR-be-ch", NumberConverterResources.NumberConvertionConfiguration_FR_be_ch),
+            new("DE", NumberConverterResources.NumberConvertionConfiguration_DE),
+            new("DE-ch", NumberConverterResources.NumberConvertionConfiguration_DE_ch),
+            new("DA", NumberConverterResources.NumberConvertionConfiguration_DA),
+            new("EN", NumberConverterResources.NumberConvertionConfiguration_EN),
+            new("EN-GB", NumberConverterResources.NumberConvertionConfiguration_EN_GB),
+            new("ES", NumberConverterResources.NumberConvertionConfiguration_ES),
+            new("BG", NumberConverterResources.NumberConvertionConfiguration_BG),
+            new("CA", NumberConverterResources.NumberConvertionConfiguration_CA),
+            new("EU", NumberConverterResources.NumberConvertionConfiguration_EU),
+            new("FA", NumberConverterResources.NumberConvertionConfiguration_FA),
+            new("GL", NumberConverterResources.NumberConvertionConfiguration_GL),
+            new("IT", NumberConverterResources.NumberConvertionConfiguration_IT),
+            new("CS", NumberConverterResources.NumberConvertionConfiguration_CS),
+            new("SK", NumberConverterResources.NumberConvertionConfiguration_SK),
+            new("FI", NumberConverterResources.NumberConvertionConfiguration_FI),
+            new("AR", NumberConverterResources.NumberConvertionConfiguration_AR),
+            new("HE", NumberConverterResources.NumberConvertionConfiguration_HE),
+            new("HR", NumberConverterResources.NumberConvertionConfiguration_HR),
+            new("HU", NumberConverterResources.NumberConvertionConfiguration_HU),
+            new("ZH", NumberConverterResources.NumberConvertionConfiguration_ZH),
+            new("KO", NumberConverterResources.NumberConvertionConfiguration_KO),
+            new("JA", NumberConverterResources.NumberConvertionConfiguration_JA),
+            new("PT", NumberConverterResources.NumberConvertionConfiguration_PT),
+            new("PL", NumberConverterResources.NumberConvertionConfiguration_PL),
+            new("HI", NumberConverterResources.NumberConvertionConfiguration_HI),
+            new("ID", NumberConverterResources.NumberConvertionConfiguration_ID),
+            new("EL", NumberConverterResources.NumberConvertionConfiguration_EL),
+            new("NL", NumberConverterResources.NumberConvertionConfiguration_NL),
+            new("NO", NumberConverterResources.NumberConvertionConfiguration_NO),
+            new("RO", NumberConverterResources.NumberConvertionConfiguration_RO),
+            new("RU", NumberConverterResources.NumberConvertionConfiguration_RU),
+            new("SV", NumberConverterResources.NumberConvertionConfiguration_SV),
+            new("SW", NumberConverterResources.NumberConvertionConfiguration_SW),
+            new("TR", NumberConverterResources.NumberConvertionConfiguration_TR),
+            new("UK", NumberConverterResources.NumberConvertionConfiguration_UK),
+            new("VN", NumberConverterResources.NumberConvertionConfiguration_VN),
+            new("ZU", NumberConverterResources.NumberConvertionConfiguration_ZU),
+            new("EE", NumberConverterResources.NumberConvertionConfiguration_EE),
+            new("WO", NumberConverterResources.NumberConvertionConfiguration_WO)
         ];
+
+        /// <summary>Identifies one ordered built-in XML configuration document.</summary>
+        /// <param name="Name">The diagnostic resource name.</param>
+        /// <param name="Configuration">The XML configuration content.</param>
+        internal sealed record BuiltInConfigurationSource(string Name, string Configuration);
+
+        /// <summary>Describes a built-in document that could not be initialized.</summary>
+        /// <param name="Name">The diagnostic resource name.</param>
+        /// <param name="Exception">The original initialization exception.</param>
+        internal sealed record BuiltInConfigurationFailure(string Name, Exception Exception);
+
+        /// <summary>Contains the successful converters and retained failures from built-in initialization.</summary>
+        internal sealed class BuiltInInitializationResult
+        {
+            /// <summary>Initializes a result from isolated initialization state.</summary>
+            /// <param name="converters">Converters published by successful documents.</param>
+            /// <param name="failures">Failures recorded in source order.</param>
+            internal BuiltInInitializationResult(
+                IReadOnlyDictionary<string, NumberToStringConverter> converters,
+                IReadOnlyList<BuiltInConfigurationFailure> failures)
+            {
+                Converters = converters;
+                Failures = failures;
+            }
+
+            /// <summary>Gets converters built by successful documents.</summary>
+            internal IReadOnlyDictionary<string, NumberToStringConverter> Converters { get; }
+
+            /// <summary>Gets failures in built-in source order.</summary>
+            internal IReadOnlyList<BuiltInConfigurationFailure> Failures { get; }
+        }
 
         private static readonly XmlSerializer ConfigurationSerializer =
             new(typeof(NumbersXmlModel), "Utils/NumberConvertionConfiguration.xsd");
@@ -83,8 +114,11 @@ namespace Utils.NumberToString
 
         static NumberToStringConverter()
         {
-            RegisterConfigurations(BuiltInConfigurations, DuplicateCulturePolicy.Reject, ConfigurationSchemaValidation.Skip);
+            BuiltInInitialization = InitializeBuiltInConfigurations(BuiltInConfigurations, publishToGlobalRegistry: true);
         }
+
+        /// <summary>Gets the diagnostic result of the package's eager built-in initialization.</summary>
+        internal static BuiltInInitializationResult BuiltInInitialization { get; }
 
         // Caches configurations for different cultures — ConcurrentDictionary for thread-safety
         private static readonly ConcurrentDictionary<string, NumberToStringConverter> CachedConfigurations = new(StringComparer.InvariantCultureIgnoreCase);
@@ -98,6 +132,68 @@ namespace Utils.NumberToString
         // A LanguageDefinition (not the public LanguageType) is cached so that a child in a later
         // document still sees which fields the base declared explicitly versus inherited.
         private static readonly ConcurrentDictionary<string, LanguageDefinition> _cachedLanguageTypes = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Initializes built-in documents sequentially and atomically per document. Successful
+        /// documents become bases for later <c>baseOn</c> references, while ordinary configuration
+        /// failures are retained and do not prevent independent later documents from loading.
+        /// Public registration remains a separate, fully atomic batch operation.
+        /// </summary>
+        /// <param name="configurations">The named documents in dependency order.</param>
+        /// <param name="publishToGlobalRegistry">Whether successful documents are published to the process-wide registry.</param>
+        /// <returns>The successful local registry and failures in source order.</returns>
+        internal static BuiltInInitializationResult InitializeBuiltInConfigurations(
+            IReadOnlyList<BuiltInConfigurationSource> configurations,
+            bool publishToGlobalRegistry = false)
+        {
+            ArgumentNullException.ThrowIfNull(configurations);
+            var converters = new Dictionary<string, NumberToStringConverter>(StringComparer.OrdinalIgnoreCase);
+            var definitions = new Dictionary<string, LanguageDefinition>(StringComparer.OrdinalIgnoreCase);
+            var failures = new List<BuiltInConfigurationFailure>();
+
+            foreach (BuiltInConfigurationSource source in configurations)
+            {
+                try
+                {
+                    ConfigurationBatch batch = BuildConfiguration(
+                        source.Configuration,
+                        commitDefinitions: false,
+                        definitions,
+                        ConfigurationSchemaValidation.Skip,
+                        definitions);
+                    string[] collisions = batch.Converters.Keys.Where(converters.ContainsKey).ToArray();
+                    if (collisions.Length > 0)
+                        throw new InvalidOperationException($"Cultures already registered: {string.Join(", ", collisions)}.");
+
+                    foreach (var (culture, converter) in batch.Converters)
+                    {
+                        converters.Add(culture, converter);
+                        definitions.Add(culture, batch.Definitions[culture]);
+                    }
+                }
+                catch (Exception exception) when (!IsFatalInitializationException(exception))
+                {
+                    failures.Add(new BuiltInConfigurationFailure(source.Name, exception));
+                }
+            }
+
+            if (publishToGlobalRegistry)
+            {
+                foreach (var (culture, converter) in converters)
+                {
+                    CachedConfigurations[culture] = converter;
+                    _cachedLanguageTypes[culture] = definitions[culture];
+                }
+            }
+
+            return new BuiltInInitializationResult(converters, failures);
+        }
+
+        /// <summary>Determines whether an exception represents a catastrophic runtime failure.</summary>
+        /// <param name="exception">The exception to classify.</param>
+        /// <returns><see langword="true"/> when the exception must escape static initialization.</returns>
+        private static bool IsFatalInitializationException(Exception exception) =>
+            exception is OutOfMemoryException or StackOverflowException or AccessViolationException;
 
         /// <summary>
         /// Registers an <see cref="INumberToStringLanguageSpecifics"/> instance under a given type name
@@ -331,7 +427,8 @@ namespace Utils.NumberToString
             string configuration,
             bool commitDefinitions,
             IReadOnlyDictionary<string, LanguageDefinition>? inheritedBatchDefinitions = null,
-            ConfigurationSchemaValidation schemaValidation = ConfigurationSchemaValidation.Validate)
+            ConfigurationSchemaValidation schemaValidation = ConfigurationSchemaValidation.Validate,
+            IReadOnlyDictionary<string, LanguageDefinition>? previouslyLoadedDefinitions = null)
         {
             NumbersXmlModel obj = DeserializeConfiguration(configuration, schemaValidation);
 
@@ -375,6 +472,7 @@ namespace Utils.NumberToString
                         definition,
                         docLanguages,
                         localCacheAdditions,
+                        previouslyLoadedDefinitions ?? _cachedLanguageTypes,
                         new HashSet<string>(StringComparer.OrdinalIgnoreCase),
                         new List<string>());
                 }
@@ -454,6 +552,7 @@ namespace Utils.NumberToString
             LanguageDefinition child,
             IReadOnlyDictionary<string, LanguageDefinition> docLanguages,
             IReadOnlyDictionary<string, LanguageDefinition> localCache,
+            IReadOnlyDictionary<string, LanguageDefinition> previouslyLoadedDefinitions,
             HashSet<string> visiting,
             List<string> resolutionPath)
         {
@@ -482,7 +581,7 @@ namespace Utils.NumberToString
                     foreach (var baseKey in baseKeys)
                     {
                         LanguageDefinition resolvedBase = FindAndResolveBase(
-                            baseKey, docLanguages, localCache, visiting, resolutionPath);
+                            baseKey, docLanguages, localCache, previouslyLoadedDefinitions, visiting, resolutionPath);
                         accumulated = MergeLanguageDefinition(inherited: accumulated, overriding: resolvedBase);
                     }
                 }
@@ -513,6 +612,7 @@ namespace Utils.NumberToString
             string baseKey,
             IReadOnlyDictionary<string, LanguageDefinition> docLanguages,
             IReadOnlyDictionary<string, LanguageDefinition> localCache,
+            IReadOnlyDictionary<string, LanguageDefinition> previouslyLoadedDefinitions,
             HashSet<string> visiting,
             List<string> resolutionPath)
         {
@@ -521,14 +621,14 @@ namespace Utils.NumberToString
             //    definition of a same-named culture is used (and cycles are always detected even
             //    when an older version of the same culture exists in _cachedLanguageTypes).
             if (docLanguages.TryGetValue(baseKey, out LanguageDefinition? rawBase))
-                return ResolveLanguage(rawBase, docLanguages, localCache, visiting, resolutionPath);
+                return ResolveLanguage(rawBase, docLanguages, localCache, previouslyLoadedDefinitions, visiting, resolutionPath);
 
             // 2. Resolved in an earlier document of the current batch.
             if (localCache.TryGetValue(baseKey, out LanguageDefinition? cachedInBatch))
                 return cachedInBatch;
 
             // 3. Resolved in a previously loaded document (cross-document inheritance).
-            if (_cachedLanguageTypes.TryGetValue(baseKey, out LanguageDefinition? globalBase))
+            if (previouslyLoadedDefinitions.TryGetValue(baseKey, out LanguageDefinition? globalBase))
                 return globalBase;
 
             throw new InvalidOperationException(
