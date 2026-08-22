@@ -14,7 +14,7 @@ internal static class WireCodecEngine
         int length = framing switch
         {
             FixedWireFraming fixedFraming => fixedFraming.Size,
-            IWireLengthFraming lengthFraming => lengthFraming.ReadLength(owner),
+            IWireLengthFraming lengthFraming => ReadLength(owner, lengthFraming),
             _ => throw new InvalidOperationException("Unsupported wire framing.")
         };
         byte[] payload = owner.ReadBytes(length);
@@ -24,6 +24,16 @@ internal static class WireCodecEngine
         T value = codec.Read(bounded);
         if (stream.Position != stream.Length) throw new InvalidDataException($"Codec consumed {stream.Position} of {stream.Length} framed bytes.");
         return value;
+    }
+
+    /// <summary>Reads and validates a declared payload length before any payload allocation or decoding occurs.</summary>
+    private static int ReadLength(Reader owner, IWireLengthFraming framing)
+    {
+        int length = framing.ReadLength(owner);
+        if (length < 0) throw new InvalidDataException("Wire framing declared a negative payload length.");
+        if (length > owner.MaximumPayloadLength)
+            throw new InvalidDataException($"Wire payload length {length} exceeds the configured maximum of {owner.MaximumPayloadLength} bytes.");
+        return length;
     }
 
     /// <summary>

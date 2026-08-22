@@ -189,6 +189,38 @@ public sealed class WireCodecTests
         Assert.ThrowsException<ArgumentOutOfRangeException>(() => new Writer(new MemoryStream(), invalidWriterOptions));
     }
 
+    /// <summary>Verifies a length-prefixed codec payload is rejected before allocation or codec invocation when it exceeds the reader limit.</summary>
+    [TestMethod]
+    public void LengthPrefixedRead_RejectsPayloadAboveReaderMaximumBeforeAllocation()
+    {
+        TrackingBlobCodec codec = new(4);
+        SerializationOptions serializationOptions = new();
+        serializationOptions.Codecs.Set(codec, new Int32LengthWireFraming());
+        using MemoryStream stream = new([4, 0, 0, 0, 1, 2, 3, 4]);
+        Reader reader = new(stream, new ReaderOptions { MaximumPayloadLength = 3 }, serializationOptions);
+
+        Assert.ThrowsException<InvalidDataException>(() => reader.Read<Blob>());
+
+        Assert.IsFalse(codec.WasRead);
+        Assert.AreEqual(4, stream.Position);
+    }
+
+    /// <summary>Verifies a length-prefixed codec payload equal to the configured reader limit remains readable.</summary>
+    [TestMethod]
+    public void LengthPrefixedRead_AcceptsPayloadAtReaderMaximum()
+    {
+        TrackingBlobCodec codec = new(4);
+        SerializationOptions serializationOptions = new();
+        serializationOptions.Codecs.Set(codec, new Int32LengthWireFraming());
+        using MemoryStream stream = new([4, 0, 0, 0, 1, 2, 3, 4]);
+        Reader reader = new(stream, new ReaderOptions { MaximumPayloadLength = 4 }, serializationOptions);
+
+        Blob value = reader.Read<Blob>();
+
+        CollectionAssert.AreEqual(new byte[] { 1, 2, 3, 4 }, value.Value);
+        Assert.IsTrue(codec.WasRead);
+    }
+
     /// <summary>Verifies bounded buffering rejects excess data during staging and leaves the target untouched.</summary>
     [TestMethod]
     public void BufferingLimit_IsEnforcedWhileCodecWrites()
@@ -316,6 +348,20 @@ public sealed class WireCodecTests
                 writer.WriteByte(item);
             }
         }
+    }
+
+    /// <summary>Readable blob codec that records whether payload decoding was invoked.</summary>
+    private sealed class TrackingBlobCodec(int payloadLength) : IWireCodec<Blob>
+    {
+        public bool WasRead { get; private set; }
+
+        public Blob Read(IReader reader)
+        {
+            WasRead = true;
+            return new Blob(reader.ReadBytes(payloadLength));
+        }
+
+        public void Write(IWriter writer, Blob value) => writer.WriteBytes(value.Value);
     }
 
     /// <summary>Variable-width test framing that forces the bounded buffering strategy.</summary>

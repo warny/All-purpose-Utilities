@@ -6,7 +6,7 @@ namespace Utils.IO.Serialization;
 public sealed class ReaderOptions
 {
     /// <summary>
-    /// Gets the largest accepted string or arbitrary-precision integer payload in bytes.
+    /// Gets the largest accepted string, arbitrary-precision integer, or length-prefixed wire-codec payload in bytes.
     /// A <see langword="null"/> value preserves the historical behavior and imposes no limit beyond the format's 32-bit length prefix.
     /// Zero permits empty payloads only.
     /// </summary>
