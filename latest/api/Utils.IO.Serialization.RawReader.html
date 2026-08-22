@@ -381,10 +381,11 @@ Each method reads a value using the supplied <a class="xref" href="Utils.IO.Seri
 
   <h3 id="Utils_IO_Serialization_RawReader_ReadBigInteger_Utils_IO_Serialization_IReader_" data-uid="Utils.IO.Serialization.RawReader.ReadBigInteger(Utils.IO.Serialization.IReader)">
   ReadBigInteger(IReader)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawReader.cs/#L136"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawReader.cs/#L139"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Reads a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.biginteger">BigInteger</a> value.</p>
+  <div class="markdown level1 summary"><p>Reads a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.biginteger">BigInteger</a> from a 32-bit byte-length prefix followed by a signed
+two's-complement payload whose byte order follows <a class="xref" href="Utils.IO.Serialization.RawReader.html#Utils_IO_Serialization_RawReader_BigEndian">BigEndian</a>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -418,7 +419,7 @@ Each method reads a value using the supplied <a class="xref" href="Utils.IO.Seri
 
   <h3 id="Utils_IO_Serialization_RawReader_ReadBool_Utils_IO_Serialization_IReader_" data-uid="Utils.IO.Serialization.RawReader.ReadBool(Utils.IO.Serialization.IReader)">
   ReadBool(IReader)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawReader.cs/#L195"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawReader.cs/#L201"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a boolean value.</p>
@@ -492,7 +493,7 @@ Each method reads a value using the supplied <a class="xref" href="Utils.IO.Seri
 
   <h3 id="Utils_IO_Serialization_RawReader_ReadChar_Utils_IO_Serialization_IReader_" data-uid="Utils.IO.Serialization.RawReader.ReadChar(Utils.IO.Serialization.IReader)">
   ReadChar(IReader)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawReader.cs/#L182"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawReader.cs/#L185"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a single character as a 2-byte UTF-16 code unit, respecting <a class="xref" href="Utils.IO.Serialization.RawReader.html#Utils_IO_Serialization_RawReader_BigEndian">BigEndian</a>.</p>
@@ -529,7 +530,7 @@ Each method reads a value using the supplied <a class="xref" href="Utils.IO.Seri
 
   <h3 id="Utils_IO_Serialization_RawReader_ReadComplex_Utils_IO_Serialization_IReader_" data-uid="Utils.IO.Serialization.RawReader.ReadComplex(Utils.IO.Serialization.IReader)">
   ReadComplex(IReader)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawReader.cs/#L151"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawReader.cs/#L154"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a complex number.</p>
@@ -566,7 +567,7 @@ Each method reads a value using the supplied <a class="xref" href="Utils.IO.Seri
 
   <h3 id="Utils_IO_Serialization_RawReader_ReadDate_Utils_IO_Serialization_IReader_" data-uid="Utils.IO.Serialization.RawReader.ReadDate(Utils.IO.Serialization.IReader)">
   ReadDate(IReader)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawReader.cs/#L166"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawReader.cs/#L169"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.dateonly">DateOnly</a> value.</p>
@@ -603,7 +604,7 @@ Each method reads a value using the supplied <a class="xref" href="Utils.IO.Seri
 
   <h3 id="Utils_IO_Serialization_RawReader_ReadDateTime_Utils_IO_Serialization_IReader_" data-uid="Utils.IO.Serialization.RawReader.ReadDateTime(Utils.IO.Serialization.IReader)">
   ReadDateTime(IReader)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawReader.cs/#L160"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawReader.cs/#L163"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a> value.</p>
@@ -714,10 +715,11 @@ Each method reads a value using the supplied <a class="xref" href="Utils.IO.Seri
 
   <h3 id="Utils_IO_Serialization_RawReader_ReadGuid_Utils_IO_Serialization_IReader_" data-uid="Utils.IO.Serialization.RawReader.ReadGuid(Utils.IO.Serialization.IReader)">
   ReadGuid(IReader)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawReader.cs/#L192"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawReader.cs/#L198"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Reads a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.guid">Guid</a>.</p>
+  <div class="markdown level1 summary"><p>Reads a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.guid">Guid</a> in canonical RFC/network byte layout, independently of the numeric
+<a class="xref" href="Utils.IO.Serialization.RawReader.html#Utils_IO_Serialization_RawReader_BigEndian">BigEndian</a> option.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -825,10 +827,10 @@ Each method reads a value using the supplied <a class="xref" href="Utils.IO.Seri
 
   <h3 id="Utils_IO_Serialization_RawReader_ReadInt128_Utils_IO_Serialization_IReader_" data-uid="Utils.IO.Serialization.RawReader.ReadInt128(Utils.IO.Serialization.IReader)">
   ReadInt128(IReader)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawReader.cs/#L145"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawReader.cs/#L148"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Reads a signed 128-bit integer.</p>
+  <div class="markdown level1 summary"><p>Reads a signed 128-bit integer whose fixed 16-byte representation follows <a class="xref" href="Utils.IO.Serialization.RawReader.html#Utils_IO_Serialization_RawReader_BigEndian">BigEndian</a>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -1010,7 +1012,7 @@ Each method reads a value using the supplied <a class="xref" href="Utils.IO.Seri
 
   <h3 id="Utils_IO_Serialization_RawReader_ReadString_Utils_IO_Serialization_IReader_" data-uid="Utils.IO.Serialization.RawReader.ReadString(Utils.IO.Serialization.IReader)">
   ReadString(IReader)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawReader.cs/#L173"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawReader.cs/#L176"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a string prefixed with its length.</p>
@@ -1047,7 +1049,7 @@ Each method reads a value using the supplied <a class="xref" href="Utils.IO.Seri
 
   <h3 id="Utils_IO_Serialization_RawReader_ReadTime_Utils_IO_Serialization_IReader_" data-uid="Utils.IO.Serialization.RawReader.ReadTime(Utils.IO.Serialization.IReader)">
   ReadTime(IReader)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawReader.cs/#L163"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawReader.cs/#L166"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.timeonly">TimeOnly</a> value.</p>
@@ -1084,7 +1086,7 @@ Each method reads a value using the supplied <a class="xref" href="Utils.IO.Seri
 
   <h3 id="Utils_IO_Serialization_RawReader_ReadTimeSpan_Utils_IO_Serialization_IReader_" data-uid="Utils.IO.Serialization.RawReader.ReadTimeSpan(Utils.IO.Serialization.IReader)">
   ReadTimeSpan(IReader)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawReader.cs/#L169"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawReader.cs/#L172"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.timespan">TimeSpan</a> value.</p>
@@ -1158,10 +1160,10 @@ Each method reads a value using the supplied <a class="xref" href="Utils.IO.Seri
 
   <h3 id="Utils_IO_Serialization_RawReader_ReadUInt128_Utils_IO_Serialization_IReader_" data-uid="Utils.IO.Serialization.RawReader.ReadUInt128(Utils.IO.Serialization.IReader)">
   ReadUInt128(IReader)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawReader.cs/#L148"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawReader.cs/#L151"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Reads an unsigned 128-bit integer.</p>
+  <div class="markdown level1 summary"><p>Reads an unsigned 128-bit integer whose fixed 16-byte representation follows <a class="xref" href="Utils.IO.Serialization.RawReader.html#Utils_IO_Serialization_RawReader_BigEndian">BigEndian</a>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
