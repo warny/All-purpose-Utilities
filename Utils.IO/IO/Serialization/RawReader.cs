@@ -127,7 +127,7 @@ public class RawReader
     private byte[] ReadNumberBytes(IReader reader, int length)
     {
         byte[] bytes = ReadExactly(reader, length, "numeric value");
-        if (BitConverter.IsLittleEndian ^ BigEndian) bytes.Reverse();
+        if (BitConverter.IsLittleEndian == BigEndian) bytes.Reverse();
         return bytes;
     }
 
@@ -160,7 +160,7 @@ public class RawReader
 
     // Date and time reading methods
     /// <summary>Reads a <see cref="DateTime"/> value.</summary>
-    public DateTime ReadDateTime(IReader reader) => new DateTime(ReadLong(reader));
+    public DateTime ReadDateTime(IReader reader) => DateTime.FromBinary(ReadLong(reader));
 
     /// <summary>Reads a <see cref="TimeOnly"/> value.</summary>
     public TimeOnly ReadTime(IReader reader) => new TimeOnly(ReadLong(reader));

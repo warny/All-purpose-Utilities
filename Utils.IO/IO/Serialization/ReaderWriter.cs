@@ -30,11 +30,23 @@ public class ReaderWriter
     /// Initializes a new instance of the <see cref="ReaderWriter"/> class for the specified stream.
     /// </summary>
     /// <param name="stream">Stream to read from and write to.</param>
-    public ReaderWriter(Stream stream)
+    public ReaderWriter(Stream stream) : this(stream, new SerializationOptions()) { }
+
+    /// <summary>Initializes a reader/writer pair with shared wire options.</summary>
+    public ReaderWriter(Stream stream, SerializationOptions serializationOptions)
+    {
+        Stream = stream ?? throw new ArgumentNullException(nameof(stream));
+        ArgumentNullException.ThrowIfNull(serializationOptions);
+        Reader = new Reader(stream, serializationOptions);
+        Writer = new Writer(stream, serializationOptions);
+    }
+
+    /// <summary>Initializes a sliced facade from readers and writers that already own immutable snapshots.</summary>
+    private ReaderWriter(Stream stream, Reader reader, Writer writer)
     {
         Stream = stream;
-        Reader = new Reader(stream);
-        Writer = new Writer(stream);
+        Reader = reader;
+        Writer = writer;
     }
 
     /// <summary>
@@ -83,6 +95,6 @@ public class ReaderWriter
     public ReaderWriter Slice(long position, long length)
     {
         PartialStream s = new PartialStream(Stream, position, length);
-        return new ReaderWriter(s);
+        return new ReaderWriter(s, Reader.CreateMappedReader(s), Writer.CreateMappedWriter(s));
     }
 }
