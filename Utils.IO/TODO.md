@@ -6,18 +6,6 @@ The July audit text had become partially stale after PRs #526 and #528. This fil
 
 ## P1
 
-### IO-03 — Extended numeric wire formats must honor the selected endianness
-
-Primitive integer/floating converters honor `BigEndian`, but `BigInteger`, `Int128` and `UInt128` currently use fixed/framework layouts. `Guid` is not numeric and must not be controlled by the numeric endianness setting.
-
-**Decision (2026-08-16):**
-
-- `Int128` and `UInt128` must support both little-endian and big-endian and follow `BigEndian`, exactly like the other integer types. These APIs are new in 2.0, so there is no legacy 1.x wire format to preserve.
-- `BigInteger` must support both little-endian and big-endian payloads so `RawReader`/`RawWriter` can interoperate with external systems. Use a documented signed two's-complement representation and make the byte order follow `BigEndian`.
-- `Guid` is an identifier, not a number. Its binary representation must be explicitly standardized and platform-interoperable, and must remain independent of `BigEndian`. Reading and writing must use the same documented standard byte layout.
-
-**Fix:** implement those contracts and add golden byte vectors for both endian modes and for the chosen standard GUID representation. Tests must assert bytes directly, not only writer→reader round-trips.
-
 ### IO-04 — Length-prefixed parsing is bounded only when callers opt in
 
 PR #526 added `RawReader.MaximumLength` and negative/over-limit validation before allocation. The old finding claiming that lengths are passed directly to `ReadBytes` is therefore obsolete. The residual risk is that the default is `int.MaxValue` and aggregate/generated readers need one coherent budget policy.
@@ -97,6 +85,7 @@ Each format must define its exact units/epoch, valid range, `DateTimeKind` seman
 
 ## Closed since the July audit
 
+- IO-03 — fixed: `Int128` and `UInt128` now use fixed-width 16-byte representations following `BigEndian`; `BigInteger` keeps its `Int32` length prefix and uses a signed minimal two's-complement payload following `BigEndian`; `Guid` uses canonical RFC/network byte order independently of `BigEndian`. Golden wire vectors cover reader and writer behavior.
 - IO-02 — base descriptor invariants: fixed by validating alphabet uniqueness, reserved-character collisions and padding quantum consistency before constructing lookup tables. Invalid custom descriptors now fail deterministically at construction time.
 - IO-01 — base alphabet validation: fixed by requiring lengths from 2 through 256 to be exact powers of two; exhaustive regression coverage checks every length from 0 through 257 and verifies `BitsWidth` for valid alphabets.
 - Old item 6 — unpadded incomplete final groups: fixed by PR #528; current `BaseDecoderStream.Close()` rejects invalid terminal quanta.

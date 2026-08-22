@@ -132,20 +132,23 @@ public class RawReader
     }
 
     // Extended number reading methods
-    /// <summary>Reads a <see cref="BigInteger"/> value.</summary>
+    /// <summary>
+    /// Reads a <see cref="BigInteger"/> from a 32-bit byte-length prefix followed by a signed
+    /// two's-complement payload whose byte order follows <see cref="BigEndian"/>.
+    /// </summary>
     public BigInteger ReadBigInteger(IReader reader)
     {
         int length = ReadInt(reader);
         ValidateLength(length, nameof(BigInteger));
         byte[] bytes = ReadExactly(reader, length, nameof(BigInteger));
-        return new BigInteger(bytes);
+        return new BigInteger(bytes, isUnsigned: false, isBigEndian: BigEndian);
     }
 
-    /// <summary>Reads a signed 128-bit integer.</summary>
-    public Int128 ReadInt128(IReader reader) => BitConverterEx.ToInt128(ReadExactly(reader, 16, nameof(Int128)));
+    /// <summary>Reads a signed 128-bit integer whose fixed 16-byte representation follows <see cref="BigEndian"/>.</summary>
+    public Int128 ReadInt128(IReader reader) => ReadNumber<Int128>(reader, false);
 
-    /// <summary>Reads an unsigned 128-bit integer.</summary>
-    public UInt128 ReadUInt128(IReader reader) => BitConverterEx.ToUInt128(ReadExactly(reader, 16, nameof(UInt128)));
+    /// <summary>Reads an unsigned 128-bit integer whose fixed 16-byte representation follows <see cref="BigEndian"/>.</summary>
+    public UInt128 ReadUInt128(IReader reader) => ReadNumber<UInt128>(reader, true);
 
     /// <summary>Reads a complex number.</summary>
     public Complex ReadComplex(IReader reader)
@@ -188,8 +191,11 @@ public class RawReader
     }
 
     // Miscellaneous reading methods
-    /// <summary>Reads a <see cref="Guid"/>.</summary>
-    public Guid ReadGuid(IReader reader) => new Guid(ReadExactly(reader, 16, nameof(Guid)));
+    /// <summary>
+    /// Reads a <see cref="Guid"/> in canonical RFC/network byte layout, independently of the numeric
+    /// <see cref="BigEndian"/> option.
+    /// </summary>
+    public Guid ReadGuid(IReader reader) => new Guid(ReadExactly(reader, 16, nameof(Guid)), bigEndian: true);
 
     /// <summary>Reads a boolean value.</summary>
     public bool ReadBool(IReader reader) => ReadByte(reader) == 1;

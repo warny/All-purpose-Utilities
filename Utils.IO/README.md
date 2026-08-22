@@ -213,6 +213,8 @@ byte[] decoded = ms.ToArray();  // [1, 2, 3, 4]
 
 `Reader` and `Writer` serialize objects by reflecting members decorated with `[Field(order)]`. Primitive types (`byte`, `short`, `int`, `long`, `float`, `double`, etc.) are handled automatically by built-in delegates.
 
+Raw extended integers have explicit portable wire contracts: `Int128` and `UInt128` occupy 16 bytes in the selected numeric byte order, while `BigInteger` uses an endian-aware `Int32` byte-length prefix and a minimal signed two's-complement payload in the same byte order. GUIDs use the canonical 16-byte RFC/network layout regardless of the numeric byte-order option.
+
 ### Define a serializable struct
 
 ```csharp
