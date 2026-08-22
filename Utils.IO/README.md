@@ -287,3 +287,173 @@ A `Reader` or `Writer` coordinates concurrent first-time contract construction w
 `Reader.TryGetBytesLeft(out long)` reports a value only for a coherent seekable stream. `Writer.TryGetBytesUntilCurrentLength(out long)` deliberately describes distance to the current length—not writable capacity; the old `Writer.BytesLeft` member is obsolete. Failed `Push(offset, origin)` calls do not add stack entries and attempt to restore position without hiding the original seek error.
 
 `PartialStream` implements Span and Memory-based async operations with identical slice limits. Async operations delegate to the underlying stream, honor cancellation, restore the underlying position, and do not hold a synchronous monitor across an `await`. `FlushAsync` flushes without finalizing an encoding quantum, and disposing a partial view never disposes its underlying stream.
+
+## Wire codecs and framing
+
+`Reader` and `Writer` use exact-type wire-codec registrations from a snapshot of `SerializationOptions`. Codecs only transform values to and from payloads; framing independently describes whether the payload is fixed-width, length-prefixed, or self-delimited (`CodecOwned`). A member-level `[WireCodec]` or `[WireFraming]` override wins over an explicitly registered type codec. An explicit type codec wins over legacy converters supplied to the `Reader` or `Writer`; those converters in turn win over built-in fallbacks such as the default DateTime representation.
+
+### Select a DateTime format globally
+
+The default DateTime representation is .NET Binary. Register another exact-type codec when an entire wire contract uses a different representation:
+
+```csharp
+using Utils.IO.Serialization;
+
+SerializationOptions options = new();
+options.Codecs.Set(new UnixSecondsDateTimeCodec());
+
+using MemoryStream stream = new();
+Writer writer = new(stream, options);
+writer.Write(new DateTime(2026, 8, 22, 12, 0, 0, DateTimeKind.Utc));
+
+stream.Position = 0;
+Reader reader = new(stream, options);
+DateTime value = reader.Read<DateTime>(); // DateTimeKind.Utc
+```
+
+Available codecs are `DotNetBinaryDateTimeCodec`, `TicksDateTimeCodec`, `UnixSecondsDateTimeCodec`, `UnixMillisecondsDateTimeCodec`, `OleAutomationDateTimeCodec`, and `FileTimeDateTimeCodec`.
+
+| Codec | Wire primitive | Kind on read |
+|---|---|---|
+| .NET Binary | `Int64` | Preserved by framework binary semantics |
+| Ticks | `Int64` | `Unspecified` |
+| Unix seconds | `Int64` | `Utc` |
+| Unix milliseconds | `Int64` | `Utc` |
+| OLE Automation | `Double` | Framework `FromOADate` semantics (`Unspecified`) |
+| FILETIME | `Int64` | `Utc` |
+
+### Override one serialized member
+
+Use `[WireCodec]` without changing the codec selected for other members of the same type:
+
+```csharp
+using Utils.IO.Serialization;
+
+public sealed class EventRecord
+{
+    [Field(1)]
+    public DateTime Created { get; set; } // default .NET Binary
+
+    [Field(2)]
+    [WireCodec(typeof(UnixMillisecondsDateTimeCodec))]
+    public DateTime ImportedTimestamp { get; set; } // signed Unix milliseconds
+}
+```
+
+The reflection serializer and serializers produced by `[GenerateReaderWriter]` honor the same member override and runtime registration precedence.
+
+### Register a codec for an application type
+
+A fixed codec declares its exact payload size and can use the existing primitive operations, including their configured byte order:
+
+```csharp
+using Utils.IO.Serialization;
+
+public readonly record struct CustomerId(int Value);
+
+public sealed class CustomerIdCodec : IFixedWireCodec<CustomerId>
+{
+    public int Size => sizeof(int);
+
+    public CustomerId Read(IReader reader) => new(reader.Read<int>());
+
+    public void Write(IWriter writer, CustomerId value) =>
+        writer.Write(value.Value);
+}
+
+SerializationOptions options = new();
+options.Codecs.Set(new CustomerIdCodec());
+
+using MemoryStream stream = new();
+new Writer(stream, options).Write(new CustomerId(42));
+stream.Position = 0;
+CustomerId copy = new Reader(stream, options).Read<CustomerId>();
+```
+
+`Reader` and `Writer` snapshot the registry when they are constructed. Changing `options.Codecs` afterward does not change those instances or slices created from them.
+
+### Register only one direction
+
+Reader and writer registrations are independent. This is useful while migrating a legacy format whose reader must remain available but whose writer is no longer used:
+
+```csharp
+SerializationOptions options = new();
+options.Codecs.SetReader<CustomerId>(new CustomerIdCodec());
+
+Reader reader = new(stream, options);
+CustomerId id = reader.Read<CustomerId>();
+```
+
+If the opposite direction has no codec, normal legacy-converter or generated/reflection fallback resolution still applies.
+
+### Choose framing and bounded buffering
+
+Framing stays separate from codecs:
+
+```csharp
+using System.Collections.Generic;
+using System.Text;
+using Utils.IO.Serialization;
+
+public readonly record struct Utf8Text(string Value);
+
+public sealed class Utf8TextCodec : IWireCodec<Utf8Text>
+{
+    public Utf8Text Read(IReader reader)
+    {
+        List<byte> bytes = [];
+        for (int value = reader.ReadByte(); value >= 0; value = reader.ReadByte())
+        {
+            bytes.Add((byte)value);
+        }
+
+        return new Utf8Text(Encoding.UTF8.GetString([.. bytes]));
+    }
+
+    public void Write(IWriter writer, Utf8Text value) =>
+        writer.WriteBytes(Encoding.UTF8.GetBytes(value.Value));
+}
+
+SerializationOptions options = new()
+{
+    VariablePayloadWritePolicy = VariablePayloadWritePolicy.AllowBuffering,
+    MaximumBufferedPayloadLength = 64 * 1024
+};
+
+options.Codecs.Set(
+    new Utf8TextCodec(),
+    new Int32LengthWireFraming());
+```
+
+`Utf8TextCodec` does not know its payload size before encoding. A seekable writer can therefore backpatch the fixed-width `Int32` prefix; a forward-only writer uses the explicitly enabled bounded staging buffer. If a codec implements `IWireSizeProvider<T>`, the writer can instead emit the known length before the payload without seeking or buffering.
+
+Fixed framing and sizes reported by `IWireSizeProvider<T>` are enforced with a non-buffering, bounded counting writer, including on forward-only streams. It rejects an overflow before bytes beyond the declaration reach the target and reports an underwrite after the codec returns.
+
+A known payload length is written before the payload and works on forward-only streams. Because its prefix is written first, a later codec underwrite is reported but does not roll back that prefix or already-written payload bytes. For an unknown size, a seekable writer may backpatch only a fixed-width prefix. Other cases fail before target output unless `AllowBuffering` and a finite `MaximumBufferedPayloadLength` are explicitly configured; the staging stream enforces that limit while the codec writes, before the target is modified. Variable-width prefixes are never treated as fixed reservations. `CodecOwned` codecs remain responsible for recognizing their own termination.
+
+### Bound reads from untrusted data
+
+The three reader limits are deliberately independent and opt in. `null` retains the unlimited historical behavior:
+
+```csharp
+ReaderOptions limits = new()
+{
+    MaximumPayloadLength = 1024 * 1024, // each string, BigInteger, or framed codec payload
+    MaximumReadBytes = 4L * 1024 * 1024, // prefixes plus payload bytes across the entire operation tree
+    MaximumCollectionLength = 100_000    // elements accepted before collection allocation
+};
+
+Reader reader = new(untrustedStream, limits, serializationOptions);
+Customer value = reader.Read<Customer>();
+```
+
+`MaximumPayloadLength` remains a per-payload limit and is not a decreasing global budget.
+`MaximumReadBytes` counts bytes actually returned from the wire, including length prefixes. Slices,
+mapped readers, reflection and generated contracts, nested contracts, and codec-owned reads share the
+same budget. Seeking does not refund bytes, so rereading consumes budget again. Length-prefixed and
+fixed framed codec bytes are charged while staging from the physical source and are not charged again
+when the bounded child reader decodes that already-accounted buffer.
+
+`MaximumCollectionLength` separately protects allocations whose element count came from untrusted
+data; a byte budget cannot infer arbitrary managed element sizes. These controls bound deterministic
+wire parsing and do not estimate CLR object overhead or total process memory.

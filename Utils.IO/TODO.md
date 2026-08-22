@@ -6,12 +6,6 @@ The July audit text had become partially stale after PRs #526 and #528. This fil
 
 ## P1
 
-### IO-04 — Length-prefixed parsing is bounded only when callers opt in
-
-PR #526 added `RawReader.MaximumLength` and negative/over-limit validation before allocation. The old finding claiming that lengths are passed directly to `ReadBytes` is therefore obsolete. The residual risk is that the default is `int.MaxValue` and aggregate/generated readers need one coherent budget policy.
-
-**Fix:** define safe parsing options/budgets and propagate them consistently before allocation or count×element-size arithmetic.
-
 ### IO-06 — `StreamCopier` target validation is incomplete
 
 `Add`/`Insert` reject null, but constructors copy entries without per-target validation and the indexer setter accepts null. No common insertion path defines whether non-writable targets are rejected at registration time.
@@ -46,24 +40,9 @@ PR #526 replaced `lock(baseStream)` with a `ConditionalWeakTable<Stream, Semapho
 
 **Fix:** either gate flush operations as well or document why they are intentionally outside slice-state synchronization.
 
-### IO-10 — `DateTime` wire format must be selectable
+### IO-10 — Fixed through generic wire-codec infrastructure
 
-`RawWriter.WriteDateTime` currently writes `Ticks`; `RawReader.ReadDateTime` reconstructs `new DateTime(ticks)`, which loses `DateTimeKind` and hard-codes one representation even though this library must read formats produced by heterogeneous external systems.
-
-**Decision (2026-08-16):** make the `DateTime` wire representation a strategy rather than hard-coding one encoding. The default in 2.0 is the native .NET binary representation (`DateTime.ToBinary()` / `DateTime.FromBinary()`), because there are currently no released users whose existing wire data must be preserved.
-
-Provide an extensible format interface/strategy and built-in implementations for the main interoperable representations, initially including:
-
-- .NET binary (`ToBinary` / `FromBinary`) — default;
-- .NET ticks;
-- Unix epoch seconds;
-- Unix epoch milliseconds;
-- OLE Automation date;
-- Windows FILETIME.
-
-Each format must define its exact units/epoch, valid range, `DateTimeKind` semantics and how it uses the primitive reader/writer. Formats backed by integer/floating primitives should naturally inherit `BigEndian` through those primitive operations rather than reimplement byte-order handling.
-
-**Fix:** introduce the strategy contract, select the .NET binary strategy by default, implement the principal formats above, and add external golden vectors plus round-trip/range/kind tests for each format.
+DateTime now uses selectable codecs, with .NET binary as the default and built-in ticks, Unix seconds/milliseconds, OLE Automation and FILETIME representations. Codecs may be registered by exact type or overridden per serialized member. Generic framing is forward-only safe and prepares, but does not close, IO-04 reader-budget integration.
 
 ### IO-11 — Boolean decoding accepts malformed bytes
 
@@ -85,6 +64,7 @@ Each format must define its exact units/epoch, valid range, `DateTimeKind` seman
 
 ## Closed since the July audit
 
+- IO-04 — fixed: opt-in aggregate wire-byte and collection-count limits are validated before dependent allocation. Reflection/generated/nested reads, codecs, mapped readers, and slices share operation state; staged framed payloads are charged once rather than again during decoding. This bounds wire parsing, not total CLR memory.
 - IO-03 — fixed: `Int128` and `UInt128` now use fixed-width 16-byte representations following `BigEndian`; `BigInteger` keeps its `Int32` length prefix and uses a signed minimal two's-complement payload following `BigEndian`; `Guid` uses canonical RFC/network byte order independently of `BigEndian`. Golden wire vectors cover reader and writer behavior.
 - IO-02 — base descriptor invariants: fixed by validating alphabet uniqueness, reserved-character collisions and padding quantum consistency before constructing lookup tables. Invalid custom descriptors now fail deterministically at construction time.
 - IO-01 — base alphabet validation: fixed by requiring lengths from 2 through 256 to be exact powers of two; exhaustive regression coverage checks every length from 0 through 257 and verifies `BitsWidth` for valid alphabets.
