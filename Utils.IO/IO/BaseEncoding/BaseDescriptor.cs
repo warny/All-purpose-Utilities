@@ -81,7 +81,7 @@ public abstract class BaseDescriptorBase : IBaseDescriptor, IBaseConverter
     /// <param name="filler">Optional padding character.</param>
     /// <param name="fillerMod">Modulo value used for padding.</param>
     protected BaseDescriptorBase(string chars, string separator, char? filler = null, int fillerMod = 0)
-        : this(chars.ToArray(), separator, filler, fillerMod)
+        : this(CopyAlphabet(chars), separator, filler, fillerMod)
     {
     }
 
@@ -94,11 +94,8 @@ public abstract class BaseDescriptorBase : IBaseDescriptor, IBaseConverter
     /// <param name="fillerMod">Modulo value used for padding.</param>
     protected BaseDescriptorBase(char[] chars, string separator, char? filler = null, int fillerMod = 0)
     {
+        ArgumentNullException.ThrowIfNull(chars);
         this.chars = chars.ToArray();
-        reversed = this.chars.Select((c, i) => new KeyValuePair<char, int>(c, i)).ToDictionary(kv => kv.Key, kv => kv.Value);
-        Separator = separator ?? Environment.NewLine;
-        Filler = filler;
-        FillerMod = fillerMod;
 
         int depth = 0;
         int length = this.chars.Length;
@@ -121,6 +118,88 @@ public abstract class BaseDescriptorBase : IBaseDescriptor, IBaseConverter
         }
 
         BitsWidth = depth;
+        Separator = separator ?? Environment.NewLine;
+        Filler = filler;
+        FillerMod = fillerMod;
+
+        ValidateAlphabet(this.chars, Separator);
+        ValidateFiller(this.chars, Separator, filler, fillerMod, BitsWidth);
+        reversed = this.chars.Select((c, i) => new KeyValuePair<char, int>(c, i)).ToDictionary(kv => kv.Key, kv => kv.Value);
+    }
+
+    /// <summary>
+    /// Validates and copies a string alphabet before constructor delegation.
+    /// </summary>
+    /// <param name="chars">The alphabet to copy.</param>
+    /// <returns>A new character array containing the alphabet.</returns>
+    private static char[] CopyAlphabet(string chars)
+    {
+        ArgumentNullException.ThrowIfNull(chars);
+        return chars.ToArray();
+    }
+
+    /// <summary>
+    /// Ensures that alphabet symbols are unique and are not ignored by the decoder.
+    /// </summary>
+    /// <param name="chars">The alphabet to validate.</param>
+    /// <param name="separator">The effective separator used by the decoder.</param>
+    private static void ValidateAlphabet(char[] chars, string separator)
+    {
+        var symbols = new HashSet<char>();
+        foreach (char character in chars)
+        {
+            if (!symbols.Add(character))
+                throw new ArgumentException($"The encoding alphabet contains duplicate character '{character}'.", nameof(chars));
+
+            if (character == ' ' || separator.Contains(character))
+                throw new ArgumentException($"The encoding alphabet cannot contain separator or whitespace character '{character}'.", nameof(chars));
+        }
+    }
+
+    /// <summary>
+    /// Ensures that padding is distinguishable from data and uses a byte-aligned quantum.
+    /// </summary>
+    /// <param name="chars">The validated encoding alphabet.</param>
+    /// <param name="separator">The effective separator used by the decoder.</param>
+    /// <param name="filler">The optional padding character.</param>
+    /// <param name="fillerMod">The configured padding quantum.</param>
+    /// <param name="bitsWidth">The number of bits represented by an alphabet symbol.</param>
+    private static void ValidateFiller(char[] chars, string separator, char? filler, int fillerMod, int bitsWidth)
+    {
+        if (!filler.HasValue)
+        {
+            if (fillerMod != 0)
+                throw new ArgumentOutOfRangeException(nameof(fillerMod), "FillerMod must be zero when no filler is configured.");
+            return;
+        }
+
+        char fillerCharacter = filler.Value;
+        if (chars.Contains(fillerCharacter))
+            throw new ArgumentException($"The filler character '{fillerCharacter}' cannot be part of the encoding alphabet.", nameof(filler));
+        if (fillerCharacter == ' ' || separator.Contains(fillerCharacter))
+            throw new ArgumentException($"The filler character '{fillerCharacter}' cannot be a separator or whitespace character.", nameof(filler));
+
+        int expectedFillerMod = 8 / GreatestCommonDivisor(8, bitsWidth);
+        if (fillerMod != expectedFillerMod)
+            throw new ArgumentOutOfRangeException(nameof(fillerMod), $"FillerMod must be {expectedFillerMod} for an encoding with BitsWidth {bitsWidth}.");
+    }
+
+    /// <summary>
+    /// Calculates the greatest common divisor of two positive integers using Euclid's algorithm.
+    /// </summary>
+    /// <param name="left">The first integer.</param>
+    /// <param name="right">The second integer.</param>
+    /// <returns>The greatest common divisor.</returns>
+    private static int GreatestCommonDivisor(int left, int right)
+    {
+        while (right != 0)
+        {
+            int remainder = left % right;
+            left = right;
+            right = remainder;
+        }
+
+        return left;
     }
 
     /// <inheritdoc />

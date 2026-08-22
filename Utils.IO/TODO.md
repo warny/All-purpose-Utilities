@@ -6,12 +6,6 @@ The July audit text had become partially stale after PRs #526 and #528. This fil
 
 ## P1
 
-### IO-02 — Base descriptor invariants are incomplete
-
-Duplicate alphabet symbols currently fail incidentally through `ToDictionary`, while alphabet/separator/filler overlap and `FillerMod` consistency are not validated explicitly.
-
-**Fix:** one deterministic descriptor validator covering uniqueness, separator/filler collisions and padding configuration.
-
 ### IO-03 — Extended numeric wire formats must honor the selected endianness
 
 Primitive integer/floating converters honor `BigEndian`, but `BigInteger`, `Int128` and `UInt128` currently use fixed/framework layouts. `Guid` is not numeric and must not be controlled by the numeric endianness setting.
@@ -103,6 +97,7 @@ Each format must define its exact units/epoch, valid range, `DateTimeKind` seman
 
 ## Closed since the July audit
 
+- IO-02 — base descriptor invariants: fixed by validating alphabet uniqueness, reserved-character collisions and padding quantum consistency before constructing lookup tables. Invalid custom descriptors now fail deterministically at construction time.
 - IO-01 — base alphabet validation: fixed by requiring lengths from 2 through 256 to be exact powers of two; exhaustive regression coverage checks every length from 0 through 257 and verifies `BitsWidth` for valid alphabets.
 - Old item 6 — unpadded incomplete final groups: fixed by PR #528; current `BaseDecoderStream.Close()` rejects invalid terminal quanta.
 - Old item 9 — locking on externally visible `baseStream`: fixed by PR #526 with a shared per-base-stream `SemaphoreSlim`.
@@ -111,7 +106,6 @@ Each format must define its exact units/epoch, valid range, `DateTimeKind` seman
 
 ## Recommended implementation order
 
-1. IO-02 — descriptor invariant validation.
-2. IO-03 + IO-04 + IO-10 + IO-11 — serialization/wire contract hardening using the decisions recorded above.
-3. IO-06 + IO-07 + IO-08 + IO-09 + IO-12 + IO-13 — stream lifecycle/API cleanup.
-4. IO-05 — documentation and regression tests for the intentionally non-transactional streaming contract; no transactional implementation is currently planned.
+1. IO-03 + IO-04 + IO-10 + IO-11 — serialization/wire contract hardening using the decisions recorded above.
+2. IO-06 + IO-07 + IO-08 + IO-09 + IO-12 + IO-13 — stream lifecycle/API cleanup.
+3. IO-05 — documentation and regression tests for the intentionally non-transactional streaming contract; no transactional implementation is currently planned.
