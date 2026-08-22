@@ -299,7 +299,7 @@ public class Writer : IWriter, IStreamMapping<Writer>
         foreach (var propertyOrField in contract.Members)
         {
             Delegate fieldWriter;
-            if (propertyOrField.CodecType is not null || propertyOrField.FramingType is not null || codecs.ContainsKey(propertyOrField.ValueType))
+            if (propertyOrField.CodecType is not null || propertyOrField.FramingType is not null || HasWritableCodec(propertyOrField.ValueType))
                 fieldWriter = CreateConfiguredWriterDelegate(propertyOrField.ValueType, propertyOrField.CodecType, propertyOrField.FramingType);
             else if (!TryFindWriterFor(propertyOrField.ValueType, out fieldWriter))
                 fieldWriter = GetOrCreateWriter(propertyOrField.ValueType);
@@ -332,6 +332,9 @@ public class Writer : IWriter, IStreamMapping<Writer>
         var compiledLambda = lambda.Compile();
         return compiledLambda;
     }
+    /// <summary>Checks whether an exact codec registration provides the writer direction.</summary>
+    private bool HasWritableCodec(Type type) => codecs.TryGetValue(type, out WireCodecRegistration? registration) && registration.Writer is not null;
+
     /// <summary>Takes an immutable snapshot of user-registered codecs and validates writer options.</summary>
     private static IReadOnlyDictionary<Type, WireCodecRegistration> Snapshot(SerializationOptions options)
     {

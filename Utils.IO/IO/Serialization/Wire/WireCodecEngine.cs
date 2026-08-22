@@ -109,12 +109,11 @@ internal static class WireCodecEngine
     private static void Buffer<T>(Writer owner, IWireWriter<T> codec, IWireLengthFraming framing, T value)
     {
         using MemoryStream staging = new();
-        Writer buffered = owner.CreateCodecWriter(staging);
+        using BoundedWriteStream boundedStaging = new(staging, owner.MaximumBufferedPayloadLength);
+        Writer buffered = owner.CreateCodecWriter(boundedStaging);
         codec.Write(buffered, value);
-        if (staging.Length > owner.MaximumBufferedPayloadLength)
-            throw new InvalidOperationException($"Buffered payload exceeds {owner.MaximumBufferedPayloadLength} bytes.");
-        framing.WriteLength(owner, checked((int)staging.Length));
-        owner.WriteBytes(staging.GetBuffer().AsSpan(0, (int)staging.Length));
+        framing.WriteLength(owner, boundedStaging.BytesWritten);
+        owner.WriteBytes(staging.GetBuffer().AsSpan(0, boundedStaging.BytesWritten));
     }
 
     /// <summary>Forwards writes while counting bytes and rejecting data beyond a declared payload boundary.</summary>

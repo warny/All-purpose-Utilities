@@ -143,7 +143,10 @@ public sealed class ReaderWriterGenerator : IIncrementalGenerator
         if (methods.Length == 1) return "reader.ReadConfiguredOr<" + type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) + ">(static configuredReader => " + FullyQualifiedCall(methods[0], "configuredReader") + ")";
         if (methods.Length > 1) context.ReportDiagnostic(Diagnostic.Create(AmbiguousConverter, type.Locations.FirstOrDefault(), "reader", type.ToDisplayString()));
         if (type is INamedTypeSymbol namedType && HasAttribute(namedType, generateAttribute))
-            return GeneratedTypeName(namedType) + ".Read" + GeneratedIdentifier(namedType) + GeneratedTypeArguments(namedType) + "(reader)";
+        {
+            string fallback = GeneratedTypeName(namedType) + ".Read" + GeneratedIdentifier(namedType) + GeneratedTypeArguments(namedType) + "(configuredReader)";
+            return "reader.ReadConfiguredOr<" + type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) + ">(static configuredReader => " + fallback + ")";
+        }
         return "reader.Read<" + type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) + ">()";
     }
 
@@ -156,7 +159,10 @@ public sealed class ReaderWriterGenerator : IIncrementalGenerator
         if (methods.Length == 1) return "writer.WriteConfiguredOr<" + type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) + ">(" + value + ", static (configuredWriter, configuredValue) => " + FullyQualifiedCall(methods[0], "configuredWriter, configuredValue") + ")";
         if (methods.Length > 1) context.ReportDiagnostic(Diagnostic.Create(AmbiguousConverter, type.Locations.FirstOrDefault(), "writer", type.ToDisplayString()));
         if (type is INamedTypeSymbol namedType && HasAttribute(namedType, generateAttribute))
-            return GeneratedTypeName(namedType) + ".Write" + GeneratedIdentifier(namedType) + GeneratedTypeArguments(namedType) + "(writer, " + value + ")";
+        {
+            string fallback = GeneratedTypeName(namedType) + ".Write" + GeneratedIdentifier(namedType) + GeneratedTypeArguments(namedType) + "(configuredWriter, configuredValue)";
+            return "writer.WriteConfiguredOr<" + type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) + ">(" + value + ", static (configuredWriter, configuredValue) => " + fallback + ")";
+        }
         return "writer.Write<" + type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) + ">(" + value + ")";
     }
 

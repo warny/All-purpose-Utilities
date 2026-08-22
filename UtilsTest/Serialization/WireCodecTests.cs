@@ -6,6 +6,30 @@ using Utils.IO.Serialization;
 
 namespace UtilsTest.Serialization;
 
+/// <summary>Generated child contract used to verify runtime codec precedence in nested generated serialization.</summary>
+[GenerateReaderWriter]
+public sealed class GeneratedCodecChild
+{
+    [Field(0)]
+    public int Value { get; set; }
+}
+
+/// <summary>Generated parent contract whose child may be replaced by a runtime codec.</summary>
+[GenerateReaderWriter]
+public sealed class GeneratedCodecParent
+{
+    [Field(0)]
+    public GeneratedCodecChild Child { get; set; } = new();
+}
+
+/// <summary>Fixed test codec that makes its use visible in the nested generated wire bytes.</summary>
+public sealed class GeneratedCodecChildWireCodec : IFixedWireCodec<GeneratedCodecChild>
+{
+    public int Size => sizeof(int);
+    public GeneratedCodecChild Read(IReader reader) => new() { Value = reader.Read<int>() - 100 };
+    public void Write(IWriter writer, GeneratedCodecChild value) => writer.Write(value.Value + 100);
+}
+
 /// <summary>Verifies wire-codec resolution, framing enforcement, snapshots, and contract diagnostics.</summary>
 [TestClass]
 public sealed class WireCodecTests
@@ -165,6 +189,63 @@ public sealed class WireCodecTests
         Assert.ThrowsException<ArgumentOutOfRangeException>(() => new Writer(new MemoryStream(), invalidWriterOptions));
     }
 
+    /// <summary>Verifies bounded buffering rejects excess data during staging and leaves the target untouched.</summary>
+    [TestMethod]
+    public void BufferingLimit_IsEnforcedWhileCodecWrites()
+    {
+        StreamingBlobCodec codec = new();
+        SerializationOptions options = new()
+        {
+            VariablePayloadWritePolicy = VariablePayloadWritePolicy.AllowBuffering,
+            MaximumBufferedPayloadLength = 3
+        };
+        options.Codecs.Set(codec, new VariableLengthWireFraming());
+        using ForwardOnlyStream stream = new();
+
+        Assert.ThrowsException<InvalidDataException>(() => new Writer(stream, options).Write(new Blob([1, 2, 3, 4])));
+
+        Assert.AreEqual(4, codec.AttemptedBytes);
+        Assert.AreEqual(0, stream.ToArray().Length);
+    }
+
+    /// <summary>Verifies a writer-only registration does not suppress normal member reading.</summary>
+    [TestMethod]
+    public void WriterOnlyRegistration_PreservesReaderFallback()
+    {
+        SerializationOptions options = new();
+        options.Codecs.SetWriter<int>(new OffsetIntWriter());
+        Reader reader = new(new MemoryStream([42, 0, 0, 0]), options);
+        Assert.AreEqual(42, reader.Read<DirectionalModel>().Value);
+    }
+
+    /// <summary>Verifies a reader-only registration does not suppress normal member writing.</summary>
+    [TestMethod]
+    public void ReaderOnlyRegistration_PreservesWriterFallback()
+    {
+        SerializationOptions options = new();
+        options.Codecs.SetReader<int>(new OffsetIntReader());
+        using MemoryStream stream = new();
+        new Writer(stream, options).Write(new DirectionalModel { Value = 42 });
+        CollectionAssert.AreEqual(new byte[] { 42, 0, 0, 0 }, stream.ToArray());
+    }
+
+    /// <summary>Verifies a nested generated child consults the runtime codec before its generated serializer fallback.</summary>
+    [TestMethod]
+    public void NestedGeneratedContract_RuntimeCodecOverridesGeneratedFallback()
+    {
+        SerializationOptions options = new();
+        options.Codecs.Set(new GeneratedCodecChildWireCodec());
+        using MemoryStream stream = new();
+        Writer writer = new(stream, options);
+        writer.WriteUtilsTest_Serialization_GeneratedCodecParent_0071f7a7(new GeneratedCodecParent { Child = new GeneratedCodecChild { Value = 42 } });
+        CollectionAssert.AreEqual(new byte[] { 142, 0, 0, 0 }, stream.ToArray());
+
+        stream.Position = 0;
+        Reader reader = new(stream, options);
+        GeneratedCodecParent copy = reader.ReadUtilsTest_Serialization_GeneratedCodecParent_0071f7a7();
+        Assert.AreEqual(42, copy.Child.Value);
+    }
+
     /// <summary>Creates an options instance for a fixed Blob codec.</summary>
     private static SerializationOptions OptionsFor(IWireCodec<Blob> codec)
     {
@@ -220,6 +301,50 @@ public sealed class WireCodecTests
         public Blob Read(IReader reader) => new(reader.ReadBytes(announcedSize));
         public void Write(IWriter writer, Blob value) => writer.WriteBytes(value.Value.AsSpan(0, bytesToWrite));
         public bool TryGetEncodedSize(Blob value, out int size) { size = announcedSize; return true; }
+    }
+
+    /// <summary>Unknown-size codec that exposes how many byte writes were attempted.</summary>
+    private sealed class StreamingBlobCodec : IWireCodec<Blob>
+    {
+        public int AttemptedBytes { get; private set; }
+        public Blob Read(IReader reader) => throw new NotSupportedException();
+        public void Write(IWriter writer, Blob value)
+        {
+            foreach (byte item in value.Value)
+            {
+                AttemptedBytes++;
+                writer.WriteByte(item);
+            }
+        }
+    }
+
+    /// <summary>Variable-width test framing that forces the bounded buffering strategy.</summary>
+    private sealed class VariableLengthWireFraming : IWireLengthFraming
+    {
+        public WireFramingKind Kind => WireFramingKind.LengthPrefixed;
+        public bool HasFixedPrefixSize => false;
+        public int PrefixSize => 0;
+        public int ReadLength(IReader reader) => reader.ReadByte();
+        public void WriteLength(IWriter writer, int length) => writer.WriteByte(checked((byte)length));
+    }
+
+    /// <summary>Writer-only codec used to verify directional fallback.</summary>
+    private sealed class OffsetIntWriter : IWireWriter<int>
+    {
+        public void Write(IWriter writer, int value) => writer.Write(value + 1);
+    }
+
+    /// <summary>Reader-only codec used to verify directional fallback.</summary>
+    private sealed class OffsetIntReader : IWireReader<int>
+    {
+        public int Read(IReader reader) => reader.Read<int>() - 1;
+    }
+
+    /// <summary>Reflection contract used for directional registration tests.</summary>
+    private sealed class DirectionalModel
+    {
+        [Field(1)]
+        public int Value { get; set; }
     }
 
     /// <summary>Reflection model using only the built-in DateTime fallback.</summary>

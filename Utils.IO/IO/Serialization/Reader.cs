@@ -308,7 +308,7 @@ public class Reader : IReader, IStreamMapping<Reader>
         foreach (var propertyOrField in contract.Members)
         {
             Delegate fieldReader;
-            if (propertyOrField.CodecType is not null || propertyOrField.FramingType is not null || codecs.ContainsKey(propertyOrField.ValueType))
+            if (propertyOrField.CodecType is not null || propertyOrField.FramingType is not null || HasReadableCodec(propertyOrField.ValueType))
                 fieldReader = CreateConfiguredReaderDelegate(propertyOrField.ValueType, propertyOrField.CodecType, propertyOrField.FramingType);
             else if (!TryFindReaderFor(propertyOrField.ValueType, out fieldReader))
                 fieldReader = GetOrCreateReader(propertyOrField.ValueType);
@@ -345,6 +345,9 @@ public class Reader : IReader, IStreamMapping<Reader>
         var compiledLambda = lambda.Compile();
         return compiledLambda;
     }
+    /// <summary>Checks whether an exact codec registration provides the reader direction.</summary>
+    private bool HasReadableCodec(Type type) => codecs.TryGetValue(type, out WireCodecRegistration? registration) && registration.Reader is not null;
+
     /// <summary>Takes an immutable snapshot of user-registered codecs.</summary>
     private static IReadOnlyDictionary<Type, WireCodecRegistration> Snapshot(SerializationOptions options)
     {
