@@ -62,6 +62,14 @@ public sealed class ReaderOptionsTests
         Assert.AreEqual(string.Empty, new Reader(emptyStream, new ReaderOptions { MaximumPayloadLength = 0 }).Read<string>());
         Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
             new Reader(new MemoryStream(), new ReaderOptions { MaximumPayloadLength = -1 }));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+            new Reader(new MemoryStream(), new ReaderOptions { MaximumReadBytes = -1 }));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+            new Reader(new MemoryStream(), new ReaderOptions { MaximumCollectionLength = -1 }));
+
+        Reader noCollections = new(new MemoryStream(), new ReaderOptions { MaximumCollectionLength = 0 });
+        Assert.AreEqual(0, noCollections.ReadArray<int>(0).Length);
+        Assert.ThrowsException<InvalidDataException>(() => noCollections.ReadArray<int>(1));
     }
 
     /// <summary>Serializes a string into a positioned memory stream for limit tests.</summary>

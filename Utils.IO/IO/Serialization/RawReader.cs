@@ -211,6 +211,8 @@ public class RawReader
     /// <summary>Reads exactly the requested binary payload, including across partial stream reads.</summary>
     private static byte[] ReadExactly(IReader reader, int length, string valueType)
     {
+        // A concrete Reader can reject an aggregate-budget overflow before this payload buffer is allocated.
+        if (reader is Reader concreteReader) concreteReader.EnsureReadAvailable(length);
         byte[] result = new byte[length];
         int received = 0;
         while (received < length)

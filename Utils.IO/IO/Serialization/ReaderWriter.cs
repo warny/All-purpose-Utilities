@@ -41,6 +41,20 @@ public class ReaderWriter
         Writer = new Writer(stream, serializationOptions);
     }
 
+    /// <summary>Initializes a reader/writer pair with reader safety limits and shared wire options.</summary>
+    /// <param name="stream">Stream to read from and write to.</param>
+    /// <param name="readerOptions">Safety limits applied only to reads.</param>
+    /// <param name="serializationOptions">Shared codec registrations.</param>
+    public ReaderWriter(Stream stream, ReaderOptions readerOptions, SerializationOptions serializationOptions)
+    {
+        Stream = stream ?? throw new ArgumentNullException(nameof(stream));
+        ArgumentNullException.ThrowIfNull(readerOptions);
+        ArgumentNullException.ThrowIfNull(serializationOptions);
+        Reader = new Reader(stream, readerOptions, serializationOptions);
+        Writer = new Writer(stream, serializationOptions);
+    }
+
+
     /// <summary>Initializes a sliced facade from readers and writers that already own immutable snapshots.</summary>
     private ReaderWriter(Stream stream, Reader reader, Writer writer)
     {

@@ -93,10 +93,27 @@ public static class ReaderWriterExtensions
     /// <param name="count">Number of elements to read.</param>
     public static T[] ReadArray<T>(this Reader reader, int count)
     {
-        var result = new T[count];
+        ArgumentNullException.ThrowIfNull(reader);
+        reader.ValidateCollectionCount(count);
+        if (TryGetFixedWireSize<T>(out int elementSize))
+            reader.EnsureReadAvailable((long)count * elementSize);
+        T[] result = new T[count];
         for (int i = 0; i < count; i++)
             result[i] = reader.Read<T>();
         return result;
+    }
+
+    /// <summary>Gets an exact built-in wire size without encoding an element.</summary>
+    private static bool TryGetFixedWireSize<T>(out int size)
+    {
+        Type type = typeof(T);
+        size = type == typeof(byte) || type == typeof(sbyte) || type == typeof(bool) ? 1
+            : type == typeof(short) || type == typeof(ushort) || type == typeof(char) || type == typeof(Half) ? 2
+            : type == typeof(int) || type == typeof(uint) || type == typeof(float) || type == typeof(DateOnly) ? 4
+            : type == typeof(long) || type == typeof(ulong) || type == typeof(double) || type == typeof(DateTime) || type == typeof(TimeOnly) || type == typeof(TimeSpan) ? 8
+            : type == typeof(decimal) || type == typeof(Guid) || type == typeof(Int128) || type == typeof(UInt128) ? 16
+            : 0;
+        return size != 0;
     }
 
     /// <summary>

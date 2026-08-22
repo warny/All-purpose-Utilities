@@ -431,4 +431,29 @@ Fixed framing and sizes reported by `IWireSizeProvider<T>` are enforced with a n
 
 A known payload length is written before the payload and works on forward-only streams. Because its prefix is written first, a later codec underwrite is reported but does not roll back that prefix or already-written payload bytes. For an unknown size, a seekable writer may backpatch only a fixed-width prefix. Other cases fail before target output unless `AllowBuffering` and a finite `MaximumBufferedPayloadLength` are explicitly configured; the staging stream enforces that limit while the codec writes, before the target is modified. Variable-width prefixes are never treated as fixed reservations. `CodecOwned` codecs remain responsible for recognizing their own termination.
 
-> IO-04 will integrate reader budgets with length-prefixed framing. Existing strings, arrays, and `BigInteger` retain their current formats in this release.
+### Bound reads from untrusted data
+
+The three reader limits are deliberately independent and opt in. `null` retains the unlimited historical behavior:
+
+```csharp
+ReaderOptions limits = new()
+{
+    MaximumPayloadLength = 1024 * 1024, // each string, BigInteger, or framed codec payload
+    MaximumReadBytes = 4L * 1024 * 1024, // prefixes plus payload bytes across the entire operation tree
+    MaximumCollectionLength = 100_000    // elements accepted before collection allocation
+};
+
+Reader reader = new(untrustedStream, limits, serializationOptions);
+Customer value = reader.Read<Customer>();
+```
+
+`MaximumPayloadLength` remains a per-payload limit and is not a decreasing global budget.
+`MaximumReadBytes` counts bytes actually returned from the wire, including length prefixes. Slices,
+mapped readers, reflection and generated contracts, nested contracts, and codec-owned reads share the
+same budget. Seeking does not refund bytes, so rereading consumes budget again. Length-prefixed and
+fixed framed codec bytes are charged while staging from the physical source and are not charged again
+when the bounded child reader decodes that already-accounted buffer.
+
+`MaximumCollectionLength` separately protects allocations whose element count came from untrusted
+data; a byte budget cannot infer arbitrary managed element sizes. These controls bound deterministic
+wire parsing and do not estimate CLR object overhead or total process memory.

@@ -17,6 +17,7 @@ internal static class WireCodecEngine
             IWireLengthFraming lengthFraming => ReadLength(owner, lengthFraming),
             _ => throw new InvalidOperationException("Unsupported wire framing.")
         };
+        owner.EnsureReadAvailable(length);
         byte[] payload = owner.ReadBytes(length);
         if (payload.Length != length) throw new EndOfStreamException($"Expected {length} codec payload bytes, received {payload.Length}.");
         using MemoryStream stream = new(payload, writable: false);
