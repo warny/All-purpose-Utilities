@@ -41,6 +41,8 @@ public sealed class ReaderWriterGenerator : IIncrementalGenerator
     {
         INamedTypeSymbol? generateAttribute = compilation.GetTypeByMetadataName("Utils.IO.Serialization.GenerateReaderWriterAttribute");
         INamedTypeSymbol? fieldAttribute = compilation.GetTypeByMetadataName("Utils.IO.Serialization.FieldAttribute");
+        INamedTypeSymbol? wireCodecAttribute = compilation.GetTypeByMetadataName("Utils.IO.Serialization.WireCodecAttribute");
+        INamedTypeSymbol? wireFramingAttribute = compilation.GetTypeByMetadataName("Utils.IO.Serialization.WireFramingAttribute");
         INamedTypeSymbol? readerType = compilation.GetTypeByMetadataName("Utils.IO.Serialization.IReader");
         INamedTypeSymbol? writerType = compilation.GetTypeByMetadataName("Utils.IO.Serialization.IWriter");
         if (generateAttribute is null || fieldAttribute is null || readerType is null || writerType is null) return;
@@ -66,7 +68,7 @@ public sealed class ReaderWriterGenerator : IIncrementalGenerator
 
             var members = type.GetMembers().Select(m => new { Symbol = m, Attribute = m.GetAttributes().FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, fieldAttribute)) })
                 .Where(x => x.Attribute is not null)
-                .Select(x => new MemberContract(x.Symbol, (int)x.Attribute!.ConstructorArguments[0].Value!)).ToList();
+                .Select(x => new MemberContract(x.Symbol, (int)x.Attribute!.ConstructorArguments[0].Value!, GetAttributeType(x.Symbol, wireCodecAttribute), GetAttributeType(x.Symbol, wireFramingAttribute))).ToList();
 
             foreach (MemberContract member in members)
             {
@@ -110,21 +112,23 @@ public sealed class ReaderWriterGenerator : IIncrementalGenerator
                 .Append("    public static ").Append(typeName).Append(" Read").Append(identifier).Append(genericDeclaration).Append("(this IReader reader)\n    {\n")
                 .Append("        var result = new ").Append(typeName).Append("();\n");
             foreach (MemberContract member in members.OrderBy(m => m.Order))
-                source.Append("        result.").Append(member.Symbol.Name).Append(" = ").Append(ReadExpression(compilation, context, member.Type, readerType, generateAttribute)).Append(";\n");
+                source.Append("        result.").Append(member.Symbol.Name).Append(" = ").Append(ReadExpression(compilation, context, member, readerType, generateAttribute)).Append(";\n");
             source.Append("        return result;\n    }\n\n    /// <summary>Writes the validated binary contract.</summary>\n")
                 .Append("    public static void Write").Append(identifier).Append(genericDeclaration).Append("(this IWriter writer, ").Append(typeName).Append(" value)\n    {\n");
             foreach (MemberContract member in members.OrderBy(m => m.Order))
-                source.Append("        ").Append(WriteExpression(compilation, context, member.Type, writerType, generateAttribute, "value." + member.Symbol.Name)).Append(";\n");
+                source.Append("        ").Append(WriteExpression(compilation, context, member, writerType, generateAttribute, "value." + member.Symbol.Name)).Append(";\n");
             source.Append("    }\n}\n");
             context.AddSource(identifier + ".Serialization.g.cs", SourceText.From(source.ToString(), Encoding.UTF8));
         }
     }
 
     /// <summary>Resolves one exact reader converter and emits its fully qualified static call.</summary>
-    private static string ReadExpression(Compilation compilation, SourceProductionContext context, ITypeSymbol type, INamedTypeSymbol readerType, INamedTypeSymbol generateAttribute)
+    private static string ReadExpression(Compilation compilation, SourceProductionContext context, MemberContract member, INamedTypeSymbol readerType, INamedTypeSymbol generateAttribute)
     {
+        ITypeSymbol type = member.Type;
+        if (member.CodecType is not null || member.FramingType is not null) return "reader.ReadConfigured<" + type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) + ">(" + TypeOf(member.CodecType) + ", " + TypeOf(member.FramingType) + ")";
         IMethodSymbol[] methods = FindConverters(compilation, "Read" + type.Name, m => m.Parameters.Length == 1 && SymbolEqualityComparer.Default.Equals(m.Parameters[0].Type, readerType) && SymbolEqualityComparer.Default.Equals(m.ReturnType, type), context).ToArray();
-        if (methods.Length == 1) return FullyQualifiedCall(methods[0], "reader");
+        if (methods.Length == 1) return "reader.ReadConfiguredOr<" + type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) + ">(static configuredReader => " + FullyQualifiedCall(methods[0], "configuredReader") + ")";
         if (methods.Length > 1) context.ReportDiagnostic(Diagnostic.Create(AmbiguousConverter, type.Locations.FirstOrDefault(), "reader", type.ToDisplayString()));
         if (type is INamedTypeSymbol namedType && HasAttribute(namedType, generateAttribute))
             return GeneratedTypeName(namedType) + ".Read" + GeneratedIdentifier(namedType) + GeneratedTypeArguments(namedType) + "(reader)";
@@ -132,10 +136,12 @@ public sealed class ReaderWriterGenerator : IIncrementalGenerator
     }
 
     /// <summary>Resolves one exact writer converter and emits its fully qualified static call.</summary>
-    private static string WriteExpression(Compilation compilation, SourceProductionContext context, ITypeSymbol type, INamedTypeSymbol writerType, INamedTypeSymbol generateAttribute, string value)
+    private static string WriteExpression(Compilation compilation, SourceProductionContext context, MemberContract member, INamedTypeSymbol writerType, INamedTypeSymbol generateAttribute, string value)
     {
+        ITypeSymbol type = member.Type;
+        if (member.CodecType is not null || member.FramingType is not null) return "writer.WriteConfigured<" + type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) + ">(" + value + ", " + TypeOf(member.CodecType) + ", " + TypeOf(member.FramingType) + ")";
         IMethodSymbol[] methods = FindConverters(compilation, "Write" + type.Name, m => m.Parameters.Length == 2 && SymbolEqualityComparer.Default.Equals(m.Parameters[0].Type, writerType) && SymbolEqualityComparer.Default.Equals(m.Parameters[1].Type, type), context).ToArray();
-        if (methods.Length == 1) return FullyQualifiedCall(methods[0], "writer, " + value);
+        if (methods.Length == 1) return "writer.WriteConfiguredOr<" + type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) + ">(" + value + ", static (configuredWriter, configuredValue) => " + FullyQualifiedCall(methods[0], "configuredWriter, configuredValue") + ")";
         if (methods.Length > 1) context.ReportDiagnostic(Diagnostic.Create(AmbiguousConverter, type.Locations.FirstOrDefault(), "writer", type.ToDisplayString()));
         if (type is INamedTypeSymbol namedType && HasAttribute(namedType, generateAttribute))
             return GeneratedTypeName(namedType) + ".Write" + GeneratedIdentifier(namedType) + GeneratedTypeArguments(namedType) + "(writer, " + value + ")";
@@ -212,6 +218,13 @@ public sealed class ReaderWriterGenerator : IIncrementalGenerator
         return true;
     }
 
+    /// <summary>Gets a Type-valued attribute constructor argument when present.</summary>
+    private static ITypeSymbol? GetAttributeType(ISymbol symbol, INamedTypeSymbol? attribute) => attribute is null ? null :
+        symbol.GetAttributes().FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, attribute))?.ConstructorArguments[0].Value as ITypeSymbol;
+
+    /// <summary>Formats an optional type as a generated typeof expression.</summary>
+    private static string TypeOf(ITypeSymbol? type) => type is null ? "null" : "typeof(" + type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) + ")";
+
     /// <summary>Checks whether a symbol carries a particular attribute.</summary>
     private static bool HasAttribute(ISymbol symbol, INamedTypeSymbol attribute) => symbol.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, attribute));
 
@@ -222,11 +235,15 @@ public sealed class ReaderWriterGenerator : IIncrementalGenerator
     private sealed class MemberContract
     {
         /// <summary>Initializes a member contract.</summary>
-        internal MemberContract(ISymbol symbol, int order) { Symbol = symbol; Order = order; }
+        internal MemberContract(ISymbol symbol, int order, ITypeSymbol? codecType, ITypeSymbol? framingType) { Symbol = symbol; Order = order; CodecType = codecType; FramingType = framingType; }
         /// <summary>Gets the source symbol.</summary>
         internal ISymbol Symbol { get; }
         /// <summary>Gets the stable wire order; negative orders are supported and sort normally.</summary>
         internal int Order { get; }
+        /// <summary>Gets the optional member codec implementation.</summary>
+        internal ITypeSymbol? CodecType { get; }
+        /// <summary>Gets the optional member framing implementation.</summary>
+        internal ITypeSymbol? FramingType { get; }
         /// <summary>Gets the serialized value type.</summary>
         internal ITypeSymbol Type => Symbol is IPropertySymbol property ? property.Type : ((IFieldSymbol)Symbol).Type;
     }

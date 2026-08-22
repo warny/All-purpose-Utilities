@@ -287,3 +287,30 @@ A `Reader` or `Writer` coordinates concurrent first-time contract construction w
 `Reader.TryGetBytesLeft(out long)` reports a value only for a coherent seekable stream. `Writer.TryGetBytesUntilCurrentLength(out long)` deliberately describes distance to the current length—not writable capacity; the old `Writer.BytesLeft` member is obsolete. Failed `Push(offset, origin)` calls do not add stack entries and attempt to restore position without hiding the original seek error.
 
 `PartialStream` implements Span and Memory-based async operations with identical slice limits. Async operations delegate to the underlying stream, honor cancellation, restore the underlying position, and do not hold a synchronous monitor across an `await`. `FlushAsync` flushes without finalizing an encoding quantum, and disposing a partial view never disposes its underlying stream.
+
+## Wire codecs and framing
+
+`Reader` and `Writer` use exact-type wire-codec registrations from a snapshot of `SerializationOptions`. Codecs only transform values to and from payloads; framing independently describes whether the payload is fixed-width, length-prefixed, or self-delimited (`CodecOwned`). A member-level `[WireCodec]` or `[WireFraming]` override wins over a type registration, which wins over legacy custom delegates and built-ins.
+
+```csharp
+var options = new SerializationOptions();
+options.Codecs.Set(new TicksDateTimeCodec());
+
+using var stream = new MemoryStream();
+new Writer(stream, options).Write(DateTime.UtcNow);
+```
+
+The default `DateTime` codec is `.NET Binary`. Available codecs are `DotNetBinaryDateTimeCodec`, `TicksDateTimeCodec`, `UnixSecondsDateTimeCodec`, `UnixMillisecondsDateTimeCodec`, `OleAutomationDateTimeCodec`, and `FileTimeDateTimeCodec`.
+
+| Codec | Wire primitive | Kind on read |
+|---|---|---|
+| .NET Binary | `Int64` | Preserved by framework binary semantics |
+| Ticks | `Int64` | `Unspecified` |
+| Unix seconds | `Int64` | `Utc` |
+| Unix milliseconds | `Int64` | `Utc` |
+| OLE Automation | `Double` | Framework `FromOADate` semantics (`Unspecified`) |
+| FILETIME | `Int64` | `Utc` |
+
+A known payload length is written before the payload and works on forward-only streams. For an unknown size, a seekable writer may backpatch only a fixed-width prefix. Other cases fail before target output unless `AllowBuffering` and a finite `MaximumBufferedPayloadLength` are explicitly configured. Variable-width prefixes are never treated as fixed reservations. `CodecOwned` codecs remain responsible for recognizing their own termination.
+
+> IO-04 will integrate reader budgets with length-prefixed framing. Existing strings, arrays, and `BigInteger` retain their current formats in this release.

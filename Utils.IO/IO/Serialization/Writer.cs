@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 using Utils.Objects;
 using Utils.Reflection;
 
@@ -29,6 +30,9 @@ public class Writer : IWriter, IStreamMapping<Writer>
     /// Dictionary mapping a type to its associated writer delegate.
     /// </summary>
     private readonly IReadOnlyDictionary<Type, Delegate> writers;
+    private readonly IReadOnlyDictionary<Type, WireCodecRegistration> codecs;
+    internal VariablePayloadWritePolicy WritePolicy { get; }
+    internal int MaximumBufferedPayloadLength { get; }
     private readonly ContractCache contractCache = new();
 
     /// <summary>
@@ -49,7 +53,11 @@ public class Writer : IWriter, IStreamMapping<Writer>
     /// <summary>
     /// Initializes a new instance of the <see cref="Writer"/> class using default converters.
     /// </summary>
-    public Writer(Stream stream) : this(stream, new RawWriter().WriterDelegates) { }
+    public Writer(Stream stream) : this(stream, new SerializationOptions()) { }
+
+    /// <summary>Initializes a writer with shared wire serialization options.</summary>
+    public Writer(Stream stream, SerializationOptions options)
+        : this(stream, new RawWriter().WriterDelegates, Snapshot(options), options.VariablePayloadWritePolicy, options.MaximumBufferedPayloadLength) { }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Writer"/> class with custom converters.
@@ -70,15 +78,42 @@ public class Writer : IWriter, IStreamMapping<Writer>
             registrations.TryAdd(arguments[1].ParameterType, converter);
         }
         writers = registrations;
+        codecs = DefaultCodecs();
+        WritePolicy = VariablePayloadWritePolicy.RequireKnownLength;
+        MaximumBufferedPayloadLength = 1024 * 1024;
+    }
+
+    /// <summary>Initializes a writer from converter delegates and a codec snapshot.</summary>
+    private Writer(Stream stream, IEnumerable<Delegate> converters, IReadOnlyDictionary<Type, WireCodecRegistration> codecs,
+        VariablePayloadWritePolicy writePolicy, int maximumBufferedPayloadLength)
+        : this(stream, BuildRegistrations(converters), codecs, writePolicy, maximumBufferedPayloadLength) { }
+
+    /// <summary>Validates writer converter delegates and indexes them by accepted value type.</summary>
+    private static IReadOnlyDictionary<Type, Delegate> BuildRegistrations(IEnumerable<Delegate> converters)
+    {
+        Dictionary<Type, Delegate> registrations = [];
+        foreach (Delegate converter in converters)
+        {
+            MethodInfo method = converter.GetMethodInfo();
+            ParameterInfo[] arguments = method.GetParameters();
+            arguments.ArgMustBeOfSize(2);
+            arguments[0].ArgMustBe(a => a.ParameterType == typeof(IWriter), "The first argument is not IWriter");
+            registrations.TryAdd(arguments[1].ParameterType, converter);
+        }
+        return registrations;
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Writer"/> class by copying existing writers.
     /// </summary>
-    private Writer(Stream stream, IReadOnlyDictionary<Type, Delegate> writers)
+    private Writer(Stream stream, IReadOnlyDictionary<Type, Delegate> writers, IReadOnlyDictionary<Type, WireCodecRegistration>? codecs = null,
+        VariablePayloadWritePolicy writePolicy = VariablePayloadWritePolicy.RequireKnownLength, int maximumBufferedPayloadLength = 1024 * 1024)
     {
         this.Stream = stream;
         this.writers = writers.ToDictionary();
+        this.codecs = codecs ?? DefaultCodecs();
+        WritePolicy = writePolicy;
+        MaximumBufferedPayloadLength = maximumBufferedPayloadLength;
     }
 
     /// <summary>
@@ -104,11 +139,9 @@ public class Writer : IWriter, IStreamMapping<Writer>
     public void Write(object value)
     {
         if (value is null) throw new ArgumentNullException(nameof(value));
-        var type = value.GetType();
-        if (!TryFindWriterFor(type, out var writerDelegate))
-        {
-            writerDelegate = GetOrCreateWriter(type);
-        }
+        Type type = value.GetType();
+        if (TryWriteCodec(type, value, null, null)) return;
+        if (!TryFindWriterFor(type, out var writerDelegate)) writerDelegate = GetOrCreateWriter(type);
         writerDelegate.DynamicInvoke(this, value);
     }
 
@@ -120,12 +153,9 @@ public class Writer : IWriter, IStreamMapping<Writer>
     public void Write<T>(T value)
     {
         if (value is null) throw new ArgumentNullException(nameof(value));
-        if (!TryFindWriterFor(typeof(T), out var writerDelegate))
-        {
-            writerDelegate = GetOrCreateWriter(typeof(T));
-        }
-        var writer = (Action<IWriter, T>)writerDelegate;
-        writer.Invoke(this, value);
+        if (TryWriteCodec(typeof(T), value, null, null)) return;
+        if (!TryFindWriterFor(typeof(T), out var writerDelegate)) writerDelegate = GetOrCreateWriter(typeof(T));
+        ((Action<IWriter, T>)writerDelegate).Invoke(this, value);
     }
 
     /// <summary>
@@ -181,7 +211,7 @@ public class Writer : IWriter, IStreamMapping<Writer>
     public Writer Slice(long position, long length)
     {
         PartialStream s = new PartialStream(Stream, position, length);
-        return new Writer(s, writers);
+        return new Writer(s, writers, codecs, WritePolicy, MaximumBufferedPayloadLength);
     }
 
     /// <summary>Attempts to measure the bytes between the current position and the stream's current length.</summary>
@@ -264,10 +294,11 @@ public class Writer : IWriter, IStreamMapping<Writer>
 
         foreach (var propertyOrField in contract.Members)
         {
-            if (!TryFindWriterFor(propertyOrField.ValueType, out var fieldWriter))
-            {
+            Delegate fieldWriter;
+            if (propertyOrField.CodecType is not null || propertyOrField.FramingType is not null || codecs.ContainsKey(propertyOrField.ValueType))
+                fieldWriter = CreateConfiguredWriterDelegate(propertyOrField.ValueType, propertyOrField.CodecType, propertyOrField.FramingType);
+            else if (!TryFindWriterFor(propertyOrField.ValueType, out fieldWriter))
                 fieldWriter = GetOrCreateWriter(propertyOrField.ValueType);
-            }
 
             // Generate the call to the writer delegate
             var writerMethod = fieldWriter.GetType().GetMethod("Invoke");
@@ -297,5 +328,62 @@ public class Writer : IWriter, IStreamMapping<Writer>
         var compiledLambda = lambda.Compile();
         return compiledLambda;
     }
+    /// <summary>Creates the built-in DateTime codec registry.</summary>
+    private static IReadOnlyDictionary<Type, WireCodecRegistration> DefaultCodecs() =>
+        new Dictionary<Type, WireCodecRegistration> { [typeof(DateTime)] = new(typeof(DateTime), new DotNetBinaryDateTimeCodec(), new DotNetBinaryDateTimeCodec(), new FixedWireFraming(sizeof(long))) };
+
+    /// <summary>Takes an immutable options snapshot and validates bounded buffering configuration.</summary>
+    private static IReadOnlyDictionary<Type, WireCodecRegistration> Snapshot(SerializationOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        if (options.MaximumBufferedPayloadLength <= 0) throw new ArgumentOutOfRangeException(nameof(options), "MaximumBufferedPayloadLength must be positive.");
+        Dictionary<Type, WireCodecRegistration> result = DefaultCodecs().ToDictionary();
+        foreach (var pair in options.Codecs.Snapshot()) result[pair.Key] = pair.Value;
+        return result;
+    }
+
+    /// <summary>Creates a staging writer retaining codecs and primitive converter behavior.</summary>
+    internal Writer CreateCodecWriter(Stream stream) => new(stream, writers, codecs, WritePolicy, MaximumBufferedPayloadLength);
+
+    /// <summary>Attempts an exact configured codec write without constructing a reflection contract.</summary>
+    internal bool TryWriteConfigured<T>(T value) => TryWriteCodec(typeof(T), value!, null, null);
+
+    /// <summary>Writes through an exact runtime or member-specific codec selection.</summary>
+    internal void WriteConfigured<T>(T value, Type? codecType, Type? framingType)
+    {
+        if (!TryWriteCodec(typeof(T), value!, codecType, framingType))
+            throw new SerializationContractException(typeof(T), [new("UIORT015", $"No writable wire codec is configured for {typeof(T).FullName}.")]);
+    }
+
+    /// <summary>Creates a strongly typed configured writer delegate for compiled contracts.</summary>
+    private Delegate CreateConfiguredWriterDelegate(Type type, Type? codecType, Type? framingType) =>
+        (Delegate)typeof(Writer).GetMethod(nameof(CreateConfiguredWriterDelegateGeneric), BindingFlags.Instance | BindingFlags.NonPublic)!.MakeGenericMethod(type).Invoke(this, [codecType, framingType])!;
+
+    /// <summary>Creates one generic configured writer delegate.</summary>
+    private Delegate CreateConfiguredWriterDelegateGeneric<T>(Type? codecType, Type? framingType) => new Action<IWriter, T>((_, value) => WriteConfigured(value, codecType, framingType));
+
+    /// <summary>Resolves and executes a codec with member metadata taking precedence over exact registrations.</summary>
+    private bool TryWriteCodec(Type type, object value, Type? codecType, Type? framingType)
+    {
+        object? codec = codecType is null ? (codecs.TryGetValue(type, out WireCodecRegistration? registration) ? registration.Writer : null) : Activator.CreateInstance(codecType);
+        IWireFraming? framing = framingType is null ? (codecType is null && codecs.TryGetValue(type, out WireCodecRegistration? registered) ? registered.Framing : null) : (IWireFraming?)Activator.CreateInstance(framingType);
+        if (codec is null) return false;
+        try { typeof(Writer).GetMethod(nameof(WriteCodecGeneric), BindingFlags.Instance | BindingFlags.NonPublic)!.MakeGenericMethod(type).Invoke(this, [codec, framing, value]); }
+        catch (TargetInvocationException exception) when (exception.InnerException is not null)
+        {
+            ExceptionDispatchInfo.Capture(exception.InnerException).Throw();
+            throw;
+        }
+        return true;
+    }
+
+    /// <summary>Executes one typed codec after validating its writer direction and default framing.</summary>
+    private void WriteCodecGeneric<T>(object codec, IWireFraming? framing, T value)
+    {
+        if (codec is not IWireWriter<T> writer) throw new SerializationContractException(typeof(T), [new("UIORT016", $"Codec {codec.GetType().FullName} has no writer for {typeof(T).FullName}.")]);
+        framing ??= codec is IFixedWireCodec<T> fixedCodec ? new FixedWireFraming(fixedCodec.Size) : new CodecOwnedWireFraming();
+        WireCodecEngine.Write(this, writer, framing, value);
+    }
+
 }
 #pragma warning restore S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields

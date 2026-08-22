@@ -25,16 +25,21 @@ public class ReaderWriter
     public Writer Writer { get; }
 
     private readonly Stack<long> savedPositions = new();
+    private readonly SerializationOptions serializationOptions;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ReaderWriter"/> class for the specified stream.
     /// </summary>
     /// <param name="stream">Stream to read from and write to.</param>
-    public ReaderWriter(Stream stream)
+    public ReaderWriter(Stream stream) : this(stream, new SerializationOptions()) { }
+
+    /// <summary>Initializes a reader/writer pair with shared wire options.</summary>
+    public ReaderWriter(Stream stream, SerializationOptions serializationOptions)
     {
-        Stream = stream;
-        Reader = new Reader(stream);
-        Writer = new Writer(stream);
+        Stream = stream ?? throw new ArgumentNullException(nameof(stream));
+        this.serializationOptions = serializationOptions ?? throw new ArgumentNullException(nameof(serializationOptions));
+        Reader = new Reader(stream, serializationOptions);
+        Writer = new Writer(stream, serializationOptions);
     }
 
     /// <summary>
@@ -83,6 +88,6 @@ public class ReaderWriter
     public ReaderWriter Slice(long position, long length)
     {
         PartialStream s = new PartialStream(Stream, position, length);
-        return new ReaderWriter(s);
+        return new ReaderWriter(s, serializationOptions);
     }
 }

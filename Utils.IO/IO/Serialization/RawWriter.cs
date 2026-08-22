@@ -208,7 +208,7 @@ public class RawWriter
     }
 
     /// <summary>Writes a <see cref="DateTime"/> value.</summary>
-    public void WriteDateTime(IWriter writer, DateTime value) => WriteLong(writer, value.Ticks);
+    public void WriteDateTime(IWriter writer, DateTime value) => WriteLong(writer, value.ToBinary());
 
     /// <summary>Writes a <see cref="TimeOnly"/> value.</summary>
     public void WriteTime(IWriter writer, TimeOnly value) => WriteLong(writer, value.Ticks);

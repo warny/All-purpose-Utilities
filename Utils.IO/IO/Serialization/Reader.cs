@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 using Utils.Reflection;
 using Utils.Objects;
 
@@ -42,6 +43,7 @@ public class Reader : IReader, IStreamMapping<Reader>
     /// Dictionary mapping a type to its reader delegate.
     /// </summary>
     private readonly IReadOnlyDictionary<Type, Delegate> readers;
+    private readonly IReadOnlyDictionary<Type, WireCodecRegistration> codecs;
 
     /// <summary>Coordinates one logical contract build for each type.</summary>
     private readonly ContractCache contractCache = new();
@@ -49,7 +51,7 @@ public class Reader : IReader, IStreamMapping<Reader>
     /// <summary>
     /// Initializes a new instance of <see cref="Reader"/> using default converters.
     /// </summary>
-    public Reader(Stream stream) : this(stream, new ReaderOptions()) { }
+    public Reader(Stream stream) : this(stream, new ReaderOptions(), new SerializationOptions()) { }
 
     /// <summary>
     /// Initializes a new instance of <see cref="Reader"/> using default converters and explicit payload options.
@@ -57,7 +59,15 @@ public class Reader : IReader, IStreamMapping<Reader>
     /// <param name="stream">Stream to read from.</param>
     /// <param name="options">Payload safety options; a null maximum preserves unlimited historical reads.</param>
     public Reader(Stream stream, ReaderOptions options)
-        : this(stream, CreateRawReader(options).ReaderDelegates) { }
+        : this(stream, options, new SerializationOptions()) { }
+
+    /// <summary>Initializes a reader with shared wire serialization options.</summary>
+    public Reader(Stream stream, SerializationOptions serializationOptions)
+        : this(stream, new ReaderOptions(), serializationOptions) { }
+
+    /// <summary>Initializes a reader with payload limits and shared wire serialization options.</summary>
+    public Reader(Stream stream, ReaderOptions options, SerializationOptions serializationOptions)
+        : this(stream, CreateRawReader(options).ReaderDelegates, Snapshot(serializationOptions)) { }
 
     /// <summary>
     /// Initializes a new instance of <see cref="Reader"/> with explicit payload options and custom converters.
@@ -68,13 +78,33 @@ public class Reader : IReader, IStreamMapping<Reader>
     public Reader(Stream stream, ReaderOptions options, params IEnumerable<Delegate> converters)
         : this(stream, converters.Union(CreateRawReader(options).ReaderDelegates)) { }
 
+    /// <summary>Initializes a reader from converter delegates and a codec snapshot.</summary>
+    private Reader(Stream stream, IEnumerable<Delegate> converters, IReadOnlyDictionary<Type, WireCodecRegistration> codecs)
+        : this(stream, BuildRegistrations(converters), codecs) { }
+
+    /// <summary>Validates reader converter delegates and indexes them by exact return type.</summary>
+    private static IReadOnlyDictionary<Type, Delegate> BuildRegistrations(IEnumerable<Delegate> converters)
+    {
+        Dictionary<Type, Delegate> registrations = [];
+        foreach (Delegate converter in converters)
+        {
+            MethodInfo method = converter.GetMethodInfo();
+            ParameterInfo[] arguments = method.GetParameters();
+            arguments.ArgMustBeOfSizes([1]);
+            arguments[0].ArgMustBe(a => a.ParameterType == typeof(IReader), "The first argument is not IReader");
+            registrations.TryAdd(method.ReturnType, converter);
+        }
+        return registrations;
+    }
+
     /// <summary>
     /// Initializes a new instance of <see cref="Reader"/> copying converters.
     /// </summary>
-    private Reader(Stream stream, IReadOnlyDictionary<Type, Delegate> readers)
+    private Reader(Stream stream, IReadOnlyDictionary<Type, Delegate> readers, IReadOnlyDictionary<Type, WireCodecRegistration>? codecs = null)
     {
         this.Stream = stream;
         this.readers = readers.ToDictionary();
+        this.codecs = codecs ?? DefaultCodecs();
     }
 
     /// <summary>Creates and validates the primitive reader configured for this reader instance.</summary>
@@ -105,6 +135,7 @@ public class Reader : IReader, IStreamMapping<Reader>
             registrations.TryAdd(method.ReturnType, converter);
         }
         readers = registrations;
+        codecs = DefaultCodecs();
     }
 
     /// <summary>
@@ -121,11 +152,9 @@ public class Reader : IReader, IStreamMapping<Reader>
     public object Read(Type type)
     {
         if (type is null) throw new ArgumentNullException(nameof(type));
-        if (!TryFindReaderFor(type, out var readerDelegate))
-        {
-            readerDelegate = GetOrCreateReader(type);
-        }
-        return readerDelegate.DynamicInvoke(this);
+        if (TryReadCodec(type, null, null, out object? codecValue)) return codecValue!;
+        if (!TryFindReaderFor(type, out var readerDelegate)) readerDelegate = GetOrCreateReader(type);
+        return readerDelegate.DynamicInvoke(this)!;
     }
 
     /// <summary>
@@ -134,12 +163,9 @@ public class Reader : IReader, IStreamMapping<Reader>
     /// <typeparam name="T">Type of object to read.</typeparam>
     public T Read<T>()
     {
-        if (!TryFindReaderFor(typeof(T), out var readerDelegate))
-        {
-            readerDelegate = GetOrCreateReader(typeof(T));
-        }
-        var reader = (Func<IReader, T>)readerDelegate;
-        return reader.Invoke(this);
+        if (TryReadCodec(typeof(T), null, null, out object? codecValue)) return (T)codecValue!;
+        if (!TryFindReaderFor(typeof(T), out var readerDelegate)) readerDelegate = GetOrCreateReader(typeof(T));
+        return ((Func<IReader, T>)readerDelegate).Invoke(this);
     }
 
     /// <summary>
@@ -224,7 +250,7 @@ public class Reader : IReader, IStreamMapping<Reader>
     public Reader Slice(long position, long length)
     {
         PartialStream s = new PartialStream(Stream, position, length);
-        return new Reader(s, this.readers);
+        return new Reader(s, this.readers, codecs);
     }
 
     /// <summary>
@@ -273,10 +299,11 @@ public class Reader : IReader, IStreamMapping<Reader>
 
         foreach (var propertyOrField in contract.Members)
         {
-            if (!TryFindReaderFor(propertyOrField.ValueType, out var fieldReader))
-            {
+            Delegate fieldReader;
+            if (propertyOrField.CodecType is not null || propertyOrField.FramingType is not null || codecs.ContainsKey(propertyOrField.ValueType))
+                fieldReader = CreateConfiguredReaderDelegate(propertyOrField.ValueType, propertyOrField.CodecType, propertyOrField.FramingType);
+            else if (!TryFindReaderFor(propertyOrField.ValueType, out fieldReader))
                 fieldReader = GetOrCreateReader(propertyOrField.ValueType);
-            }
 
             // Generate the call to the reader delegate
             var readerMethod = fieldReader.GetType().GetMethod("Invoke");
@@ -310,4 +337,67 @@ public class Reader : IReader, IStreamMapping<Reader>
         var compiledLambda = lambda.Compile();
         return compiledLambda;
     }
+    /// <summary>Creates the built-in DateTime codec registry.</summary>
+    private static IReadOnlyDictionary<Type, WireCodecRegistration> DefaultCodecs() =>
+        new Dictionary<Type, WireCodecRegistration> { [typeof(DateTime)] = new(typeof(DateTime), new DotNetBinaryDateTimeCodec(), new DotNetBinaryDateTimeCodec(), new FixedWireFraming(sizeof(long))) };
+
+    /// <summary>Takes an immutable options snapshot and adds built-ins only where no explicit registration exists.</summary>
+    private static IReadOnlyDictionary<Type, WireCodecRegistration> Snapshot(SerializationOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        Dictionary<Type, WireCodecRegistration> result = DefaultCodecs().ToDictionary();
+        foreach (var pair in options.Codecs.Snapshot()) result[pair.Key] = pair.Value;
+        return result;
+    }
+
+    /// <summary>Creates a bounded child reader retaining the exact codec snapshot.</summary>
+    internal Reader CreateCodecReader(Stream stream) => new(stream, readers, codecs);
+
+    /// <summary>Attempts an exact configured codec read without constructing a reflection contract.</summary>
+    internal bool TryReadConfigured<T>(out T value)
+    {
+        if (TryReadCodec(typeof(T), null, null, out object? result)) { value = (T)result!; return true; }
+        value = default!;
+        return false;
+    }
+
+    /// <summary>Reads through an exact runtime or member-specific codec selection.</summary>
+    internal T ReadConfigured<T>(Type? codecType, Type? framingType)
+    {
+        if (!TryReadCodec(typeof(T), codecType, framingType, out object? value))
+            throw new SerializationContractException(typeof(T), [new("UIORT015", $"No readable wire codec is configured for {typeof(T).FullName}.")]);
+        return (T)value!;
+    }
+
+    /// <summary>Creates a strongly typed configured reader delegate for compiled contracts.</summary>
+    private Delegate CreateConfiguredReaderDelegate(Type type, Type? codecType, Type? framingType) =>
+        (Delegate)typeof(Reader).GetMethod(nameof(CreateConfiguredReaderDelegateGeneric), BindingFlags.Instance | BindingFlags.NonPublic)!.MakeGenericMethod(type).Invoke(this, [codecType, framingType])!;
+
+    /// <summary>Creates one generic configured reader delegate.</summary>
+    private Delegate CreateConfiguredReaderDelegateGeneric<T>(Type? codecType, Type? framingType) => new Func<IReader, T>(_ => ReadConfigured<T>(codecType, framingType));
+
+    /// <summary>Resolves and executes a codec with member metadata taking precedence over exact registrations.</summary>
+    private bool TryReadCodec(Type type, Type? codecType, Type? framingType, out object? value)
+    {
+        object? codec = codecType is null ? (codecs.TryGetValue(type, out WireCodecRegistration? registration) ? registration.Reader : null) : Activator.CreateInstance(codecType);
+        IWireFraming? framing = framingType is null ? (codecType is null && codecs.TryGetValue(type, out WireCodecRegistration? registered) ? registered.Framing : null) : (IWireFraming?)Activator.CreateInstance(framingType);
+        if (codec is null) { value = null; return false; }
+        MethodInfo method = typeof(Reader).GetMethod(nameof(ReadCodecGeneric), BindingFlags.Instance | BindingFlags.NonPublic)!.MakeGenericMethod(type);
+        try { value = method.Invoke(this, [codec, framing]); }
+        catch (TargetInvocationException exception) when (exception.InnerException is not null)
+        {
+            ExceptionDispatchInfo.Capture(exception.InnerException).Throw();
+            throw;
+        }
+        return true;
+    }
+
+    /// <summary>Executes one typed codec after validating its read direction and default framing.</summary>
+    private T ReadCodecGeneric<T>(object codec, IWireFraming? framing)
+    {
+        if (codec is not IWireReader<T> reader) throw new SerializationContractException(typeof(T), [new("UIORT016", $"Codec {codec.GetType().FullName} has no reader for {typeof(T).FullName}.")]);
+        framing ??= codec is IFixedWireCodec<T> fixedCodec ? new FixedWireFraming(fixedCodec.Size) : new CodecOwnedWireFraming();
+        return WireCodecEngine.Read(this, reader, framing);
+    }
+
 }
