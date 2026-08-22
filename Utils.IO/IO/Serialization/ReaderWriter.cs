@@ -25,7 +25,6 @@ public class ReaderWriter
     public Writer Writer { get; }
 
     private readonly Stack<long> savedPositions = new();
-    private readonly SerializationOptions serializationOptions;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ReaderWriter"/> class for the specified stream.
@@ -37,9 +36,17 @@ public class ReaderWriter
     public ReaderWriter(Stream stream, SerializationOptions serializationOptions)
     {
         Stream = stream ?? throw new ArgumentNullException(nameof(stream));
-        this.serializationOptions = serializationOptions ?? throw new ArgumentNullException(nameof(serializationOptions));
+        ArgumentNullException.ThrowIfNull(serializationOptions);
         Reader = new Reader(stream, serializationOptions);
         Writer = new Writer(stream, serializationOptions);
+    }
+
+    /// <summary>Initializes a sliced facade from readers and writers that already own immutable snapshots.</summary>
+    private ReaderWriter(Stream stream, Reader reader, Writer writer)
+    {
+        Stream = stream;
+        Reader = reader;
+        Writer = writer;
     }
 
     /// <summary>
@@ -88,6 +95,6 @@ public class ReaderWriter
     public ReaderWriter Slice(long position, long length)
     {
         PartialStream s = new PartialStream(Stream, position, length);
-        return new ReaderWriter(s, serializationOptions);
+        return new ReaderWriter(s, Reader.CreateMappedReader(s), Writer.CreateMappedWriter(s));
     }
 }

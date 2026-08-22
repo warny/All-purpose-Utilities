@@ -127,7 +127,7 @@ public class RawReader
     private byte[] ReadNumberBytes(IReader reader, int length)
     {
         byte[] bytes = ReadExactly(reader, length, "numeric value");
-        if (BitConverter.IsLittleEndian ^ BigEndian) bytes.Reverse();
+        if (BitConverter.IsLittleEndian == BigEndian) bytes.Reverse();
         return bytes;
     }
 

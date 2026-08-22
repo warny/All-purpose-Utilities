@@ -19,6 +19,8 @@ public sealed class ReaderWriterGenerator : IIncrementalGenerator
     private static readonly DiagnosticDescriptor UnsupportedMember = Create("UIOSG003", "Unsupported member", "Member '{0}' must be an accessible instance member with both readable and writable access");
     private static readonly DiagnosticDescriptor DuplicateOrder = Create("UIOSG004", "Duplicate field order", "Member '{0}' duplicates field order {1}");
     private static readonly DiagnosticDescriptor AmbiguousConverter = Create("UIOSG005", "Ambiguous converter", "More than one exact {0} converter is available for '{1}'");
+    private static readonly DiagnosticDescriptor InvalidWireCodec = Create("UIOSG011", "Invalid wire codec", "Wire codec '{0}' on member '{1}' must be concrete, have an accessible parameterless constructor, and implement both wire directions for '{2}'");
+    private static readonly DiagnosticDescriptor InvalidWireFraming = Create("UIOSG012", "Invalid wire framing", "Wire framing '{0}' on member '{1}' must be concrete, have an accessible parameterless constructor, and implement IWireFraming");
     private static readonly DiagnosticDescriptor InitOnlyProperty = Create("UIOSG010", "Init-only property is not supported", "Property '{0}' on '{1}' is init-only and cannot be assigned by the generated reader");
 
     /// <inheritdoc />
@@ -43,6 +45,9 @@ public sealed class ReaderWriterGenerator : IIncrementalGenerator
         INamedTypeSymbol? fieldAttribute = compilation.GetTypeByMetadataName("Utils.IO.Serialization.FieldAttribute");
         INamedTypeSymbol? wireCodecAttribute = compilation.GetTypeByMetadataName("Utils.IO.Serialization.WireCodecAttribute");
         INamedTypeSymbol? wireFramingAttribute = compilation.GetTypeByMetadataName("Utils.IO.Serialization.WireFramingAttribute");
+        INamedTypeSymbol? wireReaderType = compilation.GetTypeByMetadataName("Utils.IO.Serialization.IWireReader`1");
+        INamedTypeSymbol? wireWriterType = compilation.GetTypeByMetadataName("Utils.IO.Serialization.IWireWriter`1");
+        INamedTypeSymbol? wireFramingType = compilation.GetTypeByMetadataName("Utils.IO.Serialization.IWireFraming");
         INamedTypeSymbol? readerType = compilation.GetTypeByMetadataName("Utils.IO.Serialization.IReader");
         INamedTypeSymbol? writerType = compilation.GetTypeByMetadataName("Utils.IO.Serialization.IWriter");
         if (generateAttribute is null || fieldAttribute is null || readerType is null || writerType is null) return;
@@ -84,6 +89,13 @@ public sealed class ReaderWriterGenerator : IIncrementalGenerator
                     _ => false
                 };
                 if (!valid) invalid |= Report(context, UnsupportedMember, member.Symbol.Locations.FirstOrDefault(), member.Symbol.Name);
+                if (member.CodecType is INamedTypeSymbol codec && (wireReaderType is null || wireWriterType is null || codec.IsAbstract || codec.TypeKind == TypeKind.Interface ||
+                    !codec.InstanceConstructors.Any(c => c.Parameters.Length == 0 && IsAccessible(c.DeclaredAccessibility)) ||
+                    !ImplementsConstructedInterface(codec, wireReaderType, member.Type) || !ImplementsConstructedInterface(codec, wireWriterType, member.Type)))
+                    invalid |= Report(context, InvalidWireCodec, member.Symbol.Locations.FirstOrDefault(), codec.ToDisplayString(), member.Symbol.Name, member.Type.ToDisplayString());
+                if (member.FramingType is INamedTypeSymbol framing && (wireFramingType is null || framing.IsAbstract || framing.TypeKind == TypeKind.Interface ||
+                    !framing.InstanceConstructors.Any(c => c.Parameters.Length == 0 && IsAccessible(c.DeclaredAccessibility)) || !ImplementsInterface(framing, wireFramingType)))
+                    invalid |= Report(context, InvalidWireFraming, member.Symbol.Locations.FirstOrDefault(), framing.ToDisplayString(), member.Symbol.Name);
             }
             foreach (IGrouping<int, MemberContract> duplicate in members.GroupBy(m => m.Order).Where(g => g.Count() > 1))
                 foreach (MemberContract member in duplicate)
@@ -224,6 +236,15 @@ public sealed class ReaderWriterGenerator : IIncrementalGenerator
 
     /// <summary>Formats an optional type as a generated typeof expression.</summary>
     private static string TypeOf(ITypeSymbol? type) => type is null ? "null" : "typeof(" + type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) + ")";
+
+    /// <summary>Checks whether a type implements a constructed generic interface for the member value type.</summary>
+    private static bool ImplementsConstructedInterface(INamedTypeSymbol type, INamedTypeSymbol interfaceDefinition, ITypeSymbol valueType) =>
+        type.AllInterfaces.Any(candidate => SymbolEqualityComparer.Default.Equals(candidate.OriginalDefinition, interfaceDefinition) &&
+            candidate.TypeArguments.Length == 1 && SymbolEqualityComparer.Default.Equals(candidate.TypeArguments[0], valueType));
+
+    /// <summary>Checks whether a type implements a non-generic interface.</summary>
+    private static bool ImplementsInterface(INamedTypeSymbol type, INamedTypeSymbol interfaceType) =>
+        type.AllInterfaces.Any(candidate => SymbolEqualityComparer.Default.Equals(candidate, interfaceType));
 
     /// <summary>Checks whether a symbol carries a particular attribute.</summary>
     private static bool HasAttribute(ISymbol symbol, INamedTypeSymbol attribute) => symbol.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, attribute));

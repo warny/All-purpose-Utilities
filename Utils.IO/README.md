@@ -290,7 +290,7 @@ A `Reader` or `Writer` coordinates concurrent first-time contract construction w
 
 ## Wire codecs and framing
 
-`Reader` and `Writer` use exact-type wire-codec registrations from a snapshot of `SerializationOptions`. Codecs only transform values to and from payloads; framing independently describes whether the payload is fixed-width, length-prefixed, or self-delimited (`CodecOwned`). A member-level `[WireCodec]` or `[WireFraming]` override wins over a type registration, which wins over legacy custom delegates and built-ins.
+`Reader` and `Writer` use exact-type wire-codec registrations from a snapshot of `SerializationOptions`. Codecs only transform values to and from payloads; framing independently describes whether the payload is fixed-width, length-prefixed, or self-delimited (`CodecOwned`). A member-level `[WireCodec]` or `[WireFraming]` override wins over an explicitly registered type codec. An explicit type codec wins over legacy converters supplied to the `Reader` or `Writer`; those converters in turn win over built-in fallbacks such as the default DateTime representation.
 
 ```csharp
 var options = new SerializationOptions();
@@ -311,6 +311,8 @@ The default `DateTime` codec is `.NET Binary`. Available codecs are `DotNetBinar
 | OLE Automation | `Double` | Framework `FromOADate` semantics (`Unspecified`) |
 | FILETIME | `Int64` | `Utc` |
 
-A known payload length is written before the payload and works on forward-only streams. For an unknown size, a seekable writer may backpatch only a fixed-width prefix. Other cases fail before target output unless `AllowBuffering` and a finite `MaximumBufferedPayloadLength` are explicitly configured. Variable-width prefixes are never treated as fixed reservations. `CodecOwned` codecs remain responsible for recognizing their own termination.
+Fixed framing and sizes reported by `IWireSizeProvider<T>` are enforced with a non-buffering, bounded counting writer, including on forward-only streams. It rejects an overflow before bytes beyond the declaration reach the target and reports an underwrite after the codec returns.
+
+A known payload length is written before the payload and works on forward-only streams. Because its prefix is written first, a later codec underwrite is reported but does not roll back that prefix or already-written payload bytes. For an unknown size, a seekable writer may backpatch only a fixed-width prefix. Other cases fail before target output unless `AllowBuffering` and a finite `MaximumBufferedPayloadLength` are explicitly configured. Variable-width prefixes are never treated as fixed reservations. `CodecOwned` codecs remain responsible for recognizing their own termination.
 
 > IO-04 will integrate reader budgets with length-prefixed framing. Existing strings, arrays, and `BigInteger` retain their current formats in this release.

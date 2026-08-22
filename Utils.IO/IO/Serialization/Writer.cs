@@ -59,6 +59,10 @@ public class Writer : IWriter, IStreamMapping<Writer>
     public Writer(Stream stream, SerializationOptions options)
         : this(stream, new RawWriter().WriterDelegates, Snapshot(options), options.VariablePayloadWritePolicy, options.MaximumBufferedPayloadLength) { }
 
+    /// <summary>Initializes a writer with wire options and explicit converters.</summary>
+    public Writer(Stream stream, SerializationOptions options, params IEnumerable<Delegate> converters)
+        : this(stream, converters.Union(new RawWriter().WriterDelegates), Snapshot(options), options.VariablePayloadWritePolicy, options.MaximumBufferedPayloadLength) { }
+
     /// <summary>
     /// Initializes a new instance of the <see cref="Writer"/> class with custom converters.
     /// </summary>
@@ -78,7 +82,7 @@ public class Writer : IWriter, IStreamMapping<Writer>
             registrations.TryAdd(arguments[1].ParameterType, converter);
         }
         writers = registrations;
-        codecs = DefaultCodecs();
+        codecs = new Dictionary<Type, WireCodecRegistration>();
         WritePolicy = VariablePayloadWritePolicy.RequireKnownLength;
         MaximumBufferedPayloadLength = 1024 * 1024;
     }
@@ -111,7 +115,7 @@ public class Writer : IWriter, IStreamMapping<Writer>
     {
         this.Stream = stream;
         this.writers = writers.ToDictionary();
-        this.codecs = codecs ?? DefaultCodecs();
+        this.codecs = codecs ?? new Dictionary<Type, WireCodecRegistration>();
         WritePolicy = writePolicy;
         MaximumBufferedPayloadLength = maximumBufferedPayloadLength;
     }
@@ -328,22 +332,19 @@ public class Writer : IWriter, IStreamMapping<Writer>
         var compiledLambda = lambda.Compile();
         return compiledLambda;
     }
-    /// <summary>Creates the built-in DateTime codec registry.</summary>
-    private static IReadOnlyDictionary<Type, WireCodecRegistration> DefaultCodecs() =>
-        new Dictionary<Type, WireCodecRegistration> { [typeof(DateTime)] = new(typeof(DateTime), new DotNetBinaryDateTimeCodec(), new DotNetBinaryDateTimeCodec(), new FixedWireFraming(sizeof(long))) };
-
-    /// <summary>Takes an immutable options snapshot and validates bounded buffering configuration.</summary>
+    /// <summary>Takes an immutable snapshot of user-registered codecs and validates writer options.</summary>
     private static IReadOnlyDictionary<Type, WireCodecRegistration> Snapshot(SerializationOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
         if (options.MaximumBufferedPayloadLength <= 0) throw new ArgumentOutOfRangeException(nameof(options), "MaximumBufferedPayloadLength must be positive.");
-        Dictionary<Type, WireCodecRegistration> result = DefaultCodecs().ToDictionary();
-        foreach (var pair in options.Codecs.Snapshot()) result[pair.Key] = pair.Value;
-        return result;
+        return options.Codecs.Snapshot();
     }
 
     /// <summary>Creates a staging writer retaining codecs and primitive converter behavior.</summary>
     internal Writer CreateCodecWriter(Stream stream) => new(stream, writers, codecs, WritePolicy, MaximumBufferedPayloadLength);
+
+    /// <summary>Creates a mapped writer retaining converter, codec, and buffering snapshots.</summary>
+    internal Writer CreateMappedWriter(Stream stream) => new(stream, writers, codecs, WritePolicy, MaximumBufferedPayloadLength);
 
     /// <summary>Attempts an exact configured codec write without constructing a reflection contract.</summary>
     internal bool TryWriteConfigured<T>(T value) => TryWriteCodec(typeof(T), value!, null, null);
@@ -366,6 +367,7 @@ public class Writer : IWriter, IStreamMapping<Writer>
     private bool TryWriteCodec(Type type, object value, Type? codecType, Type? framingType)
     {
         object? codec = codecType is null ? (codecs.TryGetValue(type, out WireCodecRegistration? registration) ? registration.Writer : null) : Activator.CreateInstance(codecType);
+        if (codec is null && framingType is not null && type == typeof(DateTime)) codec = new DotNetBinaryDateTimeCodec();
         IWireFraming? framing = framingType is null ? (codecType is null && codecs.TryGetValue(type, out WireCodecRegistration? registered) ? registered.Framing : null) : (IWireFraming?)Activator.CreateInstance(framingType);
         if (codec is null) return false;
         try { typeof(Writer).GetMethod(nameof(WriteCodecGeneric), BindingFlags.Instance | BindingFlags.NonPublic)!.MakeGenericMethod(type).Invoke(this, [codec, framing, value]); }

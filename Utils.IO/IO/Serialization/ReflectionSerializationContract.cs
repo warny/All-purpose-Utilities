@@ -65,7 +65,7 @@ internal static class ReflectionContractBuilder
             if (field.IsStatic) diagnostics.Add(new("UIORT003", $"Field {field.Name} is static."));
             if (!field.IsPublic) diagnostics.Add(new("UIORT003", $"Field {field.Name} is not public."));
             if (direction == SerializationDirection.Read && field.IsInitOnly) diagnostics.Add(new("UIORT003", $"Field {field.Name} is readonly and cannot be assigned during deserialization."));
-            return CreateValidatedMember(field, field.FieldType, order, diagnostics);
+            return CreateValidatedMember(field, field.FieldType, order, direction, diagnostics);
         }
         if (member is PropertyInfo property)
         {
@@ -75,13 +75,13 @@ internal static class ReflectionContractBuilder
             if (direction == SerializationDirection.Read && property.SetMethod?.ReturnParameter.GetRequiredCustomModifiers().Contains(typeof(IsExternalInit)) == true)
                 diagnostics.Add(new("UIORT010", $"Property {property.Name} is init-only and cannot be assigned during deserialization."));
             if (accessor?.IsStatic == true) diagnostics.Add(new("UIORT003", $"Property {property.Name} is static."));
-            return CreateValidatedMember(property, property.PropertyType, order, diagnostics);
+            return CreateValidatedMember(property, property.PropertyType, order, direction, diagnostics);
         }
         diagnostics.Add(new("UIORT003", $"Member {member.Name} is not a field or property."));
         return null;
     }
     /// <summary>Captures and validates wire override metadata once during contract discovery.</summary>
-    private static SerializableMemberContract CreateValidatedMember(MemberInfo member, Type valueType, int order, List<SerializationContractDiagnostic> diagnostics)
+    private static SerializableMemberContract CreateValidatedMember(MemberInfo member, Type valueType, int order, SerializationDirection direction, List<SerializationContractDiagnostic> diagnostics)
     {
         Type? codecType = member.GetCustomAttribute<WireCodecAttribute>()?.CodecType;
         Type? framingType = member.GetCustomAttribute<WireFramingAttribute>()?.FramingType;
@@ -89,8 +89,9 @@ internal static class ReflectionContractBuilder
         {
             if (codecType.IsAbstract || codecType.IsInterface) diagnostics.Add(new("UIORT011", $"Codec {codecType.FullName} for {member.Name} must be concrete."));
             if (codecType.GetConstructor(Type.EmptyTypes) is null) diagnostics.Add(new("UIORT012", $"Codec {codecType.FullName} for {member.Name} requires a public parameterless constructor."));
-            bool compatible = typeof(IWireReader<>).MakeGenericType(valueType).IsAssignableFrom(codecType) || typeof(IWireWriter<>).MakeGenericType(valueType).IsAssignableFrom(codecType);
-            if (!compatible) diagnostics.Add(new("UIORT013", $"Codec {codecType.FullName} is incompatible with {valueType.FullName}."));
+            Type requiredDirection = (direction == SerializationDirection.Read ? typeof(IWireReader<>) : typeof(IWireWriter<>)).MakeGenericType(valueType);
+            if (!requiredDirection.IsAssignableFrom(codecType))
+                diagnostics.Add(new("UIORT013", $"Codec {codecType.FullName} does not implement {requiredDirection.Name} for {member.Name}."));
         }
         if (framingType is not null && (!typeof(IWireFraming).IsAssignableFrom(framingType) || framingType.IsAbstract || framingType.IsInterface || framingType.GetConstructor(Type.EmptyTypes) is null))
             diagnostics.Add(new("UIORT014", $"Framing {framingType.FullName} for {member.Name} must be a concrete IWireFraming with a public parameterless constructor."));

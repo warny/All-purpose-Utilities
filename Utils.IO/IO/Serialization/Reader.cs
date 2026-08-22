@@ -69,6 +69,14 @@ public class Reader : IReader, IStreamMapping<Reader>
     public Reader(Stream stream, ReaderOptions options, SerializationOptions serializationOptions)
         : this(stream, CreateRawReader(options).ReaderDelegates, Snapshot(serializationOptions)) { }
 
+    /// <summary>Initializes a reader with wire options and explicit converters.</summary>
+    public Reader(Stream stream, SerializationOptions serializationOptions, params IEnumerable<Delegate> converters)
+        : this(stream, new ReaderOptions(), serializationOptions, converters) { }
+
+    /// <summary>Initializes a reader with payload limits, wire options, and explicit converters.</summary>
+    public Reader(Stream stream, ReaderOptions options, SerializationOptions serializationOptions, params IEnumerable<Delegate> converters)
+        : this(stream, converters.Union(CreateRawReader(options).ReaderDelegates), Snapshot(serializationOptions)) { }
+
     /// <summary>
     /// Initializes a new instance of <see cref="Reader"/> with explicit payload options and custom converters.
     /// </summary>
@@ -104,7 +112,7 @@ public class Reader : IReader, IStreamMapping<Reader>
     {
         this.Stream = stream;
         this.readers = readers.ToDictionary();
-        this.codecs = codecs ?? DefaultCodecs();
+        this.codecs = codecs ?? new Dictionary<Type, WireCodecRegistration>();
     }
 
     /// <summary>Creates and validates the primitive reader configured for this reader instance.</summary>
@@ -135,7 +143,7 @@ public class Reader : IReader, IStreamMapping<Reader>
             registrations.TryAdd(method.ReturnType, converter);
         }
         readers = registrations;
-        codecs = DefaultCodecs();
+        codecs = new Dictionary<Type, WireCodecRegistration>();
     }
 
     /// <summary>
@@ -337,21 +345,18 @@ public class Reader : IReader, IStreamMapping<Reader>
         var compiledLambda = lambda.Compile();
         return compiledLambda;
     }
-    /// <summary>Creates the built-in DateTime codec registry.</summary>
-    private static IReadOnlyDictionary<Type, WireCodecRegistration> DefaultCodecs() =>
-        new Dictionary<Type, WireCodecRegistration> { [typeof(DateTime)] = new(typeof(DateTime), new DotNetBinaryDateTimeCodec(), new DotNetBinaryDateTimeCodec(), new FixedWireFraming(sizeof(long))) };
-
-    /// <summary>Takes an immutable options snapshot and adds built-ins only where no explicit registration exists.</summary>
+    /// <summary>Takes an immutable snapshot of user-registered codecs.</summary>
     private static IReadOnlyDictionary<Type, WireCodecRegistration> Snapshot(SerializationOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
-        Dictionary<Type, WireCodecRegistration> result = DefaultCodecs().ToDictionary();
-        foreach (var pair in options.Codecs.Snapshot()) result[pair.Key] = pair.Value;
-        return result;
+        return options.Codecs.Snapshot();
     }
 
     /// <summary>Creates a bounded child reader retaining the exact codec snapshot.</summary>
     internal Reader CreateCodecReader(Stream stream) => new(stream, readers, codecs);
+
+    /// <summary>Creates a mapped reader retaining converter and codec snapshots.</summary>
+    internal Reader CreateMappedReader(Stream stream) => new(stream, readers, codecs);
 
     /// <summary>Attempts an exact configured codec read without constructing a reflection contract.</summary>
     internal bool TryReadConfigured<T>(out T value)
@@ -380,6 +385,7 @@ public class Reader : IReader, IStreamMapping<Reader>
     private bool TryReadCodec(Type type, Type? codecType, Type? framingType, out object? value)
     {
         object? codec = codecType is null ? (codecs.TryGetValue(type, out WireCodecRegistration? registration) ? registration.Reader : null) : Activator.CreateInstance(codecType);
+        if (codec is null && framingType is not null && type == typeof(DateTime)) codec = new DotNetBinaryDateTimeCodec();
         IWireFraming? framing = framingType is null ? (codecType is null && codecs.TryGetValue(type, out WireCodecRegistration? registered) ? registered.Framing : null) : (IWireFraming?)Activator.CreateInstance(framingType);
         if (codec is null) { value = null; return false; }
         MethodInfo method = typeof(Reader).GetMethod(nameof(ReadCodecGeneric), BindingFlags.Instance | BindingFlags.NonPublic)!.MakeGenericMethod(type);
