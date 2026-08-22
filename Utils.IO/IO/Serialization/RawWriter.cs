@@ -158,19 +158,22 @@ public class RawWriter
     /// <summary>Writes a half-precision floating point number.</summary>
     public void WriteHalf(IWriter writer, Half value) => WriteNumberBytes(writer, BitConverter.GetBytes(value));
 
-    /// <summary>Writes a <see cref="BigInteger"/>.</summary>
+    /// <summary>
+    /// Writes a <see cref="BigInteger"/> as a 32-bit byte-length prefix followed by its minimal signed
+    /// two's-complement payload, with both the prefix and payload following <see cref="BigEndian"/>.
+    /// </summary>
     public void WriteBigInteger(IWriter writer, BigInteger value)
     {
-        var bytes = value.ToByteArray();
+        byte[] bytes = value.ToByteArray(isUnsigned: false, isBigEndian: BigEndian);
         WriteInt(writer, bytes.Length);
         writer.WriteBytes(bytes);
     }
 
-    /// <summary>Writes a signed 128-bit integer.</summary>
-    public void WriteInt128(IWriter writer, Int128 value) => writer.WriteBytes(BitConverterEx.GetBytes(value));
+    /// <summary>Writes a signed 128-bit integer whose fixed 16-byte representation follows <see cref="BigEndian"/>.</summary>
+    public void WriteInt128(IWriter writer, Int128 value) => WriteNumber(writer, value);
 
-    /// <summary>Writes an unsigned 128-bit integer.</summary>
-    public void WriteUInt128(IWriter writer, UInt128 value) => writer.WriteBytes(BitConverterEx.GetBytes(value));
+    /// <summary>Writes an unsigned 128-bit integer whose fixed 16-byte representation follows <see cref="BigEndian"/>.</summary>
+    public void WriteUInt128(IWriter writer, UInt128 value) => WriteNumber(writer, value);
 
     /// <summary>Writes a complex number.</summary>
     public void WriteComplex(IWriter writer, Complex value)
@@ -216,8 +219,16 @@ public class RawWriter
     /// <summary>Writes a <see cref="TimeSpan"/> value as a 64-bit tick count.</summary>
     public void WriteTimeSpan(IWriter writer, TimeSpan value) => WriteLong(writer, value.Ticks);
 
-    /// <summary>Writes a <see cref="Guid"/>.</summary>
-    public void WriteGuid(IWriter writer, Guid value) => writer.WriteBytes(value.ToByteArray());
+    /// <summary>
+    /// Writes a <see cref="Guid"/> in canonical RFC/network byte layout, independently of the numeric
+    /// <see cref="BigEndian"/> option.
+    /// </summary>
+    public void WriteGuid(IWriter writer, Guid value)
+    {
+        Span<byte> bytes = stackalloc byte[16];
+        value.TryWriteBytes(bytes, bigEndian: true, out _);
+        writer.WriteBytes(bytes);
+    }
 
     /// <summary>Writes a boolean value.</summary>
     public void WriteBool(IWriter writer, bool value) => WriteByte(writer, value ? (byte)1 : (byte)0);
