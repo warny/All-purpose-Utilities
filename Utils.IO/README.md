@@ -292,15 +292,26 @@ A `Reader` or `Writer` coordinates concurrent first-time contract construction w
 
 `Reader` and `Writer` use exact-type wire-codec registrations from a snapshot of `SerializationOptions`. Codecs only transform values to and from payloads; framing independently describes whether the payload is fixed-width, length-prefixed, or self-delimited (`CodecOwned`). A member-level `[WireCodec]` or `[WireFraming]` override wins over an explicitly registered type codec. An explicit type codec wins over legacy converters supplied to the `Reader` or `Writer`; those converters in turn win over built-in fallbacks such as the default DateTime representation.
 
-```csharp
-var options = new SerializationOptions();
-options.Codecs.Set(new TicksDateTimeCodec());
+### Select a DateTime format globally
 
-using var stream = new MemoryStream();
-new Writer(stream, options).Write(DateTime.UtcNow);
+The default DateTime representation is .NET Binary. Register another exact-type codec when an entire wire contract uses a different representation:
+
+```csharp
+using Utils.IO.Serialization;
+
+SerializationOptions options = new();
+options.Codecs.Set(new UnixSecondsDateTimeCodec());
+
+using MemoryStream stream = new();
+Writer writer = new(stream, options);
+writer.Write(new DateTime(2026, 8, 22, 12, 0, 0, DateTimeKind.Utc));
+
+stream.Position = 0;
+Reader reader = new(stream, options);
+DateTime value = reader.Read<DateTime>(); // DateTimeKind.Utc
 ```
 
-The default `DateTime` codec is `.NET Binary`. Available codecs are `DotNetBinaryDateTimeCodec`, `TicksDateTimeCodec`, `UnixSecondsDateTimeCodec`, `UnixMillisecondsDateTimeCodec`, `OleAutomationDateTimeCodec`, and `FileTimeDateTimeCodec`.
+Available codecs are `DotNetBinaryDateTimeCodec`, `TicksDateTimeCodec`, `UnixSecondsDateTimeCodec`, `UnixMillisecondsDateTimeCodec`, `OleAutomationDateTimeCodec`, and `FileTimeDateTimeCodec`.
 
 | Codec | Wire primitive | Kind on read |
 |---|---|---|
@@ -310,6 +321,111 @@ The default `DateTime` codec is `.NET Binary`. Available codecs are `DotNetBinar
 | Unix milliseconds | `Int64` | `Utc` |
 | OLE Automation | `Double` | Framework `FromOADate` semantics (`Unspecified`) |
 | FILETIME | `Int64` | `Utc` |
+
+### Override one serialized member
+
+Use `[WireCodec]` without changing the codec selected for other members of the same type:
+
+```csharp
+using Utils.IO.Serialization;
+
+public sealed class EventRecord
+{
+    [Field(1)]
+    public DateTime Created { get; set; } // default .NET Binary
+
+    [Field(2)]
+    [WireCodec(typeof(UnixMillisecondsDateTimeCodec))]
+    public DateTime ImportedTimestamp { get; set; } // signed Unix milliseconds
+}
+```
+
+The reflection serializer and serializers produced by `[GenerateReaderWriter]` honor the same member override and runtime registration precedence.
+
+### Register a codec for an application type
+
+A fixed codec declares its exact payload size and can use the existing primitive operations, including their configured byte order:
+
+```csharp
+using Utils.IO.Serialization;
+
+public readonly record struct CustomerId(int Value);
+
+public sealed class CustomerIdCodec : IFixedWireCodec<CustomerId>
+{
+    public int Size => sizeof(int);
+
+    public CustomerId Read(IReader reader) => new(reader.Read<int>());
+
+    public void Write(IWriter writer, CustomerId value) =>
+        writer.Write(value.Value);
+}
+
+SerializationOptions options = new();
+options.Codecs.Set(new CustomerIdCodec());
+
+using MemoryStream stream = new();
+new Writer(stream, options).Write(new CustomerId(42));
+stream.Position = 0;
+CustomerId copy = new Reader(stream, options).Read<CustomerId>();
+```
+
+`Reader` and `Writer` snapshot the registry when they are constructed. Changing `options.Codecs` afterward does not change those instances or slices created from them.
+
+### Register only one direction
+
+Reader and writer registrations are independent. This is useful while migrating a legacy format whose reader must remain available but whose writer is no longer used:
+
+```csharp
+SerializationOptions options = new();
+options.Codecs.SetReader<CustomerId>(new CustomerIdCodec());
+
+Reader reader = new(stream, options);
+CustomerId id = reader.Read<CustomerId>();
+```
+
+If the opposite direction has no codec, normal legacy-converter or generated/reflection fallback resolution still applies.
+
+### Choose framing and bounded buffering
+
+Framing stays separate from codecs:
+
+```csharp
+using System.Collections.Generic;
+using System.Text;
+using Utils.IO.Serialization;
+
+public readonly record struct Utf8Text(string Value);
+
+public sealed class Utf8TextCodec : IWireCodec<Utf8Text>
+{
+    public Utf8Text Read(IReader reader)
+    {
+        List<byte> bytes = [];
+        for (int value = reader.ReadByte(); value >= 0; value = reader.ReadByte())
+        {
+            bytes.Add((byte)value);
+        }
+
+        return new Utf8Text(Encoding.UTF8.GetString([.. bytes]));
+    }
+
+    public void Write(IWriter writer, Utf8Text value) =>
+        writer.WriteBytes(Encoding.UTF8.GetBytes(value.Value));
+}
+
+SerializationOptions options = new()
+{
+    VariablePayloadWritePolicy = VariablePayloadWritePolicy.AllowBuffering,
+    MaximumBufferedPayloadLength = 64 * 1024
+};
+
+options.Codecs.Set(
+    new Utf8TextCodec(),
+    new Int32LengthWireFraming());
+```
+
+`Utf8TextCodec` does not know its payload size before encoding. A seekable writer can therefore backpatch the fixed-width `Int32` prefix; a forward-only writer uses the explicitly enabled bounded staging buffer. If a codec implements `IWireSizeProvider<T>`, the writer can instead emit the known length before the payload without seeking or buffering.
 
 Fixed framing and sizes reported by `IWireSizeProvider<T>` are enforced with a non-buffering, bounded counting writer, including on forward-only streams. It rejects an overflow before bytes beyond the declaration reach the target and reports an underwrite after the codec returns.
 
