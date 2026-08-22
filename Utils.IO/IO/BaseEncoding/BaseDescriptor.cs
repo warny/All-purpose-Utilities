@@ -168,8 +168,8 @@ public abstract class BaseDescriptorBase : IBaseDescriptor, IBaseConverter
     {
         if (!filler.HasValue)
         {
-            if (fillerMod != 0)
-                throw new ArgumentOutOfRangeException(nameof(fillerMod), "FillerMod must be zero when no filler is configured.");
+            // FillerMod has no effect when padding is disabled. Preserve compatibility with
+            // historical descriptors that supplied an otherwise arbitrary value here.
             return;
         }
 

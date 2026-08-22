@@ -119,14 +119,29 @@ public class BaseDescriptorTests
     }
 
     /// <summary>
-    /// Verifies that filler presence and the byte-aligned padding quantum remain consistent.
+    /// Verifies that an unused filler modulus remains compatible when no filler is configured.
+    /// </summary>
+    /// <param name="fillerMod">The historically accepted, inactive filler modulus.</param>
+    [DataTestMethod]
+    [DataRow(-1)]
+    [DataRow(0)]
+    [DataRow(1)]
+    [DataRow(4)]
+    [DataRow(8)]
+    public void Constructor_WithoutFiller_PreservesInactiveFillerMod(int fillerMod)
+    {
+        var descriptor = new TestBaseDescriptor("ABCD", "", null, fillerMod);
+
+        Assert.IsNull(descriptor.Filler);
+        Assert.AreEqual(fillerMod, descriptor.FillerMod);
+    }
+
+    /// <summary>
+    /// Verifies that an active filler requires the byte-aligned padding quantum.
     /// </summary>
     [TestMethod]
-    public void Constructor_IncoherentFillerMod_ThrowsArgumentOutOfRangeException()
+    public void Constructor_WithFillerAndIncoherentFillerMod_ThrowsArgumentOutOfRangeException()
     {
-        foreach (int fillerMod in new int[] { -1, 1, 4, 8 })
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => new TestBaseDescriptor("ABCD", "", null, fillerMod));
-
         foreach (int fillerMod in new int[] { -1, 0, 1, 3, 5 })
             Assert.ThrowsException<ArgumentOutOfRangeException>(() => new TestBaseDescriptor("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/", "", '=', fillerMod));
     }
