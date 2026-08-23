@@ -10,6 +10,18 @@ namespace UtilsTest.Serialization;
 [TestClass]
 public sealed class ReaderOptionsTests
 {
+    /// <summary>Ensures every common reader and writer overload rejects a null stream immediately.</summary>
+    [TestMethod]
+    public void ReaderAndWriter_NullStream_ThrowArgumentNullException()
+    {
+        Assert.ThrowsException<ArgumentNullException>(() => new Reader(null!));
+        Assert.ThrowsException<ArgumentNullException>(() => new Reader(null!, new ReaderOptions()));
+        Assert.ThrowsException<ArgumentNullException>(() => new Reader(null!, new SerializationOptions()));
+        Assert.ThrowsException<ArgumentNullException>(() => new Writer(null!));
+        Assert.ThrowsException<ArgumentNullException>(() => new Writer(null!, new SerializationOptions()));
+        Assert.ThrowsException<ArgumentNullException>(() => new ReaderWriter((Stream)null!));
+    }
+
     /// <summary>Ensures default readers preserve round trips larger than the former 16 MiB limit.</summary>
     [TestMethod]
     public void DefaultOptions_StringLargerThanFormerLimit_RoundTrips()

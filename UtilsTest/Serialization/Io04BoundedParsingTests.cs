@@ -9,6 +9,37 @@ namespace UtilsTest.Serialization;
 [TestClass]
 public sealed class Io04BoundedParsingTests
 {
+    /// <summary>Verifies an exhausted exact budget still permits an EOF probe.</summary>
+    [TestMethod]
+    public void ReadByte_AtExactBudgetAndEndOfStream_ReturnsMinusOne()
+    {
+        Reader reader = new(new MemoryStream([1]), new ReaderOptions { MaximumReadBytes = 1 });
+        Assert.AreEqual(1, reader.ReadByte());
+        Assert.AreEqual(-1, reader.ReadByte());
+    }
+
+    /// <summary>Verifies a real byte beyond the budget is rejected and only one lookahead probe occurs.</summary>
+    [TestMethod]
+    public void ReadByte_WhenBudgetExhaustedAndDataRemains_IsRejected()
+    {
+        using CountingForwardOnlyStream stream = new([1, 2, 3]);
+        Reader reader = new(stream, new ReaderOptions { MaximumReadBytes = 1 });
+        Assert.AreEqual(1, reader.ReadByte());
+        Assert.ThrowsException<InvalidDataException>(() => reader.ReadByte());
+        Assert.AreEqual(2, stream.BytesRead);
+        Assert.ThrowsException<InvalidDataException>(() => reader.ReadByte());
+        Assert.AreEqual(2, stream.BytesRead, "The rejected lookahead must be buffered instead of probing repeatedly.");
+    }
+
+    /// <summary>Verifies codec-owned EOF framing terminates when its bytes exactly exhaust the budget.</summary>
+    [TestMethod]
+    public void CodecOwned_ExactAggregateBudget_CanObserveEndOfStream()
+    {
+        SerializationOptions options = Options(new EofBlobCodec(), new CodecOwnedWireFraming());
+        Blob value = new Reader(new MemoryStream([1, 2]), new ReaderOptions { MaximumReadBytes = 2 }, options).Read<Blob>();
+        CollectionAssert.AreEqual(new byte[] { 1, 2 }, value.Bytes);
+    }
+
     /// <summary>Verifies one payload, an exact boundary, a second payload failure, and a zero budget.</summary>
     [TestMethod]
     public void AggregateBudget_BoundariesAreEnforcedAcrossPayloads()
@@ -57,6 +88,25 @@ public sealed class Io04BoundedParsingTests
 
         Reader overflowSafe = new(new MemoryStream(), new ReaderOptions { MaximumReadBytes = 1, MaximumCollectionLength = int.MaxValue });
         Assert.ThrowsException<InvalidDataException>(() => overflowSafe.ReadArray<decimal>(int.MaxValue));
+    }
+
+    /// <summary>Verifies array preflight follows actual codec and converter resolution.</summary>
+    [TestMethod]
+    public void ReadArray_OverridesSkipBuiltInElementSizeWhileDefaultPrimitivePreflights()
+    {
+        SerializationOptions codecOptions = new();
+        codecOptions.Codecs.Set(new OneByteIntCodec(), new CodecOwnedWireFraming());
+        Reader codecReader = new(new MemoryStream([1, 2]), new ReaderOptions { MaximumReadBytes = 2 }, codecOptions);
+        CollectionAssert.AreEqual(new[] { 1, 2 }, codecReader.ReadArray<int>(2));
+
+        Func<IReader, int> converter = source => source.ReadByte();
+        Reader converterReader = new(new MemoryStream([3, 4]), new ReaderOptions { MaximumReadBytes = 2 }, [converter]);
+        CollectionAssert.AreEqual(new[] { 3, 4 }, converterReader.ReadArray<int>(2));
+
+        using MemoryStream defaultStream = new(new byte[8]);
+        Reader defaultReader = new(defaultStream, new ReaderOptions { MaximumReadBytes = 7 });
+        Assert.ThrowsException<InvalidDataException>(() => defaultReader.ReadArray<int>(2));
+        Assert.AreEqual(0, defaultStream.Position);
     }
 
     /// <summary>Verifies slices share depletion with their parent and rereads do not restore budget.</summary>
@@ -203,6 +253,30 @@ public sealed class Io04BoundedParsingTests
         public void Write(IWriter writer, NestedBlob value) => writer.WriteBytes(value.Bytes);
     }
 
+    /// <summary>Codec-owned payload reader that terminates only after observing EOF.</summary>
+    private sealed class EofBlobCodec : IWireCodec<Blob>
+    {
+        /// <inheritdoc />
+        public Blob Read(IReader reader)
+        {
+            System.Collections.Generic.List<byte> bytes = [];
+            for (int value = reader.ReadByte(); value >= 0; value = reader.ReadByte()) bytes.Add((byte)value);
+            return new Blob([.. bytes]);
+        }
+
+        /// <inheritdoc />
+        public void Write(IWriter writer, Blob value) => writer.WriteBytes(value.Bytes);
+    }
+
+    /// <summary>Runtime integer codec using a one-byte representation.</summary>
+    private sealed class OneByteIntCodec : IWireCodec<int>
+    {
+        /// <inheritdoc />
+        public int Read(IReader reader) => reader.ReadByte();
+        /// <inheritdoc />
+        public void Write(IWriter writer, int value) => writer.WriteByte((byte)value);
+    }
+
     /// <summary>Codec that reads an exact caller-selected number of bytes.</summary>
     private class BlobCodec(int length) : IWireCodec<Blob>
     {
@@ -233,7 +307,7 @@ public sealed class Io04BoundedParsingTests
     }
 
     /// <summary>Non-seekable stream used to prove accounting does not inspect positions.</summary>
-    private sealed class ForwardOnlyReadStream(byte[] bytes) : MemoryStream(bytes, writable: false)
+    private class ForwardOnlyReadStream(byte[] bytes) : MemoryStream(bytes, writable: false)
     {
         /// <inheritdoc />
         public override bool CanSeek => false;
@@ -243,5 +317,20 @@ public sealed class Io04BoundedParsingTests
         public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
         /// <inheritdoc />
         public override long Seek(long offset, SeekOrigin loc) => throw new NotSupportedException();
+    }
+
+    /// <summary>Forward-only stream exposing the number of bytes physically returned to lookahead probes.</summary>
+    private sealed class CountingForwardOnlyStream(byte[] bytes) : ForwardOnlyReadStream(bytes)
+    {
+        /// <summary>Gets the number of bytes returned by the stream.</summary>
+        public int BytesRead { get; private set; }
+
+        /// <inheritdoc />
+        public override int ReadByte()
+        {
+            int value = base.ReadByte();
+            if (value >= 0) BytesRead++;
+            return value;
+        }
     }
 }

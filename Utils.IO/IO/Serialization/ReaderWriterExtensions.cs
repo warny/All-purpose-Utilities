@@ -95,7 +95,7 @@ public static class ReaderWriterExtensions
     {
         ArgumentNullException.ThrowIfNull(reader);
         reader.ValidateCollectionCount(count);
-        if (TryGetFixedWireSize<T>(out int elementSize))
+        if (reader.UsesBuiltInReader(typeof(T)) && TryGetFixedWireSize<T>(out int elementSize))
             reader.EnsureReadAvailable((long)count * elementSize);
         T[] result = new T[count];
         for (int i = 0; i < count; i++)

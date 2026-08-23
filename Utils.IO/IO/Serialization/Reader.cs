@@ -50,6 +50,7 @@ public class Reader : IReader, IStreamMapping<Reader>
     private readonly int maximumCollectionLength;
     private readonly ReadBudget readBudget;
     private readonly bool countWireBytes;
+    private int rejectedLookaheadByte = -1;
 
     /// <summary>Coordinates one logical contract build for each type.</summary>
     private readonly ContractCache contractCache = new();
@@ -116,7 +117,7 @@ public class Reader : IReader, IStreamMapping<Reader>
     /// </summary>
     private Reader(Stream stream, IReadOnlyDictionary<Type, Delegate> readers, IReadOnlyDictionary<Type, WireCodecRegistration>? codecs = null, int maximumPayloadLength = int.MaxValue, int maximumCollectionLength = int.MaxValue, ReadBudget? readBudget = null, bool countWireBytes = true)
     {
-        this.Stream = stream;
+        this.Stream = stream ?? throw new ArgumentNullException(nameof(stream));
         this.readers = readers.ToDictionary();
         this.codecs = codecs ?? new Dictionary<Type, WireCodecRegistration>();
         MaximumPayloadLength = maximumPayloadLength;
@@ -265,9 +266,20 @@ public class Reader : IReader, IStreamMapping<Reader>
     /// <returns>The byte value or -1 if read failed</returns>
     public int ReadByte()
     {
-        EnsureReadAvailable(1);
+        if (!countWireBytes) return Stream.ReadByte();
+        if (rejectedLookaheadByte >= 0)
+            throw new InvalidDataException("Reading another wire byte would exceed the configured aggregate limit.");
+        if (!readBudget.CanConsume(1))
+        {
+            // A forward-only stream can distinguish EOF from data only by probing once. Preserve a real
+            // lookahead byte logically in this reader and reject it without charging the parsing budget.
+            int lookahead = Stream.ReadByte();
+            if (lookahead < 0) return -1;
+            rejectedLookaheadByte = lookahead;
+            throw new InvalidDataException("Reading another wire byte would exceed the configured aggregate limit.");
+        }
         int value = Stream.ReadByte();
-        if (value >= 0 && countWireBytes) readBudget.Consume(1);
+        if (value >= 0) readBudget.Consume(1);
         return value;
     }
 
@@ -297,6 +309,14 @@ public class Reader : IReader, IStreamMapping<Reader>
         if (count < 0) throw new InvalidDataException($"Invalid collection element count {count}.");
         if (count > maximumCollectionLength)
             throw new InvalidDataException($"Collection element count {count} exceeds the configured maximum of {maximumCollectionLength}.");
+    }
+
+    /// <summary>Gets whether the exact type resolves to the default primitive reader rather than an override.</summary>
+    internal bool UsesBuiltInReader(Type type)
+    {
+        if (HasReadableCodec(type) || !readers.TryGetValue(type, out Delegate? reader)) return false;
+        Type? declaringType = reader.Method.DeclaringType;
+        return reader.Target is RawReader || declaringType == typeof(RawReader) || declaringType?.DeclaringType == typeof(RawReader);
     }
 
     /// <summary>Attempts to obtain the number of readable bytes between the current position and stream length.</summary>
