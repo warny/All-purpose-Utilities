@@ -2,11 +2,11 @@
 <html>
   <head>
     <meta charset="utf-8">
-      <title>Interface IReader | omy.Utils Documentation </title>
+      <title>Enum WireFramingKind | omy.Utils Documentation </title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="title" content="Interface IReader | omy.Utils Documentation ">
+      <meta name="title" content="Enum WireFramingKind | omy.Utils Documentation ">
       
-      <meta name="description" content="Provides methods for reading primitive and complex values from a stream.">
+      <meta name="description" content="Identifies how a codec payload is delimited.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -16,7 +16,7 @@
       <meta name="docfx:rel" content="../">
       
       
-      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_IO_Serialization_IReader.md&amp;value=---%0Auid%3A%20Utils.IO.Serialization.IReader%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_IO_Serialization_WireFramingKind.md&amp;value=---%0Auid%3A%20Utils.IO.Serialization.WireFramingKind%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
       <meta name="loc:inThisArticle" content="In this article">
       <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
       <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
@@ -84,12 +84,13 @@
           <nav id="breadcrumb"></nav>
         </div>
 
-        <article data-uid="Utils.IO.Serialization.IReader">
+        <article data-uid="Utils.IO.Serialization.WireFramingKind">
 
 
 
-  <h1 id="Utils_IO_Serialization_IReader" data-uid="Utils.IO.Serialization.IReader" class="text-break">
-Interface IReader  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/IReader.cs/#L8"><i class="bi bi-code-slash"></i></a>
+
+  <h1 id="Utils_IO_Serialization_WireFramingKind" data-uid="Utils.IO.Serialization.WireFramingKind" class="text-break">
+Enum WireFramingKind  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Wire/WireContracts.cs/#L44"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,12 +98,12 @@ Interface IReader  <a class="header-action link-secondary" title="View source" h
   <dl><dt>Assembly</dt><dd>Utils.IO.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Provides methods for reading primitive and complex values from a stream.</p>
+  <div class="markdown summary"><p>Identifies how a codec payload is delimited.</p>
 </div>
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public interface IReader</code></pre>
+    <pre><code class="lang-csharp hljs">public enum WireFramingKind</code></pre>
   </div>
 
 
@@ -117,18 +118,6 @@ Interface IReader  <a class="header-action link-secondary" title="View source" h
     <dd>
   <div>
       <a class="xref" href="Utils.Data.DataUtils.html#Utils_Data_DataUtils_ToDbValue_System_Object_">DataUtils.ToDbValue(object?)</a>
-  </div>
-  <div>
-      <a class="xref" href="Utils.IO.Serialization.ReaderWriterExtensions.html#Utils_IO_Serialization_ReaderWriterExtensions_ReadSLEB128_Utils_IO_Serialization_IReader_">ReaderWriterExtensions.ReadSLEB128(IReader)</a>
-  </div>
-  <div>
-      <a class="xref" href="Utils.IO.Serialization.ReaderWriterExtensions.html#Utils_IO_Serialization_ReaderWriterExtensions_ReadULEB128_Utils_IO_Serialization_IReader_">ReaderWriterExtensions.ReadULEB128(IReader)</a>
-  </div>
-  <div>
-      <a class="xref" href="Utils.IO.Serialization.WireCodecExtensions.html#Utils_IO_Serialization_WireCodecExtensions_ReadConfiguredOr__1_Utils_IO_Serialization_IReader_System_Func_Utils_IO_Serialization_IReader___0__">WireCodecExtensions.ReadConfiguredOr&lt;T&gt;(IReader, Func&lt;IReader, T&gt;)</a>
-  </div>
-  <div>
-      <a class="xref" href="Utils.IO.Serialization.WireCodecExtensions.html#Utils_IO_Serialization_WireCodecExtensions_ReadConfigured__1_Utils_IO_Serialization_IReader_System_Type_System_Type_">WireCodecExtensions.ReadConfigured&lt;T&gt;(IReader, Type?, Type?)</a>
   </div>
   <div>
       <a class="xref" href="Utils.Mathematics.MathEx.html#Utils_Mathematics_MathEx_Clamp__1___0___0___0_System_Collections_Generic_IComparer___0__">MathEx.Clamp&lt;T&gt;(T, T, T, IComparer&lt;T&gt;)</a>
@@ -200,6 +189,27 @@ Interface IReader  <a class="header-action link-secondary" title="View source" h
       <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_NotIn__1___0___0___">ObjectUtils.NotIn&lt;T&gt;(T, params T[])</a>
   </div>
   <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBeBetween__1___0___0___0_System_String_">Validations.ArgMustBeBetween&lt;T&gt;(T, T, T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBeEqualsTo__1___0___0_System_String_">Validations.ArgMustBeEqualsTo&lt;T&gt;(T, T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBeGreaterOrEqualsThan__1___0___0_System_String_">Validations.ArgMustBeGreaterOrEqualsThan&lt;T&gt;(T, T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBeGreaterThan__1___0___0_System_String_">Validations.ArgMustBeGreaterThan&lt;T&gt;(T, T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBeIn__1___0___0___System_String_">Validations.ArgMustBeIn&lt;T&gt;(T, T[], string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBeLesserOrEqualsThan__1___0___0_System_String_">Validations.ArgMustBeLesserOrEqualsThan&lt;T&gt;(T, T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBeLesserThan__1___0___0_System_String_">Validations.ArgMustBeLesserThan&lt;T&gt;(T, T, string)</a>
+  </div>
+  <div>
       <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
   </div>
   <div>
@@ -209,176 +219,33 @@ Interface IReader  <a class="header-action link-secondary" title="View source" h
       <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Arg__1___0_System_String_">Validations.Arg&lt;T&gt;(T, string)</a>
   </div>
   <div>
-      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ValueMustNotBeNull__1___0_System_String_">Validations.ValueMustNotBeNull&lt;T&gt;(T, string)</a>
-  </div>
-  <div>
       <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Variable__1___0_System_String_">Validations.Variable&lt;T&gt;(T, string)</a>
   </div>
   </dd></dl>
 
-
-
-
-
-  <h2 class="section" id="methods">Methods
+  <h2 id="fields">Fields
 </h2>
-
-
-  <a id="Utils_IO_Serialization_IReader_Read_" data-uid="Utils.IO.Serialization.IReader.Read*"></a>
-
-  <h3 id="Utils_IO_Serialization_IReader_Read_System_Type_" data-uid="Utils.IO.Serialization.IReader.Read(System.Type)">
-  Read(Type)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/IReader.cs/#L22"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Reads a value of the specified <code class="paramref">type</code> from the stream.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">object Read(Type type)</code></pre>
-  </div>
-
-  <h4 class="section">Parameters</h4>
   <dl class="parameters">
-    <dt><code>type</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></dt>
-    <dd><p>Type of the value to read.</p>
+    <dt id="Utils_IO_Serialization_WireFramingKind_CodecOwned"><code>CodecOwned = 2</code></dt>
+  
+  <dd><p>The codec itself recognizes the end of its payload.</p>
+</dd>
+    <dt id="Utils_IO_Serialization_WireFramingKind_Fixed"><code>Fixed = 0</code></dt>
+  
+  <dd><p>The payload occupies an exact positive number of bytes.</p>
+</dd>
+    <dt id="Utils_IO_Serialization_WireFramingKind_LengthPrefixed"><code>LengthPrefixed = 1</code></dt>
+  
+  <dd><p>A length prefix precedes the payload.</p>
 </dd>
   </dl>
-
-  <h4 class="section">Returns</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></dt>
-    <dd><p>The value read from the stream.</p>
-</dd>
-  </dl>
-
-
-
-
-
-
-
-
-
-
-
-  <a id="Utils_IO_Serialization_IReader_ReadByte_" data-uid="Utils.IO.Serialization.IReader.ReadByte*"></a>
-
-  <h3 id="Utils_IO_Serialization_IReader_ReadByte" data-uid="Utils.IO.Serialization.IReader.ReadByte">
-  ReadByte()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/IReader.cs/#L28"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Reads a single byte from the stream.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">int ReadByte()</code></pre>
-  </div>
-
-
-  <h4 class="section">Returns</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>The byte read or -1 if at the end of the stream.</p>
-</dd>
-  </dl>
-
-
-
-
-
-
-
-
-
-
-
-  <a id="Utils_IO_Serialization_IReader_ReadBytes_" data-uid="Utils.IO.Serialization.IReader.ReadBytes*"></a>
-
-  <h3 id="Utils_IO_Serialization_IReader_ReadBytes_System_Int32_" data-uid="Utils.IO.Serialization.IReader.ReadBytes(System.Int32)">
-  ReadBytes(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/IReader.cs/#L35"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Reads a sequence of bytes from the stream.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">byte[] ReadBytes(int length)</code></pre>
-  </div>
-
-  <h4 class="section">Parameters</h4>
-  <dl class="parameters">
-    <dt><code>length</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>Number of bytes to read.</p>
-</dd>
-  </dl>
-
-  <h4 class="section">Returns</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
-    <dd><p>The bytes read.</p>
-</dd>
-  </dl>
-
-
-
-
-
-
-
-
-
-
-
-  <a id="Utils_IO_Serialization_IReader_Read_" data-uid="Utils.IO.Serialization.IReader.Read*"></a>
-
-  <h3 id="Utils_IO_Serialization_IReader_Read__1" data-uid="Utils.IO.Serialization.IReader.Read``1">
-  Read&lt;T&gt;()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/IReader.cs/#L15"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Reads a value of the specified type from the underlying stream.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">T Read&lt;T&gt;()</code></pre>
-  </div>
-
-
-  <h4 class="section">Returns</h4>
-  <dl class="parameters">
-    <dt><span class="xref">T</span></dt>
-    <dd><p>The value read from the stream.</p>
-</dd>
-  </dl>
-
-  <h4 class="section">Type Parameters</h4>
-  <dl class="parameters">
-    <dt><code>T</code></dt>
-    <dd><p>Type of the value to read.</p>
-</dd>
-  </dl>
-
-
-
-
-
-
-
-
 
 
 
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/IReader.cs/#L8" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Wire/WireContracts.cs/#L44" class="edit-link">Edit this page</a>
         </div>
 
 

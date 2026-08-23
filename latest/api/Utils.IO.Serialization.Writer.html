@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_IO_Serialization_Writer" data-uid="Utils.IO.Serialization.Writer" class="text-break">
-Class Writer  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L16"><i class="bi bi-code-slash"></i></a>
+Class Writer  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L17"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -163,6 +163,12 @@ resolved dynamically based on the runtime type of the value to write.</p>
   </div>
   <div>
       <a class="xref" href="Utils.IO.Serialization.ReaderWriterExtensions.html#Utils_IO_Serialization_ReaderWriterExtensions_WriteULEB128_Utils_IO_Serialization_IWriter_System_UInt64_">ReaderWriterExtensions.WriteULEB128(IWriter, ulong)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.IO.Serialization.WireCodecExtensions.html#Utils_IO_Serialization_WireCodecExtensions_WriteConfiguredOr__1_Utils_IO_Serialization_IWriter___0_System_Action_Utils_IO_Serialization_IWriter___0__">WireCodecExtensions.WriteConfiguredOr&lt;T&gt;(IWriter, T, Action&lt;IWriter, T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.IO.Serialization.WireCodecExtensions.html#Utils_IO_Serialization_WireCodecExtensions_WriteConfigured__1_Utils_IO_Serialization_IWriter___0_System_Type_System_Type_">WireCodecExtensions.WriteConfigured&lt;T&gt;(IWriter, T, Type?, Type?)</a>
   </div>
   <div>
       <a class="xref" href="Utils.IO.Serialization.ReaderWriterExtensions.html#Utils_IO_Serialization_ReaderWriterExtensions_WriteFixedLengthString_Utils_IO_Serialization_Writer_System_String_System_Int32_System_Text_Encoding_">ReaderWriterExtensions.WriteFixedLengthString(Writer, string, int, Encoding)</a>
@@ -268,7 +274,7 @@ resolved dynamically based on the runtime type of the value to write.</p>
 
   <h3 id="Utils_IO_Serialization_Writer__ctor_System_IO_Stream_" data-uid="Utils.IO.Serialization.Writer.#ctor(System.IO.Stream)">
   Writer(Stream)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L52"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L56"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.IO.Serialization.Writer.html">Writer</a> class using default converters.</p>
@@ -300,7 +306,7 @@ resolved dynamically based on the runtime type of the value to write.</p>
 
   <h3 id="Utils_IO_Serialization_Writer__ctor_System_IO_Stream_System_Collections_Generic_IEnumerable_System_Collections_Generic_IEnumerable_System_Delegate___" data-uid="Utils.IO.Serialization.Writer.#ctor(System.IO.Stream,System.Collections.Generic.IEnumerable{System.Collections.Generic.IEnumerable{System.Delegate}})">
   Writer(Stream, params IEnumerable&lt;IEnumerable&lt;Delegate&gt;&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L87"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L126"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.IO.Serialization.Writer.html">Writer</a> class using multiple converter collections.</p>
@@ -334,7 +340,7 @@ resolved dynamically based on the runtime type of the value to write.</p>
 
   <h3 id="Utils_IO_Serialization_Writer__ctor_System_IO_Stream_System_Collections_Generic_IEnumerable_System_Delegate__" data-uid="Utils.IO.Serialization.Writer.#ctor(System.IO.Stream,System.Collections.Generic.IEnumerable{System.Delegate})">
   Writer(Stream, params IEnumerable&lt;Delegate&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L59"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L71"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.IO.Serialization.Writer.html">Writer</a> class with custom converters.</p>
@@ -366,6 +372,76 @@ resolved dynamically based on the runtime type of the value to write.</p>
 
 
 
+  <a id="Utils_IO_Serialization_Writer__ctor_" data-uid="Utils.IO.Serialization.Writer.#ctor*"></a>
+
+  <h3 id="Utils_IO_Serialization_Writer__ctor_System_IO_Stream_Utils_IO_Serialization_SerializationOptions_" data-uid="Utils.IO.Serialization.Writer.#ctor(System.IO.Stream,Utils.IO.Serialization.SerializationOptions)">
+  Writer(Stream, SerializationOptions)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L59"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a writer with shared wire serialization options.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Writer(Stream stream, SerializationOptions options)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>stream</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a></dt>
+    <dd></dd>
+    <dt><code>options</code> <a class="xref" href="Utils.IO.Serialization.SerializationOptions.html">SerializationOptions</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_IO_Serialization_Writer__ctor_" data-uid="Utils.IO.Serialization.Writer.#ctor*"></a>
+
+  <h3 id="Utils_IO_Serialization_Writer__ctor_System_IO_Stream_Utils_IO_Serialization_SerializationOptions_System_Collections_Generic_IEnumerable_System_Delegate__" data-uid="Utils.IO.Serialization.Writer.#ctor(System.IO.Stream,Utils.IO.Serialization.SerializationOptions,System.Collections.Generic.IEnumerable{System.Delegate})">
+  Writer(Stream, SerializationOptions, params IEnumerable&lt;Delegate&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L63"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a writer with wire options and explicit converters.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Writer(Stream stream, SerializationOptions options, params IEnumerable&lt;Delegate&gt; converters)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>stream</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a></dt>
+    <dd></dd>
+    <dt><code>options</code> <a class="xref" href="Utils.IO.Serialization.SerializationOptions.html">SerializationOptions</a></dt>
+    <dd></dd>
+    <dt><code>converters</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.delegate">Delegate</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
   <h2 class="section" id="properties">Properties
 </h2>
 
@@ -374,7 +450,7 @@ resolved dynamically based on the runtime type of the value to write.</p>
 
   <h3 id="Utils_IO_Serialization_Writer_BytesLeft" data-uid="Utils.IO.Serialization.Writer.BytesLeft">
   BytesLeft
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L46"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L50"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the number of bytes left to write in the stream.</p>
@@ -407,7 +483,7 @@ public long BytesLeft { get; }</code></pre>
 
   <h3 id="Utils_IO_Serialization_Writer_Position" data-uid="Utils.IO.Serialization.Writer.Position">
   Position
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L37"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L41"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the current position within the stream.</p>
@@ -439,7 +515,7 @@ public long BytesLeft { get; }</code></pre>
 
   <h3 id="Utils_IO_Serialization_Writer_Stream" data-uid="Utils.IO.Serialization.Writer.Stream">
   Stream
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L21"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L22"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the underlying stream used for writing.</p>
@@ -475,7 +551,7 @@ public long BytesLeft { get; }</code></pre>
 
   <h3 id="Utils_IO_Serialization_Writer_Pop" data-uid="Utils.IO.Serialization.Writer.Pop">
   Pop()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L170"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L204"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Restores the last saved position from the stack.</p>
@@ -502,7 +578,7 @@ public long BytesLeft { get; }</code></pre>
 
   <h3 id="Utils_IO_Serialization_Writer_Push" data-uid="Utils.IO.Serialization.Writer.Push">
   Push()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L139"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L173"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Saves the current position onto an internal stack.</p>
@@ -529,7 +605,7 @@ public long BytesLeft { get; }</code></pre>
 
   <h3 id="Utils_IO_Serialization_Writer_Push_System_Int32_System_IO_SeekOrigin_" data-uid="Utils.IO.Serialization.Writer.Push(System.Int32,System.IO.SeekOrigin)">
   Push(int, SeekOrigin)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L150"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L184"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Saves the current position and seeks relative to the given offset.</p>
@@ -565,7 +641,7 @@ public long BytesLeft { get; }</code></pre>
 
   <h3 id="Utils_IO_Serialization_Writer_Seek_System_Int32_System_IO_SeekOrigin_" data-uid="Utils.IO.Serialization.Writer.Seek(System.Int32,System.IO.SeekOrigin)">
   Seek(int, SeekOrigin)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L134"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L168"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Moves the current position within the stream.</p>
@@ -599,7 +675,7 @@ public long BytesLeft { get; }</code></pre>
 
   <h3 id="Utils_IO_Serialization_Writer_Slice_System_Int64_System_Int64_" data-uid="Utils.IO.Serialization.Writer.Slice(System.Int64,System.Int64)">
   Slice(long, long)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L181"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L215"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates a writer operating on a slice of the underlying stream.</p>
@@ -640,7 +716,7 @@ public long BytesLeft { get; }</code></pre>
 
   <h3 id="Utils_IO_Serialization_Writer_TryGetBytesUntilCurrentLength_System_Int64__" data-uid="Utils.IO.Serialization.Writer.TryGetBytesUntilCurrentLength(System.Int64@)">
   TryGetBytesUntilCurrentLength(out long)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L188"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L222"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Attempts to measure the bytes between the current position and the stream's current length.</p>
@@ -677,7 +753,7 @@ public long BytesLeft { get; }</code></pre>
 
   <h3 id="Utils_IO_Serialization_Writer_Write_System_Object_" data-uid="Utils.IO.Serialization.Writer.Write(System.Object)">
   Write(object)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L104"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L143"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes an object dynamically by resolving the appropriate writer.</p>
@@ -710,7 +786,7 @@ public long BytesLeft { get; }</code></pre>
 
   <h3 id="Utils_IO_Serialization_Writer_WriteByte_System_Byte_" data-uid="Utils.IO.Serialization.Writer.WriteByte(System.Byte)">
   WriteByte(byte)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L93"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L132"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes a single byte to the underlying stream.</p>
@@ -742,7 +818,7 @@ public long BytesLeft { get; }</code></pre>
 
   <h3 id="Utils_IO_Serialization_Writer_WriteBytes_System_ReadOnlySpan_System_Byte__" data-uid="Utils.IO.Serialization.Writer.WriteBytes(System.ReadOnlySpan{System.Byte})">
   WriteBytes(ReadOnlySpan&lt;byte&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L98"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L137"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes a span of bytes to the underlying stream.</p>
@@ -774,7 +850,7 @@ public long BytesLeft { get; }</code></pre>
 
   <h3 id="Utils_IO_Serialization_Writer_Write__1___0_" data-uid="Utils.IO.Serialization.Writer.Write``1(``0)">
   Write&lt;T&gt;(T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L120"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L157"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes a strongly-typed object using the cached writer delegate.</p>
@@ -813,7 +889,7 @@ public long BytesLeft { get; }</code></pre>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L16" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/Writer.cs/#L17" class="edit-link">Edit this page</a>
         </div>
 
 

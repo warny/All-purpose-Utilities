@@ -4604,6 +4604,34 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.IO.Serialization.CodecOwnedWireFraming.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.IO.Serialization.CodecOwnedWireFraming.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.IO.Serialization.CodecOwnedWireFraming",
+      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.CodecOwnedWireFraming.yml\" sourcestartlinenumber=\"1\">Declares a codec-owned, self-delimited payload.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.IO.Serialization.DotNetBinaryDateTimeCodec.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.IO.Serialization.DotNetBinaryDateTimeCodec.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.IO.Serialization.DotNetBinaryDateTimeCodec",
+      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.DotNetBinaryDateTimeCodec.yml\" sourcestartlinenumber=\"1\">Encodes DateTime using the framework binary representation and preserves Kind semantics.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.IO.Serialization.FieldAttribute.yml",
       "output": {
         ".html": {
@@ -4618,6 +4646,34 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.IO.Serialization.FileTimeDateTimeCodec.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.IO.Serialization.FileTimeDateTimeCodec.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.IO.Serialization.FileTimeDateTimeCodec",
+      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.FileTimeDateTimeCodec.yml\" sourcestartlinenumber=\"1\">Encodes UTC Windows FILETIME and decodes it as a Utc DateTime.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.IO.Serialization.FixedWireFraming.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.IO.Serialization.FixedWireFraming.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.IO.Serialization.FixedWireFraming",
+      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.FixedWireFraming.yml\" sourcestartlinenumber=\"1\">Describes a fixed-size payload.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.IO.Serialization.GenerateReaderWriterAttribute.yml",
       "output": {
         ".html": {
@@ -4629,6 +4685,20 @@
       "IsMRef": true,
       "Title": "Utils.IO.Serialization.GenerateReaderWriterAttribute",
       "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.GenerateReaderWriterAttribute.yml\" sourcestartlinenumber=\"1\">Marks a type for which reader and writer methods are generated at compile time.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.IO.Serialization.IFixedWireCodec-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.IO.Serialization.IFixedWireCodec-1.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.IO.Serialization.IFixedWireCodec<T>",
+      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.IFixedWireCodec-1.yml\" sourcestartlinenumber=\"1\">Declares the exact payload size of a fixed-width codec.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -4660,6 +4730,104 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.IO.Serialization.IWireCodec-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.IO.Serialization.IWireCodec-1.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.IO.Serialization.IWireCodec<T>",
+      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.IWireCodec-1.yml\" sourcestartlinenumber=\"1\">Combines the independent wire reader and writer directions.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.IO.Serialization.IWireCodecDescriptor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.IO.Serialization.IWireCodecDescriptor.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.IO.Serialization.IWireCodecDescriptor",
+      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.IWireCodecDescriptor.yml\" sourcestartlinenumber=\"1\">Identifies the value type represented by a registry descriptor.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.IO.Serialization.IWireFraming.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.IO.Serialization.IWireFraming.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.IO.Serialization.IWireFraming",
+      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.IWireFraming.yml\" sourcestartlinenumber=\"1\">Describes payload delimitation independently from value encoding.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.IO.Serialization.IWireLengthFraming.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.IO.Serialization.IWireLengthFraming.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.IO.Serialization.IWireLengthFraming",
+      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.IWireLengthFraming.yml\" sourcestartlinenumber=\"1\">Reads and writes payload lengths without encoding payload values.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.IO.Serialization.IWireReader-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.IO.Serialization.IWireReader-1.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.IO.Serialization.IWireReader<T>",
+      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.IWireReader-1.yml\" sourcestartlinenumber=\"1\">Decodes a value payload from sequential wire data.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.IO.Serialization.IWireSizeProvider-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.IO.Serialization.IWireSizeProvider-1.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.IO.Serialization.IWireSizeProvider<T>",
+      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.IWireSizeProvider-1.yml\" sourcestartlinenumber=\"1\">Optionally computes a variable payload size before encoding.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.IO.Serialization.IWireWriter-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.IO.Serialization.IWireWriter-1.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.IO.Serialization.IWireWriter<T>",
+      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.IWireWriter-1.yml\" sourcestartlinenumber=\"1\">Encodes a value payload to sequential wire data.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.IO.Serialization.IWriter.yml",
       "output": {
         ".html": {
@@ -4671,6 +4839,34 @@
       "IsMRef": true,
       "Title": "Utils.IO.Serialization.IWriter",
       "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.IWriter.yml\" sourcestartlinenumber=\"1\">Provides methods for writing primitive and complex values to a stream.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.IO.Serialization.Int32LengthWireFraming.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.IO.Serialization.Int32LengthWireFraming.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.IO.Serialization.Int32LengthWireFraming",
+      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.Int32LengthWireFraming.yml\" sourcestartlinenumber=\"1\">Uses a signed 32-bit payload-length prefix.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.IO.Serialization.OleAutomationDateTimeCodec.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.IO.Serialization.OleAutomationDateTimeCodec.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.IO.Serialization.OleAutomationDateTimeCodec",
+      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.OleAutomationDateTimeCodec.yml\" sourcestartlinenumber=\"1\">Encodes DateTime using the framework OLE Automation Double representation.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -4783,6 +4979,146 @@
       "IsMRef": true,
       "Title": "Utils.IO.Serialization.SerializationContractException",
       "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.SerializationContractException.yml\" sourcestartlinenumber=\"1\">Represents one or more defects in an attributed serialization contract.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.IO.Serialization.SerializationOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.IO.Serialization.SerializationOptions.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.IO.Serialization.SerializationOptions",
+      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.SerializationOptions.yml\" sourcestartlinenumber=\"1\">Configures shared wire contracts and bounded variable-payload staging.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.IO.Serialization.TicksDateTimeCodec.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.IO.Serialization.TicksDateTimeCodec.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.IO.Serialization.TicksDateTimeCodec",
+      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.TicksDateTimeCodec.yml\" sourcestartlinenumber=\"1\">Encodes DateTime ticks and decodes them with Unspecified kind for legacy interoperability.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.IO.Serialization.UnixMillisecondsDateTimeCodec",
+      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.yml\" sourcestartlinenumber=\"1\">Encodes signed whole milliseconds from the Unix UTC epoch and decodes with Utc kind.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.IO.Serialization.UnixSecondsDateTimeCodec.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.IO.Serialization.UnixSecondsDateTimeCodec.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.IO.Serialization.UnixSecondsDateTimeCodec",
+      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.UnixSecondsDateTimeCodec.yml\" sourcestartlinenumber=\"1\">Encodes signed whole seconds from the Unix UTC epoch and decodes with Utc kind.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.IO.Serialization.VariablePayloadWritePolicy.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.IO.Serialization.VariablePayloadWritePolicy.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.IO.Serialization.VariablePayloadWritePolicy",
+      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.VariablePayloadWritePolicy.yml\" sourcestartlinenumber=\"1\">Controls staging of payloads whose encoded size is unknown.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.IO.Serialization.WireCodecAttribute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.IO.Serialization.WireCodecAttribute.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.IO.Serialization.WireCodecAttribute",
+      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.WireCodecAttribute.yml\" sourcestartlinenumber=\"1\">Selects a concrete parameterless wire reader and/or writer for one serialized member.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.IO.Serialization.WireCodecExtensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.IO.Serialization.WireCodecExtensions.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.IO.Serialization.WireCodecExtensions",
+      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.WireCodecExtensions.yml\" sourcestartlinenumber=\"1\">Provides the stable runtime-dispatch bridge used by generated serializers.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.IO.Serialization.WireCodecRegistry.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.IO.Serialization.WireCodecRegistry.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.IO.Serialization.WireCodecRegistry",
+      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.WireCodecRegistry.yml\" sourcestartlinenumber=\"1\">Stores exact-type wire codec registrations before a reader or writer takes a snapshot.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.IO.Serialization.WireFramingAttribute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.IO.Serialization.WireFramingAttribute.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.IO.Serialization.WireFramingAttribute",
+      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.WireFramingAttribute.yml\" sourcestartlinenumber=\"1\">Selects a concrete parameterless framing implementation for one serialized member.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.IO.Serialization.WireFramingKind.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.IO.Serialization.WireFramingKind.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.IO.Serialization.WireFramingKind",
+      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.WireFramingKind.yml\" sourcestartlinenumber=\"1\">Identifies how a codec payload is delimited.</p>\n"
     },
     {
       "type": "ManagedReference",

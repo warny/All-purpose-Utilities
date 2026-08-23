@@ -34117,6 +34117,73 @@ references:
   commentId: N:Utils.IO.Serialization
   fullName: Utils.IO.Serialization
   nameWithType: Utils.IO.Serialization
+- uid: Utils.IO.Serialization.CodecOwnedWireFraming
+  name: CodecOwnedWireFraming
+  href: api/Utils.IO.Serialization.CodecOwnedWireFraming.html
+  commentId: T:Utils.IO.Serialization.CodecOwnedWireFraming
+  fullName: Utils.IO.Serialization.CodecOwnedWireFraming
+  nameWithType: CodecOwnedWireFraming
+- uid: Utils.IO.Serialization.CodecOwnedWireFraming.Kind
+  name: Kind
+  href: api/Utils.IO.Serialization.CodecOwnedWireFraming.html#Utils_IO_Serialization_CodecOwnedWireFraming_Kind
+  commentId: P:Utils.IO.Serialization.CodecOwnedWireFraming.Kind
+  fullName: Utils.IO.Serialization.CodecOwnedWireFraming.Kind
+  nameWithType: CodecOwnedWireFraming.Kind
+- uid: Utils.IO.Serialization.CodecOwnedWireFraming.Kind*
+  name: Kind
+  href: api/Utils.IO.Serialization.CodecOwnedWireFraming.html#Utils_IO_Serialization_CodecOwnedWireFraming_Kind_
+  commentId: Overload:Utils.IO.Serialization.CodecOwnedWireFraming.Kind
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.CodecOwnedWireFraming.Kind
+  nameWithType: CodecOwnedWireFraming.Kind
+- uid: Utils.IO.Serialization.DotNetBinaryDateTimeCodec
+  name: DotNetBinaryDateTimeCodec
+  href: api/Utils.IO.Serialization.DotNetBinaryDateTimeCodec.html
+  commentId: T:Utils.IO.Serialization.DotNetBinaryDateTimeCodec
+  fullName: Utils.IO.Serialization.DotNetBinaryDateTimeCodec
+  nameWithType: DotNetBinaryDateTimeCodec
+- uid: Utils.IO.Serialization.DotNetBinaryDateTimeCodec.Read(Utils.IO.Serialization.IReader)
+  name: Read(IReader)
+  href: api/Utils.IO.Serialization.DotNetBinaryDateTimeCodec.html#Utils_IO_Serialization_DotNetBinaryDateTimeCodec_Read_Utils_IO_Serialization_IReader_
+  commentId: M:Utils.IO.Serialization.DotNetBinaryDateTimeCodec.Read(Utils.IO.Serialization.IReader)
+  fullName: Utils.IO.Serialization.DotNetBinaryDateTimeCodec.Read(Utils.IO.Serialization.IReader)
+  nameWithType: DotNetBinaryDateTimeCodec.Read(IReader)
+- uid: Utils.IO.Serialization.DotNetBinaryDateTimeCodec.Read*
+  name: Read
+  href: api/Utils.IO.Serialization.DotNetBinaryDateTimeCodec.html#Utils_IO_Serialization_DotNetBinaryDateTimeCodec_Read_
+  commentId: Overload:Utils.IO.Serialization.DotNetBinaryDateTimeCodec.Read
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.DotNetBinaryDateTimeCodec.Read
+  nameWithType: DotNetBinaryDateTimeCodec.Read
+- uid: Utils.IO.Serialization.DotNetBinaryDateTimeCodec.Size
+  name: Size
+  href: api/Utils.IO.Serialization.DotNetBinaryDateTimeCodec.html#Utils_IO_Serialization_DotNetBinaryDateTimeCodec_Size
+  commentId: P:Utils.IO.Serialization.DotNetBinaryDateTimeCodec.Size
+  fullName: Utils.IO.Serialization.DotNetBinaryDateTimeCodec.Size
+  nameWithType: DotNetBinaryDateTimeCodec.Size
+- uid: Utils.IO.Serialization.DotNetBinaryDateTimeCodec.Size*
+  name: Size
+  href: api/Utils.IO.Serialization.DotNetBinaryDateTimeCodec.html#Utils_IO_Serialization_DotNetBinaryDateTimeCodec_Size_
+  commentId: Overload:Utils.IO.Serialization.DotNetBinaryDateTimeCodec.Size
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.DotNetBinaryDateTimeCodec.Size
+  nameWithType: DotNetBinaryDateTimeCodec.Size
+- uid: Utils.IO.Serialization.DotNetBinaryDateTimeCodec.Write(Utils.IO.Serialization.IWriter,System.DateTime)
+  name: Write(IWriter, DateTime)
+  href: api/Utils.IO.Serialization.DotNetBinaryDateTimeCodec.html#Utils_IO_Serialization_DotNetBinaryDateTimeCodec_Write_Utils_IO_Serialization_IWriter_System_DateTime_
+  commentId: M:Utils.IO.Serialization.DotNetBinaryDateTimeCodec.Write(Utils.IO.Serialization.IWriter,System.DateTime)
+  name.vb: Write(IWriter, Date)
+  fullName: Utils.IO.Serialization.DotNetBinaryDateTimeCodec.Write(Utils.IO.Serialization.IWriter, System.DateTime)
+  fullName.vb: Utils.IO.Serialization.DotNetBinaryDateTimeCodec.Write(Utils.IO.Serialization.IWriter, Date)
+  nameWithType: DotNetBinaryDateTimeCodec.Write(IWriter, DateTime)
+  nameWithType.vb: DotNetBinaryDateTimeCodec.Write(IWriter, Date)
+- uid: Utils.IO.Serialization.DotNetBinaryDateTimeCodec.Write*
+  name: Write
+  href: api/Utils.IO.Serialization.DotNetBinaryDateTimeCodec.html#Utils_IO_Serialization_DotNetBinaryDateTimeCodec_Write_
+  commentId: Overload:Utils.IO.Serialization.DotNetBinaryDateTimeCodec.Write
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.DotNetBinaryDateTimeCodec.Write
+  nameWithType: DotNetBinaryDateTimeCodec.Write
 - uid: Utils.IO.Serialization.FieldAttribute
   name: FieldAttribute
   href: api/Utils.IO.Serialization.FieldAttribute.html
@@ -34155,12 +34222,137 @@ references:
   isSpec: "True"
   fullName: Utils.IO.Serialization.FieldAttribute.Order
   nameWithType: FieldAttribute.Order
+- uid: Utils.IO.Serialization.FileTimeDateTimeCodec
+  name: FileTimeDateTimeCodec
+  href: api/Utils.IO.Serialization.FileTimeDateTimeCodec.html
+  commentId: T:Utils.IO.Serialization.FileTimeDateTimeCodec
+  fullName: Utils.IO.Serialization.FileTimeDateTimeCodec
+  nameWithType: FileTimeDateTimeCodec
+- uid: Utils.IO.Serialization.FileTimeDateTimeCodec.Read(Utils.IO.Serialization.IReader)
+  name: Read(IReader)
+  href: api/Utils.IO.Serialization.FileTimeDateTimeCodec.html#Utils_IO_Serialization_FileTimeDateTimeCodec_Read_Utils_IO_Serialization_IReader_
+  commentId: M:Utils.IO.Serialization.FileTimeDateTimeCodec.Read(Utils.IO.Serialization.IReader)
+  fullName: Utils.IO.Serialization.FileTimeDateTimeCodec.Read(Utils.IO.Serialization.IReader)
+  nameWithType: FileTimeDateTimeCodec.Read(IReader)
+- uid: Utils.IO.Serialization.FileTimeDateTimeCodec.Read*
+  name: Read
+  href: api/Utils.IO.Serialization.FileTimeDateTimeCodec.html#Utils_IO_Serialization_FileTimeDateTimeCodec_Read_
+  commentId: Overload:Utils.IO.Serialization.FileTimeDateTimeCodec.Read
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.FileTimeDateTimeCodec.Read
+  nameWithType: FileTimeDateTimeCodec.Read
+- uid: Utils.IO.Serialization.FileTimeDateTimeCodec.Size
+  name: Size
+  href: api/Utils.IO.Serialization.FileTimeDateTimeCodec.html#Utils_IO_Serialization_FileTimeDateTimeCodec_Size
+  commentId: P:Utils.IO.Serialization.FileTimeDateTimeCodec.Size
+  fullName: Utils.IO.Serialization.FileTimeDateTimeCodec.Size
+  nameWithType: FileTimeDateTimeCodec.Size
+- uid: Utils.IO.Serialization.FileTimeDateTimeCodec.Size*
+  name: Size
+  href: api/Utils.IO.Serialization.FileTimeDateTimeCodec.html#Utils_IO_Serialization_FileTimeDateTimeCodec_Size_
+  commentId: Overload:Utils.IO.Serialization.FileTimeDateTimeCodec.Size
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.FileTimeDateTimeCodec.Size
+  nameWithType: FileTimeDateTimeCodec.Size
+- uid: Utils.IO.Serialization.FileTimeDateTimeCodec.Write(Utils.IO.Serialization.IWriter,System.DateTime)
+  name: Write(IWriter, DateTime)
+  href: api/Utils.IO.Serialization.FileTimeDateTimeCodec.html#Utils_IO_Serialization_FileTimeDateTimeCodec_Write_Utils_IO_Serialization_IWriter_System_DateTime_
+  commentId: M:Utils.IO.Serialization.FileTimeDateTimeCodec.Write(Utils.IO.Serialization.IWriter,System.DateTime)
+  name.vb: Write(IWriter, Date)
+  fullName: Utils.IO.Serialization.FileTimeDateTimeCodec.Write(Utils.IO.Serialization.IWriter, System.DateTime)
+  fullName.vb: Utils.IO.Serialization.FileTimeDateTimeCodec.Write(Utils.IO.Serialization.IWriter, Date)
+  nameWithType: FileTimeDateTimeCodec.Write(IWriter, DateTime)
+  nameWithType.vb: FileTimeDateTimeCodec.Write(IWriter, Date)
+- uid: Utils.IO.Serialization.FileTimeDateTimeCodec.Write*
+  name: Write
+  href: api/Utils.IO.Serialization.FileTimeDateTimeCodec.html#Utils_IO_Serialization_FileTimeDateTimeCodec_Write_
+  commentId: Overload:Utils.IO.Serialization.FileTimeDateTimeCodec.Write
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.FileTimeDateTimeCodec.Write
+  nameWithType: FileTimeDateTimeCodec.Write
+- uid: Utils.IO.Serialization.FixedWireFraming
+  name: FixedWireFraming
+  href: api/Utils.IO.Serialization.FixedWireFraming.html
+  commentId: T:Utils.IO.Serialization.FixedWireFraming
+  fullName: Utils.IO.Serialization.FixedWireFraming
+  nameWithType: FixedWireFraming
+- uid: Utils.IO.Serialization.FixedWireFraming.#ctor(System.Int32)
+  name: FixedWireFraming(int)
+  href: api/Utils.IO.Serialization.FixedWireFraming.html#Utils_IO_Serialization_FixedWireFraming__ctor_System_Int32_
+  commentId: M:Utils.IO.Serialization.FixedWireFraming.#ctor(System.Int32)
+  name.vb: New(Integer)
+  fullName: Utils.IO.Serialization.FixedWireFraming.FixedWireFraming(int)
+  fullName.vb: Utils.IO.Serialization.FixedWireFraming.New(Integer)
+  nameWithType: FixedWireFraming.FixedWireFraming(int)
+  nameWithType.vb: FixedWireFraming.New(Integer)
+- uid: Utils.IO.Serialization.FixedWireFraming.#ctor*
+  name: FixedWireFraming
+  href: api/Utils.IO.Serialization.FixedWireFraming.html#Utils_IO_Serialization_FixedWireFraming__ctor_
+  commentId: Overload:Utils.IO.Serialization.FixedWireFraming.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.IO.Serialization.FixedWireFraming.FixedWireFraming
+  fullName.vb: Utils.IO.Serialization.FixedWireFraming.New
+  nameWithType: FixedWireFraming.FixedWireFraming
+  nameWithType.vb: FixedWireFraming.New
+- uid: Utils.IO.Serialization.FixedWireFraming.Kind
+  name: Kind
+  href: api/Utils.IO.Serialization.FixedWireFraming.html#Utils_IO_Serialization_FixedWireFraming_Kind
+  commentId: P:Utils.IO.Serialization.FixedWireFraming.Kind
+  fullName: Utils.IO.Serialization.FixedWireFraming.Kind
+  nameWithType: FixedWireFraming.Kind
+- uid: Utils.IO.Serialization.FixedWireFraming.Kind*
+  name: Kind
+  href: api/Utils.IO.Serialization.FixedWireFraming.html#Utils_IO_Serialization_FixedWireFraming_Kind_
+  commentId: Overload:Utils.IO.Serialization.FixedWireFraming.Kind
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.FixedWireFraming.Kind
+  nameWithType: FixedWireFraming.Kind
+- uid: Utils.IO.Serialization.FixedWireFraming.Size
+  name: Size
+  href: api/Utils.IO.Serialization.FixedWireFraming.html#Utils_IO_Serialization_FixedWireFraming_Size
+  commentId: P:Utils.IO.Serialization.FixedWireFraming.Size
+  fullName: Utils.IO.Serialization.FixedWireFraming.Size
+  nameWithType: FixedWireFraming.Size
+- uid: Utils.IO.Serialization.FixedWireFraming.Size*
+  name: Size
+  href: api/Utils.IO.Serialization.FixedWireFraming.html#Utils_IO_Serialization_FixedWireFraming_Size_
+  commentId: Overload:Utils.IO.Serialization.FixedWireFraming.Size
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.FixedWireFraming.Size
+  nameWithType: FixedWireFraming.Size
 - uid: Utils.IO.Serialization.GenerateReaderWriterAttribute
   name: GenerateReaderWriterAttribute
   href: api/Utils.IO.Serialization.GenerateReaderWriterAttribute.html
   commentId: T:Utils.IO.Serialization.GenerateReaderWriterAttribute
   fullName: Utils.IO.Serialization.GenerateReaderWriterAttribute
   nameWithType: GenerateReaderWriterAttribute
+- uid: Utils.IO.Serialization.IFixedWireCodec`1
+  name: IFixedWireCodec<T>
+  href: api/Utils.IO.Serialization.IFixedWireCodec-1.html
+  commentId: T:Utils.IO.Serialization.IFixedWireCodec`1
+  name.vb: IFixedWireCodec(Of T)
+  fullName: Utils.IO.Serialization.IFixedWireCodec<T>
+  fullName.vb: Utils.IO.Serialization.IFixedWireCodec(Of T)
+  nameWithType: IFixedWireCodec<T>
+  nameWithType.vb: IFixedWireCodec(Of T)
+- uid: Utils.IO.Serialization.IFixedWireCodec`1.Size
+  name: Size
+  href: api/Utils.IO.Serialization.IFixedWireCodec-1.html#Utils_IO_Serialization_IFixedWireCodec_1_Size
+  commentId: P:Utils.IO.Serialization.IFixedWireCodec`1.Size
+  fullName: Utils.IO.Serialization.IFixedWireCodec<T>.Size
+  fullName.vb: Utils.IO.Serialization.IFixedWireCodec(Of T).Size
+  nameWithType: IFixedWireCodec<T>.Size
+  nameWithType.vb: IFixedWireCodec(Of T).Size
+- uid: Utils.IO.Serialization.IFixedWireCodec`1.Size*
+  name: Size
+  href: api/Utils.IO.Serialization.IFixedWireCodec-1.html#Utils_IO_Serialization_IFixedWireCodec_1_Size_
+  commentId: Overload:Utils.IO.Serialization.IFixedWireCodec`1.Size
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.IFixedWireCodec<T>.Size
+  fullName.vb: Utils.IO.Serialization.IFixedWireCodec(Of T).Size
+  nameWithType: IFixedWireCodec<T>.Size
+  nameWithType.vb: IFixedWireCodec(Of T).Size
 - uid: Utils.IO.Serialization.IReader
   name: IReader
   href: api/Utils.IO.Serialization.IReader.html
@@ -34357,6 +34549,193 @@ references:
   fullName.vb: Utils.IO.Serialization.IStreamMapping(Of T).Stream
   nameWithType: IStreamMapping<T>.Stream
   nameWithType.vb: IStreamMapping(Of T).Stream
+- uid: Utils.IO.Serialization.IWireCodecDescriptor
+  name: IWireCodecDescriptor
+  href: api/Utils.IO.Serialization.IWireCodecDescriptor.html
+  commentId: T:Utils.IO.Serialization.IWireCodecDescriptor
+  fullName: Utils.IO.Serialization.IWireCodecDescriptor
+  nameWithType: IWireCodecDescriptor
+- uid: Utils.IO.Serialization.IWireCodecDescriptor.ValueType
+  name: ValueType
+  href: api/Utils.IO.Serialization.IWireCodecDescriptor.html#Utils_IO_Serialization_IWireCodecDescriptor_ValueType
+  commentId: P:Utils.IO.Serialization.IWireCodecDescriptor.ValueType
+  fullName: Utils.IO.Serialization.IWireCodecDescriptor.ValueType
+  nameWithType: IWireCodecDescriptor.ValueType
+- uid: Utils.IO.Serialization.IWireCodecDescriptor.ValueType*
+  name: ValueType
+  href: api/Utils.IO.Serialization.IWireCodecDescriptor.html#Utils_IO_Serialization_IWireCodecDescriptor_ValueType_
+  commentId: Overload:Utils.IO.Serialization.IWireCodecDescriptor.ValueType
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.IWireCodecDescriptor.ValueType
+  nameWithType: IWireCodecDescriptor.ValueType
+- uid: Utils.IO.Serialization.IWireCodec`1
+  name: IWireCodec<T>
+  href: api/Utils.IO.Serialization.IWireCodec-1.html
+  commentId: T:Utils.IO.Serialization.IWireCodec`1
+  name.vb: IWireCodec(Of T)
+  fullName: Utils.IO.Serialization.IWireCodec<T>
+  fullName.vb: Utils.IO.Serialization.IWireCodec(Of T)
+  nameWithType: IWireCodec<T>
+  nameWithType.vb: IWireCodec(Of T)
+- uid: Utils.IO.Serialization.IWireFraming
+  name: IWireFraming
+  href: api/Utils.IO.Serialization.IWireFraming.html
+  commentId: T:Utils.IO.Serialization.IWireFraming
+  fullName: Utils.IO.Serialization.IWireFraming
+  nameWithType: IWireFraming
+- uid: Utils.IO.Serialization.IWireFraming.Kind
+  name: Kind
+  href: api/Utils.IO.Serialization.IWireFraming.html#Utils_IO_Serialization_IWireFraming_Kind
+  commentId: P:Utils.IO.Serialization.IWireFraming.Kind
+  fullName: Utils.IO.Serialization.IWireFraming.Kind
+  nameWithType: IWireFraming.Kind
+- uid: Utils.IO.Serialization.IWireFraming.Kind*
+  name: Kind
+  href: api/Utils.IO.Serialization.IWireFraming.html#Utils_IO_Serialization_IWireFraming_Kind_
+  commentId: Overload:Utils.IO.Serialization.IWireFraming.Kind
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.IWireFraming.Kind
+  nameWithType: IWireFraming.Kind
+- uid: Utils.IO.Serialization.IWireLengthFraming
+  name: IWireLengthFraming
+  href: api/Utils.IO.Serialization.IWireLengthFraming.html
+  commentId: T:Utils.IO.Serialization.IWireLengthFraming
+  fullName: Utils.IO.Serialization.IWireLengthFraming
+  nameWithType: IWireLengthFraming
+- uid: Utils.IO.Serialization.IWireLengthFraming.HasFixedPrefixSize
+  name: HasFixedPrefixSize
+  href: api/Utils.IO.Serialization.IWireLengthFraming.html#Utils_IO_Serialization_IWireLengthFraming_HasFixedPrefixSize
+  commentId: P:Utils.IO.Serialization.IWireLengthFraming.HasFixedPrefixSize
+  fullName: Utils.IO.Serialization.IWireLengthFraming.HasFixedPrefixSize
+  nameWithType: IWireLengthFraming.HasFixedPrefixSize
+- uid: Utils.IO.Serialization.IWireLengthFraming.HasFixedPrefixSize*
+  name: HasFixedPrefixSize
+  href: api/Utils.IO.Serialization.IWireLengthFraming.html#Utils_IO_Serialization_IWireLengthFraming_HasFixedPrefixSize_
+  commentId: Overload:Utils.IO.Serialization.IWireLengthFraming.HasFixedPrefixSize
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.IWireLengthFraming.HasFixedPrefixSize
+  nameWithType: IWireLengthFraming.HasFixedPrefixSize
+- uid: Utils.IO.Serialization.IWireLengthFraming.PrefixSize
+  name: PrefixSize
+  href: api/Utils.IO.Serialization.IWireLengthFraming.html#Utils_IO_Serialization_IWireLengthFraming_PrefixSize
+  commentId: P:Utils.IO.Serialization.IWireLengthFraming.PrefixSize
+  fullName: Utils.IO.Serialization.IWireLengthFraming.PrefixSize
+  nameWithType: IWireLengthFraming.PrefixSize
+- uid: Utils.IO.Serialization.IWireLengthFraming.PrefixSize*
+  name: PrefixSize
+  href: api/Utils.IO.Serialization.IWireLengthFraming.html#Utils_IO_Serialization_IWireLengthFraming_PrefixSize_
+  commentId: Overload:Utils.IO.Serialization.IWireLengthFraming.PrefixSize
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.IWireLengthFraming.PrefixSize
+  nameWithType: IWireLengthFraming.PrefixSize
+- uid: Utils.IO.Serialization.IWireLengthFraming.ReadLength(Utils.IO.Serialization.IReader)
+  name: ReadLength(IReader)
+  href: api/Utils.IO.Serialization.IWireLengthFraming.html#Utils_IO_Serialization_IWireLengthFraming_ReadLength_Utils_IO_Serialization_IReader_
+  commentId: M:Utils.IO.Serialization.IWireLengthFraming.ReadLength(Utils.IO.Serialization.IReader)
+  fullName: Utils.IO.Serialization.IWireLengthFraming.ReadLength(Utils.IO.Serialization.IReader)
+  nameWithType: IWireLengthFraming.ReadLength(IReader)
+- uid: Utils.IO.Serialization.IWireLengthFraming.ReadLength*
+  name: ReadLength
+  href: api/Utils.IO.Serialization.IWireLengthFraming.html#Utils_IO_Serialization_IWireLengthFraming_ReadLength_
+  commentId: Overload:Utils.IO.Serialization.IWireLengthFraming.ReadLength
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.IWireLengthFraming.ReadLength
+  nameWithType: IWireLengthFraming.ReadLength
+- uid: Utils.IO.Serialization.IWireLengthFraming.WriteLength(Utils.IO.Serialization.IWriter,System.Int32)
+  name: WriteLength(IWriter, int)
+  href: api/Utils.IO.Serialization.IWireLengthFraming.html#Utils_IO_Serialization_IWireLengthFraming_WriteLength_Utils_IO_Serialization_IWriter_System_Int32_
+  commentId: M:Utils.IO.Serialization.IWireLengthFraming.WriteLength(Utils.IO.Serialization.IWriter,System.Int32)
+  name.vb: WriteLength(IWriter, Integer)
+  fullName: Utils.IO.Serialization.IWireLengthFraming.WriteLength(Utils.IO.Serialization.IWriter, int)
+  fullName.vb: Utils.IO.Serialization.IWireLengthFraming.WriteLength(Utils.IO.Serialization.IWriter, Integer)
+  nameWithType: IWireLengthFraming.WriteLength(IWriter, int)
+  nameWithType.vb: IWireLengthFraming.WriteLength(IWriter, Integer)
+- uid: Utils.IO.Serialization.IWireLengthFraming.WriteLength*
+  name: WriteLength
+  href: api/Utils.IO.Serialization.IWireLengthFraming.html#Utils_IO_Serialization_IWireLengthFraming_WriteLength_
+  commentId: Overload:Utils.IO.Serialization.IWireLengthFraming.WriteLength
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.IWireLengthFraming.WriteLength
+  nameWithType: IWireLengthFraming.WriteLength
+- uid: Utils.IO.Serialization.IWireReader`1
+  name: IWireReader<T>
+  href: api/Utils.IO.Serialization.IWireReader-1.html
+  commentId: T:Utils.IO.Serialization.IWireReader`1
+  name.vb: IWireReader(Of T)
+  fullName: Utils.IO.Serialization.IWireReader<T>
+  fullName.vb: Utils.IO.Serialization.IWireReader(Of T)
+  nameWithType: IWireReader<T>
+  nameWithType.vb: IWireReader(Of T)
+- uid: Utils.IO.Serialization.IWireReader`1.Read(Utils.IO.Serialization.IReader)
+  name: Read(IReader)
+  href: api/Utils.IO.Serialization.IWireReader-1.html#Utils_IO_Serialization_IWireReader_1_Read_Utils_IO_Serialization_IReader_
+  commentId: M:Utils.IO.Serialization.IWireReader`1.Read(Utils.IO.Serialization.IReader)
+  fullName: Utils.IO.Serialization.IWireReader<T>.Read(Utils.IO.Serialization.IReader)
+  fullName.vb: Utils.IO.Serialization.IWireReader(Of T).Read(Utils.IO.Serialization.IReader)
+  nameWithType: IWireReader<T>.Read(IReader)
+  nameWithType.vb: IWireReader(Of T).Read(IReader)
+- uid: Utils.IO.Serialization.IWireReader`1.Read*
+  name: Read
+  href: api/Utils.IO.Serialization.IWireReader-1.html#Utils_IO_Serialization_IWireReader_1_Read_
+  commentId: Overload:Utils.IO.Serialization.IWireReader`1.Read
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.IWireReader<T>.Read
+  fullName.vb: Utils.IO.Serialization.IWireReader(Of T).Read
+  nameWithType: IWireReader<T>.Read
+  nameWithType.vb: IWireReader(Of T).Read
+- uid: Utils.IO.Serialization.IWireSizeProvider`1
+  name: IWireSizeProvider<T>
+  href: api/Utils.IO.Serialization.IWireSizeProvider-1.html
+  commentId: T:Utils.IO.Serialization.IWireSizeProvider`1
+  name.vb: IWireSizeProvider(Of T)
+  fullName: Utils.IO.Serialization.IWireSizeProvider<T>
+  fullName.vb: Utils.IO.Serialization.IWireSizeProvider(Of T)
+  nameWithType: IWireSizeProvider<T>
+  nameWithType.vb: IWireSizeProvider(Of T)
+- uid: Utils.IO.Serialization.IWireSizeProvider`1.TryGetEncodedSize(`0,System.Int32@)
+  name: TryGetEncodedSize(T, out int)
+  href: api/Utils.IO.Serialization.IWireSizeProvider-1.html#Utils_IO_Serialization_IWireSizeProvider_1_TryGetEncodedSize__0_System_Int32__
+  commentId: M:Utils.IO.Serialization.IWireSizeProvider`1.TryGetEncodedSize(`0,System.Int32@)
+  name.vb: TryGetEncodedSize(T, Integer)
+  fullName: Utils.IO.Serialization.IWireSizeProvider<T>.TryGetEncodedSize(T, out int)
+  fullName.vb: Utils.IO.Serialization.IWireSizeProvider(Of T).TryGetEncodedSize(T, Integer)
+  nameWithType: IWireSizeProvider<T>.TryGetEncodedSize(T, out int)
+  nameWithType.vb: IWireSizeProvider(Of T).TryGetEncodedSize(T, Integer)
+- uid: Utils.IO.Serialization.IWireSizeProvider`1.TryGetEncodedSize*
+  name: TryGetEncodedSize
+  href: api/Utils.IO.Serialization.IWireSizeProvider-1.html#Utils_IO_Serialization_IWireSizeProvider_1_TryGetEncodedSize_
+  commentId: Overload:Utils.IO.Serialization.IWireSizeProvider`1.TryGetEncodedSize
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.IWireSizeProvider<T>.TryGetEncodedSize
+  fullName.vb: Utils.IO.Serialization.IWireSizeProvider(Of T).TryGetEncodedSize
+  nameWithType: IWireSizeProvider<T>.TryGetEncodedSize
+  nameWithType.vb: IWireSizeProvider(Of T).TryGetEncodedSize
+- uid: Utils.IO.Serialization.IWireWriter`1
+  name: IWireWriter<T>
+  href: api/Utils.IO.Serialization.IWireWriter-1.html
+  commentId: T:Utils.IO.Serialization.IWireWriter`1
+  name.vb: IWireWriter(Of T)
+  fullName: Utils.IO.Serialization.IWireWriter<T>
+  fullName.vb: Utils.IO.Serialization.IWireWriter(Of T)
+  nameWithType: IWireWriter<T>
+  nameWithType.vb: IWireWriter(Of T)
+- uid: Utils.IO.Serialization.IWireWriter`1.Write(Utils.IO.Serialization.IWriter,`0)
+  name: Write(IWriter, T)
+  href: api/Utils.IO.Serialization.IWireWriter-1.html#Utils_IO_Serialization_IWireWriter_1_Write_Utils_IO_Serialization_IWriter__0_
+  commentId: M:Utils.IO.Serialization.IWireWriter`1.Write(Utils.IO.Serialization.IWriter,`0)
+  fullName: Utils.IO.Serialization.IWireWriter<T>.Write(Utils.IO.Serialization.IWriter, T)
+  fullName.vb: Utils.IO.Serialization.IWireWriter(Of T).Write(Utils.IO.Serialization.IWriter, T)
+  nameWithType: IWireWriter<T>.Write(IWriter, T)
+  nameWithType.vb: IWireWriter(Of T).Write(IWriter, T)
+- uid: Utils.IO.Serialization.IWireWriter`1.Write*
+  name: Write
+  href: api/Utils.IO.Serialization.IWireWriter-1.html#Utils_IO_Serialization_IWireWriter_1_Write_
+  commentId: Overload:Utils.IO.Serialization.IWireWriter`1.Write
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.IWireWriter<T>.Write
+  fullName.vb: Utils.IO.Serialization.IWireWriter(Of T).Write
+  nameWithType: IWireWriter<T>.Write
+  nameWithType.vb: IWireWriter(Of T).Write
 - uid: Utils.IO.Serialization.IWriter
   name: IWriter
   href: api/Utils.IO.Serialization.IWriter.html
@@ -34420,6 +34799,128 @@ references:
   fullName.vb: Utils.IO.Serialization.IWriter.Write(Of T)(T)
   nameWithType: IWriter.Write<T>(T)
   nameWithType.vb: IWriter.Write(Of T)(T)
+- uid: Utils.IO.Serialization.Int32LengthWireFraming
+  name: Int32LengthWireFraming
+  href: api/Utils.IO.Serialization.Int32LengthWireFraming.html
+  commentId: T:Utils.IO.Serialization.Int32LengthWireFraming
+  fullName: Utils.IO.Serialization.Int32LengthWireFraming
+  nameWithType: Int32LengthWireFraming
+- uid: Utils.IO.Serialization.Int32LengthWireFraming.HasFixedPrefixSize
+  name: HasFixedPrefixSize
+  href: api/Utils.IO.Serialization.Int32LengthWireFraming.html#Utils_IO_Serialization_Int32LengthWireFraming_HasFixedPrefixSize
+  commentId: P:Utils.IO.Serialization.Int32LengthWireFraming.HasFixedPrefixSize
+  fullName: Utils.IO.Serialization.Int32LengthWireFraming.HasFixedPrefixSize
+  nameWithType: Int32LengthWireFraming.HasFixedPrefixSize
+- uid: Utils.IO.Serialization.Int32LengthWireFraming.HasFixedPrefixSize*
+  name: HasFixedPrefixSize
+  href: api/Utils.IO.Serialization.Int32LengthWireFraming.html#Utils_IO_Serialization_Int32LengthWireFraming_HasFixedPrefixSize_
+  commentId: Overload:Utils.IO.Serialization.Int32LengthWireFraming.HasFixedPrefixSize
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.Int32LengthWireFraming.HasFixedPrefixSize
+  nameWithType: Int32LengthWireFraming.HasFixedPrefixSize
+- uid: Utils.IO.Serialization.Int32LengthWireFraming.Kind
+  name: Kind
+  href: api/Utils.IO.Serialization.Int32LengthWireFraming.html#Utils_IO_Serialization_Int32LengthWireFraming_Kind
+  commentId: P:Utils.IO.Serialization.Int32LengthWireFraming.Kind
+  fullName: Utils.IO.Serialization.Int32LengthWireFraming.Kind
+  nameWithType: Int32LengthWireFraming.Kind
+- uid: Utils.IO.Serialization.Int32LengthWireFraming.Kind*
+  name: Kind
+  href: api/Utils.IO.Serialization.Int32LengthWireFraming.html#Utils_IO_Serialization_Int32LengthWireFraming_Kind_
+  commentId: Overload:Utils.IO.Serialization.Int32LengthWireFraming.Kind
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.Int32LengthWireFraming.Kind
+  nameWithType: Int32LengthWireFraming.Kind
+- uid: Utils.IO.Serialization.Int32LengthWireFraming.PrefixSize
+  name: PrefixSize
+  href: api/Utils.IO.Serialization.Int32LengthWireFraming.html#Utils_IO_Serialization_Int32LengthWireFraming_PrefixSize
+  commentId: P:Utils.IO.Serialization.Int32LengthWireFraming.PrefixSize
+  fullName: Utils.IO.Serialization.Int32LengthWireFraming.PrefixSize
+  nameWithType: Int32LengthWireFraming.PrefixSize
+- uid: Utils.IO.Serialization.Int32LengthWireFraming.PrefixSize*
+  name: PrefixSize
+  href: api/Utils.IO.Serialization.Int32LengthWireFraming.html#Utils_IO_Serialization_Int32LengthWireFraming_PrefixSize_
+  commentId: Overload:Utils.IO.Serialization.Int32LengthWireFraming.PrefixSize
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.Int32LengthWireFraming.PrefixSize
+  nameWithType: Int32LengthWireFraming.PrefixSize
+- uid: Utils.IO.Serialization.Int32LengthWireFraming.ReadLength(Utils.IO.Serialization.IReader)
+  name: ReadLength(IReader)
+  href: api/Utils.IO.Serialization.Int32LengthWireFraming.html#Utils_IO_Serialization_Int32LengthWireFraming_ReadLength_Utils_IO_Serialization_IReader_
+  commentId: M:Utils.IO.Serialization.Int32LengthWireFraming.ReadLength(Utils.IO.Serialization.IReader)
+  fullName: Utils.IO.Serialization.Int32LengthWireFraming.ReadLength(Utils.IO.Serialization.IReader)
+  nameWithType: Int32LengthWireFraming.ReadLength(IReader)
+- uid: Utils.IO.Serialization.Int32LengthWireFraming.ReadLength*
+  name: ReadLength
+  href: api/Utils.IO.Serialization.Int32LengthWireFraming.html#Utils_IO_Serialization_Int32LengthWireFraming_ReadLength_
+  commentId: Overload:Utils.IO.Serialization.Int32LengthWireFraming.ReadLength
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.Int32LengthWireFraming.ReadLength
+  nameWithType: Int32LengthWireFraming.ReadLength
+- uid: Utils.IO.Serialization.Int32LengthWireFraming.WriteLength(Utils.IO.Serialization.IWriter,System.Int32)
+  name: WriteLength(IWriter, int)
+  href: api/Utils.IO.Serialization.Int32LengthWireFraming.html#Utils_IO_Serialization_Int32LengthWireFraming_WriteLength_Utils_IO_Serialization_IWriter_System_Int32_
+  commentId: M:Utils.IO.Serialization.Int32LengthWireFraming.WriteLength(Utils.IO.Serialization.IWriter,System.Int32)
+  name.vb: WriteLength(IWriter, Integer)
+  fullName: Utils.IO.Serialization.Int32LengthWireFraming.WriteLength(Utils.IO.Serialization.IWriter, int)
+  fullName.vb: Utils.IO.Serialization.Int32LengthWireFraming.WriteLength(Utils.IO.Serialization.IWriter, Integer)
+  nameWithType: Int32LengthWireFraming.WriteLength(IWriter, int)
+  nameWithType.vb: Int32LengthWireFraming.WriteLength(IWriter, Integer)
+- uid: Utils.IO.Serialization.Int32LengthWireFraming.WriteLength*
+  name: WriteLength
+  href: api/Utils.IO.Serialization.Int32LengthWireFraming.html#Utils_IO_Serialization_Int32LengthWireFraming_WriteLength_
+  commentId: Overload:Utils.IO.Serialization.Int32LengthWireFraming.WriteLength
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.Int32LengthWireFraming.WriteLength
+  nameWithType: Int32LengthWireFraming.WriteLength
+- uid: Utils.IO.Serialization.OleAutomationDateTimeCodec
+  name: OleAutomationDateTimeCodec
+  href: api/Utils.IO.Serialization.OleAutomationDateTimeCodec.html
+  commentId: T:Utils.IO.Serialization.OleAutomationDateTimeCodec
+  fullName: Utils.IO.Serialization.OleAutomationDateTimeCodec
+  nameWithType: OleAutomationDateTimeCodec
+- uid: Utils.IO.Serialization.OleAutomationDateTimeCodec.Read(Utils.IO.Serialization.IReader)
+  name: Read(IReader)
+  href: api/Utils.IO.Serialization.OleAutomationDateTimeCodec.html#Utils_IO_Serialization_OleAutomationDateTimeCodec_Read_Utils_IO_Serialization_IReader_
+  commentId: M:Utils.IO.Serialization.OleAutomationDateTimeCodec.Read(Utils.IO.Serialization.IReader)
+  fullName: Utils.IO.Serialization.OleAutomationDateTimeCodec.Read(Utils.IO.Serialization.IReader)
+  nameWithType: OleAutomationDateTimeCodec.Read(IReader)
+- uid: Utils.IO.Serialization.OleAutomationDateTimeCodec.Read*
+  name: Read
+  href: api/Utils.IO.Serialization.OleAutomationDateTimeCodec.html#Utils_IO_Serialization_OleAutomationDateTimeCodec_Read_
+  commentId: Overload:Utils.IO.Serialization.OleAutomationDateTimeCodec.Read
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.OleAutomationDateTimeCodec.Read
+  nameWithType: OleAutomationDateTimeCodec.Read
+- uid: Utils.IO.Serialization.OleAutomationDateTimeCodec.Size
+  name: Size
+  href: api/Utils.IO.Serialization.OleAutomationDateTimeCodec.html#Utils_IO_Serialization_OleAutomationDateTimeCodec_Size
+  commentId: P:Utils.IO.Serialization.OleAutomationDateTimeCodec.Size
+  fullName: Utils.IO.Serialization.OleAutomationDateTimeCodec.Size
+  nameWithType: OleAutomationDateTimeCodec.Size
+- uid: Utils.IO.Serialization.OleAutomationDateTimeCodec.Size*
+  name: Size
+  href: api/Utils.IO.Serialization.OleAutomationDateTimeCodec.html#Utils_IO_Serialization_OleAutomationDateTimeCodec_Size_
+  commentId: Overload:Utils.IO.Serialization.OleAutomationDateTimeCodec.Size
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.OleAutomationDateTimeCodec.Size
+  nameWithType: OleAutomationDateTimeCodec.Size
+- uid: Utils.IO.Serialization.OleAutomationDateTimeCodec.Write(Utils.IO.Serialization.IWriter,System.DateTime)
+  name: Write(IWriter, DateTime)
+  href: api/Utils.IO.Serialization.OleAutomationDateTimeCodec.html#Utils_IO_Serialization_OleAutomationDateTimeCodec_Write_Utils_IO_Serialization_IWriter_System_DateTime_
+  commentId: M:Utils.IO.Serialization.OleAutomationDateTimeCodec.Write(Utils.IO.Serialization.IWriter,System.DateTime)
+  name.vb: Write(IWriter, Date)
+  fullName: Utils.IO.Serialization.OleAutomationDateTimeCodec.Write(Utils.IO.Serialization.IWriter, System.DateTime)
+  fullName.vb: Utils.IO.Serialization.OleAutomationDateTimeCodec.Write(Utils.IO.Serialization.IWriter, Date)
+  nameWithType: OleAutomationDateTimeCodec.Write(IWriter, DateTime)
+  nameWithType.vb: OleAutomationDateTimeCodec.Write(IWriter, Date)
+- uid: Utils.IO.Serialization.OleAutomationDateTimeCodec.Write*
+  name: Write
+  href: api/Utils.IO.Serialization.OleAutomationDateTimeCodec.html#Utils_IO_Serialization_OleAutomationDateTimeCodec_Write_
+  commentId: Overload:Utils.IO.Serialization.OleAutomationDateTimeCodec.Write
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.OleAutomationDateTimeCodec.Write
+  nameWithType: OleAutomationDateTimeCodec.Write
 - uid: Utils.IO.Serialization.RawReader
   name: RawReader
   href: api/Utils.IO.Serialization.RawReader.html
@@ -35291,6 +35792,42 @@ references:
   fullName.vb: Utils.IO.Serialization.Reader.New(System.IO.Stream, Utils.IO.Serialization.ReaderOptions, System.Collections.Generic.IEnumerable(Of System.Delegate))
   nameWithType: Reader.Reader(Stream, ReaderOptions, params IEnumerable<Delegate>)
   nameWithType.vb: Reader.New(Stream, ReaderOptions, IEnumerable(Of Delegate))
+- uid: Utils.IO.Serialization.Reader.#ctor(System.IO.Stream,Utils.IO.Serialization.ReaderOptions,Utils.IO.Serialization.SerializationOptions)
+  name: Reader(Stream, ReaderOptions, SerializationOptions)
+  href: api/Utils.IO.Serialization.Reader.html#Utils_IO_Serialization_Reader__ctor_System_IO_Stream_Utils_IO_Serialization_ReaderOptions_Utils_IO_Serialization_SerializationOptions_
+  commentId: M:Utils.IO.Serialization.Reader.#ctor(System.IO.Stream,Utils.IO.Serialization.ReaderOptions,Utils.IO.Serialization.SerializationOptions)
+  name.vb: New(Stream, ReaderOptions, SerializationOptions)
+  fullName: Utils.IO.Serialization.Reader.Reader(System.IO.Stream, Utils.IO.Serialization.ReaderOptions, Utils.IO.Serialization.SerializationOptions)
+  fullName.vb: Utils.IO.Serialization.Reader.New(System.IO.Stream, Utils.IO.Serialization.ReaderOptions, Utils.IO.Serialization.SerializationOptions)
+  nameWithType: Reader.Reader(Stream, ReaderOptions, SerializationOptions)
+  nameWithType.vb: Reader.New(Stream, ReaderOptions, SerializationOptions)
+- uid: Utils.IO.Serialization.Reader.#ctor(System.IO.Stream,Utils.IO.Serialization.ReaderOptions,Utils.IO.Serialization.SerializationOptions,System.Collections.Generic.IEnumerable{System.Delegate})
+  name: Reader(Stream, ReaderOptions, SerializationOptions, params IEnumerable<Delegate>)
+  href: api/Utils.IO.Serialization.Reader.html#Utils_IO_Serialization_Reader__ctor_System_IO_Stream_Utils_IO_Serialization_ReaderOptions_Utils_IO_Serialization_SerializationOptions_System_Collections_Generic_IEnumerable_System_Delegate__
+  commentId: M:Utils.IO.Serialization.Reader.#ctor(System.IO.Stream,Utils.IO.Serialization.ReaderOptions,Utils.IO.Serialization.SerializationOptions,System.Collections.Generic.IEnumerable{System.Delegate})
+  name.vb: New(Stream, ReaderOptions, SerializationOptions, IEnumerable(Of Delegate))
+  fullName: Utils.IO.Serialization.Reader.Reader(System.IO.Stream, Utils.IO.Serialization.ReaderOptions, Utils.IO.Serialization.SerializationOptions, params System.Collections.Generic.IEnumerable<System.Delegate>)
+  fullName.vb: Utils.IO.Serialization.Reader.New(System.IO.Stream, Utils.IO.Serialization.ReaderOptions, Utils.IO.Serialization.SerializationOptions, System.Collections.Generic.IEnumerable(Of System.Delegate))
+  nameWithType: Reader.Reader(Stream, ReaderOptions, SerializationOptions, params IEnumerable<Delegate>)
+  nameWithType.vb: Reader.New(Stream, ReaderOptions, SerializationOptions, IEnumerable(Of Delegate))
+- uid: Utils.IO.Serialization.Reader.#ctor(System.IO.Stream,Utils.IO.Serialization.SerializationOptions)
+  name: Reader(Stream, SerializationOptions)
+  href: api/Utils.IO.Serialization.Reader.html#Utils_IO_Serialization_Reader__ctor_System_IO_Stream_Utils_IO_Serialization_SerializationOptions_
+  commentId: M:Utils.IO.Serialization.Reader.#ctor(System.IO.Stream,Utils.IO.Serialization.SerializationOptions)
+  name.vb: New(Stream, SerializationOptions)
+  fullName: Utils.IO.Serialization.Reader.Reader(System.IO.Stream, Utils.IO.Serialization.SerializationOptions)
+  fullName.vb: Utils.IO.Serialization.Reader.New(System.IO.Stream, Utils.IO.Serialization.SerializationOptions)
+  nameWithType: Reader.Reader(Stream, SerializationOptions)
+  nameWithType.vb: Reader.New(Stream, SerializationOptions)
+- uid: Utils.IO.Serialization.Reader.#ctor(System.IO.Stream,Utils.IO.Serialization.SerializationOptions,System.Collections.Generic.IEnumerable{System.Delegate})
+  name: Reader(Stream, SerializationOptions, params IEnumerable<Delegate>)
+  href: api/Utils.IO.Serialization.Reader.html#Utils_IO_Serialization_Reader__ctor_System_IO_Stream_Utils_IO_Serialization_SerializationOptions_System_Collections_Generic_IEnumerable_System_Delegate__
+  commentId: M:Utils.IO.Serialization.Reader.#ctor(System.IO.Stream,Utils.IO.Serialization.SerializationOptions,System.Collections.Generic.IEnumerable{System.Delegate})
+  name.vb: New(Stream, SerializationOptions, IEnumerable(Of Delegate))
+  fullName: Utils.IO.Serialization.Reader.Reader(System.IO.Stream, Utils.IO.Serialization.SerializationOptions, params System.Collections.Generic.IEnumerable<System.Delegate>)
+  fullName.vb: Utils.IO.Serialization.Reader.New(System.IO.Stream, Utils.IO.Serialization.SerializationOptions, System.Collections.Generic.IEnumerable(Of System.Delegate))
+  nameWithType: Reader.Reader(Stream, SerializationOptions, params IEnumerable<Delegate>)
+  nameWithType.vb: Reader.New(Stream, SerializationOptions, IEnumerable(Of Delegate))
 - uid: Utils.IO.Serialization.Reader.#ctor*
   name: Reader
   href: api/Utils.IO.Serialization.Reader.html#Utils_IO_Serialization_Reader__ctor_
@@ -35517,6 +36054,15 @@ references:
   fullName.vb: Utils.IO.Serialization.ReaderWriter.New(System.IO.Stream)
   nameWithType: ReaderWriter.ReaderWriter(Stream)
   nameWithType.vb: ReaderWriter.New(Stream)
+- uid: Utils.IO.Serialization.ReaderWriter.#ctor(System.IO.Stream,Utils.IO.Serialization.SerializationOptions)
+  name: ReaderWriter(Stream, SerializationOptions)
+  href: api/Utils.IO.Serialization.ReaderWriter.html#Utils_IO_Serialization_ReaderWriter__ctor_System_IO_Stream_Utils_IO_Serialization_SerializationOptions_
+  commentId: M:Utils.IO.Serialization.ReaderWriter.#ctor(System.IO.Stream,Utils.IO.Serialization.SerializationOptions)
+  name.vb: New(Stream, SerializationOptions)
+  fullName: Utils.IO.Serialization.ReaderWriter.ReaderWriter(System.IO.Stream, Utils.IO.Serialization.SerializationOptions)
+  fullName.vb: Utils.IO.Serialization.ReaderWriter.New(System.IO.Stream, Utils.IO.Serialization.SerializationOptions)
+  nameWithType: ReaderWriter.ReaderWriter(Stream, SerializationOptions)
+  nameWithType.vb: ReaderWriter.New(Stream, SerializationOptions)
 - uid: Utils.IO.Serialization.ReaderWriter.#ctor*
   name: ReaderWriter
   href: api/Utils.IO.Serialization.ReaderWriter.html#Utils_IO_Serialization_ReaderWriter__ctor_
@@ -35905,6 +36451,446 @@ references:
   isSpec: "True"
   fullName: Utils.IO.Serialization.SerializationContractException.Diagnostics
   nameWithType: SerializationContractException.Diagnostics
+- uid: Utils.IO.Serialization.SerializationOptions
+  name: SerializationOptions
+  href: api/Utils.IO.Serialization.SerializationOptions.html
+  commentId: T:Utils.IO.Serialization.SerializationOptions
+  fullName: Utils.IO.Serialization.SerializationOptions
+  nameWithType: SerializationOptions
+- uid: Utils.IO.Serialization.SerializationOptions.Codecs
+  name: Codecs
+  href: api/Utils.IO.Serialization.SerializationOptions.html#Utils_IO_Serialization_SerializationOptions_Codecs
+  commentId: P:Utils.IO.Serialization.SerializationOptions.Codecs
+  fullName: Utils.IO.Serialization.SerializationOptions.Codecs
+  nameWithType: SerializationOptions.Codecs
+- uid: Utils.IO.Serialization.SerializationOptions.Codecs*
+  name: Codecs
+  href: api/Utils.IO.Serialization.SerializationOptions.html#Utils_IO_Serialization_SerializationOptions_Codecs_
+  commentId: Overload:Utils.IO.Serialization.SerializationOptions.Codecs
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.SerializationOptions.Codecs
+  nameWithType: SerializationOptions.Codecs
+- uid: Utils.IO.Serialization.SerializationOptions.MaximumBufferedPayloadLength
+  name: MaximumBufferedPayloadLength
+  href: api/Utils.IO.Serialization.SerializationOptions.html#Utils_IO_Serialization_SerializationOptions_MaximumBufferedPayloadLength
+  commentId: P:Utils.IO.Serialization.SerializationOptions.MaximumBufferedPayloadLength
+  fullName: Utils.IO.Serialization.SerializationOptions.MaximumBufferedPayloadLength
+  nameWithType: SerializationOptions.MaximumBufferedPayloadLength
+- uid: Utils.IO.Serialization.SerializationOptions.MaximumBufferedPayloadLength*
+  name: MaximumBufferedPayloadLength
+  href: api/Utils.IO.Serialization.SerializationOptions.html#Utils_IO_Serialization_SerializationOptions_MaximumBufferedPayloadLength_
+  commentId: Overload:Utils.IO.Serialization.SerializationOptions.MaximumBufferedPayloadLength
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.SerializationOptions.MaximumBufferedPayloadLength
+  nameWithType: SerializationOptions.MaximumBufferedPayloadLength
+- uid: Utils.IO.Serialization.SerializationOptions.VariablePayloadWritePolicy
+  name: VariablePayloadWritePolicy
+  href: api/Utils.IO.Serialization.SerializationOptions.html#Utils_IO_Serialization_SerializationOptions_VariablePayloadWritePolicy
+  commentId: P:Utils.IO.Serialization.SerializationOptions.VariablePayloadWritePolicy
+  fullName: Utils.IO.Serialization.SerializationOptions.VariablePayloadWritePolicy
+  nameWithType: SerializationOptions.VariablePayloadWritePolicy
+- uid: Utils.IO.Serialization.SerializationOptions.VariablePayloadWritePolicy*
+  name: VariablePayloadWritePolicy
+  href: api/Utils.IO.Serialization.SerializationOptions.html#Utils_IO_Serialization_SerializationOptions_VariablePayloadWritePolicy_
+  commentId: Overload:Utils.IO.Serialization.SerializationOptions.VariablePayloadWritePolicy
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.SerializationOptions.VariablePayloadWritePolicy
+  nameWithType: SerializationOptions.VariablePayloadWritePolicy
+- uid: Utils.IO.Serialization.TicksDateTimeCodec
+  name: TicksDateTimeCodec
+  href: api/Utils.IO.Serialization.TicksDateTimeCodec.html
+  commentId: T:Utils.IO.Serialization.TicksDateTimeCodec
+  fullName: Utils.IO.Serialization.TicksDateTimeCodec
+  nameWithType: TicksDateTimeCodec
+- uid: Utils.IO.Serialization.TicksDateTimeCodec.Read(Utils.IO.Serialization.IReader)
+  name: Read(IReader)
+  href: api/Utils.IO.Serialization.TicksDateTimeCodec.html#Utils_IO_Serialization_TicksDateTimeCodec_Read_Utils_IO_Serialization_IReader_
+  commentId: M:Utils.IO.Serialization.TicksDateTimeCodec.Read(Utils.IO.Serialization.IReader)
+  fullName: Utils.IO.Serialization.TicksDateTimeCodec.Read(Utils.IO.Serialization.IReader)
+  nameWithType: TicksDateTimeCodec.Read(IReader)
+- uid: Utils.IO.Serialization.TicksDateTimeCodec.Read*
+  name: Read
+  href: api/Utils.IO.Serialization.TicksDateTimeCodec.html#Utils_IO_Serialization_TicksDateTimeCodec_Read_
+  commentId: Overload:Utils.IO.Serialization.TicksDateTimeCodec.Read
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.TicksDateTimeCodec.Read
+  nameWithType: TicksDateTimeCodec.Read
+- uid: Utils.IO.Serialization.TicksDateTimeCodec.Size
+  name: Size
+  href: api/Utils.IO.Serialization.TicksDateTimeCodec.html#Utils_IO_Serialization_TicksDateTimeCodec_Size
+  commentId: P:Utils.IO.Serialization.TicksDateTimeCodec.Size
+  fullName: Utils.IO.Serialization.TicksDateTimeCodec.Size
+  nameWithType: TicksDateTimeCodec.Size
+- uid: Utils.IO.Serialization.TicksDateTimeCodec.Size*
+  name: Size
+  href: api/Utils.IO.Serialization.TicksDateTimeCodec.html#Utils_IO_Serialization_TicksDateTimeCodec_Size_
+  commentId: Overload:Utils.IO.Serialization.TicksDateTimeCodec.Size
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.TicksDateTimeCodec.Size
+  nameWithType: TicksDateTimeCodec.Size
+- uid: Utils.IO.Serialization.TicksDateTimeCodec.Write(Utils.IO.Serialization.IWriter,System.DateTime)
+  name: Write(IWriter, DateTime)
+  href: api/Utils.IO.Serialization.TicksDateTimeCodec.html#Utils_IO_Serialization_TicksDateTimeCodec_Write_Utils_IO_Serialization_IWriter_System_DateTime_
+  commentId: M:Utils.IO.Serialization.TicksDateTimeCodec.Write(Utils.IO.Serialization.IWriter,System.DateTime)
+  name.vb: Write(IWriter, Date)
+  fullName: Utils.IO.Serialization.TicksDateTimeCodec.Write(Utils.IO.Serialization.IWriter, System.DateTime)
+  fullName.vb: Utils.IO.Serialization.TicksDateTimeCodec.Write(Utils.IO.Serialization.IWriter, Date)
+  nameWithType: TicksDateTimeCodec.Write(IWriter, DateTime)
+  nameWithType.vb: TicksDateTimeCodec.Write(IWriter, Date)
+- uid: Utils.IO.Serialization.TicksDateTimeCodec.Write*
+  name: Write
+  href: api/Utils.IO.Serialization.TicksDateTimeCodec.html#Utils_IO_Serialization_TicksDateTimeCodec_Write_
+  commentId: Overload:Utils.IO.Serialization.TicksDateTimeCodec.Write
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.TicksDateTimeCodec.Write
+  nameWithType: TicksDateTimeCodec.Write
+- uid: Utils.IO.Serialization.UnixMillisecondsDateTimeCodec
+  name: UnixMillisecondsDateTimeCodec
+  href: api/Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.html
+  commentId: T:Utils.IO.Serialization.UnixMillisecondsDateTimeCodec
+  fullName: Utils.IO.Serialization.UnixMillisecondsDateTimeCodec
+  nameWithType: UnixMillisecondsDateTimeCodec
+- uid: Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.Read(Utils.IO.Serialization.IReader)
+  name: Read(IReader)
+  href: api/Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.html#Utils_IO_Serialization_UnixMillisecondsDateTimeCodec_Read_Utils_IO_Serialization_IReader_
+  commentId: M:Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.Read(Utils.IO.Serialization.IReader)
+  fullName: Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.Read(Utils.IO.Serialization.IReader)
+  nameWithType: UnixMillisecondsDateTimeCodec.Read(IReader)
+- uid: Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.Read*
+  name: Read
+  href: api/Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.html#Utils_IO_Serialization_UnixMillisecondsDateTimeCodec_Read_
+  commentId: Overload:Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.Read
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.Read
+  nameWithType: UnixMillisecondsDateTimeCodec.Read
+- uid: Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.Size
+  name: Size
+  href: api/Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.html#Utils_IO_Serialization_UnixMillisecondsDateTimeCodec_Size
+  commentId: P:Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.Size
+  fullName: Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.Size
+  nameWithType: UnixMillisecondsDateTimeCodec.Size
+- uid: Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.Size*
+  name: Size
+  href: api/Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.html#Utils_IO_Serialization_UnixMillisecondsDateTimeCodec_Size_
+  commentId: Overload:Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.Size
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.Size
+  nameWithType: UnixMillisecondsDateTimeCodec.Size
+- uid: Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.Write(Utils.IO.Serialization.IWriter,System.DateTime)
+  name: Write(IWriter, DateTime)
+  href: api/Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.html#Utils_IO_Serialization_UnixMillisecondsDateTimeCodec_Write_Utils_IO_Serialization_IWriter_System_DateTime_
+  commentId: M:Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.Write(Utils.IO.Serialization.IWriter,System.DateTime)
+  name.vb: Write(IWriter, Date)
+  fullName: Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.Write(Utils.IO.Serialization.IWriter, System.DateTime)
+  fullName.vb: Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.Write(Utils.IO.Serialization.IWriter, Date)
+  nameWithType: UnixMillisecondsDateTimeCodec.Write(IWriter, DateTime)
+  nameWithType.vb: UnixMillisecondsDateTimeCodec.Write(IWriter, Date)
+- uid: Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.Write*
+  name: Write
+  href: api/Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.html#Utils_IO_Serialization_UnixMillisecondsDateTimeCodec_Write_
+  commentId: Overload:Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.Write
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.Write
+  nameWithType: UnixMillisecondsDateTimeCodec.Write
+- uid: Utils.IO.Serialization.UnixSecondsDateTimeCodec
+  name: UnixSecondsDateTimeCodec
+  href: api/Utils.IO.Serialization.UnixSecondsDateTimeCodec.html
+  commentId: T:Utils.IO.Serialization.UnixSecondsDateTimeCodec
+  fullName: Utils.IO.Serialization.UnixSecondsDateTimeCodec
+  nameWithType: UnixSecondsDateTimeCodec
+- uid: Utils.IO.Serialization.UnixSecondsDateTimeCodec.Read(Utils.IO.Serialization.IReader)
+  name: Read(IReader)
+  href: api/Utils.IO.Serialization.UnixSecondsDateTimeCodec.html#Utils_IO_Serialization_UnixSecondsDateTimeCodec_Read_Utils_IO_Serialization_IReader_
+  commentId: M:Utils.IO.Serialization.UnixSecondsDateTimeCodec.Read(Utils.IO.Serialization.IReader)
+  fullName: Utils.IO.Serialization.UnixSecondsDateTimeCodec.Read(Utils.IO.Serialization.IReader)
+  nameWithType: UnixSecondsDateTimeCodec.Read(IReader)
+- uid: Utils.IO.Serialization.UnixSecondsDateTimeCodec.Read*
+  name: Read
+  href: api/Utils.IO.Serialization.UnixSecondsDateTimeCodec.html#Utils_IO_Serialization_UnixSecondsDateTimeCodec_Read_
+  commentId: Overload:Utils.IO.Serialization.UnixSecondsDateTimeCodec.Read
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.UnixSecondsDateTimeCodec.Read
+  nameWithType: UnixSecondsDateTimeCodec.Read
+- uid: Utils.IO.Serialization.UnixSecondsDateTimeCodec.Size
+  name: Size
+  href: api/Utils.IO.Serialization.UnixSecondsDateTimeCodec.html#Utils_IO_Serialization_UnixSecondsDateTimeCodec_Size
+  commentId: P:Utils.IO.Serialization.UnixSecondsDateTimeCodec.Size
+  fullName: Utils.IO.Serialization.UnixSecondsDateTimeCodec.Size
+  nameWithType: UnixSecondsDateTimeCodec.Size
+- uid: Utils.IO.Serialization.UnixSecondsDateTimeCodec.Size*
+  name: Size
+  href: api/Utils.IO.Serialization.UnixSecondsDateTimeCodec.html#Utils_IO_Serialization_UnixSecondsDateTimeCodec_Size_
+  commentId: Overload:Utils.IO.Serialization.UnixSecondsDateTimeCodec.Size
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.UnixSecondsDateTimeCodec.Size
+  nameWithType: UnixSecondsDateTimeCodec.Size
+- uid: Utils.IO.Serialization.UnixSecondsDateTimeCodec.Write(Utils.IO.Serialization.IWriter,System.DateTime)
+  name: Write(IWriter, DateTime)
+  href: api/Utils.IO.Serialization.UnixSecondsDateTimeCodec.html#Utils_IO_Serialization_UnixSecondsDateTimeCodec_Write_Utils_IO_Serialization_IWriter_System_DateTime_
+  commentId: M:Utils.IO.Serialization.UnixSecondsDateTimeCodec.Write(Utils.IO.Serialization.IWriter,System.DateTime)
+  name.vb: Write(IWriter, Date)
+  fullName: Utils.IO.Serialization.UnixSecondsDateTimeCodec.Write(Utils.IO.Serialization.IWriter, System.DateTime)
+  fullName.vb: Utils.IO.Serialization.UnixSecondsDateTimeCodec.Write(Utils.IO.Serialization.IWriter, Date)
+  nameWithType: UnixSecondsDateTimeCodec.Write(IWriter, DateTime)
+  nameWithType.vb: UnixSecondsDateTimeCodec.Write(IWriter, Date)
+- uid: Utils.IO.Serialization.UnixSecondsDateTimeCodec.Write*
+  name: Write
+  href: api/Utils.IO.Serialization.UnixSecondsDateTimeCodec.html#Utils_IO_Serialization_UnixSecondsDateTimeCodec_Write_
+  commentId: Overload:Utils.IO.Serialization.UnixSecondsDateTimeCodec.Write
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.UnixSecondsDateTimeCodec.Write
+  nameWithType: UnixSecondsDateTimeCodec.Write
+- uid: Utils.IO.Serialization.VariablePayloadWritePolicy
+  name: VariablePayloadWritePolicy
+  href: api/Utils.IO.Serialization.VariablePayloadWritePolicy.html
+  commentId: T:Utils.IO.Serialization.VariablePayloadWritePolicy
+  fullName: Utils.IO.Serialization.VariablePayloadWritePolicy
+  nameWithType: VariablePayloadWritePolicy
+- uid: Utils.IO.Serialization.VariablePayloadWritePolicy.AllowBuffering
+  name: AllowBuffering
+  href: api/Utils.IO.Serialization.VariablePayloadWritePolicy.html#Utils_IO_Serialization_VariablePayloadWritePolicy_AllowBuffering
+  commentId: F:Utils.IO.Serialization.VariablePayloadWritePolicy.AllowBuffering
+  fullName: Utils.IO.Serialization.VariablePayloadWritePolicy.AllowBuffering
+  nameWithType: VariablePayloadWritePolicy.AllowBuffering
+- uid: Utils.IO.Serialization.VariablePayloadWritePolicy.RequireKnownLength
+  name: RequireKnownLength
+  href: api/Utils.IO.Serialization.VariablePayloadWritePolicy.html#Utils_IO_Serialization_VariablePayloadWritePolicy_RequireKnownLength
+  commentId: F:Utils.IO.Serialization.VariablePayloadWritePolicy.RequireKnownLength
+  fullName: Utils.IO.Serialization.VariablePayloadWritePolicy.RequireKnownLength
+  nameWithType: VariablePayloadWritePolicy.RequireKnownLength
+- uid: Utils.IO.Serialization.WireCodecAttribute
+  name: WireCodecAttribute
+  href: api/Utils.IO.Serialization.WireCodecAttribute.html
+  commentId: T:Utils.IO.Serialization.WireCodecAttribute
+  fullName: Utils.IO.Serialization.WireCodecAttribute
+  nameWithType: WireCodecAttribute
+- uid: Utils.IO.Serialization.WireCodecAttribute.#ctor(System.Type)
+  name: WireCodecAttribute(Type)
+  href: api/Utils.IO.Serialization.WireCodecAttribute.html#Utils_IO_Serialization_WireCodecAttribute__ctor_System_Type_
+  commentId: M:Utils.IO.Serialization.WireCodecAttribute.#ctor(System.Type)
+  name.vb: New(Type)
+  fullName: Utils.IO.Serialization.WireCodecAttribute.WireCodecAttribute(System.Type)
+  fullName.vb: Utils.IO.Serialization.WireCodecAttribute.New(System.Type)
+  nameWithType: WireCodecAttribute.WireCodecAttribute(Type)
+  nameWithType.vb: WireCodecAttribute.New(Type)
+- uid: Utils.IO.Serialization.WireCodecAttribute.#ctor*
+  name: WireCodecAttribute
+  href: api/Utils.IO.Serialization.WireCodecAttribute.html#Utils_IO_Serialization_WireCodecAttribute__ctor_
+  commentId: Overload:Utils.IO.Serialization.WireCodecAttribute.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.IO.Serialization.WireCodecAttribute.WireCodecAttribute
+  fullName.vb: Utils.IO.Serialization.WireCodecAttribute.New
+  nameWithType: WireCodecAttribute.WireCodecAttribute
+  nameWithType.vb: WireCodecAttribute.New
+- uid: Utils.IO.Serialization.WireCodecAttribute.CodecType
+  name: CodecType
+  href: api/Utils.IO.Serialization.WireCodecAttribute.html#Utils_IO_Serialization_WireCodecAttribute_CodecType
+  commentId: P:Utils.IO.Serialization.WireCodecAttribute.CodecType
+  fullName: Utils.IO.Serialization.WireCodecAttribute.CodecType
+  nameWithType: WireCodecAttribute.CodecType
+- uid: Utils.IO.Serialization.WireCodecAttribute.CodecType*
+  name: CodecType
+  href: api/Utils.IO.Serialization.WireCodecAttribute.html#Utils_IO_Serialization_WireCodecAttribute_CodecType_
+  commentId: Overload:Utils.IO.Serialization.WireCodecAttribute.CodecType
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.WireCodecAttribute.CodecType
+  nameWithType: WireCodecAttribute.CodecType
+- uid: Utils.IO.Serialization.WireCodecExtensions
+  name: WireCodecExtensions
+  href: api/Utils.IO.Serialization.WireCodecExtensions.html
+  commentId: T:Utils.IO.Serialization.WireCodecExtensions
+  fullName: Utils.IO.Serialization.WireCodecExtensions
+  nameWithType: WireCodecExtensions
+- uid: Utils.IO.Serialization.WireCodecExtensions.ReadConfigured*
+  name: ReadConfigured
+  href: api/Utils.IO.Serialization.WireCodecExtensions.html#Utils_IO_Serialization_WireCodecExtensions_ReadConfigured_
+  commentId: Overload:Utils.IO.Serialization.WireCodecExtensions.ReadConfigured
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.WireCodecExtensions.ReadConfigured
+  nameWithType: WireCodecExtensions.ReadConfigured
+- uid: Utils.IO.Serialization.WireCodecExtensions.ReadConfiguredOr*
+  name: ReadConfiguredOr
+  href: api/Utils.IO.Serialization.WireCodecExtensions.html#Utils_IO_Serialization_WireCodecExtensions_ReadConfiguredOr_
+  commentId: Overload:Utils.IO.Serialization.WireCodecExtensions.ReadConfiguredOr
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.WireCodecExtensions.ReadConfiguredOr
+  nameWithType: WireCodecExtensions.ReadConfiguredOr
+- uid: Utils.IO.Serialization.WireCodecExtensions.ReadConfiguredOr``1(Utils.IO.Serialization.IReader,System.Func{Utils.IO.Serialization.IReader,``0})
+  name: ReadConfiguredOr<T>(IReader, Func<IReader, T>)
+  href: api/Utils.IO.Serialization.WireCodecExtensions.html#Utils_IO_Serialization_WireCodecExtensions_ReadConfiguredOr__1_Utils_IO_Serialization_IReader_System_Func_Utils_IO_Serialization_IReader___0__
+  commentId: M:Utils.IO.Serialization.WireCodecExtensions.ReadConfiguredOr``1(Utils.IO.Serialization.IReader,System.Func{Utils.IO.Serialization.IReader,``0})
+  name.vb: ReadConfiguredOr(Of T)(IReader, Func(Of IReader, T))
+  fullName: Utils.IO.Serialization.WireCodecExtensions.ReadConfiguredOr<T>(Utils.IO.Serialization.IReader, System.Func<Utils.IO.Serialization.IReader, T>)
+  fullName.vb: Utils.IO.Serialization.WireCodecExtensions.ReadConfiguredOr(Of T)(Utils.IO.Serialization.IReader, System.Func(Of Utils.IO.Serialization.IReader, T))
+  nameWithType: WireCodecExtensions.ReadConfiguredOr<T>(IReader, Func<IReader, T>)
+  nameWithType.vb: WireCodecExtensions.ReadConfiguredOr(Of T)(IReader, Func(Of IReader, T))
+- uid: Utils.IO.Serialization.WireCodecExtensions.ReadConfigured``1(Utils.IO.Serialization.IReader,System.Type,System.Type)
+  name: ReadConfigured<T>(IReader, Type?, Type?)
+  href: api/Utils.IO.Serialization.WireCodecExtensions.html#Utils_IO_Serialization_WireCodecExtensions_ReadConfigured__1_Utils_IO_Serialization_IReader_System_Type_System_Type_
+  commentId: M:Utils.IO.Serialization.WireCodecExtensions.ReadConfigured``1(Utils.IO.Serialization.IReader,System.Type,System.Type)
+  name.vb: ReadConfigured(Of T)(IReader, Type, Type)
+  fullName: Utils.IO.Serialization.WireCodecExtensions.ReadConfigured<T>(Utils.IO.Serialization.IReader, System.Type?, System.Type?)
+  fullName.vb: Utils.IO.Serialization.WireCodecExtensions.ReadConfigured(Of T)(Utils.IO.Serialization.IReader, System.Type, System.Type)
+  nameWithType: WireCodecExtensions.ReadConfigured<T>(IReader, Type?, Type?)
+  nameWithType.vb: WireCodecExtensions.ReadConfigured(Of T)(IReader, Type, Type)
+- uid: Utils.IO.Serialization.WireCodecExtensions.WriteConfigured*
+  name: WriteConfigured
+  href: api/Utils.IO.Serialization.WireCodecExtensions.html#Utils_IO_Serialization_WireCodecExtensions_WriteConfigured_
+  commentId: Overload:Utils.IO.Serialization.WireCodecExtensions.WriteConfigured
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.WireCodecExtensions.WriteConfigured
+  nameWithType: WireCodecExtensions.WriteConfigured
+- uid: Utils.IO.Serialization.WireCodecExtensions.WriteConfiguredOr*
+  name: WriteConfiguredOr
+  href: api/Utils.IO.Serialization.WireCodecExtensions.html#Utils_IO_Serialization_WireCodecExtensions_WriteConfiguredOr_
+  commentId: Overload:Utils.IO.Serialization.WireCodecExtensions.WriteConfiguredOr
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.WireCodecExtensions.WriteConfiguredOr
+  nameWithType: WireCodecExtensions.WriteConfiguredOr
+- uid: Utils.IO.Serialization.WireCodecExtensions.WriteConfiguredOr``1(Utils.IO.Serialization.IWriter,``0,System.Action{Utils.IO.Serialization.IWriter,``0})
+  name: WriteConfiguredOr<T>(IWriter, T, Action<IWriter, T>)
+  href: api/Utils.IO.Serialization.WireCodecExtensions.html#Utils_IO_Serialization_WireCodecExtensions_WriteConfiguredOr__1_Utils_IO_Serialization_IWriter___0_System_Action_Utils_IO_Serialization_IWriter___0__
+  commentId: M:Utils.IO.Serialization.WireCodecExtensions.WriteConfiguredOr``1(Utils.IO.Serialization.IWriter,``0,System.Action{Utils.IO.Serialization.IWriter,``0})
+  name.vb: WriteConfiguredOr(Of T)(IWriter, T, Action(Of IWriter, T))
+  fullName: Utils.IO.Serialization.WireCodecExtensions.WriteConfiguredOr<T>(Utils.IO.Serialization.IWriter, T, System.Action<Utils.IO.Serialization.IWriter, T>)
+  fullName.vb: Utils.IO.Serialization.WireCodecExtensions.WriteConfiguredOr(Of T)(Utils.IO.Serialization.IWriter, T, System.Action(Of Utils.IO.Serialization.IWriter, T))
+  nameWithType: WireCodecExtensions.WriteConfiguredOr<T>(IWriter, T, Action<IWriter, T>)
+  nameWithType.vb: WireCodecExtensions.WriteConfiguredOr(Of T)(IWriter, T, Action(Of IWriter, T))
+- uid: Utils.IO.Serialization.WireCodecExtensions.WriteConfigured``1(Utils.IO.Serialization.IWriter,``0,System.Type,System.Type)
+  name: WriteConfigured<T>(IWriter, T, Type?, Type?)
+  href: api/Utils.IO.Serialization.WireCodecExtensions.html#Utils_IO_Serialization_WireCodecExtensions_WriteConfigured__1_Utils_IO_Serialization_IWriter___0_System_Type_System_Type_
+  commentId: M:Utils.IO.Serialization.WireCodecExtensions.WriteConfigured``1(Utils.IO.Serialization.IWriter,``0,System.Type,System.Type)
+  name.vb: WriteConfigured(Of T)(IWriter, T, Type, Type)
+  fullName: Utils.IO.Serialization.WireCodecExtensions.WriteConfigured<T>(Utils.IO.Serialization.IWriter, T, System.Type?, System.Type?)
+  fullName.vb: Utils.IO.Serialization.WireCodecExtensions.WriteConfigured(Of T)(Utils.IO.Serialization.IWriter, T, System.Type, System.Type)
+  nameWithType: WireCodecExtensions.WriteConfigured<T>(IWriter, T, Type?, Type?)
+  nameWithType.vb: WireCodecExtensions.WriteConfigured(Of T)(IWriter, T, Type, Type)
+- uid: Utils.IO.Serialization.WireCodecRegistry
+  name: WireCodecRegistry
+  href: api/Utils.IO.Serialization.WireCodecRegistry.html
+  commentId: T:Utils.IO.Serialization.WireCodecRegistry
+  fullName: Utils.IO.Serialization.WireCodecRegistry
+  nameWithType: WireCodecRegistry
+- uid: Utils.IO.Serialization.WireCodecRegistry.Set*
+  name: Set
+  href: api/Utils.IO.Serialization.WireCodecRegistry.html#Utils_IO_Serialization_WireCodecRegistry_Set_
+  commentId: Overload:Utils.IO.Serialization.WireCodecRegistry.Set
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.WireCodecRegistry.Set
+  nameWithType: WireCodecRegistry.Set
+- uid: Utils.IO.Serialization.WireCodecRegistry.SetReader*
+  name: SetReader
+  href: api/Utils.IO.Serialization.WireCodecRegistry.html#Utils_IO_Serialization_WireCodecRegistry_SetReader_
+  commentId: Overload:Utils.IO.Serialization.WireCodecRegistry.SetReader
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.WireCodecRegistry.SetReader
+  nameWithType: WireCodecRegistry.SetReader
+- uid: Utils.IO.Serialization.WireCodecRegistry.SetReader``1(Utils.IO.Serialization.IWireReader{``0},Utils.IO.Serialization.IWireFraming)
+  name: SetReader<T>(IWireReader<T>, IWireFraming?)
+  href: api/Utils.IO.Serialization.WireCodecRegistry.html#Utils_IO_Serialization_WireCodecRegistry_SetReader__1_Utils_IO_Serialization_IWireReader___0__Utils_IO_Serialization_IWireFraming_
+  commentId: M:Utils.IO.Serialization.WireCodecRegistry.SetReader``1(Utils.IO.Serialization.IWireReader{``0},Utils.IO.Serialization.IWireFraming)
+  name.vb: SetReader(Of T)(IWireReader(Of T), IWireFraming)
+  fullName: Utils.IO.Serialization.WireCodecRegistry.SetReader<T>(Utils.IO.Serialization.IWireReader<T>, Utils.IO.Serialization.IWireFraming?)
+  fullName.vb: Utils.IO.Serialization.WireCodecRegistry.SetReader(Of T)(Utils.IO.Serialization.IWireReader(Of T), Utils.IO.Serialization.IWireFraming)
+  nameWithType: WireCodecRegistry.SetReader<T>(IWireReader<T>, IWireFraming?)
+  nameWithType.vb: WireCodecRegistry.SetReader(Of T)(IWireReader(Of T), IWireFraming)
+- uid: Utils.IO.Serialization.WireCodecRegistry.SetWriter*
+  name: SetWriter
+  href: api/Utils.IO.Serialization.WireCodecRegistry.html#Utils_IO_Serialization_WireCodecRegistry_SetWriter_
+  commentId: Overload:Utils.IO.Serialization.WireCodecRegistry.SetWriter
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.WireCodecRegistry.SetWriter
+  nameWithType: WireCodecRegistry.SetWriter
+- uid: Utils.IO.Serialization.WireCodecRegistry.SetWriter``1(Utils.IO.Serialization.IWireWriter{``0},Utils.IO.Serialization.IWireFraming)
+  name: SetWriter<T>(IWireWriter<T>, IWireFraming?)
+  href: api/Utils.IO.Serialization.WireCodecRegistry.html#Utils_IO_Serialization_WireCodecRegistry_SetWriter__1_Utils_IO_Serialization_IWireWriter___0__Utils_IO_Serialization_IWireFraming_
+  commentId: M:Utils.IO.Serialization.WireCodecRegistry.SetWriter``1(Utils.IO.Serialization.IWireWriter{``0},Utils.IO.Serialization.IWireFraming)
+  name.vb: SetWriter(Of T)(IWireWriter(Of T), IWireFraming)
+  fullName: Utils.IO.Serialization.WireCodecRegistry.SetWriter<T>(Utils.IO.Serialization.IWireWriter<T>, Utils.IO.Serialization.IWireFraming?)
+  fullName.vb: Utils.IO.Serialization.WireCodecRegistry.SetWriter(Of T)(Utils.IO.Serialization.IWireWriter(Of T), Utils.IO.Serialization.IWireFraming)
+  nameWithType: WireCodecRegistry.SetWriter<T>(IWireWriter<T>, IWireFraming?)
+  nameWithType.vb: WireCodecRegistry.SetWriter(Of T)(IWireWriter(Of T), IWireFraming)
+- uid: Utils.IO.Serialization.WireCodecRegistry.Set``1(Utils.IO.Serialization.IWireCodec{``0},Utils.IO.Serialization.IWireFraming)
+  name: Set<T>(IWireCodec<T>, IWireFraming?)
+  href: api/Utils.IO.Serialization.WireCodecRegistry.html#Utils_IO_Serialization_WireCodecRegistry_Set__1_Utils_IO_Serialization_IWireCodec___0__Utils_IO_Serialization_IWireFraming_
+  commentId: M:Utils.IO.Serialization.WireCodecRegistry.Set``1(Utils.IO.Serialization.IWireCodec{``0},Utils.IO.Serialization.IWireFraming)
+  name.vb: Set(Of T)(IWireCodec(Of T), IWireFraming)
+  fullName: Utils.IO.Serialization.WireCodecRegistry.Set<T>(Utils.IO.Serialization.IWireCodec<T>, Utils.IO.Serialization.IWireFraming?)
+  fullName.vb: Utils.IO.Serialization.WireCodecRegistry.Set(Of T)(Utils.IO.Serialization.IWireCodec(Of T), Utils.IO.Serialization.IWireFraming)
+  nameWithType: WireCodecRegistry.Set<T>(IWireCodec<T>, IWireFraming?)
+  nameWithType.vb: WireCodecRegistry.Set(Of T)(IWireCodec(Of T), IWireFraming)
+- uid: Utils.IO.Serialization.WireCodecRegistry.Set``1(Utils.IO.Serialization.IWireReader{``0},Utils.IO.Serialization.IWireWriter{``0},Utils.IO.Serialization.IWireFraming)
+  name: Set<T>(IWireReader<T>?, IWireWriter<T>?, IWireFraming?)
+  href: api/Utils.IO.Serialization.WireCodecRegistry.html#Utils_IO_Serialization_WireCodecRegistry_Set__1_Utils_IO_Serialization_IWireReader___0__Utils_IO_Serialization_IWireWriter___0__Utils_IO_Serialization_IWireFraming_
+  commentId: M:Utils.IO.Serialization.WireCodecRegistry.Set``1(Utils.IO.Serialization.IWireReader{``0},Utils.IO.Serialization.IWireWriter{``0},Utils.IO.Serialization.IWireFraming)
+  name.vb: Set(Of T)(IWireReader(Of T), IWireWriter(Of T), IWireFraming)
+  fullName: Utils.IO.Serialization.WireCodecRegistry.Set<T>(Utils.IO.Serialization.IWireReader<T>?, Utils.IO.Serialization.IWireWriter<T>?, Utils.IO.Serialization.IWireFraming?)
+  fullName.vb: Utils.IO.Serialization.WireCodecRegistry.Set(Of T)(Utils.IO.Serialization.IWireReader(Of T), Utils.IO.Serialization.IWireWriter(Of T), Utils.IO.Serialization.IWireFraming)
+  nameWithType: WireCodecRegistry.Set<T>(IWireReader<T>?, IWireWriter<T>?, IWireFraming?)
+  nameWithType.vb: WireCodecRegistry.Set(Of T)(IWireReader(Of T), IWireWriter(Of T), IWireFraming)
+- uid: Utils.IO.Serialization.WireFramingAttribute
+  name: WireFramingAttribute
+  href: api/Utils.IO.Serialization.WireFramingAttribute.html
+  commentId: T:Utils.IO.Serialization.WireFramingAttribute
+  fullName: Utils.IO.Serialization.WireFramingAttribute
+  nameWithType: WireFramingAttribute
+- uid: Utils.IO.Serialization.WireFramingAttribute.#ctor(System.Type)
+  name: WireFramingAttribute(Type)
+  href: api/Utils.IO.Serialization.WireFramingAttribute.html#Utils_IO_Serialization_WireFramingAttribute__ctor_System_Type_
+  commentId: M:Utils.IO.Serialization.WireFramingAttribute.#ctor(System.Type)
+  name.vb: New(Type)
+  fullName: Utils.IO.Serialization.WireFramingAttribute.WireFramingAttribute(System.Type)
+  fullName.vb: Utils.IO.Serialization.WireFramingAttribute.New(System.Type)
+  nameWithType: WireFramingAttribute.WireFramingAttribute(Type)
+  nameWithType.vb: WireFramingAttribute.New(Type)
+- uid: Utils.IO.Serialization.WireFramingAttribute.#ctor*
+  name: WireFramingAttribute
+  href: api/Utils.IO.Serialization.WireFramingAttribute.html#Utils_IO_Serialization_WireFramingAttribute__ctor_
+  commentId: Overload:Utils.IO.Serialization.WireFramingAttribute.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.IO.Serialization.WireFramingAttribute.WireFramingAttribute
+  fullName.vb: Utils.IO.Serialization.WireFramingAttribute.New
+  nameWithType: WireFramingAttribute.WireFramingAttribute
+  nameWithType.vb: WireFramingAttribute.New
+- uid: Utils.IO.Serialization.WireFramingAttribute.FramingType
+  name: FramingType
+  href: api/Utils.IO.Serialization.WireFramingAttribute.html#Utils_IO_Serialization_WireFramingAttribute_FramingType
+  commentId: P:Utils.IO.Serialization.WireFramingAttribute.FramingType
+  fullName: Utils.IO.Serialization.WireFramingAttribute.FramingType
+  nameWithType: WireFramingAttribute.FramingType
+- uid: Utils.IO.Serialization.WireFramingAttribute.FramingType*
+  name: FramingType
+  href: api/Utils.IO.Serialization.WireFramingAttribute.html#Utils_IO_Serialization_WireFramingAttribute_FramingType_
+  commentId: Overload:Utils.IO.Serialization.WireFramingAttribute.FramingType
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.WireFramingAttribute.FramingType
+  nameWithType: WireFramingAttribute.FramingType
+- uid: Utils.IO.Serialization.WireFramingKind
+  name: WireFramingKind
+  href: api/Utils.IO.Serialization.WireFramingKind.html
+  commentId: T:Utils.IO.Serialization.WireFramingKind
+  fullName: Utils.IO.Serialization.WireFramingKind
+  nameWithType: WireFramingKind
+- uid: Utils.IO.Serialization.WireFramingKind.CodecOwned
+  name: CodecOwned
+  href: api/Utils.IO.Serialization.WireFramingKind.html#Utils_IO_Serialization_WireFramingKind_CodecOwned
+  commentId: F:Utils.IO.Serialization.WireFramingKind.CodecOwned
+  fullName: Utils.IO.Serialization.WireFramingKind.CodecOwned
+  nameWithType: WireFramingKind.CodecOwned
+- uid: Utils.IO.Serialization.WireFramingKind.Fixed
+  name: Fixed
+  href: api/Utils.IO.Serialization.WireFramingKind.html#Utils_IO_Serialization_WireFramingKind_Fixed
+  commentId: F:Utils.IO.Serialization.WireFramingKind.Fixed
+  fullName: Utils.IO.Serialization.WireFramingKind.Fixed
+  nameWithType: WireFramingKind.Fixed
+- uid: Utils.IO.Serialization.WireFramingKind.LengthPrefixed
+  name: LengthPrefixed
+  href: api/Utils.IO.Serialization.WireFramingKind.html#Utils_IO_Serialization_WireFramingKind_LengthPrefixed
+  commentId: F:Utils.IO.Serialization.WireFramingKind.LengthPrefixed
+  fullName: Utils.IO.Serialization.WireFramingKind.LengthPrefixed
+  nameWithType: WireFramingKind.LengthPrefixed
 - uid: Utils.IO.Serialization.Writer
   name: Writer
   href: api/Utils.IO.Serialization.Writer.html
@@ -35938,6 +36924,24 @@ references:
   fullName.vb: Utils.IO.Serialization.Writer.New(System.IO.Stream, System.Collections.Generic.IEnumerable(Of System.Delegate))
   nameWithType: Writer.Writer(Stream, params IEnumerable<Delegate>)
   nameWithType.vb: Writer.New(Stream, IEnumerable(Of Delegate))
+- uid: Utils.IO.Serialization.Writer.#ctor(System.IO.Stream,Utils.IO.Serialization.SerializationOptions)
+  name: Writer(Stream, SerializationOptions)
+  href: api/Utils.IO.Serialization.Writer.html#Utils_IO_Serialization_Writer__ctor_System_IO_Stream_Utils_IO_Serialization_SerializationOptions_
+  commentId: M:Utils.IO.Serialization.Writer.#ctor(System.IO.Stream,Utils.IO.Serialization.SerializationOptions)
+  name.vb: New(Stream, SerializationOptions)
+  fullName: Utils.IO.Serialization.Writer.Writer(System.IO.Stream, Utils.IO.Serialization.SerializationOptions)
+  fullName.vb: Utils.IO.Serialization.Writer.New(System.IO.Stream, Utils.IO.Serialization.SerializationOptions)
+  nameWithType: Writer.Writer(Stream, SerializationOptions)
+  nameWithType.vb: Writer.New(Stream, SerializationOptions)
+- uid: Utils.IO.Serialization.Writer.#ctor(System.IO.Stream,Utils.IO.Serialization.SerializationOptions,System.Collections.Generic.IEnumerable{System.Delegate})
+  name: Writer(Stream, SerializationOptions, params IEnumerable<Delegate>)
+  href: api/Utils.IO.Serialization.Writer.html#Utils_IO_Serialization_Writer__ctor_System_IO_Stream_Utils_IO_Serialization_SerializationOptions_System_Collections_Generic_IEnumerable_System_Delegate__
+  commentId: M:Utils.IO.Serialization.Writer.#ctor(System.IO.Stream,Utils.IO.Serialization.SerializationOptions,System.Collections.Generic.IEnumerable{System.Delegate})
+  name.vb: New(Stream, SerializationOptions, IEnumerable(Of Delegate))
+  fullName: Utils.IO.Serialization.Writer.Writer(System.IO.Stream, Utils.IO.Serialization.SerializationOptions, params System.Collections.Generic.IEnumerable<System.Delegate>)
+  fullName.vb: Utils.IO.Serialization.Writer.New(System.IO.Stream, Utils.IO.Serialization.SerializationOptions, System.Collections.Generic.IEnumerable(Of System.Delegate))
+  nameWithType: Writer.Writer(Stream, SerializationOptions, params IEnumerable<Delegate>)
+  nameWithType.vb: Writer.New(Stream, SerializationOptions, IEnumerable(Of Delegate))
 - uid: Utils.IO.Serialization.Writer.#ctor*
   name: Writer
   href: api/Utils.IO.Serialization.Writer.html#Utils_IO_Serialization_Writer__ctor_

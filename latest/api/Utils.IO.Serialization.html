@@ -95,13 +95,43 @@
 Classes
 </h3>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.IO.Serialization.CodecOwnedWireFraming.html">CodecOwnedWireFraming</a></dt>
+      <dd><p>Declares a codec-owned, self-delimited payload.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.IO.Serialization.DotNetBinaryDateTimeCodec.html">DotNetBinaryDateTimeCodec</a></dt>
+      <dd><p>Encodes DateTime using the framework binary representation and preserves Kind semantics.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.IO.Serialization.FieldAttribute.html">FieldAttribute</a></dt>
       <dd><p>Marks a field or property as part of the binary serialization process.</p>
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.IO.Serialization.FileTimeDateTimeCodec.html">FileTimeDateTimeCodec</a></dt>
+      <dd><p>Encodes UTC Windows FILETIME and decodes it as a Utc DateTime.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.IO.Serialization.FixedWireFraming.html">FixedWireFraming</a></dt>
+      <dd><p>Describes a fixed-size payload.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.IO.Serialization.GenerateReaderWriterAttribute.html">GenerateReaderWriterAttribute</a></dt>
       <dd><p>Marks a type for which reader and writer methods are generated at compile time.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.IO.Serialization.Int32LengthWireFraming.html">Int32LengthWireFraming</a></dt>
+      <dd><p>Uses a signed 32-bit payload-length prefix.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.IO.Serialization.OleAutomationDateTimeCodec.html">OleAutomationDateTimeCodec</a></dt>
+      <dd><p>Encodes DateTime using the framework OLE Automation Double representation.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -147,6 +177,46 @@ Each method writes a value using the supplied <a class="xref" href="Utils.IO.Ser
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.IO.Serialization.SerializationOptions.html">SerializationOptions</a></dt>
+      <dd><p>Configures shared wire contracts and bounded variable-payload staging.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.IO.Serialization.TicksDateTimeCodec.html">TicksDateTimeCodec</a></dt>
+      <dd><p>Encodes DateTime ticks and decodes them with Unspecified kind for legacy interoperability.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.IO.Serialization.UnixMillisecondsDateTimeCodec.html">UnixMillisecondsDateTimeCodec</a></dt>
+      <dd><p>Encodes signed whole milliseconds from the Unix UTC epoch and decodes with Utc kind.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.IO.Serialization.UnixSecondsDateTimeCodec.html">UnixSecondsDateTimeCodec</a></dt>
+      <dd><p>Encodes signed whole seconds from the Unix UTC epoch and decodes with Utc kind.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.IO.Serialization.WireCodecAttribute.html">WireCodecAttribute</a></dt>
+      <dd><p>Selects a concrete parameterless wire reader and/or writer for one serialized member.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.IO.Serialization.WireCodecExtensions.html">WireCodecExtensions</a></dt>
+      <dd><p>Provides the stable runtime-dispatch bridge used by generated serializers.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.IO.Serialization.WireCodecRegistry.html">WireCodecRegistry</a></dt>
+      <dd><p>Stores exact-type wire codec registrations before a reader or writer takes a snapshot.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.IO.Serialization.WireFramingAttribute.html">WireFramingAttribute</a></dt>
+      <dd><p>Selects a concrete parameterless framing implementation for one serialized member.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.IO.Serialization.Writer.html">Writer</a></dt>
       <dd><p>Provides methods to serialize objects to a <a class="xref" href="Utils.IO.Serialization.Writer.html#Utils_IO_Serialization_Writer_Stream">Stream</a>. Writers are
 resolved dynamically based on the runtime type of the value to write.</p>
@@ -155,6 +225,11 @@ resolved dynamically based on the runtime type of the value to write.</p>
     <h3 id="interfaces">
 Interfaces
 </h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.IO.Serialization.IFixedWireCodec-1.html">IFixedWireCodec&lt;T&gt;</a></dt>
+      <dd><p>Declares the exact payload size of a fixed-width codec.</p>
+</dd>
+    </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.IO.Serialization.IReader.html">IReader</a></dt>
       <dd><p>Provides methods for reading primitive and complex values from a stream.</p>
@@ -166,8 +241,56 @@ Interfaces
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.IO.Serialization.IWireCodecDescriptor.html">IWireCodecDescriptor</a></dt>
+      <dd><p>Identifies the value type represented by a registry descriptor.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.IO.Serialization.IWireCodec-1.html">IWireCodec&lt;T&gt;</a></dt>
+      <dd><p>Combines the independent wire reader and writer directions.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.IO.Serialization.IWireFraming.html">IWireFraming</a></dt>
+      <dd><p>Describes payload delimitation independently from value encoding.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.IO.Serialization.IWireLengthFraming.html">IWireLengthFraming</a></dt>
+      <dd><p>Reads and writes payload lengths without encoding payload values.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.IO.Serialization.IWireReader-1.html">IWireReader&lt;T&gt;</a></dt>
+      <dd><p>Decodes a value payload from sequential wire data.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.IO.Serialization.IWireSizeProvider-1.html">IWireSizeProvider&lt;T&gt;</a></dt>
+      <dd><p>Optionally computes a variable payload size before encoding.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.IO.Serialization.IWireWriter-1.html">IWireWriter&lt;T&gt;</a></dt>
+      <dd><p>Encodes a value payload to sequential wire data.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.IO.Serialization.IWriter.html">IWriter</a></dt>
       <dd><p>Provides methods for writing primitive and complex values to a stream.</p>
+</dd>
+    </dl>
+    <h3 id="enums">
+Enums
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.IO.Serialization.VariablePayloadWritePolicy.html">VariablePayloadWritePolicy</a></dt>
+      <dd><p>Controls staging of payloads whose encoded size is unknown.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.IO.Serialization.WireFramingKind.html">WireFramingKind</a></dt>
+      <dd><p>Identifies how a codec payload is delimited.</p>
 </dd>
     </dl>
 
