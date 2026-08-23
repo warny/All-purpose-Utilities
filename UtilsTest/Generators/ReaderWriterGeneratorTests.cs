@@ -127,6 +127,55 @@ public sealed class ReaderWriterGeneratorTests
         Assert.IsFalse(output.GetDiagnostics().Any(item => item.Location.SourceTree?.FilePath.EndsWith(".g.cs", StringComparison.Ordinal) == true));
     }
 
+    /// <summary>Ensures an incompatible member codec produces the structured generator diagnostic.</summary>
+    [TestMethod]
+    public void InvalidWireCodec_ReportsDiagnosticWithoutSource()
+    {
+        GeneratorDriverRunResult result = RunGenerator("""
+            using Utils.IO.Serialization;
+            namespace Models;
+            [GenerateReaderWriter]
+            public class Model { [Field(0), WireCodec(typeof(string))] public int Value { get; set; } }
+            """, out _);
+
+        AssertHasSingleDiagnostic(result, "UIOSG011");
+        Assert.AreEqual(0, result.GeneratedTrees.Length);
+    }
+
+    /// <summary>Ensures an incompatible member framing produces the structured generator diagnostic.</summary>
+    [TestMethod]
+    public void InvalidWireFraming_ReportsDiagnosticWithoutSource()
+    {
+        GeneratorDriverRunResult result = RunGenerator("""
+            using Utils.IO.Serialization;
+            namespace Models;
+            [GenerateReaderWriter]
+            public class Model { [Field(0), WireFraming(typeof(string))] public int Value { get; set; } }
+            """, out _);
+
+        AssertHasSingleDiagnostic(result, "UIOSG012");
+        Assert.AreEqual(0, result.GeneratedTrees.Length);
+    }
+
+    /// <summary>Ensures nested generated contracts remain runtime-codec aware before using their generated fallback.</summary>
+    [TestMethod]
+    public void NestedGeneratedContract_UsesConfiguredCodecFallback()
+    {
+        GeneratorDriverRunResult result = RunGenerator("""
+            using Utils.IO.Serialization;
+            namespace Models;
+            [GenerateReaderWriter]
+            public class Child { [Field(0)] public int Value { get; set; } }
+            [GenerateReaderWriter]
+            public class Parent { [Field(0)] public Child Value { get; set; } = new(); }
+            """, out Compilation output);
+
+        string parentSource = result.GeneratedTrees.Select(tree => tree.ToString()).Single(source => source.Contains("global::Models.Parent", StringComparison.Ordinal));
+        StringAssert.Contains(parentSource, "ReadConfiguredOr<global::Models.Child>");
+        StringAssert.Contains(parentSource, "WriteConfiguredOr<global::Models.Child>");
+        AssertNoCompilationErrors(output);
+    }
+
     /// <summary>Runs the generator against one source document.</summary>
     private static GeneratorDriverRunResult RunGenerator(string source, out Compilation output) => RunGenerator([source], out output);
 

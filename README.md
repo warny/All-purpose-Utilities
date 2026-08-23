@@ -70,6 +70,36 @@ builder.QueryString["key"].Add("value");
 Console.WriteLine(builder.ToString());
 ```
 
+## Configurable binary wire formats
+
+`omy.Utils.IO` supports exact-type wire codecs and per-member overrides. For example, the following keeps the default .NET Binary representation everywhere except for one Unix-millisecond timestamp:
+
+```csharp
+using System;
+using System.IO;
+using Utils.IO.Serialization;
+
+public sealed class AuditEntry
+{
+    [Field(1)]
+    public DateTime Created { get; set; }
+
+    [Field(2)]
+    [WireCodec(typeof(UnixMillisecondsDateTimeCodec))]
+    public DateTime ExternalTimestamp { get; set; }
+}
+
+using MemoryStream stream = new();
+Writer writer = new(stream);
+writer.Write(new AuditEntry
+{
+    Created = DateTime.UtcNow,
+    ExternalTimestamp = DateTime.UnixEpoch
+});
+```
+
+See the [Utils.IO wire-codec guide](Utils.IO/README.md#wire-codecs-and-framing) for global registration, custom codecs, directional readers/writers, and framing/buffering examples.
+
 ## Parser look-ahead note
 
 The look-ahead probe layer can now conservatively classify structurally epsilon-capable alternatives such as optional or zero-or-more quantifiers. This classification remains informational and does not bypass normal parsing.
