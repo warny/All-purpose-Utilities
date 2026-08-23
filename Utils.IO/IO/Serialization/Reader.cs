@@ -50,7 +50,6 @@ public class Reader : IReader, IStreamMapping<Reader>
     private readonly int maximumCollectionLength;
     private readonly ReadBudget readBudget;
     private readonly bool countWireBytes;
-    private int rejectedLookaheadByte = -1;
 
     /// <summary>Coordinates one logical contract build for each type.</summary>
     private readonly ContractCache contractCache = new();
@@ -267,17 +266,8 @@ public class Reader : IReader, IStreamMapping<Reader>
     public int ReadByte()
     {
         if (!countWireBytes) return Stream.ReadByte();
-        if (rejectedLookaheadByte >= 0)
-            throw new InvalidDataException("Reading another wire byte would exceed the configured aggregate limit.");
         if (!readBudget.CanConsume(1))
-        {
-            // A forward-only stream can distinguish EOF from data only by probing once. Preserve a real
-            // lookahead byte logically in this reader and reject it without charging the parsing budget.
-            int lookahead = Stream.ReadByte();
-            if (lookahead < 0) return -1;
-            rejectedLookaheadByte = lookahead;
-            throw new InvalidDataException("Reading another wire byte would exceed the configured aggregate limit.");
-        }
+            return readBudget.ProbeEofOrReject(Stream);
         int value = Stream.ReadByte();
         if (value >= 0) readBudget.Consume(1);
         return value;

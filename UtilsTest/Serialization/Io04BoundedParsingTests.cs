@@ -31,6 +31,22 @@ public sealed class Io04BoundedParsingTests
         Assert.AreEqual(2, stream.BytesRead, "The rejected lookahead must be buffered instead of probing repeatedly.");
     }
 
+    /// <summary>Verifies sibling readers sharing an exhausted budget cannot each drain one lookahead byte.</summary>
+    [TestMethod]
+    public void ReadByte_ExhaustedBudgetAcrossSharedReaders_DoesNotProbeAgain()
+    {
+        using CountingReadStream stream = new([1, 2, 3]);
+        Reader root = new(stream, new ReaderOptions { MaximumReadBytes = 1 });
+        Reader child = root.Slice(0, 3);
+
+        Assert.AreEqual(1, root.ReadByte());
+        Assert.ThrowsException<InvalidDataException>(() => root.ReadByte());
+        Assert.AreEqual(2, stream.BytesRead);
+
+        Assert.ThrowsException<InvalidDataException>(() => child.ReadByte());
+        Assert.AreEqual(2, stream.BytesRead, "A sibling reader must observe the shared rejected lookahead without probing the source again.");
+    }
+
     /// <summary>Verifies codec-owned EOF framing terminates when its bytes exactly exhaust the budget.</summary>
     [TestMethod]
     public void CodecOwned_ExactAggregateBudget_CanObserveEndOfStream()
@@ -321,6 +337,21 @@ public sealed class Io04BoundedParsingTests
 
     /// <summary>Forward-only stream exposing the number of bytes physically returned to lookahead probes.</summary>
     private sealed class CountingForwardOnlyStream(byte[] bytes) : ForwardOnlyReadStream(bytes)
+    {
+        /// <summary>Gets the number of bytes returned by the stream.</summary>
+        public int BytesRead { get; private set; }
+
+        /// <inheritdoc />
+        public override int ReadByte()
+        {
+            int value = base.ReadByte();
+            if (value >= 0) BytesRead++;
+            return value;
+        }
+    }
+
+    /// <summary>Seekable stream exposing the number of bytes physically returned across reader slices.</summary>
+    private sealed class CountingReadStream(byte[] bytes) : MemoryStream(bytes, writable: false)
     {
         /// <summary>Gets the number of bytes returned by the stream.</summary>
         public int BytesRead { get; private set; }

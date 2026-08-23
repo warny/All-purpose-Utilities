@@ -7,6 +7,7 @@ internal sealed class ReadBudget
 {
     private readonly long? maximum;
     private long consumed;
+    private int rejectedLookaheadByte = -1;
 
     /// <summary>Initializes a shared budget from an optional maximum.</summary>
     internal ReadBudget(long? maximum) => this.maximum = maximum;
@@ -31,5 +32,27 @@ internal sealed class ReadBudget
     {
         EnsureAvailable(count);
         consumed += count;
+    }
+
+    /// <summary>
+    /// Probes an exhausted operation for EOF exactly once when data remains, retaining a rejected byte
+    /// in the shared operation context so sibling readers cannot drain the forward-only source.
+    /// </summary>
+    /// <param name="stream">The stream on which EOF must be observed.</param>
+    /// <returns><c>-1</c> when the stream is at EOF.</returns>
+    internal int ProbeEofOrReject(Stream stream)
+    {
+        lock (this)
+        {
+            if (rejectedLookaheadByte >= 0)
+                throw new InvalidDataException("Reading another wire byte would exceed the configured aggregate limit.");
+
+            // A forward-only stream cannot expose EOF without one physical read. A real byte is retained
+            // by this shared context and permanently rejected, rather than being lost to one child reader.
+            int lookahead = stream.ReadByte();
+            if (lookahead < 0) return -1;
+            rejectedLookaheadByte = lookahead;
+            throw new InvalidDataException("Reading another wire byte would exceed the configured aggregate limit.");
+        }
     }
 }
