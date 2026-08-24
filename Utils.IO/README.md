@@ -113,6 +113,8 @@ The limit is measured in payload bytes. `null` means unlimited, zero accepts onl
 
 `StreamCopier` is a write-only stream that mirrors every `Write` call to all registered target streams. It implements `IList<Stream>` so targets can be added or removed at runtime.
 
+Every target — supplied to a constructor, `Add`, `Insert` or the indexer setter — must be non-null, writable, distinct from the copier itself, and not already registered. Duplicates are detected by reference identity, not `Equals`, so two unrelated streams that compare equal can both be targets, but the same instance cannot be added twice. Disposing the copier freezes the target list rather than clearing it: `CanWrite` becomes `false` and `IsReadOnly` becomes `true`, mutating members throw `ObjectDisposedException`, but inspection (`Count`, the indexer getter, `Contains`, `IndexOf`, `CopyTo`, enumeration) keeps working. When `closeAllTargetsOnDispose` is `true`, the inspected references remain in the list even though the streams they point to have themselves already been disposed.
+
 ```csharp
 using System.IO;
 using Utils.IO;

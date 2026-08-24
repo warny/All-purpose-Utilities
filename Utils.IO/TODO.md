@@ -4,14 +4,6 @@ Re-audited on 2026-08-16 against `master` `6bcb7aed0a0afa45b07b82f442511becc5036
 
 The July audit text had become partially stale after PRs #526 and #528. This file contains only the residual work that is still reproducible in the current implementation. See `docs/releasing/TodoAudit-2026-08-16.md` for repository-wide classification, overlap analysis and PR sequencing.
 
-## P1
-
-### IO-06 — `StreamCopier` target validation is incomplete
-
-`Add`/`Insert` reject null, but constructors copy entries without per-target validation and the indexer setter accepts null. No common insertion path defines whether non-writable targets are rejected at registration time.
-
-**Fix:** central target validation for constructors, `Add`, `Insert` and indexer replacement; decide and document the `CanWrite` policy.
-
 ## P2
 
 ### IO-05 — Strict base decoding is intentionally non-transactional
@@ -21,18 +13,6 @@ The July audit text had become partially stale after PRs #526 and #528. This fil
 **Decision (2026-08-16):** keep the classical streaming policy. `BaseDecoderStream` is non-transactional: already-emitted decoded bytes are not rolled back if a later or terminal validation error occurs. Do not introduce implicit whole-stream buffering or staging.
 
 **Fix:** document this contract explicitly and add regression tests demonstrating that terminal validation remains strict while previously emitted bytes can remain in the destination. A separate transactional API should only be added in the future for a concrete requirement.
-
-### IO-07 — `StreamCopier` post-dispose semantics are only partially coherent
-
-Write and flush paths now throw after disposal and dispose is idempotent, but `CanWrite` remains `true` and list mutation/inspection does not consistently express the disposed lifetime.
-
-**Fix:** define whether the target list remains inspectable/mutable after disposal and make capability/operational members consistent with that decision.
-
-### IO-08 — Duplicate `StreamCopier` targets have no explicit contract
-
-The same `Stream` reference can be registered more than once, causing repeated writes, flushes and owned disposal.
-
-**Decision required:** reject duplicate references by identity or document weighted fan-out explicitly.
 
 ### IO-09 — `PartialStream.Flush` is outside the shared operation gate
 
@@ -58,6 +38,16 @@ DateTime now uses selectable codecs, with .NET binary as the default and built-i
 
 ## Closed since the July audit
 
+- IO-06 — fixed: all `StreamCopier` registration paths (constructors, `Add`,
+  `Insert` and the indexer setter) now apply one centralized target validation
+  policy; null, non-writable and self targets are rejected before registration.
+- IO-07 — fixed: `StreamCopier` now reports `CanWrite = false` and
+  `IsReadOnly = true` after disposal. Its target collection remains
+  inspectable but frozen, and disposal no longer changes collection
+  membership.
+- IO-08 — fixed: duplicate `Stream` targets are rejected by reference
+  identity, preventing accidental repeated writes/flushes/disposal of the
+  same target.
 - IO-11 — fixed: Boolean wire decoding is canonical and strict. `00` maps to
   false, `01` maps to true, and all other byte values are rejected as malformed
   input. The writer continues to emit only `00` and `01`.
