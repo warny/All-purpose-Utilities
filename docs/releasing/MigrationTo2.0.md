@@ -77,6 +77,20 @@ by passing `gender=feminin` themselves are unaffected — the explicit variant s
 produces the same, now-correct, result. `fr.Convert(1)` and `fr.Convert(21)` (ordinary
 cardinals, no time unit involved) remain masculine by default.
 
+`ForcedVariantSet.Create` — introduced in this same rc, not previously published —
+takes `params IEnumerable<(string Dimension, string Value)>` rather than an array-typed
+`params (string, string)[]`; existing tuple-literal call sites (`Create(("gender", "feminin"))`)
+are source-compatible. `ForcedVariantSet` dimension aliases (a language's declared
+`localName`, e.g. French `genre`) are now canonicalized to the dimension's canonical
+name before use; a forced set that mixed a canonical name and its alias for the same
+dimension (previously silently inert) is now rejected deterministically.
+
+Spanish, Portuguese, Galician, and Catalan (`ES`, `PT`, `GL`, `CA`) gain built-in
+`Convert(TimeSpan)`/`Convert(TimeOnly)` support (`SupportsTimeConversion` becomes
+`true`) using the same `forceVariants="gender=..."` pattern on their feminine `hour`
+unit; `minute`/`second` remain masculine by default. These are new capabilities, not
+behavior changes to existing output.
+
 <a id="omy-utils-fonts-2"></a>
 ## Utils.Fonts hostile-font parsing hardening
 

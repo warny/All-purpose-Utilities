@@ -323,6 +323,67 @@ public class NumberToStringConverterForcedVariantsTests
         Assert.AreEqual("une heure", converter.Convert(new TimeSpan(1, 0, 0)));
     }
 
+    // ─── Dimension alias canonicalization ──────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void TimeUnitForcedVariants_FR_LocalNameAlias_BehavesIdenticallyToCanonicalName()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+        // French declares <Dimension name="gender" localName="genre" ...>: "genre=feminin" must
+        // canonicalize to "gender=feminin" and actually override the base query's canonical
+        // "gender=masculin" default — not sit alongside it as an inert, differently-keyed entry.
+        var options = new NumberToStringConverterOptions(fr)
+        {
+            TimeUnitForcedVariants = new Dictionary<string, ForcedVariantSet>
+            {
+                ["hour"] = ForcedVariantSet.Parse("genre=feminin"),
+            },
+        };
+        var aliased = new NumberToStringConverter(options);
+
+        Assert.AreEqual("une heure", aliased.Convert(new TimeSpan(1, 0, 0)));
+        Assert.AreEqual("vingt et une heures", aliased.Convert(TimeSpan.FromHours(21)));
+        // Non-regression: identical to forcing the canonical name directly.
+        Assert.AreEqual(fr.Convert(TimeSpan.FromHours(21)), aliased.Convert(TimeSpan.FromHours(21)));
+    }
+
+    [TestMethod]
+    public void TimeUnitForcedVariants_FR_CanonicalAndAliasForSameDimension_ThrowsDuplicateDimension()
+    {
+        // "gender" (canonical) and "genre" (its declared localName) both resolve to the same
+        // declared VariantDimension: forcing both must fail deterministically rather than let one
+        // value silently win.
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("FR"))
+        {
+            TimeUnitForcedVariants = new Dictionary<string, ForcedVariantSet>
+            {
+                ["hour"] = ForcedVariantSet.Parse("gender=feminin,genre=masculin"),
+            },
+        };
+
+        var ex = Assert.ThrowsException<NumberToStringConfigurationException>(() => new NumberToStringConverter(options));
+        Assert.AreEqual("UNTS004", ex.ErrorCode);
+    }
+
+    [TestMethod]
+    public void ConvertCurrency_FR_CanonicalAndAliasForSameDimension_ThrowsDuplicateDimension()
+    {
+        // Same duplicate-alias proof through the CurrencyDefinition validation path, which
+        // canonicalizes per call rather than once at construction.
+        var fr = NumberToStringConverter.GetConverter("FR");
+        var invalid = new CurrencyDefinition
+        {
+            UnitSingular = "livre",
+            UnitPlural = "livres",
+            SubunitSingular = "sou",
+            SubunitPlural = "sous",
+            UnitForcedVariants = ForcedVariantSet.Parse("gender=feminin,genre=masculin"),
+        };
+
+        var ex = Assert.ThrowsException<NumberToStringConfigurationException>(() => fr.ConvertCurrency(21m, invalid));
+        Assert.AreEqual("UNTS004", ex.ErrorCode);
+    }
+
     // ─── FromCulture round-trip ─────────────────────────────────────────────────────────────────
 
     [TestMethod]
@@ -341,6 +402,54 @@ public class NumberToStringConverterForcedVariantsTests
     {
         var fr = NumberToStringConverter.GetConverter("FR");
         Assert.ThrowsException<ArgumentException>(() => fr.Convert(new TimeSpan(1, 0, 0), "gender=banana"));
+    }
+
+    // ─── ForcedVariantSet.Create — programmatic construction edge cases ───────────────────────
+
+    [TestMethod]
+    public void ForcedVariantSet_Create_NullSequence_ReturnsEmpty()
+    {
+        Assert.AreSame(ForcedVariantSet.Empty, ForcedVariantSet.Create(null!));
+    }
+
+    [TestMethod]
+    public void ForcedVariantSet_Create_EmptySequence_ReturnsEmpty()
+    {
+        Assert.AreSame(ForcedVariantSet.Empty, ForcedVariantSet.Create());
+    }
+
+    [TestMethod]
+    public void ForcedVariantSet_Create_EnumerableInput_IsAcceptedOnceNotJustArrayLiteral()
+    {
+        // Proves the public factory accepts a genuine IEnumerable<T>, not only an array/params
+        // literal — the repository-preferred `params IEnumerable<T>` shape (AGENTS.md).
+        IEnumerable<(string Dimension, string Value)> source = new List<(string, string)> { ("gender", "feminin") };
+        var forced = ForcedVariantSet.Create(source);
+        Assert.IsFalse(forced.IsEmpty);
+    }
+
+    [TestMethod]
+    public void ForcedVariantSet_Create_EmptyDimension_ThrowsMalformedSyntax()
+    {
+        var ex = Assert.ThrowsException<NumberToStringConfigurationException>(
+            () => ForcedVariantSet.Create(("", "feminin")));
+        Assert.AreEqual("UNTS005", ex.ErrorCode);
+    }
+
+    [TestMethod]
+    public void ForcedVariantSet_Create_EmptyValue_ThrowsMalformedSyntax()
+    {
+        var ex = Assert.ThrowsException<NumberToStringConfigurationException>(
+            () => ForcedVariantSet.Create(("gender", "")));
+        Assert.AreEqual("UNTS005", ex.ErrorCode);
+    }
+
+    [TestMethod]
+    public void ForcedVariantSet_Create_DuplicateRawDimension_ThrowsDuplicateConstraint()
+    {
+        var ex = Assert.ThrowsException<NumberToStringConfigurationException>(
+            () => ForcedVariantSet.Create(("gender", "feminin"), ("gender", "masculin")));
+        Assert.AreEqual("UNTS004", ex.ErrorCode);
     }
 
     // ─── Invalid ForcedVariants configuration ──────────────────────────────────────────────────

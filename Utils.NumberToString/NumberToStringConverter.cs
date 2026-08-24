@@ -233,10 +233,8 @@ namespace Utils.NumberToString
                     kv => kv.Key,
                     kv => new TimeUnitDefinition(kv.Value.Singular, kv.Value.Plural, kv.Value.Count1Form,
                         timeUnitForced.TryGetValue(kv.Key, out var forcedVariants) && forcedVariants != null ? forcedVariants : ForcedVariantSet.Empty));
-                _timeUnitsPublic = _timeUnits.ToImmutableDictionary(kv => kv.Key, kv => (kv.Value.Singular, kv.Value.Plural, kv.Value.Count1Form));
-                _timeUnitForcedVariantsPublic = _timeUnits
-                    .Where(kv => !kv.Value.ForcedVariants.IsEmpty)
-                    .ToImmutableDictionary(kv => kv.Key, kv => kv.Value.ForcedVariants);
+                // _timeUnitsPublic/_timeUnitForcedVariantsPublic are computed after _dimensionIndex
+                // exists, once each unit's ForcedVariants has been canonicalized (aliases resolved).
             }
             _datePattern = options.DatePattern;
             _datePatternSegments = _datePattern == null ? [] : ParseDatePattern(_datePattern, LanguageIdentifier);
@@ -251,10 +249,23 @@ namespace Utils.NumberToString
                     : [(d.Name, d), (d.LocalName, d)])
                 .ToImmutableDictionary(t => t.Item1, t => t.Item2, StringComparer.OrdinalIgnoreCase);
             ValidateVariantReferences(this, LanguageIdentifier.Length > 0 ? LanguageIdentifier : "programmatic");
-            foreach (var kv in _timeUnits)
-                ValidateForcedVariants(kv.Value.ForcedVariants, $"TimeUnits[{kv.Key}]");
-            foreach (var kv in _fractionForcedVariants)
-                ValidateForcedVariants(kv.Value, $"Fractions[{kv.Key}]");
+
+            // Canonicalize every constituent's ForcedVariants now that _dimensionIndex exists: any
+            // alias (e.g. French "genre") is resolved to its declared canonical name ("gender") so
+            // the runtime overlay always matches VariantRules, which key exclusively on canonical
+            // names. A canonical/alias pair forcing the same dimension is rejected as a duplicate.
+            _timeUnits = _timeUnits.ToImmutableDictionary(
+                kv => kv.Key,
+                kv => kv.Value with { ForcedVariants = CanonicalizeForcedVariants(kv.Value.ForcedVariants, $"TimeUnits[{kv.Key}]") });
+            _timeUnitsPublic = _timeUnits.ToImmutableDictionary(kv => kv.Key, kv => (kv.Value.Singular, kv.Value.Plural, kv.Value.Count1Form));
+            _timeUnitForcedVariantsPublic = _timeUnits
+                .Where(kv => !kv.Value.ForcedVariants.IsEmpty)
+                .ToImmutableDictionary(kv => kv.Key, kv => kv.Value.ForcedVariants);
+
+            _fractionForcedVariants = _fractionForcedVariants.ToImmutableDictionary(
+                kv => kv.Key,
+                kv => CanonicalizeForcedVariants(kv.Value, $"Fractions[{kv.Key}]"));
+
             CompileAndValidateRulePrecedence();
         }
 
@@ -1884,10 +1895,11 @@ namespace Utils.NumberToString
                     $"SubunitDigits must be between 0 and 18 (inclusive); got {currency.SubunitDigits}.");
 
             // CurrencyDefinition is supplied per call, not owned by the converter at construction,
-            // so its ForcedVariants are validated here — before any fragment is rendered — rather
-            // than once at converter construction time (as time units and fractions are).
-            ValidateForcedVariants(currency.UnitForcedVariants, "CurrencyDefinition.UnitForcedVariants");
-            ValidateForcedVariants(currency.SubunitForcedVariants, "CurrencyDefinition.SubunitForcedVariants");
+            // so its ForcedVariants are validated and canonicalized here — before any fragment is
+            // rendered — rather than once at converter construction time (as time units and
+            // fractions are). Only the canonicalized sets (aliases resolved) are used below.
+            var canonicalUnitForced = CanonicalizeForcedVariants(currency.UnitForcedVariants, "CurrencyDefinition.UnitForcedVariants");
+            var canonicalSubunitForced = CanonicalizeForcedVariants(currency.SubunitForcedVariants, "CurrencyDefinition.SubunitForcedVariants");
 
             bool isNegative = amount < 0;
             // Avoid unary negation of extreme values: extract sign and magnitude separately.
@@ -1914,13 +1926,13 @@ namespace Utils.NumberToString
             var baseQuery = BuildVariantQuery(variants);
 
             string unitName = units == BigInteger.One ? currency.UnitSingular : currency.UnitPlural;
-            string result = BuildCardinalFragment(units, currency.UnitForcedVariants.Overlay(baseQuery)) + Separator + unitName;
+            string result = BuildCardinalFragment(units, canonicalUnitForced.Overlay(baseQuery)) + Separator + unitName;
 
             if (subunits > 0)
             {
                 string subunitName = subunits == 1 ? currency.SubunitSingular : currency.SubunitPlural;
                 // Subunits are a sub-expression; do not check MaxNumber for them.
-                string subunitsText = BuildCardinalFragment(subunits, currency.SubunitForcedVariants.Overlay(baseQuery)) + Separator + subunitName;
+                string subunitsText = BuildCardinalFragment(subunits, canonicalSubunitForced.Overlay(baseQuery)) + Separator + subunitName;
                 result = result + Separator + currency.Connector + Separator + subunitsText;
             }
 

@@ -17,11 +17,17 @@ namespace Utils.NumberToString;
 /// </para>
 /// <para>
 /// Instances are immutable. <see cref="Parse"/> and <see cref="Create"/> perform only syntactic
-/// validation (well-formed dimension/value pairs, no duplicate dimension); they do not know which
-/// dimensions or values a particular language declares. Semantic validation against a specific
-/// converter's declared variant dimensions is a separate, converter-owned step (performed once at
-/// configuration time, not on every conversion call) — see
-/// <c>NumberToStringConverter.ValidateForcedVariants</c>.
+/// validation (well-formed dimension/value pairs, no duplicate *raw* dimension key); they do not
+/// know which dimensions or values a particular language declares, and a raw key may still be a
+/// <c>localName</c> alias (e.g. French "genre") rather than the canonical dimension name (e.g.
+/// "gender"). Semantic validation against a specific converter's declared variant dimensions is a
+/// separate, converter-owned step (performed once at configuration time, not on every conversion
+/// call) — see <c>NumberToStringConverter.CanonicalizeForcedVariants</c> — which also normalizes
+/// every accepted dimension to its canonical name and rejects a canonical/alias pair that both
+/// resolve to the same declared dimension as a semantic duplicate. Only the canonicalized result
+/// of that step is used to overlay a runtime variant query, so
+/// <see cref="NumberToStringConverter.VariantRule"/> matching (which keys exclusively on canonical
+/// dimension names) always sees the forced value.
 /// </para>
 /// </remarks>
 public sealed class ForcedVariantSet
@@ -78,16 +84,33 @@ public sealed class ForcedVariantSet
     /// <summary>
     /// Creates a forced variant set from explicit dimension/value pairs (programmatic construction).
     /// </summary>
-    /// <param name="values">The dimension/value pairs to force.</param>
+    /// <param name="values">
+    /// The dimension/value pairs to force, enumerated once. A <see langword="null"/> or empty
+    /// sequence returns <see cref="Empty"/>.
+    /// </param>
     /// <exception cref="NumberToStringConfigurationException">
-    /// The same dimension is supplied more than once — error code <c>"UNTS004"</c>.
+    /// A dimension or value is null/empty — error code <c>"UNTS005"</c> — or the same raw dimension
+    /// key is supplied more than once — error code <c>"UNTS004"</c>.
     /// </exception>
-    public static ForcedVariantSet Create(params (string Dimension, string Value)[] values)
+    public static ForcedVariantSet Create(params IEnumerable<(string Dimension, string Value)> values)
     {
-        if (values.Length == 0) return Empty;
-        var pairs = new List<KeyValuePair<string, string>>(values.Length);
+        if (values is null) return Empty;
+
+        var pairs = new List<KeyValuePair<string, string>>();
         foreach (var (dimension, value) in values)
+        {
+            if (string.IsNullOrEmpty(dimension))
+                throw new NumberToStringConfigurationException("UNTS005", null, "ForcedVariants",
+                    "A forced-variant dimension must not be null or empty.");
+            if (string.IsNullOrEmpty(value))
+                throw new NumberToStringConfigurationException("UNTS005", null, "ForcedVariants",
+                    $"Forced-variant dimension '{dimension}' must have a non-empty value.");
             pairs.Add(new KeyValuePair<string, string>(dimension, value));
+        }
+
+        if (pairs.Count == 0) return Empty;
+
+        // VariantConstraintSet's constructor throws "UNTS004" for a repeated raw dimension key.
         return new ForcedVariantSet(new VariantConstraintSet(pairs));
     }
 

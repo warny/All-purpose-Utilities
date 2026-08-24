@@ -671,6 +671,22 @@ fr.Convert(1);                        // "un"       — global default stays mas
 fr.Convert(new TimeSpan(1, 0, 0));    // "une heure" — local to the "hour" fragment only
 ```
 
+### Not just French
+
+The same mechanism, unmodified, covers every built-in Romance language whose
+`hour` noun is feminine — Spanish, Portuguese, Galician, and Catalan each
+declare `forceVariants="gender=..."` on their `hour` unit only:
+
+```csharp
+NumberToStringConverter es = NumberToStringConverter.GetConverter("ES");
+es.Convert(21);                      // "veintiuno"       (ordinary cardinal: masculine default)
+es.Convert(TimeSpan.FromHours(21));  // "veintiuna horas" (the "hour" unit forces gender=femenino)
+
+NumberToStringConverter pt = NumberToStringConverter.GetConverter("PT");
+pt.Convert(2);                       // "dois"
+pt.Convert(new TimeSpan(2, 0, 0));   // "duas horas"      (the "hour" unit forces gender=feminino)
+```
+
 ### Currency: independent unit and subunit
 
 `CurrencyDefinition.UnitForcedVariants` and `SubunitForcedVariants` let a
@@ -704,6 +720,14 @@ fr.ConvertCurrency(21m, livre);  // "vingt et une livres"
   `FractionForcedVariants` (keyed like `TimeUnits`/`Fractions`), or
   `CurrencyDefinition.UnitForcedVariants`/`SubunitForcedVariants` — all typed
   `ForcedVariantSet`, built via `ForcedVariantSet.Create(("dimension", "value"), ...)`.
+
+A dimension may be given by its canonical name or by its declared `localName`
+alias (e.g. French `genre` for `gender`) — both are canonicalized to the
+dimension's canonical name before the forced set is used, so `genre=feminin`
+and `gender=feminin` behave identically. Forcing the same dimension twice
+through a mix of its canonical name and an alias (e.g.
+`gender=feminin,genre=masculin`) is rejected as a duplicate, exactly like
+forcing it twice through the canonical name alone.
 
 Unknown dimensions/values, malformed syntax, and duplicate dimensions are
 rejected deterministically (`NumberToStringConfigurationException`) — for
