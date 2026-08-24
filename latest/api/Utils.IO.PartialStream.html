@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class PartialStream | omy.Utils Documentation ">
       
-      <meta name="description" content="Provides a view onto a restricted portion (a &amp;quot;slice&amp;quot;) of an underlying . This partial stream starts at a specified offset within the base stream, and has a maximum length. Reading or writing beyond that partial length is not permitted. The  property reflects the offset within the partial stream, not the offset in the underlying stream. All read and write operations are bounded by the specified length. The underlying stream&#39;s position is restored after each operation, so external consumers of the base stream see no position change (though locking is used to ensure thread safety in concurrent scenarios). By default, disposing this  does not close or dispose the underlying stream.">
+      <meta name="description" content="Provides a view onto a restricted portion (a &amp;quot;slice&amp;quot;) of an underlying . This partial stream starts at a specified offset within the base stream, and has a maximum length. Reading or writing beyond that partial length is not permitted. The  property reflects the offset within the partial stream, not the offset in the underlying stream. All read and write operations are bounded by the specified length. The underlying stream&#39;s position is restored after each operation.  views over the same underlying stream serialize every operation that touches it — including  and  — through a shared per-stream gate, so one view&#39;s temporary repositioning of the base stream can never be observed by another cooperating view. This coordination applies only to  instances sharing that base stream; it does not synchronize callers that access the base stream directly. By default, disposing this  does not close or dispose the underlying stream.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_IO_PartialStream" data-uid="Utils.IO.PartialStream" class="text-break">
-Class PartialStream  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L21"><i class="bi bi-code-slash"></i></a>
+Class PartialStream  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L25"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -102,8 +102,12 @@ This partial stream starts at a specified offset within the base stream, and has
 Reading or writing beyond that partial length is not permitted.</p>
 <p>The <a class="xref" href="Utils.IO.PartialStream.html#Utils_IO_PartialStream_Position">Position</a> property reflects the offset within the partial stream, not the offset
 in the underlying stream. All read and write operations are bounded by the specified length.
-The underlying stream's position is restored after each operation, so external consumers of the
-base stream see no position change (though locking is used to ensure thread safety in concurrent scenarios).</p>
+The underlying stream's position is restored after each operation. <a class="xref" href="Utils.IO.PartialStream.html">PartialStream</a> views
+over the same underlying stream serialize every operation that touches it — including
+<a class="xref" href="Utils.IO.PartialStream.html#Utils_IO_PartialStream_Flush">Flush()</a> and <a class="xref" href="Utils.IO.PartialStream.html#Utils_IO_PartialStream_FlushAsync_System_Threading_CancellationToken_">FlushAsync(CancellationToken)</a> — through a shared per-stream gate, so one view's
+temporary repositioning of the base stream can never be observed by another cooperating view. This
+coordination applies only to <a class="xref" href="Utils.IO.PartialStream.html">PartialStream</a> instances sharing that base stream; it does
+not synchronize callers that access the base stream directly.</p>
 <p>By default, disposing this <a class="xref" href="Utils.IO.PartialStream.html">PartialStream</a> does not close or dispose the underlying stream.</p>
 </div>
   <div class="markdown conceptual"></div>
@@ -417,7 +421,7 @@ base stream see no position change (though locking is used to ensure thread safe
 
   <h3 id="Utils_IO_PartialStream__ctor_System_IO_Stream_System_Int64_" data-uid="Utils.IO.PartialStream.#ctor(System.IO.Stream,System.Int64)">
   PartialStream(Stream, long)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L52"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L56"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates a new partial stream starting at the base stream's current position.</p>
@@ -465,7 +469,7 @@ base stream see no position change (though locking is used to ensure thread safe
 
   <h3 id="Utils_IO_PartialStream__ctor_System_IO_Stream_System_Int64_System_Int64_" data-uid="Utils.IO.PartialStream.#ctor(System.IO.Stream,System.Int64,System.Int64)">
   PartialStream(Stream, long, long)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L85"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L89"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates a new partial stream starting at a specified position in the base stream.</p>
@@ -520,7 +524,7 @@ base stream see no position change (though locking is used to ensure thread safe
 
   <h3 id="Utils_IO_PartialStream_CanRead" data-uid="Utils.IO.PartialStream.CanRead">
   CanRead
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L106"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L110"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a value indicating whether the stream supports reading.</p>
@@ -552,7 +556,7 @@ base stream see no position change (though locking is used to ensure thread safe
 
   <h3 id="Utils_IO_PartialStream_CanSeek" data-uid="Utils.IO.PartialStream.CanSeek">
   CanSeek
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L111"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L115"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a value indicating whether the stream supports seeking.</p>
@@ -584,7 +588,7 @@ base stream see no position change (though locking is used to ensure thread safe
 
   <h3 id="Utils_IO_PartialStream_CanWrite" data-uid="Utils.IO.PartialStream.CanWrite">
   CanWrite
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L116"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L120"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a value indicating whether the stream supports writing.</p>
@@ -616,7 +620,7 @@ base stream see no position change (though locking is used to ensure thread safe
 
   <h3 id="Utils_IO_PartialStream_Length" data-uid="Utils.IO.PartialStream.Length">
   Length
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L122"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L126"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the length of this partial view of the underlying stream.
@@ -649,7 +653,7 @@ Setting this value does not change the length of the underlying stream.</p>
 
   <h3 id="Utils_IO_PartialStream_Position" data-uid="Utils.IO.PartialStream.Position">
   Position
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L136"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L140"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the position within this partial stream. Must be in [0, <a class="xref" href="Utils.IO.PartialStream.html#Utils_IO_PartialStream_Length">Length</a>].</p>
@@ -691,7 +695,7 @@ Setting this value does not change the length of the underlying stream.</p>
 
   <h3 id="Utils_IO_PartialStream_Dispose_System_Boolean_" data-uid="Utils.IO.PartialStream.Dispose(System.Boolean)">
   Dispose(bool)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L384"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L417"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Disposes the partial stream. By default, this does not close or dispose the underlying stream.
@@ -725,7 +729,7 @@ If you need to dispose the base stream, do so externally.</p>
 
   <h3 id="Utils_IO_PartialStream_DisposeAsync" data-uid="Utils.IO.PartialStream.DisposeAsync">
   DisposeAsync()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L394"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L427"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Disposes this view asynchronously without disposing its underlying stream.</p>
@@ -757,11 +761,14 @@ If you need to dispose the base stream, do so externally.</p>
 
   <h3 id="Utils_IO_PartialStream_Flush" data-uid="Utils.IO.PartialStream.Flush">
   Flush()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L161"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L168"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Clears any buffers for this stream and causes any buffered data
-to be written to the underlying device.</p>
+  <div class="markdown level1 summary"><p>Clears any buffers for this stream and causes any buffered data to be written to the
+underlying device, while holding the operation gate shared by every <a class="xref" href="Utils.IO.PartialStream.html">PartialStream</a>
+view over the same underlying stream. This does not reposition the base stream or change
+<a class="xref" href="Utils.IO.PartialStream.html#Utils_IO_PartialStream_Position">Position</a>/<a class="xref" href="Utils.IO.PartialStream.html#Utils_IO_PartialStream_Length">Length</a>; the gate only prevents this flush from overlapping
+another cooperating view's temporary repositioning or I/O operation.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -785,10 +792,15 @@ to be written to the underlying device.</p>
 
   <h3 id="Utils_IO_PartialStream_FlushAsync_System_Threading_CancellationToken_" data-uid="Utils.IO.PartialStream.FlushAsync(System.Threading.CancellationToken)">
   FlushAsync(CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L368"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L390"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Asynchronously flushes the underlying stream.</p>
+  <div class="markdown level1 summary"><p>Asynchronously flushes the underlying stream, acquiring the same shared operation gate as
+<a class="xref" href="Utils.IO.PartialStream.html#Utils_IO_PartialStream_Flush">Flush()</a> and every other <a class="xref" href="Utils.IO.PartialStream.html">PartialStream</a> operation via
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.semaphoreslim.waitasync#system-threading-semaphoreslim-waitasync(system-threading-cancellationtoken)">WaitAsync(CancellationToken)</a>, without holding a synchronous monitor
+across the await. <code class="paramref">cancellationToken</code> is honored both while waiting for the gate
+and while the underlying stream flushes; if cancellation occurs while waiting, the underlying
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream.flushasync#system-io-stream-flushasync(system-threading-cancellationtoken)">FlushAsync(CancellationToken)</a> is never invoked and the gate is not acquired.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -822,7 +834,7 @@ to be written to the underlying device.</p>
 
   <h3 id="Utils_IO_PartialStream_Read_System_Byte___System_Int32_System_Int32_" data-uid="Utils.IO.PartialStream.Read(System.Byte[],System.Int32,System.Int32)">
   Read(byte[], int, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L176"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L191"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a sequence of bytes from this partial stream and advances the position
@@ -870,7 +882,7 @@ or if the read is constrained by the partial stream length.</p>
 
   <h3 id="Utils_IO_PartialStream_Read_System_Span_System_Byte__" data-uid="Utils.IO.PartialStream.Read(System.Span{System.Byte})">
   Read(Span&lt;byte&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L206"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L221"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads directly into a span while preserving slice bounds and the base position.</p>
@@ -907,7 +919,7 @@ or if the read is constrained by the partial stream length.</p>
 
   <h3 id="Utils_IO_PartialStream_ReadAsync_System_Memory_System_Byte__System_Threading_CancellationToken_" data-uid="Utils.IO.PartialStream.ReadAsync(System.Memory{System.Byte},System.Threading.CancellationToken)">
   ReadAsync(Memory&lt;byte&gt;, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L227"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L242"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Asynchronously reads within the slice without holding a synchronous monitor across an await.</p>
@@ -946,7 +958,7 @@ or if the read is constrained by the partial stream length.</p>
 
   <h3 id="Utils_IO_PartialStream_Seek_System_Int64_System_IO_SeekOrigin_" data-uid="Utils.IO.PartialStream.Seek(System.Int64,System.IO.SeekOrigin)">
   Seek(long, SeekOrigin)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L253"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L268"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Sets the position within this partial stream.</p>
@@ -988,7 +1000,7 @@ or if the read is constrained by the partial stream length.</p>
 
   <h3 id="Utils_IO_PartialStream_SetLength_System_Int64_" data-uid="Utils.IO.PartialStream.SetLength(System.Int64)">
   SetLength(long)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L283"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L298"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Sets the length of the partial stream. This does not affect the underlying stream length,
@@ -1028,7 +1040,7 @@ but changes the maximum accessible range of this partial view.</p>
 
   <h3 id="Utils_IO_PartialStream_Write_System_Byte___System_Int32_System_Int32_" data-uid="Utils.IO.PartialStream.Write(System.Byte[],System.Int32,System.Int32)">
   Write(byte[], int, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L307"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L322"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes a sequence of bytes to this partial stream and advances the position
@@ -1075,7 +1087,7 @@ the <a class="xref" href="Utils.IO.PartialStream.html#Utils_IO_PartialStream_Len
 
   <h3 id="Utils_IO_PartialStream_Write_System_ReadOnlySpan_System_Byte__" data-uid="Utils.IO.PartialStream.Write(System.ReadOnlySpan{System.Byte})">
   Write(ReadOnlySpan&lt;byte&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L330"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L345"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes a span directly while enforcing the same slice bounds as array writes.</p>
@@ -1107,7 +1119,7 @@ the <a class="xref" href="Utils.IO.PartialStream.html#Utils_IO_PartialStream_Len
 
   <h3 id="Utils_IO_PartialStream_WriteAsync_System_ReadOnlyMemory_System_Byte__System_Threading_CancellationToken_" data-uid="Utils.IO.PartialStream.WriteAsync(System.ReadOnlyMemory{System.Byte},System.Threading.CancellationToken)">
   WriteAsync(ReadOnlyMemory&lt;byte&gt;, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L349"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L364"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Asynchronously writes through the underlying stream and honors cancellation.</p>
@@ -1146,7 +1158,7 @@ the <a class="xref" href="Utils.IO.PartialStream.html#Utils_IO_PartialStream_Len
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L21" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/PartialStream.cs/#L25" class="edit-link">Edit this page</a>
         </div>
 
 

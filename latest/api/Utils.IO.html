@@ -101,8 +101,12 @@ This partial stream starts at a specified offset within the base stream, and has
 Reading or writing beyond that partial length is not permitted.</p>
 <p>The <a class="xref" href="Utils.IO.PartialStream.html#Utils_IO_PartialStream_Position">Position</a> property reflects the offset within the partial stream, not the offset
 in the underlying stream. All read and write operations are bounded by the specified length.
-The underlying stream's position is restored after each operation, so external consumers of the
-base stream see no position change (though locking is used to ensure thread safety in concurrent scenarios).</p>
+The underlying stream's position is restored after each operation. <a class="xref" href="Utils.IO.PartialStream.html">PartialStream</a> views
+over the same underlying stream serialize every operation that touches it — including
+<a class="xref" href="Utils.IO.PartialStream.html#Utils_IO_PartialStream_Flush">Flush()</a> and <a class="xref" href="Utils.IO.PartialStream.html#Utils_IO_PartialStream_FlushAsync_System_Threading_CancellationToken_">FlushAsync(CancellationToken)</a> — through a shared per-stream gate, so one view's
+temporary repositioning of the base stream can never be observed by another cooperating view. This
+coordination applies only to <a class="xref" href="Utils.IO.PartialStream.html">PartialStream</a> instances sharing that base stream; it does
+not synchronize callers that access the base stream directly.</p>
 <p>By default, disposing this <a class="xref" href="Utils.IO.PartialStream.html">PartialStream</a> does not close or dispose the underlying stream.</p>
 </dd>
     </dl>
