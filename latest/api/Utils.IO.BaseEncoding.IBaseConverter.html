@@ -216,7 +216,7 @@ Interface IBaseConverter  <a class="header-action link-secondary" title="View so
 
   <h3 id="Utils_IO_BaseEncoding_IBaseConverter_FromString_System_String_" data-uid="Utils.IO.BaseEncoding.IBaseConverter.FromString(System.String)">
   FromString(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDescriptor.cs/#L65"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDescriptor.cs/#L69"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Decodes a textual representation into binary data.</p>
@@ -255,7 +255,7 @@ Interface IBaseConverter  <a class="header-action link-secondary" title="View so
 
   <h3 id="Utils_IO_BaseEncoding_IBaseConverter_ToString_System_Byte___System_Int32_System_Int32_" data-uid="Utils.IO.BaseEncoding.IBaseConverter.ToString(System.Byte[],System.Int32,System.Int32)">
   ToString(byte[], int, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDescriptor.cs/#L58"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDescriptor.cs/#L62"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Encodes binary data into a textual representation.</p>
@@ -272,10 +272,10 @@ Interface IBaseConverter  <a class="header-action link-secondary" title="View so
     <dd><p>The data to encode.</p>
 </dd>
     <dt><code>maxDataWidth</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>Maximum number of characters per line; -1 for no limit.</p>
+    <dd><p>Maximum encoded representation characters per line; -1 disables wrapping.</p>
 </dd>
     <dt><code>indent</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>Number of spaces appended after each separator.</p>
+    <dd><p>Number of spaces inserted after each separator, before the next wrapped line.</p>
 </dd>
   </dl>
 
@@ -293,6 +293,13 @@ Interface IBaseConverter  <a class="header-action link-secondary" title="View so
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">maxDataWidth</code> is neither -1 nor a positive value, or when
+<code class="paramref">indent</code> is negative.</p>
+</dd>
+  </dl>
 
 
 

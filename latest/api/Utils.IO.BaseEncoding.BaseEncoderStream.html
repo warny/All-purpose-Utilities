@@ -413,7 +413,7 @@ Class BaseEncoderStream  <a class="header-action link-secondary" title="View sou
 
   <h3 id="Utils_IO_BaseEncoding_BaseEncoderStream__ctor_System_IO_TextWriter_Utils_IO_BaseEncoding_IBaseDescriptor_System_Int32_System_Int32_" data-uid="Utils.IO.BaseEncoding.BaseEncoderStream.#ctor(System.IO.TextWriter,Utils.IO.BaseEncoding.IBaseDescriptor,System.Int32,System.Int32)">
   BaseEncoderStream(TextWriter, IBaseDescriptor, int, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L65"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L78"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.IO.BaseEncoding.BaseEncoderStream.html">BaseEncoderStream</a> class.</p>
@@ -433,10 +433,11 @@ Class BaseEncoderStream  <a class="header-action link-secondary" title="View sou
     <dd><p>Descriptor defining the base alphabet.</p>
 </dd>
     <dt><code>maxDataWidth</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>Maximum number of characters per line, -1 for unlimited.</p>
+    <dd><p>Maximum number of encoded representation characters per output line: -1 disables wrapping, and every
+positive value is a strict per-line maximum. Zero and values below -1 are rejected.</p>
 </dd>
     <dt><code>indent</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>Indentation applied after each separator.</p>
+    <dd><p>Number of spaces inserted after each inter-line separator. Must be non-negative.</p>
 </dd>
   </dl>
 
@@ -448,6 +449,16 @@ Class BaseEncoderStream  <a class="header-action link-secondary" title="View sou
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">targetWriter</code> or <code class="paramref">baseDescriptor</code> is null.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">maxDataWidth</code> is neither -1 nor a positive value, or when
+<code class="paramref">indent</code> is negative.</p>
+</dd>
+  </dl>
 
 
 
@@ -491,7 +502,7 @@ Class BaseEncoderStream  <a class="header-action link-secondary" title="View sou
 
   <h3 id="Utils_IO_BaseEncoding_BaseEncoderStream_CanRead" data-uid="Utils.IO.BaseEncoding.BaseEncoderStream.CanRead">
   CanRead
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L40"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L45"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>When overridden in a derived class, gets a value indicating whether the current stream supports reading.</p>
@@ -524,7 +535,7 @@ Class BaseEncoderStream  <a class="header-action link-secondary" title="View sou
 
   <h3 id="Utils_IO_BaseEncoding_BaseEncoderStream_CanSeek" data-uid="Utils.IO.BaseEncoding.BaseEncoderStream.CanSeek">
   CanSeek
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L43"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L48"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>When overridden in a derived class, gets a value indicating whether the current stream supports seeking.</p>
@@ -557,7 +568,7 @@ Class BaseEncoderStream  <a class="header-action link-secondary" title="View sou
 
   <h3 id="Utils_IO_BaseEncoding_BaseEncoderStream_CanWrite" data-uid="Utils.IO.BaseEncoding.BaseEncoderStream.CanWrite">
   CanWrite
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L46"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L51"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>When overridden in a derived class, gets a value indicating whether the current stream supports writing.</p>
@@ -590,10 +601,12 @@ Class BaseEncoderStream  <a class="header-action link-secondary" title="View sou
 
   <h3 id="Utils_IO_BaseEncoding_BaseEncoderStream_Indent" data-uid="Utils.IO.BaseEncoding.BaseEncoderStream.Indent">
   Indent
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L34"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L39"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets the indentation applied after each separator.</p>
+  <div class="markdown level1 summary"><p>Gets the number of spaces inserted immediately after <a class="xref" href="Utils.IO.BaseEncoding.IBaseDescriptor.html#Utils_IO_BaseEncoding_IBaseDescriptor_Separator">Separator</a>, before
+the first character of the next wrapped line. Has no observable effect when <a class="xref" href="Utils.IO.BaseEncoding.BaseEncoderStream.html#Utils_IO_BaseEncoding_BaseEncoderStream_MaxDataWidth">MaxDataWidth</a>
+is -1, since no separator is ever emitted in that case.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -622,7 +635,7 @@ Class BaseEncoderStream  <a class="header-action link-secondary" title="View sou
 
   <h3 id="Utils_IO_BaseEncoding_BaseEncoderStream_Length" data-uid="Utils.IO.BaseEncoding.BaseEncoderStream.Length">
   Length
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L49"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L54"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>When overridden in a derived class, gets the length in bytes of the stream.</p>
@@ -664,10 +677,13 @@ Class BaseEncoderStream  <a class="header-action link-secondary" title="View sou
 
   <h3 id="Utils_IO_BaseEncoding_BaseEncoderStream_MaxDataWidth" data-uid="Utils.IO.BaseEncoding.BaseEncoderStream.MaxDataWidth">
   MaxDataWidth
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L29"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L32"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets the maximum number of characters per line, or -1 for unlimited.</p>
+  <div class="markdown level1 summary"><p>Gets the maximum number of encoded representation characters on one output line, or -1 if wrapping
+is disabled. Ordinary alphabet symbols, the final residual symbol written by <a class="xref" href="Utils.IO.BaseEncoding.BaseEncoderStream.html#Utils_IO_BaseEncoding_BaseEncoderStream_Close">Close()</a>, and
+padding/filler characters all count toward this limit; the separator and indentation inserted between
+lines do not.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -696,7 +712,7 @@ Class BaseEncoderStream  <a class="header-action link-secondary" title="View sou
 
   <h3 id="Utils_IO_BaseEncoding_BaseEncoderStream_Position" data-uid="Utils.IO.BaseEncoding.BaseEncoderStream.Position">
   Position
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L52"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L57"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>When overridden in a derived class, gets or sets the position within the current stream.</p>
@@ -777,7 +793,7 @@ Class BaseEncoderStream  <a class="header-action link-secondary" title="View sou
 
   <h3 id="Utils_IO_BaseEncoding_BaseEncoderStream_Close" data-uid="Utils.IO.BaseEncoding.BaseEncoderStream.Close">
   Close()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L239"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L273"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Finalizes the encoding process, writing remaining bits and padding.
@@ -805,7 +821,7 @@ Calling this method more than once is safe; subsequent calls are no-ops.</p>
 
   <h3 id="Utils_IO_BaseEncoding_BaseEncoderStream_DisposeAsync" data-uid="Utils.IO.BaseEncoding.BaseEncoderStream.DisposeAsync">
   DisposeAsync()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L269"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L306"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Asynchronously finalizes the encoding (flushing remaining bits and padding through <a class="xref" href="Utils.IO.BaseEncoding.BaseEncoderStream.html#Utils_IO_BaseEncoding_BaseEncoderStream_Close">Close()</a>)
@@ -842,7 +858,7 @@ completes before the padding and the <a class="xref" href="https://learn.microso
 
   <h3 id="Utils_IO_BaseEncoding_BaseEncoderStream_Flush" data-uid="Utils.IO.BaseEncoding.BaseEncoderStream.Flush">
   Flush()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L81"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L98"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>When overridden in a derived class, clears all buffers for this stream and causes any buffered data to be written to the underlying device.</p>
@@ -875,7 +891,7 @@ completes before the padding and the <a class="xref" href="https://learn.microso
 
   <h3 id="Utils_IO_BaseEncoding_BaseEncoderStream_FlushAsync_System_Threading_CancellationToken_" data-uid="Utils.IO.BaseEncoding.BaseEncoderStream.FlushAsync(System.Threading.CancellationToken)">
   FlushAsync(CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L221"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L255"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Asynchronously flushes the underlying writer.</p>
@@ -914,7 +930,7 @@ completes before the padding and the <a class="xref" href="https://learn.microso
 
   <h3 id="Utils_IO_BaseEncoding_BaseEncoderStream_Read_System_Byte___System_Int32_System_Int32_" data-uid="Utils.IO.BaseEncoding.BaseEncoderStream.Read(System.Byte[],System.Int32,System.Int32)">
   Read(byte[], int, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L87"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L105"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>When overridden in a derived class, reads a sequence of bytes from the current stream and advances the position within the stream by the number of bytes read.</p>
@@ -972,6 +988,9 @@ completes before the padding and the <a class="xref" href="https://learn.microso
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a></dt>
     <dd><p>Methods were called after the stream was closed.</p>
 </dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>Always thrown; this stream advertises <a class="xref" href="Utils.IO.BaseEncoding.BaseEncoderStream.html#Utils_IO_BaseEncoding_BaseEncoderStream_CanRead">CanRead</a> as <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+</dd>
   </dl>
 
 
@@ -980,7 +999,7 @@ completes before the padding and the <a class="xref" href="https://learn.microso
 
   <h3 id="Utils_IO_BaseEncoding_BaseEncoderStream_Seek_System_Int64_System_IO_SeekOrigin_" data-uid="Utils.IO.BaseEncoding.BaseEncoderStream.Seek(System.Int64,System.IO.SeekOrigin)">
   Seek(long, SeekOrigin)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L93"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L112"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>When overridden in a derived class, sets the position within the current stream.</p>
@@ -1026,6 +1045,9 @@ completes before the padding and the <a class="xref" href="https://learn.microso
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a></dt>
     <dd><p>Methods were called after the stream was closed.</p>
 </dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>Always thrown; this stream advertises <a class="xref" href="Utils.IO.BaseEncoding.BaseEncoderStream.html#Utils_IO_BaseEncoding_BaseEncoderStream_CanSeek">CanSeek</a> as <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+</dd>
   </dl>
 
 
@@ -1034,7 +1056,7 @@ completes before the padding and the <a class="xref" href="https://learn.microso
 
   <h3 id="Utils_IO_BaseEncoding_BaseEncoderStream_SetLength_System_Int64_" data-uid="Utils.IO.BaseEncoding.BaseEncoderStream.SetLength(System.Int64)">
   SetLength(long)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L99"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L119"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>When overridden in a derived class, sets the length of the current stream.</p>
@@ -1071,6 +1093,9 @@ completes before the padding and the <a class="xref" href="https://learn.microso
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a></dt>
     <dd><p>Methods were called after the stream was closed.</p>
 </dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>Always thrown; this stream advertises <a class="xref" href="Utils.IO.BaseEncoding.BaseEncoderStream.html#Utils_IO_BaseEncoding_BaseEncoderStream_CanSeek">CanSeek</a> as <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+</dd>
   </dl>
 
 
@@ -1079,7 +1104,7 @@ completes before the padding and the <a class="xref" href="https://learn.microso
 
   <h3 id="Utils_IO_BaseEncoding_BaseEncoderStream_Write_System_Byte___System_Int32_System_Int32_" data-uid="Utils.IO.BaseEncoding.BaseEncoderStream.Write(System.Byte[],System.Int32,System.Int32)">
   Write(byte[], int, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L123"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L143"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Encodes the provided byte buffer and writes the resulting characters.</p>
@@ -1124,7 +1149,7 @@ completes before the padding and the <a class="xref" href="https://learn.microso
 
   <h3 id="Utils_IO_BaseEncoding_BaseEncoderStream_Write_System_ReadOnlySpan_System_Byte__" data-uid="Utils.IO.BaseEncoding.BaseEncoderStream.Write(System.ReadOnlySpan{System.Byte})">
   Write(ReadOnlySpan&lt;byte&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L135"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L155"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Encodes the provided span of bytes and writes the resulting characters.</p>
@@ -1163,7 +1188,7 @@ completes before the padding and the <a class="xref" href="https://learn.microso
 
   <h3 id="Utils_IO_BaseEncoding_BaseEncoderStream_WriteAsync_System_Byte___System_Int32_System_Int32_System_Threading_CancellationToken_" data-uid="Utils.IO.BaseEncoding.BaseEncoderStream.WriteAsync(System.Byte[],System.Int32,System.Int32,System.Threading.CancellationToken)">
   WriteAsync(byte[], int, int, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L187"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L221"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Asynchronously encodes the specified buffer range. Encoding is CPU-bound and runs synchronously under
@@ -1213,7 +1238,7 @@ starts leaves the encoder state unchanged.</p>
 
   <h3 id="Utils_IO_BaseEncoding_BaseEncoderStream_WriteAsync_System_ReadOnlyMemory_System_Byte__System_Threading_CancellationToken_" data-uid="Utils.IO.BaseEncoding.BaseEncoderStream.WriteAsync(System.ReadOnlyMemory{System.Byte},System.Threading.CancellationToken)">
   WriteAsync(ReadOnlyMemory&lt;byte&gt;, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L198"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseEncoderStream.cs/#L232"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Asynchronously encodes the specified memory buffer. Encoding is CPU-bound and runs synchronously under
