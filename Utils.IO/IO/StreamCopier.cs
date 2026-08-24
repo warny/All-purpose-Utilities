@@ -1,8 +1,7 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,17 +19,39 @@ namespace Utils.IO;
 /// underlying streams in the targets collection.
 ///
 /// <remarks>
+/// <b>Target registration contract:</b> every target entering the collection — through a
+/// constructor, <see cref="Add"/>, <see cref="Insert"/> or the indexer setter — must be
+/// non-null, writable (<see cref="Stream.CanWrite"/>), distinct from this instance, and not
+/// already registered. Registration is identified by reference (<see cref="object.ReferenceEquals(object, object)"/>),
+/// not by <see cref="object.Equals(object?)"/>, so two distinct <see cref="Stream"/> instances
+/// that happen to compare equal may both be registered, while the exact same instance cannot be
+/// registered twice. Writability is checked only at registration time; a target that becomes
+/// unwritable or is disposed externally afterwards does not affect this instance's own
+/// <see cref="CanWrite"/> and is simply reported through the normal best-effort/aggregate
+/// failure behavior on the next write.
+/// <para>
 /// <b>Best-effort fan-out:</b> <see cref="Write(byte[], int, int)"/>,
 /// <see cref="Write(ReadOnlySpan{byte})"/>, and <see cref="Flush"/> attempt the operation
 /// on every target stream even if earlier ones throw. All exceptions are collected and rethrown as
 /// an <see cref="AggregateException"/> so no target is silently skipped.
 /// This means targets that were reached before a failure already hold the written data while later
 /// ones may not — callers that need strict all-or-nothing semantics must manage this externally.
+/// </para>
 /// <para>
 /// By default, disposing this object does not dispose any of the contained streams. If the
 /// parameter <see cref="T:closeAllTargetsOnDispose"/> is <see langword="true"/> when constructing
 /// this class, all target streams will be disposed when <see cref="IDisposable.Dispose()"/>
 /// is called.
+/// </para>
+/// <para>
+/// <b>Post-dispose lifecycle:</b> disposing this instance freezes but does not erase the target
+/// collection. <see cref="CanWrite"/> becomes <see langword="false"/> and <see cref="IsReadOnly"/>
+/// becomes <see langword="true"/>; the collection remains inspectable (<see cref="Count"/>, the
+/// indexer getter, <see cref="Contains"/>, <see cref="IndexOf"/>, <see cref="CopyTo"/> and
+/// enumeration all keep working), but every mutating member throws
+/// <see cref="ObjectDisposedException"/>. This holds regardless of <c>closeAllTargetsOnDispose</c>:
+/// when ownership is enabled, the returned references remain registered even though the streams
+/// they point to have themselves already been disposed.
 /// </para>
 /// </remarks>
 /// </summary>
@@ -49,7 +70,9 @@ public class StreamCopier : Stream, IList<Stream>
 
     /// <summary>
     /// Tracks whether this instance has already been disposed so that <see cref="Dispose(bool)"/>
-    /// and <see cref="DisposeAsync"/> are idempotent.
+    /// and <see cref="DisposeAsync"/> are idempotent, and so that <see cref="CanWrite"/>,
+    /// <see cref="IsReadOnly"/> and collection mutation all observe a single, consistent
+    /// disposed lifetime.
     /// </summary>
     private bool _disposed;
 
@@ -78,13 +101,23 @@ public class StreamCopier : Stream, IList<Stream>
     /// all streams in <see cref="_targets"/>.
     /// </param>
     /// <param name="streams">An array of streams to which data should be written.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="streams"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="streams"/> or one of its elements is <see langword="null"/>.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when an element is not writable, is this <see cref="StreamCopier"/> itself, or is
+    /// already present elsewhere in <paramref name="streams"/>.
+    /// </exception>
     public StreamCopier(bool closeAllTargetsOnDispose, params Stream[] streams)
     {
+        ArgumentNullException.ThrowIfNull(streams);
         this.closeAllTargetsOnDispose = closeAllTargetsOnDispose;
-        _targets = streams is null
-            ? throw new ArgumentNullException(nameof(streams))
-            : [.. streams];
+        _targets = new List<Stream>(streams.Length);
+        foreach (Stream stream in streams)
+        {
+            ValidateTarget(stream, nameof(streams));
+            _targets.Add(stream);
+        }
     }
 
     /// <summary>
@@ -92,7 +125,13 @@ public class StreamCopier : Stream, IList<Stream>
     /// adds the specified array of streams to its targets (with <c>closeAllTargetsOnDispose</c> = false).
     /// </summary>
     /// <param name="streams">An array of streams to which data should be written.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="streams"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="streams"/> or one of its elements is <see langword="null"/>.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when an element is not writable, is this <see cref="StreamCopier"/> itself, or is
+    /// already present elsewhere in <paramref name="streams"/>.
+    /// </exception>
     public StreamCopier(params Stream[] streams)
             : this(false, streams) { }
 
@@ -106,8 +145,13 @@ public class StreamCopier : Stream, IList<Stream>
     /// <inheritdoc />
     public override bool CanSeek => false;
 
-    /// <inheritdoc />
-    public override bool CanWrite => true;
+    /// <summary>
+    /// Gets a value indicating whether this instance can still be written to. This reflects the
+    /// lifetime of the <see cref="StreamCopier"/> itself — it is <see langword="true"/> while the
+    /// instance is active, including when it has zero targets, and becomes <see langword="false"/>
+    /// once disposed. It is not a live health check of the registered target streams.
+    /// </summary>
+    public override bool CanWrite => !_disposed;
 
     /// <inheritdoc />
     public override long Length => throw new NotSupportedException();
@@ -125,7 +169,7 @@ public class StreamCopier : Stream, IList<Stream>
     /// </summary>
     public override void Flush()
     {
-        ObjectDisposedException.ThrowIf(_disposed, this);
+        ThrowIfDisposed();
         List<Exception>? errors = null;
         foreach (Stream s in _targets)
         {
@@ -163,7 +207,7 @@ public class StreamCopier : Stream, IList<Stream>
     /// <param name="count">The number of bytes to write.</param>
     public override void Write(byte[] buffer, int offset, int count)
     {
-        ObjectDisposedException.ThrowIf(_disposed, this);
+        ThrowIfDisposed();
         List<Exception>? errors = null;
         // Snapshot to guard against concurrent modification
         Stream[] snapshot = [.. _targets];
@@ -183,7 +227,7 @@ public class StreamCopier : Stream, IList<Stream>
     /// <param name="buffer">The span of bytes to broadcast to every target.</param>
     public override void Write(ReadOnlySpan<byte> buffer)
     {
-        ObjectDisposedException.ThrowIf(_disposed, this);
+        ThrowIfDisposed();
         List<Exception>? errors = null;
         Stream[] snapshot = [.. _targets];
         foreach (Stream s in snapshot)
@@ -218,7 +262,7 @@ public class StreamCopier : Stream, IList<Stream>
     /// <returns>A task that completes when every target has been attempted.</returns>
     public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
     {
-        ObjectDisposedException.ThrowIf(_disposed, this);
+        ThrowIfDisposed();
         // Snapshot first so concurrent list mutations do not affect this operation.
         Stream[] snapshot = [.. _targets];
         // Cancellation observed before any target is touched aborts the whole operation.
@@ -243,7 +287,7 @@ public class StreamCopier : Stream, IList<Stream>
     /// <returns>A task that completes when every target has been attempted.</returns>
     public override async Task FlushAsync(CancellationToken cancellationToken)
     {
-        ObjectDisposedException.ThrowIf(_disposed, this);
+        ThrowIfDisposed();
         Stream[] snapshot = [.. _targets];
         if (cancellationToken.IsCancellationRequested)
             throw new OperationCanceledException(cancellationToken);
@@ -275,7 +319,10 @@ public class StreamCopier : Stream, IList<Stream>
 
     /// <summary>
     /// Disposes the current <see cref="StreamCopier"/>. If <see cref="closeAllTargetsOnDispose"/>
-    /// is <see langword="true"/>, all target streams will also be disposed. The method is idempotent.
+    /// is <see langword="true"/>, all target streams will also be disposed, but their references
+    /// remain in the target collection. The method is idempotent and shares its disposed state with
+    /// <see cref="DisposeAsync"/>: whichever path runs first attempts target disposal, the other
+    /// becomes a no-op.
     /// </summary>
     /// <param name="disposing">Whether this method is being called from a managed context.</param>
     protected override void Dispose(bool disposing)
@@ -291,14 +338,14 @@ public class StreamCopier : Stream, IList<Stream>
 
         if (disposing && closeAllTargetsOnDispose)
         {
-            // Attempt every target even if one fails; aggregate the errors.
+            // Attempt every target even if one fails; aggregate the errors. Targets cannot be null
+            // (registration forbids it), so every reference is disposed unconditionally.
             List<Exception>? errors = null;
             foreach (Stream s in _targets)
             {
-                try { s?.Dispose(); }
+                try { s.Dispose(); }
                 catch (Exception ex) { (errors ??= []).Add(ex); }
             }
-            _targets.Clear();
             if (errors is not null)
                 throw new AggregateException("One or more target streams failed to dispose.", errors);
         }
@@ -306,9 +353,12 @@ public class StreamCopier : Stream, IList<Stream>
 
     /// <summary>
     /// Asynchronously disposes the current <see cref="StreamCopier"/>. If <see cref="closeAllTargetsOnDispose"/>
-    /// is <see langword="true"/>, all target streams are asynchronously disposed; every target is attempted
-    /// even if one fails and errors are aggregated. The method is idempotent.
-    /// After disposal all write and flush operations throw <see cref="ObjectDisposedException"/>.
+    /// is <see langword="true"/>, all target streams are asynchronously disposed, but their references
+    /// remain in the target collection; every target is attempted even if one fails and errors are
+    /// aggregated. The method is idempotent and shares its disposed state with <see cref="Dispose(bool)"/>.
+    /// After disposal all write and flush operations throw <see cref="ObjectDisposedException"/>, and
+    /// <see cref="CanWrite"/> becomes <see langword="false"/> while the target collection remains
+    /// inspectable.
     /// </summary>
     /// <returns>A task that completes once disposal has been attempted for every target.</returns>
     public override async ValueTask DisposeAsync()
@@ -325,14 +375,9 @@ public class StreamCopier : Stream, IList<Stream>
         {
             foreach (Stream s in _targets)
             {
-                try
-                {
-                    if (s is not null)
-                        await s.DisposeAsync().ConfigureAwait(false);
-                }
+                try { await s.DisposeAsync().ConfigureAwait(false); }
                 catch (Exception ex) { (errors ??= []).Add(ex); }
             }
-            _targets.Clear();
         }
 
         // Signal to the base Stream that this instance is disposed so that the runtime and
@@ -349,42 +394,66 @@ public class StreamCopier : Stream, IList<Stream>
     #region IList<Stream> implementation
 
     /// <summary>
-    /// Gets the number of target streams in the list.
+    /// Gets the number of target streams in the list. Remains accurate after disposal.
     /// </summary>
     public int Count => _targets.Count;
 
     /// <summary>
-    /// Gets a value indicating whether the list of streams is read-only. This is always <see langword="false"/>.
+    /// Gets a value indicating whether the target list is read-only. This is <see langword="false"/>
+    /// while the instance is active and becomes <see langword="true"/> once disposed, at which point
+    /// every mutating member throws <see cref="ObjectDisposedException"/>.
     /// </summary>
-    public bool IsReadOnly => false;
+    public bool IsReadOnly => _disposed;
 
     /// <summary>
-    /// Gets or sets the <see cref="Stream"/> at the specified index.
+    /// Gets or sets the <see cref="Stream"/> at the specified index. The getter remains available
+    /// after disposal. The setter validates the replacement target using the same registration
+    /// contract as <see cref="Add"/> and <see cref="Insert"/>, except that replacing an index with
+    /// the exact reference already occupying it is allowed rather than treated as a duplicate.
     /// </summary>
     /// <param name="index">The zero-based index of the element to get or set.</param>
     /// <returns>The stream at the specified index.</returns>
+    /// <exception cref="ObjectDisposedException">Thrown by the setter once this instance has been disposed.</exception>
+    /// <exception cref="ArgumentNullException">Thrown by the setter when the new value is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown by the setter when the new value is not writable, is this <see cref="StreamCopier"/>
+    /// itself, or is already registered at a different index.
+    /// </exception>
     public Stream this[int index]
     {
         get => _targets[index];
-        set => _targets[index] = value;
+        set
+        {
+            ThrowIfDisposed();
+            ValidateTarget(value, nameof(value), excludedIndex: index);
+            _targets[index] = value;
+        }
     }
 
     /// <summary>
-    /// Determines the index of a specific stream in the list.
+    /// Determines the index of a specific stream in the list, using reference identity rather than
+    /// <see cref="object.Equals(object?)"/>. Remains available after disposal.
     /// </summary>
     /// <param name="item">The stream to locate in the list.</param>
     /// <returns>The index of the stream if found; otherwise, -1.</returns>
-    public int IndexOf(Stream item) => _targets.IndexOf(item);
+    public int IndexOf(Stream item) => IndexOfReference(item);
 
     /// <summary>
-    /// Inserts a stream at the specified index.
+    /// Inserts a stream at the specified index, applying the same registration contract as
+    /// <see cref="Add"/>.
     /// </summary>
     /// <param name="index">The zero-based index at which <paramref name="item"/> should be inserted.</param>
-    /// <param name="item">The stream to insert. Must not be null.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="item"/> is null.</exception>
+    /// <param name="item">The stream to insert.</param>
+    /// <exception cref="ObjectDisposedException">Thrown once this instance has been disposed.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="item"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="item"/> is not writable, is this <see cref="StreamCopier"/> itself,
+    /// or is already registered.
+    /// </exception>
     public void Insert(int index, Stream item)
     {
-        ArgumentNullException.ThrowIfNull(item);
+        ThrowIfDisposed();
+        ValidateTarget(item, nameof(item));
         _targets.Insert(index, item);
     }
 
@@ -392,57 +461,138 @@ public class StreamCopier : Stream, IList<Stream>
     /// Removes the stream at the specified index.
     /// </summary>
     /// <param name="index">The zero-based index of the stream to remove.</param>
-    public void RemoveAt(int index) => _targets.RemoveAt(index);
+    /// <exception cref="ObjectDisposedException">Thrown once this instance has been disposed.</exception>
+    public void RemoveAt(int index)
+    {
+        ThrowIfDisposed();
+        _targets.RemoveAt(index);
+    }
 
     /// <summary>
-    /// Adds a stream to the end of the list of targets.
+    /// Adds a stream to the end of the list of targets. The target must be non-null, writable, not
+    /// this <see cref="StreamCopier"/> itself, and not already registered (by reference identity).
     /// </summary>
-    /// <param name="item">The stream to add. Must not be null.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="item"/> is null.</exception>
+    /// <param name="item">The stream to add.</param>
+    /// <exception cref="ObjectDisposedException">Thrown once this instance has been disposed.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="item"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="item"/> is not writable, is this <see cref="StreamCopier"/> itself,
+    /// or is already registered.
+    /// </exception>
     public void Add(Stream item)
     {
-        ArgumentNullException.ThrowIfNull(item);
+        ThrowIfDisposed();
+        ValidateTarget(item, nameof(item));
         _targets.Add(item);
     }
 
     /// <summary>
     /// Removes all streams from the targets list.
     /// </summary>
-    public void Clear() => _targets.Clear();
+    /// <exception cref="ObjectDisposedException">Thrown once this instance has been disposed.</exception>
+    public void Clear()
+    {
+        ThrowIfDisposed();
+        _targets.Clear();
+    }
 
     /// <summary>
-    /// Determines whether the targets list contains a specific stream.
+    /// Determines whether the targets list contains a specific stream, using reference identity
+    /// rather than <see cref="object.Equals(object?)"/>. Remains available after disposal.
     /// </summary>
     /// <param name="item">The stream to locate in the list.</param>
     /// <returns><see langword="true"/> if the stream is found in the list; otherwise, <see langword="false"/>.</returns>
-    public bool Contains(Stream item) => _targets.Contains(item);
+    public bool Contains(Stream item) => IndexOfReference(item) >= 0;
 
     /// <summary>
-    /// Copies the entire list of streams to a compatible one-dimensional array, 
-    /// starting at the specified array index.
+    /// Copies the entire list of streams to a compatible one-dimensional array,
+    /// starting at the specified array index. Remains available after disposal.
     /// </summary>
     /// <param name="array">The one-dimensional array that is the destination of the elements copied from the list.</param>
     /// <param name="arrayIndex">The zero-based index in <paramref name="array"/> at which copying begins.</param>
     public void CopyTo(Stream[] array, int arrayIndex) => _targets.CopyTo(array, arrayIndex);
 
     /// <summary>
-    /// Removes the first occurrence of a specific stream from the list.
+    /// Removes the first occurrence of a specific stream from the list, using reference identity
+    /// rather than <see cref="object.Equals(object?)"/>.
     /// </summary>
     /// <param name="item">The stream to remove.</param>
     /// <returns><see langword="true"/> if the stream was successfully removed; otherwise, <see langword="false"/>.</returns>
-    public bool Remove(Stream item) => _targets.Remove(item);
+    /// <exception cref="ObjectDisposedException">Thrown once this instance has been disposed.</exception>
+    public bool Remove(Stream item)
+    {
+        ThrowIfDisposed();
+        int index = IndexOfReference(item);
+        if (index < 0) return false;
+        _targets.RemoveAt(index);
+        return true;
+    }
 
     /// <summary>
-    /// Returns an enumerator that iterates through the list of target streams.
+    /// Returns an enumerator that iterates through the list of target streams. Remains available
+    /// after disposal.
     /// </summary>
     /// <returns>An enumerator for the underlying list of streams.</returns>
     public IEnumerator<Stream> GetEnumerator() => _targets.GetEnumerator();
 
     /// <summary>
-    /// Returns an enumerator that iterates through the list of target streams.
+    /// Returns an enumerator that iterates through the list of target streams. Remains available
+    /// after disposal.
     /// </summary>
     /// <returns>An enumerator for the underlying list of streams.</returns>
     IEnumerator IEnumerable.GetEnumerator() => _targets.GetEnumerator();
+
+    /// <summary>
+    /// Finds the index of a target by reference identity (<see cref="object.ReferenceEquals(object, object)"/>),
+    /// deliberately ignoring any custom <see cref="object.Equals(object?)"/> override a target stream
+    /// might define.
+    /// </summary>
+    /// <param name="item">The stream instance to locate.</param>
+    /// <returns>The index of the exact instance if found; otherwise, -1.</returns>
+    private int IndexOfReference(Stream item)
+    {
+        for (int i = 0; i < _targets.Count; i++)
+        {
+            if (ReferenceEquals(_targets[i], item)) return i;
+        }
+        return -1;
+    }
+
+    /// <summary>
+    /// Validates a candidate target against the single registration contract shared by every
+    /// insertion path: it must be non-null, writable, distinct from this <see cref="StreamCopier"/>,
+    /// and not already registered elsewhere in the collection.
+    /// </summary>
+    /// <param name="target">The candidate target stream.</param>
+    /// <param name="paramName">The parameter name to report in thrown exceptions.</param>
+    /// <param name="excludedIndex">
+    /// An index to exclude from the duplicate check, used by the indexer setter so that replacing a
+    /// slot with the exact reference already occupying it is allowed.
+    /// </param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="target"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="target"/> is not writable, is this <see cref="StreamCopier"/> itself,
+    /// or is already registered at an index other than <paramref name="excludedIndex"/>.
+    /// </exception>
+    private void ValidateTarget(Stream target, string paramName, int excludedIndex = -1)
+    {
+        ArgumentNullException.ThrowIfNull(target, paramName);
+        if (!target.CanWrite)
+            throw new ArgumentException("The target stream must be writable.", paramName);
+        if (ReferenceEquals(target, this))
+            throw new ArgumentException("A StreamCopier cannot target itself.", paramName);
+
+        int existingIndex = IndexOfReference(target);
+        if (existingIndex >= 0 && existingIndex != excludedIndex)
+            throw new ArgumentException("The target stream is already registered.", paramName);
+    }
+
+    /// <summary>
+    /// Rejects the call once this instance has been disposed. Applied to every collection mutation
+    /// and to the write/flush operations so lifetime checks stay in a single place.
+    /// </summary>
+    /// <exception cref="ObjectDisposedException">Thrown when this instance has been disposed.</exception>
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     #endregion
 }
