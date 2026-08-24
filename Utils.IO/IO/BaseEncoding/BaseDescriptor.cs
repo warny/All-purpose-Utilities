@@ -52,9 +52,13 @@ public interface IBaseConverter
     /// Encodes binary data into a textual representation.
     /// </summary>
     /// <param name="datas">The data to encode.</param>
-    /// <param name="maxDataWidth">Maximum number of characters per line; -1 for no limit.</param>
-    /// <param name="indent">Number of spaces appended after each separator.</param>
+    /// <param name="maxDataWidth">Maximum encoded representation characters per line; -1 disables wrapping.</param>
+    /// <param name="indent">Number of spaces inserted after each separator, before the next wrapped line.</param>
     /// <returns>The encoded text.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="maxDataWidth"/> is neither -1 nor a positive value, or when
+    /// <paramref name="indent"/> is negative.
+    /// </exception>
     string ToString(byte[] datas, int maxDataWidth = -1, int indent = 0);
 
     /// <summary>

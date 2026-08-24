@@ -176,6 +176,11 @@ string b64 = Bases.Base64.ToString(data);           // "SGVsbG8="
 
 // Line-wrapped output (e.g. PEM-style at 64 chars)
 string pem = Bases.Base64.ToString(data, maxDataWidth: 64, indent: 0);
+// maxDataWidth is a strict per-line maximum on encoded characters — ordinary symbols, the
+// final residual symbol and padding all count toward it. The separator/indent are written
+// only between two non-empty lines, never after the last line. -1 disables wrapping; other
+// values must be positive, and indent must be non-negative, or the call throws
+// ArgumentOutOfRangeException.
 
 // Decode
 byte[] fromHex = Bases.Base16.FromString("48656C6C6F");

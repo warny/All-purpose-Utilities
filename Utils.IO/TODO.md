@@ -18,20 +18,15 @@ The July audit text had become partially stale after PRs #526 and #528. This fil
 
 DateTime now uses selectable codecs, with .NET binary as the default and built-in ticks, Unix seconds/milliseconds, OLE Automation and FILETIME representations. Codecs may be registered by exact type or overridden per serialized member. Generic framing is forward-only safe and prepares, but does not close, IO-04 reader-budget integration.
 
-### IO-12 — Encoder formatting arguments/output need an explicit contract
-
-`BaseEncoderStream` does not validate `maxDataWidth`/`indent`, and reaching the exact line width writes the separator immediately, including after a full final line.
-
-**Fix:** validate arguments and emit separators between lines rather than after final output if that is the chosen format contract.
-
-### IO-13 — Unsupported `BaseEncoderStream` operations use the wrong exception family
-
-`Position` setter, `Read`, `Seek` and `SetLength` throw `InvalidOperationException` even though `CanRead`/`CanSeek` advertise unsupported stream capabilities.
-
-**Fix:** use `NotSupportedException` consistently.
-
 ## Closed since the July audit
 
+- IO-12 — fixed: `BaseEncoderStream` now validates formatting arguments and
+  treats `MaxDataWidth` as a strict encoded-character line width, including
+  final symbols and padding. Separators/indentation are emitted only between
+  lines, never eagerly after a final full line.
+- IO-13 — fixed: unsupported `BaseEncoderStream` read/seek/resize and
+  `Position`-set operations now throw `NotSupportedException`, consistent with
+  its advertised Stream capabilities.
 - IO-09 — fixed: `PartialStream.Flush` and `FlushAsync` now participate in the
   same per-base-stream operation gate as read/write/position/seek/state
   operations, preventing flushes from overlapping another slice's temporary

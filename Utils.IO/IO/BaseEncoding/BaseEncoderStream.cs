@@ -24,12 +24,17 @@ public class BaseEncoderStream : Stream
     protected IBaseDescriptor BaseDescriptor { get; }
 
     /// <summary>
-    /// Gets the maximum number of characters per line, or -1 for unlimited.
+    /// Gets the maximum number of encoded representation characters on one output line, or -1 if wrapping
+    /// is disabled. Ordinary alphabet symbols, the final residual symbol written by <see cref="Close"/>, and
+    /// padding/filler characters all count toward this limit; the separator and indentation inserted between
+    /// lines do not.
     /// </summary>
     public int MaxDataWidth { get; }
 
     /// <summary>
-    /// Gets the indentation applied after each separator.
+    /// Gets the number of spaces inserted immediately after <see cref="IBaseDescriptor.Separator"/>, before
+    /// the first character of the next wrapped line. Has no observable effect when <see cref="MaxDataWidth"/>
+    /// is -1, since no separator is ever emitted in that case.
     /// </summary>
     public int Indent { get; }
 
@@ -52,7 +57,7 @@ public class BaseEncoderStream : Stream
     public override long Position
     {
         get => position;
-        set => throw new InvalidOperationException();
+        set => throw new NotSupportedException();
     }
 
     /// <summary>
@@ -60,12 +65,24 @@ public class BaseEncoderStream : Stream
     /// </summary>
     /// <param name="targetWriter">Writer receiving the encoded characters.</param>
     /// <param name="baseDescriptor">Descriptor defining the base alphabet.</param>
-    /// <param name="maxDataWidth">Maximum number of characters per line, -1 for unlimited.</param>
-    /// <param name="indent">Indentation applied after each separator.</param>
+    /// <param name="maxDataWidth">
+    /// Maximum number of encoded representation characters per output line: -1 disables wrapping, and every
+    /// positive value is a strict per-line maximum. Zero and values below -1 are rejected.
+    /// </param>
+    /// <param name="indent">Number of spaces inserted after each inter-line separator. Must be non-negative.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="targetWriter"/> or <paramref name="baseDescriptor"/> is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="maxDataWidth"/> is neither -1 nor a positive value, or when
+    /// <paramref name="indent"/> is negative.
+    /// </exception>
     public BaseEncoderStream(TextWriter targetWriter, IBaseDescriptor baseDescriptor, int maxDataWidth = -1, int indent = 0)
     {
         TargetWriter = targetWriter ?? throw new ArgumentNullException(nameof(targetWriter));
         BaseDescriptor = baseDescriptor ?? throw new ArgumentNullException(nameof(baseDescriptor));
+        if (maxDataWidth != -1 && maxDataWidth <= 0)
+            throw new ArgumentOutOfRangeException(nameof(maxDataWidth), maxDataWidth, "Must be -1 (unlimited) or a positive value.");
+        if (indent < 0)
+            throw new ArgumentOutOfRangeException(nameof(indent), indent, "Must be non-negative.");
         MaxDataWidth = maxDataWidth;
         Indent = indent;
 
@@ -84,21 +101,24 @@ public class BaseEncoderStream : Stream
     }
 
     /// <inheritdoc />
+    /// <exception cref="NotSupportedException">Always thrown; this stream advertises <see cref="CanRead"/> as <see langword="false"/>.</exception>
     public override int Read(byte[] buffer, int offset, int count)
     {
-        throw new InvalidOperationException();
+        throw new NotSupportedException();
     }
 
     /// <inheritdoc />
+    /// <exception cref="NotSupportedException">Always thrown; this stream advertises <see cref="CanSeek"/> as <see langword="false"/>.</exception>
     public override long Seek(long offset, SeekOrigin origin)
     {
-        throw new InvalidOperationException();
+        throw new NotSupportedException();
     }
 
     /// <inheritdoc />
+    /// <exception cref="NotSupportedException">Always thrown; this stream advertises <see cref="CanSeek"/> as <see langword="false"/>.</exception>
     public override void SetLength(long value)
     {
-        throw new InvalidOperationException();
+        throw new NotSupportedException();
     }
 
     private int value;
@@ -140,8 +160,8 @@ public class BaseEncoderStream : Stream
 
     /// <summary>
     /// Core encoding loop shared by every synchronous and asynchronous write path. It consumes the source
-    /// bytes eight bits at a time, emits a base symbol whenever <see cref="Depth"/> bits are available, and
-    /// inserts the configured line separator and indentation when <see cref="MaxDataWidth"/> is reached.
+    /// bytes eight bits at a time and emits a base symbol, through <see cref="WriteEncodedCharacter"/>,
+    /// whenever <see cref="Depth"/> bits are available.
     /// </summary>
     /// <param name="data">The binary data to encode.</param>
     private void EncodeCore(ReadOnlySpan<byte> data)
@@ -157,21 +177,35 @@ public class BaseEncoderStream : Stream
                 shift -= Depth;
                 targetPosition++;
                 var charIndex = (value >> shift) & Mask;
-                TargetWriter.Write(BaseDescriptor[charIndex]);
-
-                if (MaxDataWidth != -1)
-                {
-                    dataWidth++;
-                    // wrap when the next symbol would exceed the configured width
-                    if (dataWidth >= MaxDataWidth)
-                    {
-                        dataWidth = 0;
-                        TargetWriter.Write(BaseDescriptor.Separator);
-                        TargetWriter.Write(new string(' ', Indent));
-                    }
-                }
+                WriteEncodedCharacter(BaseDescriptor[charIndex]);
             }
         }
+    }
+
+    /// <summary>
+    /// Writes one encoded representation character — an alphabet symbol, the final residual symbol, or a
+    /// filler character — wrapping onto a new formatted line first if the current line has already reached
+    /// <see cref="MaxDataWidth"/>. Because wrapping is evaluated before writing <paramref name="character"/>,
+    /// the separator and indentation are emitted only between two non-empty lines, never eagerly after the
+    /// last character of the output. This is the single path used by <see cref="EncodeCore"/> and
+    /// <see cref="Close"/>, so ordinary symbols, the final partial symbol, and padding all obey the same
+    /// line-width contract.
+    /// </summary>
+    /// <param name="character">The encoded representation character to write.</param>
+    private void WriteEncodedCharacter(char character)
+    {
+        if (MaxDataWidth != -1 && dataWidth == MaxDataWidth)
+        {
+            TargetWriter.Write(BaseDescriptor.Separator);
+            // Materialize the indentation only when a wrap actually happens, so an unused Indent
+            // (in particular when MaxDataWidth == -1, where no wrap ever occurs) never allocates.
+            if (Indent > 0)
+                TargetWriter.Write(new string(' ', Indent));
+            dataWidth = 0;
+        }
+
+        TargetWriter.Write(character);
+        dataWidth++;
     }
 
     /// <summary>
@@ -245,13 +279,16 @@ public class BaseEncoderStream : Stream
         if (shift > 0)
         {
             var charIndex = (value << (Depth - shift)) & Mask;
-            TargetWriter.Write(BaseDescriptor[charIndex]);
+            WriteEncodedCharacter(BaseDescriptor[charIndex]);
         }
 
         if (BaseDescriptor.Filler is not null && targetPosition % BaseDescriptor.FillerMod != 0)
         {
+            // toFill is the padding-quantum count, unrelated to the presentation line width; only the
+            // emission of each filler character is routed through the shared wrapping-aware helper.
             int toFill = BaseDescriptor.FillerMod - (targetPosition % BaseDescriptor.FillerMod) - 1;
-            TargetWriter.Write(new string(BaseDescriptor.Filler.Value, toFill));
+            for (int i = 0; i < toFill; i++)
+                WriteEncodedCharacter(BaseDescriptor.Filler.Value);
         }
 
         Flush();
