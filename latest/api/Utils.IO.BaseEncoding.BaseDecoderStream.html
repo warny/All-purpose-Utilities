@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class BaseDecoderStream | omy.Utils Documentation ">
       
-      <meta name="description" content="Writes base-encoded characters and produces binary output to an underlying . By default the decoder operates in strict mode: characters outside the alphabet, misplaced padding and incomplete symbol groups are rejected. Pass strict = false to revert to the original permissive behaviour.">
+      <meta name="description" content="Writes base-encoded characters and produces binary output to an underlying . By default the decoder operates in strict mode: characters outside the alphabet, misplaced padding and incomplete symbol groups are rejected. Pass strict = false to revert to the original permissive behaviour.  Streaming, non-transactional output:  is a classical streaming decoder, not a transactional validator. Every complete decoded byte is written to  as soon as enough input has been processed to produce it — well before  is called. Some validation can only be performed once the full input has been seen, in particular the terminal checks performed by  (incomplete final quantum, non-zero trailing bits, incorrect padding count). A  raised by a later input character or by  therefore does not roll back bytes already written to ; those bytes remain exactly as emitted. Callers that require atomic, all-or-nothing publication must supply an explicit staging stream of their own choosing (for example  or a temporary ) and commit it only after  has returned successfully.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_IO_BaseEncoding_BaseDecoderStream" data-uid="Utils.IO.BaseEncoding.BaseDecoderStream" class="text-break">
-Class BaseDecoderStream  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L16"><i class="bi bi-code-slash"></i></a>
+Class BaseDecoderStream  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L29"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -101,6 +101,19 @@ Class BaseDecoderStream  <a class="header-action link-secondary" title="View sou
 By default the decoder operates in strict mode: characters outside the alphabet, misplaced
 padding and incomplete symbol groups are rejected. Pass <code class="paramref">strict</code> = false
 to revert to the original permissive behaviour.</p>
+<p>
+<b>Streaming, non-transactional output:</b> <a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html">BaseDecoderStream</a> is a classical
+streaming decoder, not a transactional validator. Every complete decoded byte is written to
+<a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html#Utils_IO_BaseEncoding_BaseDecoderStream_Stream">Stream</a> as soon as enough input has been processed to produce it — well before
+<a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html#Utils_IO_BaseEncoding_BaseDecoderStream_Close">Close()</a> is called. Some validation can only be performed once the full input has
+been seen, in particular the terminal checks performed by <a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html#Utils_IO_BaseEncoding_BaseDecoderStream_Close">Close()</a> (incomplete final
+quantum, non-zero trailing bits, incorrect padding count). A <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.formatexception">FormatException</a>
+raised by a later input character or by <a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html#Utils_IO_BaseEncoding_BaseDecoderStream_Close">Close()</a> therefore does <b>not</b> roll back
+bytes already written to <a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html#Utils_IO_BaseEncoding_BaseDecoderStream_Stream">Stream</a>; those bytes remain exactly as emitted. Callers
+that require atomic, all-or-nothing publication must supply an explicit staging stream of their
+own choosing (for example <a class="xref" href="Utils.IO.StreamValidator.html">StreamValidator</a> or a temporary <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.memorystream">MemoryStream</a>)
+and commit it only after <a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html#Utils_IO_BaseEncoding_BaseDecoderStream_Close">Close()</a> has returned successfully.
+</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -452,7 +465,7 @@ to revert to the original permissive behaviour.</p>
 
   <h3 id="Utils_IO_BaseEncoding_BaseDecoderStream__ctor_System_IO_Stream_Utils_IO_BaseEncoding_IBaseDescriptor_System_Boolean_" data-uid="Utils.IO.BaseEncoding.BaseDecoderStream.#ctor(System.IO.Stream,Utils.IO.BaseEncoding.IBaseDescriptor,System.Boolean)">
   BaseDecoderStream(Stream, IBaseDescriptor, bool)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L48"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L61"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html">BaseDecoderStream</a> class.</p>
@@ -496,7 +509,7 @@ When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/built
 
   <h3 id="Utils_IO_BaseEncoding_BaseDecoderStream_BaseDescriptor" data-uid="Utils.IO.BaseEncoding.BaseDecoderStream.BaseDescriptor">
   BaseDescriptor
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L22"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L35"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the descriptor that defines the base encoding alphabet.</p>
@@ -528,7 +541,7 @@ When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/built
 
   <h3 id="Utils_IO_BaseEncoding_BaseDecoderStream_Encoding" data-uid="Utils.IO.BaseEncoding.BaseDecoderStream.Encoding">
   Encoding
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L28"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L41"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>When overridden in a derived class, returns the character encoding in which the output is written.</p>
@@ -561,7 +574,7 @@ When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/built
 
   <h3 id="Utils_IO_BaseEncoding_BaseDecoderStream_Stream" data-uid="Utils.IO.BaseEncoding.BaseDecoderStream.Stream">
   Stream
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L19"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L32"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the target binary stream.</p>
@@ -597,10 +610,14 @@ When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/built
 
   <h3 id="Utils_IO_BaseEncoding_BaseDecoderStream_Close" data-uid="Utils.IO.BaseEncoding.BaseDecoderStream.Close">
   Close()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L128"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L149"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Finalizes the decoding process and flushes remaining bits.
+  <div class="markdown level1 summary"><p>Performs terminal validation (final quantum completeness, trailing-bit and padding-count
+checks) and flushes <a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html#Utils_IO_BaseEncoding_BaseDecoderStream_Stream">Stream</a>. This is <b>not</b> a commit operation: every complete
+byte decoded from previously written characters has already been written to <a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html#Utils_IO_BaseEncoding_BaseDecoderStream_Stream">Stream</a>
+by <a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html#Utils_IO_BaseEncoding_BaseDecoderStream_Write_System_Char_">Write(char)</a>. A <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.formatexception">FormatException</a> thrown here reports that the input
+was malformed overall, but does not undo those already-written bytes.
 After the first call (successful or not) the instance is permanently condemned:
 any subsequent <a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html#Utils_IO_BaseEncoding_BaseDecoderStream_Write_System_Char_">Write(char)</a> call throws <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a>.
 A second call to <a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html#Utils_IO_BaseEncoding_BaseDecoderStream_Close">Close()</a> is always a no-op.
@@ -635,7 +652,7 @@ or the padding count does not match the expected value.</p>
 
   <h3 id="Utils_IO_BaseEncoding_BaseDecoderStream_Flush" data-uid="Utils.IO.BaseEncoding.BaseDecoderStream.Flush">
   Flush()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L191"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L212"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Clears all buffers for the current writer and causes any buffered data to be written to the underlying device.</p>
@@ -662,10 +679,14 @@ or the padding count does not match the expected value.</p>
 
   <h3 id="Utils_IO_BaseEncoding_BaseDecoderStream_Write_System_Char_" data-uid="Utils.IO.BaseEncoding.BaseDecoderStream.Write(System.Char)">
   Write(char)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L68"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L85"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Writes a single base character to the decoder.</p>
+  <div class="markdown level1 summary"><p>Writes a single base character to the decoder. Whenever enough characters have accumulated to
+complete a byte, that byte is written to <a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html#Utils_IO_BaseEncoding_BaseDecoderStream_Stream">Stream</a> immediately, before this call
+returns. If a later call throws <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.formatexception">FormatException</a>, bytes already emitted by earlier
+calls are not undone. No recovery or continuation guarantee is made for the decoder's internal
+parsing state after such an exception; callers should treat the decoding operation as aborted.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -705,7 +726,7 @@ or padding appears in an illegal position.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L16" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L29" class="edit-link">Edit this page</a>
         </div>
 
 

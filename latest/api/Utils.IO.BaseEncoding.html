@@ -100,6 +100,19 @@ Classes
 By default the decoder operates in strict mode: characters outside the alphabet, misplaced
 padding and incomplete symbol groups are rejected. Pass <code class="paramref">strict</code> = false
 to revert to the original permissive behaviour.</p>
+<p>
+<b>Streaming, non-transactional output:</b> <a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html">BaseDecoderStream</a> is a classical
+streaming decoder, not a transactional validator. Every complete decoded byte is written to
+<a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html#Utils_IO_BaseEncoding_BaseDecoderStream_Stream">Stream</a> as soon as enough input has been processed to produce it — well before
+<a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html#Utils_IO_BaseEncoding_BaseDecoderStream_Close">Close()</a> is called. Some validation can only be performed once the full input has
+been seen, in particular the terminal checks performed by <a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html#Utils_IO_BaseEncoding_BaseDecoderStream_Close">Close()</a> (incomplete final
+quantum, non-zero trailing bits, incorrect padding count). A <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.formatexception">FormatException</a>
+raised by a later input character or by <a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html#Utils_IO_BaseEncoding_BaseDecoderStream_Close">Close()</a> therefore does <b>not</b> roll back
+bytes already written to <a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html#Utils_IO_BaseEncoding_BaseDecoderStream_Stream">Stream</a>; those bytes remain exactly as emitted. Callers
+that require atomic, all-or-nothing publication must supply an explicit staging stream of their
+own choosing (for example <a class="xref" href="Utils.IO.StreamValidator.html">StreamValidator</a> or a temporary <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.memorystream">MemoryStream</a>)
+and commit it only after <a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html#Utils_IO_BaseEncoding_BaseDecoderStream_Close">Close()</a> has returned successfully.
+</p>
 </dd>
     </dl>
     <dl class="jumplist">
