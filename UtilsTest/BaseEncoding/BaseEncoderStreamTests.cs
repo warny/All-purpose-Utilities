@@ -297,6 +297,23 @@ public class BaseEncoderStreamTests
         _ = new BaseEncoderStream(sw, Bases.Base64, maxDataWidth: -1, indent: 3);
     }
 
+    /// <summary>
+    /// Verifies an unused, extremely large <c>indent</c> combined with <c>maxDataWidth: -1</c> neither throws
+    /// nor materializes an indentation string, since wrapping never occurs and indentation is only allocated
+    /// at the point of an actual wrap.
+    /// </summary>
+    [TestMethod]
+    public void Constructor_UnlimitedWidth_DoesNotMaterializeUnusedIndent()
+    {
+        using StringWriter writer = new();
+        using BaseEncoderStream stream = new(writer, Bases.Base64, maxDataWidth: -1, indent: int.MaxValue);
+
+        stream.Write([0x41], 0, 1);
+        stream.Close();
+
+        Assert.AreEqual("QQ==", writer.ToString());
+    }
+
     /// <summary>Verifies <c>maxDataWidth</c> values other than -1 or a positive integer fail at construction time.</summary>
     [TestMethod]
     public void Constructor_RejectsInvalidMaxDataWidth()

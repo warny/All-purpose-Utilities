@@ -38,9 +38,6 @@ public class BaseEncoderStream : Stream
     /// </summary>
     public int Indent { get; }
 
-    /// <summary>Precomputed indentation text written after each inter-line separator; empty when <see cref="Indent"/> is zero.</summary>
-    private readonly string indentText;
-
     private int Depth { get; }
     private int Mask { get; }
 
@@ -88,7 +85,6 @@ public class BaseEncoderStream : Stream
             throw new ArgumentOutOfRangeException(nameof(indent), indent, "Must be non-negative.");
         MaxDataWidth = maxDataWidth;
         Indent = indent;
-        indentText = indent > 0 ? new string(' ', indent) : string.Empty;
 
         Depth = BaseDescriptor.BitsWidth;
         Mask = 0;
@@ -201,7 +197,10 @@ public class BaseEncoderStream : Stream
         if (MaxDataWidth != -1 && dataWidth == MaxDataWidth)
         {
             TargetWriter.Write(BaseDescriptor.Separator);
-            TargetWriter.Write(indentText);
+            // Materialize the indentation only when a wrap actually happens, so an unused Indent
+            // (in particular when MaxDataWidth == -1, where no wrap ever occurs) never allocates.
+            if (Indent > 0)
+                TargetWriter.Write(new string(' ', Indent));
             dataWidth = 0;
         }
 
