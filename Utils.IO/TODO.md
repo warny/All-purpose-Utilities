@@ -44,12 +44,6 @@ PR #526 replaced `lock(baseStream)` with a `ConditionalWeakTable<Stream, Semapho
 
 DateTime now uses selectable codecs, with .NET binary as the default and built-in ticks, Unix seconds/milliseconds, OLE Automation and FILETIME representations. Codecs may be registered by exact type or overridden per serialized member. Generic framing is forward-only safe and prepares, but does not close, IO-04 reader-budget integration.
 
-### IO-11 — Boolean decoding accepts malformed bytes
-
-`ReadBool` returns `ReadByte(reader) == 1`, so values 2–255 silently become false.
-
-**Fix:** strict 0/1 validation by default; expose permissive semantics only if a real compatibility requirement exists.
-
 ### IO-12 — Encoder formatting arguments/output need an explicit contract
 
 `BaseEncoderStream` does not validate `maxDataWidth`/`indent`, and reaching the exact line width writes the separator immediately, including after a full final line.
@@ -64,6 +58,9 @@ DateTime now uses selectable codecs, with .NET binary as the default and built-i
 
 ## Closed since the July audit
 
+- IO-11 — fixed: Boolean wire decoding is canonical and strict. `00` maps to
+  false, `01` maps to true, and all other byte values are rejected as malformed
+  input. The writer continues to emit only `00` and `01`.
 - IO-04 — fixed: opt-in aggregate wire-byte and collection-count limits are validated before dependent allocation. Reflection/generated/nested reads, codecs, mapped readers, and slices share operation state; staged framed payloads are charged once rather than again during decoding. This bounds wire parsing, not total CLR memory.
 - IO-03 — fixed: `Int128` and `UInt128` now use fixed-width 16-byte representations following `BigEndian`; `BigInteger` keeps its `Int32` length prefix and uses a signed minimal two's-complement payload following `BigEndian`; `Guid` uses canonical RFC/network byte order independently of `BigEndian`. Golden wire vectors cover reader and writer behavior.
 - IO-02 — base descriptor invariants: fixed by validating alphabet uniqueness, reserved-character collisions and padding quantum consistency before constructing lookup tables. Invalid custom descriptors now fail deterministically at construction time.
