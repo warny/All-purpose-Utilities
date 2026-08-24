@@ -47,6 +47,9 @@ public class Reader : IReader, IStreamMapping<Reader>
 
     /// <summary>Gets the largest accepted length-prefixed payload in bytes.</summary>
     internal int MaximumPayloadLength { get; }
+    private readonly int maximumCollectionLength;
+    private readonly ReadBudget readBudget;
+    private readonly bool countWireBytes;
 
     /// <summary>Coordinates one logical contract build for each type.</summary>
     private readonly ContractCache contractCache = new();
@@ -70,7 +73,7 @@ public class Reader : IReader, IStreamMapping<Reader>
 
     /// <summary>Initializes a reader with payload limits and shared wire serialization options.</summary>
     public Reader(Stream stream, ReaderOptions options, SerializationOptions serializationOptions)
-        : this(stream, CreateRawReader(options).ReaderDelegates, Snapshot(serializationOptions), GetMaximumPayloadLength(options)) { }
+        : this(stream, CreateRawReader(options).ReaderDelegates, Snapshot(serializationOptions), GetMaximumPayloadLength(options), GetMaximumCollectionLength(options), CreateReadBudget(options)) { }
 
     /// <summary>Initializes a reader with wire options and explicit converters.</summary>
     public Reader(Stream stream, SerializationOptions serializationOptions, params IEnumerable<Delegate> converters)
@@ -78,7 +81,7 @@ public class Reader : IReader, IStreamMapping<Reader>
 
     /// <summary>Initializes a reader with payload limits, wire options, and explicit converters.</summary>
     public Reader(Stream stream, ReaderOptions options, SerializationOptions serializationOptions, params IEnumerable<Delegate> converters)
-        : this(stream, converters.Union(CreateRawReader(options).ReaderDelegates), Snapshot(serializationOptions), GetMaximumPayloadLength(options)) { }
+        : this(stream, converters.Union(CreateRawReader(options).ReaderDelegates), Snapshot(serializationOptions), GetMaximumPayloadLength(options), GetMaximumCollectionLength(options), CreateReadBudget(options)) { }
 
     /// <summary>
     /// Initializes a new instance of <see cref="Reader"/> with explicit payload options and custom converters.
@@ -87,11 +90,11 @@ public class Reader : IReader, IStreamMapping<Reader>
     /// <param name="options">Payload safety options.</param>
     /// <param name="converters">Reader delegates used to deserialize objects.</param>
     public Reader(Stream stream, ReaderOptions options, params IEnumerable<Delegate> converters)
-        : this(stream, converters.Union(CreateRawReader(options).ReaderDelegates), new Dictionary<Type, WireCodecRegistration>(), GetMaximumPayloadLength(options)) { }
+        : this(stream, converters.Union(CreateRawReader(options).ReaderDelegates), new Dictionary<Type, WireCodecRegistration>(), GetMaximumPayloadLength(options), GetMaximumCollectionLength(options), CreateReadBudget(options)) { }
 
     /// <summary>Initializes a reader from converter delegates and a codec snapshot.</summary>
-    private Reader(Stream stream, IEnumerable<Delegate> converters, IReadOnlyDictionary<Type, WireCodecRegistration> codecs, int maximumPayloadLength)
-        : this(stream, BuildRegistrations(converters), codecs, maximumPayloadLength) { }
+    private Reader(Stream stream, IEnumerable<Delegate> converters, IReadOnlyDictionary<Type, WireCodecRegistration> codecs, int maximumPayloadLength, int maximumCollectionLength, ReadBudget readBudget)
+        : this(stream, BuildRegistrations(converters), codecs, maximumPayloadLength, maximumCollectionLength, readBudget) { }
 
     /// <summary>Validates reader converter delegates and indexes them by exact return type.</summary>
     private static IReadOnlyDictionary<Type, Delegate> BuildRegistrations(IEnumerable<Delegate> converters)
@@ -111,12 +114,15 @@ public class Reader : IReader, IStreamMapping<Reader>
     /// <summary>
     /// Initializes a new instance of <see cref="Reader"/> copying converters.
     /// </summary>
-    private Reader(Stream stream, IReadOnlyDictionary<Type, Delegate> readers, IReadOnlyDictionary<Type, WireCodecRegistration>? codecs = null, int maximumPayloadLength = int.MaxValue)
+    private Reader(Stream stream, IReadOnlyDictionary<Type, Delegate> readers, IReadOnlyDictionary<Type, WireCodecRegistration>? codecs = null, int maximumPayloadLength = int.MaxValue, int maximumCollectionLength = int.MaxValue, ReadBudget? readBudget = null, bool countWireBytes = true)
     {
-        this.Stream = stream;
+        this.Stream = stream ?? throw new ArgumentNullException(nameof(stream));
         this.readers = readers.ToDictionary();
         this.codecs = codecs ?? new Dictionary<Type, WireCodecRegistration>();
         MaximumPayloadLength = maximumPayloadLength;
+        this.maximumCollectionLength = maximumCollectionLength;
+        this.readBudget = readBudget ?? new ReadBudget(null);
+        this.countWireBytes = countWireBytes;
     }
 
     /// <summary>Creates and validates the primitive reader configured for this reader instance.</summary>
@@ -133,6 +139,24 @@ public class Reader : IReader, IStreamMapping<Reader>
             throw new ArgumentOutOfRangeException(nameof(options), "MaximumPayloadLength must be non-negative or null.");
 
         return options.MaximumPayloadLength ?? int.MaxValue;
+    }
+
+    /// <summary>Validates and resolves the configured collection allocation limit.</summary>
+    private static int GetMaximumCollectionLength(ReaderOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        if (options.MaximumCollectionLength < 0)
+            throw new ArgumentOutOfRangeException(nameof(options), "MaximumCollectionLength must be non-negative or null.");
+        return options.MaximumCollectionLength ?? int.MaxValue;
+    }
+
+    /// <summary>Validates the aggregate limit and creates its runtime state.</summary>
+    private static ReadBudget CreateReadBudget(ReaderOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        if (options.MaximumReadBytes < 0)
+            throw new ArgumentOutOfRangeException(nameof(options), "MaximumReadBytes must be non-negative or null.");
+        return new ReadBudget(options.MaximumReadBytes);
     }
 
     /// <summary>
@@ -155,6 +179,9 @@ public class Reader : IReader, IStreamMapping<Reader>
         readers = registrations;
         codecs = new Dictionary<Type, WireCodecRegistration>();
         MaximumPayloadLength = int.MaxValue;
+        maximumCollectionLength = int.MaxValue;
+        readBudget = new ReadBudget(null);
+        countWireBytes = true;
     }
 
     /// <summary>
@@ -236,14 +263,51 @@ public class Reader : IReader, IStreamMapping<Reader>
     /// Read one byte from the underlying <see cref="Stream"/>
     /// </summary>
     /// <returns>The byte value or -1 if read failed</returns>
-    public int ReadByte() => Stream.ReadByte();
+    public int ReadByte()
+    {
+        if (!countWireBytes) return Stream.ReadByte();
+        if (!readBudget.CanConsume(1))
+            return readBudget.RejectExhausted(Stream);
+        int value = Stream.ReadByte();
+        if (value >= 0) readBudget.Consume(1);
+        return value;
+    }
 
     /// <summary>
     /// Read a <see cref="byte"/> array from the <see cref="Stream"/> of <paramref name="length"/>
     /// </summary>
     /// <param name="length">bytes to be read</param>
     /// <returns><see cref="byte"/>array</returns>
-    public byte[] ReadBytes(int length) => Stream.ReadBytes(length);
+    public byte[] ReadBytes(int length)
+    {
+        if (length < 0) throw new InvalidDataException("A negative wire byte count is invalid.");
+        EnsureReadAvailable(length);
+        byte[] bytes = Stream.ReadBytes(length);
+        if (countWireBytes) readBudget.Consume(bytes.Length);
+        return bytes;
+    }
+
+    /// <summary>Rejects a requested wire read before it can allocate a dependent buffer.</summary>
+    internal void EnsureReadAvailable(long count)
+    {
+        if (countWireBytes) readBudget.EnsureAvailable(count);
+    }
+
+    /// <summary>Validates a collection count before allocation or iteration.</summary>
+    internal void ValidateCollectionCount(int count)
+    {
+        if (count < 0) throw new InvalidDataException($"Invalid collection element count {count}.");
+        if (count > maximumCollectionLength)
+            throw new InvalidDataException($"Collection element count {count} exceeds the configured maximum of {maximumCollectionLength}.");
+    }
+
+    /// <summary>Gets whether the exact type resolves to the default primitive reader rather than an override.</summary>
+    internal bool UsesBuiltInReader(Type type)
+    {
+        if (HasReadableCodec(type) || !readers.TryGetValue(type, out Delegate? reader)) return false;
+        Type? declaringType = reader.Method.DeclaringType;
+        return reader.Target is RawReader || declaringType == typeof(RawReader) || declaringType?.DeclaringType == typeof(RawReader);
+    }
 
     /// <summary>Attempts to obtain the number of readable bytes between the current position and stream length.</summary>
     public bool TryGetBytesLeft(out long bytesLeft)
@@ -269,7 +333,7 @@ public class Reader : IReader, IStreamMapping<Reader>
     public Reader Slice(long position, long length)
     {
         PartialStream s = new PartialStream(Stream, position, length);
-        return new Reader(s, this.readers, codecs, MaximumPayloadLength);
+        return new Reader(s, this.readers, codecs, MaximumPayloadLength, maximumCollectionLength, readBudget, countWireBytes);
     }
 
     /// <summary>
@@ -367,10 +431,10 @@ public class Reader : IReader, IStreamMapping<Reader>
     }
 
     /// <summary>Creates a bounded child reader retaining the exact codec snapshot.</summary>
-    internal Reader CreateCodecReader(Stream stream) => new(stream, readers, codecs, MaximumPayloadLength);
+    internal Reader CreateCodecReader(Stream stream) => new(stream, readers, codecs, MaximumPayloadLength, maximumCollectionLength, readBudget, countWireBytes: false);
 
     /// <summary>Creates a mapped reader retaining converter and codec snapshots.</summary>
-    internal Reader CreateMappedReader(Stream stream) => new(stream, readers, codecs, MaximumPayloadLength);
+    internal Reader CreateMappedReader(Stream stream) => new(stream, readers, codecs, MaximumPayloadLength, maximumCollectionLength, readBudget, countWireBytes);
 
     /// <summary>Attempts an exact configured codec read without constructing a reflection contract.</summary>
     internal bool TryReadConfigured<T>(out T value)

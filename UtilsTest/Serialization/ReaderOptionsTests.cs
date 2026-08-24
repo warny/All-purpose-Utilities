@@ -10,6 +10,18 @@ namespace UtilsTest.Serialization;
 [TestClass]
 public sealed class ReaderOptionsTests
 {
+    /// <summary>Ensures every common reader and writer overload rejects a null stream immediately.</summary>
+    [TestMethod]
+    public void ReaderAndWriter_NullStream_ThrowArgumentNullException()
+    {
+        Assert.ThrowsException<ArgumentNullException>(() => new Reader(null!));
+        Assert.ThrowsException<ArgumentNullException>(() => new Reader(null!, new ReaderOptions()));
+        Assert.ThrowsException<ArgumentNullException>(() => new Reader(null!, new SerializationOptions()));
+        Assert.ThrowsException<ArgumentNullException>(() => new Writer(null!));
+        Assert.ThrowsException<ArgumentNullException>(() => new Writer(null!, new SerializationOptions()));
+        Assert.ThrowsException<ArgumentNullException>(() => new ReaderWriter((Stream)null!));
+    }
+
     /// <summary>Ensures default readers preserve round trips larger than the former 16 MiB limit.</summary>
     [TestMethod]
     public void DefaultOptions_StringLargerThanFormerLimit_RoundTrips()
@@ -62,6 +74,14 @@ public sealed class ReaderOptionsTests
         Assert.AreEqual(string.Empty, new Reader(emptyStream, new ReaderOptions { MaximumPayloadLength = 0 }).Read<string>());
         Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
             new Reader(new MemoryStream(), new ReaderOptions { MaximumPayloadLength = -1 }));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+            new Reader(new MemoryStream(), new ReaderOptions { MaximumReadBytes = -1 }));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+            new Reader(new MemoryStream(), new ReaderOptions { MaximumCollectionLength = -1 }));
+
+        Reader noCollections = new(new MemoryStream(), new ReaderOptions { MaximumCollectionLength = 0 });
+        Assert.AreEqual(0, noCollections.ReadArray<int>(0).Length);
+        Assert.ThrowsException<InvalidDataException>(() => noCollections.ReadArray<int>(1));
     }
 
     /// <summary>Serializes a string into a positioned memory stream for limit tests.</summary>

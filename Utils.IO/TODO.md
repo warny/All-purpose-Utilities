@@ -6,12 +6,6 @@ The July audit text had become partially stale after PRs #526 and #528. This fil
 
 ## P1
 
-### IO-04 — Length-prefixed parsing is bounded only when callers opt in
-
-PR #526 added `RawReader.MaximumLength` and negative/over-limit validation before allocation. The old finding claiming that lengths are passed directly to `ReadBytes` is therefore obsolete. The residual risk is that the default is `int.MaxValue` and aggregate/generated readers need one coherent budget policy.
-
-**Fix:** define safe parsing options/budgets and propagate them consistently before allocation or count×element-size arithmetic.
-
 ### IO-06 — `StreamCopier` target validation is incomplete
 
 `Add`/`Insert` reject null, but constructors copy entries without per-target validation and the indexer setter accepts null. No common insertion path defines whether non-writable targets are rejected at registration time.
@@ -70,6 +64,7 @@ DateTime now uses selectable codecs, with .NET binary as the default and built-i
 
 ## Closed since the July audit
 
+- IO-04 — fixed: opt-in aggregate wire-byte and collection-count limits are validated before dependent allocation. Reflection/generated/nested reads, codecs, mapped readers, and slices share operation state; staged framed payloads are charged once rather than again during decoding. This bounds wire parsing, not total CLR memory.
 - IO-03 — fixed: `Int128` and `UInt128` now use fixed-width 16-byte representations following `BigEndian`; `BigInteger` keeps its `Int32` length prefix and uses a signed minimal two's-complement payload following `BigEndian`; `Guid` uses canonical RFC/network byte order independently of `BigEndian`. Golden wire vectors cover reader and writer behavior.
 - IO-02 — base descriptor invariants: fixed by validating alphabet uniqueness, reserved-character collisions and padding quantum consistency before constructing lookup tables. Invalid custom descriptors now fail deterministically at construction time.
 - IO-01 — base alphabet validation: fixed by requiring lengths from 2 through 256 to be exact powers of two; exhaustive regression coverage checks every length from 0 through 257 and verifies `BitsWidth` for valid alphabets.

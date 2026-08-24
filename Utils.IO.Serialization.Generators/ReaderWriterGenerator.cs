@@ -19,8 +19,8 @@ public sealed class ReaderWriterGenerator : IIncrementalGenerator
     private static readonly DiagnosticDescriptor UnsupportedMember = Create("UIOSG003", "Unsupported member", "Member '{0}' must be an accessible instance member with both readable and writable access");
     private static readonly DiagnosticDescriptor DuplicateOrder = Create("UIOSG004", "Duplicate field order", "Member '{0}' duplicates field order {1}");
     private static readonly DiagnosticDescriptor AmbiguousConverter = Create("UIOSG005", "Ambiguous converter", "More than one exact {0} converter is available for '{1}'");
-    private static readonly DiagnosticDescriptor InvalidWireCodec = Create("UIOSG011", "Invalid wire codec", "Wire codec '{0}' on member '{1}' must be concrete, have an accessible parameterless constructor, and implement both wire directions for '{2}'");
-    private static readonly DiagnosticDescriptor InvalidWireFraming = Create("UIOSG012", "Invalid wire framing", "Wire framing '{0}' on member '{1}' must be concrete, have an accessible parameterless constructor, and implement IWireFraming");
+    private static readonly DiagnosticDescriptor InvalidWireCodec = Create("UIOSG011", "Invalid wire codec", "Wire codec '{0}' on member '{1}' must be concrete, have a public parameterless constructor, and implement both wire directions for '{2}'");
+    private static readonly DiagnosticDescriptor InvalidWireFraming = Create("UIOSG012", "Invalid wire framing", "Wire framing '{0}' on member '{1}' must be concrete, have a public parameterless constructor, and implement IWireFraming");
     private static readonly DiagnosticDescriptor InitOnlyProperty = Create("UIOSG010", "Init-only property is not supported", "Property '{0}' on '{1}' is init-only and cannot be assigned by the generated reader");
 
     /// <inheritdoc />
@@ -90,11 +90,11 @@ public sealed class ReaderWriterGenerator : IIncrementalGenerator
                 };
                 if (!valid) invalid |= Report(context, UnsupportedMember, member.Symbol.Locations.FirstOrDefault(), member.Symbol.Name);
                 if (member.CodecType is INamedTypeSymbol codec && (wireReaderType is null || wireWriterType is null || codec.IsAbstract || codec.TypeKind == TypeKind.Interface ||
-                    !codec.InstanceConstructors.Any(c => c.Parameters.Length == 0 && IsAccessible(c.DeclaredAccessibility)) ||
+                    !codec.InstanceConstructors.Any(c => c.Parameters.Length == 0 && c.DeclaredAccessibility == Accessibility.Public) ||
                     !ImplementsConstructedInterface(codec, wireReaderType, member.Type) || !ImplementsConstructedInterface(codec, wireWriterType, member.Type)))
                     invalid |= Report(context, InvalidWireCodec, member.Symbol.Locations.FirstOrDefault(), codec.ToDisplayString(), member.Symbol.Name, member.Type.ToDisplayString());
                 if (member.FramingType is INamedTypeSymbol framing && (wireFramingType is null || framing.IsAbstract || framing.TypeKind == TypeKind.Interface ||
-                    !framing.InstanceConstructors.Any(c => c.Parameters.Length == 0 && IsAccessible(c.DeclaredAccessibility)) || !ImplementsInterface(framing, wireFramingType)))
+                    !framing.InstanceConstructors.Any(c => c.Parameters.Length == 0 && c.DeclaredAccessibility == Accessibility.Public) || !ImplementsInterface(framing, wireFramingType)))
                     invalid |= Report(context, InvalidWireFraming, member.Symbol.Locations.FirstOrDefault(), framing.ToDisplayString(), member.Symbol.Name);
             }
             foreach (IGrouping<int, MemberContract> duplicate in members.GroupBy(m => m.Order).Where(g => g.Count() > 1))

@@ -157,6 +157,69 @@ public sealed class ReaderWriterGeneratorTests
         Assert.AreEqual(0, result.GeneratedTrees.Length);
     }
 
+    /// <summary>Ensures a wire codec with only an internal parameterless constructor is rejected.</summary>
+    [TestMethod]
+    public void WireCodec_WithInternalParameterlessConstructor_IsRejected()
+    {
+        GeneratorDriverRunResult result = RunGenerator("""
+            using Utils.IO.Serialization;
+            namespace Models;
+            public sealed class Codec : IWireCodec<int>
+            {
+                internal Codec() { }
+                public int Read(IReader reader) => 0;
+                public void Write(IWriter writer, int value) { }
+            }
+            [GenerateReaderWriter]
+            public class Model { [Field(0), WireCodec(typeof(Codec))] public int Value { get; set; } }
+            """, out _);
+
+        AssertHasSingleDiagnostic(result, "UIOSG011");
+        Assert.AreEqual(0, result.GeneratedTrees.Length);
+    }
+
+    /// <summary>Ensures wire framing with only an internal parameterless constructor is rejected.</summary>
+    [TestMethod]
+    public void WireFraming_WithInternalParameterlessConstructor_IsRejected()
+    {
+        GeneratorDriverRunResult result = RunGenerator("""
+            using Utils.IO.Serialization;
+            namespace Models;
+            public sealed class Framing : IWireFraming
+            {
+                internal Framing() { }
+                public WireFramingKind Kind => WireFramingKind.CodecOwned;
+            }
+            [GenerateReaderWriter]
+            public class Model { [Field(0), WireFraming(typeof(Framing))] public int Value { get; set; } }
+            """, out _);
+
+        AssertHasSingleDiagnostic(result, "UIOSG012");
+        Assert.AreEqual(0, result.GeneratedTrees.Length);
+    }
+
+    /// <summary>Ensures a codec with a public parameterless constructor remains accepted.</summary>
+    [TestMethod]
+    public void WireCodec_WithPublicParameterlessConstructor_IsAccepted()
+    {
+        GeneratorDriverRunResult result = RunGenerator("""
+            using Utils.IO.Serialization;
+            namespace Models;
+            public sealed class Codec : IWireCodec<int>
+            {
+                public Codec() { }
+                public int Read(IReader reader) => 0;
+                public void Write(IWriter writer, int value) { }
+            }
+            [GenerateReaderWriter]
+            public class Model { [Field(0), WireCodec(typeof(Codec))] public int Value { get; set; } }
+            """, out Compilation output);
+
+        Assert.IsFalse(result.Diagnostics.Any(diagnostic => diagnostic.Id is "UIOSG011" or "UIOSG012"));
+        Assert.AreEqual(1, result.GeneratedTrees.Length);
+        AssertNoCompilationErrors(output);
+    }
+
     /// <summary>Ensures nested generated contracts remain runtime-codec aware before using their generated fallback.</summary>
     [TestMethod]
     public void NestedGeneratedContract_UsesConfiguredCodecFallback()

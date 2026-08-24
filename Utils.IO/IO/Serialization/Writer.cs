@@ -113,7 +113,7 @@ public class Writer : IWriter, IStreamMapping<Writer>
     private Writer(Stream stream, IReadOnlyDictionary<Type, Delegate> writers, IReadOnlyDictionary<Type, WireCodecRegistration>? codecs = null,
         VariablePayloadWritePolicy writePolicy = VariablePayloadWritePolicy.RequireKnownLength, int maximumBufferedPayloadLength = 1024 * 1024)
     {
-        this.Stream = stream;
+        this.Stream = stream ?? throw new ArgumentNullException(nameof(stream));
         this.writers = writers.ToDictionary();
         this.codecs = codecs ?? new Dictionary<Type, WireCodecRegistration>();
         WritePolicy = writePolicy;
