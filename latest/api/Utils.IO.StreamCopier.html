@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class StreamCopier | omy.Utils Documentation ">
       
-      <meta name="description" content="A writable-only stream that copies written data to multiple target streams simultaneously. This class implements both  and  so that the set of target streams can be dynamically modified at runtime. Note that no concurrency control is provided; if multiple threads write concurrently, external locking may be needed. Reading and seeking are not supported. Calling  will broadcast the provided data to all underlying streams in the targets collection.  Best-effort fan-out: , , and  attempt the operation on every target stream even if earlier ones throw. All exceptions are collected and rethrown as an  so no target is silently skipped. This means targets that were reached before a failure already hold the written data while later ones may not — callers that need strict all-or-nothing semantics must manage this externally.  By default, disposing this object does not dispose any of the contained streams. If the parameter  is true when constructing this class, all target streams will be disposed when  is called.">
+      <meta name="description" content="A writable-only stream that copies written data to multiple target streams simultaneously. This class implements both  and  so that the set of target streams can be dynamically modified at runtime. Note that no concurrency control is provided; if multiple threads write concurrently, external locking may be needed. Reading and seeking are not supported. Calling  will broadcast the provided data to all underlying streams in the targets collection.  Target registration contract: every target entering the collection — through a constructor, ,  or the indexer setter — must be non-null, writable (), distinct from this instance, and not already registered. Registration is identified by reference (), not by , so two distinct  instances that happen to compare equal may both be registered, while the exact same instance cannot be registered twice. Writability is checked only at registration time; a target that becomes unwritable or is disposed externally afterwards does not affect this instance&#39;s own  and is simply reported through the normal best-effort/aggregate failure behavior on the next write.  Best-effort fan-out: , , and  attempt the operation on every target stream even if earlier ones throw. All exceptions are collected and rethrown as an  so no target is silently skipped. This means targets that were reached before a failure already hold the written data while later ones may not — callers that need strict all-or-nothing semantics must manage this externally.   By default, disposing this object does not dispose any of the contained streams. If the parameter  is true when constructing this class, all target streams will be disposed when  is called.   Post-dispose lifecycle: disposing this instance freezes but does not erase the target collection.  becomes false and  becomes true; the collection remains inspectable (, the indexer getter, , ,  and enumeration all keep working), but every mutating member throws . This holds regardless of closeAllTargetsOnDispose: when ownership is enabled, the returned references remain registered even though the streams they point to have themselves already been disposed.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_IO_StreamCopier" data-uid="Utils.IO.StreamCopier" class="text-break">
-Class StreamCopier  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L37"><i class="bi bi-code-slash"></i></a>
+Class StreamCopier  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L58"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -105,17 +105,39 @@ control is provided; if multiple threads write concurrently, external locking ma
 Calling <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Write_System_Byte___System_Int32_System_Int32_">Write(byte[], int, int)</a> will broadcast the provided data to all
 underlying streams in the targets collection.</p>
 <remarks>
+<b>Target registration contract:</b> every target entering the collection — through a
+constructor, <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Add_System_IO_Stream_">Add(Stream)</a>, <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Insert_System_Int32_System_IO_Stream_">Insert(int, Stream)</a> or the indexer setter — must be
+non-null, writable (<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream.canwrite">CanWrite</a>), distinct from this instance, and not
+already registered. Registration is identified by reference (<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">ReferenceEquals(object, object)</a>),
+not by <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">Equals(object)</a>, so two distinct <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a> instances
+that happen to compare equal may both be registered, while the exact same instance cannot be
+registered twice. Writability is checked only at registration time; a target that becomes
+unwritable or is disposed externally afterwards does not affect this instance's own
+<a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_CanWrite">CanWrite</a> and is simply reported through the normal best-effort/aggregate
+failure behavior on the next write.
+<p>
 <b>Best-effort fan-out:</b> <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Write_System_Byte___System_Int32_System_Int32_">Write(byte[], int, int)</a>,
 <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Write_System_ReadOnlySpan_System_Byte__">Write(ReadOnlySpan&lt;byte&gt;)</a>, and <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Flush">Flush()</a> attempt the operation
 on every target stream even if earlier ones throw. All exceptions are collected and rethrown as
 an <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.aggregateexception">AggregateException</a> so no target is silently skipped.
 This means targets that were reached before a failure already hold the written data while later
 ones may not — callers that need strict all-or-nothing semantics must manage this externally.
+</p>
 <p>
 By default, disposing this object does not dispose any of the contained streams. If the
 parameter <span class="xref">closeAllTargetsOnDispose</span> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when constructing
 this class, all target streams will be disposed when <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.idisposable.dispose">Dispose()</a>
 is called.
+</p>
+<p>
+<b>Post-dispose lifecycle:</b> disposing this instance freezes but does not erase the target
+collection. <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_CanWrite">CanWrite</a> becomes <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> and <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_IsReadOnly">IsReadOnly</a>
+becomes <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>; the collection remains inspectable (<a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Count">Count</a>, the
+indexer getter, <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Contains_System_IO_Stream_">Contains(Stream)</a>, <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_IndexOf_System_IO_Stream_">IndexOf(Stream)</a>, <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_CopyTo_System_IO_Stream___System_Int32_">CopyTo(Stream[], int)</a> and
+enumeration all keep working), but every mutating member throws
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a>. This holds regardless of <code>closeAllTargetsOnDispose</code>:
+when ownership is enabled, the returned references remain registered even though the streams
+they point to have themselves already been disposed.
 </p>
 </remarks>
 </div>
@@ -479,7 +501,7 @@ is called.
 
   <h3 id="Utils_IO_StreamCopier__ctor_System_Boolean_" data-uid="Utils.IO.StreamCopier.#ctor(System.Boolean)">
   StreamCopier(bool)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L66"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L89"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.IO.StreamCopier.html">StreamCopier</a> class with an empty
@@ -514,7 +536,7 @@ all streams in <span class="xref">Utils.IO.StreamCopier._targets</span>.</p>
 
   <h3 id="Utils_IO_StreamCopier__ctor_System_Boolean_System_IO_Stream___" data-uid="Utils.IO.StreamCopier.#ctor(System.Boolean,System.IO.Stream[])">
   StreamCopier(bool, params Stream[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L82"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L111"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.IO.StreamCopier.html">StreamCopier</a> class and
@@ -548,7 +570,11 @@ all streams in <span class="xref">Utils.IO.StreamCopier._targets</span>.</p>
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
-    <dd><p>Thrown when <code class="paramref">streams</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+    <dd><p>Thrown when <code class="paramref">streams</code> or one of its elements is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when an element is not writable, is this <a class="xref" href="Utils.IO.StreamCopier.html">StreamCopier</a> itself, or is
+already present elsewhere in <code class="paramref">streams</code>.</p>
 </dd>
   </dl>
 
@@ -558,7 +584,7 @@ all streams in <span class="xref">Utils.IO.StreamCopier._targets</span>.</p>
 
   <h3 id="Utils_IO_StreamCopier__ctor_System_IO_Stream___" data-uid="Utils.IO.StreamCopier.#ctor(System.IO.Stream[])">
   StreamCopier(params Stream[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L96"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L135"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.IO.StreamCopier.html">StreamCopier</a> class and
@@ -588,7 +614,11 @@ adds the specified array of streams to its targets (with <code>closeAllTargetsOn
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
-    <dd><p>Thrown when <code class="paramref">streams</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+    <dd><p>Thrown when <code class="paramref">streams</code> or one of its elements is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when an element is not writable, is this <a class="xref" href="Utils.IO.StreamCopier.html">StreamCopier</a> itself, or is
+already present elsewhere in <code class="paramref">streams</code>.</p>
 </dd>
   </dl>
 
@@ -602,7 +632,7 @@ adds the specified array of streams to its targets (with <code>closeAllTargetsOn
 
   <h3 id="Utils_IO_StreamCopier_CanRead" data-uid="Utils.IO.StreamCopier.CanRead">
   CanRead
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L104"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L143"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>When overridden in a derived class, gets a value indicating whether the current stream supports reading.</p>
@@ -635,7 +665,7 @@ adds the specified array of streams to its targets (with <code>closeAllTargetsOn
 
   <h3 id="Utils_IO_StreamCopier_CanSeek" data-uid="Utils.IO.StreamCopier.CanSeek">
   CanSeek
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L107"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L146"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>When overridden in a derived class, gets a value indicating whether the current stream supports seeking.</p>
@@ -668,10 +698,13 @@ adds the specified array of streams to its targets (with <code>closeAllTargetsOn
 
   <h3 id="Utils_IO_StreamCopier_CanWrite" data-uid="Utils.IO.StreamCopier.CanWrite">
   CanWrite
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L110"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L154"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>When overridden in a derived class, gets a value indicating whether the current stream supports writing.</p>
+  <div class="markdown level1 summary"><p>Gets a value indicating whether this instance can still be written to. This reflects the
+lifetime of the <a class="xref" href="Utils.IO.StreamCopier.html">StreamCopier</a> itself — it is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> while the
+instance is active, including when it has zero targets, and becomes <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>
+once disposed. It is not a live health check of the registered target streams.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -686,8 +719,7 @@ adds the specified array of streams to its targets (with <code>closeAllTargetsOn
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
-    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the stream supports writing; otherwise, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
-</dd>
+    <dd></dd>
   </dl>
 
 
@@ -701,10 +733,10 @@ adds the specified array of streams to its targets (with <code>closeAllTargetsOn
 
   <h3 id="Utils_IO_StreamCopier_Count" data-uid="Utils.IO.StreamCopier.Count">
   Count
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L354"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L399"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets the number of target streams in the list.</p>
+  <div class="markdown level1 summary"><p>Gets the number of target streams in the list. Remains accurate after disposal.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -733,10 +765,12 @@ adds the specified array of streams to its targets (with <code>closeAllTargetsOn
 
   <h3 id="Utils_IO_StreamCopier_IsReadOnly" data-uid="Utils.IO.StreamCopier.IsReadOnly">
   IsReadOnly
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L359"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L406"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets a value indicating whether the list of streams is read-only. This is always <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+  <div class="markdown level1 summary"><p>Gets a value indicating whether the target list is read-only. This is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>
+while the instance is active and becomes <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> once disposed, at which point
+every mutating member throws <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -765,10 +799,13 @@ adds the specified array of streams to its targets (with <code>closeAllTargetsOn
 
   <h3 id="Utils_IO_StreamCopier_Item_System_Int32_" data-uid="Utils.IO.StreamCopier.Item(System.Int32)">
   this[int]
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L366"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L422"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets or sets the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a> at the specified index.</p>
+  <div class="markdown level1 summary"><p>Gets or sets the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a> at the specified index. The getter remains available
+after disposal. The setter validates the replacement target using the same registration
+contract as <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Add_System_IO_Stream_">Add(Stream)</a> and <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Insert_System_Int32_System_IO_Stream_">Insert(int, Stream)</a>, except that replacing an index with
+the exact reference already occupying it is allowed rather than treated as a duplicate.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -797,6 +834,19 @@ adds the specified array of streams to its targets (with <code>closeAllTargetsOn
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a></dt>
+    <dd><p>Thrown by the setter once this instance has been disposed.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown by the setter when the new value is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown by the setter when the new value is not writable, is this <a class="xref" href="Utils.IO.StreamCopier.html">StreamCopier</a>
+itself, or is already registered at a different index.</p>
+</dd>
+  </dl>
 
 
 
@@ -804,7 +854,7 @@ adds the specified array of streams to its targets (with <code>closeAllTargetsOn
 
   <h3 id="Utils_IO_StreamCopier_Length" data-uid="Utils.IO.StreamCopier.Length">
   Length
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L113"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L157"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>When overridden in a derived class, gets the length in bytes of the stream.</p>
@@ -846,7 +896,7 @@ adds the specified array of streams to its targets (with <code>closeAllTargetsOn
 
   <h3 id="Utils_IO_StreamCopier_Position" data-uid="Utils.IO.StreamCopier.Position">
   Position
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L116"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L160"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>When overridden in a derived class, gets or sets the position within the current stream.</p>
@@ -895,10 +945,11 @@ adds the specified array of streams to its targets (with <code>closeAllTargetsOn
 
   <h3 id="Utils_IO_StreamCopier_Add_System_IO_Stream_" data-uid="Utils.IO.StreamCopier.Add(System.IO.Stream)">
   Add(Stream)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L402"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L482"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Adds a stream to the end of the list of targets.</p>
+  <div class="markdown level1 summary"><p>Adds a stream to the end of the list of targets. The target must be non-null, writable, not
+this <a class="xref" href="Utils.IO.StreamCopier.html">StreamCopier</a> itself, and not already registered (by reference identity).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -909,7 +960,7 @@ adds the specified array of streams to its targets (with <code>closeAllTargetsOn
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>item</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a></dt>
-    <dd><p>The stream to add. Must not be null.</p>
+    <dd><p>The stream to add.</p>
 </dd>
   </dl>
 
@@ -923,8 +974,15 @@ adds the specified array of streams to its targets (with <code>closeAllTargetsOn
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a></dt>
+    <dd><p>Thrown once this instance has been disposed.</p>
+</dd>
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
-    <dd><p>Thrown when <code class="paramref">item</code> is null.</p>
+    <dd><p>Thrown when <code class="paramref">item</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">item</code> is not writable, is this <a class="xref" href="Utils.IO.StreamCopier.html">StreamCopier</a> itself,
+or is already registered.</p>
 </dd>
   </dl>
 
@@ -934,7 +992,7 @@ adds the specified array of streams to its targets (with <code>closeAllTargetsOn
 
   <h3 id="Utils_IO_StreamCopier_Clear" data-uid="Utils.IO.StreamCopier.Clear">
   Clear()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L411"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L493"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes all streams from the targets list.</p>
@@ -954,6 +1012,12 @@ adds the specified array of streams to its targets (with <code>closeAllTargetsOn
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a></dt>
+    <dd><p>Thrown once this instance has been disposed.</p>
+</dd>
+  </dl>
 
 
 
@@ -961,10 +1025,11 @@ adds the specified array of streams to its targets (with <code>closeAllTargetsOn
 
   <h3 id="Utils_IO_StreamCopier_Contains_System_IO_Stream_" data-uid="Utils.IO.StreamCopier.Contains(System.IO.Stream)">
   Contains(Stream)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L418"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L505"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Determines whether the targets list contains a specific stream.</p>
+  <div class="markdown level1 summary"><p>Determines whether the targets list contains a specific stream, using reference identity
+rather than <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">Equals(object)</a>. Remains available after disposal.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -1000,11 +1065,11 @@ adds the specified array of streams to its targets (with <code>closeAllTargetsOn
 
   <h3 id="Utils_IO_StreamCopier_CopyTo_System_IO_Stream___System_Int32_" data-uid="Utils.IO.StreamCopier.CopyTo(System.IO.Stream[],System.Int32)">
   CopyTo(Stream[], int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L426"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L513"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Copies the entire list of streams to a compatible one-dimensional array,
-starting at the specified array index.</p>
+starting at the specified array index. Remains available after disposal.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -1037,11 +1102,14 @@ starting at the specified array index.</p>
 
   <h3 id="Utils_IO_StreamCopier_Dispose_System_Boolean_" data-uid="Utils.IO.StreamCopier.Dispose(System.Boolean)">
   Dispose(bool)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L281"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L328"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Disposes the current <a class="xref" href="Utils.IO.StreamCopier.html">StreamCopier</a>. If <span class="xref">Utils.IO.StreamCopier.closeAllTargetsOnDispose</span>
-is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>, all target streams will also be disposed. The method is idempotent.</p>
+is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>, all target streams will also be disposed, but their references
+remain in the target collection. The method is idempotent and shares its disposed state with
+<a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_DisposeAsync">DisposeAsync()</a>: whichever path runs first attempts target disposal, the other
+becomes a no-op.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -1071,13 +1139,16 @@ is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin
 
   <h3 id="Utils_IO_StreamCopier_DisposeAsync" data-uid="Utils.IO.StreamCopier.DisposeAsync">
   DisposeAsync()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L314"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L364"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Asynchronously disposes the current <a class="xref" href="Utils.IO.StreamCopier.html">StreamCopier</a>. If <span class="xref">Utils.IO.StreamCopier.closeAllTargetsOnDispose</span>
-is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>, all target streams are asynchronously disposed; every target is attempted
-even if one fails and errors are aggregated. The method is idempotent.
-After disposal all write and flush operations throw <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a>.</p>
+is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>, all target streams are asynchronously disposed, but their references
+remain in the target collection; every target is attempted even if one fails and errors are
+aggregated. The method is idempotent and shares its disposed state with <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Dispose_System_Boolean_">Dispose(bool)</a>.
+After disposal all write and flush operations throw <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a>, and
+<a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_CanWrite">CanWrite</a> becomes <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> while the target collection remains
+inspectable.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -1107,7 +1178,7 @@ After disposal all write and flush operations throw <a class="xref" href="https:
 
   <h3 id="Utils_IO_StreamCopier_Flush" data-uid="Utils.IO.StreamCopier.Flush">
   Flush()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L126"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L170"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Flushes all target streams, collecting any exceptions. If any flush fails, an
@@ -1135,7 +1206,7 @@ After disposal all write and flush operations throw <a class="xref" href="https:
 
   <h3 id="Utils_IO_StreamCopier_FlushAsync_System_Threading_CancellationToken_" data-uid="Utils.IO.StreamCopier.FlushAsync(System.Threading.CancellationToken)">
   FlushAsync(CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L244"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L288"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Asynchronously flushes every target stream. A snapshot is taken before the loop; all targets are
@@ -1176,10 +1247,11 @@ loop takes priority over target failures.</p>
 
   <h3 id="Utils_IO_StreamCopier_GetEnumerator" data-uid="Utils.IO.StreamCopier.GetEnumerator">
   GetEnumerator()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L439"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L536"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Returns an enumerator that iterates through the list of target streams.</p>
+  <div class="markdown level1 summary"><p>Returns an enumerator that iterates through the list of target streams. Remains available
+after disposal.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -1209,10 +1281,11 @@ loop takes priority over target failures.</p>
 
   <h3 id="Utils_IO_StreamCopier_IndexOf_System_IO_Stream_" data-uid="Utils.IO.StreamCopier.IndexOf(System.IO.Stream)">
   IndexOf(Stream)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L377"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L439"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Determines the index of a specific stream in the list.</p>
+  <div class="markdown level1 summary"><p>Determines the index of a specific stream in the list, using reference identity rather than
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">Equals(object)</a>. Remains available after disposal.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -1248,10 +1321,11 @@ loop takes priority over target failures.</p>
 
   <h3 id="Utils_IO_StreamCopier_Insert_System_Int32_System_IO_Stream_" data-uid="Utils.IO.StreamCopier.Insert(System.Int32,System.IO.Stream)">
   Insert(int, Stream)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L385"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L453"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Inserts a stream at the specified index.</p>
+  <div class="markdown level1 summary"><p>Inserts a stream at the specified index, applying the same registration contract as
+<a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Add_System_IO_Stream_">Add(Stream)</a>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -1265,7 +1339,7 @@ loop takes priority over target failures.</p>
     <dd><p>The zero-based index at which <code class="paramref">item</code> should be inserted.</p>
 </dd>
     <dt><code>item</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a></dt>
-    <dd><p>The stream to insert. Must not be null.</p>
+    <dd><p>The stream to insert.</p>
 </dd>
   </dl>
 
@@ -1279,8 +1353,15 @@ loop takes priority over target failures.</p>
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a></dt>
+    <dd><p>Thrown once this instance has been disposed.</p>
+</dd>
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
-    <dd><p>Thrown when <code class="paramref">item</code> is null.</p>
+    <dd><p>Thrown when <code class="paramref">item</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">item</code> is not writable, is this <a class="xref" href="Utils.IO.StreamCopier.html">StreamCopier</a> itself,
+or is already registered.</p>
 </dd>
   </dl>
 
@@ -1290,7 +1371,7 @@ loop takes priority over target failures.</p>
 
   <h3 id="Utils_IO_StreamCopier_Read_System_Byte___System_Int32_System_Int32_" data-uid="Utils.IO.StreamCopier.Read(System.Byte[],System.Int32,System.Int32)">
   Read(byte[], int, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L140"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L184"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>When overridden in a derived class, reads a sequence of bytes from the current stream and advances the position within the stream by the number of bytes read.</p>
@@ -1356,10 +1437,11 @@ loop takes priority over target failures.</p>
 
   <h3 id="Utils_IO_StreamCopier_Remove_System_IO_Stream_" data-uid="Utils.IO.StreamCopier.Remove(System.IO.Stream)">
   Remove(Stream)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L433"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L522"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Removes the first occurrence of a specific stream from the list.</p>
+  <div class="markdown level1 summary"><p>Removes the first occurrence of a specific stream from the list, using reference identity
+rather than <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">Equals(object)</a>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -1388,6 +1470,12 @@ loop takes priority over target failures.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a></dt>
+    <dd><p>Thrown once this instance has been disposed.</p>
+</dd>
+  </dl>
 
 
 
@@ -1395,7 +1483,7 @@ loop takes priority over target failures.</p>
 
   <h3 id="Utils_IO_StreamCopier_RemoveAt_System_Int32_" data-uid="Utils.IO.StreamCopier.RemoveAt(System.Int32)">
   RemoveAt(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L395"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L465"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes the stream at the specified index.</p>
@@ -1421,6 +1509,12 @@ loop takes priority over target failures.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a></dt>
+    <dd><p>Thrown once this instance has been disposed.</p>
+</dd>
+  </dl>
 
 
 
@@ -1428,7 +1522,7 @@ loop takes priority over target failures.</p>
 
   <h3 id="Utils_IO_StreamCopier_Seek_System_Int64_System_IO_SeekOrigin_" data-uid="Utils.IO.StreamCopier.Seek(System.Int64,System.IO.SeekOrigin)">
   Seek(long, SeekOrigin)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L146"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L190"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>When overridden in a derived class, sets the position within the current stream.</p>
@@ -1482,7 +1576,7 @@ loop takes priority over target failures.</p>
 
   <h3 id="Utils_IO_StreamCopier_SetLength_System_Int64_" data-uid="Utils.IO.StreamCopier.SetLength(System.Int64)">
   SetLength(long)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L152"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L196"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>When overridden in a derived class, sets the length of the current stream.</p>
@@ -1527,7 +1621,7 @@ loop takes priority over target failures.</p>
 
   <h3 id="Utils_IO_StreamCopier_Write_System_Byte___System_Int32_System_Int32_" data-uid="Utils.IO.StreamCopier.Write(System.Byte[],System.Int32,System.Int32)">
   Write(byte[], int, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L164"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L208"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes the specified buffer range to all target streams. Every stream is attempted even if
@@ -1567,7 +1661,7 @@ earlier ones throw; all exceptions are collected and rethrown as an <a class="xr
 
   <h3 id="Utils_IO_StreamCopier_Write_System_ReadOnlySpan_System_Byte__" data-uid="Utils.IO.StreamCopier.Write(System.ReadOnlySpan{System.Byte})">
   Write(ReadOnlySpan&lt;byte&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L184"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L228"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes a span of bytes to all target streams. Every target receives the same span without any
@@ -1601,7 +1695,7 @@ intermediate allocation. Errors are aggregated in the same way as <a class="xref
 
   <h3 id="Utils_IO_StreamCopier_WriteAsync_System_Byte___System_Int32_System_Int32_System_Threading_CancellationToken_" data-uid="Utils.IO.StreamCopier.WriteAsync(System.Byte[],System.Int32,System.Int32,System.Threading.CancellationToken)">
   WriteAsync(byte[], int, int, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L208"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L252"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Asynchronously writes the specified buffer range to every target stream. A snapshot of the targets
@@ -1651,7 +1745,7 @@ aggregated. Cancellation requested before the loop takes priority over target fa
 
   <h3 id="Utils_IO_StreamCopier_WriteAsync_System_ReadOnlyMemory_System_Byte__System_Threading_CancellationToken_" data-uid="Utils.IO.StreamCopier.WriteAsync(System.ReadOnlyMemory{System.Byte},System.Threading.CancellationToken)">
   WriteAsync(ReadOnlyMemory&lt;byte&gt;, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L219"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L263"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Asynchronously writes the specified memory buffer to every target stream. A snapshot of the targets
@@ -1695,7 +1789,7 @@ aggregated. Cancellation requested before the loop takes priority over target fa
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L37" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamCopier.cs/#L58" class="edit-link">Edit this page</a>
         </div>
 
 

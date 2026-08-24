@@ -116,17 +116,39 @@ control is provided; if multiple threads write concurrently, external locking ma
 Calling <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Write_System_Byte___System_Int32_System_Int32_">Write(byte[], int, int)</a> will broadcast the provided data to all
 underlying streams in the targets collection.</p>
 <remarks>
+<b>Target registration contract:</b> every target entering the collection — through a
+constructor, <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Add_System_IO_Stream_">Add(Stream)</a>, <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Insert_System_Int32_System_IO_Stream_">Insert(int, Stream)</a> or the indexer setter — must be
+non-null, writable (<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream.canwrite">CanWrite</a>), distinct from this instance, and not
+already registered. Registration is identified by reference (<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">ReferenceEquals(object, object)</a>),
+not by <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">Equals(object)</a>, so two distinct <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a> instances
+that happen to compare equal may both be registered, while the exact same instance cannot be
+registered twice. Writability is checked only at registration time; a target that becomes
+unwritable or is disposed externally afterwards does not affect this instance's own
+<a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_CanWrite">CanWrite</a> and is simply reported through the normal best-effort/aggregate
+failure behavior on the next write.
+<p>
 <b>Best-effort fan-out:</b> <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Write_System_Byte___System_Int32_System_Int32_">Write(byte[], int, int)</a>,
 <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Write_System_ReadOnlySpan_System_Byte__">Write(ReadOnlySpan&lt;byte&gt;)</a>, and <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Flush">Flush()</a> attempt the operation
 on every target stream even if earlier ones throw. All exceptions are collected and rethrown as
 an <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.aggregateexception">AggregateException</a> so no target is silently skipped.
 This means targets that were reached before a failure already hold the written data while later
 ones may not — callers that need strict all-or-nothing semantics must manage this externally.
+</p>
 <p>
 By default, disposing this object does not dispose any of the contained streams. If the
 parameter <span class="xref">closeAllTargetsOnDispose</span> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when constructing
 this class, all target streams will be disposed when <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.idisposable.dispose">Dispose()</a>
 is called.
+</p>
+<p>
+<b>Post-dispose lifecycle:</b> disposing this instance freezes but does not erase the target
+collection. <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_CanWrite">CanWrite</a> becomes <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> and <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_IsReadOnly">IsReadOnly</a>
+becomes <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>; the collection remains inspectable (<a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Count">Count</a>, the
+indexer getter, <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Contains_System_IO_Stream_">Contains(Stream)</a>, <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_IndexOf_System_IO_Stream_">IndexOf(Stream)</a>, <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_CopyTo_System_IO_Stream___System_Int32_">CopyTo(Stream[], int)</a> and
+enumeration all keep working), but every mutating member throws
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a>. This holds regardless of <code>closeAllTargetsOnDispose</code>:
+when ownership is enabled, the returned references remain registered even though the streams
+they point to have themselves already been disposed.
 </p>
 </remarks>
 </dd>
