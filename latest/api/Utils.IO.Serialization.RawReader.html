@@ -419,10 +419,11 @@ two's-complement payload whose byte order follows <a class="xref" href="Utils.IO
 
   <h3 id="Utils_IO_Serialization_RawReader_ReadBool_Utils_IO_Serialization_IReader_" data-uid="Utils.IO.Serialization.RawReader.ReadBool(Utils.IO.Serialization.IReader)">
   ReadBool(IReader)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawReader.cs/#L201"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawReader.cs/#L204"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Reads a boolean value.</p>
+  <div class="markdown level1 summary"><p>Reads a canonical one-byte boolean value. Only <code>0x00</code> and <code>0x01</code> are valid on the wire;
+every other byte is rejected as malformed input rather than silently coerced to <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
