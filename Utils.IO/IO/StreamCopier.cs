@@ -22,7 +22,7 @@ namespace Utils.IO;
 /// <b>Target registration contract:</b> every target entering the collection — through a
 /// constructor, <see cref="Add"/>, <see cref="Insert"/> or the indexer setter — must be
 /// non-null, writable (<see cref="Stream.CanWrite"/>), distinct from this instance, and not
-/// already registered. Registration is identified by reference (<see cref="ReferenceEquals(object?, object?)"/>),
+/// already registered. Registration is identified by reference (<see cref="object.ReferenceEquals(object, object)"/>),
 /// not by <see cref="object.Equals(object?)"/>, so two distinct <see cref="Stream"/> instances
 /// that happen to compare equal may both be registered, while the exact same instance cannot be
 /// registered twice. Writability is checked only at registration time; a target that becomes
@@ -543,7 +543,7 @@ public class StreamCopier : Stream, IList<Stream>
     IEnumerator IEnumerable.GetEnumerator() => _targets.GetEnumerator();
 
     /// <summary>
-    /// Finds the index of a target by reference identity (<see cref="ReferenceEquals(object?, object?)"/>),
+    /// Finds the index of a target by reference identity (<see cref="object.ReferenceEquals(object, object)"/>),
     /// deliberately ignoring any custom <see cref="object.Equals(object?)"/> override a target stream
     /// might define.
     /// </summary>

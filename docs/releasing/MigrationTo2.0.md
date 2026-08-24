@@ -34,6 +34,8 @@ is genuinely required.
 
 Version 2.0 intentionally removes the legacy `StreamCopier`, `StreamValidator`, `BaseDecoderStream`, `ReadArray`, and `WriteVariableLengthString` signatures listed in the versioned API-breaking-change manifest. Consumers should migrate to the bounded/configurable overloads described by the current API documentation rather than restore 1.x shims.
 
+`StreamCopier` now validates targets when they are registered, through any constructor, `Add`, `Insert`, or the indexer setter. Null, non-writable, self, and duplicate target references are rejected; duplicate identity is reference-based (`ReferenceEquals`), not `Equals`. After disposal the target list remains inspectable but is frozen: `CanWrite` becomes `false`, `IsReadOnly` becomes `true`, and every mutating member throws `ObjectDisposedException`. Consumers relying on the previous permissive registration or on the post-dispose list being cleared or freely mutable must update accordingly.
+
 `ReaderWriterGenerator` is now an `IIncrementalGenerator`. Generated extension methods no longer use a type's simple name: their deterministic name contains the namespace, containing types, metadata arity, and a stable FNV-1a suffix. Call sites must use the newly generated method name visible in IntelliSense.
 
 Runtime reader converters require an exact result type. A converter returning an interface or base class is not used for a concrete `Read<T>` because it cannot guarantee `T`. Writers may use a base/interface converter; the most specific applicable registration wins and equal-specificity candidates are rejected.

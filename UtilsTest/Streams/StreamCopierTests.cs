@@ -260,12 +260,14 @@ public class StreamCopierTests
 
     // -- constructor validation --
 
+    /// <summary>Verifies the array-accepting constructor rejects a null array.</summary>
     [TestMethod]
     public void Constructor_RejectsNullArray()
     {
         Assert.ThrowsException<ArgumentNullException>(() => new StreamCopier((Stream[])null!));
     }
 
+    /// <summary>Verifies the constructor rejects a null element within an otherwise valid array.</summary>
     [TestMethod]
     public void Constructor_RejectsNullElement()
     {
@@ -273,6 +275,7 @@ public class StreamCopierTests
         Assert.ThrowsException<ArgumentNullException>(() => new StreamCopier(s1, null!));
     }
 
+    /// <summary>Verifies the constructor rejects a non-writable target before any write is attempted.</summary>
     [TestMethod]
     public void Constructor_RejectsNonWritableTarget()
     {
@@ -281,6 +284,7 @@ public class StreamCopierTests
         Assert.ThrowsException<ArgumentException>(() => new StreamCopier(readOnly));
     }
 
+    /// <summary>Verifies the constructor rejects the same stream instance appearing twice in the array.</summary>
     [TestMethod]
     public void Constructor_RejectsDuplicateReference()
     {
@@ -288,6 +292,7 @@ public class StreamCopierTests
         Assert.ThrowsException<ArgumentException>(() => new StreamCopier(s, s));
     }
 
+    /// <summary>Verifies two distinct writable targets still construct successfully.</summary>
     [TestMethod]
     public void Constructor_AllowsTwoDistinctWritableTargets()
     {
@@ -299,6 +304,7 @@ public class StreamCopierTests
 
     // -- Add / Insert --
 
+    /// <summary>Verifies <see cref="StreamCopier.Add"/> rejects a non-writable target.</summary>
     [TestMethod]
     public void Add_RejectsNonWritableTarget()
     {
@@ -308,6 +314,7 @@ public class StreamCopierTests
         Assert.ThrowsException<ArgumentException>(() => copier.Add(readOnly));
     }
 
+    /// <summary>Verifies <see cref="StreamCopier.Add"/> rejects a target that is already registered.</summary>
     [TestMethod]
     public void Add_RejectsDuplicateReference()
     {
@@ -317,6 +324,7 @@ public class StreamCopierTests
         Assert.ThrowsException<ArgumentException>(() => copier.Add(s));
     }
 
+    /// <summary>Verifies <see cref="StreamCopier.Add"/> rejects the copier registering itself.</summary>
     [TestMethod]
     public void Add_RejectsSelf()
     {
@@ -324,6 +332,7 @@ public class StreamCopierTests
         Assert.ThrowsException<ArgumentException>(() => copier.Add(copier));
     }
 
+    /// <summary>Verifies <see cref="StreamCopier.Insert"/> rejects a non-writable target.</summary>
     [TestMethod]
     public void Insert_RejectsNonWritableTarget()
     {
@@ -333,6 +342,7 @@ public class StreamCopierTests
         Assert.ThrowsException<ArgumentException>(() => copier.Insert(0, readOnly));
     }
 
+    /// <summary>Verifies <see cref="StreamCopier.Insert"/> rejects a target that is already registered.</summary>
     [TestMethod]
     public void Insert_RejectsDuplicateReference()
     {
@@ -342,6 +352,7 @@ public class StreamCopierTests
         Assert.ThrowsException<ArgumentException>(() => copier.Insert(0, s));
     }
 
+    /// <summary>Verifies <see cref="StreamCopier.Insert"/> rejects the copier registering itself.</summary>
     [TestMethod]
     public void Insert_RejectsSelf()
     {
@@ -351,6 +362,7 @@ public class StreamCopierTests
 
     // -- indexer setter --
 
+    /// <summary>Verifies the indexer setter rejects a null replacement.</summary>
     [TestMethod]
     public void IndexerSetter_RejectsNull()
     {
@@ -359,6 +371,7 @@ public class StreamCopierTests
         Assert.ThrowsException<ArgumentNullException>(() => copier[0] = null!);
     }
 
+    /// <summary>Verifies the indexer setter rejects a non-writable replacement and leaves the original target in place.</summary>
     [TestMethod]
     public void IndexerSetter_RejectsNonWritableTarget()
     {
@@ -370,6 +383,7 @@ public class StreamCopierTests
         Assert.AreSame(s1, copier[0], "A failed replacement must leave the original target unchanged.");
     }
 
+    /// <summary>Verifies the indexer setter rejects a replacement already registered at another index, leaving the original target in place.</summary>
     [TestMethod]
     public void IndexerSetter_RejectsDuplicateAtOtherIndex()
     {
@@ -380,6 +394,7 @@ public class StreamCopierTests
         Assert.AreSame(s1, copier[0], "A failed replacement must leave the original target unchanged.");
     }
 
+    /// <summary>Verifies the indexer setter rejects the copier replacing a slot with itself.</summary>
     [TestMethod]
     public void IndexerSetter_RejectsSelf()
     {
@@ -388,6 +403,7 @@ public class StreamCopierTests
         Assert.ThrowsException<ArgumentException>(() => copier[0] = copier);
     }
 
+    /// <summary>Verifies replacing a slot with the exact reference already occupying it is allowed, not treated as a duplicate.</summary>
     [TestMethod]
     public void IndexerSetter_AllowsSameReferenceAtSameIndex()
     {
@@ -399,6 +415,7 @@ public class StreamCopierTests
 
     // -- identity, not Equals --
 
+    /// <summary>Verifies duplicate detection, <see cref="StreamCopier.IndexOf"/>, <see cref="StreamCopier.Contains"/> and <see cref="StreamCopier.Remove"/> all use reference identity rather than <see cref="object.Equals(object?)"/>.</summary>
     [TestMethod]
     public void DuplicateDetection_UsesReferenceIdentity_NotEquals()
     {
@@ -423,6 +440,7 @@ public class StreamCopierTests
 
     // -- CanWrite / IsReadOnly --
 
+    /// <summary>Verifies <see cref="StreamCopier.CanWrite"/> and <see cref="StreamCopier.IsReadOnly"/> flip after synchronous disposal.</summary>
     [TestMethod]
     public void CanWrite_And_IsReadOnly_ReflectDisposalState_Sync()
     {
@@ -435,6 +453,7 @@ public class StreamCopierTests
         Assert.IsTrue(copier.IsReadOnly);
     }
 
+    /// <summary>Verifies <see cref="StreamCopier.CanWrite"/> and <see cref="StreamCopier.IsReadOnly"/> flip after asynchronous disposal.</summary>
     [TestMethod]
     public async Task CanWrite_And_IsReadOnly_ReflectDisposalState_Async()
     {
@@ -447,6 +466,7 @@ public class StreamCopierTests
         Assert.IsTrue(copier.IsReadOnly);
     }
 
+    /// <summary>Verifies a copier with zero targets is still a valid writable sink.</summary>
     [TestMethod]
     public void CanWrite_IsTrueForZeroTargetCopier()
     {
@@ -456,6 +476,7 @@ public class StreamCopierTests
 
     // -- inspection after disposal --
 
+    /// <summary>Verifies the full inspection surface (Count, indexer, Contains, IndexOf, CopyTo, enumeration) keeps working after disposal when targets are not owned.</summary>
     [TestMethod]
     public void Inspection_RemainsAvailableAfterDispose_WhenTargetsNotOwned()
     {
@@ -483,6 +504,7 @@ public class StreamCopierTests
         s2.Dispose();
     }
 
+    /// <summary>Verifies target references remain inspectable after disposal even when ownership caused the underlying streams themselves to be disposed.</summary>
     [TestMethod]
     public void Inspection_RemainsAvailableAfterDispose_WhenTargetsOwned()
     {
@@ -503,6 +525,7 @@ public class StreamCopierTests
 
     // -- mutation after disposal --
 
+    /// <summary>Verifies every mutating <see cref="IList{Stream}"/> member throws <see cref="ObjectDisposedException"/> after synchronous disposal.</summary>
     [TestMethod]
     public void Mutation_AfterDispose_AlwaysThrowsObjectDisposedException()
     {
@@ -519,6 +542,7 @@ public class StreamCopierTests
         Assert.ThrowsException<ObjectDisposedException>(() => copier.Clear());
     }
 
+    /// <summary>Verifies every mutating <see cref="IList{Stream}"/> member throws <see cref="ObjectDisposedException"/> after asynchronous disposal.</summary>
     [TestMethod]
     public async Task Mutation_AfterDisposeAsync_AlwaysThrowsObjectDisposedException()
     {
@@ -537,6 +561,7 @@ public class StreamCopierTests
 
     // -- owned target disposal counts --
 
+    /// <summary>Verifies an owned target is disposed exactly once across repeated calls to <see cref="StreamCopier.Dispose()"/>.</summary>
     [TestMethod]
     public void OwnedTarget_IsDisposedExactlyOnce_AcrossRepeatedSyncDispose()
     {
@@ -547,6 +572,7 @@ public class StreamCopierTests
         Assert.AreEqual(1, t.DisposeCount);
     }
 
+    /// <summary>Verifies an owned target is disposed exactly once across repeated calls to <see cref="StreamCopier.DisposeAsync"/>.</summary>
     [TestMethod]
     public async Task OwnedTarget_IsDisposedExactlyOnce_AcrossRepeatedAsyncDispose()
     {
@@ -561,6 +587,7 @@ public class StreamCopierTests
         Assert.AreEqual(1, t.DisposeCount);
     }
 
+    /// <summary>Verifies an owned target is not disposed a second time when <see cref="StreamCopier.Dispose()"/> is followed by <see cref="StreamCopier.DisposeAsync"/>.</summary>
     [TestMethod]
     public async Task OwnedTarget_IsDisposedExactlyOnce_SyncThenAsync()
     {
@@ -572,6 +599,7 @@ public class StreamCopierTests
         Assert.AreEqual(0, t.DisposeAsyncCount);
     }
 
+    /// <summary>Verifies an owned target is not disposed a second time when <see cref="StreamCopier.DisposeAsync"/> is followed by <see cref="StreamCopier.Dispose()"/>.</summary>
     [TestMethod]
     public async Task OwnedTarget_IsDisposedExactlyOnce_AsyncThenSync()
     {
@@ -587,6 +615,7 @@ public class StreamCopierTests
 
     // -- disposal failure --
 
+    /// <summary>Verifies a failing owned target still lets every target be attempted, aggregates the failure, and leaves the copier fully disposed without retry on a second call.</summary>
     [TestMethod]
     public void Dispose_TargetFailure_AttemptsAllTargets_AggregatesAndLeavesCopierDisposed()
     {
@@ -615,6 +644,7 @@ public class StreamCopierTests
 
     // -- target becomes unwritable after registration --
 
+    /// <summary>Verifies the copier's own <see cref="StreamCopier.CanWrite"/> does not depend on a registered target's external state, and that a failing target simply participates in the normal aggregate write failure.</summary>
     [TestMethod]
     public void CanWrite_StaysTrue_WhenARegisteredTargetIsExternallyDisposed()
     {
