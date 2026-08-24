@@ -12,6 +12,19 @@ namespace Utils.IO.BaseEncoding;
 /// By default the decoder operates in strict mode: characters outside the alphabet, misplaced
 /// padding and incomplete symbol groups are rejected. Pass <paramref name="strict"/> = false
 /// to revert to the original permissive behaviour.
+/// <para>
+/// <b>Streaming, non-transactional output:</b> <see cref="BaseDecoderStream"/> is a classical
+/// streaming decoder, not a transactional validator. Every complete decoded byte is written to
+/// <see cref="Stream"/> as soon as enough input has been processed to produce it — well before
+/// <see cref="Close"/> is called. Some validation can only be performed once the full input has
+/// been seen, in particular the terminal checks performed by <see cref="Close"/> (incomplete final
+/// quantum, non-zero trailing bits, incorrect padding count). A <see cref="FormatException"/>
+/// raised by a later input character or by <see cref="Close"/> therefore does <b>not</b> roll back
+/// bytes already written to <see cref="Stream"/>; those bytes remain exactly as emitted. Callers
+/// that require atomic, all-or-nothing publication must supply an explicit staging stream of their
+/// own choosing (for example <see cref="StreamValidator"/> or a temporary <see cref="MemoryStream"/>)
+/// and commit it only after <see cref="Close"/> has returned successfully.
+/// </para>
 /// </summary>
 public class BaseDecoderStream : TextWriter
 {
@@ -57,7 +70,10 @@ public class BaseDecoderStream : TextWriter
     }
 
     /// <summary>
-    /// Writes a single base character to the decoder.
+    /// Writes a single base character to the decoder. Whenever enough characters have accumulated to
+    /// complete a byte, that byte is written to <see cref="Stream"/> immediately, before this call
+    /// returns. If a later call throws <see cref="FormatException"/>, bytes already emitted by earlier
+    /// calls are not undone; only the character rejected by this call fails.
     /// </summary>
     /// <param name="value">The encoded character.</param>
     /// <exception cref="ObjectDisposedException">Thrown when writing after the decoder is closed.</exception>
@@ -115,7 +131,11 @@ public class BaseDecoderStream : TextWriter
     }
 
     /// <summary>
-    /// Finalizes the decoding process and flushes remaining bits.
+    /// Performs terminal validation (final quantum completeness, trailing-bit and padding-count
+    /// checks) and flushes <see cref="Stream"/>. This is <b>not</b> a commit operation: every complete
+    /// byte decoded from previously written characters has already been written to <see cref="Stream"/>
+    /// by <see cref="Write(char)"/>. A <see cref="FormatException"/> thrown here reports that the input
+    /// was malformed overall, but does not undo those already-written bytes.
     /// After the first call (successful or not) the instance is permanently condemned:
     /// any subsequent <see cref="Write(char)"/> call throws <see cref="ObjectDisposedException"/>.
     /// A second call to <see cref="Close"/> is always a no-op.

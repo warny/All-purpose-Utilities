@@ -409,5 +409,129 @@ public class BaseDecoderStreamTests
         byte[] result = Decode("A", Bases.Base64, strict: false);
         Assert.AreEqual(0, result.Length);
     }
+
+    // ---- IO-05: streaming decode is intentionally non-transactional ----
+    //
+    // BaseDecoderStream emits each complete decoded byte to the target Stream as input is
+    // processed. These tests lock in that a later strict validation failure — whether detected
+    // during Write or during the terminal checks in Close — reports the error but does not roll
+    // back bytes already written to the target. This is the documented 2.0 contract, not a defect.
+
+    /// <summary>
+    /// Verifies that Base64 "TQ=" (one padding character supplied where two are required) emits
+    /// the complete byte 0x4D before <see cref="BaseDecoderStream.Close"/> is even called, that
+    /// <c>Close</c> still throws <see cref="FormatException"/> for the incorrect padding count, and
+    /// that the already-emitted byte remains in the target afterward.
+    /// </summary>
+    [TestMethod]
+    public void StrictMode_InvalidFinalPadding_IsNonTransactional_AlreadyEmittedBytesRemain()
+    {
+        var stream = new MemoryStream();
+        var decoder = new BaseDecoderStream(stream, Bases.Base64);
+
+        decoder.Write("TQ=");
+        CollectionAssert.AreEqual(new byte[] { 0x4D }, stream.ToArray(), "the complete byte must already be in the target before Close.");
+
+        Assert.ThrowsException<FormatException>(() => decoder.Close());
+        CollectionAssert.AreEqual(new byte[] { 0x4D }, stream.ToArray(), "the byte emitted before the failure must not be rolled back.");
+    }
+
+    /// <summary>
+    /// Verifies that Base64 "AB==" emits the complete byte 0x00 before <see cref="BaseDecoderStream.Close"/>,
+    /// that <c>Close</c> still throws <see cref="FormatException"/> because the leftover terminal bits are
+    /// non-zero, and that the already-emitted byte remains in the target afterward.
+    /// </summary>
+    [TestMethod]
+    public void StrictMode_NonZeroTrailingBits_LeavesPreviouslyEmittedByte()
+    {
+        var stream = new MemoryStream();
+        var decoder = new BaseDecoderStream(stream, Bases.Base64);
+
+        decoder.Write("AB==");
+        CollectionAssert.AreEqual(new byte[] { 0x00 }, stream.ToArray(), "the complete byte must already be in the target before Close.");
+
+        Assert.ThrowsException<FormatException>(() => decoder.Close());
+        CollectionAssert.AreEqual(new byte[] { 0x00 }, stream.ToArray(), "the byte emitted before the failure must not be rolled back.");
+    }
+
+    /// <summary>
+    /// Verifies that Base16 "ABC" emits the complete byte 0xAB (from "AB") before
+    /// <see cref="BaseDecoderStream.Close"/>, that <c>Close</c> still throws
+    /// <see cref="FormatException"/> because the trailing "C" is an incomplete terminal quantum, and
+    /// that the already-emitted byte remains in the target afterward.
+    /// </summary>
+    [TestMethod]
+    public void StrictMode_IncompleteFinalQuantum_LeavesPreviouslyEmittedByte()
+    {
+        var stream = new MemoryStream();
+        var decoder = new BaseDecoderStream(stream, Bases.Base16);
+
+        decoder.Write("ABC");
+        CollectionAssert.AreEqual(new byte[] { 0xAB }, stream.ToArray(), "the complete byte must already be in the target before Close.");
+
+        Assert.ThrowsException<FormatException>(() => decoder.Close());
+        CollectionAssert.AreEqual(new byte[] { 0xAB }, stream.ToArray(), "the byte emitted before the failure must not be rolled back.");
+    }
+
+    /// <summary>
+    /// Verifies that valid Base64 input ("QUJD" → "ABC") is already fully present in the target
+    /// before <see cref="BaseDecoderStream.Close"/> is called, and that a successful <c>Close</c>
+    /// does not duplicate or otherwise alter those bytes. <c>Close</c> is a terminal validation
+    /// step, not the point at which decoded output is produced.
+    /// </summary>
+    [TestMethod]
+    public void ValidInput_EmitsCompleteBytesBeforeClose()
+    {
+        byte[] expected = { 0x41, 0x42, 0x43 };
+        var stream = new MemoryStream();
+        var decoder = new BaseDecoderStream(stream, Bases.Base64);
+
+        decoder.Write("QUJD");
+        CollectionAssert.AreEqual(expected, stream.ToArray(), "complete bytes must be visible before Close is called.");
+
+        decoder.Close();
+        CollectionAssert.AreEqual(expected, stream.ToArray(), "a successful Close must not duplicate or alter already-emitted bytes.");
+    }
+
+    /// <summary>
+    /// Verifies that a later strict-mode <see cref="FormatException"/> raised while writing an
+    /// invalid character does not roll back bytes already emitted from an earlier, valid part of
+    /// the same input.
+    /// </summary>
+    [TestMethod]
+    public void StrictMode_LaterInvalidCharacter_DoesNotRollbackPreviouslyEmittedBytes()
+    {
+        byte[] expected = { 0x41, 0x42, 0x43 };
+        var stream = new MemoryStream();
+        var decoder = new BaseDecoderStream(stream, Bases.Base64);
+
+        decoder.Write("QUJD");
+        CollectionAssert.AreEqual(expected, stream.ToArray());
+
+        Assert.ThrowsException<FormatException>(() => decoder.Write('!'));
+        CollectionAssert.AreEqual(expected, stream.ToArray(), "bytes emitted before the invalid character must remain.");
+    }
+
+    /// <summary>
+    /// Verifies that pre-existing data already present in the target stream, ahead of where the
+    /// decoder starts writing, is left untouched: the decoder only ever appends at the stream's
+    /// current position and never attempts to truncate or restore the stream on validation failure.
+    /// </summary>
+    [TestMethod]
+    public void StrictMode_TargetWithExistingPrefix_PrefixAndEmittedByteSurviveFailure()
+    {
+        byte[] prefix = { 0xFF, 0xFE };
+        var stream = new MemoryStream();
+        stream.Write(prefix, 0, prefix.Length);
+
+        var decoder = new BaseDecoderStream(stream, Bases.Base64);
+        decoder.Write("TQ="); // one padding character where two are required.
+
+        byte[] expectedBeforeClose = { 0xFF, 0xFE, 0x4D };
+        CollectionAssert.AreEqual(expectedBeforeClose, stream.ToArray());
+
+        Assert.ThrowsException<FormatException>(() => decoder.Close());
+        CollectionAssert.AreEqual(expectedBeforeClose, stream.ToArray(), "neither the pre-existing prefix nor the emitted byte must be truncated or restored.");
+    }
 }
 
