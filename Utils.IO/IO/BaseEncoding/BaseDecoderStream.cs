@@ -73,7 +73,8 @@ public class BaseDecoderStream : TextWriter
     /// Writes a single base character to the decoder. Whenever enough characters have accumulated to
     /// complete a byte, that byte is written to <see cref="Stream"/> immediately, before this call
     /// returns. If a later call throws <see cref="FormatException"/>, bytes already emitted by earlier
-    /// calls are not undone; only the character rejected by this call fails.
+    /// calls are not undone. No recovery or continuation guarantee is made for the decoder's internal
+    /// parsing state after such an exception; callers should treat the decoding operation as aborted.
     /// </summary>
     /// <param name="value">The encoded character.</param>
     /// <exception cref="ObjectDisposedException">Thrown when writing after the decoder is closed.</exception>
