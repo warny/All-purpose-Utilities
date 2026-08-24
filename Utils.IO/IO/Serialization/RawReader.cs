@@ -197,8 +197,16 @@ public class RawReader
     /// </summary>
     public Guid ReadGuid(IReader reader) => new Guid(ReadExactly(reader, 16, nameof(Guid)), bigEndian: true);
 
-    /// <summary>Reads a boolean value.</summary>
-    public bool ReadBool(IReader reader) => ReadByte(reader) == 1;
+    /// <summary>
+    /// Reads a canonical one-byte boolean value. Only <c>0x00</c> and <c>0x01</c> are valid on the wire;
+    /// every other byte is rejected as malformed input rather than silently coerced to <see langword="false"/>.
+    /// </summary>
+    public bool ReadBool(IReader reader) => ReadByte(reader) switch
+    {
+        0 => false,
+        1 => true,
+        var value => throw new InvalidDataException($"Invalid Boolean wire value {value}; expected 0 or 1.")
+    };
 
     /// <summary>Reads one required byte and rejects EOF rather than converting it to a value.</summary>
     private static byte ReadRequiredByte(IReader reader, string valueType)

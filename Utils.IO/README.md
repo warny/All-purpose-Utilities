@@ -215,6 +215,8 @@ byte[] decoded = ms.ToArray();  // [1, 2, 3, 4]
 
 Raw extended integers have explicit portable wire contracts: `Int128` and `UInt128` occupy 16 bytes in the selected numeric byte order, while `BigInteger` uses an endian-aware `Int32` byte-length prefix and a minimal signed two's-complement payload in the same byte order. GUIDs use the canonical 16-byte RFC/network layout regardless of the numeric byte-order option.
 
+Boolean values use a canonical one-byte wire representation: `00` is false and `01` is true. Other byte values are malformed and rejected.
+
 ### Define a serializable struct
 
 ```csharp
