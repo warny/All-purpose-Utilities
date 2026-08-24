@@ -9,29 +9,30 @@ namespace UtilsTest.Serialization;
 [TestClass]
 public sealed class Io04BoundedParsingTests
 {
-    /// <summary>Verifies an exhausted exact budget still permits an EOF probe.</summary>
+    /// <summary>Verifies a seekable stream reports EOF from position metadata alone once the budget is exact.</summary>
     [TestMethod]
-    public void ReadByte_AtExactBudgetAndEndOfStream_ReturnsMinusOne()
+    public void ReadByte_AtExactBudgetAndSeekableEndOfStream_ReturnsMinusOne()
     {
-        Reader reader = new(new MemoryStream([1]), new ReaderOptions { MaximumReadBytes = 1 });
+        using CountingReadStream stream = new([1]);
+        Reader reader = new(stream, new ReaderOptions { MaximumReadBytes = 1 });
         Assert.AreEqual(1, reader.ReadByte());
         Assert.AreEqual(-1, reader.ReadByte());
+        Assert.AreEqual(1, stream.BytesRead, "EOF must be observed from stream metadata, never by an extra physical read.");
     }
 
-    /// <summary>Verifies a real byte beyond the budget is rejected and only one lookahead probe occurs.</summary>
+    /// <summary>Verifies an exhausted budget on a forward-only stream never reads past the budget to probe EOF.</summary>
     [TestMethod]
-    public void ReadByte_WhenBudgetExhaustedAndDataRemains_IsRejected()
+    public void ReadByte_AtExactBudgetOnForwardOnlyStream_DoesNotProbePastBudget()
     {
         using CountingForwardOnlyStream stream = new([1, 2, 3]);
         Reader reader = new(stream, new ReaderOptions { MaximumReadBytes = 1 });
         Assert.AreEqual(1, reader.ReadByte());
         Assert.ThrowsException<InvalidDataException>(() => reader.ReadByte());
-        Assert.AreEqual(2, stream.BytesRead);
         Assert.ThrowsException<InvalidDataException>(() => reader.ReadByte());
-        Assert.AreEqual(2, stream.BytesRead, "The rejected lookahead must be buffered instead of probing repeatedly.");
+        Assert.AreEqual(1, stream.BytesRead, "A forward-only stream must never be read beyond the exhausted budget.");
     }
 
-    /// <summary>Verifies sibling readers sharing an exhausted budget cannot each drain one lookahead byte.</summary>
+    /// <summary>Verifies sibling readers sharing an exhausted budget never trigger a physical read to observe EOF.</summary>
     [TestMethod]
     public void ReadByte_ExhaustedBudgetAcrossSharedReaders_DoesNotProbeAgain()
     {
@@ -41,10 +42,10 @@ public sealed class Io04BoundedParsingTests
 
         Assert.AreEqual(1, root.ReadByte());
         Assert.ThrowsException<InvalidDataException>(() => root.ReadByte());
-        Assert.AreEqual(2, stream.BytesRead);
+        Assert.AreEqual(1, stream.BytesRead);
 
         Assert.ThrowsException<InvalidDataException>(() => child.ReadByte());
-        Assert.AreEqual(2, stream.BytesRead, "A sibling reader must observe the shared rejected lookahead without probing the source again.");
+        Assert.AreEqual(1, stream.BytesRead, "A sibling reader must observe the shared exhausted budget without any physical read.");
     }
 
     /// <summary>Verifies codec-owned EOF framing terminates when its bytes exactly exhaust the budget.</summary>

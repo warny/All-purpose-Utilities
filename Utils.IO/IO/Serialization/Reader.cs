@@ -267,7 +267,7 @@ public class Reader : IReader, IStreamMapping<Reader>
     {
         if (!countWireBytes) return Stream.ReadByte();
         if (!readBudget.CanConsume(1))
-            return readBudget.ProbeEofOrReject(Stream);
+            return readBudget.RejectExhausted(Stream);
         int value = Stream.ReadByte();
         if (value >= 0) readBudget.Consume(1);
         return value;
