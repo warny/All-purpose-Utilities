@@ -294,13 +294,20 @@ public class PartialStreamTests
         /// <summary>The <see cref="Stream.Position"/> observed by the most recent <see cref="FlushAsync(CancellationToken)"/> call.</summary>
         public long? FlushAsyncObservedPosition { get; private set; }
 
+        /// <summary>Creates the instrumented base stream backed by <paramref name="buffer"/>, exactly like a regular writable <see cref="MemoryStream"/>.</summary>
         public GateProbeStream(byte[] buffer) : base(buffer) { }
 
         /// <summary>Returns a thread-safe snapshot of the entry/exit events recorded so far, in order.</summary>
         public string[] EventsSnapshot { get { lock (logLock) return events.ToArray(); } }
 
+        /// <summary>Appends an entry/exit event name to the shared log under the log lock, so ordering can be asserted deterministically.</summary>
         private void Log(string name) { lock (logLock) events.Add(name); }
 
+        /// <summary>
+        /// Records entry, then blocks on <see cref="AllowWriteToComplete"/> before delegating to the base
+        /// <see cref="MemoryStream"/> write, so a test can hold the caller's <see cref="PartialStream"/>
+        /// operation gate open for a controlled duration and observe ordering against a concurrent flush.
+        /// </summary>
         public override void Write(byte[] buffer, int offset, int count)
         {
             Log("WriteEntered");
@@ -310,6 +317,11 @@ public class PartialStreamTests
             Log("WriteExited");
         }
 
+        /// <summary>
+        /// Records the observed <see cref="Stream.Position"/> and an entry event, then either throws a
+        /// simulated failure (when <see cref="ThrowOnFlush"/> is set) or delegates to the base
+        /// <see cref="MemoryStream"/> flush.
+        /// </summary>
         public override void Flush()
         {
             FlushObservedPosition = Position;
@@ -318,6 +330,13 @@ public class PartialStreamTests
             base.Flush();
         }
 
+        /// <summary>
+        /// Records the observed <see cref="Stream.Position"/> and an entry event, then either throws a
+        /// simulated failure (when <see cref="ThrowOnFlush"/> is set) or performs the flush synchronously
+        /// via the base <see cref="MemoryStream"/>. Calls <see cref="MemoryStream.Flush"/> non-virtually
+        /// rather than <c>base.FlushAsync</c> so this override is not spuriously re-entered (see inline
+        /// comment below).
+        /// </summary>
         public override Task FlushAsync(CancellationToken cancellationToken)
         {
             FlushAsyncObservedPosition = Position;
