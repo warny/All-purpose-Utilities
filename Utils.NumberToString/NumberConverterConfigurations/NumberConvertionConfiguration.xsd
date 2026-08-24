@@ -195,6 +195,17 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="forceVariants" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Comma-separated "dimension=value" pairs (e.g. "gender=feminin") forcing
+                    grammatical variant dimensions on the numerator fragment this fraction term
+                    governs only, on top of the language's declared dimension defaults and any
+                    caller-supplied variant. Caller variants for other dimensions remain active.
+                    Does not apply to the denominator digits themselves nor to unrelated fragments.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="FractionListType">
@@ -1397,6 +1408,19 @@
                                                         Numeral to use when count == 1, overriding Convert(1).
                                                         Use when the unit requires a gendered or irregular form of "one"
                                                         (e.g. count1form="eine" for German feminine nouns like "Stunde").
+                                                    </xs:documentation></xs:annotation>
+                                                </xs:attribute>
+                                                <xs:attribute name="forceVariants" type="xs:string" use="optional">
+                                                    <xs:annotation><xs:documentation>
+                                                        Comma-separated "dimension=value" pairs (e.g. "gender=feminin", or
+                                                        "gender=feminin,case=genitive") forcing grammatical variant
+                                                        dimensions on the numeral fragment this unit governs only, on top
+                                                        of the language's declared dimension defaults and any
+                                                        caller-supplied variant. Caller variants for other dimensions
+                                                        remain active. This is not a general variant override: it applies
+                                                        only to the numeral of this specific time unit, never to the
+                                                        whole composite phrase or to other units. See the "ForcedVariants"
+                                                        section of Utils.NumberToString/README.md.
                                                     </xs:documentation></xs:annotation>
                                                 </xs:attribute>
                                             </xs:complexType>

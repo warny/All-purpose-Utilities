@@ -183,6 +183,17 @@ namespace Utils.NumberToString
                     throw new ArgumentException(
                         $"Fraction with key {fracKey} has a null, empty, or whitespace name.", nameof(options.Fractions));
             }
+            {
+                var fractionForced = options.FractionForcedVariants ?? ImmutableDictionary<int, ForcedVariantSet>.Empty;
+                foreach (var key in fractionForced.Keys)
+                {
+                    if (!Fractions.ContainsKey(key))
+                        throw new ArgumentException($"FractionForcedVariants key '{key}' has no matching Fractions entry.", nameof(options.FractionForcedVariants));
+                }
+                _fractionForcedVariants = fractionForced
+                    .Where(kv => kv.Value != null && !kv.Value.IsEmpty)
+                    .ToImmutableDictionary(kv => kv.Key, kv => kv.Value);
+            }
             MaxNumber = options.MaxNumber;
             if (MaxNumber.HasValue && MaxNumber.Value < 0)
                 throw new ArgumentOutOfRangeException(nameof(options.MaxNumber),
@@ -210,8 +221,23 @@ namespace Utils.NumberToString
             _intraGroupConnectorThreshold = options.IntraGroupConnectorThreshold;
             _scaleConnector = options.ScaleConnector;
             _scaleConnectorThreshold = options.ScaleConnectorThreshold;
-            _timeUnits = options.TimeUnits?.ToImmutableDictionary()
-                         ?? ImmutableDictionary<string, (string Singular, string Plural, string? Count1Form)>.Empty;
+            {
+                var rawTimeUnits = options.TimeUnits ?? ImmutableDictionary<string, (string Singular, string Plural, string? Count1Form)>.Empty;
+                var timeUnitForced = options.TimeUnitForcedVariants ?? ImmutableDictionary<string, ForcedVariantSet>.Empty;
+                foreach (var key in timeUnitForced.Keys)
+                {
+                    if (!rawTimeUnits.ContainsKey(key))
+                        throw new ArgumentException($"TimeUnitForcedVariants key '{key}' has no matching TimeUnits entry.", nameof(options));
+                }
+                _timeUnits = rawTimeUnits.ToImmutableDictionary(
+                    kv => kv.Key,
+                    kv => new TimeUnitDefinition(kv.Value.Singular, kv.Value.Plural, kv.Value.Count1Form,
+                        timeUnitForced.TryGetValue(kv.Key, out var forcedVariants) && forcedVariants != null ? forcedVariants : ForcedVariantSet.Empty));
+                _timeUnitsPublic = _timeUnits.ToImmutableDictionary(kv => kv.Key, kv => (kv.Value.Singular, kv.Value.Plural, kv.Value.Count1Form));
+                _timeUnitForcedVariantsPublic = _timeUnits
+                    .Where(kv => !kv.Value.ForcedVariants.IsEmpty)
+                    .ToImmutableDictionary(kv => kv.Key, kv => kv.Value.ForcedVariants);
+            }
             _datePattern = options.DatePattern;
             _datePatternSegments = _datePattern == null ? [] : ParseDatePattern(_datePattern, LanguageIdentifier);
             _dateFirstDay = options.DateFirstDay;
@@ -225,6 +251,10 @@ namespace Utils.NumberToString
                     : [(d.Name, d), (d.LocalName, d)])
                 .ToImmutableDictionary(t => t.Item1, t => t.Item2, StringComparer.OrdinalIgnoreCase);
             ValidateVariantReferences(this, LanguageIdentifier.Length > 0 ? LanguageIdentifier : "programmatic");
+            foreach (var kv in _timeUnits)
+                ValidateForcedVariants(kv.Value.ForcedVariants, $"TimeUnits[{kv.Key}]");
+            foreach (var kv in _fractionForcedVariants)
+                ValidateForcedVariants(kv.Value, $"Fractions[{kv.Key}]");
             CompileAndValidateRulePrecedence();
         }
 
@@ -276,6 +306,12 @@ namespace Utils.NumberToString
         /// Names for decimal fractions by digit count
         /// </summary>
         public IReadOnlyDictionary<int, string> Fractions { get; }
+
+        /// <summary>
+        /// Gets the non-empty <see cref="ForcedVariantSet"/> declared per fraction digit-count key,
+        /// keyed like <see cref="Fractions"/>. A key absent from this dictionary forces nothing.
+        /// </summary>
+        public IReadOnlyDictionary<int, ForcedVariantSet> FractionForcedVariants => _fractionForcedVariants;
         /// <summary>
         /// Gets the connector used when expressing non-decimal fractions.
         /// </summary>
@@ -415,7 +451,14 @@ namespace Utils.NumberToString
         public bool SupportsLocalizableMonthNames => _dateCulture != null;
 
         /// <summary>Gets the time units for time conversion (hours, minutes, seconds).</summary>
-        public IReadOnlyDictionary<string, (string Singular, string Plural, string? Count1Form)> TimeUnits => _timeUnits;
+        public IReadOnlyDictionary<string, (string Singular, string Plural, string? Count1Form)> TimeUnits => _timeUnitsPublic;
+
+        /// <summary>
+        /// Gets the non-empty <see cref="ForcedVariantSet"/> declared per time unit, keyed like
+        /// <see cref="TimeUnits"/>. A unit absent from this dictionary forces nothing (identical to
+        /// pre-NTS-04 behavior); its numeral fragment uses only the caller-supplied/default variant query.
+        /// </summary>
+        public IReadOnlyDictionary<string, ForcedVariantSet> TimeUnitForcedVariants => _timeUnitForcedVariantsPublic;
 
         /// <summary>Gets the date pattern string (tokens: {month}, {ordinal-day}, {cardinal-day}, {year}).</summary>
         public string? DatePattern => _datePattern;
@@ -450,7 +493,10 @@ namespace Utils.NumberToString
         private readonly long _intraGroupConnectorThreshold;
         private readonly string? _scaleConnector;
         private readonly long _scaleConnectorThreshold;
-        private readonly ImmutableDictionary<string, (string Singular, string Plural, string? Count1Form)> _timeUnits;
+        private readonly ImmutableDictionary<int, ForcedVariantSet> _fractionForcedVariants;
+        private readonly ImmutableDictionary<string, TimeUnitDefinition> _timeUnits;
+        private readonly ImmutableDictionary<string, (string Singular, string Plural, string? Count1Form)> _timeUnitsPublic;
+        private readonly ImmutableDictionary<string, ForcedVariantSet> _timeUnitForcedVariantsPublic;
         private readonly string? _datePattern;
         private readonly ImmutableArray<DatePatternSegment> _datePatternSegments;
         private readonly string? _dateFirstDay;
@@ -741,8 +787,15 @@ namespace Utils.NumberToString
                 if (activeSuffix != null)
                 {
                     BigInteger fracNumerator = BigInteger.Parse(digits);
+                    // ForcedVariants belong to the *configured* fraction term, not to a caller-
+                    // supplied literal suffix override, so they only apply when the configured
+                    // suffix is the one actually being used.
+                    bool usingConfiguredSuffix = options?.DecimalSuffix is null && configuredSuffix != null;
+                    var query = usingConfiguredSuffix && _fractionForcedVariants.TryGetValue(digits.Length, out var forced)
+                        ? forced.Overlay(BuildVariantQuery(variants))
+                        : BuildVariantQuery(variants);
                     // Fractional numerator is a sub-expression; do not check MaxNumber for it.
-                    var valueText = BuildCardinalFragment(fracNumerator, variants);
+                    var valueText = BuildCardinalFragment(fracNumerator, query);
                     // Use BigInteger to avoid long overflow when fractional digits exceed 18.
                     long fracPluralProxy = fracNumerator <= 1 ? (long)fracNumerator : 2L;
                     result.Append(valueText).Append(Separator).Append(activeSuffix.ToPlural(fracPluralProxy));
@@ -905,11 +958,24 @@ namespace Utils.NumberToString
         /// <param name="variants">The morphological variants to apply to the fragment.</param>
         /// <returns>An unfinalized cardinal fragment.</returns>
         private string BuildCardinalFragment(BigInteger number, string[] variants)
+            => BuildCardinalFragment(number, BuildVariantQuery(variants));
+
+        /// <summary>
+        /// Builds a cardinal fragment from an already-resolved variant query. Used by constituents
+        /// (time units, currency units/subunits, fraction terms) that overlay a constituent-local
+        /// <see cref="ForcedVariantSet"/> on top of the caller's query before rendering their own
+        /// fragment. Same raw-adjustment/variant-rule/end-trigger pipeline as the
+        /// <see cref="BuildCardinalFragment(BigInteger, string[])"/> overload; never applies language
+        /// finalization or a sign (see the "single finalization" invariant on <see cref="FinalizePhrase"/>).
+        /// </summary>
+        /// <param name="number">The non-negative numeric value to render.</param>
+        /// <param name="query">The already-resolved dimension → value variant query.</param>
+        /// <returns>An unfinalized cardinal fragment.</returns>
+        private string BuildCardinalFragment(BigInteger number, IReadOnlyDictionary<string, string> query)
         {
             if (number.Sign < 0)
                 throw new ArgumentOutOfRangeException(nameof(number), "Cardinal fragments must be non-negative.");
 
-            var query = BuildVariantQuery(variants);
             string raw = number.IsZero ? Zero : ConvertRaw(number, query);
             raw = ApplyRawAdjustment(raw);
             raw = ApplyVariantRules(raw, query, number);
@@ -1696,8 +1762,10 @@ namespace Utils.NumberToString
                 Fractions.TryGetValue(digits, out var suffix) &&
                 BigInteger.Abs(numerator) <= long.MaxValue)
             {
+                var forced = _fractionForcedVariants.TryGetValue(digits, out var fv) ? fv : ForcedVariantSet.Empty;
+                var query = forced.Overlay(BuildVariantQuery(v));
                 // Numerator is a sub-expression; do not apply MaxNumber guard.
-                string valueText = BuildCardinalFragment(numerator, v);
+                string valueText = BuildCardinalFragment(numerator, query);
                 return string.Concat(valueText, Separator, suffix.ToPlural((long)BigInteger.Abs(numerator))).Trim();
             }
 
@@ -1815,6 +1883,12 @@ namespace Utils.NumberToString
                 throw new ArgumentOutOfRangeException(nameof(currency),
                     $"SubunitDigits must be between 0 and 18 (inclusive); got {currency.SubunitDigits}.");
 
+            // CurrencyDefinition is supplied per call, not owned by the converter at construction,
+            // so its ForcedVariants are validated here — before any fragment is rendered — rather
+            // than once at converter construction time (as time units and fractions are).
+            ValidateForcedVariants(currency.UnitForcedVariants, "CurrencyDefinition.UnitForcedVariants");
+            ValidateForcedVariants(currency.SubunitForcedVariants, "CurrencyDefinition.SubunitForcedVariants");
+
             bool isNegative = amount < 0;
             // Avoid unary negation of extreme values: extract sign and magnitude separately.
             decimal absAmount = isNegative ? decimal.Negate(amount) : amount;
@@ -1837,14 +1911,16 @@ namespace Utils.NumberToString
                 throw new ArgumentOutOfRangeException(nameof(amount),
                     $"The units component exceeds the maximum supported number ({MaxNumber.Value}).");
 
+            var baseQuery = BuildVariantQuery(variants);
+
             string unitName = units == BigInteger.One ? currency.UnitSingular : currency.UnitPlural;
-            string result = BuildCardinalFragment(units, variants) + Separator + unitName;
+            string result = BuildCardinalFragment(units, currency.UnitForcedVariants.Overlay(baseQuery)) + Separator + unitName;
 
             if (subunits > 0)
             {
                 string subunitName = subunits == 1 ? currency.SubunitSingular : currency.SubunitPlural;
                 // Subunits are a sub-expression; do not check MaxNumber for them.
-                string subunitsText = BuildCardinalFragment(subunits, variants) + Separator + subunitName;
+                string subunitsText = BuildCardinalFragment(subunits, currency.SubunitForcedVariants.Overlay(baseQuery)) + Separator + subunitName;
                 result = result + Separator + currency.Connector + Separator + subunitsText;
             }
 
@@ -2001,11 +2077,15 @@ namespace Utils.NumberToString
             return multiplier < 0 ? Minus.Replace("*", final) : final;
         }
 
-        private string FormatTimeUnit(int count, (string Singular, string Plural, string? Count1Form) unit, string[] variants)
+        private string FormatTimeUnit(int count, TimeUnitDefinition unit, string[] variants)
         {
             string word = count == 1 ? unit.Singular : unit.Plural;
-            string numeral = (count == 1 && unit.Count1Form != null) ? unit.Count1Form : BuildCardinalFragment(count, variants);
-            return numeral + Separator + word;
+            // Count1Form is a literal override for count==1; ForcedVariants never rewrite it.
+            if (count == 1 && unit.Count1Form != null)
+                return unit.Count1Form + Separator + word;
+
+            var query = unit.ForcedVariants.Overlay(BuildVariantQuery(variants));
+            return BuildCardinalFragment(count, query) + Separator + word;
         }
 
         /// <inheritdoc cref="INumberToStringConverter.Convert(TimeSpan, string[])"/>

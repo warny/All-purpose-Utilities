@@ -116,9 +116,12 @@
 			<Multiplicative value="3" string="trois fois" />
 		</Multiplicatives>
 		<TimeUnits>
-			<Unit name="hour"   singular="heure"   plural="heures"   />
-			<Unit name="minute" singular="minute"  plural="minutes"  />
-			<Unit name="second" singular="seconde" plural="secondes" />
+			<!-- "heure"/"minute"/"seconde" are all grammatically feminine; forceVariants makes the
+			     numeral fragment ("un"->"une", "vingt et un"->"vingt et une", ...) agree without
+			     requiring the caller to know this — see NTS-04 in Utils.NumberToString/README.md. -->
+			<Unit name="hour"   singular="heure"   plural="heures"   forceVariants="gender=feminin" />
+			<Unit name="minute" singular="minute"  plural="minutes"  forceVariants="gender=feminin" />
+			<Unit name="second" singular="seconde" plural="secondes" forceVariants="gender=feminin" />
 		</TimeUnits>
 		<DateFormat pattern="{cardinal-day} {month} {year}" firstCardinalDay="premier" />
 	</Language>

@@ -54,6 +54,29 @@ Version 2.0 removes declaration order as an implicit tie-breaker. Add `priority=
 
 Programmatic trigger forms must migrate from `(Constraints, To)` tuples to `NumberToStringConverter.TriggerReplacementForm`. `VariantRule` and `OrdinalVariantRule` constructors accept an optional final `priority` argument. Configurations inherited through `baseOn` retain parent priorities; parent and child candidates are validated together and no implicit override occurs.
 
+### ForcedVariants (NTS-04) — additive, with one French output correction
+
+A configured lexical constituent (a time unit, a currency unit/subunit, a fraction
+denominator term) can now force grammatical variant dimensions (e.g. gender) on the
+numeric fragment it governs, without the caller supplying them — see the
+"ForcedVariants" section of `Utils.NumberToString/README.md` for the full precedence
+and locality contract. The new public surface is purely additive: the existing
+`NumberToStringConverterOptions.TimeUnits` tuple shape and `CurrencyDefinition`'s
+existing properties are unchanged; `TimeUnitForcedVariants`, `FractionForcedVariants`,
+`CurrencyDefinition.UnitForcedVariants`/`SubunitForcedVariants`, and the new
+`ForcedVariantSet` type default to an empty set that is behaviorally identical to
+pre-2.0 output. No `AcceptedApiBreaks.md` entry is required.
+
+The one intentional **output change** is a grammatical correction to the built-in
+French time-unit configuration: `hour`/`minute`/`second` (all feminine nouns) now
+declare `forceVariants="gender=feminin"`. `fr.Convert(new TimeSpan(1, 0, 0))` changes
+from `"un heure"` to the grammatically correct `"une heure"`, and `fr.Convert(TimeSpan.FromHours(21))`
+changes from `"vingt et un heures"` to `"vingt et une heures"`, without the caller
+passing `gender=feminin` explicitly. Callers that previously worked around the defect
+by passing `gender=feminin` themselves are unaffected — the explicit variant still
+produces the same, now-correct, result. `fr.Convert(1)` and `fr.Convert(21)` (ordinary
+cardinals, no time unit involved) remain masculine by default.
+
 <a id="omy-utils-fonts-2"></a>
 ## Utils.Fonts hostile-font parsing hardening
 

@@ -1579,6 +1579,9 @@ namespace Utils.NumberToString
                 LanguageIdentifier = languageIdentifier,
                 Fractions = language.Fractions?.Fractions?.ToDictionary(f => f.Digits, f => f.StringValue)
                     ?? new Dictionary<int, string>(),
+                FractionForcedVariants = language.Fractions?.Fractions?
+                    .Where(f => !string.IsNullOrWhiteSpace(f.ForceVariants))
+                    .ToDictionary(f => f.Digits, f => ForcedVariantSet.Parse(f.ForceVariants, languageIdentifier, $"Fractions[{f.Digits}]")),
                 MaxNumber = string.IsNullOrWhiteSpace(language.MaxNumber)
                     ? null
                     : BigInteger.Parse(language.MaxNumber, CultureInfo.InvariantCulture),
@@ -1615,6 +1618,9 @@ namespace Utils.NumberToString
                 ScaleConnectorThreshold = language.ScaleConnectorThreshold,
                 TimeUnits = language.TimeUnits?.Units?
                     .ToDictionary(u => u.Name, u => (u.Singular, u.Plural, u.Count1Form)),
+                TimeUnitForcedVariants = language.TimeUnits?.Units?
+                    .Where(u => !string.IsNullOrWhiteSpace(u.ForceVariants))
+                    .ToDictionary(u => u.Name, u => ForcedVariantSet.Parse(u.ForceVariants, languageIdentifier, $"TimeUnits[{u.Name}]")),
                 DatePattern = language.DateFormat?.Pattern,
                 DateFirstDay = language.DateFormat?.FirstDay,
                 DateFirstCardinalDay = language.DateFormat?.FirstCardinalDay,
