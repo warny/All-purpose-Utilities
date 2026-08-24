@@ -280,5 +280,285 @@ public class BaseEncoderStreamTests
         // Second call must not throw ObjectDisposedException or any other exception.
         await stream.DisposeAsync();
     }
+
+    // ---- IO-12: constructor validation of maxDataWidth/indent ----
+
+    /// <summary>Verifies every accepted <c>maxDataWidth</c>/<c>indent</c> combination constructs without throwing.</summary>
+    [TestMethod]
+    public void Constructor_AcceptsValidMaxDataWidthAndIndent()
+    {
+        using var sw = new StringWriter();
+        _ = new BaseEncoderStream(sw, Bases.Base64, maxDataWidth: -1);
+        _ = new BaseEncoderStream(sw, Bases.Base64, maxDataWidth: 1);
+        _ = new BaseEncoderStream(sw, Bases.Base64, maxDataWidth: int.MaxValue);
+        _ = new BaseEncoderStream(sw, Bases.Base64, maxDataWidth: 4, indent: 0);
+        _ = new BaseEncoderStream(sw, Bases.Base64, maxDataWidth: 4, indent: 2);
+        // Indent has no observable effect when wrapping is disabled, but must still be accepted.
+        _ = new BaseEncoderStream(sw, Bases.Base64, maxDataWidth: -1, indent: 3);
+    }
+
+    /// <summary>Verifies <c>maxDataWidth</c> values other than -1 or a positive integer fail at construction time.</summary>
+    [TestMethod]
+    public void Constructor_RejectsInvalidMaxDataWidth()
+    {
+        using var sw = new StringWriter();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new BaseEncoderStream(sw, Bases.Base64, maxDataWidth: 0));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new BaseEncoderStream(sw, Bases.Base64, maxDataWidth: -2));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new BaseEncoderStream(sw, Bases.Base64, maxDataWidth: int.MinValue));
+    }
+
+    /// <summary>Verifies a negative <c>indent</c> fails at construction time, not on the first wrap.</summary>
+    [TestMethod]
+    public void Constructor_RejectsNegativeIndent()
+    {
+        using var sw = new StringWriter();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new BaseEncoderStream(sw, Bases.Base64, maxDataWidth: 4, indent: -1));
+    }
+
+    // ---- IO-12: separator-between-lines formatting contract ----
+
+    /// <summary>Verifies output that exactly fills one line has no trailing separator.</summary>
+    [TestMethod]
+    public void LineWrapping_ExactWidth_NoTrailingSeparator()
+    {
+        byte[] source = { 0x01, 0x02 };
+        var sw = new StringWriter();
+        var stream = new BaseEncoderStream(sw, Bases.Base16, maxDataWidth: 4);
+        stream.Write(source, 0, source.Length);
+        stream.Close();
+        Assert.AreEqual("0102", sw.ToString());
+    }
+
+    /// <summary>Verifies two exact full lines are joined by exactly one separator, with none trailing.</summary>
+    [TestMethod]
+    public void LineWrapping_TwoFullLines_ExactlyOneSeparatorBetweenThem()
+    {
+        byte[] source = { 0x01, 0x02, 0x03, 0x04 };
+        var sw = new StringWriter();
+        var stream = new BaseEncoderStream(sw, Bases.Base16, maxDataWidth: 4);
+        stream.Write(source, 0, source.Length);
+        stream.Close();
+        Assert.AreEqual("0102" + Bases.Base16.Separator + "0304", sw.ToString());
+    }
+
+    /// <summary>Verifies a full line followed by a shorter final line is joined by exactly one separator.</summary>
+    [TestMethod]
+    public void LineWrapping_PartialFinalLine_ExactlyOneSeparator()
+    {
+        byte[] source = { 0x01, 0x02, 0x03 };
+        var sw = new StringWriter();
+        var stream = new BaseEncoderStream(sw, Bases.Base16, maxDataWidth: 4);
+        stream.Write(source, 0, source.Length);
+        stream.Close();
+        Assert.AreEqual("0102" + Bases.Base16.Separator + "03", sw.ToString());
+    }
+
+    /// <summary>Verifies indentation is written only after a real inter-line separator, never at the start or end of the output.</summary>
+    [TestMethod]
+    public void LineWrapping_Indent_AppearsOnlyAfterSeparator()
+    {
+        byte[] source = { 0x01, 0x02, 0x03, 0x04 };
+        var sw = new StringWriter();
+        var stream = new BaseEncoderStream(sw, Bases.Base16, maxDataWidth: 4, indent: 2);
+        stream.Write(source, 0, source.Length);
+        stream.Close();
+        Assert.AreEqual("0102" + Bases.Base16.Separator + "  0304", sw.ToString());
+    }
+
+    /// <summary>Verifies width 1 separates every character with exactly one separator and never trails.</summary>
+    [TestMethod]
+    public void LineWrapping_WidthOne_SeparatesEveryCharacter()
+    {
+        byte[] source = { 0x01 };
+        var sw = new StringWriter();
+        var stream = new BaseEncoderStream(sw, Bases.Base16, maxDataWidth: 1);
+        stream.Write(source, 0, source.Length);
+        stream.Close();
+        Assert.AreEqual("0" + Bases.Base16.Separator + "1", sw.ToString());
+    }
+
+    /// <summary>Verifies a very large width behaves as effectively unwrapped for a realistic input.</summary>
+    [TestMethod]
+    public void LineWrapping_VeryLargeWidth_BehavesAsUnwrapped()
+    {
+        byte[] source = { 0x41, 0x42, 0x43, 0x44, 0x45 };
+        var sw = new StringWriter();
+        var stream = new BaseEncoderStream(sw, Bases.Base16, maxDataWidth: int.MaxValue);
+        stream.Write(source, 0, source.Length);
+        stream.Close();
+        Assert.AreEqual("4142434445", sw.ToString());
+    }
+
+    /// <summary>
+    /// Verifies the final residual symbol written by <see cref="BaseEncoderStream.Close"/> participates in
+    /// wrapping exactly like an ordinary symbol: two ordinary symbols fill the line, and the final partial
+    /// symbol alone starts a new line.
+    /// </summary>
+    [TestMethod]
+    public void LineWrapping_FinalResidualSymbol_ParticipatesInWrapping()
+    {
+        byte[] source = { 0x41, 0x42 }; // Base64("AB") = "QUI=": Q,U are ordinary symbols; I is the final residual symbol; = is filler.
+        var sw = new StringWriter();
+        var stream = new BaseEncoderStream(sw, Bases.Base64, maxDataWidth: 2);
+        stream.Write(source, 0, source.Length);
+        stream.Close();
+        Assert.AreEqual("QU" + Bases.Base64.Separator + "I=", sw.ToString());
+    }
+
+    /// <summary>Verifies filler/padding characters obey the same line-width contract and may span multiple lines.</summary>
+    [TestMethod]
+    public void LineWrapping_Padding_ParticipatesInWrapping()
+    {
+        byte[] source = { 0x41, 0x42 }; // Base32("AB") = "IFBA====" unwrapped.
+        var sw = new StringWriter();
+        var stream = new BaseEncoderStream(sw, Bases.Base32, maxDataWidth: 3);
+        stream.Write(source, 0, source.Length);
+        stream.Close();
+        string separator = Bases.Base32.Separator;
+        Assert.AreEqual("IFB" + separator + "A==" + separator + "==", sw.ToString());
+    }
+
+    /// <summary>Verifies an empty input with finite width and nonzero indent produces no output whatsoever.</summary>
+    [TestMethod]
+    public void LineWrapping_EmptyInput_ProducesEmptyOutput()
+    {
+        var sw = new StringWriter();
+        var stream = new BaseEncoderStream(sw, Bases.Base64, maxDataWidth: 4, indent: 2);
+        stream.Close();
+        Assert.AreEqual(string.Empty, sw.ToString());
+    }
+
+    /// <summary>Verifies wrapping state is independent of how the input is split across multiple <c>Write</c> calls.</summary>
+    [TestMethod]
+    public void LineWrapping_FragmentedWrites_MatchSingleWrite()
+    {
+        byte[] source = { 0x41, 0x42, 0x43, 0x44, 0x45 };
+
+        var swSingle = new StringWriter();
+        var single = new BaseEncoderStream(swSingle, Bases.Base64, maxDataWidth: 3);
+        single.Write(source, 0, source.Length);
+        single.Close();
+
+        var swFragmented = new StringWriter();
+        var fragmented = new BaseEncoderStream(swFragmented, Bases.Base64, maxDataWidth: 3);
+        fragmented.Write(source, 0, 1);
+        fragmented.Write(source, 1, 1);
+        fragmented.Write(source, 2, 3);
+        fragmented.Close();
+
+        Assert.AreEqual(swSingle.ToString(), swFragmented.ToString());
+    }
+
+    /// <summary>Verifies wrapped, padded output still decodes back to the original bytes through <see cref="BaseDecoderStream"/>.</summary>
+    [TestMethod]
+    public void LineWrapping_WrappedPaddedOutput_RoundTripsThroughDecoder()
+    {
+        byte[] source = { 0x41, 0x42, 0x43, 0x44, 0x45 };
+        var sw = new StringWriter();
+        var stream = new BaseEncoderStream(sw, Bases.Base64, maxDataWidth: 3, indent: 2);
+        stream.Write(source, 0, source.Length);
+        stream.Close();
+
+        using var target = new MemoryStream();
+        using (var decoder = new BaseDecoderStream(target, Bases.Base64))
+        {
+            decoder.Write(sw.ToString());
+            decoder.Flush();
+        }
+
+        CollectionAssert.AreEqual(source, target.ToArray());
+    }
+
+    /// <summary>Verifies a second <see cref="BaseEncoderStream.Close"/> on wrapped, padded output is a strict no-op.</summary>
+    [TestMethod]
+    public void LineWrapping_Close_IsIdempotent()
+    {
+        byte[] source = { 0x41, 0x42 };
+        var sw = new StringWriter();
+        var stream = new BaseEncoderStream(sw, Bases.Base32, maxDataWidth: 3, indent: 1);
+        stream.Write(source, 0, source.Length);
+        stream.Close();
+        string after1 = sw.ToString();
+        stream.Close();
+        Assert.AreEqual(after1, sw.ToString(), "A second Close must not add filler, separator, indentation or duplicate the final symbol.");
+    }
+
+    /// <summary>Verifies <see cref="BaseEncoderStream.DisposeAsync"/> finalizes wrapped output with the same formatting contract as <see cref="BaseEncoderStream.Close"/>.</summary>
+    [TestMethod]
+    public async Task LineWrapping_DisposeAsync_UsesSameFormattingContractAsClose()
+    {
+        byte[] source = { 0x41, 0x42 };
+
+        var swClose = new StringWriter();
+        var streamClose = new BaseEncoderStream(swClose, Bases.Base64, maxDataWidth: 2);
+        streamClose.Write(source, 0, source.Length);
+        streamClose.Close();
+
+        var swDisposeAsync = new StringWriter();
+        var streamDisposeAsync = new BaseEncoderStream(swDisposeAsync, Bases.Base64, maxDataWidth: 2);
+        streamDisposeAsync.Write(source, 0, source.Length);
+        await streamDisposeAsync.DisposeAsync();
+
+        Assert.AreEqual(swClose.ToString(), swDisposeAsync.ToString());
+    }
+
+    // ---- IO-13: unsupported operations throw NotSupportedException ----
+
+    /// <summary>Verifies setting <see cref="Stream.Position"/> throws <see cref="NotSupportedException"/>, matching <c>CanSeek == false</c>.</summary>
+    [TestMethod]
+    public void PositionSetter_ThrowsNotSupportedException()
+    {
+        using var sw = new StringWriter();
+        using var stream = new BaseEncoderStream(sw, Bases.Base64);
+        Assert.ThrowsException<NotSupportedException>(() => stream.Position = 0);
+    }
+
+    /// <summary>Verifies <see cref="Stream.Read(byte[], int, int)"/> throws <see cref="NotSupportedException"/>, matching <c>CanRead == false</c>.</summary>
+    [TestMethod]
+    public void Read_ThrowsNotSupportedException()
+    {
+        using var sw = new StringWriter();
+        using var stream = new BaseEncoderStream(sw, Bases.Base64);
+        Assert.ThrowsException<NotSupportedException>(() => stream.Read(new byte[1], 0, 1));
+    }
+
+    /// <summary>Verifies <see cref="Stream.Seek"/> throws <see cref="NotSupportedException"/>, matching <c>CanSeek == false</c>.</summary>
+    [TestMethod]
+    public void Seek_ThrowsNotSupportedException()
+    {
+        using var sw = new StringWriter();
+        using var stream = new BaseEncoderStream(sw, Bases.Base64);
+        Assert.ThrowsException<NotSupportedException>(() => stream.Seek(0, SeekOrigin.Begin));
+    }
+
+    /// <summary>Verifies <see cref="Stream.SetLength"/> throws <see cref="NotSupportedException"/>, matching <c>CanSeek == false</c>.</summary>
+    [TestMethod]
+    public void SetLength_ThrowsNotSupportedException()
+    {
+        using var sw = new StringWriter();
+        using var stream = new BaseEncoderStream(sw, Bases.Base64);
+        Assert.ThrowsException<NotSupportedException>(() => stream.SetLength(10));
+    }
+
+    /// <summary>Verifies the advertised capability flags remain consistent with the unsupported operations above.</summary>
+    [TestMethod]
+    public void CapabilityFlags_MatchUnsupportedOperations()
+    {
+        using var sw = new StringWriter();
+        using var stream = new BaseEncoderStream(sw, Bases.Base64);
+        Assert.IsFalse(stream.CanRead);
+        Assert.IsFalse(stream.CanSeek);
+        Assert.IsTrue(stream.CanWrite);
+    }
+
+    // ---- IO-12: BaseDescriptorBase.ToString shares the same validation contract ----
+
+    /// <summary>Verifies <see cref="IBaseConverter.ToString(byte[], int, int)"/> rejects invalid formatting arguments deterministically, since it constructs a <see cref="BaseEncoderStream"/> internally.</summary>
+    [TestMethod]
+    public void BaseDescriptorToString_RejectsInvalidFormattingArguments()
+    {
+        byte[] data = { 0x41, 0x42 };
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => Bases.Base64.ToString(data, 0, 0));
+    }
 }
 
