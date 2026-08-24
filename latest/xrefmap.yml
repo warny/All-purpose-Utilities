@@ -36017,6 +36017,19 @@ references:
   commentId: T:Utils.IO.Serialization.ReaderOptions
   fullName: Utils.IO.Serialization.ReaderOptions
   nameWithType: ReaderOptions
+- uid: Utils.IO.Serialization.ReaderOptions.MaximumCollectionLength
+  name: MaximumCollectionLength
+  href: api/Utils.IO.Serialization.ReaderOptions.html#Utils_IO_Serialization_ReaderOptions_MaximumCollectionLength
+  commentId: P:Utils.IO.Serialization.ReaderOptions.MaximumCollectionLength
+  fullName: Utils.IO.Serialization.ReaderOptions.MaximumCollectionLength
+  nameWithType: ReaderOptions.MaximumCollectionLength
+- uid: Utils.IO.Serialization.ReaderOptions.MaximumCollectionLength*
+  name: MaximumCollectionLength
+  href: api/Utils.IO.Serialization.ReaderOptions.html#Utils_IO_Serialization_ReaderOptions_MaximumCollectionLength_
+  commentId: Overload:Utils.IO.Serialization.ReaderOptions.MaximumCollectionLength
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.ReaderOptions.MaximumCollectionLength
+  nameWithType: ReaderOptions.MaximumCollectionLength
 - uid: Utils.IO.Serialization.ReaderOptions.MaximumPayloadLength
   name: MaximumPayloadLength
   href: api/Utils.IO.Serialization.ReaderOptions.html#Utils_IO_Serialization_ReaderOptions_MaximumPayloadLength
@@ -36030,6 +36043,19 @@ references:
   isSpec: "True"
   fullName: Utils.IO.Serialization.ReaderOptions.MaximumPayloadLength
   nameWithType: ReaderOptions.MaximumPayloadLength
+- uid: Utils.IO.Serialization.ReaderOptions.MaximumReadBytes
+  name: MaximumReadBytes
+  href: api/Utils.IO.Serialization.ReaderOptions.html#Utils_IO_Serialization_ReaderOptions_MaximumReadBytes
+  commentId: P:Utils.IO.Serialization.ReaderOptions.MaximumReadBytes
+  fullName: Utils.IO.Serialization.ReaderOptions.MaximumReadBytes
+  nameWithType: ReaderOptions.MaximumReadBytes
+- uid: Utils.IO.Serialization.ReaderOptions.MaximumReadBytes*
+  name: MaximumReadBytes
+  href: api/Utils.IO.Serialization.ReaderOptions.html#Utils_IO_Serialization_ReaderOptions_MaximumReadBytes_
+  commentId: Overload:Utils.IO.Serialization.ReaderOptions.MaximumReadBytes
+  isSpec: "True"
+  fullName: Utils.IO.Serialization.ReaderOptions.MaximumReadBytes
+  nameWithType: ReaderOptions.MaximumReadBytes
 - uid: Utils.IO.Serialization.ReaderWriter
   name: ReaderWriter
   href: api/Utils.IO.Serialization.ReaderWriter.html
@@ -36054,6 +36080,15 @@ references:
   fullName.vb: Utils.IO.Serialization.ReaderWriter.New(System.IO.Stream)
   nameWithType: ReaderWriter.ReaderWriter(Stream)
   nameWithType.vb: ReaderWriter.New(Stream)
+- uid: Utils.IO.Serialization.ReaderWriter.#ctor(System.IO.Stream,Utils.IO.Serialization.ReaderOptions,Utils.IO.Serialization.SerializationOptions)
+  name: ReaderWriter(Stream, ReaderOptions, SerializationOptions)
+  href: api/Utils.IO.Serialization.ReaderWriter.html#Utils_IO_Serialization_ReaderWriter__ctor_System_IO_Stream_Utils_IO_Serialization_ReaderOptions_Utils_IO_Serialization_SerializationOptions_
+  commentId: M:Utils.IO.Serialization.ReaderWriter.#ctor(System.IO.Stream,Utils.IO.Serialization.ReaderOptions,Utils.IO.Serialization.SerializationOptions)
+  name.vb: New(Stream, ReaderOptions, SerializationOptions)
+  fullName: Utils.IO.Serialization.ReaderWriter.ReaderWriter(System.IO.Stream, Utils.IO.Serialization.ReaderOptions, Utils.IO.Serialization.SerializationOptions)
+  fullName.vb: Utils.IO.Serialization.ReaderWriter.New(System.IO.Stream, Utils.IO.Serialization.ReaderOptions, Utils.IO.Serialization.SerializationOptions)
+  nameWithType: ReaderWriter.ReaderWriter(Stream, ReaderOptions, SerializationOptions)
+  nameWithType.vb: ReaderWriter.New(Stream, ReaderOptions, SerializationOptions)
 - uid: Utils.IO.Serialization.ReaderWriter.#ctor(System.IO.Stream,Utils.IO.Serialization.SerializationOptions)
   name: ReaderWriter(Stream, SerializationOptions)
   href: api/Utils.IO.Serialization.ReaderWriter.html#Utils_IO_Serialization_ReaderWriter__ctor_System_IO_Stream_Utils_IO_Serialization_SerializationOptions_

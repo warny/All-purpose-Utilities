@@ -4922,7 +4922,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.IO.Serialization.ReaderOptions",
-      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.ReaderOptions.yml\" sourcestartlinenumber=\"1\">Configures safety limits applied by a <xref href=\"Utils.IO.Serialization.Reader\" data-throw-if-not-resolved=\"false\"></xref> to length-prefixed payloads.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.IO.Serialization.ReaderOptions.yml\" sourcestartlinenumber=\"1\">Configures independent safety limits applied by a <xref href=\"Utils.IO.Serialization.Reader\" data-throw-if-not-resolved=\"false\"></xref> while parsing wire data.</p>\n"
     },
     {
       "type": "ManagedReference",

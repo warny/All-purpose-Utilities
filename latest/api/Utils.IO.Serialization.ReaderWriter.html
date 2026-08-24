@@ -248,7 +248,7 @@ Class ReaderWriter  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_IO_Serialization_ReaderWriter__ctor_System_Byte___" data-uid="Utils.IO.Serialization.ReaderWriter.#ctor(System.Byte[])">
   ReaderWriter(byte[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriter.cs/#L56"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriter.cs/#L70"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance from the provided data array.</p>
@@ -312,6 +312,45 @@ Class ReaderWriter  <a class="header-action link-secondary" title="View source" 
 
   <a id="Utils_IO_Serialization_ReaderWriter__ctor_" data-uid="Utils.IO.Serialization.ReaderWriter.#ctor*"></a>
 
+  <h3 id="Utils_IO_Serialization_ReaderWriter__ctor_System_IO_Stream_Utils_IO_Serialization_ReaderOptions_Utils_IO_Serialization_SerializationOptions_" data-uid="Utils.IO.Serialization.ReaderWriter.#ctor(System.IO.Stream,Utils.IO.Serialization.ReaderOptions,Utils.IO.Serialization.SerializationOptions)">
+  ReaderWriter(Stream, ReaderOptions, SerializationOptions)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriter.cs/#L48"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a reader/writer pair with reader safety limits and shared wire options.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ReaderWriter(Stream stream, ReaderOptions readerOptions, SerializationOptions serializationOptions)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>stream</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a></dt>
+    <dd><p>Stream to read from and write to.</p>
+</dd>
+    <dt><code>readerOptions</code> <a class="xref" href="Utils.IO.Serialization.ReaderOptions.html">ReaderOptions</a></dt>
+    <dd><p>Safety limits applied only to reads.</p>
+</dd>
+    <dt><code>serializationOptions</code> <a class="xref" href="Utils.IO.Serialization.SerializationOptions.html">SerializationOptions</a></dt>
+    <dd><p>Shared codec registrations.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_IO_Serialization_ReaderWriter__ctor_" data-uid="Utils.IO.Serialization.ReaderWriter.#ctor*"></a>
+
   <h3 id="Utils_IO_Serialization_ReaderWriter__ctor_System_IO_Stream_Utils_IO_Serialization_SerializationOptions_" data-uid="Utils.IO.Serialization.ReaderWriter.#ctor(System.IO.Stream,Utils.IO.Serialization.SerializationOptions)">
   ReaderWriter(Stream, SerializationOptions)
   <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriter.cs/#L36"><i class="bi bi-code-slash"></i></a>
@@ -352,7 +391,7 @@ Class ReaderWriter  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_IO_Serialization_ReaderWriter_BytesLeft" data-uid="Utils.IO.Serialization.ReaderWriter.BytesLeft">
   BytesLeft
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriter.cs/#L71"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriter.cs/#L85"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the number of bytes remaining in the stream.</p>
@@ -384,7 +423,7 @@ Class ReaderWriter  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_IO_Serialization_ReaderWriter_Position" data-uid="Utils.IO.Serialization.ReaderWriter.Position">
   Position
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriter.cs/#L76"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriter.cs/#L90"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the current position within the stream.</p>
@@ -516,7 +555,7 @@ Class ReaderWriter  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_IO_Serialization_ReaderWriter_Pop" data-uid="Utils.IO.Serialization.ReaderWriter.Pop">
   Pop()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriter.cs/#L66"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriter.cs/#L80"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Restores the last saved stream position.</p>
@@ -543,7 +582,7 @@ Class ReaderWriter  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_IO_Serialization_ReaderWriter_Push" data-uid="Utils.IO.Serialization.ReaderWriter.Push">
   Push()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriter.cs/#L61"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriter.cs/#L75"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Saves the current stream position onto an internal stack.</p>
@@ -570,7 +609,7 @@ Class ReaderWriter  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_IO_Serialization_ReaderWriter_Seek_System_Int32_System_IO_SeekOrigin_" data-uid="Utils.IO.Serialization.ReaderWriter.Seek(System.Int32,System.IO.SeekOrigin)">
   Seek(int, SeekOrigin)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriter.cs/#L87"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriter.cs/#L101"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Moves the position within the stream.</p>
@@ -606,7 +645,7 @@ Class ReaderWriter  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_IO_Serialization_ReaderWriter_Slice_System_Int64_System_Int64_" data-uid="Utils.IO.Serialization.ReaderWriter.Slice(System.Int64,System.Int64)">
   Slice(long, long)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriter.cs/#L95"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriter.cs/#L109"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates a reader/writer operating on a slice of the current stream.</p>

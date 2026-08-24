@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class ReaderOptions | omy.Utils Documentation ">
       
-      <meta name="description" content="Configures safety limits applied by a  to length-prefixed payloads.">
+      <meta name="description" content="Configures independent safety limits applied by a  while parsing wire data.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -97,7 +97,7 @@ Class ReaderOptions  <a class="header-action link-secondary" title="View source"
   <dl><dt>Assembly</dt><dd>Utils.IO.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Configures safety limits applied by a <a class="xref" href="Utils.IO.Serialization.Reader.html">Reader</a> to length-prefixed payloads.</p>
+  <div class="markdown summary"><p>Configures independent safety limits applied by a <a class="xref" href="Utils.IO.Serialization.Reader.html">Reader</a> while parsing wire data.</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -241,6 +241,40 @@ Class ReaderOptions  <a class="header-action link-secondary" title="View source"
 </h2>
 
 
+  <a id="Utils_IO_Serialization_ReaderOptions_MaximumCollectionLength_" data-uid="Utils.IO.Serialization.ReaderOptions.MaximumCollectionLength*"></a>
+
+  <h3 id="Utils_IO_Serialization_ReaderOptions_MaximumCollectionLength" data-uid="Utils.IO.Serialization.ReaderOptions.MaximumCollectionLength">
+  MaximumCollectionLength
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderOptions.cs/#L28"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the largest collection element count accepted before allocation. This is independent of
+byte budgets because the managed or wire size of an arbitrary element is not always knowable.
+A <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> value preserves unlimited historical behavior; zero permits empty collections only.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int? MaximumCollectionLength { get; init; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>?</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_IO_Serialization_ReaderOptions_MaximumPayloadLength_" data-uid="Utils.IO.Serialization.ReaderOptions.MaximumPayloadLength*"></a>
 
   <h3 id="Utils_IO_Serialization_ReaderOptions_MaximumPayloadLength" data-uid="Utils.IO.Serialization.ReaderOptions.MaximumPayloadLength">
@@ -265,6 +299,41 @@ Zero permits empty payloads only.</p>
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>?</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_IO_Serialization_ReaderOptions_MaximumReadBytes_" data-uid="Utils.IO.Serialization.ReaderOptions.MaximumReadBytes*"></a>
+
+  <h3 id="Utils_IO_Serialization_ReaderOptions_MaximumReadBytes" data-uid="Utils.IO.Serialization.ReaderOptions.MaximumReadBytes">
+  MaximumReadBytes
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderOptions.cs/#L21"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the maximum number of wire bytes that may be consumed by one reader operation tree.
+Prefixes and payload bytes are both counted. Child readers and slices share the same budget;
+seeking and rereading consumes the bytes again. A <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> value preserves the
+unlimited historical behavior, while zero rejects every attempted wire-byte read.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public long? MaximumReadBytes { get; init; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a>?</dt>
     <dd></dd>
   </dl>
 
