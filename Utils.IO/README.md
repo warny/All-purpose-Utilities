@@ -81,7 +81,7 @@ MemoryStream buffer = src.ReadToMemoryStream();
 
 ## PartialStream examples
 
-`PartialStream` exposes a bounded slice of a seekable stream without copying data. Views over the same underlying stream share synchronization so their temporary seeks cannot interfere. Disposing a view does not close the underlying stream or invalidate the synchronization used by another view.
+`PartialStream` exposes a bounded slice of a seekable stream without copying data. Views over the same underlying stream share an operation gate; read, write, seek/state and flush operations are all serialized through it, so one slice cannot observe another slice's temporary repositioning of the base stream. Disposing a view does not close the underlying stream or invalidate the synchronization used by another view. Direct use of the base stream outside cooperating `PartialStream` views is not covered by this coordination.
 
 ```csharp
 using Utils.IO;
@@ -290,7 +290,7 @@ A `Reader` or `Writer` coordinates concurrent first-time contract construction w
 
 `Reader.TryGetBytesLeft(out long)` reports a value only for a coherent seekable stream. `Writer.TryGetBytesUntilCurrentLength(out long)` deliberately describes distance to the current length—not writable capacity; the old `Writer.BytesLeft` member is obsolete. Failed `Push(offset, origin)` calls do not add stack entries and attempt to restore position without hiding the original seek error.
 
-`PartialStream` implements Span and Memory-based async operations with identical slice limits. Async operations delegate to the underlying stream, honor cancellation, restore the underlying position, and do not hold a synchronous monitor across an `await`. `FlushAsync` flushes without finalizing an encoding quantum, and disposing a partial view never disposes its underlying stream.
+`PartialStream` implements Span and Memory-based async operations with identical slice limits. Async operations delegate to the underlying stream, honor cancellation, restore the underlying position, and do not hold a synchronous monitor across an `await`. `Flush` and `FlushAsync` acquire the same shared per-base-stream gate as every other operation before touching the underlying stream, `FlushAsync` doing so via `SemaphoreSlim.WaitAsync`; `FlushAsync` flushes without finalizing an encoding quantum, and disposing a partial view never disposes its underlying stream.
 
 ## Wire codecs and framing
 

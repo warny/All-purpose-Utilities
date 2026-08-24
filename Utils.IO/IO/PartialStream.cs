@@ -13,9 +13,13 @@ namespace Utils.IO;
 /// 
 /// The <see cref="Position"/> property reflects the offset within the partial stream, not the offset
 /// in the underlying stream. All read and write operations are bounded by the specified length.
-/// The underlying stream's position is restored after each operation, so external consumers of the
-/// base stream see no position change (though locking is used to ensure thread safety in concurrent scenarios).
-/// 
+/// The underlying stream's position is restored after each operation. <see cref="PartialStream"/> views
+/// over the same underlying stream serialize every operation that touches it — including
+/// <see cref="Flush"/> and <see cref="FlushAsync"/> — through a shared per-stream gate, so one view's
+/// temporary repositioning of the base stream can never be observed by another cooperating view. This
+/// coordination applies only to <see cref="PartialStream"/> instances sharing that base stream; it does
+/// not synchronize callers that access the base stream directly.
+///
 /// By default, disposing this <see cref="PartialStream"/> does not close or dispose the underlying stream.
 /// </summary>
 public class PartialStream : Stream
@@ -155,12 +159,23 @@ public class PartialStream : Stream
     }
 
     /// <summary>
-    /// Clears any buffers for this stream and causes any buffered data
-    /// to be written to the underlying device.
+    /// Clears any buffers for this stream and causes any buffered data to be written to the
+    /// underlying device, while holding the operation gate shared by every <see cref="PartialStream"/>
+    /// view over the same underlying stream. This does not reposition the base stream or change
+    /// <see cref="Position"/>/<see cref="Length"/>; the gate only prevents this flush from overlapping
+    /// another cooperating view's temporary repositioning or I/O operation.
     /// </summary>
     public override void Flush()
     {
-        baseStream.Flush();
+        operationGate.Wait();
+        try
+        {
+            baseStream.Flush();
+        }
+        finally
+        {
+            operationGate.Release();
+        }
     }
 
     /// <summary>
@@ -364,8 +379,26 @@ public class PartialStream : Stream
         finally { operationGate.Release(); }
     }
 
-    /// <summary>Asynchronously flushes the underlying stream.</summary>
-    public override Task FlushAsync(CancellationToken cancellationToken) => baseStream.FlushAsync(cancellationToken);
+    /// <summary>
+    /// Asynchronously flushes the underlying stream, acquiring the same shared operation gate as
+    /// <see cref="Flush"/> and every other <see cref="PartialStream"/> operation via
+    /// <see cref="SemaphoreSlim.WaitAsync(CancellationToken)"/>, without holding a synchronous monitor
+    /// across the await. <paramref name="cancellationToken"/> is honored both while waiting for the gate
+    /// and while the underlying stream flushes; if cancellation occurs while waiting, the underlying
+    /// <see cref="Stream.FlushAsync(CancellationToken)"/> is never invoked and the gate is not acquired.
+    /// </summary>
+    public override async Task FlushAsync(CancellationToken cancellationToken)
+    {
+        await operationGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await baseStream.FlushAsync(cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            operationGate.Release();
+        }
+    }
 
     /// <summary>Validates a write count while the operation gate protects the current slice state.</summary>
     private void ValidateWritableCount(int count, string parameterName)

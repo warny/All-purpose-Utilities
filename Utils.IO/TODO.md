@@ -14,12 +14,6 @@ The July audit text had become partially stale after PRs #526 and #528. This fil
 
 **Fix:** document this contract explicitly and add regression tests demonstrating that terminal validation remains strict while previously emitted bytes can remain in the destination. A separate transactional API should only be added in the future for a concrete requirement.
 
-### IO-09 — `PartialStream.Flush` is outside the shared operation gate
-
-PR #526 replaced `lock(baseStream)` with a `ConditionalWeakTable<Stream, SemaphoreSlim>` gate shared by slices and synchronized read/write/position/seek/length state. The old external-lock and unsynchronized-state findings are therefore largely fixed. `Flush`/`FlushAsync` still bypass that coordination policy.
-
-**Fix:** either gate flush operations as well or document why they are intentionally outside slice-state synchronization.
-
 ### IO-10 — Fixed through generic wire-codec infrastructure
 
 DateTime now uses selectable codecs, with .NET binary as the default and built-in ticks, Unix seconds/milliseconds, OLE Automation and FILETIME representations. Codecs may be registered by exact type or overridden per serialized member. Generic framing is forward-only safe and prepares, but does not close, IO-04 reader-budget integration.
@@ -38,6 +32,10 @@ DateTime now uses selectable codecs, with .NET binary as the default and built-i
 
 ## Closed since the July audit
 
+- IO-09 — fixed: `PartialStream.Flush` and `FlushAsync` now participate in the
+  same per-base-stream operation gate as read/write/position/seek/state
+  operations, preventing flushes from overlapping another slice's temporary
+  repositioning of the shared underlying stream.
 - IO-06 — fixed: all `StreamCopier` registration paths (constructors, `Add`,
   `Insert` and the indexer setter) now apply one centralized target validation
   policy; null, non-writable and self targets are rejected before registration.
@@ -57,7 +55,7 @@ DateTime now uses selectable codecs, with .NET binary as the default and built-i
 - IO-01 — base alphabet validation: fixed by requiring lengths from 2 through 256 to be exact powers of two; exhaustive regression coverage checks every length from 0 through 257 and verifies `BitsWidth` for valid alphabets.
 - Old item 6 — unpadded incomplete final groups: fixed by PR #528; current `BaseDecoderStream.Close()` rejects invalid terminal quanta.
 - Old item 9 — locking on externally visible `baseStream`: fixed by PR #526 with a shared per-base-stream `SemaphoreSlim`.
-- Old item 10 — unsynchronized `Position`/`Seek`/`SetLength`: fixed for state transitions by PR #526; only the flush-policy residual remains as IO-09.
+- Old item 10 — unsynchronized `Position`/`Seek`/`SetLength`: fixed for state transitions by PR #526; the flush-policy residual was closed as IO-09.
 - Old item 14 — owned-target disposal stops on the first exception: current `StreamCopier` attempts every target and aggregates failures.
 
 ## Recommended implementation order
