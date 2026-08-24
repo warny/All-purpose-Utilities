@@ -170,19 +170,17 @@
 			<Ordinal from="cien"> <Variant type="gender" forms="centésimo,centésima" /></Ordinal>
 			<Ordinal from="mil">  <Variant type="gender" forms="milésimo,milésima"   /></Ordinal>
 		</Ordinals>
-		<TimeUnits>
-			<!-- "hora" is feminine; forceVariants applies the existing gender=femenino
-			     cardinal rules ("uno"->"una", "veintiuno"->"veintiuna", ...) to the hour
-			     numeral without requiring the caller to pass a variant. "minuto"/"segundo"
-			     are masculine, matching the Spanish default, so they force nothing; their
-			     count1form="un" reuses the existing attributive-form mechanism (same role
-			     as German's count1form="eine") for the standalone "uno"->"un" apocope
-			     before a masculine noun. Compound counts (e.g. 21) keep the full "veintiuno"
-			     form, matching the config's existing documented "no attributive shortening
-			     for compounds" limitation (see ConvertCurrency_ES_Euro test). -->
-			<Unit name="hour"   singular="hora"    plural="horas"    forceVariants="gender=femenino" />
-			<Unit name="minute" singular="minuto"  plural="minutos"  count1form="un" />
-			<Unit name="second" singular="segundo" plural="segundos" count1form="un" />
-		</TimeUnits>
+		<!--
+		  Spanish time-unit support is deliberately deferred (not added here): masculine
+		  attributive numeral apocope ("uno"->"un", "veintiuno"->"veintiún", "treinta y
+		  uno"->"treinta y un", ...) applies before a masculine noun for both count==1 and
+		  compound counts (21, 31, ...). Count1Form only models the count==1 case, so a
+		  <TimeUnits> block using it for "minuto"/"segundo" would produce grammatically
+		  incorrect output for compounds (e.g. "veintiuno minutos" instead of "veintiún
+		  minutos"). This requires a contextual numeral-form mechanism beyond the current
+		  gender + ForcedVariants + Count1Form model — see the "Deferred: languages needing
+		  more than Singular/Plural/Count1Form" section of DONE-2026-08-24(1).md. This is
+		  future work, not an unresolved ForcedVariants defect.
+		-->
 	</Language>
 </Numbers>

@@ -673,19 +673,29 @@ fr.Convert(new TimeSpan(1, 0, 0));    // "une heure" — local to the "hour" fra
 
 ### Not just French
 
-The same mechanism, unmodified, covers every built-in Romance language whose
-`hour` noun is feminine — Spanish, Portuguese, Galician, and Catalan each
-declare `forceVariants="gender=..."` on their `hour` unit only:
+The same mechanism, unmodified, also covers Portuguese, Galician, and Catalan,
+whose `hour` noun is feminine — each declares `forceVariants="gender=..."` on
+its `hour` unit only:
 
 ```csharp
-NumberToStringConverter es = NumberToStringConverter.GetConverter("ES");
-es.Convert(21);                      // "veintiuno"       (ordinary cardinal: masculine default)
-es.Convert(TimeSpan.FromHours(21));  // "veintiuna horas" (the "hour" unit forces gender=femenino)
-
 NumberToStringConverter pt = NumberToStringConverter.GetConverter("PT");
 pt.Convert(2);                       // "dois"
 pt.Convert(new TimeSpan(2, 0, 0));   // "duas horas"      (the "hour" unit forces gender=feminino)
+
+NumberToStringConverter ca = NumberToStringConverter.GetConverter("CA");
+ca.Convert(21);                      // "vint-i-un"
+ca.Convert(TimeSpan.FromHours(21));  // "vint-i-una hores" (the "hour" unit forces gender=femení)
 ```
+
+Spanish (`ES`) time-unit support is deliberately **not** included: Spanish
+masculine attributive numeral apocope ("uno"→"un", "veintiuno"→"veintiún",
+"treinta y uno"→"treinta y un") applies to compound counts (21, 31, …), not
+just to count 1, and the current `Count1Form` mechanism only models the
+count-1 case. Adding `<TimeUnits>` to the Spanish configuration today would
+produce grammatically incorrect compound output (e.g. "veintiuno minutos"
+instead of "veintiún minutos"). This needs a contextual numeral-form
+mechanism beyond `gender` + `ForcedVariants` + `Count1Form` and is deferred
+as separate future work — see `DONE-2026-08-24(1).md`.
 
 ### Currency: independent unit and subunit
 

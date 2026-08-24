@@ -85,11 +85,15 @@ are source-compatible. `ForcedVariantSet` dimension aliases (a language's declar
 name before use; a forced set that mixed a canonical name and its alias for the same
 dimension (previously silently inert) is now rejected deterministically.
 
-Spanish, Portuguese, Galician, and Catalan (`ES`, `PT`, `GL`, `CA`) gain built-in
+Portuguese, Galician, and Catalan (`PT`, `GL`, `CA`) gain built-in
 `Convert(TimeSpan)`/`Convert(TimeOnly)` support (`SupportsTimeConversion` becomes
 `true`) using the same `forceVariants="gender=..."` pattern on their feminine `hour`
 unit; `minute`/`second` remain masculine by default. These are new capabilities, not
-behavior changes to existing output.
+behavior changes to existing output. Spanish (`ES`) time-unit support was evaluated
+and deliberately deferred — its masculine attributive numeral apocope ("uno"→"un",
+"veintiuno"→"veintiún") applies to compound counts as well as count 1, which the
+current `Count1Form` mechanism cannot express correctly; `ES.SupportsTimeConversion`
+remains `false`. See `Utils.NumberToString/DONE-2026-08-24(1).md`.
 
 <a id="omy-utils-fonts-2"></a>
 ## Utils.Fonts hostile-font parsing hardening
