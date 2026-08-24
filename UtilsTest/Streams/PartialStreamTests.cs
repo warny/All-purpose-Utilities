@@ -1,6 +1,9 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Utils.IO;
 using Utils.Collections;
 
@@ -261,5 +264,246 @@ public class PartialStreamTests
         Assert.ThrowsException<OverflowException>(
             () => ps.Seek(long.MaxValue, SeekOrigin.End),
             "Arithmetic overflow in SeekOrigin.End must propagate as OverflowException");
+    }
+
+    // ---- IO-09: Flush/FlushAsync participate in the shared per-base-stream operation gate ----
+
+    /// <summary>
+    /// A seekable <see cref="MemoryStream"/> that instruments <see cref="Write(byte[], int, int)"/>,
+    /// <see cref="Flush"/> and <see cref="FlushAsync(CancellationToken)"/> so tests can deterministically
+    /// prove ordering between concurrent <see cref="PartialStream"/> operations sharing this base stream,
+    /// instead of relying on wall-clock timing.
+    /// </summary>
+    private sealed class GateProbeStream : MemoryStream
+    {
+        private readonly object logLock = new();
+        private readonly System.Collections.Generic.List<string> events = new();
+
+        /// <summary>Set by an overridden <see cref="Write(byte[], int, int)"/> as soon as it is entered, before it blocks.</summary>
+        public ManualResetEventSlim WriteEntered { get; } = new(false);
+
+        /// <summary>Blocks an in-progress <see cref="Write(byte[], int, int)"/> until the test releases it.</summary>
+        public ManualResetEventSlim AllowWriteToComplete { get; } = new(false);
+
+        /// <summary>When <see langword="true"/>, <see cref="Flush"/> and <see cref="FlushAsync(CancellationToken)"/> throw instead of flushing.</summary>
+        public bool ThrowOnFlush { get; set; }
+
+        /// <summary>The <see cref="Stream.Position"/> observed by the most recent <see cref="Flush"/> call.</summary>
+        public long? FlushObservedPosition { get; private set; }
+
+        /// <summary>The <see cref="Stream.Position"/> observed by the most recent <see cref="FlushAsync(CancellationToken)"/> call.</summary>
+        public long? FlushAsyncObservedPosition { get; private set; }
+
+        public GateProbeStream(byte[] buffer) : base(buffer) { }
+
+        /// <summary>Returns a thread-safe snapshot of the entry/exit events recorded so far, in order.</summary>
+        public string[] EventsSnapshot { get { lock (logLock) return events.ToArray(); } }
+
+        private void Log(string name) { lock (logLock) events.Add(name); }
+
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            Log("WriteEntered");
+            WriteEntered.Set();
+            AllowWriteToComplete.Wait();
+            base.Write(buffer, offset, count);
+            Log("WriteExited");
+        }
+
+        public override void Flush()
+        {
+            FlushObservedPosition = Position;
+            Log("FlushEntered");
+            if (ThrowOnFlush) throw new IOException("Simulated flush failure.");
+            base.Flush();
+        }
+
+        public override Task FlushAsync(CancellationToken cancellationToken)
+        {
+            FlushAsyncObservedPosition = Position;
+            Log("FlushAsyncEntered");
+            if (ThrowOnFlush) throw new IOException("Simulated flush failure.");
+            // Call the non-virtual base implementation directly: the default Stream.FlushAsync
+            // (inherited by MemoryStream) invokes the virtual Flush(), which would otherwise
+            // re-enter this class's own Flush() override and log a spurious extra event.
+            base.Flush();
+            return Task.CompletedTask;
+        }
+    }
+
+    /// <summary>
+    /// The core IO-09 regression: while one <see cref="PartialStream"/> view holds the shared gate inside
+    /// a blocked <see cref="PartialStream.Write(byte[], int, int)"/>, another view's <see cref="PartialStream.Flush"/>
+    /// over the same base stream must wait, and must observe the base stream's restored position rather
+    /// than the write's temporary repositioning.
+    /// </summary>
+    [TestMethod]
+    public void Flush_WaitsForConcurrentWriteOnAnotherSliceOverSameBaseStream()
+    {
+        using GateProbeStream baseStream = new(new byte[100]);
+        baseStream.Position = 3;
+
+        PartialStream sliceA = new(baseStream, position: 20, length: 10);
+        PartialStream sliceB = new(baseStream, position: 0, length: 100);
+
+        Task writeTask = Task.Run(() => sliceA.Write([1, 2, 3], 0, 3));
+        Assert.IsTrue(baseStream.WriteEntered.Wait(TimeSpan.FromSeconds(5)), "the write must reach the base stream before the test proceeds.");
+
+        Task flushTask = Task.Run(() => sliceB.Flush());
+        Assert.IsFalse(baseStream.EventsSnapshot.Contains("FlushEntered"), "Flush must not enter while the write holds the shared gate.");
+
+        baseStream.AllowWriteToComplete.Set();
+        Assert.IsTrue(writeTask.Wait(TimeSpan.FromSeconds(5)), "the write must complete once released.");
+        Assert.IsTrue(flushTask.Wait(TimeSpan.FromSeconds(5)), "the flush must complete once the gate is released.");
+
+        CollectionAssert.AreEqual(new[] { "WriteEntered", "WriteExited", "FlushEntered" }, baseStream.EventsSnapshot);
+        Assert.AreEqual(3, baseStream.FlushObservedPosition, "Flush must observe the restored base position, not sliceA's temporary offset.");
+        Assert.AreEqual(3, baseStream.Position, "the base position must be restored once both operations complete.");
+    }
+
+    /// <summary>
+    /// The async counterpart of the core IO-09 regression: <see cref="PartialStream.FlushAsync(CancellationToken)"/>
+    /// must wait behind a concurrent, blocked <see cref="PartialStream.Write(byte[], int, int)"/> on another view
+    /// over the same base stream, proving sync/async interoperability through the same <see cref="SemaphoreSlim"/>.
+    /// </summary>
+    [TestMethod]
+    public async Task FlushAsync_WaitsForConcurrentWriteOnAnotherSliceOverSameBaseStream()
+    {
+        using GateProbeStream baseStream = new(new byte[100]);
+        baseStream.Position = 3;
+
+        PartialStream sliceA = new(baseStream, position: 20, length: 10);
+        PartialStream sliceB = new(baseStream, position: 0, length: 100);
+
+        Task writeTask = Task.Run(() => sliceA.Write([1, 2, 3], 0, 3));
+        Assert.IsTrue(baseStream.WriteEntered.Wait(TimeSpan.FromSeconds(5)), "the write must reach the base stream before the test proceeds.");
+
+        Task flushAsyncTask = sliceB.FlushAsync(CancellationToken.None);
+        Assert.IsFalse(baseStream.EventsSnapshot.Contains("FlushAsyncEntered"), "FlushAsync must not enter while the write holds the shared gate.");
+
+        baseStream.AllowWriteToComplete.Set();
+        Assert.IsTrue(writeTask.Wait(TimeSpan.FromSeconds(5)), "the write must complete once released.");
+        await flushAsyncTask.WaitAsync(TimeSpan.FromSeconds(5));
+
+        CollectionAssert.AreEqual(new[] { "WriteEntered", "WriteExited", "FlushAsyncEntered" }, baseStream.EventsSnapshot);
+        Assert.AreEqual(3, baseStream.FlushAsyncObservedPosition, "FlushAsync must observe the restored base position, not sliceA's temporary offset.");
+    }
+
+    /// <summary>
+    /// Cancellation while <see cref="PartialStream.FlushAsync(CancellationToken)"/> is waiting for the shared gate
+    /// must never invoke the underlying <see cref="Stream.FlushAsync(CancellationToken)"/>, and must not leave the
+    /// gate over-released or otherwise unusable for the next operation.
+    /// </summary>
+    [TestMethod]
+    public async Task FlushAsync_CancelledWhileWaitingForGate_NeverInvokesBaseFlushAsync_AndLeavesGateUsable()
+    {
+        using GateProbeStream baseStream = new(new byte[20]);
+
+        PartialStream sliceA = new(baseStream, position: 0, length: 10);
+        PartialStream sliceB = new(baseStream, position: 0, length: 10);
+
+        Task writeTask = Task.Run(() => sliceA.Write([1], 0, 1));
+        Assert.IsTrue(baseStream.WriteEntered.Wait(TimeSpan.FromSeconds(5)), "the write must reach the base stream before the test proceeds.");
+
+        using CancellationTokenSource cts = new();
+        Task flushAsyncTask = sliceB.FlushAsync(cts.Token);
+        cts.Cancel();
+
+        // Observe the cancellation while the write is still holding the gate, before releasing it.
+        // This avoids racing the cancellation against the write's eventual Release().
+        OperationCanceledException? observed = null;
+        try { await flushAsyncTask; }
+        catch (OperationCanceledException ex) { observed = ex; }
+        Assert.IsNotNull(observed, "cancellation while waiting for the gate must surface as OperationCanceledException.");
+        Assert.IsFalse(baseStream.EventsSnapshot.Contains("FlushAsyncEntered"), "a cancelled wait must never invoke the underlying FlushAsync.");
+
+        baseStream.AllowWriteToComplete.Set();
+        Assert.IsTrue(writeTask.Wait(TimeSpan.FromSeconds(5)), "the write must complete once released.");
+
+        // The gate must be healthy: a subsequent operation must proceed without deadlocking or throwing.
+        await sliceB.FlushAsync(CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.IsTrue(baseStream.EventsSnapshot.Contains("FlushAsyncEntered"));
+    }
+
+    /// <summary>A throwing <see cref="Stream.Flush"/> must still release the shared gate for the next operation.</summary>
+    [TestMethod]
+    public void Flush_WhenUnderlyingFlushThrows_StillReleasesGateForSubsequentOperations()
+    {
+        using GateProbeStream baseStream = new(new byte[20]) { ThrowOnFlush = true };
+        PartialStream sliceA = new(baseStream, position: 0, length: 10);
+        PartialStream sliceB = new(baseStream, position: 0, length: 10);
+
+        Assert.ThrowsException<IOException>(() => sliceA.Flush());
+
+        baseStream.ThrowOnFlush = false;
+        sliceB.Flush();
+        Assert.AreEqual(2, baseStream.EventsSnapshot.Count(e => e == "FlushEntered"));
+    }
+
+    /// <summary>A throwing <see cref="Stream.FlushAsync(CancellationToken)"/> must still release the shared gate for the next operation.</summary>
+    [TestMethod]
+    public async Task FlushAsync_WhenUnderlyingFlushAsyncThrows_StillReleasesGateForSubsequentOperations()
+    {
+        using GateProbeStream baseStream = new(new byte[20]) { ThrowOnFlush = true };
+        PartialStream sliceA = new(baseStream, position: 0, length: 10);
+        PartialStream sliceB = new(baseStream, position: 0, length: 10);
+
+        await Assert.ThrowsExceptionAsync<IOException>(() => sliceA.FlushAsync(CancellationToken.None));
+
+        baseStream.ThrowOnFlush = false;
+        await sliceB.FlushAsync(CancellationToken.None);
+        Assert.AreEqual(2, baseStream.EventsSnapshot.Count(e => e == "FlushAsyncEntered"));
+    }
+
+    /// <summary>The shared gate is keyed per base <see cref="Stream"/> identity; unrelated base streams must never block each other.</summary>
+    [TestMethod]
+    public void Flush_OnDifferentBaseStream_DoesNotWaitForUnrelatedBaseStreamOperation()
+    {
+        using GateProbeStream baseA = new(new byte[20]);
+        using MemoryStream baseB = new(new byte[20]);
+
+        PartialStream a = new(baseA, position: 0, length: 10);
+        PartialStream b = new(baseB, position: 0, length: 10);
+
+        Task writeTask = Task.Run(() => a.Write([1], 0, 1));
+        Assert.IsTrue(baseA.WriteEntered.Wait(TimeSpan.FromSeconds(5)), "the write must reach base A before the test proceeds.");
+
+        Task flushOnBTask = Task.Run(() => b.Flush());
+        Assert.IsTrue(flushOnBTask.Wait(TimeSpan.FromSeconds(5)), "flushing a view over an unrelated base stream must not be blocked by base A's held gate.");
+
+        baseA.AllowWriteToComplete.Set();
+        Assert.IsTrue(writeTask.Wait(TimeSpan.FromSeconds(5)));
+    }
+
+    /// <summary>Outside a concurrent operation, <see cref="PartialStream.Flush"/> must not reposition anything.</summary>
+    [TestMethod]
+    public void Flush_DoesNotChangePartialPositionLengthOrBasePosition()
+    {
+        using MemoryStream baseStream = new(new byte[20]);
+        baseStream.Position = 6;
+        PartialStream ps = new(baseStream, position: 2, length: 10);
+        ps.Position = 4;
+
+        ps.Flush();
+
+        Assert.AreEqual(4, ps.Position);
+        Assert.AreEqual(10, ps.Length);
+        Assert.AreEqual(6, baseStream.Position);
+    }
+
+    /// <summary>Outside a concurrent operation, <see cref="PartialStream.FlushAsync(CancellationToken)"/> must not reposition anything.</summary>
+    [TestMethod]
+    public async Task FlushAsync_DoesNotChangePartialPositionLengthOrBasePosition()
+    {
+        using MemoryStream baseStream = new(new byte[20]);
+        baseStream.Position = 6;
+        PartialStream ps = new(baseStream, position: 2, length: 10);
+        ps.Position = 4;
+
+        await ps.FlushAsync(CancellationToken.None);
+
+        Assert.AreEqual(4, ps.Position);
+        Assert.AreEqual(10, ps.Length);
+        Assert.AreEqual(6, baseStream.Position);
     }
 }
