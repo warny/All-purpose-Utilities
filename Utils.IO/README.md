@@ -216,6 +216,8 @@ decoder.Close();
 byte[] decoded = ms.ToArray();  // [1, 2, 3, 4]
 ```
 
+`BaseDecoderStream` is a streaming decoder, not a transactional validator. Complete decoded bytes are written to the target as soon as they are available. In strict mode, a later invalid character or a terminal `Close()` validation error can therefore throw `FormatException` after the target has already changed; previously written bytes are not rolled back. Callers that need atomic, all-or-nothing publication should decode into an explicit staging stream of their own choosing (for example `StreamValidator` or a temporary `MemoryStream`) and commit it only after `Close()` returns successfully.
+
 ## Binary serialization examples
 
 `Reader` and `Writer` serialize objects by reflecting members decorated with `[Field(order)]`. Primitive types (`byte`, `short`, `int`, `long`, `float`, `double`, etc.) are handled automatically by built-in delegates.
