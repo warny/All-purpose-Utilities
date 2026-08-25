@@ -91319,24 +91319,6 @@ references:
   fullName.vb: Utils.Range.Ranges(Of T).Clear
   nameWithType: Ranges<T>.Clear
   nameWithType.vb: Ranges(Of T).Clear
-- uid: Utils.Range.Ranges`1.Complement(Utils.Range.Ranges{`0})
-  name: Complement(Ranges<T>)
-  href: api/Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_Complement_Utils_Range_Ranges__0__
-  commentId: M:Utils.Range.Ranges`1.Complement(Utils.Range.Ranges{`0})
-  name.vb: Complement(Ranges(Of T))
-  fullName: Utils.Range.Ranges<T>.Complement(Utils.Range.Ranges<T>)
-  fullName.vb: Utils.Range.Ranges(Of T).Complement(Utils.Range.Ranges(Of T))
-  nameWithType: Ranges<T>.Complement(Ranges<T>)
-  nameWithType.vb: Ranges(Of T).Complement(Ranges(Of T))
-- uid: Utils.Range.Ranges`1.Complement*
-  name: Complement
-  href: api/Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_Complement_
-  commentId: Overload:Utils.Range.Ranges`1.Complement
-  isSpec: "True"
-  fullName: Utils.Range.Ranges<T>.Complement
-  fullName.vb: Utils.Range.Ranges(Of T).Complement
-  nameWithType: Ranges<T>.Complement
-  nameWithType.vb: Ranges(Of T).Complement
 - uid: Utils.Range.Ranges`1.Contains(Utils.Range.IRange{`0})
   name: Contains(IRange<T>)
   href: api/Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_Contains_Utils_Range_IRange__0__
@@ -91723,25 +91705,6 @@ references:
   fullName.vb: Utils.Range.Ranges(Of T).<>
   nameWithType: Ranges<T>.operator !=
   nameWithType.vb: Ranges(Of T).<>
-- uid: Utils.Range.Ranges`1.op_OnesComplement(Utils.Range.Ranges{`0})
-  name: operator ~(Ranges<T>)
-  href: api/Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_op_OnesComplement_Utils_Range_Ranges__0__
-  commentId: M:Utils.Range.Ranges`1.op_OnesComplement(Utils.Range.Ranges{`0})
-  name.vb: Not(Ranges(Of T))
-  fullName: Utils.Range.Ranges<T>.operator ~(Utils.Range.Ranges<T>)
-  fullName.vb: Utils.Range.Ranges(Of T).Not(Utils.Range.Ranges(Of T))
-  nameWithType: Ranges<T>.operator ~(Ranges<T>)
-  nameWithType.vb: Ranges(Of T).Not(Ranges(Of T))
-- uid: Utils.Range.Ranges`1.op_OnesComplement*
-  name: operator ~
-  href: api/Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_op_OnesComplement_
-  commentId: Overload:Utils.Range.Ranges`1.op_OnesComplement
-  isSpec: "True"
-  name.vb: Not
-  fullName: Utils.Range.Ranges<T>.operator ~
-  fullName.vb: Utils.Range.Ranges(Of T).Not
-  nameWithType: Ranges<T>.operator ~
-  nameWithType.vb: Ranges(Of T).Not
 - uid: Utils.Range.Ranges`1.op_Subtraction(Utils.Range.Ranges{`0},Utils.Range.Ranges{`0})
   name: operator -(Ranges<T>, Ranges<T>)
   href: api/Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_op_Subtraction_Utils_Range_Ranges__0__Utils_Range_Ranges__0__

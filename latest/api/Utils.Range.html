@@ -132,14 +132,19 @@ A null Maximum =&gt; +∞.</p>
       <dt><a class="xref" href="Utils.Range.Ranges-1.html">Ranges&lt;T&gt;</a></dt>
       <dd><p>Represents a set of intervals (ranges) for an ordered type <code class="typeparamref">T</code>.
 Provides set-like operations (union, intersection, difference, symmetric difference)
-via bitwise operators:
+via operators:
 | =&gt; Union,
 &amp; =&gt; Intersection,
-^ =&gt; Symmetric Difference,
-~ =&gt; Complement (relative to entire domain, if desired),</p>
+^ =&gt; Symmetric Difference,</p>
 <ul>
 <li>=&gt; Difference (Except).</li>
 </ul>
+<p>There is deliberately no complement operation: <code class="typeparamref">T</code> is only constrained by
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable&lt;T&gt;</a>, and <a class="xref" href="Utils.Range.IRange-1.html">IRange&lt;T&gt;</a> carries no notion of a domain, a
+minimum/maximum value, or infinite bounds, so a complement relative to &quot;the entire domain&quot; cannot
+be computed in general (an empty <a class="xref" href="Utils.Range.Ranges-1.html">Ranges&lt;T&gt;</a> would not even have a domain to recover
+it from). Types that explicitly model their complete domain, such as <a class="xref" href="Utils.Range.IntRange-1.html">IntRange&lt;T&gt;</a>,
+can define their own well-defined complement instead.</p>
 <p>The intervals are stored internally as disjoint, sorted <a class="xref" href="Utils.Range.Range-1.html">Range&lt;T&gt;</a> objects.</p>
 </dd>
     </dl>
