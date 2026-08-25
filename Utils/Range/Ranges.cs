@@ -18,8 +18,8 @@ namespace Utils.Range;
 /// <see cref="IComparable{T}"/>, and <see cref="IRange{T}"/> carries no notion of a domain, a
 /// minimum/maximum value, or infinite bounds, so a complement relative to "the entire domain" cannot
 /// be computed in general (an empty <see cref="Ranges{T}"/> would not even have a domain to recover
-/// it from). Types that model an explicit bounded domain, such as <see cref="IntRange{T}"/>, define
-/// their own, well-defined complement instead.
+/// it from). Types that explicitly model their complete domain, such as <see cref="IntRange{T}"/>,
+/// can define their own well-defined complement instead.
 ///
 /// The intervals are stored internally as disjoint, sorted <see cref="Range{T}"/> objects.
 /// </summary>
