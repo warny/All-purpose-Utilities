@@ -107,18 +107,58 @@ namespace UtilsTest.Mathematics.Numbers
             Assert.AreEqual("veintinueve", c.Convert(29, "gender=femenino"));
         }
 
-        // Spanish time-unit (TimeSpan/TimeOnly) support is deliberately deferred — see the
-        // "Deferred: languages needing more than Singular/Plural/Count1Form" section of
-        // DONE-2026-08-24(1).md. Masculine attributive numeral apocope ("uno"->"un",
-        // "veintiuno"->"veintiún") applies to compound counts (21, 31, ...) as well as count==1,
-        // and the current Count1Form mechanism only models the count==1 case.
+        // ─── NTS-05 — attributive masculine apocope via the "form" ForcedVariants dimension ────
+        //
+        // Spanish time-unit support was previously deferred (DONE-2026-08-24(1).md) because
+        // masculine attributive numeral apocope ("uno"->"un", "veintiuno"->"veintiún", "treinta y
+        // uno"->"treinta y un") applies to compound counts (21, 31, ...) as well as count==1, which
+        // Count1Form alone cannot express. NTS-05 resolves this with a new "form" variant dimension
+        // (standalone/attributive) forced by the time units, reusing the existing ForcedVariants +
+        // nested <Variant> engine — no new C# code for Spanish specifically, no ad-hoc replacements.
 
         [TestMethod]
-        public void Convert_ES_DoesNotSupportTimeConversion()
+        public void Convert_ES_OrdinaryCardinal_RemainsUnaffectedByAttributiveForm()
         {
             var c = NumberToStringConverter.GetConverter("ES");
-            Assert.IsFalse(c.SupportsTimeConversion);
-            Assert.ThrowsException<NotSupportedException>(() => c.Convert(new TimeSpan(1, 0, 0)));
+            Assert.IsTrue(c.SupportsTimeConversion);
+            // Ordinary cardinals default to form=standalone: no apocope leaks in.
+            Assert.AreEqual("uno", c.Convert(1));
+            Assert.AreEqual("veintiuno", c.Convert(21));
+            Assert.AreEqual("treinta y uno", c.Convert(31));
+        }
+
+        [TestMethod]
+        public void Convert_TimeSpan_ES_Hours_ForcedFeminineAttributiveWithoutExplicitVariant()
+        {
+            var c = NumberToStringConverter.GetConverter("ES");
+            Assert.AreEqual("una hora", c.Convert(new TimeSpan(1, 0, 0)));
+            Assert.AreEqual("veintiuna horas", c.Convert(TimeSpan.FromHours(21)));
+            Assert.AreEqual("treinta y una horas", c.Convert(TimeSpan.FromHours(31)));
+        }
+
+        [TestMethod]
+        public void Convert_TimeSpan_ES_Minutes_ForcedMasculineAttributiveApocope()
+        {
+            var c = NumberToStringConverter.GetConverter("ES");
+            Assert.AreEqual("un minuto", c.Convert(new TimeSpan(0, 1, 0)));
+            Assert.AreEqual("veintiún minutos", c.Convert(new TimeSpan(0, 21, 0)));
+            Assert.AreEqual("treinta y un minutos", c.Convert(new TimeSpan(0, 31, 0)));
+        }
+
+        [TestMethod]
+        public void Convert_TimeSpan_ES_Seconds_ForcedMasculineAttributiveApocope()
+        {
+            var c = NumberToStringConverter.GetConverter("ES");
+            Assert.AreEqual("un segundo", c.Convert(new TimeSpan(0, 0, 1)));
+            Assert.AreEqual("veintiún segundos", c.Convert(new TimeSpan(0, 0, 21)));
+        }
+
+        [TestMethod]
+        public void Convert_TimeSpan_ES_Composite_FeminineHourAndMasculineMinuteSecondDoNotLeak()
+        {
+            var c = NumberToStringConverter.GetConverter("ES");
+            Assert.AreEqual("veintiuna horas veintiún minutos veintiún segundos",
+                c.Convert(new TimeSpan(21, 21, 21)));
         }
     }
 }

@@ -85,15 +85,37 @@ are source-compatible. `ForcedVariantSet` dimension aliases (a language's declar
 name before use; a forced set that mixed a canonical name and its alias for the same
 dimension (previously silently inert) is now rejected deterministically.
 
-Portuguese, Galician, and Catalan (`PT`, `GL`, `CA`) gain built-in
+Portuguese, Galician, Catalan, and Spanish (`PT`, `GL`, `CA`, `ES`) gain built-in
 `Convert(TimeSpan)`/`Convert(TimeOnly)` support (`SupportsTimeConversion` becomes
-`true`) using the same `forceVariants="gender=..."` pattern on their feminine `hour`
-unit; `minute`/`second` remain masculine by default. These are new capabilities, not
-behavior changes to existing output. Spanish (`ES`) time-unit support was evaluated
-and deliberately deferred — its masculine attributive numeral apocope ("uno"→"un",
-"veintiuno"→"veintiún") applies to compound counts as well as count 1, which the
-current `Count1Form` mechanism cannot express correctly; `ES.SupportsTimeConversion`
-remains `false`. See `Utils.NumberToString/DONE-2026-08-24(1).md`.
+`true`). PT/GL/CA use the same `forceVariants="gender=..."` pattern on their feminine
+`hour` unit; `minute`/`second` remain masculine by default. Spanish additionally
+declares a new `form` variant dimension (`standalone`/`attributive`) so its masculine
+attributive numeral apocope ("uno"→"un", "veintiuno"→"veintiún") applies correctly to
+both count 1 and compound counts (21, 31, …) — see the "Lexical form selection /
+ForcedVariants (NTS-05)" note below. These are new capabilities, not behavior changes
+to existing output.
+
+### Lexical form selection (NTS-05) — additive
+
+New public extension point: `ILexicalFormSelector`, `LexicalFormContext`,
+`LexicalFormSet`, `DefaultLexicalFormSelector`, `LexicalFormSelectorConfiguration`,
+and `NumberToStringConverter.RegisterLexicalFormSelector`/
+`NumberToStringConverterOptions.TimeUnitForms`/`TimeUnitFormSelectors` — lets a
+configured time unit choose among more than two named word forms (e.g. a future
+Russian "час"/"часа"/"часов") via a selector resolved at most once per distinct
+selector type, during configuration loading, never during `Convert(...)`. A unit may
+optionally pass selector-specific settings via a structured
+`<LexicalFormSelector type="..."><Configuration>...</Configuration></LexicalFormSelector>`
+XML element (the core library never interprets `<Configuration>`'s content); units
+needing no configuration keep using the concise `formSelector="..."` attribute.
+`NumberToStringConverter.TimeUnitForms`/`TimeUnitFormSelectors` report the *effective*
+state for every configured time unit (synthesized singular/plural and
+`DefaultLexicalFormSelector` for units with no override). Every unit that configures no
+selector uses the built-in default (today's exact singular/plural behavior), so no
+existing configuration or output changes. See the "Lexical form selection" section of
+`Utils.NumberToString/README.md` and `Utils.NumberToString/DONE-2026-08-25(1).md`/
+`DONE-2026-08-25(2).md`. Spanish does not use this mechanism — its time-unit fix is a
+`ForcedVariants` addition (see above), not a lexical-form-selector one.
 
 <a id="omy-utils-fonts-2"></a>
 ## Utils.Fonts hostile-font parsing hardening

@@ -176,6 +176,40 @@ public class NumberToStringCompositeFinalizationTests
         Assert.AreEqual("<1:two euros and two-F cents>", result);
     }
 
+    /// <summary>
+    /// Verifies a time phrase rendered through a custom <see cref="ILexicalFormSelector"/> (NTS-05)
+    /// is still finalized exactly once, proving lexical form selection composes with the numeral
+    /// pipeline without adding a per-fragment finalization call.
+    /// </summary>
+    [TestMethod]
+    public void Convert_TimeSpan_WithCustomLexicalFormSelector_FinalizesCompletePhraseOnce()
+    {
+        var finalizer = new RecordingFinalizer();
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        {
+            LanguageSpecifics = finalizer,
+            TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)>
+            {
+                ["hour"] = ("hour", "hours", null),
+            },
+            TimeUnitForms = new Dictionary<string, LexicalFormSet>
+            {
+                ["hour"] = LexicalFormSet.Create(("custom", "custom-hour")),
+            },
+            TimeUnitFormSelectors = new Dictionary<string, ILexicalFormSelector>
+            {
+                ["hour"] = new AlwaysCustomFormSelector(),
+            },
+        };
+        var converter = new NumberToStringConverter(options);
+
+        string result = converter.Convert(new TimeSpan(2, 0, 0));
+
+        Assert.AreEqual(1, finalizer.CallCount);
+        CollectionAssert.AreEqual(new[] { "two custom-hour" }, finalizer.Inputs);
+        Assert.AreEqual("<1:two custom-hour>", result);
+    }
+
     /// <summary>Verifies signs remain outside the once-finalized fraction and currency phrases.</summary>
     [TestMethod]
     public void Convert_NegativeComposite_AppliesSignAfterSingleFinalization()
@@ -226,6 +260,12 @@ public class NumberToStringCompositeFinalizationTests
         {
             MaxNumber = maxNumber,
         });
+
+    /// <summary>Always selects the "custom" form key, regardless of count/context.</summary>
+    private sealed class AlwaysCustomFormSelector : ILexicalFormSelector
+    {
+        public string SelectForm(LexicalFormContext context) => "custom";
+    }
 
     /// <summary>Records and visibly marks every language-finalization invocation.</summary>
     private sealed class RecordingFinalizer : INumberToStringLanguageSpecifics

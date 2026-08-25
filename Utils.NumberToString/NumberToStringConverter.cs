@@ -224,17 +224,50 @@ namespace Utils.NumberToString
             {
                 var rawTimeUnits = options.TimeUnits ?? ImmutableDictionary<string, (string Singular, string Plural, string? Count1Form)>.Empty;
                 var timeUnitForced = options.TimeUnitForcedVariants ?? ImmutableDictionary<string, ForcedVariantSet>.Empty;
+                var timeUnitForms = options.TimeUnitForms ?? ImmutableDictionary<string, LexicalFormSet>.Empty;
+                var timeUnitSelectors = options.TimeUnitFormSelectors ?? ImmutableDictionary<string, ILexicalFormSelector>.Empty;
                 foreach (var key in timeUnitForced.Keys)
                 {
                     if (!rawTimeUnits.ContainsKey(key))
                         throw new ArgumentException($"TimeUnitForcedVariants key '{key}' has no matching TimeUnits entry.", nameof(options));
                 }
+                foreach (var key in timeUnitForms.Keys)
+                {
+                    if (!rawTimeUnits.ContainsKey(key))
+                        throw new ArgumentException($"TimeUnitForms key '{key}' has no matching TimeUnits entry.", nameof(options));
+                }
+                foreach (var key in timeUnitSelectors.Keys)
+                {
+                    if (!rawTimeUnits.ContainsKey(key))
+                        throw new ArgumentException($"TimeUnitFormSelectors key '{key}' has no matching TimeUnits entry.", nameof(options));
+                }
                 _timeUnits = rawTimeUnits.ToImmutableDictionary(
                     kv => kv.Key,
-                    kv => new TimeUnitDefinition(kv.Value.Singular, kv.Value.Plural, kv.Value.Count1Form,
-                        timeUnitForced.TryGetValue(kv.Key, out var forcedVariants) && forcedVariants != null ? forcedVariants : ForcedVariantSet.Empty));
-                // _timeUnitsPublic/_timeUnitForcedVariantsPublic are computed after _dimensionIndex
-                // exists, once each unit's ForcedVariants has been canonicalized (aliases resolved).
+                    kv =>
+                    {
+                        var baseForms = LexicalFormSet.Create(("singular", kv.Value.Singular), ("plural", kv.Value.Plural));
+                        var forms = timeUnitForms.TryGetValue(kv.Key, out var overrideForms) && overrideForms != null
+                            ? baseForms.MergeOverriddenBy(overrideForms) : baseForms;
+                        var selector = timeUnitSelectors.TryGetValue(kv.Key, out var overrideSelector) && overrideSelector != null
+                            ? overrideSelector : DefaultLexicalFormSelector.Instance;
+                        return new TimeUnitDefinition(kv.Value.Singular, kv.Value.Plural, kv.Value.Count1Form,
+                            timeUnitForced.TryGetValue(kv.Key, out var forcedVariants) && forcedVariants != null ? forcedVariants : ForcedVariantSet.Empty,
+                            forms, selector);
+                    });
+                // _timeUnitFormOverrides/_timeUnitFormSelectorOverrides retain only the entries
+                // actually configured as overrides here — never every unit's synthesized default —
+                // so cloning a converter and narrowing its TimeUnits (see
+                // NumberToStringConverterOptions(NumberToStringConverter)) never resurrects a
+                // TimeUnitForms/TimeUnitFormSelectors entry for a unit that no longer exists. This
+                // internal, override-only snapshot is distinct from the public TimeUnitForms/
+                // TimeUnitFormSelectors properties, which report the EFFECTIVE per-unit state (see
+                // below, computed from _timeUnits once it is finalized).
+                _timeUnitFormOverrides = timeUnitForms
+                    .Where(kv => kv.Value != null && !kv.Value.IsEmpty)
+                    .ToImmutableDictionary(kv => kv.Key, kv => kv.Value);
+                _timeUnitFormSelectorOverrides = timeUnitSelectors
+                    .Where(kv => kv.Value != null)
+                    .ToImmutableDictionary(kv => kv.Key, kv => kv.Value);
             }
             _datePattern = options.DatePattern;
             _datePatternSegments = _datePattern == null ? [] : ParseDatePattern(_datePattern, LanguageIdentifier);
@@ -261,6 +294,13 @@ namespace Utils.NumberToString
             _timeUnitForcedVariantsPublic = _timeUnits
                 .Where(kv => !kv.Value.ForcedVariants.IsEmpty)
                 .ToImmutableDictionary(kv => kv.Key, kv => kv.Value.ForcedVariants);
+            // Effective views: every TimeUnits key is present, each mapped to the Forms/Selector
+            // TimeUnitDefinition already resolved (base singular/plural merged with any override,
+            // and DefaultLexicalFormSelector when no selector override was configured) — distinct
+            // from the override-only _timeUnitFormOverrides/_timeUnitFormSelectorOverrides above,
+            // which exist solely to support safe cloning.
+            _timeUnitFormsPublic = _timeUnits.ToImmutableDictionary(kv => kv.Key, kv => kv.Value.Forms);
+            _timeUnitFormSelectorsPublic = _timeUnits.ToImmutableDictionary(kv => kv.Key, kv => kv.Value.Selector);
 
             _fractionForcedVariants = _fractionForcedVariants.ToImmutableDictionary(
                 kv => kv.Key,
@@ -471,6 +511,39 @@ namespace Utils.NumberToString
         /// </summary>
         public IReadOnlyDictionary<string, ForcedVariantSet> TimeUnitForcedVariants => _timeUnitForcedVariantsPublic;
 
+        /// <summary>
+        /// Gets the effective <see cref="LexicalFormSet"/> per time unit, keyed like
+        /// <see cref="TimeUnits"/>. Always includes at least "singular"/"plural", synthesized from
+        /// <see cref="TimeUnits"/> when no explicit override was configured.
+        /// </summary>
+        public IReadOnlyDictionary<string, LexicalFormSet> TimeUnitForms => _timeUnitFormsPublic;
+
+        /// <summary>
+        /// Gets the effective <see cref="ILexicalFormSelector"/> per time unit, keyed like
+        /// <see cref="TimeUnits"/>. A unit with no configured selector uses
+        /// <see cref="DefaultLexicalFormSelector"/>.
+        /// </summary>
+        public IReadOnlyDictionary<string, ILexicalFormSelector> TimeUnitFormSelectors => _timeUnitFormSelectorsPublic;
+
+        /// <summary>
+        /// Gets only the explicitly configured <see cref="LexicalFormSet"/> overrides per time
+        /// unit — i.e. the units for which an override was actually supplied, unlike the effective
+        /// <see cref="TimeUnitForms"/>. Used by <c>NumberToStringConverterOptions(NumberToStringConverter)</c>
+        /// so cloning and then narrowing <see cref="TimeUnits"/> never resurrects a synthesized
+        /// default form set for a unit that was removed from the clone.
+        /// </summary>
+        internal IReadOnlyDictionary<string, LexicalFormSet> TimeUnitFormOverrides => _timeUnitFormOverrides;
+
+        /// <summary>
+        /// Gets only the explicitly configured <see cref="ILexicalFormSelector"/> overrides per
+        /// time unit — i.e. the units for which a selector override was actually supplied, unlike
+        /// the effective <see cref="TimeUnitFormSelectors"/>. Used by
+        /// <c>NumberToStringConverterOptions(NumberToStringConverter)</c> so cloning and then
+        /// narrowing <see cref="TimeUnits"/> never resurrects a default-selector entry for a unit
+        /// that was removed from the clone.
+        /// </summary>
+        internal IReadOnlyDictionary<string, ILexicalFormSelector> TimeUnitFormSelectorOverrides => _timeUnitFormSelectorOverrides;
+
         /// <summary>Gets the date pattern string (tokens: {month}, {ordinal-day}, {cardinal-day}, {year}).</summary>
         public string? DatePattern => _datePattern;
 
@@ -508,6 +581,10 @@ namespace Utils.NumberToString
         private readonly ImmutableDictionary<string, TimeUnitDefinition> _timeUnits;
         private readonly ImmutableDictionary<string, (string Singular, string Plural, string? Count1Form)> _timeUnitsPublic;
         private readonly ImmutableDictionary<string, ForcedVariantSet> _timeUnitForcedVariantsPublic;
+        private readonly ImmutableDictionary<string, LexicalFormSet> _timeUnitFormsPublic;
+        private readonly ImmutableDictionary<string, ILexicalFormSelector> _timeUnitFormSelectorsPublic;
+        private readonly ImmutableDictionary<string, LexicalFormSet> _timeUnitFormOverrides;
+        private readonly ImmutableDictionary<string, ILexicalFormSelector> _timeUnitFormSelectorOverrides;
         private readonly string? _datePattern;
         private readonly ImmutableArray<DatePatternSegment> _datePatternSegments;
         private readonly string? _dateFirstDay;
@@ -2089,14 +2166,31 @@ namespace Utils.NumberToString
             return multiplier < 0 ? Minus.Replace("*", final) : final;
         }
 
-        private string FormatTimeUnit(int count, TimeUnitDefinition unit, string[] variants)
+        /// <summary>
+        /// Renders one time-unit fragment: the selector chooses a lexical form key from the
+        /// effective variant query, that key resolves to the unit word via <see cref="TimeUnitDefinition.Forms"/>,
+        /// and (unless <see cref="TimeUnitDefinition.Count1Form"/> applies) the numeral is built with
+        /// the same effective query so <see cref="ForcedVariantSet"/> and lexical form selection
+        /// compose without leaking into each other's concerns.
+        /// </summary>
+        /// <param name="count">The unit's count (hours, minutes, or seconds).</param>
+        /// <param name="unit">The resolved time-unit definition.</param>
+        /// <param name="variants">The caller-supplied variants for the numeral.</param>
+        /// <param name="constituentDescription">Identifies the unit in diagnostics, e.g. <c>"TimeUnits[hour]"</c>.</param>
+        private string FormatTimeUnit(int count, TimeUnitDefinition unit, string[] variants, string constituentDescription)
         {
-            string word = count == 1 ? unit.Singular : unit.Plural;
-            // Count1Form is a literal override for count==1; ForcedVariants never rewrite it.
+            var query = unit.ForcedVariants.Overlay(BuildVariantQuery(variants));
+            string formKey = unit.Selector.SelectForm(new LexicalFormContext(count, query));
+            if (!unit.Forms.TryGetForm(formKey, out string? word))
+                throw new NumberToStringConfigurationException("UNTS007", LanguageIdentifier, constituentDescription,
+                    $"Language '{LanguageIdentifier}', {constituentDescription}: lexical form selector returned " +
+                    $"unknown form key '{formKey}'. Available forms: {string.Join(", ", unit.Forms.Keys)}.");
+
+            // Count1Form is a literal override for count==1; ForcedVariants and lexical form
+            // selection never rewrite it.
             if (count == 1 && unit.Count1Form != null)
                 return unit.Count1Form + Separator + word;
 
-            var query = unit.ForcedVariants.Overlay(BuildVariantQuery(variants));
             return BuildCardinalFragment(count, query) + Separator + word;
         }
 
@@ -2127,21 +2221,21 @@ namespace Utils.NumberToString
                 if (!_timeUnits.TryGetValue("hour", out var h))
                     throw new InvalidOperationException(
                         $"Language '{LanguageIdentifier}' has a non-zero hours component but no 'hour' unit configured in <TimeUnits>.");
-                parts.Add(FormatTimeUnit(totalHours, h, variants));
+                parts.Add(FormatTimeUnit(totalHours, h, variants, "TimeUnits[hour]"));
             }
             if (duration.Minutes > 0)
             {
                 if (!_timeUnits.TryGetValue("minute", out var m))
                     throw new InvalidOperationException(
                         $"Language '{LanguageIdentifier}' has a non-zero minutes component but no 'minute' unit configured in <TimeUnits>.");
-                parts.Add(FormatTimeUnit(duration.Minutes, m, variants));
+                parts.Add(FormatTimeUnit(duration.Minutes, m, variants, "TimeUnits[minute]"));
             }
             if (duration.Seconds > 0)
             {
                 if (!_timeUnits.TryGetValue("second", out var s))
                     throw new InvalidOperationException(
                         $"Language '{LanguageIdentifier}' has a non-zero seconds component but no 'second' unit configured in <TimeUnits>.");
-                parts.Add(FormatTimeUnit(duration.Seconds, s, variants));
+                parts.Add(FormatTimeUnit(duration.Seconds, s, variants, "TimeUnits[second]"));
             }
 
             string body = parts.Count > 0 ? string.Join(Separator, parts) : Zero;
@@ -2165,7 +2259,7 @@ namespace Utils.NumberToString
         {
             var parts = new List<string>();
             if (_timeUnits.TryGetValue("hour", out var h))
-                parts.Add(FormatTimeUnit(time.Hour, h, variants));
+                parts.Add(FormatTimeUnit(time.Hour, h, variants, "TimeUnits[hour]"));
             else if (time.Hour > 0)
                 throw new InvalidOperationException(
                     $"Language '{LanguageIdentifier}' has a non-zero hours component but no 'hour' unit configured in <TimeUnits>.");
@@ -2175,14 +2269,14 @@ namespace Utils.NumberToString
                 if (!_timeUnits.TryGetValue("minute", out var m))
                     throw new InvalidOperationException(
                         $"Language '{LanguageIdentifier}' has a non-zero minutes component but no 'minute' unit configured in <TimeUnits>.");
-                parts.Add(FormatTimeUnit(time.Minute, m, variants));
+                parts.Add(FormatTimeUnit(time.Minute, m, variants, "TimeUnits[minute]"));
             }
             if (time.Second > 0)
             {
                 if (!_timeUnits.TryGetValue("second", out var s))
                     throw new InvalidOperationException(
                         $"Language '{LanguageIdentifier}' has a non-zero seconds component but no 'second' unit configured in <TimeUnits>.");
-                parts.Add(FormatTimeUnit(time.Second, s, variants));
+                parts.Add(FormatTimeUnit(time.Second, s, variants, "TimeUnits[second]"));
             }
 
             return parts.Count > 0 ? string.Join(Separator, parts) : Zero;

@@ -615,6 +615,55 @@ public class TimeUnitEntry
     /// </summary>
     [XmlAttribute("forceVariants")]
     public string? ForceVariants { get; set; }
+
+    /// <summary>
+    /// Optional lexical-form-selector type name or built-in alias (currently only <c>"default"</c>),
+    /// for a selector that needs no selector-specific configuration. Choosing which named
+    /// <see cref="Forms"/> entry applies to a given count/context. Resolved once, via reflection,
+    /// while loading configuration — never on the conversion hot path. When both this attribute
+    /// and <see cref="LexicalFormSelector"/> are omitted, the built-in default selector is used
+    /// (count 1 → "singular", otherwise "plural"), which is exactly today's Singular/Plural
+    /// behavior. Ignored when <see cref="LexicalFormSelector"/> is present.
+    /// </summary>
+    [XmlAttribute("formSelector")]
+    public string? FormSelector { get; set; }
+
+    /// <summary>
+    /// Optional structured selector declaration, used instead of <see cref="FormSelector"/> when
+    /// the selector needs its own configuration subtree. See
+    /// <see cref="Utils.NumberToString.LexicalFormSelectorConfiguration"/>.
+    /// </summary>
+    [XmlElement("LexicalFormSelector")]
+    public LexicalFormSelectorElementType? LexicalFormSelector { get; set; }
+
+    /// <summary>
+    /// Optional named lexical forms for this unit (e.g. an "attributive" form), beyond the
+    /// "singular"/"plural" forms implicitly synthesized from <see cref="Singular"/>/<see cref="Plural"/>.
+    /// Entries here override the synthesized "singular"/"plural" keys if reused, and add any other
+    /// key a configured selector may request.
+    /// </summary>
+    [XmlElement("Forms")]
+    public LexicalFormsType? Forms { get; set; }
+}
+
+/// <summary>
+/// Declares a custom lexical-form-selector type together with its own, selector-owned
+/// configuration subtree. Used instead of the plain <c>formSelector</c> attribute when the
+/// selector needs configuration beyond its type name.
+/// </summary>
+public class LexicalFormSelectorElementType
+{
+    /// <summary>The selector type name or built-in alias (same vocabulary as <see cref="TimeUnitEntry.FormSelector"/>).</summary>
+    [XmlAttribute("type")]
+    public string Type { get; set; } = "";
+
+    /// <summary>
+    /// The raw <c>&lt;Configuration&gt;</c> element, interpreted entirely by the selector — the
+    /// core library never reads its content. <see langword="null"/> when the selector needs no
+    /// configuration (a plain <c>&lt;LexicalFormSelector type="..."/&gt;</c> with no children).
+    /// </summary>
+    [XmlAnyElement]
+    public XmlElement? Configuration { get; set; }
 }
 
 /// <summary>
@@ -625,6 +674,30 @@ public class TimeUnitsType
     /// <summary>Gets or sets the list of time unit definitions.</summary>
     [XmlElement("Unit")]
     public List<TimeUnitEntry>? Units { get; set; }
+}
+
+/// <summary>
+/// Holds named lexical form entries for a configurable constituent (e.g. a time unit).
+/// </summary>
+public class LexicalFormsType
+{
+    /// <summary>Gets or sets the named form entries.</summary>
+    [XmlElement("Form")]
+    public List<LexicalFormEntry>? Entries { get; set; }
+}
+
+/// <summary>
+/// Maps one lexical form key (e.g. "singular", "attributive", "few") to its localized word.
+/// </summary>
+public class LexicalFormEntry
+{
+    /// <summary>The form key, looked up by a configured <see cref="Utils.NumberToString.ILexicalFormSelector"/>.</summary>
+    [XmlAttribute("key")]
+    public string Key { get; set; } = "";
+
+    /// <summary>The localized word for this form.</summary>
+    [XmlAttribute("value")]
+    public string Value { get; set; } = "";
 }
 
 /// <summary>

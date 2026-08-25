@@ -99,6 +99,13 @@ When working on `Utils.Parser` documentation, agents must consult `docs/parser/I
 This section **extends** the existing guidelines above.  
 All previous rules remain fully applicable.
 
+> **Scope note:** the "no breaking changes / no behavioral changes / metadata-only"
+> constraints below (Compact version item 1, Detailed version "Constraints") apply
+> **only to this documentation/discoverability mission**. They do not restrict
+> unrelated runtime or public-API feature work elsewhere in the repository — such
+> work is governed by the general guidelines above (e.g. the Testing rules, the
+> coding-style rules), not by this section.
+
 ### Scope
 
 Improve **documentation, metadata, and discoverability** of the repository and its

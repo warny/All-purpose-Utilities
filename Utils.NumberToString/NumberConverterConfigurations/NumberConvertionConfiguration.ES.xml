@@ -82,6 +82,15 @@
 			  use a space-separated buildString ("treinta y *"), so LastWord works there.
 			-->
 			<Dimension name="gender" localName="género" values="masculino,femenino" />
+			<!--
+			  NTS-05: "form" models whether a numeral is standalone (an ordinary cardinal, e.g.
+			  Convert(21)) or attributive (governing a noun, e.g. a time unit — "veintiún minutos").
+			  Masculine attributive apocope ("uno"->"un", "veintiuno"->"veintiún", "treinta y
+			  uno"->"treinta y un") applies only in the attributive context; standalone cardinals
+			  are unaffected because "standalone" (declared first) is the default. Only time units
+			  force form=attributive today; ordinary Convert(...) calls never do.
+			-->
+			<Dimension name="form" localName="forma" values="standalone,attributive" />
 
 			<Variant type="gender" variant="femenino">
 				<!-- Units: "uno" alone or at end of group (preceded by a space or hyphen) -->
@@ -101,6 +110,16 @@
 				<Replacement oldValue="ochocientos"   newValue="ochocientas"   scope="Anywhere" />
 				<Replacement oldValue="novecientos"   newValue="novecientas"   scope="Anywhere" />
 			</Variant>
+
+			<!-- NTS-05: masculine attributive apocope — only fires when BOTH gender=masculino
+			     (the default) AND form=attributive are active, so it never affects the feminine
+			     rule above (disjoint gender values) nor ordinary standalone cardinals. -->
+			<Variant type="gender" variant="masculino">
+				<Variant type="form" variant="attributive">
+					<Replacement oldValue="uno" newValue="un" scope="LastWord" />
+					<Replacement oldValue="veintiuno" newValue="veintiún" scope="Anywhere" />
+				</Variant>
+			</Variant>
 		</Variants>
 		<!--
 		  Spanish ordinals are etymologically Latin-derived and unrelated in form to the cardinals.
@@ -116,71 +135,82 @@
 		  The first form also serves as the default when no variant is specified.
 		-->
 		<Ordinals>
+			<!--
+			  NTS-05 note: every entry below now carries an explicit top-level string=/to= value
+			  (equal to the masculine/first-declared form the nested Variant already provides).
+			  This is required because the "form" Dimension added above makes the ordinal
+			  default-form resolver require exhaustive coverage of every declared Dimension for any
+			  entry that relies on it (see NumberToStringConverter.Globalization.cs SelectDefaultForm);
+			  since these gender-only Variant blocks intentionally say nothing about "form" (Spanish
+			  ordinals have no attributive/standalone distinction), supplying the base form directly
+			  sidesteps that resolver instead of nesting an unrelated "form" constraint into every
+			  ordinal entry. Runtime gender dispatch (OrdinalVariants) is unaffected: it already
+			  matched on gender alone via normal subset matching before this change.
+			-->
 			<!-- Irregulars 1-12 — forms: masculino, femenino -->
-			<OrdinalException value="1">   <Variant type="gender" forms="primero,primera"     /></OrdinalException>
-			<OrdinalException value="2">   <Variant type="gender" forms="segundo,segunda"     /></OrdinalException>
-			<OrdinalException value="3">   <Variant type="gender" forms="tercero,tercera"     /></OrdinalException>
-			<OrdinalException value="4">   <Variant type="gender" forms="cuarto,cuarta"       /></OrdinalException>
-			<OrdinalException value="5">   <Variant type="gender" forms="quinto,quinta"       /></OrdinalException>
-			<OrdinalException value="6">   <Variant type="gender" forms="sexto,sexta"         /></OrdinalException>
-			<OrdinalException value="7">   <Variant type="gender" forms="séptimo,séptima"     /></OrdinalException>
-			<OrdinalException value="8">   <Variant type="gender" forms="octavo,octava"       /></OrdinalException>
-			<OrdinalException value="9">   <Variant type="gender" forms="noveno,novena"       /></OrdinalException>
-			<OrdinalException value="10">  <Variant type="gender" forms="décimo,décima"       /></OrdinalException>
-			<OrdinalException value="11">  <Variant type="gender" forms="undécimo,undécima"   /></OrdinalException>
-			<OrdinalException value="12">  <Variant type="gender" forms="duodécimo,duodécima" /></OrdinalException>
+			<OrdinalException value="1"  string="primero">   <Variant type="gender" forms="primero,primera"     /></OrdinalException>
+			<OrdinalException value="2"  string="segundo">   <Variant type="gender" forms="segundo,segunda"     /></OrdinalException>
+			<OrdinalException value="3"  string="tercero">   <Variant type="gender" forms="tercero,tercera"     /></OrdinalException>
+			<OrdinalException value="4"  string="cuarto">    <Variant type="gender" forms="cuarto,cuarta"       /></OrdinalException>
+			<OrdinalException value="5"  string="quinto">    <Variant type="gender" forms="quinto,quinta"       /></OrdinalException>
+			<OrdinalException value="6"  string="sexto">     <Variant type="gender" forms="sexto,sexta"         /></OrdinalException>
+			<OrdinalException value="7"  string="séptimo">   <Variant type="gender" forms="séptimo,séptima"     /></OrdinalException>
+			<OrdinalException value="8"  string="octavo">    <Variant type="gender" forms="octavo,octava"       /></OrdinalException>
+			<OrdinalException value="9"  string="noveno">    <Variant type="gender" forms="noveno,novena"       /></OrdinalException>
+			<OrdinalException value="10" string="décimo">    <Variant type="gender" forms="décimo,décima"       /></OrdinalException>
+			<OrdinalException value="11" string="undécimo">  <Variant type="gender" forms="undécimo,undécima"   /></OrdinalException>
+			<OrdinalException value="12" string="duodécimo"> <Variant type="gender" forms="duodécimo,duodécima" /></OrdinalException>
 			<!-- Teens 13-19 (last word = cardinal exception word) -->
-			<Ordinal from="trece">      <Variant type="gender" forms="decimotercero,decimotercera"   /></Ordinal>
-			<Ordinal from="catorce">    <Variant type="gender" forms="decimocuarto,decimocuarta"     /></Ordinal>
-			<Ordinal from="quince">     <Variant type="gender" forms="decimoquinto,decimoquinta"     /></Ordinal>
-			<Ordinal from="dieciséis">  <Variant type="gender" forms="decimosexto,decimosexta"       /></Ordinal>
-			<Ordinal from="diecisiete"> <Variant type="gender" forms="decimoséptimo,decimoséptima"   /></Ordinal>
-			<Ordinal from="dieciocho">  <Variant type="gender" forms="decimoctavo,decimoctava"       /></Ordinal>
-			<Ordinal from="diecinueve"> <Variant type="gender" forms="decimonoveno,decimonovena"     /></Ordinal>
+			<Ordinal from="trece"      to="decimotercero">   <Variant type="gender" forms="decimotercero,decimotercera"   /></Ordinal>
+			<Ordinal from="catorce"    to="decimocuarto">    <Variant type="gender" forms="decimocuarto,decimocuarta"     /></Ordinal>
+			<Ordinal from="quince"     to="decimoquinto">    <Variant type="gender" forms="decimoquinto,decimoquinta"     /></Ordinal>
+			<Ordinal from="dieciséis"  to="decimosexto">     <Variant type="gender" forms="decimosexto,decimosexta"       /></Ordinal>
+			<Ordinal from="diecisiete" to="decimoséptimo">   <Variant type="gender" forms="decimoséptimo,decimoséptima"   /></Ordinal>
+			<Ordinal from="dieciocho"  to="decimoctavo">     <Variant type="gender" forms="decimoctavo,decimoctava"       /></Ordinal>
+			<Ordinal from="diecinueve" to="decimonoveno">    <Variant type="gender" forms="decimonoveno,decimonovena"     /></Ordinal>
 			<!-- Round tens 20-90 -->
-			<Ordinal from="veinte">    <Variant type="gender" forms="vigésimo,vigésima"          /></Ordinal>
-			<Ordinal from="treinta">   <Variant type="gender" forms="trigésimo,trigésima"         /></Ordinal>
-			<Ordinal from="cuarenta">  <Variant type="gender" forms="cuadragésimo,cuadragésima"   /></Ordinal>
-			<Ordinal from="cincuenta"> <Variant type="gender" forms="quincuagésimo,quincuagésima" /></Ordinal>
-			<Ordinal from="sesenta">   <Variant type="gender" forms="sexagésimo,sexagésima"       /></Ordinal>
-			<Ordinal from="setenta">   <Variant type="gender" forms="septuagésimo,septuagésima"   /></Ordinal>
-			<Ordinal from="ochenta">   <Variant type="gender" forms="octogésimo,octogésima"       /></Ordinal>
-			<Ordinal from="noventa">   <Variant type="gender" forms="nonagésimo,nonagésima"       /></Ordinal>
+			<Ordinal from="veinte"    to="vigésimo">      <Variant type="gender" forms="vigésimo,vigésima"          /></Ordinal>
+			<Ordinal from="treinta"   to="trigésimo">     <Variant type="gender" forms="trigésimo,trigésima"         /></Ordinal>
+			<Ordinal from="cuarenta"  to="cuadragésimo">  <Variant type="gender" forms="cuadragésimo,cuadragésima"   /></Ordinal>
+			<Ordinal from="cincuenta" to="quincuagésimo"> <Variant type="gender" forms="quincuagésimo,quincuagésima" /></Ordinal>
+			<Ordinal from="sesenta"   to="sexagésimo">    <Variant type="gender" forms="sexagésimo,sexagésima"       /></Ordinal>
+			<Ordinal from="setenta"   to="septuagésimo">  <Variant type="gender" forms="septuagésimo,septuagésima"   /></Ordinal>
+			<Ordinal from="ochenta"   to="octogésimo">    <Variant type="gender" forms="octogésimo,octogésima"       /></Ordinal>
+			<Ordinal from="noventa"   to="nonagésimo">    <Variant type="gender" forms="nonagésimo,nonagésima"       /></Ordinal>
 			<!-- Fused 21-29 (config produces "veintiuno", "veintidós"…) -->
-			<Ordinal from="veintiuno">    <Variant type="gender" forms="vigesimoprimero,vigesimoprimera" /></Ordinal>
-			<Ordinal from="veintidós">    <Variant type="gender" forms="vigesimosegundo,vigesimosegunda" /></Ordinal>
-			<Ordinal from="veintitrés">   <Variant type="gender" forms="vigesimotercero,vigesimatercera" /></Ordinal>
-			<Ordinal from="veinticuatro"> <Variant type="gender" forms="vigesimocuarto,vigesimacuarta"   /></Ordinal>
-			<Ordinal from="veinticinco">  <Variant type="gender" forms="vigesimoquinto,vigesimaquinta"   /></Ordinal>
-			<Ordinal from="veintiséis">   <Variant type="gender" forms="vigesimosexto,vigesemasexta"     /></Ordinal>
-			<Ordinal from="veintisiete">  <Variant type="gender" forms="vigesimoseptimo,vigesimoseptima" /></Ordinal>
-			<Ordinal from="veintiocho">   <Variant type="gender" forms="vigesimooctavo,vigesimaoctava"   /></Ordinal>
-			<Ordinal from="veintinueve">  <Variant type="gender" forms="vigesimonoveno,vigesimanovena"   /></Ordinal>
+			<Ordinal from="veintiuno"    to="vigesimoprimero"> <Variant type="gender" forms="vigesimoprimero,vigesimoprimera" /></Ordinal>
+			<Ordinal from="veintidós"    to="vigesimosegundo"> <Variant type="gender" forms="vigesimosegundo,vigesimosegunda" /></Ordinal>
+			<Ordinal from="veintitrés"   to="vigesimotercero"> <Variant type="gender" forms="vigesimotercero,vigesimatercera" /></Ordinal>
+			<Ordinal from="veinticuatro" to="vigesimocuarto">  <Variant type="gender" forms="vigesimocuarto,vigesimacuarta"   /></Ordinal>
+			<Ordinal from="veinticinco"  to="vigesimoquinto">  <Variant type="gender" forms="vigesimoquinto,vigesimaquinta"   /></Ordinal>
+			<Ordinal from="veintiséis"   to="vigesimosexto">   <Variant type="gender" forms="vigesimosexto,vigesemasexta"     /></Ordinal>
+			<Ordinal from="veintisiete"  to="vigesimoseptimo"> <Variant type="gender" forms="vigesimoseptimo,vigesimoseptima" /></Ordinal>
+			<Ordinal from="veintiocho"   to="vigesimooctavo">  <Variant type="gender" forms="vigesimooctavo,vigesimaoctava"   /></Ordinal>
+			<Ordinal from="veintinueve"  to="vigesimonoveno">  <Variant type="gender" forms="vigesimonoveno,vigesimanovena"   /></Ordinal>
 			<!-- Compound last-word units (covers 31-99 when last word is separated by space in the config) -->
-			<Ordinal from="uno">    <Variant type="gender" forms="primero,primera" /></Ordinal>
-			<Ordinal from="dos">    <Variant type="gender" forms="segundo,segunda" /></Ordinal>
-			<Ordinal from="tres">   <Variant type="gender" forms="tercero,tercera" /></Ordinal>
-			<Ordinal from="cuatro"> <Variant type="gender" forms="cuarto,cuarta"   /></Ordinal>
-			<Ordinal from="cinco">  <Variant type="gender" forms="quinto,quinta"   /></Ordinal>
-			<Ordinal from="seis">   <Variant type="gender" forms="sexto,sexta"     /></Ordinal>
-			<Ordinal from="siete">  <Variant type="gender" forms="séptimo,séptima" /></Ordinal>
-			<Ordinal from="ocho">   <Variant type="gender" forms="octavo,octava"   /></Ordinal>
-			<Ordinal from="nueve">  <Variant type="gender" forms="noveno,novena"   /></Ordinal>
+			<Ordinal from="uno"    to="primero">  <Variant type="gender" forms="primero,primera" /></Ordinal>
+			<Ordinal from="dos"    to="segundo">  <Variant type="gender" forms="segundo,segunda" /></Ordinal>
+			<Ordinal from="tres"   to="tercero">  <Variant type="gender" forms="tercero,tercera" /></Ordinal>
+			<Ordinal from="cuatro" to="cuarto">   <Variant type="gender" forms="cuarto,cuarta"   /></Ordinal>
+			<Ordinal from="cinco"  to="quinto">   <Variant type="gender" forms="quinto,quinta"   /></Ordinal>
+			<Ordinal from="seis"   to="sexto">    <Variant type="gender" forms="sexto,sexta"     /></Ordinal>
+			<Ordinal from="siete"  to="séptimo">  <Variant type="gender" forms="séptimo,séptima" /></Ordinal>
+			<Ordinal from="ocho"   to="octavo">   <Variant type="gender" forms="octavo,octava"   /></Ordinal>
+			<Ordinal from="nueve"  to="noveno">   <Variant type="gender" forms="noveno,novena"   /></Ordinal>
 			<!-- Round scale words -->
-			<Ordinal from="cien"> <Variant type="gender" forms="centésimo,centésima" /></Ordinal>
-			<Ordinal from="mil">  <Variant type="gender" forms="milésimo,milésima"   /></Ordinal>
+			<Ordinal from="cien" to="centésimo"> <Variant type="gender" forms="centésimo,centésima" /></Ordinal>
+			<Ordinal from="mil"  to="milésimo">  <Variant type="gender" forms="milésimo,milésima"   /></Ordinal>
 		</Ordinals>
-		<!--
-		  Spanish time-unit support is deliberately deferred (not added here): masculine
-		  attributive numeral apocope ("uno"->"un", "veintiuno"->"veintiún", "treinta y
-		  uno"->"treinta y un", ...) applies before a masculine noun for both count==1 and
-		  compound counts (21, 31, ...). Count1Form only models the count==1 case, so a
-		  <TimeUnits> block using it for "minuto"/"segundo" would produce grammatically
-		  incorrect output for compounds (e.g. "veintiuno minutos" instead of "veintiún
-		  minutos"). This requires a contextual numeral-form mechanism beyond the current
-		  gender + ForcedVariants + Count1Form model — see the "Deferred: languages needing
-		  more than Singular/Plural/Count1Form" section of DONE-2026-08-24(1).md. This is
-		  future work, not an unresolved ForcedVariants defect.
-		-->
+		<TimeUnits>
+			<!-- NTS-05: "hora" is feminine; "minuto"/"segundo" are masculine (the language default,
+			     so no gender= override needed). All three force form=attributive, which activates
+			     the appropriate existing gender-specific Variant rule above — feminine "una"/
+			     "veintiuna" for hora, masculine apocope "un"/"veintiún" for minuto/segundo — for
+			     count==1 AND compound counts (21, 31, ...) alike. No count1form needed: the
+			     generic mechanism already covers count==1 uniformly with compounds. -->
+			<Unit name="hour"   singular="hora"    plural="horas"    forceVariants="gender=femenino,form=attributive" />
+			<Unit name="minute" singular="minuto"  plural="minutos"  forceVariants="form=attributive" />
+			<Unit name="second" singular="segundo" plural="segundos" forceVariants="form=attributive" />
+		</TimeUnits>
 	</Language>
 </Numbers>

@@ -8,8 +8,10 @@ using System.Numerics;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Xml;
+using System.Xml.Linq;
 using System.Xml.Schema;
 using System.Xml.Serialization;
+using Utils.Collections;
 using Utils.Range;
 
 namespace Utils.NumberToString
@@ -126,6 +128,38 @@ namespace Utils.NumberToString
         // Explicitly registered language-specifics instances, consulted before reflection
         private static readonly ConcurrentDictionary<string, Func<INumberToStringLanguageSpecifics>> _registeredSpecifics = new(StringComparer.Ordinal);
 
+        // Single resolution registry for lexical-form-selector activators, backed by the
+        // repository-standard Utils.Collections.CachedLoader rather than a bespoke cache.
+        // Explicit registrations (RegisterLexicalFormSelector) and the built-in "default" alias
+        // are written directly into the cache, so both take precedence over — and never invoke —
+        // the reflection-based loader below; any other key is resolved by that loader on first use
+        // and reused afterwards. The cached value is always an ACTIVATION STRATEGY
+        // (Func&lt;LexicalFormSelectorConfiguration, ILexicalFormSelector&gt;), never a configured
+        // instance, so the same type name can be re-invoked with a different configuration per
+        // unit without re-discovering its type/constructor.
+        //
+        // Concurrency: the backing store is a ConcurrentDictionary, but CachedLoader's
+        // check-then-load-then-store sequence over it is not atomic (see CachedLoader.CreateGetValue).
+        // Under a race, the reflection loader may therefore run more than once for the same
+        // not-yet-cached type name; each run is deterministic and side-effect-free, so this is
+        // benign — only one of the resulting activators ends up cached, and every resolution still
+        // returns a correctly-configured selector. This is CachedLoader's real guarantee: not a
+        // strict single-execution lock, but a converging, eventually-single cache entry per key.
+        private static readonly CachedLoader<string, Func<LexicalFormSelectorConfiguration, ILexicalFormSelector>> _lexicalFormSelectorActivators =
+            CreateLexicalFormSelectorActivatorCache();
+
+        private static CachedLoader<string, Func<LexicalFormSelectorConfiguration, ILexicalFormSelector>> CreateLexicalFormSelectorActivatorCache()
+        {
+            var cache = new CachedLoader<string, Func<LexicalFormSelectorConfiguration, ILexicalFormSelector>>(
+                LoadLexicalFormSelectorActivator,
+                new ConcurrentDictionary<string, Func<LexicalFormSelectorConfiguration, ILexicalFormSelector>>(StringComparer.Ordinal));
+            // The built-in alias flows through the same preload mechanism a future built-in (e.g. a
+            // CLDR or modulo-range selector) would use — ResolveLexicalFormSelector has no
+            // special-cased "typeName == default" branch.
+            cache["default"] = _ => DefaultLexicalFormSelector.Instance;
+            return cache;
+        }
+
         private static readonly object ConfigurationLock = new();
 
         // Stores resolved language definitions for cross-document baseOn resolution.
@@ -235,6 +269,58 @@ namespace Utils.NumberToString
             ArgumentException.ThrowIfNullOrWhiteSpace(typeName, nameof(typeName));
             ArgumentNullException.ThrowIfNull(factory);
             _registeredSpecifics[typeName] = factory;
+        }
+
+        /// <summary>
+        /// Registers an <see cref="ILexicalFormSelector"/> instance under a given type name so
+        /// that XML configurations referencing that name (via <c>formSelector="..."</c> or
+        /// <c>&lt;LexicalFormSelector type="..."&gt;</c>) find it without reflection.
+        /// </summary>
+        /// <remarks>
+        /// Writes directly into the shared activator cache (see
+        /// <see cref="_lexicalFormSelectorActivators"/>), so this registration takes precedence
+        /// over — and is never followed by — reflection-based resolution for the same type name.
+        /// If a selector is already registered under <paramref name="typeName"/>, it is replaced
+        /// silently. The registered instance is shared across every unit/converter that
+        /// references the type name and may be invoked concurrently during conversion.
+        /// Implementations must therefore be stateless or internally thread-safe.
+        /// </remarks>
+        /// <param name="typeName">The type name as it appears in <c>formSelector</c> attributes (full or short name).</param>
+        /// <param name="instance">The instance to register. Must not be <see langword="null"/>.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="instance"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="typeName"/> is null, empty, or whitespace.</exception>
+        public static void RegisterLexicalFormSelector(string typeName, ILexicalFormSelector instance)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(typeName, nameof(typeName));
+            ArgumentNullException.ThrowIfNull(instance);
+            _lexicalFormSelectorActivators[typeName] = _ => instance;
+        }
+
+        /// <summary>Registers a factory that creates a lexical-form-selector implementation for each converter, taking precedence over reflection.</summary>
+        /// <param name="typeName">The configured type name.</param>
+        /// <param name="factory">The non-null factory. Invoked once per resolution and ignores any selector-specific configuration.</param>
+        public static void RegisterLexicalFormSelector(string typeName, Func<ILexicalFormSelector> factory)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(typeName, nameof(typeName));
+            ArgumentNullException.ThrowIfNull(factory);
+            _lexicalFormSelectorActivators[typeName] = _ => factory();
+        }
+
+        /// <summary>
+        /// Registers a configuration-aware factory that creates a lexical-form-selector
+        /// implementation for each converter, receiving the same <see cref="LexicalFormSelectorConfiguration"/>
+        /// (including any selector-owned <c>&lt;Configuration&gt;</c> subtree) a reflection-resolved
+        /// selector would receive. Use this overload when a registered name must still honor
+        /// per-unit selector configuration (e.g. the same registered name used with different
+        /// <c>&lt;Configuration&gt;</c> content on different units), taking precedence over reflection.
+        /// </summary>
+        /// <param name="typeName">The configured type name.</param>
+        /// <param name="configuredFactory">The non-null, configuration-aware factory.</param>
+        public static void RegisterLexicalFormSelector(string typeName, Func<LexicalFormSelectorConfiguration, ILexicalFormSelector> configuredFactory)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(typeName, nameof(typeName));
+            ArgumentNullException.ThrowIfNull(configuredFactory);
+            _lexicalFormSelectorActivators[typeName] = configuredFactory;
         }
 
         /// <summary>
@@ -1621,6 +1707,15 @@ namespace Utils.NumberToString
                 TimeUnitForcedVariants = language.TimeUnits?.Units?
                     .Where(u => !string.IsNullOrWhiteSpace(u.ForceVariants))
                     .ToDictionary(u => u.Name, u => ForcedVariantSet.Parse(u.ForceVariants, languageIdentifier, $"TimeUnits[{u.Name}]")),
+                TimeUnitForms = language.TimeUnits?.Units?
+                    .Where(u => u.Forms?.Entries is { Count: > 0 })
+                    .ToDictionary(u => u.Name, u => LexicalFormSet.Create(u.Forms!.Entries!.Select(f => (f.Key, f.Value)))),
+                TimeUnitFormSelectors = language.TimeUnits?.Units?
+                    .Where(u => !string.IsNullOrWhiteSpace(u.LexicalFormSelector?.Type) || !string.IsNullOrWhiteSpace(u.FormSelector))
+                    .ToDictionary(u => u.Name, u => ResolveLexicalFormSelector(
+                        !string.IsNullOrWhiteSpace(u.LexicalFormSelector?.Type) ? u.LexicalFormSelector!.Type : u.FormSelector,
+                        languageIdentifier,
+                        XmlElementToXElement(u.LexicalFormSelector?.Configuration))),
                 DatePattern = language.DateFormat?.Pattern,
                 DateFirstDay = language.DateFormat?.FirstDay,
                 DateFirstCardinalDay = language.DateFormat?.FirstCardinalDay,
@@ -1733,6 +1828,137 @@ namespace Utils.NumberToString
             return Activator.CreateInstance(specificsType) as INumberToStringLanguageSpecifics
                    ?? throw new InvalidOperationException(
                        $"LanguageSpecifics type '{typeName}' could not be instantiated.");
+        }
+
+        /// <summary>
+        /// Resolves a configured <c>formSelector</c>/<c>&lt;LexicalFormSelector&gt;</c> value to a
+        /// ready-to-use <see cref="ILexicalFormSelector"/> instance via the shared
+        /// <see cref="_lexicalFormSelectorActivators"/> registry: an explicit registration or the
+        /// built-in <c>"default"</c> alias is an immediate cache hit; any other type name is
+        /// resolved by reflection on first use (see <see cref="LoadLexicalFormSelectorActivator"/>)
+        /// and reused afterwards, so <see cref="Type.GetType(string, bool)"/>, assembly scanning,
+        /// and <see cref="Type.GetConstructor(Type[])"/> run at most once per distinct selector
+        /// implementation, not once per configured unit that references it. The cached activator is
+        /// then invoked, with each unit's own <paramref name="configuration"/>, for every use of the
+        /// type name — so the same type resolved for two units with two different configurations
+        /// still produces two independently-configured selector instances. Called at most once per
+        /// configured unit, during configuration loading / converter construction — never from a
+        /// conversion method.
+        /// </summary>
+        /// <param name="typeName">
+        /// The configured type name, a built-in alias (currently only <c>"default"</c>), or
+        /// <see langword="null"/>/blank for the default selector.
+        /// </param>
+        /// <param name="languageIdentifier">
+        /// The owning language identifier, used only for diagnostics. Carried by the exception
+        /// thrown for an activation failure (e.g. a selector constructor throwing for this specific
+        /// unit's configuration); a type-discovery failure (type not found / wrong shape / no usable
+        /// constructor) is raised from the shared, language-agnostic activator cache and therefore
+        /// always carries a <see langword="null"/> <see cref="NumberToStringConfigurationException.LanguageIdentifier"/>.
+        /// </param>
+        /// <param name="configuration">
+        /// The selector-owned <c>&lt;Configuration&gt;</c> subtree, or <see langword="null"/> when
+        /// the unit supplied only a plain <c>formSelector</c> attribute (or none). Passed to the
+        /// selector's <see cref="LexicalFormSelectorConfiguration"/> unread by the core library.
+        /// </param>
+        /// <returns>A ready-to-use selector instance.</returns>
+        /// <exception cref="NumberToStringConfigurationException">
+        /// The type could not be found in any loaded assembly, does not implement
+        /// <see cref="ILexicalFormSelector"/> (or is abstract/interface), has no usable constructor,
+        /// or could not be instantiated — error code <c>"UNTS008"</c>.
+        /// </exception>
+        internal static ILexicalFormSelector ResolveLexicalFormSelector(string? typeName, string? languageIdentifier, XElement? configuration = null)
+        {
+            if (string.IsNullOrWhiteSpace(typeName))
+                return DefaultLexicalFormSelector.Instance;
+
+            var config = new LexicalFormSelectorConfiguration(typeName, languageIdentifier, configuration);
+            Func<LexicalFormSelectorConfiguration, ILexicalFormSelector> activator = _lexicalFormSelectorActivators[typeName];
+
+            try
+            {
+                return activator(config)
+                       ?? throw new InvalidOperationException("The resolved activator returned null.");
+            }
+            catch (Exception ex) when (ex is not NumberToStringConfigurationException)
+            {
+                throw new NumberToStringConfigurationException("UNTS008", languageIdentifier, typeName,
+                    $"Lexical form selector type '{typeName}' could not be instantiated: {UnwrapMessage(ex)}");
+            }
+        }
+
+        /// <summary>
+        /// <see cref="CachedLoader{TKey, TValue}.TryLoadValueDelegate"/> backing
+        /// <see cref="_lexicalFormSelectorActivators"/>: resolves an unregistered type name to a
+        /// type once and returns a reusable activation delegate — the expensive part (type/
+        /// constructor lookup) — without invoking it. Always returns <see langword="true"/>; a
+        /// failure to resolve is a deterministic <see cref="NumberToStringConfigurationException"/>
+        /// rather than a cache miss, so it is never itself cached (a later resolution attempt for
+        /// the same type name retries reflection from scratch).
+        /// </summary>
+        /// <param name="typeName">The type name to resolve.</param>
+        /// <param name="activator">The resolved, reusable activation delegate.</param>
+        /// <exception cref="NumberToStringConfigurationException">
+        /// The type could not be found, does not implement <see cref="ILexicalFormSelector"/> (or is
+        /// abstract/interface), or declares no constructor this resolver can use — error code
+        /// <c>"UNTS008"</c>, with a <see langword="null"/> <c>LanguageIdentifier</c> since this
+        /// loader is shared across every language.
+        /// </exception>
+        private static bool LoadLexicalFormSelectorActivator(string typeName, out Func<LexicalFormSelectorConfiguration, ILexicalFormSelector> activator)
+        {
+            Type? selectorType = Type.GetType(typeName, throwOnError: false);
+            selectorType ??= AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(SafeGetTypes)
+                .FirstOrDefault(t => string.Equals(t.FullName, typeName, StringComparison.Ordinal)
+                                     || string.Equals(t.Name, typeName, StringComparison.Ordinal));
+
+            if (selectorType == null)
+                throw new NumberToStringConfigurationException("UNTS008", null, typeName,
+                    $"Lexical form selector type '{typeName}' could not be found in any loaded assembly. " +
+                    $"Call RegisterLexicalFormSelector(\"{typeName}\", instance) before loading the configuration, " +
+                    "or use the built-in \"default\" selector.");
+
+            if (!typeof(ILexicalFormSelector).IsAssignableFrom(selectorType) || selectorType.IsAbstract || selectorType.IsInterface)
+                throw new NumberToStringConfigurationException("UNTS008", null, typeName,
+                    $"Lexical form selector type '{typeName}' does not implement ILexicalFormSelector or is abstract/interface.");
+
+            var configConstructor = selectorType.GetConstructor([typeof(LexicalFormSelectorConfiguration)]);
+            if (configConstructor != null)
+            {
+                activator = config => (ILexicalFormSelector)configConstructor.Invoke([config]);
+                return true;
+            }
+
+            var parameterlessConstructor = selectorType.GetConstructor(Type.EmptyTypes);
+            if (parameterlessConstructor != null)
+            {
+                activator = _ => (ILexicalFormSelector)parameterlessConstructor.Invoke(null);
+                return true;
+            }
+
+            throw new NumberToStringConfigurationException("UNTS008", null, typeName,
+                $"Lexical form selector type '{typeName}' has no usable constructor. Declare a public " +
+                "constructor accepting a LexicalFormSelectorConfiguration, or a public parameterless constructor.");
+        }
+
+        /// <summary>Unwraps a reflection <see cref="TargetInvocationException"/> to its real cause for diagnostics.</summary>
+        /// <param name="exception">The exception to unwrap.</param>
+        private static string UnwrapMessage(Exception exception) =>
+            exception is System.Reflection.TargetInvocationException { InnerException: { } inner } ? inner.Message : exception.Message;
+
+        /// <summary>
+        /// Converts the raw <see cref="XmlElement"/> captured by the DTO's <c>[XmlAnyElement]</c>
+        /// for a <c>&lt;LexicalFormSelector&gt;&lt;Configuration&gt;</c> node into the public
+        /// <see cref="XElement"/> shape exposed by <see cref="LexicalFormSelectorConfiguration"/>.
+        /// </summary>
+        /// <param name="element">The raw configuration element, or <see langword="null"/> when none was supplied.</param>
+        private static XElement? XmlElementToXElement(XmlElement? element)
+        {
+            if (element == null)
+                return null;
+
+            using var reader = new XmlNodeReader(element);
+            return XElement.Load(reader);
         }
 
         /// <summary>
