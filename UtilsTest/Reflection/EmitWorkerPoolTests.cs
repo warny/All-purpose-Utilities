@@ -25,14 +25,14 @@ public class EmitWorkerPoolTests
     [TestMethod]
     public void Constructor_WithZeroLoadTimeout_ThrowsArgumentOutOfRange()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => new EmitWorkerPool(loadTimeout: TimeSpan.Zero));
     }
 
     [TestMethod]
     public void Constructor_WithNegativeCallTimeout_ThrowsArgumentOutOfRange()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => new EmitWorkerPool(callTimeout: TimeSpan.FromSeconds(-1)));
     }
 
@@ -40,7 +40,7 @@ public class EmitWorkerPoolTests
     public void Constructor_WithInfiniteLoadTimeout_ThrowsArgumentOutOfRange()
     {
         // Timeout.InfiniteTimeSpan is -1ms — not a valid positive finite duration.
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => new EmitWorkerPool(loadTimeout: System.Threading.Timeout.InfiniteTimeSpan));
     }
 
@@ -66,7 +66,7 @@ public class EmitWorkerPoolTests
         var pool = new EmitWorkerPool();
         pool.Dispose();
 
-        Assert.ThrowsException<ObjectDisposedException>(
+        Assert.ThrowsExactly<ObjectDisposedException>(
             () => pool.Emit<ITinyInterface>("does-not-matter.dll", CallingConvention.Winapi));
     }
 

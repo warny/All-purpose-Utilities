@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.IO;
 using Utils.IO.Serialization;
@@ -110,6 +110,6 @@ public class NewReaderWriterTest
         using MemoryStream stream = new MemoryStream();
         Writer writer = new Writer(stream, new RawWriter().WriterDelegates);
 
-        Assert.ThrowsException<ArgumentNullException>(() => writer.Write((object)null));
+        Assert.ThrowsExactly<ArgumentNullException>(() => writer.Write((object)null));
     }
 }

@@ -1383,7 +1383,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
             A : { {{predicateCode}} }? 'a' ;
             """;
 
-        ParserEmbeddedCodeTransformationException exception = Assert.ThrowsException<ParserEmbeddedCodeTransformationException>(() => EmitWithAntlrStyleTransformer(grammar));
+        ParserEmbeddedCodeTransformationException exception = Assert.ThrowsExactly<ParserEmbeddedCodeTransformationException>(() => EmitWithAntlrStyleTransformer(grammar));
 
         Assert.AreEqual(ParserEmbeddedCodeTransformationPath.GeneratedCodeEmission, exception.Path);
         Assert.AreEqual(ParserEmbeddedCodeLocation.LexerSemanticPredicate, exception.Location);
@@ -1438,7 +1438,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
             B : 'b' ;
             """;
 
-        ParserEmbeddedCodeTransformationException exception = Assert.ThrowsException<ParserEmbeddedCodeTransformationException>(() => EmitWithAntlrStyleTransformer(grammar));
+        ParserEmbeddedCodeTransformationException exception = Assert.ThrowsExactly<ParserEmbeddedCodeTransformationException>(() => EmitWithAntlrStyleTransformer(grammar));
 
         Assert.AreEqual(ParserEmbeddedCodeTransformationPath.GeneratedCodeEmission, exception.Path);
         Assert.AreEqual(ParserEmbeddedCodeLocation.LexerInlineAction, exception.Location);
@@ -1462,7 +1462,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
             A : 'a' { Seen = $foo; } ;
             """;
 
-        ParserEmbeddedCodeTransformationException exception = Assert.ThrowsException<ParserEmbeddedCodeTransformationException>(() => EmitWithAntlrStyleTransformer(grammar));
+        ParserEmbeddedCodeTransformationException exception = Assert.ThrowsExactly<ParserEmbeddedCodeTransformationException>(() => EmitWithAntlrStyleTransformer(grammar));
 
         Assert.AreEqual(ParserEmbeddedCodeTransformationPath.GeneratedCodeEmission, exception.Path);
         Assert.AreEqual(ParserEmbeddedCodeLocation.LexerInlineAction, exception.Location);
@@ -3161,7 +3161,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
         var context = CreateExecutionContext(assembly);
         var policy = InvokeCreateRuntimePolicy(assembly, context);
 
-        Assert.ThrowsException<ArgumentException>(() => policy.ExecutionStateManager.Restore(new object()));
+        Assert.ThrowsExactly<ArgumentException>(() => policy.ExecutionStateManager.Restore(new object()));
     }
 
     /// <summary>
@@ -3174,7 +3174,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
         var context = CreateExecutionContext(assembly);
         var copyFrom = context.GetType().GetMethod("CopyFrom", BindingFlags.Instance | BindingFlags.NonPublic)!;
 
-        var exception = Assert.ThrowsException<TargetInvocationException>(() => copyFrom.Invoke(context, [null]));
+        var exception = Assert.ThrowsExactly<TargetInvocationException>(() => copyFrom.Invoke(context, [null]));
 
         Assert.IsInstanceOfType(exception.InnerException, typeof(ArgumentNullException));
     }
@@ -3655,7 +3655,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
         var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
         var executionContext = CreateExecutionContext(assembly);
 
-        TargetInvocationException exception = Assert.ThrowsException<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", executionContext));
+        TargetInvocationException exception = Assert.ThrowsExactly<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", executionContext));
 
         Assert.IsInstanceOfType<ParserAttributeAccessException>(exception.InnerException);
         Assert.AreEqual(-1, ReadInstanceIntField(executionContext, "Seen"));
@@ -4010,7 +4010,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
         var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
         object executionContext = CreateExecutionContext(assembly);
 
-        TargetInvocationException exception = Assert.ThrowsException<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", executionContext));
+        TargetInvocationException exception = Assert.ThrowsExactly<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", executionContext));
 
         Assert.IsInstanceOfType<ParserAttributeAccessException>(exception.InnerException);
         Assert.AreEqual(-1, ReadInstanceIntField(executionContext, "Seen"));
@@ -4289,7 +4289,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
         var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
         var executionContext = CreateExecutionContext(assembly);
 
-        TargetInvocationException exception = Assert.ThrowsException<TargetInvocationException>(() =>
+        TargetInvocationException exception = Assert.ThrowsExactly<TargetInvocationException>(() =>
             InvokeParseWithContext(assembly, "a", executionContext));
 
         Assert.IsInstanceOfType<ParserAttributeAccessException>(exception.InnerException);
@@ -4321,7 +4321,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
             RuleCallExecutionPolicy = new PositionalLiteralRuleCallExecutionPolicy(),
         };
 
-        TargetInvocationException exception = Assert.ThrowsException<TargetInvocationException>(() =>
+        TargetInvocationException exception = Assert.ThrowsExactly<TargetInvocationException>(() =>
             InvokeParseWithContextAndPolicy(assembly, "a", executionContext, basePolicy));
 
         Assert.IsInstanceOfType<ParserAttributeAccessException>(exception.InnerException);
@@ -4426,7 +4426,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
         {
             RuleCallExecutionPolicy = new TypedPositionalLiteralRuleCallExecutionPolicy(ParserRuleCallBindingFailureBehavior.Throw),
         };
-        TargetInvocationException invocationException = Assert.ThrowsException<TargetInvocationException>(() =>
+        TargetInvocationException invocationException = Assert.ThrowsExactly<TargetInvocationException>(() =>
             InvokeParseWithContextAndPolicy(assembly, "a", throwingContext, throwingPolicy));
         Assert.IsInstanceOfType<ParserRuleCallBindingException>(invocationException.InnerException);
     }
@@ -4698,7 +4698,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
         {
             RuleCallExecutionPolicy = new TypedPositionalLiteralRuleCallExecutionPolicy(ParserRuleCallBindingFailureBehavior.Throw),
         };
-        TargetInvocationException exception = Assert.ThrowsException<TargetInvocationException>(() =>
+        TargetInvocationException exception = Assert.ThrowsExactly<TargetInvocationException>(() =>
             InvokeParseWithContextAndPolicy(requiredAssembly, "a", throwingContext, throwingPolicy));
         Assert.IsInstanceOfType<ParserRuleCallBindingException>(exception.InnerException);
     }
@@ -4932,7 +4932,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
         var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true));
         object context = CreateExecutionContext(assembly);
 
-        var ex = Assert.ThrowsException<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
+        var ex = Assert.ThrowsExactly<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
 
         Assert.IsInstanceOfType(ex.InnerException, typeof(ParserRuleCallBindingException));
         StringAssert.Contains(ex.InnerException!.Message, "exactly");
@@ -4961,7 +4961,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
         var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true));
         object context = CreateExecutionContext(assembly);
 
-        var ex = Assert.ThrowsException<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
+        var ex = Assert.ThrowsExactly<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
 
         Assert.IsInstanceOfType(ex.InnerException, typeof(ParserRuleCallBindingException));
         StringAssert.Contains(ex.InnerException!.Message, "exactly");
@@ -5012,7 +5012,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
         var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true));
         object context = CreateExecutionContext(assembly);
 
-        var ex = Assert.ThrowsException<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
+        var ex = Assert.ThrowsExactly<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
 
         Assert.IsInstanceOfType(ex.InnerException, typeof(ParserRuleCallBindingException));
         StringAssert.Contains(ex.InnerException!.Message, "exactly 0 positional argument");
@@ -5058,7 +5058,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
         var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true));
         object context = CreateExecutionContext(assembly);
 
-        var ex = Assert.ThrowsException<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
+        var ex = Assert.ThrowsExactly<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
 
         Assert.IsInstanceOfType(ex.InnerException, typeof(ParserRuleCallBindingException));
         Assert.AreEqual(-1, ReadInstanceIntField(context, "Seen"));
@@ -5155,7 +5155,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
         var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true));
         object context = CreateExecutionContext(assembly);
 
-        var ex = Assert.ThrowsException<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
+        var ex = Assert.ThrowsExactly<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
 
         Assert.IsInstanceOfType(ex.InnerException, typeof(ParserRuleCallBindingException));
         StringAssert.Contains(ex.InnerException!.Message, "Named rule-call arguments are not supported");
@@ -6370,7 +6370,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
     {
         string grammar = "grammar P; " + ruleFragment;
 
-        ParserEmbeddedCodeTransformationException exception = Assert.ThrowsException<ParserEmbeddedCodeTransformationException>(() => EmitWithAntlrStyleTransformer(grammar));
+        ParserEmbeddedCodeTransformationException exception = Assert.ThrowsExactly<ParserEmbeddedCodeTransformationException>(() => EmitWithAntlrStyleTransformer(grammar));
 
         StringAssert.Contains(exception.Message, expectedMessage);
     }
@@ -6386,7 +6386,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
             """;
         var transformer = new BlockingEmbeddedCodeTransformer("APU9999", "blocked by transformer");
 
-        ParserEmbeddedCodeTransformationException exception = Assert.ThrowsException<ParserEmbeddedCodeTransformationException>(() => EmitWithTransformer(grammar, transformer));
+        ParserEmbeddedCodeTransformationException exception = Assert.ThrowsExactly<ParserEmbeddedCodeTransformationException>(() => EmitWithTransformer(grammar, transformer));
 
         Assert.AreEqual(1, transformer.Count);
         Assert.AreEqual(ParserEmbeddedCodeTransformationPath.GeneratedCodeEmission, exception.Path);
@@ -6407,10 +6407,10 @@ public class Antlr4GeneratedEmbeddedCodeTests
             A : 'a' ;
             """;
         var generatorTransformer = new BlockingEmbeddedCodeTransformer("APU9999", "blocked by transformer");
-        ParserEmbeddedCodeTransformationException generatorException = Assert.ThrowsException<ParserEmbeddedCodeTransformationException>(() => EmitWithTransformer(grammar, generatorTransformer));
+        ParserEmbeddedCodeTransformationException generatorException = Assert.ThrowsExactly<ParserEmbeddedCodeTransformationException>(() => EmitWithTransformer(grammar, generatorTransformer));
 
         var runtimeTransformer = new BlockingEmbeddedCodeTransformer("APU9999", "blocked by transformer");
-        ParserEmbeddedCodeTransformationException runtimeException = Assert.ThrowsException<ParserEmbeddedCodeTransformationException>(() => ParserEmbeddedCodeTransformationService.TransformOrThrow(
+        ParserEmbeddedCodeTransformationException runtimeException = Assert.ThrowsExactly<ParserEmbeddedCodeTransformationException>(() => ParserEmbeddedCodeTransformationService.TransformOrThrow(
             runtimeTransformer,
             new RawEmbeddedCode("RAW_PREDICATE"),
             new ParserEmbeddedCodeTransformationContext
@@ -6616,7 +6616,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
         object descriptor = descriptorType.GetProperty("ParserAction", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)!.GetValue(null)!;
         var source = new System.Text.StringBuilder();
 
-        TargetInvocationException exception = Assert.ThrowsException<TargetInvocationException>(() =>
+        TargetInvocationException exception = Assert.ThrowsExactly<TargetInvocationException>(() =>
             methodEmitterType.GetMethod("Emit", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)!.Invoke(null, [source, hook, descriptor]));
 
         Assert.IsInstanceOfType<InvalidOperationException>(exception.InnerException);

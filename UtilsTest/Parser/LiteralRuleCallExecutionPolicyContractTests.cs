@@ -73,7 +73,7 @@ public class LiteralRuleCallExecutionPolicyContractTests
             policyCase.CreatePolicy(ParserRuleCallBindingFailureBehavior.IgnoreCall)
                 .BeforeRuleCall(policyCase.CreateMissingDescriptorContext());
 
-            ParserRuleCallBindingException exception = Assert.ThrowsException<ParserRuleCallBindingException>(() =>
+            ParserRuleCallBindingException exception = Assert.ThrowsExactly<ParserRuleCallBindingException>(() =>
                 policyCase.CreatePolicy(ParserRuleCallBindingFailureBehavior.Throw)
                     .BeforeRuleCall(policyCase.CreateMissingDescriptorContext()), policyCase.Name);
             Assert.AreEqual("child", exception.RuleName, policyCase.Name);
@@ -81,8 +81,8 @@ public class LiteralRuleCallExecutionPolicyContractTests
 
             ParserRuleCallExecutionContext validContext = policyCase.CreateValidContext(static _ => true);
             policyCase.CreatePolicy().AfterRuleCall(validContext);
-            Assert.ThrowsException<ArgumentNullException>(() => policyCase.CreatePolicy().BeforeRuleCall(null!), policyCase.Name);
-            Assert.ThrowsException<ArgumentNullException>(() => policyCase.CreatePolicy().AfterRuleCall(null!), policyCase.Name);
+            Assert.ThrowsExactly<ArgumentNullException>(() => policyCase.CreatePolicy().BeforeRuleCall(null!), policyCase.Name);
+            Assert.ThrowsExactly<ArgumentNullException>(() => policyCase.CreatePolicy().AfterRuleCall(null!), policyCase.Name);
         }
 
         Assert.AreSame(NullParserRuleCallExecutionPolicy.Instance, ParserRuntimeFeaturePolicy.Default.RuleCallExecutionPolicy);
@@ -135,7 +135,7 @@ public class LiteralRuleCallExecutionPolicyContractTests
     [TestMethod]
     public void ParserRuleCallBindingException_ExposesPolicySpecificStructuredMetadata()
     {
-        ParserRuleCallBindingException untyped = Assert.ThrowsException<ParserRuleCallBindingException>(() =>
+        ParserRuleCallBindingException untyped = Assert.ThrowsExactly<ParserRuleCallBindingException>(() =>
             new PositionalLiteralRuleCallExecutionPolicy(ParserRuleCallBindingFailureBehavior.Throw)
                 .BeforeRuleCall(PositionalContext(["notALiteral"], Descriptor(Parameter("value", "int")))));
         Assert.AreEqual("child", untyped.RuleName);
@@ -145,7 +145,7 @@ public class LiteralRuleCallExecutionPolicyContractTests
         Assert.IsNull(untyped.DeclaredType);
         StringAssert.Contains(untyped.Message, "supported simple literal");
 
-        ParserRuleCallBindingException typed = Assert.ThrowsException<ParserRuleCallBindingException>(() =>
+        ParserRuleCallBindingException typed = Assert.ThrowsExactly<ParserRuleCallBindingException>(() =>
             new TypedPositionalLiteralRuleCallExecutionPolicy(ParserRuleCallBindingFailureBehavior.Throw)
                 .BeforeRuleCall(PositionalContext(["300"], Descriptor(Parameter("value", "byte")))));
         Assert.AreEqual("child", typed.RuleName);

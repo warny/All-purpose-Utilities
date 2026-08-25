@@ -79,7 +79,7 @@ public class Antlr4PrequelParityTests
             ID : ('a'..'z')+ ;
             """;
 
-        Assert.ThrowsException<GrammarParseException>(() => Antlr4GrammarConverter.ParseUnresolved(grammar, new DiagnosticBag()));
+        Assert.ThrowsExactly<GrammarParseException>(() => Antlr4GrammarConverter.ParseUnresolved(grammar, new DiagnosticBag()));
         var generatorDiagnostics = new DiagnosticBag();
         _ = new G4Parser(new G4Tokenizer(grammar).Tokenize(), generatorDiagnostics).Parse();
         Assert.IsTrue(generatorDiagnostics.Count > 0);
@@ -95,7 +95,7 @@ public class Antlr4PrequelParityTests
             ID : ('a'..'z')+ ;
             """;
 
-        Assert.ThrowsException<GrammarParseException>(() => Antlr4GrammarConverter.ParseUnresolved(grammar, new DiagnosticBag()));
+        Assert.ThrowsExactly<GrammarParseException>(() => Antlr4GrammarConverter.ParseUnresolved(grammar, new DiagnosticBag()));
         var generatorDiagnostics = new DiagnosticBag();
         _ = new G4Parser(new G4Tokenizer(grammar).Tokenize(), generatorDiagnostics).Parse();
         Assert.IsTrue(generatorDiagnostics.Count > 0);

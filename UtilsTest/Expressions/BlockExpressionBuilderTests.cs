@@ -105,7 +105,7 @@ public class BlockExpressionBuilderTests
     {
         var builder = new BlockExpressionBuilder();
 
-        Assert.ThrowsException<InvalidOperationException>(
+        Assert.ThrowsExactly<InvalidOperationException>(
             () => builder.GetVariable("missing"));
     }
 

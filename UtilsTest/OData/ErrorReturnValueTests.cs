@@ -17,20 +17,20 @@ public class ErrorReturnValueTests
     [TestMethod]
     public void Constructor_NullMessage_ThrowsArgumentException()
     {
-        Assert.ThrowsException<ArgumentException>(() => new ErrorReturnValue(1, null!));
+        Assert.ThrowsExactly<ArgumentException>(() => new ErrorReturnValue(1, null!));
     }
 
     [TestMethod]
     public void Constructor_EmptyMessage_ThrowsArgumentException()
     {
-        Assert.ThrowsException<ArgumentException>(() => new ErrorReturnValue(1, string.Empty));
+        Assert.ThrowsExactly<ArgumentException>(() => new ErrorReturnValue(1, string.Empty));
     }
 
     [TestMethod]
     public void Constructor_WhitespaceMessage_ThrowsArgumentException()
     {
         // Item 32: whitespace-only messages must be rejected, not just null/empty.
-        Assert.ThrowsException<ArgumentException>(() => new ErrorReturnValue(1, "   "));
+        Assert.ThrowsExactly<ArgumentException>(() => new ErrorReturnValue(1, "   "));
     }
 
     [TestMethod]

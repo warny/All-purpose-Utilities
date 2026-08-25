@@ -16,7 +16,7 @@ public sealed class SerializationContractTests
     public void DuplicateOrders_AreAggregated()
     {
         var reader = new Reader(new MemoryStream());
-        SerializationContractException error = Assert.ThrowsException<SerializationContractException>(() => reader.Read<DuplicateOrderModel>());
+        SerializationContractException error = Assert.ThrowsExactly<SerializationContractException>(() => reader.Read<DuplicateOrderModel>());
         StringAssert.Contains(error.Message, "UIORT004");
         StringAssert.Contains(error.Message, nameof(DuplicateOrderModel.First));
         StringAssert.Contains(error.Message, nameof(DuplicateOrderModel.Second));
@@ -26,9 +26,9 @@ public sealed class SerializationContractTests
     [TestMethod]
     public void RecursiveContracts_AreRejected()
     {
-        SerializationContractException direct = Assert.ThrowsException<SerializationContractException>(() => new Reader(new MemoryStream()).Read<DirectRecursiveModel>());
-        SerializationContractException indirect = Assert.ThrowsException<SerializationContractException>(() => new Writer(new MemoryStream()).Write(new IndirectRecursiveA()));
-        SerializationContractException triple = Assert.ThrowsException<SerializationContractException>(() => new Reader(new MemoryStream()).Read<TripleRecursiveA>());
+        SerializationContractException direct = Assert.ThrowsExactly<SerializationContractException>(() => new Reader(new MemoryStream()).Read<DirectRecursiveModel>());
+        SerializationContractException indirect = Assert.ThrowsExactly<SerializationContractException>(() => new Writer(new MemoryStream()).Write(new IndirectRecursiveA()));
+        SerializationContractException triple = Assert.ThrowsExactly<SerializationContractException>(() => new Reader(new MemoryStream()).Read<TripleRecursiveA>());
         StringAssert.Contains(direct.Message, "UIORT007");
         StringAssert.Contains(indirect.Message, nameof(IndirectRecursiveA));
         StringAssert.Contains(indirect.Message, nameof(IndirectRecursiveB));
@@ -43,7 +43,7 @@ public sealed class SerializationContractTests
     {
         var reader = new Reader(new MemoryStream());
         Task<SerializationContractException>[] calls = Enumerable.Range(0, 16).Select(_ => Task.Run(() =>
-            Assert.ThrowsException<SerializationContractException>(() => reader.Read<NoDefaultConstructorModel>()))).ToArray();
+            Assert.ThrowsExactly<SerializationContractException>(() => reader.Read<NoDefaultConstructorModel>()))).ToArray();
         SerializationContractException[] failures = await Task.WhenAll(calls);
         Assert.IsTrue(failures.All(error => ReferenceEquals(error, failures[0])));
     }
@@ -53,16 +53,16 @@ public sealed class SerializationContractTests
     public void PrimitiveTruncation_ThrowsEndOfStreamException()
     {
         var reader = new Reader(new MemoryStream(new byte[] { 1, 2, 3 }));
-        EndOfStreamException error = Assert.ThrowsException<EndOfStreamException>(() => reader.Read<uint>());
+        EndOfStreamException error = Assert.ThrowsExactly<EndOfStreamException>(() => reader.Read<uint>());
         StringAssert.Contains(error.Message, "expected 4 bytes, received 3");
-        Assert.ThrowsException<EndOfStreamException>(() => new Reader(new MemoryStream()).Read<byte>());
+        Assert.ThrowsExactly<EndOfStreamException>(() => new Reader(new MemoryStream()).Read<byte>());
     }
 
     /// <summary>Ensures runtime and generated readers both reject post-construction init assignment.</summary>
     [TestMethod]
     public void InitOnlyProperty_IsRejectedByRuntimeContract()
     {
-        SerializationContractException error = Assert.ThrowsException<SerializationContractException>(() =>
+        SerializationContractException error = Assert.ThrowsExactly<SerializationContractException>(() =>
             new Reader(new MemoryStream()).Read<InitOnlyModel>());
         StringAssert.Contains(error.Message, "UIORT010");
     }
@@ -73,9 +73,9 @@ public sealed class SerializationContractTests
     {
         using var stream = new MutatingFailingSeekStream(new byte[8]);
         var reader = new Reader(stream);
-        Assert.ThrowsException<IOException>(() => reader.Push(3, SeekOrigin.Begin));
+        Assert.ThrowsExactly<IOException>(() => reader.Push(3, SeekOrigin.Begin));
         Assert.AreEqual(0, stream.Position);
-        Assert.ThrowsException<InvalidOperationException>(() => reader.Pop());
+        Assert.ThrowsExactly<InvalidOperationException>(() => reader.Pop());
     }
 
     /// <summary>Model with an invalid duplicate order.</summary>

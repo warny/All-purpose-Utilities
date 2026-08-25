@@ -71,7 +71,7 @@ public class SchedulerTests
         Assert.IsFalse(view is List<ScheduledProcess<DefaultContext>>);
         var collection = (ICollection<ScheduledProcess<DefaultContext>>)view;
         Assert.IsTrue(collection.IsReadOnly);
-        Assert.ThrowsException<NotSupportedException>(() => collection.Add(process));
+        Assert.ThrowsExactly<NotSupportedException>(() => collection.Add(process));
     }
 
     [TestMethod]
@@ -435,7 +435,7 @@ public class SchedulerTests
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 
-        Assert.ThrowsException<OperationCanceledException>(() => scheduler.Run(cts.Token));
+        Assert.ThrowsExactly<OperationCanceledException>(() => scheduler.Run(cts.Token));
     }
 
     [TestMethod]
@@ -511,7 +511,7 @@ public class SchedulerTests
         scheduler.AddProcess(Ctx(0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01), Proc());
         using var cts = new CancellationTokenSource();
         cts.Cancel();
-        Assert.ThrowsException<OperationCanceledException>(
+        Assert.ThrowsExactly<OperationCanceledException>(
             () => scheduler.RunAsync(cts.Token).GetAwaiter().GetResult());
     }
 
@@ -625,7 +625,7 @@ public class SchedulerTests
         var scheduler = new Scheduler<DefaultContext>();
         var ctx = Ctx(0x00);
         scheduler.AddProcess(ctx, Proc());
-        Assert.ThrowsException<ArgumentException>(() => scheduler.AddProcess(ctx, Proc()));
+        Assert.ThrowsExactly<ArgumentException>(() => scheduler.AddProcess(ctx, Proc()));
     }
 
     [TestMethod]
@@ -646,7 +646,7 @@ public class SchedulerTests
         var ctx = Ctx(0x00);
         scheduler.AddProcess(ctx, Proc());
 
-        var ex = Assert.ThrowsException<ArgumentNullException>(
+        var ex = Assert.ThrowsExactly<ArgumentNullException>(
             () => scheduler.AddProcess(ctx, null!));
         Assert.AreEqual("processor", ex.ParamName);
     }
@@ -719,7 +719,7 @@ public class SchedulerTests
         // Register a JUMP instruction that loops back to address 0.
         processor.RegisterInstruction([0x02], "JUMP_0", ctx => ctx.InstructionPointer = 0);
         scheduler.AddProcess(Ctx(0x01, 0x02), processor); // STEP, JUMP_0 — infinite loop
-        Assert.ThrowsException<InstructionBudgetExceededException>(
+        Assert.ThrowsExactly<InstructionBudgetExceededException>(
             () => scheduler.Run(maxInstructions: 6));
     }
 
@@ -730,7 +730,7 @@ public class SchedulerTests
         var processor = new CountingProcessor();
         processor.RegisterInstruction([0x02], "JUMP_0", ctx => ctx.InstructionPointer = 0);
         scheduler.AddProcess(Ctx(0x01, 0x02), processor);
-        var ex = Assert.ThrowsException<InstructionBudgetExceededException>(
+        var ex = Assert.ThrowsExactly<InstructionBudgetExceededException>(
             () => scheduler.Run(maxInstructions: 4));
         Assert.AreEqual(4L, ex.Budget);
     }
@@ -768,7 +768,7 @@ public class SchedulerTests
         processor.RegisterInstruction([0x02], "JUMP_0", ctx => ctx.InstructionPointer = 0);
         scheduler.AddProcess(Ctx(0x01, 0x02), processor); // STEP, JUMP_0 — infinite loop
 
-        Assert.ThrowsException<InstructionBudgetExceededException>(
+        Assert.ThrowsExactly<InstructionBudgetExceededException>(
             () => scheduler.Run(maxInstructions: 1));
 
         Assert.AreEqual(1L, scheduler.InstructionsExecuted);
@@ -783,7 +783,7 @@ public class SchedulerTests
         processor.RegisterInstruction([0x02], "JUMP_0", ctx => ctx.InstructionPointer = 0);
         scheduler.AddProcess(Ctx(0x01, 0x02), processor); // STEP, JUMP_0 — infinite loop
 
-        Assert.ThrowsException<InstructionBudgetExceededException>(
+        Assert.ThrowsExactly<InstructionBudgetExceededException>(
             () => scheduler.Run(maxInstructions: 5));
 
         Assert.AreEqual(5L, scheduler.InstructionsExecuted);
@@ -799,7 +799,7 @@ public class SchedulerTests
         scheduler.AddProcess(Ctx(0x01, 0x02), processor); // infinite loop
         scheduler.AddProcess(Ctx(0x01, 0x02), processor); // infinite loop
 
-        Assert.ThrowsException<InstructionBudgetExceededException>(
+        Assert.ThrowsExactly<InstructionBudgetExceededException>(
             () => scheduler.Run(maxInstructions: 5));
 
         Assert.IsTrue(scheduler.InstructionsExecuted <= 5,
@@ -815,7 +815,7 @@ public class SchedulerTests
         processor.RegisterInstruction([0x02], "JUMP_0", ctx => ctx.InstructionPointer = 0);
         scheduler.AddProcess(Ctx(0x01, 0x02), processor); // infinite loop
 
-        await Assert.ThrowsExceptionAsync<InstructionBudgetExceededException>(
+        await Assert.ThrowsExactlyAsync<InstructionBudgetExceededException>(
             () => scheduler.RunAsync(maxInstructions: 3));
 
         Assert.AreEqual(3L, scheduler.InstructionsExecuted);
@@ -825,7 +825,7 @@ public class SchedulerTests
     public void Run_NegativeMaxInstructions_ThrowsArgumentOutOfRangeException()
     {
         var scheduler = new Scheduler<DefaultContext>();
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => scheduler.Run(maxInstructions: -1));
     }
 
@@ -833,7 +833,7 @@ public class SchedulerTests
     public async Task RunAsync_NegativeMaxInstructions_ThrowsArgumentOutOfRangeException()
     {
         var scheduler = new Scheduler<DefaultContext>();
-        await Assert.ThrowsExceptionAsync<ArgumentOutOfRangeException>(
+        await Assert.ThrowsExactlyAsync<ArgumentOutOfRangeException>(
             () => scheduler.RunAsync(maxInstructions: -1));
     }
 }

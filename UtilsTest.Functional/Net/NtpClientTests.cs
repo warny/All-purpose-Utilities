@@ -121,7 +121,7 @@ public class NtpClientFunctionalTests
         // Use a short timeout to avoid waiting the full 5 seconds in CI.
         var transport = new UdpNtpTransport(TimeSpan.FromMilliseconds(500));
 
-        var ex = await Assert.ThrowsExceptionAsync<NtpQueryException>(
+        var ex = await Assert.ThrowsExactlyAsync<NtpQueryException>(
             () => NtpClient.GetTimeAsync("loopback.test", port, resolver, transport, CancellationToken.None))
             .ConfigureAwait(false);
 
@@ -150,7 +150,7 @@ public class NtpClientFunctionalTests
         var resolver = new LoopbackResolver();
         var transport = new UdpNtpTransport();
 
-        await Assert.ThrowsExceptionAsync<OperationCanceledException>(
+        await Assert.ThrowsExactlyAsync<OperationCanceledException>(
             () => NtpClient.GetTimeAsync("loopback.test", port, resolver, transport, cts.Token))
             .ConfigureAwait(false);
 
@@ -171,7 +171,7 @@ public class NtpClientFunctionalTests
         // Use the production UdpNtpTransport with a short timeout so the test doesn't wait 5 s.
         var transport = new UdpNtpTransport(TimeSpan.FromMilliseconds(300));
 
-        var ex = await Assert.ThrowsExceptionAsync<SocketException>(
+        var ex = await Assert.ThrowsExactlyAsync<SocketException>(
             () => transport.ExchangeAsync(endpoint, request, CancellationToken.None))
             .ConfigureAwait(false);
 

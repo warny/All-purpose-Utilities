@@ -62,7 +62,7 @@ public class MathExpressionExtensionsTests
     public void Derivate_NonFloatingPointParameterType_ThrowsNotSupportedException()
     {
         Expression<Func<int, int>> f = x => x;
-        Assert.ThrowsException<NotSupportedException>(() => f.Derivate());
+        Assert.ThrowsExactly<NotSupportedException>(() => f.Derivate());
     }
 
     /// <summary>
@@ -73,7 +73,7 @@ public class MathExpressionExtensionsTests
     public void Gradient_MixedParameterTypes_ThrowsNotSupportedException()
     {
         Expression<Func<float, double, double>> f = (x, y) => x + y;
-        Assert.ThrowsException<NotSupportedException>(() => f.Gradient());
+        Assert.ThrowsExactly<NotSupportedException>(() => f.Gradient());
     }
 
     // ── Parameter-instance resolution (TODO-pass4 item #47) ────────────────────

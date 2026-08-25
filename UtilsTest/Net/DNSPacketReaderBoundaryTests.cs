@@ -58,7 +58,7 @@ public class DNSPacketReaderBoundaryTests
             0x00, 0x01, // QCLASS IN
         ];
 
-        InvalidDataException ex = Assert.ThrowsException<InvalidDataException>(() => Reader.Read(datagram));
+        InvalidDataException ex = Assert.ThrowsExactly<InvalidDataException>(() => Reader.Read(datagram));
         StringAssert.Contains(ex.Message, "loop",
             "Exception must mention the compression-pointer loop.");
     }
@@ -80,7 +80,7 @@ public class DNSPacketReaderBoundaryTests
             0xC0, 0x0C, // offset 16-17: pointer back to 12
         ];
 
-        InvalidDataException ex = Assert.ThrowsException<InvalidDataException>(() => Reader.Read(datagram));
+        InvalidDataException ex = Assert.ThrowsExactly<InvalidDataException>(() => Reader.Read(datagram));
         StringAssert.Contains(ex.Message, "loop");
     }
 
@@ -103,7 +103,7 @@ public class DNSPacketReaderBoundaryTests
         ];
 
         // ReadByte() checks (Position >= RDataEnd) and throws InvalidDataException.
-        Assert.ThrowsException<InvalidDataException>(() => Reader.Read(datagram));
+        Assert.ThrowsExactly<InvalidDataException>(() => Reader.Read(datagram));
     }
 
     /// <summary>
@@ -155,7 +155,7 @@ public class DNSPacketReaderBoundaryTests
     [TestMethod]
     public void Read_ThrowsWhenDatagramShorterThanHeader()
     {
-        Assert.ThrowsException<InvalidDataException>(() => Reader.Read(new byte[8]));
+        Assert.ThrowsExactly<InvalidDataException>(() => Reader.Read(new byte[8]));
     }
 
     /// <summary>
@@ -174,6 +174,6 @@ public class DNSPacketReaderBoundaryTests
             0x00, 0x0A,               // only 2 of the 4 declared bytes present
         ];
 
-        Assert.ThrowsException<InvalidDataException>(() => Reader.Read(datagram));
+        Assert.ThrowsExactly<InvalidDataException>(() => Reader.Read(datagram));
     }
 }

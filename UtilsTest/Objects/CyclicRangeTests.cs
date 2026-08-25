@@ -37,7 +37,7 @@ public class CyclicRangeTests
         var ranges = new Ranges<int>();
         ranges.Add(new Range<int>(0, 3));
 
-        Assert.ThrowsException<InvalidOperationException>(() => ranges.Add(new CyclicRange<int>(22, 2, 0, 23)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => ranges.Add(new CyclicRange<int>(22, 2, 0, 23)));
     }
 
     [TestMethod]
@@ -46,7 +46,7 @@ public class CyclicRangeTests
         var ranges = new Ranges<int>();
         ranges.Add(new CyclicRange<int>(22, 2, 0, 23));
 
-        Assert.ThrowsException<InvalidOperationException>(() => ranges.Add(new Range<int>(0, 3)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => ranges.Add(new Range<int>(0, 3)));
     }
 
     [TestMethod]
@@ -55,7 +55,7 @@ public class CyclicRangeTests
         var ranges = new Ranges<int>();
         ranges.Add(new CyclicRange<int>(22, 2, 0, 23));
 
-        Assert.ThrowsException<InvalidOperationException>(() => ranges.Add(new CyclicRange<int>(23, 1, 1, 24)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => ranges.Add(new CyclicRange<int>(23, 1, 1, 24)));
     }
 
     [TestMethod]
@@ -125,7 +125,7 @@ public class CyclicRangeTests
     {
         var ranges = new Ranges<int>();
 
-        Assert.ThrowsException<ArgumentNullException>(() => ranges.Add((IRange<int>)null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => ranges.Add((IRange<int>)null!));
     }
 
     [TestMethod]

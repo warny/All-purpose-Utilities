@@ -11,7 +11,7 @@ public class ParserRawNamedArgumentSplitterTests
 {
     [TestMethod]
     public void SplitNamed_Null_ThrowsArgumentNullException()
-        => Assert.ThrowsException<ArgumentNullException>(() => ParserRawNamedArgumentSplitter.SplitNamedTopLevel(null!));
+        => Assert.ThrowsExactly<ArgumentNullException>(() => ParserRawNamedArgumentSplitter.SplitNamedTopLevel(null!));
 
     [TestMethod]
     public void SplitNamed_Empty_ReturnsEmptyDictionary()
@@ -58,7 +58,7 @@ public class ParserRawNamedArgumentSplitterTests
     public void SplitNamed_ColonOnly_IgnoresEquals()
     {
         // "text = hello" has no colon — should throw FormatException in ColonOnly mode
-        Assert.ThrowsException<FormatException>(() =>
+        Assert.ThrowsExactly<FormatException>(() =>
             ParserRawNamedArgumentSplitter.SplitNamedTopLevel("value: 42, text = hello",
                 ParserRawNamedArgumentSeparatorMode.ColonOnly));
     }
@@ -66,7 +66,7 @@ public class ParserRawNamedArgumentSplitterTests
     [TestMethod]
     public void SplitNamed_EqualsOnly_IgnoresColon()
     {
-        Assert.ThrowsException<FormatException>(() =>
+        Assert.ThrowsExactly<FormatException>(() =>
             ParserRawNamedArgumentSplitter.SplitNamedTopLevel("value: 42, text = hello",
                 ParserRawNamedArgumentSeparatorMode.EqualsOnly));
     }
@@ -108,14 +108,14 @@ public class ParserRawNamedArgumentSplitterTests
     [TestMethod]
     public void SplitNamed_MissingSeparator_ThrowsFormatException()
     {
-        Assert.ThrowsException<FormatException>(() =>
+        Assert.ThrowsExactly<FormatException>(() =>
             ParserRawNamedArgumentSplitter.SplitNamedTopLevel("justvalue"));
     }
 
     [TestMethod]
     public void SplitNamed_EmptyKey_ThrowsFormatException()
     {
-        Assert.ThrowsException<FormatException>(() =>
+        Assert.ThrowsExactly<FormatException>(() =>
             ParserRawNamedArgumentSplitter.SplitNamedTopLevel(": somevalue"));
     }
 

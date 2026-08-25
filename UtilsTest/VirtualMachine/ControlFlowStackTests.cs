@@ -217,7 +217,7 @@ public class ControlFlowStackTests
     {
         var cfs = new ControlFlowStack();
         var ctx = new ControlFlowContext(new byte[0]);
-        Assert.ThrowsException<VmInvalidOperationException>(() => cfs.Break(ctx));
+        Assert.ThrowsExactly<VmInvalidOperationException>(() => cfs.Break(ctx));
     }
 
     [TestMethod]
@@ -249,7 +249,7 @@ public class ControlFlowStackTests
     {
         var cfs = new ControlFlowStack();
         var ctx = new ControlFlowContext(new byte[0]);
-        Assert.ThrowsException<VmInvalidOperationException>(() => cfs.Continue(ctx));
+        Assert.ThrowsExactly<VmInvalidOperationException>(() => cfs.Continue(ctx));
     }
 
     // â"€â"€ ExceptionBlock â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
@@ -276,7 +276,7 @@ public class ControlFlowStackTests
     [TestMethod]
     public void ExceptionBlock_NoCatchAndNoFinally_Throws()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => new ExceptionBlock(0, catchAddress: null, finallyAddress: null));
     }
 
@@ -342,7 +342,7 @@ public class ControlFlowStackTests
     public void Pop_EmptyStack_Throws()
     {
         var cfs = new ControlFlowStack();
-        Assert.ThrowsException<VmInvalidOperationException>(() => cfs.Pop());
+        Assert.ThrowsExactly<VmInvalidOperationException>(() => cfs.Pop());
     }
 
     // â"€â"€ Typed Pop<T> â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
@@ -363,7 +363,7 @@ public class ControlFlowStackTests
     {
         var cfs = new ControlFlowStack();
         cfs.PushLoop(0, 50); // LoopBlock is on top
-        Assert.ThrowsException<VirtualProcessorException>(() => cfs.Pop<ConditionalBlock>());
+        Assert.ThrowsExactly<VirtualProcessorException>(() => cfs.Pop<ConditionalBlock>());
     }
 
     [TestMethod]
@@ -381,7 +381,7 @@ public class ControlFlowStackTests
     public void PopTyped_EmptyStack_Throws()
     {
         var cfs = new ControlFlowStack();
-        Assert.ThrowsException<VmInvalidOperationException>(() => cfs.Pop<LoopBlock>());
+        Assert.ThrowsExactly<VmInvalidOperationException>(() => cfs.Pop<LoopBlock>());
     }
 
     // ── Item 12: Break/Continue are transactional — no stack corruption on failure ──
@@ -394,7 +394,7 @@ public class ControlFlowStackTests
         cfs.PushConditional(0, 10);
         cfs.PushConditional(5, 8);
         var ctx = new ControlFlowContext(new byte[0]);
-        Assert.ThrowsException<VmInvalidOperationException>(() => cfs.Break(ctx));
+        Assert.ThrowsExactly<VmInvalidOperationException>(() => cfs.Break(ctx));
         Assert.AreEqual(2, cfs.Depth); // both blocks must still be present
     }
 
@@ -404,7 +404,7 @@ public class ControlFlowStackTests
         var cfs = new ControlFlowStack();
         cfs.PushConditional(0, 10);
         var ctx = new ControlFlowContext(new byte[0]);
-        Assert.ThrowsException<VmInvalidOperationException>(() => cfs.Continue(ctx));
+        Assert.ThrowsExactly<VmInvalidOperationException>(() => cfs.Continue(ctx));
         Assert.AreEqual(1, cfs.Depth);
     }
 
@@ -442,7 +442,7 @@ public class ControlFlowStackTests
     [TestMethod]
     public void FullContext_NullCallStack_Throws()
     {
-        Assert.ThrowsException<ArgumentNullException>(() => new FullContext(new byte[0], null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new FullContext(new byte[0], null!));
     }
 
     [TestMethod]
@@ -477,7 +477,7 @@ public class ControlFlowStackTests
     [TestMethod]
     public void FullContext_ThreeArgCtor_NullControlFlow_Throws()
     {
-        Assert.ThrowsException<ArgumentNullException>(
+        Assert.ThrowsExactly<ArgumentNullException>(
             () => new FullContext(new byte[0], new SimpleCallStack(), null!));
     }
 
@@ -613,7 +613,7 @@ public class ControlFlowStackTests
     [TestMethod]
     public void ControlFlowContext_NullStack_Throws()
     {
-        Assert.ThrowsException<ArgumentNullException>(() => new ControlFlowContext(new byte[0], null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new ControlFlowContext(new byte[0], null!));
     }
 
     // â"€â"€ IsEmpty â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
@@ -774,7 +774,7 @@ public class ControlFlowStackTests
         var cfs = new ControlFlowStack();
         cfs.PushLoop(0, 10);
         var ctx = new ControlFlowContext(new byte[0]);
-        Assert.ThrowsException<VmInvalidOperationException>(() => cfs.EndCatch(ctx));
+        Assert.ThrowsExactly<VmInvalidOperationException>(() => cfs.EndCatch(ctx));
     }
 
     [TestMethod]
@@ -782,7 +782,7 @@ public class ControlFlowStackTests
     {
         var cfs = new ControlFlowStack();
         var ctx = new ControlFlowContext(new byte[0]);
-        Assert.ThrowsException<VmInvalidOperationException>(() => cfs.EndCatch(ctx));
+        Assert.ThrowsExactly<VmInvalidOperationException>(() => cfs.EndCatch(ctx));
     }
 
     [TestMethod]
@@ -794,7 +794,7 @@ public class ControlFlowStackTests
         var ctx = new ControlFlowContext(new byte[50]);
         cfs.Throw(ctx, "error");
         cfs.EndCatch(ctx); // now in Finally phase
-        Assert.ThrowsException<VmInvalidOperationException>(() => cfs.EndCatch(ctx));
+        Assert.ThrowsExactly<VmInvalidOperationException>(() => cfs.EndCatch(ctx));
     }
 
     [TestMethod]
@@ -802,7 +802,7 @@ public class ControlFlowStackTests
     {
         var cfs = new ControlFlowStack();
         cfs.PushException(0, catchAddress: 10, finallyAddress: null);
-        Assert.ThrowsException<ArgumentNullException>(() => cfs.EndCatch(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => cfs.EndCatch(null!));
     }
 
     [TestMethod]
@@ -823,7 +823,7 @@ public class ControlFlowStackTests
         var cfs = new ControlFlowStack();
         cfs.PushLoop(0, 10);
         var ctx = new ControlFlowContext(new byte[0]);
-        Assert.ThrowsException<VmInvalidOperationException>(() => cfs.EndFinally(ctx));
+        Assert.ThrowsExactly<VmInvalidOperationException>(() => cfs.EndFinally(ctx));
     }
 
     [TestMethod]
@@ -831,7 +831,7 @@ public class ControlFlowStackTests
     {
         var cfs = new ControlFlowStack();
         var ctx = new ControlFlowContext(new byte[0]);
-        Assert.ThrowsException<VmInvalidOperationException>(() => cfs.EndFinally(ctx));
+        Assert.ThrowsExactly<VmInvalidOperationException>(() => cfs.EndFinally(ctx));
     }
 
     [TestMethod]
@@ -1090,7 +1090,7 @@ public class ControlFlowStackTests
     public void PushException_NoCatchNoFinally_ThrowsArgumentException()
     {
         var cfs = new ControlFlowStack();
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => cfs.PushException(startAddress: 0, catchAddress: null, finallyAddress: null));
     }
 
@@ -1128,7 +1128,7 @@ public class ControlFlowStackTests
     {
         var cfs = new ControlFlowStack();
         cfs.PushLoop(0, 10);
-        Assert.ThrowsException<ArgumentNullException>(() => cfs.Break(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => cfs.Break(null!));
     }
 
     [TestMethod]
@@ -1136,7 +1136,7 @@ public class ControlFlowStackTests
     {
         var cfs = new ControlFlowStack();
         cfs.PushLoop(0, 10);
-        Assert.ThrowsException<ArgumentNullException>(() => cfs.Continue(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => cfs.Continue(null!));
     }
 
     [TestMethod]
@@ -1144,7 +1144,7 @@ public class ControlFlowStackTests
     {
         var cfs = new ControlFlowStack();
         cfs.PushException(0, catchAddress: null, finallyAddress: 20);
-        Assert.ThrowsException<ArgumentNullException>(() => cfs.EndFinally(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => cfs.EndFinally(null!));
     }
 
     [TestMethod]
@@ -1152,7 +1152,7 @@ public class ControlFlowStackTests
     {
         var cfs = new ControlFlowStack();
         cfs.PushException(0, catchAddress: 10, finallyAddress: null);
-        Assert.ThrowsException<ArgumentNullException>(() => cfs.Throw(null!, "error"));
+        Assert.ThrowsExactly<ArgumentNullException>(() => cfs.Throw(null!, "error"));
     }
 
     // ── MaxDepth (item 14) ────────────────────────────────────────────────────────────────────
@@ -1168,8 +1168,8 @@ public class ControlFlowStackTests
     [TestMethod]
     public void Constructor_InvalidMaxDepth_ThrowsArgumentOutOfRangeException()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new ControlFlowStack(0));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new ControlFlowStack(-1));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new ControlFlowStack(0));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new ControlFlowStack(-1));
     }
 
     [TestMethod]
@@ -1178,7 +1178,7 @@ public class ControlFlowStackTests
         var cfs = new ControlFlowStack(maxDepth: 2);
         cfs.PushConditional(0, 10);
         cfs.PushConditional(1, 20);
-        Assert.ThrowsException<VmLimitExceededException>(() => cfs.PushConditional(2, 30));
+        Assert.ThrowsExactly<VmLimitExceededException>(() => cfs.PushConditional(2, 30));
     }
 
     [TestMethod]
@@ -1186,7 +1186,7 @@ public class ControlFlowStackTests
     {
         var cfs = new ControlFlowStack(maxDepth: 1);
         cfs.PushLoop(0, 10);
-        Assert.ThrowsException<VmLimitExceededException>(() => cfs.PushLoop(1, 20));
+        Assert.ThrowsExactly<VmLimitExceededException>(() => cfs.PushLoop(1, 20));
     }
 
     [TestMethod]
@@ -1194,7 +1194,7 @@ public class ControlFlowStackTests
     {
         var cfs = new ControlFlowStack(maxDepth: 1);
         cfs.PushException(0, catchAddress: 10, finallyAddress: null);
-        Assert.ThrowsException<VmLimitExceededException>(
+        Assert.ThrowsExactly<VmLimitExceededException>(
             () => cfs.PushException(1, catchAddress: 20, finallyAddress: null));
     }
 
@@ -1214,42 +1214,42 @@ public class ControlFlowStackTests
     public void PushConditional_NegativeStartAddress_ThrowsArgumentOutOfRangeException()
     {
         var cfs = new ControlFlowStack();
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => cfs.PushConditional(-1, 10));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => cfs.PushConditional(-1, 10));
     }
 
     [TestMethod]
     public void PushConditional_NegativeEndAddress_ThrowsArgumentOutOfRangeException()
     {
         var cfs = new ControlFlowStack();
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => cfs.PushConditional(0, -1));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => cfs.PushConditional(0, -1));
     }
 
     [TestMethod]
     public void PushConditional_NegativeElseAddress_ThrowsArgumentOutOfRangeException()
     {
         var cfs = new ControlFlowStack();
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => cfs.PushConditional(0, 10, elseAddress: -1));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => cfs.PushConditional(0, 10, elseAddress: -1));
     }
 
     [TestMethod]
     public void PushLoop_NegativeStartAddress_ThrowsArgumentOutOfRangeException()
     {
         var cfs = new ControlFlowStack();
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => cfs.PushLoop(-1, 10));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => cfs.PushLoop(-1, 10));
     }
 
     [TestMethod]
     public void PushLoop_NegativeEndAddress_ThrowsArgumentOutOfRangeException()
     {
         var cfs = new ControlFlowStack();
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => cfs.PushLoop(0, -1));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => cfs.PushLoop(0, -1));
     }
 
     [TestMethod]
     public void PushException_NegativeStartAddress_ThrowsArgumentOutOfRangeException()
     {
         var cfs = new ControlFlowStack();
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => cfs.PushException(-1, catchAddress: 10, finallyAddress: null));
     }
 
@@ -1257,7 +1257,7 @@ public class ControlFlowStackTests
     public void PushException_NegativeCatchAddress_ThrowsArgumentOutOfRangeException()
     {
         var cfs = new ControlFlowStack();
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => cfs.PushException(0, catchAddress: -1, finallyAddress: null));
     }
 
@@ -1265,7 +1265,7 @@ public class ControlFlowStackTests
     public void PushException_NegativeFinallyAddress_ThrowsArgumentOutOfRangeException()
     {
         var cfs = new ControlFlowStack();
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => cfs.PushException(0, catchAddress: null, finallyAddress: -5));
     }
 }

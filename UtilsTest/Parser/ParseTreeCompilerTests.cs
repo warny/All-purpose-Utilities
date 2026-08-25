@@ -385,21 +385,21 @@ public class ParseTreeCompilerTests
     // ═══════════════════════════════════════════════════════════════
 
     [TestMethod]
-    [ExpectedException(typeof(InvalidOperationException))]
     public void Compiler_DuplicateDescentRegistration_Throws()
     {
-        new ParseTreeCompiler<int, string>()
-            .OnDescend("eval", (nav, ctx) => ctx)
-            .OnDescend("eval", (nav, ctx) => ctx);
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            new ParseTreeCompiler<int, string>()
+                .OnDescend("eval", (nav, ctx) => ctx)
+                .OnDescend("eval", (nav, ctx) => ctx));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(InvalidOperationException))]
     public void Compiler_DuplicateAscentRegistration_Throws()
     {
-        new ParseTreeCompiler<int, string>()
-            .OnAscend("eval", (nav, ctx) => "x")
-            .OnAscend("eval", (nav, ctx) => "y");
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            new ParseTreeCompiler<int, string>()
+                .OnAscend("eval", (nav, ctx) => "x")
+                .OnAscend("eval", (nav, ctx) => "y"));
     }
 
     // ═══════════════════════════════════════════════════════════════

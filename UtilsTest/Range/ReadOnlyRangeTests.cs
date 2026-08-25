@@ -14,7 +14,7 @@ public class ReadOnlyRangeTests
     public void OutOfRange_EndIndex_ThrowsWithCorrectParamName()
     {
         var list = List(0, 1, 2, 3, 4);
-        var ex = Assert.ThrowsException<ArgumentOutOfRangeException>(
+        var ex = Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => list.Between(0, 10)); // endIndex=10 >= Count=5
 
         // Regression: was incorrectly reporting "startIndex" instead of "endIndex".

@@ -90,22 +90,22 @@ public class NumberToStringConverterEngineFixesTests
     public void Convert_Double_NaN_ThrowsArgumentException()
     {
         var en = NumberToStringConverter.GetConverter("EN");
-        Assert.ThrowsException<ArgumentException>(() => en.Convert(double.NaN));
+        Assert.ThrowsExactly<ArgumentException>(() => en.Convert(double.NaN));
     }
 
     [TestMethod]
     public void Convert_Double_Infinity_ThrowsArgumentException()
     {
         var en = NumberToStringConverter.GetConverter("EN");
-        Assert.ThrowsException<ArgumentException>(() => en.Convert(double.PositiveInfinity));
-        Assert.ThrowsException<ArgumentException>(() => en.Convert(double.NegativeInfinity));
+        Assert.ThrowsExactly<ArgumentException>(() => en.Convert(double.PositiveInfinity));
+        Assert.ThrowsExactly<ArgumentException>(() => en.Convert(double.NegativeInfinity));
     }
 
     [TestMethod]
     public void Convert_Float_NaN_ThrowsArgumentException()
     {
         var en = NumberToStringConverter.GetConverter("EN");
-        Assert.ThrowsException<ArgumentException>(() => en.Convert(float.NaN));
+        Assert.ThrowsExactly<ArgumentException>(() => en.Convert(float.NaN));
     }
 
     // ─── Item 46 — ConvertFraction(int/long) overloads ───────────────────────

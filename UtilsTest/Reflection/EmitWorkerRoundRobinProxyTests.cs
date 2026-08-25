@@ -38,7 +38,7 @@ public class EmitWorkerRoundRobinProxyTests
     {
         ITinyInterface proxy = DispatchProxy.Create<ITinyInterface, EmitWorkerRoundRobinProxy>();
 
-        Assert.ThrowsException<ObjectDisposedException>(() => proxy.Foo(1));
+        Assert.ThrowsExactly<ObjectDisposedException>(() => proxy.Foo(1));
     }
 
     [TestMethod]
@@ -52,14 +52,14 @@ public class EmitWorkerRoundRobinProxyTests
     [TestMethod]
     public void EmitRoundRobin_WithZeroWorkers_ThrowsArgumentOutOfRangeException()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => LibraryMapper.EmitRoundRobin<ITinyInterface>("does-not-matter.dll", CallingConvention.Winapi, workerCount: 0));
     }
 
     [TestMethod]
     public void EmitRoundRobin_WithNegativeWorkerCount_ThrowsArgumentOutOfRangeException()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => LibraryMapper.EmitRoundRobin<ITinyInterface>("does-not-matter.dll", CallingConvention.Winapi, workerCount: -1));
     }
 

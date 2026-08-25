@@ -123,45 +123,40 @@ public class DrawMappingTests
     // ── Finding #13: DrawF constructor validates viewport ─────────────────────
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
     public void DrawF_NaNTop_ThrowsArgumentException()
     {
         var accessor = new ArrayImageAccessor<ColorArgb32>(10, 10);
-        _ = new DrawF<ColorArgb32>(accessor, float.NaN, 0, 10, 10);
+        Assert.ThrowsExactly<ArgumentException>(() => _ = new DrawF<ColorArgb32>(accessor, float.NaN, 0, 10, 10));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
     public void DrawF_InfinityLeft_ThrowsArgumentException()
     {
         var accessor = new ArrayImageAccessor<ColorArgb32>(10, 10);
-        _ = new DrawF<ColorArgb32>(accessor, 0, float.PositiveInfinity, 10, 10);
+        Assert.ThrowsExactly<ArgumentException>(() => _ = new DrawF<ColorArgb32>(accessor, 0, float.PositiveInfinity, 10, 10));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
     public void DrawF_InfinityRight_ThrowsArgumentException()
     {
         var accessor = new ArrayImageAccessor<ColorArgb32>(10, 10);
-        _ = new DrawF<ColorArgb32>(accessor, 0, 0, float.NegativeInfinity, 10);
+        Assert.ThrowsExactly<ArgumentException>(() => _ = new DrawF<ColorArgb32>(accessor, 0, 0, float.NegativeInfinity, 10));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
     public void DrawF_ZeroWidthViewport_ThrowsArgumentException()
     {
         // Right == Left → zero-width span
         var accessor = new ArrayImageAccessor<ColorArgb32>(10, 10);
-        _ = new DrawF<ColorArgb32>(accessor, 0, 5, 5, 10);
+        Assert.ThrowsExactly<ArgumentException>(() => _ = new DrawF<ColorArgb32>(accessor, 0, 5, 5, 10));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
     public void DrawF_ZeroHeightViewport_ThrowsArgumentException()
     {
         // Down == Top → zero-height span
         var accessor = new ArrayImageAccessor<ColorArgb32>(10, 10);
-        _ = new DrawF<ColorArgb32>(accessor, 3, 0, 10, 3);
+        Assert.ThrowsExactly<ArgumentException>(() => _ = new DrawF<ColorArgb32>(accessor, 3, 0, 10, 3));
     }
 
     [TestMethod]
@@ -307,11 +302,10 @@ public class DrawMappingTests
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentOutOfRangeException))]
     public void IntersectionMergeThreshold_NegativeValue_ThrowsArgumentOutOfRangeException()
     {
         var accessor = new ArrayImageAccessor<ColorArgb32>(10, 10);
         var draw = new DrawI<ColorArgb32>(accessor);
-        draw.IntersectionMergeThreshold = -0.1f;
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => draw.IntersectionMergeThreshold = -0.1f);
     }
 }

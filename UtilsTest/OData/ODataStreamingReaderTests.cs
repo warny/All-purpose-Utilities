@@ -102,7 +102,7 @@ public class ODataStreamingReaderTests
         channel.Writer.TryWrite([fieldValue]);
         reader.Read();
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => reader.GetBytes(0, -1, null, 0, 0),
             "Negative field offset must throw ArgumentOutOfRangeException");
         reader.Dispose();
@@ -122,7 +122,7 @@ public class ODataStreamingReaderTests
         channel.Writer.TryWrite([fieldValue]);
         reader.Read();
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => reader.GetBytes(0, (long)int.MaxValue + 1, null, 0, 0),
             "Field offset > int.MaxValue must throw ArgumentOutOfRangeException");
         reader.Dispose();
@@ -142,7 +142,7 @@ public class ODataStreamingReaderTests
         channel.Writer.TryWrite([fieldValue]);
         reader.Read();
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => reader.GetBytes(0, 0, new byte[10], 0, -1),
             "Negative length must throw ArgumentOutOfRangeException");
         reader.Dispose();
@@ -163,7 +163,7 @@ public class ODataStreamingReaderTests
         reader.Read();
 
         // Buffer has 3 slots, offset 1 leaves 2 free, but we request 3 bytes → overflow.
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => reader.GetBytes(0, 0, new byte[3], 1, 3),
             "bufferoffset + length > buffer.Length must throw ArgumentException");
         reader.Dispose();
@@ -225,7 +225,7 @@ public class ODataStreamingReaderTests
         channel.Writer.TryWrite(["Hello"]);
         reader.Read();
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => reader.GetChars(0, -1, null, 0, 0));
         reader.Dispose();
         cts.Dispose();
@@ -243,7 +243,7 @@ public class ODataStreamingReaderTests
         channel.Writer.TryWrite(["Hello"]);
         reader.Read();
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => reader.GetChars(0, (long)int.MaxValue + 1, null, 0, 0));
         reader.Dispose();
         cts.Dispose();
@@ -261,7 +261,7 @@ public class ODataStreamingReaderTests
         channel.Writer.TryWrite(["Hello"]);
         reader.Read();
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => reader.GetChars(0, 0, new char[10], 0, -1));
         reader.Dispose();
         cts.Dispose();
@@ -280,7 +280,7 @@ public class ODataStreamingReaderTests
         reader.Read();
 
         // Buffer has 3 slots, offset 1 leaves 2 free, but we request 3 chars → overflow.
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => reader.GetChars(0, 0, new char[3], 1, 3),
             "bufferoffset + length > buffer.Length must throw ArgumentException");
         reader.Dispose();
@@ -314,7 +314,7 @@ public class ODataStreamingReaderTests
     private static ArgumentException ThrowsArgumentExceptionFromReflectedCtor(Action act)
     {
         // Reflection wraps constructor exceptions in TargetInvocationException.
-        var tie = Assert.ThrowsException<System.Reflection.TargetInvocationException>(act);
+        var tie = Assert.ThrowsExactly<System.Reflection.TargetInvocationException>(act);
         Assert.IsInstanceOfType<ArgumentException>(tie.InnerException,
             "Inner exception must be ArgumentException");
         return (ArgumentException)tie.InnerException!;

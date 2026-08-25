@@ -189,7 +189,7 @@ public class NetClientProtocolTests
         });
         SmtpClient client = new() { MaxResponseCount = 1 };
         await client.ConnectAsync(stream);
-        await Assert.ThrowsExceptionAsync<InvalidDataException>(() => client.EhloAsync("example.test"));
+        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => client.EhloAsync("example.test"));
         Assert.IsFalse(client.IsConnected);
         Assert.IsNotNull(client.SessionFailure);
         await server;
@@ -208,7 +208,7 @@ public class NetClientProtocolTests
         });
         Pop3Client client = new();
         await client.ConnectAsync(stream);
-        ProtocolResponseException error = await Assert.ThrowsExceptionAsync<ProtocolResponseException>(() => client.GetStatAsync());
+        ProtocolResponseException error = await Assert.ThrowsExactlyAsync<ProtocolResponseException>(() => client.GetStatAsync());
         Assert.AreEqual("STAT", error.Command);
         await server;
     }
@@ -226,7 +226,7 @@ public class NetClientProtocolTests
         });
         Pop3Client client = new();
         await client.ConnectAsync(stream);
-        ProtocolResponseException error = await Assert.ThrowsExceptionAsync<ProtocolResponseException>(() => client.GetCapabilitiesAsync());
+        ProtocolResponseException error = await Assert.ThrowsExactlyAsync<ProtocolResponseException>(() => client.GetCapabilitiesAsync());
         Assert.AreEqual("CAPA", error.Command);
         await server;
     }
@@ -246,7 +246,7 @@ public class NetClientProtocolTests
         });
         Pop3Client client = new() { MaxMultilineBytes = 2 };
         await client.ConnectAsync(stream);
-        await Assert.ThrowsExceptionAsync<InvalidDataException>(() => client.ListAsync());
+        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => client.ListAsync());
         Assert.IsFalse(client.IsConnected);
         await server;
     }
@@ -267,7 +267,7 @@ public class NetClientProtocolTests
         });
         SmtpClient client = new();
         await client.ConnectAsync(stream);
-        ProtocolResponseException error = await Assert.ThrowsExceptionAsync<ProtocolResponseException>(() =>
+        ProtocolResponseException error = await Assert.ThrowsExactlyAsync<ProtocolResponseException>(() =>
             client.AuthenticateAsync("user", "password", SmtpAuthenticationMechanism.Login));
         Assert.AreEqual("535", error.ResponseCode);
         Assert.IsTrue(client.IsConnected);
@@ -294,7 +294,7 @@ public class NetClientProtocolTests
         SmtpClient client = new();
         await client.ConnectAsync(stream);
         using CancellationTokenSource cancellation = new(100);
-        await Assert.ThrowsExceptionAsync<OperationCanceledException>(() =>
+        await Assert.ThrowsExactlyAsync<OperationCanceledException>(() =>
             client.SendMailAsync(SmtpPath.Parse("sender@example.com"), [SmtpPath.Parse("recipient@example.com")], new StringReader("body"), cancellationToken: cancellation.Token));
         Assert.IsFalse(client.IsConnected);
         Assert.IsFalse(commands.Contains("RSET"));
@@ -314,7 +314,7 @@ public class NetClientProtocolTests
         });
         SmtpClient client = new();
         await client.ConnectAsync(stream);
-        await Assert.ThrowsExceptionAsync<IOException>(() => client.AuthenticateAsync(new SmtpPlainCredentials("user", "password")));
+        await Assert.ThrowsExactlyAsync<IOException>(() => client.AuthenticateAsync(new SmtpPlainCredentials("user", "password")));
         Assert.IsFalse(client.IsConnected);
         Assert.IsNotNull(client.SessionFailure);
         await server;
@@ -352,7 +352,7 @@ public class NetClientProtocolTests
         });
         SmtpClient client = new();
         await client.ConnectAsync(stream);
-        await Assert.ThrowsExceptionAsync<IOException>(() =>
+        await Assert.ThrowsExactlyAsync<IOException>(() =>
             client.SendMailAsync(SmtpPath.Parse("sender@example.com"), [SmtpPath.Parse("recipient@example.com")], new StringReader("body")));
         Assert.IsFalse(client.IsConnected);
         Assert.IsNotNull(client.SessionFailure);
@@ -375,7 +375,7 @@ public class NetClientProtocolTests
         });
         NntpClient client = new();
         await client.ConnectAsync(stream);
-        await Assert.ThrowsExceptionAsync<ProtocolResponseException>(() => client.ArticleAsync(1));
+        await Assert.ThrowsExactlyAsync<ProtocolResponseException>(() => client.ArticleAsync(1));
         Assert.IsTrue(client.IsConnected);
         Assert.AreEqual((0, 0, 0), await client.GroupAsync("comp.test"));
         await server;
@@ -412,7 +412,7 @@ public class NetClientProtocolTests
     public async Task SmtpClient_SendMailAsync_NullRecipients_ThrowsArgumentNullException()
     {
         SmtpClient client = new SmtpClient();
-        await Assert.ThrowsExceptionAsync<ArgumentNullException>(() =>
+        await Assert.ThrowsExactlyAsync<ArgumentNullException>(() =>
             client.SendMailAsync("sender@example.com", null!, "body"));
     }
 
@@ -420,7 +420,7 @@ public class NetClientProtocolTests
     public async Task SmtpClient_SendMailAsync_EmptyRecipients_ThrowsArgumentException()
     {
         SmtpClient client = new SmtpClient();
-        await Assert.ThrowsExceptionAsync<ArgumentException>(() =>
+        await Assert.ThrowsExactlyAsync<ArgumentException>(() =>
             client.SendMailAsync("sender@example.com", new string[0], "body"));
     }
 
@@ -444,7 +444,7 @@ public class NetClientProtocolTests
         await client.ConnectAsync(clientStream, leaveOpen: false);
 
         // Second recipient has a CR, which ValidateCommandArgument rejects before MAIL FROM
-        await Assert.ThrowsExceptionAsync<ArgumentException>(() =>
+        await Assert.ThrowsExactlyAsync<ArgumentException>(() =>
             client.SendMailAsync("sender@example.com", new[] { "good@example.com", "bad\rrecipient" }, "body"));
 
         // Give the server task a moment to detect MAIL FROM if it had been sent

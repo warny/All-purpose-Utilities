@@ -14,7 +14,7 @@ public class ParserRawArgumentSplitterTests
     [TestMethod]
     public void SplitTopLevel_Null_ThrowsArgumentNullException()
     {
-        Assert.ThrowsException<ArgumentNullException>(() => ParserRawArgumentSplitter.SplitTopLevel(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => ParserRawArgumentSplitter.SplitTopLevel(null!));
     }
 
     [TestMethod]

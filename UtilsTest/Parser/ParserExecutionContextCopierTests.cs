@@ -362,7 +362,7 @@ public class ParserExecutionContextCopierTests
         CloneableContext source = new(3);
         source.SetCloneResult(null);
 
-        InvalidOperationException exception = Assert.ThrowsException<InvalidOperationException>(
+        InvalidOperationException exception = Assert.ThrowsExactly<InvalidOperationException>(
             () => ParserExecutionContextCopier<CloneableContext>.Copy(source, static () => new CloneableContext(0)));
 
         StringAssert.Contains(exception.Message, "ICloneable.Clone()");
@@ -378,7 +378,7 @@ public class ParserExecutionContextCopierTests
         CloneableContext source = new(3);
         source.SetCloneResult(new object());
 
-        InvalidOperationException exception = Assert.ThrowsException<InvalidOperationException>(
+        InvalidOperationException exception = Assert.ThrowsExactly<InvalidOperationException>(
             () => ParserExecutionContextCopier<CloneableContext>.Copy(source, static () => new CloneableContext(0)));
 
         StringAssert.Contains(exception.Message, "ICloneable.Clone()");
@@ -411,10 +411,10 @@ public class ParserExecutionContextCopierTests
         SimpleContext source = new();
         SimpleContext target = new();
 
-        Assert.ThrowsException<ArgumentNullException>(() => ParserExecutionContextCopier<SimpleContext>.Copy(null!, static () => new SimpleContext()));
-        Assert.ThrowsException<ArgumentNullException>(() => ParserExecutionContextCopier<SimpleContext>.Copy(source, null!));
-        Assert.ThrowsException<ArgumentNullException>(() => ParserExecutionContextCopier<SimpleContext>.CopyTo(null!, target));
-        Assert.ThrowsException<ArgumentNullException>(() => ParserExecutionContextCopier<SimpleContext>.CopyTo(source, null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => ParserExecutionContextCopier<SimpleContext>.Copy(null!, static () => new SimpleContext()));
+        Assert.ThrowsExactly<ArgumentNullException>(() => ParserExecutionContextCopier<SimpleContext>.Copy(source, null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => ParserExecutionContextCopier<SimpleContext>.CopyTo(null!, target));
+        Assert.ThrowsExactly<ArgumentNullException>(() => ParserExecutionContextCopier<SimpleContext>.CopyTo(source, null!));
     }
 
     /// <summary>
@@ -423,7 +423,7 @@ public class ParserExecutionContextCopierTests
     [TestMethod]
     public void CopyRejectsReadonlyInstanceFields()
     {
-        InvalidOperationException exception = Assert.ThrowsException<InvalidOperationException>(
+        InvalidOperationException exception = Assert.ThrowsExactly<InvalidOperationException>(
             () => ParserExecutionContextCopier<ReadonlyContext>.Copy(new ReadonlyContext(1), static () => new ReadonlyContext(0)));
 
         StringAssert.Contains(exception.Message, "Readonly instance field '_count'");
@@ -1347,7 +1347,7 @@ public class ParserExecutionContextCopierTests
         SimpleContext source = new();
         source.SetState(1, "x", true);
 
-        InvalidOperationException exception = Assert.ThrowsException<InvalidOperationException>(
+        InvalidOperationException exception = Assert.ThrowsExactly<InvalidOperationException>(
             () => ParserExecutionContextCopier<SimpleContext>.Copy(source, static () => null!));
 
         StringAssert.Contains(exception.Message, "non-null");

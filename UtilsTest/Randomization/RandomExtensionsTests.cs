@@ -29,14 +29,14 @@ public class RandomExtensionsTests
     public void RandomString_NullCharArray_Throws()
     {
         var rng = new Random();
-        Assert.ThrowsException<ArgumentNullException>(() => rng.RandomString(5, (char[])null));
+        Assert.ThrowsExactly<ArgumentNullException>(() => rng.RandomString(5, (char[])null));
     }
 
     [TestMethod]
     public void RandomString_NullCharArrayMinMax_Throws()
     {
         var rng = new Random();
-        Assert.ThrowsException<ArgumentNullException>(() => rng.RandomString(3, 8, (char[])null));
+        Assert.ThrowsExactly<ArgumentNullException>(() => rng.RandomString(3, 8, (char[])null));
     }
 
     [TestMethod]

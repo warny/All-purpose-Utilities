@@ -27,8 +27,8 @@ public sealed class Io04BoundedParsingTests
         using CountingForwardOnlyStream stream = new([1, 2, 3]);
         Reader reader = new(stream, new ReaderOptions { MaximumReadBytes = 1 });
         Assert.AreEqual(1, reader.ReadByte());
-        Assert.ThrowsException<InvalidDataException>(() => reader.ReadByte());
-        Assert.ThrowsException<InvalidDataException>(() => reader.ReadByte());
+        Assert.ThrowsExactly<InvalidDataException>(() => reader.ReadByte());
+        Assert.ThrowsExactly<InvalidDataException>(() => reader.ReadByte());
         Assert.AreEqual(1, stream.BytesRead, "A forward-only stream must never be read beyond the exhausted budget.");
     }
 
@@ -41,10 +41,10 @@ public sealed class Io04BoundedParsingTests
         Reader child = root.Slice(0, 3);
 
         Assert.AreEqual(1, root.ReadByte());
-        Assert.ThrowsException<InvalidDataException>(() => root.ReadByte());
+        Assert.ThrowsExactly<InvalidDataException>(() => root.ReadByte());
         Assert.AreEqual(1, stream.BytesRead);
 
-        Assert.ThrowsException<InvalidDataException>(() => child.ReadByte());
+        Assert.ThrowsExactly<InvalidDataException>(() => child.ReadByte());
         Assert.AreEqual(1, stream.BytesRead, "A sibling reader must observe the shared exhausted budget without any physical read.");
     }
 
@@ -67,9 +67,9 @@ public sealed class Io04BoundedParsingTests
         using MemoryStream pair = Strings("a", "b");
         Reader reader = new(pair, new ReaderOptions { MaximumPayloadLength = 1, MaximumReadBytes = 9 });
         Assert.AreEqual("a", reader.Read<string>());
-        Assert.ThrowsException<InvalidDataException>(() => reader.Read<string>());
+        Assert.ThrowsExactly<InvalidDataException>(() => reader.Read<string>());
 
-        Assert.ThrowsException<InvalidDataException>(() => new Reader(new MemoryStream([1]), new ReaderOptions { MaximumReadBytes = 0 }).Read<byte>());
+        Assert.ThrowsExactly<InvalidDataException>(() => new Reader(new MemoryStream([1]), new ReaderOptions { MaximumReadBytes = 0 }).Read<byte>());
     }
 
     /// <summary>Verifies reflection members and nested contracts consume one shared operation budget.</summary>
@@ -78,11 +78,11 @@ public sealed class Io04BoundedParsingTests
     {
         using MemoryStream pair = Strings("one", "two");
         Reader reflection = new(pair, new ReaderOptions { MaximumPayloadLength = 3, MaximumReadBytes = 13 });
-        Assert.ThrowsException<InvalidDataException>(() => reflection.Read<PayloadContainer>());
+        Assert.ThrowsExactly<InvalidDataException>(() => reflection.Read<PayloadContainer>());
 
         using MemoryStream nested = Strings("one", "two");
         Reader nestedReader = new(nested, new ReaderOptions { MaximumReadBytes = 13 });
-        Assert.ThrowsException<InvalidDataException>(() => nestedReader.Read<OuterContainer>());
+        Assert.ThrowsExactly<InvalidDataException>(() => nestedReader.Read<OuterContainer>());
     }
 
     /// <summary>Verifies a source-generated member reader consumes the owning Reader's shared budget.</summary>
@@ -91,7 +91,7 @@ public sealed class Io04BoundedParsingTests
     {
         using MemoryStream pair = Strings("one", "two");
         Reader reader = new(pair, new ReaderOptions { MaximumPayloadLength = 3, MaximumReadBytes = 13 });
-        Assert.ThrowsException<InvalidDataException>(() => reader.ReadUtilsTest_Serialization_Io04BoundedParsingTests_GeneratedPayloadContainer_c4aa081c());
+        Assert.ThrowsExactly<InvalidDataException>(() => reader.ReadUtilsTest_Serialization_Io04BoundedParsingTests_GeneratedPayloadContainer_c4aa081c());
     }
 
     /// <summary>Verifies collection counts are checked before allocation and exact configured counts work.</summary>
@@ -99,12 +99,12 @@ public sealed class Io04BoundedParsingTests
     public void Collections_ValidateCountsAndKnownWireSizeBeforeAllocation()
     {
         Reader reader = new(new MemoryStream(new byte[8]), new ReaderOptions { MaximumCollectionLength = 2, MaximumReadBytes = 8 });
-        Assert.ThrowsException<InvalidDataException>(() => reader.ReadArray<int>(-1));
-        Assert.ThrowsException<InvalidDataException>(() => reader.ReadArray<int>(3));
+        Assert.ThrowsExactly<InvalidDataException>(() => reader.ReadArray<int>(-1));
+        Assert.ThrowsExactly<InvalidDataException>(() => reader.ReadArray<int>(3));
         Assert.AreEqual(2, reader.ReadArray<int>(2).Length);
 
         Reader overflowSafe = new(new MemoryStream(), new ReaderOptions { MaximumReadBytes = 1, MaximumCollectionLength = int.MaxValue });
-        Assert.ThrowsException<InvalidDataException>(() => overflowSafe.ReadArray<decimal>(int.MaxValue));
+        Assert.ThrowsExactly<InvalidDataException>(() => overflowSafe.ReadArray<decimal>(int.MaxValue));
     }
 
     /// <summary>Verifies array preflight follows actual codec and converter resolution.</summary>
@@ -122,7 +122,7 @@ public sealed class Io04BoundedParsingTests
 
         using MemoryStream defaultStream = new(new byte[8]);
         Reader defaultReader = new(defaultStream, new ReaderOptions { MaximumReadBytes = 7 });
-        Assert.ThrowsException<InvalidDataException>(() => defaultReader.ReadArray<int>(2));
+        Assert.ThrowsExactly<InvalidDataException>(() => defaultReader.ReadArray<int>(2));
         Assert.AreEqual(0, defaultStream.Position);
     }
 
@@ -133,12 +133,12 @@ public sealed class Io04BoundedParsingTests
         using MemoryStream stream = new([1, 2]);
         Reader root = new(stream, new ReaderOptions { MaximumReadBytes = 1 });
         Assert.AreEqual((byte)1, root.Slice(0, 1).Read<byte>());
-        Assert.ThrowsException<InvalidDataException>(() => root.Read<byte>());
+        Assert.ThrowsExactly<InvalidDataException>(() => root.Read<byte>());
 
         using MemoryStream pairStream = new([1, 2]);
         ReaderWriter pair = new(pairStream, new ReaderOptions { MaximumReadBytes = 1 }, new SerializationOptions());
         Assert.AreEqual((byte)1, pair.Slice(0, 1).Reader.Read<byte>());
-        Assert.ThrowsException<InvalidDataException>(() => pair.Reader.Read<byte>());
+        Assert.ThrowsExactly<InvalidDataException>(() => pair.Reader.Read<byte>());
     }
 
     /// <summary>Verifies sequential non-seekable input uses the same deterministic byte accounting.</summary>
@@ -148,7 +148,7 @@ public sealed class Io04BoundedParsingTests
         using ForwardOnlyReadStream stream = new([1, 2]);
         Reader reader = new(stream, new ReaderOptions { MaximumReadBytes = 1 });
         Assert.AreEqual((byte)1, reader.Read<byte>());
-        Assert.ThrowsException<InvalidDataException>(() => reader.Read<byte>());
+        Assert.ThrowsExactly<InvalidDataException>(() => reader.Read<byte>());
     }
 
     /// <summary>Verifies fixed, codec-owned, and staged length-prefixed codecs cannot bypass or double-debit budgets.</summary>
@@ -163,15 +163,15 @@ public sealed class Io04BoundedParsingTests
         SerializationOptions rejectedOptions = Options(tracking, new Int32LengthWireFraming());
         using MemoryStream rejectedStream = new([4, 0, 0, 0, 1, 2, 3, 4]);
         Reader rejected = new(rejectedStream, new ReaderOptions { MaximumReadBytes = 7 }, rejectedOptions);
-        Assert.ThrowsException<InvalidDataException>(() => rejected.Read<Blob>());
+        Assert.ThrowsExactly<InvalidDataException>(() => rejected.Read<Blob>());
         Assert.IsFalse(tracking.WasRead);
         Assert.AreEqual(4, rejectedStream.Position);
 
         SerializationOptions fixedOptions = Options(new FixedBlobCodec(), new FixedWireFraming(4));
-        Assert.ThrowsException<InvalidDataException>(() => new Reader(new MemoryStream([1, 2, 3, 4]), new ReaderOptions { MaximumReadBytes = 3 }, fixedOptions).Read<Blob>());
+        Assert.ThrowsExactly<InvalidDataException>(() => new Reader(new MemoryStream([1, 2, 3, 4]), new ReaderOptions { MaximumReadBytes = 3 }, fixedOptions).Read<Blob>());
 
         SerializationOptions ownedOptions = Options(new BlobCodec(4), new CodecOwnedWireFraming());
-        Assert.ThrowsException<InvalidDataException>(() => new Reader(new MemoryStream([1, 2, 3, 4]), new ReaderOptions { MaximumReadBytes = 3 }, ownedOptions).Read<Blob>());
+        Assert.ThrowsExactly<InvalidDataException>(() => new Reader(new MemoryStream([1, 2, 3, 4]), new ReaderOptions { MaximumReadBytes = 3 }, ownedOptions).Read<Blob>());
 
         SerializationOptions nestedOptions = new();
         nestedOptions.Codecs.Set(new OuterBlobCodec(), new Int32LengthWireFraming());

@@ -23,37 +23,37 @@ public class DNSLookupTests
     [TestMethod]
     public void Constructor_NullNameServers_Throws()
     {
-        Assert.ThrowsException<ArgumentNullException>(() => new DNSLookup((IPAddress[])null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new DNSLookup((IPAddress[])null!));
     }
 
     [TestMethod]
     public void Constructor_EmptyNameServers_Throws()
     {
-        Assert.ThrowsException<ArgumentException>(() => new DNSLookup(System.Array.Empty<IPAddress>()));
+        Assert.ThrowsExactly<ArgumentException>(() => new DNSLookup(System.Array.Empty<IPAddress>()));
     }
 
     [TestMethod]
     public void Constructor_NullEntry_Throws()
     {
-        Assert.ThrowsException<ArgumentNullException>(() => new DNSLookup(new IPAddress[] { null! }));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new DNSLookup(new IPAddress[] { null! }));
     }
 
     [TestMethod]
     public void Constructor_AnyAddress_Throws()
     {
-        Assert.ThrowsException<ArgumentException>(() => new DNSLookup(IPAddress.Any));
+        Assert.ThrowsExactly<ArgumentException>(() => new DNSLookup(IPAddress.Any));
     }
 
     [TestMethod]
     public void Constructor_IPv6Any_Throws()
     {
-        Assert.ThrowsException<ArgumentException>(() => new DNSLookup(IPAddress.IPv6Any));
+        Assert.ThrowsExactly<ArgumentException>(() => new DNSLookup(IPAddress.IPv6Any));
     }
 
     [TestMethod]
     public void Constructor_MulticastAddress_Throws()
     {
-        Assert.ThrowsException<ArgumentException>(() => new DNSLookup(IPAddress.Parse("224.0.0.251")));
+        Assert.ThrowsExactly<ArgumentException>(() => new DNSLookup(IPAddress.Parse("224.0.0.251")));
     }
 
     [TestMethod]
@@ -169,7 +169,7 @@ public class DNSLookupTests
         var transport = new FakeTransport((ep, q) => (new byte[] { 1, 2, 3 }, null));
         var lookup = new DNSLookup(transport, ServerA);
 
-        var ex = await Assert.ThrowsExceptionAsync<DnsLookupException>(() => lookup.RequestAsync("A", "example.com"));
+        var ex = await Assert.ThrowsExactlyAsync<DnsLookupException>(() => lookup.RequestAsync("A", "example.com"));
         Assert.AreEqual(1, ex.Failures.Count);
         Assert.AreEqual(DnsFailureKind.MalformedResponse, ex.Failures[0].Kind);
     }
@@ -180,7 +180,7 @@ public class DNSLookupTests
         var transport = new FakeTransport((ep, q) => (BuildResponse(q, h => h.ID = (ushort)(h.ID ^ 0x1)), null));
         var lookup = new DNSLookup(transport, ServerA);
 
-        var ex = await Assert.ThrowsExceptionAsync<DnsLookupException>(() => lookup.RequestAsync("A", "example.com"));
+        var ex = await Assert.ThrowsExactlyAsync<DnsLookupException>(() => lookup.RequestAsync("A", "example.com"));
         Assert.AreEqual(DnsFailureKind.TransactionIdMismatch, ex.Failures[0].Kind);
     }
 
@@ -206,7 +206,7 @@ public class DNSLookupTests
                 : (null, new SocketException((int)SocketError.ConnectionRefused)));
 
         var lookup = new DNSLookup(transport, ServerA, ServerB);
-        var ex = await Assert.ThrowsExceptionAsync<DnsLookupException>(() => lookup.RequestAsync("A", "example.com"));
+        var ex = await Assert.ThrowsExactlyAsync<DnsLookupException>(() => lookup.RequestAsync("A", "example.com"));
 
         Assert.AreEqual(2, ex.Failures.Count);
         Assert.AreEqual(ServerA, ex.Failures[0].Endpoint.Address);
@@ -223,7 +223,7 @@ public class DNSLookupTests
         var transport = new FakeTransport((ep, q) => (BuildResponse(q), null));
         var lookup = new DNSLookup(transport, ServerA);
 
-        await Assert.ThrowsExceptionAsync<OperationCanceledException>(() => lookup.RequestAsync("A", "example.com", DNSClassId.ALL, cts.Token));
+        await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => lookup.RequestAsync("A", "example.com", DNSClassId.ALL, cts.Token));
     }
 
     // ---- Argument validation on RequestAsync (item 56) ----
@@ -232,41 +232,41 @@ public class DNSLookupTests
     public async Task RequestAsync_NullType_Throws()
     {
         var lookup = new DNSLookup(new FakeTransport((ep, q) => (BuildResponse(q), null)), ServerA);
-        await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => lookup.RequestAsync(null!, "example.com"));
+        await Assert.ThrowsExactlyAsync<ArgumentNullException>(() => lookup.RequestAsync(null!, "example.com"));
     }
 
     [TestMethod]
     public async Task RequestAsync_EmptyType_Throws()
     {
         var lookup = new DNSLookup(new FakeTransport((ep, q) => (BuildResponse(q), null)), ServerA);
-        await Assert.ThrowsExceptionAsync<ArgumentException>(() => lookup.RequestAsync("", "example.com"));
+        await Assert.ThrowsExactlyAsync<ArgumentException>(() => lookup.RequestAsync("", "example.com"));
     }
 
     [TestMethod]
     public async Task RequestAsync_WhitespaceType_Throws()
     {
         var lookup = new DNSLookup(new FakeTransport((ep, q) => (BuildResponse(q), null)), ServerA);
-        await Assert.ThrowsExceptionAsync<ArgumentException>(() => lookup.RequestAsync("   ", "example.com"));
+        await Assert.ThrowsExactlyAsync<ArgumentException>(() => lookup.RequestAsync("   ", "example.com"));
     }
 
     [TestMethod]
     public async Task RequestAsync_NullName_Throws()
     {
         var lookup = new DNSLookup(new FakeTransport((ep, q) => (BuildResponse(q), null)), ServerA);
-        await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => lookup.RequestAsync("A", null!));
+        await Assert.ThrowsExactlyAsync<ArgumentNullException>(() => lookup.RequestAsync("A", null!));
     }
 
     [TestMethod]
     public async Task RequestAsync_EmptyName_Throws()
     {
         var lookup = new DNSLookup(new FakeTransport((ep, q) => (BuildResponse(q), null)), ServerA);
-        await Assert.ThrowsExceptionAsync<ArgumentException>(() => lookup.RequestAsync("A", ""));
+        await Assert.ThrowsExactlyAsync<ArgumentException>(() => lookup.RequestAsync("A", ""));
     }
 
     [TestMethod]
     public async Task RequestAsync_WhitespaceName_Throws()
     {
         var lookup = new DNSLookup(new FakeTransport((ep, q) => (BuildResponse(q), null)), ServerA);
-        await Assert.ThrowsExceptionAsync<ArgumentException>(() => lookup.RequestAsync("A", "   "));
+        await Assert.ThrowsExactlyAsync<ArgumentException>(() => lookup.RequestAsync("A", "   "));
     }
 }

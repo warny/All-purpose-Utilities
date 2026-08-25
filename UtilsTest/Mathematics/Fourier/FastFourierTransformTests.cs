@@ -57,7 +57,7 @@ public class FastFourierTransformTests
     public void Transform_NonPowerOfTwo_Throws()
     {
         var samples = new Complex[3];
-        Assert.ThrowsException<ArgumentException>(() => FastFourierTransform.Transform(samples));
+        Assert.ThrowsExactly<ArgumentException>(() => FastFourierTransform.Transform(samples));
     }
 
     [TestMethod]
@@ -65,7 +65,7 @@ public class FastFourierTransformTests
     {
         // Regression: previously dereferenced array.Length before any guard ran, producing an
         // incidental NullReferenceException instead of a documented ArgumentNullException.
-        Assert.ThrowsException<ArgumentNullException>(() => FastFourierTransform.Transform(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => FastFourierTransform.Transform(null!));
     }
 
     [TestMethod]
@@ -73,7 +73,7 @@ public class FastFourierTransformTests
     {
         // Zero is not a power of two under this library's IsPowerOfTwo (0 > 0 is false), so a
         // zero-length array is rejected rather than silently treated as a no-op.
-        Assert.ThrowsException<ArgumentException>(() => FastFourierTransform.Transform(System.Array.Empty<Complex>()));
+        Assert.ThrowsExactly<ArgumentException>(() => FastFourierTransform.Transform(System.Array.Empty<Complex>()));
     }
 
     [TestMethod]
@@ -128,8 +128,8 @@ public class FastFourierTransformTests
     public void GetFrequencies_NegativeSampleRate_Throws()
     {
         Complex[] samples = [1, 1, 1, 1];
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => samples.GetFrequencies(-1));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => samples.GetFrequencies(0));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => samples.GetFrequencies(-1));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => samples.GetFrequencies(0));
     }
 
     // ── Null/empty/non-finite validation (TODO-pass4 item #53) ─────────────────
@@ -139,21 +139,21 @@ public class FastFourierTransformTests
     {
         // Previously only "sampleRate <= 0" was checked, silently accepting NaN (NaN <= 0 is false).
         Complex[] samples = [1, 1, 1, 1];
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => samples.GetFrequencies(double.NaN));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => samples.GetFrequencies(double.NaN));
     }
 
     [TestMethod]
     public void GetFrequencies_PositiveInfinitySampleRate_Throws()
     {
         Complex[] samples = [1, 1, 1, 1];
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => samples.GetFrequencies(double.PositiveInfinity));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => samples.GetFrequencies(double.PositiveInfinity));
     }
 
     [TestMethod]
     public void GetFrequencies_NullTransform_Throws()
     {
         Complex[] transform = null!;
-        Assert.ThrowsException<ArgumentNullException>(() => transform.GetFrequencies(8));
+        Assert.ThrowsExactly<ArgumentNullException>(() => transform.GetFrequencies(8));
     }
 
     [TestMethod]
@@ -161,35 +161,35 @@ public class FastFourierTransformTests
     {
         // Previously computed sampleRate / 0 (an unused infinity) and silently returned an empty array.
         Complex[] transform = [];
-        Assert.ThrowsException<ArgumentException>(() => transform.GetFrequencies(8));
+        Assert.ThrowsExactly<ArgumentException>(() => transform.GetFrequencies(8));
     }
 
     [TestMethod]
     public void GetAmplitudes_NullTransform_Throws()
     {
         Complex[] transform = null!;
-        Assert.ThrowsException<ArgumentNullException>(() => transform.GetAmplitudes());
+        Assert.ThrowsExactly<ArgumentNullException>(() => transform.GetAmplitudes());
     }
 
     [TestMethod]
     public void GetAmplitudes_EmptyTransform_Throws()
     {
         Complex[] transform = [];
-        Assert.ThrowsException<ArgumentException>(() => transform.GetAmplitudes());
+        Assert.ThrowsExactly<ArgumentException>(() => transform.GetAmplitudes());
     }
 
     [TestMethod]
     public void GetPhases_NullTransform_Throws()
     {
         Complex[] transform = null!;
-        Assert.ThrowsException<ArgumentNullException>(() => transform.GetPhases());
+        Assert.ThrowsExactly<ArgumentNullException>(() => transform.GetPhases());
     }
 
     [TestMethod]
     public void GetPhases_EmptyTransform_Throws()
     {
         Complex[] transform = [];
-        Assert.ThrowsException<ArgumentException>(() => transform.GetPhases());
+        Assert.ThrowsExactly<ArgumentException>(() => transform.GetPhases());
     }
 
     // ── One-sided / all-bin spectrum APIs (TODO-pass4 item #54) ────────────────
@@ -273,14 +273,14 @@ public class FastFourierTransformTests
     public void GetAllBinFrequencies_NullTransform_Throws()
     {
         Complex[] transform = null!;
-        Assert.ThrowsException<ArgumentNullException>(() => transform.GetAllBinFrequencies(8));
+        Assert.ThrowsExactly<ArgumentNullException>(() => transform.GetAllBinFrequencies(8));
     }
 
     [TestMethod]
     public void GetOneSidedFrequencies_EmptyTransform_Throws()
     {
         Complex[] transform = [];
-        Assert.ThrowsException<ArgumentException>(() => transform.GetOneSidedFrequencies(8));
+        Assert.ThrowsExactly<ArgumentException>(() => transform.GetOneSidedFrequencies(8));
     }
 
     [TestMethod]
@@ -356,7 +356,7 @@ public class FastFourierTransformTests
     public void GetMagnitudes_NullTransform_Throws()
     {
         Complex[] transform = null!;
-        Assert.ThrowsException<ArgumentNullException>(() => transform.GetMagnitudes());
+        Assert.ThrowsExactly<ArgumentNullException>(() => transform.GetMagnitudes());
     }
 
     [TestMethod]
@@ -410,18 +410,18 @@ public class FastFourierTransformTests
     public void InverseTransform_NonPowerOfTwo_Throws()
     {
         var spectrum = new Complex[3];
-        Assert.ThrowsException<ArgumentException>(() => FastFourierTransform.InverseTransform(spectrum));
+        Assert.ThrowsExactly<ArgumentException>(() => FastFourierTransform.InverseTransform(spectrum));
     }
 
     [TestMethod]
     public void InverseTransform_Null_ThrowsArgumentNullException()
     {
-        Assert.ThrowsException<ArgumentNullException>(() => FastFourierTransform.InverseTransform(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => FastFourierTransform.InverseTransform(null!));
     }
 
     [TestMethod]
     public void InverseTransform_ZeroLength_Throws()
     {
-        Assert.ThrowsException<ArgumentException>(() => FastFourierTransform.InverseTransform(System.Array.Empty<Complex>()));
+        Assert.ThrowsExactly<ArgumentException>(() => FastFourierTransform.InverseTransform(System.Array.Empty<Complex>()));
     }
 }

@@ -48,7 +48,7 @@ public class ParserRuntimeFeaturePolicyTests
         var executor = NullParserRuleLifecycleExecutor.Instance;
         var context = new ParserRuleLifecycleContext("start", 0);
 
-        Assert.ThrowsException<ArgumentNullException>(() => executor.Execute(ParserRuleLifecyclePhase.Init, null!, context));
+        Assert.ThrowsExactly<ArgumentNullException>(() => executor.Execute(ParserRuleLifecyclePhase.Init, null!, context));
     }
 
     /// <summary>
@@ -59,7 +59,7 @@ public class ParserRuntimeFeaturePolicyTests
     {
         var executor = NullParserRuleLifecycleExecutor.Instance;
 
-        Assert.ThrowsException<ArgumentNullException>(() => executor.Execute(ParserRuleLifecyclePhase.Init, "start", null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => executor.Execute(ParserRuleLifecyclePhase.Init, "start", null!));
     }
 
     /// <summary>
@@ -71,7 +71,7 @@ public class ParserRuntimeFeaturePolicyTests
         var definition = CreateMinimalDefinition();
         var invalidPolicy = ParserRuntimeFeaturePolicy.Default with { RuleLifecycleExecutor = null! };
 
-        Assert.ThrowsException<ArgumentNullException>(() => new ParserEngine(definition, invalidPolicy));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new ParserEngine(definition, invalidPolicy));
     }
 
 
@@ -103,7 +103,7 @@ public class ParserRuntimeFeaturePolicyTests
         var definition = CreateMinimalDefinition();
         var invalidPolicy = ParserRuntimeFeaturePolicy.Default with { RuleInvocationFrameManager = null! };
 
-        Assert.ThrowsException<ArgumentNullException>(() => new ParserEngine(definition, invalidPolicy));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new ParserEngine(definition, invalidPolicy));
     }
 
     /// <summary>
@@ -445,7 +445,7 @@ public class ParserRuntimeFeaturePolicyTests
         var definition = CreateMinimalDefinition();
         var invalidPolicy = ParserRuntimeFeaturePolicy.Default with { ExecutionStateManager = null! };
 
-        Assert.ThrowsException<ArgumentNullException>(() => new ParserEngine(definition, invalidPolicy));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new ParserEngine(definition, invalidPolicy));
     }
 
     /// <summary>

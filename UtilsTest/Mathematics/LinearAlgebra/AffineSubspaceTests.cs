@@ -52,12 +52,12 @@ public class AffineSubspaceTests
 
     [TestMethod]
     public void FromNormals_NoNormals_Throws()
-        => Assert.ThrowsException<ArgumentException>(
+        => Assert.ThrowsExactly<ArgumentException>(
             () => AffineSubspace<double>.FromNormals(V(0, 0, 0)));
 
     [TestMethod]
     public void FromNormals_WrongDimension_Throws()
-        => Assert.ThrowsException<ArgumentException>(
+        => Assert.ThrowsExactly<ArgumentException>(
             () => AffineSubspace<double>.FromNormals(V(0, 0, 0), V(1, 0)));
 
     // -------------------------------------------------------------------------
@@ -81,12 +81,12 @@ public class AffineSubspaceTests
 
     [TestMethod]
     public void FromSpan_AllZeroDirections_Throws()
-        => Assert.ThrowsException<ArgumentException>(
+        => Assert.ThrowsExactly<ArgumentException>(
             () => AffineSubspace<double>.FromSpan(V(0, 0, 0), V(0, 0, 0)));
 
     [TestMethod]
     public void FromSpan_NoDirections_Throws()
-        => Assert.ThrowsException<ArgumentException>(
+        => Assert.ThrowsExactly<ArgumentException>(
             () => AffineSubspace<double>.FromSpan(V(0, 0, 0)));
 
     // -------------------------------------------------------------------------
@@ -129,7 +129,7 @@ public class AffineSubspaceTests
     public void DistanceTo_WrongDimension_Throws()
     {
         var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
-        Assert.ThrowsException<ArgumentException>(() => plane.DistanceTo(V(1, 2)));
+        Assert.ThrowsExactly<ArgumentException>(() => plane.DistanceTo(V(1, 2)));
     }
 
     // -------------------------------------------------------------------------
@@ -192,14 +192,14 @@ public class AffineSubspaceTests
     public void Contains_NegativeTolerance_Throws()
     {
         var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => plane.Contains(V(3, 4, 0), -1e-9));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => plane.Contains(V(3, 4, 0), -1e-9));
     }
 
     [TestMethod]
     public void Contains_NaNTolerance_Throws()
     {
         var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => plane.Contains(V(3, 4, 0), double.NaN));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => plane.Contains(V(3, 4, 0), double.NaN));
     }
 
     /// <summary>
@@ -210,7 +210,7 @@ public class AffineSubspaceTests
     public void Contains_PositiveInfinityTolerance_Throws()
     {
         var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => plane.Contains(V(3, 4, 100), double.PositiveInfinity));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => plane.Contains(V(3, 4, 100), double.PositiveInfinity));
     }
 
     [TestMethod]
@@ -272,7 +272,7 @@ public class AffineSubspaceTests
     {
         var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
         var line = new Line<double>(V(0, 0), V(1, 0));
-        Assert.ThrowsException<ArgumentException>(() => plane.IntersectWith(line));
+        Assert.ThrowsExactly<ArgumentException>(() => plane.IntersectWith(line));
     }
 
     // -------------------------------------------------------------------------
@@ -338,7 +338,7 @@ public class AffineSubspaceTests
     {
         var plane3D = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
         var line2D = AffineSubspace<double>.FromSpan(V(0, 0), V(1, 0));
-        Assert.ThrowsException<ArgumentException>(() => plane3D.IntersectWith(line2D));
+        Assert.ThrowsExactly<ArgumentException>(() => plane3D.IntersectWith(line2D));
     }
 
     // -------------------------------------------------------------------------
@@ -358,7 +358,7 @@ public class AffineSubspaceTests
     public void ToLine_TwoDimensionalSubspace_Throws()
     {
         var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
-        Assert.ThrowsException<InvalidOperationException>(() => plane.ToLine());
+        Assert.ThrowsExactly<InvalidOperationException>(() => plane.ToLine());
     }
 
     // -------------------------------------------------------------------------
@@ -435,67 +435,67 @@ public class AffineSubspaceTests
 
     [TestMethod]
     public void FromSpan_NullAnchor_Throws()
-        => Assert.ThrowsException<ArgumentNullException>(
+        => Assert.ThrowsExactly<ArgumentNullException>(
             () => AffineSubspace<double>.FromSpan(null!, V(1, 0, 0)));
 
     [TestMethod]
     public void FromSpan_NullDirectionsArray_Throws()
-        => Assert.ThrowsException<ArgumentNullException>(
+        => Assert.ThrowsExactly<ArgumentNullException>(
             () => AffineSubspace<double>.FromSpan(V(0, 0, 0), (Vector<double>[])null!));
 
     [TestMethod]
     public void FromSpan_NullDirectionElement_Throws()
-        => Assert.ThrowsException<ArgumentNullException>(
+        => Assert.ThrowsExactly<ArgumentNullException>(
             () => AffineSubspace<double>.FromSpan(V(0, 0, 0), V(1, 0, 0), null!));
 
     [TestMethod]
     public void FromNormals_NullAnchor_Throws()
-        => Assert.ThrowsException<ArgumentNullException>(
+        => Assert.ThrowsExactly<ArgumentNullException>(
             () => AffineSubspace<double>.FromNormals(null!, V(0, 0, 1)));
 
     [TestMethod]
     public void FromNormals_NullNormalsArray_Throws()
-        => Assert.ThrowsException<ArgumentNullException>(
+        => Assert.ThrowsExactly<ArgumentNullException>(
             () => AffineSubspace<double>.FromNormals(V(0, 0, 0), (Vector<double>[])null!));
 
     [TestMethod]
     public void FromNormals_NullNormalElement_Throws()
-        => Assert.ThrowsException<ArgumentNullException>(
+        => Assert.ThrowsExactly<ArgumentNullException>(
             () => AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1), null!));
 
     [TestMethod]
     public void Project_NullPoint_Throws()
     {
         var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
-        Assert.ThrowsException<ArgumentNullException>(() => plane.Project(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => plane.Project(null!));
     }
 
     [TestMethod]
     public void DistanceTo_NullPoint_Throws()
     {
         var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
-        Assert.ThrowsException<ArgumentNullException>(() => plane.DistanceTo(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => plane.DistanceTo(null!));
     }
 
     [TestMethod]
     public void Contains_NullPoint_Throws()
     {
         var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
-        Assert.ThrowsException<ArgumentNullException>(() => plane.Contains(null!, 1e-9));
+        Assert.ThrowsExactly<ArgumentNullException>(() => plane.Contains(null!, 1e-9));
     }
 
     [TestMethod]
     public void IntersectWith_NullLine_Throws()
     {
         var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
-        Assert.ThrowsException<ArgumentNullException>(() => plane.IntersectWith((Line<double>)null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => plane.IntersectWith((Line<double>)null!));
     }
 
     [TestMethod]
     public void IntersectWith_NullAffineSubspace_Throws()
     {
         var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
-        Assert.ThrowsException<ArgumentNullException>(() => plane.IntersectWith((AffineSubspace<double>)null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => plane.IntersectWith((AffineSubspace<double>)null!));
     }
 
     // -------------------------------------------------------------------------
@@ -520,7 +520,7 @@ public class AffineSubspaceTests
 
     [TestMethod]
     public void FromSpan_NegativeRankTolerance_Throws()
-        => Assert.ThrowsException<ArgumentOutOfRangeException>(
+        => Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => AffineSubspace<double>.FromSpan(V(0, 0, 0), -1e-9, V(1, 0, 0)));
 
     [TestMethod]
@@ -532,7 +532,7 @@ public class AffineSubspaceTests
 
     [TestMethod]
     public void FromNormals_NegativeRankTolerance_Throws()
-        => Assert.ThrowsException<ArgumentOutOfRangeException>(
+        => Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => AffineSubspace<double>.FromNormals(V(0, 0, 0), -1e-9, V(0, 0, 1)));
 
     // -------------------------------------------------------------------------

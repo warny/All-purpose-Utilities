@@ -135,7 +135,7 @@ public sealed class WireCodecTests
     {
         SerializationOptions options = OptionsFor(new DeclaredSizeBlobCodec(3, 2));
         using ForwardOnlyStream stream = new();
-        Assert.ThrowsException<InvalidDataException>(() => new Writer(stream, options).Write(new Blob([1, 2, 3])));
+        Assert.ThrowsExactly<InvalidDataException>(() => new Writer(stream, options).Write(new Blob([1, 2, 3])));
         CollectionAssert.AreEqual(new byte[] { 1, 2 }, stream.ToArray());
     }
 
@@ -145,7 +145,7 @@ public sealed class WireCodecTests
     {
         SerializationOptions options = OptionsFor(new DeclaredSizeBlobCodec(3, 4));
         using ForwardOnlyStream stream = new();
-        Assert.ThrowsException<InvalidDataException>(() => new Writer(stream, options).Write(new Blob([1, 2, 3, 4])));
+        Assert.ThrowsExactly<InvalidDataException>(() => new Writer(stream, options).Write(new Blob([1, 2, 3, 4])));
         Assert.AreEqual(0, stream.ToArray().Length);
     }
 
@@ -165,7 +165,7 @@ public sealed class WireCodecTests
     [TestMethod]
     public void InvalidWireCodecAttribute_IsRejectedAsContractError()
     {
-        SerializationContractException error = Assert.ThrowsException<SerializationContractException>(() => new Writer(new MemoryStream()).Write(new InvalidCodecModel()));
+        SerializationContractException error = Assert.ThrowsExactly<SerializationContractException>(() => new Writer(new MemoryStream()).Write(new InvalidCodecModel()));
         Assert.IsTrue(error.Diagnostics.Any(diagnostic => diagnostic.Code == "UIORT013"));
     }
 
@@ -173,7 +173,7 @@ public sealed class WireCodecTests
     [TestMethod]
     public void InvalidWireFramingAttribute_IsRejectedAsContractError()
     {
-        SerializationContractException error = Assert.ThrowsException<SerializationContractException>(() => new Writer(new MemoryStream()).Write(new InvalidFramingModel()));
+        SerializationContractException error = Assert.ThrowsExactly<SerializationContractException>(() => new Writer(new MemoryStream()).Write(new InvalidFramingModel()));
         Assert.IsTrue(error.Diagnostics.Any(diagnostic => diagnostic.Code == "UIORT014"));
     }
 
@@ -181,12 +181,12 @@ public sealed class WireCodecTests
     [TestMethod]
     public void SerializationOptions_AreValidatedByRelevantConsumer()
     {
-        Assert.ThrowsException<ArgumentNullException>(() => new Reader(new MemoryStream(), (SerializationOptions)null!));
-        Assert.ThrowsException<ArgumentNullException>(() => new Writer(new MemoryStream(), (SerializationOptions)null!));
-        Assert.ThrowsException<ArgumentNullException>(() => new ReaderWriter(new MemoryStream(), null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new Reader(new MemoryStream(), (SerializationOptions)null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new Writer(new MemoryStream(), (SerializationOptions)null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new ReaderWriter(new MemoryStream(), null!));
         SerializationOptions invalidWriterOptions = new() { MaximumBufferedPayloadLength = 0 };
         _ = new Reader(new MemoryStream(), invalidWriterOptions);
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new Writer(new MemoryStream(), invalidWriterOptions));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new Writer(new MemoryStream(), invalidWriterOptions));
     }
 
     /// <summary>Verifies a length-prefixed codec payload is rejected before allocation or codec invocation when it exceeds the reader limit.</summary>
@@ -199,7 +199,7 @@ public sealed class WireCodecTests
         using MemoryStream stream = new([4, 0, 0, 0, 1, 2, 3, 4]);
         Reader reader = new(stream, new ReaderOptions { MaximumPayloadLength = 3 }, serializationOptions);
 
-        Assert.ThrowsException<InvalidDataException>(() => reader.Read<Blob>());
+        Assert.ThrowsExactly<InvalidDataException>(() => reader.Read<Blob>());
 
         Assert.IsFalse(codec.WasRead);
         Assert.AreEqual(4, stream.Position);
@@ -234,7 +234,7 @@ public sealed class WireCodecTests
         options.Codecs.Set(codec, new VariableLengthWireFraming());
         using ForwardOnlyStream stream = new();
 
-        Assert.ThrowsException<InvalidDataException>(() => new Writer(stream, options).Write(new Blob([1, 2, 3, 4])));
+        Assert.ThrowsExactly<InvalidDataException>(() => new Writer(stream, options).Write(new Blob([1, 2, 3, 4])));
 
         Assert.AreEqual(4, codec.AttemptedBytes);
         Assert.AreEqual(0, stream.ToArray().Length);
@@ -293,7 +293,7 @@ public sealed class WireCodecTests
         options.Codecs.Set(new SizedBlobCodec(3, bytesToWrite), new Int32LengthWireFraming());
         using ForwardOnlyStream stream = new();
         Action action = () => new Writer(stream, options).Write(new Blob([1, 2, 3, 4]));
-        if (shouldThrow) Assert.ThrowsException<InvalidDataException>(action); else action();
+        if (shouldThrow) Assert.ThrowsExactly<InvalidDataException>(action); else action();
         CollectionAssert.AreEqual(expected, stream.ToArray());
     }
 

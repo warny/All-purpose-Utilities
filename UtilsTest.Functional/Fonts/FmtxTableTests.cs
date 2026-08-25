@@ -56,6 +56,6 @@ public class FmtxTableTests
     public void ReadData_WrongSize_Throws()
     {
         var table = new FmtxTable();
-        Assert.ThrowsException<System.ArgumentException>(() => table.ReadData(MakeReader(new byte[10])));
+        Assert.ThrowsExactly<System.ArgumentException>(() => table.ReadData(MakeReader(new byte[10])));
     }
 }

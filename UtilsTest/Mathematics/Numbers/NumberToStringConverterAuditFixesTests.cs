@@ -24,7 +24,7 @@ public class NumberToStringConverterAuditFixesTests
     public void ConvertOrdinal_Long_MinValue_ThrowsArgumentOutOfRange()
     {
         var c = EN;
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => c.ConvertOrdinal(long.MinValue),
             "ConvertOrdinal(long.MinValue) must throw because abs value exceeds long.MaxValue");
     }
@@ -52,7 +52,7 @@ public class NumberToStringConverterAuditFixesTests
     public void ConvertYear_Int_MinValue_ThrowsArgumentOutOfRange()
     {
         var c = EN;
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => c.ConvertYear(int.MinValue),
             "ConvertYear(int.MinValue) must throw because abs value exceeds int.MaxValue");
     }
@@ -72,7 +72,7 @@ public class NumberToStringConverterAuditFixesTests
     {
         var fr = FR;
         // FR has TimeUnits configured
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => fr.Convert(TimeSpan.MinValue),
             "Convert(TimeSpan.MinValue) must throw because negation overflows");
     }
@@ -167,7 +167,7 @@ public class NumberToStringConverterAuditFixesTests
             SubunitSingular = "sub", SubunitPlural = "subs",
             SubunitDigits = -1
         };
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => c.ConvertCurrency(10.5m, badCurrency),
             "Negative SubunitDigits must be rejected");
     }
@@ -197,7 +197,7 @@ public class NumberToStringConverterAuditFixesTests
             SubunitSingular = "sub", SubunitPlural = "subs",
             SubunitDigits = 29
         };
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => c.ConvertCurrency(10.5m, badCurrency),
             "SubunitDigits > 28 must be rejected (exceeds decimal precision)");
     }
@@ -209,7 +209,7 @@ public class NumberToStringConverterAuditFixesTests
     {
         var c = EN;
         // double.MaxValue is well beyond decimal range and has a fractional part
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => c.Convert(double.MaxValue),
             "A double beyond decimal range should throw rather than silently truncate");
     }
@@ -228,7 +228,7 @@ public class NumberToStringConverterAuditFixesTests
     {
         var c = EN;
         // float.MaxValue ~ 3.4e38, beyond decimal.MaxValue ~ 7.9e28
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => c.Convert(float.MaxValue),
             "A float beyond decimal range should throw rather than silently truncate");
     }
@@ -239,7 +239,7 @@ public class NumberToStringConverterAuditFixesTests
     public void ConvertFraction_ZeroDenominator_ThrowsArgumentOutOfRange()
     {
         var c = EN;
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => c.ConvertFraction(1, 0),
             "Zero denominator must be rejected");
     }
@@ -272,7 +272,7 @@ public class NumberToStringConverterAuditFixesTests
     public void Convert_Decimal_MandatoryDigits_Above28_ThrowsArgumentOutOfRange()
     {
         var c = EN;
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => c.Convert(1.5m, 29),
             "mandatoryDecimalDigits > 28 must be rejected (exceeds decimal precision)");
     }
@@ -371,7 +371,7 @@ public class NumberToStringConverterAuditFixesTests
     {
         // The ArgumentException must be thrown inside TriggerReplace's constructor
         // because that is where the Regex is compiled.
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => new NumberToStringConverter.TriggerReplace("[invalid(", true, [], "x"),
             "An invalid regex pattern must throw ArgumentException at construction time");
     }
@@ -479,7 +479,7 @@ public class NumberToStringConverterAuditFixesTests
             }
         };
         var converter = new NumberToStringConverter(options);
-        Assert.ThrowsException<InvalidOperationException>(
+        Assert.ThrowsExactly<InvalidOperationException>(
             () => converter.Convert(TimeSpan.FromHours(1)),
             "A non-zero hours value with no 'hour' unit must throw InvalidOperationException");
     }
@@ -497,7 +497,7 @@ public class NumberToStringConverterAuditFixesTests
             }
         };
         var converter = new NumberToStringConverter(options);
-        Assert.ThrowsException<InvalidOperationException>(
+        Assert.ThrowsExactly<InvalidOperationException>(
             () => converter.Convert(new TimeOnly(1, 0)),
             "A non-zero hour in TimeOnly with no 'hour' unit must throw InvalidOperationException");
     }
@@ -514,7 +514,7 @@ public class NumberToStringConverterAuditFixesTests
             }
         };
         var converter = new NumberToStringConverter(options);
-        Assert.ThrowsException<InvalidOperationException>(
+        Assert.ThrowsExactly<InvalidOperationException>(
             () => converter.Convert(new TimeOnly(0, 30)),
             "A non-zero minute in TimeOnly with no 'minute' unit must throw InvalidOperationException");
     }
@@ -604,7 +604,7 @@ public class NumberToStringConverterAuditFixesTests
     {
         var c = EN;
         var tooLarge = new BigInteger(long.MaxValue) + 1;
-        var ex = Assert.ThrowsException<ArgumentOutOfRangeException>(
+        var ex = Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => c.ConvertOrdinal(tooLarge));
         StringAssert.Contains(ex.Message, tooLarge.ToString(),
             "Exception message must include the out-of-range value");
@@ -615,7 +615,7 @@ public class NumberToStringConverterAuditFixesTests
     {
         var c = EN;
         var tooSmall = new BigInteger(long.MinValue) - 1;
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => c.ConvertOrdinal(tooSmall));
     }
 
@@ -641,7 +641,7 @@ public class NumberToStringConverterAuditFixesTests
         // Static names are fine
         Assert.AreEqual("thousand", scale.GetScaleName(1));
         // Beyond static → must throw
-        Assert.ThrowsException<InvalidOperationException>(
+        Assert.ThrowsExactly<InvalidOperationException>(
             () => scale.GetScaleName(2),
             "Requesting a dynamic scale when no suffixes are configured must throw");
     }
@@ -649,7 +649,7 @@ public class NumberToStringConverterAuditFixesTests
     [TestMethod]
     public void NumberScale_NegativeStartIndex_ThrowsArgumentOutOfRange()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => new NumberScale(
                 staticValues: (IReadOnlyList<string>)new[] { "" },
                 scaleSuffixes: (IReadOnlyList<string>)new[] { "illion" },
@@ -660,7 +660,7 @@ public class NumberToStringConverterAuditFixesTests
     [TestMethod]
     public void NumberScale_PrefixTableWrongSize_ThrowsArgumentException()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => new NumberScale(
                 staticValues: (IReadOnlyList<string>)new[] { "" },
                 scaleSuffixes: (IReadOnlyList<string>)new[] { "illion" },
@@ -674,7 +674,7 @@ public class NumberToStringConverterAuditFixesTests
     public void ConvertGroup_NegativeGroupNumber_ThrowsArgumentOutOfRange()
     {
         var c = EN;
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => c.ConvertGroup(-1, 1),
             "Negative groupNumber must be rejected");
     }
@@ -684,7 +684,7 @@ public class NumberToStringConverterAuditFixesTests
     {
         var c = EN;
         // EN uses group=3 (keys 1, 2, 3). groupNumber=99 is not configured.
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => c.ConvertGroup(99, 1),
             "Unconfigured groupNumber must be rejected with a clear message");
     }
@@ -694,7 +694,7 @@ public class NumberToStringConverterAuditFixesTests
     [TestMethod]
     public void TriggerReplace_NullFrom_ThrowsArgumentException()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => new NumberToStringConverter.TriggerReplace(null!, false, [], "x"),
             "null 'from' must be rejected");
     }
@@ -702,7 +702,7 @@ public class NumberToStringConverterAuditFixesTests
     [TestMethod]
     public void TriggerReplace_EmptyFrom_ThrowsArgumentException()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => new NumberToStringConverter.TriggerReplace("", false, [], "x"),
             "Empty 'from' must be rejected");
     }
@@ -710,7 +710,7 @@ public class NumberToStringConverterAuditFixesTests
     [TestMethod]
     public void TriggerReplace_NullForms_ThrowsArgumentNullException()
     {
-        Assert.ThrowsException<ArgumentNullException>(
+        Assert.ThrowsExactly<ArgumentNullException>(
             () => new NumberToStringConverter.TriggerReplace("word", false, null!, "x"),
             "null forms must be rejected");
     }
@@ -718,7 +718,7 @@ public class NumberToStringConverterAuditFixesTests
     [TestMethod]
     public void TriggerRule_NullReplaces_ThrowsArgumentNullException()
     {
-        Assert.ThrowsException<ArgumentNullException>(
+        Assert.ThrowsExactly<ArgumentNullException>(
             () => new NumberToStringConverter.TriggerRule(
                 NumberToStringConverter.TriggerAt.End, null, null!),
             "null replaces must be rejected");
@@ -727,7 +727,7 @@ public class NumberToStringConverterAuditFixesTests
     [TestMethod]
     public void TriggerRule_NegativeGroupIndex_ThrowsArgumentException()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => new NumberToStringConverter.TriggerRule(
                 NumberToStringConverter.TriggerAt.Group, new[] { -1 }, []),
             "Negative group index must be rejected");
@@ -736,7 +736,7 @@ public class NumberToStringConverterAuditFixesTests
     [TestMethod]
     public void TriggerReplace_NullConstraintsInForm_ThrowsArgumentException()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => new NumberToStringConverter.TriggerReplace(
                 "word", false,
                 [new NumberToStringConverter.TriggerReplacementForm(null!, "replacement")],
@@ -747,7 +747,7 @@ public class NumberToStringConverterAuditFixesTests
     [TestMethod]
     public void TriggerReplace_NullToInForm_ThrowsArgumentException()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => new NumberToStringConverter.TriggerReplace(
                 "word", false,
                 [new NumberToStringConverter.TriggerReplacementForm(new System.Collections.Generic.Dictionary<string, string>(), null!)],
@@ -768,7 +768,7 @@ public class NumberToStringConverterAuditFixesTests
                 new NumberToStringConverter.ReplacementRule("one", "uno", ReplacementScope.Standalone)  // duplicate key
             ]
         };
-        var ex = Assert.ThrowsException<InvalidOperationException>(
+        var ex = Assert.ThrowsExactly<InvalidOperationException>(
             () => new NumberToStringConverter(options));
         StringAssert.Contains(ex.Message, "'one'",
             "Exception must identify the conflicting key");
@@ -782,7 +782,7 @@ public class NumberToStringConverterAuditFixesTests
         var scale = new NumberScale(
             staticValues: (IReadOnlyList<string>)new[] { "", "thousand" },
             scaleSuffixes: (IReadOnlyList<string>)new[] { "illion" });
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => scale.GetScaleName(-1),
             "Negative scale must be rejected");
     }
@@ -862,7 +862,7 @@ public class NumberToStringConverterAuditFixesTests
     [TestMethod]
     public void NumberScale_NullEntryInStaticValues_ThrowsArgumentException()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => new NumberScale(
                 staticValues: (IReadOnlyList<string>)new string[] { "", null! },
                 scaleSuffixes: (IReadOnlyList<string>)new[] { "illion" }),
@@ -872,7 +872,7 @@ public class NumberToStringConverterAuditFixesTests
     [TestMethod]
     public void NumberScale_NullEntryInScaleSuffixes_ThrowsArgumentException()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => new NumberScale(
                 staticValues: (IReadOnlyList<string>)new[] { "" },
                 scaleSuffixes: (IReadOnlyList<string>)new string[] { null! }),
@@ -883,7 +883,7 @@ public class NumberToStringConverterAuditFixesTests
     public void NumberScale_NullEntryInScale0Prefixes_ThrowsArgumentException()
     {
         var prefixes = new string[] { "", null!, "du", "tri", "quadri", "quinti", "sexti", "septi", "octi", "noni" };
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => new NumberScale(
                 staticValues: (IReadOnlyList<string>)new[] { "" },
                 scaleSuffixes: (IReadOnlyList<string>)new[] { "illion" },
@@ -896,7 +896,7 @@ public class NumberToStringConverterAuditFixesTests
     [TestMethod]
     public void ConvertGroup_NegativeNumber_ThrowsArgumentOutOfRange()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => EN.ConvertGroup(1, -1),
             "Negative number must be rejected by ConvertGroup");
     }
@@ -905,7 +905,7 @@ public class NumberToStringConverterAuditFixesTests
     public void ConvertGroup_NumberExceedsGroupRange_ThrowsArgumentOutOfRange()
     {
         // EN group 1 covers values 0–9; passing 10 must throw, not produce a KeyNotFoundException.
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => EN.ConvertGroup(1, 10),
             "A number that exceeds the valid range for the group must be rejected with a clear message");
     }
@@ -915,7 +915,7 @@ public class NumberToStringConverterAuditFixesTests
     {
         // groupNumber == 0 is the recursive base case but the method is public.
         // A negative number must still be rejected even for group 0.
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => EN.ConvertGroup(0, -1),
             "ConvertGroup(0, -1) must throw because number is invalid regardless of groupNumber");
     }
@@ -929,7 +929,7 @@ public class NumberToStringConverterAuditFixesTests
     public void Constructor_GroupSizeZero_ThrowsArgumentOutOfRange()
     {
         var opts = new NumberToStringConverterOptions(EN) { Group = 0 };
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new NumberToStringConverter(opts),
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new NumberToStringConverter(opts),
             "Group = 0 must be rejected at construction time");
     }
 
@@ -937,7 +937,7 @@ public class NumberToStringConverterAuditFixesTests
     public void Constructor_GroupSizeNegative_ThrowsArgumentOutOfRange()
     {
         var opts = new NumberToStringConverterOptions(EN) { Group = -1 };
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new NumberToStringConverter(opts),
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new NumberToStringConverter(opts),
             "Group = -1 must be rejected at construction time");
     }
 
@@ -948,7 +948,7 @@ public class NumberToStringConverterAuditFixesTests
         {
             Groups = new Dictionary<int, DigitListType>()
         };
-        Assert.ThrowsException<ArgumentException>(() => new NumberToStringConverter(opts),
+        Assert.ThrowsExactly<ArgumentException>(() => new NumberToStringConverter(opts),
             "An empty Groups dictionary must be rejected at construction time");
     }
 
@@ -959,7 +959,7 @@ public class NumberToStringConverterAuditFixesTests
         {
             Groups = new Dictionary<int, DigitListType> { [0] = OneDigitList() }
         };
-        Assert.ThrowsException<ArgumentException>(() => new NumberToStringConverter(opts),
+        Assert.ThrowsExactly<ArgumentException>(() => new NumberToStringConverter(opts),
             "Group key 0 is not a positive integer and must be rejected");
     }
 
@@ -971,7 +971,7 @@ public class NumberToStringConverterAuditFixesTests
         {
             Groups = new Dictionary<int, DigitListType> { [1] = dl, [3] = dl }
         };
-        Assert.ThrowsException<ArgumentException>(() => new NumberToStringConverter(opts),
+        Assert.ThrowsExactly<ArgumentException>(() => new NumberToStringConverter(opts),
             "Group keys 1 and 3 have a gap at 2 and must be rejected");
     }
 
@@ -982,7 +982,7 @@ public class NumberToStringConverterAuditFixesTests
         var groups = new Dictionary<int, DigitListType>();
         for (int i = 1; i <= 20; i++) groups[i] = dl;
         var opts = new NumberToStringConverterOptions(EN) { Groups = groups };
-        Assert.ThrowsException<ArgumentException>(() => new NumberToStringConverter(opts),
+        Assert.ThrowsExactly<ArgumentException>(() => new NumberToStringConverter(opts),
             "Group key 20 exceeds the supported limit and must be rejected");
     }
 
@@ -996,7 +996,7 @@ public class NumberToStringConverterAuditFixesTests
                 [1] = new() { Digits = [] }
             }
         };
-        Assert.ThrowsException<ArgumentException>(() => new NumberToStringConverter(opts),
+        Assert.ThrowsExactly<ArgumentException>(() => new NumberToStringConverter(opts),
             "A group with no digit definitions must be rejected at construction time");
     }
 
@@ -1005,7 +1005,7 @@ public class NumberToStringConverterAuditFixesTests
     {
         // _decimalPowersOfTen has 19 entries; Group must be < 19 to stay in range.
         var opts = new NumberToStringConverterOptions(EN) { Group = 19 };
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new NumberToStringConverter(opts),
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new NumberToStringConverter(opts),
             "Group = 19 equals _decimalPowersOfTen.Length and must be rejected");
     }
 
@@ -1016,7 +1016,7 @@ public class NumberToStringConverterAuditFixesTests
         {
             Groups = new Dictionary<int, DigitListType> { [1] = null! }
         };
-        Assert.ThrowsException<ArgumentException>(() => new NumberToStringConverter(opts),
+        Assert.ThrowsExactly<ArgumentException>(() => new NumberToStringConverter(opts),
             "A null DigitListType entry must be rejected before the immutable snapshot is built");
     }
 
@@ -1027,7 +1027,7 @@ public class NumberToStringConverterAuditFixesTests
         {
             Groups = new Dictionary<int, DigitListType> { [1] = new DigitListType() }
         };
-        Assert.ThrowsException<ArgumentException>(() => new NumberToStringConverter(opts),
+        Assert.ThrowsExactly<ArgumentException>(() => new NumberToStringConverter(opts),
             "A null Digits list must be rejected before the immutable snapshot is built");
     }
 
@@ -1041,7 +1041,7 @@ public class NumberToStringConverterAuditFixesTests
                 [1] = new DigitListType { Digits = [new DigitType(1, "one"), null!] }
             }
         };
-        Assert.ThrowsException<ArgumentException>(() => new NumberToStringConverter(opts),
+        Assert.ThrowsExactly<ArgumentException>(() => new NumberToStringConverter(opts),
             "A null DigitType entry in the Digits list must be rejected before LINQ materialisation");
     }
 
@@ -1055,7 +1055,7 @@ public class NumberToStringConverterAuditFixesTests
                 [1] = new DigitListType { Digits = [new DigitType(1, "one"), new DigitType(1, "uno")] }
             }
         };
-        Assert.ThrowsException<ArgumentException>(() => new NumberToStringConverter(opts),
+        Assert.ThrowsExactly<ArgumentException>(() => new NumberToStringConverter(opts),
             "Duplicate digit value 1 in the same group must be rejected with a clear diagnostic");
     }
 
@@ -1078,7 +1078,7 @@ public class NumberToStringConverterAuditFixesTests
                 }
             }
         };
-        Assert.ThrowsException<ArgumentException>(() => new NumberToStringConverter(opts),
+        Assert.ThrowsExactly<ArgumentException>(() => new NumberToStringConverter(opts),
             "Two DigitType entries with the same Digit value in the same group must be rejected");
     }
 
@@ -1095,7 +1095,7 @@ public class NumberToStringConverterAuditFixesTests
                 [3] = OneDigitList()
             }
         };
-        Assert.ThrowsException<ArgumentException>(() => new NumberToStringConverter(opts),
+        Assert.ThrowsExactly<ArgumentException>(() => new NumberToStringConverter(opts),
             "Group keys must start at 1");
     }
 
@@ -1105,7 +1105,7 @@ public class NumberToStringConverterAuditFixesTests
     public void Constructor_NegativeMaxNumber_ThrowsArgumentOutOfRange()
     {
         var opts = new NumberToStringConverterOptions(EN) { MaxNumber = -1 };
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new NumberToStringConverter(opts),
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new NumberToStringConverter(opts),
             "MaxNumber = -1 must be rejected; a negative maximum makes every conversion fail");
     }
 
@@ -1126,21 +1126,21 @@ public class NumberToStringConverterAuditFixesTests
     [TestMethod]
     public void VariantDimension_NullName_ThrowsArgumentNullException()
     {
-        Assert.ThrowsException<ArgumentNullException>(
+        Assert.ThrowsExactly<ArgumentNullException>(
             () => new NumberToStringConverter.VariantDimension(null!, ["masc"]));
     }
 
     [TestMethod]
     public void VariantDimension_EmptyName_ThrowsArgumentException()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => new NumberToStringConverter.VariantDimension("", ["masc"]));
     }
 
     [TestMethod]
     public void VariantDimension_NullValues_ThrowsArgumentNullException()
     {
-        Assert.ThrowsException<ArgumentNullException>(
+        Assert.ThrowsExactly<ArgumentNullException>(
             () => new NumberToStringConverter.VariantDimension("gender", null!));
     }
 
@@ -1178,14 +1178,14 @@ public class NumberToStringConverterAuditFixesTests
     [TestMethod]
     public void VariantRule_NullConstraints_ThrowsArgumentNullException()
     {
-        Assert.ThrowsException<ArgumentNullException>(
+        Assert.ThrowsExactly<ArgumentNullException>(
             () => new NumberToStringConverter.VariantRule(null!, []));
     }
 
     [TestMethod]
     public void VariantRule_NullReplacements_ThrowsArgumentNullException()
     {
-        Assert.ThrowsException<ArgumentNullException>(
+        Assert.ThrowsExactly<ArgumentNullException>(
             () => new NumberToStringConverter.VariantRule(new Dictionary<string, string>(), null!));
     }
 
@@ -1218,7 +1218,7 @@ public class NumberToStringConverterAuditFixesTests
     [TestMethod]
     public void OrdinalVariantRule_NullConstraints_ThrowsArgumentNullException()
     {
-        Assert.ThrowsException<ArgumentNullException>(() =>
+        Assert.ThrowsExactly<ArgumentNullException>(() =>
             new NumberToStringConverter.OrdinalVariantRule(
                 null!, new Dictionary<long, string>(), new Dictionary<string, string>(), null, null));
     }
@@ -1226,7 +1226,7 @@ public class NumberToStringConverterAuditFixesTests
     [TestMethod]
     public void OrdinalVariantRule_NullExceptions_ThrowsArgumentNullException()
     {
-        Assert.ThrowsException<ArgumentNullException>(() =>
+        Assert.ThrowsExactly<ArgumentNullException>(() =>
             new NumberToStringConverter.OrdinalVariantRule(
                 new Dictionary<string, string>(), null!, new Dictionary<string, string>(), null, null));
     }
@@ -1234,7 +1234,7 @@ public class NumberToStringConverterAuditFixesTests
     [TestMethod]
     public void OrdinalVariantRule_NullWordRules_ThrowsArgumentNullException()
     {
-        Assert.ThrowsException<ArgumentNullException>(() =>
+        Assert.ThrowsExactly<ArgumentNullException>(() =>
             new NumberToStringConverter.OrdinalVariantRule(
                 new Dictionary<string, string>(), new Dictionary<long, string>(), null!, null, null));
     }
@@ -1437,7 +1437,7 @@ public class NumberToStringConverterAuditFixesTests
     {
         // Dimension declares 3 values; forms= provides only 2 → must reject.
         string xml = BuildXmlWithForms("dim1", "a,b,c", "X,Y");
-        var ex = Assert.ThrowsException<InvalidOperationException>(
+        var ex = Assert.ThrowsExactly<InvalidOperationException>(
             () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "dim1",
             "Exception must identify the offending dimension name");
@@ -1452,7 +1452,7 @@ public class NumberToStringConverterAuditFixesTests
     {
         // Dimension declares 2 values; forms= provides 3 → must reject.
         string xml = BuildXmlWithForms("dim1", "a,b", "X,Y,Z");
-        var ex = Assert.ThrowsException<InvalidOperationException>(
+        var ex = Assert.ThrowsExactly<InvalidOperationException>(
             () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "dim1");
     }
@@ -1474,7 +1474,7 @@ public class NumberToStringConverterAuditFixesTests
         // Two dimensions with the same canonical name must be rejected.
         string xml = BuildXmlWithDuplicateDimension(canonical1: "gender", alias1: null,
                                                     canonical2: "gender", alias2: null);
-        var ex = Assert.ThrowsException<InvalidOperationException>(
+        var ex = Assert.ThrowsExactly<InvalidOperationException>(
             () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "gender",
             "Exception must identify the colliding dimension name");
@@ -1486,7 +1486,7 @@ public class NumberToStringConverterAuditFixesTests
         // Dimension "case" with alias "gender" collides with the canonical name of another dimension "gender".
         string xml = BuildXmlWithDuplicateDimension(canonical1: "gender", alias1: null,
                                                     canonical2: "case", alias2: "gender");
-        var ex = Assert.ThrowsException<InvalidOperationException>(
+        var ex = Assert.ThrowsExactly<InvalidOperationException>(
             () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "gender");
     }
@@ -1520,7 +1520,7 @@ public class NumberToStringConverterAuditFixesTests
     {
         // indices 0 and 2 (gap at 1) must be rejected.
         string xml = BuildXmlWithScaleIndices(0, 2);
-        var ex = Assert.ThrowsException<InvalidOperationException>(
+        var ex = Assert.ThrowsExactly<InvalidOperationException>(
             () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "contiguous",
             "Exception must mention contiguous indices requirement");
@@ -1531,7 +1531,7 @@ public class NumberToStringConverterAuditFixesTests
     {
         // An index starting at 1 (missing 0) must be rejected.
         string xml = BuildXmlWithScaleIndices(1, 2);
-        var ex = Assert.ThrowsException<InvalidOperationException>(
+        var ex = Assert.ThrowsExactly<InvalidOperationException>(
             () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "0",
             "Exception must mention that index 0 is expected first");
@@ -1552,7 +1552,7 @@ public class NumberToStringConverterAuditFixesTests
     public void ReadConfiguration_ReplacementWithoutNewValueOrVariants_ThrowsInvalidOperation()
     {
         string xml = BuildXmlWithBareReplacement("one");
-        var ex = Assert.ThrowsException<InvalidOperationException>(
+        var ex = Assert.ThrowsExactly<InvalidOperationException>(
             () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "one",
             "Exception must identify the incomplete replacement's oldValue");
@@ -1580,7 +1580,7 @@ public class NumberToStringConverterAuditFixesTests
     {
         // Count matches (2 values, 2 entries) but first entry is empty → must reject.
         string xml = BuildXmlWithForms("dim1", "a,b", ",b");
-        var ex = Assert.ThrowsException<InvalidOperationException>(
+        var ex = Assert.ThrowsExactly<InvalidOperationException>(
             () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "dim1",
             "Exception must identify the dimension");
@@ -1593,7 +1593,7 @@ public class NumberToStringConverterAuditFixesTests
     {
         // Count matches (2 values, 2 entries) but last entry is empty → must reject.
         string xml = BuildXmlWithForms("dim1", "a,b", "X,");
-        var ex = Assert.ThrowsException<InvalidOperationException>(
+        var ex = Assert.ThrowsExactly<InvalidOperationException>(
             () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "dim1");
         StringAssert.Contains(ex.Message, "b",
@@ -1607,7 +1607,7 @@ public class NumberToStringConverterAuditFixesTests
     {
         // A <Replacement> inside a <Variant> rule with no newValue and no <Variant> children must throw.
         string xml = BuildXmlWithNestedBareReplacement(dimName: "gender", dimValues: "a,b", dimValue: "a", oldValue: "one");
-        var ex = Assert.ThrowsException<InvalidOperationException>(
+        var ex = Assert.ThrowsExactly<InvalidOperationException>(
             () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "one",
             "Exception must identify the incomplete replacement's oldValue");
@@ -1623,7 +1623,7 @@ public class NumberToStringConverterAuditFixesTests
         string xml = BuildXmlWithNestedFormVariantReplacement(
             structDim: "case", structValues: "nom,acc", structValue: "acc",
             formDim: "gender", formValues: "m,f", oldValue: "one");
-        var ex = Assert.ThrowsException<InvalidOperationException>(
+        var ex = Assert.ThrowsExactly<InvalidOperationException>(
             () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "one",
             "Exception must identify the replacement's oldValue");
@@ -1799,7 +1799,7 @@ public class NumberToStringConverterAuditFixesTests
         var opts = new NumberToStringConverterOptions(EN) { MaxNumber = 1 };
         var conv = new NumberToStringConverter(opts);
         // integer part is 2 > MaxNumber → must throw
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => conv.Convert(2.1m),
             "Convert(decimal) must throw when the integer part exceeds MaxNumber");
     }
@@ -1908,7 +1908,7 @@ public class NumberToStringConverterAuditFixesTests
     <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
   </Language>
 </Numbers>";
-        var ex = Assert.ThrowsException<InvalidOperationException>(
+        var ex = Assert.ThrowsExactly<InvalidOperationException>(
             () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "cycle",
             "Exception must mention 'cycle' to identify the cause");
@@ -1926,7 +1926,7 @@ public class NumberToStringConverterAuditFixesTests
     <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
   </Language>
 </Numbers>";
-        var ex = Assert.ThrowsException<InvalidOperationException>(
+        var ex = Assert.ThrowsExactly<InvalidOperationException>(
             () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "cycle",
             "Self-cycle must be detected and reported as a cycle");
@@ -1954,7 +1954,7 @@ public class NumberToStringConverterAuditFixesTests
     <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
   </Language>
 </Numbers>";
-        var ex = Assert.ThrowsException<InvalidOperationException>(
+        var ex = Assert.ThrowsExactly<InvalidOperationException>(
             () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "cycle",
             "Three-node cycle must be detected");
@@ -1977,7 +1977,7 @@ public class NumberToStringConverterAuditFixesTests
     <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
   </Language>
 </Numbers>";
-        var ex = Assert.ThrowsException<InvalidOperationException>(
+        var ex = Assert.ThrowsExactly<InvalidOperationException>(
             () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "cycle",
             "Case-insensitive cycle must be detected");
@@ -1995,7 +1995,7 @@ public class NumberToStringConverterAuditFixesTests
     <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
   </Language>
 </Numbers>";
-        var ex = Assert.ThrowsException<InvalidOperationException>(
+        var ex = Assert.ThrowsExactly<InvalidOperationException>(
             () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "DOES-NOT-EXIST",
             "Exception must identify the missing base culture");
@@ -2052,7 +2052,7 @@ public class NumberToStringConverterAuditFixesTests
     <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
   </Language>
 </Numbers>";
-        Assert.ThrowsException<InvalidOperationException>(
+        Assert.ThrowsExactly<InvalidOperationException>(
             () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         // The valid language in the same document must NOT have been committed.
         bool found = NumberToStringConverter.TryGetConverter(uniqueKey, out _);
@@ -2083,7 +2083,7 @@ public class NumberToStringConverterAuditFixesTests
     <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
   </Language>
 </Numbers>";
-        var ex = Assert.ThrowsException<InvalidOperationException>(
+        var ex = Assert.ThrowsExactly<InvalidOperationException>(
             () => LegacyNumberToStringFixture.ReadConfiguration(xml));
         StringAssert.Contains(ex.Message, "cycle",
             "Cycle in one branch of a multi-base inheritance must be detected");
@@ -2125,7 +2125,7 @@ public class NumberToStringConverterAuditFixesTests
     <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
   </Language>
 </Numbers>";
-        var ex = Assert.ThrowsException<InvalidOperationException>(
+        var ex = Assert.ThrowsExactly<InvalidOperationException>(
             () => LegacyNumberToStringFixture.ReadConfiguration(secondDoc));
         StringAssert.Contains(ex.Message, "cycle",
             "A locally declared language must shadow the cached version so the cycle is still detected");
@@ -2378,7 +2378,7 @@ public class NumberToStringConverterAuditFixesTests
     [TestMethod]
     public void RegisterLanguageSpecifics_NullInstance_ThrowsArgumentNullException()
     {
-        Assert.ThrowsException<ArgumentNullException>(
+        Assert.ThrowsExactly<ArgumentNullException>(
             () => NumberToStringConverter.RegisterLanguageSpecifics("ValidName", (INumberToStringLanguageSpecifics)null!),
             "Null instance must be rejected");
     }
@@ -2388,7 +2388,7 @@ public class NumberToStringConverterAuditFixesTests
     [TestMethod]
     public void RegisterLanguageSpecifics_NullName_ThrowsArgumentNullException()
     {
-        Assert.ThrowsException<ArgumentNullException>(
+        Assert.ThrowsExactly<ArgumentNullException>(
             () => NumberToStringConverter.RegisterLanguageSpecifics(null!, new FakeSpecifics()),
             "Null typeName must be rejected");
     }
@@ -2396,7 +2396,7 @@ public class NumberToStringConverterAuditFixesTests
     [TestMethod]
     public void RegisterLanguageSpecifics_EmptyName_ThrowsArgumentException()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => NumberToStringConverter.RegisterLanguageSpecifics("", new FakeSpecifics()),
             "Empty typeName must be rejected");
     }
@@ -2404,7 +2404,7 @@ public class NumberToStringConverterAuditFixesTests
     [TestMethod]
     public void RegisterLanguageSpecifics_WhitespaceName_ThrowsArgumentException()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => NumberToStringConverter.RegisterLanguageSpecifics("   ", new FakeSpecifics()),
             "Whitespace-only typeName must be rejected");
     }
@@ -2496,7 +2496,7 @@ public class NumberToStringConverterAuditFixesTests
     <Culture>{childKey}</Culture>
   </Language>
 </Numbers>";
-        Assert.ThrowsException<InvalidOperationException>(
+        Assert.ThrowsExactly<InvalidOperationException>(
             () => LegacyNumberToStringFixture.ReadConfiguration(xml),
             "Explicit groupSize=\"0\" must propagate through merge and be rejected by ReadConverter, " +
             "not silently replaced by the inherited non-zero value");
@@ -2587,11 +2587,11 @@ public class NumberToStringConverterAuditFixesTests
   </Language>
 </Numbers>";
 
-        Assert.ThrowsException<InvalidOperationException>(
+        Assert.ThrowsExactly<InvalidOperationException>(
             () => LegacyNumberToStringFixture.ReadConfiguration(d1),
             "D1 must fail because one of its languages has an invalid groupSize");
 
-        var ex = Assert.ThrowsException<InvalidOperationException>(
+        var ex = Assert.ThrowsExactly<InvalidOperationException>(
             () => LegacyNumberToStringFixture.ReadConfiguration(d2),
             "D2 must fail because D1 was never committed to _cachedLanguageTypes (atomicity)");
         StringAssert.Contains(ex.Message, baseKey,
@@ -3076,7 +3076,7 @@ public class NumberToStringConverterAuditFixesTests
   </Language>
 </Numbers>";
 
-        var ex = Assert.ThrowsException<InvalidOperationException>(
+        var ex = Assert.ThrowsExactly<InvalidOperationException>(
             () => LegacyNumberToStringFixture.ReadConfiguration(xml),
             "Missing default variant form must throw InvalidOperationException");
         StringAssert.Contains(ex.Message, "1",
@@ -3150,7 +3150,7 @@ public class NumberToStringConverterAuditFixesTests
         // Item 95: whitespace-only names must be rejected just like empty/null names.
         var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"));
         options.Fractions = new System.Collections.Generic.Dictionary<int, string> { { 2, "   " } };
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => new NumberToStringConverter(options),
             "A whitespace-only fraction name must be rejected");
     }
@@ -3194,7 +3194,7 @@ public class NumberToStringConverterAuditFixesTests
   </Language>
 </Numbers>";
 
-        Assert.ThrowsException<InvalidOperationException>(
+        Assert.ThrowsExactly<InvalidOperationException>(
             () => LegacyNumberToStringFixture.ReadConfiguration(xml),
             "A document with an invalid ordinal must throw during ReadConfiguration");
 
@@ -3238,7 +3238,7 @@ public class NumberToStringConverterAuditFixesTests
     {
         var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"));
         options.Fractions = new Dictionary<int, string> { { 0, "zeroth" } };
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => new NumberToStringConverter(options),
             "A fraction key of 0 must be rejected");
     }
@@ -3248,7 +3248,7 @@ public class NumberToStringConverterAuditFixesTests
     {
         var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"));
         options.Fractions = new Dictionary<int, string> { { -1, "negative-ths" } };
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => new NumberToStringConverter(options),
             "A negative fraction key must be rejected");
     }
@@ -3271,7 +3271,7 @@ public class NumberToStringConverterAuditFixesTests
     {
         var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"));
         options.Fractions = new Dictionary<int, string> { { 2, "" } };
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => new NumberToStringConverter(options),
             "An empty fraction name must be rejected");
     }

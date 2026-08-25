@@ -99,10 +99,9 @@ public class PcltTableTests
     // ── Test 4 — Wrong size throws ───────────────────────────────────────
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
     public void ReadData_WrongSize_Throws()
     {
         var table = new PcltTable();
-        table.ReadData(MakeReader(new byte[20]));  // not 54 bytes
+        Assert.ThrowsExactly<ArgumentException>(() => table.ReadData(MakeReader(new byte[20])));  // not 54 bytes
     }
 }

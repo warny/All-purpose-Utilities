@@ -87,7 +87,7 @@ public class DelegateInvokerTests
         inv.Add<IMammal>(_ => "imammal");
         inv.Add<IFlying>(_ => "iflying");
 
-        Assert.ThrowsException<AmbiguousMatchException>(
+        Assert.ThrowsExactly<AmbiguousMatchException>(
             () => inv.TryInvoke(new Bat(), out _));
     }
 

@@ -47,8 +47,8 @@ public class ParserRuleCallExecutionPolicyTests
         NullParserRuleCallExecutionPolicy.Instance.BeforeRuleCall(context);
         NullParserRuleCallExecutionPolicy.Instance.AfterRuleCall(context);
 
-        Assert.ThrowsException<ArgumentNullException>(() => NullParserRuleCallExecutionPolicy.Instance.BeforeRuleCall(null!));
-        Assert.ThrowsException<ArgumentNullException>(() => NullParserRuleCallExecutionPolicy.Instance.AfterRuleCall(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => NullParserRuleCallExecutionPolicy.Instance.BeforeRuleCall(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => NullParserRuleCallExecutionPolicy.Instance.AfterRuleCall(null!));
     }
 
     /// <summary>
@@ -64,7 +64,7 @@ public class ParserRuleCallExecutionPolicyTests
             """);
         var policy = ParserRuntimeFeaturePolicy.Default with { RuleCallExecutionPolicy = null! };
 
-        Assert.ThrowsException<ArgumentNullException>(() => new ParserEngine(definition, policy));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new ParserEngine(definition, policy));
     }
 
     /// <summary>
@@ -307,7 +307,7 @@ public class ParserRuleCallExecutionPolicyTests
         {
             RuleCallExecutionPolicy = new PositionalLiteralRuleCallExecutionPolicy(ParserRuleCallBindingFailureBehavior.Throw),
         };
-        var exception = Assert.ThrowsException<ParserRuleCallBindingException>(() =>
+        var exception = Assert.ThrowsExactly<ParserRuleCallBindingException>(() =>
             new CompiledGrammar(Antlr4GrammarConverter.Parse(grammar), strictPolicy).Parse("a"));
         StringAssert.Contains(exception.Message, "Managed parameter seeding is unavailable");
     }
@@ -385,7 +385,7 @@ public class ParserRuleCallExecutionPolicyTests
         Assert.IsNotInstanceOfType(ignoredResult, typeof(ErrorNode));
         Assert.AreEqual(0, observed.Count, "Validation must finish before any seed is written.");
 
-        var exception = Assert.ThrowsException<ParserRuleCallBindingException>(() => Compile(
+        var exception = Assert.ThrowsExactly<ParserRuleCallBindingException>(() => Compile(
             grammar,
             new PositionalLiteralRuleCallExecutionPolicy(ParserRuleCallBindingFailureBehavior.Throw)).Parse("a"));
         Assert.AreEqual("child", exception.RuleName);
@@ -401,13 +401,13 @@ public class ParserRuleCallExecutionPolicyTests
     {
         var policy = new PositionalLiteralRuleCallExecutionPolicy(ParserRuleCallBindingFailureBehavior.Throw);
         var arityContext = CreatePolicyContext(["1"], ["first", "second"]);
-        Assert.ThrowsException<ParserRuleCallBindingException>(() => policy.BeforeRuleCall(arityContext));
+        Assert.ThrowsExactly<ParserRuleCallBindingException>(() => policy.BeforeRuleCall(arityContext));
 
         var duplicateContext = CreatePolicyContext(["1", "2"], ["value", "value"]);
-        Assert.ThrowsException<ParserRuleCallBindingException>(() => policy.BeforeRuleCall(duplicateContext));
+        Assert.ThrowsExactly<ParserRuleCallBindingException>(() => policy.BeforeRuleCall(duplicateContext));
 
         var missingContext = CreatePolicyContext(["1"], [" "]);
-        Assert.ThrowsException<ParserRuleCallBindingException>(() => policy.BeforeRuleCall(missingContext));
+        Assert.ThrowsExactly<ParserRuleCallBindingException>(() => policy.BeforeRuleCall(missingContext));
     }
 
     /// <summary>
@@ -507,13 +507,13 @@ public class ParserRuleCallExecutionPolicyTests
         ignored.AfterRuleCall(CreateNamedPolicyContext(null, null, ["value"]));
 
         var strict = new NamedLiteralRuleCallExecutionPolicy(ParserRuleCallBindingFailureBehavior.Throw);
-        var exception = Assert.ThrowsException<ParserRuleCallBindingException>(() =>
+        var exception = Assert.ThrowsExactly<ParserRuleCallBindingException>(() =>
             strict.BeforeRuleCall(CreateNamedPolicyContext("42", null, ["value"])));
 
         Assert.AreEqual("child", exception.RuleName);
         Assert.AreEqual("42", exception.RawArguments);
         Assert.IsNull(exception.ArgumentIndex);
-        Assert.ThrowsException<ArgumentNullException>(() => strict.AfterRuleCall(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => strict.AfterRuleCall(null!));
     }
 
     /// <summary>
@@ -538,15 +538,15 @@ public class ParserRuleCallExecutionPolicyTests
         Assert.AreEqual(0, observed.Count, "Every literal must be parsed before the atomic seed batch is submitted.");
 
         var strict = new NamedLiteralRuleCallExecutionPolicy(ParserRuleCallBindingFailureBehavior.Throw);
-        var unsupported = Assert.ThrowsException<ParserRuleCallBindingException>(() => Compile(grammar, strict).Parse("a"));
+        var unsupported = Assert.ThrowsExactly<ParserRuleCallBindingException>(() => Compile(grammar, strict).Parse("a"));
         StringAssert.Contains(unsupported.Message, "second");
         StringAssert.Contains(unsupported.Message, "supported simple literal");
 
-        Assert.ThrowsException<ParserRuleCallBindingException>(() => strict.BeforeRuleCall(
+        Assert.ThrowsExactly<ParserRuleCallBindingException>(() => strict.BeforeRuleCall(
             CreateNamedPolicyContext("first: 1", Named("first", "1"), ["first", "second"])));
-        Assert.ThrowsException<ParserRuleCallBindingException>(() => strict.BeforeRuleCall(
+        Assert.ThrowsExactly<ParserRuleCallBindingException>(() => strict.BeforeRuleCall(
             CreateNamedPolicyContext("first: 1, extra: 2", Named(("first", "1"), ("extra", "2")), ["first"])));
-        Assert.ThrowsException<ParserRuleCallBindingException>(() => strict.BeforeRuleCall(
+        Assert.ThrowsExactly<ParserRuleCallBindingException>(() => strict.BeforeRuleCall(
             CreateNamedPolicyContext("Value: 1", Named("Value", "1"), ["value"])));
 
         const string missingGrammar = """
@@ -582,14 +582,14 @@ public class ParserRuleCallExecutionPolicyTests
     public void NamedLiteralPolicy_InvalidDescriptorNamesOrWriter_ThrowsInStrictMode()
     {
         var strict = new NamedLiteralRuleCallExecutionPolicy(ParserRuleCallBindingFailureBehavior.Throw);
-        Assert.ThrowsException<ParserRuleCallBindingException>(() => strict.BeforeRuleCall(
+        Assert.ThrowsExactly<ParserRuleCallBindingException>(() => strict.BeforeRuleCall(
             CreateNamedPolicyContext("value: 1", Named("value", "1"), null)));
-        Assert.ThrowsException<ParserRuleCallBindingException>(() => strict.BeforeRuleCall(
+        Assert.ThrowsExactly<ParserRuleCallBindingException>(() => strict.BeforeRuleCall(
             CreateNamedPolicyContext("value: 1", Named("value", "1"), [" "])));
-        Assert.ThrowsException<ParserRuleCallBindingException>(() => strict.BeforeRuleCall(
+        Assert.ThrowsExactly<ParserRuleCallBindingException>(() => strict.BeforeRuleCall(
             CreateNamedPolicyContext("value: 1", Named("value", "1"), ["value", "value"])));
 
-        var unavailable = Assert.ThrowsException<ParserRuleCallBindingException>(() => strict.BeforeRuleCall(
+        var unavailable = Assert.ThrowsExactly<ParserRuleCallBindingException>(() => strict.BeforeRuleCall(
             CreateNamedPolicyContext("value: 1", Named("value", "1"), ["value"])));
         StringAssert.Contains(unavailable.Message, "Managed parameter seeding is unavailable");
     }
@@ -652,7 +652,7 @@ public class ParserRuleCallExecutionPolicyTests
     [TestMethod]
     public void NamedLiteralPolicy_InvalidFailureBehavior_IsRejected()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
             new NamedLiteralRuleCallExecutionPolicy((ParserRuleCallBindingFailureBehavior)int.MaxValue));
     }
 

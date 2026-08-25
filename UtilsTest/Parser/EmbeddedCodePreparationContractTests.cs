@@ -88,7 +88,7 @@ public class EmbeddedCodePreparationContractTests
     [TestMethod]
     public void EmbeddedCodePreparationResult_WhenSuccessHasNoArtifact_ThrowsArgumentException()
     {
-        Assert.ThrowsException<ArgumentException>(() => new EmbeddedCodePreparationResult<string>(EmbeddedCodePreparationStatus.Succeeded));
+        Assert.ThrowsExactly<ArgumentException>(() => new EmbeddedCodePreparationResult<string>(EmbeddedCodePreparationStatus.Succeeded));
     }
 
     /// <summary>

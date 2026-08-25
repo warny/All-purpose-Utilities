@@ -34,7 +34,7 @@ public class EmitWorkerProxyTests
     {
         ITinyInterface proxy = DispatchProxy.Create<ITinyInterface, EmitWorkerProxy>();
 
-        Assert.ThrowsException<ObjectDisposedException>(() => proxy.Foo(1));
+        Assert.ThrowsExactly<ObjectDisposedException>(() => proxy.Foo(1));
     }
 
     [TestMethod]
@@ -57,7 +57,7 @@ public class EmitWorkerProxyTests
         ITinyInterface proxy = DispatchProxy.Create<ITinyInterface, EmitWorkerProxy>();
         proxy.Dispose();
 
-        Assert.ThrowsException<ObjectDisposedException>(() => proxy.Foo(1));
+        Assert.ThrowsExactly<ObjectDisposedException>(() => proxy.Foo(1));
     }
 
     [TestMethod]
@@ -99,7 +99,7 @@ public class EmitWorkerProxyTests
         proxy.Dispose();
 
         // The fast-path check (disposeState != 0) must fire before entering the active-call region.
-        var ex = Assert.ThrowsException<ObjectDisposedException>(() => proxy.Foo(42));
+        var ex = Assert.ThrowsExactly<ObjectDisposedException>(() => proxy.Foo(42));
         Assert.IsNotNull(ex);
     }
 }

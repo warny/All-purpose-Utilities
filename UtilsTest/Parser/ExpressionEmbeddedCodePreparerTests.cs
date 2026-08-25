@@ -21,7 +21,7 @@ public class ExpressionEmbeddedCodePreparerTests
     [TestMethod]
     public void Constructor_WhenCompilerIsNull_Throws()
     {
-        Assert.ThrowsException<ArgumentNullException>(() => new ExpressionEmbeddedCodePreparer(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new ExpressionEmbeddedCodePreparer(null!));
     }
 
     [TestMethod]
@@ -126,7 +126,7 @@ public class ExpressionEmbeddedCodePreparerTests
     {
         var transformer = new CountingTransformer();
 
-        Assert.ThrowsException<ArgumentNullException>(() => ParserEmbeddedCodeTransformationService.TransformOrThrow(
+        Assert.ThrowsExactly<ArgumentNullException>(() => ParserEmbeddedCodeTransformationService.TransformOrThrow(
             transformer,
             null!,
             new ParserEmbeddedCodeTransformationContext { Location = ParserEmbeddedCodeLocation.InlineAction },
@@ -164,7 +164,7 @@ public class ExpressionEmbeddedCodePreparerTests
     {
         var transformer = new ConfigurableTransformer { Result = null };
 
-        var exception = Assert.ThrowsException<Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException>(() => ParserEmbeddedCodeTransformationService.TransformOrThrow(
+        var exception = Assert.ThrowsExactly<Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException>(() => ParserEmbeddedCodeTransformationService.TransformOrThrow(
             transformer,
             new RawEmbeddedCode("raw"),
             new ParserEmbeddedCodeTransformationContext { Location = ParserEmbeddedCodeLocation.SemanticPredicate },
@@ -179,7 +179,7 @@ public class ExpressionEmbeddedCodePreparerTests
     {
         var transformer = new ConfigurableTransformer { Result = new ParserEmbeddedCodeTransformationResult { Code = null! } };
 
-        var exception = Assert.ThrowsException<Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException>(() => ParserEmbeddedCodeTransformationService.TransformOrThrow(
+        var exception = Assert.ThrowsExactly<Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException>(() => ParserEmbeddedCodeTransformationService.TransformOrThrow(
             transformer,
             new RawEmbeddedCode("raw"),
             new ParserEmbeddedCodeTransformationContext { Location = ParserEmbeddedCodeLocation.SemanticPredicate },
@@ -209,7 +209,7 @@ public class ExpressionEmbeddedCodePreparerTests
         var inner = new FormatException("boom");
         var transformer = new ConfigurableTransformer { Exception = inner };
 
-        var exception = Assert.ThrowsException<Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException>(() => ParserEmbeddedCodeTransformationService.TransformOrThrow(
+        var exception = Assert.ThrowsExactly<Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException>(() => ParserEmbeddedCodeTransformationService.TransformOrThrow(
             transformer,
             new RawEmbeddedCode("raw"),
             new ParserEmbeddedCodeTransformationContext { Location = ParserEmbeddedCodeLocation.InlineAction },

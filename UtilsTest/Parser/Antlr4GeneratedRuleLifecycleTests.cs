@@ -289,7 +289,7 @@ public class Antlr4GeneratedRuleLifecycleTests
         var policy = InvokeCreateRuntimePolicy(assembly, context);
 
         Assert.IsNotInstanceOfType(policy.RuleLifecycleExecutor, typeof(NullParserRuleLifecycleExecutor));
-        Assert.ThrowsException<ArgumentNullException>(() => policy.RuleLifecycleExecutor.Execute(ParserRuleLifecyclePhase.Init, "start", null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => policy.RuleLifecycleExecutor.Execute(ParserRuleLifecyclePhase.Init, "start", null!));
     }
 
     /// <summary>
@@ -1915,7 +1915,7 @@ public class Antlr4GeneratedRuleLifecycleTests
             """;
 
         var assembly = CompileGeneratedSource(Emit(grammar));
-        var ex = Assert.ThrowsException<System.Reflection.TargetInvocationException>(
+        var ex = Assert.ThrowsExactly<System.Reflection.TargetInvocationException>(
             () => InvokeParse(assembly, "ParseWithEmbeddedCode", "ab"));
         Assert.IsInstanceOfType<System.FormatException>(ex.InnerException,
             "FormatException from int.Parse must propagate through the helper.");
@@ -2660,7 +2660,7 @@ public class Antlr4GeneratedRuleLifecycleTests
             """;
 
         var assembly = CompileGeneratedSource(Emit(grammar));
-        var ex = Assert.ThrowsException<System.Reflection.TargetInvocationException>(
+        var ex = Assert.ThrowsExactly<System.Reflection.TargetInvocationException>(
             () => InvokeParse(assembly, "ParseWithEmbeddedCode", "ab"));
         Assert.IsInstanceOfType<System.FormatException>(ex.InnerException);
     }
@@ -3006,7 +3006,7 @@ public class Antlr4GeneratedRuleLifecycleTests
             """;
 
         var assembly = CompileGeneratedSource(Emit(grammar));
-        var ex = Assert.ThrowsException<System.Reflection.TargetInvocationException>(
+        var ex = Assert.ThrowsExactly<System.Reflection.TargetInvocationException>(
             () => InvokeParse(assembly, "ParseWithEmbeddedCode", "ab"));
         Assert.IsInstanceOfType<System.FormatException>(ex.InnerException);
     }
@@ -4038,7 +4038,7 @@ public class Antlr4GeneratedRuleLifecycleTests
             """;
 
         Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
-        TargetInvocationException exception = Assert.ThrowsException<TargetInvocationException>(() => InvokeParse(assembly, "ParseWithEmbeddedCode", "a"));
+        TargetInvocationException exception = Assert.ThrowsExactly<TargetInvocationException>(() => InvokeParse(assembly, "ParseWithEmbeddedCode", "a"));
 
         Assert.IsInstanceOfType<ParserAttributeAccessException>(exception.InnerException);
         Assert.AreEqual("Assignment label 'x' is not available in the current rule invocation.", exception.InnerException!.Message);
@@ -4177,7 +4177,7 @@ public class Antlr4GeneratedRuleLifecycleTests
             """;
 
         Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
-        TargetInvocationException exception = Assert.ThrowsException<TargetInvocationException>(() => InvokeParse(assembly, "ParseWithEmbeddedCode", "a"));
+        TargetInvocationException exception = Assert.ThrowsExactly<TargetInvocationException>(() => InvokeParse(assembly, "ParseWithEmbeddedCode", "a"));
 
         Assert.IsInstanceOfType<ParserAttributeAccessException>(exception.InnerException);
         Assert.AreEqual("Assignment label 'missing' is not available in the current rule invocation.", exception.InnerException!.Message);
@@ -4221,7 +4221,7 @@ public class Antlr4GeneratedRuleLifecycleTests
             """;
 
         Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
-        TargetInvocationException exception = Assert.ThrowsException<TargetInvocationException>(() => InvokeParse(assembly, "ParseWithEmbeddedCode", "a"));
+        TargetInvocationException exception = Assert.ThrowsExactly<TargetInvocationException>(() => InvokeParse(assembly, "ParseWithEmbeddedCode", "a"));
 
         Assert.IsInstanceOfType<ParserAttributeAccessException>(exception.InnerException);
         Assert.AreEqual("Return 'missing' is not available on assignment label 'c'.", exception.InnerException!.Message);

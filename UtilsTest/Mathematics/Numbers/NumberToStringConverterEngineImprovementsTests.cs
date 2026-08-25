@@ -187,7 +187,7 @@ public class NumberToStringConverterEngineImprovementsTests
     {
         var de = NumberToStringConverter.GetConverter("DE");
         Assert.IsFalse(de.SupportsMultiplicative, "DE should not support multiplicative");
-        Assert.ThrowsException<NotSupportedException>(() => de.ConvertMultiplicative(2));
+        Assert.ThrowsExactly<NotSupportedException>(() => de.ConvertMultiplicative(2));
     }
 
     [TestMethod]
@@ -195,7 +195,7 @@ public class NumberToStringConverterEngineImprovementsTests
     {
         INumberToStringConverter minimal = new MinimalConverterForFractionTest();
         Assert.IsFalse(minimal.SupportsMultiplicative);
-        Assert.ThrowsException<NotSupportedException>(() => minimal.ConvertMultiplicative(1));
+        Assert.ThrowsExactly<NotSupportedException>(() => minimal.ConvertMultiplicative(1));
     }
 
     // ─── B1 — Group connector ───────────────────────────────────────────────

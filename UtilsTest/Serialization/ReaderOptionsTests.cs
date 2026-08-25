@@ -14,12 +14,12 @@ public sealed class ReaderOptionsTests
     [TestMethod]
     public void ReaderAndWriter_NullStream_ThrowArgumentNullException()
     {
-        Assert.ThrowsException<ArgumentNullException>(() => new Reader(null!));
-        Assert.ThrowsException<ArgumentNullException>(() => new Reader(null!, new ReaderOptions()));
-        Assert.ThrowsException<ArgumentNullException>(() => new Reader(null!, new SerializationOptions()));
-        Assert.ThrowsException<ArgumentNullException>(() => new Writer(null!));
-        Assert.ThrowsException<ArgumentNullException>(() => new Writer(null!, new SerializationOptions()));
-        Assert.ThrowsException<ArgumentNullException>(() => new ReaderWriter((Stream)null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new Reader(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new Reader(null!, new ReaderOptions()));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new Reader(null!, new SerializationOptions()));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new Writer(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new Writer(null!, new SerializationOptions()));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new ReaderWriter((Stream)null!));
     }
 
     /// <summary>Ensures default readers preserve round trips larger than the former 16 MiB limit.</summary>
@@ -41,7 +41,7 @@ public sealed class ReaderOptionsTests
         using var stream = CreateStringPayload("12345");
         var reader = new Reader(stream, new ReaderOptions { MaximumPayloadLength = 4 });
 
-        Assert.ThrowsException<InvalidDataException>(() => reader.Read<string>());
+        Assert.ThrowsExactly<InvalidDataException>(() => reader.Read<string>());
     }
 
     /// <summary>Ensures the configured payload limit also applies to arbitrary-precision integers.</summary>
@@ -53,7 +53,7 @@ public sealed class ReaderOptionsTests
         stream.Position = 0;
         var reader = new Reader(stream, new ReaderOptions { MaximumPayloadLength = 4 });
 
-        Assert.ThrowsException<InvalidDataException>(() => reader.Read<BigInteger>());
+        Assert.ThrowsExactly<InvalidDataException>(() => reader.Read<BigInteger>());
     }
 
     /// <summary>Ensures a payload exactly equal to the configured limit remains valid.</summary>
@@ -72,16 +72,16 @@ public sealed class ReaderOptionsTests
     {
         using var emptyStream = CreateStringPayload(string.Empty);
         Assert.AreEqual(string.Empty, new Reader(emptyStream, new ReaderOptions { MaximumPayloadLength = 0 }).Read<string>());
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
             new Reader(new MemoryStream(), new ReaderOptions { MaximumPayloadLength = -1 }));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
             new Reader(new MemoryStream(), new ReaderOptions { MaximumReadBytes = -1 }));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
             new Reader(new MemoryStream(), new ReaderOptions { MaximumCollectionLength = -1 }));
 
         Reader noCollections = new(new MemoryStream(), new ReaderOptions { MaximumCollectionLength = 0 });
         Assert.AreEqual(0, noCollections.ReadArray<int>(0).Length);
-        Assert.ThrowsException<InvalidDataException>(() => noCollections.ReadArray<int>(1));
+        Assert.ThrowsExactly<InvalidDataException>(() => noCollections.ReadArray<int>(1));
     }
 
     /// <summary>Serializes a string into a positioned memory stream for limit tests.</summary>

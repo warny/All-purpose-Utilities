@@ -15,7 +15,7 @@ public sealed class ConverterResolutionTests
     {
         Func<IReader, IAnimal> converter = _ => new Dog();
         var reader = new Reader(new MemoryStream(), [converter]);
-        SerializationContractException error = Assert.ThrowsException<SerializationContractException>(() => reader.Read<Dog>());
+        SerializationContractException error = Assert.ThrowsExactly<SerializationContractException>(() => reader.Read<Dog>());
         StringAssert.Contains(error.Message, typeof(IAnimal).FullName!);
         Assert.IsFalse(error.InnerException is InvalidCastException);
     }
@@ -61,7 +61,7 @@ public sealed class ConverterResolutionTests
         Action<IWriter, IAnimal> animal = (_, _) => { };
         Action<IWriter, IPet> pet = (_, _) => { };
         var writer = new Writer(new MemoryStream(), [animal, pet]);
-        SerializationContractException error = Assert.ThrowsException<SerializationContractException>(() => writer.Write(new Dog()));
+        SerializationContractException error = Assert.ThrowsExactly<SerializationContractException>(() => writer.Write(new Dog()));
         StringAssert.Contains(error.Message, "equally specific");
         Assert.IsFalse(error.InnerException is InvalidCastException or System.Reflection.TargetInvocationException);
     }

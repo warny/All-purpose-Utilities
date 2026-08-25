@@ -91,7 +91,7 @@ public class ParserRuleCallStackTests
         var rootFrame = manager.Enter("start", 0);
         _ = manager.Enter("child", 1);
 
-        Assert.ThrowsException<InvalidOperationException>(() => manager.Exit(rootFrame, false));
+        Assert.ThrowsExactly<InvalidOperationException>(() => manager.Exit(rootFrame, false));
     }
 
     /// <summary>
@@ -102,7 +102,7 @@ public class ParserRuleCallStackTests
     {
         var manager = new StackParserRuleInvocationFrameManager();
 
-        Assert.ThrowsException<ArgumentNullException>(() => manager.Exit(null!, false));
+        Assert.ThrowsExactly<ArgumentNullException>(() => manager.Exit(null!, false));
     }
 
     /// <summary>

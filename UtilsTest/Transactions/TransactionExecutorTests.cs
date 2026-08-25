@@ -161,7 +161,7 @@ public class TransactionExecutorTests
         Assert.IsFalse(exception.RollbackExceptions is Exception[]);
         var collection = (ICollection<Exception>)exception.RollbackExceptions;
         Assert.IsTrue(collection.IsReadOnly);
-        Assert.ThrowsException<NotSupportedException>(() => collection.Clear());
+        Assert.ThrowsExactly<NotSupportedException>(() => collection.Clear());
     }
 
     [TestMethod]

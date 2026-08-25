@@ -145,12 +145,11 @@ public class DateFormulaTests
     }
 
     [TestMethod]
-    [ExpectedException(typeof(InvalidOperationException))]
     public void FormulaWorkingDaysRequiresCalendar()
     {
         var culture = new CultureInfo("fr-FR");
         var date = new DateTime(2024, 4, 5);
-        _ = date.Calculate("FS+1O", culture);
+        Assert.ThrowsExactly<InvalidOperationException>(() => _ = date.Calculate("FS+1O", culture));
     }
 
     [TestMethod]
@@ -180,45 +179,40 @@ public class DateFormulaTests
     }
 
     [TestMethod]
-    [ExpectedException(typeof(InvalidOperationException))]
     public void FormulaWorkingDayAdjustRequiresCalendar()
     {
         var culture = new CultureInfo("fr-FR");
         var date = new DateTime(2024, 4, 6);
-        _ = date.Calculate("FS+O", culture);
+        Assert.ThrowsExactly<InvalidOperationException>(() => _ = date.Calculate("FS+O", culture));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
     public void StartOfDayIsInvalid()
     {
         var culture = new CultureInfo("fr-FR");
-        _ = new DateTime(2024, 4, 6).Calculate("DJ", culture);
+        Assert.ThrowsExactly<ArgumentException>(() => _ = new DateTime(2024, 4, 6).Calculate("DJ", culture));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
     public void StartOfWorkingDayIsInvalid()
     {
         var culture = new CultureInfo("fr-FR");
         ICalendarProvider provider = new WeekEndCalendarProvider();
-        _ = new DateTime(2024, 4, 6).Calculate("DO", culture, provider);
+        Assert.ThrowsExactly<ArgumentException>(() => _ = new DateTime(2024, 4, 6).Calculate("DO", culture, provider));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
     public void EndOfDayIsInvalid()
     {
         var culture = new CultureInfo("fr-FR");
-        _ = new DateTime(2024, 4, 6).Calculate("FJ", culture);
+        Assert.ThrowsExactly<ArgumentException>(() => _ = new DateTime(2024, 4, 6).Calculate("FJ", culture));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
     public void EndOfWorkingDayIsInvalid()
     {
         var culture = new CultureInfo("fr-FR");
         ICalendarProvider provider = new WeekEndCalendarProvider();
-        _ = new DateTime(2024, 4, 6).Calculate("FO", culture, provider);
+        Assert.ThrowsExactly<ArgumentException>(() => _ = new DateTime(2024, 4, 6).Calculate("FO", culture, provider));
     }
 }

@@ -26,7 +26,7 @@ public sealed class NumberToStringRulePrecedenceTests
     [TestMethod]
     public void EqualRankOrdinalIntersectionIsRejected()
     {
-        var exception = Assert.ThrowsException<NumberToStringConfigurationException>(() => Create(ordinalVariants:
+        var exception = Assert.ThrowsExactly<NumberToStringConfigurationException>(() => Create(ordinalVariants:
         [
             Ordinal("female", "a", 0),
             new NumberToStringConverter.OrdinalVariantRule(
@@ -124,7 +124,7 @@ public sealed class NumberToStringRulePrecedenceTests
     [TestMethod]
     public void EqualRankCumulativeIntersectionReportsUnts001()
     {
-        var exception = Assert.ThrowsException<NumberToStringConfigurationException>(() => Create(variantRules:
+        var exception = Assert.ThrowsExactly<NumberToStringConfigurationException>(() => Create(variantRules:
         [
             Variant("female", "one", "a", 0),
             new NumberToStringConverter.VariantRule(
@@ -143,7 +143,7 @@ public sealed class NumberToStringRulePrecedenceTests
             new NumberToStringConverter.TriggerReplacementForm(new Dictionary<string, string> { ["gender"] = "female" }, "a"),
             new NumberToStringConverter.TriggerReplacementForm(new Dictionary<string, string> { ["number"] = "plural" }, "b")
         };
-        var exception = Assert.ThrowsException<NumberToStringConfigurationException>(() => Create(triggers:
+        var exception = Assert.ThrowsExactly<NumberToStringConfigurationException>(() => Create(triggers:
         [
             new NumberToStringConverter.TriggerRule(NumberToStringConverter.TriggerAt.End, null,
             [new NumberToStringConverter.TriggerReplace("one", false, forms, null)])
@@ -158,7 +158,7 @@ public sealed class NumberToStringRulePrecedenceTests
         var rule = new NumberToStringConverter.VariantRule(
             new Dictionary<string, string> { ["gender"] = "female", ["genre"] = "female" },
             [new NumberToStringConverter.ReplacementRule("one", "a", ReplacementScope.Anywhere)]);
-        var exception = Assert.ThrowsException<NumberToStringConfigurationException>(() => Create(variantRules: [rule]));
+        var exception = Assert.ThrowsExactly<NumberToStringConfigurationException>(() => Create(variantRules: [rule]));
         Assert.AreEqual("UNTS004", exception.ErrorCode);
     }
 
@@ -252,7 +252,7 @@ public sealed class NumberToStringRulePrecedenceTests
         {
             string culture = $"precedence-default-ambiguous-{element}";
             NumberToStringConfigurationException exception =
-                Assert.ThrowsException<NumberToStringConfigurationException>(() =>
+                Assert.ThrowsExactly<NumberToStringConfigurationException>(() =>
                     NumberToStringConverter.RegisterConfigurations(
                         [CreateOrdinalFallbackXml(culture, element, reverse: false, equalPriority: true)],
                         DuplicateCulturePolicy.Replace));

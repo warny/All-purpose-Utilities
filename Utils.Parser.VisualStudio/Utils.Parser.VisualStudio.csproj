@@ -14,7 +14,7 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.VisualStudio.Extensibility" Version="17.14.2098" />
         <PackageReference Include="Microsoft.VisualStudio.Extensibility.Build" Version="17.14.40608" PrivateAssets="all" />
-        <PackageReference Include="Nerdbank.Streams" Version="2.11.90" />
+        <PackageReference Include="Nerdbank.Streams" Version="2.13.31" />
         <PackageReference Include="System.IO.Pipes.AccessControl" Version="5.0.0" />
     </ItemGroup>
 
@@ -56,17 +56,12 @@
         <ItemGroup>
             <WorkerOutputFiles Include="$(WorkerOutputDir)**\*.*" />
         </ItemGroup>
-        <Copy SourceFiles="@(WorkerOutputFiles)"
-              DestinationFolder="$(OutputPath)worker\%(RecursiveDir)"
-              SkipUnchangedFiles="true" />
+        <Copy SourceFiles="@(WorkerOutputFiles)" DestinationFolder="$(OutputPath)worker\%(RecursiveDir)" SkipUnchangedFiles="true" />
     </Target>
 
     <Target Name="EnsureSourceVsixManifest" BeforeTargets="DetokenizeVsixManifestFile">
         <MakeDir Directories="$(IntermediateOutputPath)" />
-        <Copy
-            SourceFiles="source.extension.vsixmanifest"
-            DestinationFiles="$(IntermediateOutputPath)extension.vsixmanifest"
-            Condition="Exists('source.extension.vsixmanifest')" />
+        <Copy SourceFiles="source.extension.vsixmanifest" DestinationFiles="$(IntermediateOutputPath)extension.vsixmanifest" Condition="Exists('source.extension.vsixmanifest')" />
     </Target>
 
     <ItemGroup>
@@ -82,6 +77,10 @@
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
             <_Parameter1>UtilsTest.Functional</_Parameter1>
         </AssemblyAttribute>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Update="Microsoft.SourceLink.GitHub" Version="10.0.400" />
     </ItemGroup>
 
 </Project>

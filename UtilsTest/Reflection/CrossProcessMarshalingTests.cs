@@ -119,7 +119,7 @@ public class CrossProcessMarshalingTests
     [TestMethod]
     public void EnsureInterfaceIsSupported_Throws_ForIntPtrParameter()
     {
-        var ex = Assert.ThrowsException<NotSupportedException>(
+        var ex = Assert.ThrowsExactly<NotSupportedException>(
             () => CrossProcessMarshaling.EnsureInterfaceIsSupported(typeof(IUnsupportedPointer)));
         StringAssert.Contains(ex.Message, "EmitInProcess");
     }
@@ -127,21 +127,21 @@ public class CrossProcessMarshalingTests
     [TestMethod]
     public void EnsureInterfaceIsSupported_Throws_ForArbitraryReferenceTypeParameter()
     {
-        Assert.ThrowsException<NotSupportedException>(
+        Assert.ThrowsExactly<NotSupportedException>(
             () => CrossProcessMarshaling.EnsureInterfaceIsSupported(typeof(IUnsupportedReferenceType)));
     }
 
     [TestMethod]
     public void EnsureInterfaceIsSupported_Throws_ForStructWithUnsupportedField()
     {
-        Assert.ThrowsException<NotSupportedException>(
+        Assert.ThrowsExactly<NotSupportedException>(
             () => CrossProcessMarshaling.EnsureInterfaceIsSupported(typeof(IUnsupportedNestedField)));
     }
 
     [TestMethod]
     public void EnsureInterfaceIsSupported_Throws_ForUnsupportedReturnType()
     {
-        Assert.ThrowsException<NotSupportedException>(
+        Assert.ThrowsExactly<NotSupportedException>(
             () => CrossProcessMarshaling.EnsureInterfaceIsSupported(typeof(IUnsupportedReturnType)));
     }
 
@@ -219,7 +219,7 @@ public class CrossProcessMarshalingTests
     [TestMethod]
     public void EnsureInterfaceIsSupported_Throws_ForStructWithUnsupportedPublicProperty()
     {
-        Assert.ThrowsException<NotSupportedException>(
+        Assert.ThrowsExactly<NotSupportedException>(
             () => CrossProcessMarshaling.EnsureInterfaceIsSupported(typeof(IStructWithUnsupportedProp)));
     }
 
@@ -267,7 +267,7 @@ public class CrossProcessMarshalingTests
     [TestMethod]
     public void EnsureInterfaceIsSupported_Throws_ForStructWithIndexer()
     {
-        Assert.ThrowsException<NotSupportedException>(
+        Assert.ThrowsExactly<NotSupportedException>(
             () => CrossProcessMarshaling.EnsureInterfaceIsSupported(typeof(IStructWithIndexer)));
     }
 
@@ -285,7 +285,7 @@ public class CrossProcessMarshalingTests
     {
         // A getter that throws prevents serialization of the default instance, which is detected
         // by the round-trip validation in EnsureInterfaceIsSupported.
-        Assert.ThrowsException<NotSupportedException>(
+        Assert.ThrowsExactly<NotSupportedException>(
             () => CrossProcessMarshaling.EnsureInterfaceIsSupported(typeof(IStructWithThrowingGetter)));
     }
 }

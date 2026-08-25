@@ -38,7 +38,7 @@ public class NumberToStringConverterBatchTests
     {
         INumberToStringConverter iface = NumberToStringConverter.GetConverter("EN");
         // BigInteger > long.MaxValue → ArgumentOutOfRangeException with clear message (#51)
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => iface.ConvertOrdinal(new BigInteger(long.MaxValue) + 1));
     }
 
@@ -377,7 +377,7 @@ public class NumberToStringConverterBatchTests
     public void Convert_VN_AboveMax_Throws()
     {
         var vn = NumberToStringConverter.GetConverter("VN");
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => vn.Convert(1_000_000_000_000L));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => vn.Convert(1_000_000_000_000L));
     }
 
     [TestMethod]
@@ -585,7 +585,7 @@ public class NumberToStringConverterBatchTests
     public void Convert_FA_AboveMax_Throws()
     {
         var fa = NumberToStringConverter.GetConverter("FA");
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => fa.Convert(new BigInteger(1_000_000_000_000_000L)));
     }
 

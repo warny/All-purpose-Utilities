@@ -144,7 +144,7 @@ public class ParserDiagnosticsTests
             ParserRules: [parserRule],
             RootRule: parserRule);
 
-        Assert.ThrowsException<GrammarValidationException>(() => RuleResolver.Resolve(definition, diagnostics));
+        Assert.ThrowsExactly<GrammarValidationException>(() => RuleResolver.Resolve(definition, diagnostics));
         Assert.IsTrue(diagnostics.Any(d => d.Code == ParserDiagnostics.UnknownRuleReference.Code));
     }
 
@@ -386,7 +386,7 @@ public class ParserDiagnosticsTests
             ParserRules: [parserRule],
             RootRule: parserRule);
 
-        Assert.ThrowsException<GrammarValidationException>(() => RuleResolver.Resolve(definition, diagnostics: null));
+        Assert.ThrowsExactly<GrammarValidationException>(() => RuleResolver.Resolve(definition, diagnostics: null));
     }
 
     [TestMethod]

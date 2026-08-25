@@ -159,7 +159,7 @@ public class ODataQueryTranslatorTests
     {
         // item 10: arbitrary method calls must not be compiled and invoked during
         // query translation; NotSupportedException is the required signal.
-        Assert.ThrowsException<NotSupportedException>(
+        Assert.ThrowsExactly<NotSupportedException>(
             () => Filter<Item>(x => x.Quantity > GetThreshold()),
             "A method call in a filter value expression must throw NotSupportedException.");
     }
@@ -171,7 +171,7 @@ public class ODataQueryTranslatorTests
         // Only compiler-generated closure fields (FieldInfo) are in the safe subset.
         // The caller must assign the value to a local variable before building the query.
         var settings = new { MinQuantity = 5 };
-        Assert.ThrowsException<NotSupportedException>(
+        Assert.ThrowsExactly<NotSupportedException>(
             () => Filter<Item>(x => x.Quantity > settings.MinQuantity),
             "A property getter read in a filter value expression must throw NotSupportedException.");
     }

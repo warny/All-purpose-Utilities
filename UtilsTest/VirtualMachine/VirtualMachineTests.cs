@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -250,14 +250,14 @@ namespace UtilsTest.VirtualMachine
         [TestMethod]
         public void Execute_NullContext_ThrowsArgumentNullException()
         {
-            Assert.ThrowsException<ArgumentNullException>(
+            Assert.ThrowsExactly<ArgumentNullException>(
                 () => new TestMachine().Execute(null!));
         }
 
         [TestMethod]
         public void ExecuteStep_NullContext_ThrowsArgumentNullException()
         {
-            Assert.ThrowsException<ArgumentNullException>(
+            Assert.ThrowsExactly<ArgumentNullException>(
                 () => new TestMachine().ExecuteStep(null!));
         }
 
@@ -266,14 +266,14 @@ namespace UtilsTest.VirtualMachine
         [TestMethod]
         public void InstructionAttribute_EmptyName_ThrowsArgumentException()
         {
-            Assert.ThrowsException<ArgumentException>(
+            Assert.ThrowsExactly<ArgumentException>(
                 () => new InstructionAttribute("", 0x01));
         }
 
         [TestMethod]
         public void InstructionAttribute_WhitespaceName_ThrowsArgumentException()
         {
-            Assert.ThrowsException<ArgumentException>(
+            Assert.ThrowsExactly<ArgumentException>(
                 () => new InstructionAttribute("   ", 0x01));
         }
 
@@ -281,7 +281,7 @@ namespace UtilsTest.VirtualMachine
         public void RegisterInstruction_EmptyName_ThrowsArgumentException()
         {
             var machine = new TestMachine();
-            Assert.ThrowsException<ArgumentException>(
+            Assert.ThrowsExactly<ArgumentException>(
                 () => machine.RegisterInstruction([0xA0], "", _ => { }));
         }
 
@@ -289,7 +289,7 @@ namespace UtilsTest.VirtualMachine
         public void RegisterInstruction_WhitespaceName_ThrowsArgumentException()
         {
             var machine = new TestMachine();
-            Assert.ThrowsException<ArgumentException>(
+            Assert.ThrowsExactly<ArgumentException>(
                 () => machine.RegisterInstruction([0xA0], "   ", _ => { }));
         }
 
@@ -305,7 +305,7 @@ namespace UtilsTest.VirtualMachine
             using var cts = new CancellationTokenSource();
             cts.Cancel();  // already cancelled
 
-            Assert.ThrowsException<OperationCanceledException>(
+            Assert.ThrowsExactly<OperationCanceledException>(
                 () => machine.Execute(context, cts.Token));
         }
 
@@ -327,7 +327,7 @@ namespace UtilsTest.VirtualMachine
         public void RegisterInstruction_EmptyOpcode_Throws()
         {
             var machine = new TestMachine();
-            Assert.ThrowsException<ArgumentException>(
+            Assert.ThrowsExactly<ArgumentException>(
                 () => machine.RegisterInstruction([], "NOP", _ => { }));
         }
 
@@ -432,7 +432,7 @@ namespace UtilsTest.VirtualMachine
             // [0x10] already registered; [0x10, 0x20] is rejected because [0x10] is a prefix of it.
             var machine = new TestMachine(); // TestMachine has [0x10,0x01] and [0x10,0x02]
             machine.RegisterInstruction([0xAA], "A", _ => { });
-            Assert.ThrowsException<ArgumentException>(
+            Assert.ThrowsExactly<ArgumentException>(
                 () => machine.RegisterInstruction([0xAA, 0x01], "B", _ => { }));
         }
 
@@ -442,7 +442,7 @@ namespace UtilsTest.VirtualMachine
             // [0xBB, 0x01] registered first; [0xBB] alone conflicts because it is a prefix.
             var machine = new TestMachine();
             machine.RegisterInstruction([0xBB, 0x01], "LONG", _ => { });
-            Assert.ThrowsException<ArgumentException>(
+            Assert.ThrowsExactly<ArgumentException>(
                 () => machine.RegisterInstruction([0xBB], "SHORT", _ => { }));
         }
 
@@ -489,7 +489,7 @@ namespace UtilsTest.VirtualMachine
             // [0xAA] registered first; [0xAA, 0x01] would make [0xAA] a prefix — rejected.
             var machine = new TestMachine();
             machine.RegisterInstruction([0xAA], "SHORT", _ => { });
-            Assert.ThrowsException<ArgumentException>(
+            Assert.ThrowsExactly<ArgumentException>(
                 () => machine.RegisterInstruction([0xAA, 0x01], "LONG", _ => { }, overwrite: true));
         }
 
@@ -499,7 +499,7 @@ namespace UtilsTest.VirtualMachine
             // [0xBB, 0x01] registered first; [0xBB] alone is a prefix of it — rejected even with overwrite.
             var machine = new TestMachine();
             machine.RegisterInstruction([0xBB, 0x01], "LONG", _ => { });
-            Assert.ThrowsException<ArgumentException>(
+            Assert.ThrowsExactly<ArgumentException>(
                 () => machine.RegisterInstruction([0xBB], "SHORT", _ => { }, overwrite: true));
         }
 
@@ -524,7 +524,7 @@ namespace UtilsTest.VirtualMachine
         {
             var context = new DefaultContext(new byte[] { 0xFF });
             var machine = new TestMachine();
-            var ex = Assert.ThrowsException<VirtualProcessorException>(() => machine.Execute(context));
+            var ex = Assert.ThrowsExactly<VirtualProcessorException>(() => machine.Execute(context));
             Assert.AreEqual(0, ex.InstructionPointer);
             CollectionAssert.AreEqual(new byte[] { 0xFF }, ex.OpcodeBytes);
         }
@@ -535,7 +535,7 @@ namespace UtilsTest.VirtualMachine
             // 0x01 alone doesn't match any instruction — all opcodes starting with 0x01 are 2 bytes.
             var context = new DefaultContext(new byte[] { 0x01 });
             var machine = new TestMachine();
-            var ex = Assert.ThrowsException<VirtualProcessorException>(() => machine.Execute(context));
+            var ex = Assert.ThrowsExactly<VirtualProcessorException>(() => machine.Execute(context));
             Assert.AreEqual(0, ex.InstructionPointer);
         }
 
@@ -545,7 +545,7 @@ namespace UtilsTest.VirtualMachine
             // Opcode [0x01, 0x01] (PUSH_BYTE) matches, but no operand byte follows.
             var context = new DefaultContext(new byte[] { 0x01, 0x01 });
             var machine = new TestMachine();
-            var ex = Assert.ThrowsException<VirtualProcessorException>(() => machine.Execute(context));
+            var ex = Assert.ThrowsExactly<VirtualProcessorException>(() => machine.Execute(context));
             Assert.AreEqual(0, ex.InstructionPointer);
             CollectionAssert.AreEqual(new byte[] { 0x01, 0x01 }, ex.OpcodeBytes);
             Assert.IsNotNull(ex.InnerException);
@@ -622,7 +622,7 @@ namespace UtilsTest.VirtualMachine
             byte[] payload = [0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00];
             byte[] instructions = [0x20, .. payload];
             var context = new DefaultContext(instructions);
-            Assert.ThrowsException<FormatException>(() => new LEB128TestMachine().Execute(context));
+            Assert.ThrowsExactly<FormatException>(() => new LEB128TestMachine().Execute(context));
         }
 
         [TestMethod]
@@ -633,7 +633,7 @@ namespace UtilsTest.VirtualMachine
             byte[] payload = [0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x02];
             byte[] instructions = [0x20, .. payload];
             var context = new DefaultContext(instructions);
-            Assert.ThrowsException<FormatException>(() => new LEB128TestMachine().Execute(context));
+            Assert.ThrowsExactly<FormatException>(() => new LEB128TestMachine().Execute(context));
         }
 
         [TestMethod]
@@ -654,7 +654,7 @@ namespace UtilsTest.VirtualMachine
             byte[] payload = [0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00];
             byte[] instructions = [0x21, .. payload];
             var context = new DefaultContext(instructions);
-            Assert.ThrowsException<FormatException>(() => new LEB128TestMachine().Execute(context));
+            Assert.ThrowsExactly<FormatException>(() => new LEB128TestMachine().Execute(context));
         }
 
         [TestMethod]
@@ -666,7 +666,7 @@ namespace UtilsTest.VirtualMachine
             byte[] payload = [0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x01];
             byte[] instructions = [0x21, .. payload];
             var context = new DefaultContext(instructions);
-            Assert.ThrowsException<FormatException>(() => new LEB128TestMachine().Execute(context));
+            Assert.ThrowsExactly<FormatException>(() => new LEB128TestMachine().Execute(context));
         }
 
         [TestMethod]
@@ -677,7 +677,7 @@ namespace UtilsTest.VirtualMachine
             byte[] payload = [0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x7E];
             byte[] instructions = [0x21, .. payload];
             var context = new DefaultContext(instructions);
-            Assert.ThrowsException<FormatException>(() => new LEB128TestMachine().Execute(context));
+            Assert.ThrowsExactly<FormatException>(() => new LEB128TestMachine().Execute(context));
         }
 
         [TestMethod]
@@ -709,7 +709,7 @@ namespace UtilsTest.VirtualMachine
         {
             var machine = new TestMachine();
             machine.RegisterInstruction([0xFF], "NOP1", _ => { });
-            Assert.ThrowsException<ArgumentException>(
+            Assert.ThrowsExactly<ArgumentException>(
                 () => machine.RegisterInstruction([0xFF], "NOP2", _ => { }));
         }
 
@@ -775,19 +775,19 @@ namespace UtilsTest.VirtualMachine
         [TestMethod]
         public void InstructionAttribute_NullName_Throws()
         {
-            Assert.ThrowsException<ArgumentNullException>(() => new InstructionAttribute(null!, 0x01));
+            Assert.ThrowsExactly<ArgumentNullException>(() => new InstructionAttribute(null!, 0x01));
         }
 
         [TestMethod]
         public void InstructionAttribute_NullInstruction_ThrowsArgumentNullException()
         {
-            Assert.ThrowsException<ArgumentNullException>(() => new InstructionAttribute("NOP", null!));
+            Assert.ThrowsExactly<ArgumentNullException>(() => new InstructionAttribute("NOP", null!));
         }
 
         [TestMethod]
         public void InstructionAttribute_EmptyOpcode_Throws()
         {
-            Assert.ThrowsException<ArgumentException>(() => new InstructionAttribute("NOP"));
+            Assert.ThrowsExactly<ArgumentException>(() => new InstructionAttribute("NOP"));
         }
 
         [TestMethod]
@@ -855,7 +855,7 @@ namespace UtilsTest.VirtualMachine
             byte[] instructions = [0x30]; // PUSH_SBYTE opcode with no operand
             var context = new DefaultContext(instructions);
 
-            Assert.ThrowsException<VirtualProcessorException>(
+            Assert.ThrowsExactly<VirtualProcessorException>(
                 () => new SByteTestMachine().Execute(context));
 
             // IP must be restored to the instruction start (0), not left at 1 (after opcode).
@@ -872,7 +872,7 @@ namespace UtilsTest.VirtualMachine
             byte[] instructions = [0x40, 0x01, 0x02, 0x03]; // PUSH_INT with 3 of 4 operand bytes
             var ctx = new TypedStackContext<int>(instructions);
 
-            Assert.ThrowsException<VirtualProcessorException>(
+            Assert.ThrowsExactly<VirtualProcessorException>(
                 () => new IntMachine().Execute(ctx));
 
             // IP must point to the instruction start (0), not to after the partial operand.
@@ -936,7 +936,7 @@ namespace UtilsTest.VirtualMachine
         public void VirtualProcessorException_OpcodeBytes_MutationDoesNotAlterDiagnostics()
         {
             var context = new DefaultContext(new byte[] { 0xFF });
-            var ex = Assert.ThrowsException<VirtualProcessorException>(
+            var ex = Assert.ThrowsExactly<VirtualProcessorException>(
                 () => new TestMachine().Execute(context));
 
             byte[]? first = ex.OpcodeBytes;
@@ -954,7 +954,7 @@ namespace UtilsTest.VirtualMachine
         {
             // PUSH_BYTE matches [0x01, 0x01] but operand byte is missing
             var context = new DefaultContext(new byte[] { 0x01, 0x01 });
-            var ex = Assert.ThrowsException<VirtualProcessorException>(
+            var ex = Assert.ThrowsExactly<VirtualProcessorException>(
                 () => new TestMachine().Execute(context));
             Assert.AreEqual("PUSH_BYTE", ex.InstructionName);
         }
@@ -964,7 +964,7 @@ namespace UtilsTest.VirtualMachine
         {
             // Unknown opcode: no instruction matched, so no name is available
             var context = new DefaultContext(new byte[] { 0xAA });
-            var ex = Assert.ThrowsException<VirtualProcessorException>(
+            var ex = Assert.ThrowsExactly<VirtualProcessorException>(
                 () => new TestMachine().Execute(context));
             Assert.IsNull(ex.InstructionName);
         }
@@ -1222,28 +1222,28 @@ namespace UtilsTest.VirtualMachine
             var stack = new BoundedStack<int>(maxDepth: 2);
             stack.Push(1);
             stack.Push(2);
-            Assert.ThrowsException<VmLimitExceededException>(() => stack.Push(3));
+            Assert.ThrowsExactly<VmLimitExceededException>(() => stack.Push(3));
         }
 
         [TestMethod]
         public void BoundedStack_Pop_EmptyStack_ThrowsInvalidOperationException()
         {
             var stack = new BoundedStack<int>();
-            Assert.ThrowsException<VmInvalidOperationException>(() => stack.Pop());
+            Assert.ThrowsExactly<VmInvalidOperationException>(() => stack.Pop());
         }
 
         [TestMethod]
         public void BoundedStack_Peek_EmptyStack_ThrowsInvalidOperationException()
         {
             var stack = new BoundedStack<int>();
-            Assert.ThrowsException<VmInvalidOperationException>(() => stack.Peek());
+            Assert.ThrowsExactly<VmInvalidOperationException>(() => stack.Peek());
         }
 
         [TestMethod]
         public void BoundedStack_InvalidMaxDepth_ThrowsArgumentOutOfRangeException()
         {
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => new BoundedStack<int>(0));
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => new BoundedStack<int>(-1));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new BoundedStack<int>(0));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new BoundedStack<int>(-1));
         }
 
         [TestMethod]
@@ -1273,7 +1273,7 @@ namespace UtilsTest.VirtualMachine
         {
             var ctx = new DefaultContext(ReadOnlyMemory<byte>.Empty, maxOperandStackDepth: 1);
             ctx.Stack.Push(42);
-            Assert.ThrowsException<VmLimitExceededException>(() => ctx.Stack.Push(99));
+            Assert.ThrowsExactly<VmLimitExceededException>(() => ctx.Stack.Push(99));
         }
 
         [TestMethod]
@@ -1281,7 +1281,7 @@ namespace UtilsTest.VirtualMachine
         {
             var ctx = new TypedStackContext<int>(ReadOnlyMemory<byte>.Empty, maxOperandStackDepth: 1);
             ctx.Stack.Push(1);
-            Assert.ThrowsException<VmLimitExceededException>(() => ctx.Stack.Push(2));
+            Assert.ThrowsExactly<VmLimitExceededException>(() => ctx.Stack.Push(2));
         }
 
         // ── Context.Data defensive copy (item 43) ─────────────────────────────────────────────
@@ -1326,7 +1326,7 @@ namespace UtilsTest.VirtualMachine
                 before: (ctx, addr, name) => throw new InvalidOperationException("boom"));
             byte[] program = [0x01]; // PUSH_A
             var ctx = new DefaultContext(program);
-            var ex = Assert.ThrowsException<VmInspectorException>(() => machine.Execute(ctx));
+            var ex = Assert.ThrowsExactly<VmInspectorException>(() => machine.Execute(ctx));
             Assert.AreEqual(VmInspectorPhase.BeforeInstruction, ex.Phase);
             Assert.AreEqual(0, ex.Address);
             Assert.IsInstanceOfType<InvalidOperationException>(ex.InnerException);
@@ -1341,7 +1341,7 @@ namespace UtilsTest.VirtualMachine
             machine.Breakpoints.Add(0);
             byte[] program = [0x01]; // PUSH_A
             var ctx = new DefaultContext(program);
-            var ex = Assert.ThrowsException<VmInspectorException>(() => machine.Execute(ctx));
+            var ex = Assert.ThrowsExactly<VmInspectorException>(() => machine.Execute(ctx));
             Assert.AreEqual(VmInspectorPhase.OnBreakpoint, ex.Phase);
             Assert.AreEqual(0, ex.Address);
             Assert.IsInstanceOfType<InvalidOperationException>(ex.InnerException);
@@ -1354,7 +1354,7 @@ namespace UtilsTest.VirtualMachine
             machine.Inspector = MakeInspector(
                 before: (ctx, addr, name) => throw new InvalidOperationException("boom"));
             byte[] program = [0x01]; // PUSH_A
-            var ex = Assert.ThrowsException<VmInspectorException>(
+            var ex = Assert.ThrowsExactly<VmInspectorException>(
                 () => machine.Execute(new DefaultContext(program)));
             Assert.AreEqual("PUSH_A", ex.InstructionName);
         }
@@ -1368,7 +1368,7 @@ namespace UtilsTest.VirtualMachine
             machine.Inspector = MakeInspector(
                 before: (ctx, addr, name) => throw inner);
             byte[] program = [0x01];
-            var ex = Assert.ThrowsException<VmInspectorException>(
+            var ex = Assert.ThrowsExactly<VmInspectorException>(
                 () => machine.Execute(new DefaultContext(program)));
             Assert.AreSame(inner, ex);
         }
@@ -1381,7 +1381,7 @@ namespace UtilsTest.VirtualMachine
             machine.Inspector = MakeInspector(
                 before: (ctx, addr, name) => throw new InvalidOperationException("slow"));
             byte[] program = [0x01, 0x01, 42]; // PUSH_BYTE 42 (slow path)
-            var ex = Assert.ThrowsException<VmInspectorException>(
+            var ex = Assert.ThrowsExactly<VmInspectorException>(
                 () => machine.Execute(new DefaultContext(program)));
             Assert.AreEqual(VmInspectorPhase.BeforeInstruction, ex.Phase);
         }
@@ -1399,7 +1399,7 @@ namespace UtilsTest.VirtualMachine
             machine.RegisterInstruction([0xFF], "LOOP", ctx => ctx.InstructionPointer = 0);
             byte[] program = [0x01, 0xFF]; // PUSH_A, LOOP — infinite loop
             var ctx = new DefaultContext(program);
-            Assert.ThrowsException<InstructionBudgetExceededException>(
+            Assert.ThrowsExactly<InstructionBudgetExceededException>(
                 () => machine.Execute(ctx, maxInstructions: 5));
         }
 
@@ -1410,7 +1410,7 @@ namespace UtilsTest.VirtualMachine
             machine.RegisterInstruction([0xFF], "LOOP", ctx => ctx.InstructionPointer = 0);
             byte[] program = [0x01, 0xFF];
             var ctx = new DefaultContext(program);
-            var ex = Assert.ThrowsException<InstructionBudgetExceededException>(
+            var ex = Assert.ThrowsExactly<InstructionBudgetExceededException>(
                 () => machine.Execute(ctx, maxInstructions: 3));
             Assert.AreEqual(3L, ex.Budget);
         }
@@ -1484,7 +1484,7 @@ namespace UtilsTest.VirtualMachine
             // A handler that throws IOOB from its own logic must NOT be wrapped as VirtualProcessorException.
             var machine = new FastPathFaultMachine();
             byte[] program = [0xA0];
-            Assert.ThrowsException<IndexOutOfRangeException>(
+            Assert.ThrowsExactly<IndexOutOfRangeException>(
                 () => machine.Execute(new DefaultContext(program)));
         }
 
@@ -1494,7 +1494,7 @@ namespace UtilsTest.VirtualMachine
             // A handler that throws AOOB from its own logic must NOT be wrapped as VirtualProcessorException.
             var machine = new FastPathFaultMachine();
             byte[] program = [0xA1];
-            Assert.ThrowsException<ArgumentOutOfRangeException>(
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(
                 () => machine.Execute(new DefaultContext(program)));
         }
 
@@ -1504,7 +1504,7 @@ namespace UtilsTest.VirtualMachine
             // Genuine end-of-stream during operand read must be wrapped as VirtualProcessorException.
             var machine = new FastPathFaultMachine();
             byte[] program = [0xA2]; // opcode only, no operand byte
-            var ex = Assert.ThrowsException<VirtualProcessorException>(
+            var ex = Assert.ThrowsExactly<VirtualProcessorException>(
                 () => machine.Execute(new DefaultContext(program)));
             Assert.AreEqual(0, ex.InstructionPointer);
             Assert.AreEqual("TRUNCATED_BYTE", ex.InstructionName);
@@ -1516,7 +1516,7 @@ namespace UtilsTest.VirtualMachine
             // Same guarantee for the slow dispatch path (multi-byte opcode).
             var machine = new SlowPathFaultMachine();
             byte[] program = [0xB0, 0x01]; // opcode only, no operands
-            Assert.ThrowsException<IndexOutOfRangeException>(
+            Assert.ThrowsExactly<IndexOutOfRangeException>(
                 () => machine.Execute(new DefaultContext(program)));
         }
     }
@@ -1660,7 +1660,7 @@ namespace UtilsTest.VirtualMachine
         public void GenericMethod_ThrowsInvalidOperationException()
         {
             // Generic instruction methods cannot be compiled by expression-tree dispatch.
-            var ex = Assert.ThrowsException<VmInvalidOperationException>(
+            var ex = Assert.ThrowsExactly<VmInvalidOperationException>(
                 () => new GenericHandlerMachine());
             StringAssert.Contains(ex.Message, "Generic");
         }
@@ -1669,7 +1669,7 @@ namespace UtilsTest.VirtualMachine
         public void NonVoidReturn_ThrowsInvalidOperationException()
         {
             // Non-void instruction methods are not callable as InstructionDelegate.
-            var ex = Assert.ThrowsException<VmInvalidOperationException>(
+            var ex = Assert.ThrowsExactly<VmInvalidOperationException>(
                 () => new NonVoidHandlerMachine());
             StringAssert.Contains(ex.Message, "void");
         }
@@ -1678,7 +1678,7 @@ namespace UtilsTest.VirtualMachine
         public void UnsupportedOperandType_ThrowsInvalidOperationException()
         {
             // An operand type not present in INumberReader gives a clear error, not KeyNotFoundException.
-            var ex = Assert.ThrowsException<VmInvalidOperationException>(
+            var ex = Assert.ThrowsExactly<VmInvalidOperationException>(
                 () => new UnsupportedOperandMachine());
             StringAssert.Contains(ex.Message, "unsupported operand type");
         }
@@ -1686,7 +1686,7 @@ namespace UtilsTest.VirtualMachine
         [TestMethod]
         public void OutParameter_ThrowsInvalidOperationException()
         {
-            var ex = Assert.ThrowsException<VmInvalidOperationException>(
+            var ex = Assert.ThrowsExactly<VmInvalidOperationException>(
                 () => new OutParamMachine());
             StringAssert.Contains(ex.Message, "out");
         }
@@ -1694,7 +1694,7 @@ namespace UtilsTest.VirtualMachine
         [TestMethod]
         public void RefParameter_ThrowsInvalidOperationException()
         {
-            var ex = Assert.ThrowsException<VmInvalidOperationException>(
+            var ex = Assert.ThrowsExactly<VmInvalidOperationException>(
                 () => new RefParamMachine());
             StringAssert.Contains(ex.Message, "ref");
         }

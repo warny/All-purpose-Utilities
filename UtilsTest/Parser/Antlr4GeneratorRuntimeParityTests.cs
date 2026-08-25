@@ -410,7 +410,7 @@ public class Antlr4GeneratorRuntimeParityTests
 
     private static void AssertRuntimeFailsAndGeneratorRecovers(string grammar, int minimumGeneratorDiagnostics)
     {
-        Assert.ThrowsException<GrammarParseException>(() => Antlr4GrammarConverter.ParseUnresolved(grammar, new DiagnosticBag()));
+        Assert.ThrowsExactly<GrammarParseException>(() => Antlr4GrammarConverter.ParseUnresolved(grammar, new DiagnosticBag()));
         var diagnostics = new DiagnosticBag();
         _ = new G4Parser(new G4Tokenizer(grammar).Tokenize(), diagnostics).Parse();
         Assert.IsTrue(

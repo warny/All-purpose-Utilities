@@ -163,7 +163,7 @@ public class BaseEncoderStreamTests
         var sw = new StringWriter();
         var stream = new BaseEncoderStream(sw, Bases.Base64);
         stream.Close();
-        Assert.ThrowsException<ObjectDisposedException>(() => stream.Write(new byte[] { 1 }, 0, 1));
+        Assert.ThrowsExactly<ObjectDisposedException>(() => stream.Write(new byte[] { 1 }, 0, 1));
     }
 
     // ---- item 13: off-by-one du wrapping ----
@@ -254,7 +254,7 @@ public class BaseEncoderStreamTests
         var sw = new StringWriter();
         var stream = new BaseEncoderStream(sw, Bases.Base64);
         stream.Close();
-        await Assert.ThrowsExceptionAsync<ObjectDisposedException>(
+        await Assert.ThrowsExactlyAsync<ObjectDisposedException>(
             () => stream.WriteAsync(new byte[] { 1 }, 0, 1, CancellationToken.None));
     }
 
@@ -265,7 +265,7 @@ public class BaseEncoderStreamTests
         var stream = new BaseEncoderStream(sw, Bases.Base64);
         using var cts = new CancellationTokenSource();
         cts.Cancel();
-        await Assert.ThrowsExceptionAsync<OperationCanceledException>(
+        await Assert.ThrowsExactlyAsync<OperationCanceledException>(
             () => stream.WriteAsync(new byte[] { 1, 2, 3 }, 0, 3, cts.Token));
         Assert.AreEqual(0, sw.ToString().Length, "No output must be produced when cancelled before encoding.");
     }
@@ -319,9 +319,9 @@ public class BaseEncoderStreamTests
     public void Constructor_RejectsInvalidMaxDataWidth()
     {
         using var sw = new StringWriter();
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new BaseEncoderStream(sw, Bases.Base64, maxDataWidth: 0));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new BaseEncoderStream(sw, Bases.Base64, maxDataWidth: -2));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new BaseEncoderStream(sw, Bases.Base64, maxDataWidth: int.MinValue));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new BaseEncoderStream(sw, Bases.Base64, maxDataWidth: 0));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new BaseEncoderStream(sw, Bases.Base64, maxDataWidth: -2));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new BaseEncoderStream(sw, Bases.Base64, maxDataWidth: int.MinValue));
     }
 
     /// <summary>Verifies a negative <c>indent</c> fails at construction time, not on the first wrap.</summary>
@@ -329,7 +329,7 @@ public class BaseEncoderStreamTests
     public void Constructor_RejectsNegativeIndent()
     {
         using var sw = new StringWriter();
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new BaseEncoderStream(sw, Bases.Base64, maxDataWidth: 4, indent: -1));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new BaseEncoderStream(sw, Bases.Base64, maxDataWidth: 4, indent: -1));
     }
 
     // ---- IO-12: separator-between-lines formatting contract ----
@@ -527,7 +527,7 @@ public class BaseEncoderStreamTests
     {
         using var sw = new StringWriter();
         using var stream = new BaseEncoderStream(sw, Bases.Base64);
-        Assert.ThrowsException<NotSupportedException>(() => stream.Position = 0);
+        Assert.ThrowsExactly<NotSupportedException>(() => stream.Position = 0);
     }
 
     /// <summary>Verifies <see cref="Stream.Read(byte[], int, int)"/> throws <see cref="NotSupportedException"/>, matching <c>CanRead == false</c>.</summary>
@@ -536,7 +536,7 @@ public class BaseEncoderStreamTests
     {
         using var sw = new StringWriter();
         using var stream = new BaseEncoderStream(sw, Bases.Base64);
-        Assert.ThrowsException<NotSupportedException>(() => stream.Read(new byte[1], 0, 1));
+        Assert.ThrowsExactly<NotSupportedException>(() => stream.Read(new byte[1], 0, 1));
     }
 
     /// <summary>Verifies <see cref="Stream.Seek"/> throws <see cref="NotSupportedException"/>, matching <c>CanSeek == false</c>.</summary>
@@ -545,7 +545,7 @@ public class BaseEncoderStreamTests
     {
         using var sw = new StringWriter();
         using var stream = new BaseEncoderStream(sw, Bases.Base64);
-        Assert.ThrowsException<NotSupportedException>(() => stream.Seek(0, SeekOrigin.Begin));
+        Assert.ThrowsExactly<NotSupportedException>(() => stream.Seek(0, SeekOrigin.Begin));
     }
 
     /// <summary>Verifies <see cref="Stream.SetLength"/> throws <see cref="NotSupportedException"/>, matching <c>CanSeek == false</c>.</summary>
@@ -554,7 +554,7 @@ public class BaseEncoderStreamTests
     {
         using var sw = new StringWriter();
         using var stream = new BaseEncoderStream(sw, Bases.Base64);
-        Assert.ThrowsException<NotSupportedException>(() => stream.SetLength(10));
+        Assert.ThrowsExactly<NotSupportedException>(() => stream.SetLength(10));
     }
 
     /// <summary>Verifies the advertised capability flags remain consistent with the unsupported operations above.</summary>
@@ -575,7 +575,7 @@ public class BaseEncoderStreamTests
     public void BaseDescriptorToString_RejectsInvalidFormattingArguments()
     {
         byte[] data = { 0x41, 0x42 };
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => Bases.Base64.ToString(data, 0, 0));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => Bases.Base64.ToString(data, 0, 0));
     }
 }
 

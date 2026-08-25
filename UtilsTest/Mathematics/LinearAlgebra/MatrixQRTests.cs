@@ -77,7 +77,7 @@ public class MatrixQRTests
     public void DecomposeQR_MoreColumnsThanRows_Throws()
     {
         var a = new Matrix<double>(new double[,] { { 1, 2, 3 }, { 4, 5, 6 } });
-        Assert.ThrowsException<InvalidOperationException>(() => a.DecomposeQR());
+        Assert.ThrowsExactly<InvalidOperationException>(() => a.DecomposeQR());
     }
 
     [TestMethod]
@@ -142,8 +142,8 @@ public class MatrixQRTests
     public void DecomposeQR_InvalidRankTolerance_Throws()
     {
         var a = new Matrix<double>(new double[,] { { 1, 2 }, { 3, 4 } });
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => a.DecomposeQR(rankTolerance: double.NaN));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => a.DecomposeQR(rankTolerance: -1d));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => a.DecomposeQR(rankTolerance: double.NaN));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => a.DecomposeQR(rankTolerance: -1d));
     }
 
     [TestMethod]

@@ -474,7 +474,7 @@ public class ANTLRCompatibilityDocTests
     public void IndirectLeftRecursion_ThrowsAndEmitsDiagnosticError()
     {
         var diagnostics = new DiagnosticBag();
-        Assert.ThrowsException<GrammarValidationException>(() =>
+        Assert.ThrowsExactly<GrammarValidationException>(() =>
             Antlr4GrammarConverter.Parse("""
                 grammar G;
                 start : a ;

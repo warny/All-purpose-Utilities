@@ -47,21 +47,21 @@ public class MatrixSolveTests
     public void Solve_NonSquare_Throws()
     {
         var a = new Matrix<double>(new double[,] { { 1, 2, 3 }, { 4, 5, 6 } });
-        Assert.ThrowsException<InvalidOperationException>(() => a.Solve(V(1, 2)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => a.Solve(V(1, 2)));
     }
 
     [TestMethod]
     public void Solve_WrongVectorDimension_Throws()
     {
         var a = new Matrix<double>(new double[,] { { 1, 2 }, { 3, 4 } });
-        Assert.ThrowsException<ArgumentException>(() => a.Solve(V(1, 2, 3)));
+        Assert.ThrowsExactly<ArgumentException>(() => a.Solve(V(1, 2, 3)));
     }
 
     [TestMethod]
     public void Solve_SingularMatrix_Throws()
     {
         var a = new Matrix<double>(new double[,] { { 1, 2 }, { 2, 4 } });
-        Assert.ThrowsException<InvalidOperationException>(() => a.Solve(V(1, 2)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => a.Solve(V(1, 2)));
     }
 
     [TestMethod]
@@ -72,7 +72,7 @@ public class MatrixSolveTests
         // it would previously amplify rounding error into a huge/NaN "solution" that still looked
         // like a normal return value instead of a diagnosed failure.
         var a = new Matrix<double>(new double[,] { { 1, 2 }, { 2 + 2e-13, 4 + 4e-13 } });
-        Assert.ThrowsException<InvalidOperationException>(() => a.Solve(V(1, 2)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => a.Solve(V(1, 2)));
     }
 
     [TestMethod]
@@ -85,7 +85,7 @@ public class MatrixSolveTests
         var x = a.Solve(V(1, 1));
         Assert.IsNotNull(x);
 
-        Assert.ThrowsException<InvalidOperationException>(
+        Assert.ThrowsExactly<InvalidOperationException>(
             () => a.Solve(V(1, 1), relativeSingularityTolerance: 0.6));
     }
 
@@ -93,8 +93,8 @@ public class MatrixSolveTests
     public void Solve_InvalidExplicitTolerance_Throws()
     {
         var a = Matrix<double>.Diagonal(1.0, 1.0);
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => a.Solve(V(1, 2), relativeSingularityTolerance: double.NaN));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => a.Solve(V(1, 2), relativeSingularityTolerance: -1d));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => a.Solve(V(1, 2), relativeSingularityTolerance: double.NaN));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => a.Solve(V(1, 2), relativeSingularityTolerance: -1d));
     }
 
     [TestMethod]
@@ -156,7 +156,7 @@ public class MatrixSolveTests
         // was rejected. This pivot (0.001) is non-zero but negligible relative to the matrix's own
         // scale under Half's own limited precision, and must still be rejected.
         var a = new Matrix<Half>(new Half[,] { { (Half)1f, (Half)0f }, { (Half)0f, (Half)0.001f } });
-        Assert.ThrowsException<InvalidOperationException>(() => a.Solve(new Vector<Half>((Half)1f, (Half)1f)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => a.Solve(new Vector<Half>((Half)1f, (Half)1f)));
     }
 
     [TestMethod]

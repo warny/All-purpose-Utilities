@@ -333,7 +333,7 @@ public class NumberToStringConverterTimeAndNewLangTests
     {
         var hr = NumberToStringConverter.GetConverter("HR");
         Assert.IsFalse(hr.SupportsTimeConversion);
-        Assert.ThrowsException<NotSupportedException>(() => hr.Convert(new TimeSpan(1, 0, 0)));
+        Assert.ThrowsExactly<NotSupportedException>(() => hr.Convert(new TimeSpan(1, 0, 0)));
     }
 
     // ─── EN-GB (British English, derived from EN via baseOn) ──────────────────

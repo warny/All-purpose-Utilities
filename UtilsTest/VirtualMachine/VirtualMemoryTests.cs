@@ -42,7 +42,7 @@ public class VirtualMemoryTests
         Assert.IsFalse(view is List<VirtualPage>);
         var collection = (ICollection<VirtualPage>)view;
         Assert.IsTrue(collection.IsReadOnly);
-        Assert.ThrowsException<NotSupportedException>(() => collection.Add(page));
+        Assert.ThrowsExactly<NotSupportedException>(() => collection.Add(page));
     }
 
     [TestMethod]
@@ -88,7 +88,7 @@ public class VirtualMemoryTests
         Assert.IsFalse(view is List<VirtualProcess<int>>);
         var collection = (ICollection<VirtualProcess<int>>)view;
         Assert.IsTrue(collection.IsReadOnly);
-        Assert.ThrowsException<NotSupportedException>(() => collection.Add(process));
+        Assert.ThrowsExactly<NotSupportedException>(() => collection.Add(process));
     }
 
     [TestMethod]
@@ -110,11 +110,11 @@ public class VirtualMemoryTests
         Assert.IsFalse(updated is List<(int VirtualPageIndex, VirtualPage Page, PageAccess Access)>);
         var collection = (ICollection<(int VirtualPageIndex, VirtualPage Page, PageAccess Access)>)updated;
         Assert.IsTrue(collection.IsReadOnly);
-        Assert.ThrowsException<NotSupportedException>(() => collection.Clear());
+        Assert.ThrowsExactly<NotSupportedException>(() => collection.Clear());
 
         memory.FreeProcess(process);
         Assert.AreEqual(1, updated.Count);
-        Assert.ThrowsException<ObjectDisposedException>(() => _ = process.Mappings);
+        Assert.ThrowsExactly<ObjectDisposedException>(() => _ = process.Mappings);
     }
 
     [TestMethod]
@@ -153,7 +153,7 @@ public class VirtualMemoryTests
         var mem2 = new VirtualMemory<int>(pageSize: 16);
         var foreignPage = mem2.AllocatePage();
         var proc = mem1.CreateProcess();
-        Assert.ThrowsException<ArgumentException>(() => mem1.MapPage(proc, foreignPage, 0, PageAccess.ReadWrite));
+        Assert.ThrowsExactly<ArgumentException>(() => mem1.MapPage(proc, foreignPage, 0, PageAccess.ReadWrite));
     }
 
     [TestMethod]
@@ -161,7 +161,7 @@ public class VirtualMemoryTests
     {
         var mem = new VirtualMemory<int>(pageSize: 16);
         var page = mem.AllocatePage();
-        Assert.ThrowsException<ArgumentNullException>(() => mem.MapPage(null!, page, 0, PageAccess.ReadWrite));
+        Assert.ThrowsExactly<ArgumentNullException>(() => mem.MapPage(null!, page, 0, PageAccess.ReadWrite));
     }
 
     [TestMethod]
@@ -169,7 +169,7 @@ public class VirtualMemoryTests
     {
         var mem = new VirtualMemory<int>(pageSize: 16);
         var proc = mem.CreateProcess();
-        Assert.ThrowsException<ArgumentNullException>(() => mem.MapPage(proc, null!, 0, PageAccess.ReadWrite));
+        Assert.ThrowsExactly<ArgumentNullException>(() => mem.MapPage(proc, null!, 0, PageAccess.ReadWrite));
     }
 
     [TestMethod]
@@ -179,7 +179,7 @@ public class VirtualMemoryTests
         var memB = new VirtualMemory<int>(pageSize: 16);
         var pageA = memA.AllocatePage();
         var procB = memB.CreateProcess();
-        Assert.ThrowsException<ArgumentException>(() => memA.MapPage(procB, pageA, 0, PageAccess.ReadWrite));
+        Assert.ThrowsExactly<ArgumentException>(() => memA.MapPage(procB, pageA, 0, PageAccess.ReadWrite));
     }
 
     [TestMethod]
@@ -188,7 +188,7 @@ public class VirtualMemoryTests
         var memA = new VirtualMemory<int>(pageSize: 16);
         var memB = new VirtualMemory<int>(pageSize: 16);
         var procB = memB.CreateProcess();
-        Assert.ThrowsException<ArgumentException>(() => memA.UnmapPage(procB, 0));
+        Assert.ThrowsExactly<ArgumentException>(() => memA.UnmapPage(procB, 0));
     }
 
     // ───────────────────────────────────── Read ──────────────────────────────────────────────
@@ -225,7 +225,7 @@ public class VirtualMemoryTests
     {
         var mem = new VirtualMemory<int>(pageSize: 16);
         var buf = new byte[1];
-        Assert.ThrowsException<MemoryAccessException>(() => mem.MasterProcess.Read(0, buf));
+        Assert.ThrowsExactly<MemoryAccessException>(() => mem.MasterProcess.Read(0, buf));
     }
 
     // ── Item 7: negative addresses rejected ───────────────────────────────────────────────────
@@ -236,7 +236,7 @@ public class VirtualMemoryTests
         var mem = new VirtualMemory<int>(pageSize: 16);
         mem.AllocatePage();
         var buf = new byte[1];
-        Assert.ThrowsException<MemoryAccessException>(() => mem.MasterProcess.Read(-1, buf));
+        Assert.ThrowsExactly<MemoryAccessException>(() => mem.MasterProcess.Read(-1, buf));
     }
 
     [TestMethod]
@@ -244,7 +244,7 @@ public class VirtualMemoryTests
     {
         var mem = new VirtualMemory<int>(pageSize: 16);
         mem.AllocatePage();
-        Assert.ThrowsException<MemoryAccessException>(() => mem.MasterProcess.Write(-1, new byte[] { 0 }));
+        Assert.ThrowsExactly<MemoryAccessException>(() => mem.MasterProcess.Write(-1, new byte[] { 0 }));
     }
 
     [TestMethod]
@@ -252,7 +252,7 @@ public class VirtualMemoryTests
     {
         var mem = new VirtualMemory<int>(pageSize: 16);
         mem.AllocatePage();
-        Assert.ThrowsException<MemoryAccessException>(() => mem.MasterProcess.IsAccessible(-1));
+        Assert.ThrowsExactly<MemoryAccessException>(() => mem.MasterProcess.IsAccessible(-1));
     }
 
     [TestMethod]
@@ -260,7 +260,7 @@ public class VirtualMemoryTests
     {
         var mem = new VirtualMemory<int>(pageSize: 16);
         mem.AllocatePage();
-        Assert.ThrowsException<MemoryAccessException>(() => mem.MasterProcess.GetAccess(-1));
+        Assert.ThrowsExactly<MemoryAccessException>(() => mem.MasterProcess.GetAccess(-1));
     }
 
     [TestMethod]
@@ -268,7 +268,7 @@ public class VirtualMemoryTests
     {
         var mem = new VirtualMemory<int>(pageSize: 16);
         mem.AllocatePage();
-        Assert.ThrowsException<MemoryAccessException>(
+        Assert.ThrowsExactly<MemoryAccessException>(
             () => mem.MasterProcess.Read(-1, Span<byte>.Empty));
     }
 
@@ -277,7 +277,7 @@ public class VirtualMemoryTests
     {
         var mem = new VirtualMemory<int>(pageSize: 16);
         mem.AllocatePage();
-        Assert.ThrowsException<MemoryAccessException>(
+        Assert.ThrowsExactly<MemoryAccessException>(
             () => mem.MasterProcess.Write(-1, ReadOnlySpan<byte>.Empty));
     }
 
@@ -288,7 +288,7 @@ public class VirtualMemoryTests
     {
         var mem = new VirtualMemory<uint>(pageSize: 16);
         var buf = new byte[1];
-        var ex = Assert.ThrowsException<MemoryAccessException>(() => mem.MasterProcess.Read(0xDEADBEEFu, buf));
+        var ex = Assert.ThrowsExactly<MemoryAccessException>(() => mem.MasterProcess.Read(0xDEADBEEFu, buf));
         StringAssert.Contains(ex.VirtualAddressText, "DEADBEEF");
     }
 
@@ -310,7 +310,7 @@ public class VirtualMemoryTests
         // Write sentinel to page0 so we can detect mutation.
         mem.MasterProcess.Write(0, new byte[] { 0xAA, 0xAA, 0xAA, 0xAA });
 
-        Assert.ThrowsException<MemoryAccessException>(() =>
+        Assert.ThrowsExactly<MemoryAccessException>(() =>
             proc.Write(2, new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }));
 
         // Page 0 must be unchanged.
@@ -334,7 +334,7 @@ public class VirtualMemoryTests
 
         byte[] destination = new byte[] { 0xDE, 0xAD, 0xBE, 0xEF, 0xFF };
 
-        Assert.ThrowsException<MemoryAccessException>(() =>
+        Assert.ThrowsExactly<MemoryAccessException>(() =>
             proc.Read(2, destination.AsSpan()));
 
         // Destination buffer must be unchanged.
@@ -377,7 +377,7 @@ public class VirtualMemoryTests
         var page = mem.AllocatePage();
         var proc = mem.CreateProcess();
         mem.MapPage(proc, page, 0, PageAccess.ReadOnly);
-        var ex = Assert.ThrowsException<MemoryAccessException>(() => proc.Write(0, new byte[] { 1 }));
+        var ex = Assert.ThrowsExactly<MemoryAccessException>(() => proc.Write(0, new byte[] { 1 }));
         Assert.AreEqual(PageAccess.ReadWrite, ex.RequestedAccess);
         Assert.AreEqual(PageAccess.ReadOnly, ex.ActualAccess);
     }
@@ -387,7 +387,7 @@ public class VirtualMemoryTests
     {
         var mem = new VirtualMemory<int>(pageSize: 16);
         var proc = mem.CreateProcess();
-        var ex = Assert.ThrowsException<MemoryAccessException>(() => proc.Write(0, new byte[] { 1 }));
+        var ex = Assert.ThrowsExactly<MemoryAccessException>(() => proc.Write(0, new byte[] { 1 }));
         Assert.IsNull(ex.ActualAccess);
     }
 
@@ -446,14 +446,14 @@ public class VirtualMemoryTests
     public void VirtualMemoryContext_PageCtor_NullPage_Throws()
     {
         var mem = new VirtualMemory<int>(pageSize: 16);
-        Assert.ThrowsException<ArgumentNullException>(() =>
+        Assert.ThrowsExactly<ArgumentNullException>(() =>
             new VirtualMemoryContext<int>((VirtualPage)null!, mem.MasterProcess));
     }
 
     [TestMethod]
     public void VirtualMemoryContext_NullProcess_Throws()
     {
-        Assert.ThrowsException<ArgumentNullException>(() =>
+        Assert.ThrowsExactly<ArgumentNullException>(() =>
             new VirtualMemoryContext<int>(ReadOnlyMemory<byte>.Empty, null!));
     }
 
@@ -463,7 +463,7 @@ public class VirtualMemoryTests
         var mem = new VirtualMemory<int>(pageSize: 16);
         var proc = mem.CreateProcess();
         mem.FreeProcess(proc);
-        Assert.ThrowsException<ObjectDisposedException>(() =>
+        Assert.ThrowsExactly<ObjectDisposedException>(() =>
             new VirtualMemoryContext<int>(ReadOnlyMemory<byte>.Empty, proc));
     }
 
@@ -475,7 +475,7 @@ public class VirtualMemoryTests
         var page = mem1.AllocatePage();
         // page belongs to mem1 but proc belongs to mem2 — not mapped
         var proc = mem2.MasterProcess;
-        Assert.ThrowsException<ArgumentException>(() =>
+        Assert.ThrowsExactly<ArgumentException>(() =>
             new VirtualMemoryContext<int>(page, proc));
     }
 
@@ -486,7 +486,7 @@ public class VirtualMemoryTests
         var page = mem.AllocatePage();
         var proc = mem.CreateProcess();
         mem.FreeProcess(proc);
-        Assert.ThrowsException<ObjectDisposedException>(() =>
+        Assert.ThrowsExactly<ObjectDisposedException>(() =>
             new VirtualMemoryContext<int>(page, proc));
     }
 
@@ -570,7 +570,7 @@ public class VirtualMemoryTests
     public void FreeProcess_MasterProcess_Throws()
     {
         var mem = new VirtualMemory<int>(pageSize: 16);
-        Assert.ThrowsException<ArgumentException>(() => mem.FreeProcess(mem.MasterProcess));
+        Assert.ThrowsExactly<ArgumentException>(() => mem.FreeProcess(mem.MasterProcess));
     }
 
     [TestMethod]
@@ -579,14 +579,14 @@ public class VirtualMemoryTests
         var mem1 = new VirtualMemory<int>(pageSize: 16);
         var mem2 = new VirtualMemory<int>(pageSize: 16);
         var proc = mem2.CreateProcess();
-        Assert.ThrowsException<ArgumentException>(() => mem1.FreeProcess(proc));
+        Assert.ThrowsExactly<ArgumentException>(() => mem1.FreeProcess(proc));
     }
 
     [TestMethod]
     public void FreeProcess_Null_Throws()
     {
         var mem = new VirtualMemory<int>(pageSize: 16);
-        Assert.ThrowsException<ArgumentNullException>(() => mem.FreeProcess(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => mem.FreeProcess(null!));
     }
 
     // ── Item 25: operations on a freed process throw ObjectDisposedException ──
@@ -607,7 +607,7 @@ public class VirtualMemoryTests
         var mem = new VirtualMemory<int>(pageSize: 16);
         var proc = mem.CreateProcess();
         mem.FreeProcess(proc);
-        Assert.ThrowsException<ObjectDisposedException>(() => proc.Read(0, new byte[1]));
+        Assert.ThrowsExactly<ObjectDisposedException>(() => proc.Read(0, new byte[1]));
     }
 
     [TestMethod]
@@ -616,7 +616,7 @@ public class VirtualMemoryTests
         var mem = new VirtualMemory<int>(pageSize: 16);
         var proc = mem.CreateProcess();
         mem.FreeProcess(proc);
-        Assert.ThrowsException<ObjectDisposedException>(() => proc.Write(0, new byte[1]));
+        Assert.ThrowsExactly<ObjectDisposedException>(() => proc.Write(0, new byte[1]));
     }
 
     [TestMethod]
@@ -625,7 +625,7 @@ public class VirtualMemoryTests
         var mem = new VirtualMemory<int>(pageSize: 16);
         var proc = mem.CreateProcess();
         mem.FreeProcess(proc);
-        Assert.ThrowsException<ObjectDisposedException>(() => proc.IsAccessible(0));
+        Assert.ThrowsExactly<ObjectDisposedException>(() => proc.IsAccessible(0));
     }
 
     [TestMethod]
@@ -634,7 +634,7 @@ public class VirtualMemoryTests
         var mem = new VirtualMemory<int>(pageSize: 16);
         var proc = mem.CreateProcess();
         mem.FreeProcess(proc);
-        Assert.ThrowsException<ObjectDisposedException>(() => proc.GetAccess(0));
+        Assert.ThrowsExactly<ObjectDisposedException>(() => proc.GetAccess(0));
     }
 
     [TestMethod]
@@ -643,7 +643,7 @@ public class VirtualMemoryTests
         var mem = new VirtualMemory<int>(pageSize: 16);
         var proc = mem.CreateProcess();
         mem.FreeProcess(proc);
-        Assert.ThrowsException<ObjectDisposedException>(() => proc.Mappings);
+        Assert.ThrowsExactly<ObjectDisposedException>(() => proc.Mappings);
     }
 
     [TestMethod]
@@ -670,7 +670,7 @@ public class VirtualMemoryTests
         var page = mem.AllocatePage();
         var proc = mem.CreateProcess();
         mem.FreeProcess(proc);
-        Assert.ThrowsException<ObjectDisposedException>(() => mem.MapPage(proc, page, 0, PageAccess.ReadWrite));
+        Assert.ThrowsExactly<ObjectDisposedException>(() => mem.MapPage(proc, page, 0, PageAccess.ReadWrite));
     }
 
     [TestMethod]
@@ -680,7 +680,7 @@ public class VirtualMemoryTests
         mem.AllocatePage();
         var proc = mem.CreateProcess();
         mem.FreeProcess(proc);
-        Assert.ThrowsException<ObjectDisposedException>(() => mem.UnmapPage(proc, 0));
+        Assert.ThrowsExactly<ObjectDisposedException>(() => mem.UnmapPage(proc, 0));
     }
 
     // ── Item 33: FreePage — page lifecycle ────────────────────────────────────
@@ -719,14 +719,14 @@ public class VirtualMemoryTests
         var mem = new VirtualMemory<int>(pageSize: 16);
         var page = mem.AllocatePage();
         mem.FreePage(page);
-        Assert.ThrowsException<ObjectDisposedException>(() => mem.FreePage(page));
+        Assert.ThrowsExactly<ObjectDisposedException>(() => mem.FreePage(page));
     }
 
     [TestMethod]
     public void FreePage_NullPage_ThrowsArgumentNullException()
     {
         var mem = new VirtualMemory<int>(pageSize: 16);
-        Assert.ThrowsException<ArgumentNullException>(() => mem.FreePage(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => mem.FreePage(null!));
     }
 
     [TestMethod]
@@ -735,7 +735,7 @@ public class VirtualMemoryTests
         var mem1 = new VirtualMemory<int>(pageSize: 16);
         var mem2 = new VirtualMemory<int>(pageSize: 16);
         var page = mem2.AllocatePage();
-        Assert.ThrowsException<ArgumentException>(() => mem1.FreePage(page));
+        Assert.ThrowsExactly<ArgumentException>(() => mem1.FreePage(page));
     }
 
     [TestMethod]
@@ -745,7 +745,7 @@ public class VirtualMemoryTests
         var page = mem.AllocatePage();
         var proc = mem.CreateProcess();
         mem.MapPage(proc, page, 0, PageAccess.ReadOnly);
-        Assert.ThrowsException<VmInvalidOperationException>(() => mem.FreePage(page));
+        Assert.ThrowsExactly<VmInvalidOperationException>(() => mem.FreePage(page));
     }
 
     [TestMethod]
@@ -766,7 +766,7 @@ public class VirtualMemoryTests
         var mem = new VirtualMemory<int>(pageSize: 16);
         var page = mem.AllocatePage();
         mem.FreePage(page);
-        Assert.ThrowsException<ObjectDisposedException>(() => page.AsReadOnlyMemory());
+        Assert.ThrowsExactly<ObjectDisposedException>(() => page.AsReadOnlyMemory());
     }
 
     [TestMethod]
@@ -793,7 +793,7 @@ public class VirtualMemoryTests
         mem.MapPage(proc, page0, 0, PageAccess.ReadWrite);
         mem.MasterProcess.Write(0, new byte[] { 0xAA, 0xAA, 0xAA, 0xAA });
 
-        Assert.ThrowsException<MemoryAccessException>(() =>
+        Assert.ThrowsExactly<MemoryAccessException>(() =>
             proc.Write(2, new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }));
 
         var buf = new byte[4];
@@ -818,7 +818,7 @@ public class VirtualMemoryTests
         mem.MasterProcess.Write(0, new byte[] { 0x11, 0x11, 0x11, 0x11 });
         mem.MasterProcess.Write(4, new byte[] { 0x22, 0x22, 0x22, 0x22 });
 
-        Assert.ThrowsException<MemoryAccessException>(() =>
+        Assert.ThrowsExactly<MemoryAccessException>(() =>
             proc.Write(0, new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }));
 
         var buf0 = new byte[4];
@@ -845,7 +845,7 @@ public class VirtualMemoryTests
         mem.MasterProcess.Write(0, new byte[] { 0x11, 0x11, 0x11, 0x11 });
         mem.MasterProcess.Write(4, new byte[] { 0x22, 0x22, 0x22, 0x22 });
 
-        Assert.ThrowsException<MemoryAccessException>(() =>
+        Assert.ThrowsExactly<MemoryAccessException>(() =>
             proc.Write(0, new byte[9]));
 
         var buf0 = new byte[4];
@@ -899,7 +899,7 @@ public class VirtualMemoryTests
         mem.MasterProcess.Write(4u, new byte[] { 0xBB, 0xBB, 0xBB, 0xBB });
 
         uint startAddr = uint.MaxValue - 1u; // 0xFFFFFFFE, offset 2 in last page
-        var ex = Assert.ThrowsException<MemoryAccessException>(() =>
+        var ex = Assert.ThrowsExactly<MemoryAccessException>(() =>
             proc.Write(startAddr, new byte[] { 0xFF, 0xFF, 0xFF, 0xFF }));
 
         var bufLast = new byte[4];
@@ -952,7 +952,7 @@ public class VirtualMemoryTests
         mem.MasterProcess.Write((byte)0, new byte[] { 0xAA, 0xAA, 0xAA, 0xAA });
         mem.MasterProcess.Write((byte)4, new byte[] { 0xBB, 0xBB, 0xBB, 0xBB });
 
-        Assert.ThrowsException<MemoryAccessException>(() =>
+        Assert.ThrowsExactly<MemoryAccessException>(() =>
             proc.Write((byte)254, new byte[] { 0xFF, 0xFF, 0xFF, 0xFF }));
 
         var bufLast = new byte[4];
@@ -972,7 +972,7 @@ public class VirtualMemoryTests
         // No page near int.MaxValue is needed; the overflow check fires first.
         var mem = new VirtualMemory<int>(pageSize: 4);
         mem.AllocatePage();
-        Assert.ThrowsException<MemoryAccessException>(() =>
+        Assert.ThrowsExactly<MemoryAccessException>(() =>
             mem.MasterProcess.Write(int.MaxValue - 1, new byte[] { 0x01, 0x02, 0x03 }));
     }
 
@@ -992,7 +992,7 @@ public class VirtualMemoryTests
 
         byte[] dest = new byte[] { 0xDE, 0xAD, 0xBE, 0xEF, 0xDE, 0xAD, 0xBE, 0xEF, 0xFF };
 
-        Assert.ThrowsException<MemoryAccessException>(() =>
+        Assert.ThrowsExactly<MemoryAccessException>(() =>
             proc.Read(0, dest.AsSpan()));
 
         // Every sentinel must remain intact.
@@ -1015,7 +1015,7 @@ public class VirtualMemoryTests
 
         byte[] dest = new byte[] { 0xDE, 0xAD, 0xBE, 0xEF };
 
-        Assert.ThrowsException<MemoryAccessException>(() =>
+        Assert.ThrowsExactly<MemoryAccessException>(() =>
             proc.Read(uint.MaxValue - 1u, dest.AsSpan()));
 
         CollectionAssert.AreEqual(new byte[] { 0xDE, 0xAD, 0xBE, 0xEF }, dest,
@@ -1055,7 +1055,7 @@ public class VirtualMemoryTests
 
         byte[] dest = new byte[] { 0xDE, 0xAD, 0xBE, 0xEF };
 
-        Assert.ThrowsException<MemoryAccessException>(() =>
+        Assert.ThrowsExactly<MemoryAccessException>(() =>
             proc.Read((byte)254, dest.AsSpan()));
 
         CollectionAssert.AreEqual(new byte[] { 0xDE, 0xAD, 0xBE, 0xEF }, dest,
@@ -1070,7 +1070,7 @@ public class VirtualMemoryTests
 
         byte[] dest = new byte[] { 0xDE, 0xAD, 0xBE };
 
-        Assert.ThrowsException<MemoryAccessException>(() =>
+        Assert.ThrowsExactly<MemoryAccessException>(() =>
             mem.MasterProcess.Read(int.MaxValue - 1, dest.AsSpan()));
 
         CollectionAssert.AreEqual(new byte[] { 0xDE, 0xAD, 0xBE }, dest,
@@ -1100,7 +1100,7 @@ public class VirtualMemoryTests
     public void Read_UnmappedAddress_ActualAccess_IsNull()
     {
         var mem = new VirtualMemory<int>(pageSize: 16);
-        var ex = Assert.ThrowsException<MemoryAccessException>(
+        var ex = Assert.ThrowsExactly<MemoryAccessException>(
             () => mem.MasterProcess.Read(0, new byte[1]));
         Assert.IsNull(ex.ActualAccess);
         Assert.AreEqual(PageAccess.ReadOnly, ex.RequestedAccess);
@@ -1116,7 +1116,7 @@ public class VirtualMemoryTests
         mem.MapPage(proc, page0, 0, PageAccess.ReadWrite);
         mem.MapPage(proc, page1, 1, PageAccess.ReadOnly);
 
-        var ex = Assert.ThrowsException<MemoryAccessException>(() =>
+        var ex = Assert.ThrowsExactly<MemoryAccessException>(() =>
             proc.Write(2, new byte[] { 1, 2, 3, 4, 5 }));
 
         Assert.AreEqual(PageAccess.ReadWrite, ex.RequestedAccess);
@@ -1133,7 +1133,7 @@ public class VirtualMemoryTests
         var proc = mem.CreateProcess();
         mem.MapPage(proc, lastPage, lastPageIdx, PageAccess.ReadWrite);
 
-        var ex = Assert.ThrowsException<MemoryAccessException>(() =>
+        var ex = Assert.ThrowsExactly<MemoryAccessException>(() =>
             proc.Write(uint.MaxValue - 1u, new byte[] { 0x01, 0x02, 0x03, 0x04 }));
 
         // Must report the start address (0xFFFFFFFE), not wrapped zero.
@@ -1175,7 +1175,7 @@ public class VirtualMemoryTests
         var mem = new VirtualMemory<int>(pageSize: 1);
         // No pages allocated; address 0 is unmapped.
         var buf = new byte[1_000_000];
-        Assert.ThrowsException<MemoryAccessException>(
+        Assert.ThrowsExactly<MemoryAccessException>(
             () => mem.MasterProcess.Read(0, buf),
             "A large read on an unmapped address must throw MemoryAccessException, not OOM.");
     }
@@ -1185,7 +1185,7 @@ public class VirtualMemoryTests
     {
         var mem = new VirtualMemory<int>(pageSize: 1);
         var buf = new byte[1_000_000];
-        Assert.ThrowsException<MemoryAccessException>(
+        Assert.ThrowsExactly<MemoryAccessException>(
             () => mem.MasterProcess.Write(0, buf),
             "A large write on an unmapped address must throw MemoryAccessException, not OOM.");
     }

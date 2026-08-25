@@ -75,7 +75,7 @@ public class NumberToStringCompositeFinalizationTests
     {
         NumberToStringConverter converter = CreateConverterWithMaxNumber(1);
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => converter.ConvertCurrency(2.00m, CreateCurrency()));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => converter.ConvertCurrency(2.00m, CreateCurrency()));
     }
 
     /// <summary>Verifies the units limit is evaluated after rounded subunits carry into it.</summary>
@@ -84,7 +84,7 @@ public class NumberToStringCompositeFinalizationTests
     {
         NumberToStringConverter converter = CreateConverterWithMaxNumber(1);
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => converter.ConvertCurrency(1.999m, CreateCurrency()));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => converter.ConvertCurrency(1.999m, CreateCurrency()));
     }
 
     /// <summary>Verifies raw adjustment precedes fragment variants without premature finalization.</summary>

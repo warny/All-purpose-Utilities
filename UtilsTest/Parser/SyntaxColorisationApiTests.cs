@@ -33,8 +33,8 @@ public class SyntaxColorisationApiTests
             "@FileExtension: .g4\n" +
             "identifier: IDENT");
 
-        Assert.ThrowsException<NotSupportedException>(() => ((IList<string>)document.FileExtensions).Add(".antlr"));
-        Assert.ThrowsException<NotSupportedException>(() => ((IList<SyntaxColorisationSection>)document.Sections).Add(new SyntaxColorisationSection("x")));
-        Assert.ThrowsException<NotSupportedException>(() => ((IList<string>)document.Sections[0].Rules).Add("foo"));
+        Assert.ThrowsExactly<NotSupportedException>(() => ((IList<string>)document.FileExtensions).Add(".antlr"));
+        Assert.ThrowsExactly<NotSupportedException>(() => ((IList<SyntaxColorisationSection>)document.Sections).Add(new SyntaxColorisationSection("x")));
+        Assert.ThrowsExactly<NotSupportedException>(() => ((IList<string>)document.Sections[0].Rules).Add("foo"));
     }
 }

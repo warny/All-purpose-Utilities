@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -107,7 +107,7 @@ namespace UtilsTest.Mathematics.LinearAlgebra
         public void DiagonalizeLU_NearSingularMatrix_ThrowsInsteadOfReturningGarbage()
         {
             var matrix = new Matrix<double>(new double[,] { { 1d, 2d }, { 2d + 2e-13, 4d + 4e-13 } });
-            Assert.ThrowsException<InvalidOperationException>(() => matrix.DiagonalizeLU());
+            Assert.ThrowsExactly<InvalidOperationException>(() => matrix.DiagonalizeLU());
         }
 
         /// <summary>
@@ -182,9 +182,9 @@ namespace UtilsTest.Mathematics.LinearAlgebra
             var matrix = new Matrix<double>(new double[,] { { 1d, 2d }, { 2d, 4d } });
 
             Assert.AreEqual(0d, matrix.Determinant, 1e-12);
-            Assert.ThrowsException<InvalidOperationException>(() => matrix.DiagonalizeLU());
-            Assert.ThrowsException<InvalidOperationException>(() => matrix.Invert());
-            Assert.ThrowsException<InvalidOperationException>(() => matrix.Solve(new Vector<double>(1d, 1d)));
+            Assert.ThrowsExactly<InvalidOperationException>(() => matrix.DiagonalizeLU());
+            Assert.ThrowsExactly<InvalidOperationException>(() => matrix.Invert());
+            Assert.ThrowsExactly<InvalidOperationException>(() => matrix.Solve(new Vector<double>(1d, 1d)));
         }
 
         /// <summary>
@@ -221,14 +221,14 @@ namespace UtilsTest.Mathematics.LinearAlgebra
         public void Invert_SingularMatrix_Throws()
         {
             var matrix = new Matrix<double>(new double[,] { { 1d, 2d }, { 2d, 4d } });
-            Assert.ThrowsException<InvalidOperationException>(() => matrix.Invert());
+            Assert.ThrowsExactly<InvalidOperationException>(() => matrix.Invert());
         }
 
         [TestMethod]
         public void Invert_NearSingularMatrix_ThrowsInsteadOfReturningGarbage()
         {
             var matrix = new Matrix<double>(new double[,] { { 1d, 2d }, { 2d + 2e-13, 4d + 4e-13 } });
-            Assert.ThrowsException<InvalidOperationException>(() => matrix.Invert());
+            Assert.ThrowsExactly<InvalidOperationException>(() => matrix.Invert());
         }
 
         // ── Structural metadata on the inverse (TODO-pass5 item #61) ───────────────
@@ -446,17 +446,17 @@ namespace UtilsTest.Mathematics.LinearAlgebra
             // for everything), and a negative tolerance would reject even an exact match.
             var m = Matrix<double>.Identity(2);
 
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => m.IsTriangularWithin(double.NaN));
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => m.IsTriangularWithin(-1d));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => m.IsTriangularWithin(double.NaN));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => m.IsTriangularWithin(-1d));
 
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => m.IsDiagonalWithin(double.NaN));
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => m.IsDiagonalWithin(-1d));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => m.IsDiagonalWithin(double.NaN));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => m.IsDiagonalWithin(-1d));
 
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => m.IsIdentityWithin(double.NaN));
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => m.IsIdentityWithin(-1d));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => m.IsIdentityWithin(double.NaN));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => m.IsIdentityWithin(-1d));
 
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => m.IsNormalSpaceWithin(double.NaN));
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => m.IsNormalSpaceWithin(-1d));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => m.IsNormalSpaceWithin(double.NaN));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => m.IsNormalSpaceWithin(-1d));
         }
 
         [TestMethod]
@@ -570,7 +570,7 @@ namespace UtilsTest.Mathematics.LinearAlgebra
         {
             // Regression: previously threw an incidental InvalidOperationException from
             // Enumerable.Max() on an empty sequence instead of a clear, documented rejection.
-            Assert.ThrowsException<ArgumentException>(() => new Matrix<double>(System.Array.Empty<double[]>()));
+            Assert.ThrowsExactly<ArgumentException>(() => new Matrix<double>(System.Array.Empty<double[]>()));
         }
 
         [TestMethod]
@@ -578,7 +578,7 @@ namespace UtilsTest.Mathematics.LinearAlgebra
         {
             // Regression: previously threw an incidental NullReferenceException when computing the
             // null row's length.
-            Assert.ThrowsException<ArgumentException>(() => new Matrix<double>(new double[][] { new[] { 1d, 2d }, null! }));
+            Assert.ThrowsExactly<ArgumentException>(() => new Matrix<double>(new double[][] { new[] { 1d, 2d }, null! }));
         }
 
         [TestMethod]
@@ -586,7 +586,7 @@ namespace UtilsTest.Mathematics.LinearAlgebra
         {
             // Regression: previously threw an incidental IndexOutOfRangeException from accessing
             // vectors[0] unconditionally.
-            Assert.ThrowsException<ArgumentException>(() => new Matrix<double>(System.Array.Empty<Vector<double>>()));
+            Assert.ThrowsExactly<ArgumentException>(() => new Matrix<double>(System.Array.Empty<Vector<double>>()));
         }
 
         [TestMethod]
@@ -594,7 +594,7 @@ namespace UtilsTest.Mathematics.LinearAlgebra
         {
             // Regression: previously threw an incidental NullReferenceException when reading the
             // null vector's Dimension.
-            Assert.ThrowsException<ArgumentException>(() => new Matrix<double>(new Vector<double>(1d, 2d), null!));
+            Assert.ThrowsExactly<ArgumentException>(() => new Matrix<double>(new Vector<double>(1d, 2d), null!));
         }
 
         [TestMethod]
@@ -604,22 +604,22 @@ namespace UtilsTest.Mathematics.LinearAlgebra
             // all, relying on the CLR's own (undocumented, exception-type-inconsistent) behavior for
             // non-positive multidimensional array allocation instead of the explicit contract already
             // enforced by Identity/Zero/Diagonal.
-            Assert.ThrowsException<ArgumentException>(() => new Matrix<double>(0, 3));
-            Assert.ThrowsException<ArgumentException>(() => new Matrix<double>(3, 0));
-            Assert.ThrowsException<ArgumentException>(() => new Matrix<double>(-1, 3));
+            Assert.ThrowsExactly<ArgumentException>(() => new Matrix<double>(0, 3));
+            Assert.ThrowsExactly<ArgumentException>(() => new Matrix<double>(3, 0));
+            Assert.ThrowsExactly<ArgumentException>(() => new Matrix<double>(-1, 3));
         }
 
         [TestMethod]
         public void ArrayConstructor_ZeroSizedArray_ThrowsClearArgumentException()
         {
-            Assert.ThrowsException<ArgumentException>(() => new Matrix<double>(new double[0, 0]));
-            Assert.ThrowsException<ArgumentException>(() => new Matrix<double>(new double[0, 3]));
+            Assert.ThrowsExactly<ArgumentException>(() => new Matrix<double>(new double[0, 0]));
+            Assert.ThrowsExactly<ArgumentException>(() => new Matrix<double>(new double[0, 3]));
         }
 
         [TestMethod]
         public void JaggedArrayConstructor_AllRowsEmpty_ThrowsClearArgumentException()
         {
-            Assert.ThrowsException<ArgumentException>(() => new Matrix<double>(new double[][] { System.Array.Empty<double>() }));
+            Assert.ThrowsExactly<ArgumentException>(() => new Matrix<double>(new double[][] { System.Array.Empty<double>() }));
         }
 
         [TestMethod]
@@ -689,7 +689,7 @@ namespace UtilsTest.Mathematics.LinearAlgebra
         public void ToString_UnrecognizedLayoutToken_ThrowsFormatException()
         {
             var m = new Matrix<double>(new double[,] { { 1 } });
-            Assert.ThrowsException<FormatException>(() => m.ToString("bogus", null));
+            Assert.ThrowsExactly<FormatException>(() => m.ToString("bogus", null));
         }
 
         // ── Pad (TODO-pass5 item #67) ───────────────────────────────────────────────
@@ -738,14 +738,14 @@ namespace UtilsTest.Mathematics.LinearAlgebra
         public void Pad_ZeroRows_Throws()
         {
             var m = new Matrix<double>(new double[,] { { 1d } });
-            Assert.ThrowsException<ArgumentException>(() => m.Pad(0, 2));
+            Assert.ThrowsExactly<ArgumentException>(() => m.Pad(0, 2));
         }
 
         [TestMethod]
         public void Pad_NegativeColumns_Throws()
         {
             var m = new Matrix<double>(new double[,] { { 1d } });
-            Assert.ThrowsException<ArgumentException>(() => m.Pad(2, -1));
+            Assert.ThrowsExactly<ArgumentException>(() => m.Pad(2, -1));
         }
 
         // ── Raw scalar division operator (TODO-pass4 item #56) ─────────────────────

@@ -98,61 +98,61 @@ public class MatrixImageTransformerTests
     // ── Finding #8: weights null, empty, non-finite, cloned ──────────────────
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentNullException))]
     public void Constructor_NullWeights_ThrowsArgumentNullException()
     {
-        new MatrixImageTransformer<ColorArgb, double>(null!, new Point(0, 0),
-            (a, r, g, b) => new ColorArgb(a, r, g, b));
+        Assert.ThrowsExactly<ArgumentNullException>(() =>
+            new MatrixImageTransformer<ColorArgb, double>(null!, new Point(0, 0),
+                (a, r, g, b) => new ColorArgb(a, r, g, b)));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentNullException))]
     public void Constructor_NullCreator_ThrowsArgumentNullException()
     {
-        new MatrixImageTransformer<ColorArgb, double>(Identity1x1(), new Point(0, 0), null!);
+        Assert.ThrowsExactly<ArgumentNullException>(() =>
+            new MatrixImageTransformer<ColorArgb, double>(Identity1x1(), new Point(0, 0), null!));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
     public void Constructor_EmptyWeightsFirstDimension_ThrowsArgumentException()
     {
-        new MatrixImageTransformer<ColorArgb, double>(new double[0, 1], new Point(0, 0),
-            (a, r, g, b) => new ColorArgb(a, r, g, b));
+        Assert.ThrowsExactly<ArgumentException>(() =>
+            new MatrixImageTransformer<ColorArgb, double>(new double[0, 1], new Point(0, 0),
+                (a, r, g, b) => new ColorArgb(a, r, g, b)));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
     public void Constructor_EmptyWeightsSecondDimension_ThrowsArgumentException()
     {
-        new MatrixImageTransformer<ColorArgb, double>(new double[1, 0], new Point(0, 0),
-            (a, r, g, b) => new ColorArgb(a, r, g, b));
+        Assert.ThrowsExactly<ArgumentException>(() =>
+            new MatrixImageTransformer<ColorArgb, double>(new double[1, 0], new Point(0, 0),
+                (a, r, g, b) => new ColorArgb(a, r, g, b)));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
     public void Constructor_NaNWeight_ThrowsArgumentException()
     {
         var weights = new double[,] { { double.NaN } };
-        new MatrixImageTransformer<ColorArgb, double>(weights, new Point(0, 0),
-            (a, r, g, b) => new ColorArgb(a, r, g, b));
+        Assert.ThrowsExactly<ArgumentException>(() =>
+            new MatrixImageTransformer<ColorArgb, double>(weights, new Point(0, 0),
+                (a, r, g, b) => new ColorArgb(a, r, g, b)));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
     public void Constructor_InfinityWeight_ThrowsArgumentException()
     {
         var weights = new double[,] { { double.PositiveInfinity } };
-        new MatrixImageTransformer<ColorArgb, double>(weights, new Point(0, 0),
-            (a, r, g, b) => new ColorArgb(a, r, g, b));
+        Assert.ThrowsExactly<ArgumentException>(() =>
+            new MatrixImageTransformer<ColorArgb, double>(weights, new Point(0, 0),
+                (a, r, g, b) => new ColorArgb(a, r, g, b)));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
     public void Constructor_NegativeInfinityWeight_ThrowsArgumentException()
     {
         var weights = new double[,] { { double.NegativeInfinity } };
-        new MatrixImageTransformer<ColorArgb, double>(weights, new Point(0, 0),
-            (a, r, g, b) => new ColorArgb(a, r, g, b));
+        Assert.ThrowsExactly<ArgumentException>(() =>
+            new MatrixImageTransformer<ColorArgb, double>(weights, new Point(0, 0),
+                (a, r, g, b) => new ColorArgb(a, r, g, b)));
     }
 
     [TestMethod]
@@ -178,7 +178,6 @@ public class MatrixImageTransformerTests
     // ── Finding #7: mask dimension mismatch ──────────────────────────────────
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
     public void Transform_MaskWidthMismatch_ThrowsArgumentException()
     {
         var image = new ArrayAccessor<ColorArgb>(4, 4);
@@ -188,11 +187,10 @@ public class MatrixImageTransformerTests
             Identity1x1(), new Point(0, 0),
             (a, r, g, b) => new ColorArgb(a, r, g, b));
 
-        transformer.Transform(image, mask);
+        Assert.ThrowsExactly<ArgumentException>(() => transformer.Transform(image, mask));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
     public void Transform_MaskHeightMismatch_ThrowsArgumentException()
     {
         var image = new ArrayAccessor<ColorArgb>(4, 4);
@@ -202,24 +200,22 @@ public class MatrixImageTransformerTests
             Identity1x1(), new Point(0, 0),
             (a, r, g, b) => new ColorArgb(a, r, g, b));
 
-        transformer.Transform(image, mask);
+        Assert.ThrowsExactly<ArgumentException>(() => transformer.Transform(image, mask));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentNullException))]
     public void Transform_NullAccessor_ThrowsArgumentNullException()
     {
         var transformer = new MatrixImageTransformer<ColorArgb, double>(
             Identity1x1(), new Point(0, 0),
             (a, r, g, b) => new ColorArgb(a, r, g, b));
 
-        transformer.Transform(null!);
+        Assert.ThrowsExactly<ArgumentNullException>(() => transformer.Transform(null!));
     }
 
     // ── Finding #6: checked dimension multiplication ──────────────────────────
 
     [TestMethod]
-    [ExpectedException(typeof(OverflowException))]
     public void Transform_IntegerOverflowDimensions_ThrowsOverflowException()
     {
         // 100 000 × 100 000 = 10^10, overflows int.
@@ -228,11 +224,10 @@ public class MatrixImageTransformerTests
             Identity1x1(), new Point(0, 0),
             (a, r, g, b) => new ColorArgb(a, r, g, b));
 
-        transformer.Transform(oversized);
+        Assert.ThrowsExactly<OverflowException>(() => transformer.Transform(oversized));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(OverflowException))]
     public void Transform_ExceedsPixelLimit_ThrowsOverflowException()
     {
         // 8193 × 8193 = 67 117 249 > 64 × 1024 × 1024 = 67 108 864.
@@ -241,7 +236,7 @@ public class MatrixImageTransformerTests
             Identity1x1(), new Point(0, 0),
             (a, r, g, b) => new ColorArgb(a, r, g, b));
 
-        transformer.Transform(big);
+        Assert.ThrowsExactly<OverflowException>(() => transformer.Transform(big));
     }
 
     // ── Finding #12: zero-sum kernel (edge detection) ─────────────────────────

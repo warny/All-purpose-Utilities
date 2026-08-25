@@ -209,7 +209,7 @@ public class CommandResponseLifecycleTests
         using CommandResponseServer server = new();
         await server.StartAsync(serverStream, leaveOpen: true);
 
-        await Assert.ThrowsExceptionAsync<InvalidOperationException>(() =>
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
             server.StartAsync(serverStream, leaveOpen: true));
     }
 
@@ -221,7 +221,7 @@ public class CommandResponseLifecycleTests
         await server.StartAsync(serverStream, leaveOpen: true);
         server.Dispose();
 
-        await Assert.ThrowsExceptionAsync<InvalidOperationException>(() =>
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
             server.StartAsync(serverStream, leaveOpen: true));
     }
 
@@ -229,12 +229,12 @@ public class CommandResponseLifecycleTests
     public async Task StartAsync_AfterInitializationFailure_Throws()
     {
         using CommandResponseServer server = new();
-        await Assert.ThrowsExceptionAsync<ArgumentNullException>(() =>
+        await Assert.ThrowsExactlyAsync<ArgumentNullException>(() =>
             server.StartAsync(null!, leaveOpen: true));
 
         // A failed startup must leave the instance unusable (single-use contract).
         (DuplexStream serverStream, StreamWriter clientWriter, StreamReader clientReader) = CreateServerTestPair();
-        await Assert.ThrowsExceptionAsync<InvalidOperationException>(() =>
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
             server.StartAsync(serverStream, leaveOpen: true));
     }
 
@@ -246,7 +246,7 @@ public class CommandResponseLifecycleTests
     public void RegisterCommand_NullCommand_Throws()
     {
         CommandResponseServer server = new();
-        Assert.ThrowsException<ArgumentNullException>(() =>
+        Assert.ThrowsExactly<ArgumentNullException>(() =>
             server.RegisterCommand(null!, (_, _, _) => Task.FromResult<IEnumerable<ServerResponse>>([])));
     }
 
@@ -254,7 +254,7 @@ public class CommandResponseLifecycleTests
     public void RegisterCommand_EmptyCommand_Throws()
     {
         CommandResponseServer server = new();
-        Assert.ThrowsException<ArgumentException>(() =>
+        Assert.ThrowsExactly<ArgumentException>(() =>
             server.RegisterCommand(string.Empty, (_, _, _) => Task.FromResult<IEnumerable<ServerResponse>>([])));
     }
 
@@ -262,7 +262,7 @@ public class CommandResponseLifecycleTests
     public void RegisterCommand_CommandWithSpace_Throws()
     {
         CommandResponseServer server = new();
-        Assert.ThrowsException<ArgumentException>(() =>
+        Assert.ThrowsExactly<ArgumentException>(() =>
             server.RegisterCommand("FOO BAR", (_, _, _) => Task.FromResult<IEnumerable<ServerResponse>>([])));
     }
 
@@ -270,7 +270,7 @@ public class CommandResponseLifecycleTests
     public void RegisterCommand_NullHandler_Throws()
     {
         CommandResponseServer server = new();
-        Assert.ThrowsException<ArgumentNullException>(() =>
+        Assert.ThrowsExactly<ArgumentNullException>(() =>
             server.RegisterCommand("FOO", (Func<CommandContext, string[], CancellationToken, Task<IEnumerable<ServerResponse>>>)null!));
     }
 
@@ -278,49 +278,49 @@ public class CommandResponseLifecycleTests
     public void AddContext_NullContext_Throws()
     {
         CommandResponseServer server = new();
-        Assert.ThrowsException<ArgumentNullException>(() => server.AddContext(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => server.AddContext(null!));
     }
 
     [TestMethod]
     public void AddContext_EmptyContext_Throws()
     {
         CommandResponseServer server = new();
-        Assert.ThrowsException<ArgumentException>(() => server.AddContext(string.Empty));
+        Assert.ThrowsExactly<ArgumentException>(() => server.AddContext(string.Empty));
     }
 
     [TestMethod]
     public void RemoveContext_NullContext_Throws()
     {
         CommandResponseServer server = new();
-        Assert.ThrowsException<ArgumentNullException>(() => server.RemoveContext(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => server.RemoveContext(null!));
     }
 
     [TestMethod]
     public void HasContext_NullContext_Throws()
     {
         CommandResponseServer server = new();
-        Assert.ThrowsException<ArgumentNullException>(() => server.HasContext(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => server.HasContext(null!));
     }
 
     [TestMethod]
     public void MaxConsecutiveErrors_NegativeValue_Throws()
     {
         CommandResponseServer server = new();
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => server.MaxConsecutiveErrors = -1);
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => server.MaxConsecutiveErrors = -1);
     }
 
     [TestMethod]
     public void MaxLineLength_NegativeValue_Throws()
     {
         CommandResponseServer server = new();
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => server.MaxLineLength = -1);
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => server.MaxLineLength = -1);
     }
 
     [TestMethod]
     public void MaxCommandQueueDepth_NegativeValue_Throws()
     {
         CommandResponseServer server = new();
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => server.MaxCommandQueueDepth = -1);
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => server.MaxCommandQueueDepth = -1);
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -367,7 +367,7 @@ public class CommandResponseLifecycleTests
         using CommandResponseServer server = new();
         await server.StartAsync(serverStream, leaveOpen: true);
 
-        Assert.ThrowsException<InvalidOperationException>(() =>
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
             server.RegisterCommand("FOO", (_, _, _) => Task.FromResult<IEnumerable<ServerResponse>>([])));
     }
 
@@ -378,7 +378,7 @@ public class CommandResponseLifecycleTests
         using CommandResponseServer server = new();
         await server.StartAsync(serverStream, leaveOpen: true);
 
-        Assert.ThrowsException<InvalidOperationException>(() => server.AddContext("AUTH"));
+        Assert.ThrowsExactly<InvalidOperationException>(() => server.AddContext("AUTH"));
     }
 
     [TestMethod]
@@ -389,7 +389,7 @@ public class CommandResponseLifecycleTests
         server.AddContext("AUTH");
         await server.StartAsync(serverStream, leaveOpen: true);
 
-        Assert.ThrowsException<InvalidOperationException>(() => server.RemoveContext("AUTH"));
+        Assert.ThrowsExactly<InvalidOperationException>(() => server.RemoveContext("AUTH"));
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -604,7 +604,7 @@ public class CommandResponseLifecycleTests
         using CommandResponseClient client = new();
         await client.ConnectAsync(clientStream, leaveOpen: true);
 
-        await Assert.ThrowsExceptionAsync<InvalidOperationException>(() =>
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
             client.ConnectAsync(clientStream, leaveOpen: true));
     }
 
@@ -642,7 +642,7 @@ public class CommandResponseLifecycleTests
         await client.ConnectAsync(clientStream, leaveOpen: true);
         client.Dispose();
 
-        await Assert.ThrowsExceptionAsync<ObjectDisposedException>(() =>
+        await Assert.ThrowsExactlyAsync<ObjectDisposedException>(() =>
             client.ConnectAsync(clientStream, leaveOpen: true));
     }
 
@@ -654,7 +654,7 @@ public class CommandResponseLifecycleTests
     public async Task ConnectAsync_Stream_NullStream_Throws()
     {
         using CommandResponseClient client = new();
-        await Assert.ThrowsExceptionAsync<ArgumentNullException>(() =>
+        await Assert.ThrowsExactlyAsync<ArgumentNullException>(() =>
             client.ConnectAsync((Stream)null!, leaveOpen: false));
     }
 
@@ -734,7 +734,7 @@ public class CommandResponseLifecycleTests
         using TestableClient client = new();
         await client.ConnectAsync(clientStream, leaveOpen: true);
 
-        await Assert.ThrowsExceptionAsync<ArgumentException>(() =>
+        await Assert.ThrowsExactlyAsync<ArgumentException>(() =>
             client.SendLinesPublicAsync(["SAFE", "BAD\rINJECT"]));
     }
 
@@ -745,7 +745,7 @@ public class CommandResponseLifecycleTests
         using TestableClient client = new();
         await client.ConnectAsync(clientStream, leaveOpen: true);
 
-        await Assert.ThrowsExceptionAsync<ArgumentException>(() =>
+        await Assert.ThrowsExactlyAsync<ArgumentException>(() =>
             client.SendLinesPublicAsync(["SAFE", "BAD\nINJECT"]));
     }
 
@@ -782,21 +782,21 @@ public class CommandResponseLifecycleTests
     public void MaxLineLength_NegativeValue_ThrowsOnClient()
     {
         CommandResponseClient client = new();
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => client.MaxLineLength = -1);
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => client.MaxLineLength = -1);
     }
 
     [TestMethod]
     public void MaxResponseCount_NegativeValue_Throws()
     {
         CommandResponseClient client = new();
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => client.MaxResponseCount = -1);
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => client.MaxResponseCount = -1);
     }
 
     [TestMethod]
     public void ListenTimeout_NegativeValue_Throws()
     {
         CommandResponseClient client = new();
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
             client.ListenTimeout = TimeSpan.FromMilliseconds(-500));
     }
 
@@ -811,7 +811,7 @@ public class CommandResponseLifecycleTests
     public void NoOpInterval_NegativeValue_Throws()
     {
         CommandResponseClient client = new();
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
             client.NoOpInterval = TimeSpan.FromMilliseconds(-500));
     }
 
@@ -826,7 +826,7 @@ public class CommandResponseLifecycleTests
     public void NoOpInterval_Zero_Throws()
     {
         CommandResponseClient client = new();
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
             client.NoOpInterval = TimeSpan.Zero);
     }
 
@@ -841,42 +841,42 @@ public class CommandResponseLifecycleTests
     public void NoOpCommand_Null_Throws()
     {
         CommandResponseClient client = new();
-        Assert.ThrowsException<ArgumentNullException>(() => client.NoOpCommand = null!);
+        Assert.ThrowsExactly<ArgumentNullException>(() => client.NoOpCommand = null!);
     }
 
     [TestMethod]
     public void NoOpCommand_Empty_Throws()
     {
         CommandResponseClient client = new();
-        Assert.ThrowsException<ArgumentException>(() => client.NoOpCommand = "");
+        Assert.ThrowsExactly<ArgumentException>(() => client.NoOpCommand = "");
     }
 
     [TestMethod]
     public void NoOpCommand_Whitespace_Throws()
     {
         CommandResponseClient client = new();
-        Assert.ThrowsException<ArgumentException>(() => client.NoOpCommand = "   ");
+        Assert.ThrowsExactly<ArgumentException>(() => client.NoOpCommand = "   ");
     }
 
     [TestMethod]
     public void NoOpCommand_ContainsCr_Throws()
     {
         CommandResponseClient client = new();
-        Assert.ThrowsException<ArgumentException>(() => client.NoOpCommand = "NOOP\r");
+        Assert.ThrowsExactly<ArgumentException>(() => client.NoOpCommand = "NOOP\r");
     }
 
     [TestMethod]
     public void NoOpCommand_ContainsLf_Throws()
     {
         CommandResponseClient client = new();
-        Assert.ThrowsException<ArgumentException>(() => client.NoOpCommand = "NOOP\n");
+        Assert.ThrowsExactly<ArgumentException>(() => client.NoOpCommand = "NOOP\n");
     }
 
     [TestMethod]
     public void NoOpCommand_ContainsNul_Throws()
     {
         CommandResponseClient client = new();
-        Assert.ThrowsException<ArgumentException>(() => client.NoOpCommand = "NOOP\0");
+        Assert.ThrowsExactly<ArgumentException>(() => client.NoOpCommand = "NOOP\0");
     }
 
     [TestMethod]
@@ -892,7 +892,7 @@ public class CommandResponseLifecycleTests
     {
         CommandResponseClient client = new();
         TimeSpan tooLarge = TimeSpan.FromMilliseconds((double)int.MaxValue + 1);
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => client.ListenTimeout = tooLarge);
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => client.ListenTimeout = tooLarge);
     }
 
     [TestMethod]
@@ -999,7 +999,7 @@ public class CommandResponseLifecycleTests
         await WithTimeout(client.OnConnectStarted.Task, "OnConnect did not start within 5s.");
 
         // State is Connecting; SendCommandAsync must throw.
-        await Assert.ThrowsExceptionAsync<InvalidOperationException>(() =>
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
             client.SendCommandAsync("HELLO"));
 
         // Allow OnConnect to complete and verify normal use is possible afterwards.
@@ -1227,7 +1227,7 @@ public class CommandResponseLifecycleTests
         Assert.IsFalse(client.IsConnected, "Client must not report connected after OnConnect failure.");
 
         // A second call must throw ObjectDisposedException — the instance is single-use.
-        await Assert.ThrowsExceptionAsync<ObjectDisposedException>(() =>
+        await Assert.ThrowsExactlyAsync<ObjectDisposedException>(() =>
             client.ConnectAsync(clientStream, leaveOpen: true));
     }
 

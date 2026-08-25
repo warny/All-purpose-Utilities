@@ -11,7 +11,7 @@ public class MapPositionTests
     public void ConstructorRejectsZeroZoomLevel()
     {
         var point = new GeoPoint<double>(0, 0);
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new MapPosition<double>(point, 0));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new MapPosition<double>(point, 0));
     }
 
     [TestMethod]

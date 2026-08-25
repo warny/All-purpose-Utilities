@@ -48,6 +48,6 @@ public class ParserExecutionStateManagerTests
     [TestMethod]
     public void NullParserExecutionStateManager_RestoreNull_ThrowsArgumentNullException()
     {
-        Assert.ThrowsException<ArgumentNullException>(() => NullParserExecutionStateManager.Instance.Restore(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => NullParserExecutionStateManager.Instance.Restore(null!));
     }
 }

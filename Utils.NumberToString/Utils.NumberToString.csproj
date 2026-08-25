@@ -38,12 +38,15 @@
             <Generator>ResXFileCodeGenerator</Generator>
             <LastGenOutput>NumberConverterResources.Designer.cs</LastGenOutput>
         </EmbeddedResource>
-        <EmbeddedResource Include="NumberConverterConfigurations/NumberConvertionConfiguration.xsd"
-                          LogicalName="Utils.NumberToString.NumberConvertionConfiguration.xsd" />
+        <EmbeddedResource Include="NumberConverterConfigurations/NumberConvertionConfiguration.xsd" LogicalName="Utils.NumberToString.NumberConvertionConfiguration.xsd" />
     </ItemGroup>
 
     <ItemGroup>
         <None Include="README.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Update="Microsoft.SourceLink.GitHub" Version="10.0.400" />
     </ItemGroup>
 
 </Project>

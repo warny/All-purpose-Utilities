@@ -61,6 +61,6 @@ public class ParserFeatureCapabilitiesTests
     [TestMethod]
     public void ParserFeatureCapabilities_GetThrowsClearlyForUnknown()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => ParserFeatureCapabilities.Get((ParserFeature)999));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => ParserFeatureCapabilities.Get((ParserFeature)999));
     }
 }

@@ -21,12 +21,12 @@ public class SkipListSafetyTests
         SkipList<int> list = CreateList(1, 2, 3);
         using IEnumerator<int> beforeFirstMove = list.GetEnumerator();
         Assert.IsTrue(list.Add(4));
-        Assert.ThrowsException<InvalidOperationException>(() => beforeFirstMove.MoveNext());
+        Assert.ThrowsExactly<InvalidOperationException>(() => beforeFirstMove.MoveNext());
 
         using IEnumerator<int> afterFirstMove = list.GetEnumerator();
         Assert.IsTrue(afterFirstMove.MoveNext());
         Assert.IsTrue(list.Add(5));
-        Assert.ThrowsException<InvalidOperationException>(() => afterFirstMove.MoveNext());
+        Assert.ThrowsExactly<InvalidOperationException>(() => afterFirstMove.MoveNext());
         list.ValidateInvariants();
     }
 
@@ -65,7 +65,7 @@ public class SkipListSafetyTests
         using IEnumerator<int> invalidated = list.GetEnumerator();
         Assert.IsTrue(invalidated.MoveNext());
         Assert.IsTrue(list.Remove(2));
-        Assert.ThrowsException<InvalidOperationException>(() => invalidated.MoveNext());
+        Assert.ThrowsExactly<InvalidOperationException>(() => invalidated.MoveNext());
         list.ValidateInvariants();
     }
 
@@ -78,7 +78,7 @@ public class SkipListSafetyTests
         SkipList<int> list = CreateList(1, 2);
         using IEnumerator<int> invalidated = list.GetEnumerator();
         list.Clear();
-        Assert.ThrowsException<InvalidOperationException>(() => invalidated.MoveNext());
+        Assert.ThrowsExactly<InvalidOperationException>(() => invalidated.MoveNext());
         list.ValidateInvariants();
 
         using IEnumerator<int> unaffected = list.GetEnumerator();
@@ -132,7 +132,7 @@ public class SkipListSafetyTests
         int countBefore = list.Count;
         comparer.ThrowOnComparisonNumber = comparer.ComparisonCount + scenario.ComparisonCount;
 
-        ComparerTestException exception = Assert.ThrowsException<ComparerTestException>(
+        ComparerTestException exception = Assert.ThrowsExactly<ComparerTestException>(
             () => Execute(operation, list, scenario.Target));
 
         Assert.AreSame(comparer.Exception, exception);

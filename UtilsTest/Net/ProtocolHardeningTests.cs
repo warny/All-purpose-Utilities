@@ -26,13 +26,13 @@ public class ProtocolHardeningTests
     [DataRow("user @example.com")]
     [DataRow("@route:user@example.com")]
     [DataRow("user@example.com\rRCPT TO:<evil@example.com>")]
-    public void SmtpPath_Parse_RejectsUnsafeSyntax(string value) => Assert.ThrowsException<FormatException>(() => SmtpPath.Parse(value));
+    public void SmtpPath_Parse_RejectsUnsafeSyntax(string value) => Assert.ThrowsExactly<FormatException>(() => SmtpPath.Parse(value));
 
     /// <summary>Verifies SMTPUTF8 is opt-in and never silently substituted.</summary>
     [TestMethod]
     public void SmtpPath_Parse_Utf8RequiresExplicitOptIn()
     {
-        Assert.ThrowsException<FormatException>(() => SmtpPath.Parse("tést@example.com"));
+        Assert.ThrowsExactly<FormatException>(() => SmtpPath.Parse("tést@example.com"));
         Assert.AreEqual("tést@example.com", SmtpPath.Parse("tést@example.com", true).Value);
     }
 
@@ -40,18 +40,18 @@ public class ProtocolHardeningTests
     [TestMethod]
     public void SmtpPlainCredentials_RejectNulInEveryField()
     {
-        Assert.ThrowsException<ArgumentException>(() => new SmtpPlainCredentials("a\0b", "password"));
-        Assert.ThrowsException<ArgumentException>(() => new SmtpPlainCredentials("user", "pass\0word"));
-        Assert.ThrowsException<ArgumentException>(() => new SmtpPlainCredentials("user", "password", "a\0z"));
+        Assert.ThrowsExactly<ArgumentException>(() => new SmtpPlainCredentials("a\0b", "password"));
+        Assert.ThrowsExactly<ArgumentException>(() => new SmtpPlainCredentials("user", "pass\0word"));
+        Assert.ThrowsExactly<ArgumentException>(() => new SmtpPlainCredentials("user", "password", "a\0z"));
     }
 
     /// <summary>Verifies payload limits reject negative values at assignment.</summary>
     [TestMethod]
     public void ProtocolPayloadLimits_RejectNegativeValues()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new ProtocolPayloadLimits { MaximumLines = -1 });
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new ProtocolPayloadLimits { MaximumCharacters = -1 });
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new ProtocolPayloadLimits { MaximumBytes = -1 });
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new ProtocolPayloadLimits { MaximumLines = -1 });
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new ProtocolPayloadLimits { MaximumCharacters = -1 });
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new ProtocolPayloadLimits { MaximumBytes = -1 });
     }
 
     /// <summary>Verifies structured failures copy responses and redact command arguments.</summary>

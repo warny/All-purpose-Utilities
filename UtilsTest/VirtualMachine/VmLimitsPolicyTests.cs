@@ -48,56 +48,56 @@ public class VmLimitsPolicyTests
     [TestMethod]
     public void VirtualMachineLimits_Zero_MaxCallStackDepth_Throws()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => new VirtualMachineLimits(maxCallStackDepth: 0));
     }
 
     [TestMethod]
     public void VirtualMachineLimits_Negative_MaxCallStackDepth_Throws()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => new VirtualMachineLimits(maxCallStackDepth: -1));
     }
 
     [TestMethod]
     public void VirtualMachineLimits_Zero_MaxControlFlowDepth_Throws()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => new VirtualMachineLimits(maxControlFlowDepth: 0));
     }
 
     [TestMethod]
     public void VirtualMachineLimits_Zero_MaxOperandStackDepth_Throws()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => new VirtualMachineLimits(maxOperandStackDepth: 0));
     }
 
     [TestMethod]
     public void VirtualMachineLimits_Zero_MaxPhysicalPages_Throws()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => new VirtualMachineLimits(maxPhysicalPages: 0));
     }
 
     [TestMethod]
     public void VirtualMachineLimits_Zero_MaxMemoryProcesses_Throws()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => new VirtualMachineLimits(maxMemoryProcesses: 0));
     }
 
     [TestMethod]
     public void VirtualMachineLimits_Zero_MaxScheduledProcesses_Throws()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => new VirtualMachineLimits(maxScheduledProcesses: 0));
     }
 
     [TestMethod]
     public void VirtualMachineLimits_Zero_SchedulerQuantumSteps_Throws()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => new VirtualMachineLimits(schedulerQuantumSteps: 0));
     }
 
@@ -145,13 +145,13 @@ public class VmLimitsPolicyTests
     [TestMethod]
     public void ExecutionLimits_Zero_Throws()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new ExecutionLimits(0));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new ExecutionLimits(0));
     }
 
     [TestMethod]
     public void ExecutionLimits_Negative_Throws()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new ExecutionLimits(-1));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new ExecutionLimits(-1));
     }
 
     [TestMethod]
@@ -263,7 +263,7 @@ public class VmLimitsPolicyTests
         stack.Push(1);
         stack.Push(2);
         stack.Push(3);
-        var ex = Assert.ThrowsException<VmLimitExceededException>(() => stack.Push(4));
+        var ex = Assert.ThrowsExactly<VmLimitExceededException>(() => stack.Push(4));
         Assert.AreEqual(VmLimitKind.OperandStackDepth, ex.LimitKind);
         Assert.AreEqual(3L, ex.Limit);
         Assert.AreEqual(4L, ex.AttemptedValue);
@@ -296,7 +296,7 @@ public class VmLimitsPolicyTests
         var cs = new CallStack(maxDepth: 2);
         cs.Call(10);
         cs.Call(20);
-        var ex = Assert.ThrowsException<VmLimitExceededException>(() => cs.Call(30));
+        var ex = Assert.ThrowsExactly<VmLimitExceededException>(() => cs.Call(30));
         Assert.AreEqual(VmLimitKind.CallStackDepth, ex.LimitKind);
         Assert.AreEqual(2L, ex.Limit);
         Assert.AreEqual(3L, ex.AttemptedValue);
@@ -317,7 +317,7 @@ public class VmLimitsPolicyTests
         var cs = new SimpleCallStack(maxDepth: 2);
         cs.Call(10);
         cs.Call(20);
-        var ex = Assert.ThrowsException<VmLimitExceededException>(() => cs.Call(30));
+        var ex = Assert.ThrowsExactly<VmLimitExceededException>(() => cs.Call(30));
         Assert.AreEqual(VmLimitKind.CallStackDepth, ex.LimitKind);
         Assert.AreEqual(2L, ex.Limit);
         Assert.AreEqual(3L, ex.AttemptedValue);
@@ -340,7 +340,7 @@ public class VmLimitsPolicyTests
         var cfs = new ControlFlowStack(maxDepth: 2);
         cfs.PushLoop(0, 10);
         cfs.PushLoop(1, 20);
-        var ex = Assert.ThrowsException<VmLimitExceededException>(() => cfs.PushLoop(2, 30));
+        var ex = Assert.ThrowsExactly<VmLimitExceededException>(() => cfs.PushLoop(2, 30));
         Assert.AreEqual(VmLimitKind.ControlFlowDepth, ex.LimitKind);
         Assert.AreEqual(2L, ex.Limit);
         Assert.AreEqual(3L, ex.AttemptedValue);
@@ -372,7 +372,7 @@ public class VmLimitsPolicyTests
         var ctx = new DefaultContext(ReadOnlyMemory<byte>.Empty, limits);
         ctx.Stack.Push(1);
         ctx.Stack.Push(2);
-        Assert.ThrowsException<VmLimitExceededException>(() => ctx.Stack.Push(3));
+        Assert.ThrowsExactly<VmLimitExceededException>(() => ctx.Stack.Push(3));
     }
 
     [TestMethod]
@@ -382,7 +382,7 @@ public class VmLimitsPolicyTests
         var ctx = new TypedStackContext<int>(ReadOnlyMemory<byte>.Empty, limits);
         ctx.Stack.Push(1);
         ctx.Stack.Push(2);
-        var ex = Assert.ThrowsException<VmLimitExceededException>(() => ctx.Stack.Push(3));
+        var ex = Assert.ThrowsExactly<VmLimitExceededException>(() => ctx.Stack.Push(3));
         Assert.AreEqual(VmLimitKind.OperandStackDepth, ex.LimitKind);
     }
 
@@ -394,12 +394,12 @@ public class VmLimitsPolicyTests
         // Verify call stack limit
         ctx.CallStack.Call(10);
         ctx.CallStack.Call(20);
-        Assert.ThrowsException<VmLimitExceededException>(() => ctx.CallStack.Call(30));
+        Assert.ThrowsExactly<VmLimitExceededException>(() => ctx.CallStack.Call(30));
         // Verify operand stack limit
         ctx.Stack.Push(1);
         ctx.Stack.Push(2);
         ctx.Stack.Push(3);
-        Assert.ThrowsException<VmLimitExceededException>(() => ctx.Stack.Push(4));
+        Assert.ThrowsExactly<VmLimitExceededException>(() => ctx.Stack.Push(4));
     }
 
     // ── VirtualProcessor.Execute with ExecutionLimits ─────────────────────────
@@ -449,7 +449,7 @@ public class VmLimitsPolicyTests
         // Program needs 4 instructions (3 STEP + HALT). Budget of 2 should throw.
         var proc = new LimitTestProcessor();
         var ctx = new DefaultContext(BuildNStepProgram(3));
-        Assert.ThrowsException<InstructionBudgetExceededException>(
+        Assert.ThrowsExactly<InstructionBudgetExceededException>(
             () => proc.Execute(ctx, new ExecutionLimits(2), CancellationToken.None));
     }
 
@@ -459,7 +459,7 @@ public class VmLimitsPolicyTests
         // InstructionBudgetExceededException is a VmLimitExceededException
         var proc = new LimitTestProcessor();
         var ctx = new DefaultContext(BuildNStepProgram(5));
-        var ex = Assert.ThrowsException<InstructionBudgetExceededException>(
+        var ex = Assert.ThrowsExactly<InstructionBudgetExceededException>(
             () => proc.Execute(ctx, new ExecutionLimits(3), CancellationToken.None));
         Assert.AreEqual(3L, ex.Budget);
         Assert.IsInstanceOfType<VmLimitExceededException>(ex);
@@ -470,7 +470,7 @@ public class VmLimitsPolicyTests
     {
         var proc = new LimitTestProcessor();
         var ctx = new DefaultContext(BuildNStepProgram(3));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => proc.Execute(ctx, maxInstructions: -1));
     }
 
@@ -507,7 +507,7 @@ public class VmLimitsPolicyTests
         for (int i = 0; i < 10; i++) program[i] = 0x01;
         program[10] = 0x00;
         scheduler.AddProcess(new DefaultContext(program), SchProc());
-        Assert.ThrowsException<InstructionBudgetExceededException>(
+        Assert.ThrowsExactly<InstructionBudgetExceededException>(
             () => scheduler.Run(new ExecutionLimits(3), CancellationToken.None));
     }
 
@@ -528,7 +528,7 @@ public class VmLimitsPolicyTests
     {
         var scheduler = new Scheduler<DefaultContext>();
         scheduler.AddProcess(SchCtx(0x00), SchProc());
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => scheduler.Run(cancellationToken: default, maxInstructions: -1));
     }
 
@@ -541,7 +541,7 @@ public class VmLimitsPolicyTests
         var scheduler = new Scheduler<DefaultContext>(limits);
         scheduler.AddProcess(SchCtx(0x00), SchProc());
         scheduler.AddProcess(SchCtx(0x00), SchProc());
-        var ex = Assert.ThrowsException<VmLimitExceededException>(
+        var ex = Assert.ThrowsExactly<VmLimitExceededException>(
             () => scheduler.AddProcess(SchCtx(0x00), SchProc()));
         Assert.AreEqual(VmLimitKind.ScheduledProcessCount, ex.LimitKind);
         Assert.AreEqual(2L, ex.Limit);
@@ -595,7 +595,7 @@ public class VmLimitsPolicyTests
         var mem = new VirtualMemory<int>(pageSize: 16, limits);
         mem.AllocatePage();
         mem.AllocatePage();
-        var ex = Assert.ThrowsException<VmLimitExceededException>(() => mem.AllocatePage());
+        var ex = Assert.ThrowsExactly<VmLimitExceededException>(() => mem.AllocatePage());
         Assert.AreEqual(VmLimitKind.PhysicalPageCount, ex.LimitKind);
         Assert.AreEqual(2L, ex.Limit);
         Assert.AreEqual(3L, ex.AttemptedValue);
@@ -622,7 +622,7 @@ public class VmLimitsPolicyTests
         var limits = new VirtualMachineLimits(maxMemoryProcesses: 1);
         var mem = new VirtualMemory<int>(pageSize: 16, limits);
         Assert.AreEqual(1, mem.Processes.Count); // master only
-        var ex = Assert.ThrowsException<VmLimitExceededException>(() => mem.CreateProcess());
+        var ex = Assert.ThrowsExactly<VmLimitExceededException>(() => mem.CreateProcess());
         Assert.AreEqual(VmLimitKind.MemoryProcessCount, ex.LimitKind);
     }
 
@@ -643,7 +643,7 @@ public class VmLimitsPolicyTests
         var limits = new VirtualMachineLimits(maxMemoryProcesses: 2);
         var mem = new VirtualMemory<int>(pageSize: 16, limits);
         mem.CreateProcess(); // 2 total (master + 1)
-        var ex = Assert.ThrowsException<VmLimitExceededException>(() => mem.CreateProcess());
+        var ex = Assert.ThrowsExactly<VmLimitExceededException>(() => mem.CreateProcess());
         Assert.AreEqual(VmLimitKind.MemoryProcessCount, ex.LimitKind);
         Assert.AreEqual(2L, ex.Limit);
         Assert.AreEqual(3L, ex.AttemptedValue);
@@ -656,7 +656,7 @@ public class VmLimitsPolicyTests
         var mem = new VirtualMemory<int>(pageSize: 16, limits);
         var proc = mem.CreateProcess(); // 2 total
         // Can't add more.
-        Assert.ThrowsException<VmLimitExceededException>(() => mem.CreateProcess());
+        Assert.ThrowsExactly<VmLimitExceededException>(() => mem.CreateProcess());
         // Free one, then it should be possible to add again.
         mem.FreeProcess(proc);
         var newProc = mem.CreateProcess(); // Should succeed: back to 2 total.
@@ -676,7 +676,7 @@ public class VmLimitsPolicyTests
         program[5] = 0x00;
         scheduler.AddProcess(new DefaultContext(program), SchProc());
         scheduler.AddProcess(new DefaultContext((byte[])program.Clone()), SchProc());
-        Assert.ThrowsException<InstructionBudgetExceededException>(
+        Assert.ThrowsExactly<InstructionBudgetExceededException>(
             () => scheduler.Run(new ExecutionLimits(5), CancellationToken.None));
     }
 
@@ -690,7 +690,7 @@ public class VmLimitsPolicyTests
         for (int i = 0; i < 10; i++) program[i] = 0x01;
         program[10] = 0x00;
         scheduler.AddProcess(new DefaultContext(program), SchProc());
-        await Assert.ThrowsExceptionAsync<InstructionBudgetExceededException>(
+        await Assert.ThrowsExactlyAsync<InstructionBudgetExceededException>(
             () => scheduler.RunAsync(new ExecutionLimits(3), CancellationToken.None));
     }
 
@@ -699,7 +699,7 @@ public class VmLimitsPolicyTests
     {
         var scheduler = new Scheduler<DefaultContext>();
         scheduler.AddProcess(SchCtx(0x00), SchProc());
-        await Assert.ThrowsExceptionAsync<ArgumentOutOfRangeException>(
+        await Assert.ThrowsExactlyAsync<ArgumentOutOfRangeException>(
             () => scheduler.RunAsync(cancellationToken: default, maxInstructions: -1));
     }
 }

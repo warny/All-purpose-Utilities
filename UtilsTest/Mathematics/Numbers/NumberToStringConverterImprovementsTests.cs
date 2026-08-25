@@ -75,7 +75,7 @@ public class NumberToStringConverterImprovementsTests
         };
         var converter = new NumberToStringConverter(options);
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => converter.Convert(1000));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => converter.Convert(1000));
     }
 
     [TestMethod]
@@ -87,7 +87,7 @@ public class NumberToStringConverterImprovementsTests
         };
         var converter = new NumberToStringConverter(options);
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => converter.Convert(-1000));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => converter.Convert(-1000));
     }
 
     [TestMethod]
@@ -130,7 +130,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void RegisterConfigurations_DuplicateCultureThrowsByDefault()
     {
-        Assert.ThrowsException<InvalidOperationException>(
+        Assert.ThrowsExactly<InvalidOperationException>(
             () => NumberToStringConverter.RegisterConfigurations([MinimalXmlConfig, MinimalXmlConfig]));
     }
 
@@ -307,7 +307,7 @@ public class NumberToStringConverterImprovementsTests
     public void Convert_UnknownVariantDimension_Throws()
     {
         var converter = NumberToStringConverter.GetConverter("FR");
-        Assert.ThrowsException<ArgumentException>(() => converter.Convert(1, "cas=inconnu"));
+        Assert.ThrowsExactly<ArgumentException>(() => converter.Convert(1, "cas=inconnu"));
     }
 
     // ─── C2d — Variants ES (género) ───────────────────────────────────────
@@ -961,11 +961,11 @@ public class NumberToStringConverterImprovementsTests
         Assert.AreEqual("3", converter.Convert(new Number(3, 2)));  // 3/2 → Numerator=3
 
         // ConvertOrdinal(int) → throws NotSupportedException
-        Assert.ThrowsException<NotSupportedException>(() => converter.ConvertOrdinal(1));
+        Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertOrdinal(1));
         // ConvertOrdinal(long) in int range → delegates → same NotSupportedException
-        Assert.ThrowsException<NotSupportedException>(() => converter.ConvertOrdinal(1L));
+        Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertOrdinal(1L));
         // ConvertOrdinal(long) outside int range → OverflowException from checked cast
-        Assert.ThrowsException<OverflowException>(() => converter.ConvertOrdinal((long)int.MaxValue + 1));
+        Assert.ThrowsExactly<OverflowException>(() => converter.ConvertOrdinal((long)int.MaxValue + 1));
     }
 
     private sealed class MinimalConverter : INumberToStringConverter
@@ -1829,7 +1829,7 @@ public class NumberToStringConverterImprovementsTests
             </Numbers>
             """;
 
-        Assert.ThrowsException<InvalidOperationException>(() =>
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
             LegacyNumberToStringFixture.ReadConfiguration(xml));
     }
 
@@ -1856,7 +1856,7 @@ public class NumberToStringConverterImprovementsTests
             </Numbers>
             """;
 
-        Assert.ThrowsException<InvalidOperationException>(() =>
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
             LegacyNumberToStringFixture.ReadConfiguration(xml));
     }
 
@@ -2173,10 +2173,9 @@ public class NumberToStringConverterImprovementsTests
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentOutOfRangeException))]
     public void RoundToSignificantDigits_ZeroDigits_Throws()
     {
-        MathEx.RoundToSignificantDigits(123, 0);
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => MathEx.RoundToSignificantDigits(123, 0));
     }
 
     [TestMethod]
@@ -2796,7 +2795,7 @@ public class NumberToStringConverterImprovementsTests
               </Language>
             </Numbers>
             """;
-        var ex = Assert.ThrowsException<InvalidOperationException>(
+        var ex = Assert.ThrowsExactly<InvalidOperationException>(
             () => LegacyNumberToStringFixture.ReadConfiguration(bad));
         StringAssert.Contains(ex.Message, "DOES-NOT-EXIST");
     }
@@ -2860,8 +2859,8 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void ParseRangeExpression_EmptyString_Throws()
     {
-        Assert.ThrowsException<ArgumentException>(() => NumberToStringConverter.ParseRangeExpression(""));
-        Assert.ThrowsException<ArgumentException>(() => NumberToStringConverter.ParseRangeExpression("   "));
+        Assert.ThrowsExactly<ArgumentException>(() => NumberToStringConverter.ParseRangeExpression(""));
+        Assert.ThrowsExactly<ArgumentException>(() => NumberToStringConverter.ParseRangeExpression("   "));
     }
 
     // ─── onValue — onScale + onValue via XML ─────────────────────────────────

@@ -147,26 +147,26 @@ public class BaseDecoderStreamTests
     public void StrictMode_RejectsCharactersOutsideAlphabet()
     {
         // '!' is not in base64 alphabet
-        Assert.ThrowsException<FormatException>(() => Decode("QU!C", Bases.Base64));
+        Assert.ThrowsExactly<FormatException>(() => Decode("QU!C", Bases.Base64));
     }
 
     [TestMethod]
     public void StrictMode_RejectsPaddingAtStart()
     {
-        Assert.ThrowsException<FormatException>(() => Decode("=QUI=", Bases.Base64));
+        Assert.ThrowsExactly<FormatException>(() => Decode("=QUI=", Bases.Base64));
     }
 
     [TestMethod]
     public void StrictMode_RejectsDataAfterPadding()
     {
         // Data character after padding is illegal
-        Assert.ThrowsException<FormatException>(() => Decode("QUI=A", Bases.Base64));
+        Assert.ThrowsExactly<FormatException>(() => Decode("QUI=A", Bases.Base64));
     }
 
     [TestMethod]
     public void StrictMode_Base16_RejectsInvalidChars()
     {
-        Assert.ThrowsException<FormatException>(() => Decode("GG", Bases.Base16));
+        Assert.ThrowsExactly<FormatException>(() => Decode("GG", Bases.Base16));
     }
 
     [TestMethod]
@@ -198,7 +198,7 @@ public class BaseDecoderStreamTests
     public void StrictMode_Base64_RejectsIncorrectPaddingCount()
     {
         // "TQ=" has only 1 filler where 2 are required for a 2-symbol group
-        Assert.ThrowsException<FormatException>(() => Decode("TQ=", Bases.Base64));
+        Assert.ThrowsExactly<FormatException>(() => Decode("TQ=", Bases.Base64));
         // "TQ==" (2 fillers) is the correct form and must decode successfully
         byte[] result = Decode("TQ==", Bases.Base64);
         Assert.AreEqual(1, result.Length);
@@ -225,7 +225,7 @@ public class BaseDecoderStreamTests
         using var stream = new MemoryStream();
         var decoder = new BaseDecoderStream(stream, Bases.Base64);
         decoder.Close();
-        Assert.ThrowsException<ObjectDisposedException>(() => decoder.Write('Q'));
+        Assert.ThrowsExactly<ObjectDisposedException>(() => decoder.Write('Q'));
     }
 
     // ---- Close() state coherence after FormatException ----
@@ -236,7 +236,7 @@ public class BaseDecoderStreamTests
         using var ms = new MemoryStream();
         var decoder = new BaseDecoderStream(ms, Bases.Base64);
         decoder.Write("TQ="); // only 1 '=' where 2 are required
-        Assert.ThrowsException<FormatException>(() => decoder.Close());
+        Assert.ThrowsExactly<FormatException>(() => decoder.Close());
     }
 
     [TestMethod]
@@ -247,7 +247,7 @@ public class BaseDecoderStreamTests
         decoder.Write("TQ=");
         try { decoder.Close(); } catch (FormatException) { }
         // The instance is permanently condemned; any subsequent write must be rejected.
-        Assert.ThrowsException<ObjectDisposedException>(() => decoder.Write('Q'),
+        Assert.ThrowsExactly<ObjectDisposedException>(() => decoder.Write('Q'),
             "Write after a failed Close must throw ObjectDisposedException");
     }
 
@@ -300,7 +300,7 @@ public class BaseDecoderStreamTests
         decoder.Write("TQ="); // invalid: 1 padding where 2 are required
         stream.ShouldFailOnFlush = true;
 
-        Assert.ThrowsException<FormatException>(() => decoder.Close(),
+        Assert.ThrowsExactly<FormatException>(() => decoder.Close(),
             "FormatException from validation must not be replaced by the IOException from Flush");
     }
 
@@ -310,7 +310,7 @@ public class BaseDecoderStreamTests
     public void Base16_SingleSymbol_Strict_ThrowsFormatException()
     {
         // A single hex digit leaves 4 unresolved bits and can never form a byte.
-        Assert.ThrowsException<FormatException>(() => Decode("A", Bases.Base16));
+        Assert.ThrowsExactly<FormatException>(() => Decode("A", Bases.Base16));
     }
 
     [TestMethod]
@@ -325,7 +325,7 @@ public class BaseDecoderStreamTests
     public void Base16_ThreeSymbols_Strict_ThrowsFormatException()
     {
         // 3 hex digits = 12 bits = 1 byte + 4 leftover bits → invalid terminal.
-        Assert.ThrowsException<FormatException>(() => Decode("ABC", Bases.Base16));
+        Assert.ThrowsExactly<FormatException>(() => Decode("ABC", Bases.Base16));
     }
 
     // Base32: every possible terminal remainder (symbol counts 1..8, all-zero data).
@@ -337,7 +337,7 @@ public class BaseDecoderStreamTests
     [DataRow("AAAAAA", DisplayName = "6 symbols → 6 leftover bits, invalid")]
     public void Base32_InvalidTerminalRemainder_ThrowsFormatException(string source)
     {
-        Assert.ThrowsException<FormatException>(() => Decode(source, Bases.Base32));
+        Assert.ThrowsExactly<FormatException>(() => Decode(source, Bases.Base32));
     }
 
     [TestMethod]
@@ -358,7 +358,7 @@ public class BaseDecoderStreamTests
     public void Base64_SingleSymbol_Strict_ThrowsFormatException()
     {
         // A single base64 symbol leaves 6 unresolved bits → invalid.
-        Assert.ThrowsException<FormatException>(() => Decode("A===", Bases.Base64));
+        Assert.ThrowsExactly<FormatException>(() => Decode("A===", Bases.Base64));
     }
 
     [TestMethod]
@@ -384,14 +384,14 @@ public class BaseDecoderStreamTests
     {
         // Not applicable to Base16 (any leftover is invalid quantum), so use Base32:
         // 2 symbols "AB" → 10 bits, byte = (A=0,B=1) => bits 00000 00001 => leftover 2 bits = "01" ≠ 0.
-        Assert.ThrowsException<FormatException>(() => Decode("AB======", Bases.Base32));
+        Assert.ThrowsExactly<FormatException>(() => Decode("AB======", Bases.Base32));
     }
 
     [TestMethod]
     public void Base64_NonZeroTrailingBits_ThrowsFormatException()
     {
         // "AB==" : A=0, B=1 → 12 bits 000000 000001, first byte 0x00, leftover 4 bits = 0001 ≠ 0.
-        Assert.ThrowsException<FormatException>(() => Decode("AB==", Bases.Base64));
+        Assert.ThrowsExactly<FormatException>(() => Decode("AB==", Bases.Base64));
     }
 
     [TestMethod]
@@ -432,7 +432,7 @@ public class BaseDecoderStreamTests
         decoder.Write("TQ=");
         CollectionAssert.AreEqual(new byte[] { 0x4D }, stream.ToArray(), "the complete byte must already be in the target before Close.");
 
-        Assert.ThrowsException<FormatException>(() => decoder.Close());
+        Assert.ThrowsExactly<FormatException>(() => decoder.Close());
         CollectionAssert.AreEqual(new byte[] { 0x4D }, stream.ToArray(), "the byte emitted before the failure must not be rolled back.");
     }
 
@@ -450,7 +450,7 @@ public class BaseDecoderStreamTests
         decoder.Write("AB==");
         CollectionAssert.AreEqual(new byte[] { 0x00 }, stream.ToArray(), "the complete byte must already be in the target before Close.");
 
-        Assert.ThrowsException<FormatException>(() => decoder.Close());
+        Assert.ThrowsExactly<FormatException>(() => decoder.Close());
         CollectionAssert.AreEqual(new byte[] { 0x00 }, stream.ToArray(), "the byte emitted before the failure must not be rolled back.");
     }
 
@@ -469,7 +469,7 @@ public class BaseDecoderStreamTests
         decoder.Write("ABC");
         CollectionAssert.AreEqual(new byte[] { 0xAB }, stream.ToArray(), "the complete byte must already be in the target before Close.");
 
-        Assert.ThrowsException<FormatException>(() => decoder.Close());
+        Assert.ThrowsExactly<FormatException>(() => decoder.Close());
         CollectionAssert.AreEqual(new byte[] { 0xAB }, stream.ToArray(), "the byte emitted before the failure must not be rolled back.");
     }
 
@@ -508,7 +508,7 @@ public class BaseDecoderStreamTests
         decoder.Write("QUJD");
         CollectionAssert.AreEqual(expected, stream.ToArray());
 
-        Assert.ThrowsException<FormatException>(() => decoder.Write('!'));
+        Assert.ThrowsExactly<FormatException>(() => decoder.Write('!'));
         CollectionAssert.AreEqual(expected, stream.ToArray(), "bytes emitted before the invalid character must remain.");
     }
 
@@ -530,7 +530,7 @@ public class BaseDecoderStreamTests
         byte[] expectedBeforeClose = { 0xFF, 0xFE, 0x4D };
         CollectionAssert.AreEqual(expectedBeforeClose, stream.ToArray());
 
-        Assert.ThrowsException<FormatException>(() => decoder.Close());
+        Assert.ThrowsExactly<FormatException>(() => decoder.Close());
         CollectionAssert.AreEqual(expectedBeforeClose, stream.ToArray(), "neither the pre-existing prefix nor the emitted byte must be truncated or restored.");
     }
 }
