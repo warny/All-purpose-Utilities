@@ -185,6 +185,29 @@ public sealed class NumberToStringConverterOptions
     public IReadOnlyDictionary<string, ForcedVariantSet>? TimeUnitForcedVariants { get; set; }
 
     /// <summary>
+    /// Optional per-unit <see cref="LexicalFormSet"/> declaring named lexical forms (e.g. an
+    /// "attributive" form) beyond the "singular"/"plural" forms implicitly synthesized from
+    /// <see cref="TimeUnits"/>. Entries here override the synthesized "singular"/"plural" keys if
+    /// reused, and add any other key a configured <see cref="TimeUnitFormSelectors"/> entry may
+    /// request. Keys must match <see cref="TimeUnits"/> keys; a converter constructed with a key
+    /// here that has no matching <see cref="TimeUnits"/> entry throws <see cref="ArgumentException"/>.
+    /// </summary>
+    public IReadOnlyDictionary<string, LexicalFormSet>? TimeUnitForms { get; set; }
+
+    /// <summary>
+    /// Optional per-unit <see cref="ILexicalFormSelector"/> choosing which named lexical form
+    /// (see <see cref="TimeUnitForms"/>) applies to a given count/context. Values here must
+    /// already be ready-to-use instances — supply an instance directly for programmatic
+    /// configuration (no reflection is performed here); XML configuration resolves a configured
+    /// <c>formSelector</c> type name via reflection once, while loading configuration, and places
+    /// the resulting instance in this same dictionary. Units absent from this dictionary use
+    /// <see cref="DefaultLexicalFormSelector"/> (today's Singular/Plural behavior). Keys must
+    /// match <see cref="TimeUnits"/> keys; a converter constructed with a key here that has no
+    /// matching <see cref="TimeUnits"/> entry throws <see cref="ArgumentException"/>.
+    /// </summary>
+    public IReadOnlyDictionary<string, ILexicalFormSelector>? TimeUnitFormSelectors { get; set; }
+
+    /// <summary>
     /// Pattern for rendering a date. Supported tokens: {month}, {ordinal-day}, {cardinal-day}, {year}.
     /// Required for Convert(DateOnly/DateTime).
     /// </summary>
@@ -255,6 +278,8 @@ public sealed class NumberToStringConverterOptions
         ScaleConnectorThreshold = source.ScaleConnectorThreshold;
         TimeUnits = source.TimeUnits;
         TimeUnitForcedVariants = source.TimeUnitForcedVariants;
+        TimeUnitForms = source.TimeUnitForms;
+        TimeUnitFormSelectors = source.TimeUnitFormSelectors;
         DatePattern = source.DatePattern;
         DateFirstDay = source.DateFirstDay;
         DateFirstCardinalDay = source.DateFirstCardinalDay;

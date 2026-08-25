@@ -1394,6 +1394,31 @@
                                     <xs:sequence>
                                         <xs:element name="Unit" minOccurs="0" maxOccurs="unbounded">
                                             <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element name="Forms" minOccurs="0">
+                                                        <xs:annotation><xs:documentation>
+                                                            Optional named lexical forms for this unit (e.g. an "attributive"
+                                                            form), beyond the "singular"/"plural" forms implicitly
+                                                            synthesized from the singular/plural attributes. A configured
+                                                            formSelector chooses which of these keys applies to a given
+                                                            count/context; it never chooses the localized word itself.
+                                                        </xs:documentation></xs:annotation>
+                                                        <xs:complexType>
+                                                            <xs:sequence>
+                                                                <xs:element name="Form" minOccurs="0" maxOccurs="unbounded">
+                                                                    <xs:complexType>
+                                                                        <xs:attribute name="key" type="xs:string" use="required">
+                                                                            <xs:annotation><xs:documentation>The form key, looked up by the unit's lexical form selector.</xs:documentation></xs:annotation>
+                                                                        </xs:attribute>
+                                                                        <xs:attribute name="value" type="xs:string" use="required">
+                                                                            <xs:annotation><xs:documentation>The localized word for this form.</xs:documentation></xs:annotation>
+                                                                        </xs:attribute>
+                                                                    </xs:complexType>
+                                                                </xs:element>
+                                                            </xs:sequence>
+                                                        </xs:complexType>
+                                                    </xs:element>
+                                                </xs:sequence>
                                                 <xs:attribute name="name" type="xs:string" use="required">
                                                     <xs:annotation><xs:documentation>Canonical name: "hour", "minute", or "second".</xs:documentation></xs:annotation>
                                                 </xs:attribute>
@@ -1421,6 +1446,18 @@
                                                         only to the numeral of this specific time unit, never to the
                                                         whole composite phrase or to other units. See the "ForcedVariants"
                                                         section of Utils.NumberToString/README.md.
+                                                    </xs:documentation></xs:annotation>
+                                                </xs:attribute>
+                                                <xs:attribute name="formSelector" type="xs:string" use="optional">
+                                                    <xs:annotation><xs:documentation>
+                                                        Optional lexical-form-selector type name or built-in alias
+                                                        (currently only "default") choosing which named Forms entry
+                                                        applies to a given count/context. Resolved once via reflection
+                                                        while loading configuration, never on the conversion hot path.
+                                                        Omit to use the built-in default selector (count 1 -> "singular",
+                                                        otherwise "plural"), which is exactly today's Singular/Plural
+                                                        behavior. See the "Lexical form selection" section of
+                                                        Utils.NumberToString/README.md.
                                                     </xs:documentation></xs:annotation>
                                                 </xs:attribute>
                                             </xs:complexType>

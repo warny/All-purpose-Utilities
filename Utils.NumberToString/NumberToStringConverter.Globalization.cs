@@ -126,6 +126,9 @@ namespace Utils.NumberToString
         // Explicitly registered language-specifics instances, consulted before reflection
         private static readonly ConcurrentDictionary<string, Func<INumberToStringLanguageSpecifics>> _registeredSpecifics = new(StringComparer.Ordinal);
 
+        // Explicitly registered lexical-form-selector instances, consulted before reflection
+        private static readonly ConcurrentDictionary<string, Func<ILexicalFormSelector>> _registeredLexicalFormSelectors = new(StringComparer.Ordinal);
+
         private static readonly object ConfigurationLock = new();
 
         // Stores resolved language definitions for cross-document baseOn resolution.
@@ -235,6 +238,38 @@ namespace Utils.NumberToString
             ArgumentException.ThrowIfNullOrWhiteSpace(typeName, nameof(typeName));
             ArgumentNullException.ThrowIfNull(factory);
             _registeredSpecifics[typeName] = factory;
+        }
+
+        /// <summary>
+        /// Registers an <see cref="ILexicalFormSelector"/> instance under a given type name so
+        /// that XML configurations referencing that name (via <c>formSelector="..."</c>) find it
+        /// without reflection.
+        /// </summary>
+        /// <remarks>
+        /// If a selector is already registered under <paramref name="typeName"/>, it is replaced
+        /// silently. The registered instance is shared across every unit/converter that
+        /// references the type name and may be invoked concurrently during conversion.
+        /// Implementations must therefore be stateless or internally thread-safe.
+        /// </remarks>
+        /// <param name="typeName">The type name as it appears in <c>formSelector</c> attributes (full or short name).</param>
+        /// <param name="instance">The instance to register. Must not be <see langword="null"/>.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="instance"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="typeName"/> is null, empty, or whitespace.</exception>
+        public static void RegisterLexicalFormSelector(string typeName, ILexicalFormSelector instance)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(typeName, nameof(typeName));
+            ArgumentNullException.ThrowIfNull(instance);
+            _registeredLexicalFormSelectors[typeName] = () => instance;
+        }
+
+        /// <summary>Registers a factory that creates a lexical-form-selector implementation for each converter.</summary>
+        /// <param name="typeName">The configured type name.</param>
+        /// <param name="factory">The non-null factory.</param>
+        public static void RegisterLexicalFormSelector(string typeName, Func<ILexicalFormSelector> factory)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(typeName, nameof(typeName));
+            ArgumentNullException.ThrowIfNull(factory);
+            _registeredLexicalFormSelectors[typeName] = factory;
         }
 
         /// <summary>
@@ -1621,6 +1656,12 @@ namespace Utils.NumberToString
                 TimeUnitForcedVariants = language.TimeUnits?.Units?
                     .Where(u => !string.IsNullOrWhiteSpace(u.ForceVariants))
                     .ToDictionary(u => u.Name, u => ForcedVariantSet.Parse(u.ForceVariants, languageIdentifier, $"TimeUnits[{u.Name}]")),
+                TimeUnitForms = language.TimeUnits?.Units?
+                    .Where(u => u.Forms?.Entries is { Count: > 0 })
+                    .ToDictionary(u => u.Name, u => LexicalFormSet.Create(u.Forms!.Entries!.Select(f => (f.Key, f.Value)))),
+                TimeUnitFormSelectors = language.TimeUnits?.Units?
+                    .Where(u => !string.IsNullOrWhiteSpace(u.FormSelector))
+                    .ToDictionary(u => u.Name, u => ResolveLexicalFormSelector(u.FormSelector, languageIdentifier)),
                 DatePattern = language.DateFormat?.Pattern,
                 DateFirstDay = language.DateFormat?.FirstDay,
                 DateFirstCardinalDay = language.DateFormat?.FirstCardinalDay,
@@ -1733,6 +1774,73 @@ namespace Utils.NumberToString
             return Activator.CreateInstance(specificsType) as INumberToStringLanguageSpecifics
                    ?? throw new InvalidOperationException(
                        $"LanguageSpecifics type '{typeName}' could not be instantiated.");
+        }
+
+        /// <summary>
+        /// Resolves a configured <c>formSelector</c> value to a ready-to-use
+        /// <see cref="ILexicalFormSelector"/> instance. Called at most once per configured unit,
+        /// during configuration loading / converter construction — never from a conversion method.
+        /// </summary>
+        /// <param name="typeName">
+        /// The configured type name, a built-in alias (currently only <c>"default"</c>), or
+        /// <see langword="null"/>/blank for the default selector.
+        /// </param>
+        /// <param name="languageIdentifier">The owning language identifier, used only for diagnostics.</param>
+        /// <returns>A ready-to-use, immutable selector instance.</returns>
+        /// <exception cref="NumberToStringConfigurationException">
+        /// The type could not be found in any loaded assembly, does not implement
+        /// <see cref="ILexicalFormSelector"/> (or is abstract/interface), or could not be
+        /// instantiated — error code <c>"UNTS008"</c>.
+        /// </exception>
+        internal static ILexicalFormSelector ResolveLexicalFormSelector(string? typeName, string? languageIdentifier)
+        {
+            if (string.IsNullOrWhiteSpace(typeName) || string.Equals(typeName, "default", StringComparison.OrdinalIgnoreCase))
+                return DefaultLexicalFormSelector.Instance;
+
+            if (_registeredLexicalFormSelectors.TryGetValue(typeName, out var registered))
+            {
+                try
+                {
+                    return registered() ?? throw new InvalidOperationException("The registered factory returned null.");
+                }
+                catch (Exception ex)
+                {
+                    throw new NumberToStringConfigurationException("UNTS008", languageIdentifier, typeName,
+                        $"Lexical form selector factory for configured type '{typeName}' failed: {ex.Message}");
+                }
+            }
+
+            Type? selectorType = Type.GetType(typeName, throwOnError: false);
+            selectorType ??= AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(SafeGetTypes)
+                .FirstOrDefault(t => string.Equals(t.FullName, typeName, StringComparison.Ordinal)
+                                     || string.Equals(t.Name, typeName, StringComparison.Ordinal));
+
+            if (selectorType == null)
+                throw new NumberToStringConfigurationException("UNTS008", languageIdentifier, typeName,
+                    $"Lexical form selector type '{typeName}' could not be found in any loaded assembly. " +
+                    $"Call RegisterLexicalFormSelector(\"{typeName}\", instance) before loading the configuration, " +
+                    "or use the built-in \"default\" selector.");
+
+            if (!typeof(ILexicalFormSelector).IsAssignableFrom(selectorType) || selectorType.IsAbstract || selectorType.IsInterface)
+                throw new NumberToStringConfigurationException("UNTS008", languageIdentifier, typeName,
+                    $"Lexical form selector type '{typeName}' does not implement ILexicalFormSelector or is abstract/interface.");
+
+            var config = new LexicalFormSelectorConfiguration(typeName, languageIdentifier);
+            var configConstructor = selectorType.GetConstructor([typeof(LexicalFormSelectorConfiguration)]);
+            try
+            {
+                object? instance = configConstructor != null
+                    ? configConstructor.Invoke([config])
+                    : Activator.CreateInstance(selectorType);
+                return instance as ILexicalFormSelector
+                       ?? throw new InvalidOperationException("Activator.CreateInstance returned null or an incompatible instance.");
+            }
+            catch (Exception ex) when (ex is not NumberToStringConfigurationException)
+            {
+                throw new NumberToStringConfigurationException("UNTS008", languageIdentifier, typeName,
+                    $"Lexical form selector type '{typeName}' could not be instantiated: {ex.Message}");
+            }
         }
 
         /// <summary>

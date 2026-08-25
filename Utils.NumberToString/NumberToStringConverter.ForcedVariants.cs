@@ -8,9 +8,25 @@ namespace Utils.NumberToString
         /// <summary>
         /// Internal merged runtime representation of a configured time unit. Not public — the
         /// public, backward-compatible split view is <see cref="TimeUnits"/> (singular/plural/
-        /// count-one form) and <see cref="TimeUnitForcedVariants"/> (per-unit forced variants).
+        /// count-one form), <see cref="TimeUnitForcedVariants"/> (per-unit forced variants),
+        /// <see cref="TimeUnitForms"/>, and <see cref="TimeUnitFormSelectors"/>.
         /// </summary>
-        private readonly record struct TimeUnitDefinition(string Singular, string Plural, string? Count1Form, ForcedVariantSet ForcedVariants);
+        /// <param name="Singular">The singular word (e.g. "hour").</param>
+        /// <param name="Plural">The plural word (e.g. "hours").</param>
+        /// <param name="Count1Form">Optional literal numeral override for count == 1.</param>
+        /// <param name="ForcedVariants">Canonicalized numeral-grammar constraints this unit forces.</param>
+        /// <param name="Forms">
+        /// Always populated with at least "singular"/"plural" (synthesized from
+        /// <paramref name="Singular"/>/<paramref name="Plural"/>), merged with any configured
+        /// <see cref="NumberToStringConverterOptions.TimeUnitForms"/> override.
+        /// </param>
+        /// <param name="Selector">
+        /// <see cref="DefaultLexicalFormSelector"/> unless overridden via
+        /// <see cref="NumberToStringConverterOptions.TimeUnitFormSelectors"/>.
+        /// </param>
+        private readonly record struct TimeUnitDefinition(
+            string Singular, string Plural, string? Count1Form, ForcedVariantSet ForcedVariants,
+            LexicalFormSet Forms, ILexicalFormSelector Selector);
 
         /// <summary>
         /// Validates that every dimension and value forced by <paramref name="forced"/> is declared

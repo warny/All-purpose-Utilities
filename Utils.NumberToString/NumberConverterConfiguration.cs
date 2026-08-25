@@ -615,6 +615,25 @@ public class TimeUnitEntry
     /// </summary>
     [XmlAttribute("forceVariants")]
     public string? ForceVariants { get; set; }
+
+    /// <summary>
+    /// Optional lexical-form-selector type name or built-in alias (currently only <c>"default"</c>)
+    /// choosing which named <see cref="Forms"/> entry applies to a given count/context. Resolved
+    /// once, via reflection, while loading configuration — never on the conversion hot path. When
+    /// omitted, the built-in default selector is used (count 1 → "singular", otherwise "plural"),
+    /// which is exactly today's Singular/Plural behavior.
+    /// </summary>
+    [XmlAttribute("formSelector")]
+    public string? FormSelector { get; set; }
+
+    /// <summary>
+    /// Optional named lexical forms for this unit (e.g. an "attributive" form), beyond the
+    /// "singular"/"plural" forms implicitly synthesized from <see cref="Singular"/>/<see cref="Plural"/>.
+    /// Entries here override the synthesized "singular"/"plural" keys if reused, and add any other
+    /// key a configured <see cref="FormSelector"/> may request.
+    /// </summary>
+    [XmlElement("Forms")]
+    public LexicalFormsType? Forms { get; set; }
 }
 
 /// <summary>
@@ -625,6 +644,30 @@ public class TimeUnitsType
     /// <summary>Gets or sets the list of time unit definitions.</summary>
     [XmlElement("Unit")]
     public List<TimeUnitEntry>? Units { get; set; }
+}
+
+/// <summary>
+/// Holds named lexical form entries for a configurable constituent (e.g. a time unit).
+/// </summary>
+public class LexicalFormsType
+{
+    /// <summary>Gets or sets the named form entries.</summary>
+    [XmlElement("Form")]
+    public List<LexicalFormEntry>? Entries { get; set; }
+}
+
+/// <summary>
+/// Maps one lexical form key (e.g. "singular", "attributive", "few") to its localized word.
+/// </summary>
+public class LexicalFormEntry
+{
+    /// <summary>The form key, looked up by a configured <see cref="Utils.NumberToString.ILexicalFormSelector"/>.</summary>
+    [XmlAttribute("key")]
+    public string Key { get; set; } = "";
+
+    /// <summary>The localized word for this form.</summary>
+    [XmlAttribute("value")]
+    public string Value { get; set; } = "";
 }
 
 /// <summary>
