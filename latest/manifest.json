@@ -15133,16 +15133,6 @@
     },
     {
       "type": "Conceptual",
-      "source_relative_path": "docs/code-audit.md",
-      "output": {
-        ".html": {
-          "relative_path": "docs/code-audit.html"
-        }
-      },
-      "version": ""
-    },
-    {
-      "type": "Conceptual",
       "source_relative_path": "docs/getting-started.md",
       "output": {
         ".html": {
