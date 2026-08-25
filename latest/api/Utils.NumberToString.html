@@ -111,6 +111,15 @@ Classes
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.DefaultLexicalFormSelector.html">DefaultLexicalFormSelector</a></dt>
+      <dd><p>The built-in <a class="xref" href="Utils.NumberToString.ILexicalFormSelector.html">ILexicalFormSelector</a> that reproduces the number-to-string
+converter's historical singular/plural selection: <code>&quot;singular&quot;</code> when the absolute value
+equals one, <code>&quot;plural&quot;</code> otherwise. Used automatically for any constituent that does not
+configure a different selector, so legacy Singular/Plural-only configurations are unaffected
+by the lexical-form mechanism.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.DefaultNumberToStringLanguageSpecifics.html">DefaultNumberToStringLanguageSpecifics</a></dt>
       <dd><p>Default no-op implementation used when no language-specific finalization is configured.</p>
 </dd>
@@ -185,6 +194,37 @@ into <code>OrdinalVariantRule</code> or <code>VariantRule</code> entries — no 
 <code>groupSize</code> attribute (plus its <code>Specified</code> companion) alongside every other
 XML member of a language so XmlSerializer can populate it directly. It is projected onto
 the public <a class="xref" href="Utils.NumberToString.LanguageType.html">LanguageType</a> after inheritance resolution.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.LexicalFormEntry.html">LexicalFormEntry</a></dt>
+      <dd><p>Maps one lexical form key (e.g. &quot;singular&quot;, &quot;attributive&quot;, &quot;few&quot;) to its localized word.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.LexicalFormSelectorConfiguration.html">LexicalFormSelectorConfiguration</a></dt>
+      <dd><p>Identifies a custom <a class="xref" href="Utils.NumberToString.ILexicalFormSelector.html">ILexicalFormSelector</a> being resolved from configuration, and
+carries the selector's own, selector-owned configuration subtree, so a selector's constructor
+can access the type name, owning language, and its configuration for diagnostics and setup.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.LexicalFormSelectorElementType.html">LexicalFormSelectorElementType</a></dt>
+      <dd><p>Declares a custom lexical-form-selector type together with its own, selector-owned
+configuration subtree. Used instead of the plain <code>formSelector</code> attribute when the
+selector needs configuration beyond its type name.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.LexicalFormSet.html">LexicalFormSet</a></dt>
+      <dd><p>Represents an immutable mapping from lexical form keys (e.g. <code>&quot;singular&quot;</code>,
+<code>&quot;plural&quot;</code>, <code>&quot;few&quot;</code>) to the localized word a configured constituent uses for that
+form.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.LexicalFormsType.html">LexicalFormsType</a></dt>
+      <dd><p>Holds named lexical form entries for a configurable constituent (e.g. a time unit).</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -413,9 +453,24 @@ and the list of variant rules.</p>
 When present, years within any declared <a class="xref" href="Utils.NumberToString.YearFormatType.html#Utils_NumberToString_YearFormatType_SplitRanges">SplitRanges</a> are split at the hundreds boundary.</p>
 </dd>
     </dl>
+    <h3 id="structs">
+Structs
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.LexicalFormContext.html">LexicalFormContext</a></dt>
+      <dd><p>Carries the numeric value and active grammatical variant query an <a class="xref" href="Utils.NumberToString.ILexicalFormSelector.html">ILexicalFormSelector</a>
+uses to choose a form key.</p>
+</dd>
+    </dl>
     <h3 id="interfaces">
 Interfaces
 </h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.ILexicalFormSelector.html">ILexicalFormSelector</a></dt>
+      <dd><p>Chooses which named lexical form of a configured constituent (e.g. a time unit) applies to
+a given numeric value and grammatical context.</p>
+</dd>
+    </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.INumberToStringConverter.html">INumberToStringConverter</a></dt>
       <dd><p>Converts numeric values into a formatted string representation while exposing

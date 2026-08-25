@@ -60745,6 +60745,25 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.DecimalFormatOptions.OmitZeroDecimals
   nameWithType: DecimalFormatOptions.OmitZeroDecimals
+- uid: Utils.NumberToString.DefaultLexicalFormSelector
+  name: DefaultLexicalFormSelector
+  href: api/Utils.NumberToString.DefaultLexicalFormSelector.html
+  commentId: T:Utils.NumberToString.DefaultLexicalFormSelector
+  fullName: Utils.NumberToString.DefaultLexicalFormSelector
+  nameWithType: DefaultLexicalFormSelector
+- uid: Utils.NumberToString.DefaultLexicalFormSelector.SelectForm(Utils.NumberToString.LexicalFormContext)
+  name: SelectForm(LexicalFormContext)
+  href: api/Utils.NumberToString.DefaultLexicalFormSelector.html#Utils_NumberToString_DefaultLexicalFormSelector_SelectForm_Utils_NumberToString_LexicalFormContext_
+  commentId: M:Utils.NumberToString.DefaultLexicalFormSelector.SelectForm(Utils.NumberToString.LexicalFormContext)
+  fullName: Utils.NumberToString.DefaultLexicalFormSelector.SelectForm(Utils.NumberToString.LexicalFormContext)
+  nameWithType: DefaultLexicalFormSelector.SelectForm(LexicalFormContext)
+- uid: Utils.NumberToString.DefaultLexicalFormSelector.SelectForm*
+  name: SelectForm
+  href: api/Utils.NumberToString.DefaultLexicalFormSelector.html#Utils_NumberToString_DefaultLexicalFormSelector_SelectForm_
+  commentId: Overload:Utils.NumberToString.DefaultLexicalFormSelector.SelectForm
+  isSpec: "True"
+  fullName: Utils.NumberToString.DefaultLexicalFormSelector.SelectForm
+  nameWithType: DefaultLexicalFormSelector.SelectForm
 - uid: Utils.NumberToString.DefaultNumberToStringLanguageSpecifics
   name: DefaultNumberToStringLanguageSpecifics
   href: api/Utils.NumberToString.DefaultNumberToStringLanguageSpecifics.html
@@ -61187,6 +61206,25 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.GroupsListType.Groups
   nameWithType: GroupsListType.Groups
+- uid: Utils.NumberToString.ILexicalFormSelector
+  name: ILexicalFormSelector
+  href: api/Utils.NumberToString.ILexicalFormSelector.html
+  commentId: T:Utils.NumberToString.ILexicalFormSelector
+  fullName: Utils.NumberToString.ILexicalFormSelector
+  nameWithType: ILexicalFormSelector
+- uid: Utils.NumberToString.ILexicalFormSelector.SelectForm(Utils.NumberToString.LexicalFormContext)
+  name: SelectForm(LexicalFormContext)
+  href: api/Utils.NumberToString.ILexicalFormSelector.html#Utils_NumberToString_ILexicalFormSelector_SelectForm_Utils_NumberToString_LexicalFormContext_
+  commentId: M:Utils.NumberToString.ILexicalFormSelector.SelectForm(Utils.NumberToString.LexicalFormContext)
+  fullName: Utils.NumberToString.ILexicalFormSelector.SelectForm(Utils.NumberToString.LexicalFormContext)
+  nameWithType: ILexicalFormSelector.SelectForm(LexicalFormContext)
+- uid: Utils.NumberToString.ILexicalFormSelector.SelectForm*
+  name: SelectForm
+  href: api/Utils.NumberToString.ILexicalFormSelector.html#Utils_NumberToString_ILexicalFormSelector_SelectForm_
+  commentId: Overload:Utils.NumberToString.ILexicalFormSelector.SelectForm
+  isSpec: "True"
+  fullName: Utils.NumberToString.ILexicalFormSelector.SelectForm
+  nameWithType: ILexicalFormSelector.SelectForm
 - uid: Utils.NumberToString.INumberToStringConverter
   name: INumberToStringConverter
   href: api/Utils.NumberToString.INumberToStringConverter.html
@@ -62508,6 +62546,265 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.LanguageXmlModel.Zero
   nameWithType: LanguageXmlModel.Zero
+- uid: Utils.NumberToString.LexicalFormContext
+  name: LexicalFormContext
+  href: api/Utils.NumberToString.LexicalFormContext.html
+  commentId: T:Utils.NumberToString.LexicalFormContext
+  fullName: Utils.NumberToString.LexicalFormContext
+  nameWithType: LexicalFormContext
+- uid: Utils.NumberToString.LexicalFormContext.#ctor(System.Numerics.BigInteger,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name: LexicalFormContext(BigInteger, IReadOnlyDictionary<string, string>)
+  href: api/Utils.NumberToString.LexicalFormContext.html#Utils_NumberToString_LexicalFormContext__ctor_System_Numerics_BigInteger_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__
+  commentId: M:Utils.NumberToString.LexicalFormContext.#ctor(System.Numerics.BigInteger,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name.vb: New(BigInteger, IReadOnlyDictionary(Of String, String))
+  fullName: Utils.NumberToString.LexicalFormContext.LexicalFormContext(System.Numerics.BigInteger, System.Collections.Generic.IReadOnlyDictionary<string, string>)
+  fullName.vb: Utils.NumberToString.LexicalFormContext.New(System.Numerics.BigInteger, System.Collections.Generic.IReadOnlyDictionary(Of String, String))
+  nameWithType: LexicalFormContext.LexicalFormContext(BigInteger, IReadOnlyDictionary<string, string>)
+  nameWithType.vb: LexicalFormContext.New(BigInteger, IReadOnlyDictionary(Of String, String))
+- uid: Utils.NumberToString.LexicalFormContext.#ctor*
+  name: LexicalFormContext
+  href: api/Utils.NumberToString.LexicalFormContext.html#Utils_NumberToString_LexicalFormContext__ctor_
+  commentId: Overload:Utils.NumberToString.LexicalFormContext.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.NumberToString.LexicalFormContext.LexicalFormContext
+  fullName.vb: Utils.NumberToString.LexicalFormContext.New
+  nameWithType: LexicalFormContext.LexicalFormContext
+  nameWithType.vb: LexicalFormContext.New
+- uid: Utils.NumberToString.LexicalFormContext.AbsoluteValue
+  name: AbsoluteValue
+  href: api/Utils.NumberToString.LexicalFormContext.html#Utils_NumberToString_LexicalFormContext_AbsoluteValue
+  commentId: P:Utils.NumberToString.LexicalFormContext.AbsoluteValue
+  fullName: Utils.NumberToString.LexicalFormContext.AbsoluteValue
+  nameWithType: LexicalFormContext.AbsoluteValue
+- uid: Utils.NumberToString.LexicalFormContext.AbsoluteValue*
+  name: AbsoluteValue
+  href: api/Utils.NumberToString.LexicalFormContext.html#Utils_NumberToString_LexicalFormContext_AbsoluteValue_
+  commentId: Overload:Utils.NumberToString.LexicalFormContext.AbsoluteValue
+  isSpec: "True"
+  fullName: Utils.NumberToString.LexicalFormContext.AbsoluteValue
+  nameWithType: LexicalFormContext.AbsoluteValue
+- uid: Utils.NumberToString.LexicalFormContext.Value
+  name: Value
+  href: api/Utils.NumberToString.LexicalFormContext.html#Utils_NumberToString_LexicalFormContext_Value
+  commentId: P:Utils.NumberToString.LexicalFormContext.Value
+  fullName: Utils.NumberToString.LexicalFormContext.Value
+  nameWithType: LexicalFormContext.Value
+- uid: Utils.NumberToString.LexicalFormContext.Value*
+  name: Value
+  href: api/Utils.NumberToString.LexicalFormContext.html#Utils_NumberToString_LexicalFormContext_Value_
+  commentId: Overload:Utils.NumberToString.LexicalFormContext.Value
+  isSpec: "True"
+  fullName: Utils.NumberToString.LexicalFormContext.Value
+  nameWithType: LexicalFormContext.Value
+- uid: Utils.NumberToString.LexicalFormContext.Variants
+  name: Variants
+  href: api/Utils.NumberToString.LexicalFormContext.html#Utils_NumberToString_LexicalFormContext_Variants
+  commentId: P:Utils.NumberToString.LexicalFormContext.Variants
+  fullName: Utils.NumberToString.LexicalFormContext.Variants
+  nameWithType: LexicalFormContext.Variants
+- uid: Utils.NumberToString.LexicalFormContext.Variants*
+  name: Variants
+  href: api/Utils.NumberToString.LexicalFormContext.html#Utils_NumberToString_LexicalFormContext_Variants_
+  commentId: Overload:Utils.NumberToString.LexicalFormContext.Variants
+  isSpec: "True"
+  fullName: Utils.NumberToString.LexicalFormContext.Variants
+  nameWithType: LexicalFormContext.Variants
+- uid: Utils.NumberToString.LexicalFormEntry
+  name: LexicalFormEntry
+  href: api/Utils.NumberToString.LexicalFormEntry.html
+  commentId: T:Utils.NumberToString.LexicalFormEntry
+  fullName: Utils.NumberToString.LexicalFormEntry
+  nameWithType: LexicalFormEntry
+- uid: Utils.NumberToString.LexicalFormEntry.Key
+  name: Key
+  href: api/Utils.NumberToString.LexicalFormEntry.html#Utils_NumberToString_LexicalFormEntry_Key
+  commentId: P:Utils.NumberToString.LexicalFormEntry.Key
+  fullName: Utils.NumberToString.LexicalFormEntry.Key
+  nameWithType: LexicalFormEntry.Key
+- uid: Utils.NumberToString.LexicalFormEntry.Key*
+  name: Key
+  href: api/Utils.NumberToString.LexicalFormEntry.html#Utils_NumberToString_LexicalFormEntry_Key_
+  commentId: Overload:Utils.NumberToString.LexicalFormEntry.Key
+  isSpec: "True"
+  fullName: Utils.NumberToString.LexicalFormEntry.Key
+  nameWithType: LexicalFormEntry.Key
+- uid: Utils.NumberToString.LexicalFormEntry.Value
+  name: Value
+  href: api/Utils.NumberToString.LexicalFormEntry.html#Utils_NumberToString_LexicalFormEntry_Value
+  commentId: P:Utils.NumberToString.LexicalFormEntry.Value
+  fullName: Utils.NumberToString.LexicalFormEntry.Value
+  nameWithType: LexicalFormEntry.Value
+- uid: Utils.NumberToString.LexicalFormEntry.Value*
+  name: Value
+  href: api/Utils.NumberToString.LexicalFormEntry.html#Utils_NumberToString_LexicalFormEntry_Value_
+  commentId: Overload:Utils.NumberToString.LexicalFormEntry.Value
+  isSpec: "True"
+  fullName: Utils.NumberToString.LexicalFormEntry.Value
+  nameWithType: LexicalFormEntry.Value
+- uid: Utils.NumberToString.LexicalFormSelectorConfiguration
+  name: LexicalFormSelectorConfiguration
+  href: api/Utils.NumberToString.LexicalFormSelectorConfiguration.html
+  commentId: T:Utils.NumberToString.LexicalFormSelectorConfiguration
+  fullName: Utils.NumberToString.LexicalFormSelectorConfiguration
+  nameWithType: LexicalFormSelectorConfiguration
+- uid: Utils.NumberToString.LexicalFormSelectorConfiguration.#ctor(System.String,System.String,System.Xml.Linq.XElement)
+  name: LexicalFormSelectorConfiguration(string, string?, XElement?)
+  href: api/Utils.NumberToString.LexicalFormSelectorConfiguration.html#Utils_NumberToString_LexicalFormSelectorConfiguration__ctor_System_String_System_String_System_Xml_Linq_XElement_
+  commentId: M:Utils.NumberToString.LexicalFormSelectorConfiguration.#ctor(System.String,System.String,System.Xml.Linq.XElement)
+  name.vb: New(String, String, XElement)
+  fullName: Utils.NumberToString.LexicalFormSelectorConfiguration.LexicalFormSelectorConfiguration(string, string?, System.Xml.Linq.XElement?)
+  fullName.vb: Utils.NumberToString.LexicalFormSelectorConfiguration.New(String, String, System.Xml.Linq.XElement)
+  nameWithType: LexicalFormSelectorConfiguration.LexicalFormSelectorConfiguration(string, string?, XElement?)
+  nameWithType.vb: LexicalFormSelectorConfiguration.New(String, String, XElement)
+- uid: Utils.NumberToString.LexicalFormSelectorConfiguration.#ctor*
+  name: LexicalFormSelectorConfiguration
+  href: api/Utils.NumberToString.LexicalFormSelectorConfiguration.html#Utils_NumberToString_LexicalFormSelectorConfiguration__ctor_
+  commentId: Overload:Utils.NumberToString.LexicalFormSelectorConfiguration.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.NumberToString.LexicalFormSelectorConfiguration.LexicalFormSelectorConfiguration
+  fullName.vb: Utils.NumberToString.LexicalFormSelectorConfiguration.New
+  nameWithType: LexicalFormSelectorConfiguration.LexicalFormSelectorConfiguration
+  nameWithType.vb: LexicalFormSelectorConfiguration.New
+- uid: Utils.NumberToString.LexicalFormSelectorConfiguration.Configuration
+  name: Configuration
+  href: api/Utils.NumberToString.LexicalFormSelectorConfiguration.html#Utils_NumberToString_LexicalFormSelectorConfiguration_Configuration
+  commentId: P:Utils.NumberToString.LexicalFormSelectorConfiguration.Configuration
+  fullName: Utils.NumberToString.LexicalFormSelectorConfiguration.Configuration
+  nameWithType: LexicalFormSelectorConfiguration.Configuration
+- uid: Utils.NumberToString.LexicalFormSelectorConfiguration.Configuration*
+  name: Configuration
+  href: api/Utils.NumberToString.LexicalFormSelectorConfiguration.html#Utils_NumberToString_LexicalFormSelectorConfiguration_Configuration_
+  commentId: Overload:Utils.NumberToString.LexicalFormSelectorConfiguration.Configuration
+  isSpec: "True"
+  fullName: Utils.NumberToString.LexicalFormSelectorConfiguration.Configuration
+  nameWithType: LexicalFormSelectorConfiguration.Configuration
+- uid: Utils.NumberToString.LexicalFormSelectorConfiguration.LanguageIdentifier
+  name: LanguageIdentifier
+  href: api/Utils.NumberToString.LexicalFormSelectorConfiguration.html#Utils_NumberToString_LexicalFormSelectorConfiguration_LanguageIdentifier
+  commentId: P:Utils.NumberToString.LexicalFormSelectorConfiguration.LanguageIdentifier
+  fullName: Utils.NumberToString.LexicalFormSelectorConfiguration.LanguageIdentifier
+  nameWithType: LexicalFormSelectorConfiguration.LanguageIdentifier
+- uid: Utils.NumberToString.LexicalFormSelectorConfiguration.LanguageIdentifier*
+  name: LanguageIdentifier
+  href: api/Utils.NumberToString.LexicalFormSelectorConfiguration.html#Utils_NumberToString_LexicalFormSelectorConfiguration_LanguageIdentifier_
+  commentId: Overload:Utils.NumberToString.LexicalFormSelectorConfiguration.LanguageIdentifier
+  isSpec: "True"
+  fullName: Utils.NumberToString.LexicalFormSelectorConfiguration.LanguageIdentifier
+  nameWithType: LexicalFormSelectorConfiguration.LanguageIdentifier
+- uid: Utils.NumberToString.LexicalFormSelectorConfiguration.TypeName
+  name: TypeName
+  href: api/Utils.NumberToString.LexicalFormSelectorConfiguration.html#Utils_NumberToString_LexicalFormSelectorConfiguration_TypeName
+  commentId: P:Utils.NumberToString.LexicalFormSelectorConfiguration.TypeName
+  fullName: Utils.NumberToString.LexicalFormSelectorConfiguration.TypeName
+  nameWithType: LexicalFormSelectorConfiguration.TypeName
+- uid: Utils.NumberToString.LexicalFormSelectorConfiguration.TypeName*
+  name: TypeName
+  href: api/Utils.NumberToString.LexicalFormSelectorConfiguration.html#Utils_NumberToString_LexicalFormSelectorConfiguration_TypeName_
+  commentId: Overload:Utils.NumberToString.LexicalFormSelectorConfiguration.TypeName
+  isSpec: "True"
+  fullName: Utils.NumberToString.LexicalFormSelectorConfiguration.TypeName
+  nameWithType: LexicalFormSelectorConfiguration.TypeName
+- uid: Utils.NumberToString.LexicalFormSelectorElementType
+  name: LexicalFormSelectorElementType
+  href: api/Utils.NumberToString.LexicalFormSelectorElementType.html
+  commentId: T:Utils.NumberToString.LexicalFormSelectorElementType
+  fullName: Utils.NumberToString.LexicalFormSelectorElementType
+  nameWithType: LexicalFormSelectorElementType
+- uid: Utils.NumberToString.LexicalFormSelectorElementType.Configuration
+  name: Configuration
+  href: api/Utils.NumberToString.LexicalFormSelectorElementType.html#Utils_NumberToString_LexicalFormSelectorElementType_Configuration
+  commentId: P:Utils.NumberToString.LexicalFormSelectorElementType.Configuration
+  fullName: Utils.NumberToString.LexicalFormSelectorElementType.Configuration
+  nameWithType: LexicalFormSelectorElementType.Configuration
+- uid: Utils.NumberToString.LexicalFormSelectorElementType.Configuration*
+  name: Configuration
+  href: api/Utils.NumberToString.LexicalFormSelectorElementType.html#Utils_NumberToString_LexicalFormSelectorElementType_Configuration_
+  commentId: Overload:Utils.NumberToString.LexicalFormSelectorElementType.Configuration
+  isSpec: "True"
+  fullName: Utils.NumberToString.LexicalFormSelectorElementType.Configuration
+  nameWithType: LexicalFormSelectorElementType.Configuration
+- uid: Utils.NumberToString.LexicalFormSelectorElementType.Type
+  name: Type
+  href: api/Utils.NumberToString.LexicalFormSelectorElementType.html#Utils_NumberToString_LexicalFormSelectorElementType_Type
+  commentId: P:Utils.NumberToString.LexicalFormSelectorElementType.Type
+  fullName: Utils.NumberToString.LexicalFormSelectorElementType.Type
+  nameWithType: LexicalFormSelectorElementType.Type
+- uid: Utils.NumberToString.LexicalFormSelectorElementType.Type*
+  name: Type
+  href: api/Utils.NumberToString.LexicalFormSelectorElementType.html#Utils_NumberToString_LexicalFormSelectorElementType_Type_
+  commentId: Overload:Utils.NumberToString.LexicalFormSelectorElementType.Type
+  isSpec: "True"
+  fullName: Utils.NumberToString.LexicalFormSelectorElementType.Type
+  nameWithType: LexicalFormSelectorElementType.Type
+- uid: Utils.NumberToString.LexicalFormSet
+  name: LexicalFormSet
+  href: api/Utils.NumberToString.LexicalFormSet.html
+  commentId: T:Utils.NumberToString.LexicalFormSet
+  fullName: Utils.NumberToString.LexicalFormSet
+  nameWithType: LexicalFormSet
+- uid: Utils.NumberToString.LexicalFormSet.Create(System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})
+  name: Create(params IEnumerable<(string Key, string Value)>)
+  href: api/Utils.NumberToString.LexicalFormSet.html#Utils_NumberToString_LexicalFormSet_Create_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___
+  commentId: M:Utils.NumberToString.LexicalFormSet.Create(System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})
+  name.vb: Create(IEnumerable(Of (Key As String, Value As String)))
+  fullName: Utils.NumberToString.LexicalFormSet.Create(params System.Collections.Generic.IEnumerable<(string Key, string Value)>)
+  fullName.vb: Utils.NumberToString.LexicalFormSet.Create(System.Collections.Generic.IEnumerable(Of (Key As String, Value As String)))
+  nameWithType: LexicalFormSet.Create(params IEnumerable<(string Key, string Value)>)
+  nameWithType.vb: LexicalFormSet.Create(IEnumerable(Of (Key As String, Value As String)))
+- uid: Utils.NumberToString.LexicalFormSet.Create*
+  name: Create
+  href: api/Utils.NumberToString.LexicalFormSet.html#Utils_NumberToString_LexicalFormSet_Create_
+  commentId: Overload:Utils.NumberToString.LexicalFormSet.Create
+  isSpec: "True"
+  fullName: Utils.NumberToString.LexicalFormSet.Create
+  nameWithType: LexicalFormSet.Create
+- uid: Utils.NumberToString.LexicalFormSet.Empty
+  name: Empty
+  href: api/Utils.NumberToString.LexicalFormSet.html#Utils_NumberToString_LexicalFormSet_Empty
+  commentId: P:Utils.NumberToString.LexicalFormSet.Empty
+  fullName: Utils.NumberToString.LexicalFormSet.Empty
+  nameWithType: LexicalFormSet.Empty
+- uid: Utils.NumberToString.LexicalFormSet.Empty*
+  name: Empty
+  href: api/Utils.NumberToString.LexicalFormSet.html#Utils_NumberToString_LexicalFormSet_Empty_
+  commentId: Overload:Utils.NumberToString.LexicalFormSet.Empty
+  isSpec: "True"
+  fullName: Utils.NumberToString.LexicalFormSet.Empty
+  nameWithType: LexicalFormSet.Empty
+- uid: Utils.NumberToString.LexicalFormSet.IsEmpty
+  name: IsEmpty
+  href: api/Utils.NumberToString.LexicalFormSet.html#Utils_NumberToString_LexicalFormSet_IsEmpty
+  commentId: P:Utils.NumberToString.LexicalFormSet.IsEmpty
+  fullName: Utils.NumberToString.LexicalFormSet.IsEmpty
+  nameWithType: LexicalFormSet.IsEmpty
+- uid: Utils.NumberToString.LexicalFormSet.IsEmpty*
+  name: IsEmpty
+  href: api/Utils.NumberToString.LexicalFormSet.html#Utils_NumberToString_LexicalFormSet_IsEmpty_
+  commentId: Overload:Utils.NumberToString.LexicalFormSet.IsEmpty
+  isSpec: "True"
+  fullName: Utils.NumberToString.LexicalFormSet.IsEmpty
+  nameWithType: LexicalFormSet.IsEmpty
+- uid: Utils.NumberToString.LexicalFormsType
+  name: LexicalFormsType
+  href: api/Utils.NumberToString.LexicalFormsType.html
+  commentId: T:Utils.NumberToString.LexicalFormsType
+  fullName: Utils.NumberToString.LexicalFormsType
+  nameWithType: LexicalFormsType
+- uid: Utils.NumberToString.LexicalFormsType.Entries
+  name: Entries
+  href: api/Utils.NumberToString.LexicalFormsType.html#Utils_NumberToString_LexicalFormsType_Entries
+  commentId: P:Utils.NumberToString.LexicalFormsType.Entries
+  fullName: Utils.NumberToString.LexicalFormsType.Entries
+  nameWithType: LexicalFormsType.Entries
+- uid: Utils.NumberToString.LexicalFormsType.Entries*
+  name: Entries
+  href: api/Utils.NumberToString.LexicalFormsType.html#Utils_NumberToString_LexicalFormsType_Entries_
+  commentId: Overload:Utils.NumberToString.LexicalFormsType.Entries
+  isSpec: "True"
+  fullName: Utils.NumberToString.LexicalFormsType.Entries
+  nameWithType: LexicalFormsType.Entries
 - uid: Utils.NumberToString.MultiplicativeEntryType
   name: MultiplicativeEntryType
   href: api/Utils.NumberToString.MultiplicativeEntryType.html
@@ -64151,6 +64448,40 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.RegisterLanguageSpecifics
   nameWithType: NumberToStringConverter.RegisterLanguageSpecifics
+- uid: Utils.NumberToString.NumberToStringConverter.RegisterLexicalFormSelector(System.String,System.Func{Utils.NumberToString.ILexicalFormSelector})
+  name: RegisterLexicalFormSelector(string, Func<ILexicalFormSelector>)
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_RegisterLexicalFormSelector_System_String_System_Func_Utils_NumberToString_ILexicalFormSelector__
+  commentId: M:Utils.NumberToString.NumberToStringConverter.RegisterLexicalFormSelector(System.String,System.Func{Utils.NumberToString.ILexicalFormSelector})
+  name.vb: RegisterLexicalFormSelector(String, Func(Of ILexicalFormSelector))
+  fullName: Utils.NumberToString.NumberToStringConverter.RegisterLexicalFormSelector(string, System.Func<Utils.NumberToString.ILexicalFormSelector>)
+  fullName.vb: Utils.NumberToString.NumberToStringConverter.RegisterLexicalFormSelector(String, System.Func(Of Utils.NumberToString.ILexicalFormSelector))
+  nameWithType: NumberToStringConverter.RegisterLexicalFormSelector(string, Func<ILexicalFormSelector>)
+  nameWithType.vb: NumberToStringConverter.RegisterLexicalFormSelector(String, Func(Of ILexicalFormSelector))
+- uid: Utils.NumberToString.NumberToStringConverter.RegisterLexicalFormSelector(System.String,System.Func{Utils.NumberToString.LexicalFormSelectorConfiguration,Utils.NumberToString.ILexicalFormSelector})
+  name: RegisterLexicalFormSelector(string, Func<LexicalFormSelectorConfiguration, ILexicalFormSelector>)
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_RegisterLexicalFormSelector_System_String_System_Func_Utils_NumberToString_LexicalFormSelectorConfiguration_Utils_NumberToString_ILexicalFormSelector__
+  commentId: M:Utils.NumberToString.NumberToStringConverter.RegisterLexicalFormSelector(System.String,System.Func{Utils.NumberToString.LexicalFormSelectorConfiguration,Utils.NumberToString.ILexicalFormSelector})
+  name.vb: RegisterLexicalFormSelector(String, Func(Of LexicalFormSelectorConfiguration, ILexicalFormSelector))
+  fullName: Utils.NumberToString.NumberToStringConverter.RegisterLexicalFormSelector(string, System.Func<Utils.NumberToString.LexicalFormSelectorConfiguration, Utils.NumberToString.ILexicalFormSelector>)
+  fullName.vb: Utils.NumberToString.NumberToStringConverter.RegisterLexicalFormSelector(String, System.Func(Of Utils.NumberToString.LexicalFormSelectorConfiguration, Utils.NumberToString.ILexicalFormSelector))
+  nameWithType: NumberToStringConverter.RegisterLexicalFormSelector(string, Func<LexicalFormSelectorConfiguration, ILexicalFormSelector>)
+  nameWithType.vb: NumberToStringConverter.RegisterLexicalFormSelector(String, Func(Of LexicalFormSelectorConfiguration, ILexicalFormSelector))
+- uid: Utils.NumberToString.NumberToStringConverter.RegisterLexicalFormSelector(System.String,Utils.NumberToString.ILexicalFormSelector)
+  name: RegisterLexicalFormSelector(string, ILexicalFormSelector)
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_RegisterLexicalFormSelector_System_String_Utils_NumberToString_ILexicalFormSelector_
+  commentId: M:Utils.NumberToString.NumberToStringConverter.RegisterLexicalFormSelector(System.String,Utils.NumberToString.ILexicalFormSelector)
+  name.vb: RegisterLexicalFormSelector(String, ILexicalFormSelector)
+  fullName: Utils.NumberToString.NumberToStringConverter.RegisterLexicalFormSelector(string, Utils.NumberToString.ILexicalFormSelector)
+  fullName.vb: Utils.NumberToString.NumberToStringConverter.RegisterLexicalFormSelector(String, Utils.NumberToString.ILexicalFormSelector)
+  nameWithType: NumberToStringConverter.RegisterLexicalFormSelector(string, ILexicalFormSelector)
+  nameWithType.vb: NumberToStringConverter.RegisterLexicalFormSelector(String, ILexicalFormSelector)
+- uid: Utils.NumberToString.NumberToStringConverter.RegisterLexicalFormSelector*
+  name: RegisterLexicalFormSelector
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_RegisterLexicalFormSelector_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.RegisterLexicalFormSelector
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.RegisterLexicalFormSelector
+  nameWithType: NumberToStringConverter.RegisterLexicalFormSelector
 - uid: Utils.NumberToString.NumberToStringConverter.ReplacementRule
   name: NumberToStringConverter.ReplacementRule
   href: api/Utils.NumberToString.NumberToStringConverter.ReplacementRule.html
@@ -64393,6 +64724,32 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.TimeUnitForcedVariants
   nameWithType: NumberToStringConverter.TimeUnitForcedVariants
+- uid: Utils.NumberToString.NumberToStringConverter.TimeUnitFormSelectors
+  name: TimeUnitFormSelectors
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_TimeUnitFormSelectors
+  commentId: P:Utils.NumberToString.NumberToStringConverter.TimeUnitFormSelectors
+  fullName: Utils.NumberToString.NumberToStringConverter.TimeUnitFormSelectors
+  nameWithType: NumberToStringConverter.TimeUnitFormSelectors
+- uid: Utils.NumberToString.NumberToStringConverter.TimeUnitFormSelectors*
+  name: TimeUnitFormSelectors
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_TimeUnitFormSelectors_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.TimeUnitFormSelectors
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.TimeUnitFormSelectors
+  nameWithType: NumberToStringConverter.TimeUnitFormSelectors
+- uid: Utils.NumberToString.NumberToStringConverter.TimeUnitForms
+  name: TimeUnitForms
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_TimeUnitForms
+  commentId: P:Utils.NumberToString.NumberToStringConverter.TimeUnitForms
+  fullName: Utils.NumberToString.NumberToStringConverter.TimeUnitForms
+  nameWithType: NumberToStringConverter.TimeUnitForms
+- uid: Utils.NumberToString.NumberToStringConverter.TimeUnitForms*
+  name: TimeUnitForms
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_TimeUnitForms_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.TimeUnitForms
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.TimeUnitForms
+  nameWithType: NumberToStringConverter.TimeUnitForms
 - uid: Utils.NumberToString.NumberToStringConverter.TimeUnits
   name: TimeUnits
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_TimeUnits
@@ -65390,6 +65747,32 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverterOptions.TimeUnitForcedVariants
   nameWithType: NumberToStringConverterOptions.TimeUnitForcedVariants
+- uid: Utils.NumberToString.NumberToStringConverterOptions.TimeUnitFormSelectors
+  name: TimeUnitFormSelectors
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_TimeUnitFormSelectors
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.TimeUnitFormSelectors
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.TimeUnitFormSelectors
+  nameWithType: NumberToStringConverterOptions.TimeUnitFormSelectors
+- uid: Utils.NumberToString.NumberToStringConverterOptions.TimeUnitFormSelectors*
+  name: TimeUnitFormSelectors
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_TimeUnitFormSelectors_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.TimeUnitFormSelectors
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.TimeUnitFormSelectors
+  nameWithType: NumberToStringConverterOptions.TimeUnitFormSelectors
+- uid: Utils.NumberToString.NumberToStringConverterOptions.TimeUnitForms
+  name: TimeUnitForms
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_TimeUnitForms
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.TimeUnitForms
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.TimeUnitForms
+  nameWithType: NumberToStringConverterOptions.TimeUnitForms
+- uid: Utils.NumberToString.NumberToStringConverterOptions.TimeUnitForms*
+  name: TimeUnitForms
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_TimeUnitForms_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.TimeUnitForms
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.TimeUnitForms
+  nameWithType: NumberToStringConverterOptions.TimeUnitForms
 - uid: Utils.NumberToString.NumberToStringConverterOptions.TimeUnits
   name: TimeUnits
   href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_TimeUnits
@@ -66153,6 +66536,45 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.TimeUnitEntry.ForceVariants
   nameWithType: TimeUnitEntry.ForceVariants
+- uid: Utils.NumberToString.TimeUnitEntry.FormSelector
+  name: FormSelector
+  href: api/Utils.NumberToString.TimeUnitEntry.html#Utils_NumberToString_TimeUnitEntry_FormSelector
+  commentId: P:Utils.NumberToString.TimeUnitEntry.FormSelector
+  fullName: Utils.NumberToString.TimeUnitEntry.FormSelector
+  nameWithType: TimeUnitEntry.FormSelector
+- uid: Utils.NumberToString.TimeUnitEntry.FormSelector*
+  name: FormSelector
+  href: api/Utils.NumberToString.TimeUnitEntry.html#Utils_NumberToString_TimeUnitEntry_FormSelector_
+  commentId: Overload:Utils.NumberToString.TimeUnitEntry.FormSelector
+  isSpec: "True"
+  fullName: Utils.NumberToString.TimeUnitEntry.FormSelector
+  nameWithType: TimeUnitEntry.FormSelector
+- uid: Utils.NumberToString.TimeUnitEntry.Forms
+  name: Forms
+  href: api/Utils.NumberToString.TimeUnitEntry.html#Utils_NumberToString_TimeUnitEntry_Forms
+  commentId: P:Utils.NumberToString.TimeUnitEntry.Forms
+  fullName: Utils.NumberToString.TimeUnitEntry.Forms
+  nameWithType: TimeUnitEntry.Forms
+- uid: Utils.NumberToString.TimeUnitEntry.Forms*
+  name: Forms
+  href: api/Utils.NumberToString.TimeUnitEntry.html#Utils_NumberToString_TimeUnitEntry_Forms_
+  commentId: Overload:Utils.NumberToString.TimeUnitEntry.Forms
+  isSpec: "True"
+  fullName: Utils.NumberToString.TimeUnitEntry.Forms
+  nameWithType: TimeUnitEntry.Forms
+- uid: Utils.NumberToString.TimeUnitEntry.LexicalFormSelector
+  name: LexicalFormSelector
+  href: api/Utils.NumberToString.TimeUnitEntry.html#Utils_NumberToString_TimeUnitEntry_LexicalFormSelector
+  commentId: P:Utils.NumberToString.TimeUnitEntry.LexicalFormSelector
+  fullName: Utils.NumberToString.TimeUnitEntry.LexicalFormSelector
+  nameWithType: TimeUnitEntry.LexicalFormSelector
+- uid: Utils.NumberToString.TimeUnitEntry.LexicalFormSelector*
+  name: LexicalFormSelector
+  href: api/Utils.NumberToString.TimeUnitEntry.html#Utils_NumberToString_TimeUnitEntry_LexicalFormSelector_
+  commentId: Overload:Utils.NumberToString.TimeUnitEntry.LexicalFormSelector
+  isSpec: "True"
+  fullName: Utils.NumberToString.TimeUnitEntry.LexicalFormSelector
+  nameWithType: TimeUnitEntry.LexicalFormSelector
 - uid: Utils.NumberToString.TimeUnitEntry.Name
   name: Name
   href: api/Utils.NumberToString.TimeUnitEntry.html#Utils_NumberToString_TimeUnitEntry_Name

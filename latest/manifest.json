@@ -8510,6 +8510,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.DefaultLexicalFormSelector.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.DefaultLexicalFormSelector.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.DefaultLexicalFormSelector",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.DefaultLexicalFormSelector.yml\" sourcestartlinenumber=\"1\">The built-in <xref href=\"Utils.NumberToString.ILexicalFormSelector\" data-throw-if-not-resolved=\"false\"></xref> that reproduces the number-to-string\nconverter's historical singular/plural selection: <code>&quot;singular&quot;</code> when the absolute value\nequals one, <code>&quot;plural&quot;</code> otherwise. Used automatically for any constituent that does not\nconfigure a different selector, so legacy Singular/Plural-only configurations are unaffected\nby the lexical-form mechanism.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.DefaultNumberToStringLanguageSpecifics.yml",
       "output": {
         ".html": {
@@ -8664,6 +8678,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.ILexicalFormSelector.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.ILexicalFormSelector.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.ILexicalFormSelector",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.ILexicalFormSelector.yml\" sourcestartlinenumber=\"1\">Chooses which named lexical form of a configured constituent (e.g. a time unit) applies to\na given numeric value and grammatical context.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.INumberToStringConverter.yml",
       "output": {
         ".html": {
@@ -8731,6 +8759,90 @@
       "IsMRef": true,
       "Title": "Utils.NumberToString.LanguageXmlModel",
       "Summary": "<p sourcefile=\"api/Utils.NumberToString.LanguageXmlModel.yml\" sourcestartlinenumber=\"1\">Internal XML model for a language definition. Holds the presence-sensitive\n<code>groupSize</code> attribute (plus its <code>Specified</code> companion) alongside every other\nXML member of a language so XmlSerializer can populate it directly. It is projected onto\nthe public <xref href=\"Utils.NumberToString.LanguageType\" data-throw-if-not-resolved=\"false\"></xref> after inheritance resolution.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.LexicalFormContext.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.LexicalFormContext.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.LexicalFormContext",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.LexicalFormContext.yml\" sourcestartlinenumber=\"1\">Carries the numeric value and active grammatical variant query an <xref href=\"Utils.NumberToString.ILexicalFormSelector\" data-throw-if-not-resolved=\"false\"></xref>\nuses to choose a form key.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.LexicalFormEntry.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.LexicalFormEntry.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.LexicalFormEntry",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.LexicalFormEntry.yml\" sourcestartlinenumber=\"1\">Maps one lexical form key (e.g. &quot;singular&quot;, &quot;attributive&quot;, &quot;few&quot;) to its localized word.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.LexicalFormSelectorConfiguration.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.LexicalFormSelectorConfiguration.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.LexicalFormSelectorConfiguration",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.LexicalFormSelectorConfiguration.yml\" sourcestartlinenumber=\"1\">Identifies a custom <xref href=\"Utils.NumberToString.ILexicalFormSelector\" data-throw-if-not-resolved=\"false\"></xref> being resolved from configuration, and\ncarries the selector's own, selector-owned configuration subtree, so a selector's constructor\ncan access the type name, owning language, and its configuration for diagnostics and setup.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.LexicalFormSelectorElementType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.LexicalFormSelectorElementType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.LexicalFormSelectorElementType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.LexicalFormSelectorElementType.yml\" sourcestartlinenumber=\"1\">Declares a custom lexical-form-selector type together with its own, selector-owned\nconfiguration subtree. Used instead of the plain <code>formSelector</code> attribute when the\nselector needs configuration beyond its type name.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.LexicalFormSet.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.LexicalFormSet.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.LexicalFormSet",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.LexicalFormSet.yml\" sourcestartlinenumber=\"1\">Represents an immutable mapping from lexical form keys (e.g. <code>&quot;singular&quot;</code>,\n<code>&quot;plural&quot;</code>, <code>&quot;few&quot;</code>) to the localized word a configured constituent uses for that\nform.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.LexicalFormsType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.LexicalFormsType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.LexicalFormsType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.LexicalFormsType.yml\" sourcestartlinenumber=\"1\">Holds named lexical form entries for a configurable constituent (e.g. a time unit).</p>\n"
     },
     {
       "type": "ManagedReference",

@@ -313,6 +313,113 @@ other dimensions remain active. Parsed via <a class="xref" href="Utils.NumberToS
 
 
 
+  <a id="Utils_NumberToString_TimeUnitEntry_FormSelector_" data-uid="Utils.NumberToString.TimeUnitEntry.FormSelector*"></a>
+
+  <h3 id="Utils_NumberToString_TimeUnitEntry_FormSelector" data-uid="Utils.NumberToString.TimeUnitEntry.FormSelector">
+  FormSelector
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L628"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Optional lexical-form-selector type name or built-in alias (currently only <code>&quot;default&quot;</code>),
+for a selector that needs no selector-specific configuration. Choosing which named
+<a class="xref" href="Utils.NumberToString.TimeUnitEntry.html#Utils_NumberToString_TimeUnitEntry_Forms">Forms</a> entry applies to a given count/context. Resolved once, via reflection,
+while loading configuration — never on the conversion hot path. When both this attribute
+and <a class="xref" href="Utils.NumberToString.TimeUnitEntry.html#Utils_NumberToString_TimeUnitEntry_LexicalFormSelector">LexicalFormSelector</a> are omitted, the built-in default selector is used
+(count 1 → &quot;singular&quot;, otherwise &quot;plural&quot;), which is exactly today's Singular/Plural
+behavior. Ignored when <a class="xref" href="Utils.NumberToString.TimeUnitEntry.html#Utils_NumberToString_TimeUnitEntry_LexicalFormSelector">LexicalFormSelector</a> is present.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string? FormSelector { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_NumberToString_TimeUnitEntry_Forms_" data-uid="Utils.NumberToString.TimeUnitEntry.Forms*"></a>
+
+  <h3 id="Utils_NumberToString_TimeUnitEntry_Forms" data-uid="Utils.NumberToString.TimeUnitEntry.Forms">
+  Forms
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L645"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Optional named lexical forms for this unit (e.g. an &quot;attributive&quot; form), beyond the
+&quot;singular&quot;/&quot;plural&quot; forms implicitly synthesized from <a class="xref" href="Utils.NumberToString.TimeUnitEntry.html#Utils_NumberToString_TimeUnitEntry_Singular">Singular</a>/<a class="xref" href="Utils.NumberToString.TimeUnitEntry.html#Utils_NumberToString_TimeUnitEntry_Plural">Plural</a>.
+Entries here override the synthesized &quot;singular&quot;/&quot;plural&quot; keys if reused, and add any other
+key a configured selector may request.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public LexicalFormsType? Forms { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.NumberToString.LexicalFormsType.html">LexicalFormsType</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_NumberToString_TimeUnitEntry_LexicalFormSelector_" data-uid="Utils.NumberToString.TimeUnitEntry.LexicalFormSelector*"></a>
+
+  <h3 id="Utils_NumberToString_TimeUnitEntry_LexicalFormSelector" data-uid="Utils.NumberToString.TimeUnitEntry.LexicalFormSelector">
+  LexicalFormSelector
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L636"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Optional structured selector declaration, used instead of <a class="xref" href="Utils.NumberToString.TimeUnitEntry.html#Utils_NumberToString_TimeUnitEntry_FormSelector">FormSelector</a> when
+the selector needs its own configuration subtree. See
+<a class="xref" href="Utils.NumberToString.LexicalFormSelectorConfiguration.html">LexicalFormSelectorConfiguration</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public LexicalFormSelectorElementType? LexicalFormSelector { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.NumberToString.LexicalFormSelectorElementType.html">LexicalFormSelectorElementType</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_NumberToString_TimeUnitEntry_Name_" data-uid="Utils.NumberToString.TimeUnitEntry.Name*"></a>
 
   <h3 id="Utils_NumberToString_TimeUnitEntry_Name" data-uid="Utils.NumberToString.TimeUnitEntry.Name">

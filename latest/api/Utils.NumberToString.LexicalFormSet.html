@@ -2,11 +2,11 @@
 <html>
   <head>
     <meta charset="utf-8">
-      <title>Class YearFormatSplitRangeType | omy.Utils Documentation </title>
+      <title>Class LexicalFormSet | omy.Utils Documentation </title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="title" content="Class YearFormatSplitRangeType | omy.Utils Documentation ">
+      <meta name="title" content="Class LexicalFormSet | omy.Utils Documentation ">
       
-      <meta name="description" content="Describes a range of years for which the split-at-hundreds algorithm applies in .">
+      <meta name="description" content="Represents an immutable mapping from lexical form keys (e.g. &amp;quot;singular&amp;quot;, &amp;quot;plural&amp;quot;, &amp;quot;few&amp;quot;) to the localized word a configured constituent uses for that form.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -16,7 +16,7 @@
       <meta name="docfx:rel" content="../">
       
       
-      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_YearFormatSplitRangeType.md&amp;value=---%0Auid%3A%20Utils.NumberToString.YearFormatSplitRangeType%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_LexicalFormSet.md&amp;value=---%0Auid%3A%20Utils.NumberToString.LexicalFormSet%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
       <meta name="loc:inThisArticle" content="In this article">
       <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
       <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
@@ -84,12 +84,12 @@
           <nav id="breadcrumb"></nav>
         </div>
 
-        <article data-uid="Utils.NumberToString.YearFormatSplitRangeType">
+        <article data-uid="Utils.NumberToString.LexicalFormSet">
 
 
 
-  <h1 id="Utils_NumberToString_YearFormatSplitRangeType" data-uid="Utils.NumberToString.YearFormatSplitRangeType" class="text-break">
-Class YearFormatSplitRangeType  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L1009"><i class="bi bi-code-slash"></i></a>
+  <h1 id="Utils_NumberToString_LexicalFormSet" data-uid="Utils.NumberToString.LexicalFormSet" class="text-break">
+Class LexicalFormSet  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/LexicalFormSet.cs/#L21"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,12 +97,14 @@ Class YearFormatSplitRangeType  <a class="header-action link-secondary" title="V
   <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Describes a range of years for which the split-at-hundreds algorithm applies in <a class="xref" href="Utils.NumberToString.YearFormatType.html">YearFormatType</a>.</p>
+  <div class="markdown summary"><p>Represents an immutable mapping from lexical form keys (e.g. <code>&quot;singular&quot;</code>,
+<code>&quot;plural&quot;</code>, <code>&quot;few&quot;</code>) to the localized word a configured constituent uses for that
+form.</p>
 </div>
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class YearFormatSplitRangeType</code></pre>
+    <pre><code class="lang-csharp hljs">public sealed class LexicalFormSet</code></pre>
   </div>
 
 
@@ -112,7 +114,7 @@ Class YearFormatSplitRangeType  <a class="header-action link-secondary" title="V
     <dt>Inheritance</dt>
     <dd>
       <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
-      <div><span class="xref">YearFormatSplitRangeType</span></div>
+      <div><span class="xref">LexicalFormSet</span></div>
     </dd>
   </dl>
 
@@ -132,9 +134,6 @@ Class YearFormatSplitRangeType  <a class="header-action link-secondary" title="V
     </div>
     <div>
       <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
     </div>
     <div>
       <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
@@ -238,25 +237,34 @@ Class YearFormatSplitRangeType  <a class="header-action link-secondary" title="V
 
 
 
+  <h2 id="Utils_NumberToString_LexicalFormSet_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>
+A <a class="xref" href="Utils.NumberToString.LexicalFormSet.html">LexicalFormSet</a> is the word-side counterpart of <a class="xref" href="Utils.NumberToString.ForcedVariantSet.html">ForcedVariantSet</a>:
+an <a class="xref" href="Utils.NumberToString.ILexicalFormSelector.html">ILexicalFormSelector</a> chooses a form KEY, and a <a class="xref" href="Utils.NumberToString.LexicalFormSet.html">LexicalFormSet</a>
+resolves that key to the actual localized word for one constituent (e.g. one time unit).
+Selectors never see the words; <a class="xref" href="Utils.NumberToString.LexicalFormSet.html">LexicalFormSet</a> never chooses which key applies.
+</p>
+<p>Instances are immutable; key comparison is case-insensitive.</p>
+</div>
 
 
   <h2 class="section" id="properties">Properties
 </h2>
 
 
-  <a id="Utils_NumberToString_YearFormatSplitRangeType_From_" data-uid="Utils.NumberToString.YearFormatSplitRangeType.From*"></a>
+  <a id="Utils_NumberToString_LexicalFormSet_Empty_" data-uid="Utils.NumberToString.LexicalFormSet.Empty*"></a>
 
-  <h3 id="Utils_NumberToString_YearFormatSplitRangeType_From" data-uid="Utils.NumberToString.YearFormatSplitRangeType.From">
-  From
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L1012"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_NumberToString_LexicalFormSet_Empty" data-uid="Utils.NumberToString.LexicalFormSet.Empty">
+  Empty
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/LexicalFormSet.cs/#L24"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets or sets the lower bound of the range (inclusive).</p>
+  <div class="markdown level1 summary"><p>Gets a form set with no configured forms.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public int From { get; set; }</code></pre>
+    <pre><code class="lang-csharp hljs">public static LexicalFormSet Empty { get; }</code></pre>
   </div>
 
 
@@ -265,7 +273,7 @@ Class YearFormatSplitRangeType  <a class="header-action link-secondary" title="V
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dt><a class="xref" href="Utils.NumberToString.LexicalFormSet.html">LexicalFormSet</a></dt>
     <dd></dd>
   </dl>
 
@@ -276,19 +284,19 @@ Class YearFormatSplitRangeType  <a class="header-action link-secondary" title="V
 
 
 
-  <a id="Utils_NumberToString_YearFormatSplitRangeType_To_" data-uid="Utils.NumberToString.YearFormatSplitRangeType.To*"></a>
+  <a id="Utils_NumberToString_LexicalFormSet_IsEmpty_" data-uid="Utils.NumberToString.LexicalFormSet.IsEmpty*"></a>
 
-  <h3 id="Utils_NumberToString_YearFormatSplitRangeType_To" data-uid="Utils.NumberToString.YearFormatSplitRangeType.To">
-  To
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L1016"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_NumberToString_LexicalFormSet_IsEmpty" data-uid="Utils.NumberToString.LexicalFormSet.IsEmpty">
+  IsEmpty
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/LexicalFormSet.cs/#L31"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets or sets the upper bound of the range (inclusive).</p>
+  <div class="markdown level1 summary"><p>Gets whether this set declares no forms.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public int To { get; set; }</code></pre>
+    <pre><code class="lang-csharp hljs">public bool IsEmpty { get; }</code></pre>
   </div>
 
 
@@ -297,7 +305,7 @@ Class YearFormatSplitRangeType  <a class="header-action link-secondary" title="V
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
     <dd></dd>
   </dl>
 
@@ -305,6 +313,56 @@ Class YearFormatSplitRangeType  <a class="header-action link-secondary" title="V
 
 
 
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_NumberToString_LexicalFormSet_Create_" data-uid="Utils.NumberToString.LexicalFormSet.Create*"></a>
+
+  <h3 id="Utils_NumberToString_LexicalFormSet_Create_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___" data-uid="Utils.NumberToString.LexicalFormSet.Create(System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
+  Create(params IEnumerable&lt;(string Key, string Value)&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/LexicalFormSet.cs/#L47"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Creates a lexical form set from explicit key/value pairs.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static LexicalFormSet Create(params IEnumerable&lt;(string Key, string Value)&gt; forms)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>forms</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;(<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.string,system.string-.dimension">Dimension</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.string,system.string-.value">Value</a>)&gt;</dt>
+    <dd><p>The form key/word pairs, enumerated once. A <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> or empty sequence
+returns <a class="xref" href="Utils.NumberToString.LexicalFormSet.html#Utils_NumberToString_LexicalFormSet_Empty">Empty</a>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.NumberToString.LexicalFormSet.html">LexicalFormSet</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.NumberToString.NumberToStringConfigurationException.html">NumberToStringConfigurationException</a></dt>
+    <dd><p>A key or value is null/empty, or the same key (case-insensitive) is supplied more than
+once — error code <code>&quot;UNTS007&quot;</code>.</p>
+</dd>
+  </dl>
 
 
 
@@ -312,7 +370,7 @@ Class YearFormatSplitRangeType  <a class="header-action link-secondary" title="V
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L1009" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/LexicalFormSet.cs/#L21" class="edit-link">Edit this page</a>
         </div>
 
 

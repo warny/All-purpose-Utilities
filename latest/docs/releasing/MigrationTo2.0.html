@@ -134,15 +134,35 @@ are source-compatible. <code>ForcedVariantSet</code> dimension aliases (a langua
 <code>localName</code>, e.g. French <code>genre</code>) are now canonicalized to the dimension's canonical
 name before use; a forced set that mixed a canonical name and its alias for the same
 dimension (previously silently inert) is now rejected deterministically.</p>
-<p>Portuguese, Galician, and Catalan (<code>PT</code>, <code>GL</code>, <code>CA</code>) gain built-in
+<p>Portuguese, Galician, Catalan, and Spanish (<code>PT</code>, <code>GL</code>, <code>CA</code>, <code>ES</code>) gain built-in
 <code>Convert(TimeSpan)</code>/<code>Convert(TimeOnly)</code> support (<code>SupportsTimeConversion</code> becomes
-<code>true</code>) using the same <code>forceVariants=&quot;gender=...&quot;</code> pattern on their feminine <code>hour</code>
-unit; <code>minute</code>/<code>second</code> remain masculine by default. These are new capabilities, not
-behavior changes to existing output. Spanish (<code>ES</code>) time-unit support was evaluated
-and deliberately deferred — its masculine attributive numeral apocope (&quot;uno&quot;→&quot;un&quot;,
-&quot;veintiuno&quot;→&quot;veintiún&quot;) applies to compound counts as well as count 1, which the
-current <code>Count1Form</code> mechanism cannot express correctly; <code>ES.SupportsTimeConversion</code>
-remains <code>false</code>. See <code>Utils.NumberToString/DONE-2026-08-24(1).md</code>.</p>
+<code>true</code>). PT/GL/CA use the same <code>forceVariants=&quot;gender=...&quot;</code> pattern on their feminine
+<code>hour</code> unit; <code>minute</code>/<code>second</code> remain masculine by default. Spanish additionally
+declares a new <code>form</code> variant dimension (<code>standalone</code>/<code>attributive</code>) so its masculine
+attributive numeral apocope (&quot;uno&quot;→&quot;un&quot;, &quot;veintiuno&quot;→&quot;veintiún&quot;) applies correctly to
+both count 1 and compound counts (21, 31, …) — see the &quot;Lexical form selection /
+ForcedVariants (NTS-05)&quot; note below. These are new capabilities, not behavior changes
+to existing output.</p>
+<h3 id="lexical-form-selection-nts-05--additive">Lexical form selection (NTS-05) — additive</h3>
+<p>New public extension point: <code>ILexicalFormSelector</code>, <code>LexicalFormContext</code>,
+<code>LexicalFormSet</code>, <code>DefaultLexicalFormSelector</code>, <code>LexicalFormSelectorConfiguration</code>,
+and <code>NumberToStringConverter.RegisterLexicalFormSelector</code>/
+<code>NumberToStringConverterOptions.TimeUnitForms</code>/<code>TimeUnitFormSelectors</code> — lets a
+configured time unit choose among more than two named word forms (e.g. a future
+Russian &quot;час&quot;/&quot;часа&quot;/&quot;часов&quot;) via a selector resolved at most once per distinct
+selector type, during configuration loading, never during <code>Convert(...)</code>. A unit may
+optionally pass selector-specific settings via a structured
+<code>&lt;LexicalFormSelector type=&quot;...&quot;&gt;&lt;Configuration&gt;...&lt;/Configuration&gt;&lt;/LexicalFormSelector&gt;</code>
+XML element (the core library never interprets <code>&lt;Configuration&gt;</code>'s content); units
+needing no configuration keep using the concise <code>formSelector=&quot;...&quot;</code> attribute.
+<code>NumberToStringConverter.TimeUnitForms</code>/<code>TimeUnitFormSelectors</code> report the <em>effective</em>
+state for every configured time unit (synthesized singular/plural and
+<code>DefaultLexicalFormSelector</code> for units with no override). Every unit that configures no
+selector uses the built-in default (today's exact singular/plural behavior), so no
+existing configuration or output changes. See the &quot;Lexical form selection&quot; section of
+<code>Utils.NumberToString/README.md</code> and <code>Utils.NumberToString/DONE-2026-08-25(1).md</code>/
+<code>DONE-2026-08-25(2).md</code>. Spanish does not use this mechanism — its time-unit fix is a
+<code>ForcedVariants</code> addition (see above), not a lexical-form-selector one.</p>
 <p><a id="omy-utils-fonts-2"></a></p>
 <h2 id="utilsfonts-hostile-font-parsing-hardening">Utils.Fonts hostile-font parsing hardening</h2>
 <p><code>TrueTypeFont.ParseFont</code>/<code>ParseFontAsync</code> now accept an optional <code>TrueTypeFontParsingOptions</code>
