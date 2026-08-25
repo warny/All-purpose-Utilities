@@ -14,7 +14,7 @@ ApiCompat findings are accepted only for this coordinated major candidate and re
 
 ## Reviewed API compatibility changes
 
-The repository-wide ApiCompat run against verified latest stable packages reports the following accepted major-version incompatibility counts: Core 126; IO 6; XML 1; Net 24; Data 3; Fonts 49; Imaging 7; Geography 23; Reflection 3; Mathematics 19; OData 10; VirtualMachine 7; OData generators 3; IO serialization generators 4; and dependency-injection generators 3. DependencyInjection runtime is binary compatible in the automated comparison. Collections, NumberToString, and parser packages establish first candidate baselines.
+The repository-wide ApiCompat run against verified latest stable packages reports the following accepted major-version incompatibility counts: Core 132; IO 6; XML 1; Net 24; Data 3; Fonts 49; Imaging 7; Geography 23; Reflection 3; Mathematics 19; OData 10; VirtualMachine 7; OData generators 3; IO serialization generators 4; and dependency-injection generators 3. DependencyInjection runtime is binary compatible in the automated comparison. Collections, NumberToString, and parser packages establish first candidate baselines.
 
 Each accepted diagnostic is pinned by diagnostic ID and exact message in `eng/api-breaking-changes/2.0.0.json`. The human-review inventory in [Accepted API breaks](AcceptedApiBreaks.md) groups the exact removed or incompatible surface by package and links every acceptance back to its package section. New diagnostics, stale acceptances, and missing migration anchors all fail the gate. The counts include removed types/members and changed signatures or constraints; they are not behavioral guarantees or rename inference. The package-specific raw reports under `artifacts/api-compat` and structured `public-api-comparison.json` are the authoritative review inputs; consumers must recompile and exercise their own usage.
 
@@ -28,6 +28,21 @@ array, materialize an explicit copy with `Types.Number.ToArray()`.
 `ConstantNumericAttribute.Values` changed from `double[]` to `IReadOnlyList<double>?`. Use `Count`
 instead of `Length`, retain the existing null handling, and call `ToArray()` only when a mutable copy
 is genuinely required.
+
+<a id="utils-range-complement"></a>
+## Utils.Range: Ranges&lt;T&gt; complement removed
+
+`Ranges<T>.Complement(Ranges<T>)` and its `~` operator are removed, and `Ranges<T>` no longer
+implements `System.Numerics.IBitwiseOperators<Ranges<T>, Ranges<T>, Ranges<T>>` (a prerequisite for
+declaring `~`). Both members were a public stub that unconditionally threw `NotImplementedException`
+in 1.x: `Ranges<T>` is only constrained by `IComparable<T>`, and `IRange<T>` carries no notion of a
+domain, a minimum/maximum value, or infinite bounds, so a complement relative to "the entire domain"
+cannot be computed for an arbitrary `Ranges<T>` — an empty instance would not even have a domain to
+recover it from. No internal code or test in the repository called either member. `Union` (`|`),
+`Intersect` (`&`), `SymmetricDifference` (`^`), and `Except` (`-`) are unaffected and remain declared
+directly on `Ranges<T>` even without the `IBitwiseOperators` interface. `IntRange<T>.Complement()`
+and its `~` operator are unaffected: that type's nullable endpoints explicitly represent `±∞`, so its
+complement (`Except(FullRange, this)`) is well-defined and unchanged.
 
 <a id="utils-io-serialization-2"></a>
 ## Utils.IO serialization and stream changes
