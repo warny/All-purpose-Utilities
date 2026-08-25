@@ -205,7 +205,7 @@ public sealed class EmbeddedCodeTransformationInvariantTests
             """;
         var transformer = new RecordingEmbeddedCodeTransformer { DiagnosticSeverity = ParserEmbeddedCodeDiagnosticSeverity.Error };
 
-        var exception = Assert.ThrowsException<Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException>(() => EmitWithTransformer(grammar, transformer));
+        var exception = Assert.ThrowsExactly<Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException>(() => EmitWithTransformer(grammar, transformer));
 
         Assert.AreEqual(ParserEmbeddedCodeLocation.ParserMembers, exception.Location);
         Assert.AreEqual(1, transformer.Calls.Count);
@@ -227,7 +227,7 @@ public sealed class EmbeddedCodeTransformationInvariantTests
         var inner = new InvalidOperationException("boom");
         var transformer = new RecordingEmbeddedCodeTransformer { Exception = inner };
 
-        var exception = Assert.ThrowsException<Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException>(() => EmitWithTransformer(grammar, transformer));
+        var exception = Assert.ThrowsExactly<Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException>(() => EmitWithTransformer(grammar, transformer));
 
         Assert.AreEqual(ParserEmbeddedCodeLocation.ParserFooter, exception.Location);
         Assert.AreSame(inner, exception.InnerException);
@@ -255,7 +255,7 @@ public sealed class EmbeddedCodeTransformationInvariantTests
             ReturnNullCode = !nullResult
         };
 
-        var exception = Assert.ThrowsException<Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException>(() => EmitWithTransformer(grammar, transformer));
+        var exception = Assert.ThrowsExactly<Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException>(() => EmitWithTransformer(grammar, transformer));
 
         Assert.AreEqual(ParserEmbeddedCodeLocation.ParserMembers, exception.Location);
         Assert.AreEqual(1, transformer.Calls.Count);

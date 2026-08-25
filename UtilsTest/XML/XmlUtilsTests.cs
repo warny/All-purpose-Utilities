@@ -416,7 +416,7 @@ public class XmlUtilsTests
         doc.LoadXml("<root>text</root>");
         var text = doc.DocumentElement!.FirstChild!;
 
-        Assert.ThrowsException<NotSupportedException>(() => text.GetXPath());
+        Assert.ThrowsExactly<NotSupportedException>(() => text.GetXPath());
     }
 
     [TestMethod]
@@ -427,7 +427,7 @@ public class XmlUtilsTests
         doc.LoadXml("<root><!-- comment --></root>");
         var comment = doc.DocumentElement!.FirstChild!;
 
-        Assert.ThrowsException<NotSupportedException>(() => comment.GetXPath());
+        Assert.ThrowsExactly<NotSupportedException>(() => comment.GetXPath());
     }
 }
 
@@ -537,7 +537,7 @@ public class XmlDataProcessorTests
     [Description("Item 8/20: a Task-returning (async) handler must be rejected at construction.")]
     public void AsyncHandler_RejectedAtConstruction()
     {
-        Assert.ThrowsException<InvalidOperationException>(
+        Assert.ThrowsExactly<InvalidOperationException>(
             () => new AsyncReturnsTaskProcessor(),
             "Async handler must be rejected during processor construction.");
     }
@@ -546,7 +546,7 @@ public class XmlDataProcessorTests
     [Description("Item 8: a non-void returning handler must be rejected at construction.")]
     public void NonVoidHandler_RejectedAtConstruction()
     {
-        Assert.ThrowsException<InvalidOperationException>(
+        Assert.ThrowsExactly<InvalidOperationException>(
             () => new NonVoidReturnProcessor());
     }
 
@@ -563,7 +563,7 @@ public class XmlDataProcessorTests
 
         var processor = new RecordingProcessor();
 
-        Assert.ThrowsException<XmlException>(() => processor.ReadSecure(stream),
+        Assert.ThrowsExactly<XmlException>(() => processor.ReadSecure(stream),
             "ReadSecure(Stream) must reject documents with DTD declarations.");
     }
 
@@ -584,7 +584,7 @@ public class XmlDataProcessorTests
     [Description("Item 15: prefix starting with digit is invalid NCName.")]
     public void XmlNamespaceAttribute_DigitPrefix_Throws()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => new XmlNamespaceAttribute("1ns", "http://example.com/"));
     }
 
@@ -592,7 +592,7 @@ public class XmlDataProcessorTests
     [Description("Item 15: reserved prefix 'xml' is rejected.")]
     public void XmlNamespaceAttribute_XmlPrefix_Throws()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => new XmlNamespaceAttribute("xml", "http://www.w3.org/XML/1998/namespace"));
     }
 
@@ -600,7 +600,7 @@ public class XmlDataProcessorTests
     [Description("Item 15: reserved prefix 'xmlns' is rejected.")]
     public void XmlNamespaceAttribute_XmlnsPrefix_Throws()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => new XmlNamespaceAttribute("xmlns", "http://www.w3.org/2000/xmlns/"));
     }
 
@@ -608,7 +608,7 @@ public class XmlDataProcessorTests
     [Description("Item 15: empty namespace URI is rejected.")]
     public void XmlNamespaceAttribute_EmptyNamespace_Throws()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => new XmlNamespaceAttribute("ns", ""));
     }
 
@@ -669,7 +669,7 @@ public class XmlDataProcessorTests
         var processor = new CyclicDispatchProcessor();
         var doc = MakeDoc("<root/>");
 
-        Assert.ThrowsException<InvalidOperationException>(
+        Assert.ThrowsExactly<InvalidOperationException>(
             () => processor.Read(doc.CreateNavigator()!),
             "Cyclic dispatch must be detected and result in InvalidOperationException.");
     }
@@ -708,7 +708,7 @@ public class XmlDataProcessorTests
     [Description("Item 24: conflicting namespace declaration (same prefix, different URI) must throw.")]
     public void ConflictingNamespace_ThrowsAtConstruction()
     {
-        Assert.ThrowsException<InvalidOperationException>(
+        Assert.ThrowsExactly<InvalidOperationException>(
             () => new ConflictingNsProcessor());
     }
 
@@ -720,7 +720,7 @@ public class XmlDataProcessorTests
     [Description("Item 25: MatchAttribute rejects null XPath expression.")]
     public void MatchAttribute_NullXPath_Throws()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => new MatchAttribute(null!));
     }
 
@@ -728,7 +728,7 @@ public class XmlDataProcessorTests
     [Description("Item 25: MatchAttribute rejects empty XPath expression.")]
     public void MatchAttribute_EmptyXPath_Throws()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => new MatchAttribute(""));
     }
 
@@ -736,7 +736,7 @@ public class XmlDataProcessorTests
     [Description("Item 25: MatchAttribute rejects whitespace-only XPath expression.")]
     public void MatchAttribute_WhitespaceXPath_Throws()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => new MatchAttribute("   "));
     }
 
@@ -749,7 +749,7 @@ public class XmlDataProcessorTests
     public void Read_NullNavigator_Throws()
     {
         var processor = new RecordingProcessor();
-        Assert.ThrowsException<ArgumentNullException>(
+        Assert.ThrowsExactly<ArgumentNullException>(
             () => processor.Read((XPathNavigator)null!));
     }
 
@@ -758,7 +758,7 @@ public class XmlDataProcessorTests
     public void Read_NullStream_Throws()
     {
         var processor = new RecordingProcessor();
-        Assert.ThrowsException<ArgumentNullException>(
+        Assert.ThrowsExactly<ArgumentNullException>(
             () => processor.Read((Stream)null!));
     }
 
@@ -767,7 +767,7 @@ public class XmlDataProcessorTests
     public void Read_NullXmlReader_Throws()
     {
         var processor = new RecordingProcessor();
-        Assert.ThrowsException<ArgumentNullException>(
+        Assert.ThrowsExactly<ArgumentNullException>(
             () => processor.Read((XmlReader)null!));
     }
 
@@ -776,7 +776,7 @@ public class XmlDataProcessorTests
     public void ReadSecure_NullStream_Throws()
     {
         var processor = new RecordingProcessor();
-        Assert.ThrowsException<ArgumentNullException>(
+        Assert.ThrowsExactly<ArgumentNullException>(
             () => processor.ReadSecure((Stream)null!));
     }
 }

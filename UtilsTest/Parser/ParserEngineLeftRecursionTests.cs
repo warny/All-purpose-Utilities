@@ -103,7 +103,7 @@ public class ParserEngineLeftRecursionTests
     public void LeftRecursion_WithoutBaseAlternative_Throws()
     {
         var diagnostics = new DiagnosticBag();
-        Assert.ThrowsException<GrammarValidationException>(() => Antlr4GrammarConverter.Parse("""
+        Assert.ThrowsExactly<GrammarValidationException>(() => Antlr4GrammarConverter.Parse("""
             grammar G;
             start : expr ;
             expr : expr '+' expr ;
@@ -117,7 +117,7 @@ public class ParserEngineLeftRecursionTests
     public void IndirectLeftRecursion_ReportsClearDiagnostic()
     {
         var diagnostics = new DiagnosticBag();
-        Assert.ThrowsException<GrammarValidationException>(() => Antlr4GrammarConverter.Parse("""
+        Assert.ThrowsExactly<GrammarValidationException>(() => Antlr4GrammarConverter.Parse("""
             grammar G;
             start : a ;
             a : b ;

@@ -73,20 +73,18 @@ namespace UtilsTest.Lists
         }
 
         [TestMethod]
-        [ExpectedException(typeof(KeyNotFoundException))]
         public void Indexer_GetMissingKey_Throws()
         {
             var dict = new SkipListDictionary<string, int>();
-            _ = dict["missing"];
+            Assert.ThrowsExactly<KeyNotFoundException>(() => _ = dict["missing"]);
         }
 
         [TestMethod]
-        [ExpectedException(typeof(ArgumentException))]
         public void Add_DuplicateKey_Throws()
         {
             var dict = new SkipListDictionary<string, int>();
             dict.Add("a", 1);
-            dict.Add("a", 2);
+            Assert.ThrowsExactly<ArgumentException>(() => dict.Add("a", 2));
         }
 
         [TestMethod]
@@ -98,8 +96,8 @@ namespace UtilsTest.Lists
             var dict = new SkipListDictionary<string, int>(StringComparer.OrdinalIgnoreCase);
             dict.Add("abc", 1);
 
-            Assert.ThrowsException<ArgumentException>(() => dict.Add("abc", 2));
-            Assert.ThrowsException<ArgumentException>(() => dict.Add("ABC", 3));
+            Assert.ThrowsExactly<ArgumentException>(() => dict.Add("abc", 2));
+            Assert.ThrowsExactly<ArgumentException>(() => dict.Add("ABC", 3));
             Assert.AreEqual(1, dict.Count);
             Assert.AreEqual(1, dict["ABC"]);
 
@@ -137,12 +135,12 @@ namespace UtilsTest.Lists
         /// <param name="dict">The dictionary whose public key boundaries are tested.</param>
         private static void AssertNullKeysAreRejected(SkipListDictionary<string, int> dict)
         {
-            Assert.ThrowsException<ArgumentNullException>(() => dict.Add(null!, 1));
-            Assert.ThrowsException<ArgumentNullException>(() => dict.ContainsKey(null!));
-            Assert.ThrowsException<ArgumentNullException>(() => dict.TryGetValue(null!, out _));
-            Assert.ThrowsException<ArgumentNullException>(() => dict.Remove(null!));
-            Assert.ThrowsException<ArgumentNullException>(() => _ = dict[null!]);
-            Assert.ThrowsException<ArgumentNullException>(() => dict[null!] = 1);
+            Assert.ThrowsExactly<ArgumentNullException>(() => dict.Add(null!, 1));
+            Assert.ThrowsExactly<ArgumentNullException>(() => dict.ContainsKey(null!));
+            Assert.ThrowsExactly<ArgumentNullException>(() => dict.TryGetValue(null!, out _));
+            Assert.ThrowsExactly<ArgumentNullException>(() => dict.Remove(null!));
+            Assert.ThrowsExactly<ArgumentNullException>(() => _ = dict[null!]);
+            Assert.ThrowsExactly<ArgumentNullException>(() => dict[null!] = 1);
             Assert.AreEqual(0, dict.Count);
         }
 
@@ -286,9 +284,9 @@ namespace UtilsTest.Lists
 
             dict["a"] = 42;
 
-            Assert.ThrowsException<InvalidOperationException>(() => entries.MoveNext());
-            Assert.ThrowsException<InvalidOperationException>(() => keys.MoveNext());
-            Assert.ThrowsException<InvalidOperationException>(() => values.MoveNext());
+            Assert.ThrowsExactly<InvalidOperationException>(() => entries.MoveNext());
+            Assert.ThrowsExactly<InvalidOperationException>(() => keys.MoveNext());
+            Assert.ThrowsExactly<InvalidOperationException>(() => values.MoveNext());
         }
 
         /// <summary>
@@ -314,7 +312,7 @@ namespace UtilsTest.Lists
             else
                 dict.Clear();
 
-            Assert.ThrowsException<InvalidOperationException>(() => enumerator.MoveNext());
+            Assert.ThrowsExactly<InvalidOperationException>(() => enumerator.MoveNext());
         }
 
         [TestMethod]

@@ -14,9 +14,9 @@ public class ParserDiagnosticCompositionTests
     [TestMethod]
     public void SourceCodeLocation_ValidatesConstructorArguments_AndFormatsDisplayText()
     {
-        Assert.ThrowsException<ArgumentException>(() => new SourceCodeLocation(" ", 1, 1));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new SourceCodeLocation("file.ext", 0, 1));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new SourceCodeLocation("file.ext", 1, 0));
+        Assert.ThrowsExactly<ArgumentException>(() => new SourceCodeLocation(" ", 1, 1));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new SourceCodeLocation("file.ext", 0, 1));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new SourceCodeLocation("file.ext", 1, 0));
 
         var location = new SourceCodeLocation("file.ext", 12, 5);
         Assert.AreEqual("file.ext", location.FilePath);
@@ -28,7 +28,7 @@ public class ParserDiagnosticCompositionTests
     [TestMethod]
     public void SourceCodeRange_InheritsLocation_ValidatesLength_AndFormatsDisplayText()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new SourceCodeRange("file.ext", 1, 1, -1));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new SourceCodeRange("file.ext", 1, 1, -1));
 
         SourceCodeLocation rangeAsLocation = new SourceCodeRange("file.ext", 12, 5, 3);
         var range = (SourceCodeRange)rangeAsLocation;
@@ -42,8 +42,8 @@ public class ParserDiagnosticCompositionTests
     [TestMethod]
     public void DiagnosticSpan_ValidatesStartAndLength()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new DiagnosticSpan(-1, 0));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new DiagnosticSpan(0, -1));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new DiagnosticSpan(-1, 0));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new DiagnosticSpan(0, -1));
 
         var span = new DiagnosticSpan(10, 4);
         Assert.AreEqual(10, span.Start);
@@ -100,7 +100,7 @@ public class ParserDiagnosticCompositionTests
     [TestMethod]
     public void ParserDiagnostic_LegacyConstructor_RejectsSpanStartWithoutSpanLength()
     {
-        Assert.ThrowsException<ArgumentException>(() =>
+        Assert.ThrowsExactly<ArgumentException>(() =>
             new ParserDiagnostic(
                 ParserDiagnostics.SemanticPredicateNotEnforced,
                 "Message",
@@ -111,7 +111,7 @@ public class ParserDiagnosticCompositionTests
     [TestMethod]
     public void ParserDiagnostic_LegacyConstructor_RejectsSpanLengthWithoutSpanStart()
     {
-        Assert.ThrowsException<ArgumentException>(() =>
+        Assert.ThrowsExactly<ArgumentException>(() =>
             new ParserDiagnostic(
                 ParserDiagnostics.SemanticPredicateNotEnforced,
                 "Message",
@@ -140,7 +140,7 @@ public class ParserDiagnosticCompositionTests
     {
         var bag = new DiagnosticBag();
 
-        Assert.ThrowsException<ArgumentException>(() =>
+        Assert.ThrowsExactly<ArgumentException>(() =>
             bag.AddWithContext(
                 ParserDiagnostics.SemanticPredicateNotEnforced,
                 spanStart: 5,

@@ -168,7 +168,7 @@ public class ParserExecutionContextHasherTests
     {
         var context = new UnsupportedObjectContext { Value = new UnsupportedUserValue() };
 
-        var exception = Assert.ThrowsException<InvalidOperationException>(() => ParserExecutionContextHasher<UnsupportedObjectContext>.GetKey(context));
+        var exception = Assert.ThrowsExactly<InvalidOperationException>(() => ParserExecutionContextHasher<UnsupportedObjectContext>.GetKey(context));
 
         StringAssert.Contains(exception.Message, typeof(UnsupportedUserValue).FullName!);
         StringAssert.Contains(exception.Message, nameof(UnsupportedObjectContext.Value));

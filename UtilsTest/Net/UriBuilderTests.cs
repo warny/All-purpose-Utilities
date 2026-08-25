@@ -52,7 +52,7 @@ namespace UtilsTest.Net
             Assert.AreEqual("", builder.Scheme);
             Assert.AreEqual("example.com", builder.Host);
             Assert.AreEqual("/path", builder.AbsolutePath);
-            Assert.AreEqual("value", builder.QueryString["key"]);
+            Assert.AreEqual("value", (string)builder.QueryString["key"]);
             Assert.AreEqual("//example.com/path?key=value", builder.ToString());
         }
 
@@ -78,7 +78,7 @@ namespace UtilsTest.Net
             Assert.AreEqual("", builder.Scheme);
             Assert.AreEqual("", builder.Host);
             Assert.AreEqual("/path", builder.AbsolutePath);
-            Assert.AreEqual("value", builder.QueryString["key"]);
+            Assert.AreEqual("value", (string)builder.QueryString["key"]);
             Assert.AreEqual("/path?key=value", builder.ToString());
         }
 
@@ -89,8 +89,8 @@ namespace UtilsTest.Net
             Assert.AreEqual("example.com", builder.Host);
             Assert.AreEqual("http", builder.Scheme);
             Assert.AreEqual("/", builder.AbsolutePath);
-            Assert.AreEqual("value1", builder.QueryString["key1"]);
-            Assert.AreEqual("value2", builder.QueryString["key2"]);
+            Assert.AreEqual("value1", (string)builder.QueryString["key1"]);
+            Assert.AreEqual("value2", (string)builder.QueryString["key2"]);
         }
 
         [TestMethod]
@@ -102,9 +102,9 @@ namespace UtilsTest.Net
             Assert.AreEqual("example.com", builder.Host);
             Assert.AreEqual("http", builder.Scheme);
             Assert.AreEqual("/", builder.AbsolutePath);
-            Assert.AreEqual("value1", builder.QueryString["key1"]);
-            Assert.AreEqual("value2", builder.QueryString["key2"]);
-            Assert.AreEqual("value3", builder.QueryString["key3"]);
+            Assert.AreEqual("value1", (string)builder.QueryString["key1"]);
+            Assert.AreEqual("value2", (string)builder.QueryString["key2"]);
+            Assert.AreEqual("value3", (string)builder.QueryString["key3"]);
             Assert.AreEqual("http://example.com/?key1=value1&key2=value2&key3=value3", builder.ToString());
         }
 
@@ -118,14 +118,14 @@ namespace UtilsTest.Net
             Assert.AreEqual("example.com", builder.Host);
             Assert.AreEqual("http", builder.Scheme);
             Assert.AreEqual("/", builder.AbsolutePath);
-            Assert.AreEqual("value1", builder.QueryString["key1"]);
+            Assert.AreEqual("value1", (string)builder.QueryString["key1"]);
             var values2 = builder.QueryString["key2"];
             Assert.AreEqual("value2a", values2[0]);
             Assert.AreEqual("value2b", values2[1]);
             var values3 = builder.QueryString["key3"];
             Assert.AreEqual("value3a", values3[0]);
             Assert.AreEqual("value3b", values3[1]);
-            Assert.AreEqual("value3a,value3b", values3);
+            Assert.AreEqual("value3a,value3b", (string)values3);
             Assert.AreEqual("http://example.com/?key1=value1&key2=value2a&key2=value2b&key3=value3a&key3=value3b", builder.ToString());
         }
 
@@ -139,7 +139,7 @@ namespace UtilsTest.Net
             Assert.AreEqual("example.com", builder.Host);
             Assert.AreEqual("http", builder.Scheme);
             Assert.AreEqual("/", builder.AbsolutePath);
-            Assert.AreEqual("value1", builder.QueryString["key1"]);
+            Assert.AreEqual("value1", (string)builder.QueryString["key1"]);
             var values2 = builder.QueryString["key2"];
             Assert.AreEqual("value2", values2[0]);
             var values3 = builder.QueryString["key3"];
@@ -156,7 +156,7 @@ namespace UtilsTest.Net
             Assert.AreEqual("example.com", builder.Host);
             Assert.AreEqual("http", builder.Scheme);
             Assert.AreEqual("/test.html", builder.AbsolutePath);
-            Assert.AreEqual("value1", builder.QueryString["key1"]);
+            Assert.AreEqual("value1", (string)builder.QueryString["key1"]);
             var values2 = builder.QueryString["key2"];
             Assert.IsFalse(values2.Count != 0);
             var values3 = builder.QueryString["key3"];

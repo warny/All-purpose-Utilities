@@ -176,7 +176,7 @@ public class QueryODataBehaviourTests
 
         var task = (Task)method.Invoke(null, [batch, columns, converter, channel.Writer, CancellationToken.None, (int?)null])!;
 
-        var ex = Assert.ThrowsException<AggregateException>(() => task.Wait());
+        var ex = Assert.ThrowsExactly<AggregateException>(() => task.Wait());
         Assert.IsInstanceOfType<InvalidOperationException>(ex.InnerException,
             "A scalar value in the OData value array must raise InvalidOperationException");
     }
@@ -196,7 +196,7 @@ public class QueryODataBehaviourTests
 
         var task = (Task)method.Invoke(null, [batch, columns, converter, channel.Writer, CancellationToken.None, (int?)null])!;
 
-        var ex = Assert.ThrowsException<AggregateException>(() => task.Wait());
+        var ex = Assert.ThrowsExactly<AggregateException>(() => task.Wait());
         Assert.IsInstanceOfType<InvalidOperationException>(ex.InnerException,
             "A null entry in the OData value array must raise InvalidOperationException");
     }
@@ -216,7 +216,7 @@ public class QueryODataBehaviourTests
 
         var task = (Task)method.Invoke(null, [batch, columns, converter, channel.Writer, CancellationToken.None, (int?)null])!;
 
-        var ex = Assert.ThrowsException<AggregateException>(() => task.Wait());
+        var ex = Assert.ThrowsExactly<AggregateException>(() => task.Wait());
         Assert.IsInstanceOfType<InvalidOperationException>(ex.InnerException,
             "A nested array in the OData value array must raise InvalidOperationException");
     }

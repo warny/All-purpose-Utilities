@@ -23,9 +23,9 @@ public class VisualStudioSyntaxColorizationDescriptorApiTests
         var descriptor = new SyntaxColorizationDescriptor();
         var entry = new SyntaxColorizationDescriptorEntry("Keyword");
 
-        Assert.ThrowsException<NotSupportedException>(() => ((IList<string>)descriptor.FileExtensions).Add(".sql"));
-        Assert.ThrowsException<NotSupportedException>(() => ((IList<string>)descriptor.StringSyntaxExtensions).Add("SQL"));
-        Assert.ThrowsException<NotSupportedException>(() => ((IList<SyntaxColorizationDescriptorEntry>)descriptor.Entries).Add(entry));
-        Assert.ThrowsException<NotSupportedException>(() => ((IList<string>)entry.Rules).Add("RULE"));
+        Assert.ThrowsExactly<NotSupportedException>(() => ((IList<string>)descriptor.FileExtensions).Add(".sql"));
+        Assert.ThrowsExactly<NotSupportedException>(() => ((IList<string>)descriptor.StringSyntaxExtensions).Add("SQL"));
+        Assert.ThrowsExactly<NotSupportedException>(() => ((IList<SyntaxColorizationDescriptorEntry>)descriptor.Entries).Add(entry));
+        Assert.ThrowsExactly<NotSupportedException>(() => ((IList<string>)entry.Rules).Add("RULE"));
     }
 }

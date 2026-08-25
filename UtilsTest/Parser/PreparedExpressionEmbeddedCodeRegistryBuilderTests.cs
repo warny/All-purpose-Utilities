@@ -21,7 +21,7 @@ public class PreparedExpressionEmbeddedCodeRegistryBuilderTests
     {
         var preparer = new FakePreparer();
 
-        Assert.ThrowsException<ArgumentNullException>(() => PreparedExpressionEmbeddedCodeRegistryBuilder.Build(null!, preparer));
+        Assert.ThrowsExactly<ArgumentNullException>(() => PreparedExpressionEmbeddedCodeRegistryBuilder.Build(null!, preparer));
     }
 
     /// <summary>
@@ -32,7 +32,7 @@ public class PreparedExpressionEmbeddedCodeRegistryBuilderTests
     {
         var definition = CreateDefinition(CreateRule("start", new Sequence([])));
 
-        Assert.ThrowsException<ArgumentNullException>(() => PreparedExpressionEmbeddedCodeRegistryBuilder.Build(definition, null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => PreparedExpressionEmbeddedCodeRegistryBuilder.Build(definition, null!));
     }
 
     /// <summary>

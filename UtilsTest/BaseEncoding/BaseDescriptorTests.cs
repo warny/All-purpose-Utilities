@@ -25,7 +25,7 @@ public class BaseDescriptorTests
 
             if (!isValid)
             {
-                Assert.ThrowsException<ArgumentOutOfRangeException>(
+                Assert.ThrowsExactly<ArgumentOutOfRangeException>(
                     () => new TestBaseDescriptor(alphabet),
                     $"An alphabet containing {length} characters should be rejected.");
                 continue;
@@ -72,8 +72,8 @@ public class BaseDescriptorTests
     [TestMethod]
     public void Constructor_NullAlphabet_ThrowsArgumentNullExceptionForChars()
     {
-        ArgumentNullException stringException = Assert.ThrowsException<ArgumentNullException>(() => new TestBaseDescriptor((string)null!));
-        ArgumentNullException arrayException = Assert.ThrowsException<ArgumentNullException>(() => new TestBaseDescriptor((char[])null!));
+        ArgumentNullException stringException = Assert.ThrowsExactly<ArgumentNullException>(() => new TestBaseDescriptor((string)null!));
+        ArgumentNullException arrayException = Assert.ThrowsExactly<ArgumentNullException>(() => new TestBaseDescriptor((char[])null!));
 
         Assert.AreEqual("chars", stringException.ParamName);
         Assert.AreEqual("chars", arrayException.ParamName);
@@ -87,7 +87,7 @@ public class BaseDescriptorTests
     [DataRow("ABCA")]
     public void Constructor_DuplicateAlphabet_ThrowsArgumentException(string alphabet)
     {
-        ArgumentException exception = Assert.ThrowsException<ArgumentException>(() => new TestBaseDescriptor(alphabet));
+        ArgumentException exception = Assert.ThrowsExactly<ArgumentException>(() => new TestBaseDescriptor(alphabet));
 
         Assert.AreEqual("chars", exception.ParamName);
         StringAssert.Contains(exception.Message, "duplicate");
@@ -100,11 +100,11 @@ public class BaseDescriptorTests
     public void Constructor_AlphabetContainsIgnoredCharacter_ThrowsArgumentException()
     {
         Assert.AreEqual(1, new TestBaseDescriptor("AB", "").BitsWidth);
-        Assert.ThrowsException<ArgumentException>(() => new TestBaseDescriptor("ABC-", "-"));
-        Assert.ThrowsException<ArgumentException>(() => new TestBaseDescriptor("ABC ", ""));
+        Assert.ThrowsExactly<ArgumentException>(() => new TestBaseDescriptor("ABC-", "-"));
+        Assert.ThrowsExactly<ArgumentException>(() => new TestBaseDescriptor("ABC ", ""));
 
         char platformSeparatorCharacter = Environment.NewLine[0];
-        Assert.ThrowsException<ArgumentException>(() => new TestBaseDescriptor($"ABC{platformSeparatorCharacter}", null!));
+        Assert.ThrowsExactly<ArgumentException>(() => new TestBaseDescriptor($"ABC{platformSeparatorCharacter}", null!));
     }
 
     /// <summary>
@@ -113,9 +113,9 @@ public class BaseDescriptorTests
     [TestMethod]
     public void Constructor_FillerCollision_ThrowsArgumentException()
     {
-        Assert.ThrowsException<ArgumentException>(() => new TestBaseDescriptor("ABCD", "", 'D', 4));
-        Assert.ThrowsException<ArgumentException>(() => new TestBaseDescriptor("ABCD", "=\r\n", '=', 4));
-        Assert.ThrowsException<ArgumentException>(() => new TestBaseDescriptor("ABCD", "", ' ', 4));
+        Assert.ThrowsExactly<ArgumentException>(() => new TestBaseDescriptor("ABCD", "", 'D', 4));
+        Assert.ThrowsExactly<ArgumentException>(() => new TestBaseDescriptor("ABCD", "=\r\n", '=', 4));
+        Assert.ThrowsExactly<ArgumentException>(() => new TestBaseDescriptor("ABCD", "", ' ', 4));
     }
 
     /// <summary>
@@ -143,7 +143,7 @@ public class BaseDescriptorTests
     public void Constructor_WithFillerAndIncoherentFillerMod_ThrowsArgumentOutOfRangeException()
     {
         foreach (int fillerMod in new int[] { -1, 0, 1, 3, 5 })
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => new TestBaseDescriptor("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/", "", '=', fillerMod));
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new TestBaseDescriptor("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/", "", '=', fillerMod));
     }
 
     /// <summary>

@@ -47,7 +47,7 @@ public class VectorTests
     {
         var p1 = new Vector<double>(0d, 0d);
         var p2 = new Vector<double>(2d, 0d);
-        Assert.ThrowsException<ArgumentException>(() => Vector<double>.ComputeBarycenter((0d, p1), (0d, p2)));
+        Assert.ThrowsExactly<ArgumentException>(() => Vector<double>.ComputeBarycenter((0d, p1), (0d, p2)));
     }
 
     /// <summary>
@@ -59,7 +59,7 @@ public class VectorTests
     {
         var p1 = new Vector<double>(0d, 0d);
         var p2 = new Vector<double>(2d, 0d);
-        Assert.ThrowsException<ArgumentException>(() => Vector<double>.ComputeBarycenter((1d, p1), (-1d, p2)));
+        Assert.ThrowsExactly<ArgumentException>(() => Vector<double>.ComputeBarycenter((1d, p1), (-1d, p2)));
     }
 
     /// <summary>
@@ -71,7 +71,7 @@ public class VectorTests
     {
         var p1 = new Vector<double>(0d, 0d);
         var p2 = new Vector<double>(2d, 0d);
-        Assert.ThrowsException<ArgumentException>(() => Vector<double>.ComputeBarycenter((1d, p1), (double.NaN, p2)));
+        Assert.ThrowsExactly<ArgumentException>(() => Vector<double>.ComputeBarycenter((1d, p1), (double.NaN, p2)));
     }
 
     /// <summary>
@@ -83,7 +83,7 @@ public class VectorTests
     {
         var p1 = new Vector<double>(0d, 0d);
         var p2 = new Vector<double>(2d, 0d);
-        Assert.ThrowsException<ArgumentException>(() => Vector<double>.ComputeBarycenter((1d, p1), (double.PositiveInfinity, p2)));
+        Assert.ThrowsExactly<ArgumentException>(() => Vector<double>.ComputeBarycenter((1d, p1), (double.PositiveInfinity, p2)));
     }
 
     /// <summary>
@@ -108,7 +108,7 @@ public class VectorTests
     public void ComputeBarycenter_NullWeightSelector_Throws()
     {
         var p1 = new Vector<double>(0d, 0d);
-        Assert.ThrowsException<ArgumentNullException>(
+        Assert.ThrowsExactly<ArgumentNullException>(
             () => Vector<double>.ComputeBarycenter<(double weight, Vector<double> vector)>(null, wp => wp.vector, [(1d, p1)]));
     }
 
@@ -117,7 +117,7 @@ public class VectorTests
     public void ComputeBarycenter_NullVectorSelector_Throws()
     {
         var p1 = new Vector<double>(0d, 0d);
-        Assert.ThrowsException<ArgumentNullException>(
+        Assert.ThrowsExactly<ArgumentNullException>(
             () => Vector<double>.ComputeBarycenter<(double weight, Vector<double> vector)>(wp => wp.weight, null, [(1d, p1)]));
     }
 
@@ -125,7 +125,7 @@ public class VectorTests
     [TestMethod]
     public void ComputeBarycenter_NullWeightedPoints_Throws()
     {
-        Assert.ThrowsException<ArgumentNullException>(
+        Assert.ThrowsExactly<ArgumentNullException>(
             () => Vector<double>.ComputeBarycenter<(double weight, Vector<double> vector)>(wp => wp.weight, wp => wp.vector, null));
     }
 
@@ -136,7 +136,7 @@ public class VectorTests
     [TestMethod]
     public void ComputeBarycenter_NullSelectedVector_Throws()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => Vector<double>.ComputeBarycenter<double>(w => w, w => null, [1d, 2d]));
     }
 
@@ -150,7 +150,7 @@ public class VectorTests
     {
         var p1 = new Vector<double>(0d, 0d);
         var p2 = new Vector<double>(1d, 1d, 1d);
-        Assert.ThrowsException<ArgumentException>(() => Vector<double>.ComputeBarycenter((1d, p1), (1d, p2)));
+        Assert.ThrowsExactly<ArgumentException>(() => Vector<double>.ComputeBarycenter((1d, p1), (1d, p2)));
     }
 
     /// <summary>
@@ -214,7 +214,7 @@ public class VectorTests
         // NaN/infinity components for the zero vector instead of the explicit failure ProjectOnto
         // already uses for its own zero-vector case.
         var vector = new Vector<double>(0d, 0d, 0d);
-        Assert.ThrowsException<InvalidOperationException>(() => vector.Normalize());
+        Assert.ThrowsExactly<InvalidOperationException>(() => vector.Normalize());
     }
 
     [TestMethod]
@@ -225,7 +225,7 @@ public class VectorTests
         // component around 1e-150) must be rejected too, rather than producing a "normalized" result
         // that is only an artifact of floating-point noise.
         var vector = new Vector<double>(1e-150, 1e-150, 1e-150);
-        Assert.ThrowsException<InvalidOperationException>(() => vector.Normalize());
+        Assert.ThrowsExactly<InvalidOperationException>(() => vector.Normalize());
     }
 
     [TestMethod]
@@ -241,8 +241,8 @@ public class VectorTests
     public void Normalize_InvalidTolerance_Throws()
     {
         var vector = new Vector<double>(1d, 0d, 0d);
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => vector.Normalize(tolerance: double.NaN));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => vector.Normalize(tolerance: -1d));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => vector.Normalize(tolerance: double.NaN));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => vector.Normalize(tolerance: -1d));
     }
 
     [TestMethod]
@@ -301,7 +301,7 @@ public class VectorTests
     {
         var v1 = new Vector<double>(1d, 0d, 0d);
         var v2 = new Vector<double>(1d, 0d);
-        Assert.ThrowsException<ArgumentException>(() => Vector<double>.CrossProduct(v1, v2));
+        Assert.ThrowsExactly<ArgumentException>(() => Vector<double>.CrossProduct(v1, v2));
     }
 
     /// <summary>
@@ -372,7 +372,7 @@ public class VectorTests
         // the previous implementation divided by it unconditionally, silently producing
         // NaN/infinity components instead of signaling that no Cartesian equivalent exists.
         var h = new Vector<double>(1d, 2d, 3d, 0d);
-        Assert.ThrowsException<InvalidOperationException>(() => h.FromNormalSpace());
+        Assert.ThrowsExactly<InvalidOperationException>(() => h.FromNormalSpace());
     }
 
     [TestMethod]
@@ -383,7 +383,7 @@ public class VectorTests
         // astronomically large, meaningless magnitude instead of being recognized as a direction at
         // infinity.
         var h = new Vector<double>(1d, 2d, 3d, 1e-300);
-        Assert.ThrowsException<InvalidOperationException>(() => h.FromNormalSpace());
+        Assert.ThrowsExactly<InvalidOperationException>(() => h.FromNormalSpace());
     }
 
     [TestMethod]
@@ -399,8 +399,8 @@ public class VectorTests
     public void FromNormalSpace_InvalidTolerance_Throws()
     {
         var h = new Vector<double>(1d, 2d, 3d, 1d);
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => h.FromNormalSpace(tolerance: double.NaN));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => h.FromNormalSpace(tolerance: -1d));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => h.FromNormalSpace(tolerance: double.NaN));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => h.FromNormalSpace(tolerance: -1d));
     }
 
     // ── ProjectOnto ───────────────────────────────────────────────────────
@@ -444,7 +444,7 @@ public class VectorTests
     {
         var v = new Vector<double>(1d, 2d);
         var zero = new Vector<double>(0d, 0d);
-        Assert.ThrowsException<InvalidOperationException>(() => v.ProjectOnto(zero));
+        Assert.ThrowsExactly<InvalidOperationException>(() => v.ProjectOnto(zero));
     }
 
     [TestMethod]
@@ -452,7 +452,7 @@ public class VectorTests
     {
         var v = new Vector<double>(1d, 2d, 3d);
         var u = new Vector<double>(1d, 0d);
-        Assert.ThrowsException<ArgumentException>(() => v.ProjectOnto(u));
+        Assert.ThrowsExactly<ArgumentException>(() => v.ProjectOnto(u));
     }
 
     // ── Equals overload fix (A) ───────────────────────────────────────────
@@ -504,7 +504,7 @@ public class VectorTests
     {
         var v1 = new Vector<double>(1d, 0d);
         var v2 = new Vector<double>(1d, 0d, 0d);
-        Assert.ThrowsException<ArgumentException>(() => v1.AngleWith(v2));
+        Assert.ThrowsExactly<ArgumentException>(() => v1.AngleWith(v2));
     }
 
     [TestMethod]
@@ -512,7 +512,7 @@ public class VectorTests
     {
         var v1 = new Vector<double>(1d, 0d);
         var v2 = new Vector<double>(0d, 0d);
-        Assert.ThrowsException<InvalidOperationException>(() => v1.AngleWith(v2));
+        Assert.ThrowsExactly<InvalidOperationException>(() => v1.AngleWith(v2));
     }
 
     [TestMethod]
@@ -520,7 +520,7 @@ public class VectorTests
     {
         Vector<double> v1 = null;
         var v2 = new Vector<double>(1d, 0d);
-        Assert.ThrowsException<ArgumentNullException>(() => v1.AngleWith(v2));
+        Assert.ThrowsExactly<ArgumentNullException>(() => v1.AngleWith(v2));
     }
 
     [TestMethod]
@@ -528,7 +528,7 @@ public class VectorTests
     {
         var v1 = new Vector<double>(1d, 0d);
         Vector<double> v2 = null;
-        Assert.ThrowsException<ArgumentNullException>(() => v1.AngleWith(v2));
+        Assert.ThrowsExactly<ArgumentNullException>(() => v1.AngleWith(v2));
     }
 
     [TestMethod]
@@ -548,7 +548,7 @@ public class VectorTests
     {
         var v1 = new Vector<double>(double.NaN, 0d);
         var v2 = new Vector<double>(1d, 0d);
-        Assert.ThrowsException<InvalidOperationException>(() => v1.AngleWith(v2));
+        Assert.ThrowsExactly<InvalidOperationException>(() => v1.AngleWith(v2));
     }
 
     [TestMethod]

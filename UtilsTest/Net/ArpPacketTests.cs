@@ -59,7 +59,7 @@ public class ArpPacketTests
     {
         ArpPacket packet = ValidRequest();
         packet.SenderProtocolAddress = IPAddress.Parse("2001:db8::1");
-        Assert.ThrowsException<InvalidOperationException>(() => packet.ToBytes());
+        Assert.ThrowsExactly<InvalidOperationException>(() => packet.ToBytes());
     }
 
     [TestMethod]
@@ -67,7 +67,7 @@ public class ArpPacketTests
     {
         ArpPacket packet = ValidRequest();
         packet.TargetProtocolAddress = IPAddress.Parse("2001:db8::2");
-        Assert.ThrowsException<InvalidOperationException>(() => packet.ToBytes());
+        Assert.ThrowsExactly<InvalidOperationException>(() => packet.ToBytes());
     }
 
     [TestMethod]
@@ -75,7 +75,7 @@ public class ArpPacketTests
     {
         ArpPacket packet = ValidRequest();
         packet.SenderHardwareAddress = new PhysicalAddress(new byte[] { 1, 2, 3 });
-        Assert.ThrowsException<InvalidOperationException>(() => packet.ToBytes());
+        Assert.ThrowsExactly<InvalidOperationException>(() => packet.ToBytes());
     }
 
     [TestMethod]
@@ -83,7 +83,7 @@ public class ArpPacketTests
     {
         ArpPacket packet = ValidRequest();
         packet.TargetHardwareAddress = new PhysicalAddress(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
-        Assert.ThrowsException<InvalidOperationException>(() => packet.ToBytes());
+        Assert.ThrowsExactly<InvalidOperationException>(() => packet.ToBytes());
     }
 
     [TestMethod]
@@ -92,7 +92,7 @@ public class ArpPacketTests
         // PhysicalAddress.None serialises to zero bytes, which is not a 6-byte MAC.
         ArpPacket packet = ValidRequest();
         packet.SenderHardwareAddress = PhysicalAddress.None;
-        Assert.ThrowsException<InvalidOperationException>(() => packet.ToBytes());
+        Assert.ThrowsExactly<InvalidOperationException>(() => packet.ToBytes());
     }
 
     [TestMethod]
@@ -101,7 +101,7 @@ public class ArpPacketTests
         // IPAddress.IPv6None is not InterNetwork and is not 4 bytes.
         ArpPacket packet = ValidRequest();
         packet.TargetProtocolAddress = IPAddress.IPv6None;
-        Assert.ThrowsException<InvalidOperationException>(() => packet.ToBytes());
+        Assert.ThrowsExactly<InvalidOperationException>(() => packet.ToBytes());
     }
 
     [TestMethod]
@@ -111,7 +111,7 @@ public class ArpPacketTests
         // hardware type and is rejected.
         ArpPacket packet = ValidRequest();
         packet.SenderHardwareAddress = new PhysicalAddress(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
-        Assert.ThrowsException<InvalidOperationException>(() => packet.ToBytes());
+        Assert.ThrowsExactly<InvalidOperationException>(() => packet.ToBytes());
     }
 
     [TestMethod]
@@ -120,7 +120,7 @@ public class ArpPacketTests
         // A non-IPv4 protocol address represents a non-IPv4 protocol type and is rejected.
         ArpPacket packet = ValidRequest();
         packet.SenderProtocolAddress = IPAddress.IPv6Loopback;
-        Assert.ThrowsException<InvalidOperationException>(() => packet.ToBytes());
+        Assert.ThrowsExactly<InvalidOperationException>(() => packet.ToBytes());
     }
 
     [TestMethod]
@@ -145,7 +145,7 @@ public class ArpPacketTests
     [TestMethod]
     public void Read_HeaderShorterThanEightBytes_ThrowsInvalidDataException()
     {
-        Assert.ThrowsException<InvalidDataException>(() => ArpPacket.Read(new byte[7]));
+        Assert.ThrowsExactly<InvalidDataException>(() => ArpPacket.Read(new byte[7]));
     }
 
     [TestMethod]
@@ -155,7 +155,7 @@ public class ArpPacketTests
         // Truncate the body while keeping a full 8-byte header.
         byte[] truncated = new byte[20];
         System.Array.Copy(bytes, truncated, 20);
-        Assert.ThrowsException<InvalidDataException>(() => ArpPacket.Read(truncated));
+        Assert.ThrowsExactly<InvalidDataException>(() => ArpPacket.Read(truncated));
     }
 
     [TestMethod]
@@ -163,7 +163,7 @@ public class ArpPacketTests
     {
         byte[] bytes = ValidRequest().ToBytes();
         bytes[4] = 0; // HLEN = 0
-        Assert.ThrowsException<InvalidDataException>(() => ArpPacket.Read(bytes));
+        Assert.ThrowsExactly<InvalidDataException>(() => ArpPacket.Read(bytes));
     }
 
     [TestMethod]
@@ -171,7 +171,7 @@ public class ArpPacketTests
     {
         byte[] bytes = ValidRequest().ToBytes();
         bytes[5] = 0; // PLEN = 0
-        Assert.ThrowsException<InvalidDataException>(() => ArpPacket.Read(bytes));
+        Assert.ThrowsExactly<InvalidDataException>(() => ArpPacket.Read(bytes));
     }
 
     [TestMethod]
@@ -183,7 +183,7 @@ public class ArpPacketTests
         bytes[2] = 0x08;   // PTYPE high
         bytes[4] = 200;    // HLEN
         bytes[5] = 200;    // PLEN
-        Assert.ThrowsException<InvalidDataException>(() => ArpPacket.Read(bytes));
+        Assert.ThrowsExactly<InvalidDataException>(() => ArpPacket.Read(bytes));
     }
 
     [TestMethod]
@@ -191,7 +191,7 @@ public class ArpPacketTests
     {
         byte[] bytes = ValidRequest().ToBytes();
         bytes[1] = 6; // HTYPE = 6 (IEEE 802) instead of 1
-        Assert.ThrowsException<InvalidDataException>(() => ArpPacket.Read(bytes));
+        Assert.ThrowsExactly<InvalidDataException>(() => ArpPacket.Read(bytes));
     }
 
     [TestMethod]
@@ -200,7 +200,7 @@ public class ArpPacketTests
         byte[] bytes = ValidRequest().ToBytes();
         bytes[2] = 0x86;
         bytes[3] = 0xDD; // PTYPE = 0x86DD (IPv6) instead of 0x0800
-        Assert.ThrowsException<InvalidDataException>(() => ArpPacket.Read(bytes));
+        Assert.ThrowsExactly<InvalidDataException>(() => ArpPacket.Read(bytes));
     }
 
     [TestMethod]
@@ -236,7 +236,7 @@ public class ArpPacketTests
     {
         ArpPacket packet = ValidRequest();
         packet.Operation = (ArpOperation)99;
-        Assert.ThrowsException<InvalidOperationException>(() => packet.ToBytes());
+        Assert.ThrowsExactly<InvalidOperationException>(() => packet.ToBytes());
     }
 
     [TestMethod]
@@ -246,7 +246,7 @@ public class ArpPacketTests
         // Set operation to an unsupported value (99 = 0x0063).
         bytes[6] = 0x00;
         bytes[7] = 99;
-        Assert.ThrowsException<InvalidDataException>(() => ArpPacket.Read(bytes));
+        Assert.ThrowsExactly<InvalidDataException>(() => ArpPacket.Read(bytes));
     }
 
     [TestMethod]
@@ -255,7 +255,7 @@ public class ArpPacketTests
         // A freshly constructed packet has PhysicalAddress.None (0-byte MAC) and IPAddress.Any;
         // ToBytes must reject these even when Operation is set.
         var packet = new ArpPacket { Operation = ArpOperation.Request };
-        Assert.ThrowsException<InvalidOperationException>(() => packet.ToBytes());
+        Assert.ThrowsExactly<InvalidOperationException>(() => packet.ToBytes());
     }
 
     [TestMethod]

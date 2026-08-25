@@ -169,25 +169,25 @@ public class PolynomialTests
     public void FindRoot_NonPositiveMaxIterations_Throws()
     {
         var p = new Polynomial<double>(-4.0, 0.0, 1.0);
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => p.FindRoot(1.5, maxIterations: 0));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => p.FindRoot(1.5, maxIterations: -1));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => p.FindRoot(1.5, maxIterations: 0));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => p.FindRoot(1.5, maxIterations: -1));
     }
 
     [TestMethod]
     public void FindRoot_NonFiniteInitialGuess_Throws()
     {
         var p = new Polynomial<double>(-4.0, 0.0, 1.0);
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => p.FindRoot(double.NaN));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => p.FindRoot(double.PositiveInfinity));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => p.FindRoot(double.NaN));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => p.FindRoot(double.PositiveInfinity));
     }
 
     [TestMethod]
     public void FindRoot_InvalidTolerance_Throws()
     {
         var p = new Polynomial<double>(-4.0, 0.0, 1.0);
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => p.FindRoot(1.5, tolerance: -1e-6));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => p.FindRoot(1.5, tolerance: 0.0));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => p.FindRoot(1.5, tolerance: double.NaN));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => p.FindRoot(1.5, tolerance: -1e-6));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => p.FindRoot(1.5, tolerance: 0.0));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => p.FindRoot(1.5, tolerance: double.NaN));
     }
 
     [TestMethod]
@@ -247,9 +247,9 @@ public class PolynomialTests
         // would reject even identical coefficients (0 > -1 is true).
         var p = new Polynomial<double>(1.0, 2.0, 3.0);
         var q = new Polynomial<double>(1.0, 2.0, 3.0);
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => p.ApproximatelyEquals(q, double.NaN));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => p.ApproximatelyEquals(q, double.NegativeInfinity));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => p.ApproximatelyEquals(q, -1.0));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => p.ApproximatelyEquals(q, double.NaN));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => p.ApproximatelyEquals(q, double.NegativeInfinity));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => p.ApproximatelyEquals(q, -1.0));
     }
 
     [TestMethod]
@@ -276,7 +276,7 @@ public class PolynomialTests
 
     [TestMethod]
     public void NoCoefficients_Throws()
-        => Assert.ThrowsException<ArgumentException>(() => new Polynomial<double>(System.Array.Empty<double>()));
+        => Assert.ThrowsExactly<ArgumentException>(() => new Polynomial<double>(System.Array.Empty<double>()));
 
     // ── ToString sign rendering (TODO-pass5 item #65) ───────────────────────────
 

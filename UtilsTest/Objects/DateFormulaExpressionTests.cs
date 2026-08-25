@@ -277,17 +277,15 @@ public class DateFormulaExpressionTests
     // ──────────────────────────────────────────────────────────────────────────
 
     [TestMethod]
-    [ExpectedException(typeof(InvalidOperationException))]
     public void Compile_WorkingDaysWithoutCalendarProvider_Throws()
     {
-        DateFormulaExpression.Parse("FS+3O", Fr).Compile(Fr);
+        Assert.ThrowsExactly<InvalidOperationException>(() => DateFormulaExpression.Parse("FS+3O", Fr).Compile(Fr));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(InvalidOperationException))]
     public void Compile_WorkingDaySnapWithoutCalendarProvider_Throws()
     {
-        DateFormulaExpression.Parse("FS+O", Fr).Compile(Fr);
+        Assert.ThrowsExactly<InvalidOperationException>(() => DateFormulaExpression.Parse("FS+O", Fr).Compile(Fr));
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -337,19 +335,16 @@ public class DateFormulaExpressionTests
     // ──────────────────────────────────────────────────────────────────────────
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
     public void Parse_TooShort_Throws()
-        => DateFormulaExpression.Parse("F", Fr);
+        => Assert.ThrowsExactly<ArgumentException>(() => DateFormulaExpression.Parse("F", Fr));
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
     public void Parse_InvalidStartToken_Throws()
-        => DateFormulaExpression.Parse("XM+1J", Fr);
+        => Assert.ThrowsExactly<ArgumentException>(() => DateFormulaExpression.Parse("XM+1J", Fr));
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
     public void Parse_DayAsBasePeriod_Throws()
-        => DateFormulaExpression.Parse("FJ", Fr);
+        => Assert.ThrowsExactly<ArgumentException>(() => DateFormulaExpression.Parse("FJ", Fr));
 
     [DataTestMethod]
     [DataRow("FM+LuMa")]   // AdjustToWeekDay (+Lu) followed by MoveToSameWeekDay (Ma)
@@ -357,7 +352,7 @@ public class DateFormulaExpressionTests
     [DataRow("FM+1JLuX")]  // MoveToSameWeekDay (Lu) with trailing garbage
     public void Parse_ContentAfterTerminalOperation_Throws(string formula)
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => DateFormulaExpression.Parse(formula, Fr));
     }
 

@@ -50,7 +50,7 @@ public class VariableLengthStringTests
     {
         using var ms = new MemoryStream();
         var writer = new Writer(ms);
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => writer.WriteVariableLengthString("x", Encoding.UTF8, sizeLength));
         Assert.AreEqual(0, ms.Length, "No bytes must be written when sizeLength is invalid.");
     }
@@ -64,7 +64,7 @@ public class VariableLengthStringTests
     {
         using var ms = new MemoryStream(new byte[] { 1, 2, 3, 4, 5 });
         var reader = new Reader(ms);
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => reader.ReadVariableLengthString(Encoding.UTF8, sizeLength));
         Assert.AreEqual(0, ms.Position, "No bytes must be consumed when sizeLength is invalid.");
     }
@@ -86,7 +86,7 @@ public class VariableLengthStringTests
         string value = new string('a', 256);
         using var ms = new MemoryStream();
         var writer = new Writer(ms);
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => writer.WriteVariableLengthString(value, Encoding.ASCII, 1));
         Assert.AreEqual(0, ms.Length, "A failed capacity check must not write any bytes.");
     }
@@ -106,7 +106,7 @@ public class VariableLengthStringTests
         string value = new string('a', 65536);
         using var ms = new MemoryStream();
         var writer = new Writer(ms);
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => writer.WriteVariableLengthString(value, Encoding.ASCII, 2));
         Assert.AreEqual(0, ms.Length);
     }
@@ -131,7 +131,7 @@ public class VariableLengthStringTests
         // 0xFFFFFFFF little-endian = -1 as Int32.
         using var ms = new MemoryStream(new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0x00 });
         var reader = new Reader(ms);
-        Assert.ThrowsException<FormatException>(
+        Assert.ThrowsExactly<FormatException>(
             () => reader.ReadVariableLengthString(Encoding.UTF8, 4));
     }
 
@@ -143,7 +143,7 @@ public class VariableLengthStringTests
         // Prefix says 100 bytes; only a few follow. The limit is checked before ReadBytes.
         using var ms = new MemoryStream(new byte[] { 100, 1, 2, 3 });
         var reader = new Reader(ms);
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => reader.ReadVariableLengthString(Encoding.UTF8, 1, maxByteLength: 10));
         // Only the single prefix byte was consumed before rejection.
         Assert.AreEqual(1, ms.Position);
@@ -163,7 +163,7 @@ public class VariableLengthStringTests
     {
         using var ms = new MemoryStream(new byte[] { 1, (byte)'a' });
         var reader = new Reader(ms);
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => reader.ReadVariableLengthString(Encoding.ASCII, 1, maxByteLength: -1));
         Assert.AreEqual(0, ms.Position, "No bytes consumed when maxByteLength is invalid.");
     }

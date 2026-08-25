@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -114,7 +114,7 @@ namespace UtilsTest.Array
         {
             int[] values = [1, 2, 3];
 
-            var exception = Assert.ThrowsException<ArgumentOutOfRangeException>(() => values.Copy(-1, 1));
+            var exception = Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => values.Copy(-1, 1));
 
             Assert.AreEqual("start", exception.ParamName);
         }
@@ -124,7 +124,7 @@ namespace UtilsTest.Array
         {
             int[] values = [1, 2, 3];
 
-            var exception = Assert.ThrowsException<ArgumentOutOfRangeException>(() => values.Copy(1, 5));
+            var exception = Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => values.Copy(1, 5));
 
             Assert.AreEqual("length", exception.ParamName);
         }

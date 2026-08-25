@@ -109,7 +109,7 @@ namespace UtilsTest.Geography
                 {
                     string strTarget = test.intersections is null ? "(null)" : "(" + string.Join("), (", (IEnumerable<GeoPoint<double>>)test.intersections) + ")";
                     string strResult = intersections is null ? "(null)" : "(" + string.Join("), (", (IEnumerable<GeoPoint<double>>)intersections) + ")";
-                    Assert.Fail("Result [{0}] differs from target [{1}]", strResult, strTarget);
+                    Assert.Fail($"Result [{strResult}] differs from target [{strTarget}]");
                 }
             }
         }

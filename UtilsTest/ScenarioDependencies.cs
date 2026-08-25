@@ -1,5 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
-using SolidToken.SpecFlow.DependencyInjection;
+using Reqnroll.Microsoft.Extensions.DependencyInjection;
 
 namespace UtilsTest;
 

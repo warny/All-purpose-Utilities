@@ -105,7 +105,7 @@ namespace UtilsTest.Mathematics.Numbers
                     new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["typo"] = "fem" },
                     [new NumberToStringConverter.ReplacementRule("un", "une", ReplacementScope.LastWord)])
             ];
-            Assert.ThrowsException<InvalidOperationException>(() => new NumberToStringConverter(options),
+            Assert.ThrowsExactly<InvalidOperationException>(() => new NumberToStringConverter(options),
                 "Should throw when a VariantRule references an unknown dimension");
         }
 
@@ -120,7 +120,7 @@ namespace UtilsTest.Mathematics.Numbers
                     new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["gender"] = "fem" },
                     [new NumberToStringConverter.ReplacementRule("un", "une", ReplacementScope.LastWord)])
             ];
-            Assert.ThrowsException<InvalidOperationException>(() => new NumberToStringConverter(options),
+            Assert.ThrowsExactly<InvalidOperationException>(() => new NumberToStringConverter(options),
                 "Should throw even when no VariantDimensions are declared but constraints reference one");
         }
 

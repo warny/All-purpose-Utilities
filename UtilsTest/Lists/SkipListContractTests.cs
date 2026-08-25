@@ -133,21 +133,21 @@ public class SkipListContractTests
     /// <param name="sentinel">The value used to prefill and verify the destination.</param>
     private static void AssertCopyPreflight<T>(int count, Action<T[], int> copy, T sentinel)
     {
-        Assert.ThrowsException<ArgumentNullException>(() => copy(null!, 0));
+        Assert.ThrowsExactly<ArgumentNullException>(() => copy(null!, 0));
 
         T[] negativeIndex = Enumerable.Repeat(sentinel, count + 1).ToArray();
         T[] negativeSnapshot = negativeIndex.ToArray();
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => copy(negativeIndex, -1));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => copy(negativeIndex, -1));
         CollectionAssert.AreEqual(negativeSnapshot, negativeIndex);
 
         T[] insufficient = Enumerable.Repeat(sentinel, count).ToArray();
         T[] insufficientSnapshot = insufficient.ToArray();
-        Assert.ThrowsException<ArgumentException>(() => copy(insufficient, 1));
+        Assert.ThrowsExactly<ArgumentException>(() => copy(insufficient, 1));
         CollectionAssert.AreEqual(insufficientSnapshot, insufficient);
 
         T[] indexPastEnd = Enumerable.Repeat(sentinel, count).ToArray();
         T[] indexPastEndSnapshot = indexPastEnd.ToArray();
-        Assert.ThrowsException<ArgumentException>(() => copy(indexPastEnd, indexPastEnd.Length + 1));
+        Assert.ThrowsExactly<ArgumentException>(() => copy(indexPastEnd, indexPastEnd.Length + 1));
         CollectionAssert.AreEqual(indexPastEndSnapshot, indexPastEnd);
     }
 }

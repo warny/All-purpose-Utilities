@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.IO;
 using System.Threading;
@@ -61,7 +61,7 @@ public class StreamCopierTests
         var bad = new ThrowingStream { ShouldThrow = true };
         var copier = new StreamCopier(bad, good);
 
-        var ex = Assert.ThrowsException<AggregateException>(() => copier.Write(new byte[] { 1, 2, 3 }, 0, 3));
+        var ex = Assert.ThrowsExactly<AggregateException>(() => copier.Write(new byte[] { 1, 2, 3 }, 0, 3));
         Assert.AreEqual(1, ex.InnerExceptions.Count);
         Assert.AreEqual(3, good.Length, "good target must have received the data");
     }
@@ -83,7 +83,7 @@ public class StreamCopierTests
         var failFlushStream = new FailFlushStream();
         var copier2 = new StreamCopier(good1, failFlushStream, good2);
 
-        var ex = Assert.ThrowsException<AggregateException>(() => copier2.Flush());
+        var ex = Assert.ThrowsExactly<AggregateException>(() => copier2.Flush());
         Assert.AreEqual(1, ex.InnerExceptions.Count, "exactly the failing stream should contribute an exception");
     }
 
@@ -96,14 +96,14 @@ public class StreamCopierTests
     public void Add_RejectsNullStream()
     {
         var copier = new StreamCopier();
-        Assert.ThrowsException<ArgumentNullException>(() => copier.Add(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => copier.Add(null!));
     }
 
     [TestMethod]
     public void Insert_RejectsNullStream()
     {
         var copier = new StreamCopier();
-        Assert.ThrowsException<ArgumentNullException>(() => copier.Insert(0, null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => copier.Insert(0, null!));
     }
 
     // ---- item 30: span, async, cancellation, disposal ----
@@ -149,7 +149,7 @@ public class StreamCopierTests
         var copier = new StreamCopier(t1);
         using var cts = new CancellationTokenSource();
         cts.Cancel();
-        await Assert.ThrowsExceptionAsync<OperationCanceledException>(
+        await Assert.ThrowsExactlyAsync<OperationCanceledException>(
             () => copier.WriteAsync(new byte[] { 1 }, 0, 1, cts.Token));
         Assert.AreEqual(0, t1.Length, "No data must be written when cancelled before the loop.");
     }
@@ -160,7 +160,7 @@ public class StreamCopierTests
         var good = new MemoryStream();
         var bad = new ThrowingStream { ShouldThrow = true };
         var copier = new StreamCopier(bad, good);
-        var ex = await Assert.ThrowsExceptionAsync<AggregateException>(
+        var ex = await Assert.ThrowsExactlyAsync<AggregateException>(
             () => copier.WriteAsync(new byte[] { 1, 2, 3 }, 0, 3, CancellationToken.None));
         Assert.AreEqual(1, ex.InnerExceptions.Count);
         Assert.AreEqual(3, good.Length, "good target must still have received the data");
@@ -173,8 +173,8 @@ public class StreamCopierTests
         var t2 = new MemoryStream();
         var copier = new StreamCopier(closeAllTargetsOnDispose: true, t1, t2);
         copier.DisposeAsync().AsTask().Wait();
-        Assert.ThrowsException<ObjectDisposedException>(() => t1.WriteByte(1));
-        Assert.ThrowsException<ObjectDisposedException>(() => t2.WriteByte(1));
+        Assert.ThrowsExactly<ObjectDisposedException>(() => t1.WriteByte(1));
+        Assert.ThrowsExactly<ObjectDisposedException>(() => t2.WriteByte(1));
     }
 
     [TestMethod]
@@ -205,7 +205,7 @@ public class StreamCopierTests
     {
         var copier = new StreamCopier(new MemoryStream());
         copier.Dispose();
-        Assert.ThrowsException<ObjectDisposedException>(() => copier.Write(new byte[] { 1 }, 0, 1));
+        Assert.ThrowsExactly<ObjectDisposedException>(() => copier.Write(new byte[] { 1 }, 0, 1));
     }
 
     [TestMethod]
@@ -213,7 +213,7 @@ public class StreamCopierTests
     {
         var copier = new StreamCopier(new MemoryStream());
         copier.Dispose();
-        Assert.ThrowsException<ObjectDisposedException>(() => copier.Flush());
+        Assert.ThrowsExactly<ObjectDisposedException>(() => copier.Flush());
     }
 
     [TestMethod]
@@ -221,7 +221,7 @@ public class StreamCopierTests
     {
         var copier = new StreamCopier(new MemoryStream());
         await copier.DisposeAsync();
-        await Assert.ThrowsExceptionAsync<ObjectDisposedException>(
+        await Assert.ThrowsExactlyAsync<ObjectDisposedException>(
             () => copier.WriteAsync(new byte[] { 1 }, 0, 1, CancellationToken.None));
     }
 
@@ -264,7 +264,7 @@ public class StreamCopierTests
     [TestMethod]
     public void Constructor_RejectsNullArray()
     {
-        Assert.ThrowsException<ArgumentNullException>(() => new StreamCopier((Stream[])null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new StreamCopier((Stream[])null!));
     }
 
     /// <summary>Verifies the constructor rejects a null element within an otherwise valid array.</summary>
@@ -272,7 +272,7 @@ public class StreamCopierTests
     public void Constructor_RejectsNullElement()
     {
         using MemoryStream s1 = new();
-        Assert.ThrowsException<ArgumentNullException>(() => new StreamCopier(s1, null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new StreamCopier(s1, null!));
     }
 
     /// <summary>Verifies the constructor rejects a non-writable target before any write is attempted.</summary>
@@ -281,7 +281,7 @@ public class StreamCopierTests
     {
         byte[] bytes = [1, 2, 3];
         using MemoryStream readOnly = new(bytes, writable: false);
-        Assert.ThrowsException<ArgumentException>(() => new StreamCopier(readOnly));
+        Assert.ThrowsExactly<ArgumentException>(() => new StreamCopier(readOnly));
     }
 
     /// <summary>Verifies the constructor rejects the same stream instance appearing twice in the array.</summary>
@@ -289,7 +289,7 @@ public class StreamCopierTests
     public void Constructor_RejectsDuplicateReference()
     {
         using MemoryStream s = new();
-        Assert.ThrowsException<ArgumentException>(() => new StreamCopier(s, s));
+        Assert.ThrowsExactly<ArgumentException>(() => new StreamCopier(s, s));
     }
 
     /// <summary>Verifies two distinct writable targets still construct successfully.</summary>
@@ -311,7 +311,7 @@ public class StreamCopierTests
         byte[] bytes = [1, 2, 3];
         using MemoryStream readOnly = new(bytes, writable: false);
         using StreamCopier copier = new();
-        Assert.ThrowsException<ArgumentException>(() => copier.Add(readOnly));
+        Assert.ThrowsExactly<ArgumentException>(() => copier.Add(readOnly));
     }
 
     /// <summary>Verifies <see cref="StreamCopier.Add"/> rejects a target that is already registered.</summary>
@@ -321,7 +321,7 @@ public class StreamCopierTests
         using MemoryStream s = new();
         using StreamCopier copier = new();
         copier.Add(s);
-        Assert.ThrowsException<ArgumentException>(() => copier.Add(s));
+        Assert.ThrowsExactly<ArgumentException>(() => copier.Add(s));
     }
 
     /// <summary>Verifies <see cref="StreamCopier.Add"/> rejects the copier registering itself.</summary>
@@ -329,7 +329,7 @@ public class StreamCopierTests
     public void Add_RejectsSelf()
     {
         using StreamCopier copier = new();
-        Assert.ThrowsException<ArgumentException>(() => copier.Add(copier));
+        Assert.ThrowsExactly<ArgumentException>(() => copier.Add(copier));
     }
 
     /// <summary>Verifies <see cref="StreamCopier.Insert"/> rejects a non-writable target.</summary>
@@ -339,7 +339,7 @@ public class StreamCopierTests
         byte[] bytes = [1, 2, 3];
         using MemoryStream readOnly = new(bytes, writable: false);
         using StreamCopier copier = new();
-        Assert.ThrowsException<ArgumentException>(() => copier.Insert(0, readOnly));
+        Assert.ThrowsExactly<ArgumentException>(() => copier.Insert(0, readOnly));
     }
 
     /// <summary>Verifies <see cref="StreamCopier.Insert"/> rejects a target that is already registered.</summary>
@@ -349,7 +349,7 @@ public class StreamCopierTests
         using MemoryStream s = new();
         using StreamCopier copier = new();
         copier.Add(s);
-        Assert.ThrowsException<ArgumentException>(() => copier.Insert(0, s));
+        Assert.ThrowsExactly<ArgumentException>(() => copier.Insert(0, s));
     }
 
     /// <summary>Verifies <see cref="StreamCopier.Insert"/> rejects the copier registering itself.</summary>
@@ -357,7 +357,7 @@ public class StreamCopierTests
     public void Insert_RejectsSelf()
     {
         using StreamCopier copier = new();
-        Assert.ThrowsException<ArgumentException>(() => copier.Insert(0, copier));
+        Assert.ThrowsExactly<ArgumentException>(() => copier.Insert(0, copier));
     }
 
     // -- indexer setter --
@@ -368,7 +368,7 @@ public class StreamCopierTests
     {
         using MemoryStream s1 = new();
         using StreamCopier copier = new(s1);
-        Assert.ThrowsException<ArgumentNullException>(() => copier[0] = null!);
+        Assert.ThrowsExactly<ArgumentNullException>(() => copier[0] = null!);
     }
 
     /// <summary>Verifies the indexer setter rejects a non-writable replacement and leaves the original target in place.</summary>
@@ -379,7 +379,7 @@ public class StreamCopierTests
         using MemoryStream s1 = new();
         using MemoryStream readOnly = new(bytes, writable: false);
         using StreamCopier copier = new(s1);
-        Assert.ThrowsException<ArgumentException>(() => copier[0] = readOnly);
+        Assert.ThrowsExactly<ArgumentException>(() => copier[0] = readOnly);
         Assert.AreSame(s1, copier[0], "A failed replacement must leave the original target unchanged.");
     }
 
@@ -390,7 +390,7 @@ public class StreamCopierTests
         using MemoryStream s1 = new();
         using MemoryStream s2 = new();
         using StreamCopier copier = new(s1, s2);
-        Assert.ThrowsException<ArgumentException>(() => copier[0] = s2);
+        Assert.ThrowsExactly<ArgumentException>(() => copier[0] = s2);
         Assert.AreSame(s1, copier[0], "A failed replacement must leave the original target unchanged.");
     }
 
@@ -400,7 +400,7 @@ public class StreamCopierTests
     {
         using MemoryStream s1 = new();
         using StreamCopier copier = new(s1);
-        Assert.ThrowsException<ArgumentException>(() => copier[0] = copier);
+        Assert.ThrowsExactly<ArgumentException>(() => copier[0] = copier);
     }
 
     /// <summary>Verifies replacing a slot with the exact reference already occupying it is allowed, not treated as a duplicate.</summary>
@@ -519,8 +519,8 @@ public class StreamCopierTests
         Assert.IsTrue(copier.Contains(s1));
 
         // Owned targets are themselves disposed even though their references remain registered.
-        Assert.ThrowsException<ObjectDisposedException>(() => s1.WriteByte(1));
-        Assert.ThrowsException<ObjectDisposedException>(() => s2.WriteByte(1));
+        Assert.ThrowsExactly<ObjectDisposedException>(() => s1.WriteByte(1));
+        Assert.ThrowsExactly<ObjectDisposedException>(() => s2.WriteByte(1));
     }
 
     // -- mutation after disposal --
@@ -534,12 +534,12 @@ public class StreamCopierTests
         StreamCopier copier = new(s1, s2);
         copier.Dispose();
 
-        Assert.ThrowsException<ObjectDisposedException>(() => copier.Add(new MemoryStream()));
-        Assert.ThrowsException<ObjectDisposedException>(() => copier.Insert(0, new MemoryStream()));
-        Assert.ThrowsException<ObjectDisposedException>(() => copier[0] = new MemoryStream());
-        Assert.ThrowsException<ObjectDisposedException>(() => copier.Remove(s1));
-        Assert.ThrowsException<ObjectDisposedException>(() => copier.RemoveAt(0));
-        Assert.ThrowsException<ObjectDisposedException>(() => copier.Clear());
+        Assert.ThrowsExactly<ObjectDisposedException>(() => copier.Add(new MemoryStream()));
+        Assert.ThrowsExactly<ObjectDisposedException>(() => copier.Insert(0, new MemoryStream()));
+        Assert.ThrowsExactly<ObjectDisposedException>(() => copier[0] = new MemoryStream());
+        Assert.ThrowsExactly<ObjectDisposedException>(() => copier.Remove(s1));
+        Assert.ThrowsExactly<ObjectDisposedException>(() => copier.RemoveAt(0));
+        Assert.ThrowsExactly<ObjectDisposedException>(() => copier.Clear());
     }
 
     /// <summary>Verifies every mutating <see cref="IList{Stream}"/> member throws <see cref="ObjectDisposedException"/> after asynchronous disposal.</summary>
@@ -551,12 +551,12 @@ public class StreamCopierTests
         StreamCopier copier = new(s1, s2);
         await copier.DisposeAsync();
 
-        Assert.ThrowsException<ObjectDisposedException>(() => copier.Add(new MemoryStream()));
-        Assert.ThrowsException<ObjectDisposedException>(() => copier.Insert(0, new MemoryStream()));
-        Assert.ThrowsException<ObjectDisposedException>(() => copier[0] = new MemoryStream());
-        Assert.ThrowsException<ObjectDisposedException>(() => copier.Remove(s1));
-        Assert.ThrowsException<ObjectDisposedException>(() => copier.RemoveAt(0));
-        Assert.ThrowsException<ObjectDisposedException>(() => copier.Clear());
+        Assert.ThrowsExactly<ObjectDisposedException>(() => copier.Add(new MemoryStream()));
+        Assert.ThrowsExactly<ObjectDisposedException>(() => copier.Insert(0, new MemoryStream()));
+        Assert.ThrowsExactly<ObjectDisposedException>(() => copier[0] = new MemoryStream());
+        Assert.ThrowsExactly<ObjectDisposedException>(() => copier.Remove(s1));
+        Assert.ThrowsExactly<ObjectDisposedException>(() => copier.RemoveAt(0));
+        Assert.ThrowsExactly<ObjectDisposedException>(() => copier.Clear());
     }
 
     // -- owned target disposal counts --
@@ -624,7 +624,7 @@ public class StreamCopierTests
         TrackingDisposeStream good2 = new();
         StreamCopier copier = new(closeAllTargetsOnDispose: true, good1, bad, good2);
 
-        AggregateException ex = Assert.ThrowsException<AggregateException>(() => copier.Dispose());
+        AggregateException ex = Assert.ThrowsExactly<AggregateException>(() => copier.Dispose());
         Assert.AreEqual(1, ex.InnerExceptions.Count);
         Assert.AreEqual(1, good1.DisposeCount);
         Assert.AreEqual(1, bad.DisposeCount);
@@ -653,7 +653,7 @@ public class StreamCopierTests
         target.Dispose();
 
         Assert.IsTrue(copier.CanWrite, "the copier's own capability does not depend on external target state");
-        AggregateException ex = Assert.ThrowsException<AggregateException>(
+        AggregateException ex = Assert.ThrowsExactly<AggregateException>(
             () => copier.Write(new byte[] { 1 }, 0, 1));
         Assert.AreEqual(1, ex.InnerExceptions.Count);
     }

@@ -57,8 +57,8 @@ public class StreamValidatorTests
     public void WriteRejectsNegativeMaxBufferSize()
     {
         using var ms = new MemoryStream();
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new StreamValidator(ms, 0));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new StreamValidator(ms, -1));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new StreamValidator(ms, 0));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new StreamValidator(ms, -1));
     }
 
     [TestMethod]
@@ -67,7 +67,7 @@ public class StreamValidatorTests
         using var ms = new MemoryStream();
         var validator = new StreamValidator(ms, maxBufferSize: 5);
         validator.Write(new byte[5], 0, 5);
-        Assert.ThrowsException<InvalidOperationException>(() => validator.Write(new byte[1], 0, 1));
+        Assert.ThrowsExactly<InvalidOperationException>(() => validator.Write(new byte[1], 0, 1));
     }
 
     [TestMethod]
@@ -121,7 +121,7 @@ public class StreamValidatorTests
         validator.Write(new byte[] { 1, 2, 3 }, 0, 3);
 
         target.ShouldThrow = true;
-        Assert.ThrowsException<IOException>(() => validator.Validate());
+        Assert.ThrowsExactly<IOException>(() => validator.Validate());
         target.ShouldThrow = false;
 
         // Position must be restored; the buffer is retained so the caller can Discard or retry.
@@ -145,7 +145,7 @@ public class StreamValidatorTests
         validator.Write(new byte[] { 1, 2, 3, 4, 5 }, 0, 5);
 
         target.FailAfterBytes = 2; // write 2 bytes then throw
-        Assert.ThrowsException<IOException>(() => validator.Validate());
+        Assert.ThrowsExactly<IOException>(() => validator.Validate());
 
         // Position is restored to where it was before the (partial) write
         Assert.AreEqual(positionBeforeValidate, target.Position, "target position must be restored");

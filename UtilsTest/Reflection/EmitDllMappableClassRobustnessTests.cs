@@ -75,7 +75,7 @@ public class EmitDllMappableClassRobustnessTests
     public void Emit_NonInterfaceType_ThrowsNotSupportedException()
     {
 #pragma warning disable UTILSREFL001 // Deliberately exercising the in-process codegen path under test.
-        NotSupportedException ex = Assert.ThrowsException<NotSupportedException>(
+        NotSupportedException ex = Assert.ThrowsExactly<NotSupportedException>(
             () => EmitDllMappableClass.Emit(typeof(EmitDllMappableClassRobustnessNotAnInterface), CallingConvention.Cdecl));
 #pragma warning restore UTILSREFL001
 
@@ -86,7 +86,7 @@ public class EmitDllMappableClassRobustnessTests
     public void Emit_GenericInterface_ThrowsNotSupportedException()
     {
 #pragma warning disable UTILSREFL001 // Deliberately exercising the in-process codegen path under test.
-        NotSupportedException ex = Assert.ThrowsException<NotSupportedException>(
+        NotSupportedException ex = Assert.ThrowsExactly<NotSupportedException>(
             () => EmitDllMappableClass.Emit(typeof(IEmitDllMappableClassGenericTarget<int>), CallingConvention.Cdecl));
 #pragma warning restore UTILSREFL001
 
@@ -97,7 +97,7 @@ public class EmitDllMappableClassRobustnessTests
     public void Emit_InterfaceWithGenericMethod_ThrowsNotSupportedException()
     {
 #pragma warning disable UTILSREFL001
-        NotSupportedException ex = Assert.ThrowsException<NotSupportedException>(
+        NotSupportedException ex = Assert.ThrowsExactly<NotSupportedException>(
             () => EmitDllMappableClass.Emit(typeof(IEmitDllMappableClassGenericMethodTarget), CallingConvention.Cdecl));
 #pragma warning restore UTILSREFL001
 

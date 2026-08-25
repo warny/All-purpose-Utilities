@@ -21,7 +21,7 @@ public class BitmapAccessorTests
     [TestMethod]
     public void BitmapAccessor_NullBitmap_ThrowsArgumentNullException()
     {
-        Assert.ThrowsException<ArgumentNullException>(() => new BitmapAccessor(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new BitmapAccessor(null!));
     }
 
     [TestMethod]
@@ -40,7 +40,7 @@ public class BitmapAccessorTests
         using var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
         using var acc = new BitmapAccessor(bmp, PixelFormat.Format32bppArgb);
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => { _ = acc[-1, 0, 0]; });
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => { _ = acc[-1, 0, 0]; });
     }
 
     [TestMethod]
@@ -49,7 +49,7 @@ public class BitmapAccessorTests
         using var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
         using var acc = new BitmapAccessor(bmp, PixelFormat.Format32bppArgb);
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => { _ = acc[4, 0, 0]; });
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => { _ = acc[4, 0, 0]; });
     }
 
     [TestMethod]
@@ -58,7 +58,7 @@ public class BitmapAccessorTests
         using var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
         using var acc = new BitmapAccessor(bmp, PixelFormat.Format32bppArgb);
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => { _ = acc[0, -1, 0]; });
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => { _ = acc[0, -1, 0]; });
     }
 
     [TestMethod]
@@ -67,7 +67,7 @@ public class BitmapAccessorTests
         using var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
         using var acc = new BitmapAccessor(bmp, PixelFormat.Format32bppArgb);
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => { _ = acc[0, 4, 0]; });
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => { _ = acc[0, 4, 0]; });
     }
 
     [TestMethod]
@@ -76,7 +76,7 @@ public class BitmapAccessorTests
         using var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
         using var acc = new BitmapAccessor(bmp, PixelFormat.Format32bppArgb);
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => { _ = acc[0, 0, 4]; });
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => { _ = acc[0, 0, 4]; });
     }
 
     [TestMethod]
@@ -86,7 +86,7 @@ public class BitmapAccessorTests
         var acc = new BitmapAccessor(bmp, PixelFormat.Format32bppArgb);
         acc.Dispose();
 
-        Assert.ThrowsException<ObjectDisposedException>(() => { _ = acc[0, 0, 0]; });
+        Assert.ThrowsExactly<ObjectDisposedException>(() => { _ = acc[0, 0, 0]; });
     }
 
     [TestMethod]
@@ -105,7 +105,7 @@ public class BitmapAccessorTests
         using var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
         var region = new Rectangle(-1, 0, 2, 2);
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new BitmapAccessor(bmp, PixelFormat.Format32bppArgb, region));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new BitmapAccessor(bmp, PixelFormat.Format32bppArgb, region));
     }
 
     [TestMethod]
@@ -114,7 +114,7 @@ public class BitmapAccessorTests
         using var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
         var region = new Rectangle(0, 0, 0, 2);
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new BitmapAccessor(bmp, PixelFormat.Format32bppArgb, region));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new BitmapAccessor(bmp, PixelFormat.Format32bppArgb, region));
     }
 
     // ── BitmapIndexed8Accessor ────────────────────────────────────────────────
@@ -122,7 +122,7 @@ public class BitmapAccessorTests
     [TestMethod]
     public void BitmapIndexed8Accessor_NullBitmap_ThrowsArgumentNullException()
     {
-        Assert.ThrowsException<ArgumentNullException>(() => new BitmapIndexed8Accessor(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new BitmapIndexed8Accessor(null!));
     }
 
     [TestMethod]
@@ -141,10 +141,10 @@ public class BitmapAccessorTests
         using var bmp = new Bitmap(4, 4, PixelFormat.Format8bppIndexed);
         using var acc = new BitmapIndexed8Accessor(bmp);
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => { _ = acc[4, 0]; });
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => { _ = acc[0, 4]; });
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => { _ = acc[-1, 0]; });
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => { _ = acc[0, -1]; });
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => { _ = acc[4, 0]; });
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => { _ = acc[0, 4]; });
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => { _ = acc[-1, 0]; });
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => { _ = acc[0, -1]; });
     }
 
     [TestMethod]
@@ -154,7 +154,7 @@ public class BitmapAccessorTests
         var acc = new BitmapIndexed8Accessor(bmp);
         acc.Dispose();
 
-        Assert.ThrowsException<ObjectDisposedException>(() => { _ = acc[0, 0]; });
+        Assert.ThrowsExactly<ObjectDisposedException>(() => { _ = acc[0, 0]; });
     }
 
     [TestMethod]
@@ -171,7 +171,7 @@ public class BitmapAccessorTests
     [TestMethod]
     public void BitmapArgb64Accessor_NullBitmap_ThrowsArgumentNullException()
     {
-        Assert.ThrowsException<ArgumentNullException>(() => new BitmapArgb64Accessor(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new BitmapArgb64Accessor(null!));
     }
 
     [TestMethod]
@@ -218,10 +218,10 @@ public class BitmapAccessorTests
         using var bmp = new Bitmap(4, 4, PixelFormat.Format64bppArgb);
         using var acc = new BitmapArgb64Accessor(bmp);
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => { _ = acc[4, 0]; });
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => { _ = acc[0, 4]; });
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => { _ = acc[-1, 0]; });
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => { _ = acc[0, -1]; });
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => { _ = acc[4, 0]; });
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => { _ = acc[0, 4]; });
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => { _ = acc[-1, 0]; });
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => { _ = acc[0, -1]; });
     }
 
     [TestMethod]
@@ -231,7 +231,7 @@ public class BitmapAccessorTests
         var acc = new BitmapArgb64Accessor(bmp);
         acc.Dispose();
 
-        Assert.ThrowsException<ObjectDisposedException>(() => { _ = acc[0, 0]; });
+        Assert.ThrowsExactly<ObjectDisposedException>(() => { _ = acc[0, 0]; });
     }
 
     [TestMethod]
@@ -258,10 +258,9 @@ public class BitmapAccessorTests
     // ── BitmapArgb32Accessor — finding #20: disposed-state contract ──────────
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentNullException))]
     public void BitmapArgb32Accessor_NullBitmap_ThrowsArgumentNullException()
     {
-        _ = new BitmapArgb32Accessor(null!);
+        Assert.ThrowsExactly<ArgumentNullException>(() => _ = new BitmapArgb32Accessor(null!));
     }
 
     [TestMethod]
@@ -279,7 +278,7 @@ public class BitmapAccessorTests
         var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
         var acc = new BitmapArgb32Accessor(bmp);
         acc.Dispose();
-        Assert.ThrowsException<ObjectDisposedException>(() => { _ = acc[0, 0]; });
+        Assert.ThrowsExactly<ObjectDisposedException>(() => { _ = acc[0, 0]; });
     }
 
     [TestMethod]
@@ -288,7 +287,7 @@ public class BitmapAccessorTests
         var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
         var acc = new BitmapArgb32Accessor(bmp);
         acc.Dispose();
-        Assert.ThrowsException<ObjectDisposedException>(() => { _ = acc.Width; });
+        Assert.ThrowsExactly<ObjectDisposedException>(() => { _ = acc.Width; });
     }
 
     [TestMethod]
@@ -306,7 +305,7 @@ public class BitmapAccessorTests
         var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
         var acc = new BitmapArgb32Accessor(bmp);
         acc.Dispose();
-        Assert.ThrowsException<ObjectDisposedException>(() => acc.CopyToArray());
+        Assert.ThrowsExactly<ObjectDisposedException>(() => acc.CopyToArray());
     }
 
     [TestMethod]
@@ -315,10 +314,10 @@ public class BitmapAccessorTests
         using var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
         using var acc = new BitmapArgb32Accessor(bmp);
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => { _ = acc[4, 0]; });
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => { _ = acc[0, 4]; });
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => { _ = acc[-1, 0]; });
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => { _ = acc[0, -1]; });
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => { _ = acc[4, 0]; });
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => { _ = acc[0, 4]; });
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => { _ = acc[-1, 0]; });
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => { _ = acc[0, -1]; });
     }
 
     [TestMethod]
@@ -342,13 +341,13 @@ public class BitmapAccessorTests
     {
         using var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => new BitmapArgb32Accessor(bmp, new Rectangle(-1, 0, 2, 2)),
             "negative X");
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => new BitmapArgb32Accessor(bmp, new Rectangle(0, 0, 0, 2)),
             "zero width");
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => new BitmapArgb32Accessor(bmp, new Rectangle(0, 0, 5, 2)),
             "width exceeds bitmap");
     }
@@ -361,7 +360,7 @@ public class BitmapAccessorTests
         var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
         var acc = new BitmapAccessor(bmp, PixelFormat.Format32bppArgb);
         acc.Dispose();
-        Assert.ThrowsException<ObjectDisposedException>(() => { _ = acc.ColorDepth; });
+        Assert.ThrowsExactly<ObjectDisposedException>(() => { _ = acc.ColorDepth; });
     }
 
     [TestMethod]
@@ -370,33 +369,30 @@ public class BitmapAccessorTests
         var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
         var acc = new BitmapAccessor(bmp, PixelFormat.Format32bppArgb);
         acc.Dispose();
-        Assert.ThrowsException<ObjectDisposedException>(() => { _ = acc.PixelFormat; });
+        Assert.ThrowsExactly<ObjectDisposedException>(() => { _ = acc.PixelFormat; });
     }
 
     // ── Finding #17: pixel-format aliases rejected ────────────────────────────
 
     [TestMethod]
-    [ExpectedException(typeof(NotSupportedException))]
     public void BitmapAccessor_AlphaFlagFormat_ThrowsNotSupportedException()
     {
         using var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
-        using var _ = new BitmapAccessor(bmp, PixelFormat.Alpha);
+        Assert.ThrowsExactly<NotSupportedException>(() => new BitmapAccessor(bmp, PixelFormat.Alpha));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(NotSupportedException))]
     public void BitmapAccessor_PAlphaFlagFormat_ThrowsNotSupportedException()
     {
         using var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
-        using var _ = new BitmapAccessor(bmp, PixelFormat.PAlpha);
+        Assert.ThrowsExactly<NotSupportedException>(() => new BitmapAccessor(bmp, PixelFormat.PAlpha));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(NotSupportedException))]
     public void BitmapAccessor_CanonicalAliasFormat_ThrowsNotSupportedException()
     {
         using var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
-        using var _ = new BitmapAccessor(bmp, PixelFormat.Canonical);
+        Assert.ThrowsExactly<NotSupportedException>(() => new BitmapAccessor(bmp, PixelFormat.Canonical));
     }
 
     [TestMethod]
@@ -411,25 +407,23 @@ public class BitmapAccessorTests
     // ── Finding #18: premultiplied formats rejected in ApplySprite ────────────
 
     [TestMethod]
-    [ExpectedException(typeof(NotSupportedException))]
     public void ApplySprite_PremultipliedDestination_ThrowsNotSupportedException()
     {
         using var dst = new Bitmap(4, 4, PixelFormat.Format32bppPArgb);
         using var src = new Bitmap(2, 2, PixelFormat.Format32bppArgb);
         using var dstAcc = new BitmapAccessor(dst, PixelFormat.Format32bppPArgb);
         using var srcAcc = new BitmapAccessor(src, PixelFormat.Format32bppArgb);
-        dstAcc.ApplySprite(Point.Empty, srcAcc, (s, d) => s);
+        Assert.ThrowsExactly<NotSupportedException>(() => dstAcc.ApplySprite(Point.Empty, srcAcc, (s, d) => s));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(NotSupportedException))]
     public void ApplySprite_PremultipliedSprite_ThrowsNotSupportedException()
     {
         using var dst = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
         using var src = new Bitmap(2, 2, PixelFormat.Format32bppPArgb);
         using var dstAcc = new BitmapAccessor(dst, PixelFormat.Format32bppArgb);
         using var srcAcc = new BitmapAccessor(src, PixelFormat.Format32bppPArgb);
-        dstAcc.ApplySprite(Point.Empty, srcAcc, (s, d) => s);
+        Assert.ThrowsExactly<NotSupportedException>(() => dstAcc.ApplySprite(Point.Empty, srcAcc, (s, d) => s));
     }
 
     [TestMethod]

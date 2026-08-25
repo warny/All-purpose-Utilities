@@ -106,7 +106,7 @@ public class AuthenticodeVerificationTests
             return;
         }
 
-        Assert.ThrowsException<PlatformNotSupportedException>(
+        Assert.ThrowsExactly<PlatformNotSupportedException>(
             () => ProcessIsolationPlatformSecurity.VerifyAuthenticodeSignature("some-file.dll"));
     }
 
@@ -119,7 +119,7 @@ public class AuthenticodeVerificationTests
             return;
         }
 
-        Assert.ThrowsException<PlatformNotSupportedException>(
+        Assert.ThrowsExactly<PlatformNotSupportedException>(
             () => ProcessIsolationPlatformSecurity.HasValidAuthenticodeSignature("some-file.dll"));
     }
 

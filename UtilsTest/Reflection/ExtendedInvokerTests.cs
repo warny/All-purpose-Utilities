@@ -52,7 +52,7 @@ public class ExtendedInvokerTests
         invoker.Add((Func<object, string>)(a => "first"));
         invoker.Add((Func<object, string>)(b => "second"));
 
-        Assert.ThrowsException<AmbiguousMatchException>(
+        Assert.ThrowsExactly<AmbiguousMatchException>(
             () => invoker.TryInvoke([new object()], out _),
             "Equal-distance candidates must raise AmbiguousMatchException, not silently pick one.");
     }
@@ -64,7 +64,7 @@ public class ExtendedInvokerTests
         invoker.Add((Func<object, string>)(a => "first"));
         invoker.Add((Func<object, string>)(b => "second"));
 
-        Assert.ThrowsException<AmbiguousMatchException>(() => invoker.Invoke(new object()));
+        Assert.ThrowsExactly<AmbiguousMatchException>(() => invoker.Invoke(new object()));
     }
 
     [TestMethod]
@@ -74,7 +74,7 @@ public class ExtendedInvokerTests
         var invoker = new ExtendedInvoker<string>();
         invoker.Add((Func<int, string>)(_ => throw new InvalidOperationException("original")));
 
-        var ex = Assert.ThrowsException<InvalidOperationException>(
+        var ex = Assert.ThrowsExactly<InvalidOperationException>(
             () => invoker.TryInvoke([1], out _));
 
         Assert.AreEqual("original", ex.Message,
@@ -87,7 +87,7 @@ public class ExtendedInvokerTests
         var invoker = new ExtendedInvoker<string>();
         invoker.Add((Func<int, string>)(_ => throw new ArgumentOutOfRangeException("x", "bad value")));
 
-        var ex = Assert.ThrowsException<ArgumentOutOfRangeException>(() => invoker.Invoke(1));
+        var ex = Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => invoker.Invoke(1));
 
         StringAssert.Contains(ex.Message, "bad value",
             "Invoke must rethrow the original exception, not a TargetInvocationException wrapper.");

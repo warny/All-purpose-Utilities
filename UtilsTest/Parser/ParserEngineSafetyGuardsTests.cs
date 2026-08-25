@@ -161,7 +161,7 @@ public class ParserEngineSafetyGuardsTests
     public void IndirectCycle_IsRejectedCleanly()
     {
         var diagnostics = new DiagnosticBag();
-        Assert.ThrowsException<GrammarValidationException>(() => Antlr4GrammarConverter.Parse("""
+        Assert.ThrowsExactly<GrammarValidationException>(() => Antlr4GrammarConverter.Parse("""
             grammar G;
             start : a ;
             a : b ;

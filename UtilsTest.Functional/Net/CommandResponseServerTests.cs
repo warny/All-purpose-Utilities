@@ -110,7 +110,7 @@ public class CommandResponseServerTests
             Assert.AreEqual("502", replies[0].Code);
         }
         await serverTask; // should complete after third error
-        await Assert.ThrowsExceptionAsync<IOException>(() => client.SendCommandAsync("BOGUS"));
+        await Assert.ThrowsExactlyAsync<IOException>(() => client.SendCommandAsync("BOGUS"));
     }
 
     /// <summary>

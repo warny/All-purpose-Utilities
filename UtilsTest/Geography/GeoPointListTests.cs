@@ -59,7 +59,7 @@ public class GeoPointListTests
     public void BoundingBoxOnEmptyListThrows()
     {
         var list = new GeoPointList<double>();
-        Assert.ThrowsException<InvalidOperationException>(() => _ = list.BoundingBox);
+        Assert.ThrowsExactly<InvalidOperationException>(() => _ = list.BoundingBox);
     }
 
     [TestMethod]
@@ -82,7 +82,7 @@ public class GeoPointListTests
     public void GeoPointList2BoundingBoxOnEmptyListThrows()
     {
         var list2 = new GeoPointList2<double>();
-        Assert.ThrowsException<InvalidOperationException>(() => _ = list2.BoundingBox);
+        Assert.ThrowsExactly<InvalidOperationException>(() => _ = list2.BoundingBox);
     }
 
     [TestMethod]

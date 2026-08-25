@@ -361,7 +361,7 @@ public class NumberToStringConverterForcedVariantsTests
             },
         };
 
-        var ex = Assert.ThrowsException<NumberToStringConfigurationException>(() => new NumberToStringConverter(options));
+        var ex = Assert.ThrowsExactly<NumberToStringConfigurationException>(() => new NumberToStringConverter(options));
         Assert.AreEqual("UNTS004", ex.ErrorCode);
     }
 
@@ -380,7 +380,7 @@ public class NumberToStringConverterForcedVariantsTests
             UnitForcedVariants = ForcedVariantSet.Parse("gender=feminin,genre=masculin"),
         };
 
-        var ex = Assert.ThrowsException<NumberToStringConfigurationException>(() => fr.ConvertCurrency(21m, invalid));
+        var ex = Assert.ThrowsExactly<NumberToStringConfigurationException>(() => fr.ConvertCurrency(21m, invalid));
         Assert.AreEqual("UNTS004", ex.ErrorCode);
     }
 
@@ -401,7 +401,7 @@ public class NumberToStringConverterForcedVariantsTests
     public void Convert_TimeSpan_FR_InvalidCallerVariant_StillThrowsBeforeForcedOverlay()
     {
         var fr = NumberToStringConverter.GetConverter("FR");
-        Assert.ThrowsException<ArgumentException>(() => fr.Convert(new TimeSpan(1, 0, 0), "gender=banana"));
+        Assert.ThrowsExactly<ArgumentException>(() => fr.Convert(new TimeSpan(1, 0, 0), "gender=banana"));
     }
 
     // ─── ForcedVariantSet.Create — programmatic construction edge cases ───────────────────────
@@ -431,7 +431,7 @@ public class NumberToStringConverterForcedVariantsTests
     [TestMethod]
     public void ForcedVariantSet_Create_EmptyDimension_ThrowsMalformedSyntax()
     {
-        var ex = Assert.ThrowsException<NumberToStringConfigurationException>(
+        var ex = Assert.ThrowsExactly<NumberToStringConfigurationException>(
             () => ForcedVariantSet.Create(("", "feminin")));
         Assert.AreEqual("UNTS005", ex.ErrorCode);
     }
@@ -439,7 +439,7 @@ public class NumberToStringConverterForcedVariantsTests
     [TestMethod]
     public void ForcedVariantSet_Create_EmptyValue_ThrowsMalformedSyntax()
     {
-        var ex = Assert.ThrowsException<NumberToStringConfigurationException>(
+        var ex = Assert.ThrowsExactly<NumberToStringConfigurationException>(
             () => ForcedVariantSet.Create(("gender", "")));
         Assert.AreEqual("UNTS005", ex.ErrorCode);
     }
@@ -447,7 +447,7 @@ public class NumberToStringConverterForcedVariantsTests
     [TestMethod]
     public void ForcedVariantSet_Create_DuplicateRawDimension_ThrowsDuplicateConstraint()
     {
-        var ex = Assert.ThrowsException<NumberToStringConfigurationException>(
+        var ex = Assert.ThrowsExactly<NumberToStringConfigurationException>(
             () => ForcedVariantSet.Create(("gender", "feminin"), ("gender", "masculin")));
         Assert.AreEqual("UNTS004", ex.ErrorCode);
     }
@@ -463,7 +463,7 @@ public class NumberToStringConverterForcedVariantsTests
             TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)> { ["hour"] = ("hour", "hours", null) },
             TimeUnitForcedVariants = new Dictionary<string, ForcedVariantSet> { ["hour"] = ForcedVariantSet.Parse("gender=banana") },
         };
-        var ex = Assert.ThrowsException<NumberToStringConfigurationException>(() => new NumberToStringConverter(options));
+        var ex = Assert.ThrowsExactly<NumberToStringConfigurationException>(() => new NumberToStringConverter(options));
         Assert.AreEqual("UNTS006", ex.ErrorCode);
     }
 
@@ -476,28 +476,28 @@ public class NumberToStringConverterForcedVariantsTests
             TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)> { ["hour"] = ("hour", "hours", null) },
             TimeUnitForcedVariants = new Dictionary<string, ForcedVariantSet> { ["hour"] = ForcedVariantSet.Parse("unknown=value") },
         };
-        var ex = Assert.ThrowsException<NumberToStringConfigurationException>(() => new NumberToStringConverter(options));
+        var ex = Assert.ThrowsExactly<NumberToStringConfigurationException>(() => new NumberToStringConverter(options));
         Assert.AreEqual("UNTS006", ex.ErrorCode);
     }
 
     [TestMethod]
     public void ForcedVariantSet_Parse_MissingValue_ThrowsMalformedSyntax()
     {
-        var ex = Assert.ThrowsException<NumberToStringConfigurationException>(() => ForcedVariantSet.Parse("gender="));
+        var ex = Assert.ThrowsExactly<NumberToStringConfigurationException>(() => ForcedVariantSet.Parse("gender="));
         Assert.AreEqual("UNTS005", ex.ErrorCode);
     }
 
     [TestMethod]
     public void ForcedVariantSet_Parse_MissingDimension_ThrowsMalformedSyntax()
     {
-        var ex = Assert.ThrowsException<NumberToStringConfigurationException>(() => ForcedVariantSet.Parse("=feminin"));
+        var ex = Assert.ThrowsExactly<NumberToStringConfigurationException>(() => ForcedVariantSet.Parse("=feminin"));
         Assert.AreEqual("UNTS005", ex.ErrorCode);
     }
 
     [TestMethod]
     public void ForcedVariantSet_Parse_DuplicateDimension_ThrowsDuplicateConstraint()
     {
-        var ex = Assert.ThrowsException<NumberToStringConfigurationException>(
+        var ex = Assert.ThrowsExactly<NumberToStringConfigurationException>(
             () => ForcedVariantSet.Parse("gender=feminin,gender=masculin"));
         Assert.AreEqual("UNTS004", ex.ErrorCode);
     }
@@ -512,7 +512,7 @@ public class NumberToStringConverterForcedVariantsTests
                 ["nonexistent"] = ForcedVariantSet.Create(("gender", "feminin")),
             },
         };
-        Assert.ThrowsException<ArgumentException>(() => new NumberToStringConverter(options));
+        Assert.ThrowsExactly<ArgumentException>(() => new NumberToStringConverter(options));
     }
 
     [TestMethod]
@@ -533,7 +533,7 @@ public class NumberToStringConverterForcedVariantsTests
             UnitForcedVariants = ForcedVariantSet.Create(("gender", "banana")),
         };
 
-        Assert.ThrowsException<NumberToStringConfigurationException>(() => fr.ConvertCurrency(21m, invalid));
+        Assert.ThrowsExactly<NumberToStringConfigurationException>(() => fr.ConvertCurrency(21m, invalid));
         Assert.AreEqual(0, finalizeCallCount);
     }
 

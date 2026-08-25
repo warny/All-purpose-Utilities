@@ -178,7 +178,7 @@ public class ProjectionBoundsTests
         IProjectionTransformation<double> legacy = new LegacyProjectionWithoutBounds();
         var projected = legacy.GeoPointToMapPoint(new GeoPoint<double>(10, 20));
 
-        Assert.ThrowsException<NotSupportedException>(() => _ = legacy.Bounds);
-        Assert.ThrowsException<NotSupportedException>(() => legacy.Normalize(projected));
+        Assert.ThrowsExactly<NotSupportedException>(() => _ = legacy.Bounds);
+        Assert.ThrowsExactly<NotSupportedException>(() => legacy.Normalize(projected));
     }
 }

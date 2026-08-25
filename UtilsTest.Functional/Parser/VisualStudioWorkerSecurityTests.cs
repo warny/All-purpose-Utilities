@@ -115,7 +115,7 @@ public class VisualStudioWorkerSecurityTests
             }
 
             var parser = new SyntaxColorizationDescriptorFileParser();
-            InvalidOperationException ex = Assert.ThrowsException<InvalidOperationException>(
+            InvalidOperationException ex = Assert.ThrowsExactly<InvalidOperationException>(
                 () => parser.ParseFile(filePath));
 
             StringAssert.Contains(ex.Message, "exceeds");

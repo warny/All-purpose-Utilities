@@ -133,7 +133,7 @@ public class NumberToStringConfigurationSchemaTests
     {
         string document = ValidConfiguration.Replace(" zero=\"zero\"", "", StringComparison.Ordinal);
 
-        InvalidOperationException exception = Assert.ThrowsException<InvalidOperationException>(
+        InvalidOperationException exception = Assert.ThrowsExactly<InvalidOperationException>(
             () => NumberToStringConverter.ReadConfiguration(document));
         StringAssert.Contains(exception.Message, "Zero");
     }
@@ -145,7 +145,7 @@ public class NumberToStringConfigurationSchemaTests
         string replacements = "<Replacements><Replacement oldValue=\"one\" newValue=\"uno\"/></Replacements>";
         string document = ValidConfiguration.Replace("</NumberScale>", $"</NumberScale>{replacements}{replacements}", StringComparison.Ordinal);
 
-        XmlSchemaValidationException exception = Assert.ThrowsException<XmlSchemaValidationException>(
+        XmlSchemaValidationException exception = Assert.ThrowsExactly<XmlSchemaValidationException>(
             () => NumberToStringConverter.ReadConfiguration(document));
         Assert.IsTrue(exception.LineNumber > 0);
         Assert.IsTrue(exception.LinePosition > 0);
@@ -195,7 +195,7 @@ public class NumberToStringConfigurationSchemaTests
             "<Numbers",
             "<!DOCTYPE Numbers [<!ENTITY xxe SYSTEM \"file:///does-not-exist\">]><Numbers",
             StringComparison.Ordinal);
-        Assert.ThrowsException<InvalidOperationException>(() =>
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
             NumberToStringConverter.BuildConfigurationForTesting(document, NumberToStringConverter.ConfigurationSchemaValidation.Skip));
     }
 
@@ -216,14 +216,14 @@ public class NumberToStringConfigurationSchemaTests
         string valid = ValidConfiguration.Replace("SCHEMA-TEST", culture, StringComparison.Ordinal);
         string invalid = ValidConfiguration.Replace("digit=\"1\"", "digit=\"10\"", StringComparison.Ordinal);
 
-        Assert.ThrowsException<XmlSchemaValidationException>(() => NumberToStringConverter.RegisterConfigurations([valid, invalid]));
+        Assert.ThrowsExactly<XmlSchemaValidationException>(() => NumberToStringConverter.RegisterConfigurations([valid, invalid]));
         Assert.IsFalse(NumberToStringConverter.TryGetConverter(culture, out _));
     }
 
     /// <summary>Asserts that external parsing reports a schema error with source coordinates.</summary>
     private static void AssertSchemaFailure(string configuration)
     {
-        XmlSchemaValidationException exception = Assert.ThrowsException<XmlSchemaValidationException>(
+        XmlSchemaValidationException exception = Assert.ThrowsExactly<XmlSchemaValidationException>(
             () => NumberToStringConverter.ReadConfiguration(configuration));
         Assert.IsTrue(exception.LineNumber > 0);
         Assert.IsTrue(exception.LinePosition > 0);

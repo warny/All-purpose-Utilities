@@ -150,14 +150,14 @@ public class Leb128Tests
     public void ReadULEB128_EmptyStream_ThrowsEndOfStreamException()
     {
         using var ms = new MemoryStream();
-        Assert.ThrowsException<EndOfStreamException>(() => new SimpleReader(ms).ReadULEB128());
+        Assert.ThrowsExactly<EndOfStreamException>(() => new SimpleReader(ms).ReadULEB128());
     }
 
     [TestMethod]
     public void ReadSLEB128_EmptyStream_ThrowsEndOfStreamException()
     {
         using var ms = new MemoryStream();
-        Assert.ThrowsException<EndOfStreamException>(() => new SimpleReader(ms).ReadSLEB128());
+        Assert.ThrowsExactly<EndOfStreamException>(() => new SimpleReader(ms).ReadSLEB128());
     }
 
     [TestMethod]
@@ -165,7 +165,7 @@ public class Leb128Tests
     {
         // 0x80 has continuation bit set but no following byte
         using var ms = new MemoryStream([0x80]);
-        Assert.ThrowsException<EndOfStreamException>(() => new SimpleReader(ms).ReadULEB128());
+        Assert.ThrowsExactly<EndOfStreamException>(() => new SimpleReader(ms).ReadULEB128());
     }
 
     // ── Overflow / overlong rejection (item 17) ──────────────────────────────
@@ -175,7 +175,7 @@ public class Leb128Tests
     {
         // 11 continuation bytes: continuation bit stays set on the tenth byte → overflow.
         using var ms = new MemoryStream([0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x01]);
-        Assert.ThrowsException<OverflowException>(() => new SimpleReader(ms).ReadULEB128());
+        Assert.ThrowsExactly<OverflowException>(() => new SimpleReader(ms).ReadULEB128());
     }
 
     [TestMethod]
@@ -183,7 +183,7 @@ public class Leb128Tests
     {
         // Nine continuation bytes then a tenth byte with payload > 0x01 → value would exceed 64 bits.
         using var ms = new MemoryStream([0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x02]);
-        Assert.ThrowsException<OverflowException>(() => new SimpleReader(ms).ReadULEB128());
+        Assert.ThrowsExactly<OverflowException>(() => new SimpleReader(ms).ReadULEB128());
     }
 
     [TestMethod]
@@ -201,14 +201,14 @@ public class Leb128Tests
     public void ReadULEB128_Overlong_ThrowsFormatException(byte[] bytes)
     {
         using var ms = new MemoryStream(bytes);
-        Assert.ThrowsException<FormatException>(() => new SimpleReader(ms).ReadULEB128());
+        Assert.ThrowsExactly<FormatException>(() => new SimpleReader(ms).ReadULEB128());
     }
 
     [TestMethod]
     public void ReadSLEB128_ElevenBytes_Throws()
     {
         using var ms = new MemoryStream([0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00]);
-        Assert.ThrowsException<OverflowException>(() => new SimpleReader(ms).ReadSLEB128());
+        Assert.ThrowsExactly<OverflowException>(() => new SimpleReader(ms).ReadSLEB128());
     }
 
     [TestMethod]
@@ -216,7 +216,7 @@ public class Leb128Tests
     {
         // Nine continuation bytes then a tenth byte whose high bits are not a valid sign extension.
         using var ms = new MemoryStream([0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x40]);
-        Assert.ThrowsException<OverflowException>(() => new SimpleReader(ms).ReadSLEB128());
+        Assert.ThrowsExactly<OverflowException>(() => new SimpleReader(ms).ReadSLEB128());
     }
 
     [TestMethod]
@@ -226,7 +226,7 @@ public class Leb128Tests
     public void ReadSLEB128_Overlong_ThrowsFormatException(byte[] bytes)
     {
         using var ms = new MemoryStream(bytes);
-        Assert.ThrowsException<FormatException>(() => new SimpleReader(ms).ReadSLEB128());
+        Assert.ThrowsExactly<FormatException>(() => new SimpleReader(ms).ReadSLEB128());
     }
 
     [TestMethod]
@@ -247,7 +247,7 @@ public class Leb128Tests
         // Ten continuation bytes with no terminator: overflow triggers on the tenth byte.
         using var ms = new MemoryStream([0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80]);
         var reader = new SimpleReader(ms);
-        Assert.ThrowsException<OverflowException>(() => reader.ReadULEB128());
+        Assert.ThrowsExactly<OverflowException>(() => reader.ReadULEB128());
         Assert.AreEqual(10, ms.Position, "Reader must stop after consuming the tenth byte.");
     }
 
@@ -260,7 +260,7 @@ public class Leb128Tests
         // 80 80 80 80 80 80 80 80 80 00 — the ninth byte's payload (0x00) has sign bit 0x40 clear,
         // so a terminal 0x00 on the tenth byte merely repeats the already-established sign and is overlong.
         using var ms = new MemoryStream([0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00]);
-        Assert.ThrowsException<FormatException>(() => new SimpleReader(ms).ReadSLEB128());
+        Assert.ThrowsExactly<FormatException>(() => new SimpleReader(ms).ReadSLEB128());
     }
 
     [TestMethod]
@@ -270,7 +270,7 @@ public class Leb128Tests
         // FF FF FF FF FF FF FF FF FF 7F — the ninth byte's payload (0x7F) has sign bit 0x40 set,
         // so a terminal 0x7F on the tenth byte merely repeats the negative sign and is overlong.
         using var ms = new MemoryStream([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x7F]);
-        Assert.ThrowsException<FormatException>(() => new SimpleReader(ms).ReadSLEB128());
+        Assert.ThrowsExactly<FormatException>(() => new SimpleReader(ms).ReadSLEB128());
     }
 
     [TestMethod]
@@ -279,7 +279,7 @@ public class Leb128Tests
         // Zero encoded with nine continuation bytes then a zero terminal byte:
         // 80 80 80 80 80 80 80 80 80 00 — trailing zero payload is overlong (same check as byte-2 overlongs).
         using var ms = new MemoryStream([0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00]);
-        Assert.ThrowsException<FormatException>(() => new SimpleReader(ms).ReadULEB128());
+        Assert.ThrowsExactly<FormatException>(() => new SimpleReader(ms).ReadULEB128());
     }
 
     [TestMethod]

@@ -36,7 +36,7 @@ public class StreamUtilsTests
     public void ReadBytes_EofWithException_Throws()
     {
         using var ms = new MemoryStream(new byte[] { 1 });
-        Assert.ThrowsException<EndOfStreamException>(() => ms.ReadBytes(5, raiseException: true));
+        Assert.ThrowsExactly<EndOfStreamException>(() => ms.ReadBytes(5, raiseException: true));
     }
 
     // ---- item 10: CopyToStream validation de bufferSize ----
@@ -46,7 +46,7 @@ public class StreamUtilsTests
     {
         using var src = new MemoryStream(new byte[] { 1, 2 });
         using var dst = new MemoryStream();
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => src.CopyToStream(dst, 0));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => src.CopyToStream(dst, 0));
     }
 
     [TestMethod]
@@ -54,7 +54,7 @@ public class StreamUtilsTests
     {
         using var src = new MemoryStream(new byte[] { 1, 2 });
         using var dst = new MemoryStream();
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => src.CopyToStream(dst, -1));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => src.CopyToStream(dst, -1));
     }
 
     [TestMethod]
@@ -85,7 +85,7 @@ public class StreamUtilsTests
     {
         byte[] data = new byte[100];
         using var ms = new MemoryStream(data);
-        Assert.ThrowsException<InvalidOperationException>(() => ms.ReadToEnd(maxBytes: 10));
+        Assert.ThrowsExactly<InvalidOperationException>(() => ms.ReadToEnd(maxBytes: 10));
     }
 
     [TestMethod]
@@ -148,7 +148,7 @@ public class StreamUtilsTests
     {
         byte[] data = new byte[11];
         using var src = new MemoryStream(data);
-        Assert.ThrowsException<InvalidOperationException>(() => src.ReadToMemoryStream(maxBytes: 10));
+        Assert.ThrowsExactly<InvalidOperationException>(() => src.ReadToMemoryStream(maxBytes: 10));
     }
 
     [TestMethod]
@@ -172,7 +172,7 @@ public class StreamUtilsTests
     public void ReadToMemoryStream_NegativeLimit_Throws()
     {
         using var src = new MemoryStream(new byte[] { 1 });
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => src.ReadToMemoryStream(maxBytes: -1));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => src.ReadToMemoryStream(maxBytes: -1));
     }
 
     [TestMethod]
@@ -188,7 +188,7 @@ public class StreamUtilsTests
     {
         byte[] data = Encoding.UTF8.GetBytes("hello world");
         using var src = new MemoryStream(data);
-        Assert.ThrowsException<InvalidOperationException>(() => src.ReadAllText(Encoding.UTF8, maxBytes: 5));
+        Assert.ThrowsExactly<InvalidOperationException>(() => src.ReadAllText(Encoding.UTF8, maxBytes: 5));
     }
 
     [TestMethod]
@@ -247,21 +247,21 @@ public class StreamUtilsTests
     public void ReadBlock_Bounded_EofWithoutSeparator_Throws()
     {
         using var src = new MemoryStream(new byte[] { 1, 2, 3 });
-        Assert.ThrowsException<EndOfStreamException>(() => src.ReadBlock(new byte[] { 0xFF }, maxBytes: 100));
+        Assert.ThrowsExactly<EndOfStreamException>(() => src.ReadBlock(new byte[] { 0xFF }, maxBytes: 100));
     }
 
     [TestMethod]
     public void ReadBlock_Bounded_LimitExceededBeforeSeparator_Throws()
     {
         using var src = new MemoryStream(new byte[] { 1, 2, 3, 4, 5, 0xFF });
-        Assert.ThrowsException<InvalidOperationException>(() => src.ReadBlock(new byte[] { 0xFF }, maxBytes: 3));
+        Assert.ThrowsExactly<InvalidOperationException>(() => src.ReadBlock(new byte[] { 0xFF }, maxBytes: 3));
     }
 
     [TestMethod]
     public void ReadBlock_Bounded_NegativeMaxBytes_Throws()
     {
         using var src = new MemoryStream(new byte[] { 0xFF });
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => src.ReadBlock(new byte[] { 0xFF }, maxBytes: -1));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => src.ReadBlock(new byte[] { 0xFF }, maxBytes: -1));
     }
 
     [TestMethod]

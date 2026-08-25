@@ -107,14 +107,14 @@ public class EmitWorkerProcessTests
     [TestMethod]
     public void ValidateTimeout_ThrowsOnZero()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => EmitWorkerProcess.ValidateTimeout(TimeSpan.Zero, EmitWorkerProcess.DefaultCallTimeout, "test"));
     }
 
     [TestMethod]
     public void ValidateTimeout_ThrowsOnNegative()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => EmitWorkerProcess.ValidateTimeout(TimeSpan.FromSeconds(-1), EmitWorkerProcess.DefaultCallTimeout, "test"));
     }
 
@@ -122,7 +122,7 @@ public class EmitWorkerProcessTests
     public void ValidateTimeout_ThrowsOnInfiniteTimeSpan()
     {
         // Timeout.InfiniteTimeSpan is -1ms, which is negative — must be rejected.
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => EmitWorkerProcess.ValidateTimeout(Timeout.InfiniteTimeSpan, EmitWorkerProcess.DefaultCallTimeout, "test"));
     }
 
@@ -130,7 +130,7 @@ public class EmitWorkerProcessTests
     public void ValidateTimeout_ThrowsWhenExceedsMaximum()
     {
         TimeSpan tooLarge = TimeSpan.FromMilliseconds((double)int.MaxValue + 1);
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => EmitWorkerProcess.ValidateTimeout(tooLarge, EmitWorkerProcess.DefaultCallTimeout, "test"));
     }
 
@@ -243,7 +243,7 @@ public class EmitWorkerProcessTests
         IProcessContainer throwingContainer = new ThrowingProcessContainer();
         object?[] args = { "dummy.exe", "test-pipe", throwingContainer };
 
-        var wrapped = Assert.ThrowsException<TargetInvocationException>(() => method.Invoke(null, args));
+        var wrapped = Assert.ThrowsExactly<TargetInvocationException>(() => method.Invoke(null, args));
 
         Assert.IsInstanceOfType<InvalidOperationException>(wrapped.InnerException,
             "Sandbox launch failure must propagate as InvalidOperationException, not be swallowed.");

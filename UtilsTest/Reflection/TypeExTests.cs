@@ -61,7 +61,7 @@ public class TypeExTests
     public void GetStaticMethods_ThrowsForClosedGenericType()
     {
         // List<int> is a closed generic type — MakeGenericType on it would fail.
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => typeof(System.Collections.Generic.List<int>)
                 .GetStaticMethods([typeof(int)], "ConvertAll"));
     }
@@ -69,7 +69,7 @@ public class TypeExTests
     [TestMethod]
     public void GetStaticMethods_ThrowsForNonGenericType()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => typeof(string).GetStaticMethods([typeof(int)], "Concat"));
     }
 
@@ -77,7 +77,7 @@ public class TypeExTests
     public void GetStaticMethods_ThrowsForWrongArgCount()
     {
         // List<> has one generic parameter; passing two arguments should throw.
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => typeof(System.Collections.Generic.List<>)
                 .GetStaticMethods([typeof(int), typeof(string)], "ConvertAll"));
     }
@@ -85,7 +85,7 @@ public class TypeExTests
     [TestMethod]
     public void GetStaticMethod_ThrowsForClosedGenericType()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => typeof(System.Collections.Generic.List<int>)
                 .GetStaticMethod([typeof(int)], "ConvertAll", [typeof(int)]));
     }

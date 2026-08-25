@@ -39,7 +39,7 @@ public class ConstrainedValueTests
     [TestMethod]
     public void ConstructorThrowsWhenValueInvalid()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new PositiveIntValue(0));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new PositiveIntValue(0));
     }
 
     [TestMethod]

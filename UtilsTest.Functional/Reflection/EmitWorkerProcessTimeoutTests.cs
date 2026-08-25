@@ -39,7 +39,7 @@ public class EmitWorkerProcessTimeoutTests
         using var timeoutSource = new CancellationTokenSource(TimeSpan.FromMilliseconds(300));
 
         var stopwatch = Stopwatch.StartNew();
-        await Assert.ThrowsExceptionAsync<OperationCanceledException>(
+        await Assert.ThrowsExactlyAsync<OperationCanceledException>(
             async () => await reader.ReadLineAsync(timeoutSource.Token));
         stopwatch.Stop();
 

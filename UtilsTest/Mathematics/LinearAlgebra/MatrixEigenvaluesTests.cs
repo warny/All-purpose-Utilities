@@ -37,8 +37,8 @@ public class MatrixEigenvaluesTests
     public void IsSymmetric_InvalidTolerance_Throws()
     {
         var a = new Matrix<double>(new double[,] { { 4, 2 }, { 2, 3 } });
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => a.IsSymmetric(symmetryTolerance: double.NaN));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => a.IsSymmetric(symmetryTolerance: -1d));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => a.IsSymmetric(symmetryTolerance: double.NaN));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => a.IsSymmetric(symmetryTolerance: -1d));
     }
 
     [TestMethod]
@@ -142,8 +142,8 @@ public class MatrixEigenvaluesTests
         // method silently returned the raw diagonal entries of the un-diagonalized input as
         // "eigenvalues", with no convergence check ever running.
         var a = new Matrix<double>(new double[,] { { 2, 1 }, { 1, 2 } });
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => a.ComputeEigenvalues(0));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => a.ComputeEigenvalues(-1));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => a.ComputeEigenvalues(0));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => a.ComputeEigenvalues(-1));
     }
 
     [TestMethod]
@@ -173,14 +173,14 @@ public class MatrixEigenvaluesTests
     public void ComputeEigenvalues_NonSquare_Throws()
     {
         var a = new Matrix<double>(new double[,] { { 1, 2, 3 }, { 4, 5, 6 } });
-        Assert.ThrowsException<InvalidOperationException>(() => a.ComputeEigenvalues());
+        Assert.ThrowsExactly<InvalidOperationException>(() => a.ComputeEigenvalues());
     }
 
     [TestMethod]
     public void ComputeEigenvalues_NonSymmetric_Throws()
     {
         var a = new Matrix<double>(new double[,] { { 1, 2 }, { 3, 4 } });
-        Assert.ThrowsException<InvalidOperationException>(() => a.ComputeEigenvalues());
+        Assert.ThrowsExactly<InvalidOperationException>(() => a.ComputeEigenvalues());
     }
 
     [TestMethod]
@@ -196,8 +196,8 @@ public class MatrixEigenvaluesTests
     public void ComputeEigenvalues_InvalidConvergenceTolerance_Throws()
     {
         var a = new Matrix<double>(new double[,] { { 2, 1 }, { 1, 2 } });
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => a.ComputeEigenvalues(convergenceTolerance: double.NaN));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => a.ComputeEigenvalues(convergenceTolerance: -1d));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => a.ComputeEigenvalues(convergenceTolerance: double.NaN));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => a.ComputeEigenvalues(convergenceTolerance: -1d));
     }
 
     [TestMethod]
@@ -212,7 +212,7 @@ public class MatrixEigenvaluesTests
         // given the same residual asymmetry - the point under test is the symmetryTolerance forwarding,
         // not convergence behavior.
         var a = new Matrix<double>(new double[,] { { 4, 2.0000001 }, { 2.0000002, 3 } });
-        Assert.ThrowsException<InvalidOperationException>(() => a.ComputeEigenvalues());
+        Assert.ThrowsExactly<InvalidOperationException>(() => a.ComputeEigenvalues());
 
         var (values, _) = a.ComputeEigenvalues(symmetryTolerance: 1e-6, convergenceTolerance: 1e-6);
         Assert.AreEqual(2, values.Length);
@@ -223,8 +223,8 @@ public class MatrixEigenvaluesTests
     public void ComputeEigenvalues_InvalidSymmetryTolerance_Throws()
     {
         var a = new Matrix<double>(new double[,] { { 2, 1 }, { 1, 2 } });
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => a.ComputeEigenvalues(symmetryTolerance: double.NaN));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => a.ComputeEigenvalues(symmetryTolerance: -1d));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => a.ComputeEigenvalues(symmetryTolerance: double.NaN));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => a.ComputeEigenvalues(symmetryTolerance: -1d));
     }
 
     [TestMethod]
@@ -244,8 +244,8 @@ public class MatrixEigenvaluesTests
     public void ComputeEigenvalues_InvalidRankTolerance_Throws()
     {
         var a = new Matrix<double>(new double[,] { { 2, 1 }, { 1, 2 } });
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => a.ComputeEigenvalues(rankTolerance: double.NaN));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => a.ComputeEigenvalues(rankTolerance: -1d));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => a.ComputeEigenvalues(rankTolerance: double.NaN));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => a.ComputeEigenvalues(rankTolerance: -1d));
     }
 
     [TestMethod]
@@ -339,7 +339,7 @@ public class MatrixEigenvaluesTests
         var m = new Matrix<double>(original);
         if (steps > 1)
         {
-            Assert.ThrowsException<InvalidOperationException>(
+            Assert.ThrowsExactly<InvalidOperationException>(
                 () => m.ComputeEigenvalues(maxIterations: steps - 1),
                 $"maxIterations={steps - 1} should still be one step short of the {steps} steps this matrix needs.");
         }

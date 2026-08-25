@@ -25,4 +25,8 @@
         <InternalsVisibleTo Include="UtilsTest.Unit" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Update="Microsoft.SourceLink.GitHub" Version="10.0.400" />
+    </ItemGroup>
+
 </Project>

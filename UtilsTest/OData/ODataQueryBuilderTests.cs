@@ -165,35 +165,35 @@ public class ODataQueryBuilderTests
     public void NegativeSkipArgument_ThrowsArgumentOutOfRange()
     {
         var query = new Query { Table = "Products" };
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => BuildUrl(query, skip: -1));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => BuildUrl(query, skip: -1));
     }
 
     [TestMethod]
     public void NegativeQuerySkip_ThrowsArgumentOutOfRange()
     {
         var query = new Query { Table = "Products", Skip = -5 };
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => BuildUrl(query));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => BuildUrl(query));
     }
 
     [TestMethod]
     public void ZeroTop_ThrowsArgumentOutOfRange()
     {
         var query = new Query { Table = "Products", Top = 0 };
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => BuildUrl(query));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => BuildUrl(query));
     }
 
     [TestMethod]
     public void NegativeTop_ThrowsArgumentOutOfRange()
     {
         var query = new Query { Table = "Products", Top = -10 };
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => BuildUrl(query));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => BuildUrl(query));
     }
 
     [TestMethod]
     public void OverflowingCombinedSkip_ThrowsOverflowException()
     {
         var query = new Query { Table = "Products", Skip = int.MaxValue };
-        Assert.ThrowsException<OverflowException>(() => BuildUrl(query, skip: 1));
+        Assert.ThrowsExactly<OverflowException>(() => BuildUrl(query, skip: 1));
     }
 
     [TestMethod]
@@ -231,13 +231,13 @@ public class ODataQueryBuilderTests
     public void NullBaseUrl_ThrowsArgumentNullException()
     {
         var query = new Query { Table = "Products" };
-        Assert.ThrowsException<ArgumentNullException>(() => new ODataQueryBuilder(null!, query));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new ODataQueryBuilder(null!, query));
     }
 
     [TestMethod]
     public void NullQuery_ThrowsArgumentNullException()
     {
-        Assert.ThrowsException<ArgumentNullException>(() => new ODataQueryBuilder("https://example.org", null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new ODataQueryBuilder("https://example.org", null!));
     }
 
     [TestMethod]

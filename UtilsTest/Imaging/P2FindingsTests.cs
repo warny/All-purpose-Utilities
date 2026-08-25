@@ -23,35 +23,31 @@ public class P2FindingsTests
     // ── IntersectionMergeThreshold rejects NaN and Infinity ──────────────────
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentOutOfRangeException))]
     public void DrawI_IntersectionMergeThreshold_NaN_ThrowsArgumentOutOfRangeException()
     {
         var draw = new DrawI<ColorArgb32>(new DummyAccessor<ColorArgb32>());
-        draw.IntersectionMergeThreshold = float.NaN;
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => draw.IntersectionMergeThreshold = float.NaN);
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentOutOfRangeException))]
     public void DrawI_IntersectionMergeThreshold_PositiveInfinity_ThrowsArgumentOutOfRangeException()
     {
         var draw = new DrawI<ColorArgb32>(new DummyAccessor<ColorArgb32>());
-        draw.IntersectionMergeThreshold = float.PositiveInfinity;
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => draw.IntersectionMergeThreshold = float.PositiveInfinity);
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentOutOfRangeException))]
     public void DrawI_IntersectionMergeThreshold_NegativeInfinity_ThrowsArgumentOutOfRangeException()
     {
         var draw = new DrawI<ColorArgb32>(new DummyAccessor<ColorArgb32>());
-        draw.IntersectionMergeThreshold = float.NegativeInfinity;
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => draw.IntersectionMergeThreshold = float.NegativeInfinity);
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentOutOfRangeException))]
     public void DrawI_IntersectionMergeThreshold_Negative_ThrowsArgumentOutOfRangeException()
     {
         var draw = new DrawI<ColorArgb32>(new DummyAccessor<ColorArgb32>());
-        draw.IntersectionMergeThreshold = -1f;
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => draw.IntersectionMergeThreshold = -1f);
     }
 
     [TestMethod]
@@ -73,17 +69,15 @@ public class P2FindingsTests
     // ── Finding #27: BaseDrawing validates null accessor ──────────────────────
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentNullException))]
     public void DrawI_NullAccessor_ThrowsArgumentNullException()
     {
-        _ = new DrawI<ColorArgb32>(null!);
+        Assert.ThrowsExactly<ArgumentNullException>(() => _ = new DrawI<ColorArgb32>(null!));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentNullException))]
     public void DrawF_NullAccessor_ThrowsArgumentNullException()
     {
-        _ = new DrawF<ColorArgb32>(null!);
+        Assert.ThrowsExactly<ArgumentNullException>(() => _ = new DrawF<ColorArgb32>(null!));
     }
 
     [TestMethod]
@@ -97,24 +91,21 @@ public class P2FindingsTests
     // ── Finding #28: ConvolutionMatrixFactory.Blur validates size ─────────────
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentOutOfRangeException))]
     public void Blur_ZeroSize_ThrowsArgumentOutOfRangeException()
     {
-        ConvolutionMatrixFactory.Blur(0);
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => ConvolutionMatrixFactory.Blur(0));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentOutOfRangeException))]
     public void Blur_NegativeSize_ThrowsArgumentOutOfRangeException()
     {
-        ConvolutionMatrixFactory.Blur(-1);
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => ConvolutionMatrixFactory.Blur(-1));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentOutOfRangeException))]
     public void Blur_SizeTooLarge_ThrowsArgumentOutOfRangeException()
     {
-        ConvolutionMatrixFactory.Blur(1025); // > MaxKernelSize (1024)
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => ConvolutionMatrixFactory.Blur(1025)); // > MaxKernelSize (1024)
     }
 
     [TestMethod]
@@ -150,40 +141,35 @@ public class P2FindingsTests
     // ── Finding #29: ColorAhsv rejects non-finite Hue ─────────────────────────
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentOutOfRangeException))]
     public void ColorAhsv_Constructor_NaNHue_ThrowsArgumentOutOfRangeException()
     {
-        _ = new ColorAhsv(1.0, double.NaN, 0.5, 0.5);
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = new ColorAhsv(1.0, double.NaN, 0.5, 0.5));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentOutOfRangeException))]
     public void ColorAhsv_Constructor_InfinityHue_ThrowsArgumentOutOfRangeException()
     {
-        _ = new ColorAhsv(1.0, double.PositiveInfinity, 0.5, 0.5);
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = new ColorAhsv(1.0, double.PositiveInfinity, 0.5, 0.5));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentOutOfRangeException))]
     public void ColorAhsv_Constructor_NegativeInfinityHue_ThrowsArgumentOutOfRangeException()
     {
-        _ = new ColorAhsv(1.0, double.NegativeInfinity, 0.5, 0.5);
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = new ColorAhsv(1.0, double.NegativeInfinity, 0.5, 0.5));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentOutOfRangeException))]
     public void ColorAhsv_HueSetter_NaN_ThrowsArgumentOutOfRangeException()
     {
         var c = new ColorAhsv(1.0, 0.0, 0.5, 0.5);
-        c.Hue = double.NaN;
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => c.Hue = double.NaN);
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentOutOfRangeException))]
     public void ColorAhsv_HueSetter_Infinity_ThrowsArgumentOutOfRangeException()
     {
         var c = new ColorAhsv(1.0, 0.0, 0.5, 0.5);
-        c.Hue = double.PositiveInfinity;
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => c.Hue = double.PositiveInfinity);
     }
 
     [TestMethod]

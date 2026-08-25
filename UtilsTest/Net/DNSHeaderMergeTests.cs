@@ -23,7 +23,7 @@ public class DNSHeaderMergeTests
     public void MergeRecordsFrom_Null_Throws()
     {
         var header = ResponseWithQuestion();
-        Assert.ThrowsException<ArgumentNullException>(() => header.MergeRecordsFrom(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => header.MergeRecordsFrom(null!));
     }
 
     [TestMethod]
@@ -69,7 +69,7 @@ public class DNSHeaderMergeTests
     {
         var a = ResponseWithQuestion("example.com");
         var b = ResponseWithQuestion("other.com");
-        Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
+        Assert.ThrowsExactly<InvalidOperationException>(() => a.MergeRecordsFrom(b));
     }
 
     [TestMethod]
@@ -78,7 +78,7 @@ public class DNSHeaderMergeTests
         var a = ResponseWithQuestion();
         var b = ResponseWithQuestion();
         b.OpCode = DNSOpCode.Inverse;
-        Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
+        Assert.ThrowsExactly<InvalidOperationException>(() => a.MergeRecordsFrom(b));
     }
 
     [TestMethod]
@@ -87,7 +87,7 @@ public class DNSHeaderMergeTests
         var a = ResponseWithQuestion();          // Response
         var b = ResponseWithQuestion();
         b.QrBit = DNSQRBit.Question;              // Question
-        Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
+        Assert.ThrowsExactly<InvalidOperationException>(() => a.MergeRecordsFrom(b));
     }
 
     [TestMethod]
@@ -98,7 +98,7 @@ public class DNSHeaderMergeTests
         var b = ResponseWithQuestion();
         b.ErrorCode = DNSError.ServerFailure;
 
-        Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
+        Assert.ThrowsExactly<InvalidOperationException>(() => a.MergeRecordsFrom(b));
     }
 
     [TestMethod]
@@ -109,7 +109,7 @@ public class DNSHeaderMergeTests
         var b = ResponseWithQuestion();
         b.AuthoritativeAnswer = false;
 
-        Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
+        Assert.ThrowsExactly<InvalidOperationException>(() => a.MergeRecordsFrom(b));
     }
 
     [TestMethod]
@@ -120,7 +120,7 @@ public class DNSHeaderMergeTests
         var b = ResponseWithQuestion();
         b.MessageTruncated = true;
 
-        Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
+        Assert.ThrowsExactly<InvalidOperationException>(() => a.MergeRecordsFrom(b));
     }
 
     [TestMethod]
@@ -131,7 +131,7 @@ public class DNSHeaderMergeTests
         var b = ResponseWithQuestion();
         b.AuthenticDatas = false;
 
-        Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
+        Assert.ThrowsExactly<InvalidOperationException>(() => a.MergeRecordsFrom(b));
     }
 
     [TestMethod]
@@ -142,7 +142,7 @@ public class DNSHeaderMergeTests
         var b = ResponseWithQuestion();
         b.CheckingDisabled = true;
 
-        Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
+        Assert.ThrowsExactly<InvalidOperationException>(() => a.MergeRecordsFrom(b));
     }
 
     [TestMethod]
@@ -153,7 +153,7 @@ public class DNSHeaderMergeTests
         var b = ResponseWithQuestion();
         b.RecursionDesired = false;
 
-        Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
+        Assert.ThrowsExactly<InvalidOperationException>(() => a.MergeRecordsFrom(b));
     }
 
     [TestMethod]
@@ -164,7 +164,7 @@ public class DNSHeaderMergeTests
         var b = ResponseWithQuestion();
         b.RecursionPossible = false;
 
-        Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
+        Assert.ThrowsExactly<InvalidOperationException>(() => a.MergeRecordsFrom(b));
     }
 
     [TestMethod]
@@ -177,7 +177,7 @@ public class DNSHeaderMergeTests
         var b = ResponseWithQuestion();
         b.ReservedFlags = 0x40; // bit 6 survives the ReservedZ mask (0x0040)
 
-        Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
+        Assert.ThrowsExactly<InvalidOperationException>(() => a.MergeRecordsFrom(b));
     }
 
     [TestMethod]
@@ -241,7 +241,7 @@ public class DNSHeaderMergeTests
         var b = new DNSHeader { QrBit = DNSQRBit.Response };
         b.Requests.Add(reqB);
 
-        Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
+        Assert.ThrowsExactly<InvalidOperationException>(() => a.MergeRecordsFrom(b));
     }
 
     /// <summary>
@@ -257,7 +257,7 @@ public class DNSHeaderMergeTests
         var b = new DNSHeader { QrBit = DNSQRBit.Response };
         b.Requests.Add(new DNSRequestRecord("A", "example.com", DNSClassId.ALL));
 
-        Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
+        Assert.ThrowsExactly<InvalidOperationException>(() => a.MergeRecordsFrom(b));
     }
 
     /// <summary>
@@ -278,7 +278,7 @@ public class DNSHeaderMergeTests
         b.Requests.Add((DNSRequestRecord)q2.Clone());
         b.Requests.Add((DNSRequestRecord)q1.Clone());
 
-        Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
+        Assert.ThrowsExactly<InvalidOperationException>(() => a.MergeRecordsFrom(b));
     }
 
     /// <summary>
@@ -334,7 +334,7 @@ public class DNSHeaderMergeTests
         var b = ResponseWithQuestion("other.com");
         b.Responses.Add(ARecord("b.example.com", "192.0.2.2"));
 
-        Assert.ThrowsException<InvalidOperationException>(() => a.MergeRecordsFrom(b));
+        Assert.ThrowsExactly<InvalidOperationException>(() => a.MergeRecordsFrom(b));
         Assert.AreEqual(countBefore, a.Responses.Count);
     }
 

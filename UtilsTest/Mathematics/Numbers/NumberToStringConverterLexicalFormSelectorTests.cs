@@ -50,7 +50,7 @@ public class NumberToStringConverterLexicalFormSelectorTests
     [TestMethod]
     public void LexicalFormSet_Create_DuplicateKey_ThrowsUNTS007()
     {
-        var ex = Assert.ThrowsException<NumberToStringConfigurationException>(
+        var ex = Assert.ThrowsExactly<NumberToStringConfigurationException>(
             () => LexicalFormSet.Create(("singular", "hour"), ("singular", "hours")));
         Assert.AreEqual("UNTS007", ex.ErrorCode);
     }
@@ -58,9 +58,9 @@ public class NumberToStringConverterLexicalFormSelectorTests
     [TestMethod]
     public void LexicalFormSet_Create_EmptyKeyOrValue_ThrowsUNTS007()
     {
-        Assert.AreEqual("UNTS007", Assert.ThrowsException<NumberToStringConfigurationException>(
+        Assert.AreEqual("UNTS007", Assert.ThrowsExactly<NumberToStringConfigurationException>(
             () => LexicalFormSet.Create(("", "hour"))).ErrorCode);
-        Assert.AreEqual("UNTS007", Assert.ThrowsException<NumberToStringConfigurationException>(
+        Assert.AreEqual("UNTS007", Assert.ThrowsExactly<NumberToStringConfigurationException>(
             () => LexicalFormSet.Create(("singular", ""))).ErrorCode);
     }
 
@@ -118,7 +118,7 @@ public class NumberToStringConverterLexicalFormSelectorTests
     [TestMethod]
     public void ResolveLexicalFormSelector_TypeNotFound_ThrowsUNTS008()
     {
-        var ex = Assert.ThrowsException<NumberToStringConfigurationException>(
+        var ex = Assert.ThrowsExactly<NumberToStringConfigurationException>(
             () => NumberToStringConverter.ResolveLexicalFormSelector("Nonexistent.Type.Name, NonexistentAssembly", null));
         Assert.AreEqual("UNTS008", ex.ErrorCode);
     }
@@ -127,7 +127,7 @@ public class NumberToStringConverterLexicalFormSelectorTests
     public void ResolveLexicalFormSelector_TypeDoesNotImplementInterface_ThrowsUNTS008()
     {
         string typeName = typeof(NotASelector).AssemblyQualifiedName!;
-        var ex = Assert.ThrowsException<NumberToStringConfigurationException>(
+        var ex = Assert.ThrowsExactly<NumberToStringConfigurationException>(
             () => NumberToStringConverter.ResolveLexicalFormSelector(typeName, null));
         Assert.AreEqual("UNTS008", ex.ErrorCode);
     }
@@ -136,7 +136,7 @@ public class NumberToStringConverterLexicalFormSelectorTests
     public void ResolveLexicalFormSelector_InstantiationFails_ThrowsUNTS008()
     {
         string typeName = typeof(ThrowingConstructorSelector).AssemblyQualifiedName!;
-        var ex = Assert.ThrowsException<NumberToStringConfigurationException>(
+        var ex = Assert.ThrowsExactly<NumberToStringConfigurationException>(
             () => NumberToStringConverter.ResolveLexicalFormSelector(typeName, null));
         Assert.AreEqual("UNTS008", ex.ErrorCode);
     }
@@ -186,7 +186,7 @@ public class NumberToStringConverterLexicalFormSelectorTests
         };
         var converter = new NumberToStringConverter(options);
 
-        var ex = Assert.ThrowsException<NumberToStringConfigurationException>(
+        var ex = Assert.ThrowsExactly<NumberToStringConfigurationException>(
             () => converter.Convert(new TimeSpan(1, 0, 0)));
         Assert.AreEqual("UNTS007", ex.ErrorCode);
     }

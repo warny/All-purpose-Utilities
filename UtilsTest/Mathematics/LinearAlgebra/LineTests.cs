@@ -50,14 +50,14 @@ public class LineTests
             new Vector<double>(0d, 0d),
             new Vector<double>(1d, 0d));
 
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => line.DistanceTo(new Vector<double>(0d, 0d, 0d)));
     }
 
     [TestMethod]
     public void Constructor_DifferentDimensions_Throws()
     {
-        Assert.ThrowsException<ArgumentException>(() =>
+        Assert.ThrowsExactly<ArgumentException>(() =>
             new Line<double>(new Vector<double>(0d, 0d), new Vector<double>(1d, 0d, 0d)));
     }
 
@@ -82,14 +82,14 @@ public class LineTests
     [TestMethod]
     public void Constructor_ZeroDirection_Throws()
     {
-        Assert.ThrowsException<ArgumentException>(() =>
+        Assert.ThrowsExactly<ArgumentException>(() =>
             new Line<double>(new Vector<double>(0d, 0d), new Vector<double>(0d, 0d)));
     }
 
     [TestMethod]
     public void Constructor_NearZeroDirection_Throws()
     {
-        Assert.ThrowsException<ArgumentException>(() =>
+        Assert.ThrowsExactly<ArgumentException>(() =>
             new Line<double>(new Vector<double>(0d, 0d), new Vector<double>(1e-300, 1e-300)));
     }
 
@@ -131,7 +131,7 @@ public class LineTests
         var a = new Line<double>(new Vector<double>(0d, 0d), new Vector<double>(1d, 0d));
         var b = new Line<double>(new Vector<double>(0d, 0d), new Vector<double>(1d, 0d));
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => a.IsGeometricallyEquivalentTo(b, -1.0));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => a.IsGeometricallyEquivalentTo(b, -1.0));
     }
 
     // ── ToString format/provider propagation (item 39) ────────────────────────

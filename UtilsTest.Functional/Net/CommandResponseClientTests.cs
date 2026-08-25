@@ -114,7 +114,7 @@ public class CommandResponseClientTests
 
         using CommandResponseClient client = new() { NoOpInterval = Timeout.InfiniteTimeSpan };
         await client.ConnectAsync("127.0.0.1", port);
-        await Assert.ThrowsExceptionAsync<IOException>(() => client.SendCommandAsync("PING"));
+        await Assert.ThrowsExactlyAsync<IOException>(() => client.SendCommandAsync("PING"));
         await serverTask;
     }
 
@@ -141,7 +141,7 @@ public class CommandResponseClientTests
             ListenTimeout = TimeSpan.FromMilliseconds(100)
         };
         await client.ConnectAsync("127.0.0.1", port);
-        await Assert.ThrowsExceptionAsync<IOException>(() => client.SendCommandAsync("PING"));
+        await Assert.ThrowsExactlyAsync<IOException>(() => client.SendCommandAsync("PING"));
         tcs.SetResult();
         await serverTask;
     }

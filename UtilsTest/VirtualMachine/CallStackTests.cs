@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -95,13 +95,13 @@ public class CallStackTests
         cs.Call(1);
         cs.Call(2);
         cs.Call(3);
-        Assert.ThrowsException<VmLimitExceededException>(() => cs.Call(4));
+        Assert.ThrowsExactly<VmLimitExceededException>(() => cs.Call(4));
     }
 
     [TestMethod]
     public void CallStack_MaxDepth_SetBelowOne_Throws()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new CallStack(0));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new CallStack(0));
     }
 
     [TestMethod]
@@ -180,7 +180,7 @@ public class CallStackTests
         Assert.IsFalse(view is Dictionary<string, object?>);
         var dictionary = (IDictionary<string, object?>)view;
         Assert.IsTrue(dictionary.IsReadOnly);
-        Assert.ThrowsException<NotSupportedException>(() => dictionary.Clear());
+        Assert.ThrowsExactly<NotSupportedException>(() => dictionary.Clear());
     }
 
     [TestMethod]
@@ -226,7 +226,7 @@ public class CallStackTests
     {
         var cs = new CallStack();
         cs.Call(0);
-        Assert.ThrowsException<KeyNotFoundException>(() => cs.CurrentFrame!.GetLocal<int>("missing"));
+        Assert.ThrowsExactly<KeyNotFoundException>(() => cs.CurrentFrame!.GetLocal<int>("missing"));
     }
 
     [TestMethod]
@@ -237,7 +237,7 @@ public class CallStackTests
         var cs = new CallStack();
         cs.Call(0);
         cs.CurrentFrame!.SetLocal("x", 42);
-        Assert.ThrowsException<InvalidCastException>(() => cs.CurrentFrame.GetLocal<string>("x"));
+        Assert.ThrowsExactly<InvalidCastException>(() => cs.CurrentFrame.GetLocal<string>("x"));
     }
 
     // â"€â"€ ICallStack contract: SimpleCallStack â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
@@ -273,13 +273,13 @@ public class CallStackTests
         var cs = new SimpleCallStack(maxDepth: 2);
         cs.Call(1);
         cs.Call(2);
-        Assert.ThrowsException<VmLimitExceededException>(() => cs.Call(3));
+        Assert.ThrowsExactly<VmLimitExceededException>(() => cs.Call(3));
     }
 
     [TestMethod]
     public void SimpleCallStack_MaxDepth_SetBelowOne_Throws()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new SimpleCallStack(0));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new SimpleCallStack(0));
     }
 
     [TestMethod]
@@ -309,7 +309,7 @@ public class CallStackTests
     [TestMethod]
     public void CallStackContext_CustomCtor_NullStack_Throws()
     {
-        Assert.ThrowsException<ArgumentNullException>(() => new CallStackContext(new byte[0], (ICallStack)null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new CallStackContext(new byte[0], (ICallStack)null!));
     }
 
     // â"€â"€ Integration: CALL / RET in a VirtualProcessor â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
@@ -458,7 +458,7 @@ public class CallStackTests
         var cs = new CallStack();
         cs.Call(0);
         cs.CurrentFrame!.SetLocal("n", null);
-        Assert.ThrowsException<InvalidCastException>(
+        Assert.ThrowsExactly<InvalidCastException>(
             () => cs.CurrentFrame.GetLocal<int>("n"));
     }
 
@@ -467,7 +467,7 @@ public class CallStackTests
     {
         var cs = new CallStack();
         cs.Call(0);
-        Assert.ThrowsException<KeyNotFoundException>(
+        Assert.ThrowsExactly<KeyNotFoundException>(
             () => cs.CurrentFrame!.GetLocal<int>("missing"));
     }
 
@@ -477,7 +477,7 @@ public class CallStackTests
         var cs = new CallStack();
         cs.Call(0);
         cs.CurrentFrame!.SetLocal("x", 42);
-        Assert.ThrowsException<InvalidCastException>(
+        Assert.ThrowsExactly<InvalidCastException>(
             () => cs.CurrentFrame.GetLocal<string>("x"));
     }
 
@@ -487,14 +487,14 @@ public class CallStackTests
     public void CallStack_Call_NegativeAddress_ThrowsArgumentOutOfRangeException()
     {
         var cs = new CallStack();
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => cs.Call(-1));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => cs.Call(-1));
     }
 
     [TestMethod]
     public void SimpleCallStack_Call_NegativeAddress_ThrowsArgumentOutOfRangeException()
     {
         var cs = new SimpleCallStack();
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => cs.Call(-1));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => cs.Call(-1));
     }
 
     [TestMethod]

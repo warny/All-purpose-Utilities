@@ -33,7 +33,7 @@ public class CoordinatesUtilTests
     [TestMethod]
     public void ParseCoordinatestringThrowsWhenCountDoesNotMatch()
     {
-        Assert.ThrowsException<ArgumentException>(() => CoordinatesUtil<double>.ParseCoordinatestring("1,2,3", 4));
+        Assert.ThrowsExactly<ArgumentException>(() => CoordinatesUtil<double>.ParseCoordinatestring("1,2,3", 4));
     }
 
     [TestMethod]
@@ -47,14 +47,14 @@ public class CoordinatesUtilTests
     [TestMethod]
     public void ValidateLatitudeRejectsOutOfRangeValues()
     {
-        Assert.ThrowsException<ArgumentException>(() => CoordinatesUtil<double>.ValidateLatitude(90.1));
-        Assert.ThrowsException<ArgumentException>(() => CoordinatesUtil<double>.ValidateLatitude(-90.1));
+        Assert.ThrowsExactly<ArgumentException>(() => CoordinatesUtil<double>.ValidateLatitude(90.1));
+        Assert.ThrowsExactly<ArgumentException>(() => CoordinatesUtil<double>.ValidateLatitude(-90.1));
     }
 
     [TestMethod]
     public void ValidateLatitudeRejectsNaN()
     {
-        Assert.ThrowsException<ArgumentException>(() => CoordinatesUtil<double>.ValidateLatitude(double.NaN));
+        Assert.ThrowsExactly<ArgumentException>(() => CoordinatesUtil<double>.ValidateLatitude(double.NaN));
     }
 
     [TestMethod]
@@ -64,28 +64,28 @@ public class CoordinatesUtilTests
         // which was accepted when 4 coordinates were expected, silently shifting all values after
         // the empty position. StringSplitOptions.None preserves empty tokens so the count mismatch
         // (or explicit empty-token check) causes a proper rejection.
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => CoordinatesUtil<double>.ParseCoordinatestring("1,,2,3,4", 4));
     }
 
     [TestMethod]
     public void ParseCoordinatestringRejectsLeadingEmptyToken()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => CoordinatesUtil<double>.ParseCoordinatestring(",1,2,3", 4));
     }
 
     [TestMethod]
     public void ParseCoordinatestringRejectsTrailingEmptyToken()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => CoordinatesUtil<double>.ParseCoordinatestring("1,2,3,", 4));
     }
 
     [TestMethod]
     public void ParseCoordinatestringRejectsWhitespaceOnlyToken()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => CoordinatesUtil<double>.ParseCoordinatestring("1, ,3,4", 4));
     }
 }

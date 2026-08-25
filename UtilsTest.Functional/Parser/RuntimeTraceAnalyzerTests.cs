@@ -102,10 +102,10 @@ public class RuntimeTraceAnalyzerTests
     {
         var summary = RuntimeTraceAnalyzer.Summarize(CreateTrace());
 
-        Assert.ThrowsException<NotSupportedException>(() => ((IDictionary<ParserRuntimeObservationKind, int>)summary.EventDistribution).Add(ParserRuntimeObservationKind.Unknown, 1));
-        Assert.ThrowsException<NotSupportedException>(() => ((IDictionary<ParserRuntimeObservationStatus, int>)summary.StatusDistribution).Add(ParserRuntimeObservationStatus.Unknown, 1));
-        Assert.ThrowsException<NotSupportedException>(() => ((IDictionary<string, int>)summary.RuleDistribution).Add("other", 1));
-        Assert.ThrowsException<NotSupportedException>(() => ((IDictionary<int, int>)summary.AlternativeDistribution).Add(99, 1));
+        Assert.ThrowsExactly<NotSupportedException>(() => ((IDictionary<ParserRuntimeObservationKind, int>)summary.EventDistribution).Add(ParserRuntimeObservationKind.Unknown, 1));
+        Assert.ThrowsExactly<NotSupportedException>(() => ((IDictionary<ParserRuntimeObservationStatus, int>)summary.StatusDistribution).Add(ParserRuntimeObservationStatus.Unknown, 1));
+        Assert.ThrowsExactly<NotSupportedException>(() => ((IDictionary<string, int>)summary.RuleDistribution).Add("other", 1));
+        Assert.ThrowsExactly<NotSupportedException>(() => ((IDictionary<int, int>)summary.AlternativeDistribution).Add(99, 1));
     }
 
     /// <summary>
@@ -116,7 +116,7 @@ public class RuntimeTraceAnalyzerTests
     {
         var comparison = RuntimeTraceAnalyzer.Compare(CreateTrace(), CreateTrace());
 
-        Assert.ThrowsException<NotSupportedException>(() => ((IDictionary<ParserRuntimeObservationKind, int>)comparison.EventCountDelta).Add(ParserRuntimeObservationKind.Unknown, 1));
+        Assert.ThrowsExactly<NotSupportedException>(() => ((IDictionary<ParserRuntimeObservationKind, int>)comparison.EventCountDelta).Add(ParserRuntimeObservationKind.Unknown, 1));
     }
 
     private static AlternativeRuntimeObservation[] CreateTrace()

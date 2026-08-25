@@ -90,7 +90,7 @@ public class FourierWindowTests
 
     [TestMethod]
     public void Hann_SizeTooSmall_Throws()
-        => Assert.ThrowsException<ArgumentOutOfRangeException>(
+        => Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => FourierWindow.Hann<double>(1));
 
     [TestMethod]

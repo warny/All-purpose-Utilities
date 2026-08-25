@@ -56,7 +56,7 @@ public class ODataContextMetadataLoadingTests
     [TestMethod]
     public async Task LoadMetadataFromStreamAsync_NullStream_ThrowsArgumentNull()
     {
-        await Assert.ThrowsExceptionAsync<ArgumentNullException>(
+        await Assert.ThrowsExactlyAsync<ArgumentNullException>(
             async () => await ODataContext.LoadMetadataFromStreamAsync(null!));
     }
 
@@ -69,7 +69,7 @@ public class ODataContextMetadataLoadingTests
     {
         using MemoryStream stream = EdmxStream();
         var options = new ODataMetadataOptions { MaxMetadataBytes = 8 };
-        await Assert.ThrowsExceptionAsync<InvalidOperationException>(
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(
             async () => await ODataContext.LoadMetadataFromStreamAsync(stream, options));
     }
 
@@ -115,7 +115,7 @@ public class ODataContextMetadataLoadingTests
         using MemoryStream backing = EdmxStream();
         using var forwardOnly = new ForwardOnlyStream(backing);
         var options = new ODataMetadataOptions { MaxMetadataBytes = 8 };
-        await Assert.ThrowsExceptionAsync<InvalidOperationException>(
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(
             async () => await ODataContext.LoadMetadataFromStreamAsync(forwardOnly, options));
     }
 
@@ -143,14 +143,14 @@ public class ODataContextMetadataLoadingTests
     public async Task LoadMetadataAsync_MissingFile_ThrowsInvalidOperation()
     {
         string path = Path.Combine(Path.GetTempPath(), $"missing-{Guid.NewGuid():N}.edmx");
-        await Assert.ThrowsExceptionAsync<InvalidOperationException>(
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(
             async () => await ODataContext.LoadMetadataAsync(path));
     }
 
     [TestMethod]
     public async Task LoadMetadataAsync_NullOrWhitespace_ThrowsArgument()
     {
-        await Assert.ThrowsExceptionAsync<ArgumentException>(
+        await Assert.ThrowsExactlyAsync<ArgumentException>(
             async () => await ODataContext.LoadMetadataAsync("   "));
     }
 
@@ -182,7 +182,7 @@ public class ODataContextMetadataLoadingTests
     [TestMethod]
     public void ODataMetadataOptions_NonPositiveMaxBytes_Throws()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => new ODataMetadataOptions { MaxMetadataBytes = 0 });
     }
 

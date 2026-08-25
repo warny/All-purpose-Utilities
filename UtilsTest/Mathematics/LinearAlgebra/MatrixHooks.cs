@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using TechTalk.SpecFlow;
+using Reqnroll;
 using Utils.Mathematics.LinearAlgebra;
 
 namespace UtilsTest.Mathematics.LinearAlgebra

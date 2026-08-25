@@ -240,7 +240,7 @@ public class EmitWorkerProtocolTests
         using var input = new StringReader(malformed);
         using var output = new StringWriter();
 
-        Assert.ThrowsException<InvalidOperationException>(
+        Assert.ThrowsExactly<InvalidOperationException>(
             () => EmitWorkerHost.Run(input, output));
     }
 
@@ -287,7 +287,7 @@ public class EmitWorkerProtocolTests
         string oversizedLine = new string('x', 101) + "\n";
         using var reader = new StringReader(oversizedLine);
 
-        Assert.ThrowsException<InvalidOperationException>(
+        Assert.ThrowsExactly<InvalidOperationException>(
             () => ProtocolFraming.ReadBoundedLine(reader, maxLength: 100));
     }
 
@@ -323,7 +323,7 @@ public class EmitWorkerProtocolTests
         string oversizedByOne = new string('x', 100) + "!";
         using var reader = new StringReader(oversizedByOne);
 
-        Assert.ThrowsException<InvalidOperationException>(
+        Assert.ThrowsExactly<InvalidOperationException>(
             () => ProtocolFraming.ReadBoundedLine(reader, maxLength: 100));
     }
 

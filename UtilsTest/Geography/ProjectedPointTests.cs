@@ -11,7 +11,7 @@ public class ProjectedPointTests
     [TestMethod]
     public void ConstructorRejectsNullProjection()
     {
-        Assert.ThrowsException<ArgumentNullException>(() => new ProjectedPoint<double>(1, 2, null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new ProjectedPoint<double>(1, 2, null!));
     }
 
     [TestMethod]

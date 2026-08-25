@@ -36,7 +36,7 @@ public class MatrixTransformationsTests
     /// </summary>
     [TestMethod]
     public void Identity_ZeroDimension_ThrowsLikeMatrixIdentity()
-        => Assert.ThrowsException<ArgumentException>(() => MatrixTransformations.Identity<double>(0));
+        => Assert.ThrowsExactly<ArgumentException>(() => MatrixTransformations.Identity<double>(0));
 
     /// <summary>
     /// Same as <see cref="Identity_ZeroDimension_ThrowsLikeMatrixIdentity"/>, for a negative dimension:
@@ -45,7 +45,7 @@ public class MatrixTransformationsTests
     /// </summary>
     [TestMethod]
     public void Identity_NegativeDimension_ThrowsLikeMatrixIdentity()
-        => Assert.ThrowsException<ArgumentException>(() => MatrixTransformations.Identity<double>(-1));
+        => Assert.ThrowsExactly<ArgumentException>(() => MatrixTransformations.Identity<double>(-1));
 
     [TestMethod]
     public void Identity_MatchesMatrixIdentityFactory()
@@ -94,7 +94,7 @@ public class MatrixTransformationsTests
 
     [TestMethod]
     public void Diagonal_NoValues_Throws()
-        => Assert.ThrowsException<ArgumentException>(() => MatrixTransformations.Diagonal<double>());
+        => Assert.ThrowsExactly<ArgumentException>(() => MatrixTransformations.Diagonal<double>());
 
     // ── Scaling ──────────────────────────────────────────────────────────────
 
@@ -183,7 +183,7 @@ public class MatrixTransformationsTests
     public void Skew_InvalidAngleCount_Throws()
     {
         // 3 is not d*(d-1) for any integer d (0, 2, 6, 12, ...).
-        Assert.ThrowsException<ArgumentException>(() => MatrixTransformations.Skew<double>(1d, 2d, 3d));
+        Assert.ThrowsExactly<ArgumentException>(() => MatrixTransformations.Skew<double>(1d, 2d, 3d));
     }
 
     // ── Translation ──────────────────────────────────────────────────────────
@@ -281,7 +281,7 @@ public class MatrixTransformationsTests
     /// </summary>
     [TestMethod]
     public void Rotation_NoAngles_ThrowsAmbiguousDimensionError()
-        => Assert.ThrowsException<ArgumentException>(() => MatrixTransformations.Rotation<double>());
+        => Assert.ThrowsExactly<ArgumentException>(() => MatrixTransformations.Rotation<double>());
 
     // ── Transform ────────────────────────────────────────────────────────────
 
@@ -341,7 +341,7 @@ public class MatrixTransformationsTests
     public void Transform_InvalidValueCount_Throws()
     {
         // 5 is not d*(d+1) for any integer d (0, 2, 6, 12, ...).
-        Assert.ThrowsException<ArgumentException>(() => MatrixTransformations.Transform<double>(1d, 2d, 3d, 4d, 5d));
+        Assert.ThrowsExactly<ArgumentException>(() => MatrixTransformations.Transform<double>(1d, 2d, 3d, 4d, 5d));
     }
 
     // ── Structural metadata invariants (TODO-pass5 item #68) ────────────────────

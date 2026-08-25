@@ -412,7 +412,7 @@ public class BlockTests
     {
         var expression = "() => { var obj = new(1, 2); obj; }";
 
-        var exception = Assert.ThrowsException<InvalidOperationException>(() => compiler.Compile(expression));
+        var exception = Assert.ThrowsExactly<InvalidOperationException>(() => compiler.Compile(expression));
 
         StringAssert.Contains(exception.Message, "Target-typed new expressions with arguments are not supported.");
     }

@@ -24,7 +24,10 @@
 		<ProjectReference Include="..\Utils\Utils.csproj" />
 	</ItemGroup>
 	<ItemGroup>
-		<None Include="README.md" Pack="true" PackagePath="\"/>
+		<None Include="README.md" Pack="true" PackagePath="\" />
+	</ItemGroup>
+	<ItemGroup>
+	  <PackageReference Update="Microsoft.SourceLink.GitHub" Version="10.0.400" />
 	</ItemGroup>
 
 </Project>

@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -175,7 +175,7 @@ public class MathExTests
         Assert.IsTrue(MathEx.IsMultipleOf(0, 5));
         Assert.IsTrue(MathEx.IsMultipleOf(-6, 3));
         Assert.IsFalse(MathEx.IsMultipleOf(-7, 3));
-        Assert.ThrowsException<DivideByZeroException>(() => MathEx.IsMultipleOf(5, 0));
+        Assert.ThrowsExactly<DivideByZeroException>(() => MathEx.IsMultipleOf(5, 0));
     }
 
     // ── IsPowerOfTwo ──────────────────────────────────────────────────────────
@@ -274,7 +274,7 @@ public class MathExTests
     [TestMethod]
     public void Min_EmptyArray_ThrowsArgumentException()
     {
-        Assert.ThrowsException<ArgumentException>(() => MathEx.Min<int>());
+        Assert.ThrowsExactly<ArgumentException>(() => MathEx.Min<int>());
     }
 
     [TestMethod]
@@ -310,7 +310,7 @@ public class MathExTests
     [TestMethod]
     public void Max_EmptyArray_ThrowsArgumentException()
     {
-        Assert.ThrowsException<ArgumentException>(() => MathEx.Max<int>());
+        Assert.ThrowsExactly<ArgumentException>(() => MathEx.Max<int>());
     }
 
     [TestMethod]
@@ -356,7 +356,7 @@ public class MathExTests
     [TestMethod]
     public void Clamp_MinGreaterThanMax_ThrowsArgumentException()
     {
-        Assert.ThrowsException<ArgumentException>(() => MathEx.Clamp(5, 10, 1));
+        Assert.ThrowsExactly<ArgumentException>(() => MathEx.Clamp(5, 10, 1));
     }
 
     [TestMethod]
@@ -419,9 +419,8 @@ public class MathExTests
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentOutOfRangeException))]
     public void RoundToSignificantDigits_ZeroDigits_Throws()
     {
-        MathEx.RoundToSignificantDigits(123, 0);
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => MathEx.RoundToSignificantDigits(123, 0));
     }
 }

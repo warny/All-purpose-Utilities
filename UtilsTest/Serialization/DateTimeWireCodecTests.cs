@@ -41,7 +41,7 @@ public sealed class DateTimeWireCodecTests
             [0, 0, 0, 0, 0, 0x01, 0x51, 0x80],
             value => { Assert.AreEqual(ReferenceUtc, value); Assert.AreEqual(DateTimeKind.Utc, value.Kind); });
         Assert.AreEqual(DateTime.UnixEpoch.AddSeconds(-1), Read(new UnixSecondsDateTimeCodec(), [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], false));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => Read(new UnixSecondsDateTimeCodec(), [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x7F], false));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => Read(new UnixSecondsDateTimeCodec(), [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x7F], false));
     }
 
     /// <summary>Verifies literal signed Unix-millisecond vectors and Utc semantics.</summary>
@@ -53,7 +53,7 @@ public sealed class DateTimeWireCodecTests
             [0, 0, 0, 0, 0x05, 0x26, 0x5C, 0x00],
             value => { Assert.AreEqual(ReferenceUtc, value); Assert.AreEqual(DateTimeKind.Utc, value.Kind); });
         Assert.AreEqual(DateTime.UnixEpoch.AddMilliseconds(-1), Read(new UnixMillisecondsDateTimeCodec(), [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], false));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => Read(new UnixMillisecondsDateTimeCodec(), [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x7F], false));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => Read(new UnixMillisecondsDateTimeCodec(), [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x7F], false));
     }
 
     /// <summary>Verifies the external OLE Automation value 25570.0 and framework Unspecified semantics.</summary>

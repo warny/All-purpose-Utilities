@@ -26,7 +26,7 @@ public class PreparedExpressionRuntimePolicyBuilderTests
     {
         var compiler = new TrackingExpressionCompiler();
 
-        Assert.ThrowsException<ArgumentNullException>(() => PreparedExpressionRuntimePolicyBuilder.Build(null!, compiler));
+        Assert.ThrowsExactly<ArgumentNullException>(() => PreparedExpressionRuntimePolicyBuilder.Build(null!, compiler));
     }
 
     /// <summary>
@@ -37,7 +37,7 @@ public class PreparedExpressionRuntimePolicyBuilderTests
     {
         var definition = CreatePredicateDefinition("predicateTrue");
 
-        Assert.ThrowsException<ArgumentNullException>(() => PreparedExpressionRuntimePolicyBuilder.Build(definition, null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => PreparedExpressionRuntimePolicyBuilder.Build(definition, null!));
     }
 
     /// <summary>

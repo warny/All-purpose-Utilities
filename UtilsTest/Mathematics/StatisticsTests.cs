@@ -18,15 +18,15 @@ public class StatisticsTests
 
     [TestMethod]
     public void Mean_EmptySequence_Throws()
-        => Assert.ThrowsException<ArgumentException>(() => Statistics.Mean<double>([]));
+        => Assert.ThrowsExactly<ArgumentException>(() => Statistics.Mean<double>([]));
 
     [TestMethod]
     public void Mean_ContainsNaN_Throws()
-        => Assert.ThrowsException<ArgumentException>(() => Statistics.Mean<double>([1, double.NaN, 3]));
+        => Assert.ThrowsExactly<ArgumentException>(() => Statistics.Mean<double>([1, double.NaN, 3]));
 
     [TestMethod]
     public void Mean_ContainsInfinity_Throws()
-        => Assert.ThrowsException<ArgumentException>(() => Statistics.Mean<double>([1, double.PositiveInfinity, 3]));
+        => Assert.ThrowsExactly<ArgumentException>(() => Statistics.Mean<double>([1, double.PositiveInfinity, 3]));
 
     [TestMethod]
     public void Variance_KnownSample()
@@ -42,11 +42,11 @@ public class StatisticsTests
 
     [TestMethod]
     public void Variance_SingleElement_Throws()
-        => Assert.ThrowsException<ArgumentException>(() => Statistics.Variance<double>([1.0]));
+        => Assert.ThrowsExactly<ArgumentException>(() => Statistics.Variance<double>([1.0]));
 
     [TestMethod]
     public void Variance_ContainsNaN_Throws()
-        => Assert.ThrowsException<ArgumentException>(() => Statistics.Variance<double>([1, double.NaN, 3]));
+        => Assert.ThrowsExactly<ArgumentException>(() => Statistics.Variance<double>([1, double.NaN, 3]));
 
     [TestMethod]
     public void StdDev_IsSquareRootOfVariance()
@@ -66,12 +66,12 @@ public class StatisticsTests
 
     [TestMethod]
     public void Covariance_DifferentLengths_Throws()
-        => Assert.ThrowsException<ArgumentException>(
+        => Assert.ThrowsExactly<ArgumentException>(
             () => Statistics.Covariance<double>([1, 2, 3], [1, 2]));
 
     [TestMethod]
     public void Covariance_ContainsNaN_Throws()
-        => Assert.ThrowsException<ArgumentException>(
+        => Assert.ThrowsExactly<ArgumentException>(
             () => Statistics.Covariance<double>([1, double.NaN, 3], [1, 2, 3]));
 
     [TestMethod]
@@ -108,22 +108,22 @@ public class StatisticsTests
 
     [TestMethod]
     public void Correlation_DifferentLengths_Throws()
-        => Assert.ThrowsException<ArgumentException>(
+        => Assert.ThrowsExactly<ArgumentException>(
             () => Statistics.Correlation<double>([1, 2, 3], [1, 2]));
 
     [TestMethod]
     public void Correlation_FewerThanTwoElements_Throws()
-        => Assert.ThrowsException<ArgumentException>(
+        => Assert.ThrowsExactly<ArgumentException>(
             () => Statistics.Correlation<double>([1], [1]));
 
     [TestMethod]
     public void Correlation_ZeroVarianceSequence_Throws()
-        => Assert.ThrowsException<InvalidOperationException>(
+        => Assert.ThrowsExactly<InvalidOperationException>(
             () => Statistics.Correlation<double>([1, 1, 1], [1, 2, 3]));
 
     [TestMethod]
     public void Correlation_ContainsInfinity_Throws()
-        => Assert.ThrowsException<ArgumentException>(
+        => Assert.ThrowsExactly<ArgumentException>(
             () => Statistics.Correlation<double>([1, 2, 3], [1, double.PositiveInfinity, 3]));
 
     [TestMethod]
@@ -159,5 +159,5 @@ public class StatisticsTests
 
     [TestMethod]
     public void Median_EmptySequence_Throws()
-        => Assert.ThrowsException<ArgumentException>(() => Statistics.Median<double>([]));
+        => Assert.ThrowsExactly<ArgumentException>(() => Statistics.Median<double>([]));
 }

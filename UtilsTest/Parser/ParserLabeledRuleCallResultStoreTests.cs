@@ -22,7 +22,7 @@ public sealed class ParserLabeledRuleCallResultStoreTests
         Assert.IsFalse(empty.TryGetReturn("value", out _));
         Assert.IsTrue(presentNull.TryGetReturn("value", out object? value));
         Assert.IsNull(value);
-        Assert.ThrowsException<ArgumentNullException>(() => presentNull.TryGetReturn(null!, out _));
+        Assert.ThrowsExactly<ArgumentNullException>(() => presentNull.TryGetReturn(null!, out _));
     }
 
     /// <summary>
@@ -44,7 +44,7 @@ public sealed class ParserLabeledRuleCallResultStoreTests
         Assert.IsTrue(result.TryGetReturn("second", out object? second));
         Assert.IsNull(second);
         Assert.IsFalse(result.Returns.ContainsKey("third"));
-        Assert.ThrowsException<NotSupportedException>(() => ((IDictionary<string, object?>)result.Returns).Add("fourth", 4));
+        Assert.ThrowsExactly<NotSupportedException>(() => ((IDictionary<string, object?>)result.Returns).Add("fourth", 4));
     }
 
     /// <summary>
@@ -91,7 +91,7 @@ public sealed class ParserLabeledRuleCallResultStoreTests
         Assert.AreSame(second, other);
         CollectionAssert.AreEqual(new[] { first, second }, listed.GetList("xs").ToArray());
         Assert.AreEqual(0, overwritten.GetList("xs").Count, "Earlier snapshots must not observe later appends.");
-        Assert.ThrowsException<NotSupportedException>(() => ((IList<ParserRuleCallResult>)listed.GetList("xs")).Add(first));
+        Assert.ThrowsExactly<NotSupportedException>(() => ((IList<ParserRuleCallResult>)listed.GetList("xs")).Add(first));
     }
 
     /// <summary>

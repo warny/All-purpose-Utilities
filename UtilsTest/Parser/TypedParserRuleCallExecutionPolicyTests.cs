@@ -82,7 +82,7 @@ public class TypedParserRuleCallExecutionPolicyTests
     public void TypedPositionalPolicy_ThrowMode_ReportsTypedMetadata()
     {
         var policy = new TypedPositionalLiteralRuleCallExecutionPolicy(ParserRuleCallBindingFailureBehavior.Throw);
-        ParserRuleCallBindingException exception = Assert.ThrowsException<ParserRuleCallBindingException>(() =>
+        ParserRuleCallBindingException exception = Assert.ThrowsExactly<ParserRuleCallBindingException>(() =>
             policy.BeforeRuleCall(PositionalContext(["\"hello\""], [("value", "int")])));
 
         Assert.AreEqual("child", exception.RuleName);
@@ -364,10 +364,10 @@ public class TypedParserRuleCallExecutionPolicyTests
     public void TypedPolicies_DefaultThrowMode_ReportsOmittedParameterMetadata()
     {
         var positional = new TypedPositionalLiteralRuleCallExecutionPolicy(ParserRuleCallBindingFailureBehavior.Throw);
-        ParserRuleCallBindingException positionalException = Assert.ThrowsException<ParserRuleCallBindingException>(() =>
+        ParserRuleCallBindingException positionalException = Assert.ThrowsExactly<ParserRuleCallBindingException>(() =>
             positional.BeforeRuleCall(PositionalContext([], Descriptor(Parameter("value", "byte", "300")))));
         var named = new TypedNamedLiteralRuleCallExecutionPolicy(ParserRuleCallBindingFailureBehavior.Throw);
-        ParserRuleCallBindingException namedException = Assert.ThrowsException<ParserRuleCallBindingException>(() =>
+        ParserRuleCallBindingException namedException = Assert.ThrowsExactly<ParserRuleCallBindingException>(() =>
             named.BeforeRuleCall(NamedContext("", Named(), Descriptor(Parameter("value", "int")))));
 
         Assert.IsNull(positionalException.ArgumentIndex);
@@ -405,10 +405,10 @@ public class TypedParserRuleCallExecutionPolicyTests
         new TypedPositionalLiteralRuleCallExecutionPolicy().AfterRuleCall(context);
         new TypedNamedLiteralRuleCallExecutionPolicy().AfterRuleCall(context);
 
-        Assert.ThrowsException<ArgumentNullException>(() => new TypedPositionalLiteralRuleCallExecutionPolicy().AfterRuleCall(null!));
-        Assert.ThrowsException<ArgumentNullException>(() => new TypedNamedLiteralRuleCallExecutionPolicy().AfterRuleCall(null!));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new TypedPositionalLiteralRuleCallExecutionPolicy((ParserRuleCallBindingFailureBehavior)int.MaxValue));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new TypedNamedLiteralRuleCallExecutionPolicy((ParserRuleCallBindingFailureBehavior)int.MaxValue));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new TypedPositionalLiteralRuleCallExecutionPolicy().AfterRuleCall(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new TypedNamedLiteralRuleCallExecutionPolicy().AfterRuleCall(null!));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new TypedPositionalLiteralRuleCallExecutionPolicy((ParserRuleCallBindingFailureBehavior)int.MaxValue));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new TypedNamedLiteralRuleCallExecutionPolicy((ParserRuleCallBindingFailureBehavior)int.MaxValue));
     }
 
     /// <summary>

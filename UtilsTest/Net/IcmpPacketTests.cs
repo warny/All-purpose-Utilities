@@ -30,14 +30,13 @@ public class IcmpPacketTests
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
     public void ReadPacketDetectsCorruptedChecksum()
     {
         IcmpPacket packet = new() { PacketType = IcmpPacketType.IcmpV4EchoRequest };
         packet.CreateRandomPayload(8);
         byte[] bytes = packet.ToBytes();
         bytes[0] ^= 0xFF; // Corrupt data
-        IcmpPacket.ReadPacket(bytes);
+        Assert.ThrowsExactly<ArgumentException>(() => IcmpPacket.ReadPacket(bytes));
     }
 
     [TestMethod]

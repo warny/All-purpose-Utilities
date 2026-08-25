@@ -392,7 +392,7 @@ public class ModelTests
             Kind: RuleKind.Parser);
         var builder = new RuleResolutionBuilder(rule);
 
-        Assert.ThrowsException<GrammarValidationException>(() => builder.ResolveAs(RuleKind.Lexer));
+        Assert.ThrowsExactly<GrammarValidationException>(() => builder.ResolveAs(RuleKind.Lexer));
     }
 
     [TestMethod]
@@ -408,7 +408,7 @@ public class ModelTests
             [new LexerMode("DEFAULT_MODE", [rule1, rule2])],
             [], null);
 
-        Assert.ThrowsException<GrammarValidationException>(() => RuleResolver.Resolve(definition));
+        Assert.ThrowsExactly<GrammarValidationException>(() => RuleResolver.Resolve(definition));
     }
 
     [TestMethod]
@@ -424,7 +424,7 @@ public class ModelTests
             [new LexerMode("DEFAULT_MODE", [rule])],
             [], null);
 
-        Assert.ThrowsException<GrammarValidationException>(() => RuleResolver.Resolve(definition));
+        Assert.ThrowsExactly<GrammarValidationException>(() => RuleResolver.Resolve(definition));
     }
 
     [TestMethod]

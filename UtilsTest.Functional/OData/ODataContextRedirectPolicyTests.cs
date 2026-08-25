@@ -83,7 +83,7 @@ public class ODataContextRedirectPolicyTests
 
         var options = new ODataMetadataOptions { HttpClient = client };
 
-        var ex = await Assert.ThrowsExceptionAsync<InvalidOperationException>(
+        var ex = await Assert.ThrowsExactlyAsync<InvalidOperationException>(
             async () => await ODataContext.LoadMetadataAsync("https://service.example.com/$metadata", options));
 
         StringAssert.Contains(ex.Message, "redirect");
@@ -114,7 +114,7 @@ public class ODataContextRedirectPolicyTests
 
         var options = new ODataMetadataOptions { HttpClient = client };
 
-        var ex = await Assert.ThrowsExceptionAsync<InvalidOperationException>(
+        var ex = await Assert.ThrowsExactlyAsync<InvalidOperationException>(
             async () => await ODataContext.LoadMetadataAsync("https://service.example.com/$metadata", options));
 
         StringAssert.Contains(ex.Message, "redirect");
@@ -145,7 +145,7 @@ public class ODataContextRedirectPolicyTests
 
         var options = new ODataMetadataOptions { HttpClient = client };
 
-        var ex = await Assert.ThrowsExceptionAsync<InvalidOperationException>(
+        var ex = await Assert.ThrowsExactlyAsync<InvalidOperationException>(
             async () => await ODataContext.LoadMetadataAsync("https://service.example.com/$metadata", options));
         StringAssert.Contains(ex.Message, "redirect");
     }
@@ -196,7 +196,7 @@ public class ODataContextRedirectPolicyTests
             DownloadTimeout = TimeSpan.FromMilliseconds(200)
         };
 
-        await Assert.ThrowsExceptionAsync<InvalidOperationException>(
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(
             async () => await ODataContext.LoadMetadataAsync("https://service.example.com/$metadata", options));
     }
 
@@ -219,7 +219,7 @@ public class ODataContextRedirectPolicyTests
         using var client = new HttpClient(handler);
 
         var options = new ODataMetadataOptions { HttpClient = client, MaxMetadataBytes = 8 };
-        await Assert.ThrowsExceptionAsync<InvalidOperationException>(
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(
             async () => await ODataContext.LoadMetadataAsync("https://service.example.com/$metadata", options));
     }
 

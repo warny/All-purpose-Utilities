@@ -244,7 +244,7 @@ public class Antlr4GrammarConverterTests
     {
         var diagnostics = new DiagnosticBag();
 
-        Assert.ThrowsException<GrammarParseException>(() => Antlr4GrammarConverter.Parse("""
+        Assert.ThrowsExactly<GrammarParseException>(() => Antlr4GrammarConverter.Parse("""
             grammar G;
             start : ID ;
             ID : 'a' -> customCommand ;
@@ -360,7 +360,7 @@ public class Antlr4GrammarConverterTests
     public void RuleParameters_MalformedBlock_ProducesDiagnostic()
     {
         var diagnostics = new DiagnosticBag();
-        Assert.ThrowsException<GrammarParseException>(() => Antlr4GrammarConverter.Parse("""
+        Assert.ThrowsExactly<GrammarParseException>(() => Antlr4GrammarConverter.Parse("""
             grammar G;
             start[List<int x : 'a' ;
             """, diagnostics));
@@ -754,7 +754,7 @@ public class Antlr4GrammarConverterTests
     [TestMethod]
     public void Parse_InvalidGrammar_Throws()
     {
-        Assert.ThrowsException<GrammarParseException>(() =>
+        Assert.ThrowsExactly<GrammarParseException>(() =>
             Antlr4GrammarConverter.Parse("not a valid grammar at all"));
     }
 

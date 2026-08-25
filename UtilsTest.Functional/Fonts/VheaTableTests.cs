@@ -87,10 +87,9 @@ public class VheaTableTests
     // ── Test 3 — Bad size throws ─────────────────────────────────────────────
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
     public void ReadData_WrongSize_Throws()
     {
         var table = new VheaTable();
-        table.ReadData(MakeReader(new byte[20])); // not 36 bytes → throws
+        Assert.ThrowsExactly<ArgumentException>(() => table.ReadData(MakeReader(new byte[20]))); // not 36 bytes → throws
     }
 }

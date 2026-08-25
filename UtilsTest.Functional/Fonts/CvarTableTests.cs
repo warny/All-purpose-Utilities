@@ -342,10 +342,9 @@ public class CvarTableTests
     // ── Test 6 — ReadData throws when AxisCount is not set ──────────────────
 
     [TestMethod]
-    [ExpectedException(typeof(InvalidOperationException))]
     public void ReadData_AxisCountNotSet_ThrowsInvalidOperation()
     {
         var table = new CvarTable(); // AxisCount = 0 by default
-        table.ReadData(MakeReader([0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x08]));
+        Assert.ThrowsExactly<InvalidOperationException>(() => table.ReadData(MakeReader([0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x08])));
     }
 }

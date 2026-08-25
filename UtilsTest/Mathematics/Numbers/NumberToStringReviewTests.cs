@@ -51,7 +51,7 @@ public class NumberToStringReviewTests
     public void DatePattern_InvalidSyntaxThrows(string pattern)
     {
         var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN")) { DatePattern = pattern };
-        Assert.ThrowsException<InvalidOperationException>(() => new NumberToStringConverter(options));
+        Assert.ThrowsExactly<InvalidOperationException>(() => new NumberToStringConverter(options));
     }
 
     /// <summary>Verifies the explicit bound contract when no large-number scale is configured.</summary>
@@ -63,9 +63,9 @@ public class NumberToStringReviewTests
         Assert.IsTrue(NumberToStringConverter.ReadConfiguration(valid).ContainsKey(culture));
 
         string absent = valid.Replace(" maxNumber=\"999\"", string.Empty, StringComparison.Ordinal);
-        Assert.ThrowsException<InvalidOperationException>(() => NumberToStringConverter.ReadConfiguration(absent));
+        Assert.ThrowsExactly<InvalidOperationException>(() => NumberToStringConverter.ReadConfiguration(absent));
         string excessive = valid.Replace("maxNumber=\"999\"", "maxNumber=\"1000\"", StringComparison.Ordinal);
-        Assert.ThrowsException<InvalidOperationException>(() => NumberToStringConverter.ReadConfiguration(excessive));
+        Assert.ThrowsExactly<InvalidOperationException>(() => NumberToStringConverter.ReadConfiguration(excessive));
     }
 
     /// <summary>Verifies factory validation and that a fresh specifics instance is created per converter.</summary>
@@ -86,7 +86,7 @@ public class NumberToStringReviewTests
 
         Assert.AreEqual(2, creations);
         Assert.IsTrue(converters.Values.All(c => c.Convert(1).EndsWith("!", StringComparison.Ordinal)));
-        Assert.ThrowsException<ArgumentNullException>(() => NumberToStringConverter.RegisterLanguageSpecifics("x", (Func<INumberToStringLanguageSpecifics>)null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => NumberToStringConverter.RegisterLanguageSpecifics("x", (Func<INumberToStringLanguageSpecifics>)null!));
     }
 
     /// <summary>Verifies all duplicate policies against the existing registry.</summary>
@@ -95,7 +95,7 @@ public class NumberToStringReviewTests
     {
         string culture = "POLICY-" + Guid.NewGuid().ToString("N");
         NumberToStringConverter.RegisterConfigurations([CreateConfiguration(culture, "first")], DuplicateCulturePolicy.Replace);
-        Assert.ThrowsException<InvalidOperationException>(() =>
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
             NumberToStringConverter.RegisterConfigurations([CreateConfiguration(culture, "rejected")], DuplicateCulturePolicy.Reject));
 
         NumberToStringConverter.RegisterConfigurations([CreateConfiguration(culture, "kept")], DuplicateCulturePolicy.KeepExisting);
@@ -137,7 +137,7 @@ public class NumberToStringReviewTests
         string childCulture = "READ-ISOLATED-CHILD-" + Guid.NewGuid().ToString("N");
         NumberToStringConverter.ReadConfiguration(CreateConfiguration(baseCulture, "read"));
 
-        var exception = Assert.ThrowsException<InvalidOperationException>(() =>
+        var exception = Assert.ThrowsExactly<InvalidOperationException>(() =>
             NumberToStringConverter.RegisterConfigurations([CreateChildConfiguration(childCulture, baseCulture)]));
 
         StringAssert.Contains(exception.Message, "was not found");
@@ -157,9 +157,9 @@ public class NumberToStringReviewTests
             $"<Language><Culture>{invalidCulture}</Culture></Language></Numbers>",
             StringComparison.Ordinal);
 
-        Assert.ThrowsException<InvalidOperationException>(() =>
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
             NumberToStringConverter.ReadConfiguration(invalidDocument));
-        Assert.ThrowsException<InvalidOperationException>(() =>
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
             NumberToStringConverter.ReadConfiguration(CreateChildConfiguration(childCulture, baseCulture)));
     }
 
@@ -243,11 +243,11 @@ public class NumberToStringReviewTests
         string probeCulture = "REJECT-PROBE-" + Guid.NewGuid().ToString("N");
         NumberToStringConverter.RegisterConfigurations([CreateConfiguration(collisionCulture, "existing")]);
 
-        Assert.ThrowsException<InvalidOperationException>(() => NumberToStringConverter.RegisterConfigurations(
+        Assert.ThrowsExactly<InvalidOperationException>(() => NumberToStringConverter.RegisterConfigurations(
             [CreateConfiguration(stagedCulture, "staged"), CreateConfiguration(collisionCulture, "candidate")]));
 
         Assert.IsFalse(NumberToStringConverter.TryGetConverter(stagedCulture, out _));
-        Assert.ThrowsException<InvalidOperationException>(() =>
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
             NumberToStringConverter.RegisterConfigurations([CreateChildConfiguration(probeCulture, stagedCulture)]));
         Assert.IsFalse(NumberToStringConverter.TryGetConverter(probeCulture, out _));
     }
@@ -259,11 +259,11 @@ public class NumberToStringReviewTests
         string validCulture = "INVALID-STAGED-" + Guid.NewGuid().ToString("N");
         string probeCulture = "INVALID-PROBE-" + Guid.NewGuid().ToString("N");
 
-        Assert.ThrowsException<XmlException>(() => NumberToStringConverter.RegisterConfigurations(
+        Assert.ThrowsExactly<XmlException>(() => NumberToStringConverter.RegisterConfigurations(
             [CreateConfiguration(validCulture, "valid"), "<Numbers>"]));
 
         Assert.IsFalse(NumberToStringConverter.TryGetConverter(validCulture, out _));
-        Assert.ThrowsException<InvalidOperationException>(() =>
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
             NumberToStringConverter.RegisterConfigurations([CreateChildConfiguration(probeCulture, validCulture)]));
     }
 
@@ -289,7 +289,7 @@ public class NumberToStringReviewTests
     public void RegisterConfigurations_InvalidPolicyThrows()
     {
         var invalidPolicy = (DuplicateCulturePolicy)99;
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
             NumberToStringConverter.RegisterConfigurations([], invalidPolicy));
     }
 

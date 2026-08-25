@@ -69,28 +69,28 @@ public class NtpClientTests
     [TestMethod]
     public async Task GetTimeAsync_NullHost_Throws()
     {
-        await Assert.ThrowsExceptionAsync<ArgumentNullException>(
+        await Assert.ThrowsExactlyAsync<ArgumentNullException>(
             () => Query(new FakeResolver(IPAddress.Loopback), new FakeTransport((e, r) => new byte[48]), host: null!));
     }
 
     [TestMethod]
     public async Task GetTimeAsync_EmptyHost_Throws()
     {
-        await Assert.ThrowsExceptionAsync<ArgumentException>(
+        await Assert.ThrowsExactlyAsync<ArgumentException>(
             () => Query(new FakeResolver(IPAddress.Loopback), new FakeTransport((e, r) => new byte[48]), host: "   "));
     }
 
     [TestMethod]
     public async Task GetTimeAsync_InvalidPort_Throws()
     {
-        await Assert.ThrowsExceptionAsync<ArgumentOutOfRangeException>(
+        await Assert.ThrowsExactlyAsync<ArgumentOutOfRangeException>(
             () => Query(new FakeResolver(IPAddress.Loopback), new FakeTransport((e, r) => new byte[48]), port: 0));
     }
 
     [TestMethod]
     public async Task GetTimeAsync_NoResolvedAddress_ThrowsClearException()
     {
-        await Assert.ThrowsExceptionAsync<NtpQueryException>(
+        await Assert.ThrowsExactlyAsync<NtpQueryException>(
             () => Query(new FakeResolver(), new FakeTransport((e, r) => new byte[48])));
     }
 
@@ -116,7 +116,7 @@ public class NtpClientTests
     public async Task GetTimeAsync_AllEndpointsFail_AggregatesFailures()
     {
         var transport = new FakeTransport((ep, req) => throw new SocketException((int)SocketError.ConnectionRefused));
-        var ex = await Assert.ThrowsExceptionAsync<NtpQueryException>(
+        var ex = await Assert.ThrowsExactlyAsync<NtpQueryException>(
             () => Query(new FakeResolver(IPAddress.Parse("192.0.2.1"), IPAddress.Parse("192.0.2.2")), transport));
         Assert.AreEqual(2, ex.Failures.Count);
     }
@@ -130,7 +130,7 @@ public class NtpClientTests
             cts.Cancel();
             throw new SocketException((int)SocketError.TimedOut);
         });
-        await Assert.ThrowsExceptionAsync<OperationCanceledException>(
+        await Assert.ThrowsExactlyAsync<OperationCanceledException>(
             () => Query(new FakeResolver(IPAddress.Parse("192.0.2.1"), IPAddress.Parse("192.0.2.2")), transport, ct: cts.Token));
     }
 
@@ -138,7 +138,7 @@ public class NtpClientTests
     public async Task GetTimeAsync_BroadcastMode5_ThrowsInvalidDataException()
     {
         var transport = new FakeTransport((ep, req) => ServerResponse(req, DateTime.UtcNow, mode: 5));
-        var ex = await Assert.ThrowsExceptionAsync<NtpQueryException>(
+        var ex = await Assert.ThrowsExactlyAsync<NtpQueryException>(
             () => Query(new FakeResolver(IPAddress.Loopback), transport));
         Assert.IsInstanceOfType(ex.Failures[0].Exception, typeof(InvalidDataException));
     }
@@ -147,7 +147,7 @@ public class NtpClientTests
     public async Task GetTimeAsync_ClientMode3Response_Throws()
     {
         var transport = new FakeTransport((ep, req) => ServerResponse(req, DateTime.UtcNow, mode: 3));
-        await Assert.ThrowsExceptionAsync<NtpQueryException>(
+        await Assert.ThrowsExactlyAsync<NtpQueryException>(
             () => Query(new FakeResolver(IPAddress.Loopback), transport));
     }
 
@@ -164,7 +164,7 @@ public class NtpClientTests
     public async Task GetTimeAsync_OriginateTimestampMismatch_Throws()
     {
         var transport = new FakeTransport((ep, req) => ServerResponse(req, DateTime.UtcNow, echoOriginate: false));
-        var ex = await Assert.ThrowsExceptionAsync<NtpQueryException>(
+        var ex = await Assert.ThrowsExactlyAsync<NtpQueryException>(
             () => Query(new FakeResolver(IPAddress.Loopback), transport));
         Assert.IsInstanceOfType(ex.Failures[0].Exception, typeof(InvalidDataException));
     }
@@ -178,7 +178,7 @@ public class NtpClientTests
             SysArray.Clear(response, 40, 8); // zero the transmit timestamp
             return response;
         });
-        await Assert.ThrowsExceptionAsync<NtpQueryException>(
+        await Assert.ThrowsExactlyAsync<NtpQueryException>(
             () => Query(new FakeResolver(IPAddress.Loopback), transport));
     }
 
@@ -186,7 +186,7 @@ public class NtpClientTests
     public async Task GetTimeAsync_LeapAlarm_Throws()
     {
         var transport = new FakeTransport((ep, req) => ServerResponse(req, DateTime.UtcNow, leap: 0xC0));
-        await Assert.ThrowsExceptionAsync<NtpQueryException>(
+        await Assert.ThrowsExactlyAsync<NtpQueryException>(
             () => Query(new FakeResolver(IPAddress.Loopback), transport));
     }
 
@@ -194,7 +194,7 @@ public class NtpClientTests
     public async Task GetTimeAsync_StratumZero_Throws()
     {
         var transport = new FakeTransport((ep, req) => ServerResponse(req, DateTime.UtcNow, stratum: 0));
-        await Assert.ThrowsExceptionAsync<NtpQueryException>(
+        await Assert.ThrowsExactlyAsync<NtpQueryException>(
             () => Query(new FakeResolver(IPAddress.Loopback), transport));
     }
 
@@ -202,7 +202,7 @@ public class NtpClientTests
     public async Task GetTimeAsync_TooShortPacket_Throws()
     {
         var transport = new FakeTransport((ep, req) => new byte[10]);
-        await Assert.ThrowsExceptionAsync<NtpQueryException>(
+        await Assert.ThrowsExactlyAsync<NtpQueryException>(
             () => Query(new FakeResolver(IPAddress.Loopback), transport));
     }
 
@@ -212,7 +212,7 @@ public class NtpClientTests
         // The real UDP transport rejects unexpected endpoints; here we simulate the resulting
         // IOException surfacing as an aggregated failure.
         var transport = new FakeTransport((ep, req) => throw new IOException("NTP response received from unexpected endpoint."));
-        var ex = await Assert.ThrowsExceptionAsync<NtpQueryException>(
+        var ex = await Assert.ThrowsExactlyAsync<NtpQueryException>(
             () => Query(new FakeResolver(IPAddress.Loopback), transport));
         Assert.AreEqual(NtpPhase.Exchange, ex.Failures[0].Phase);
     }
@@ -230,21 +230,21 @@ public class NtpClientTests
     [TestMethod]
     public void UdpNtpTransport_ZeroTimeout_Throws()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => new UdpNtpTransport(TimeSpan.Zero));
     }
 
     [TestMethod]
     public void UdpNtpTransport_NegativeTimeout_Throws()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => new UdpNtpTransport(TimeSpan.FromSeconds(-1)));
     }
 
     [TestMethod]
     public void UdpNtpTransport_InfiniteTimeout_Throws()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => new UdpNtpTransport(System.Threading.Timeout.InfiniteTimeSpan));
     }
 
@@ -257,7 +257,7 @@ public class NtpClientTests
     {
         var transport = new UdpNtpTransport(TimeSpan.FromSeconds(1));
 
-        await Assert.ThrowsExceptionAsync<ArgumentNullException>(
+        await Assert.ThrowsExactlyAsync<ArgumentNullException>(
             () => transport.ExchangeAsync(null!, new byte[48], CancellationToken.None))
             .ConfigureAwait(false);
     }
@@ -272,7 +272,7 @@ public class NtpClientTests
         var transport = new UdpNtpTransport(TimeSpan.FromSeconds(1));
         var endpoint = new IPEndPoint(IPAddress.Loopback, 123);
 
-        await Assert.ThrowsExceptionAsync<ArgumentNullException>(
+        await Assert.ThrowsExactlyAsync<ArgumentNullException>(
             () => transport.ExchangeAsync(endpoint, null!, CancellationToken.None))
             .ConfigureAwait(false);
     }
@@ -287,7 +287,7 @@ public class NtpClientTests
         var transport = new UdpNtpTransport(TimeSpan.FromSeconds(1));
         var endpoint = new IPEndPoint(IPAddress.Loopback, 123);
 
-        await Assert.ThrowsExceptionAsync<ArgumentException>(
+        await Assert.ThrowsExactlyAsync<ArgumentException>(
             () => transport.ExchangeAsync(endpoint, new byte[0], CancellationToken.None))
             .ConfigureAwait(false);
     }

@@ -55,7 +55,7 @@ public sealed class BooleanWireFormatTests
     {
         for (int value = 2; value <= byte.MaxValue; value++)
         {
-            InvalidDataException exception = Assert.ThrowsException<InvalidDataException>(
+            InvalidDataException exception = Assert.ThrowsExactly<InvalidDataException>(
                 () => new RawReader().ReadBool(new Reader(new MemoryStream([(byte)value]))),
                 $"Byte 0x{value:X2} must be rejected.");
             StringAssert.Contains(exception.Message, "0 or 1");
@@ -68,15 +68,15 @@ public sealed class BooleanWireFormatTests
     {
         Assert.IsFalse(new Reader(new MemoryStream([0x00])).Read<bool>());
         Assert.IsTrue(new Reader(new MemoryStream([0x01])).Read<bool>());
-        Assert.ThrowsException<InvalidDataException>(() => new Reader(new MemoryStream([0x02])).Read<bool>());
-        Assert.ThrowsException<InvalidDataException>(() => new Reader(new MemoryStream([0xFF])).Read<bool>());
+        Assert.ThrowsExactly<InvalidDataException>(() => new Reader(new MemoryStream([0x02])).Read<bool>());
+        Assert.ThrowsExactly<InvalidDataException>(() => new Reader(new MemoryStream([0xFF])).Read<bool>());
     }
 
     /// <summary>Verifies an empty stream reports end-of-stream rather than malformed data.</summary>
     [TestMethod]
     public void GenericReader_EmptyStream_ThrowsEndOfStream()
     {
-        Assert.ThrowsException<EndOfStreamException>(() => new Reader(new MemoryStream([])).Read<bool>());
+        Assert.ThrowsExactly<EndOfStreamException>(() => new Reader(new MemoryStream([])).Read<bool>());
     }
 
     /// <summary>Verifies boolean encoding is one byte and independent of the numeric byte-order option.</summary>
@@ -99,7 +99,7 @@ public sealed class BooleanWireFormatTests
     {
         Assert.IsFalse(Deserialize<BoolContainer>([0x00]).Value);
         Assert.IsTrue(Deserialize<BoolContainer>([0x01]).Value);
-        Assert.ThrowsException<InvalidDataException>(() => Deserialize<BoolContainer>([0x02]));
+        Assert.ThrowsExactly<InvalidDataException>(() => Deserialize<BoolContainer>([0x02]));
     }
 
     /// <summary>Verifies generated members enforce the same strict decoding as the built-in reader.</summary>
@@ -108,7 +108,7 @@ public sealed class BooleanWireFormatTests
     {
         Assert.IsFalse(ReadGeneratedBoolContainer([0x00]).Value);
         Assert.IsTrue(ReadGeneratedBoolContainer([0x01]).Value);
-        Assert.ThrowsException<InvalidDataException>(() => ReadGeneratedBoolContainer([0x02]));
+        Assert.ThrowsExactly<InvalidDataException>(() => ReadGeneratedBoolContainer([0x02]));
     }
 
     /// <summary>Verifies an explicitly registered custom codec still overrides the strict built-in reader.</summary>
@@ -138,7 +138,7 @@ public sealed class BooleanWireFormatTests
         Assert.IsTrue(reader.Read<bool>());
 
         Reader exhausted = new(new MemoryStream([0x01]), new ReaderOptions { MaximumReadBytes = 0 });
-        Assert.ThrowsException<InvalidDataException>(() => exhausted.Read<bool>());
+        Assert.ThrowsExactly<InvalidDataException>(() => exhausted.Read<bool>());
     }
 
     /// <summary>Serializes a boolean using the default little-endian raw writer.</summary>

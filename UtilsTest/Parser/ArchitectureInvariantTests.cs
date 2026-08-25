@@ -66,7 +66,7 @@ public class ArchitectureInvariantTests
         var alternatives = rule.Content.Alternatives;
         var probes = CreateProbes(alternatives.Count);
 
-        _ = Assert.ThrowsException<ArgumentException>(() => scheduler.Run(
+        _ = Assert.ThrowsExactly<ArgumentException>(() => scheduler.Run(
             rule,
             alternatives,
             0,

@@ -67,6 +67,6 @@ public class HheaTableTests
     public void ReadData_WrongSize_Throws()
     {
         var table = NewTable();
-        Assert.ThrowsException<System.ArgumentException>(() => table.ReadData(MakeReader(new byte[10])));
+        Assert.ThrowsExactly<System.ArgumentException>(() => table.ReadData(MakeReader(new byte[10])));
     }
 }

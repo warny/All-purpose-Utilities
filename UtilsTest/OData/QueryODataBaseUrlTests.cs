@@ -38,7 +38,7 @@ public class QueryODataBaseUrlTests
     [TestMethod]
     public void Constructor_NullBaseUrl_ThrowsArgumentNullException()
     {
-        Assert.ThrowsException<ArgumentNullException>(
+        Assert.ThrowsExactly<ArgumentNullException>(
             () => new QueryOData(null!));
     }
 
@@ -46,49 +46,49 @@ public class QueryODataBaseUrlTests
     public void Constructor_NullBaseUrl_WithClient_ThrowsArgumentNullException()
     {
         using var client = new System.Net.Http.HttpClient();
-        Assert.ThrowsException<ArgumentNullException>(
+        Assert.ThrowsExactly<ArgumentNullException>(
             () => new QueryOData(null!, client));
     }
 
     [TestMethod]
     public void Constructor_RelativeUrl_ThrowsArgumentException()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => new QueryOData("/odata"));
     }
 
     [TestMethod]
     public void Constructor_NonHttpScheme_File_ThrowsArgumentException()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => new QueryOData("file:///C:/data"));
     }
 
     [TestMethod]
     public void Constructor_NonHttpScheme_Ftp_ThrowsArgumentException()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => new QueryOData("ftp://example.org/data"));
     }
 
     [TestMethod]
     public void Constructor_PlainString_ThrowsArgumentException()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => new QueryOData("not-a-url"));
     }
 
     [TestMethod]
     public void Constructor_EmptyString_ThrowsArgumentException()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => new QueryOData(string.Empty));
     }
 
     [TestMethod]
     public void Constructor_WhitespaceString_ThrowsArgumentException()
     {
-        Assert.ThrowsException<ArgumentException>(
+        Assert.ThrowsExactly<ArgumentException>(
             () => new QueryOData("   "));
     }
 }

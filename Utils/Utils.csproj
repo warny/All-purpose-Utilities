@@ -35,7 +35,7 @@
 		     dependency. The reference was an inverted dependency that pulled the parser into all
 		     consumers of the base package (#28). -->
 		<!-- System.Runtime is a framework meta-package, no need to reference it explicitly on net9.0 (#27). -->
-                <PackageReference Include="System.Text.Encoding.CodePages" Version="9.0.6" />
+                <PackageReference Include="System.Text.Encoding.CodePages" Version="10.0.11" />
         </ItemGroup>
 
 	<ItemGroup>
@@ -44,5 +44,9 @@
 
         <ItemGroup>
                 <None Include="README.md" Pack="true" PackagePath="\" />
+        </ItemGroup>
+
+        <ItemGroup>
+          <PackageReference Update="Microsoft.SourceLink.GitHub" Version="10.0.400" />
         </ItemGroup>
 </Project>

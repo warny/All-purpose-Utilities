@@ -169,7 +169,7 @@ public class ODataContextGeneratorTests
 
         try
         {
-            InvalidOperationException exception = Assert.ThrowsException<InvalidOperationException>(() => _ = new FileContext(metadataUrl));
+            InvalidOperationException exception = Assert.ThrowsExactly<InvalidOperationException>(() => _ = new FileContext(metadataUrl));
             StringAssert.Contains(exception.Message, "maximum allowed size");
         }
         finally

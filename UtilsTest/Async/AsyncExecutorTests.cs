@@ -104,7 +104,7 @@ namespace UtilsTest.Async
         public async Task ExecuteParallelAsync_NullFunctions_ThrowsArgumentNullException()
         {
             IAsyncExecutor executor = new AsyncExecutor();
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(
+            await Assert.ThrowsExactlyAsync<ArgumentNullException>(
                 () => executor.ExecuteParallelAsync(null!));
         }
 
@@ -112,7 +112,7 @@ namespace UtilsTest.Async
         public async Task ExecuteSequentialAsync_NullFunctions_ThrowsArgumentNullException()
         {
             IAsyncExecutor executor = new AsyncExecutor();
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(
+            await Assert.ThrowsExactlyAsync<ArgumentNullException>(
                 () => executor.ExecuteSequentialAsync(null!));
         }
 
@@ -120,7 +120,7 @@ namespace UtilsTest.Async
         public async Task ExecuteAsync_NullFunctions_ThrowsArgumentNullException()
         {
             IAsyncExecutor executor = new AsyncExecutor();
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(
+            await Assert.ThrowsExactlyAsync<ArgumentNullException>(
                 () => executor.ExecuteAsync(null!, 3));
         }
 
@@ -129,7 +129,7 @@ namespace UtilsTest.Async
         {
             IAsyncExecutor executor = new AsyncExecutor();
             Func<Task>[] tasks = [async () => await Task.Delay(1)];
-            await Assert.ThrowsExceptionAsync<ArgumentOutOfRangeException>(
+            await Assert.ThrowsExactlyAsync<ArgumentOutOfRangeException>(
                 () => executor.ExecuteAsync(tasks, -1));
         }
 
@@ -138,7 +138,7 @@ namespace UtilsTest.Async
         {
             IAsyncExecutor executor = new AsyncExecutor();
             Func<Task>[] tasks = [null!];
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(
+            await Assert.ThrowsExactlyAsync<ArgumentNullException>(
                 () => executor.ExecuteParallelAsync(tasks));
         }
 
@@ -147,7 +147,7 @@ namespace UtilsTest.Async
         {
             IAsyncExecutor executor = new AsyncExecutor();
             Func<Task>[] tasks = [null!];
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(
+            await Assert.ThrowsExactlyAsync<ArgumentNullException>(
                 () => executor.ExecuteSequentialAsync(tasks));
         }
 
@@ -163,7 +163,7 @@ namespace UtilsTest.Async
                 async () => { await Task.Delay(1); throw new InvalidOperationException("boom"); },
             ];
 
-            await Assert.ThrowsExceptionAsync<InvalidOperationException>(
+            await Assert.ThrowsExactlyAsync<InvalidOperationException>(
                 () => executor.ExecuteParallelAsync(tasks));
         }
 
@@ -180,7 +180,7 @@ namespace UtilsTest.Async
                 async () => { await Task.Delay(1); executedCount++; },
             ];
 
-            await Assert.ThrowsExceptionAsync<InvalidOperationException>(
+            await Assert.ThrowsExactlyAsync<InvalidOperationException>(
                 () => executor.ExecuteSequentialAsync(tasks));
 
             // Third task must not have run

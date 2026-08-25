@@ -89,7 +89,7 @@ public class LibraryMapperDisposeTests
             return;
         }
 
-        Assert.ThrowsException<EntryPointNotFoundException>(
+        Assert.ThrowsExactly<EntryPointNotFoundException>(
             () => LibraryMapper.Create<MissingExportMapper>("kernel32.dll"),
             "Create must propagate EntryPointNotFoundException when an export is missing.");
     }
@@ -111,7 +111,7 @@ public class LibraryMapperDisposeTests
             return;
         }
 
-        var ex = Assert.ThrowsException<InvalidOperationException>(
+        var ex = Assert.ThrowsExactly<InvalidOperationException>(
             () => LibraryMapper.Create<ReadOnlyPropertyMapper>("kernel32.dll"));
 
         StringAssert.Contains(ex.Message, "no setter",
@@ -142,7 +142,7 @@ public class LibraryMapperDisposeTests
 
         // A non-auto-property setter cannot be guaranteed to accept null unconditionally,
         // so Create must reject it in the prepare phase before loading any export.
-        var ex = Assert.ThrowsException<InvalidOperationException>(
+        var ex = Assert.ThrowsExactly<InvalidOperationException>(
             () => LibraryMapper.Create<CustomSetterMapper>("kernel32.dll"));
 
         StringAssert.Contains(ex.Message, "custom setter",
