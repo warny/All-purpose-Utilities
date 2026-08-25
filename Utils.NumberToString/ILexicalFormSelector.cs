@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Numerics;
+using System.Xml.Linq;
 
 namespace Utils.NumberToString;
 
@@ -81,23 +82,44 @@ public sealed class DefaultLexicalFormSelector : ILexicalFormSelector
 }
 
 /// <summary>
-/// Identifies a custom <see cref="ILexicalFormSelector"/> being resolved from configuration, so
-/// the selector's own constructor can access the type name and owning language for diagnostics.
+/// Identifies a custom <see cref="ILexicalFormSelector"/> being resolved from configuration, and
+/// carries the selector's own, selector-owned configuration subtree, so a selector's constructor
+/// can access the type name, owning language, and its configuration for diagnostics and setup.
 /// </summary>
 /// <remarks>
+/// <para>
 /// A selector type may optionally declare a public constructor accepting a single
 /// <see cref="LexicalFormSelectorConfiguration"/> parameter; when present, it is used instead of
-/// a parameterless constructor. This configuration is intentionally minimal (no arbitrary option
-/// bag) — it is expected to grow additively in a future release if a concrete consumer needs
-/// per-instance options; do not infer unsupported configuration surface from its current shape.
+/// a parameterless constructor.
+/// </para>
+/// <para>
+/// The core library owns type resolution and activation lifecycle; it does not — and must not —
+/// interpret <see cref="Configuration"/> itself. A selector interprets its own configuration
+/// subtree in whatever shape it chooses (attributes, child elements, …); the core library never
+/// invents a universal expression language for it. <see cref="Configuration"/> is handed to the
+/// selector as-is and must be treated as read-only: the core library does not defend against a
+/// selector mutating the <see cref="XElement"/> it receives, but doing so has no effect on the
+/// XML configuration the converter itself was built from.
+/// </para>
 /// </remarks>
 /// <param name="typeName">The configured type name or built-in alias being resolved.</param>
 /// <param name="languageIdentifier">The language identifier the selector is being resolved for, when known.</param>
-public sealed class LexicalFormSelectorConfiguration(string typeName, string? languageIdentifier)
+/// <param name="configuration">
+/// The selector-owned <c>&lt;Configuration&gt;</c> subtree from a <c>&lt;LexicalFormSelector&gt;</c>
+/// XML element, or <see langword="null"/> when no selector-specific configuration was supplied
+/// (including every programmatic use that does not construct one explicitly).
+/// </param>
+public sealed class LexicalFormSelectorConfiguration(string typeName, string? languageIdentifier, XElement? configuration = null)
 {
     /// <summary>Gets the configured type name or built-in alias (e.g. <c>"default"</c>) being resolved.</summary>
     public string TypeName { get; } = typeName;
 
     /// <summary>Gets the language identifier the selector is being resolved for, or <see langword="null"/> when resolved programmatically outside a language context.</summary>
     public string? LanguageIdentifier { get; } = languageIdentifier;
+
+    /// <summary>
+    /// Gets the selector-owned configuration subtree, or <see langword="null"/> when none was
+    /// supplied. Read-only by convention; the core library never reads or validates its content.
+    /// </summary>
+    public XElement? Configuration { get; } = configuration;
 }

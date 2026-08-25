@@ -102,13 +102,20 @@ New public extension point: `ILexicalFormSelector`, `LexicalFormContext`,
 and `NumberToStringConverter.RegisterLexicalFormSelector`/
 `NumberToStringConverterOptions.TimeUnitForms`/`TimeUnitFormSelectors` — lets a
 configured time unit choose among more than two named word forms (e.g. a future
-Russian "час"/"часа"/"часов") via a selector resolved at most once, during
-configuration loading, never during `Convert(...)`. Every unit that configures no
+Russian "час"/"часа"/"часов") via a selector resolved at most once per distinct
+selector type, during configuration loading, never during `Convert(...)`. A unit may
+optionally pass selector-specific settings via a structured
+`<LexicalFormSelector type="..."><Configuration>...</Configuration></LexicalFormSelector>`
+XML element (the core library never interprets `<Configuration>`'s content); units
+needing no configuration keep using the concise `formSelector="..."` attribute.
+`NumberToStringConverter.TimeUnitForms`/`TimeUnitFormSelectors` report the *effective*
+state for every configured time unit (synthesized singular/plural and
+`DefaultLexicalFormSelector` for units with no override). Every unit that configures no
 selector uses the built-in default (today's exact singular/plural behavior), so no
 existing configuration or output changes. See the "Lexical form selection" section of
-`Utils.NumberToString/README.md` and `Utils.NumberToString/DONE-2026-08-25(1).md`.
-Spanish does not use this mechanism — its time-unit fix is a `ForcedVariants` addition
-(see above), not a lexical-form-selector one.
+`Utils.NumberToString/README.md` and `Utils.NumberToString/DONE-2026-08-25(1).md`/
+`DONE-2026-08-25(2).md`. Spanish does not use this mechanism — its time-unit fix is a
+`ForcedVariants` addition (see above), not a lexical-form-selector one.
 
 <a id="omy-utils-fonts-2"></a>
 ## Utils.Fonts hostile-font parsing hardening

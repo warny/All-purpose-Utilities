@@ -1395,6 +1395,40 @@
                                         <xs:element name="Unit" minOccurs="0" maxOccurs="unbounded">
                                             <xs:complexType>
                                                 <xs:sequence>
+                                                    <xs:element name="LexicalFormSelector" minOccurs="0">
+                                                        <xs:annotation><xs:documentation>
+                                                            Structured alternative to the formSelector attribute, used only
+                                                            when the selector needs its own configuration. The core library
+                                                            resolves "type" (same vocabulary as formSelector) and hands the
+                                                            raw Configuration subtree to the selector unread/unvalidated;
+                                                            it never interprets that content itself. Ignored — with
+                                                            formSelector also ignored — when this element is absent; a
+                                                            plain formSelector attribute remains sufficient for selectors
+                                                            that need no configuration. See the "Lexical form selection"
+                                                            section of Utils.NumberToString/README.md.
+                                                        </xs:documentation></xs:annotation>
+                                                        <xs:complexType>
+                                                            <xs:sequence>
+                                                                <xs:element name="Configuration" minOccurs="0">
+                                                                    <xs:annotation><xs:documentation>
+                                                                        Selector-owned configuration content. Schema validation
+                                                                        is deliberately permissive only inside this element —
+                                                                        it does not weaken validation anywhere else in the
+                                                                        language schema.
+                                                                    </xs:documentation></xs:annotation>
+                                                                    <xs:complexType>
+                                                                        <xs:sequence>
+                                                                            <xs:any processContents="lax" minOccurs="0" maxOccurs="unbounded" />
+                                                                        </xs:sequence>
+                                                                        <xs:anyAttribute processContents="lax" />
+                                                                    </xs:complexType>
+                                                                </xs:element>
+                                                            </xs:sequence>
+                                                            <xs:attribute name="type" type="xs:string" use="required">
+                                                                <xs:annotation><xs:documentation>The selector type name or built-in alias.</xs:documentation></xs:annotation>
+                                                            </xs:attribute>
+                                                        </xs:complexType>
+                                                    </xs:element>
                                                     <xs:element name="Forms" minOccurs="0">
                                                         <xs:annotation><xs:documentation>
                                                             Optional named lexical forms for this unit (e.g. an "attributive"

@@ -1,7 +1,9 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
+using System.Xml.Linq;
 using Utils.NumberToString;
 
 namespace UtilsTest.Mathematics.Numbers;
@@ -219,6 +221,210 @@ public class NumberToStringConverterLexicalFormSelectorTests
         Assert.AreEqual("one custom-hour", converter.Convert(new TimeSpan(1, 0, 0)));
     }
 
+    // ─── TimeUnitForms/TimeUnitFormSelectors — effective (not override-only) contract ─────────────
+
+    [TestMethod]
+    public void TimeUnitForms_BuiltInEN_ReturnsEffectiveFormsForEveryUnit()
+    {
+        var en = NumberToStringConverter.GetConverter("EN");
+
+        CollectionAssert.AreEquivalent(new[] { "hour", "minute", "second" }, en.TimeUnitForms.Keys.ToArray());
+
+        AssertHasSingularPlural(en.TimeUnitForms["hour"], "hour", "hours");
+        AssertHasSingularPlural(en.TimeUnitForms["minute"], "minute", "minutes");
+        AssertHasSingularPlural(en.TimeUnitForms["second"], "second", "seconds");
+
+        static void AssertHasSingularPlural(LexicalFormSet forms, string singular, string plural)
+        {
+            Assert.IsTrue(forms.TryGetForm("singular", out var s));
+            Assert.AreEqual(singular, s);
+            Assert.IsTrue(forms.TryGetForm("plural", out var p));
+            Assert.AreEqual(plural, p);
+        }
+    }
+
+    [TestMethod]
+    public void TimeUnitFormSelectors_BuiltInEN_ReturnsDefaultSelectorForEveryUnit()
+    {
+        var en = NumberToStringConverter.GetConverter("EN");
+
+        CollectionAssert.AreEquivalent(new[] { "hour", "minute", "second" }, en.TimeUnitFormSelectors.Keys.ToArray());
+        Assert.IsInstanceOfType<DefaultLexicalFormSelector>(en.TimeUnitFormSelectors["hour"]);
+        Assert.IsInstanceOfType<DefaultLexicalFormSelector>(en.TimeUnitFormSelectors["minute"]);
+        Assert.IsInstanceOfType<DefaultLexicalFormSelector>(en.TimeUnitFormSelectors["second"]);
+    }
+
+    [TestMethod]
+    public void TimeUnitForms_ExplicitOverrideOnOneUnit_MergesWithSynthesizedFormsAndSiblingsStaySynthesizedOnly()
+    {
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        {
+            TimeUnitForms = new Dictionary<string, LexicalFormSet>
+            {
+                ["hour"] = LexicalFormSet.Create(("custom", "custom-hour")),
+            },
+        };
+        var converter = new NumberToStringConverter(options);
+
+        // "hour" keeps its synthesized singular/plural AND gains the explicit override.
+        var hourForms = converter.TimeUnitForms["hour"];
+        Assert.IsTrue(hourForms.TryGetForm("singular", out var hs));
+        Assert.AreEqual("hour", hs);
+        Assert.IsTrue(hourForms.TryGetForm("plural", out var hp));
+        Assert.AreEqual("hours", hp);
+        Assert.IsTrue(hourForms.TryGetForm("custom", out var hc));
+        Assert.AreEqual("custom-hour", hc);
+
+        // "minute" has no configured override, yet the effective view still reports it, with only
+        // its synthesized singular/plural.
+        var minuteForms = converter.TimeUnitForms["minute"];
+        Assert.IsTrue(minuteForms.TryGetForm("singular", out var ms));
+        Assert.AreEqual("minute", ms);
+        Assert.IsTrue(minuteForms.TryGetForm("plural", out var mp));
+        Assert.AreEqual("minutes", mp);
+        Assert.IsFalse(minuteForms.TryGetForm("custom", out _));
+    }
+
+    [TestMethod]
+    public void TimeUnitFormSelectors_OverrideOnOneUnit_SiblingsStillReportDefaultSelector()
+    {
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        {
+            TimeUnitFormSelectors = new Dictionary<string, ILexicalFormSelector>
+            {
+                ["hour"] = new ThreeFormSelector(),
+            },
+        };
+        var converter = new NumberToStringConverter(options);
+
+        Assert.IsInstanceOfType<ThreeFormSelector>(converter.TimeUnitFormSelectors["hour"]);
+        Assert.IsInstanceOfType<DefaultLexicalFormSelector>(converter.TimeUnitFormSelectors["minute"]);
+        Assert.IsInstanceOfType<DefaultLexicalFormSelector>(converter.TimeUnitFormSelectors["second"]);
+    }
+
+    [TestMethod]
+    public void Clone_NarrowingTimeUnits_DoesNotResurrectRemovedUnitFormsOrSelectors()
+    {
+        var source = NumberToStringConverter.GetConverter("EN");
+        var options = new NumberToStringConverterOptions(source)
+        {
+            TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)>
+            {
+                ["hour"] = source.TimeUnits["hour"],
+            },
+        };
+        var narrowed = new NumberToStringConverter(options);
+
+        CollectionAssert.AreEquivalent(new[] { "hour" }, narrowed.TimeUnitForms.Keys.ToArray());
+        CollectionAssert.AreEquivalent(new[] { "hour" }, narrowed.TimeUnitFormSelectors.Keys.ToArray());
+    }
+
+    // ─── Selector-specific XML configuration (<LexicalFormSelector><Configuration>) ────────────────
+
+    [TestMethod]
+    public void ReadConfiguration_UnitWithLexicalFormSelectorElement_PassesConfigurationToSelector()
+    {
+        string typeName = typeof(ConfigDrivenFormSelector).AssemblyQualifiedName!;
+        string xml = $"""
+            <?xml version="1.0" encoding="utf-8"?>
+            <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+              <Language groupSize="3" separator=" " groupSeparator="" zero="zero" minus="minus *" decimalSeparator="point" maxNumber="999">
+                <Culture>NTS05-XML-CONFIG-TEST</Culture>
+                <Groups><Group level="1"><Digit digit="0" string=""/><Digit digit="1" string="one"/><Digit digit="2" string="two"/><Digit digit="3" string="three"/><Digit digit="4" string="four"/><Digit digit="5" string="five"/><Digit digit="6" string="six"/><Digit digit="7" string="seven"/><Digit digit="8" string="eight"/><Digit digit="9" string="nine"/></Group></Groups>
+                <NumberScale firstLetterUpperCase="false"><StaticNames><Scale value="0" string=""/></StaticNames><Suffixes><Suffix>on</Suffix></Suffixes></NumberScale>
+                <TimeUnits>
+                  <Unit name="hour" singular="hour" plural="hours">
+                    <LexicalFormSelector type="{typeName}">
+                      <Configuration form="configured-hour-form" />
+                    </LexicalFormSelector>
+                    <Forms>
+                      <Form key="configured-hour-form" value="configured-hour" />
+                    </Forms>
+                  </Unit>
+                  <Unit name="minute" singular="minute" plural="minutes" />
+                  <Unit name="second" singular="second" plural="seconds" />
+                </TimeUnits>
+              </Language>
+            </Numbers>
+            """;
+
+        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        var converter = converters["NTS05-XML-CONFIG-TEST"];
+
+        Assert.AreEqual("one configured-hour", converter.Convert(new TimeSpan(1, 0, 0)));
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_SameSelectorTypeWithDifferentConfigurationsOnTwoUnits_EachUsesItsOwnConfiguration()
+    {
+        string typeName = typeof(ConfigDrivenFormSelector).AssemblyQualifiedName!;
+        string xml = $"""
+            <?xml version="1.0" encoding="utf-8"?>
+            <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+              <Language groupSize="3" separator=" " groupSeparator="" zero="zero" minus="minus *" decimalSeparator="point" maxNumber="999">
+                <Culture>NTS05-XML-DUAL-CONFIG-TEST</Culture>
+                <Groups><Group level="1"><Digit digit="0" string=""/><Digit digit="1" string="one"/><Digit digit="2" string="two"/><Digit digit="3" string="three"/><Digit digit="4" string="four"/><Digit digit="5" string="five"/><Digit digit="6" string="six"/><Digit digit="7" string="seven"/><Digit digit="8" string="eight"/><Digit digit="9" string="nine"/></Group></Groups>
+                <NumberScale firstLetterUpperCase="false"><StaticNames><Scale value="0" string=""/></StaticNames><Suffixes><Suffix>on</Suffix></Suffixes></NumberScale>
+                <TimeUnits>
+                  <Unit name="hour" singular="hour" plural="hours">
+                    <LexicalFormSelector type="{typeName}">
+                      <Configuration form="hour-form" />
+                    </LexicalFormSelector>
+                    <Forms><Form key="hour-form" value="loud-hour" /></Forms>
+                  </Unit>
+                  <Unit name="minute" singular="minute" plural="minutes">
+                    <LexicalFormSelector type="{typeName}">
+                      <Configuration form="minute-form" />
+                    </LexicalFormSelector>
+                    <Forms><Form key="minute-form" value="quiet-minute" /></Forms>
+                  </Unit>
+                  <Unit name="second" singular="second" plural="seconds" />
+                </TimeUnits>
+              </Language>
+            </Numbers>
+            """;
+
+        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        var converter = converters["NTS05-XML-DUAL-CONFIG-TEST"];
+
+        // Same selector TYPE, two different <Configuration> subtrees: each unit must use its own,
+        // proving the reflection activator cache is keyed by type name (and re-invoked per unit),
+        // not a single shared configured instance.
+        Assert.AreEqual("one loud-hour", converter.Convert(new TimeSpan(1, 0, 0)));
+        Assert.AreEqual("one quiet-minute", converter.Convert(new TimeSpan(0, 1, 0)));
+    }
+
+    // ─── Reflection activation caching — cached per type name, not per configured instance ─────────
+
+    [TestMethod]
+    public void ResolveLexicalFormSelector_SameTypeResolvedTwice_ActivatorCacheGrowsByOneNotTwo()
+    {
+        string typeName = typeof(CacheInstrumentedSelector).AssemblyQualifiedName!;
+        int before = NumberToStringConverter.LexicalFormSelectorActivatorCacheCount;
+
+        NumberToStringConverter.ResolveLexicalFormSelector(typeName, null);
+        int afterFirst = NumberToStringConverter.LexicalFormSelectorActivatorCacheCount;
+
+        NumberToStringConverter.ResolveLexicalFormSelector(typeName, null);
+        int afterSecond = NumberToStringConverter.LexicalFormSelectorActivatorCacheCount;
+
+        Assert.AreEqual(before + 1, afterFirst);
+        Assert.AreEqual(afterFirst, afterSecond);
+    }
+
+    [TestMethod]
+    public void ResolveLexicalFormSelector_SameTypeResolvedTwice_ConstructsANewInstanceEachTime()
+    {
+        string typeName = typeof(CacheInstrumentedSelector).AssemblyQualifiedName!;
+        CacheInstrumentedSelector.ConstructionCount = 0;
+
+        var first = NumberToStringConverter.ResolveLexicalFormSelector(typeName, null);
+        var second = NumberToStringConverter.ResolveLexicalFormSelector(typeName, null);
+
+        Assert.AreEqual(2, CacheInstrumentedSelector.ConstructionCount);
+        Assert.AreNotSame(first, second);
+    }
+
     // ─── Immutability / snapshot ────────────────────────────────────────────────────────────────
 
     [TestMethod]
@@ -273,4 +479,25 @@ internal sealed class ThrowingConstructorSelector : ILexicalFormSelector
 {
     public ThrowingConstructorSelector() => throw new InvalidOperationException("Deliberate test failure.");
     public string SelectForm(LexicalFormContext context) => "unreachable";
+}
+
+/// <summary>
+/// Test-only selector that always returns the form key configured on its own
+/// <c>&lt;Configuration form="..."/&gt;</c> subtree, regardless of numeric value/variants — proves a
+/// selector actually receives and can use its own selector-specific configuration.
+/// </summary>
+internal sealed class ConfigDrivenFormSelector(LexicalFormSelectorConfiguration configuration) : ILexicalFormSelector
+{
+    private readonly string _formKey = configuration.Configuration?.Attribute("form")?.Value
+        ?? throw new InvalidOperationException("ConfigDrivenFormSelector requires a 'form' attribute on <Configuration>.");
+
+    public string SelectForm(LexicalFormContext context) => _formKey;
+}
+
+/// <summary>Test-only selector whose constructor counts invocations, to prove the activation cache stores an activator (invoked anew per resolution), not a shared instance.</summary>
+internal sealed class CacheInstrumentedSelector : ILexicalFormSelector
+{
+    public static int ConstructionCount;
+    public CacheInstrumentedSelector() => ConstructionCount++;
+    public string SelectForm(LexicalFormContext context) => "instrumented";
 }

@@ -18,7 +18,10 @@ There are no active P0–P3 findings for `Utils.NumberToString` as of
   (supersedes the deferral recorded in `DONE-2026-08-21(1).md`).
 - NTS-05 — extensible lexical form selection + Spanish attributive apocope:
   `DONE-2026-08-25(1).md` (resolves the Spanish deferral recorded in
-  `DONE-2026-08-24(1).md`).
+  `DONE-2026-08-24(1).md`), with pre-merge review fixes (selector-specific
+  XML configuration, per-type reflection activation caching, and the
+  `TimeUnitForms`/`TimeUnitFormSelectors` effective-state correction) in
+  `DONE-2026-08-25(2).md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) are deliberately out of scope — the

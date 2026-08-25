@@ -278,8 +278,12 @@ public sealed class NumberToStringConverterOptions
         ScaleConnectorThreshold = source.ScaleConnectorThreshold;
         TimeUnits = source.TimeUnits;
         TimeUnitForcedVariants = source.TimeUnitForcedVariants;
-        TimeUnitForms = source.TimeUnitForms;
-        TimeUnitFormSelectors = source.TimeUnitFormSelectors;
+        // Use the override-only internal snapshots, not the effective TimeUnitForms/
+        // TimeUnitFormSelectors properties: those report every TimeUnits key (synthesizing
+        // defaults for units with no override), which would resurrect a stale entry if the
+        // caller narrows TimeUnits after cloning (see NumberToStringConverter.TimeUnitFormOverrides).
+        TimeUnitForms = source.TimeUnitFormOverrides;
+        TimeUnitFormSelectors = source.TimeUnitFormSelectorOverrides;
         DatePattern = source.DatePattern;
         DateFirstDay = source.DateFirstDay;
         DateFirstCardinalDay = source.DateFirstCardinalDay;

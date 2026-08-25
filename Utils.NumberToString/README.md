@@ -793,10 +793,10 @@ var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConv
 ```
 
 XML configuration resolves a `formSelector="..."` type name via reflection —
-**once, while loading configuration, never on the conversion hot path** —
-using a built-in alias (`"default"`, or omit the attribute) or a
-consumer-supplied assembly-qualified type name. Register a name in advance to
-skip reflection entirely:
+**once per distinct type name, while loading configuration, never on the
+conversion hot path** — using a built-in alias (`"default"`, or omit the
+attribute) or a consumer-supplied assembly-qualified type name. Register a
+name in advance to skip reflection entirely:
 
 ```csharp
 NumberToStringConverter.RegisterLexicalFormSelector("my-company:count-bucket", new MyCountBucketSelector());
@@ -810,12 +810,69 @@ NumberToStringConverter.RegisterLexicalFormSelector("my-company:count-bucket", n
 ```
 
 A selector type may optionally declare a constructor accepting a
-`LexicalFormSelectorConfiguration` (type name + language identifier) instead
-of a parameterless one; implementations must be stateless/thread-safe after
-construction, since a single instance is shared and may be called
-concurrently. A form key the selector returns but the unit doesn't configure
-is a deterministic `NumberToStringConfigurationException` (`"UNTS007"`), not
-a silent fallback.
+`LexicalFormSelectorConfiguration` (type name, language identifier, and
+optional selector-specific `Configuration`) instead of a parameterless one;
+implementations must be stateless/thread-safe after construction, since a
+single instance is shared and may be called concurrently. A form key the
+selector returns but the unit doesn't configure is a deterministic
+`NumberToStringConfigurationException` (`"UNTS007"`), not a silent fallback.
+
+### Selector-specific XML configuration
+
+A unit that needs to pass its own configuration to a custom selector (not
+just a type name) uses the structured `<LexicalFormSelector>` element instead
+of the plain `formSelector` attribute:
+
+```xml
+<Unit name="hour" singular="hour" plural="hours">
+  <LexicalFormSelector type="MyCompany.CountBucketSelector, MyCompany.Assembly">
+    <Configuration threshold="5" />
+  </LexicalFormSelector>
+  <Forms>
+    <Form key="few" value="часа" />
+  </Forms>
+</Unit>
+```
+
+The `<Configuration>` subtree's shape is owned entirely by the selector — the
+core library never interprets its content, only hands it to the selector's
+`LexicalFormSelectorConfiguration.Configuration` (an `XElement`) as-is. Units
+that need no configuration keep using the concise `formSelector="..."`
+attribute unchanged; it is ignored when `<LexicalFormSelector>` is present.
+
+**Reflection is cached per type name, not per configured instance**: resolving
+`"MyCompany.CountBucketSelector, ..."` for two units with two *different*
+`<Configuration>` subtrees performs the expensive type/constructor lookup
+once, then re-invokes the cached activator with each unit's own
+configuration — so the same selector implementation can be reused with
+different settings across units without paying reflection cost twice, and
+without one unit's configuration leaking into another's.
+
+Programmatically, an already-constructed `ILexicalFormSelector` instance
+never triggers reflection — reflection only ever resolves configured type
+*names* (XML `formSelector`/`<LexicalFormSelector type="...">`, or a type
+name passed to `RegisterLexicalFormSelector`), never instances supplied via
+`NumberToStringConverterOptions.TimeUnitFormSelectors` or an instance passed
+to `RegisterLexicalFormSelector` directly. A third `RegisterLexicalFormSelector`
+overload accepts `Func<LexicalFormSelectorConfiguration, ILexicalFormSelector>`
+so a registered name can still honor each unit's own configuration:
+
+```csharp
+NumberToStringConverter.RegisterLexicalFormSelector(
+    "my-company:count-bucket",
+    config => new MyCountBucketSelector(config.Configuration));
+```
+
+### `TimeUnitForms` / `TimeUnitFormSelectors` — effective, not override-only
+
+`NumberToStringConverter.TimeUnitForms` and `.TimeUnitFormSelectors` report
+the **effective** state for every key in `TimeUnits` — including units that
+configured no override at all, which show a synthesized
+`{"singular": ..., "plural": ...}` form set and `DefaultLexicalFormSelector`
+respectively. A unit with an explicit override shows its singular/plural
+merged with the override, not the override alone. This mirrors what
+`FormatTimeUnit` actually uses at conversion time, so inspecting these
+properties tells you exactly what a given unit will render.
 
 **Spanish does not use this mechanism** — its "hora"/"minuto"/"segundo" only
 ever need ordinary singular/plural word forms. Its attributive apocope

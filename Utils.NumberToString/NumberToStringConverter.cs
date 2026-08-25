@@ -254,17 +254,18 @@ namespace Utils.NumberToString
                             timeUnitForced.TryGetValue(kv.Key, out var forcedVariants) && forcedVariants != null ? forcedVariants : ForcedVariantSet.Empty,
                             forms, selector);
                     });
-                // _timeUnitsPublic/_timeUnitForcedVariantsPublic are computed after _dimensionIndex
-                // exists, once each unit's ForcedVariants has been canonicalized (aliases resolved).
-                // Forms/selectors need no canonicalization, so their public views reflect only the
-                // entries actually configured as overrides here — never every unit's synthesized
-                // default — so cloning a converter and narrowing its TimeUnits (see
+                // _timeUnitFormOverrides/_timeUnitFormSelectorOverrides retain only the entries
+                // actually configured as overrides here — never every unit's synthesized default —
+                // so cloning a converter and narrowing its TimeUnits (see
                 // NumberToStringConverterOptions(NumberToStringConverter)) never resurrects a
-                // TimeUnitForms/TimeUnitFormSelectors entry for a unit that no longer exists.
-                _timeUnitFormsPublic = timeUnitForms
+                // TimeUnitForms/TimeUnitFormSelectors entry for a unit that no longer exists. This
+                // internal, override-only snapshot is distinct from the public TimeUnitForms/
+                // TimeUnitFormSelectors properties, which report the EFFECTIVE per-unit state (see
+                // below, computed from _timeUnits once it is finalized).
+                _timeUnitFormOverrides = timeUnitForms
                     .Where(kv => kv.Value != null && !kv.Value.IsEmpty)
                     .ToImmutableDictionary(kv => kv.Key, kv => kv.Value);
-                _timeUnitFormSelectorsPublic = timeUnitSelectors
+                _timeUnitFormSelectorOverrides = timeUnitSelectors
                     .Where(kv => kv.Value != null)
                     .ToImmutableDictionary(kv => kv.Key, kv => kv.Value);
             }
@@ -293,6 +294,13 @@ namespace Utils.NumberToString
             _timeUnitForcedVariantsPublic = _timeUnits
                 .Where(kv => !kv.Value.ForcedVariants.IsEmpty)
                 .ToImmutableDictionary(kv => kv.Key, kv => kv.Value.ForcedVariants);
+            // Effective views: every TimeUnits key is present, each mapped to the Forms/Selector
+            // TimeUnitDefinition already resolved (base singular/plural merged with any override,
+            // and DefaultLexicalFormSelector when no selector override was configured) — distinct
+            // from the override-only _timeUnitFormOverrides/_timeUnitFormSelectorOverrides above,
+            // which exist solely to support safe cloning.
+            _timeUnitFormsPublic = _timeUnits.ToImmutableDictionary(kv => kv.Key, kv => kv.Value.Forms);
+            _timeUnitFormSelectorsPublic = _timeUnits.ToImmutableDictionary(kv => kv.Key, kv => kv.Value.Selector);
 
             _fractionForcedVariants = _fractionForcedVariants.ToImmutableDictionary(
                 kv => kv.Key,
@@ -517,6 +525,25 @@ namespace Utils.NumberToString
         /// </summary>
         public IReadOnlyDictionary<string, ILexicalFormSelector> TimeUnitFormSelectors => _timeUnitFormSelectorsPublic;
 
+        /// <summary>
+        /// Gets only the explicitly configured <see cref="LexicalFormSet"/> overrides per time
+        /// unit — i.e. the units for which an override was actually supplied, unlike the effective
+        /// <see cref="TimeUnitForms"/>. Used by <c>NumberToStringConverterOptions(NumberToStringConverter)</c>
+        /// so cloning and then narrowing <see cref="TimeUnits"/> never resurrects a synthesized
+        /// default form set for a unit that was removed from the clone.
+        /// </summary>
+        internal IReadOnlyDictionary<string, LexicalFormSet> TimeUnitFormOverrides => _timeUnitFormOverrides;
+
+        /// <summary>
+        /// Gets only the explicitly configured <see cref="ILexicalFormSelector"/> overrides per
+        /// time unit — i.e. the units for which a selector override was actually supplied, unlike
+        /// the effective <see cref="TimeUnitFormSelectors"/>. Used by
+        /// <c>NumberToStringConverterOptions(NumberToStringConverter)</c> so cloning and then
+        /// narrowing <see cref="TimeUnits"/> never resurrects a default-selector entry for a unit
+        /// that was removed from the clone.
+        /// </summary>
+        internal IReadOnlyDictionary<string, ILexicalFormSelector> TimeUnitFormSelectorOverrides => _timeUnitFormSelectorOverrides;
+
         /// <summary>Gets the date pattern string (tokens: {month}, {ordinal-day}, {cardinal-day}, {year}).</summary>
         public string? DatePattern => _datePattern;
 
@@ -556,6 +583,8 @@ namespace Utils.NumberToString
         private readonly ImmutableDictionary<string, ForcedVariantSet> _timeUnitForcedVariantsPublic;
         private readonly ImmutableDictionary<string, LexicalFormSet> _timeUnitFormsPublic;
         private readonly ImmutableDictionary<string, ILexicalFormSelector> _timeUnitFormSelectorsPublic;
+        private readonly ImmutableDictionary<string, LexicalFormSet> _timeUnitFormOverrides;
+        private readonly ImmutableDictionary<string, ILexicalFormSelector> _timeUnitFormSelectorOverrides;
         private readonly string? _datePattern;
         private readonly ImmutableArray<DatePatternSegment> _datePatternSegments;
         private readonly string? _dateFirstDay;
