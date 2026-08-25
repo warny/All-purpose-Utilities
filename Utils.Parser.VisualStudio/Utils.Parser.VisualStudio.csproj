@@ -16,6 +16,16 @@
         <PackageReference Include="Microsoft.VisualStudio.Extensibility.Build" Version="17.14.40608" PrivateAssets="all" />
         <PackageReference Include="Nerdbank.Streams" Version="2.13.31" />
         <PackageReference Include="System.IO.Pipes.AccessControl" Version="5.0.0" />
+        <!--
+            REL-01: MessagePack is a transitive dependency (via StreamJsonRpc and
+            Microsoft.ServiceHub.Framework, both pulled in by Microsoft.VisualStudio.Extensibility)
+            that NuGet was otherwise free to resolve down to 2.5.192, which is vulnerable to
+            CVE-2026-48515 (DoS via unvalidated multi-dimensional array lengths in the formatters).
+            Pinned here, not centrally, since no other project in the solution references
+            MessagePack. 2.5.302 is the latest 2.x patch (fixed in 2.5.301) - deliberately staying
+            on the already-resolved 2.x line rather than jumping to the breaking MessagePack 3.x.
+        -->
+        <PackageReference Include="MessagePack" Version="2.5.302" />
     </ItemGroup>
 
     <ItemGroup>

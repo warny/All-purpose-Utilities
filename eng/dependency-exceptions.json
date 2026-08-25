@@ -1,12 +1,3 @@
 {
-  "exceptions": [
-    {
-      "package": "MessagePack",
-      "version": "2.5.192",
-      "scope": "Utils.Parser.VisualStudio",
-      "reason": "The dependency is confined to the excluded VSIX project and is not present in the NuGet product train.",
-      "trackingIssue": "https://github.com/warny/All-purpose-Utilities/issues/28",
-      "expiryDate": "2026-12-31"
-    }
-  ]
+  "exceptions": []
 }
