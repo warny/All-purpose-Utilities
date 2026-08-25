@@ -170,5 +170,17 @@
 			<Ordinal from="cien"> <Variant type="gender" forms="centésimo,centésima" /></Ordinal>
 			<Ordinal from="mil">  <Variant type="gender" forms="milésimo,milésima"   /></Ordinal>
 		</Ordinals>
+		<!--
+		  Spanish time-unit support is deliberately deferred (not added here): masculine
+		  attributive numeral apocope ("uno"->"un", "veintiuno"->"veintiún", "treinta y
+		  uno"->"treinta y un", ...) applies before a masculine noun for both count==1 and
+		  compound counts (21, 31, ...). Count1Form only models the count==1 case, so a
+		  <TimeUnits> block using it for "minuto"/"segundo" would produce grammatically
+		  incorrect output for compounds (e.g. "veintiuno minutos" instead of "veintiún
+		  minutos"). This requires a contextual numeral-form mechanism beyond the current
+		  gender + ForcedVariants + Count1Form model — see the "Deferred: languages needing
+		  more than Singular/Plural/Count1Form" section of DONE-2026-08-24(1).md. This is
+		  future work, not an unresolved ForcedVariants defect.
+		-->
 	</Language>
 </Numbers>

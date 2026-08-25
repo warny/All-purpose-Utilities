@@ -136,6 +136,46 @@ public class NumberToStringCompositeFinalizationTests
         CollectionAssert.AreEqual(new[] { "triggered euros" }, finalizer.Inputs);
     }
 
+    /// <summary>
+    /// Verifies a currency phrase where the unit and subunit force different local variant queries
+    /// (NTS-04 ForcedVariants) is still finalized exactly once, with both locally-queried fragments
+    /// present in the single text handed to the finalizer.
+    /// </summary>
+    [TestMethod]
+    public void ConvertCurrency_UnitAndSubunit_DifferentForcedVariants_FinalizeCompletePhraseOnce()
+    {
+        var finalizer = new RecordingFinalizer();
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        {
+            LanguageSpecifics = finalizer,
+            VariantDimensions = [new NumberToStringConverter.VariantDimension("gender", ["masculine", "feminine"])],
+            VariantRules =
+            [
+                new NumberToStringConverter.VariantRule(
+                    new Dictionary<string, string> { ["gender"] = "feminine" },
+                    [new NumberToStringConverter.ReplacementRule("two", "two-F", ReplacementScope.Anywhere)])
+            ],
+        };
+        var converter = new NumberToStringConverter(options);
+        var currency = new CurrencyDefinition
+        {
+            UnitSingular = "euro",
+            UnitPlural = "euros",
+            SubunitSingular = "cent",
+            SubunitPlural = "cents",
+            SubunitDigits = 2,
+            Connector = "and",
+            // Only the subunit forces gender=feminine; the unit uses the unforced (masculine) default.
+            SubunitForcedVariants = ForcedVariantSet.Create(("gender", "feminine")),
+        };
+
+        string result = converter.ConvertCurrency(2.02m, currency);
+
+        Assert.AreEqual(1, finalizer.CallCount);
+        CollectionAssert.AreEqual(new[] { "two euros and two-F cents" }, finalizer.Inputs);
+        Assert.AreEqual("<1:two euros and two-F cents>", result);
+    }
+
     /// <summary>Verifies signs remain outside the once-finalized fraction and currency phrases.</summary>
     [TestMethod]
     public void Convert_NegativeComposite_AppliesSignAfterSingleFinalization()

@@ -154,5 +154,14 @@
 				<Replacement oldValue="dos-cents" newValue="dues-centes" scope="Anywhere" />
 			</Variant>
 		</Variants>
+		<TimeUnits>
+			<!-- "hora" is feminine; forceVariants applies the existing gender=femení
+			     cardinal rules ("un"->"una", "dos"->"dues") to the hour numeral without
+			     requiring the caller to pass a variant. "minut"/"segon" are masculine,
+			     matching the Catalan default, so they force nothing. -->
+			<Unit name="hour"   singular="hora"  plural="hores"  forceVariants="gender=femení" />
+			<Unit name="minute" singular="minut" plural="minuts" />
+			<Unit name="second" singular="segon" plural="segons" />
+		</TimeUnits>
 	</Language>
 </Numbers>

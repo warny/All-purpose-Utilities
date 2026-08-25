@@ -622,6 +622,131 @@ en.ConvertCurrency(12.01m, dollar); // "twelve dollars and one cent"
 
 ---
 
+## ForcedVariants — constituent-local grammatical constraints
+
+A configured lexical constituent (a time unit, a currency unit/subunit, a
+fraction denominator term) may own an intrinsic grammatical constraint on the
+numeric fragment it governs. French "heure" is feminine, so `21 heures` must
+render as `vingt et une heures`, not `vingt et un heures` — but the caller of
+`Convert(TimeSpan)` should not need to know that "heure" is feminine.
+
+`ForcedVariants` let the constituent itself declare that constraint:
+
+```csharp
+NumberToStringConverter fr = NumberToStringConverter.GetConverter("FR");
+
+fr.Convert(21);                       // "vingt et un"        (ordinary cardinal: masculine default)
+fr.Convert(TimeSpan.FromHours(21));   // "vingt et une heures" (the "hour" unit forces gender=feminin)
+```
+
+No caller variant is required — the built-in French configuration declares
+`forceVariants="gender=feminin"` on the `hour`/`minute`/`second` time units.
+
+### Precedence
+
+For the numeric fragment governed by a constituent, the effective variant
+query is computed per dimension as:
+
+```
+language defaults  →  caller-supplied variants  →  constituent ForcedVariants
+```
+
+Each layer overrides the previous one **only for the dimensions it mentions**.
+A constituent forcing `gender` does not erase a caller-supplied `case`:
+
+```csharp
+// "gender=masculin" from the caller does not override the hour unit's
+// intrinsic gender=feminin — the constituent wins locally ("forced means forced").
+fr.Convert(TimeSpan.FromHours(21), "gender=masculin"); // still "vingt et une heures"
+```
+
+### Locality — no leakage
+
+ForcedVariants apply only while building the fragment governed by the
+constituent that declares them. They never affect another fragment in the
+same phrase, another call, or the converter's global defaults:
+
+```csharp
+fr.Convert(1);                        // "un"       — global default stays masculine
+fr.Convert(new TimeSpan(1, 0, 0));    // "une heure" — local to the "hour" fragment only
+```
+
+### Not just French
+
+The same mechanism, unmodified, also covers Portuguese, Galician, and Catalan,
+whose `hour` noun is feminine — each declares `forceVariants="gender=..."` on
+its `hour` unit only:
+
+```csharp
+NumberToStringConverter pt = NumberToStringConverter.GetConverter("PT");
+pt.Convert(2);                       // "dois"
+pt.Convert(new TimeSpan(2, 0, 0));   // "duas horas"      (the "hour" unit forces gender=feminino)
+
+NumberToStringConverter ca = NumberToStringConverter.GetConverter("CA");
+ca.Convert(21);                      // "vint-i-un"
+ca.Convert(TimeSpan.FromHours(21));  // "vint-i-una hores" (the "hour" unit forces gender=femení)
+```
+
+Spanish (`ES`) time-unit support is deliberately **not** included: Spanish
+masculine attributive numeral apocope ("uno"→"un", "veintiuno"→"veintiún",
+"treinta y uno"→"treinta y un") applies to compound counts (21, 31, …), not
+just to count 1, and the current `Count1Form` mechanism only models the
+count-1 case. Adding `<TimeUnits>` to the Spanish configuration today would
+produce grammatically incorrect compound output (e.g. "veintiuno minutos"
+instead of "veintiún minutos"). This needs a contextual numeral-form
+mechanism beyond `gender` + `ForcedVariants` + `Count1Form` and is deferred
+as separate future work — see `DONE-2026-08-24(1).md`.
+
+### Currency: independent unit and subunit
+
+`CurrencyDefinition.UnitForcedVariants` and `SubunitForcedVariants` let a
+single currency force different grammar for its main unit and its subunit —
+one phrase, two independent local queries:
+
+```csharp
+var euro = new CurrencyDefinition
+{
+    UnitSingular = "euro", UnitPlural = "euros",
+    SubunitSingular = "centime", SubunitPlural = "centimes",
+    // Masculine is already the FR default: no forcing needed.
+};
+var livre = new CurrencyDefinition
+{
+    UnitSingular = "livre", UnitPlural = "livres",
+    SubunitSingular = "sou", SubunitPlural = "sous",
+    UnitForcedVariants = ForcedVariantSet.Create(("gender", "feminin")),
+};
+
+fr.ConvertCurrency(21m, euro);   // "vingt et un euros"
+fr.ConvertCurrency(21m, livre);  // "vingt et une livres"
+```
+
+### Configuring ForcedVariants
+
+- **XML**: `forceVariants="dimension=value"` or `forceVariants="dimension=value,dimension2=value2"`
+  on `<Unit>` (inside `<TimeUnits>`) or `<Fraction>`, reusing the same
+  `dimension=value` vocabulary as caller-supplied variants.
+- **Programmatic**: `NumberToStringConverterOptions.TimeUnitForcedVariants` /
+  `FractionForcedVariants` (keyed like `TimeUnits`/`Fractions`), or
+  `CurrencyDefinition.UnitForcedVariants`/`SubunitForcedVariants` — all typed
+  `ForcedVariantSet`, built via `ForcedVariantSet.Create(("dimension", "value"), ...)`.
+
+A dimension may be given by its canonical name or by its declared `localName`
+alias (e.g. French `genre` for `gender`) — both are canonicalized to the
+dimension's canonical name before the forced set is used, so `genre=feminin`
+and `gender=feminin` behave identically. Forcing the same dimension twice
+through a mix of its canonical name and an alias (e.g.
+`gender=feminin,genre=masculin`) is rejected as a duplicate, exactly like
+forcing it twice through the canonical name alone.
+
+Unknown dimensions/values, malformed syntax, and duplicate dimensions are
+rejected deterministically (`NumberToStringConfigurationException`) — for
+time units and fraction terms at converter construction time, and for
+`CurrencyDefinition` at the start of `ConvertCurrency`, before any fragment is
+rendered.
+
+---
+
 ## Customisation via `NumberToStringConverterOptions`
 
 Clone and modify an existing converter:

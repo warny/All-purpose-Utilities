@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using Utils.NumberToString;
 
 namespace UtilsTest.Mathematics.Numbers
@@ -104,6 +105,20 @@ namespace UtilsTest.Mathematics.Numbers
             // 22-29 do not vary in gender (only the "uno" unit does).
             Assert.AreEqual("veintidos",  c.Convert(22, "gender=femenino"));
             Assert.AreEqual("veintinueve", c.Convert(29, "gender=femenino"));
+        }
+
+        // Spanish time-unit (TimeSpan/TimeOnly) support is deliberately deferred — see the
+        // "Deferred: languages needing more than Singular/Plural/Count1Form" section of
+        // DONE-2026-08-24(1).md. Masculine attributive numeral apocope ("uno"->"un",
+        // "veintiuno"->"veintiún") applies to compound counts (21, 31, ...) as well as count==1,
+        // and the current Count1Form mechanism only models the count==1 case.
+
+        [TestMethod]
+        public void Convert_ES_DoesNotSupportTimeConversion()
+        {
+            var c = NumberToStringConverter.GetConverter("ES");
+            Assert.IsFalse(c.SupportsTimeConversion);
+            Assert.ThrowsException<NotSupportedException>(() => c.Convert(new TimeSpan(1, 0, 0)));
         }
     }
 }

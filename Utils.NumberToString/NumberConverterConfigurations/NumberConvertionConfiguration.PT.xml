@@ -161,5 +161,14 @@
 				<Replacement oldValue="novecentos"   newValue="novecentas"   scope="Anywhere" />
 			</Variant>
 		</Variants>
+		<TimeUnits>
+			<!-- "hora" is feminine; forceVariants applies the existing gender=feminino
+			     cardinal rules ("um"->"uma", "dois"->"duas") to the hour numeral without
+			     requiring the caller to pass a variant. "minuto"/"segundo" are masculine,
+			     matching the Portuguese default, so they force nothing. -->
+			<Unit name="hour"   singular="hora"    plural="horas"    forceVariants="gender=feminino" />
+			<Unit name="minute" singular="minuto"  plural="minutos" />
+			<Unit name="second" singular="segundo" plural="segundos" />
+		</TimeUnits>
 	</Language>
 </Numbers>

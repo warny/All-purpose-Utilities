@@ -62,6 +62,15 @@ public sealed class NumberToStringConverterOptions
     /// <summary>Named suffixes for decimal fractions, keyed by digit count.</summary>
     public IReadOnlyDictionary<int, string>? Fractions { get; set; }
 
+    /// <summary>
+    /// Optional per-digit-count <see cref="ForcedVariantSet"/> forcing grammatical variant
+    /// dimensions on the numerator fragment when the corresponding <see cref="Fractions"/> suffix
+    /// is used. Keys must match <see cref="Fractions"/> keys. Does not apply when a caller
+    /// overrides the suffix via <c>DecimalFormatOptions.DecimalSuffix</c> — that is caller-supplied
+    /// literal text, not the configured lexical constituent this set governs.
+    /// </summary>
+    public IReadOnlyDictionary<int, ForcedVariantSet>? FractionForcedVariants { get; set; }
+
     /// <summary>Upper bound of supported values, or <see langword="null"/> for unlimited.</summary>
     public BigInteger? MaxNumber { get; set; }
 
@@ -165,6 +174,17 @@ public sealed class NumberToStringConverterOptions
     public IReadOnlyDictionary<string, (string Singular, string Plural, string? Count1Form)>? TimeUnits { get; set; }
 
     /// <summary>
+    /// Optional per-unit <see cref="ForcedVariantSet"/> forcing grammatical variant dimensions
+    /// (e.g. gender) on the numeral fragment of the named time unit only, on top of the language's
+    /// declared dimension defaults and any caller-supplied variant. Keys must match
+    /// <see cref="TimeUnits"/> keys ("hour", "minute", "second", …); a converter constructed with a
+    /// key here that has no matching <see cref="TimeUnits"/> entry throws
+    /// <see cref="ArgumentException"/>. Units absent from this dictionary, or present with
+    /// <see cref="ForcedVariantSet.Empty"/>, behave exactly as before this property existed.
+    /// </summary>
+    public IReadOnlyDictionary<string, ForcedVariantSet>? TimeUnitForcedVariants { get; set; }
+
+    /// <summary>
     /// Pattern for rendering a date. Supported tokens: {month}, {ordinal-day}, {cardinal-day}, {year}.
     /// Required for Convert(DateOnly/DateTime).
     /// </summary>
@@ -212,6 +232,7 @@ public sealed class NumberToStringConverterOptions
         LanguageSpecifics = source.LanguageSpecifics;
         LanguageIdentifier = source.LanguageIdentifier;
         Fractions = source.Fractions;
+        FractionForcedVariants = source.FractionForcedVariants;
         MaxNumber = source.MaxNumber;
         FractionSeparator = source.FractionSeparator;
         OrdinalSuffix = source.OrdinalSuffix;
@@ -233,6 +254,7 @@ public sealed class NumberToStringConverterOptions
         ScaleConnector = source.ScaleConnector;
         ScaleConnectorThreshold = source.ScaleConnectorThreshold;
         TimeUnits = source.TimeUnits;
+        TimeUnitForcedVariants = source.TimeUnitForcedVariants;
         DatePattern = source.DatePattern;
         DateFirstDay = source.DateFirstDay;
         DateFirstCardinalDay = source.DateFirstCardinalDay;

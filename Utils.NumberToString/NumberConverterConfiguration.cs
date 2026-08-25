@@ -560,6 +560,14 @@ public class FractionType
     /// </summary>
     [XmlAttribute("string")]
     public string StringValue { get; set; }
+
+    /// <summary>
+    /// Optional comma-separated "dimension=value" pairs (e.g. "gender=feminin") forcing
+    /// grammatical variant dimensions on the numerator fragment governed by this fraction term
+    /// only. Parsed via <see cref="Utils.NumberToString.ForcedVariantSet.Parse"/>.
+    /// </summary>
+    [XmlAttribute("forceVariants")]
+    public string? ForceVariants { get; set; }
 }
 
 /// <summary>
@@ -598,6 +606,15 @@ public class TimeUnitEntry
     /// </summary>
     [XmlAttribute("count1form")]
     public string? Count1Form { get; set; }
+
+    /// <summary>
+    /// Optional comma-separated "dimension=value" pairs (e.g. "gender=feminin") forcing
+    /// grammatical variant dimensions on the numeral fragment of this unit only, on top of the
+    /// language's declared dimension defaults and any caller-supplied variant. Caller variants for
+    /// other dimensions remain active. Parsed via <see cref="Utils.NumberToString.ForcedVariantSet.Parse"/>.
+    /// </summary>
+    [XmlAttribute("forceVariants")]
+    public string? ForceVariants { get; set; }
 }
 
 /// <summary>
