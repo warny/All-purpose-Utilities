@@ -21,7 +21,9 @@ There are no active P0–P3 findings for `Utils.NumberToString` as of
   `DONE-2026-08-24(1).md`), with pre-merge review fixes (selector-specific
   XML configuration, per-type reflection activation caching, and the
   `TimeUnitForms`/`TimeUnitFormSelectors` effective-state correction) in
-  `DONE-2026-08-25(2).md`.
+  `DONE-2026-08-25(2).md`, and a second review round (selector activation
+  caching reuses `Utils.Collections.CachedLoader` instead of a bespoke
+  cache) in `DONE-2026-08-25(3).md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) are deliberately out of scope — the

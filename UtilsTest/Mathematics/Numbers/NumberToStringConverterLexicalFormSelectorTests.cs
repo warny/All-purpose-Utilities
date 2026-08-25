@@ -76,6 +76,9 @@ public class NumberToStringConverterLexicalFormSelectorTests
     [TestMethod]
     public void ResolveLexicalFormSelector_RegisteredInstance_IsUsed()
     {
+        // "test-registered-instance" is not a real type name: if this bypassed the registration and
+        // fell through to reflection, resolution would fail with UNTS008 instead of succeeding —
+        // this proves a registered instance takes precedence over reflection.
         var instance = new ThreeFormSelector();
         NumberToStringConverter.RegisterLexicalFormSelector("test-registered-instance", instance);
         var resolved = NumberToStringConverter.ResolveLexicalFormSelector("test-registered-instance", null);
@@ -85,6 +88,8 @@ public class NumberToStringConverterLexicalFormSelectorTests
     [TestMethod]
     public void ResolveLexicalFormSelector_RegisteredFactory_IsInvoked()
     {
+        // Same precedence argument as above: "test-registered-factory" resolves only because the
+        // registered factory is consulted before reflection.
         NumberToStringConverter.RegisterLexicalFormSelector("test-registered-factory", () => new ThreeFormSelector());
         var resolved = NumberToStringConverter.ResolveLexicalFormSelector("test-registered-factory", null);
         Assert.IsInstanceOfType<ThreeFormSelector>(resolved);
@@ -395,34 +400,85 @@ public class NumberToStringConverterLexicalFormSelectorTests
     }
 
     // ─── Reflection activation caching — cached per type name, not per configured instance ─────────
-
-    [TestMethod]
-    public void ResolveLexicalFormSelector_SameTypeResolvedTwice_ActivatorCacheGrowsByOneNotTwo()
-    {
-        string typeName = typeof(CacheInstrumentedSelector).AssemblyQualifiedName!;
-        int before = NumberToStringConverter.LexicalFormSelectorActivatorCacheCount;
-
-        NumberToStringConverter.ResolveLexicalFormSelector(typeName, null);
-        int afterFirst = NumberToStringConverter.LexicalFormSelectorActivatorCacheCount;
-
-        NumberToStringConverter.ResolveLexicalFormSelector(typeName, null);
-        int afterSecond = NumberToStringConverter.LexicalFormSelectorActivatorCacheCount;
-
-        Assert.AreEqual(before + 1, afterFirst);
-        Assert.AreEqual(afterFirst, afterSecond);
-    }
+    //
+    // These tests are intentionally self-contained: each uses a dedicated, test-local selector type
+    // and resets its own static counter immediately before asserting, so results never depend on
+    // MSTest's (unspecified) execution order or on prior tests having already touched the shared,
+    // process-wide activator registry. Reflection/type-constructor discovery being cached per type
+    // name (as opposed to per resolution) is CachedLoader's own responsibility — not re-verified
+    // here via cache-internals introspection — but its functional consequence (the same type name
+    // used by two units with two different configurations never cross-contaminates) is exercised by
+    // ReadConfiguration_SameSelectorTypeWithDifferentConfigurationsOnTwoUnits_EachUsesItsOwnConfiguration
+    // above.
 
     [TestMethod]
     public void ResolveLexicalFormSelector_SameTypeResolvedTwice_ConstructsANewInstanceEachTime()
     {
-        string typeName = typeof(CacheInstrumentedSelector).AssemblyQualifiedName!;
-        CacheInstrumentedSelector.ConstructionCount = 0;
+        string typeName = typeof(ConstructionCountingSelector).AssemblyQualifiedName!;
+        ConstructionCountingSelector.ConstructionCount = 0;
 
         var first = NumberToStringConverter.ResolveLexicalFormSelector(typeName, null);
         var second = NumberToStringConverter.ResolveLexicalFormSelector(typeName, null);
 
-        Assert.AreEqual(2, CacheInstrumentedSelector.ConstructionCount);
+        // The activation STRATEGY for this type name is cached and reused (CachedLoader), but each
+        // resolution still invokes it fresh: the cache never stores one shared configured instance.
+        Assert.AreEqual(2, ConstructionCountingSelector.ConstructionCount);
         Assert.AreNotSame(first, second);
+    }
+
+    [TestMethod]
+    public void RegisterLexicalFormSelector_ConfigAwareFactory_ReceivesPerUnitConfigurationAndTakesPrecedenceOverReflection()
+    {
+        // Not a real type name: if this were ever routed to the reflection loader instead of the
+        // registered factory below, resolution would fail with UNTS008 (type not found).
+        const string registeredName = "test-registered-configured-factory";
+        NumberToStringConverter.RegisterLexicalFormSelector(
+            registeredName,
+            config => new ConfigAwareSelector(config));
+
+        var configurationA = XElement.Parse("<Configuration form=\"a\" />");
+        var configurationB = XElement.Parse("<Configuration form=\"b\" />");
+
+        var resolvedA = (ConfigAwareSelector)NumberToStringConverter.ResolveLexicalFormSelector(registeredName, "LANG-A", configurationA);
+        var resolvedB = (ConfigAwareSelector)NumberToStringConverter.ResolveLexicalFormSelector(registeredName, "LANG-B", configurationB);
+
+        Assert.AreEqual("LANG-A", resolvedA.Configuration.LanguageIdentifier);
+        Assert.AreEqual("a", resolvedA.Configuration.Configuration!.Attribute("form")!.Value);
+        Assert.AreEqual("LANG-B", resolvedB.Configuration.LanguageIdentifier);
+        Assert.AreEqual("b", resolvedB.Configuration.Configuration!.Attribute("form")!.Value);
+    }
+
+    [TestMethod]
+    public void Convert_ReflectionResolvedSelector_ConstructsSelectorOnceAtConfigurationLoadNotOnEachConvertCall()
+    {
+        string typeName = typeof(HotPathReflectionGuardSelector).AssemblyQualifiedName!;
+        HotPathReflectionGuardSelector.ConstructionCount = 0;
+        string xml = $"""
+            <?xml version="1.0" encoding="utf-8"?>
+            <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+              <Language groupSize="3" separator=" " groupSeparator="" zero="zero" minus="minus *" decimalSeparator="point" maxNumber="999">
+                <Culture>NTS05-XML-HOTPATH-TEST</Culture>
+                <Groups><Group level="1"><Digit digit="0" string=""/><Digit digit="1" string="one"/><Digit digit="2" string="two"/><Digit digit="3" string="three"/><Digit digit="4" string="four"/><Digit digit="5" string="five"/><Digit digit="6" string="six"/><Digit digit="7" string="seven"/><Digit digit="8" string="eight"/><Digit digit="9" string="nine"/></Group></Groups>
+                <NumberScale firstLetterUpperCase="false"><StaticNames><Scale value="0" string=""/></StaticNames><Suffixes><Suffix>on</Suffix></Suffixes></NumberScale>
+                <TimeUnits>
+                  <Unit name="hour" singular="hour" plural="hours" formSelector="{typeName}" />
+                  <Unit name="minute" singular="minute" plural="minutes" />
+                  <Unit name="second" singular="second" plural="seconds" />
+                </TimeUnits>
+              </Language>
+            </Numbers>
+            """;
+
+        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        Assert.AreEqual(1, HotPathReflectionGuardSelector.ConstructionCount);
+
+        var converter = converters["NTS05-XML-HOTPATH-TEST"];
+        for (int i = 1; i <= 5; i++)
+            converter.Convert(new TimeSpan(i, 0, 0));
+
+        // Repeated Convert calls must never re-resolve/re-construct the selector: resolution
+        // happens exactly once, while loading configuration.
+        Assert.AreEqual(1, HotPathReflectionGuardSelector.ConstructionCount);
     }
 
     // ─── Immutability / snapshot ────────────────────────────────────────────────────────────────
@@ -495,9 +551,18 @@ internal sealed class ConfigDrivenFormSelector(LexicalFormSelectorConfiguration 
 }
 
 /// <summary>Test-only selector whose constructor counts invocations, to prove the activation cache stores an activator (invoked anew per resolution), not a shared instance.</summary>
-internal sealed class CacheInstrumentedSelector : ILexicalFormSelector
+internal sealed class ConstructionCountingSelector : ILexicalFormSelector
 {
     public static int ConstructionCount;
-    public CacheInstrumentedSelector() => ConstructionCount++;
+    public ConstructionCountingSelector() => ConstructionCount++;
     public string SelectForm(LexicalFormContext context) => "instrumented";
+}
+
+/// <summary>Test-only selector whose constructor counts invocations, to prove Convert(...) never re-resolves/re-constructs a selector already resolved while loading configuration.</summary>
+internal sealed class HotPathReflectionGuardSelector : ILexicalFormSelector
+{
+    public static int ConstructionCount;
+    public HotPathReflectionGuardSelector() => ConstructionCount++;
+    public string SelectForm(LexicalFormContext context) =>
+        context.AbsoluteValue == System.Numerics.BigInteger.One ? "singular" : "plural";
 }

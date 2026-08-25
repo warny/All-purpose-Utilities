@@ -792,11 +792,15 @@ var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConv
 };
 ```
 
-XML configuration resolves a `formSelector="..."` type name via reflection —
-**once per distinct type name, while loading configuration, never on the
-conversion hot path** — using a built-in alias (`"default"`, or omit the
-attribute) or a consumer-supplied assembly-qualified type name. Register a
-name in advance to skip reflection entirely:
+XML configuration resolves a `formSelector="..."` type name — while loading
+configuration, never on the conversion hot path — through a single
+resolution registry backed by the repository-standard
+`Utils.Collections.CachedLoader`: the built-in `"default"` alias and any
+name passed to `RegisterLexicalFormSelector` are preloaded directly into
+that registry, so they never touch reflection; any other type name is
+resolved by reflection on first use and the resulting *activation strategy*
+is cached per distinct type name, so later uses of the same name skip
+reflection. Register a name in advance to skip reflection entirely:
 
 ```csharp
 NumberToStringConverter.RegisterLexicalFormSelector("my-company:count-bucket", new MyCountBucketSelector());
@@ -843,10 +847,22 @@ attribute unchanged; it is ignored when `<LexicalFormSelector>` is present.
 **Reflection is cached per type name, not per configured instance**: resolving
 `"MyCompany.CountBucketSelector, ..."` for two units with two *different*
 `<Configuration>` subtrees performs the expensive type/constructor lookup
-once, then re-invokes the cached activator with each unit's own
-configuration — so the same selector implementation can be reused with
-different settings across units without paying reflection cost twice, and
-without one unit's configuration leaking into another's.
+once (cached as a reusable `Func<LexicalFormSelectorConfiguration,
+ILexicalFormSelector>` activation strategy, never as a shared instance), then
+re-invokes that cached activator with each unit's own configuration — so the
+same selector implementation can be reused with different settings across
+units without paying reflection cost twice, and without one unit's
+configuration leaking into another's.
+
+This activator cache is a plain `CachedLoader<string, Func<...>>` over a
+`ConcurrentDictionary`, not a custom locking scheme: its check-then-load
+sequence is not atomic, so under a race, first-time resolution of the same
+not-yet-cached type name may run the reflection lookup more than once. Each
+run is deterministic and side-effect-free, so this is harmless — only one
+resulting activator ends up cached, and every resolution still returns a
+correctly-configured selector — but it means the guarantee is "the loader
+converges to one cached activator per type name," not "the loader runs at
+most once, ever."
 
 Programmatically, an already-constructed `ILexicalFormSelector` instance
 never triggers reflection — reflection only ever resolves configured type
