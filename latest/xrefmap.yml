@@ -60564,6 +60564,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.CurrencyDefinition.SubunitDigits
   nameWithType: CurrencyDefinition.SubunitDigits
+- uid: Utils.NumberToString.CurrencyDefinition.SubunitForcedVariants
+  name: SubunitForcedVariants
+  href: api/Utils.NumberToString.CurrencyDefinition.html#Utils_NumberToString_CurrencyDefinition_SubunitForcedVariants
+  commentId: P:Utils.NumberToString.CurrencyDefinition.SubunitForcedVariants
+  fullName: Utils.NumberToString.CurrencyDefinition.SubunitForcedVariants
+  nameWithType: CurrencyDefinition.SubunitForcedVariants
+- uid: Utils.NumberToString.CurrencyDefinition.SubunitForcedVariants*
+  name: SubunitForcedVariants
+  href: api/Utils.NumberToString.CurrencyDefinition.html#Utils_NumberToString_CurrencyDefinition_SubunitForcedVariants_
+  commentId: Overload:Utils.NumberToString.CurrencyDefinition.SubunitForcedVariants
+  isSpec: "True"
+  fullName: Utils.NumberToString.CurrencyDefinition.SubunitForcedVariants
+  nameWithType: CurrencyDefinition.SubunitForcedVariants
 - uid: Utils.NumberToString.CurrencyDefinition.SubunitPlural
   name: SubunitPlural
   href: api/Utils.NumberToString.CurrencyDefinition.html#Utils_NumberToString_CurrencyDefinition_SubunitPlural
@@ -60590,6 +60603,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.CurrencyDefinition.SubunitSingular
   nameWithType: CurrencyDefinition.SubunitSingular
+- uid: Utils.NumberToString.CurrencyDefinition.UnitForcedVariants
+  name: UnitForcedVariants
+  href: api/Utils.NumberToString.CurrencyDefinition.html#Utils_NumberToString_CurrencyDefinition_UnitForcedVariants
+  commentId: P:Utils.NumberToString.CurrencyDefinition.UnitForcedVariants
+  fullName: Utils.NumberToString.CurrencyDefinition.UnitForcedVariants
+  nameWithType: CurrencyDefinition.UnitForcedVariants
+- uid: Utils.NumberToString.CurrencyDefinition.UnitForcedVariants*
+  name: UnitForcedVariants
+  href: api/Utils.NumberToString.CurrencyDefinition.html#Utils_NumberToString_CurrencyDefinition_UnitForcedVariants_
+  commentId: Overload:Utils.NumberToString.CurrencyDefinition.UnitForcedVariants
+  isSpec: "True"
+  fullName: Utils.NumberToString.CurrencyDefinition.UnitForcedVariants
+  nameWithType: CurrencyDefinition.UnitForcedVariants
 - uid: Utils.NumberToString.CurrencyDefinition.UnitPlural
   name: UnitPlural
   href: api/Utils.NumberToString.CurrencyDefinition.html#Utils_NumberToString_CurrencyDefinition_UnitPlural
@@ -60889,6 +60915,70 @@ references:
   commentId: F:Utils.NumberToString.DuplicateCulturePolicy.Replace
   fullName: Utils.NumberToString.DuplicateCulturePolicy.Replace
   nameWithType: DuplicateCulturePolicy.Replace
+- uid: Utils.NumberToString.ForcedVariantSet
+  name: ForcedVariantSet
+  href: api/Utils.NumberToString.ForcedVariantSet.html
+  commentId: T:Utils.NumberToString.ForcedVariantSet
+  fullName: Utils.NumberToString.ForcedVariantSet
+  nameWithType: ForcedVariantSet
+- uid: Utils.NumberToString.ForcedVariantSet.Create(System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})
+  name: Create(params IEnumerable<(string Dimension, string Value)>)
+  href: api/Utils.NumberToString.ForcedVariantSet.html#Utils_NumberToString_ForcedVariantSet_Create_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___
+  commentId: M:Utils.NumberToString.ForcedVariantSet.Create(System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})
+  name.vb: Create(IEnumerable(Of (Dimension As String, Value As String)))
+  fullName: Utils.NumberToString.ForcedVariantSet.Create(params System.Collections.Generic.IEnumerable<(string Dimension, string Value)>)
+  fullName.vb: Utils.NumberToString.ForcedVariantSet.Create(System.Collections.Generic.IEnumerable(Of (Dimension As String, Value As String)))
+  nameWithType: ForcedVariantSet.Create(params IEnumerable<(string Dimension, string Value)>)
+  nameWithType.vb: ForcedVariantSet.Create(IEnumerable(Of (Dimension As String, Value As String)))
+- uid: Utils.NumberToString.ForcedVariantSet.Create*
+  name: Create
+  href: api/Utils.NumberToString.ForcedVariantSet.html#Utils_NumberToString_ForcedVariantSet_Create_
+  commentId: Overload:Utils.NumberToString.ForcedVariantSet.Create
+  isSpec: "True"
+  fullName: Utils.NumberToString.ForcedVariantSet.Create
+  nameWithType: ForcedVariantSet.Create
+- uid: Utils.NumberToString.ForcedVariantSet.Empty
+  name: Empty
+  href: api/Utils.NumberToString.ForcedVariantSet.html#Utils_NumberToString_ForcedVariantSet_Empty
+  commentId: P:Utils.NumberToString.ForcedVariantSet.Empty
+  fullName: Utils.NumberToString.ForcedVariantSet.Empty
+  nameWithType: ForcedVariantSet.Empty
+- uid: Utils.NumberToString.ForcedVariantSet.Empty*
+  name: Empty
+  href: api/Utils.NumberToString.ForcedVariantSet.html#Utils_NumberToString_ForcedVariantSet_Empty_
+  commentId: Overload:Utils.NumberToString.ForcedVariantSet.Empty
+  isSpec: "True"
+  fullName: Utils.NumberToString.ForcedVariantSet.Empty
+  nameWithType: ForcedVariantSet.Empty
+- uid: Utils.NumberToString.ForcedVariantSet.IsEmpty
+  name: IsEmpty
+  href: api/Utils.NumberToString.ForcedVariantSet.html#Utils_NumberToString_ForcedVariantSet_IsEmpty
+  commentId: P:Utils.NumberToString.ForcedVariantSet.IsEmpty
+  fullName: Utils.NumberToString.ForcedVariantSet.IsEmpty
+  nameWithType: ForcedVariantSet.IsEmpty
+- uid: Utils.NumberToString.ForcedVariantSet.IsEmpty*
+  name: IsEmpty
+  href: api/Utils.NumberToString.ForcedVariantSet.html#Utils_NumberToString_ForcedVariantSet_IsEmpty_
+  commentId: Overload:Utils.NumberToString.ForcedVariantSet.IsEmpty
+  isSpec: "True"
+  fullName: Utils.NumberToString.ForcedVariantSet.IsEmpty
+  nameWithType: ForcedVariantSet.IsEmpty
+- uid: Utils.NumberToString.ForcedVariantSet.Parse(System.String,System.String,System.String)
+  name: Parse(string?, string?, string?)
+  href: api/Utils.NumberToString.ForcedVariantSet.html#Utils_NumberToString_ForcedVariantSet_Parse_System_String_System_String_System_String_
+  commentId: M:Utils.NumberToString.ForcedVariantSet.Parse(System.String,System.String,System.String)
+  name.vb: Parse(String, String, String)
+  fullName: Utils.NumberToString.ForcedVariantSet.Parse(string?, string?, string?)
+  fullName.vb: Utils.NumberToString.ForcedVariantSet.Parse(String, String, String)
+  nameWithType: ForcedVariantSet.Parse(string?, string?, string?)
+  nameWithType.vb: ForcedVariantSet.Parse(String, String, String)
+- uid: Utils.NumberToString.ForcedVariantSet.Parse*
+  name: Parse
+  href: api/Utils.NumberToString.ForcedVariantSet.html#Utils_NumberToString_ForcedVariantSet_Parse_
+  commentId: Overload:Utils.NumberToString.ForcedVariantSet.Parse
+  isSpec: "True"
+  fullName: Utils.NumberToString.ForcedVariantSet.Parse
+  nameWithType: ForcedVariantSet.Parse
 - uid: Utils.NumberToString.FormVariantType
   name: FormVariantType
   href: api/Utils.NumberToString.FormVariantType.html
@@ -61011,6 +61101,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.FractionType.Digits
   nameWithType: FractionType.Digits
+- uid: Utils.NumberToString.FractionType.ForceVariants
+  name: ForceVariants
+  href: api/Utils.NumberToString.FractionType.html#Utils_NumberToString_FractionType_ForceVariants
+  commentId: P:Utils.NumberToString.FractionType.ForceVariants
+  fullName: Utils.NumberToString.FractionType.ForceVariants
+  nameWithType: FractionType.ForceVariants
+- uid: Utils.NumberToString.FractionType.ForceVariants*
+  name: ForceVariants
+  href: api/Utils.NumberToString.FractionType.html#Utils_NumberToString_FractionType_ForceVariants_
+  commentId: Overload:Utils.NumberToString.FractionType.ForceVariants
+  isSpec: "True"
+  fullName: Utils.NumberToString.FractionType.ForceVariants
+  nameWithType: FractionType.ForceVariants
 - uid: Utils.NumberToString.FractionType.StringValue
   name: StringValue
   href: api/Utils.NumberToString.FractionType.html#Utils_NumberToString_FractionType_StringValue
@@ -63513,6 +63616,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.Exceptions
   nameWithType: NumberToStringConverter.Exceptions
+- uid: Utils.NumberToString.NumberToStringConverter.FractionForcedVariants
+  name: FractionForcedVariants
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_FractionForcedVariants
+  commentId: P:Utils.NumberToString.NumberToStringConverter.FractionForcedVariants
+  fullName: Utils.NumberToString.NumberToStringConverter.FractionForcedVariants
+  nameWithType: NumberToStringConverter.FractionForcedVariants
+- uid: Utils.NumberToString.NumberToStringConverter.FractionForcedVariants*
+  name: FractionForcedVariants
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_FractionForcedVariants_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.FractionForcedVariants
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.FractionForcedVariants
+  nameWithType: NumberToStringConverter.FractionForcedVariants
 - uid: Utils.NumberToString.NumberToStringConverter.FractionSeparator
   name: FractionSeparator
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_FractionSeparator
@@ -64264,6 +64380,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.SupportsTimeConversion
   nameWithType: NumberToStringConverter.SupportsTimeConversion
+- uid: Utils.NumberToString.NumberToStringConverter.TimeUnitForcedVariants
+  name: TimeUnitForcedVariants
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_TimeUnitForcedVariants
+  commentId: P:Utils.NumberToString.NumberToStringConverter.TimeUnitForcedVariants
+  fullName: Utils.NumberToString.NumberToStringConverter.TimeUnitForcedVariants
+  nameWithType: NumberToStringConverter.TimeUnitForcedVariants
+- uid: Utils.NumberToString.NumberToStringConverter.TimeUnitForcedVariants*
+  name: TimeUnitForcedVariants
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_TimeUnitForcedVariants_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.TimeUnitForcedVariants
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.TimeUnitForcedVariants
+  nameWithType: NumberToStringConverter.TimeUnitForcedVariants
 - uid: Utils.NumberToString.NumberToStringConverter.TimeUnits
   name: TimeUnits
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_TimeUnits
@@ -64875,6 +65004,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverterOptions.Exceptions
   nameWithType: NumberToStringConverterOptions.Exceptions
+- uid: Utils.NumberToString.NumberToStringConverterOptions.FractionForcedVariants
+  name: FractionForcedVariants
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_FractionForcedVariants
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.FractionForcedVariants
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.FractionForcedVariants
+  nameWithType: NumberToStringConverterOptions.FractionForcedVariants
+- uid: Utils.NumberToString.NumberToStringConverterOptions.FractionForcedVariants*
+  name: FractionForcedVariants
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_FractionForcedVariants_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.FractionForcedVariants
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.FractionForcedVariants
+  nameWithType: NumberToStringConverterOptions.FractionForcedVariants
 - uid: Utils.NumberToString.NumberToStringConverterOptions.FractionSeparator
   name: FractionSeparator
   href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_FractionSeparator
@@ -65235,6 +65377,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverterOptions.Separator
   nameWithType: NumberToStringConverterOptions.Separator
+- uid: Utils.NumberToString.NumberToStringConverterOptions.TimeUnitForcedVariants
+  name: TimeUnitForcedVariants
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_TimeUnitForcedVariants
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.TimeUnitForcedVariants
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.TimeUnitForcedVariants
+  nameWithType: NumberToStringConverterOptions.TimeUnitForcedVariants
+- uid: Utils.NumberToString.NumberToStringConverterOptions.TimeUnitForcedVariants*
+  name: TimeUnitForcedVariants
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_TimeUnitForcedVariants_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.TimeUnitForcedVariants
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.TimeUnitForcedVariants
+  nameWithType: NumberToStringConverterOptions.TimeUnitForcedVariants
 - uid: Utils.NumberToString.NumberToStringConverterOptions.TimeUnits
   name: TimeUnits
   href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_TimeUnits
@@ -65985,6 +66140,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.TimeUnitEntry.Count1Form
   nameWithType: TimeUnitEntry.Count1Form
+- uid: Utils.NumberToString.TimeUnitEntry.ForceVariants
+  name: ForceVariants
+  href: api/Utils.NumberToString.TimeUnitEntry.html#Utils_NumberToString_TimeUnitEntry_ForceVariants
+  commentId: P:Utils.NumberToString.TimeUnitEntry.ForceVariants
+  fullName: Utils.NumberToString.TimeUnitEntry.ForceVariants
+  nameWithType: TimeUnitEntry.ForceVariants
+- uid: Utils.NumberToString.TimeUnitEntry.ForceVariants*
+  name: ForceVariants
+  href: api/Utils.NumberToString.TimeUnitEntry.html#Utils_NumberToString_TimeUnitEntry_ForceVariants_
+  commentId: Overload:Utils.NumberToString.TimeUnitEntry.ForceVariants
+  isSpec: "True"
+  fullName: Utils.NumberToString.TimeUnitEntry.ForceVariants
+  nameWithType: TimeUnitEntry.ForceVariants
 - uid: Utils.NumberToString.TimeUnitEntry.Name
   name: Name
   href: api/Utils.NumberToString.TimeUnitEntry.html#Utils_NumberToString_TimeUnitEntry_Name

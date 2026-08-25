@@ -2,11 +2,11 @@
 <html>
   <head>
     <meta charset="utf-8">
-      <title>Class FractionType | omy.Utils Documentation </title>
+      <title>Class ForcedVariantSet | omy.Utils Documentation </title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="title" content="Class FractionType | omy.Utils Documentation ">
+      <meta name="title" content="Class ForcedVariantSet | omy.Utils Documentation ">
       
-      <meta name="description" content="Configures how fractional values should be rendered.">
+      <meta name="description" content="Represents zero or more grammatical variant dimension values that a configured lexical constituent (a time unit, a currency unit/subunit, a fraction denominator term, …) forces on the numeric fragment it governs.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -16,7 +16,7 @@
       <meta name="docfx:rel" content="../">
       
       
-      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_FractionType.md&amp;value=---%0Auid%3A%20Utils.NumberToString.FractionType%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_ForcedVariantSet.md&amp;value=---%0Auid%3A%20Utils.NumberToString.ForcedVariantSet%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
       <meta name="loc:inThisArticle" content="In this article">
       <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
       <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
@@ -84,12 +84,12 @@
           <nav id="breadcrumb"></nav>
         </div>
 
-        <article data-uid="Utils.NumberToString.FractionType">
+        <article data-uid="Utils.NumberToString.ForcedVariantSet">
 
 
 
-  <h1 id="Utils_NumberToString_FractionType" data-uid="Utils.NumberToString.FractionType" class="text-break">
-Class FractionType  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L550"><i class="bi bi-code-slash"></i></a>
+  <h1 id="Utils_NumberToString_ForcedVariantSet" data-uid="Utils.NumberToString.ForcedVariantSet" class="text-break">
+Class ForcedVariantSet  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ForcedVariantSet.cs/#L33"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,12 +97,14 @@ Class FractionType  <a class="header-action link-secondary" title="View source" 
   <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Configures how fractional values should be rendered.</p>
+  <div class="markdown summary"><p>Represents zero or more grammatical variant dimension values that a configured lexical
+constituent (a time unit, a currency unit/subunit, a fraction denominator term, …) forces on
+the numeric fragment it governs.</p>
 </div>
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class FractionType</code></pre>
+    <pre><code class="lang-csharp hljs">public sealed class ForcedVariantSet</code></pre>
   </div>
 
 
@@ -112,7 +114,7 @@ Class FractionType  <a class="header-action link-secondary" title="View source" 
     <dt>Inheritance</dt>
     <dd>
       <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
-      <div><span class="xref">FractionType</span></div>
+      <div><span class="xref">ForcedVariantSet</span></div>
     </dd>
   </dl>
 
@@ -132,9 +134,6 @@ Class FractionType  <a class="header-action link-secondary" title="View source" 
     </div>
     <div>
       <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
     </div>
     <div>
       <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
@@ -238,25 +237,48 @@ Class FractionType  <a class="header-action link-secondary" title="View source" 
 
 
 
+  <h2 id="Utils_NumberToString_ForcedVariantSet_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>
+Forced values take precedence, dimension by dimension, over both the language's declared
+dimension defaults and any caller-supplied variant for the same dimension — but only for the
+single numeric fragment the owning constituent renders. A caller-supplied dimension not forced
+here survives untouched; other fragments in the same composite phrase, and any subsequent
+public conversion call, are never affected. See <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">Overlay(IReadOnlyDictionary&lt;string, string&gt;)</a>.
+</p>
+<p>
+Instances are immutable. <a class="xref" href="Utils.NumberToString.ForcedVariantSet.html#Utils_NumberToString_ForcedVariantSet_Parse_System_String_System_String_System_String_">Parse(string?, string?, string?)</a> and <a class="xref" href="Utils.NumberToString.ForcedVariantSet.html#Utils_NumberToString_ForcedVariantSet_Create_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___">Create(params IEnumerable&lt;(string Dimension, string Value)&gt;)</a> perform only syntactic
+validation (well-formed dimension/value pairs, no duplicate *raw* dimension key); they do not
+know which dimensions or values a particular language declares, and a raw key may still be a
+<code>localName</code> alias (e.g. French "genre") rather than the canonical dimension name (e.g.
+"gender"). Semantic validation against a specific converter's declared variant dimensions is a
+separate, converter-owned step (performed once at configuration time, not on every conversion
+call) — see <code>NumberToStringConverter.CanonicalizeForcedVariants</code> — which also normalizes
+every accepted dimension to its canonical name and rejects a canonical/alias pair that both
+resolve to the same declared dimension as a semantic duplicate. Only the canonicalized result
+of that step is used to overlay a runtime variant query, so
+<a class="xref" href="Utils.NumberToString.NumberToStringConverter.VariantRule.html">NumberToStringConverter.VariantRule</a> matching (which keys exclusively on canonical
+dimension names) always sees the forced value.
+</p>
+</div>
 
 
   <h2 class="section" id="properties">Properties
 </h2>
 
 
-  <a id="Utils_NumberToString_FractionType_Digits_" data-uid="Utils.NumberToString.FractionType.Digits*"></a>
+  <a id="Utils_NumberToString_ForcedVariantSet_Empty_" data-uid="Utils.NumberToString.ForcedVariantSet.Empty*"></a>
 
-  <h3 id="Utils_NumberToString_FractionType_Digits" data-uid="Utils.NumberToString.FractionType.Digits">
-  Digits
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L555"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_NumberToString_ForcedVariantSet_Empty" data-uid="Utils.NumberToString.ForcedVariantSet.Empty">
+  Empty
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ForcedVariantSet.cs/#L36"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets or sets the number of digits considered by the fraction.</p>
+  <div class="markdown level1 summary"><p>Gets a forced variant set with no forced dimensions. Overlaying it is a no-op.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public int Digits { get; set; }</code></pre>
+    <pre><code class="lang-csharp hljs">public static ForcedVariantSet Empty { get; }</code></pre>
   </div>
 
 
@@ -265,7 +287,7 @@ Class FractionType  <a class="header-action link-secondary" title="View source" 
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dt><a class="xref" href="Utils.NumberToString.ForcedVariantSet.html">ForcedVariantSet</a></dt>
     <dd></dd>
   </dl>
 
@@ -276,21 +298,19 @@ Class FractionType  <a class="header-action link-secondary" title="View source" 
 
 
 
-  <a id="Utils_NumberToString_FractionType_ForceVariants_" data-uid="Utils.NumberToString.FractionType.ForceVariants*"></a>
+  <a id="Utils_NumberToString_ForcedVariantSet_IsEmpty_" data-uid="Utils.NumberToString.ForcedVariantSet.IsEmpty*"></a>
 
-  <h3 id="Utils_NumberToString_FractionType_ForceVariants" data-uid="Utils.NumberToString.FractionType.ForceVariants">
-  ForceVariants
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L569"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_NumberToString_ForcedVariantSet_IsEmpty" data-uid="Utils.NumberToString.ForcedVariantSet.IsEmpty">
+  IsEmpty
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ForcedVariantSet.cs/#L44"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Optional comma-separated &quot;dimension=value&quot; pairs (e.g. &quot;gender=feminin&quot;) forcing
-grammatical variant dimensions on the numerator fragment governed by this fraction term
-only. Parsed via <a class="xref" href="Utils.NumberToString.ForcedVariantSet.html#Utils_NumberToString_ForcedVariantSet_Parse_System_String_System_String_System_String_">Parse(string?, string?, string?)</a>.</p>
+  <div class="markdown level1 summary"><p>Gets whether no dimension is forced by this set.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string? ForceVariants { get; set; }</code></pre>
+    <pre><code class="lang-csharp hljs">public bool IsEmpty { get; }</code></pre>
   </div>
 
 
@@ -299,7 +319,7 @@ only. Parsed via <a class="xref" href="Utils.NumberToString.ForcedVariantSet.htm
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
     <dd></dd>
   </dl>
 
@@ -310,28 +330,36 @@ only. Parsed via <a class="xref" href="Utils.NumberToString.ForcedVariantSet.htm
 
 
 
-  <a id="Utils_NumberToString_FractionType_StringValue_" data-uid="Utils.NumberToString.FractionType.StringValue*"></a>
+  <h2 class="section" id="methods">Methods
+</h2>
 
-  <h3 id="Utils_NumberToString_FractionType_StringValue" data-uid="Utils.NumberToString.FractionType.StringValue">
-  StringValue
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L561"><i class="bi bi-code-slash"></i></a>
+
+  <a id="Utils_NumberToString_ForcedVariantSet_Create_" data-uid="Utils.NumberToString.ForcedVariantSet.Create*"></a>
+
+  <h3 id="Utils_NumberToString_ForcedVariantSet_Create_System_Collections_Generic_IEnumerable_System_ValueTuple_System_String_System_String___" data-uid="Utils.NumberToString.ForcedVariantSet.Create(System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
+  Create(params IEnumerable&lt;(string Dimension, string Value)&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ForcedVariantSet.cs/#L95"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets or sets the literal representation of the fraction.</p>
+  <div class="markdown level1 summary"><p>Creates a forced variant set from explicit dimension/value pairs (programmatic construction).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string StringValue { get; set; }</code></pre>
+    <pre><code class="lang-csharp hljs">public static ForcedVariantSet Create(params IEnumerable&lt;(string Dimension, string Value)&gt; values)</code></pre>
   </div>
 
-
-
-
-
-  <h4 class="section">Property Value</h4>
+  <h4 class="section">Parameters</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dt><code>values</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;(<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.string,system.string-.dimension">Dimension</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.string,system.string-.value">Value</a>)&gt;</dt>
+    <dd><p>The dimension/value pairs to force, enumerated once. A <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> or empty
+sequence returns <a class="xref" href="Utils.NumberToString.ForcedVariantSet.html#Utils_NumberToString_ForcedVariantSet_Empty">Empty</a>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.NumberToString.ForcedVariantSet.html">ForcedVariantSet</a></dt>
     <dd></dd>
   </dl>
 
@@ -339,6 +367,70 @@ only. Parsed via <a class="xref" href="Utils.NumberToString.ForcedVariantSet.htm
 
 
 
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.NumberToString.NumberToStringConfigurationException.html">NumberToStringConfigurationException</a></dt>
+    <dd><p>A dimension or value is null/empty — error code <code>&quot;UNTS005&quot;</code> — or the same raw dimension
+key is supplied more than once — error code <code>&quot;UNTS004&quot;</code>.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_NumberToString_ForcedVariantSet_Parse_" data-uid="Utils.NumberToString.ForcedVariantSet.Parse*"></a>
+
+  <h3 id="Utils_NumberToString_ForcedVariantSet_Parse_System_String_System_String_System_String_" data-uid="Utils.NumberToString.ForcedVariantSet.Parse(System.String,System.String,System.String)">
+  Parse(string?, string?, string?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ForcedVariantSet.cs/#L59"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Parses a comma-separated list of <code>dimension=value</code> pairs, e.g. <code>&quot;gender=feminin&quot;</code>
+or <code>&quot;gender=feminin,case=genitive&quot;</code>. A <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>, empty, or
+whitespace-only string returns <a class="xref" href="Utils.NumberToString.ForcedVariantSet.html#Utils_NumberToString_ForcedVariantSet_Empty">Empty</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ForcedVariantSet Parse(string? text, string? languageIdentifier = null, string? configurationPath = null)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>text</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The comma-separated forced-variant declaration to parse.</p>
+</dd>
+    <dt><code>languageIdentifier</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The owning language identifier, used only for diagnostics.</p>
+</dd>
+    <dt><code>configurationPath</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>A description of the configuration location, used only for diagnostics.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.NumberToString.ForcedVariantSet.html">ForcedVariantSet</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.NumberToString.NumberToStringConfigurationException.html">NumberToStringConfigurationException</a></dt>
+    <dd><p>The syntax is malformed (missing '=', empty dimension, or empty value) — error code
+<code>&quot;UNTS005&quot;</code> — or the same dimension is declared more than once — error code
+<code>&quot;UNTS004&quot;</code> (raised by the shared <span class="xref">Utils.NumberToString.VariantConstraintSet</span> constructor).</p>
+</dd>
+  </dl>
 
 
 
@@ -346,7 +438,7 @@ only. Parsed via <a class="xref" href="Utils.NumberToString.ForcedVariantSet.htm
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L550" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ForcedVariantSet.cs/#L33" class="edit-link">Edit this page</a>
         </div>
 
 

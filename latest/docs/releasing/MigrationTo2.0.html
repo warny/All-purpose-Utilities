@@ -107,6 +107,42 @@ is genuinely required.</p>
 <h2 id="numbertostring-rule-precedence">NumberToString rule precedence</h2>
 <p>Version 2.0 removes declaration order as an implicit tie-breaker. Add <code>priority=&quot;100&quot;</code> (or another intentional signed <code>xs:int</code> value) when compatible rules have equal canonical specificity. Ordinal variants and trigger forms select the greatest specificity and then greatest priority. Cumulative variants apply the least specific and lowest-priority rules first.</p>
 <p>Programmatic trigger forms must migrate from <code>(Constraints, To)</code> tuples to <code>NumberToStringConverter.TriggerReplacementForm</code>. <code>VariantRule</code> and <code>OrdinalVariantRule</code> constructors accept an optional final <code>priority</code> argument. Configurations inherited through <code>baseOn</code> retain parent priorities; parent and child candidates are validated together and no implicit override occurs.</p>
+<h3 id="forcedvariants-nts-04--additive-with-one-french-output-correction">ForcedVariants (NTS-04) — additive, with one French output correction</h3>
+<p>A configured lexical constituent (a time unit, a currency unit/subunit, a fraction
+denominator term) can now force grammatical variant dimensions (e.g. gender) on the
+numeric fragment it governs, without the caller supplying them — see the
+&quot;ForcedVariants&quot; section of <code>Utils.NumberToString/README.md</code> for the full precedence
+and locality contract. The new public surface is purely additive: the existing
+<code>NumberToStringConverterOptions.TimeUnits</code> tuple shape and <code>CurrencyDefinition</code>'s
+existing properties are unchanged; <code>TimeUnitForcedVariants</code>, <code>FractionForcedVariants</code>,
+<code>CurrencyDefinition.UnitForcedVariants</code>/<code>SubunitForcedVariants</code>, and the new
+<code>ForcedVariantSet</code> type default to an empty set that is behaviorally identical to
+pre-2.0 output. No <code>AcceptedApiBreaks.md</code> entry is required.</p>
+<p>The one intentional <strong>output change</strong> is a grammatical correction to the built-in
+French time-unit configuration: <code>hour</code>/<code>minute</code>/<code>second</code> (all feminine nouns) now
+declare <code>forceVariants=&quot;gender=feminin&quot;</code>. <code>fr.Convert(new TimeSpan(1, 0, 0))</code> changes
+from <code>&quot;un heure&quot;</code> to the grammatically correct <code>&quot;une heure&quot;</code>, and <code>fr.Convert(TimeSpan.FromHours(21))</code>
+changes from <code>&quot;vingt et un heures&quot;</code> to <code>&quot;vingt et une heures&quot;</code>, without the caller
+passing <code>gender=feminin</code> explicitly. Callers that previously worked around the defect
+by passing <code>gender=feminin</code> themselves are unaffected — the explicit variant still
+produces the same, now-correct, result. <code>fr.Convert(1)</code> and <code>fr.Convert(21)</code> (ordinary
+cardinals, no time unit involved) remain masculine by default.</p>
+<p><code>ForcedVariantSet.Create</code> — introduced in this same rc, not previously published —
+takes <code>params IEnumerable&lt;(string Dimension, string Value)&gt;</code> rather than an array-typed
+<code>params (string, string)[]</code>; existing tuple-literal call sites (<code>Create((&quot;gender&quot;, &quot;feminin&quot;))</code>)
+are source-compatible. <code>ForcedVariantSet</code> dimension aliases (a language's declared
+<code>localName</code>, e.g. French <code>genre</code>) are now canonicalized to the dimension's canonical
+name before use; a forced set that mixed a canonical name and its alias for the same
+dimension (previously silently inert) is now rejected deterministically.</p>
+<p>Portuguese, Galician, and Catalan (<code>PT</code>, <code>GL</code>, <code>CA</code>) gain built-in
+<code>Convert(TimeSpan)</code>/<code>Convert(TimeOnly)</code> support (<code>SupportsTimeConversion</code> becomes
+<code>true</code>) using the same <code>forceVariants=&quot;gender=...&quot;</code> pattern on their feminine <code>hour</code>
+unit; <code>minute</code>/<code>second</code> remain masculine by default. These are new capabilities, not
+behavior changes to existing output. Spanish (<code>ES</code>) time-unit support was evaluated
+and deliberately deferred — its masculine attributive numeral apocope (&quot;uno&quot;→&quot;un&quot;,
+&quot;veintiuno&quot;→&quot;veintiún&quot;) applies to compound counts as well as count 1, which the
+current <code>Count1Form</code> mechanism cannot express correctly; <code>ES.SupportsTimeConversion</code>
+remains <code>false</code>. See <code>Utils.NumberToString/DONE-2026-08-24(1).md</code>.</p>
 <p><a id="omy-utils-fonts-2"></a></p>
 <h2 id="utilsfonts-hostile-font-parsing-hardening">Utils.Fonts hostile-font parsing hardening</h2>
 <p><code>TrueTypeFont.ParseFont</code>/<code>ParseFontAsync</code> now accept an optional <code>TrueTypeFontParsingOptions</code>

@@ -305,6 +305,40 @@ Class CurrencyDefinition  <a class="header-action link-secondary" title="View so
 
 
 
+  <a id="Utils_NumberToString_CurrencyDefinition_SubunitForcedVariants_" data-uid="Utils.NumberToString.CurrencyDefinition.SubunitForcedVariants*"></a>
+
+  <h3 id="Utils_NumberToString_CurrencyDefinition_SubunitForcedVariants" data-uid="Utils.NumberToString.CurrencyDefinition.SubunitForcedVariants">
+  SubunitForcedVariants
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/CurrencyDefinition.cs/#L40"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Forces grammatical variant dimensions (e.g. gender) on the numeral fragment of the subunit
+only, independently of <a class="xref" href="Utils.NumberToString.CurrencyDefinition.html#Utils_NumberToString_CurrencyDefinition_UnitForcedVariants">UnitForcedVariants</a>. Defaults to
+<a class="xref" href="Utils.NumberToString.ForcedVariantSet.html#Utils_NumberToString_ForcedVariantSet_Empty">Empty</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ForcedVariantSet SubunitForcedVariants { get; init; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.NumberToString.ForcedVariantSet.html">ForcedVariantSet</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_NumberToString_CurrencyDefinition_SubunitPlural_" data-uid="Utils.NumberToString.CurrencyDefinition.SubunitPlural*"></a>
 
   <h3 id="Utils_NumberToString_CurrencyDefinition_SubunitPlural" data-uid="Utils.NumberToString.CurrencyDefinition.SubunitPlural">
@@ -359,6 +393,42 @@ Class CurrencyDefinition  <a class="header-action link-secondary" title="View so
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_NumberToString_CurrencyDefinition_UnitForcedVariants_" data-uid="Utils.NumberToString.CurrencyDefinition.UnitForcedVariants*"></a>
+
+  <h3 id="Utils_NumberToString_CurrencyDefinition_UnitForcedVariants" data-uid="Utils.NumberToString.CurrencyDefinition.UnitForcedVariants">
+  UnitForcedVariants
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/CurrencyDefinition.cs/#L33"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Forces grammatical variant dimensions (e.g. gender) on the numeral fragment of the main
+unit only, on top of the language's declared dimension defaults and any caller-supplied
+variant. Caller variants for other dimensions remain active. Defaults to
+<a class="xref" href="Utils.NumberToString.ForcedVariantSet.html#Utils_NumberToString_ForcedVariantSet_Empty">Empty</a> (identical to pre-NTS-04 behavior); existing object
+initializers that don't set this property are unaffected.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ForcedVariantSet UnitForcedVariants { get; init; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.NumberToString.ForcedVariantSet.html">ForcedVariantSet</a></dt>
     <dd></dd>
   </dl>
 

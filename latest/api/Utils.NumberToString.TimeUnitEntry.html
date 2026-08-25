@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_TimeUnitEntry" data-uid="Utils.NumberToString.TimeUnitEntry" class="text-break">
-Class TimeUnitEntry  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L580"><i class="bi bi-code-slash"></i></a>
+Class TimeUnitEntry  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L588"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -248,7 +248,7 @@ Class TimeUnitEntry  <a class="header-action link-secondary" title="View source"
 
   <h3 id="Utils_NumberToString_TimeUnitEntry_Count1Form" data-uid="Utils.NumberToString.TimeUnitEntry.Count1Form">
   Count1Form
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L599"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L607"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Optional numeral form to use when count == 1, overriding the standard Convert(1) result.
@@ -278,11 +278,46 @@ Useful when the unit has a grammatical gender that requires a different form of 
 
 
 
+  <a id="Utils_NumberToString_TimeUnitEntry_ForceVariants_" data-uid="Utils.NumberToString.TimeUnitEntry.ForceVariants*"></a>
+
+  <h3 id="Utils_NumberToString_TimeUnitEntry_ForceVariants" data-uid="Utils.NumberToString.TimeUnitEntry.ForceVariants">
+  ForceVariants
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L616"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Optional comma-separated &quot;dimension=value&quot; pairs (e.g. &quot;gender=feminin&quot;) forcing
+grammatical variant dimensions on the numeral fragment of this unit only, on top of the
+language's declared dimension defaults and any caller-supplied variant. Caller variants for
+other dimensions remain active. Parsed via <a class="xref" href="Utils.NumberToString.ForcedVariantSet.html#Utils_NumberToString_ForcedVariantSet_Parse_System_String_System_String_System_String_">Parse(string?, string?, string?)</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string? ForceVariants { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_NumberToString_TimeUnitEntry_Name_" data-uid="Utils.NumberToString.TimeUnitEntry.Name*"></a>
 
   <h3 id="Utils_NumberToString_TimeUnitEntry_Name" data-uid="Utils.NumberToString.TimeUnitEntry.Name">
   Name
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L583"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L591"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Canonical unit name (e.g. &quot;hour&quot;, &quot;minute&quot;, &quot;second&quot;).</p>
@@ -314,7 +349,7 @@ Useful when the unit has a grammatical gender that requires a different form of 
 
   <h3 id="Utils_NumberToString_TimeUnitEntry_Plural" data-uid="Utils.NumberToString.TimeUnitEntry.Plural">
   Plural
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L591"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L599"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Plural form of the unit (e.g. &quot;heures&quot;).</p>
@@ -346,7 +381,7 @@ Useful when the unit has a grammatical gender that requires a different form of 
 
   <h3 id="Utils_NumberToString_TimeUnitEntry_Singular" data-uid="Utils.NumberToString.TimeUnitEntry.Singular">
   Singular
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L587"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L595"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Singular form of the unit (e.g. &quot;heure&quot;).</p>
@@ -378,7 +413,7 @@ Useful when the unit has a grammatical gender that requires a different form of 
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L580" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L588" class="edit-link">Edit this page</a>
         </div>
 
 

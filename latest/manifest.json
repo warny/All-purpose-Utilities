@@ -8566,6 +8566,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.ForcedVariantSet.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.ForcedVariantSet.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.ForcedVariantSet",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.ForcedVariantSet.yml\" sourcestartlinenumber=\"1\">Represents zero or more grammatical variant dimension values that a configured lexical\nconstituent (a time unit, a currency unit/subunit, a fraction denominator term, …) forces on\nthe numeric fragment it governs.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.FormVariantType.yml",
       "output": {
         ".html": {

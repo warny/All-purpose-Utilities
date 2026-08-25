@@ -250,7 +250,7 @@ or <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.htm
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions__ctor" data-uid="Utils.NumberToString.NumberToStringConverterOptions.#ctor">
   NumberToStringConverterOptions()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L191"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L211"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates an options object with sensible defaults. Required properties
@@ -279,7 +279,7 @@ must be set before passing to the constructor.</p>
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions__ctor_Utils_NumberToString_NumberToStringConverter_" data-uid="Utils.NumberToString.NumberToStringConverterOptions.#ctor(Utils.NumberToString.NumberToStringConverter)">
   NumberToStringConverterOptions(NumberToStringConverter)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L195"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L215"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Clones all settings from an existing converter instance.</p>
@@ -348,7 +348,7 @@ must be set before passing to the constructor.</p>
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_DateFirstCardinalDay" data-uid="Utils.NumberToString.NumberToStringConverterOptions.DateFirstCardinalDay">
   DateFirstCardinalDay
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L183"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L203"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Special string for day 1 in {cardinal-day} (e.g. &quot;premier&quot; in French, &quot;ersten&quot; in German).
@@ -381,7 +381,7 @@ When set, replaces the standard cardinal form of 1 in cardinal-day slots.</p>
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_DateFirstDay" data-uid="Utils.NumberToString.NumberToStringConverterOptions.DateFirstDay">
   DateFirstDay
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L177"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L197"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Special string for day 1 in {ordinal-day} (e.g. &quot;first&quot; override).
@@ -414,7 +414,7 @@ When set, replaces the standard ordinal form of 1 in ordinal-day slots.</p>
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_DatePattern" data-uid="Utils.NumberToString.NumberToStringConverterOptions.DatePattern">
   DatePattern
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L171"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L191"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Pattern for rendering a date. Supported tokens: {month}, {ordinal-day}, {cardinal-day}, {year}.
@@ -447,7 +447,7 @@ Required for Convert(DateOnly/DateTime).</p>
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_DateTimeConnector" data-uid="Utils.NumberToString.NumberToStringConverterOptions.DateTimeConnector">
   DateTimeConnector
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L186"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L206"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Connector inserted between date and time when converting a DateTime (defaults to Separator).</p>
@@ -539,11 +539,47 @@ Required for Convert(DateOnly/DateTime).</p>
 
 
 
+  <a id="Utils_NumberToString_NumberToStringConverterOptions_FractionForcedVariants_" data-uid="Utils.NumberToString.NumberToStringConverterOptions.FractionForcedVariants*"></a>
+
+  <h3 id="Utils_NumberToString_NumberToStringConverterOptions_FractionForcedVariants" data-uid="Utils.NumberToString.NumberToStringConverterOptions.FractionForcedVariants">
+  FractionForcedVariants
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L72"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Optional per-digit-count <a class="xref" href="Utils.NumberToString.ForcedVariantSet.html">ForcedVariantSet</a> forcing grammatical variant
+dimensions on the numerator fragment when the corresponding <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_Fractions">Fractions</a> suffix
+is used. Keys must match <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_Fractions">Fractions</a> keys. Does not apply when a caller
+overrides the suffix via <code>DecimalFormatOptions.DecimalSuffix</code> — that is caller-supplied
+literal text, not the configured lexical constituent this set governs.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IReadOnlyDictionary&lt;int, ForcedVariantSet&gt;? FractionForcedVariants { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>, <a class="xref" href="Utils.NumberToString.ForcedVariantSet.html">ForcedVariantSet</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_NumberToString_NumberToStringConverterOptions_FractionSeparator_" data-uid="Utils.NumberToString.NumberToStringConverterOptions.FractionSeparator*"></a>
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_FractionSeparator" data-uid="Utils.NumberToString.NumberToStringConverterOptions.FractionSeparator">
   FractionSeparator
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L69"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L78"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Connector word between numerator and denominator when rendering non-decimal fractions.</p>
@@ -639,7 +675,7 @@ Required for Convert(DateOnly/DateTime).</p>
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_GroupConnector" data-uid="Utils.NumberToString.NumberToStringConverterOptions.GroupConnector">
   GroupConnector
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L136"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L145"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Word inserted between scale groups when the lower group value is below <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_GroupConnectorThreshold">GroupConnectorThreshold</a>.</p>
@@ -671,7 +707,7 @@ Required for Convert(DateOnly/DateTime).</p>
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_GroupConnectorThreshold" data-uid="Utils.NumberToString.NumberToStringConverterOptions.GroupConnectorThreshold">
   GroupConnectorThreshold
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L139"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L148"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Threshold below which <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_GroupConnector">GroupConnector</a> is used instead of the regular group separator.</p>
@@ -767,7 +803,7 @@ Required for Convert(DateOnly/DateTime).</p>
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_IntraGroupConnector" data-uid="Utils.NumberToString.NumberToStringConverterOptions.IntraGroupConnector">
   IntraGroupConnector
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L145"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L154"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Word inserted inside a group between the hundreds and the lower part when the lower part is
@@ -800,7 +836,7 @@ below <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_IntraGroupConnectorThreshold" data-uid="Utils.NumberToString.NumberToStringConverterOptions.IntraGroupConnectorThreshold">
   IntraGroupConnectorThreshold
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L148"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L157"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Threshold below which <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_IntraGroupConnector">IntraGroupConnector</a> is inserted within a group.</p>
@@ -896,7 +932,7 @@ below <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_MaxNumber" data-uid="Utils.NumberToString.NumberToStringConverterOptions.MaxNumber">
   MaxNumber
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L66"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L75"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Upper bound of supported values, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> for unlimited.</p>
@@ -961,7 +997,7 @@ below <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_MultiplicativeSuffix" data-uid="Utils.NumberToString.NumberToStringConverterOptions.MultiplicativeSuffix">
   MultiplicativeSuffix
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L133"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L142"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Suffix appended to the cardinal for multiplicatives not in <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_Multiplicatives">Multiplicatives</a> (e.g. &quot; times&quot;).</p>
@@ -993,7 +1029,7 @@ below <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_Multiplicatives" data-uid="Utils.NumberToString.NumberToStringConverterOptions.Multiplicatives">
   Multiplicatives
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L130"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L139"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Named multiplicative forms (e.g. 2 → &quot;twice&quot;). Key is the multiplier.</p>
@@ -1025,7 +1061,7 @@ below <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_OrdinalExceptions" data-uid="Utils.NumberToString.NumberToStringConverterOptions.OrdinalExceptions">
   OrdinalExceptions
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L88"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L97"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integer-level ordinal exceptions (whole-number → ordinal text, e.g. 1 → &quot;premier&quot; in French).
@@ -1058,7 +1094,7 @@ These take priority over word-level rules.</p>
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_OrdinalPrefix" data-uid="Utils.NumberToString.NumberToStringConverterOptions.OrdinalPrefix">
   OrdinalPrefix
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L100"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L109"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Prefix prepended to the whole ordinal result after <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_AdjustFunction">AdjustFunction</a> is applied.
@@ -1091,7 +1127,7 @@ Example: <code>&quot;第&quot;</code> for Chinese/Japanese (第一, 第二…).<
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_OrdinalRemoveTrailing" data-uid="Utils.NumberToString.NumberToStringConverterOptions.OrdinalRemoveTrailing">
   OrdinalRemoveTrailing
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L82"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L91"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Trailing string to remove from the last cardinal word before appending <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_OrdinalSuffix">OrdinalSuffix</a>.
@@ -1125,7 +1161,7 @@ Example: <code>&quot;e&quot;</code> for French (&quot;quatre&quot; → &quot;qua
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_OrdinalSuffix" data-uid="Utils.NumberToString.NumberToStringConverterOptions.OrdinalSuffix">
   OrdinalSuffix
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L75"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L84"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Ordinal suffix appended to the last word of a cardinal when no word-level rule matches
@@ -1158,7 +1194,7 @@ Example: <code>&quot;e&quot;</code> for French (&quot;quatre&quot; → &quot;qua
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_OrdinalVariants" data-uid="Utils.NumberToString.NumberToStringConverterOptions.OrdinalVariants">
   OrdinalVariants
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L106"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L115"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Variant-specific ordinal rules applied when dimension constraints match the active variant query.
@@ -1191,7 +1227,7 @@ Each rule overrides exceptions, word rules, suffix, and/or removeTrailing for th
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_OrdinalWordRules" data-uid="Utils.NumberToString.NumberToStringConverterOptions.OrdinalWordRules">
   OrdinalWordRules
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L94"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L103"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Word-level ordinal transformation rules applied to the last word of a cardinal
@@ -1288,7 +1324,7 @@ Each rule overrides exceptions, word rules, suffix, and/or removeTrailing for th
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_ScaleConnector" data-uid="Utils.NumberToString.NumberToStringConverterOptions.ScaleConnector">
   ScaleConnector
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L155"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L164"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Connector word inserted between a group's digit text and the scale name when the group's
@@ -1322,7 +1358,7 @@ Example: <code>&quot;de&quot;</code> for Romanian — &quot;douăzeci de mii&quo
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_ScaleConnectorThreshold" data-uid="Utils.NumberToString.NumberToStringConverterOptions.ScaleConnectorThreshold">
   ScaleConnectorThreshold
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L158"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L167"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Threshold at or above which <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_ScaleConnector">ScaleConnector</a> is inserted.</p>
@@ -1382,11 +1418,49 @@ Example: <code>&quot;de&quot;</code> for Romanian — &quot;douăzeci de mii&quo
 
 
 
+  <a id="Utils_NumberToString_NumberToStringConverterOptions_TimeUnitForcedVariants_" data-uid="Utils.NumberToString.NumberToStringConverterOptions.TimeUnitForcedVariants*"></a>
+
+  <h3 id="Utils_NumberToString_NumberToStringConverterOptions_TimeUnitForcedVariants" data-uid="Utils.NumberToString.NumberToStringConverterOptions.TimeUnitForcedVariants">
+  TimeUnitForcedVariants
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L185"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Optional per-unit <a class="xref" href="Utils.NumberToString.ForcedVariantSet.html">ForcedVariantSet</a> forcing grammatical variant dimensions
+(e.g. gender) on the numeral fragment of the named time unit only, on top of the language's
+declared dimension defaults and any caller-supplied variant. Keys must match
+<a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_TimeUnits">TimeUnits</a> keys (&quot;hour&quot;, &quot;minute&quot;, &quot;second&quot;, …); a converter constructed with a
+key here that has no matching <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_TimeUnits">TimeUnits</a> entry throws
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a>. Units absent from this dictionary, or present with
+<a class="xref" href="Utils.NumberToString.ForcedVariantSet.html#Utils_NumberToString_ForcedVariantSet_Empty">Empty</a>, behave exactly as before this property existed.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IReadOnlyDictionary&lt;string, ForcedVariantSet&gt;? TimeUnitForcedVariants { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="Utils.NumberToString.ForcedVariantSet.html">ForcedVariantSet</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_NumberToString_NumberToStringConverterOptions_TimeUnits_" data-uid="Utils.NumberToString.NumberToStringConverterOptions.TimeUnits*"></a>
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_TimeUnits" data-uid="Utils.NumberToString.NumberToStringConverterOptions.TimeUnits">
   TimeUnits
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L165"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L174"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Time units keyed by canonical name (&quot;hour&quot;, &quot;minute&quot;, &quot;second&quot;),
@@ -1420,7 +1494,7 @@ Required for Convert(TimeSpan/TimeOnly).</p>
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_Triggers" data-uid="Utils.NumberToString.NumberToStringConverterOptions.Triggers">
   Triggers
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L127"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L136"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Trigger rules applied at specific points in the conversion pipeline.
@@ -1453,7 +1527,7 @@ Processed in declaration order.</p>
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_VariantDimensions" data-uid="Utils.NumberToString.NumberToStringConverterOptions.VariantDimensions">
   VariantDimensions
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L112"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L121"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Declared variant dimensions (e.g. &quot;gender&quot;, &quot;case&quot;) with their ordered values.
@@ -1486,7 +1560,7 @@ The first value of each dimension is the default when no explicit variant is req
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_VariantRules" data-uid="Utils.NumberToString.NumberToStringConverterOptions.VariantRules">
   VariantRules
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L118"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L127"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Variant rules that associate a set of dimension constraints with replacement rules.
@@ -1519,7 +1593,7 @@ Applied between the raw adjustment function and <a class="xref" href="Utils.Numb
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_YearFormat" data-uid="Utils.NumberToString.NumberToStringConverterOptions.YearFormat">
   YearFormat
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L121"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L130"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Year-format configuration used by <a class="xref" href="Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ConvertYear_System_Int32_">ConvertYear(int)</a>.</p>
@@ -1587,7 +1661,7 @@ Applied between the raw adjustment function and <a class="xref" href="Utils.Numb
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_FromCulture_System_Globalization_CultureInfo_" data-uid="Utils.NumberToString.NumberToStringConverterOptions.FromCulture(System.Globalization.CultureInfo)">
   FromCulture(CultureInfo)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L245"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L267"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Clones the settings of the converter registered for <code class="paramref">culture</code>.</p>
@@ -1624,7 +1698,7 @@ Applied between the raw adjustment function and <a class="xref" href="Utils.Numb
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_FromCulture_System_String_" data-uid="Utils.NumberToString.NumberToStringConverterOptions.FromCulture(System.String)">
   FromCulture(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L252"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L274"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Clones the settings of the converter registered for <code class="paramref">cultureName</code>
