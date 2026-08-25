@@ -125,6 +125,44 @@ namespace UtilsTest.Objects
             Assert.IsFalse(ranges.Contains(5));
         }
 
+        // ── Operators: |, &, ^, - (CORE-01: no ~ / Complement — see Ranges<T> XML doc) ──────────
+
+        [TestMethod]
+        public void UnionOperatorTest()
+        {
+            var a = new Ranges<double>(new Range<double>(1, 5));
+            var b = new Ranges<double>(new Range<double>(3, 8));
+
+            Assert.AreEqual("[ 1 - 8 ]", (a | b).ToString());
+        }
+
+        [TestMethod]
+        public void IntersectOperatorTest()
+        {
+            var a = new Ranges<double>(new Range<double>(1, 5));
+            var b = new Ranges<double>(new Range<double>(3, 8));
+
+            Assert.AreEqual("[ 3 - 5 ]", (a & b).ToString());
+        }
+
+        [TestMethod]
+        public void SymmetricDifferenceOperatorTest()
+        {
+            var a = new Ranges<double>(new Range<double>(1, 5));
+            var b = new Ranges<double>(new Range<double>(3, 8));
+
+            Assert.AreEqual("[ 1 - 3 [ ∪ ] 5 - 8 ]", (a ^ b).ToString());
+        }
+
+        [TestMethod]
+        public void ExceptOperatorTest()
+        {
+            var a = new Ranges<double>(new Range<double>(1, 8));
+            var b = new Ranges<double>(new Range<double>(3, 5));
+
+            Assert.AreEqual("[ 1 - 3 [ ∪ ] 5 - 8 ]", (a - b).ToString());
+        }
+
         [TestMethod]
         public void DoubleRangesTest1()
         {

@@ -398,6 +398,42 @@
         },
         {
           "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Range.Ranges<T> Utils.Range.Ranges<T>.Complement(Utils.Range.Ranges<T>)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "CORE-01: Complement() was a public stub that always threw NotImplementedException. T is only constrained by IComparable<T> and IRange<T> carries no domain/MinValue/MaxValue/infinite-bound concept, so a complement relative to the entire domain cannot be computed for an arbitrary Ranges<T>; removed rather than kept as a permanently-broken API. IntRange<T>.Complement() is unaffected and unchanged.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'Utils.Range.Ranges<T> Utils.Range.Ranges<T>.operator ~(Utils.Range.Ranges<T>)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "CORE-01: the ~ operator only ever called the now-removed Complement() stub. The |, &, ^, and - operators (Union/Intersect/SymmetricDifference/Except) are unaffected and remain declared directly on the type.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils"
+        },
+        {
+          "diagnosticId": "CP0008",
+          "message": "Type 'Utils.Range.Ranges<T>' does not implement interface 'System.Numerics.IBitwiseOperators<Utils.Range.Ranges<T>, Utils.Range.Ranges<T>, Utils.Range.Ranges<T>>' on {candidateAssembly} but it does on {baselineAssembly}",
+          "reason": "CORE-01: IBitwiseOperators<Ranges<T>,...> required a valid ~ operator, which the removed Complement() stub could never provide.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils"
+        },
+        {
+          "diagnosticId": "CP0008",
+          "message": "Type 'Utils.Range.DoubleRanges' does not implement interface 'System.Numerics.IBitwiseOperators<Utils.Range.Ranges<double>, Utils.Range.Ranges<double>, Utils.Range.Ranges<double>>' on {candidateAssembly} but it does on {baselineAssembly}",
+          "reason": "CORE-01: cascades from the Ranges<T> base type; DoubleRanges has no complement of its own.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils"
+        },
+        {
+          "diagnosticId": "CP0008",
+          "message": "Type 'Utils.Range.SingleRanges' does not implement interface 'System.Numerics.IBitwiseOperators<Utils.Range.Ranges<float>, Utils.Range.Ranges<float>, Utils.Range.Ranges<float>>' on {candidateAssembly} but it does on {baselineAssembly}",
+          "reason": "CORE-01: cascades from the Ranges<T> base type; SingleRanges has no complement of its own.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils"
+        },
+        {
+          "diagnosticId": "CP0008",
+          "message": "Type 'Utils.Range.DateTimeRanges' does not implement interface 'System.Numerics.IBitwiseOperators<Utils.Range.Ranges<System.DateTime>, Utils.Range.Ranges<System.DateTime>, Utils.Range.Ranges<System.DateTime>>' on {candidateAssembly} but it does on {baselineAssembly}",
+          "reason": "CORE-01: cascades from the Ranges<T> base type; DateTimeRanges has no complement of its own.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils"
+        },
+        {
+          "diagnosticId": "CP0002",
           "message": "Member 'bool Utils.Range.Range<T>.Contains(Utils.Range.Range<T>)' exists on {baselineAssembly} but not on {candidateAssembly}",
           "reason": "The published member is deliberately absent or signature-incompatible in the 2.0 candidate and is retained as an enumerated major-version break.",
           "migrationSection": "docs/releasing/AcceptedApiBreaks.md#omy-utils"

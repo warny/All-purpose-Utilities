@@ -418,6 +418,17 @@
     <Target>M:Utils.Security.Authenticator.get_Key</Target>
   </Suppression>
   <Suppression>
+    <!-- CORE-01: Complement() was a stub that always threw NotImplementedException; T is only
+         constrained by IComparable<T> so a domain-relative complement cannot be computed. -->
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:Utils.Range.Ranges`1.Complement(Utils.Range.Ranges{`0})</Target>
+  </Suppression>
+  <Suppression>
+    <!-- CORE-01: the ~ operator only ever called the removed Complement() stub. -->
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:Utils.Range.Ranges`1.op_OnesComplement(Utils.Range.Ranges{`0})</Target>
+  </Suppression>
+  <Suppression>
     <DiagnosticId>CP0006</DiagnosticId>
     <Target>M:Utils.Mathematics.IAngleCalculator`1.AreEqual(`0,`0,`0)</Target>
   </Suppression>
@@ -436,6 +447,28 @@
   <Suppression>
     <DiagnosticId>CP0008</DiagnosticId>
     <Target>T:Utils.Mathematics.FloatingPointComparer`1</Target>
+  </Suppression>
+  <Suppression>
+    <!-- CORE-01: IBitwiseOperators<Ranges<T>,...> required a valid ~ operator, which Complement()
+         could never provide. Union/Intersect/SymmetricDifference/Except and their |, &, ^, -
+         operators are unaffected and remain declared directly on the type. -->
+    <DiagnosticId>CP0008</DiagnosticId>
+    <Target>T:Utils.Range.Ranges`1</Target>
+  </Suppression>
+  <Suppression>
+    <!-- CORE-01: cascades from Ranges<T> above; DoubleRanges has no complement of its own. -->
+    <DiagnosticId>CP0008</DiagnosticId>
+    <Target>T:Utils.Range.DoubleRanges</Target>
+  </Suppression>
+  <Suppression>
+    <!-- CORE-01: cascades from Ranges<T> above; SingleRanges has no complement of its own. -->
+    <DiagnosticId>CP0008</DiagnosticId>
+    <Target>T:Utils.Range.SingleRanges</Target>
+  </Suppression>
+  <Suppression>
+    <!-- CORE-01: cascades from Ranges<T> above; DateTimeRanges has no complement of its own. -->
+    <DiagnosticId>CP0008</DiagnosticId>
+    <Target>T:Utils.Range.DateTimeRanges</Target>
   </Suppression>
   <Suppression>
     <DiagnosticId>CP0009</DiagnosticId>

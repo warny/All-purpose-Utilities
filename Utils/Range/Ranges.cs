@@ -8,19 +8,24 @@ namespace Utils.Range;
 /// <summary>
 /// Represents a set of intervals (ranges) for an ordered type <typeparamref name="T"/>.
 /// Provides set-like operations (union, intersection, difference, symmetric difference)
-/// via bitwise operators:
+/// via operators:
 ///   | =&gt; Union,
 ///   &amp; =&gt; Intersection,
 ///   ^ =&gt; Symmetric Difference,
-///   ~ =&gt; Complement (relative to entire domain, if desired),
 ///   - =&gt; Difference (Except).
-/// 
+///
+/// There is deliberately no complement operation: <typeparamref name="T"/> is only constrained by
+/// <see cref="IComparable{T}"/>, and <see cref="IRange{T}"/> carries no notion of a domain, a
+/// minimum/maximum value, or infinite bounds, so a complement relative to "the entire domain" cannot
+/// be computed in general (an empty <see cref="Ranges{T}"/> would not even have a domain to recover
+/// it from). Types that explicitly model their complete domain, such as <see cref="IntRange{T}"/>,
+/// can define their own well-defined complement instead.
+///
 /// The intervals are stored internally as disjoint, sorted <see cref="Range{T}"/> objects.
 /// </summary>
 /// <typeparam name="T">A comparable type that supports ordering.</typeparam>
 public class Ranges<T> : IFormattable, IEquatable<Ranges<T>>,
     ISubtractionOperators<Ranges<T>, Ranges<T>, Ranges<T>>,
-    IBitwiseOperators<Ranges<T>, Ranges<T>, Ranges<T>>,
     IEqualityOperators<Ranges<T>, Ranges<T>, bool>
     where T : IComparable<T>
 {
@@ -494,20 +499,6 @@ public class Ranges<T> : IFormattable, IEquatable<Ranges<T>>,
         return Union(part1, part2);
     }
 
-    /// <summary>
-    /// Returns the complement with respect to the entire domain (-∞..+∞).
-    /// 
-    /// Implementation details for infinite intervals will vary. 
-    /// If you want actual intervals that store ±∞, you must design a specialized <see cref="Range{T}"/> mechanism for that.
-    /// </summary>
-    public static Ranges<T> Complement(Ranges<T> range)
-    {
-        // STUB: If you want a real "complement" with infinite intervals, 
-        // you'd store something like [-∞..range[0].Start), 
-        // plus all gaps, plus (range[n-1].End..+∞], etc.
-        throw new NotImplementedException("Complement with infinite intervals not implemented.");
-    }
-
     #endregion
 
     #region Bitwise Operators
@@ -523,10 +514,6 @@ public class Ranges<T> : IFormattable, IEquatable<Ranges<T>>,
     /// <summary>Symmetric Difference =&gt; bitwise XOR operator.</summary>
     public static Ranges<T> operator ^(Ranges<T> left, Ranges<T> right)
         => SymmetricDifference(left, right);
-
-    /// <summary>Complement =&gt; bitwise NOT operator.</summary>
-    public static Ranges<T> operator ~(Ranges<T> range)
-        => Complement(range);
 
     /// <summary>Difference =&gt; set except operator.</summary>
     public static Ranges<T> operator -(Ranges<T> left, Ranges<T> right)

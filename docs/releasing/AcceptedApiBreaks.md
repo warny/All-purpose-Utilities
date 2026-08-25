@@ -6,8 +6,8 @@ This human-review index summarizes the exact machine-enforced diagnostics in `en
 ## omy.Utils
 
 - Published baseline: `1.2.1`
-- Accepted diagnostics: **126**
-- Diagnostic classes: `CP0001`: 70, `CP0002`: 46, `CP0006`: 3, `CP0008`: 2, `CP0009`: 1, `CP0021`: 4
+- Accepted diagnostics: **132**
+- Diagnostic classes: `CP0001`: 70, `CP0002`: 48, `CP0006`: 3, `CP0008`: 6, `CP0009`: 1, `CP0021`: 4
 
 ### Removed or incompatible published surface
 
@@ -79,6 +79,8 @@ This human-review index summarizes the exact machine-enforced diagnostics in `en
 - `CP0002` — `void Utils.Range.Ranges<T>.Add(Utils.Range.Range<T>)`
 - `CP0002` — `void Utils.Range.Ranges<T>.RemoveAll(System.Collections.Generic.IEnumerable<Utils.Range.Range<T>>)`
 - `CP0002` — `void Utils.Range.Ranges<T>.Remove(Utils.Range.Range<T>)`
+- `CP0002` — `Utils.Range.Ranges<T> Utils.Range.Ranges<T>.Complement(Utils.Range.Ranges<T>)` — CORE-01: was a public stub that always threw `NotImplementedException`; `T` is only constrained by `IComparable<T>` and `IRange<T>` has no domain/`MinValue`/`MaxValue`/infinite-bound concept, so a domain-relative complement cannot be computed for an arbitrary `Ranges<T>`. `IntRange<T>.Complement()` is unaffected.
+- `CP0002` — `Utils.Range.Ranges<T> Utils.Range.Ranges<T>.operator ~(Utils.Range.Ranges<T>)` — CORE-01: only ever called the removed `Complement()` stub; `|`, `&`, `^`, and `-` are unaffected.
 - `CP0002` — `bool Utils.Range.Range<T>.Contains(Utils.Range.Range<T>)`
 - `CP0002` — `bool Utils.Range.Range<T>.Overlap(Utils.Range.Range<T>)`
 - `CP0002` — `bool Utils.Range.Range<T>.Overlap(Utils.Range.Range<T>, Utils.Range.Range<T>)`
@@ -139,6 +141,10 @@ This human-review index summarizes the exact machine-enforced diagnostics in `en
 - `CP0006` — Cannot add interface member 'bool Utils.Mathematics.IAngleCalculator<T>.AreEqualRounded(T, T, int)' to {candidateAssembly} because it does not exist on {baselineAssembly}
 - `CP0006` — Cannot add interface member 'T Utils.Mathematics.IAngleCalculator<T>.NormalizeRounded(T, int)' to {candidateAssembly} because it does not exist on {baselineAssembly}
 - `CP0008` — Type 'Utils.Mathematics.FloatingPointComparer<T>' does not implement interface 'System.Collections.Generic.IEqualityComparer<T>' on {candidateAssembly} but it does on {baselineAssembly}
+- `CP0008` — Type 'Utils.Range.Ranges<T>' does not implement interface 'System.Numerics.IBitwiseOperators<Utils.Range.Ranges<T>, Utils.Range.Ranges<T>, Utils.Range.Ranges<T>>' on {candidateAssembly} but it does on {baselineAssembly} — CORE-01: `IBitwiseOperators` required a valid `~` operator, which the removed `Complement()` stub could never provide.
+- `CP0008` — Type 'Utils.Range.DoubleRanges' does not implement interface 'System.Numerics.IBitwiseOperators<Utils.Range.Ranges<double>, Utils.Range.Ranges<double>, Utils.Range.Ranges<double>>' on {candidateAssembly} but it does on {baselineAssembly} — cascades from `Ranges<T>` above.
+- `CP0008` — Type 'Utils.Range.SingleRanges' does not implement interface 'System.Numerics.IBitwiseOperators<Utils.Range.Ranges<float>, Utils.Range.Ranges<float>, Utils.Range.Ranges<float>>' on {candidateAssembly} but it does on {baselineAssembly} — cascades from `Ranges<T>` above.
+- `CP0008` — Type 'Utils.Range.DateTimeRanges' does not implement interface 'System.Numerics.IBitwiseOperators<Utils.Range.Ranges<System.DateTime>, Utils.Range.Ranges<System.DateTime>, Utils.Range.Ranges<System.DateTime>>' on {candidateAssembly} but it does on {baselineAssembly} — cascades from `Ranges<T>` above.
 - `CP0009` — Type 'Utils.Security.Authenticator' has the sealed modifier on {candidateAssembly} but not on {baselineAssembly}
 
 <a id="omy-utils-io"></a>
