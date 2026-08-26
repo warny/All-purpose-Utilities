@@ -69,6 +69,26 @@
         <Copy SourceFiles="@(WorkerOutputFiles)" DestinationFolder="$(OutputPath)worker\%(RecursiveDir)" SkipUnchangedFiles="true" />
     </Target>
 
+    <!--
+        The worker executable and its dependencies must ship inside the VSIX itself: PluginWorkerProcess
+        looks for it at "<extensionDir>\worker\Utils.Parser.VisualStudio.Worker.exe" (extensionDir being
+        the installed location of this assembly), so without this target the packaged extension silently
+        degrades to in-process-only classification for every user. GetVsixSourceItems runs earlier in
+        Build's own dependency chain than the BuildPluginWorker/CopyPluginWorkerToOutput BeforeTargets/
+        AfterTargets="Build" hooks above, so on a clean build $(WorkerOutputDir) does not exist yet by the
+        time this target would naively read it. DependsOnTargets="BuildPluginWorker" forces the worker to
+        build here if it hasn't already; the nested MSBuild call is a no-op on the (common) case where
+        BuildPluginWorker already ran first.
+    -->
+    <Target Name="IncludePluginWorkerInVsix" BeforeTargets="GetVsixSourceItems" DependsOnTargets="BuildPluginWorker">
+        <ItemGroup>
+            <_PluginWorkerVsixFiles Include="$(WorkerOutputDir)**\*.*" />
+            <VSIXSourceItem Include="@(_PluginWorkerVsixFiles)">
+                <VSIXSubPath>worker\%(RecursiveDir)</VSIXSubPath>
+            </VSIXSourceItem>
+        </ItemGroup>
+    </Target>
+
     <Target Name="EnsureSourceVsixManifest" BeforeTargets="DetokenizeVsixManifestFile">
         <MakeDir Directories="$(IntermediateOutputPath)" />
         <Copy SourceFiles="source.extension.vsixmanifest" DestinationFiles="$(IntermediateOutputPath)extension.vsixmanifest" Condition="Exists('source.extension.vsixmanifest')" />

@@ -4,14 +4,25 @@
     xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011"
     xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
 	<Metadata>
+		<!--
+            Version policy (provisional pre-2.0 series): see docs/releasing/VisualStudioExtension.md.
+            While the product train (Directory.Build.props: ProductTrainVersion) is a 2.0.0
+            prerelease, this VSIX ships an independent 0.0.x provisional series (0.0.1, 0.0.2, ...).
+            It will jump directly to 2.0.0 once the product train reaches that stable version, and
+            from then on should track the product train version. This Version attribute is the single
+            authoritative value for the VSIX version; docs/releasing/VisualStudioExtension.md only
+            documents the policy, it does not derive or override this value.
+            The Id below must remain stable across 0.0.x, 2.0.0, and all future versions so that
+            Visual Studio treats successive publications as updates of the same extension.
+        -->
 		<Identity
             Id="Utils.Parser.VisualStudio.ef18346f-f79e-4e44-86f4-bf8094951570"
-            Version="1.0.0"
+            Version="0.0.1"
             Language="en-US"
             Publisher="Olivier MARTY" />
-        <DisplayName>Utils Parser Visual Studio</DisplayName>
-        <Description xml:space="preserve">Out-of-process syntax colorization extension based on .syntaxcolor descriptors.</Description>
-        <Tags>syntax;colorization;parser;utils</Tags>
+        <DisplayName>Utils Parser for Visual Studio</DisplayName>
+        <Description xml:space="preserve">Syntax highlighting for custom languages defined with .syntaxcolor descriptors, powered by Utils.Parser with isolated out-of-process extensions.</Description>
+        <Tags>syntax;syntax highlighting;colorization;parser;language;editor;utils</Tags>
     </Metadata>
     <Installation>
         <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0,)">

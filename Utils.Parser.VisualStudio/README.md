@@ -9,6 +9,60 @@
 - Produces editor `ClassificationTag` tags through an out-of-process `TextViewTagger`.
 - Forwards classification to user-supplied plugin assemblies running in an isolated worker process.
 
+## Marketplace listing
+
+This section is the source for the Visual Studio Marketplace listing fields that are not carried by
+`source.extension.vsixmanifest` itself.
+
+- **Name:** Utils Parser for Visual Studio
+- **Short description:** Syntax highlighting for custom languages defined with .syntaxcolor descriptors, powered by Utils.Parser with isolated out-of-process extensions.
+- **Tags:** syntax, syntax highlighting, colorization, parser, language, editor, utils
+- **Status:** provisional pre-2.0 release (`0.0.x` version series — see [VSIX versioning and release](../docs/releasing/VisualStudioExtension.md)). Interfaces and descriptor formats are expected to remain stable, but this is not yet the first stable `2.0.0` build.
+
+### Prerequisites
+
+- Visual Studio 2022 (17.0) or later, Community/Professional/Enterprise (`Microsoft.VisualStudio.Component.CoreEditor` workload component).
+- .NET 8.0 runtime or later on the machine running Visual Studio (declared as `Microsoft.Framework.NDP` `[8.0,)` in the manifest).
+
+### Supported Visual Studio versions and architecture
+
+- `InstallationTarget`: `Microsoft.VisualStudio.Community`, version range `[17.0,)` — this also covers Professional and Enterprise editions, which share the same SKU family for extension installation purposes.
+- `ProductArchitecture`: `amd64`.
+
+### Installation
+
+From the Marketplace: search for "Utils Parser for Visual Studio" in the Visual Studio Extension
+Manager (or download the `.vsix` from the Marketplace page) and install it, then restart Visual
+Studio.
+
+From source: see "Build and debug" below.
+
+### Basic usage
+
+1. Place a `.syntaxcolor` descriptor file (see "Descriptor files" below) next to the source files you want colorized, or in one of their parent directories.
+2. Open a file whose extension matches an `@FileExtension` directive in that descriptor.
+3. Keywords, numbers, and strings declared in the descriptor are colorized using the editor's standard classification colors.
+
+Optionally, drop `ISyntaxColorisation` plugin assemblies into
+`%LOCALAPPDATA%\Utils.Parser.VisualStudio\Plugins\` for classification logic beyond what a static
+descriptor file can express — see "Plugin system" below. Plugins always run out-of-process, isolated
+from Visual Studio itself (see "Security architecture" below); this isolation is enforced by the
+extension itself and does not depend on any Marketplace-side setting.
+
+### Known limitations (this provisional release)
+
+- No product logo/icon yet (tracked separately; the Marketplace listing will use a default icon until then).
+- No `.vsixlangpack`/localized manifest strings; `DisplayName`/`Description`/`Tags` are English-only.
+- The AppContainer sandbox and Authenticode plugin verification (see "Security architecture") are Windows-only; there is no reduced-security fallback path documented for non-Windows Visual Studio hosts.
+
+### Links
+
+- Repository: <https://github.com/warny/All-purpose-Utilities>
+- License: [Apache-2.0](../LICENSE-apache-2.0.txt)
+- Issues / support: <https://github.com/warny/All-purpose-Utilities/issues>
+
+---
+
 ## Descriptor files
 
 Descriptor files (`.syntaxcolor`) define keyword lists for a given file extension. They are discovered by walking from the edited file's directory up to the filesystem root.

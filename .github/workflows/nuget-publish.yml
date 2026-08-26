@@ -91,6 +91,9 @@ jobs:
                       New-Item -ItemType Directory -Path $versionDirectory -Force | Out-Null
                       Copy-Item $_.FullName -Destination $versionDirectory -Force
                   }
+            - name: Validate Utils.Parser.VisualStudio VSIX package
+              shell: pwsh
+              run: ./eng/test-vsix-package.ps1 -Configuration Release -SkipBuild
             - name: Upload VSIX artifacts
               uses: actions/upload-artifact@v4
               with:

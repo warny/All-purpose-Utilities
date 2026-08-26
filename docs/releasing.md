@@ -43,3 +43,11 @@ dotnet add package omy.Utils --version 2.0.0-rc.1
 ## Repository-wide 2.0.0 candidate
 
 The complete process is documented in the [product-train overview](releasing/ProductTrain.md), [quality-gate reference](releasing/ReleaseQualityGates.md), [derived package graph](releasing/PackageGraph.md), and [2.0 migration guide](releasing/MigrationTo2.0.md). The release candidate covers every manifested library and source generator, not only parser packages.
+
+## Visual Studio extension (VSIX)
+
+`Utils.Parser.VisualStudio` is excluded from the NuGet product train above and follows its own
+provisional version series until the train reaches a stable `2.0.0`. See the
+[VSIX versioning and release guide](releasing/VisualStudioExtension.md) for the policy, and
+[`Utils.Parser.VisualStudio/README.md`](../Utils.Parser.VisualStudio/README.md) for the
+Marketplace-facing description, features, and manual publication checklist.
