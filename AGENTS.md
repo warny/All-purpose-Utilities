@@ -30,30 +30,44 @@ to make sure that the modification does not break any other project. **If a test
 
 ### Test projects
 
-The test suite is split into two MSTest projects:
+The test suite is split into three MSTest projects:
 
 | Project | Path | When to use |
 |---|---|---|
-| **UtilsTest.Unit** | `UtilsTest/UtilsTest.Unit.csproj` | Deterministic, self-contained — in-memory data, embedded resources, no external system dependencies |
-| **UtilsTest.Functional** | `UtilsTest.Functional/UtilsTest.Functional.csproj` | Tests that depend on real external systems — network sockets, OS processes, environment-dependent file paths |
+| **UtilsTest.Security** | `UtilsTest.Security/UtilsTest.Security.csproj` | Security-invariant tests, regardless of whether they run in memory, over the network, on the filesystem, or against a sandboxed process |
+| **UtilsTest.Unit** | `UtilsTest/UtilsTest.Unit.csproj` | Deterministic, self-contained, non-security tests — in-memory data, embedded resources, no external system dependencies |
+| **UtilsTest.Functional** | `UtilsTest.Functional/UtilsTest.Functional.csproj` | Non-security tests that depend on real external systems — network sockets, OS processes, environment-dependent file paths |
 
-**Default: add tests to `UtilsTest.Unit`.**  
+**Default: add tests to `UtilsTest.Unit`.**
 Only move a test to `UtilsTest.Functional` when it genuinely requires an external system that cannot be substituted.
+Only move a test to `UtilsTest.Security` when its primary purpose is protecting a security invariant.
+
+#### Classification order: Security > Functional > Unit
+
+Classify every test in this order:
+
+1. **Is the test's primary purpose to protect a security invariant?** Authentication/authorization, secrets and log redaction, command/data injection, path traversal, validation of hostile or malformed input, resource-exhaustion limits, resistance to malformed network packets, DNS/NTP spoofing or correlation protection, authentication throttling, TLS/fail-closed policy, sandboxing and process isolation, Authenticode/certificate trust and revocation, fail-closed behavior after a transport or security error, and immutability/encapsulation invariants of objects designed to be immutable (no published mutable alias). If yes → **`UtilsTest.Security`**, regardless of whether the test happens to use a socket, spawn a process, or run entirely in memory. This rule has priority over the test's technical dependencies.
+2. Otherwise, **does it require a real external system** (socket, process, environment-dependent file path)? If yes → **`UtilsTest.Functional`**.
+3. Otherwise → **`UtilsTest.Unit`**.
+
+Do not classify a test by its namespace or by the mere presence of `System.Security.Cryptography`, `ImmutableDictionary`, or a networking class — classify by the invariant the assertions actually protect. If you cannot state that invariant in one sentence, the test is not a Security test.
 
 #### Criteria
 
-A test belongs in **UtilsTest.Unit** if it:
+A test belongs in **UtilsTest.Security** if its assertions defend a security invariant as described above.
+
+A test belongs in **UtilsTest.Unit** if it is not a Security test and it:
 - produces the same result regardless of the host environment,
 - uses only in-memory data: literals, `MemoryStream`, synthetic objects, embedded resources (`Resources.*`),
 - may span multiple components or assemblies as long as no external system is involved.
 
-A test belongs in **UtilsTest.Functional** if it:
+A test belongs in **UtilsTest.Functional** if it is not a Security test and it:
 - opens real network sockets (`TcpClient`, `UdpClient`, `HttpClient` against a live endpoint),
 - spawns or communicates with OS processes,
 - reads files whose path depends on the host environment (fonts loaded from disk, EDMX files resolved at runtime),
 - relies on a running external service (SMTP server, NTP, OData endpoint).
 
-> **Note — embedded resources are not "file system".** A test that reads data via `Resources.*` or a compiled-in `byte[]` is deterministic and belongs in `UtilsTest.Unit`, even if the data originated from a file.
+> **Note — embedded resources are not "file system".** A test that reads data via `Resources.*` or a compiled-in `byte[]` is deterministic and belongs in `UtilsTest.Unit` (or `UtilsTest.Security` if it protects a security invariant), even if the data originated from a file.
 
 #### Running tests
 
@@ -63,10 +77,15 @@ dotnet test UtilsTest/UtilsTest.Unit.csproj
 
 # Integration suite (requires network / environment):
 dotnet test UtilsTest.Functional/UtilsTest.Functional.csproj
+
+# Security-invariant suite:
+dotnet test UtilsTest.Security/UtilsTest.Security.csproj
 ```
 
-#### SpecFlow
-SpecFlow `.feature` files and their step bindings live exclusively in **UtilsTest.Unit** (the `Lists/` and `Mathematics/` BDD scenarios). Do not add SpecFlow infrastructure to `UtilsTest.Functional`.
+Security is not optional: `UtilsTest.Security` is a blocking gate in CI on the same footing as `UtilsTest.Unit` and `UtilsTest.Functional`.
+
+#### Reqnroll
+Reqnroll `.feature` files and their step bindings live exclusively in **UtilsTest.Unit** (the `Lists/` and `Mathematics/` BDD scenarios). Do not add Reqnroll infrastructure to `UtilsTest.Functional` or `UtilsTest.Security`.
 
 ---
 

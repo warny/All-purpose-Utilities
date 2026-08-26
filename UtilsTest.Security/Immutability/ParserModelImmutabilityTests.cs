@@ -5,7 +5,7 @@ using Utils.Parser.Model;
 using Utils.Parser.Runtime;
 using Utils.Parser.Source;
 
-namespace UtilsTest.Parser;
+namespace UtilsTest.Security.Immutability;
 
 /// <summary>Verifies defensive immutable snapshots in public parser models.</summary>
 [TestClass]

@@ -10,7 +10,7 @@ using Utils.Fonts.TTF.Tables.CMap;
 using Utils.IO.Serialization;
 using Utils.OData.Linq;
 
-namespace UtilsTest.Immutability;
+namespace UtilsTest.Security.Immutability;
 
 /// <summary>Verifies the immutable collection boundaries identified by the final repository audit.</summary>
 [TestClass]

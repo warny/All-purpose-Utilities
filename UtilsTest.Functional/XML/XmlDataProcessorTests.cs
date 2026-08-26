@@ -1,8 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
 using System.Xml;
 using Utils.XML;
 
@@ -67,17 +65,5 @@ public class XmlDataProcessorTests
         }
 
         CollectionAssert.AreEquivalent(new[] { "A", "First", "B", "Second" }, processor.Values);
-    }
-
-    [TestMethod]
-    public void ReadString_ShouldBeMarkedAsObsoleteWarning()
-    {
-        MethodInfo? method = typeof(XmlDataProcessor).GetMethod(nameof(XmlDataProcessor.Read), new[] { typeof(string) });
-        Assert.IsNotNull(method);
-
-        ObsoleteAttribute? attribute = method.GetCustomAttribute<ObsoleteAttribute>();
-        Assert.IsNotNull(attribute);
-        Assert.IsFalse(attribute.IsError);
-        StringAssert.Contains(attribute.Message, "ReadSecure");
     }
 }

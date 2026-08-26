@@ -114,6 +114,7 @@ dotnet restore Utils.sln
 dotnet build Utils.sln --configuration Release --no-restore
 dotnet test UtilsTest/UtilsTest.Unit.csproj --configuration Release --no-build
 dotnet test UtilsTest.Functional/UtilsTest.Functional.csproj --configuration Release --no-build
+dotnet test UtilsTest.Security/UtilsTest.Security.csproj --configuration Release --no-build
 dotnet pack Utils.Parser/Utils.Parser.csproj --configuration Release --no-build
 dotnet pack Utils.Parser.Generators/Utils.Parser.Generators.csproj --configuration Release --no-build
 dotnet list Utils.sln package --vulnerable --include-transitive

@@ -551,6 +551,11 @@
       "reason": "functional test project"
     },
     {
+      "project": "UtilsTest.Security/UtilsTest.Security.csproj",
+      "classification": "test",
+      "reason": "security-invariant test project"
+    },
+    {
       "project": "Utils.Expressions.CSyntax/Utils.Expressions.CSyntax.csproj",
       "classification": "non-packable",
       "reason": "internal syntax implementation"

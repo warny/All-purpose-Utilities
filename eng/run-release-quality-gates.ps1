@@ -39,9 +39,10 @@ $gates = @(
         Invoke-NativeCommand dotnet @("restore", (Join-Path $repoRoot "Utils.sln")) ([TimeSpan]::FromMinutes(15)) (Join-Path $logRoot "restore.log") | Out-Null
         Invoke-NativeCommand dotnet @("build", (Join-Path $repoRoot "Utils.sln"), "--configuration", $Configuration, "--no-restore", "-p:UseSharedCompilation=false") ([TimeSpan]::FromMinutes(20)) (Join-Path $logRoot "build.log") | Out-Null
     } },
-    [pscustomobject]@{ Name = "tests"; Display = "Unit and functional tests"; Skip = [bool]$SkipTests; Action = {
+    [pscustomobject]@{ Name = "tests"; Display = "Unit, functional and security tests"; Skip = [bool]$SkipTests; Action = {
         Invoke-NativeCommand dotnet @("test", (Join-Path $repoRoot "UtilsTest/UtilsTest.Unit.csproj"), "--configuration", $Configuration, "--no-build") ([TimeSpan]::FromMinutes(15)) (Join-Path $logRoot "unit-tests.log") | Out-Null
         Invoke-NativeCommand dotnet @("test", (Join-Path $repoRoot "UtilsTest.Functional/UtilsTest.Functional.csproj"), "--configuration", $Configuration, "--no-build") ([TimeSpan]::FromMinutes(20)) (Join-Path $logRoot "functional-tests.log") | Out-Null
+        Invoke-NativeCommand dotnet @("test", (Join-Path $repoRoot "UtilsTest.Security/UtilsTest.Security.csproj"), "--configuration", $Configuration, "--no-build") ([TimeSpan]::FromMinutes(15)) (Join-Path $logRoot "security-tests.log") | Out-Null
     } },
     [pscustomobject]@{ Name = "package-discovery"; Display = "Package discovery and graph"; Skip = $false; Action = { & "$PSScriptRoot/discover-release-projects.ps1" -Configuration $Configuration -ArtifactsPath $ArtifactsPath; & "$PSScriptRoot/analyze-package-graph.ps1" -Configuration $Configuration -ArtifactsPath $ArtifactsPath } },
     [pscustomobject]@{ Name = "packaged-product-train"; Display = "Packaged product train ($Mode)"; Skip = [bool]$SkipPackagedAcceptance; Action = { & "$PSScriptRoot/test-packaged-product-train.ps1" -ValidationTier $Mode -Configuration $Configuration -ArtifactsPath $ArtifactsPath -SkipBuild } },

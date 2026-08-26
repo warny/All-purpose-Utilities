@@ -1,7 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Net.DNS;
 
-namespace Utils.Tests.Net;
+namespace UtilsTest.Security.Net;
 
 /// <summary>
 /// Contains security-focused tests for <see cref="DNSHeader"/> initialization.

@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Utils.Security;
 
-namespace Utils.Tests.Security;
+namespace UtilsTest.Security;
 
 [TestClass]
 public class AuthenticatorTests

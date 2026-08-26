@@ -3,7 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Net.DNS;
 using Utils.Net.DNS.RFC1035;
 
-namespace UtilsTest.Net;
+namespace UtilsTest.Security.Net;
 
 /// <summary>
 /// Tests for edge-case and security-sensitive behaviour in <see cref="DNSPacketReader"/>:

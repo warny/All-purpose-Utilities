@@ -37,6 +37,7 @@ jobs:
                   dotnet build Utils.sln -c Release --no-restore -p:ContinuousIntegrationBuild=true
                   dotnet test UtilsTest/UtilsTest.Unit.csproj -c Release --no-build
                   dotnet test UtilsTest.Functional/UtilsTest.Functional.csproj -c Release --no-build
+                  dotnet test UtilsTest.Security/UtilsTest.Security.csproj -c Release --no-build
                   ./eng/audit-dependencies.ps1 -ArtifactsPath artifacts
                   ./eng/discover-release-projects.ps1 -Configuration Release -ArtifactsPath artifacts
                   ./eng/pack-product-train.ps1 -Configuration Release -ArtifactsPath artifacts -NoBuild

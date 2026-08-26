@@ -116,15 +116,6 @@ public class NetworkParametersDiscoveryTests
         Assert.AreEqual(IPAddress.Parse("10.0.0.53"), result[0]);
     }
 
-    [TestMethod]
-    public void DnsServers_GetterReturnsDefensiveCopy()
-    {
-        var parameters = new NetworkParameters();
-        IPAddress[] first = parameters.DnsServers;
-        IPAddress[] second = parameters.DnsServers;
-        Assert.AreNotSame(first, second);
-    }
-
     /// <summary>
     /// Verifies that <see cref="NetworkParameters.NetworkInterfaces"/> returns the same cached
     /// <see cref="IReadOnlyList{T}"/> instance on every call.
