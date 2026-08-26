@@ -4,7 +4,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Utils.Reflection.ProcessIsolation;
 
-namespace UtilsTest.Reflection;
+namespace UtilsTest.Security.Reflection;
 
 /// <summary>
 /// Validates the structured Authenticode result types and <see cref="ProcessIsolationPlatformSecurity"/>

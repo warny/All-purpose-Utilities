@@ -5,7 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Utils.Reflection.ProcessIsolation;
 
-namespace UtilsTest.Reflection;
+namespace UtilsTest.Security.Reflection;
 
 /// <summary>
 /// Validates that <see cref="SandboxedProcessEnvironment.ApplyMinimalEnvironment"/> strips the

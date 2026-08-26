@@ -42,6 +42,14 @@
 		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
 			<_Parameter1>UtilsTest.Functional</_Parameter1>
 		</AssemblyAttribute>
+		<!--
+		    Exception: UtilsTest.Security requires access to EmitWorkerProcess, SandboxedProcessEnvironment,
+		    AppContainerSandbox and MacOsSandboxExecContainer, internal sandboxing/isolation and
+		    resource-allocation-guard components with no public API surface.
+		-->
+		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+			<_Parameter1>UtilsTest.Security</_Parameter1>
+		</AssemblyAttribute>
 	</ItemGroup>
 	<ItemGroup>
 	  <PackageReference Update="Microsoft.SourceLink.GitHub" Version="10.0.400" />

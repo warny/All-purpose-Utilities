@@ -90,6 +90,20 @@ jobs:
                   cache-dependency-path: ${{ env.DOTNET_CACHE_PATHS }}
             - run: dotnet test UtilsTest.Functional/UtilsTest.Functional.csproj --configuration Release --logger trx --results-directory artifacts/test-results
 
+    security-tests:
+        needs: changes
+        if: needs.changes.outputs.train == 'true'
+        runs-on: ubuntu-latest
+        timeout-minutes: 25
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: '9.0.x'
+                  cache: true
+                  cache-dependency-path: ${{ env.DOTNET_CACHE_PATHS }}
+            - run: dotnet test UtilsTest.Security/UtilsTest.Security.csproj --configuration Release --logger trx --results-directory artifacts/test-results
+
     canonical-packages:
         needs: changes
         if: needs.changes.outputs.train == 'true'
@@ -218,7 +232,7 @@ jobs:
 
     required:
         if: always()
-        needs: [changes, build, unit-tests, functional-tests, canonical-packages, packaged-validation-ubuntu, packaged-validation-windows-light, source-gates-ubuntu]
+        needs: [changes, build, unit-tests, functional-tests, security-tests, canonical-packages, packaged-validation-ubuntu, packaged-validation-windows-light, source-gates-ubuntu]
         runs-on: ubuntu-latest
         timeout-minutes: 5
         steps:
@@ -243,6 +257,7 @@ jobs:
                       buildPassed = '${{ needs.build.result }}' -eq 'success'
                       unitTestsPassed = '${{ needs.unit-tests.result }}' -eq 'success'
                       functionalTestsPassed = '${{ needs.functional-tests.result }}' -eq 'success'
+                      securityTestsPassed = '${{ needs.security-tests.result }}' -eq 'success'
                       canonicalPackagesProduced = '${{ needs.canonical-packages.result }}' -eq 'success'
                       ubuntuPackageValidationPassed = '${{ needs.packaged-validation-ubuntu.result }}' -eq 'success'
                       windowsPackageValidationPassed = '${{ needs.packaged-validation-windows-light.result }}' -eq 'success'
@@ -264,6 +279,7 @@ jobs:
                       test '${{ needs.build.result }}' = success
                       test '${{ needs.unit-tests.result }}' = success
                       test '${{ needs.functional-tests.result }}' = success
+                      test '${{ needs.security-tests.result }}' = success
                       test '${{ needs.canonical-packages.result }}' = success
                       test '${{ needs.packaged-validation-ubuntu.result }}' = success
                       test '${{ needs.packaged-validation-windows-light.result }}' = success

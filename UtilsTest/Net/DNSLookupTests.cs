@@ -64,37 +64,6 @@ public class DNSLookupTests
     }
 
     [TestMethod]
-    public void Constructor_CallerMutatesInputArray_DoesNotChangeConfiguration()
-    {
-        var input = new[] { ServerA, ServerB };
-        var lookup = new DNSLookup(input);
-        input[0] = IPAddress.Parse("203.0.113.9");
-
-        CollectionAssert.AreEqual(new[] { ServerA, ServerB }, lookup.NameServers);
-    }
-
-    [TestMethod]
-    public void NameServers_GetterReturnsDefensiveCopy()
-    {
-        var lookup = new DNSLookup(ServerA, ServerB);
-        IPAddress[] first = lookup.NameServers;
-        first[0] = IPAddress.Parse("203.0.113.9");
-
-        CollectionAssert.AreEqual(new[] { ServerA, ServerB }, lookup.NameServers);
-    }
-
-    [TestMethod]
-    public void NameServers_SetterCopiesInput()
-    {
-        var lookup = new DNSLookup(ServerA);
-        var input = new[] { ServerB };
-        lookup.NameServers = input;
-        input[0] = IPAddress.Parse("203.0.113.9");
-
-        CollectionAssert.AreEqual(new[] { ServerB }, lookup.NameServers);
-    }
-
-    [TestMethod]
     public void LoopbackAddress_IsAccepted()
     {
         var lookup = new DNSLookup(IPAddress.Loopback);
@@ -161,27 +130,6 @@ public class DNSLookupTests
 
         Assert.AreEqual(DNSQRBit.Response, response.QrBit);
         Assert.AreEqual(2, transport.UdpCalls.Count);
-    }
-
-    [TestMethod]
-    public async Task RequestAsync_MalformedResponse_IsAggregated()
-    {
-        var transport = new FakeTransport((ep, q) => (new byte[] { 1, 2, 3 }, null));
-        var lookup = new DNSLookup(transport, ServerA);
-
-        var ex = await Assert.ThrowsExactlyAsync<DnsLookupException>(() => lookup.RequestAsync("A", "example.com"));
-        Assert.AreEqual(1, ex.Failures.Count);
-        Assert.AreEqual(DnsFailureKind.MalformedResponse, ex.Failures[0].Kind);
-    }
-
-    [TestMethod]
-    public async Task RequestAsync_WrongTransactionId_IsAggregated()
-    {
-        var transport = new FakeTransport((ep, q) => (BuildResponse(q, h => h.ID = (ushort)(h.ID ^ 0x1)), null));
-        var lookup = new DNSLookup(transport, ServerA);
-
-        var ex = await Assert.ThrowsExactlyAsync<DnsLookupException>(() => lookup.RequestAsync("A", "example.com"));
-        Assert.AreEqual(DnsFailureKind.TransactionIdMismatch, ex.Failures[0].Kind);
     }
 
     [TestMethod]

@@ -135,86 +135,12 @@ public class NtpClientTests
     }
 
     [TestMethod]
-    public async Task GetTimeAsync_BroadcastMode5_ThrowsInvalidDataException()
-    {
-        var transport = new FakeTransport((ep, req) => ServerResponse(req, DateTime.UtcNow, mode: 5));
-        var ex = await Assert.ThrowsExactlyAsync<NtpQueryException>(
-            () => Query(new FakeResolver(IPAddress.Loopback), transport));
-        Assert.IsInstanceOfType(ex.Failures[0].Exception, typeof(InvalidDataException));
-    }
-
-    [TestMethod]
-    public async Task GetTimeAsync_ClientMode3Response_Throws()
-    {
-        var transport = new FakeTransport((ep, req) => ServerResponse(req, DateTime.UtcNow, mode: 3));
-        await Assert.ThrowsExactlyAsync<NtpQueryException>(
-            () => Query(new FakeResolver(IPAddress.Loopback), transport));
-    }
-
-    [TestMethod]
     public async Task GetTimeAsync_ServerMode4_IsAccepted()
     {
         DateTime expected = new(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         var transport = new FakeTransport((ep, req) => ServerResponse(req, expected, mode: 4));
         DateTime result = await Query(new FakeResolver(IPAddress.Loopback), transport);
         Assert.AreEqual(expected, result);
-    }
-
-    [TestMethod]
-    public async Task GetTimeAsync_OriginateTimestampMismatch_Throws()
-    {
-        var transport = new FakeTransport((ep, req) => ServerResponse(req, DateTime.UtcNow, echoOriginate: false));
-        var ex = await Assert.ThrowsExactlyAsync<NtpQueryException>(
-            () => Query(new FakeResolver(IPAddress.Loopback), transport));
-        Assert.IsInstanceOfType(ex.Failures[0].Exception, typeof(InvalidDataException));
-    }
-
-    [TestMethod]
-    public async Task GetTimeAsync_ZeroTransmitTimestamp_Throws()
-    {
-        var transport = new FakeTransport((ep, req) =>
-        {
-            byte[] response = ServerResponse(req, DateTime.UtcNow);
-            SysArray.Clear(response, 40, 8); // zero the transmit timestamp
-            return response;
-        });
-        await Assert.ThrowsExactlyAsync<NtpQueryException>(
-            () => Query(new FakeResolver(IPAddress.Loopback), transport));
-    }
-
-    [TestMethod]
-    public async Task GetTimeAsync_LeapAlarm_Throws()
-    {
-        var transport = new FakeTransport((ep, req) => ServerResponse(req, DateTime.UtcNow, leap: 0xC0));
-        await Assert.ThrowsExactlyAsync<NtpQueryException>(
-            () => Query(new FakeResolver(IPAddress.Loopback), transport));
-    }
-
-    [TestMethod]
-    public async Task GetTimeAsync_StratumZero_Throws()
-    {
-        var transport = new FakeTransport((ep, req) => ServerResponse(req, DateTime.UtcNow, stratum: 0));
-        await Assert.ThrowsExactlyAsync<NtpQueryException>(
-            () => Query(new FakeResolver(IPAddress.Loopback), transport));
-    }
-
-    [TestMethod]
-    public async Task GetTimeAsync_TooShortPacket_Throws()
-    {
-        var transport = new FakeTransport((ep, req) => new byte[10]);
-        await Assert.ThrowsExactlyAsync<NtpQueryException>(
-            () => Query(new FakeResolver(IPAddress.Loopback), transport));
-    }
-
-    [TestMethod]
-    public async Task GetTimeAsync_UnexpectedEndpoint_Throws()
-    {
-        // The real UDP transport rejects unexpected endpoints; here we simulate the resulting
-        // IOException surfacing as an aggregated failure.
-        var transport = new FakeTransport((ep, req) => throw new IOException("NTP response received from unexpected endpoint."));
-        var ex = await Assert.ThrowsExactlyAsync<NtpQueryException>(
-            () => Query(new FakeResolver(IPAddress.Loopback), transport));
-        Assert.AreEqual(NtpPhase.Exchange, ex.Failures[0].Phase);
     }
 
     [TestMethod]

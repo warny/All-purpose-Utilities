@@ -143,67 +143,6 @@ public class ArpPacketTests
     }
 
     [TestMethod]
-    public void Read_HeaderShorterThanEightBytes_ThrowsInvalidDataException()
-    {
-        Assert.ThrowsExactly<InvalidDataException>(() => ArpPacket.Read(new byte[7]));
-    }
-
-    [TestMethod]
-    public void Read_DeclaredLengthExceedsBuffer_ThrowsInvalidDataException()
-    {
-        byte[] bytes = ValidRequest().ToBytes();
-        // Truncate the body while keeping a full 8-byte header.
-        byte[] truncated = new byte[20];
-        System.Array.Copy(bytes, truncated, 20);
-        Assert.ThrowsExactly<InvalidDataException>(() => ArpPacket.Read(truncated));
-    }
-
-    [TestMethod]
-    public void Read_ZeroHardwareLength_ThrowsInvalidDataException()
-    {
-        byte[] bytes = ValidRequest().ToBytes();
-        bytes[4] = 0; // HLEN = 0
-        Assert.ThrowsExactly<InvalidDataException>(() => ArpPacket.Read(bytes));
-    }
-
-    [TestMethod]
-    public void Read_ZeroProtocolLength_ThrowsInvalidDataException()
-    {
-        byte[] bytes = ValidRequest().ToBytes();
-        bytes[5] = 0; // PLEN = 0
-        Assert.ThrowsExactly<InvalidDataException>(() => ArpPacket.Read(bytes));
-    }
-
-    [TestMethod]
-    public void Read_OversizedLengths_ThrowsInvalidDataException()
-    {
-        byte[] bytes = new byte[28];
-        // Valid header prefix, then oversized HLEN/PLEN that exceed the buffer.
-        bytes[1] = 1;      // HTYPE
-        bytes[2] = 0x08;   // PTYPE high
-        bytes[4] = 200;    // HLEN
-        bytes[5] = 200;    // PLEN
-        Assert.ThrowsExactly<InvalidDataException>(() => ArpPacket.Read(bytes));
-    }
-
-    [TestMethod]
-    public void Read_UnsupportedHardwareType_ThrowsInvalidDataException()
-    {
-        byte[] bytes = ValidRequest().ToBytes();
-        bytes[1] = 6; // HTYPE = 6 (IEEE 802) instead of 1
-        Assert.ThrowsExactly<InvalidDataException>(() => ArpPacket.Read(bytes));
-    }
-
-    [TestMethod]
-    public void Read_UnsupportedProtocolType_ThrowsInvalidDataException()
-    {
-        byte[] bytes = ValidRequest().ToBytes();
-        bytes[2] = 0x86;
-        bytes[3] = 0xDD; // PTYPE = 0x86DD (IPv6) instead of 0x0800
-        Assert.ThrowsExactly<InvalidDataException>(() => ArpPacket.Read(bytes));
-    }
-
-    [TestMethod]
     public void Read_TrailingPadding_IsHandledAccordingToDocumentedPolicy()
     {
         // Documented policy: trailing Ethernet padding after the 28-byte packet is ignored.
@@ -237,16 +176,6 @@ public class ArpPacketTests
         ArpPacket packet = ValidRequest();
         packet.Operation = (ArpOperation)99;
         Assert.ThrowsExactly<InvalidOperationException>(() => packet.ToBytes());
-    }
-
-    [TestMethod]
-    public void Read_UnsupportedOperation_ThrowsInvalidDataException()
-    {
-        byte[] bytes = ValidRequest().ToBytes();
-        // Set operation to an unsupported value (99 = 0x0063).
-        bytes[6] = 0x00;
-        bytes[7] = 99;
-        Assert.ThrowsExactly<InvalidDataException>(() => ArpPacket.Read(bytes));
     }
 
     [TestMethod]

@@ -30,6 +30,7 @@
 	<ItemGroup>
 		<InternalsVisibleTo Include="UtilsTest.Unit" />
 		<InternalsVisibleTo Include="UtilsTest.Functional" />
+		<InternalsVisibleTo Include="UtilsTest.Security" />
 	</ItemGroup>
 	<ItemGroup>
 	  <PackageReference Update="Microsoft.SourceLink.GitHub" Version="10.0.400" />

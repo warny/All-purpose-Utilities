@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Net;
 
-namespace UtilsTest.Net;
+namespace UtilsTest.Security.Net;
 
 /// <summary>
 /// Tests for <see cref="Pop3Server"/> authentication lockout behaviour.

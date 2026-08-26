@@ -4,7 +4,7 @@ using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Net;
 
-namespace Utils.Tests.Net;
+namespace UtilsTest.Security.Net;
 
 /// <summary>
 /// Verifies compile-time warning metadata applied to potentially insecure network operations.

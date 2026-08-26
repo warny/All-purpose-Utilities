@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<EnablePreviewFeatures>True</EnablePreviewFeatures>
+		<IsPackable>false</IsPackable>
+		<IsTestProject>true</IsTestProject>
+		<Authors>Olivier MARTY</Authors>
+		<Description>Security-invariant tests for all utilities: authentication, secrets, injection, path traversal, resource-exhaustion limits, sandboxing/isolation, Authenticode trust, and immutability/encapsulation guarantees.</Description>
+		<RootNamespace>UtilsTest.Security</RootNamespace>
+		<NoWarn>$(NoWarn);1591;CS0612;CS0618;CS8618;CS8625;CS8602;CS8603;CS8604;CS8600;CS8767;CS8601;CS8765;CS8620;CS8619;CS8629;CS8714;CS8622;CS8621</NoWarn>
+		<RollForward>Major</RollForward>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="coverlet.collector" Version="10.0.1">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
+		<PackageReference Include="MSTest.TestAdapter" Version="4.3.3" />
+		<PackageReference Include="MSTest.TestFramework" Version="4.3.3" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Utils\Utils.csproj" />
+		<ProjectReference Include="..\Utils.Data\Utils.Data.csproj" />
+		<ProjectReference Include="..\Utils.Fonts\Utils.Fonts.csproj" />
+		<ProjectReference Include="..\Utils.IO\Utils.IO.csproj" />
+		<ProjectReference Include="..\Utils.Net\Utils.Net.csproj" />
+		<ProjectReference Include="..\Utils.OData\Utils.OData.csproj" />
+		<ProjectReference Include="..\Utils.Reflection\Utils.Reflection.csproj" />
+		<ProjectReference Include="..\Utils.Xml\Utils.Xml.csproj" />
+		<ProjectReference Include="..\Utils.Parser\Utils.Parser.csproj" />
+		<ProjectReference Include="..\Utils.Parser.Source\Utils.Parser.Source.csproj" />
+		<ProjectReference Include="..\Utils.Parser.Antlr4.Common\Utils.Parser.Antlr4.Common.csproj" />
+		<ProjectReference Include="..\Utils.Parser.Expressions\Utils.Parser.Expressions.csproj" />
+		<ProjectReference Include="..\Utils.Parser.Diagnostics\Utils.Parser.Diagnostics.csproj" />
+		<ProjectReference Include="..\Utils.Parser.VisualStudio\Utils.Parser.VisualStudio.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Update="Microsoft.SourceLink.GitHub" Version="10.0.400" />
+	</ItemGroup>
+
+</Project>
