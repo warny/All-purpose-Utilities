@@ -84,8 +84,8 @@ dotnet test UtilsTest.Security/UtilsTest.Security.csproj
 
 Security is not optional: `UtilsTest.Security` is a blocking gate in CI on the same footing as `UtilsTest.Unit` and `UtilsTest.Functional`.
 
-#### SpecFlow
-SpecFlow `.feature` files and their step bindings live exclusively in **UtilsTest.Unit** (the `Lists/` and `Mathematics/` BDD scenarios). Do not add SpecFlow/Reqnroll infrastructure to `UtilsTest.Functional` or `UtilsTest.Security`.
+#### Reqnroll
+Reqnroll `.feature` files and their step bindings live exclusively in **UtilsTest.Unit** (the `Lists/` and `Mathematics/` BDD scenarios). Do not add Reqnroll infrastructure to `UtilsTest.Functional` or `UtilsTest.Security`.
 
 ---
 

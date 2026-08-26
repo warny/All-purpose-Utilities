@@ -1,6 +1,6 @@
 # UtilsTest
 
-`UtilsTest` contains the deterministic unit tests (MSTest + SpecFlow) for the full `Utils.*` project set.
+`UtilsTest` contains the deterministic unit tests (MSTest + Reqnroll) for the full `Utils.*` project set.
 
 ## Purpose
 
@@ -43,4 +43,4 @@ dotnet test UtilsTest.Security/UtilsTest.Security.csproj
 - Expression tests: `UtilsTest/Expressions/`
 - Network tests: `UtilsTest/Net/`
 - Math tests: `UtilsTest/Mathematics/`
-- SpecFlow scenarios: `UtilsTest/Lists/` and `UtilsTest/Mathematics/LinearAlgebra/`
+- Reqnroll scenarios: `UtilsTest/Lists/` and `UtilsTest/Mathematics/LinearAlgebra/`

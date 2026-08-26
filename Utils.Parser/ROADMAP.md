@@ -248,6 +248,14 @@ Scope of completed/recently consolidated work:
 - lifecycle contracts,
 - branch outcome model,
 - parser test suite normalization.
+- parser tests are now split across three MSTest projects by finality rather than by two:
+  `UtilsTest` (deterministic, non-security), `UtilsTest.Functional` (real external systems,
+  non-security), and `UtilsTest.Security` (security-invariant tests — e.g. parser/parse-tree
+  immutability and encapsulation snapshots, VS worker plugin Authenticode/size-limit guards —
+  regardless of whether they run in memory or against a real process). See the repository-level
+  `AGENTS.md` for the full Security > Functional > Unit classification order. This is an
+  organizational split only: no parser runtime behavior, diagnostics, parse-tree shape, or public
+  API changed as part of it.
 
 Ongoing expectation:
 
