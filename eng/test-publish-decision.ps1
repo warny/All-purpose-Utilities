@@ -49,9 +49,16 @@ Assert-Decision "ResumePartialPublication without Publish (empty state)" -Exists
 Assert-Decision "ResumePartialPublication without Publish (partial state)" -Exists @($true, $false, $false) -ResumePartialPublication -ExpectedAllowed $false
 
 # Additional coverage matching eng/publish-product-train.ps1's full documented behavior table.
-Assert-Decision "empty + Publish + ResumePartialPublication behaves like a normal publish" -Exists @($false, $false, $false) -Publish -ResumePartialPublication -ExpectedAllowed $true -ExpectedResuming $true -ExpectedNothingToPublish $false
+# An empty remote state plus an explicit resume request degrades to an ordinary fresh publish:
+# there is nothing yet to have interrupted a symbol-package push, so --skip-duplicate must not be
+# switched on - an unexpected collision here must still be a hard, fail-closed error.
+Assert-Decision "empty + Publish + ResumePartialPublication behaves like a normal publish" -Exists @($false, $false, $false) -Publish -ResumePartialPublication -ExpectedAllowed $true -ExpectedResuming $false -ExpectedNothingToPublish $false
 Assert-Decision "fully present + dry run => nothing to publish, not rejected" -Exists @($true, $true, $true) -ExpectedAllowed $true -ExpectedResuming $false -ExpectedNothingToPublish $true
 Assert-Decision "fully present + Publish => nothing to publish" -Exists @($true, $true, $true) -Publish -ExpectedAllowed $true -ExpectedResuming $false -ExpectedNothingToPublish $true
+# Every .nupkg already existing does not mean every .snupkg made it too (the remote scan only sees
+# main packages): an explicit resume against a fully-present-by-nupkg state must still retry every
+# artifact, so it must not be short-circuited as "nothing to publish".
+Assert-Decision "fully present (by nupkg) + Publish + ResumePartialPublication retries every artifact" -Exists @($true, $true, $true) -Publish -ResumePartialPublication -ExpectedAllowed $true -ExpectedResuming $true -ExpectedNothingToPublish $false
 Assert-Decision "partial + dry run (no Publish, no Resume) => rejected" -Exists @($true, $false, $false) -ExpectedAllowed $false
 Assert-Decision "partial + PreflightPackageIdsOnly-equivalent (no Publish) => rejected" -Exists @($false, $true, $false) -ExpectedAllowed $false
 

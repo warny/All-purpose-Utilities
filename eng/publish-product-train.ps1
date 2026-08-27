@@ -111,7 +111,7 @@ $plan = [ordered]@{ generatedAtUtc = [DateTime]::UtcNow.ToString('O'); productTr
 $reportRoot = Join-Path $artifactRoot "reports"
 New-Item $reportRoot -ItemType Directory -Force | Out-Null
 $plan | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $reportRoot "publication-plan.json")
-if ($present.Count -eq $states.Count) { Write-Host "All packages already exist; nothing to publish."; return }
+if ($decision.nothingToPublish) { Write-Host "All packages already exist; nothing to publish."; return }
 if (-not $Publish) { Write-Host "Dry run passed: all package IDs are available at $($manifest.version)."; return }
 if ([string]::IsNullOrWhiteSpace($ApiKey)) { throw "An API key is required for publication." }
 if ($resuming) {

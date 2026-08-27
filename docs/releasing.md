@@ -46,6 +46,8 @@ plan a dry run → **a human runs the actual push manually**, not push-on-merge:
 
    This reuses the same validated candidate and pushes every package's `.nupkg` and `.snupkg` again, but adds `--skip-duplicate` to each push: NuGet guarantees a published id+version's content is immutable, so a re-push of an already-published artifact is turned into a harmless no-op instead of an error, while an artifact that never actually made it (for example, a `.snupkg` whose push failed right after its `.nupkg` succeeded) still gets a real, effective push. `-ResumePartialPublication` requires `-Publish` and does nothing on its own. Do not reach for it to explain away a partial state whose origin you have not actually confirmed to be a known interrupted run of this script - it exists for that one specific, deliberate scenario, not as a general-purpose override.
 
+   The remote-state scan only checks each package's `.nupkg` - NuGet does not expose a symbol-package existence query - so a run that fails on the very last package's `.snupkg` leaves every `.nupkg` looking published. `-ResumePartialPublication` is also the right (and only) way to complete that case: without it, `-Publish` alone would see every `.nupkg` present, report "nothing to publish", and leave that one stranded `.snupkg` unpublished forever. With `-ResumePartialPublication`, every artifact for every package is re-attempted with `--skip-duplicate`, so the 24 already-complete packages are harmless no-ops and the missing `.snupkg` gets a real, effective push.
+
 ## Validating packages
 
 After a release completes:

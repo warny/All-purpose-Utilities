@@ -236,11 +236,22 @@ state, and whether that is a resume.
 .DESCRIPTION
 Pure decision logic with no network, filesystem, or external-process access, so it can be
 exercised directly by a lightweight self-test. $Exists is one boolean per manifested package
-(true = that package/version already exists on the remote feed). A state where some but not all
-packages already exist ("partial") is only ever allowed to proceed when both -Publish and
--ResumePartialPublication are set; every other combination (a dry run, -PreflightPackageIdsOnly,
-or a plain -Publish) rejects it. This mirrors, as a single source of truth, the same rule
-eng/publish-product-train.ps1 enforces.
+(true = that package's .nupkg already exists on the remote feed - this scan cannot see whether its
+.snupkg also made it, since NuGet does not expose a symbol-package existence query). A state where
+some but not all packages already exist ("partial") is only ever allowed to proceed when both
+-Publish and -ResumePartialPublication are set; every other combination (a dry run,
+-PreflightPackageIdsOnly, or a plain -Publish) rejects it. This mirrors, as a single source of
+truth, the same rule eng/publish-product-train.ps1 enforces.
+
+Resuming is also honored when every .nupkg already exists: a run that fails on the very last
+package's .snupkg leaves the remote .nupkg scan looking fully complete, yet that .snupkg was never
+published. An explicit -ResumePartialPublication in that state is not "nothing to publish" - it
+re-attempts every artifact (with --skip-duplicate, so the already-published .nupkgs are harmless
+no-ops) specifically to give that stranded .snupkg a real retry. Only a "fully present" state
+without an explicit resume request short-circuits as nothingToPublish; and resuming only activates
+--skip-duplicate semantics when at least one package's .nupkg was actually observed present,
+so requesting -ResumePartialPublication against an empty remote state degrades to an ordinary,
+fail-closed fresh publish rather than needlessly weakening it with --skip-duplicate.
 #>
 function Get-PublicationDecision {
     param(
@@ -254,9 +265,10 @@ function Get-PublicationDecision {
     $total = $Exists.Count
     $presentCount = @($Exists | Where-Object { $_ }).Count
     $isPartial = $presentCount -ne 0 -and $presentCount -ne $total
-    $resuming = [bool]($Publish -and $ResumePartialPublication)
+    $resuming = [bool]($Publish -and $ResumePartialPublication -and $presentCount -gt 0)
     if ($isPartial -and -not $resuming) {
         return [pscustomobject]@{ allowed = $false; resuming = $false; nothingToPublish = $false; reason = "Partial remote state requires explicit -Publish -ResumePartialPublication." }
     }
-    return [pscustomobject]@{ allowed = $true; resuming = $resuming; nothingToPublish = ($presentCount -eq $total); reason = $null }
+    $nothingToPublish = $presentCount -eq $total -and -not $resuming
+    return [pscustomobject]@{ allowed = $true; resuming = $resuming; nothingToPublish = $nothingToPublish; reason = $null }
 }
