@@ -18,7 +18,6 @@ $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "Release.Common.ps1")
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $manifest = Get-Content (Join-Path $PSScriptRoot "product-train-manifest.json") -Raw | ConvertFrom-Json
-$manifestById = @{}; $manifest.packages | ForEach-Object { $manifestById[$_.packageId] = $_ }
 $artifactRoot = [IO.Path]::GetFullPath((Join-Path $repoRoot $ArtifactsPath))
 $packagesPath = Join-Path $artifactRoot "packages"
 if ($Publish -and $PreflightPackageIdsOnly) { throw "PreflightPackageIdsOnly can never publish packages." }

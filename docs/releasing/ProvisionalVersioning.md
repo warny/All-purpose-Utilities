@@ -21,17 +21,21 @@ manifest's `exclusions` array instead, each with its own independent, explicit v
 | `Utils.Parser.VisualStudio` (VSIX, not a NuGet package - see below) | `exclusions[]`, `"classification": "vsix"` | `0.0.1` | The VSIX version format has no representation for a SemVer prerelease suffix like `2.0.0-rc.1`; see [VSIX versioning and release](VisualStudioExtension.md). |
 
 Both are excluded from the train for different reasons (maturity vs. VSIX versioning format), but
-the mechanics are the same: an explicit literal `<Version>`, packed/published independently of the
-train, and never part of the train's canonical package set, candidate manifest, publication order,
-or all-or-none publish preflight (`eng/publish-product-train.ps1` only ever iterates the manifest's
-`packages` array).
+the mechanics are the same in spirit: an explicit, independent version declared where each
+packaging format expects it - a literal MSBuild `<Version>` in `Utils.Collections.csproj` for the
+NuGet package, and `<Identity Version="0.0.1">` in `source.extension.vsixmanifest` for the VSIX
+(there is no MSBuild `<Version>` involved for the VSIX). Either way, packed/published independently
+of the train, and never part of the train's canonical package set, candidate manifest, publication
+order, or all-or-none publish preflight (`eng/publish-product-train.ps1` only ever iterates the
+manifest's `packages` array).
 
-Both will jump directly to the product train's *then-current* version (for example `2.0.0` or
-later) once they are considered mature/stable enough - there is no obligation to publish an
-intermediate `1.x`, and no obligation to keep incrementing `0.0.x` once the train itself is stable.
-Rejoining the train is a two-line change: remove the literal `<Version>`, restore
+`omy.Utils.Collections` will jump directly to the product train's *then-current* version (for
+example `2.0.0` or later) once it is considered mature enough - there is no obligation to publish
+an intermediate `1.x`, and no obligation to keep incrementing `0.0.x` once the train itself is
+stable. Rejoining the train is a two-line change: remove the literal `<Version>`, restore
 `<Version>$(ProductTrainVersion)</Version>`, and move the manifest entry from `exclusions` to
-`packages`.
+`packages`. The VSIX's exclusion is permanent and structural rather than a maturity gate (see
+below) - it does not have an equivalent "rejoin the train" path.
 
 ## The VSIX is not a NuGet package
 
