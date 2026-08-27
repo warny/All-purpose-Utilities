@@ -112,3 +112,17 @@ list.CopyTo(dest, 0);
 
 
 [Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)
+
+> **Provisional release, temporarily outside the product train.** `omy.Utils.Collections` is
+> listed in `eng/product-train-manifest.json`'s `exclusions` array (`"classification":
+> "provisional-package"`), not in the synchronized `packages` array: it only contains
+> `SkipList`/`SkipListDictionary` today and is not yet considered mature enough to join the
+> `omy.Utils` product train (currently `2.0.0-rc.1`) as a stable component. It is packed and
+> published independently, at its own literal `0.0.1`, and is never part of the train's canonical
+> package set, candidate manifest, publication order, or all-or-none publish preflight. The API
+> documentation above is still generated once for the whole repository under the product-train's
+> version label (see `docs/releasing.md`) - it documents this package's current API even though the
+> package version itself does not match that label. `omy.Utils.Collections` will move directly into
+> the `packages` array at the product train's then-current version once it is considered mature -
+> there is no obligation to pass through an intermediate `1.x`. See
+> [Provisional versioning](https://github.com/warny/All-purpose-Utilities/blob/master/docs/releasing/ProvisionalVersioning.md).

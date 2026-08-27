@@ -1,10 +1,27 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
+        <IsProductTrainProject>true</IsProductTrainProject>
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <IsPackable>false</IsPackable>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <Copyright>Olivier MARTY 2025</Copyright>
+        <Authors>Olivier MARTY</Authors>
+        <Company>Olivier MARTY</Company>
+        <PackageId>omy.Utils.Expressions.CSyntax</PackageId>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <Version>$(ProductTrainVersion)</Version>
+        <Description>C-like expression compiler targeting .NET LINQ expression trees (System.Linq.Expressions), with functions, control flow, and a persistable symbol context.</Description>
+        <PackageTags>omy;utilities;expressions;compiler;linq;csyntax</PackageTags>
+        <RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageProjectUrl>https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
     </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="README.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\Utils.Parser\Utils.Parser.csproj" />

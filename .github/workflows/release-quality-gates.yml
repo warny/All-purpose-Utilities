@@ -127,3 +127,27 @@ jobs:
                   ./eng/publish-product-train.ps1 -ArtifactsPath artifacts -ValidateCandidateOnly
             - uses: actions/upload-artifact@v4
               with: { name: 'full-product-train-${{ github.sha }}', path: artifacts }
+
+    # The VSIX is not part of the NuGet product train (see docs/releasing/ProvisionalVersioning.md),
+    # so this job is independent of canonical/candidate. It builds and validates the extension but
+    # never publishes it anywhere - see docs/releasing/VisualStudioExtension.md for the manual
+    # publication process.
+    vsix-validation:
+        runs-on: windows-latest
+        timeout-minutes: 20
+        steps:
+            - uses: actions/checkout@v4
+              with: { fetch-depth: 0 }
+            - uses: actions/setup-dotnet@v4
+              with: { dotnet-version: '9.0.x' }
+            - name: Build and validate the Utils.Parser.VisualStudio VSIX
+              shell: pwsh
+              run: ./eng/test-vsix-package.ps1 -Configuration Release
+            - uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: 'full-vsix-${{ github.sha }}'
+                  path: |
+                      Utils.Parser.VisualStudio/bin/Release/**/*.vsix
+                      artifacts/reports/vsix-package.json
+                  if-no-files-found: error

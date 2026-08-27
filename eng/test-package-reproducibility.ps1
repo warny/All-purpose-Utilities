@@ -70,8 +70,9 @@ try {
     }
     $comparisons = @()
     foreach ($package in $manifest.packages) {
+        $packageVersion = [string]$manifest.version
         foreach ($extension in @('nupkg', 'snupkg')) {
-            $name = "$($package.packageId).$($manifest.version).$extension"
+            $name = "$($package.packageId).$packageVersion.$extension"
             $one = Join-Path $artifactRoot "reproducibility/run1/packages/$name"
             $two = Join-Path $artifactRoot "reproducibility/run2/packages/$name"
             if (-not (Test-Path $one) -or -not (Test-Path $two)) { throw "$name is missing from one isolated build." }
@@ -82,7 +83,7 @@ try {
             }
             $result = if ($hashOne -eq $hashTwo) { 'bit-identical' } elseif (-not $differences) { 'logically-identical-after-zip-normalization' } else { 'different' }
             if ($result -eq 'different') { throw "$name contains path-isolated reproducibility differences: $($differences.file -join ', ')." }
-            $comparisons += [ordered]@{ packageId=$package.packageId; version=[string]$manifest.version; artifact=$name; result=$result; firstSha256=$hashOne; secondSha256=$hashTwo; differences=$differences }
+            $comparisons += [ordered]@{ packageId=$package.packageId; version=$packageVersion; artifact=$name; result=$result; firstSha256=$hashOne; secondSha256=$hashTwo; differences=$differences }
         }
     }
     Write-ReleaseJson ([ordered]@{ productTrain=[string]$manifest.productTrain; version=[string]$manifest.version; isolation='two-distinct-git-worktrees'; inputSnapshot=$inputSnapshot; artifacts=$comparisons }) (Join-Path $artifactRoot 'reports/reproducibility-report.json')

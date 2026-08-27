@@ -37,7 +37,8 @@ foreach ($id in $order) {
 # NuGet serializes project-reference dependencies as minimum versions. Rewrite only
 # manifested internal dependencies to exact ranges before these archives become candidates.
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-$internalIds = @($manifest.packages.packageId | ForEach-Object { $_.ToLowerInvariant() })
+$byLowerId = @{}; $manifest.packages | ForEach-Object { $byLowerId[$_.packageId.ToLowerInvariant()] = $_ }
+$internalIds = @($byLowerId.Keys)
 foreach ($archivePath in Get-ChildItem $packagePath -File | Where-Object Extension -in @('.nupkg', '.snupkg')) {
     $archive = [IO.Compression.ZipFile]::Open($archivePath.FullName, [IO.Compression.ZipArchiveMode]::Update)
     try {
@@ -45,7 +46,8 @@ foreach ($archivePath in Get-ChildItem $packagePath -File | Where-Object Extensi
         $reader = [IO.StreamReader]::new($nuspecEntry.Open()); try { [xml]$nuspec = $reader.ReadToEnd() } finally { $reader.Dispose() }
         $changed = $false
         foreach ($dependency in $nuspec.SelectNodes("//*[local-name()='dependency']")) {
-            if ($internalIds -contains $dependency.id.ToLowerInvariant()) { $dependency.version = "[$($manifest.version)]"; $changed = $true }
+            $lowerId = $dependency.id.ToLowerInvariant()
+            if ($internalIds -contains $lowerId) { $dependency.version = "[$($manifest.version)]"; $changed = $true }
         }
         if ($changed) {
             $name = $nuspecEntry.FullName; $nuspecEntry.Delete(); $replacement = $archive.CreateEntry($name, [IO.Compression.CompressionLevel]::Optimal)

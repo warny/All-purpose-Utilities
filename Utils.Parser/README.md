@@ -6,7 +6,7 @@ at runtime (without mandatory code generation).
 ## Install
 
 ```bash
-dotnet add package omy.Utils.Parser --version 2.0.0-rc.1-rc.1
+dotnet add package omy.Utils.Parser --version 2.0.0-rc.1
 ```
 
 > For compile-time grammar compilation (zero runtime `.g4` parsing), see

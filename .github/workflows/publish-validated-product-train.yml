@@ -37,7 +37,7 @@ jobs:
                           core.setFailed(`Validation run ${runId} does not belong to this repository.`);
                           return;
                       }
-                      if (run.path !== '.github/workflows/dotnetcore.yml') {
+                      if (run.path !== '.github/workflows/release-quality-gates.yml') {
                           core.setFailed(`Validation run ${runId} came from unexpected workflow '${run.path}'.`);
                           return;
                       }

@@ -16,8 +16,12 @@ Human-readable source-location contracts such as `SourceCodeLocation` and `Sourc
 
 The package is typically consumed transitively by parser packages. Reference it directly when building custom tooling that needs to exchange diagnostics with `omy.Utils.Parser` or `omy.Utils.Parser.Generators`.
 
+This package's first publication is the `2.0.0-rc.1` release candidate - there is no earlier stable
+version, so `dotnet add package` requires an explicit version (NuGet does not install a prerelease
+by default):
+
 ```bash
-dotnet add package omy.Utils.Parser.Diagnostics
+dotnet add package omy.Utils.Parser.Diagnostics --version 2.0.0-rc.1
 ```
 
 ## Diagnostic code catalogue

@@ -11,13 +11,15 @@ Pick the smallest package that matches your use case.
 | Package | Purpose | TFM |
 |---|---|---|
 | `omy.Utils` | Shared foundation helpers used across the ecosystem. | `net8.0` |
-| `omy.Utils.Collections` | Collection structures and helpers (including skip list). | `net8.0` |
+| `omy.Utils.Collections` | Collection structures and helpers (including skip list). **Provisional `0.0.x` version**, temporarily outside the product train and packaged/published independently — see [provisional versioning](releasing/ProvisionalVersioning.md). | `net8.0` |
 | `omy.Utils.Data` | Map `IDataRecord` / `IDataReader` to typed objects. | `net8.0` |
 | `omy.Utils.DependencyInjection` | Attribute-driven DI registration helpers. | `net9.0` |
+| `omy.Utils.Expressions.CSyntax` | C-like expression compiler targeting LINQ expression trees. | `net8.0` |
+| `omy.Utils.Expressions.VBSyntax` | VB-like expression compiler targeting LINQ expression trees. | `net8.0` |
 | `omy.Utils.Fonts` | Font parsing and glyph/encoding helpers. | `net8.0` |
 | `omy.Utils.Geography` | Coordinates, projections, and map/tile helpers. | `net8.0` |
 | `omy.Utils.IO` | Streams, conversion helpers, and serialization primitives. | `net8.0` |
-| `omy.Utils.Imaging` | Imaging and drawing utilities. | `net8.0` |
+| `omy.Utils.Imaging` | Imaging and drawing utilities. **Windows only** (`System.Drawing.Common`). | `net8.0` |
 | `omy.Utils.Mathematics` | Math helpers, FFT, and algebra-related types. | `net8.0` |
 | `omy.Utils.Net` | Networking helpers (DNS, ICMP, WOL, URI tooling). | `net9.0` |
 | `omy.Utils.NumberToString` | Number-to-string conversion helpers. | `net8.0` |
@@ -35,17 +37,35 @@ Pick the smallest package that matches your use case.
 
 ## 2) Install
 
+Most packages already have a published stable release, so a plain `dotnet add package` installs
+that stable version, **not** the `2.0.0-rc.1` release candidate this repository's docs describe:
+
 ```bash
+# Latest stable
 dotnet add package omy.Utils
 # or
 dotnet add package omy.Utils.IO
 ```
 
+To try the `2.0.0-rc.1` candidate itself, pin it explicitly:
+
+```bash
+# 2.0 release candidate
+dotnet add package omy.Utils --version 2.0.0-rc.1
+# or
+dotnet add package omy.Utils.IO --version 2.0.0-rc.1
+```
+
 For source-generator packages:
 
 ```bash
-dotnet add package omy.Utils.DependencyInjection.Generators
+dotnet add package omy.Utils.DependencyInjection.Generators --version 2.0.0-rc.1
 ```
+
+`omy.Utils.NumberToString`, the `omy.Utils.Parser*` family, and
+`omy.Utils.Expressions.CSyntax`/`Expressions.VBSyntax` have **no published stable release yet** -
+`2.0.0-rc.1` is their first publication, so `--version 2.0.0-rc.1` is required for those (NuGet does
+not install a prerelease by default), not just a way to get the newer candidate.
 
 ## 3) Minimal usage snippet
 

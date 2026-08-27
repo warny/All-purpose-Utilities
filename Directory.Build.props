@@ -2,6 +2,8 @@
     <PropertyGroup>
         <!-- Authoritative version for the synchronized omy product train. -->
         <ProductTrainVersion>2.0.0-rc.1</ProductTrainVersion>
+        <!-- Single source file for the solution logo, reused by every publishable NuGet package and the VSIX. Forward slashes so it also resolves under the Linux release/CI agents. -->
+        <SolutionLogoPath>$(MSBuildThisFileDirectory)res/AllPurposeUtilities_logo.png</SolutionLogoPath>
         <LangVersion>latest</LangVersion>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
@@ -25,6 +27,7 @@
         <PackageProjectUrl Condition="'$(PackageProjectUrl)' == ''">https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
         <PackageLicenseExpression Condition="'$(PackageLicenseExpression)' == ''">Apache-2.0</PackageLicenseExpression>
         <PackageTags Condition="'$(PackageTags)' == ''">omy;utilities;dotnet</PackageTags>
+        <PackageIcon Condition="'$(PackageIcon)' == ''">AllPurposeUtilities_logo.png</PackageIcon>
     </PropertyGroup>
 
     <ItemGroup>
@@ -36,5 +39,10 @@
             <Pack>True</Pack>
             <PackagePath></PackagePath>
         </None>
+    </ItemGroup>
+
+    <!-- Solution logo, packed at the .nupkg root next to PackageIcon above. Single source: res/AllPurposeUtilities_logo.png. -->
+    <ItemGroup Condition="'$(IsPackable)' != 'false' AND Exists('$(SolutionLogoPath)')">
+        <None Include="$(SolutionLogoPath)" Pack="true" PackagePath="\" Visible="false" />
     </ItemGroup>
 </Project>

@@ -45,6 +45,25 @@
         </None>
     </ItemGroup>
 
+    <!-- Solution logo, reused from res/AllPurposeUtilities_logo.png (Directory.Build.props: SolutionLogoPath) -
+         no source copy lives under this project. Linked at Resources\ to match the <Icon> path declared in
+         source.extension.vsixmanifest. -->
+    <ItemGroup Condition="Exists('$(SolutionLogoPath)')">
+        <Content Include="$(SolutionLogoPath)">
+            <Link>Resources\AllPurposeUtilities_logo.png</Link>
+            <IncludeInVSIX>true</IncludeInVSIX>
+        </Content>
+    </ItemGroup>
+
+    <!-- Repository license, linked (not copied) into the VSIX root to match <License> in
+         source.extension.vsixmanifest. -->
+    <ItemGroup Condition="Exists('$(MSBuildThisFileDirectory)..\LICENSE-apache-2.0.txt')">
+        <Content Include="$(MSBuildThisFileDirectory)..\LICENSE-apache-2.0.txt">
+            <Link>LICENSE-apache-2.0.txt</Link>
+            <IncludeInVSIX>true</IncludeInVSIX>
+        </Content>
+    </ItemGroup>
+
     <!--
         Build the plugin worker process and copy its output next to the extension DLL.
         The tagger looks for the worker at $(OutputPath)worker\Utils.Parser.VisualStudio.Worker.exe.
@@ -67,6 +86,26 @@
             <WorkerOutputFiles Include="$(WorkerOutputDir)**\*.*" />
         </ItemGroup>
         <Copy SourceFiles="@(WorkerOutputFiles)" DestinationFolder="$(OutputPath)worker\%(RecursiveDir)" SkipUnchangedFiles="true" />
+    </Target>
+
+    <!--
+        The worker executable and its dependencies must ship inside the VSIX itself: PluginWorkerProcess
+        looks for it at "<extensionDir>\worker\Utils.Parser.VisualStudio.Worker.exe" (extensionDir being
+        the installed location of this assembly), so without this target the packaged extension silently
+        degrades to in-process-only classification for every user. GetVsixSourceItems runs earlier in
+        Build's own dependency chain than the BuildPluginWorker/CopyPluginWorkerToOutput BeforeTargets/
+        AfterTargets="Build" hooks above, so on a clean build $(WorkerOutputDir) does not exist yet by the
+        time this target would naively read it. DependsOnTargets="BuildPluginWorker" forces the worker to
+        build here if it hasn't already; the nested MSBuild call is a no-op on the (common) case where
+        BuildPluginWorker already ran first.
+    -->
+    <Target Name="IncludePluginWorkerInVsix" BeforeTargets="GetVsixSourceItems" DependsOnTargets="BuildPluginWorker">
+        <ItemGroup>
+            <_PluginWorkerVsixFiles Include="$(WorkerOutputDir)**\*.*" />
+            <VSIXSourceItem Include="@(_PluginWorkerVsixFiles)">
+                <VSIXSubPath>worker\%(RecursiveDir)</VSIXSubPath>
+            </VSIXSourceItem>
+        </ItemGroup>
     </Target>
 
     <Target Name="EnsureSourceVsixManifest" BeforeTargets="DetokenizeVsixManifestFile">

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -322,13 +323,19 @@ public sealed partial class CSyntaxExpressionCompiler
     /// <param name="token">Type token candidate.</param>
     /// <param name="importedNamespaces">Imported namespaces.</param>
     /// <returns>Resolved type when recognized; otherwise <c>null</c>.</returns>
+    /// <remarks>
+    /// Any exception raised while resolving <paramref name="token"/> as a type means it is not one -
+    /// the caller falls back to treating it as an identifier instead. This preserves this method's
+    /// original behavior; it previously used <c>catch (Exception) when (true)</c>, which is
+    /// equivalent but triggered CS7095 (constant filter expression) under the release warnings gate.
+    /// </remarks>
     private static Type? TryResolveNativeTypeToken(string token, IReadOnlyList<string> importedNamespaces)
     {
         try
         {
             return ResolveNativeType(token, importedNamespaces);
         }
-        catch (Exception) when (true)
+        catch (Exception)
         {
             return null;
         }
@@ -1201,9 +1208,10 @@ public sealed partial class CSyntaxExpressionCompiler
     /// </summary>
     /// <param name="genericMethod">Generic method definition.</param>
     /// <param name="arguments">Invocation arguments.</param>
-    /// <param name="closedMethod">Constructed generic method when inference succeeds.</param>
+    /// <param name="closedMethod">Constructed generic method when inference succeeds. Non-<c>null</c>
+    /// whenever this method returns <c>true</c>.</param>
     /// <returns><c>true</c> when inference succeeds; otherwise <c>false</c>.</returns>
-    private static bool TryCloseGenericMethod(MethodInfo genericMethod, IReadOnlyList<Expression> arguments, out MethodInfo? closedMethod)
+    private static bool TryCloseGenericMethod(MethodInfo genericMethod, IReadOnlyList<Expression> arguments, [NotNullWhen(true)] out MethodInfo? closedMethod)
     {
         closedMethod = null;
         ParameterInfo[] parameters = genericMethod.GetParameters();
@@ -1465,12 +1473,13 @@ public sealed partial class CSyntaxExpressionCompiler
     /// </summary>
     /// <param name="handlerType">Handler CLR type.</param>
     /// <param name="template">Parsed interpolated string template.</param>
-    /// <param name="handlerExpression">Generated handler expression.</param>
+    /// <param name="handlerExpression">Generated handler expression. Non-<c>null</c> whenever this
+    /// method returns <c>true</c>.</param>
     /// <returns><c>true</c> when construction succeeded; otherwise <c>false</c>.</returns>
     private static bool TryBuildInterpolatedStringHandlerExpression(
         Type handlerType,
         InterpolatedStringTemplateExpression template,
-        out Expression? handlerExpression)
+        [NotNullWhen(true)] out Expression? handlerExpression)
     {
         handlerExpression = null;
 
@@ -2006,6 +2015,8 @@ public sealed partial class CSyntaxExpressionCompiler
     /// <param name="Compiler">Owning compiler instance.</param>
     /// <param name="ImportedNamespaces">Namespaces imported by <c>using</c> directives in the source.</param>
     /// <param name="BlockScope">Per-node variable lists populated by descent handlers.</param>
+    /// <param name="IsInLoopContext">Indicates whether compilation is currently descending through a loop body.</param>
+    /// <param name="LoopContextDepth">Number of nested loop bodies currently being compiled.</param>
     private sealed record CompilationContext(
         IReadOnlyDictionary<string, Expression> Symbols,
         ExpressionCompilerContext? RuntimeContext,

@@ -36,6 +36,8 @@ if ($packagedScript -notmatch 'get-packaged-validation-plan\.ps1' -or $packagedS
 & (Join-Path $PSScriptRoot 'test-validation-scope.ps1')
 & (Join-Path $PSScriptRoot 'test-packaged-validation-plan.ps1')
 & (Join-Path $PSScriptRoot 'test-workflow-timeouts.ps1')
+& (Join-Path $PSScriptRoot 'test-publish-decision.ps1')
+if (-not $?) { throw "Publication decision logic tests failed." }
 
 $runnerArtifacts = Join-Path "artifacts" "packaged-runner-test-$([guid]::NewGuid().ToString('N'))"
 try {

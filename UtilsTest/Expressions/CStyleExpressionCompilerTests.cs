@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using System.Linq;
+using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Expressions;
 using Utils.Expressions.CSyntax.Runtime;
@@ -462,6 +463,60 @@ public class CSyntaxExpressionCompilerTests
         Expression.Lambda<Func<int>>(Expression.Convert(expr, typeof(int))).Compile().Invoke();
 
         Assert.IsTrue(callCount > 0, "The initializer side effect must still execute even when the variable is unused.");
+    }
+
+    /// <summary>
+    /// A leading identifier that names a real CLR type must be resolved as a native type so that a
+    /// following <c>.Member(...)</c> segment compiles to a static method call (regression coverage
+    /// for the <c>TryResolveNativeTypeToken</c> success path).
+    /// </summary>
+    [TestMethod]
+    public void Compile_QualifiedStaticMethodCall_ResolvesNativeTypeForStaticAccess()
+    {
+        var compiler = new CSyntaxExpressionCompiler();
+        Expression expression = compiler.Compile("Math.Abs(-42)");
+        double result = Expression.Lambda<Func<double>>(Expression.Convert(expression, typeof(double))).Compile()();
+
+        Assert.AreEqual(42d, result);
+    }
+
+    /// <summary>
+    /// A leading identifier that is neither a resolvable native type nor a known symbol must fail
+    /// with the compiler's own controlled "unable to resolve identifier" error, not with an
+    /// unrelated or unhandled exception leaking out of native type resolution (regression coverage
+    /// for the <c>TryResolveNativeTypeToken</c> "unknown token" fallback path).
+    /// </summary>
+    [TestMethod]
+    public void Compile_UnknownIdentifier_FallsBackToControlledResolutionError()
+    {
+        var compiler = new CSyntaxExpressionCompiler();
+
+        InvalidOperationException exception = Assert.ThrowsExactly<InvalidOperationException>(
+            () => compiler.Compile("thisIdentifierIsDefinitelyNotDefinedAnywhere"));
+
+        StringAssert.Contains(exception.Message, "thisIdentifierIsDefinitelyNotDefinedAnywhere");
+    }
+
+    /// <summary>
+    /// Exercises <c>TryResolveNativeTypeToken</c> directly via reflection (the single production
+    /// call site never passes an unresolvable token for a type that also fails to match any known
+    /// symbol, so this path is otherwise only reached indirectly). Confirms the CS7095 fix
+    /// (removing the always-true <c>when (true)</c> filter from <c>catch (Exception) when (true)</c>)
+    /// preserves the pre-existing behavior exactly: any exception raised while resolving an unknown
+    /// token as a native type - here <see cref="NotSupportedException"/> - is still swallowed into
+    /// <c>null</c>, not just that one exception type.
+    /// </summary>
+    [TestMethod]
+    public void TryResolveNativeTypeToken_UnknownToken_ReturnsNullWithoutThrowing()
+    {
+        MethodInfo method = typeof(CSyntaxExpressionCompiler).GetMethod(
+            "TryResolveNativeTypeToken",
+            BindingFlags.NonPublic | BindingFlags.Static)
+            ?? throw new InvalidOperationException("TryResolveNativeTypeToken was not found via reflection.");
+
+        object? result = method.Invoke(null, [ "ThisTypeDoesNotExistAnywhere12345", System.Array.Empty<string>() ]);
+
+        Assert.IsNull(result);
     }
 
     /// <summary>

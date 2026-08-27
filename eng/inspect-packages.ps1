@@ -29,9 +29,12 @@ foreach ($file in $archives) {
         $metadata = $nuspec.package.metadata; $id = ([string]$metadata.id).ToLowerInvariant(); $version = [string]$metadata.version
         if (-not $manifestById.ContainsKey($id)) { throw "$($file.Name): unexpected package '$id'." }
         $definition = $manifestById[$id]
-        if ($version -ne $manifest.version) { throw "${id}: version '$version' differs from '$($manifest.version)'." }
+        $expectedVersion = [string]$manifest.version
+        if ($version -ne $expectedVersion) { throw "${id}: version '$version' differs from '$expectedVersion'." }
         if ($seen.ContainsKey($id)) { throw "Duplicate package '$id'." }; $seen[$id] = $true
-        foreach ($required in @('README.md', 'LICENSE-apache-2.0.txt')) { if ($entries -notcontains $required) { throw "${id}: '$required' is missing." } }
+        foreach ($required in @('README.md', 'LICENSE-apache-2.0.txt', 'AllPurposeUtilities_logo.png')) { if ($entries -notcontains $required) { throw "${id}: '$required' is missing." } }
+        if ([string]$metadata.icon -ne 'AllPurposeUtilities_logo.png') { throw "${id}: nuspec <icon> is '$([string]$metadata.icon)', expected 'AllPurposeUtilities_logo.png'." }
+        if (@($entries | Where-Object { $_ -eq 'AllPurposeUtilities_logo.png' }).Count -ne 1) { throw "${id}: the solution logo must appear exactly once in the package." }
         $invalid = @($entries | Where-Object { $_ -match '(^|/)(obj|bin/Debug|tmp|temp)(/|$)' -or $_ -match '^[A-Za-z]:\\' })
         if ($invalid) { throw "${id}: forbidden archive entries: $($invalid -join ', ')." }
         $assemblyEntries = @($entries | Where-Object { $_ -like 'lib/*/*.dll' -or $_ -like 'ref/*/*.dll' -or $_ -like 'analyzers/dotnet/cs/*.dll' -or $_ -like 'analyzers/dotnet/cs/*/*.dll' })
@@ -43,7 +46,8 @@ foreach ($file in $archives) {
         $expectedInternal = @($expectedRuntimeDependencies[$id] | Sort-Object)
         if (($actualInternal -join ',') -ne ($expectedInternal -join ',')) { throw "${id}: internal dependencies '$($actualInternal -join ',')' differ from graph '$($expectedInternal -join ',')'." }
         foreach ($dependency in $actualInternal) {
-            if ($deps[$dependency] -notin @("[$($manifest.version)]")) { throw "${id}: dependency '$dependency' must use the exact candidate version, not '$($deps[$dependency])'." }
+            $expectedDependencyVersion = "[$($manifest.version)]"
+            if ($deps[$dependency] -ne $expectedDependencyVersion) { throw "${id}: dependency '$dependency' must use the exact candidate version '$expectedDependencyVersion', not '$($deps[$dependency])'." }
         }
         if ([string]$metadata.repository.url -ne $manifest.repository) { throw "${id}: repository URL is incorrect." }
         if (-not $SkipRepositoryMetadataAndSymbols -and [string]$metadata.repository.commit -ne $commit) { throw "${id}: repository commit is incorrect." }
@@ -54,10 +58,11 @@ foreach ($file in $archives) {
             $stream = $archive.GetEntry($dllPath).Open(); $copy = [IO.MemoryStream]::new(); $stream.CopyTo($copy); $copy.Position = 0
             $readerPe = [Reflection.PortableExecutable.PEReader]::new($copy)
             try {
+                $expectedAssemblyVersion = Get-PackageAssemblyVersion $expectedVersion
                 $assemblyVersion = [Reflection.Metadata.PEReaderExtensions]::GetMetadataReader($readerPe).GetAssemblyDefinition().Version
-                if ($assemblyVersion -ne [Version]'2.0.0.0') { throw "${id}: '$dllPath' assembly version is '$assemblyVersion'." }
+                if ($assemblyVersion -ne [Version]$expectedAssemblyVersion) { throw "${id}: '$dllPath' assembly version is '$assemblyVersion', expected '$expectedAssemblyVersion'." }
                 $temporaryDll = [IO.Path]::GetTempFileName(); [IO.File]::WriteAllBytes($temporaryDll, $copy.ToArray())
-                try { $fileInfo = [Diagnostics.FileVersionInfo]::GetVersionInfo($temporaryDll); if ($fileInfo.FileVersion -ne '2.0.0.0') { throw "${id}: '$dllPath' file version is '$($fileInfo.FileVersion)'." }; if (-not $fileInfo.ProductVersion.StartsWith("$($manifest.version)+")) { throw "${id}: '$dllPath' informational version '$($fileInfo.ProductVersion)' lacks candidate version and commit." } } finally { Remove-Item $temporaryDll -Force }
+                try { $fileInfo = [Diagnostics.FileVersionInfo]::GetVersionInfo($temporaryDll); if ($fileInfo.FileVersion -ne $expectedAssemblyVersion) { throw "${id}: '$dllPath' file version is '$($fileInfo.FileVersion)', expected '$expectedAssemblyVersion'." }; if (-not $fileInfo.ProductVersion.StartsWith("$expectedVersion+")) { throw "${id}: '$dllPath' informational version '$($fileInfo.ProductVersion)' lacks candidate version and commit." } } finally { Remove-Item $temporaryDll -Force }
             } finally { $readerPe.Dispose(); $copy.Dispose(); $stream.Dispose() }
             $assemblyReports += [ordered]@{ path = $dllPath; assemblyVersion = $assemblyVersion.ToString(); fileVersion = $fileInfo.FileVersion; informationalVersion = $fileInfo.ProductVersion }
         }

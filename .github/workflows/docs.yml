@@ -37,7 +37,10 @@ jobs:
                       V=$(echo "$GITHUB_REF" | sed 's|refs/heads/releases/||')
                       echo "label=v$V" >> "$GITHUB_OUTPUT"
                   elif [ "$GITHUB_REF" = "refs/heads/release" ]; then
-                      V=$(grep -oP '(?<=<Version>)[^<]+' Utils/Utils.csproj | head -1)
+                      # Utils/Utils.csproj declares <Version>$(ProductTrainVersion)</Version> (an
+                      # MSBuild property reference, not a literal value) - read the actual product
+                      # train version from its source of truth instead.
+                      V=$(grep -oP '(?<=<ProductTrainVersion>)[^<]+' Directory.Build.props | head -1)
                       echo "label=v$V" >> "$GITHUB_OUTPUT"
                   else
                       echo "label=latest" >> "$GITHUB_OUTPUT"

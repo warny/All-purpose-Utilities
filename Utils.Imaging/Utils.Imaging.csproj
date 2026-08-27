@@ -17,7 +17,6 @@
                 <Description>Bitmap accessors, color conversions, and lightweight drawing primitives built on System.Drawing.</Description>
                 <PackageTags>omy;utilities;imaging;bitmap;color;drawing</PackageTags>
 		<RootNamespace>Utils</RootNamespace>
-		<NoWarn>CA1416</NoWarn>
 		<RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageProjectUrl>https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
@@ -33,6 +32,20 @@
 
 	<ItemGroup>
 		<PackageReference Include="System.Drawing.Common" Version="10.0.11" />
+	</ItemGroup>
+
+	<!--
+		Windows-only: System.Drawing.Common has been Windows-only since .NET 6 (see
+		https://learn.microsoft.com/dotnet/core/compatibility/core-libraries/6.0/system-drawing-common-windows-only).
+		This assembly-level attribute is the .NET-recommended way to declare that honestly without
+		changing the TargetFramework (net8.0-windows would be a breaking change for the package
+		identity/restore graph); it also lets the platform-compatibility analyzer suppress warnings
+		for calls made *within* this assembly, which is why CA1416 no longer needs to be silenced below.
+	-->
+	<ItemGroup>
+		<AssemblyAttribute Include="System.Runtime.Versioning.SupportedOSPlatform">
+			<_Parameter1>windows</_Parameter1>
+		</AssemblyAttribute>
 	</ItemGroup>
 
 	<ItemGroup>

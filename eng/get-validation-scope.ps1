@@ -34,6 +34,19 @@ $documentationOnly = $normalized.Count -gt 0 -and @($normalized | Where-Object {
     # A README beside a project may be packed, so it deliberately runs the train.
     $_ -ne 'README.md' -and $_ -notlike 'docs/*'
 }).Count -eq 0
+$vsixPaths = @($normalized | Where-Object {
+    $_ -like 'Utils.Parser.VisualStudio/*' -or
+    $_ -like 'Utils.Parser.VisualStudio.Worker/*' -or
+    $_ -eq 'res/AllPurposeUtilities_logo.png' -or
+    $_ -eq 'eng/test-vsix-package.ps1' -or
+    $_ -eq 'Directory.Build.props' -or
+    # The workflow files that define or invoke the VSIX validation job: a change that only
+    # touches the vsix-validation block in one of these could otherwise break that job's own
+    # invocation while runVsix stays false, silently skipping the very check that would catch it.
+    $_ -eq '.github/workflows/dotnetcore.yml' -or
+    $_ -eq '.github/workflows/nuget-publish.yml' -or
+    $_ -eq '.github/workflows/release-quality-gates.yml'
+})
 $result = [ordered]@{
     paths = $normalized
     codeOrPackages = $codeOrPackages.Count -gt 0
@@ -43,10 +56,14 @@ $result = [ordered]@{
     # bypass compilation and package validation. Unknown files always run the train.
     runProductTrain = -not $documentationOnly -or $releaseInfrastructure.Count -gt 0
     runReleaseScriptTests = $releaseInfrastructure.Count -gt 0
+    # The VSIX build+validation gate is Windows-only and comparatively slow; run it only
+    # when a change could plausibly affect the extension, its worker, its packaging, or the
+    # gate script itself (or when explicitly forced, e.g. workflow_dispatch).
+    runVsix = $vsixPaths.Count -gt 0 -or $ForceProductTrain.IsPresent
 }
 if ($WriteGitHubOutput) {
     if ([string]::IsNullOrWhiteSpace($env:GITHUB_OUTPUT)) { throw 'GITHUB_OUTPUT is not defined.' }
-    foreach ($name in @('codeOrPackages', 'releaseInfrastructure', 'documentationOnly', 'runProductTrain', 'runReleaseScriptTests')) {
+    foreach ($name in @('codeOrPackages', 'releaseInfrastructure', 'documentationOnly', 'runProductTrain', 'runReleaseScriptTests', 'runVsix')) {
         "$name=$($result[$name].ToString().ToLowerInvariant())" | Add-Content $env:GITHUB_OUTPUT
     }
 }

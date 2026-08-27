@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <IsProductTrainProject>true</IsProductTrainProject>
         <TargetFramework>net8.0</TargetFramework>
         <Nullable>enable</Nullable>
         <LangVersion>12</LangVersion>
@@ -12,7 +11,17 @@
         <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>$(ProductTrainVersion)</Version>
+        <!-- Independent provisional version - this project is intentionally outside the
+             product train (see eng/product-train-manifest.json's exclusions[] entry and
+             docs/releasing/ProvisionalVersioning.md). Only contains SkipList/SkipListDictionary;
+             not yet mature enough to join the 2.0 product train. IsProductTrainProject is
+             deliberately absent (it would flip Directory.Build.targets' warnings-as-errors gate
+             under ReleaseQualityGates for a project the train no longer validates). Bump this
+             literal when publishing a new 0.0.x candidate; when this package is considered mature,
+             remove this literal, switch to <Version>$(ProductTrainVersion)</Version>, restore
+             <IsProductTrainProject>true</IsProductTrainProject>, and move the manifest entry from
+             exclusions[] to packages[] - no 1.x intermediate is required. -->
+        <Version>0.0.1</Version>
         <Description>Skip list implementation providing fast search, insertion, and deletion for sorted data sets.</Description>
         <PackageTags>omy;utilities;collections;skiplist;data-structures</PackageTags>
         <RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
