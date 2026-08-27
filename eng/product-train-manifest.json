@@ -576,8 +576,7 @@
       "project": "Utils.Collections/Utils.Collections.csproj",
       "packageId": "omy.Utils.Collections",
       "classification": "provisional-package",
-      "version": "0.0.1",
-      "reason": "Independent provisional NuGet package: only contains SkipList/SkipListDictionary today, not yet mature enough to join the 2.0 product train. Declares its own literal <Version>0.0.1</Version> instead of ProductTrainVersion, is packed and published separately, and is not part of the product train's canonical package set, candidate manifest, publication order, or all-or-none publish preflight. Intended to move to packages[] directly at the product train's then-current version (no 1.x intermediate) once mature - see docs/releasing/ProvisionalVersioning.md."
+      "reason": "Independent provisional NuGet package: only contains SkipList/SkipListDictionary today, not yet mature enough to join the 2.0 product train. Its literal <Version> in Utils.Collections.csproj (not this manifest) is the sole version authority - it is packed and published separately, and is not part of the product train's canonical package set, candidate manifest, publication order, or all-or-none publish preflight. Intended to move to packages[] directly at the product train's then-current version (no 1.x intermediate) once mature - see docs/releasing/ProvisionalVersioning.md."
     },
     {
       "project": "Utils.Parser.VisualStudio/Utils.Parser.VisualStudio.csproj",

@@ -99,17 +99,30 @@ extension compatibility model:
   compatibility model for Visual Studio*, <https://learn.microsoft.com/visualstudio/extensibility/migration/extension-compatibility>)
 
 **This is not fixed by this PR and is not a merge blocker for this preparation work** - the VSIX is
-still not being published by anything in this repository. It **is** a blocker for the "ready to
-publish publicly on the Marketplace" milestone: as long as `VSEXTPREVIEW_TAGGERS` is suppressed
-rather than resolved, this extension depends on an API that Microsoft's own documentation says is
-not supported for Marketplace publication. Whether an actual upload would be technically rejected
-is not something this repository can claim one way or the other; the point is that the extension
-should not be represented as production-ready while this dependency exists. Resolving it requires
-either an in-proc fallback for classification (see
+still not being published by anything in this repository. It **is** a blocker for **any upload to
+the Visual Studio Marketplace, public or private**: Microsoft's compatibility-model statement quoted
+above says Preview APIs "are not supported for production extensions or **publishing to the Visual
+Studio Marketplace**" - it draws no distinction between a public listing and a private one, because
+both are the same act of *publishing to the Marketplace* (`VsixPublisher.exe publish`), just with a
+different visibility flag on the same uploaded artifact. Whether an actual upload would be
+technically rejected is not something this repository can claim one way or the other; the point is
+that this extension should not be uploaded to the Marketplace under either visibility setting while
+this dependency exists. Resolving it requires either an in-proc fallback for classification (see
 [In-proc extensions](https://learn.microsoft.com/visualstudio/extensibility/visualstudio.extensibility/get-started/in-proc-extensions))
 or waiting for the Taggers API to graduate out of preview - both are functional changes outside the
 scope of this packaging/release-preparation work and are tracked as a separate, distinct follow-up.
-The manual publication checklist below reflects this explicitly.
+
+Preparing to publish is not the same as publishing, so the following remain fine to do while the
+blocker is open: creating/selecting the Marketplace Publisher account, and preparing
+`publishManifest.json`. What must wait for the blocker to be resolved is any actual
+`VsixPublisher.exe publish` invocation, public or private. For manual testing in the meantime, use
+the Visual Studio experimental instance that a normal VSIX debug session already launches (see
+"Build and debug" in
+[`Utils.Parser.VisualStudio/README.md`](../../Utils.Parser.VisualStudio/README.md) - pressing F5
+runs `devenv.exe /RootSuffix Exp` automatically; see also Microsoft's
+[The Experimental Instance](https://learn.microsoft.com/visualstudio/extensibility/the-experimental-instance)),
+or a locally built/sideloaded `.vsix` - neither requires any Marketplace upload. The manual
+publication checklist below reflects this explicitly.
 
 ## Publishing tooling: not `tfx`
 
@@ -223,12 +236,14 @@ an intentionally manual, one-time act by a maintainer with access to the target 
 - [x] Preparing `Utils.Parser.VisualStudio/marketplace/overview.md` for `VsixPublisher.exe`.
 - [ ] Publishing anywhere - deliberately **not** automated. See "Publishing tooling" above for why `tfx` was removed and what a future automated `VsixPublisher.exe` step would need.
 
-**Manual, one-time, human-only:**
-- [ ] **Blocking, resolve first:** decide how to handle the `VSEXTPREVIEW_TAGGERS` Preview API dependency (see "Marketplace blocker" above) before treating this extension as ready for public Marketplace publication. This does not block merging this preparation PR, but it should block checking off any of the steps below with the intent of making the listing public.
+**Manual, one-time, human-only - can be done now, does not touch the Marketplace:**
 - [ ] Create or select the target Publisher identity at <https://marketplace.visualstudio.com/manage/publishers>, and note its real identifier (see "Publisher: VSIX metadata vs. Marketplace account" above - it does not have to be `Olivier MARTY`).
-- [ ] Create `Utils.Parser.VisualStudio/marketplace/publishManifest.json` from the template above with that real identifier.
-- [ ] Create the new extension listing on the Marketplace (first publication only; later versions update the existing listing) by running `VsixPublisher.exe publish` locally, or decide whether/when to wire this into CI as a separate, deliberate follow-up.
+- [ ] Create `Utils.Parser.VisualStudio/marketplace/publishManifest.json` from the template above with that real identifier. Leave `"private": true` in the template - it is the correct setting for whenever the first real publish eventually happens, but does not itself upload anything.
 - [ ] Fill in the fields neither the manifest nor `publishManifest.json` carry: a dedicated Marketplace preview image (the packaged `<Icon>` covers the Extension Manager/listing icon already; a larger preview image is a distinct future step - see `Utils.Parser.VisualStudio/README.md`), and any additional screenshots.
-- [ ] Leave the listing private (`publishManifest.json`'s `"private": true`) for the initial `0.0.x` provisional releases - this is also the state to stay in for as long as the `VSEXTPREVIEW_TAGGERS` blocker above is unresolved.
-- [ ] Install the published VSIX from the Marketplace into a clean Visual Studio instance and verify syntax colorization and the out-of-process worker both work (see "Build and debug" below for what to check).
-- [ ] Only after the Preview API blocker is resolved, set `"private": false` and republish to make the listing public.
+- [ ] Validate the extension by debugging it into the Visual Studio experimental instance (see "Build and debug" in `Utils.Parser.VisualStudio/README.md`) and/or by sideloading a locally built `.vsix` - verify syntax colorization and the out-of-process worker both work. Neither step contacts the Marketplace.
+
+**Blocking - must wait for `VSEXTPREVIEW_TAGGERS` to be resolved (see "Marketplace blocker" above):**
+- [ ] **Do not run `VsixPublisher.exe publish` with any visibility setting - public or private - before this is resolved.** Per Microsoft's compatibility-model statement, this restriction is about publishing to the Marketplace at all, not about the listing's visibility flag. This does not block merging this preparation PR; it only blocks the actual upload step.
+- [ ] Once resolved, create the new extension listing on the Marketplace (first publication only; later versions update the existing listing) by running `VsixPublisher.exe publish` locally with `publishManifest.json`'s `"private": true`, or decide whether/when to wire this into CI as a separate, deliberate follow-up.
+- [ ] Install the now-published (private) VSIX from the Marketplace into a clean Visual Studio instance as a final sanity check beyond the experimental-instance testing above.
+- [ ] Only after that private listing is verified, set `"private": false` and republish to make the listing public.

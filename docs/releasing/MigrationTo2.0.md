@@ -1,11 +1,11 @@
 # Migrating the package family to 2.0.0-rc.1
 
-This is a coordinated major-version release candidate. Update all direct `omy.Utils*` references together and remove mixed 1.x, 2.0.0, `0.0.1`, and preview references. Internal dependencies are exact at `2.0.0-rc.1`.
+This is a coordinated major-version release candidate. All product-train `omy.Utils*` references should be upgraded together; remove mixed 1.x, 2.0.0, and preview references among them. Internal dependencies between product-train packages are exact at `2.0.0-rc.1`. `omy.Utils.Collections` is the current exception: it is intentionally excluded from the product train and remains independently versioned at `0.0.1` - do not "fix" a mixed `omy.Utils.Collections` reference by pulling it to `2.0.0-rc.1`.
 
 ## Families
 
 - **Core:** review the detailed [`omy.Utils` 1.2.1 audit](../api/omy.Utils-1.2.1-to-2.0.0-rc.1.md), including removed expression/number formatting APIs, enumerable overloads, nullability, and embedded DateFormula resources.
-- **IO and serialization, Networking, Data, Imaging and fonts, Geography, Mathematics and collections, OData, Dependency injection, Virtual machine, and Number formatting:** recompile against the candidate and review the generated package-specific ApiCompat report. The manifest records the verified latest stable baseline: mostly 1.2.1, OData and OData.Generators 0.0.1, VirtualMachine 0.1.0, and first-candidate baselines for unpublished packages.
+- **IO and serialization, Networking, Data, Imaging and fonts, Geography, Mathematics, OData, Dependency injection, Virtual machine, and Number formatting:** recompile against the candidate and review the generated package-specific ApiCompat report. The manifest records the verified latest stable baseline: mostly 1.2.1, OData and OData.Generators 0.0.1, VirtualMachine 0.1.0, and first-candidate baselines for unpublished packages. `omy.Utils.Collections` is not part of this candidate at all - see the note above.
 - **Reflection:** compare against the latest published 1.2.1 package and account for the isolated worker behavior already documented in the changelog.
 - **Parser:** these packages establish their first public candidate baseline and remain governed by the parser production support contract.
 - **Source generators:** reference generators as analyzers with `ReferenceOutputAssembly="false"`; do not reference their implementation assemblies directly.

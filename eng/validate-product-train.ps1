@@ -19,5 +19,12 @@ foreach($package in $manifest.packages){
     if($p.PackageId-ne$package.packageId-or$p.IsPackable-eq'false'){throw "$($package.project) evaluates an invalid package identity or IsPackable value."}
     if($p.Version-ne$manifest.version-or$p.PackageVersion-ne$manifest.version){throw "$($package.packageId) evaluates divergent Version/PackageVersion values (expected '$($manifest.version)')."}
     if($p.VersionPrefix-or$p.VersionSuffix){throw "$($package.packageId) must not compose the candidate from VersionPrefix/VersionSuffix."}
+    $readmePath=Join-Path (Split-Path -Parent $path) 'README.md'
+    if(Test-Path -LiteralPath $readmePath -PathType Leaf){
+        $readme=Get-Content -LiteralPath $readmePath -Raw
+        # Catches a doubled-suffix concatenation bug (for example "2.0.0-rc.1-rc.1") that a
+        # packed README would otherwise ship to consumers verbatim.
+        if($readme-match"$([regex]::Escape($manifest.version))-rc\.\d+"){throw "$($package.packageId): README.md contains a doubled prerelease suffix ('$($manifest.version)-rc.N') - check for a stale concatenated version string."}
+    }
 }
 Write-Host "Validate: all $($manifest.packages.Count) projects evaluate to $($manifest.versionProperty)=$($manifest.version)."

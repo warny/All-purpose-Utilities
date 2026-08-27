@@ -7,13 +7,13 @@ no reflection, no extra dependencies in your output.
 ## Install
 
 ```bash
-dotnet add package omy.Utils.Parser.Generators --version 2.0.0-rc.1-rc.1
+dotnet add package omy.Utils.Parser.Generators --version 2.0.0-rc.1
 ```
 
 You also need the runtime library:
 
 ```bash
-dotnet add package omy.Utils.Parser --version 2.0.0-rc.1-rc.1
+dotnet add package omy.Utils.Parser --version 2.0.0-rc.1
 ```
 
 ## Supported frameworks
@@ -56,8 +56,8 @@ Or with NuGet packages:
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="omy.Utils.Parser" Version="2.0.0-rc.1-rc.1" />
-  <PackageReference Include="omy.Utils.Parser.Generators" Version="2.0.0-rc.1-rc.1"
+  <PackageReference Include="omy.Utils.Parser" Version="2.0.0-rc.1" />
+  <PackageReference Include="omy.Utils.Parser.Generators" Version="2.0.0-rc.1"
                     OutputItemType="Analyzer"
                     ReferenceOutputAssembly="false" />
 </ItemGroup>
