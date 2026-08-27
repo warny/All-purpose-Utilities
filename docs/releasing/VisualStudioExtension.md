@@ -34,9 +34,9 @@ installs it from the Marketplace before the 2.0.0 stable release. Once the produ
 
 The `Version` attribute on `<Identity>` in
 [`Utils.Parser.VisualStudio/source.extension.vsixmanifest`](../../Utils.Parser.VisualStudio/source.extension.vsixmanifest)
-is the single authoritative value for the VSIX version — it is what `dotnet build`, `tfx extension
-publish`, and Visual Studio's Extension Manager all read directly. This document only records the
-*policy* that value must follow; it does not derive or override it.
+is the single authoritative value for the VSIX version — it is what `dotnet build`, `VsixPublisher.exe`
+(see "Publishing tooling" below), and Visual Studio's Extension Manager all read directly. This
+document only records the *policy* that value must follow; it does not derive or override it.
 
 A literal, hand-edited value (rather than a central MSBuild property substituted into the manifest)
 was a deliberate choice: the manifest's tokenization/detokenization pipeline
@@ -79,6 +79,37 @@ into the VSIX at `Resources\AllPurposeUtilities_logo.png` (no source copy under 
 element order (`Icon` before `PreviewImage` before `Tags`), and the build fails with `VSSDK1062`
 schema-validation errors if that order is violated. No `<PreviewImage>` is declared; a Marketplace
 preview image is out of scope for this change and left as a distinct future step.
+
+## Marketplace blocker: Taggers are a Preview API (`VSEXTPREVIEW_TAGGERS`)
+
+`Utils.Parser.VisualStudio.csproj` explicitly suppresses the `VSEXTPREVIEW_TAGGERS` diagnostic
+(`<NoWarn>$(NoWarn);1591;VSEXTPREVIEW_TAGGERS</NoWarn>`) because the extension's syntax
+colorization is built on `ITextViewTaggerProvider`/`TextViewTagger<>`, which
+`Microsoft.VisualStudio.Extensibility` currently ships as an experimental (`[Experimental]`-attributed)
+API - the diagnostic exists specifically to flag that dependency at compile time.
+
+Per Microsoft's own current guidance on the VisualStudio.Extensibility preview surface and on the
+extension compatibility model:
+
+- "There are a few of our APIs that don't yet meet this bar for stability... These APIs are
+  explicitly labeled using the `[Experimental]` attribute" (*About VisualStudio.Extensibility
+  (Preview)*, "Experimental APIs and Breaking Changes").
+- "New APIs are additive and preview first. Preview APIs may change or be removed and **are not
+  supported for production extensions or publishing to the Visual Studio Marketplace**." (*Extension
+  compatibility model for Visual Studio*, <https://learn.microsoft.com/visualstudio/extensibility/migration/extension-compatibility>)
+
+**This is not fixed by this PR and is not a merge blocker for this preparation work** - the VSIX is
+still not being published by anything in this repository. It **is** a blocker for the "ready to
+publish publicly on the Marketplace" milestone: as long as `VSEXTPREVIEW_TAGGERS` is suppressed
+rather than resolved, this extension depends on an API that Microsoft's own documentation says is
+not supported for Marketplace publication. Whether an actual upload would be technically rejected
+is not something this repository can claim one way or the other; the point is that the extension
+should not be represented as production-ready while this dependency exists. Resolving it requires
+either an in-proc fallback for classification (see
+[In-proc extensions](https://learn.microsoft.com/visualstudio/extensibility/visualstudio.extensibility/get-started/in-proc-extensions))
+or waiting for the Taggers API to graduate out of preview - both are functional changes outside the
+scope of this packaging/release-preparation work and are tracked as a separate, distinct follow-up.
+The manual publication checklist below reflects this explicitly.
 
 ## Publishing tooling: not `tfx`
 
@@ -193,10 +224,11 @@ an intentionally manual, one-time act by a maintainer with access to the target 
 - [ ] Publishing anywhere - deliberately **not** automated. See "Publishing tooling" above for why `tfx` was removed and what a future automated `VsixPublisher.exe` step would need.
 
 **Manual, one-time, human-only:**
+- [ ] **Blocking, resolve first:** decide how to handle the `VSEXTPREVIEW_TAGGERS` Preview API dependency (see "Marketplace blocker" above) before treating this extension as ready for public Marketplace publication. This does not block merging this preparation PR, but it should block checking off any of the steps below with the intent of making the listing public.
 - [ ] Create or select the target Publisher identity at <https://marketplace.visualstudio.com/manage/publishers>, and note its real identifier (see "Publisher: VSIX metadata vs. Marketplace account" above - it does not have to be `Olivier MARTY`).
 - [ ] Create `Utils.Parser.VisualStudio/marketplace/publishManifest.json` from the template above with that real identifier.
 - [ ] Create the new extension listing on the Marketplace (first publication only; later versions update the existing listing) by running `VsixPublisher.exe publish` locally, or decide whether/when to wire this into CI as a separate, deliberate follow-up.
 - [ ] Fill in the fields neither the manifest nor `publishManifest.json` carry: a dedicated Marketplace preview image (the packaged `<Icon>` covers the Extension Manager/listing icon already; a larger preview image is a distinct future step - see `Utils.Parser.VisualStudio/README.md`), and any additional screenshots.
-- [ ] Leave the listing private (`publishManifest.json`'s `"private": true`) for the initial `0.0.x` provisional releases.
+- [ ] Leave the listing private (`publishManifest.json`'s `"private": true`) for the initial `0.0.x` provisional releases - this is also the state to stay in for as long as the `VSEXTPREVIEW_TAGGERS` blocker above is unresolved.
 - [ ] Install the published VSIX from the Marketplace into a clean Visual Studio instance and verify syntax colorization and the out-of-process worker both work (see "Build and debug" below for what to check).
-- [ ] Only then set `"private": false` and republish to make the listing public.
+- [ ] Only after the Preview API blocker is resolved, set `"private": false` and republish to make the listing public.

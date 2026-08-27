@@ -8,7 +8,7 @@ Use this guide to align GitHub releases with NuGet publishing for the `omy.Utils
 2. Add release notes to `CHANGELOG.md` under a new version heading.
 3. Create a Git tag matching the package version (for example `v2.0.0-rc.1`).
 
-Most of the 24 manifested projects use `ProductTrainVersion` from `Directory.Build.props` as their version authority. A small number are explicitly marked `"versionPolicy": "provisional"` in `eng/product-train-manifest.json` and instead declare their own literal version - see [provisional versioning](releasing/ProvisionalVersioning.md). Either way, the release gate rejects project-local `PackageVersion`, assembly/file version overrides, undeclared hard-coded versions, divergent evaluated MSBuild properties, dependencies, assets, or artifacts.
+Most of the manifested projects (see `eng/product-train-manifest.json`'s `packages` array for the current count) use `ProductTrainVersion` from `Directory.Build.props` as their version authority. A small number are explicitly marked `"versionPolicy": "provisional"` in `eng/product-train-manifest.json` and instead declare their own literal version - see [provisional versioning](releasing/ProvisionalVersioning.md). Either way, the release gate rejects project-local `PackageVersion`, assembly/file version overrides, undeclared hard-coded versions, divergent evaluated MSBuild properties, dependencies, assets, or artifacts.
 
 ## GitHub release flow
 

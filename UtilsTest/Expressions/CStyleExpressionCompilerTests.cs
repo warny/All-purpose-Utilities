@@ -498,12 +498,15 @@ public class CSyntaxExpressionCompilerTests
     }
 
     /// <summary>
-    /// Exercises <c>TryResolveNativeTypeToken</c> and its exception filter directly via reflection,
-    /// since the single production call site only ever passes plain identifiers and cannot reach
-    /// every exception shape the filter is documented to handle. Confirms both halves of the CS7095
-    /// fix: expected resolution failures still yield <c>null</c> (unchanged, pre-existing
-    /// behavior), and the predicate that decides what gets swallowed no longer accepts arbitrary
-    /// exceptions - a defect exception type is correctly classified as "must propagate".
+    /// Exercises <c>TryResolveNativeTypeToken</c> directly via reflection (the single production
+    /// call site never passes an unresolvable token for a type that also fails to match any known
+    /// symbol, so this path is otherwise only reached indirectly). Confirms the CS7095 fix's
+    /// unchanged, pre-existing behavior for the one exception shape the method's call graph is
+    /// demonstrated to raise for a plain identifier that names no CLR type:
+    /// <see cref="NotSupportedException"/> is still swallowed into <c>null</c>. The catch clause is
+    /// now a concrete <c>catch (NotSupportedException)</c> rather than a runtime predicate, so the
+    /// compiler itself - not a test - is what guarantees other exception types (a compiler defect,
+    /// for example) propagate instead of being reinterpreted as "unknown type".
     /// </summary>
     [TestMethod]
     public void TryResolveNativeTypeToken_UnknownToken_ReturnsNullWithoutThrowing()
@@ -516,31 +519,6 @@ public class CSyntaxExpressionCompilerTests
         object? result = method.Invoke(null, [ "ThisTypeDoesNotExistAnywhere12345", System.Array.Empty<string>() ]);
 
         Assert.IsNull(result);
-    }
-
-    /// <summary>
-    /// The exception filter backing <c>TryResolveNativeTypeToken</c> must classify the documented
-    /// "expected type-resolution failure" exception types as swallow-able, and any other exception
-    /// type (representing an internal compiler defect) as something that must propagate instead of
-    /// being silently reinterpreted as "unknown type".
-    /// </summary>
-    [TestMethod]
-    public void IsUnresolvableTypeTokenFailure_ClassifiesExpectedFailuresOnly()
-    {
-        MethodInfo method = typeof(CSyntaxExpressionCompiler).GetMethod(
-            "IsUnresolvableTypeTokenFailure",
-            BindingFlags.NonPublic | BindingFlags.Static)
-            ?? throw new InvalidOperationException("IsUnresolvableTypeTokenFailure was not found via reflection.");
-
-        bool Classify(Exception exception) => (bool)method.Invoke(null, [exception])!;
-
-        Assert.IsTrue(Classify(new NotSupportedException("Unsupported type 'Whatever'.")), "NotSupportedException must be treated as an expected resolution failure.");
-        Assert.IsTrue(Classify(new ArgumentException("Malformed generic type syntax.")), "ArgumentException must be treated as an expected resolution failure.");
-        Assert.IsTrue(Classify(new TypeLoadException("Constructed type cannot be loaded.")), "TypeLoadException must be treated as an expected resolution failure.");
-
-        Assert.IsFalse(Classify(new InvalidOperationException("Internal compiler defect.")), "InvalidOperationException must NOT be swallowed as a resolution failure.");
-        Assert.IsFalse(Classify(new NullReferenceException()), "NullReferenceException must NOT be swallowed as a resolution failure.");
-        Assert.IsFalse(Classify(new IndexOutOfRangeException()), "IndexOutOfRangeException must NOT be swallowed as a resolution failure.");
     }
 
     /// <summary>

@@ -320,42 +320,41 @@ public sealed partial class CSyntaxExpressionCompiler
     /// <summary>
     /// Tries to resolve a native type token without throwing when the token is unknown.
     /// </summary>
-    /// <param name="token">Type token candidate.</param>
+    /// <param name="token">Type token candidate. The sole production caller
+    /// (<see cref="CompileIdentifierExpression"/>) always passes a plain identifier read by
+    /// <see cref="ReadIdentifier"/> - never generic (<c>&lt;...&gt;</c>) or array (<c>[]</c>)
+    /// syntax - so <see cref="ResolveNativeType"/>'s generic/array branches are never reached from
+    /// here today.</param>
     /// <param name="importedNamespaces">Imported namespaces.</param>
     /// <returns>Resolved type when recognized; otherwise <c>null</c>.</returns>
+    /// <remarks>
+    /// Only <see cref="NotSupportedException"/> is caught: for a plain identifier, that is the sole
+    /// exception <see cref="ResolveNativeType"/>'s call graph is demonstrated to raise for "this
+    /// token does not name a resolvable CLR type" (the explicit throw in
+    /// <see cref="ResolveComplexType"/> when <see cref="FindTypeByName"/> finds nothing;
+    /// <c>Type.GetType(name, throwOnError: false)</c>/<c>Assembly.GetType(name, false)</c> do not
+    /// throw for a syntactically valid simple name). Exceptions such as
+    /// <see cref="ArgumentException"/> or <see cref="TypeLoadException"/> are reachable in
+    /// principle through the generic-type-argument branches of <see cref="ResolveComplexType"/>,
+    /// but only for a token containing <c>&lt;...&gt;</c>, which cannot happen through this call
+    /// site - catching them here without a real, tested path exercising them would risk
+    /// reinterpreting a genuine defect as "unknown type" the moment a future caller (or a change to
+    /// <see cref="ReadIdentifier"/>) starts passing such tokens. If that ever happens, broaden this
+    /// catch deliberately, backed by a test that demonstrates the new exception on a real input.
+    /// Any other exception (for example <see cref="NullReferenceException"/>) is a compiler defect
+    /// and must propagate.
+    /// </remarks>
     private static Type? TryResolveNativeTypeToken(string token, IReadOnlyList<string> importedNamespaces)
     {
         try
         {
             return ResolveNativeType(token, importedNamespaces);
         }
-        catch (Exception ex) when (IsUnresolvableTypeTokenFailure(ex))
+        catch (NotSupportedException)
         {
             return null;
         }
     }
-
-    /// <summary>
-    /// Indicates whether an exception raised while resolving a native type token represents an
-    /// expected "this token is not a resolvable type" outcome, as opposed to an internal compiler
-    /// defect that must propagate instead of being silently reinterpreted as an unknown type.
-    /// </summary>
-    /// <param name="exception">Exception raised by <see cref="ResolveNativeType"/> or one of the
-    /// members it calls (<see cref="ResolveComplexType"/>, <see cref="FindTypeByName"/>).</param>
-    /// <returns>
-    /// <c>true</c> for the exception shapes that type resolution is documented (or known, via
-    /// <see cref="Type.MakeGenericType"/>/<see cref="Type.MakeArrayType()"/>/<see cref="Type.GetType(string, bool)"/>)
-    /// to raise for a token that simply does not name a resolvable CLR type - specifically:
-    /// <see cref="NotSupportedException"/> (the explicit "Unsupported type" case thrown by
-    /// <see cref="ResolveComplexType"/> when no type is found), <see cref="ArgumentException"/>
-    /// (malformed generic syntax, or a generic type argument that violates the generic
-    /// definition's constraints), and <see cref="TypeLoadException"/> (a constructed generic or
-    /// array type that cannot be loaded). Programming-error exceptions such as
-    /// <see cref="NullReferenceException"/> or <see cref="IndexOutOfRangeException"/> are
-    /// deliberately excluded and left to propagate.
-    /// </returns>
-    private static bool IsUnresolvableTypeTokenFailure(Exception exception) =>
-        exception is NotSupportedException or ArgumentException or TypeLoadException;
 
     /// <summary>
     /// Reads an identifier token from source text.
