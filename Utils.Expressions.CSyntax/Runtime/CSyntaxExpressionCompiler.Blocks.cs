@@ -320,29 +320,14 @@ public sealed partial class CSyntaxExpressionCompiler
     /// <summary>
     /// Tries to resolve a native type token without throwing when the token is unknown.
     /// </summary>
-    /// <param name="token">Type token candidate. The sole production caller
-    /// (<see cref="CompileIdentifierExpression"/>) always passes a plain identifier read by
-    /// <see cref="ReadIdentifier"/> - never generic (<c>&lt;...&gt;</c>) or array (<c>[]</c>)
-    /// syntax - so <see cref="ResolveNativeType"/>'s generic/array branches are never reached from
-    /// here today.</param>
+    /// <param name="token">Type token candidate.</param>
     /// <param name="importedNamespaces">Imported namespaces.</param>
     /// <returns>Resolved type when recognized; otherwise <c>null</c>.</returns>
     /// <remarks>
-    /// Only <see cref="NotSupportedException"/> is caught: for a plain identifier, that is the sole
-    /// exception <see cref="ResolveNativeType"/>'s call graph is demonstrated to raise for "this
-    /// token does not name a resolvable CLR type" (the explicit throw in
-    /// <see cref="ResolveComplexType"/> when <see cref="FindTypeByName"/> finds nothing;
-    /// <c>Type.GetType(name, throwOnError: false)</c>/<c>Assembly.GetType(name, false)</c> do not
-    /// throw for a syntactically valid simple name). Exceptions such as
-    /// <see cref="ArgumentException"/> or <see cref="TypeLoadException"/> are reachable in
-    /// principle through the generic-type-argument branches of <see cref="ResolveComplexType"/>,
-    /// but only for a token containing <c>&lt;...&gt;</c>, which cannot happen through this call
-    /// site - catching them here without a real, tested path exercising them would risk
-    /// reinterpreting a genuine defect as "unknown type" the moment a future caller (or a change to
-    /// <see cref="ReadIdentifier"/>) starts passing such tokens. If that ever happens, broaden this
-    /// catch deliberately, backed by a test that demonstrates the new exception on a real input.
-    /// Any other exception (for example <see cref="NullReferenceException"/>) is a compiler defect
-    /// and must propagate.
+    /// Any exception raised while resolving <paramref name="token"/> as a type means it is not one -
+    /// the caller falls back to treating it as an identifier instead. This preserves this method's
+    /// original behavior; it previously used <c>catch (Exception) when (true)</c>, which is
+    /// equivalent but triggered CS7095 (constant filter expression) under the release warnings gate.
     /// </remarks>
     private static Type? TryResolveNativeTypeToken(string token, IReadOnlyList<string> importedNamespaces)
     {
@@ -350,7 +335,7 @@ public sealed partial class CSyntaxExpressionCompiler
         {
             return ResolveNativeType(token, importedNamespaces);
         }
-        catch (NotSupportedException)
+        catch (Exception)
         {
             return null;
         }

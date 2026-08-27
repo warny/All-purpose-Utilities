@@ -39,7 +39,13 @@ $vsixPaths = @($normalized | Where-Object {
     $_ -like 'Utils.Parser.VisualStudio.Worker/*' -or
     $_ -eq 'res/AllPurposeUtilities_logo.png' -or
     $_ -eq 'eng/test-vsix-package.ps1' -or
-    $_ -eq 'Directory.Build.props'
+    $_ -eq 'Directory.Build.props' -or
+    # The workflow files that define or invoke the VSIX validation job: a change that only
+    # touches the vsix-validation block in one of these could otherwise break that job's own
+    # invocation while runVsix stays false, silently skipping the very check that would catch it.
+    $_ -eq '.github/workflows/dotnetcore.yml' -or
+    $_ -eq '.github/workflows/nuget-publish.yml' -or
+    $_ -eq '.github/workflows/release-quality-gates.yml'
 })
 $result = [ordered]@{
     paths = $normalized

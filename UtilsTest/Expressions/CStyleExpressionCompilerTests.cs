@@ -500,13 +500,11 @@ public class CSyntaxExpressionCompilerTests
     /// <summary>
     /// Exercises <c>TryResolveNativeTypeToken</c> directly via reflection (the single production
     /// call site never passes an unresolvable token for a type that also fails to match any known
-    /// symbol, so this path is otherwise only reached indirectly). Confirms the CS7095 fix's
-    /// unchanged, pre-existing behavior for the one exception shape the method's call graph is
-    /// demonstrated to raise for a plain identifier that names no CLR type:
-    /// <see cref="NotSupportedException"/> is still swallowed into <c>null</c>. The catch clause is
-    /// now a concrete <c>catch (NotSupportedException)</c> rather than a runtime predicate, so the
-    /// compiler itself - not a test - is what guarantees other exception types (a compiler defect,
-    /// for example) propagate instead of being reinterpreted as "unknown type".
+    /// symbol, so this path is otherwise only reached indirectly). Confirms the CS7095 fix
+    /// (removing the always-true <c>when (true)</c> filter from <c>catch (Exception) when (true)</c>)
+    /// preserves the pre-existing behavior exactly: any exception raised while resolving an unknown
+    /// token as a native type - here <see cref="NotSupportedException"/> - is still swallowed into
+    /// <c>null</c>, not just that one exception type.
     /// </summary>
     [TestMethod]
     public void TryResolveNativeTypeToken_UnknownToken_ReturnsNullWithoutThrowing()

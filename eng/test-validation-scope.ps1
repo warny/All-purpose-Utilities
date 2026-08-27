@@ -26,6 +26,11 @@ Assert-Scope 'Utils.Parser.VisualStudio.Worker/Program.cs' $true $false $false $
 Assert-Scope 'res/AllPurposeUtilities_logo.png' $true $false $false $true
 Assert-Scope 'eng/test-vsix-package.ps1' $true $true $false $true
 Assert-Scope 'Directory.Build.props' $true $false $false $true
+# The workflow files that define/invoke the VSIX validation job must themselves trigger it -
+# otherwise a change that only breaks the vsix-validation block could ship with runVsix=false.
+Assert-Scope '.github/workflows/dotnetcore.yml' $true $true $false $true
+Assert-Scope '.github/workflows/nuget-publish.yml' $true $true $false $true
+Assert-Scope '.github/workflows/release-quality-gates.yml' $true $true $false $true
 Assert-Scope 'src/Thing.cs' $true $false $false $false
 foreach ($path in @(
     'Utils.sln',
