@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class TrueTypeFontParsingOptions | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class TrueTypeFontParsingOptions | omy.Utils Documentation ">
+      
+      <meta name="description" content="Immutable set of limits and policy switches that govern how  and its overloads read a font. All limits are explicit, bounded, and validated before the corresponding data is allocated or read, so that a hostile font cannot force unbounded memory use or CPU time.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions.md&amp;value=---%0Auid%3A%20Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions">
+
+
+
+  <h1 id="Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions" data-uid="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions" class="text-break">
+Class TrueTypeFontParsingOptions  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Fonts/TTF/Parsing/TrueTypeFontParsingOptions.cs/#L17"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Fonts.html">Fonts</a>.<a class="xref" href="Utils.Fonts.TTF.html">TTF</a>.<a class="xref" href="Utils.Fonts.TTF.Parsing.html">Parsing</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.Fonts.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Immutable set of limits and policy switches that govern how
+<a class="xref" href="Utils.Fonts.TTF.TrueTypeFont.html#Utils_Fonts_TTF_TrueTypeFont_ParseFont_System_ReadOnlySpan_System_Byte__Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_">ParseFont(ReadOnlySpan&lt;byte&gt;, TrueTypeFontParsingOptions)</a> and its
+overloads read a font. All limits are explicit, bounded, and validated before the corresponding
+data is allocated or read, so that a hostile font cannot force unbounded memory use or CPU time.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public sealed record TrueTypeFontParsingOptions : IEquatable&lt;TrueTypeFontParsingOptions&gt;</code></pre>
+  </div>
+
+
+
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><span class="xref">TrueTypeFontParsingOptions</span></div>
+    </dd>
+  </dl>
+
+  <dl class="typelist implements">
+    <dt>Implements</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a class="xref" href="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html">TrueTypeFontParsingOptions</a>&gt;</div>
+    </dd>
+  </dl>
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+  </dd></dl>
+
+  <dl class="typelist extensionMethods">
+    <dt>Extension Methods</dt>
+    <dd>
+  <div>
+      <a class="xref" href="Utils.Data.DataUtils.html#Utils_Data_DataUtils_ToDbValue_System_Object_">DataUtils.ToDbValue(object?)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Mathematics.MathEx.html#Utils_Mathematics_MathEx_Clamp__1___0___0___0_System_Collections_Generic_IComparer___0__">MathEx.Clamp&lt;T&gt;(T, T, T, IComparer&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Failure__1___0_">FluentExtensions.Failure&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsEqualTo__2___0___1_">FluentExtensions.IsEqualTo&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterOrEqualsThan__2___0___1_">FluentExtensions.IsGreaterOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterThan__2___0___1_">FluentExtensions.IsGreaterThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsIn__1___0___0___">FluentExtensions.IsIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerOrEqualsThan__2___0___1_">FluentExtensions.IsLowerOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerThan__2___0___1_">FluentExtensions.IsLowerThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotIn__1___0___0___">FluentExtensions.IsNotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotNull__1___0_">FluentExtensions.IsNotNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNull__1___0_">FluentExtensions.IsNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Success__1___0_">FluentExtensions.Success&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Test__1___0_System_Func___0_System_Boolean__">FluentExtensions.Test&lt;T&gt;(T, Func&lt;T, bool&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0_System_Threading_Tasks_Task___1___System_Func_System_Threading_Tasks_Task___1___">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Task&lt;Result&gt;&gt;, Func&lt;Task&lt;Result&gt;&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0_System_Threading_Tasks_Task___1_____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Task&lt;Result&gt;&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1____1_">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_In__1___0___0___">ObjectUtils.In&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_NotIn__1___0___0___">ObjectUtils.NotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustNotBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustNotBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Arg__1___0_System_String_">Validations.Arg&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ValueMustNotBeNull__1___0_System_String_">Validations.ValueMustNotBeNull&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Variable__1___0_System_String_">Validations.Variable&lt;T&gt;(T, string)</a>
+  </div>
+  </dd></dl>
+
+
+
+  <h2 id="Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>The default values are deliberately generous for real-world fonts (which rarely exceed a few
+megabytes and a few hundred tables/glyph components) while still bounding worst-case resource
+usage for a parser embedded in a larger process. Callers parsing fonts from a fully untrusted
+source should consider lowering them further.</p>
+</div>
+
+
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_Default_" data-uid="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.Default*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_Default" data-uid="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.Default">
+  Default
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Fonts/TTF/Parsing/TrueTypeFontParsingOptions.cs/#L23"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the shared default options instance, used whenever a parsing overload is called with
+a <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> options argument.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static TrueTypeFontParsingOptions Default { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html">TrueTypeFontParsingOptions</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_LeaveOpen_" data-uid="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.LeaveOpen*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_LeaveOpen" data-uid="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.LeaveOpen">
+  LeaveOpen
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Fonts/TTF/Parsing/TrueTypeFontParsingOptions.cs/#L112"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a value indicating whether the caller-supplied stream passed to
+<a class="xref" href="Utils.Fonts.TTF.TrueTypeFont.html#Utils_Fonts_TTF_TrueTypeFont_ParseFont_System_IO_Stream_Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_">ParseFont(Stream, TrueTypeFontParsingOptions)</a> or
+<a class="xref" href="Utils.Fonts.TTF.TrueTypeFont.html#Utils_Fonts_TTF_TrueTypeFont_ParseFontAsync_System_IO_Stream_Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_System_Threading_CancellationToken_">ParseFontAsync(Stream, TrueTypeFontParsingOptions, CancellationToken)</a>
+should be left open after parsing completes (or fails). Defaults to <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>.
+Temporary streams created internally to buffer a non-seekable source are always disposed by
+the parser regardless of this setting -- it only governs ownership of the stream the caller
+passed in.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool LeaveOpen { get; init; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumCmapSubtables_" data-uid="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCmapSubtables*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumCmapSubtables" data-uid="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCmapSubtables">
+  MaximumCmapSubtables
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Fonts/TTF/Parsing/TrueTypeFontParsingOptions.cs/#L67"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the maximum number of 'cmap' subtable directory records accepted. Defaults to 1024.
+Exceeding this limit always throws, in both validation modes.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ushort MaximumCmapSubtables { get; init; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumCompositeComponents_" data-uid="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCompositeComponents*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumCompositeComponents" data-uid="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCompositeComponents">
+  MaximumCompositeComponents
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Fonts/TTF/Parsing/TrueTypeFontParsingOptions.cs/#L73"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the maximum number of components a single compound glyph's own component list may
+declare (before following references to other compound glyphs). Defaults to 4096.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int MaximumCompositeComponents { get; init; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumCompositeDepth_" data-uid="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCompositeDepth*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumCompositeDepth" data-uid="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCompositeDepth">
+  MaximumCompositeDepth
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Fonts/TTF/Parsing/TrueTypeFontParsingOptions.cs/#L88"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the maximum recursion depth allowed while resolving compound glyphs that reference
+other compound glyphs. Defaults to 64.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int MaximumCompositeDepth { get; init; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumCompositeInstructionBytes_" data-uid="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCompositeInstructionBytes*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumCompositeInstructionBytes" data-uid="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumCompositeInstructionBytes">
+  MaximumCompositeInstructionBytes
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Fonts/TTF/Parsing/TrueTypeFontParsingOptions.cs/#L82"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the maximum number of instruction bytes accepted for a single compound glyph's
+trailing instruction block. Defaults to 64 KiB. The declared instruction length is always
+read as a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a> (so it can never itself request more than 65,535 bytes), but
+this limit is checked and enforced independently, before those bytes are read, rather than
+relying only on the coarser whole-table <a class="xref" href="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.html#Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumTableBytes">MaximumTableBytes</a> bound.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int MaximumCompositeInstructionBytes { get; init; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumExpandedComponents_" data-uid="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumExpandedComponents*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumExpandedComponents" data-uid="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumExpandedComponents">
+  MaximumExpandedComponents
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Fonts/TTF/Parsing/TrueTypeFontParsingOptions.cs/#L95"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the maximum number of components allowed while fully expanding a compound glyph's
+component graph (shared across the whole expansion, not reset per recursive call).
+Defaults to 100,000.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int MaximumExpandedComponents { get; init; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumExpandedPoints_" data-uid="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumExpandedPoints*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumExpandedPoints" data-uid="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumExpandedPoints">
+  MaximumExpandedPoints
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Fonts/TTF/Parsing/TrueTypeFontParsingOptions.cs/#L101"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the maximum number of points allowed while fully expanding a compound glyph's outline
+(shared across the whole expansion, not reset per recursive call). Defaults to 2,000,000.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int MaximumExpandedPoints { get; init; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumFontBytes_" data-uid="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumFontBytes*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumFontBytes" data-uid="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumFontBytes">
+  MaximumFontBytes
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Fonts/TTF/Parsing/TrueTypeFontParsingOptions.cs/#L47"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the maximum total size, in bytes, of the font being parsed (whether supplied as a
+byte array, a seekable stream, or copied incrementally from a non-seekable stream).
+Defaults to 64 MiB. Exceeding this limit always throws, in both validation modes.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public long MaximumFontBytes { get; init; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+  <h4 class="section" id="Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumFontBytes_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Typed <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a> to avoid a second breaking API change, but the effective ceiling is
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint32.maxvalue">MaxValue</a> (4 GiB): the SFNT format addresses every table offset and length
+with an unsigned 32-bit field, so this library does not attempt to support fonts larger than
+that regardless of this setting. <span class="xref">Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.EnsureValid()</span> rejects a configured value above
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint32.maxvalue">MaxValue</a> outright (<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a>) rather than
+silently clamping it down -- a caller who asks for a larger limit than this library can ever
+honor should find out immediately, not discover that fonts near their configured limit are
+silently rejected earlier than requested.</p>
+</div>
+
+
+
+
+  <a id="Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumTableBytes_" data-uid="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumTableBytes*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumTableBytes" data-uid="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumTableBytes">
+  MaximumTableBytes
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Fonts/TTF/Parsing/TrueTypeFontParsingOptions.cs/#L53"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the maximum size, in bytes, accepted for any single table's declared length.
+Defaults to 32 MiB. Exceeding this limit always throws, in both validation modes.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public uint MaximumTableBytes { get; init; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint32">uint</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumTables_" data-uid="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumTables*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_MaximumTables" data-uid="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.MaximumTables">
+  MaximumTables
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Fonts/TTF/Parsing/TrueTypeFontParsingOptions.cs/#L61"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the maximum number of table directory entries accepted. Defaults to 4096, far above
+what any real font declares (the OpenType spec allows up to <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16.maxvalue">MaxValue</a>
+via <code>numTables</code>, but no legitimate font needs more than a few dozen). Exceeding this
+limit always throws, in both validation modes.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ushort MaximumTables { get; init; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_ValidationMode_" data-uid="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.ValidationMode*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Parsing_TrueTypeFontParsingOptions_ValidationMode" data-uid="Utils.Fonts.TTF.Parsing.TrueTypeFontParsingOptions.ValidationMode">
+  ValidationMode
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Fonts/TTF/Parsing/TrueTypeFontParsingOptions.cs/#L30"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the validation mode: <a class="xref" href="Utils.Fonts.TTF.Parsing.FontValidationMode.html#Utils_Fonts_TTF_Parsing_FontValidationMode_Strict">Strict</a> (default) rejects any
+structural anomaly; <a class="xref" href="Utils.Fonts.TTF.Parsing.FontValidationMode.html#Utils_Fonts_TTF_Parsing_FontValidationMode_Permissive">Permissive</a> records diagnostics and
+continues when safe to do so.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public FontValidationMode ValidationMode { get; init; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Fonts.TTF.Parsing.FontValidationMode.html">FontValidationMode</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Fonts/TTF/Parsing/TrueTypeFontParsingOptions.cs/#L17" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

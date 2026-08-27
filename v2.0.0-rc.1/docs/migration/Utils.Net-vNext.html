@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>omy.Utils.Net — Migration Notes (vNext) | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="omy.Utils.Net — Migration Notes (vNext) | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../../favicon.ico">
+      <link rel="stylesheet" href="../../public/docfx.min.css">
+      <link rel="stylesheet" href="../../public/main.css">
+      <meta name="docfx:navrel" content="../../toc.html">
+      <meta name="docfx:tocrel" content="../../toc.html">
+      
+      <meta name="docfx:rel" content="../../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/blob/master/docs/migration/Utils.Net-vNext.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../../index.html">
+            <img id="logo" class="svg" src="../../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="omyutilsnet--migration-notes-vnext">omy.Utils.Net — Migration Notes (vNext)</h1>
+
+<p>This document describes breaking changes introduced in the next major release of <code>omy.Utils.Net</code>
+that require callers to update their code.</p>
+<hr>
+<h2 id="arppacket--read-only-hardwareprotocol-fields">ArpPacket — read-only hardware/protocol fields</h2>
+<h3 id="what-changed">What changed</h3>
+<p><code>ArpPacket.HardwareType</code>, <code>ArpPacket.ProtocolType</code>, <code>ArpPacket.HardwareAddressLength</code>, and
+<code>ArpPacket.ProtocolAddressLength</code> were previously writable properties. They are now read-only
+expression-bodied properties that always return the fixed Ethernet/IPv4 constants.</p>
+<h3 id="why">Why</h3>
+<p><code>ArpPacket</code> is specialized for Ethernet over IPv4. The previous writable setters allowed callers
+to set values that the serializer cannot represent; the type would accept the mutation but then
+throw at <code>ToBytes()</code> time. Making the fields read-only expresses the invariant in the API itself
+and eliminates an entire class of invalid states at compile time.</p>
+<h3 id="how-to-migrate">How to migrate</h3>
+<p>Remove any assignments to these properties. If you need to construct packets for other hardware or
+protocol types, use a different serialization approach — <code>ArpPacket</code> only supports the
+Ethernet/IPv4 binding.</p>
+<p><strong>Before:</strong></p>
+<pre><code class="lang-csharp">var packet = new ArpPacket();
+packet.HardwareType = 1;      // was allowed, now compile error
+packet.ProtocolType = 0x0800; // was allowed, now compile error
+</code></pre>
+<p><strong>After:</strong></p>
+<pre><code class="lang-csharp">var packet = new ArpPacket();
+// HardwareType and ProtocolType are always 1 and 0x0800 — no assignment needed.
+</code></pre>
+<hr>
+<h2 id="arppacket--operation-validation-in-tobytes-and-read">ArpPacket — Operation validation in ToBytes() and Read()</h2>
+<h3 id="what-changed-1">What changed</h3>
+<p><code>ArpPacket.ToBytes()</code> now throws <code>InvalidOperationException</code> when <code>Operation</code> is not
+<code>ArpOperation.Request</code> (1) or <code>ArpOperation.Reply</code> (2).</p>
+<p><code>ArpPacket.Read()</code> now throws <code>InvalidDataException</code> when the operation field in the wire-format
+data is not 1 or 2.</p>
+<h3 id="why-1">Why</h3>
+<p>The previous implementation silently accepted and forwarded unsupported operation codes. The only
+operations defined for Ethernet/IPv4 ARP are Request and Reply; other values are not valid for
+this binding.</p>
+<h3 id="how-to-migrate-1">How to migrate</h3>
+<p>Ensure <code>Operation</code> is set to <code>ArpOperation.Request</code> or <code>ArpOperation.Reply</code> before calling
+<code>ToBytes()</code>. When parsing untrusted data, wrap <code>Read()</code> in a <code>try/catch</code> for
+<code>InvalidDataException</code>.</p>
+<hr>
+<h2 id="dnsheaderappend--removed-in-vnext">DNSHeader.Append — removed in vNext</h2>
+<h3 id="what-changed-2">What changed</h3>
+<p><code>DNSHeader.Append(DNSHeader)</code> has been removed. Use <code>DNSHeader.MergeRecordsFrom(DNSHeader)</code> instead.</p>
+<h3 id="why-2">Why</h3>
+<p><code>Append</code> had ambiguous semantics around flag handling. <code>MergeRecordsFrom</code> enforces a precise merge
+contract: both headers must agree on all semantic flag fields (QrBit, OpCode, ErrorCode,
+AuthoritativeAnswer, MessageTruncated, AuthenticDatas, CheckingDisabled, RecursionDesired,
+RecursionPossible, ReservedFlags). Only distinct records from the source are added to the target.
+The merge is atomic: all clones are prepared before any collection is mutated.</p>
+<h3 id="how-to-migrate-2">How to migrate</h3>
+<p>Replace <code>a.Append(b)</code> with <code>a.MergeRecordsFrom(b)</code>. Ensure both headers carry identical flag values
+before calling <code>MergeRecordsFrom</code>, as differing flags now throw <code>InvalidOperationException</code>.</p>
+<hr>
+<h2 id="networkparameters--dns-server-ordering-follows-os-enumeration-order">NetworkParameters — DNS server ordering follows OS enumeration order</h2>
+<h3 id="what-changed-3">What changed</h3>
+<p><code>NetworkParameters.SelectDnsServers</code> previously sorted active interfaces — favouring those with a
+default gateway and using <code>IPv4InterfaceProperties.Index</code> as a tiebreaker. Both of these sort
+keys have been removed.</p>
+<p>DNS servers are now collected in strict OS enumeration order:</p>
+<ol>
+<li>Iterate <code>NetworkInterface.GetAllNetworkInterfaces()</code> in the order the OS provides.</li>
+<li>Include every <code>OperationalStatus.Up</code> interface, regardless of whether it has a default gateway.</li>
+<li>Within each interface, preserve the order of <code>DnsAddresses</code>.</li>
+<li>Exclude wildcard/unspecified and multicast addresses.</li>
+<li>Deduplicate, keeping the first-seen occurrence.</li>
+</ol>
+<h3 id="why-3">Why</h3>
+<p>The previous &quot;gateway-first&quot; heuristic silently broke split-DNS, VPN, and point-to-point
+configurations where the most specific resolver is reachable through an interface without a
+default gateway. A VPN resolver listed first by the OS would be moved after a public DNS server
+on an Ethernet interface that happened to have a default gateway, causing all internal names to
+resolve through the wrong server.</p>
+<p>OS enumeration order is the closest approximation to what the system administrator or
+VPN software intended.</p>
+<h3 id="impact">Impact</h3>
+<p>The order of DNS servers returned by <code>DnsServers</code> and <code>PrimaryDns</code> may change on machines with
+multiple active network interfaces. If your application relied on the previous gateway-first
+ordering, review whether the new OS-enumeration order is correct for your network topology.</p>
+<h3 id="note-on-vpn-and-split-dns">Note on VPN and split-DNS</h3>
+<p>If a VPN interface appears first in OS enumeration, its resolver is now correctly prioritised.
+A negative DNS response from that resolver (NXDOMAIN) is a valid response and prevents fallback
+to a subsequent public resolver for the same name — which is the expected split-DNS behaviour.</p>
+<hr>
+<h2 id="ntp--internal-transport-changes-no-migration-required">NTP — internal transport changes (no migration required)</h2>
+<p>The UDP transport used by <code>NtpClient</code> (<code>UdpNtpTransport</code>) is an internal implementation detail.
+Its constructor and <code>ExchangeAsync</code> method are not part of the public API. No migration is required
+for callers of the public <code>NtpClient.GetTimeAsync</code> overloads.</p>
+<hr>
+<h2 id="dnslookupexception-and-ntpqueryexception--failure-list-is-now-defensively-copied">DnsLookupException and NtpQueryException — failure list is now defensively copied</h2>
+<h3 id="what-changed-4">What changed</h3>
+<p>The <code>Failures</code> property of <code>DnsLookupException</code> and <code>NtpQueryException</code> now stores an internal
+copy of the list passed to the constructor. Mutating the original list after constructing the
+exception no longer affects <code>Failures</code>.</p>
+<h3 id="why-4">Why</h3>
+<p>Exceptions are intended to be immutable once constructed. Exposing a reference to the caller's
+list violated that contract and could cause non-deterministic behaviour if the list was mutated
+after the exception was thrown.</p>
+<h3 id="impact-1">Impact</h3>
+<p>This is a behavioral fix, not a signature change. Code that reads <code>Failures</code> is unaffected.
+Code that relies on the exception reflecting post-construction mutations to the original list
+must be updated — though such patterns were never correct.</p>
+<hr>
+<h2 id="smtp-pop3-and-nntp-protocol-contracts-in-20">SMTP, POP3, and NNTP protocol contracts in 2.0</h2>
+<p>SMTP mailbox strings are now parsed strictly by <code>SmtpPath</code>. Angle brackets, whitespace, controls, source routes, and embedded ESMTP parameters are rejected. SMTPUTF8 requires opt-in both while parsing and in <code>SmtpMailOptions</code>. SASL PLAIN and LOGIN use strict UTF-8 and reject NUL in each credential field.</p>
+<p>An SMTP mail transaction and an AUTH LOGIN challenge sequence now hold one exclusive exchange lease. After <code>MAIL FROM</code>, a framed failure is recovered with verified <code>RSET</code> under <code>TransactionRecoveryTimeout</code> (five seconds by default). Failure after DATA acceptance or failed RSET poisons the session.</p>
+<p><code>ProtocolResponseException</code> replaces generic response-message <code>IOException</code> failures and exposes protocol, sanitized verb, code, severity, immutable response lines, and enhanced status. A normal framed negative response does not poison the connection; cancellation, EOF, framing loss, streaming consumer failure, and multiline limit overruns do.</p>
+<p>POP3 STAT/LIST/UIDL and NNTP GROUP/LIST/STAT/NEXT now reject missing, extra, overflowing, negative, or duplicate mandatory values. <code>NextAsync</code> returns <code>null</code> only for NNTP 421. <code>NewNewsAsync</code> returns NNTP message-id strings rather than integers, and <code>INntpArticleStore.ListNewsSinceAsync</code> now supplies those message IDs directly.</p>
+<p>Streaming overloads accept <code>TextWriter</code> for POP3 RETR and NNTP ARTICLE/HEADER/BODY. Materializing wrappers use these bounded streaming paths. Defaults are 100,000 lines, 10 Mi characters, and 40 MiB (UTF-8 count).</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/docs/migration/Utils.Net-vNext.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

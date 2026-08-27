@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Namespace Utils.NumberToString | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Namespace Utils.NumberToString | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.NumberToString">
+
+  <h1 id="Utils_NumberToString" data-uid="Utils.NumberToString" class="text-break">Namespace Utils.NumberToString</h1>
+  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="markdown level0 remarks"></div>
+
+    <h3 id="classes">
+Classes
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.CurrencyDefinition.html">CurrencyDefinition</a></dt>
+      <dd><p>Defines the unit and subunit names used to convert a currency amount to words.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.DateFormatType.html">DateFormatType</a></dt>
+      <dd><p>Holds date-format configuration for a language.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.DecimalFormatOptions.html">DecimalFormatOptions</a></dt>
+      <dd><p>Formatting options for the decimal part produced by
+<a class="xref" href="Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_Convert_System_Decimal_System_Int32_Utils_NumberToString_DecimalFormatOptions_System_String___">Convert(decimal, int, DecimalFormatOptions?, params string[])</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.DefaultLexicalFormSelector.html">DefaultLexicalFormSelector</a></dt>
+      <dd><p>The built-in <a class="xref" href="Utils.NumberToString.ILexicalFormSelector.html">ILexicalFormSelector</a> that reproduces the number-to-string
+converter's historical singular/plural selection: <code>&quot;singular&quot;</code> when the absolute value
+equals one, <code>&quot;plural&quot;</code> otherwise. Used automatically for any constituent that does not
+configure a different selector, so legacy Singular/Plural-only configurations are unaffected
+by the lexical-form mechanism.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.DefaultNumberToStringLanguageSpecifics.html">DefaultNumberToStringLanguageSpecifics</a></dt>
+      <dd><p>Default no-op implementation used when no language-specific finalization is configured.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.DigitListType.html">DigitListType</a></dt>
+      <dd><p>Represents a collection of digit definitions for a particular group of numbers.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.DigitType.html">DigitType</a></dt>
+      <dd><p>Describes how a specific digit should be rendered and composed within a number name.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.ForcedVariantSet.html">ForcedVariantSet</a></dt>
+      <dd><p>Represents zero or more grammatical variant dimension values that a configured lexical
+constituent (a time unit, a currency unit/subunit, a fraction denominator term, …) forces on
+the numeric fragment it governs.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.FormVariantType.html">FormVariantType</a></dt>
+      <dd><p>A variant node inside a form-producing element (<code>&lt;Replacement&gt;</code>,
+<code>&lt;OrdinalException&gt;</code>, <code>&lt;Ordinal&gt;</code>).
+Plays two roles depending on whether <a class="xref" href="Utils.NumberToString.FormVariantType.html#Utils_NumberToString_FormVariantType_Forms">Forms</a> is present:</p>
+<ul><li><span class="term">Intermediate node</span>
+    <a class="xref" href="Utils.NumberToString.FormVariantType.html#Utils_NumberToString_FormVariantType_DimensionType">DimensionType</a> + <a class="xref" href="Utils.NumberToString.FormVariantType.html#Utils_NumberToString_FormVariantType_VariantValue">VariantValue</a> add one constraint;
+    child <code>&lt;Variant&gt;</code> elements cascade further constraints.
+  </li><li><span class="term">Leaf node</span>
+    <a class="xref" href="Utils.NumberToString.FormVariantType.html#Utils_NumberToString_FormVariantType_DimensionType">DimensionType</a> + <a class="xref" href="Utils.NumberToString.FormVariantType.html#Utils_NumberToString_FormVariantType_Forms">Forms</a> provide one output form per
+    dimension value in the order declared by the matching <code>&lt;Dimension&gt;</code>
+    element. Empty entries are skipped.
+  </li></ul>
+<p>All (constraints, form) pairs are collected at load time and merged by constraint set
+into <code>OrdinalVariantRule</code> or <code>VariantRule</code> entries — no runtime changes required.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.FractionListType.html">FractionListType</a></dt>
+      <dd><p>Represents a collection of fractional definitions.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.FractionType.html">FractionType</a></dt>
+      <dd><p>Configures how fractional values should be rendered.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.GermanNumberToStringLanguageSpecifics.html">GermanNumberToStringLanguageSpecifics</a></dt>
+      <dd><p>Applies German writing-specific finalization rules to converted numeric texts.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.GroupType.html">GroupType</a></dt>
+      <dd><p>Represents a numbered group of digits used when decomposing large numbers.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.GroupsListType.html">GroupsListType</a></dt>
+      <dd><p>Collection wrapper for <a class="xref" href="Utils.NumberToString.GroupType.html">GroupType</a> entries.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.LanguageType.html">LanguageType</a></dt>
+      <dd><p>Describes the conversion settings for a single language or culture.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.LanguageXmlModel.html">LanguageXmlModel</a></dt>
+      <dd><p>Internal XML model for a language definition. Holds the presence-sensitive
+<code>groupSize</code> attribute (plus its <code>Specified</code> companion) alongside every other
+XML member of a language so XmlSerializer can populate it directly. It is projected onto
+the public <a class="xref" href="Utils.NumberToString.LanguageType.html">LanguageType</a> after inheritance resolution.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.LexicalFormEntry.html">LexicalFormEntry</a></dt>
+      <dd><p>Maps one lexical form key (e.g. &quot;singular&quot;, &quot;attributive&quot;, &quot;few&quot;) to its localized word.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.LexicalFormSelectorConfiguration.html">LexicalFormSelectorConfiguration</a></dt>
+      <dd><p>Identifies a custom <a class="xref" href="Utils.NumberToString.ILexicalFormSelector.html">ILexicalFormSelector</a> being resolved from configuration, and
+carries the selector's own, selector-owned configuration subtree, so a selector's constructor
+can access the type name, owning language, and its configuration for diagnostics and setup.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.LexicalFormSelectorElementType.html">LexicalFormSelectorElementType</a></dt>
+      <dd><p>Declares a custom lexical-form-selector type together with its own, selector-owned
+configuration subtree. Used instead of the plain <code>formSelector</code> attribute when the
+selector needs configuration beyond its type name.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.LexicalFormSet.html">LexicalFormSet</a></dt>
+      <dd><p>Represents an immutable mapping from lexical form keys (e.g. <code>&quot;singular&quot;</code>,
+<code>&quot;plural&quot;</code>, <code>&quot;few&quot;</code>) to the localized word a configured constituent uses for that
+form.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.LexicalFormsType.html">LexicalFormsType</a></dt>
+      <dd><p>Holds named lexical form entries for a configurable constituent (e.g. a time unit).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.MultiplicativeEntryType.html">MultiplicativeEntryType</a></dt>
+      <dd><p>Maps a specific multiplier value to its named multiplicative form.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.MultiplicativesType.html">MultiplicativesType</a></dt>
+      <dd><p>Holds multiplicative configuration for a language (e.g. 1 → &quot;once&quot;, 2 → &quot;twice&quot;).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.NumberListType.html">NumberListType</a></dt>
+      <dd><p>Collection wrapper for <a class="xref" href="Utils.NumberToString.NumberType.html">NumberType</a> records to simplify XML serialization.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.NumberScale.html">NumberScale</a></dt>
+      <dd><p>Represents the scale used for large number names (e.g., thousand, million).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.NumberScaleType.html">NumberScaleType</a></dt>
+      <dd><p>Configures the prefixes and metadata needed to build number scale names.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.NumberScaleXmlModel.html">NumberScaleXmlModel</a></dt>
+      <dd><p>Internal XML model for a number-scale definition. Carries the two presence-sensitive
+attributes (<code>firstLetterUpperCase</code> and <code>startIndex</code>) with their <code>Specified</code>
+companions. Projected onto the public <a class="xref" href="Utils.NumberToString.NumberScaleType.html">NumberScaleType</a> after resolution.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.NumberToStringConfigurationException.html">NumberToStringConfigurationException</a></dt>
+      <dd><p>Represents configuration failures detected while compiling number-writing rules.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.NumberToStringConverter.html">NumberToStringConverter</a></dt>
+      <dd><p>Provides functionality to convert numbers to their string representation according to a specific culture or custom configuration.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.html">NumberToStringConverter.OrdinalVariantRule</a></dt>
+      <dd><p>Associates dimension constraints with variant-specific ordinal configuration
+(exceptions, word rules, suffix, and removeTrailing override).
+All fields fall through to the base ordinal config when absent.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.NumberToStringConverter.ReplacementRule.html">NumberToStringConverter.ReplacementRule</a></dt>
+      <dd><p>Represents a configured replacement rule.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.NumberToStringConverter.TriggerReplace.html">NumberToStringConverter.TriggerReplace</a></dt>
+      <dd><p>A compiled text-replacement rule inside a <a class="xref" href="Utils.NumberToString.NumberToStringConverter.TriggerRule.html">NumberToStringConverter.TriggerRule</a>.
+When the trigger fires, the most specific matching variant form is selected and
+applied exactly once; <a class="xref" href="Utils.NumberToString.NumberToStringConverter.TriggerReplace.html#Utils_NumberToString_NumberToStringConverter_TriggerReplace_DefaultTo">DefaultTo</a> is used when nothing matches.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.NumberToStringConverter.TriggerReplacementForm.html">NumberToStringConverter.TriggerReplacementForm</a></dt>
+      <dd><p>Represents one conditional replacement form in a trigger.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.NumberToStringConverter.TriggerRule.html">NumberToStringConverter.TriggerRule</a></dt>
+      <dd><p>A trigger that fires at a specific position in the conversion pipeline and applies
+one or more text replacements, each optionally variant-conditioned.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.NumberToStringConverter.VariantDimension.html">NumberToStringConverter.VariantDimension</a></dt>
+      <dd><p>Declares one dimension of grammatical variation (e.g. &quot;gender&quot;) with its ordered
+set of values. The first value is the default applied when no explicit variant is requested.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.NumberToStringConverter.VariantRule.html">NumberToStringConverter.VariantRule</a></dt>
+      <dd><p>Associates a set of dimension constraints with replacement rules to apply
+when all constraints are satisfied.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.html">NumberToStringConverterOptions</a></dt>
+      <dd><p>Holds all configuration parameters for a <a class="xref" href="Utils.NumberToString.NumberToStringConverter.html">NumberToStringConverter</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.NumberType.html">NumberType</a></dt>
+      <dd><p>Describes a fixed mapping between a numeric value and its literal representation.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.Numbers.html">Numbers</a></dt>
+      <dd><p>Represents the root configuration element that aggregates number conversion definitions for multiple languages.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.NumbersXmlModel.html">NumbersXmlModel</a></dt>
+      <dd><p>XML deserialization root. Mirrors <a class="xref" href="Utils.NumberToString.Numbers.html">Numbers</a> but references the internal
+language model so the presence-sensitive attributes carry a <code>Specified</code> companion
+without exposing those technical members on the public configuration API.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.OrdinalExceptionType.html">OrdinalExceptionType</a></dt>
+      <dd><p>Describes a single ordinal exception that maps an integer to its ordinal text.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.OrdinalRuleType.html">OrdinalRuleType</a></dt>
+      <dd><p>Describes a word-level transformation rule for ordinal conversion: when the last
+word of a cardinal equals <a class="xref" href="Utils.NumberToString.OrdinalRuleType.html#Utils_NumberToString_OrdinalRuleType_From">From</a>, it is replaced with <a class="xref" href="Utils.NumberToString.OrdinalRuleType.html#Utils_NumberToString_OrdinalRuleType_To">To</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.OrdinalVariantElementType.html">OrdinalVariantElementType</a></dt>
+      <dd><p>A single <code>&lt;Variant&gt;</code> inside <code>&lt;OrdinalVariants&gt;</code>: declares one constraint
+via <a class="xref" href="Utils.NumberToString.OrdinalVariantElementType.html#Utils_NumberToString_OrdinalVariantElementType_DimensionType">DimensionType</a> + <a class="xref" href="Utils.NumberToString.OrdinalVariantElementType.html#Utils_NumberToString_OrdinalVariantElementType_VariantValue">VariantValue</a>, optional suffix/removeTrailing
+overrides, ordinal exceptions, word rules, and nested sub-variants for cascaded constraints.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.OrdinalVariants.html">OrdinalVariants</a></dt>
+      <dd><p>Container element <code>&lt;OrdinalVariants&gt;</code> that groups variant-specific ordinal override
+blocks. Each child <code>&lt;Variant&gt;</code> targets one dimension and can contain nested
+<code>&lt;Variant&gt;</code> elements to express cascaded multi-dimension constraints.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.OrdinalsType.html">OrdinalsType</a></dt>
+      <dd><p>Holds the complete ordinal configuration for a language: whole-number exceptions,
+word-level transformation rules, and a default suffix.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.PolishOrdinalLanguageSpecifics.html">PolishOrdinalLanguageSpecifics</a></dt>
+      <dd><p>Handles Polish ordinal conversion for numbers 20 and above, where compound forms
+require both the tens and units components to carry ordinal endings — a transformation
+the XML word-rule engine cannot perform because it only rewrites the last word.
+Numbers 1–19 fall through to the XML pipeline (which carries full case/gender tables).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.ReplacementType.html">ReplacementType</a></dt>
+      <dd><p>Defines a string replacement applied to the generated number name.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.ReplacementsListType.html">ReplacementsListType</a></dt>
+      <dd><p>Holds a list of string replacements applied after number conversion.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.StaticNamesType.html">StaticNamesType</a></dt>
+      <dd><p>Holds the static names mapped to particular scales.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.SuffixesType.html">SuffixesType</a></dt>
+      <dd><p>Describes the suffixes appended to scale names.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.TimeUnitEntry.html">TimeUnitEntry</a></dt>
+      <dd><p>Describes a single time unit (hour, minute, second) with its singular and plural forms.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.TimeUnitsType.html">TimeUnitsType</a></dt>
+      <dd><p>Holds time-unit configuration for a language (hours, minutes, seconds).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.TriggerReplaceType.html">TriggerReplaceType</a></dt>
+      <dd><p>A text-replacement rule inside a <a class="xref" href="Utils.NumberToString.TriggerType.html">TriggerType</a>.
+Selects the most specific matching variant form, or <a class="xref" href="Utils.NumberToString.TriggerReplaceType.html#Utils_NumberToString_TriggerReplaceType_To">To</a> as the unconditional default.
+Uses the same <a class="xref" href="Utils.NumberToString.FormVariantType.html">FormVariantType</a> nesting as <code>Replacement</code>, <code>Ordinal</code>, and
+<code>OrdinalException</code>: leaf nodes provide positional <code>forms</code> or a single <code>value</code>;
+intermediate nodes add dimension constraints via <code>type</code>+<code>variant</code>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.TriggerType.html">TriggerType</a></dt>
+      <dd><p>A trigger that fires at a specific point in the conversion pipeline and applies
+text replacements, each optionally selecting a form based on active variant values.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.VariantDimensionType.html">VariantDimensionType</a></dt>
+      <dd><p>Declares one dimension of grammatical variation for a language (e.g. &quot;gender&quot; or &quot;case&quot;)
+together with its ordered set of values. The first value is the default when no explicit
+variant is requested.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.VariantType.html">VariantType</a></dt>
+      <dd><p>Describes a morphological variant: one dimension constraint expressed as explicit
+<code>type</code> (dimension name) and <code>variant</code> (dimension value) attributes, plus
+replacement rules and optional nested sub-variants for cascaded constraints.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.VariantsType.html">VariantsType</a></dt>
+      <dd><p>Holds the complete variant configuration for a language: the declared dimensions
+and the list of variant rules.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.YearFormatOptions.html">YearFormatOptions</a></dt>
+      <dd><p>Immutable year-format options that drive <a class="xref" href="Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ConvertYear_System_Int32_">ConvertYear(int)</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.YearFormatSplitRangeType.html">YearFormatSplitRangeType</a></dt>
+      <dd><p>Describes a range of years for which the split-at-hundreds algorithm applies in <a class="xref" href="Utils.NumberToString.YearFormatType.html">YearFormatType</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.YearFormatType.html">YearFormatType</a></dt>
+      <dd><p>Configures the year-format algorithm used by <a class="xref" href="Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ConvertYear_System_Int32_">ConvertYear(int)</a>.
+When present, years within any declared <a class="xref" href="Utils.NumberToString.YearFormatType.html#Utils_NumberToString_YearFormatType_SplitRanges">SplitRanges</a> are split at the hundreds boundary.</p>
+</dd>
+    </dl>
+    <h3 id="structs">
+Structs
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.LexicalFormContext.html">LexicalFormContext</a></dt>
+      <dd><p>Carries the numeric value and active grammatical variant query an <a class="xref" href="Utils.NumberToString.ILexicalFormSelector.html">ILexicalFormSelector</a>
+uses to choose a form key.</p>
+</dd>
+    </dl>
+    <h3 id="interfaces">
+Interfaces
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.ILexicalFormSelector.html">ILexicalFormSelector</a></dt>
+      <dd><p>Chooses which named lexical form of a configured constituent (e.g. a time unit) applies to
+a given numeric value and grammatical context.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.INumberToStringConverter.html">INumberToStringConverter</a></dt>
+      <dd><p>Converts numeric values into a formatted string representation while exposing
+the largest supported number for validation purposes.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.INumberToStringLanguageSpecifics.html">INumberToStringLanguageSpecifics</a></dt>
+      <dd><p>Defines language-specific post-processing behavior applied after number-to-text conversion.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.IOrdinalLanguageSpecifics.html">IOrdinalLanguageSpecifics</a></dt>
+      <dd><p>Provides language-specific ordinal conversion for cases where ordinal formation
+cannot be expressed through the XML configuration alone (e.g. languages with
+complex morphological agreement or root-pattern transformations).</p>
+</dd>
+    </dl>
+    <h3 id="enums">
+Enums
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.DuplicateCulturePolicy.html">DuplicateCulturePolicy</a></dt>
+      <dd><p>Specifies how registration handles a culture already present in the global registry.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.NumberToStringConverter.TriggerAt.html">NumberToStringConverter.TriggerAt</a></dt>
+      <dd><p>Specifies when a <a class="xref" href="Utils.NumberToString.NumberToStringConverter.TriggerRule.html">NumberToStringConverter.TriggerRule</a> fires in the conversion pipeline.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.ReplacementScope.html">ReplacementScope</a></dt>
+      <dd><p>Defines how a replacement should be applied to the converted value.</p>
+</dd>
+    </dl>
+
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

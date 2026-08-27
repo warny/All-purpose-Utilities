@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Production Support Contract for Utils.Parser 2.0.0-rc.1 | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Production Support Contract for Utils.Parser 2.0.0-rc.1 | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../../favicon.ico">
+      <link rel="stylesheet" href="../../public/docfx.min.css">
+      <link rel="stylesheet" href="../../public/main.css">
+      <meta name="docfx:navrel" content="../../toc.html">
+      <meta name="docfx:tocrel" content="../../toc.html">
+      
+      <meta name="docfx:rel" content="../../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/ProductionSupportContract.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../../index.html">
+            <img id="logo" class="svg" src="../../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="production-support-contract-for-utilsparser-200-rc1">Production Support Contract for <code>Utils.Parser 2.0.0-rc.1</code></h1>
+
+<h2 id="1-purpose-and-scope">1. Purpose and scope</h2>
+<p>This document is the normative product-support contract for <code>Utils.Parser 2.0.0-rc.1</code>. This version is a release candidate: it is suitable for evaluation and controlled production use within the boundaries below, but it does not yet carry the final binary-compatibility promise of <code>2.0.0</code>.</p>
+<p><code>Utils.Parser</code> implements a tested subset of ANTLR4 grammar ingestion and execution; it is not a drop-in or exhaustive replacement for ANTLR4. The supported scope is grammars owned or reviewed by trusted developers, validated with application-specific tests, and resolved in a controlled environment. Arbitrary grammars or embedded code supplied by untrusted users are excluded.</p>
+<h2 id="2-supported-surfaces">2. Supported surfaces</h2>
+<ul>
+<li><strong>Runtime project compilation:</strong> <code>Antlr4GrammarProjectCompiler</code> composes a controlled set of grammar sources, resolves dependencies, and produces a runtime definition.</li>
+<li><strong>Direct runtime use:</strong> callers can build or convert a <code>ParserDefinition</code>, then use <code>LexerEngine</code>, <code>ParserEngine</code>, or <code>CompiledGrammar</code> directly.</li>
+<li><strong>Roslyn generation:</strong> <code>Utils.Parser.Generators</code> parses each configured <code>.g4</code> file at build time and emits a local grammar facade. Generated import composition is expressly excluded below.</li>
+<li><strong>Conservative parsing:</strong> generated <code>Parse(...)</code> uses the default conservative policy and does not execute generated embedded-code hooks.</li>
+<li><strong>Explicit embedded-code parsing:</strong> generated <code>ParseWithEmbeddedCode(...)</code> selects the generated-C# opt-in path. Runtime-inline expressions instead require explicit preparation and policy installation.</li>
+<li><strong>Advanced APIs:</strong> runtime feature policies, rule-call policies, transformers, execution contexts, and observation APIs are supported only under their documented explicit contracts. They are never enabled merely because related metadata exists.</li>
+</ul>
+<p><code>ParserEngine</code> remains the final authority for parse success, acceptance, diagnostics, and the produced tree on every runtime surface.</p>
+<h2 id="3-normative-statuses">3. Normative statuses</h2>
+<ul>
+<li><strong>Stable:</strong> guaranteed for the RC subset, with deterministic behavior covered by tests. RC stabilization commitments in section 9 apply.</li>
+<li><strong>Supported under option:</strong> executable only after the documented explicit opt-in, policy, transformer, or generation option is selected; the conservative default is unchanged.</li>
+<li><strong>Experimental:</strong> usable and tested in a bounded form, but its API or detailed behavior may change between release candidates with documentation.</li>
+<li><strong>Metadata-only:</strong> syntax or information is recognized and preserved, but it has no execution authority. This status never means supported execution.</li>
+<li><strong>Rejected with diagnostic:</strong> the construct is not accepted for the relevant surface and produces a documented deterministic diagnostic.</li>
+<li><strong>Preparatory/internal:</strong> infrastructure exists for future work but is not a consumer execution contract.</li>
+<li><strong>Out of scope for <code>2.0.0-rc.1</code>:</strong> no production-support commitment is made for that capability in this RC.</li>
+</ul>
+<h2 id="4-support-matrix">4. Support matrix</h2>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Runtime / project compiler</th>
+<th>Generator and <code>Parse(...)</code></th>
+<th>Explicit opt-in path</th>
+<th>RC status and limits</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Combined, lexer, and parser grammars; lexer and parser rules</td>
+<td>Ingested, resolved, tokenized, and parsed within the tested subset</td>
+<td>Local definitions are emitted; <code>Grammar</code>, <code>Tokenize(...)</code>, and conservative <code>Parse(...)</code> execute them</td>
+<td>Generated hooks require <code>ParseWithEmbeddedCode(...)</code></td>
+<td><strong>Stable</strong> for controlled, tested local grammars; not exhaustive ANTLR4 parity</td>
+</tr>
+<tr>
+<td>Literals, groups, alternatives, and quantifiers</td>
+<td>Executed by lexer/parser runtime</td>
+<td>Emitted and executed conservatively</td>
+<td>No opt-in required</td>
+<td><strong>Stable</strong> within documented diagnostics and non-progress guards</td>
+</tr>
+<tr>
+<td>Fragments, lexer modes, and built-in lexer commands</td>
+<td>Fragments, mode stack, <code>skip</code>, <code>more</code>, <code>channel</code>, <code>type</code>, <code>pushMode</code>, <code>popMode</code>, and <code>mode</code> execute</td>
+<td>Local constructs are emitted and tokenized</td>
+<td>Limited lexer hooks use generated C# only</td>
+<td><strong>Stable</strong> for core lexer behavior; embedded lexer code is limited as below</td>
+</tr>
+<tr>
+<td>Declared channels and <code>tokens {}</code></td>
+<td>Names are recognized and preserved; declarations do not create general runtime channel/token semantics</td>
+<td>Metadata is emitted with compatibility diagnostics</td>
+<td><code>-&gt; channel(...)</code> and <code>-&gt; type(...)</code> remain operational commands</td>
+<td><strong>Metadata-only</strong> declarations; unsupported meaning is <strong>rejected with diagnostic</strong></td>
+</tr>
+<tr>
+<td>Direct left recursion and precedence / <code>&lt;assoc=right&gt;</code></td>
+<td>Seed-and-extend execution with safeguards</td>
+<td>Local rules use the same runtime</td>
+<td>None</td>
+<td><strong>Experimental</strong>: tested direct shapes only, not all ANTLR transformations or indirect recursion</td>
+</tr>
+<tr>
+<td>Direct/transitive imports, cycles, collisions, local masking, and local root</td>
+<td>Project compiler uses the common deterministic composition plan; cycles/missing/ambiguous inputs diagnose; the entry grammar owns the root</td>
+<td>The generator emits the same effective rule selection from the common composition plan</td>
+<td>None</td>
+<td>Runtime and generator: <strong>Stable</strong> within tested deterministic composition rules</td>
+</tr>
+<tr>
+<td><code>tokenVocab</code></td>
+<td>Lexer-only dependency visibility is composed when resolver inputs exist</td>
+<td>Effective lexer rules, fragments, modes, tokens, and channels are emitted without parser rules</td>
+<td>None</td>
+<td>Runtime and generator: <strong>Stable</strong> for controlled project inputs</td>
+</tr>
+<tr>
+<td>Grammar/rule options</td>
+<td><code>caseInsensitive</code> executes; supported dependency options participate in compilation; other values may be preserved</td>
+<td>Local supported values are emitted</td>
+<td>None</td>
+<td><code>superClass</code> and unsupported options are <strong>Metadata-only</strong> or <strong>rejected with diagnostic</strong>; no inheritance execution</td>
+</tr>
+<tr>
+<td>Rule parameters and call arguments</td>
+<td>Declarations and raw arguments are preserved; conservative parsing performs no automatic binding</td>
+<td><code>Parse(...)</code> preserves metadata and does not bind</td>
+<td>Explicit runtime literal policies, helpers, or generated positional binding when <code>UtilsParserEnableGeneratedRuleArgumentBinding=true</code></td>
+<td>Metadata by default; bounded literal binding is <strong>Supported under option</strong>; arbitrary expressions and typed ANTLR signatures are out of scope</td>
+</tr>
+<tr>
+<td>Returns, locals, and rule-reference labels</td>
+<td>Descriptors and parser-managed frame/call-result storage exist; no automatic typed semantics</td>
+<td>Conservative parsing does not expose or execute them</td>
+<td>Generated helpers and the optional C# transformer provide narrow current-rule/labeled-return access</td>
+<td>Declarations are <strong>Metadata-only</strong>; helper-based managed state is <strong>Supported under option</strong>; no automatic propagation or typed contexts</td>
+</tr>
+<tr>
+<td>Parser predicates and inline actions</td>
+<td>Preserved; unevaluated predicates do not become authoritative and actions do not execute by default</td>
+<td><code>Parse(...)</code> does not execute generated hooks</td>
+<td>Runtime-inline prepared expressions or generated C# through <code>ParseWithEmbeddedCode(...)</code></td>
+<td><strong>Supported under option</strong> for documented positions and indexing only; no general ANTLR embedded-code compatibility</td>
+</tr>
+<tr>
+<td>Parser <code>@init</code> and <code>@after</code></td>
+<td>Preserved but not executed by the runtime-inline expression path</td>
+<td><code>Parse(...)</code> does not execute them</td>
+<td>Generated C# lifecycle executor through <code>ParseWithEmbeddedCode(...)</code></td>
+<td><strong>Supported under option</strong> with parser-managed state snapshots</td>
+</tr>
+<tr>
+<td>Parser named actions</td>
+<td>Metadata in runtime paths</td>
+<td>Supported C# <code>@header</code>, <code>@parser::header</code>, <code>@members</code>, <code>@parser::members</code>, <code>@footer</code>, and <code>@parser::footer</code> are injected at documented locations; other names diagnose</td>
+<td>Compiled as consumer project source, not interpreted by the parser</td>
+<td>Limited generated-C# bridge is <strong>Supported under option</strong>; other forms are <strong>Rejected with diagnostic</strong></td>
+</tr>
+<tr>
+<td>Lexer embedded code</td>
+<td>Runtime-inline preparation does not execute lexer code</td>
+<td><code>Parse(...)</code> is conservative</td>
+<td>Generated-C# simple predicates/actions and limited <code>$text</code>, <code>$type</code>, <code>$channel</code>, <code>$mode</code>, <code>$line</code>, <code>$pos</code> reads; limited writes to type/channel/mode</td>
+<td><strong>Experimental / Supported under option</strong>; no complete lexer embedded-code model</td>
+</tr>
+<tr>
+<td>Diagnostics</td>
+<td><code>ParserEngine</code> and grammar diagnostics remain authoritative</td>
+<td>Roslyn adds generator diagnostics without overriding runtime acceptance</td>
+<td>Opt-in compilation may also produce C# or transformation diagnostics</td>
+<td><strong>Stable</strong> where documented; metadata diagnostics do not grant execution authority</td>
+</tr>
+<tr>
+<td>Generator incrementality</td>
+<td>Not applicable</td>
+<td>Per-file parsing is reusable; collected project validation/emission may rerun globally</td>
+<td>Option changes can regenerate project outputs</td>
+<td><strong>Experimental</strong> performance characteristic, not a guarantee of isolated downstream emission</td>
+</tr>
+<tr>
+<td>Concurrent execution</td>
+<td>A separate <code>CompiledGrammar</code> may be created for each concurrent operation; every individual parse remains sequential</td>
+<td>The generated static <code>Grammar</code> facade caches one <code>CompiledGrammar</code>, including one <code>LexerEngine</code> and one <code>ParserEngine</code>; concurrent <code>Parse(...)</code> or <code>Tokenize(...)</code> calls on that shared instance are not safe</td>
+<td>Callers must synchronize access to the static facade or create a distinct <code>CompiledGrammar</code> per concurrent operation; supplied execution contexts and reusable generated policies also carry mutable state and must not be shared concurrently</td>
+<td>Parsing-internal parallelism is <strong>out of scope</strong>; no shared runtime engine or mutable execution context has a thread-safety guarantee</td>
+</tr>
+<tr>
+<td>Rollback and external effects</td>
+<td>Parser-managed frame, seed, call-result, and configured execution state participate in documented snapshots</td>
+<td>Conservative <code>Parse(...)</code> executes no hooks</td>
+<td>Generated context snapshots cover managed state at parser backtracking boundaries</td>
+<td>Managed rollback is <strong>Supported under option</strong>; external I/O, global/static mutation, and arbitrary object graphs are never fully rolled back</td>
+</tr>
+</tbody>
+</table>
+<h2 id="5-conservative-path-guarantees">5. Conservative-path guarantees</h2>
+<p>Generated <code>Parse(...)</code> does not execute generated embedded code. An action that was not executed and a predicate that was not evaluated never acquire implicit authority over acceptance. Advanced behavior requires an explicit API, policy, transformer, or build option. During the <code>2.0.0</code> RC series, the guaranteed subset will not receive silent parse-tree-shape or diagnostic-contract breaks.</p>
+<p>Metadata—including continuations, shared-prefix plans, arguments, returns, locals, labels, imports recorded on a definition, and unsupported options—is descriptive until an expressly documented execution path consumes it.</p>
+<h2 id="6-opt-in-features">6. Opt-in features</h2>
+<ul>
+<li>The <strong>runtime-inline expression path</strong> uses <code>ExpressionEmbeddedCodePreparer</code>, an explicit transformer, a caller-supplied expression compiler, prepared registries, and an explicitly installed runtime policy. It covers bounded parser predicates and inline parser actions, not lifecycle or lexer code.</li>
+<li>The <strong>source-generator C# path</strong> emits supported C# hooks and compiles them as part of the consuming project. <code>ParseWithEmbeddedCode(...)</code> activates the generated policy; <code>CreateRuntimePolicy(executionContext, basePolicy)</code> exposes explicit policy binding.</li>
+<li><strong>Generated argument binding</strong> is disabled by default. With <code>UtilsParserEnableGeneratedRuleArgumentBinding=true</code>, only exact-arity positional simple literals and allowlisted declared types are bound on <code>ParseWithEmbeddedCode(...)</code> overloads without <code>basePolicy</code>. The <code>basePolicy</code> overload preserves the caller's rule-call policy.</li>
+<li><strong>Lifecycle hooks</strong> <code>@init</code> and <code>@after</code> execute only in the generated-C# opt-in path.</li>
+<li><strong>Transactional state</strong> covers parser-managed frame values, pending seeds, call results, and generated execution-context snapshots at documented backtracking boundaries. It does not buffer actions, replay them, deep-clone arbitrary graphs, or undo external effects.</li>
+</ul>
+<p>Embedded code remains target-language source, not a claim of general ANTLR4 action compatibility.</p>
+<h2 id="7-imports">7. Imports</h2>
+<h3 id="runtime--project-compiler">Runtime / project compiler</h3>
+<p><code>Antlr4GrammarProjectCompiler</code> consumes the common composition plan. Tested behavior includes direct and transitive traversal, full-import versus <code>tokenVocab</code> visibility, local masking, deterministic imported collisions, diamond deduplication, cycles, missing or ambiguous dependencies, modes, entry-owned options/actions/root, and provenance. Single-file conversion cannot resolve a project dependency without resolver inputs.</p>
+<h3 id="generator">Generator</h3>
+<p>The generator projects the shared composition plan into an effective emission model. Direct and transitive full imports emit selected parser and lexer rules, fragments, and modes; <code>tokenVocab</code> emits lexer declarations only. The entry grammar retains its root, options, and grammar actions. <code>APU0107</code> covers uniquely resolved local and imported parser targets and remains silent for unresolved, lexer-only, source-ambiguous, or rule-collision targets.</p>
+<p>Generated import composition is <strong>Supported under option</strong> for the deterministic subset described above. Unqualified aliased imports retain the runtime compatibility behavior; qualified <code>Alias.rule</code> calls remain unsupported. Per-file parsing is incremental, while graph changes recompute project composition and replace affected generated output without retaining stale declarations.</p>
+<h2 id="8-trust-model">8. Trust model</h2>
+<p>The RC covers grammars written or reviewed by trusted developers, embedded C# treated exactly like source code in the consuming project, and imports resolved from a controlled environment. It offers no sandbox for hostile grammars or code, no safe evaluation boundary for untrusted C#, and no guarantee against malicious resource consumption or side effects.</p>
+<h2 id="9-stability-during-the-rc">9. Stability during the RC</h2>
+<ul>
+<li>Documented diagnostic identifiers, severities, and trigger conditions are treated as RC contracts.</li>
+<li>The guaranteed subset will not receive silent parse-tree-shape changes.</li>
+<li>Public APIs may still change between release candidates when the change is documented and accompanied by migration notes; final <code>2.0.0</code> binary stability is not promised yet.</li>
+<li>Experimental or opt-in behavior will not become enabled implicitly.</li>
+<li>Explicit, tested bug fixes may correct behavior during the RC and will be called out in release notes.</li>
+</ul>
+<h2 id="10-non-goals">10. Non-goals</h2>
+<p><code>2.0.0-rc.1</code> does not promise exhaustive ANTLR4 compatibility, GLL, adaptive LL, continuation replay, shared-prefix execution, parsing-internal parallelism, async runtime parsing, full rollback of external effects, action buffering, typed ANTLR rule signatures, arbitrary argument expressions, complete lexer embedded code, or a sandbox for untrusted code execution.</p>
+<h2 id="11-package-train-distribution-boundary">11. Package-train distribution boundary</h2>
+<p>The <code>2.0.0-rc.1</code> parser packages share one centrally declared version. Runtime package dependencies are <code>Source -&gt; Diagnostics -&gt; Parser</code>, with <code>Antlr4.Common -&gt; Parser</code>; <code>Parser.Expressions</code> depends exactly on <code>Parser</code> and <code>omy.Utils</code> 2.0.0-rc.1. The generator is a compiler analyzer package that embeds only its Source, Diagnostics, and Antlr4.Common compiler-host support DLLs. Package-only consumers are restored with an isolated global-package cache and source mapping that resolves every <code>omy.*</code> candidate from the local feed. This distribution validation does not broaden the functional compatibility matrix and does not establish reproducibility, performance, trimming/AOT, signing, or transactional multi-package publication guarantees.</p>
+<p>Package acceptance for this release candidate now crosses both runtime and generated composition paths. It executes direct/transitive imports, <code>tokenVocab</code>, separate lexer/parser grammars, populated and empty modes, local masking, root ownership, collision precedence, graph diagnostics, and generator rebuild replacement after graph changes. This evidence is distribution validation of the already documented subset; it does not expand the ANTLR4 compatibility contract.</p>
+<p>The parser packages are released only as part of the synchronized repository-wide <code>omy.Utils</code> 2.0.0-rc.1 product train. Global packaging, API, warning, SourceLink, reproducibility, dependency, and artifact-integrity gates strengthen distribution evidence without expanding the parser behavior or ANTLR4 feature guarantees in this contract.</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/ProductionSupportContract.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

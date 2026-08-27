@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Quality and Security Audit | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Quality and Security Audit | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="../toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/blob/master/docs/audit-quality-security.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="quality-and-security-audit">Quality and Security Audit</h1>
+
+<p><em>Date:</em> 2026-03-18<br>
+<em>Scope:</em> <code>Utils.sln</code> and packable projects in this repository.</p>
+<h2 id="executive-summary">Executive summary</h2>
+<p>The repository is functionally rich and already includes an extensive automated test suite, XML documentation generation, SourceLink metadata, and package-level vulnerability checks. The main quality and security risks identified during this audit are concentrated in three areas:</p>
+<ol>
+<li><strong>Compile-time quality debt</strong>: the solution currently emits a large number of nullable-reference and documentation warnings during build.</li>
+<li><strong>Legacy protocol and parser attack surface</strong>: some APIs still expose historically weak or permissive behaviors for compatibility.</li>
+<li><strong>Local file trust boundaries</strong>: a resource-loading path accepts external file references without constraining them to an expected directory.</li>
+</ol>
+<p>No vulnerable NuGet package was reported by <code>dotnet list package --vulnerable --include-transitive</code> at the time of the audit.</p>
+<h2 id="audit-method">Audit method</h2>
+<p>The audit combined:</p>
+<ul>
+<li>solution-level test and build execution;</li>
+<li>NuGet vulnerability inspection;</li>
+<li>targeted static review of security-sensitive APIs (networking, XML parsing, file loading, cryptography);</li>
+<li>code search for known risky primitives (<code>MD5</code>, <code>XmlReader</code>, sockets, <code>unsafe</code>, raw file and network access).</li>
+</ul>
+<h2 id="commands-executed">Commands executed</h2>
+<pre><code class="lang-bash">dotnet --version
+dotnet list Utils.sln package --vulnerable --include-transitive
+rg -n &quot;BinaryFormatter|MD5|SHA1|AesManaged|Rijndael|DES|RC2|SslProtocols\.|Process\.Start|DllImport|unsafe|stackalloc|Random\(|new Random|HttpClient\(|WebRequest|TcpListener|UdpClient|Socket\(|File\.Open\(|FileStream\(|Path\.Combine\(|Path\.GetTempPath\(|Environment\.GetEnvironmentVariable|XmlDocument|XDocument.Load\(|XmlReader.Create\(|Regex\(|new Regex\(&quot; Utils Utils.* Utils.Net Utils.IO Utils.Data Utils.Xml Utils.Parser Utils.DependencyInjection Utils.Collections Utils.Reflection Utils.Imaging Utils.Fonts Utils.OData Utils.Geography Utils.Mathematics Utils.VirtualMachine Utils.OData.Generators Utils.IO.Serialization.Generators Utils.Parser.Generators Utils.DependencyInjection.Generators -g '!**/bin/**' -g '!**/obj/**'
+dotnet test Utils.sln
+dotnet build Utils.sln -warnaserror
+</code></pre>
+<h2 id="detailed-findings">Detailed findings</h2>
+<h3 id="1-high-quality-debt-from-compiler-warnings">1. High quality debt from compiler warnings</h3>
+<p><strong>Severity:</strong> Medium<br>
+<strong>Category:</strong> Maintainability / correctness / hardening</p>
+<p>The solution builds and tests, but the build emits a large number of warnings, especially:</p>
+<ul>
+<li>nullable-reference warnings (<code>CS8600</code>–<code>CS8625</code>, <code>CS8618</code>),</li>
+<li>malformed XML documentation placement warnings (<code>CS1587</code>),</li>
+<li>analyzer warnings such as <code>CA2260</code> and <code>RS2008</code>.</li>
+</ul>
+<p>This is a quality issue first, but it also has security impact because nullable warnings frequently map to unchecked states, unexpected <code>null</code> flows, and inconsistent invariants in edge cases.</p>
+<p><strong>Examples observed during audit:</strong></p>
+<ul>
+<li><code>Utils.Collections/SkipList.cs</code> initializes non-nullable fields lazily, which currently triggers <code>CS8618</code> and related nullability flow warnings.</li>
+<li><code>Utils.Parser/Model/*</code> files contain XML comments attached to positional record parameters in a way that triggers <code>CS1587</code>.</li>
+<li><code>Utils.Parser.Generators/Antlr4GrammarGenerator.cs</code> triggers <code>RS2008</code>, meaning analyzer release tracking is not configured.</li>
+</ul>
+<p><strong>Recommendation:</strong></p>
+<ul>
+<li>Reduce warnings project by project, starting with nullable warnings in the most reused packages (<code>Utils</code>, <code>Utils.Collections</code>, <code>Utils.Geography</code>, <code>Utils.Parser</code>).</li>
+<li>Treat <code>CS1587</code> fixes as low-risk cleanup because they improve generated API docs without changing behavior.</li>
+<li>Add a CI gate on warnings for touched projects only before considering solution-wide <code>warnaserror</code>.</li>
+</ul>
+<h3 id="2-pop3-apop-authentication-still-relies-on-md5">2. POP3 APOP authentication still relies on MD5</h3>
+<p><strong>Severity:</strong> Medium<br>
+<strong>Category:</strong> Cryptography / protocol risk</p>
+<p><code>Pop3Client.AuthenticateApopAsync</code> computes the APOP digest with <code>MD5</code>. This is historically accurate for the protocol, but MD5 is cryptographically obsolete and should not be treated as a modern secure authentication mechanism.</p>
+<p><strong>Why it matters:</strong></p>
+<ul>
+<li>APOP reduces direct password exposure compared with <code>USER</code>/<code>PASS</code>, but it still depends on MD5.</li>
+<li>Consumers may incorrectly infer that the API is secure by modern standards because it is not marked obsolete the way <code>AuthenticateAsync</code> is.</li>
+</ul>
+<p><strong>Recommendation:</strong></p>
+<ul>
+<li>Keep the API for compatibility if required, but document it explicitly as legacy / compatibility-only.</li>
+<li>Consider marking <code>AuthenticateApopAsync</code> as obsolete with a non-breaking warning message similar to <code>AuthenticateAsync</code>.</li>
+<li>Recommend TLS-protected transports regardless of POP3 authentication mode.</li>
+</ul>
+<h3 id="3-external-resource-loading-does-not-enforce-a-directory-boundary">3. External resource loading does not enforce a directory boundary</h3>
+<p><strong>Severity:</strong> Medium<br>
+<strong>Category:</strong> File-system trust boundary</p>
+<p><code>ExternalResource</code> resolves <code>ResXFileRef</code> values into full paths and falls back to paths relative to the base file directory, but it does not verify that the resulting path remains within an allowed root directory.</p>
+<p><strong>Why it matters:</strong></p>
+<ul>
+<li>If a <code>.resx</code> file is accepted from an untrusted or semi-trusted source, a crafted relative path such as <code>..\..\secret.txt</code> could resolve outside the intended resource folder.</li>
+<li>The code intentionally supports lazy reading of external text and binary files, which amplifies the impact of path traversal if trust boundaries are not explicit.</li>
+</ul>
+<p><strong>Recommendation:</strong></p>
+<ul>
+<li>Add an explicit path containment check against the <code>.resx</code> directory before accepting external references.</li>
+<li>If preserving current behavior is required, document that <code>ExternalResource</code> assumes trusted <code>.resx</code> input.</li>
+<li>Add tests for sibling-file access, parent traversal, and absolute-path inputs.</li>
+</ul>
+<h3 id="4-secure-xml-reading-exists-but-the-safe-path-is-not-consistently-the-default">4. Secure XML reading exists, but the safe path is not consistently the default</h3>
+<p><strong>Severity:</strong> Low to Medium<br>
+<strong>Category:</strong> XML parser hardening</p>
+<p><code>XmlDataProcessor</code> now exposes <code>ReadSecure(string)</code> with hardened reader settings, but the older <code>Read(string)</code> and <code>Read(Stream)</code> entry points still keep legacy parsing behavior for compatibility.</p>
+<p><strong>Why it matters:</strong></p>
+<ul>
+<li>This is better than having no hardened path, but consumers can still call the permissive overloads by habit.</li>
+<li>Security hardening is more effective when the safe path is the default and legacy behavior is opt-in.</li>
+</ul>
+<p><strong>Recommendation:</strong></p>
+<ul>
+<li>Continue the migration toward secure-by-default XML APIs.</li>
+<li>Add equivalent secure overloads for stream-based untrusted input if that scenario is relevant.</li>
+<li>Ensure package documentation consistently points consumers to secure overloads first.</li>
+</ul>
+<h3 id="5-strict-build-quality-gate-does-not-currently-pass-in-this-environment">5. Strict build quality gate does not currently pass in this environment</h3>
+<p><strong>Severity:</strong> Low<br>
+<strong>Category:</strong> Build governance / supply-chain hygiene</p>
+<p><code>dotnet build Utils.sln -warnaserror</code> did not pass during the audit. Two causes were observed:</p>
+<ul>
+<li>environment-specific SourceLink/repository metadata errors because the local clone has no configured remote;</li>
+<li>real code warnings that become blocking under <code>warnaserror</code>.</li>
+</ul>
+<p><strong>Recommendation:</strong></p>
+<ul>
+<li>Keep SourceLink, but make local strict-build guidance explicit for contributors working from detached or remote-less clones.</li>
+<li>Separate environment warnings from code-quality warnings in CI reporting.</li>
+<li>Track a warning budget and reduce it over time.</li>
+</ul>
+<h2 id="positive-observations">Positive observations</h2>
+<ul>
+<li>The repository has broad automated test coverage through <code>UtilsTest</code>.</li>
+<li>XML documentation file generation is enabled centrally.</li>
+<li>SourceLink, deterministic builds, symbol packages, repository metadata, and package URLs are configured in <code>Directory.Build.props</code>.</li>
+<li>No vulnerable NuGet packages were reported by the CLI audit at the time of execution.</li>
+<li>Several risky legacy APIs are already being steered with compatibility warnings, for example POP3 <code>USER</code>/<code>PASS</code> authentication and legacy XML loading from URI.</li>
+</ul>
+<h2 id="priority-roadmap">Priority roadmap</h2>
+<ol>
+<li><strong>First priority:</strong> reduce nullable and documentation warnings in the core packages.</li>
+<li><strong>Second priority:</strong> document or deprecate legacy security-sensitive APIs (<code>APOP</code>, permissive XML readers).</li>
+<li><strong>Third priority:</strong> harden <code>ExternalResource</code> against path traversal when processing untrusted <code>.resx</code> content.</li>
+<li><strong>Fourth priority:</strong> restore a clean strict build path in CI with clearer handling of SourceLink prerequisites.</li>
+</ol>
+<h2 id="conclusion">Conclusion</h2>
+<p>The repository does not show an obvious critical vulnerability from package dependencies, but it still carries meaningful quality debt and several compatibility-driven security risks. The most important next step is not a large rewrite: it is to tighten trust boundaries, continue deprecating insecure legacy behaviors, and steadily eliminate compiler warnings in the foundational libraries.</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/docs/audit-quality-security.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

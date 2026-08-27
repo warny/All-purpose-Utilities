@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class ArpPacket | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class ArpPacket | omy.Utils Documentation ">
+      
+      <meta name="description" content="Represents an Address Resolution Protocol (ARP) packet, specialised for the Ethernet / IPv4 binding defined in RFC 826.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Net_Arp_ArpPacket.md&amp;value=---%0Auid%3A%20Utils.Net.Arp.ArpPacket%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Net.Arp.ArpPacket">
+
+
+
+  <h1 id="Utils_Net_Arp_ArpPacket" data-uid="Utils.Net.Arp.ArpPacket" class="text-break">
+Class ArpPacket  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Net/Net/Arp/ArpPacket.cs/#L39"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Net.html">Net</a>.<a class="xref" href="Utils.Net.Arp.html">Arp</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.Net.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Represents an Address Resolution Protocol (ARP) packet, specialised for the
+Ethernet / IPv4 binding defined in <a href="https://www.rfc-editor.org/rfc/rfc826">RFC 826</a>.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class ArpPacket</code></pre>
+  </div>
+
+
+
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><span class="xref">ArpPacket</span></div>
+    </dd>
+  </dl>
+
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+  </dd></dl>
+
+  <dl class="typelist extensionMethods">
+    <dt>Extension Methods</dt>
+    <dd>
+  <div>
+      <a class="xref" href="Utils.Data.DataUtils.html#Utils_Data_DataUtils_ToDbValue_System_Object_">DataUtils.ToDbValue(object?)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Mathematics.MathEx.html#Utils_Mathematics_MathEx_Clamp__1___0___0___0_System_Collections_Generic_IComparer___0__">MathEx.Clamp&lt;T&gt;(T, T, T, IComparer&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Failure__1___0_">FluentExtensions.Failure&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsEqualTo__2___0___1_">FluentExtensions.IsEqualTo&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterOrEqualsThan__2___0___1_">FluentExtensions.IsGreaterOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterThan__2___0___1_">FluentExtensions.IsGreaterThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsIn__1___0___0___">FluentExtensions.IsIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerOrEqualsThan__2___0___1_">FluentExtensions.IsLowerOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerThan__2___0___1_">FluentExtensions.IsLowerThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotIn__1___0___0___">FluentExtensions.IsNotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotNull__1___0_">FluentExtensions.IsNotNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNull__1___0_">FluentExtensions.IsNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Success__1___0_">FluentExtensions.Success&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Test__1___0_System_Func___0_System_Boolean__">FluentExtensions.Test&lt;T&gt;(T, Func&lt;T, bool&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0_System_Threading_Tasks_Task___1___System_Func_System_Threading_Tasks_Task___1___">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Task&lt;Result&gt;&gt;, Func&lt;Task&lt;Result&gt;&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0_System_Threading_Tasks_Task___1_____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Task&lt;Result&gt;&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1____1_">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_In__1___0___0___">ObjectUtils.In&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_NotIn__1___0___0___">ObjectUtils.NotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustNotBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustNotBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Arg__1___0_System_String_">Validations.Arg&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ValueMustNotBeNull__1___0_System_String_">Validations.ValueMustNotBeNull&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Variable__1___0_System_String_">Validations.Variable&lt;T&gt;(T, string)</a>
+  </div>
+  </dd></dl>
+
+
+
+  <h2 id="Utils_Net_Arp_ArpPacket_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>
+This type only supports the classic Ethernet over IPv4 encoding: a hardware type of
+<code>1</code> (Ethernet), a protocol type of <code>0x0800</code> (IPv4), a 6-byte hardware address
+length and a 4-byte protocol address length. These invariants are enforced both when
+serialising (<a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_ToBytes">ToBytes()</a>) and when parsing (<a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_Read_System_ReadOnlySpan_System_Byte__">Read(ReadOnlySpan&lt;byte&gt;)</a>).
+</p>
+<p>
+The hardware/protocol type and length fields are exposed as read-only constants
+(<a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_HardwareType">HardwareType</a>, <a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_ProtocolType">ProtocolType</a>, <a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_HardwareAddressLength">HardwareAddressLength</a>,
+<a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_ProtocolAddressLength">ProtocolAddressLength</a>) because varying them would produce a packet that this
+implementation cannot serialise or parse.
+</p>
+<p>
+An <a class="xref" href="Utils.Net.Arp.ArpPacket.html">ArpPacket</a> is not immediately serialisable after construction. Before
+calling <a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_ToBytes">ToBytes()</a>, the caller must set <a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_Operation">Operation</a>,
+<a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_SenderHardwareAddress">SenderHardwareAddress</a>, <a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_SenderProtocolAddress">SenderProtocolAddress</a>,
+<a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_TargetHardwareAddress">TargetHardwareAddress</a> and <a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_TargetProtocolAddress">TargetProtocolAddress</a> to valid
+Ethernet/IPv4 values. <a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_ToBytes">ToBytes()</a> performs final validation and throws
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a> when any constraint is violated.
+Only <a class="xref" href="Utils.Net.Arp.ArpOperation.html#Utils_Net_Arp_ArpOperation_Request">Request</a> (1) and <a class="xref" href="Utils.Net.Arp.ArpOperation.html#Utils_Net_Arp_ArpOperation_Reply">Reply</a> (2) are
+supported; any other <a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_Operation">Operation</a> value will also cause <a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_ToBytes">ToBytes()</a>
+to throw.
+</p>
+</div>
+
+
+  <h2 class="section" id="fields">Fields
+</h2>
+
+
+
+  <h3 id="Utils_Net_Arp_ArpPacket_EthernetHardwareAddressLength" data-uid="Utils.Net.Arp.ArpPacket.EthernetHardwareAddressLength">
+  EthernetHardwareAddressLength
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Net/Net/Arp/ArpPacket.cs/#L48"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ethernet hardware address length, in bytes.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const byte EthernetHardwareAddressLength = 6</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Net_Arp_ArpPacket_EthernetHardwareType" data-uid="Utils.Net.Arp.ArpPacket.EthernetHardwareType">
+  EthernetHardwareType
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Net/Net/Arp/ArpPacket.cs/#L42"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ethernet hardware type value (RFC 826).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const ushort EthernetHardwareType = 1</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Net_Arp_ArpPacket_EthernetIpv4PacketLength" data-uid="Utils.Net.Arp.ArpPacket.EthernetIpv4PacketLength">
+  EthernetIpv4PacketLength
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Net/Net/Arp/ArpPacket.cs/#L54"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Fixed on-the-wire length of an Ethernet/IPv4 ARP packet, in bytes.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const int EthernetIpv4PacketLength = 28</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Net_Arp_ArpPacket_Ipv4ProtocolAddressLength" data-uid="Utils.Net.Arp.ArpPacket.Ipv4ProtocolAddressLength">
+  Ipv4ProtocolAddressLength
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Net/Net/Arp/ArpPacket.cs/#L51"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>IPv4 protocol address length, in bytes.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const byte Ipv4ProtocolAddressLength = 4</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Net_Arp_ArpPacket_Ipv4ProtocolType" data-uid="Utils.Net.Arp.ArpPacket.Ipv4ProtocolType">
+  Ipv4ProtocolType
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Net/Net/Arp/ArpPacket.cs/#L45"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>IPv4 protocol type value (EtherType 0x0800).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const ushort Ipv4ProtocolType = 2048</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="Utils_Net_Arp_ArpPacket_HardwareAddressLength_" data-uid="Utils.Net.Arp.ArpPacket.HardwareAddressLength*"></a>
+
+  <h3 id="Utils_Net_Arp_ArpPacket_HardwareAddressLength" data-uid="Utils.Net.Arp.ArpPacket.HardwareAddressLength">
+  HardwareAddressLength
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Net/Net/Arp/ArpPacket.cs/#L69"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the hardware address length in bytes. Always <a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_EthernetHardwareAddressLength">EthernetHardwareAddressLength</a> (6).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public byte HardwareAddressLength { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Arp_ArpPacket_HardwareType_" data-uid="Utils.Net.Arp.ArpPacket.HardwareType*"></a>
+
+  <h3 id="Utils_Net_Arp_ArpPacket_HardwareType" data-uid="Utils.Net.Arp.ArpPacket.HardwareType">
+  HardwareType
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Net/Net/Arp/ArpPacket.cs/#L59"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the hardware type. Always <a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_EthernetHardwareType">EthernetHardwareType</a> (Ethernet = 1).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ushort HardwareType { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Arp_ArpPacket_Operation_" data-uid="Utils.Net.Arp.ArpPacket.Operation*"></a>
+
+  <h3 id="Utils_Net_Arp_ArpPacket_Operation" data-uid="Utils.Net.Arp.ArpPacket.Operation">
+  Operation
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Net/Net/Arp/ArpPacket.cs/#L79"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the ARP operation.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ArpOperation Operation { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Net.Arp.ArpOperation.html">ArpOperation</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Arp_ArpPacket_ProtocolAddressLength_" data-uid="Utils.Net.Arp.ArpPacket.ProtocolAddressLength*"></a>
+
+  <h3 id="Utils_Net_Arp_ArpPacket_ProtocolAddressLength" data-uid="Utils.Net.Arp.ArpPacket.ProtocolAddressLength">
+  ProtocolAddressLength
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Net/Net/Arp/ArpPacket.cs/#L74"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the protocol address length in bytes. Always <a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_Ipv4ProtocolAddressLength">Ipv4ProtocolAddressLength</a> (4).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public byte ProtocolAddressLength { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Arp_ArpPacket_ProtocolType_" data-uid="Utils.Net.Arp.ArpPacket.ProtocolType*"></a>
+
+  <h3 id="Utils_Net_Arp_ArpPacket_ProtocolType" data-uid="Utils.Net.Arp.ArpPacket.ProtocolType">
+  ProtocolType
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Net/Net/Arp/ArpPacket.cs/#L64"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the protocol type. Always <a class="xref" href="Utils.Net.Arp.ArpPacket.html#Utils_Net_Arp_ArpPacket_Ipv4ProtocolType">Ipv4ProtocolType</a> (IPv4 = 0x0800).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ushort ProtocolType { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Arp_ArpPacket_SenderHardwareAddress_" data-uid="Utils.Net.Arp.ArpPacket.SenderHardwareAddress*"></a>
+
+  <h3 id="Utils_Net_Arp_ArpPacket_SenderHardwareAddress" data-uid="Utils.Net.Arp.ArpPacket.SenderHardwareAddress">
+  SenderHardwareAddress
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Net/Net/Arp/ArpPacket.cs/#L84"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the sender hardware (MAC) address. Must be exactly 6 bytes when serialising.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public PhysicalAddress SenderHardwareAddress { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.networkinformation.physicaladdress">PhysicalAddress</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Arp_ArpPacket_SenderProtocolAddress_" data-uid="Utils.Net.Arp.ArpPacket.SenderProtocolAddress*"></a>
+
+  <h3 id="Utils_Net_Arp_ArpPacket_SenderProtocolAddress" data-uid="Utils.Net.Arp.ArpPacket.SenderProtocolAddress">
+  SenderProtocolAddress
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Net/Net/Arp/ArpPacket.cs/#L89"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the sender protocol (IPv4) address. Must be an IPv4 address when serialising.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IPAddress SenderProtocolAddress { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.ipaddress">IPAddress</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Arp_ArpPacket_TargetHardwareAddress_" data-uid="Utils.Net.Arp.ArpPacket.TargetHardwareAddress*"></a>
+
+  <h3 id="Utils_Net_Arp_ArpPacket_TargetHardwareAddress" data-uid="Utils.Net.Arp.ArpPacket.TargetHardwareAddress">
+  TargetHardwareAddress
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Net/Net/Arp/ArpPacket.cs/#L94"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the target hardware (MAC) address. Must be exactly 6 bytes when serialising.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public PhysicalAddress TargetHardwareAddress { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.networkinformation.physicaladdress">PhysicalAddress</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Arp_ArpPacket_TargetProtocolAddress_" data-uid="Utils.Net.Arp.ArpPacket.TargetProtocolAddress*"></a>
+
+  <h3 id="Utils_Net_Arp_ArpPacket_TargetProtocolAddress" data-uid="Utils.Net.Arp.ArpPacket.TargetProtocolAddress">
+  TargetProtocolAddress
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Net/Net/Arp/ArpPacket.cs/#L99"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the target protocol (IPv4) address. Must be an IPv4 address when serialising.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IPAddress TargetProtocolAddress { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.ipaddress">IPAddress</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_Net_Arp_ArpPacket_Read_" data-uid="Utils.Net.Arp.ArpPacket.Read*"></a>
+
+  <h3 id="Utils_Net_Arp_ArpPacket_Read_System_ReadOnlySpan_System_Byte__" data-uid="Utils.Net.Arp.ArpPacket.Read(System.ReadOnlySpan{System.Byte})">
+  Read(ReadOnlySpan&lt;byte&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Net/Net/Arp/ArpPacket.cs/#L190"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Reads an Ethernet/IPv4 ARP packet from raw bytes.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ArpPacket Read(ReadOnlySpan&lt;byte&gt; data)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>data</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.readonlyspan-1">ReadOnlySpan</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>&gt;</dt>
+    <dd><p>The raw packet bytes. May contain trailing padding after the packet.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Net.Arp.ArpPacket.html">ArpPacket</a></dt>
+    <dd><p>The parsed <a class="xref" href="Utils.Net.Arp.ArpPacket.html">ArpPacket</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section" id="Utils_Net_Arp_ArpPacket_Read_System_ReadOnlySpan_System_Byte___remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>
+Parsing proceeds in two steps. First the 8-byte fixed header (HTYPE, PTYPE, HLEN, PLEN,
+OPER) is read and the declared body length is computed as
+<code>8 + 2*HLEN + 2*PLEN</code>. The buffer must be at least that long. Only then are the
+Ethernet/IPv4 invariants checked (HTYPE == 1, PTYPE == 0x0800, HLEN == 6, PLEN == 4).
+</p>
+<p>
+Trailing bytes beyond the declared packet length are ignored. This is intentional:
+Ethernet frames pad payloads shorter than 46 bytes, so a 28-byte ARP packet routinely
+arrives with 18 padding bytes appended. The padding is not part of the ARP packet and is
+discarded.
+</p>
+</div>
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.invaliddataexception">InvalidDataException</a></dt>
+    <dd><p>Thrown when the header is shorter than 8 bytes, when the declared body length exceeds the
+buffer, or when the hardware/protocol type or length fields are not the supported
+Ethernet/IPv4 combination.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Net_Arp_ArpPacket_ToBytes_" data-uid="Utils.Net.Arp.ArpPacket.ToBytes*"></a>
+
+  <h3 id="Utils_Net_Arp_ArpPacket_ToBytes" data-uid="Utils.Net.Arp.ArpPacket.ToBytes">
+  ToBytes()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Net/Net/Arp/ArpPacket.cs/#L110"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Serialises the ARP packet into its 28-byte Ethernet/IPv4 wire representation.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public byte[] ToBytes()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd><p>A 28-byte array containing the serialised packet.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
+    <dd><p>Thrown when the packet cannot be represented as a valid Ethernet/IPv4 ARP packet: the
+hardware or protocol addresses have the wrong length or family (IPv6, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.networkinformation.physicaladdress.none">None</a>,
+a MAC that is not exactly 6 bytes, or a protocol address that is not IPv4).</p>
+</dd>
+  </dl>
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Net/Net/Arp/ArpPacket.cs/#L39" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

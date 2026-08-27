@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Utils.Parser Documentation Index | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Utils.Parser Documentation Index | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../../favicon.ico">
+      <link rel="stylesheet" href="../../public/docfx.min.css">
+      <link rel="stylesheet" href="../../public/main.css">
+      <meta name="docfx:navrel" content="../../toc.html">
+      <meta name="docfx:tocrel" content="../../toc.html">
+      
+      <meta name="docfx:rel" content="../../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/INDEX.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../../index.html">
+            <img id="logo" class="svg" src="../../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="utilsparser-documentation-index">Utils.Parser Documentation Index</h1>
+
+<p>This index consolidates the parser documentation set and gives a short summary of each file.</p>
+<h2 id="core-contracts-and-boundaries">Core contracts and boundaries</h2>
+<ul>
+<li><a href="ProductionSupportContract.html"><code>ProductionSupportContract.md</code></a>: Normative <code>2.0.0-rc.1</code> product-support contract and first entry point for deciding what is guaranteed, including the explicit non-thread-safe generated static facade boundary; unlike the technical compatibility matrices, it defines the RC commitment rather than only describing implementation state.</li>
+<li><a href="RuntimeStateOwnership.html"><code>RuntimeStateOwnership.md</code></a>: Canonical authority map for runtime responsibilities (parse decisions, diagnostics, parse-tree ownership, scheduler/registry boundaries).</li>
+<li><a href="ParserMetadataAndRuntimeLimitations.html"><code>ParserMetadataAndRuntimeLimitations.md</code></a>: Limitations-first reference that clarifies metadata-only semantics, unsupported runtime semantics, and activation preconditions.</li>
+<li><a href="RuntimeObservationAndExportContract.html"><code>RuntimeObservationAndExportContract.md</code></a>: Defines what runtime observations are allowed to emit and how exporters must remain passive and non-authoritative.</li>
+<li><a href="DiagnosticsObservationCorrelation.html"><code>DiagnosticsObservationCorrelation.md</code></a>: Conservative rules for linking diagnostics to runtime observations without changing runtime authority.</li>
+</ul>
+<h2 id="metadata-and-preparation-documents">Metadata and preparation documents</h2>
+<ul>
+<li><a href="ContinuationMetadata.html"><code>ContinuationMetadata.md</code></a>: Describes continuation metadata lifecycle and explicitly states that metadata does not grant execution/resume authority.</li>
+<li><a href="SharedLookAheadPreparation.html"><code>SharedLookAheadPreparation.md</code></a>: Documents shared-prefix/look-ahead preparation as deterministic advisory metadata only.</li>
+<li><a href="RuntimeArchitecture.html"><code>RuntimeArchitecture.md</code></a>: Canonical pipeline and ownership map from preparation through analysis, including metadata authority boundaries.</li>
+</ul>
+<h2 id="compatibility-and-analysis">Compatibility and analysis</h2>
+<ul>
+<li><a href="EmbeddedCodeExecutionModel.html"><code>EmbeddedCodeExecutionModel.md</code></a>: Architecture boundary for ANTLR embedded code, including runtime-inline and generated-C# opt-in paths, typed <code>RawEmbeddedCode</code>/<code>TransformedEmbeddedCode</code> handoff through <code>ParserEmbeddedCodeTransformationService</code>, parser snapshot semantics, and the distinct lexer model: mutation-free supported predicates during exploration, actions only after acceptance, acceptance-local <code>LexerActionExecutionResult</code> staging, authoritative commands, lexer-owned operational state split by lifetime, and non-transactional external effects.</li>
+<li><a href="EmbeddedCodeTransactionalState.html"><code>EmbeddedCodeTransactionalState.md</code></a>: Transactional-state audit covering parser-managed backtracking snapshots and state-aware memoization, plus the lexer acceptance boundary, bounded action-result mutation ordering, lexer-owned operational state lifetimes, the prohibition on reusing parser state management, and external-side-effect limits.</li>
+<li><a href="PackagingAudit.html"><code>PackagingAudit.md</code></a>: Audits the package graph, generator layout, runtime resources, frameworks, and current publication-workflow risks.</li>
+<li><a href="ANTLRCompatibility.html"><code>ANTLRCompatibility.md</code></a>: Canonical ANTLR compatibility reference, including conservative defaults, explicit labeled parser-rule return/result helper semantics, embedded-code preservation by default, typed raw/transformed transformer handoff, optional target-language transformers for <code>$...</code> convenience syntax, parser local/return writes, embedded-code opt-in paths, deterministic named-action diagnostics, literal call policies, generated-C# lexer inline action reads for <code>$text</code>/<code>$type</code>/<code>$channel</code>/<code>$mode</code>/<code>$line</code>/<code>$pos</code>, simple <code>$type</code>/<code>$channel</code>/<code>$mode</code> write support via <code>LexerActionExecutionResult</code>, command precedence, passive read-context behavior, edge-case coverage, a non-normative compatibility level estimate, and non-goals.</li>
+<li><a href="RuleArgumentsAndReturnsPlan.html"><code>RuleArgumentsAndReturnsPlan.md</code></a>: Durable state/design reference for ANTLR-style rule arguments, parameters, returns, labels, explicit literal policy subset completion, generation-flagged generated-C# exact positional simple-literal binding surfaces, explicit labeled child-return helpers, rollback boundaries, and progressive generated-C# opt-in integration.</li>
+<li><a href="Antlr4CompatibilityMatrix.html"><code>Antlr4CompatibilityMatrix.md</code></a>: Feature matrix for default, runtime-inline, and generated-C# behavior, including embedded-code preservation by default, typed raw/transformed embedded-code transformation before runtime compilation or generated emission, optional ANTLR-style attribute rewriting, parser local/current-rule return writes with generated-C# capture/rollback/memoization boundaries, explicit labeled result and return helpers, narrow supported <code>$c.value</code>/<code>$xs.value</code> generated-C# return sugar plus unsupported broader child/labeled return convenience access, named-action boundaries, unsupported diagnostics, literal call binding, generation-flagged generated-C# automatic positional binding surface distinctions, invocation-frame metadata, state-aware memoization constraints, generated-C# lexer action read/write rows, unsupported lexer predicate attributes, runtime-inline lexer execution, a non-normative compatibility level estimate, and full ANTLR lexer semantics.</li>
+<li><a href="LexerInlineActionsAndPredicatesAudit.html"><code>LexerInlineActionsAndPredicatesAudit.md</code></a>: Audits current minimal opt-in lexer inline action and predicate support, including predicate path rejection without managed mutation, post-acceptance action execution, acceptance-local last-write-wins results, command precedence, lexer-owned operational state lifetimes, <code>@lexer::members</code>, and explicit external-effect rollback exclusions.</li>
+<li><a href="RuntimeTraceAnalysis.html"><code>RuntimeTraceAnalysis.md</code></a>: Tooling-oriented analysis model for runtime traces, focused on descriptive outputs rather than runtime control.</li>
+</ul>
+<h2 id="maintenance-rule-for-contributors-and-agents">Maintenance rule for contributors and agents</h2>
+<p>When adding, removing, or materially changing any file in <code>docs/parser/</code>, update this index in the same change so summaries stay accurate.</p>
+<h2 id="recent-metadata-note">Recent metadata note</h2>
+<p><code>ANTLRCompatibility.md</code> is the primary compatibility source for embedded code. <code>EmbeddedCodeExecutionModel.md</code> and <code>EmbeddedCodeTransactionalState.md</code> complement it with architecture and flow details, including the <code>IParserEmbeddedCodeTransformer</code> boundary, typed raw/transformed handoff through <code>ParserEmbeddedCodeTransformationService</code>, no-op default preservation, shared runtime indexing metadata, explicit unsupported reasons, fresh generated execution contexts for <code>ParseWithEmbeddedCode(string)</code>, explicit context-bound generated policies, the preparatory <code>ParserExecutionContextCopier&lt;TContext&gt;</code> helper, generated <code>Fork()</code> / <code>CopyFrom(...)</code> context helpers, state-aware completed-result memoization via <code>IParserExecutionStateManager.GetCurrentStateKey()</code> plus post-rule snapshot restoration, managed execution-state capture/restore for parser backtracking attempt boundaries, required-property compatibility guidance, passive parser rule invocation-frame descriptor infrastructure with preserved raw rule locals and exception metadata, explicit before/after rule-call policy callbacks with current-call-site metadata, generated C# opt-in <code>@init</code> / <code>@after</code> lifecycle support with missing-only untyped <code>null</code> allocation and explicit rule-local frame helper methods, generated C# parser <code>@header</code> / <code>@parser::header</code> source-file injection diagnostics (<code>UP1035</code>), generated C# parser <code>@parser::members</code> execution-context injection, generated C# parser <code>@footer</code> / <code>@parser::footer</code> trailing source injection diagnostics (<code>UP1036</code>), deterministic unsupported custom lexer/unknown named-action diagnostics including parser named actions and unscoped parser-compatible actions in lexer grammars, the top-level parse-rejection rollback boundary, <code>UP1030</code> predicate-options compatibility diagnostic, <code>UP1033</code>/<code>UP1034</code> rule options metadata diagnostics, <code>UP1031</code> parser-members injection diagnostics, and <code>UP1029</code> generator diagnostics for visible unsupported constructs used to keep runtime-inline preparation and source-generated hooks aligned with limited generated-C# opt-in lexer action and predicate execution, plus optional generated-C# lexer action <code>$text</code>/<code>$type</code>/<code>$channel</code>/<code>$mode</code>/<code>$line</code>/<code>$pos</code> read rewriting, tested <code>$text</code> context text behavior for fragments, lexer rule references, commands, and <code>more</code>, tested <code>$type</code>/<code>$channel</code>/<code>$mode</code> passive metadata reads before lexer commands and across modes/fragments/rule references, <code>$line</code>/<code>$pos</code> accepted token/chunk start reads, simple <code>$type</code>/<code>$channel</code>/<code>$mode</code> writes through <code>LexerActionExecutionResult</code>, write-before-command ordering with command precedence, passive read-context behavior after writes, edge-case stabilization for last-write-wins, fragments, lexer rule refs, quantifiers, rejected alternatives, <code>more</code>, command override, and deterministic diagnostics for unsupported lexer <code>$...</code> forms.</p>
+<h2 id="generated-c-positional-rule-arguments">Generated-C# positional rule arguments</h2>
+<p>The parser documentation pages listed here now distinguish conservative <code>Parse(...)</code>, explicit runtime literal policies, and generated-C# exact-arity explicit simple positional argument binding for rule calls exposed by the project-wide <code>UtilsParserEnableGeneratedRuleArgumentBinding</code> opt-in, including zero-parameter callees, explicit empty argument lists, and the distinction from explicit runtime typed defaults. See <code>RuleArgumentsAndReturnsPlan.md</code>, <code>ANTLRCompatibility.md</code>, <code>Antlr4CompatibilityMatrix.md</code>, <code>EmbeddedCodeExecutionModel.md</code>, and <code>EmbeddedCodeTransactionalState.md</code> for the current support boundaries.</p>
+<h2 id="generated-c-returns-and-labels-boundary">Generated-C# returns and labels boundary</h2>
+<p>The parser documentation now locks the generated-C# rule returns and labeled rule-call boundary to the existing parser named-action and embedded-code transformer strategy: named-action classification stays centralized in <code>EmbeddedMembersSupport</code>, parser headers/members/footers use the documented generated-source injection locations, rule-return and label metadata is not automatic ANTLR context support, conservative <code>Parse(...)</code> remains unchanged, and the implemented <code>$returnName</code> current-rule return convenience stays behind <code>IParserEmbeddedCodeTransformer</code>, while assignment-label <code>$c.value</code> and list-label <code>$xs.value</code> now rewrite to explicit helpers in supported generated-C# parser actions/<code>@after</code>; <code>$child.value</code>, <code>$rule.value</code>, <code>$ctx</code>, <code>$c.ctx</code>, <code>$xs.ctx</code>, bare labels, token attributes, typed contexts, public ANTLR-style parser methods, and general ANTLR attribute compatibility remain unsupported.</p>
+<h2 id="generated-binding-diagnostics-update">Generated binding diagnostics update</h2>
+<p>The parser documentation now records that generated-C# positional rule-call argument binding emits <code>APU0107</code> only when <code>UtilsParserEnableGeneratedRuleArgumentBinding=true</code> and the target parser rule is uniquely resolved in the effective local or imported composition. Graph failures, rule collisions, lexer-only targets, and unresolved calls remain outside binding conclusions. See <code>ANTLRCompatibility.md</code>, <code>Antlr4CompatibilityMatrix.md</code>, and <code>RuleArgumentsAndReturnsPlan.md</code> for generation behavior and the bounded incremental model where per-file parsing is reusable but the collected project validation/emission stage may rerun globally.</p>
+<h2 id="shared-grammar-import-composition-update">Shared grammar import composition update</h2>
+<p><code>ANTLRCompatibility.md</code> and <code>Antlr4CompatibilityMatrix.md</code> now define the common runtime/generator planning semantics: ordinal structural identities, source-order traversal, declared versus effective full-import/<code>tokenVocab</code> edge kinds after visibility propagation, visibility-specific rule provenance paths, local masking, imported collisions with deterministic source-order precedence, diamond deduplication, cycles, missing/ambiguous dependencies, alias limits, entry-owned options/actions/root, descriptive <code>ParserDefinition.Imports</code>, effective generator emission, and certainty-gated local/imported <code>APU0107</code>.</p>
+<h2 id="packaged-release-candidate-note">Packaged release-candidate note</h2>
+<p><code>ProductionSupportContract.md</code> now also records the manifest-driven <code>omy.Utils</code>/<code>omy.Utils.Parser.*</code> package graph, isolated-feed acceptance boundary, analyzer support-assembly strategy, and the distribution properties that remain unclaimed.</p>
+<p>The packaging audit additionally records package-only runtime/generator import scenarios, graph-changing incremental builds, deterministic graph diagnostics, and the precise boundary between portable-symbol checks and unvalidated SourceLink mappings.</p>
+<h2 id="synchronized-product-train-release-gate">Synchronized product-train release gate</h2>
+<p><code>PackagingAudit.md</code> now records the single <code>omy</code> 2.0.0-rc.1 version authority, strict topological order, the published <code>omy.Utils</code> 1.2.1 API comparison boundary, and first candidate baselines for parser packages.</p>
+<h2 id="global-product-train-integration">Global product-train integration</h2>
+<p><code>PackagingAudit.md</code> now describes how the retained parser-specific packaged scenarios are nested within the repository-wide 24-package discovery, graph, generic-consumer, integrity, and dry-run publication chain. <code>ProductionSupportContract.md</code> clarifies that these distribution gates do not expand parser behavioral guarantees.</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/INDEX.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

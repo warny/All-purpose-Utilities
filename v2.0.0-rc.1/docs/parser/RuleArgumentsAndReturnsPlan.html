@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>ANTLR rule arguments and returns integration plan | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="ANTLR rule arguments and returns integration plan | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../../favicon.ico">
+      <link rel="stylesheet" href="../../public/docfx.min.css">
+      <link rel="stylesheet" href="../../public/main.css">
+      <meta name="docfx:navrel" content="../../toc.html">
+      <meta name="docfx:tocrel" content="../../toc.html">
+      
+      <meta name="docfx:rel" content="../../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/RuleArgumentsAndReturnsPlan.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../../index.html">
+            <img id="logo" class="svg" src="../../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="antlr-rule-arguments-and-returns-integration-plan">ANTLR rule arguments and returns integration plan</h1>
+
+<h2 id="purpose">Purpose</h2>
+<p>This document records the design boundary for ANTLR-style rule arguments, rule parameters, rule returns, labels, rollback, and generated-C# opt-in integration in <code>Utils.Parser</code>.</p>
+<p>This document is now a durable state and design reference. The explicit literal-binding runtime policy subset is implemented, while <code>Parse(...)</code> remains conservative, <code>ParserEngine</code> remains target-language neutral, and automatic arbitrary <code>callee[expr]</code> evaluation plus ANTLR-compatible generated parser signatures remain out of scope.</p>
+<p>The plan separates four surfaces that are easy to confuse:</p>
+<ul>
+<li>runtime standard behavior: conservative <code>Parse(...)</code> and the default runtime policy;</li>
+<li>runtime opt-in behavior: explicit <code>IParserRuleCallExecutionPolicy</code> implementations installed by callers;</li>
+<li>generated-C# opt-in behavior: generated helper APIs and optional embedded-code hooks used by <code>ParseWithEmbeddedCode(...)</code> / generated policies;</li>
+<li>metadata-only behavior: parsed grammar facts that are observable but non-authoritative.</li>
+</ul>
+<h2 id="current-support-summary">Current support summary</h2>
+<p>The project already has several building blocks for future rule argument and return integration:</p>
+<ul>
+<li>rule parameters such as <code>rule[int x]</code> are parsed and preserved as metadata;</li>
+<li>rule-call argument clauses such as <code>callee[...]</code> are recognized and preserved as raw text;</li>
+<li><code>RuleRef.RawArguments</code> stores call-site argument text without the outer brackets;</li>
+<li><code>ParserRuleCallExecutionContext.RawArguments</code> exposes the raw text to explicit rule-call policies;</li>
+<li><code>ParserRuleCallExecutionContext.PositionalRawArguments</code> exposes syntactic top-level positional slices;</li>
+<li><code>ParserRuleCallExecutionContext.NamedRawArguments</code> exposes syntactic top-level named slices when the whole call-site matches a supported named form;</li>
+<li><code>ParserRuleCallResult.RawArguments</code> carries raw argument metadata on completed child call results;</li>
+<li><code>ParserRuleInvocationFrame.Parameters</code>, <code>ParserRuleInvocationFrame.Locals</code>, and <code>ParserRuleInvocationFrame.Returns</code> provide untyped parser-managed frame stores;</li>
+<li><code>ParserRuleInvocationDescriptor.Parameters</code>, <code>ParserRuleInvocationDescriptor.Returns</code>, and <code>ParserRuleInvocationDescriptor.Locals</code> expose passive declaration descriptors;</li>
+<li><code>ParserRuleCallResult.Returns</code> snapshots completed child return values;</li>
+<li><code>ParserLabeledRuleCallResultStore</code> retains assignment/list labeled child call results;</li>
+<li>generated helpers include <code>SetNextRuleParameter(...)</code> and <code>ClearNextRuleParameters(...)</code>;</li>
+<li>generated helpers include <code>SetNextRuleParameterFromRawArguments(...)</code>;</li>
+<li>generated helpers include <code>SetNextRuleParametersFromRawArguments(...)</code>;</li>
+<li>generated helpers include <code>SetNextRuleParametersFromNamedRawArguments(...)</code>;</li>
+<li>generated helpers include current-rule return helper APIs;</li>
+<li>generated helpers include labeled-rule-call result and return helper APIs.</li>
+</ul>
+<p>These pieces do <strong>not</strong> mean full ANTLR compatibility. They are explicit, conservative primitives for metadata visibility, managed state, and opt-in helper use.</p>
+<h2 id="runtime-standard-behavior">Runtime standard behavior</h2>
+<p>The default runtime remains conservative:</p>
+<ul>
+<li><code>Parse(...)</code> does not execute generated embedded-code hooks or generated helper logic;</li>
+<li>the default rule-call policy is no-op and does not bind arguments;</li>
+<li>raw arguments are preserved and split syntactically only;</li>
+<li>raw arguments are not evaluated as C#, ANTLR target code, constants, expressions, return reads, label reads, or parameter references;</li>
+<li>declared parameters are not automatically populated by <code>callee[expr]</code>;</li>
+<li>declared returns do not create typed ANTLR variables or typed generated members;</li>
+<li>labels store managed <code>ParserRuleCallResult</code> snapshots, not ANTLR parser contexts;</li>
+<li><code>ParserEngine</code> remains language-neutral and does not contain target-language C# expression evaluation.</li>
+</ul>
+<h2 id="runtime-opt-in-behavior">Runtime opt-in behavior</h2>
+<p>Runtime opt-in is available only through explicit caller-installed policies. Existing policies include:</p>
+<ul>
+<li><code>PositionalLiteralRuleCallExecutionPolicy</code>;</li>
+<li><code>NamedLiteralRuleCallExecutionPolicy</code>;</li>
+<li><code>TypedPositionalLiteralRuleCallExecutionPolicy</code>;</li>
+<li><code>TypedNamedLiteralRuleCallExecutionPolicy</code>.</li>
+</ul>
+<p>Their intended boundary is narrow:</p>
+<ul>
+<li>opt-in only; none of these policies are installed by the default policy;</li>
+<li>simple literals only;</li>
+<li>typed conversion is allowlisted only for typed policies;</li>
+<li>no arbitrary C# evaluation;</li>
+<li>no Roslyn expression evaluation;</li>
+<li>no ANTLR generated method signature changes;</li>
+<li>no automatic binding by default;</li>
+<li>failure behavior is configurable by policy options where exposed;</li>
+<li>any accepted values must be written through the managed pending-seed mechanism rather than through external side effects.</li>
+</ul>
+<p>These policies are useful compatibility adapters, not a full ANTLR argument model.</p>
+<h2 id="literal-policy-subset-status">Literal policy subset status</h2>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Status</th>
+<th>Boundary</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Untyped positional literals</td>
+<td>Realized</td>
+<td>Exact arity by declaration order; declared types and defaults are ignored.</td>
+</tr>
+<tr>
+<td>Untyped named literals</td>
+<td>Realized</td>
+<td>Exact ordinal declared-name coverage; argument order is irrelevant; defaults are ignored.</td>
+</tr>
+<tr>
+<td>Typed positional literals</td>
+<td>Realized</td>
+<td>Allowlisted conversion with trailing omission satisfied only by supported simple defaults.</td>
+</tr>
+<tr>
+<td>Typed named literals</td>
+<td>Realized</td>
+<td>Allowlisted conversion with omitted names satisfied only by supported simple defaults.</td>
+</tr>
+<tr>
+<td>Default runtime behavior</td>
+<td>Explicitly limited</td>
+<td>No binding unless a caller installs a policy.</td>
+</tr>
+<tr>
+<td>Runtime batching</td>
+<td>Realized</td>
+<td>One atomic managed seed batch after complete validation.</td>
+</tr>
+<tr>
+<td>Rollback and memoization</td>
+<td>Realized</td>
+<td>Managed seeds participate in rollback and effective bound values participate in generated state keys.</td>
+</tr>
+<tr>
+<td>Generated-C# opt-in</td>
+<td>Explicitly limited</td>
+<td>Generated helper/policy paths may opt in; conservative generated <code>Parse(...)</code> remains unchanged.</td>
+</tr>
+<tr>
+<td>Arbitrary ANTLR/C# semantics</td>
+<td>Future separately justified</td>
+<td>No expression evaluation, references to parameters/locals/labels/returns, user types, generated typed signatures, automatic returns, or full ANTLR compatibility.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="generated-c-opt-in-behavior">Generated-C# opt-in behavior</h2>
+<p>Generated C# already exposes helper APIs that let embedded code seed parameters manually and inspect call-site metadata. Relevant helpers include:</p>
+<ul>
+<li><code>SetNextRuleParameter</code>;</li>
+<li><code>ClearNextRuleParameters</code>;</li>
+<li><code>SetNextRuleParameterFromRawArguments</code>;</li>
+<li><code>SetNextRuleParametersFromRawArguments</code>;</li>
+<li><code>SetNextRuleParametersFromNamedRawArguments</code>;</li>
+<li><code>SplitRawArgumentsTopLevel</code>;</li>
+<li><code>SplitNamedRawArgumentsTopLevel</code>;</li>
+<li><code>TrySplitLastRuleCallRawArguments</code>;</li>
+<li><code>TrySplitLastRuleCallNamedRawArguments</code>.</li>
+</ul>
+<p>These helpers support explicit user-controlled flows such as reading the previous child call's raw arguments, mapping them with caller-provided delegates, and seeding a future child invocation.</p>
+<p>They are <strong>not</strong>:</p>
+<ul>
+<li>automatic <code>callee[expr]</code> evaluation;</li>
+<li>automatic parameter binding;</li>
+<li>generated method signatures such as <code>rule(int x)</code>;</li>
+<li>an ANTLR-compatible public parser API;</li>
+<li>a full ANTLR attribute model;</li>
+<li>permission to move <code>$...</code> rewriting into parser core.</li>
+</ul>
+<p>ANTLR-style <code>$...</code> conveniences remain behind the optional C# <code>IParserEmbeddedCodeTransformer</code> path. The no-op/default transformer preserves <code>$...</code> text unchanged, and future target-language conveniences must remain transformer-owned.</p>
+<h2 id="metadata-only-behavior">Metadata-only behavior</h2>
+<p>The following grammar/model facts are observable but do not grant execution authority:</p>
+<ul>
+<li><code>RawParameters</code>;</li>
+<li><code>RawReturnType</code>;</li>
+<li><code>RawLocals</code>;</li>
+<li><code>ParserRuleParameterDescriptor</code>;</li>
+<li><code>ParserRuleReturnDescriptor</code>;</li>
+<li><code>ParserRuleLocalDescriptor</code>;</li>
+<li><code>RawArguments</code>;</li>
+<li><code>LabelName</code>;</li>
+<li><code>LabelKind</code>.</li>
+</ul>
+<p>Metadata can inform diagnostics, generated helper shape, documentation, tests, and future opt-in paths. It must not be interpreted as permission for implicit execution in conservative parsing.</p>
+<h2 id="unsupported--non-goals">Unsupported / non-goals</h2>
+<p>This plan does not implement or promise:</p>
+<ul>
+<li>full ANTLR compatibility;</li>
+<li>ANTLR generated parser API parity;</li>
+<li>automatic arbitrary target-language expression evaluation;</li>
+<li>automatic public rule signatures;</li>
+<li>automatic <code>callee[expr]</code> evaluation;</li>
+<li>automatic parameter binding;</li>
+<li>generated parser signatures compatible with ANTLR;</li>
+<li>full ANTLR attribute model;</li>
+<li>general action buffering / replay;</li>
+<li>rollback of external side effects;</li>
+<li>runtime-inline lexer execution;</li>
+<li>separate runtime lexer;</li>
+<li>target-language C# logic in <code>ParserEngine</code>;</li>
+<li>implicit execution in <code>Parse(...)</code>.</li>
+</ul>
+<h2 id="rule-parameters">Rule parameters</h2>
+<p>Rule parameter declarations are parsed as passive metadata. Descriptor extraction is lexical and conservative: names are extracted for helper/descriptive purposes, while raw declarations remain available for diagnostics and generated helper context.</p>
+<p>Current behavior:</p>
+<ul>
+<li>declaration metadata can be observed through descriptors;</li>
+<li>generated C# helper code can read frame parameter values when a caller or helper has explicitly seeded them;</li>
+<li>pending seeds are managed parser state when the stack frame manager and generated execution state manager are active.</li>
+</ul>
+<p>Boundaries:</p>
+<ul>
+<li>parameters are not automatically populated from <code>callee[...]</code>;</li>
+<li>parameter declaration types are not automatically compiled into public parser signatures;</li>
+<li>typed policy conversions are limited opt-in adapters, not general C# type checking;</li>
+<li><code>$param</code> conveniences are optional generated-C# transformer behavior only and do not apply to conservative <code>Parse(...)</code>.</li>
+</ul>
+<h2 id="rule-call-arguments">Rule-call arguments</h2>
+<p>Rule-call arguments are call-site metadata first. The raw text in <code>callee[...]</code> is preserved, can be syntactically split, and can be carried into completed child call results.</p>
+<p>Current behavior:</p>
+<ul>
+<li>raw argument text is preserved without outer brackets;</li>
+<li>positional splitting is top-level syntactic splitting only;</li>
+<li>named splitting supports the documented named separators and last-wins duplicate raw names;</li>
+<li>generated helper APIs can map raw slices with caller-provided delegates;</li>
+<li>explicit rule-call policies can seed simple literal values.</li>
+</ul>
+<p>Boundaries:</p>
+<ul>
+<li>no automatic expression evaluation;</li>
+<li>no automatic caller-context evaluation before child entry;</li>
+<li>no automatic binding to child parameters;</li>
+<li>no general support for arguments that read labels, returns, locals, parameters, or arbitrary target code.</li>
+</ul>
+<h2 id="rule-returns">Rule returns</h2>
+<p>Rule returns are represented as metadata and parser-managed untyped frame state.</p>
+<p>Current behavior:</p>
+<ul>
+<li>return declarations are preserved as raw metadata and descriptor entries;</li>
+<li>generated C# helper APIs can explicitly read/write the active frame's return store;</li>
+<li>successful child rule calls can snapshot return values into <code>ParserRuleCallResult.Returns</code>;</li>
+<li>labeled child result helpers can read captured return values from assignment/list labels;</li>
+<li>present-null return values and missing return keys remain distinct.</li>
+</ul>
+<p>Boundaries:</p>
+<ul>
+<li>returns are not auto-allocated as typed ANTLR variables;</li>
+<li>returns are not public generated method return values;</li>
+<li>parent rules do not receive automatic return assignments;</li>
+<li>dotted writes such as <code>$rule.value = ...</code> remain unsupported;</li>
+<li>any <code>$...</code> return convenience remains optional generated-C# transformer behavior.</li>
+</ul>
+<h2 id="labels-and-child-call-results">Labels and child call results</h2>
+<p>Rule-reference labels are preserved as metadata and can bind successful child call results into managed stores.</p>
+<p>Current behavior:</p>
+<ul>
+<li>assignment labels retain the last successful <code>ParserRuleCallResult</code>;</li>
+<li>list labels append successful results in order;</li>
+<li>result snapshots include returns, raw arguments, and label metadata;</li>
+<li>memoized child calls can be annotated with the current call-site label before label binding;</li>
+<li>generated C# helper APIs can inspect labeled result and return collections.</li>
+</ul>
+<p>Boundaries:</p>
+<ul>
+<li>labels are not ANTLR parser contexts;</li>
+<li>no bare <code>$x</code> / <code>$xs</code> variables are created by parser core;</li>
+<li>no typed label fields/properties are generated;</li>
+<li>no automatic return binding occurs merely because a label exists;</li>
+<li>lexer labels and lexer returns remain out of scope.</li>
+</ul>
+<h2 id="rollback-and-memoization">Rollback and memoization</h2>
+<p>Rollback support is limited to parser-managed state:</p>
+<ul>
+<li>pending child parameter seeds are rollback-safe when the managed execution-state mechanism is active;</li>
+<li>current-rule returns can be snapshotted and restored through managed execution-state capture/restore;</li>
+<li>completed child call results include returns, raw arguments, and labels;</li>
+<li>labeled results are stored as immutable snapshots;</li>
+<li>memoization keys can include deterministic parser-managed state;</li>
+<li>return objects that are not deterministically hashable must remain conservative for memoization, typically forcing volatile/non-reusable state rather than unsafe reuse;</li>
+<li>external side effects are not rolled back.</li>
+</ul>
+<p>This is not general ANTLR transactional execution. There is no action buffering/replay layer and no external side-effect rollback.</p>
+<h2 id="evaluation-order-target-model">Evaluation order target model</h2>
+<p>A future functional PR may add a generated-C# opt-in path for <code>callee[expr]</code>. The target model is:</p>
+<ol>
+<li>parse the call site exactly as today;</li>
+<li>before entering <code>callee</code>, evaluate argument expressions in the caller context;</li>
+<li>prepare a complete batch of parameter seeds;</li>
+<li>validate arity, names, and unsupported cases before writing seeds;</li>
+<li>write seeds atomically;</li>
+<li>enter <code>callee</code>;</li>
+<li>expose parameters through the callee frame;</li>
+<li>capture returns after success and <code>@after</code>;</li>
+<li>annotate the child call result with raw arguments and the call-site label;</li>
+<li>bind the result into assignment/list labels when applicable.</li>
+</ol>
+<p>This model is for a future generated-C# opt-in implementation only. It is not the default runtime behavior and is not a <code>Parse(...)</code> feature.</p>
+<h2 id="implementation-status-groups">Implementation status groups</h2>
+<h3 id="completed-milestones">Completed milestones</h3>
+<ul>
+<li>Documentation and compatibility boundaries are established in this document, the compatibility reference, the compatibility matrix, the roadmap, and the generator README.</li>
+<li>Runtime metadata preservation for rule parameters, returns, locals, labels, and raw call arguments is implemented.</li>
+<li>Explicit runtime literal policies cover untyped positional, untyped named, typed positional, and typed named binding.</li>
+<li>Generated-C# simple positional literal binding is implemented only for its documented opt-in path; it keeps exact arity, limited literal conversion, one atomic seed batch, conservative generated <code>Parse(...)</code>, and unchanged public parser method signatures.</li>
+<li>Raw argument splitters, named argument splitting, duplicate/empty/unsupported forms, mapper failure behavior, policy exceptions, rollback, and state-key edge cases are covered by deterministic tests across the runtime and generated-C# suites.</li>
+<li>Current-rule returns and labeled child result/return helpers are stabilized for the explicit generated-C# helper surface, including present-null versus absent semantics, rollback, and memoization restoration boundaries.</li>
+</ul>
+<h3 id="current-bounded-behavior">Current bounded behavior</h3>
+<ul>
+<li>Runtime literal binding is opt-in only and never selected by the default runtime policy.</li>
+<li>Generated-C# binding is opt-in only and limited to the documented generated policy/helper path; runtime-inline <code>Parse(...)</code> remains metadata-only.</li>
+<li>Accepted literal-policy calls validate the complete call before submitting one atomic managed pending-seed batch.</li>
+<li>Unsupported syntax and conversion cases fail before mutation, either silently in <code>IgnoreCall</code> mode or through <code>ParserRuleCallBindingException</code> in <code>Throw</code> mode.</li>
+<li>Return and label support remains explicit helper-based state, not ANTLR-compatible generated context fields or public rule signatures.</li>
+</ul>
+<h3 id="future-separately-designed-extensions">Future separately designed extensions</h3>
+<ul>
+<li>General argument and return integration remains future work when it requires arbitrary expression evaluation, parameter/return/local/label references inside argument clauses, mixed positional/named syntax, policy composition, user-defined types, arrays, generics, enums, Roslyn/general C# resolution, generated typed rule signatures, automatic parent-return propagation, lexer execution, or full ANTLR compatibility.</li>
+<li>Any future extension must update this document, <code>docs/parser/ANTLRCompatibility.md</code>, <code>docs/parser/Antlr4CompatibilityMatrix.md</code>, <code>Utils.Parser/ROADMAP.md</code>, <code>Utils.Parser.Generators/README.md</code>, and <code>docs/parser/INDEX.md</code> when materially changed.</li>
+<li>Future PR descriptions must state whether behavior, diagnostics, runtime metadata, public API shape, or test strategy changed.</li>
+</ul>
+<h3 id="generated-c-explicit-simple-positional-rule-call-binding">Generated-C# explicit simple positional rule-call binding</h3>
+<p>Generated parsers install a generated-C#-only rule-call policy for <code>ParseWithEmbeddedCode(input)</code> and <code>ParseWithEmbeddedCode(input, executionContext)</code> only when generation enables simple positional rule-argument binding. The shipped generator exposes an explicit project-wide opt-in, disabled by default, through the MSBuild property <code>UtilsParserEnableGeneratedRuleArgumentBinding</code>, so this binding path remains opt-in rather than default package-consumer behavior. The overload <code>ParseWithEmbeddedCode(input, executionContext, basePolicy)</code> deliberately calls the generated policy factory with automatic argument binding disabled so the caller-supplied <code>RuleCallExecutionPolicy</code> wins unchanged. When a parser rule call supplies raw positional arguments, the generated policy first requires the raw positional argument count to exactly match the declared target-rule parameter count, including zero-parameter target rules; an explicit empty argument list such as <code>child[]</code> is therefore valid only when the target declares zero parameters. This generated-C# automatic boundary is stricter than the reusable typed runtime policy: declared parameter defaults are not consumed to satisfy omitted generated-C# call-site arguments. After exact arity passes, the generated policy converts supported simple literals and submits one atomic managed seed batch to the existing invocation-frame parameter store. The conservative generated <code>Parse(...)</code> path remains unchanged and does not execute this binding path. This generated wrapper is distinct from the reusable runtime policies (<code>PositionalLiteralRuleCallExecutionPolicy</code>, <code>NamedLiteralRuleCallExecutionPolicy</code>, <code>TypedPositionalLiteralRuleCallExecutionPolicy</code>, and <code>TypedNamedLiteralRuleCallExecutionPolicy</code>) that callers can install explicitly through a runtime policy.</p>
+<p>Supported automatic generated-C# argument forms are intentionally narrow: exact-arity simple positional literals that the typed literal binding policy can convert to the declared parameter type, including decimal integer literals for <code>int</code> parameters. Named arguments and arbitrary C# expressions remain unsupported and are rejected deterministically in the generated-C# explicit binding path before child lifecycle hooks can observe partially seeded state. Full ANTLR-compatible generated rule signatures such as <code>child(int value)</code> are still not emitted; generated hooks should continue to read parameters through frame helpers such as <code>GetRequiredRuleParameter&lt;T&gt;(context, &quot;name&quot;)</code>, and the optional C# ANTLR-style transformer may rewrite <code>$name</code> to those helpers. Explicit runtime policies such as <code>TypedPositionalLiteralRuleCallExecutionPolicy</code> may still support simple typed defaults separately when callers install them directly.</p>
+<p>The implementation uses existing parser-managed pending seeds, invocation frames, execution-state snapshots, rollback, and memoization boundaries. No target-language expression evaluator was added to <code>ParserEngine</code>.</p>
+<h3 id="generated-c-returnslabels-boundary-and-named-action-strategy">Generated-C# returns/labels boundary and named-action strategy</h3>
+<p>The rule-return and labeled rule-call boundary follows the existing parser named-action architecture rather than a parallel implementation path. Classification of grammar-level named actions is centralized in <code>EmbeddedMembersSupport</code>: <code>@members</code> and <code>@parser::members</code> are parser compatibility blocks injected into the generated execution context, <code>@header</code> and <code>@parser::header</code> are injected near the top of generated C# source, and <code>@footer</code> and <code>@parser::footer</code> are injected as trailing generated C# source. Unsupported parser-scoped actions such as <code>@parser::init</code> and parser named actions inside lexer grammars remain deterministic diagnostics and are not generated-source injection points.</p>
+<p>Parser embedded code must continue to pass through <code>IParserEmbeddedCodeTransformer</code> via <code>TransformEmbeddedCode(...)</code>. The default path preserves target-language code, and generated-C# embedded-code paths remain opt-in. Metadata is not execution authority: rule-return declarations may be present in grammar metadata, and labeled rule-call storage may be present in parser-managed frame state, but metadata/storage alone does not imply automatic runtime support, ANTLR-compatible label access, public typed parser contexts, <code>$label.ctx</code>, <code>$ctx</code>, or public ANTLR-style rule methods. Conservative <code>Parse(...)</code> remains unchanged, and <code>ParserEngine</code> remains target-language-neutral.</p>
+<p>Future simple generated-C# return assignment/access should reuse generated execution-context helpers and optional transformer rewriting. Future labeled rule-call return access should build on existing labeled result storage where available. Any <code>$...</code> syntax support must be implemented through the parser embedded-code transformer, not the runtime parser core. No full ANTLR parser context model is promised by the current generated-C# compatibility bridge.</p>
+<h2 id="explicit-generated-c-labeled-return-helper-lock-in">Explicit generated-C# labeled return helper lock-in</h2>
+<p>Generated-C# parent access to labeled child rule returns is helper-first. Current-rule returns may use the narrow bare <code>$value</code> convenience only inside the rule that declares <code>returns [.. value ..]</code>, and only through the optional C# transformer in supported parser action locations. Parent rules may inspect completed assignment-labeled child calls with narrow <code>$c.value</code> sugar in generated-C# inline parser actions and <code>@after</code>, or explicitly with helpers such as <code>GetRequiredLabeledRuleCallReturn(context, &quot;c&quot;, &quot;value&quot;)</code>, <code>TryGetLabeledRuleCallReturn(context, &quot;c&quot;, &quot;value&quot;, out object? value)</code>, <code>TryGetLabeledRuleCallResult(context, &quot;c&quot;, out ParserRuleCallResult? result)</code>, <code>GetLabeledRuleCallResults(context, &quot;xs&quot;)</code>, and <code>GetLabeledRuleCallReturns(context, &quot;xs&quot;, &quot;value&quot;)</code>.</p>
+<p>Assignment labels (<code>c=child</code>) expose the last successful child <code>ParserRuleCallResult</code> for that label. List labels (<code>xs+=child</code>) expose successful child results in call order. Present-null return values are distinct from missing return keys: required helpers return <code>null</code> for present-null values and throw the deterministic parser attribute exception for missing labels or missing return names. Failed alternatives must not leak label state, and memoized child results must restore return values while applying the current successful call-site label. <code>$c.value</code>/<code>$x.value</code> are supported as assignment-label transformer sugar in generated-C# inline parser actions and <code>@after</code>. <code>$xs.value</code> is supported separately as read-only list-label projection sugar only when <code>xs</code> is a visible <code>xs+=child</code> parser-rule list label and every referenced target rule declares <code>value</code>; it rewrites to <code>GetLabeledRuleCallReturns(context, &quot;xs&quot;, &quot;value&quot;)</code>, so ordinary C# member access such as <code>$xs.value.Count</code> works after the root projection rewrite. <code>$child.value</code>, <code>$rule.value</code>, <code>$ctx</code>, <code>$c.ctx</code>, <code>$xs.ctx</code>, bare <code>$c</code>/<code>$xs</code> label objects, writes to <code>$c.value</code> or <code>$xs.value</code>, <code>@init</code> label-return reads, semantic-predicate label-return reads, token attributes such as <code>$t.text</code>, lexer attributes, typed parser contexts, public ANTLR-style parser rule methods, and general ANTLR attribute compatibility remain unsupported syntax. Conservative <code>Parse(...)</code> remains unchanged and <code>ParserEngine</code> remains target-language-neutral.</p>
+<h2 id="generated-binding-static-diagnostics">Generated binding static diagnostics</h2>
+<p>The generated-C# positional binding opt-in now includes bounded generator-time diagnostics for certain failures only when the call target is the caller grammar's unique local parser rule. Imported rules are not statically concluded by <code>APU0107</code> because generated definitions currently contain only local rules and cannot execute imported targets through <code>ParserDefinition.Imports</code>. Missing imports or rules, aliased imports, duplicate declared grammar names, ambiguous imported declarations, explicit mapping helpers, and manually installed runtime policies are not statically concluded by this pass. This does not change the runtime contract: arguments remain positional only, simple literals only, exact arity only, allowlisted declared types only, no default-value consumption, no named arguments, no expressions, no generated ANTLR-style rule signatures, and no change to <code>Parse(...)</code>. A grammar file with certain local generated-binding errors is not emitted, but other valid grammar files continue to generate.</p>
+<p>The generator pipeline parses each <code>.g4</code> file independently from its path, source text, and own <code>AdditionalFiles</code> metadata such as <code>Namespace</code> and <code>ClassName</code>. Unchanged parsed-file values are reusable across global option changes and unrelated file edits. The parsed project is still aggregated with <code>Collect()</code> so declared-grammar-name indexing, direct/transitive import resolution, ambiguity checks, validation, and emission can rerun project-wide when one grammar file or the binding option changes; no import-subgraph-only recalculation guarantee is made.</p>
+<p>Example:</p>
+<pre><code class="lang-antlr">start : child[1 + 2] ;
+child[int value] : A ;
+</code></pre>
+<p>With <code>UtilsParserEnableGeneratedRuleArgumentBinding=true</code>, this reports <code>APU0107</code> because <code>1 + 2</code> is not a supported simple literal. Imported parser-rule targets do not produce <code>APU0107</code> in the current generator because the emitted <code>ParserDefinition</code> for the caller does not include imported rules. The same-project resolver remains preparatory infrastructure for a future composition plan, but diagnostics must not conclude on a target that the generated parser cannot resolve. With the option absent or <code>false</code>, the argument remains metadata only and no generated-binding diagnostic is produced.</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/RuleArgumentsAndReturnsPlan.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

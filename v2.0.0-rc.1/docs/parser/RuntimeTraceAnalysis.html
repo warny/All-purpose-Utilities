@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Runtime Trace Analysis | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Runtime Trace Analysis | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../../favicon.ico">
+      <link rel="stylesheet" href="../../public/docfx.min.css">
+      <link rel="stylesheet" href="../../public/main.css">
+      <meta name="docfx:navrel" content="../../toc.html">
+      <meta name="docfx:tocrel" content="../../toc.html">
+      
+      <meta name="docfx:rel" content="../../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/RuntimeTraceAnalysis.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../../index.html">
+            <img id="logo" class="svg" src="../../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="runtime-trace-analysis">Runtime Trace Analysis</h1>
+
+<p>This document defines a conservative, tooling-only analysis layer for runtime trace observations.</p>
+<p>See also:</p>
+<ul>
+<li><a href="RuntimeObservationAndExportContract.html"><code>RuntimeObservationAndExportContract.md</code></a></li>
+<li><a href="DiagnosticsObservationCorrelation.html"><code>DiagnosticsObservationCorrelation.md</code></a></li>
+<li><a href="RuntimeStateOwnership.html"><code>RuntimeStateOwnership.md</code></a></li>
+</ul>
+<h2 id="intent">Intent</h2>
+<p>Runtime trace analysis validates that external tooling can extract useful descriptive information from passive observations. Export identity can be reported as informational metadata only.</p>
+<p>The analysis layer consumes only:</p>
+<ul>
+<li><code>AlternativeRuntimeObservation</code> sequences.</li>
+</ul>
+<p>The analysis layer produces only:</p>
+<ul>
+<li>summaries,</li>
+<li>distributions,</li>
+<li>deterministic descriptive comparisons.</li>
+</ul>
+<h2 id="explicit-non-authority-boundaries">Explicit non-authority boundaries</h2>
+<p>Runtime trace analysis does <strong>not</strong> imply:</p>
+<ul>
+<li>replay,</li>
+<li>runtime ownership,</li>
+<li>parser authority,</li>
+<li>diagnostics authority,</li>
+<li>parser execution control,</li>
+<li>scheduling control,</li>
+<li>runtime object navigation.</li>
+</ul>
+<h2 id="current-abstractions">Current abstractions</h2>
+<p>The current tooling abstractions are:</p>
+<ul>
+<li><code>RuntimeTraceSummary</code>: deterministic counts and distributions.</li>
+<li><code>RuntimeTraceAnalyzer</code>: summary and comparison entry points.</li>
+<li><code>RuntimeTraceComparison</code>: deterministic descriptive comparison values.</li>
+</ul>
+<p>These abstractions are read-only and do not access runtime internals.</p>
+<h2 id="typical-outputs">Typical outputs</h2>
+<p>Examples of allowed descriptive outputs:</p>
+<ul>
+<li>total observation count,</li>
+<li>event-kind distribution,</li>
+<li>status distribution,</li>
+<li>rule-name distribution,</li>
+<li>alternative-index distribution,</li>
+<li>deterministic event count deltas,</li>
+<li>optional export identity indicators (<code>AreTextExportsIdentical</code>, <code>AreJsonExportsIdentical</code>) treated as informational only.</li>
+</ul>
+<p>These outputs are diagnostic aids for tooling only.</p>
+<h2 id="end-to-end-usage-examples-runtime--observation--export--analysis">End-to-end usage examples (runtime → observation → export → analysis)</h2>
+<p>The examples below intentionally demonstrate consumption of <strong>existing</strong> APIs only.
+They are illustrative tooling snippets, not a supported framework surface.</p>
+<h3 id="example-a--record-observations-during-parsing">Example A — Record observations during parsing</h3>
+<pre><code class="lang-csharp">using Utils.Parser.Bootstrap;
+using Utils.Parser.Model;
+using Utils.Parser.Runtime;
+
+var definition = Antlr4GrammarConverter.Parse(&quot;&quot;&quot;
+    grammar Sample;
+    start : Number ('+' Number)* EOF ;
+    Number : [0-9]+ ;
+    WS : [ 	
+]+ -&gt; skip ;
+    &quot;&quot;&quot;);
+
+var recorder = new RuntimeObservationRecorder();
+var policy = ParserRuntimeFeaturePolicy.Default with
+{
+    RuntimeObserver = recorder
+};
+
+var parser = new ParserEngine(definition, policy);
+var lexer = new LexerEngine(definition);
+var tokens = lexer.Tokenize(new StringReader(&quot;1+2+3&quot;)).ToList();
+
+var parseResult = parser.Parse(tokens);
+
+// Immutable deterministic payloads emitted in scheduler order.
+IReadOnlyList&lt;AlternativeRuntimeObservation&gt; observations = recorder.Observations;
+</code></pre>
+<h3 id="example-b--produce-deterministic-exports-from-observations">Example B — Produce deterministic exports from observations</h3>
+<pre><code class="lang-csharp">using Utils.Parser.Runtime;
+
+IReadOnlyList&lt;AlternativeRuntimeObservation&gt; observations = recorder.Observations;
+
+var textTrace = RuntimeObservationTextWriter.Write(observations);
+var jsonTrace = RuntimeObservationJsonWriter.Write(observations);
+
+File.WriteAllText(&quot;trace.txt&quot;, textTrace);
+File.WriteAllText(&quot;trace.json&quot;, jsonTrace);
+</code></pre>
+<h3 id="example-c--run-deterministic-analysis-and-compare-traces">Example C — Run deterministic analysis and compare traces</h3>
+<pre><code class="lang-csharp">using Utils.Parser.Runtime;
+
+IReadOnlyList&lt;AlternativeRuntimeObservation&gt; baseline = baselineRecorder.Observations;
+IReadOnlyList&lt;AlternativeRuntimeObservation&gt; candidate = candidateRecorder.Observations;
+
+RuntimeTraceSummary baselineSummary = RuntimeTraceAnalyzer.Summarize(baseline);
+RuntimeTraceSummary candidateSummary = RuntimeTraceAnalyzer.Summarize(candidate);
+RuntimeTraceComparison comparison = RuntimeTraceAnalyzer.Compare(baseline, candidate);
+
+Console.WriteLine($&quot;Baseline events: {baselineSummary.TotalObservations}&quot;);
+Console.WriteLine($&quot;Candidate events: {candidateSummary.TotalObservations}&quot;);
+Console.WriteLine($&quot;Delta events: {comparison.EventCountDelta}&quot;);
+Console.WriteLine($&quot;Text export identical: {comparison.AreTextExportsIdentical}&quot;);
+Console.WriteLine($&quot;Json export identical: {comparison.AreJsonExportsIdentical}&quot;);
+</code></pre>
+<h2 id="tooling-boundary-guidance">Tooling boundary guidance</h2>
+<p>Keep runtime trace tooling strictly on the descriptive side:</p>
+<ul>
+<li>✅ allowed: record observations, export deterministic text/JSON, summarize distributions, compare trace sets.</li>
+<li>❌ not allowed: parser replay, scheduler manipulation, branch forcing, diagnostics ownership changes, parse-tree control.</li>
+<li>❌ not exposed: runtime object graph navigation, execution handles, parser state mutation APIs.</li>
+</ul>
+<p>Practical interpretation:</p>
+<ul>
+<li>Runtime remains the only execution authority.</li>
+<li>Observation remains passive.</li>
+<li>Export remains neutral formatting.</li>
+<li>Analysis remains read-only interpretation.</li>
+</ul>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/RuntimeTraceAnalysis.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

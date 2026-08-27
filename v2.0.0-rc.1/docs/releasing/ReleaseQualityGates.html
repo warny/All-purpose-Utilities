@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Release quality gates | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Release quality gates | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../../favicon.ico">
+      <link rel="stylesheet" href="../../public/docfx.min.css">
+      <link rel="stylesheet" href="../../public/main.css">
+      <meta name="docfx:navrel" content="../../toc.html">
+      <meta name="docfx:tocrel" content="../../toc.html">
+      
+      <meta name="docfx:rel" content="../../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/blob/master/docs/releasing/ReleaseQualityGates.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../../index.html">
+            <img id="logo" class="svg" src="../../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="release-quality-gates">Release quality gates</h1>
+
+<p>Run the complete local chain with:</p>
+<pre><code class="lang-powershell">./eng/run-release-quality-gates.ps1 -Configuration Release
+</code></pre>
+<p>The orchestrator uses an isolated NuGet cache and restores its environment. It restores, builds, and tests the solution; discovers projects; validates the package graph and versions; builds and packs the full train; inspects archives; restores package-only consumers; checks public APIs and warnings; validates SourceLink source retrieval and checksums; performs two clean reproducibility builds; audits dependencies; and creates a self-verifying candidate manifest.</p>
+<p>Reports are written below <code>artifacts/reports</code>, immutable-candidate metadata below <code>artifacts/manifests</code>, and packages below <code>artifacts/packages</code>. Failed packaged-acceptance workspaces and logs are retained. Successful temporary consumers are removed after shutting down MSBuild servers to accommodate Windows locks.</p>
+<p>Packaged acceptance uses one isolated NuGet global-packages cache for the job. Each
+generated consumer has a distinct top-level package graph and therefore receives one
+explicit restore to produce and inspect its own <code>project.assets.json</code>; these restores
+reuse the shared cache rather than forcing network downloads. Every subsequent build,
+run, generator matrix, and publish for that consumer uses <code>--no-restore</code>. This preserves
+independent proof that each <code>omy.*</code> reference resolves from the candidate feed instead
+of replacing candidates with project references or claiming that all distinct graphs
+can be restored by one MSBuild invocation.</p>
+<h2 id="failure-policy">Failure policy</h2>
+<p>Undeclared or ambiguous projects, duplicate IDs, graph cycles, divergent versions, permissive internal dependency versions, unexpected archive contents, missing symbols/readmes/licenses, API breaks without a manifest acceptance, expired warning/dependency exceptions, SourceLink retrieval failures, content-level reproducibility differences, vulnerable product dependencies, and manifest hash differences are blocking.</p>
+<p>Warning exceptions are project-and-code specific in <code>eng/release-warning-exceptions.json</code>; dependency exceptions require scope, reason, tracking issue, and expiry in <code>eng/dependency-exceptions.json</code>. No wildcard exception is allowed.</p>
+<h2 id="ci-validation-tiers">CI validation tiers</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Trigger</th>
+<th>Gates</th>
+<th style="text-align: right;">Target</th>
+<th>Artifact</th>
+<th>Publishable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lightweight pull request</td>
+<td>Ordinary documentation outside <code>docs/releasing</code></td>
+<td>Path classification and lightweight script checks</td>
+<td style="text-align: right;">Under 2 minutes</td>
+<td>None</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Ordinary code pull request</td>
+<td>Code or test change</td>
+<td>Parallel build, tests, one canonical pack, four representative consumers on Ubuntu and Windows, API, warnings, local SourceLink</td>
+<td style="text-align: right;">5–10 minutes</td>
+<td>Diagnostic reports only</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Package pull request</td>
+<td>Package or release-infrastructure change</td>
+<td>Same fast gates with canonical package inspection and cross-platform consumers</td>
+<td style="text-align: right;">10–15 minutes maximum</td>
+<td>Diagnostic reports only</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Full release</td>
+<td><code>master</code>, weekly, <code>v*</code>, or manual</td>
+<td>Every consumer and matrix, reproducibility, remote SourceLink, vulnerable/deprecated/outdated audits, complete manifest</td>
+<td style="text-align: right;">Recorded by Actions</td>
+<td><code>full-product-train-*</code></td>
+<td>Yes, after separate approval</td>
+</tr>
+</tbody>
+</table>
+<p>The deterministic pull-request set contains <code>UtilsConsumer</code> (root package and net8),
+<code>ParserRuntimeConsumer</code> (complex composition and internal dependencies),
+<code>ParserGeneratorConsumer</code> (source generation), and
+<code>DependencyInjectionGeneratorConsumer</code> (analyzer composition and net9). PullRequest restores, builds, and executes only these representative projects; canonical inspection still validates every archive and hash. FullRelease retains every consumer, the generated per-package consumers, and every specialized matrix.</p>
+<p>The framework coverage is derived from the selected consumer project files and tested
+offline: the PR subset currently covers both <code>net8.0</code> and <code>net9.0</code>. Selection and gate
+flags are defined by <code>eng/get-packaged-validation-plan.ps1</code>, preventing documentation,
+tests, and packaged acceptance from maintaining separate lists.</p>
+<p>The <code>changes</code> job uses <code>eng/get-validation-scope.ps1</code>, not a third-party path action.
+Ordinary non-release documentation skips package production and both platform runners.
+Changes below <code>eng</code>, <code>.github/workflows</code>, and <code>docs/releasing</code> run release-script tests.
+Manual dispatch has no pull-request base SHA, so it explicitly uses <code>-ForceProductTrain</code>
+and always runs the complete PR validation rather than attempting an empty diff.</p>
+<p>Pull requests do not assemble a publication candidate. Their final JSON is a small,
+explicitly non-publishable status summary. Only FullRelease assembles a candidate and
+sets <code>validationTier: full-release</code> with <code>reproducibilityValidated: true</code> after the
+two-build Ubuntu reproducibility gate. Publication-capable commands continue to reject
+anything else before contacting NuGet.</p>
+<p>Pull requests use <code>.github/workflows/dotnetcore.yml</code>. Build, unit tests, functional tests, and canonical packaging start in parallel immediately after path classification. Canonical packaging unlocks three parallel branches: Ubuntu packaged acceptance, Windows packaged acceptance, and Ubuntu-only source gates. Both platform jobs download and hash-check the same canonical package artifact; neither packs projects. API compatibility, warnings, and local SourceLink run once on Ubuntu. Reproducibility, remote SourceLink, deprecated/outdated audits, per-consumer vulnerability scans, and exhaustive specialized scenarios remain outside the PR critical path. Each package job uses an isolated <code>NUGET_PACKAGES</code> directory, so the ordinary NuGet cache cannot replace the canonical feed. The final <code>required</code> job only evaluates job results and emits best-effort timing plus a non-publishable status report; it downloads no validation artifacts. The previous PR run exceeded 30 minutes before failing during candidate assembly. That assembly has been removed; observed replacement timings are recorded per job in <code>workflow-timings.json</code> and should be added here after the first completed run.</p>
+<p>The full workflow, <code>.github/workflows/release-quality-gates.yml</code>, runs weekly, for
+<code>v*</code> tags, and on manual dispatch. It retains the remote SourceLink download, deprecated
+and outdated dependency reports, complete build/test pass, and all package consumers
+on Ubuntu and Windows. Its two-build reproducibility check runs once on Ubuntu. The
+120-minute full-validation limit and per-command limits bound external tools while
+leaving diagnostic logs that name the command, exit code, and elapsed time.
+Native commands create their log and print the command before process startup, then
+stream stdout and stderr to both the Actions console and the log. Each log ends with a
+SUCCESS, FAILED, or TIMEOUT marker. After a timeout, process-tree termination and
+redirected-stream draining have their own bounded grace period, so cleanup cannot turn
+an expired command into an unlimited wait.</p>
+<p>For a fast local check after build and test jobs have already passed, run:</p>
+<pre><code class="lang-powershell">./eng/run-release-quality-gates.ps1 -Mode PullRequest -Configuration Release
+</code></pre>
+<p>To inspect which gates a mode would execute without invoking external tools, add
+<code>-PlanOnly</code>. Before publishing, run the complete non-publishing validation:</p>
+<pre><code class="lang-powershell">./eng/run-release-quality-gates.ps1 -Mode FullRelease -Configuration Release
+</code></pre>
+<p>The full workflow validates candidates but never publishes them. Publication remains
+a separate, explicitly authorized workflow. A release pull request should remain a
+draft until the pull-request workflow has succeeded on Ubuntu and Windows.</p>
+<h3 id="run-2397-diagnosis">Run 2397 diagnosis</h3>
+<p>Run 2397 placed restore, build, both test suites, packaging and every package consumer,
+generator matrices, API checks, warning checks, network SourceLink retrieval, two
+isolated reproducibility builds, dependency audits, and manifest generation inside one
+opaque step on both operating systems. Windows reached the job timeout during that
+step, so the active gate and command were not visible and dependent Linux/functional
+work was cancelled. The tiered workflows remove repeated PR build/test work from the
+orchestrator, expose each mandatory PR gate, and reserve remote/advisory release work
+for the full workflow rather than merely increasing the old timeout.</p>
+<h2 id="publication-compatible-validation-artifact">Publication-compatible validation artifact</h2>
+<p>The Ubuntu canonical-packages job records the SHA-256 of every <code>.nupkg</code> and <code>.snupkg</code>
+in <code>canonical-packages.json</code>. Both platform validation jobs recalculate those hashes
+before running consumers and copy them into their acceptance reports. Assembly verifies
+that Ubuntu and Windows tested every canonical file with exactly the recorded hash; it
+does not compare independently rebuilt platform packages. It copies only the canonical
+package directory, combines the platform validation reports and the distinct Ubuntu
+reproducibility report, then generates and self-validates
+<code>artifacts/manifests/release-candidate-manifest.json</code>. The resulting
+<code>full-product-train-&lt;sha&gt;</code> artifact preserves the contract consumed by
+<code>publish-validated-product-train.yml</code>; pull requests still never publish packages.
+The artifact contract can be checked locally without contacting NuGet by running
+<code>./eng/publish-product-train.ps1 -ArtifactsPath &lt;path&gt; -ValidateCandidateOnly</code>.</p>
+<h2 id="versioned-api-breaking-change-manifest">Versioned API breaking-change manifest</h2>
+<p>The 2.0 product train points each published-baseline package to <code>eng/api-breaking-changes/2.0.0.json</code>. The public API gate compares exact normalized ApiCompat diagnostic IDs and messages with that manifest. Both undeclared diagnostics and stale manifest entries fail the gate; accepted entries require a reason and a checked-in migration anchor. Raw and Markdown comparison reports remain release artifacts. This keeps major-version breaks blocking unless they are explicitly reviewed rather than making APICompat informational.</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/docs/releasing/ReleaseQualityGates.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

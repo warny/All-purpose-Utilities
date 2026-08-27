@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class FourierExtensions | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class FourierExtensions | omy.Utils Documentation ">
+      
+      <meta name="description" content="Utility extension methods for Fourier-related computations.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Mathematics_Fourier_FourierExtensions.md&amp;value=---%0Auid%3A%20Utils.Mathematics.Fourier.FourierExtensions%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Mathematics.Fourier.FourierExtensions">
+
+
+
+  <h1 id="Utils_Mathematics_Fourier_FourierExtensions" data-uid="Utils.Mathematics.Fourier.FourierExtensions" class="text-break">
+Class FourierExtensions  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Mathematics/Fourier/FourierExtensions.cs/#L9"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Mathematics.html">Mathematics</a>.<a class="xref" href="Utils.Mathematics.Fourier.html">Fourier</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.Mathematics.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Utility extension methods for Fourier-related computations.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static class FourierExtensions</code></pre>
+  </div>
+
+
+
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><span class="xref">FourierExtensions</span></div>
+    </dd>
+  </dl>
+
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+  </dd></dl>
+
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_Mathematics_Fourier_FourierExtensions_GetAllBinFrequencies_" data-uid="Utils.Mathematics.Fourier.FourierExtensions.GetAllBinFrequencies*"></a>
+
+  <h3 id="Utils_Mathematics_Fourier_FourierExtensions_GetAllBinFrequencies_System_Numerics_Complex___System_Double_" data-uid="Utils.Mathematics.Fourier.FourierExtensions.GetAllBinFrequencies(System.Numerics.Complex[],System.Double)">
+  GetAllBinFrequencies(Complex[], double)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Mathematics/Fourier/FourierExtensions.cs/#L160"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns the frequency represented by every bin of a Fourier transform result, including the
+negative (aliased) frequencies of the upper half - matching <a class="xref" href="Utils.Mathematics.Fourier.FourierExtensions.html#Utils_Mathematics_Fourier_FourierExtensions_GetAmplitudes_System_Numerics_Complex___">GetAmplitudes(Complex[])</a>/
+<a class="xref" href="Utils.Mathematics.Fourier.FourierExtensions.html#Utils_Mathematics_Fourier_FourierExtensions_GetPhases_System_Numerics_Complex___">GetPhases(Complex[])</a>'s bin count exactly, unlike <a class="xref" href="Utils.Mathematics.Fourier.FourierExtensions.html#Utils_Mathematics_Fourier_FourierExtensions_GetFrequencies_System_Numerics_Complex___System_Double_">GetFrequencies(Complex[], double)</a> (see
+TODO-2026-07-11-pass4.md item #54).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static double[] GetAllBinFrequencies(this Complex[] transform, double sampleRate)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>transform</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.complex">Complex</a>[]</dt>
+    <dd><p>The transform result. Must be non-null and non-empty.</p>
+</dd>
+    <dt><code>sampleRate</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>Sampling rate in hertz. Must be finite and positive.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a>[]</dt>
+    <dd><p>Array of <code>N</code> frequencies in hertz: bin <code>i &lt; ceil(N/2)</code> is the positive frequency
+<code>i * sampleRate / N</code>; bin <code>i &gt;= ceil(N/2)</code> is the negative (aliased) frequency
+<code>(i - N) * sampleRate / N</code> - the same convention as e.g. NumPy's <code>fftfreq</code>, under which
+an even-length transform's Nyquist bin is reported as the negative Nyquist frequency.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">transform</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">transform</code> is empty.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">sampleRate</code> is not finite or is not positive.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Mathematics_Fourier_FourierExtensions_GetAmplitudes_" data-uid="Utils.Mathematics.Fourier.FourierExtensions.GetAmplitudes*"></a>
+
+  <h3 id="Utils_Mathematics_Fourier_FourierExtensions_GetAmplitudes_System_Numerics_Complex___" data-uid="Utils.Mathematics.Fourier.FourierExtensions.GetAmplitudes(System.Numerics.Complex[])">
+  GetAmplitudes(Complex[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Mathematics/Fourier/FourierExtensions.cs/#L70"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns the raw spectral magnitude (<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.complex.magnitude">Magnitude</a>) of each bin in the transform
+result - <b>not</b> a physically normalized sinusoidal amplitude (see
+TODO-2026-07-11-pass4.md item #55). Depending on the forward transform's own normalization
+convention, signal length, one-sided-vs-two-sided selection, and any window's coherent gain, the
+value that corresponds to a signal component's actual physical amplitude generally requires
+further scaling by the caller (e.g. this library's own forward transform is unnormalized, so a
+pure sinusoid's peak bin magnitude equals <code>signal amplitude * N / 2</code>, not the amplitude
+itself - see <a class="xref" href="Utils.Mathematics.Fourier.FourierExtensions.html#Utils_Mathematics_Fourier_FourierExtensions_GetMagnitudes_System_Numerics_Complex___">GetMagnitudes(Complex[])</a>'s &quot;constant signal&quot; example). <a class="xref" href="Utils.Mathematics.Fourier.FourierExtensions.html#Utils_Mathematics_Fourier_FourierExtensions_GetMagnitudes_System_Numerics_Complex___">GetMagnitudes(Complex[])</a>
+is an identical, more accurately-named alias; this method is kept for backward compatibility.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static double[] GetAmplitudes(this Complex[] transform)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>transform</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.complex">Complex</a>[]</dt>
+    <dd><p>The transform result. Must be non-null and non-empty.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a>[]</dt>
+    <dd><p>Array of raw magnitudes, one per bin.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">transform</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">transform</code> is empty.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Mathematics_Fourier_FourierExtensions_GetFrequencies_" data-uid="Utils.Mathematics.Fourier.FourierExtensions.GetFrequencies*"></a>
+
+  <h3 id="Utils_Mathematics_Fourier_FourierExtensions_GetFrequencies_System_Numerics_Complex___System_Double_" data-uid="Utils.Mathematics.Fourier.FourierExtensions.GetFrequencies(System.Numerics.Complex[],System.Double)">
+  GetFrequencies(Complex[], double)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Mathematics/Fourier/FourierExtensions.cs/#L39"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns the frequency represented by each bin in the first half of a Fourier transform result.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static double[] GetFrequencies(this Complex[] transform, double sampleRate)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>transform</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.complex">Complex</a>[]</dt>
+    <dd><p>The transform result. Must be non-null and non-empty.</p>
+</dd>
+    <dt><code>sampleRate</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>Sampling rate in hertz. Must be finite and positive.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a>[]</dt>
+    <dd><p>Array of <code>N/2</code> frequencies in hertz, one per bin.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">transform</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">transform</code> is empty.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">sampleRate</code> is not finite or is not positive (previously only
+<code>sampleRate &lt;= 0</code> was checked, silently accepting <code>NaN</code> - see
+TODO-2026-07-11-pass4.md item #53).</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Mathematics_Fourier_FourierExtensions_GetMagnitudes_" data-uid="Utils.Mathematics.Fourier.FourierExtensions.GetMagnitudes*"></a>
+
+  <h3 id="Utils_Mathematics_Fourier_FourierExtensions_GetMagnitudes_System_Numerics_Complex___" data-uid="Utils.Mathematics.Fourier.FourierExtensions.GetMagnitudes(System.Numerics.Complex[])">
+  GetMagnitudes(Complex[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Mathematics/Fourier/FourierExtensions.cs/#L84"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns the raw spectral magnitude (<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.complex.magnitude">Magnitude</a>) of each bin in the transform
+result. The more accurately-named counterpart to <a class="xref" href="Utils.Mathematics.Fourier.FourierExtensions.html#Utils_Mathematics_Fourier_FourierExtensions_GetAmplitudes_System_Numerics_Complex___">GetAmplitudes(Complex[])</a> (see
+TODO-2026-07-11-pass4.md item #55): &quot;amplitude&quot; suggests a physically normalized sinusoidal
+amplitude, but this is the raw, unnormalized FFT bin magnitude - e.g. for this library's
+unnormalized forward transform, the FFT of a constant signal of value <code>1</code> over <code>N</code>
+samples has a DC-bin magnitude of <code>N</code>, not <code>1</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static double[] GetMagnitudes(this Complex[] transform)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>transform</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.complex">Complex</a>[]</dt>
+    <dd><p>The transform result. Must be non-null and non-empty.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a>[]</dt>
+    <dd><p>Array of raw magnitudes, one per bin.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">transform</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">transform</code> is empty.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Mathematics_Fourier_FourierExtensions_GetOneSidedAmplitudes_" data-uid="Utils.Mathematics.Fourier.FourierExtensions.GetOneSidedAmplitudes*"></a>
+
+  <h3 id="Utils_Mathematics_Fourier_FourierExtensions_GetOneSidedAmplitudes_System_Numerics_Complex___System_Boolean_" data-uid="Utils.Mathematics.Fourier.FourierExtensions.GetOneSidedAmplitudes(System.Numerics.Complex[],System.Boolean)">
+  GetOneSidedAmplitudes(Complex[], bool)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Mathematics/Fourier/FourierExtensions.cs/#L219"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns the raw spectral magnitude (see <a class="xref" href="Utils.Mathematics.Fourier.FourierExtensions.html#Utils_Mathematics_Fourier_FourierExtensions_GetMagnitudes_System_Numerics_Complex___">GetMagnitudes(Complex[])</a> - <b>not</b> a physically
+normalized sinusoidal amplitude) of each one-sided (non-negative frequency) bin, length-matched
+with <a class="xref" href="Utils.Mathematics.Fourier.FourierExtensions.html#Utils_Mathematics_Fourier_FourierExtensions_GetOneSidedFrequencies_System_Numerics_Complex___System_Double_System_Boolean_">GetOneSidedFrequencies(Complex[], double, bool)</a> for the same <code class="paramref">includeNyquist</code> choice
+(see TODO-2026-07-11-pass4.md items #54/#55). <a class="xref" href="Utils.Mathematics.Fourier.FourierExtensions.html#Utils_Mathematics_Fourier_FourierExtensions_GetOneSidedMagnitudes_System_Numerics_Complex___System_Boolean_">GetOneSidedMagnitudes(Complex[], bool)</a> is an
+identical, more accurately-named alias; this method is kept for backward compatibility.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static double[] GetOneSidedAmplitudes(this Complex[] transform, bool includeNyquist = false)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>transform</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.complex">Complex</a>[]</dt>
+    <dd><p>The transform result. Must be non-null and non-empty.</p>
+</dd>
+    <dt><code>includeNyquist</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>See <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">GetOneSidedBinCount(int, bool)</a>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a>[]</dt>
+    <dd><p>Array of one-sided raw magnitudes; see <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">GetOneSidedBinCount(int, bool)</a> for the exact count.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">transform</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">transform</code> is empty.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Mathematics_Fourier_FourierExtensions_GetOneSidedFrequencies_" data-uid="Utils.Mathematics.Fourier.FourierExtensions.GetOneSidedFrequencies*"></a>
+
+  <h3 id="Utils_Mathematics_Fourier_FourierExtensions_GetOneSidedFrequencies_System_Numerics_Complex___System_Double_System_Boolean_" data-uid="Utils.Mathematics.Fourier.FourierExtensions.GetOneSidedFrequencies(System.Numerics.Complex[],System.Double,System.Boolean)">
+  GetOneSidedFrequencies(Complex[], double, bool)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Mathematics/Fourier/FourierExtensions.cs/#L191"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns the frequency represented by each one-sided (non-negative frequency) bin, with an
+explicit, caller-controlled choice of whether the Nyquist bin is included (see
+TODO-2026-07-11-pass4.md item #54).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static double[] GetOneSidedFrequencies(this Complex[] transform, double sampleRate, bool includeNyquist = false)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>transform</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.complex">Complex</a>[]</dt>
+    <dd><p>The transform result. Must be non-null and non-empty.</p>
+</dd>
+    <dt><code>sampleRate</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>Sampling rate in hertz. Must be finite and positive.</p>
+</dd>
+    <dt><code>includeNyquist</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>See <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">GetOneSidedBinCount(int, bool)</a>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a>[]</dt>
+    <dd><p>Array of one-sided frequencies in hertz; see <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">GetOneSidedBinCount(int, bool)</a> for the exact count.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">transform</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">transform</code> is empty.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">sampleRate</code> is not finite or is not positive.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Mathematics_Fourier_FourierExtensions_GetOneSidedMagnitudes_" data-uid="Utils.Mathematics.Fourier.FourierExtensions.GetOneSidedMagnitudes*"></a>
+
+  <h3 id="Utils_Mathematics_Fourier_FourierExtensions_GetOneSidedMagnitudes_System_Numerics_Complex___System_Boolean_" data-uid="Utils.Mathematics.Fourier.FourierExtensions.GetOneSidedMagnitudes(System.Numerics.Complex[],System.Boolean)">
+  GetOneSidedMagnitudes(Complex[], bool)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Mathematics/Fourier/FourierExtensions.cs/#L235"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns the raw spectral magnitude (<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.complex.magnitude">Magnitude</a>) of each one-sided
+(non-negative frequency) bin, length-matched with <a class="xref" href="Utils.Mathematics.Fourier.FourierExtensions.html#Utils_Mathematics_Fourier_FourierExtensions_GetOneSidedFrequencies_System_Numerics_Complex___System_Double_System_Boolean_">GetOneSidedFrequencies(Complex[], double, bool)</a> for the
+same <code class="paramref">includeNyquist</code> choice. The more accurately-named counterpart to
+<a class="xref" href="Utils.Mathematics.Fourier.FourierExtensions.html#Utils_Mathematics_Fourier_FourierExtensions_GetOneSidedAmplitudes_System_Numerics_Complex___System_Boolean_">GetOneSidedAmplitudes(Complex[], bool)</a>, mirroring the <a class="xref" href="Utils.Mathematics.Fourier.FourierExtensions.html#Utils_Mathematics_Fourier_FourierExtensions_GetMagnitudes_System_Numerics_Complex___">GetMagnitudes(Complex[])</a>/<a class="xref" href="Utils.Mathematics.Fourier.FourierExtensions.html#Utils_Mathematics_Fourier_FourierExtensions_GetAmplitudes_System_Numerics_Complex___">GetAmplitudes(Complex[])</a>
+relationship: &quot;amplitude&quot; suggests a physically normalized sinusoidal amplitude, but this is the
+raw, unnormalized FFT bin magnitude (see TODO-2026-07-11-pass4.md items #54/#55).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static double[] GetOneSidedMagnitudes(this Complex[] transform, bool includeNyquist = false)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>transform</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.complex">Complex</a>[]</dt>
+    <dd><p>The transform result. Must be non-null and non-empty.</p>
+</dd>
+    <dt><code>includeNyquist</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>See <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">GetOneSidedBinCount(int, bool)</a>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a>[]</dt>
+    <dd><p>Array of one-sided raw magnitudes; see <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">GetOneSidedBinCount(int, bool)</a> for the exact count.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">transform</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">transform</code> is empty.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Mathematics_Fourier_FourierExtensions_GetOneSidedPhases_" data-uid="Utils.Mathematics.Fourier.FourierExtensions.GetOneSidedPhases*"></a>
+
+  <h3 id="Utils_Mathematics_Fourier_FourierExtensions_GetOneSidedPhases_System_Numerics_Complex___System_Boolean_" data-uid="Utils.Mathematics.Fourier.FourierExtensions.GetOneSidedPhases(System.Numerics.Complex[],System.Boolean)">
+  GetOneSidedPhases(Complex[], bool)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Mathematics/Fourier/FourierExtensions.cs/#L255"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns the phase (argument) in radians of each one-sided (non-negative frequency) bin,
+length-matched with <a class="xref" href="Utils.Mathematics.Fourier.FourierExtensions.html#Utils_Mathematics_Fourier_FourierExtensions_GetOneSidedFrequencies_System_Numerics_Complex___System_Double_System_Boolean_">GetOneSidedFrequencies(Complex[], double, bool)</a> for the same
+<code class="paramref">includeNyquist</code> choice (see TODO-2026-07-11-pass4.md item #54).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static double[] GetOneSidedPhases(this Complex[] transform, bool includeNyquist = false)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>transform</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.complex">Complex</a>[]</dt>
+    <dd><p>The transform result. Must be non-null and non-empty.</p>
+</dd>
+    <dt><code>includeNyquist</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>See <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">GetOneSidedBinCount(int, bool)</a>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a>[]</dt>
+    <dd><p>Array of one-sided phases in radians; see <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">GetOneSidedBinCount(int, bool)</a> for the exact count.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">transform</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">transform</code> is empty.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Mathematics_Fourier_FourierExtensions_GetPhases_" data-uid="Utils.Mathematics.Fourier.FourierExtensions.GetPhases*"></a>
+
+  <h3 id="Utils_Mathematics_Fourier_FourierExtensions_GetPhases_System_Numerics_Complex___" data-uid="Utils.Mathematics.Fourier.FourierExtensions.GetPhases(System.Numerics.Complex[])">
+  GetPhases(Complex[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Mathematics/Fourier/FourierExtensions.cs/#L100"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns the phase (argument) in radians of each bin in the transform result.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static double[] GetPhases(this Complex[] transform)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>transform</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.complex">Complex</a>[]</dt>
+    <dd><p>The transform result. Must be non-null and non-empty.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a>[]</dt>
+    <dd><p>Array of phases in radians, one per bin.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">transform</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">transform</code> is empty.</p>
+</dd>
+  </dl>
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/releases/2.0.0-rc.1/Utils.Mathematics/Fourier/FourierExtensions.cs/#L9" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

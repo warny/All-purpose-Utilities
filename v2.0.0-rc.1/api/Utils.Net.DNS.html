@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Namespace Utils.Net.DNS | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Namespace Utils.Net.DNS | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Net.DNS">
+
+  <h1 id="Utils_Net_DNS" data-uid="Utils.Net.DNS" class="text-break">Namespace Utils.Net.DNS</h1>
+  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="markdown level0 remarks"></div>
+
+    <h3 id="classes">
+Classes
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.DNSCanonicalWriter.html">DNSCanonicalWriter</a></dt>
+      <dd><p>Provides functionality to serialize DNS packets into a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a> array using reflection
+and expression trees. This class can handle standard DNS headers, request records, response records,
+and user-defined DNS response details annotated with <a class="xref" href="Utils.Net.DNS.DNSRecordAttribute.html">DNSRecordAttribute</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.DNSConstants.html">DNSConstants</a></dt>
+      <dd><p>Constants representing DNS datagram flags and fields masks.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.DNSDatagram.html">DNSDatagram</a></dt>
+      <dd><p>Represents a DNS datagram, which provides methods for reading and writing DNS-related data.
+It supports simple DNS name compression, reading and writing integers of various sizes,
+and handling string labels in DNS-compatible formats.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.DNSElement.html">DNSElement</a></dt>
+      <dd><p>Represents the abstract base class for all DNS elements within this library.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.DNSElementsComparer.html">DNSElementsComparer</a></dt>
+      <dd><p>Provides an <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.iequalitycomparer-1">IEqualityComparer&lt;T&gt;</a> implementation for <a class="xref" href="Utils.Net.DNS.DNSElement.html">DNSElement</a> objects.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.DNSFactory.html">DNSFactory</a></dt>
+      <dd><p>Provides a mechanism to discover and store DNS-related types, along with their associated class and record IDs.
+This class uses <a class="xref" href="Utils.Net.DNS.DNSRecordAttribute.html">DNSRecordAttribute</a> metadata to map DNS record classes and IDs to corresponding
+.NET types that implement <a class="xref" href="Utils.Net.DNS.DNSResponseDetail.html">DNSResponseDetail</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.DNSFieldAttribute.html">DNSFieldAttribute</a></dt>
+      <dd><p>Applied to properties or fields within a DNS record class to indicate how the
+corresponding data should be serialized, deserialized, or otherwise interpreted.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.DNSHeader.html">DNSHeader</a></dt>
+      <dd><p>Represents the DNS header section of a DNS packet, including standard bits from
+<a href="https://www.rfc-editor.org/rfc/rfc1035#section-4.1.1">RFC 1035 §4.1.1</a> and the
+AD/CD extensions introduced in <a href="https://www.rfc-editor.org/rfc/rfc2535">RFC 2535</a>.
+The header provides information about flags, counts for queries/answers/authorities/additionals,
+and other DNS-level metadata.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.DNSHeadersComparer.html">DNSHeadersComparer</a></dt>
+      <dd><p>Provides an <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.iequalitycomparer-1">IEqualityComparer&lt;T&gt;</a> implementation for <a class="xref" href="Utils.Net.DNS.DNSHeader.html">DNSHeader</a> objects.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.DNSPacketReader.html">DNSPacketReader</a></dt>
+      <dd><p>Provides helpers to translate DNS datagrams into strongly typed response structures.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.DNSPacketWriter.html">DNSPacketWriter</a></dt>
+      <dd><p>Provides functionality to serialize DNS packets into a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a> array using reflection
+and expression trees. This class can handle standard DNS headers, request records, response records,
+and user-defined DNS response details annotated with <a class="xref" href="Utils.Net.DNS.DNSRecordAttribute.html">DNSRecordAttribute</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.DNSRecordAttribute.html">DNSRecordAttribute</a></dt>
+      <dd><p>Specifies a DNS record attribute that can be applied at the class level to identify
+the DNS <a class="xref" href="Utils.Net.DNS.DNSClassId.html">DNSClassId</a>, record ID, and an optional descriptive name.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.DNSRequestRecord.html">DNSRequestRecord</a></dt>
+      <dd><p>Represents a DNS query (request) record within a DNS packet, following the layout defined in
+<a href="https://www.rfc-editor.org/rfc/rfc1035#section-4.1.2">RFC 1035 §4.1.2</a> and indicating
+which record type (e.g., A, AAAA, MX) is being queried for a particular domain name.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.DNSRequestType.html">DNSRequestType</a></dt>
+      <dd><p>Request type identifiers used in legacy AXFR-style zone transfers.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.DNSResponseDetail.html">DNSResponseDetail</a></dt>
+      <dd><p>Represents the base class for DNS response details (RData). Concrete types that inherit from this class
+are annotated with <a class="xref" href="Utils.Net.DNS.DNSRecordAttribute.html">DNSRecordAttribute</a> for identifying DNS record types and include
+fields marked by <a class="xref" href="Utils.Net.DNS.DNSFieldAttribute.html">DNSFieldAttribute</a> for serialization.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.DNSResponseRecord.html">DNSResponseRecord</a></dt>
+      <dd><p>Represents a DNS response record, containing all necessary fields to describe
+a specific DNS answer in a response packet, including the domain name, the record type,
+TTL, and the <a class="xref" href="Utils.Net.DNS.DNSResponseRecord.html#Utils_Net_DNS_DNSResponseRecord_RData">RData</a>, as defined by
+<a href="https://www.rfc-editor.org/rfc/rfc1035#section-4.1.3">RFC 1035 §4.1.3</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.DNSText.html">DNSText</a></dt>
+      <dd><p>Provides helper methods to convert DNS records to and from the textual
+representation commonly used in zone files.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.DNSTextRecordAttribute.html">DNSTextRecordAttribute</a></dt>
+      <dd><p>Specifies the textual format for a DNS record. The format string may contain
+property or field names enclosed in curly braces (e.g. <code>{Preference}</code>)
+that will be replaced when converting to or from text.</p>
+</dd>
+    </dl>
+    <h3 id="structs">
+Structs
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.DNSDomainName.html">DNSDomainName</a></dt>
+      <dd><p>Represents a DNS domain name composed of an optional subdomain and a parent domain.
+Provides comparison and equality checks against both <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a> and <a class="xref" href="Utils.Net.DNS.DNSDomainName.html">DNSDomainName</a>.</p>
+</dd>
+    </dl>
+    <h3 id="interfaces">
+Interfaces
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.IDNSReader-1.html">IDNSReader&lt;T&gt;</a></dt>
+      <dd><p>Describes a component capable of reading DNS headers from a transport-specific source.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.IDNSWriter-1.html">IDNSWriter&lt;T&gt;</a></dt>
+      <dd><p>Represents a DNS serializer targeting a specific transport type.</p>
+</dd>
+    </dl>
+    <h3 id="enums">
+Enums
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.Algorithm.html">Algorithm</a></dt>
+      <dd><p>Enumerates algorithm identifiers used in DNS security (DNSSEC) and related cryptographic functions.
+Defined primarily for keys and signatures in DNSSEC records.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.CertificateTypes.html">CertificateTypes</a></dt>
+      <dd><p>Enumerates certificate types that might appear within CERT DNS records.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.DHCIDIdentifierTypes.html">DHCIDIdentifierTypes</a></dt>
+      <dd><p>Enumerates identifier types for DHCID records (DHCP Identifier),
+distinguishing how a client or device is identified in DHCP.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.DNSClassId.html">DNSClassId</a></dt>
+      <dd><p>DNS class identifiers that describe the scope of a resource record.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.DNSError.html">DNSError</a></dt>
+      <dd><p>Four bits that indicates the returned error value (4 bits, aligned)</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.DNSOpCode.html">DNSOpCode</a></dt>
+      <dd><p>Requested operation (4bits, aligned)</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.DNSQRBit.html">DNSQRBit</a></dt>
+      <dd><p>Identifies whether the DNS datagram carries a query or a response payload (1 bit, aligned).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.DigestTypes.html">DigestTypes</a></dt>
+      <dd><p>Enumerates digest/hash algorithms for DNSSEC-related records, such as DS (Delegation Signer).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.FieldsSizeOptions.html">FieldsSizeOptions</a></dt>
+      <dd><p>Enumerates the supported prefixed-size mechanisms for array or field lengths.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.GatewayType.html">GatewayType</a></dt>
+      <dd><p>Enumerates gateway types used in IPSECKEY records to indicate the nature
+of the gateway (e.g., an IPv4 address, IPv6 address, or a domain name).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.IANAddressFamily.html">IANAddressFamily</a></dt>
+      <dd><p>Enumerates IANA address family types used in DNS-based IPSECKEY or other resource records
+that store numeric address family identifiers.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.IPSecAlgorithm.html">IPSecAlgorithm</a></dt>
+      <dd><p>Enumerates cryptographic algorithms for IPSECKEY records.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.Protocol.html">Protocol</a></dt>
+      <dd><p>Enumerates the protocols associated with a DNSKEY (or KEY) resource record,
+specifying how the key is intended to be used (e.g., for TLS, email, DNSSEC).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.SSHAlgorithm.html">SSHAlgorithm</a></dt>
+      <dd><p>Enumerates algorithm types for SSHFP records (SSH Fingerprint records in DNS).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.SSHFingerprintType.html">SSHFingerprintType</a></dt>
+      <dd><p>Enumerates fingerprint/hash algorithms for SSHFP records.</p>
+</dd>
+    </dl>
+
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

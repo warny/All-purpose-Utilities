@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Migrating the package family to 2.0.0-rc.1 | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Migrating the package family to 2.0.0-rc.1 | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../../favicon.ico">
+      <link rel="stylesheet" href="../../public/docfx.min.css">
+      <link rel="stylesheet" href="../../public/main.css">
+      <meta name="docfx:navrel" content="../../toc.html">
+      <meta name="docfx:tocrel" content="../../toc.html">
+      
+      <meta name="docfx:rel" content="../../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/blob/master/docs/releasing/MigrationTo2.0.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../../index.html">
+            <img id="logo" class="svg" src="../../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="migrating-the-package-family-to-200-rc1">Migrating the package family to 2.0.0-rc.1</h1>
+
+<p>This is a coordinated major-version release candidate. All product-train <code>omy.Utils*</code> references should be upgraded together; remove mixed 1.x, 2.0.0, and preview references among them. Internal dependencies between product-train packages are exact at <code>2.0.0-rc.1</code>. <code>omy.Utils.Collections</code> is the current exception: it is intentionally excluded from the product train and remains independently versioned at <code>0.0.1</code> - do not &quot;fix&quot; a mixed <code>omy.Utils.Collections</code> reference by pulling it to <code>2.0.0-rc.1</code>.</p>
+<h2 id="families">Families</h2>
+<ul>
+<li><strong>Core:</strong> review the detailed <a href="../api/omy.Utils-1.2.1-to-2.0.0-rc.1.html"><code>omy.Utils</code> 1.2.1 audit</a>, including removed expression/number formatting APIs, enumerable overloads, nullability, and embedded DateFormula resources.</li>
+<li><strong>IO and serialization, Networking, Data, Imaging and fonts, Geography, Mathematics, OData, Dependency injection, Virtual machine, and Number formatting:</strong> recompile against the candidate and review the generated package-specific ApiCompat report. The manifest records the verified latest stable baseline: mostly 1.2.1, OData and OData.Generators 0.0.1, VirtualMachine 0.1.0, and first-candidate baselines for unpublished packages. <code>omy.Utils.Collections</code> is not part of this candidate at all - see the note above.</li>
+<li><strong>Reflection:</strong> compare against the latest published 1.2.1 package and account for the isolated worker behavior already documented in the changelog.</li>
+<li><strong>Parser:</strong> these packages establish their first public candidate baseline and remain governed by the parser production support contract.</li>
+<li><strong>Source generators:</strong> reference generators as analyzers with <code>ReferenceOutputAssembly=&quot;false&quot;</code>; do not reference their implementation assemblies directly.</li>
+</ul>
+<p>ApiCompat findings are accepted only for this coordinated major candidate and remain visible in <code>artifacts/reports/public-api-comparison.*</code>. Validate application-specific behavior before production deployment.</p>
+<h2 id="reviewed-api-compatibility-changes">Reviewed API compatibility changes</h2>
+<p>The repository-wide ApiCompat run against verified latest stable packages reports the following accepted major-version incompatibility counts: Core 132; IO 6; XML 1; Net 24; Data 3; Fonts 49; Imaging 7; Geography 23; Reflection 3; Mathematics 19; OData 10; VirtualMachine 7; OData generators 3; IO serialization generators 4; and dependency-injection generators 3. DependencyInjection runtime is binary compatible in the automated comparison. NumberToString and parser packages establish first candidate baselines. <code>omy.Utils.Collections</code> is outside the product train's <code>packages</code> array entirely, so this gate does not run against it.</p>
+<p>Each accepted diagnostic is pinned by diagnostic ID and exact message in <code>eng/api-breaking-changes/2.0.0.json</code>. The human-review inventory in <a href="AcceptedApiBreaks.html">Accepted API breaks</a> groups the exact removed or incompatible surface by package and links every acceptance back to its package section. New diagnostics, stale acceptances, and missing migration anchors all fail the gate. The counts include removed types/members and changed signatures or constraints; they are not behavioral guarantees or rename inference. The package-specific raw reports under <code>artifacts/api-compat</code> and structured <code>public-api-comparison.json</code> are the authoritative review inputs; consumers must recompile and exercise their own usage.</p>
+<h2 id="core-read-only-collections">Core read-only collections</h2>
+<p>The numeric classification tables under <code>Utils.Objects.Types</code> changed from mutable <code>Type[]</code> values
+to immutable <code>IReadOnlyList&lt;Type&gt;</code> values. Use collection operations directly; for example,
+<code>type.In(Types.Number)</code> may become <code>Types.Number.Contains(type)</code>. If an API specifically requires an
+array, materialize an explicit copy with <code>Types.Number.ToArray()</code>.</p>
+<p><code>ConstantNumericAttribute.Values</code> changed from <code>double[]</code> to <code>IReadOnlyList&lt;double&gt;?</code>. Use <code>Count</code>
+instead of <code>Length</code>, retain the existing null handling, and call <code>ToArray()</code> only when a mutable copy
+is genuinely required.</p>
+<p><a id="utils-range-complement"></a></p>
+<h2 id="utilsrange-rangest-complement-removed">Utils.Range: Ranges&lt;T&gt; complement removed</h2>
+<p><code>Ranges&lt;T&gt;.Complement(Ranges&lt;T&gt;)</code> and its <code>~</code> operator are removed, and <code>Ranges&lt;T&gt;</code> no longer
+implements <code>System.Numerics.IBitwiseOperators&lt;Ranges&lt;T&gt;, Ranges&lt;T&gt;, Ranges&lt;T&gt;&gt;</code> (a prerequisite for
+declaring <code>~</code>). Both members were a public stub that unconditionally threw <code>NotImplementedException</code>
+in 1.x: <code>Ranges&lt;T&gt;</code> is only constrained by <code>IComparable&lt;T&gt;</code>, and <code>IRange&lt;T&gt;</code> carries no notion of a
+domain, a minimum/maximum value, or infinite bounds, so a complement relative to &quot;the entire domain&quot;
+cannot be computed for an arbitrary <code>Ranges&lt;T&gt;</code> — an empty instance would not even have a domain to
+recover it from. No internal code or test in the repository called either member. <code>Union</code> (<code>|</code>),
+<code>Intersect</code> (<code>&amp;</code>), <code>SymmetricDifference</code> (<code>^</code>), and <code>Except</code> (<code>-</code>) are unaffected and remain declared
+directly on <code>Ranges&lt;T&gt;</code> even without the <code>IBitwiseOperators</code> interface. <code>IntRange&lt;T&gt;.Complement()</code>
+and its <code>~</code> operator are unaffected: that type's nullable endpoints explicitly represent <code>±∞</code>, so its
+complement (<code>Except(FullRange, this)</code>) is well-defined and unchanged.</p>
+<p><a id="utils-io-serialization-2"></a></p>
+<h2 id="utilsio-serialization-and-stream-changes">Utils.IO serialization and stream changes</h2>
+<p>Version 2.0 intentionally removes the legacy <code>StreamCopier</code>, <code>StreamValidator</code>, <code>BaseDecoderStream</code>, <code>ReadArray</code>, and <code>WriteVariableLengthString</code> signatures listed in the versioned API-breaking-change manifest. Consumers should migrate to the bounded/configurable overloads described by the current API documentation rather than restore 1.x shims.</p>
+<p><code>StreamCopier</code> now validates targets when they are registered, through any constructor, <code>Add</code>, <code>Insert</code>, or the indexer setter. Null, non-writable, self, and duplicate target references are rejected; duplicate identity is reference-based (<code>ReferenceEquals</code>), not <code>Equals</code>. After disposal the target list remains inspectable but is frozen: <code>CanWrite</code> becomes <code>false</code>, <code>IsReadOnly</code> becomes <code>true</code>, and every mutating member throws <code>ObjectDisposedException</code>. Consumers relying on the previous permissive registration or on the post-dispose list being cleared or freely mutable must update accordingly.</p>
+<p><code>BaseEncoderStream</code> now validates <code>maxDataWidth</code> (must be -1 or positive) and <code>indent</code> (must be non-negative) at construction, throwing <code>ArgumentOutOfRangeException</code> instead of accepting invalid values or failing later. Wrapping no longer emits a trailing separator/indent after the last line, and padding/filler characters now participate in the configured line width like any other encoded character; consumers matching wrapped output against a fixed string should re-check it. Unsupported <code>BaseEncoderStream</code> operations (<code>Position</code> setter, <code>Read</code>, <code>Seek</code>, <code>SetLength</code>) now throw <code>NotSupportedException</code> instead of <code>InvalidOperationException</code>, consistent with the stream's advertised <code>CanRead</code>/<code>CanSeek</code> capabilities.</p>
+<p><code>ReaderWriterGenerator</code> is now an <code>IIncrementalGenerator</code>. Generated extension methods no longer use a type's simple name: their deterministic name contains the namespace, containing types, metadata arity, and a stable FNV-1a suffix. Call sites must use the newly generated method name visible in IntelliSense.</p>
+<p>Runtime reader converters require an exact result type. A converter returning an interface or base class is not used for a concrete <code>Read&lt;T&gt;</code> because it cannot guarantee <code>T</code>. Writers may use a base/interface converter; the most specific applicable registration wins and equal-specificity candidates are rejected.</p>
+<p><code>PartialStream</code> serializes reads, writes, position changes, seeking, and length changes through one sync/async-compatible gate. Bounds are evaluated while holding that gate, async wait and I/O honor cancellation, failed writes do not advance the logical position, and each operation restores the underlying stream position.</p>
+<h2 id="omyutilsnet-protocol-clients">omy.Utils.Net protocol clients</h2>
+<p>Use <code>SmtpPath</code> and <code>SmtpMailOptions</code> for SMTP envelopes, handle <code>ProtocolResponseException</code> for negative responses, and recreate a client after <code>ProtocolSessionPoisonedException</code>. POP3 STAT sizes are <code>long</code>; NNTP <code>NewNewsAsync</code> returns message-id strings; and <code>NextAsync</code> returns null only for response 421. Prefer the new <code>TextReader</code>/<code>TextWriter</code> streaming overloads for large payloads.</p>
+<h2 id="numbertostring-rule-precedence">NumberToString rule precedence</h2>
+<p>Version 2.0 removes declaration order as an implicit tie-breaker. Add <code>priority=&quot;100&quot;</code> (or another intentional signed <code>xs:int</code> value) when compatible rules have equal canonical specificity. Ordinal variants and trigger forms select the greatest specificity and then greatest priority. Cumulative variants apply the least specific and lowest-priority rules first.</p>
+<p>Programmatic trigger forms must migrate from <code>(Constraints, To)</code> tuples to <code>NumberToStringConverter.TriggerReplacementForm</code>. <code>VariantRule</code> and <code>OrdinalVariantRule</code> constructors accept an optional final <code>priority</code> argument. Configurations inherited through <code>baseOn</code> retain parent priorities; parent and child candidates are validated together and no implicit override occurs.</p>
+<h3 id="forcedvariants-nts-04--additive-with-one-french-output-correction">ForcedVariants (NTS-04) — additive, with one French output correction</h3>
+<p>A configured lexical constituent (a time unit, a currency unit/subunit, a fraction
+denominator term) can now force grammatical variant dimensions (e.g. gender) on the
+numeric fragment it governs, without the caller supplying them — see the
+&quot;ForcedVariants&quot; section of <code>Utils.NumberToString/README.md</code> for the full precedence
+and locality contract. The new public surface is purely additive: the existing
+<code>NumberToStringConverterOptions.TimeUnits</code> tuple shape and <code>CurrencyDefinition</code>'s
+existing properties are unchanged; <code>TimeUnitForcedVariants</code>, <code>FractionForcedVariants</code>,
+<code>CurrencyDefinition.UnitForcedVariants</code>/<code>SubunitForcedVariants</code>, and the new
+<code>ForcedVariantSet</code> type default to an empty set that is behaviorally identical to
+pre-2.0 output. No <code>AcceptedApiBreaks.md</code> entry is required.</p>
+<p>The one intentional <strong>output change</strong> is a grammatical correction to the built-in
+French time-unit configuration: <code>hour</code>/<code>minute</code>/<code>second</code> (all feminine nouns) now
+declare <code>forceVariants=&quot;gender=feminin&quot;</code>. <code>fr.Convert(new TimeSpan(1, 0, 0))</code> changes
+from <code>&quot;un heure&quot;</code> to the grammatically correct <code>&quot;une heure&quot;</code>, and <code>fr.Convert(TimeSpan.FromHours(21))</code>
+changes from <code>&quot;vingt et un heures&quot;</code> to <code>&quot;vingt et une heures&quot;</code>, without the caller
+passing <code>gender=feminin</code> explicitly. Callers that previously worked around the defect
+by passing <code>gender=feminin</code> themselves are unaffected — the explicit variant still
+produces the same, now-correct, result. <code>fr.Convert(1)</code> and <code>fr.Convert(21)</code> (ordinary
+cardinals, no time unit involved) remain masculine by default.</p>
+<p><code>ForcedVariantSet.Create</code> — introduced in this same rc, not previously published —
+takes <code>params IEnumerable&lt;(string Dimension, string Value)&gt;</code> rather than an array-typed
+<code>params (string, string)[]</code>; existing tuple-literal call sites (<code>Create((&quot;gender&quot;, &quot;feminin&quot;))</code>)
+are source-compatible. <code>ForcedVariantSet</code> dimension aliases (a language's declared
+<code>localName</code>, e.g. French <code>genre</code>) are now canonicalized to the dimension's canonical
+name before use; a forced set that mixed a canonical name and its alias for the same
+dimension (previously silently inert) is now rejected deterministically.</p>
+<p>Portuguese, Galician, Catalan, and Spanish (<code>PT</code>, <code>GL</code>, <code>CA</code>, <code>ES</code>) gain built-in
+<code>Convert(TimeSpan)</code>/<code>Convert(TimeOnly)</code> support (<code>SupportsTimeConversion</code> becomes
+<code>true</code>). PT/GL/CA use the same <code>forceVariants=&quot;gender=...&quot;</code> pattern on their feminine
+<code>hour</code> unit; <code>minute</code>/<code>second</code> remain masculine by default. Spanish additionally
+declares a new <code>form</code> variant dimension (<code>standalone</code>/<code>attributive</code>) so its masculine
+attributive numeral apocope (&quot;uno&quot;→&quot;un&quot;, &quot;veintiuno&quot;→&quot;veintiún&quot;) applies correctly to
+both count 1 and compound counts (21, 31, …) — see the &quot;Lexical form selection /
+ForcedVariants (NTS-05)&quot; note below. These are new capabilities, not behavior changes
+to existing output.</p>
+<h3 id="lexical-form-selection-nts-05--additive">Lexical form selection (NTS-05) — additive</h3>
+<p>New public extension point: <code>ILexicalFormSelector</code>, <code>LexicalFormContext</code>,
+<code>LexicalFormSet</code>, <code>DefaultLexicalFormSelector</code>, <code>LexicalFormSelectorConfiguration</code>,
+and <code>NumberToStringConverter.RegisterLexicalFormSelector</code>/
+<code>NumberToStringConverterOptions.TimeUnitForms</code>/<code>TimeUnitFormSelectors</code> — lets a
+configured time unit choose among more than two named word forms (e.g. a future
+Russian &quot;час&quot;/&quot;часа&quot;/&quot;часов&quot;) via a selector resolved at most once per distinct
+selector type, during configuration loading, never during <code>Convert(...)</code>. A unit may
+optionally pass selector-specific settings via a structured
+<code>&lt;LexicalFormSelector type=&quot;...&quot;&gt;&lt;Configuration&gt;...&lt;/Configuration&gt;&lt;/LexicalFormSelector&gt;</code>
+XML element (the core library never interprets <code>&lt;Configuration&gt;</code>'s content); units
+needing no configuration keep using the concise <code>formSelector=&quot;...&quot;</code> attribute.
+<code>NumberToStringConverter.TimeUnitForms</code>/<code>TimeUnitFormSelectors</code> report the <em>effective</em>
+state for every configured time unit (synthesized singular/plural and
+<code>DefaultLexicalFormSelector</code> for units with no override). Every unit that configures no
+selector uses the built-in default (today's exact singular/plural behavior), so no
+existing configuration or output changes. See the &quot;Lexical form selection&quot; section of
+<code>Utils.NumberToString/README.md</code> and <code>Utils.NumberToString/DONE-2026-08-25(1).md</code>/
+<code>DONE-2026-08-25(2).md</code>. Spanish does not use this mechanism — its time-unit fix is a
+<code>ForcedVariants</code> addition (see above), not a lexical-form-selector one.</p>
+<p><a id="omy-utils-fonts-2"></a></p>
+<h2 id="utilsfonts-hostile-font-parsing-hardening">Utils.Fonts hostile-font parsing hardening</h2>
+<p><code>TrueTypeFont.ParseFont</code>/<code>ParseFontAsync</code> now accept an optional <code>TrueTypeFontParsingOptions</code>
+governing a <code>FontValidationMode</code> (<code>Strict</code>, the default, or <code>Permissive</code>), explicit resource limits
+(font/table size, table count, <code>cmap</code> subtable count, composite-glyph depth/component/point
+budgets), and stream-ownership (<code>LeaveOpen</code>). Strict mode rejects any structural anomaly by throwing
+<code>FontParseException</code>; permissive mode records <code>FontDiagnostic</code>s on <code>TrueTypeFont.Diagnostics</code> and
+continues whenever doing so remains memory-safe -- resource-limit violations always throw in both
+modes. Fonts that previously loaded silently despite duplicate table tags, checksum mismatches,
+malformed <code>cmap</code> subtables, or out-of-range composite glyph references now fail fast by default;
+pass <code>FontValidationMode.Permissive</code> to restore a best-effort parse. <code>TrueTypeFontParsingOptions.MaximumFontBytes</code>
+defaults to 64 MiB and cannot be configured above <code>uint.MaxValue</code> (4 GiB) -- SFNT table
+offsets/lengths are themselves unsigned 32-bit fields, so this library never supports a larger font
+regardless of this setting; a value above that ceiling throws <code>ArgumentOutOfRangeException</code>
+immediately when constructing the options.</p>
+<p>Several <code>short</code>-typed members were widened to their correct unsigned/wider wire type and are 2.0
+breaks requiring recompilation: see the &quot;Second audit pass&quot; entry under
+<a href="AcceptedApiBreaks.html#omy-utils-fonts"><code>omy.Utils.Fonts</code></a> for the full list, including the
+<code>GlyphCompound.getGlyphIndex</code> → <code>GetGlyphIndex</code> rename and the <code>CmapTable.CMaps</code>/
+<code>GlyphCompound.Instructions</code> immutability changes. This also includes <code>CmapSubtable.PlatformID</code> and
+<code>PlatformSpecificID</code>, which now use <code>ushort</code> to match their unsigned 16-bit wire fields.</p>
+<p>The static <code>FontSupport</code> name, charset, and encoding tables now expose <code>IReadOnlyList&lt;string&gt;</code> or
+<code>IReadOnlyList&lt;int&gt;</code> rather than mutable arrays. Continue to use indexing and enumeration, replace
+<code>Length</code> with <code>Count</code>, and make any required mutable copy explicit, for example:</p>
+<pre><code class="lang-csharp">var copy = FontSupport.StdNames.ToArray();
+</code></pre>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/docs/releasing/MigrationTo2.0.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

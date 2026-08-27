@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>The synchronized omy.Utils product train | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="The synchronized omy.Utils product train | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../../favicon.ico">
+      <link rel="stylesheet" href="../../public/docfx.min.css">
+      <link rel="stylesheet" href="../../public/main.css">
+      <meta name="docfx:navrel" content="../../toc.html">
+      <meta name="docfx:tocrel" content="../../toc.html">
+      
+      <meta name="docfx:rel" content="../../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/blob/master/docs/releasing/ProductTrain.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../../index.html">
+            <img id="logo" class="svg" src="../../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="the-synchronized-omyutils-product-train">The synchronized <code>omy.Utils</code> product train</h1>
+
+<p><code>2.0.0-rc.1</code> is one release candidate for the publishable libraries and analyzers manifested in <code>eng/product-train-manifest.json</code> (see that file's <code>packages</code> array for the exact, current count - it changes as packages join or leave the train; do not hard-code a number here). <code>Directory.Build.props</code> owns the only product-train-wide version property, while <code>eng/product-train-manifest.json</code> explicitly owns package selection, classification, frameworks, platforms, acceptance profiles, published API baselines, and package-specific assets.</p>
+<p>The train contains Core; IO; XML; Net; Data; Fonts; Imaging; Geography; Reflection; Mathematics; Expressions.CSyntax; Expressions.VBSyntax; OData; NumberToString; VirtualMachine; DependencyInjection; three non-parser source generators (OData.Generators, IO.Serialization.Generators, DependencyInjection.Generators); and the six-package parser ecosystem (Parser.Source, Parser.Diagnostics, Parser.Antlr4.Common, Parser, Parser.Expressions, and Parser.Generators - itself a fourth source generator, embedded in the &quot;six&quot; count rather than double-counted with the three above). Demonstrations, tests, the VSIX, its worker, generated acceptance consumers, and <code>omy.Utils.Collections</code> are explicitly excluded.</p>
+<p><code>omy.Utils.Collections</code> is <strong>not</strong> a manifested member of the train: it is listed in the manifest's <code>exclusions</code> array (<code>&quot;classification&quot;: &quot;provisional-package&quot;</code>) and ships independently at its own literal <code>0.0.1</code> instead of <code>ProductTrainVersion</code> - see <a href="ProvisionalVersioning.html">provisional versioning</a>.</p>
+<p>The manifest is authoritative, but publication order is not handwritten. <code>eng/analyze-package-graph.ps1</code> evaluates <code>ProjectReference</code> items through MSBuild, validates an acyclic graph, and writes the derived order under <code>artifacts/reports</code>.</p>
+<p>All candidates are built and packed before inspection. None of the quality-gate scripts publishes a package. The publication workflow only downloads already validated archives, verifies their hashes and remote all-or-none state, and emits a dry-run plan.</p>
+<h2 id="published-baselines">Published baselines</h2>
+<p>NuGet discovery selects 1.2.1 for Core, IO, XML, Net, Data, Fonts, Imaging, Geography, Reflection, Mathematics, DependencyInjection, and the IO/DI generators; 0.0.1 for OData and its generator; and 0.1.0 for VirtualMachine. NumberToString, all parser packages, and the newly-added Expressions.CSyntax/Expressions.VBSyntax were not found on NuGet and therefore establish first candidate baselines. The API gate queries NuGet again and fails rather than silently changing a pinned published baseline. <code>omy.Utils.Collections</code> is outside the train's <code>packages</code> array entirely, so this gate does not run against it at all.</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/docs/releasing/ProductTrain.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

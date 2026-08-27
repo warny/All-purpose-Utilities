@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Parser product-train packaging audit | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Parser product-train packaging audit | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../../favicon.ico">
+      <link rel="stylesheet" href="../../public/docfx.min.css">
+      <link rel="stylesheet" href="../../public/main.css">
+      <meta name="docfx:navrel" content="../../toc.html">
+      <meta name="docfx:tocrel" content="../../toc.html">
+      
+      <meta name="docfx:rel" content="../../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/PackagingAudit.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../../index.html">
+            <img id="logo" class="svg" src="../../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="parser-product-train-packaging-audit">Parser product-train packaging audit</h1>
+
+<h2 id="project-and-package-graph">Project and package graph</h2>
+<table>
+<thead>
+<tr>
+<th>Project reference</th>
+<th>Distribution decision</th>
+<th>Public-type exposure</th>
+<th>TFM and consumer status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Diagnostics -&gt; Source</td>
+<td>NuGet dependency at the synchronized parser version</td>
+<td>Diagnostics use shared source locations</td>
+<td><code>netstandard2.0</code>; usable by compatible compiler/runtime consumers</td>
+</tr>
+<tr>
+<td>Parser -&gt; Source, Diagnostics, Antlr4.Common</td>
+<td>Three explicit NuGet dependencies</td>
+<td>Parser diagnostics and source contracts cross public boundaries; common composition types are primarily internal</td>
+<td>Parser <code>net8.0</code>; dependencies <code>netstandard2.0</code></td>
+</tr>
+<tr>
+<td>Expressions -&gt; Parser, Utils</td>
+<td>Two explicit NuGet dependencies</td>
+<td>Expression policies implement parser interfaces and use Utils expression contracts</td>
+<td><code>net8.0</code></td>
+</tr>
+<tr>
+<td>Generators -&gt; Diagnostics, Antlr4.Common (Diagnostics -&gt; Source)</td>
+<td>Embedded analyzer-host DLLs, suppressed from runtime dependency groups</td>
+<td>Not application runtime API</td>
+<td>Generator and support DLLs <code>netstandard2.0</code></td>
+</tr>
+</tbody>
+</table>
+<p>Within the parser-related subgraph, dependencies place <code>Utils</code>, <code>Source</code>, and <code>Antlr4.Common</code> before <code>Diagnostics</code> and <code>Parser</code>, followed by <code>Generators</code> and <code>Expressions</code>; the global graph derives the complete 24-package order. All seven packages use the single documented <code>2.0.0-rc.1</code> product-train version. <code>omy.Utils</code> is intentionally a major-version candidate relative to its published 1.2.1 API; the parser packages use their first candidate baseline.</p>
+<h2 id="generator-findings">Generator findings</h2>
+<p>The generator package deliberately embeds four analyzer-directory DLLs and one <code>buildTransitive</code> targets file. Its support projects are built before <code>pack --no-build</code>; hard-coded <code>bin/$(Configuration)/netstandard2.0</code> inputs remain a maintenance risk, but clean candidate staging and archive inspection prevent stale packages from being silently reused. Roslyn load failures, generated-file emission, and attach-file settings are exercised by a real consumer. Different SDK minor-version behavior remains a CI/platform observation rather than a compatibility promise.</p>
+<h2 id="runtime-resources-and-platform-findings">Runtime resources and platform findings</h2>
+<p><code>DateFormulaConfiguration.json</code> was the only product-train runtime file loaded from <code>AppContext.BaseDirectory</code>; it is now an assembly resource. Parser filesystem APIs accept caller-selected grammar paths and are not missing package payloads. The train targets stable <code>net8.0</code> and <code>netstandard2.0</code>; no native dependency was found. Unsafe code remains confined to <code>omy.Utils</code>' documented implementation. The runtime and expressions projects compile without <code>EnablePreviewFeatures</code>; package-only consumers enforce the same setting. Single-file, trimming, and AOT support are not claimed.</p>
+<h2 id="existing-publication-workflow-risks">Existing publication workflow risks</h2>
+<p>The release workflow discovers every project recursively, packs and pushes inside one loop, and can therefore select unintended packages or leave a partial release when a later push fails. Existence-check network failures are treated like an absent package. It does not validate an immutable candidate set, internal dependency coherence, SourceLink, symbol contents, consumer restoration, or a pre-push vulnerability report. A duplicate version is skipped independently. Package publication cannot be transactional. The acceptance scripts intentionally stop before any push and provide manifest-selected artifacts for a future validate-then-publish workflow.</p>
+<h2 id="packaged-composition-and-incrementality-coverage">Packaged composition and incrementality coverage</h2>
+<p>The package-only runtime consumer now executes <code>Antlr4GrammarProjectCompiler</code> with direct and transitive imports, separate lexer/parser grammars, <code>tokenVocab</code>, populated and empty lexer modes, local masking, entry-root ownership, deterministic imported collisions, and missing/cyclic/ambiguous dependency failures. The package-only generator consumer builds the equivalent effective composition and then, in a copied real project, changes an imported grammar, removes its import, changes <code>tokenVocab</code>, and adds/removes an imported collision. Every rebuild executes the resulting facade and rejects stale effective rules. Separate builds require <code>UP0010</code>, <code>UP0011</code>, and <code>UP0016</code> for missing, cyclic, and ambiguous imports.</p>
+<p>The symbol inspection proves repository metadata, candidate commit identity, <code>.snupkg</code> presence, and portable PDB signatures. It does <strong>not</strong> inspect the embedded SourceLink document or retrieve mapped sources, so full SourceLink validation remains an explicit release risk.</p>
+<h2 id="repository-wide-train-generalization">Repository-wide train generalization</h2>
+<p>The original seven-package parser acceptance chain is retained as specialized evidence inside the global 24-package train. Discovery now makes every project an explicit include/exclude decision, graph analysis derives publication order, and generic package-only consumers restore, compile, and load every library or analyzer before parser-specific runtime, generator, and incremental scenarios run.</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/PackagingAudit.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

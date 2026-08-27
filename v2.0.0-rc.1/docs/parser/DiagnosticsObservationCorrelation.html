@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Diagnostics / Observation Correlation Contract | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Diagnostics / Observation Correlation Contract | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../../favicon.ico">
+      <link rel="stylesheet" href="../../public/docfx.min.css">
+      <link rel="stylesheet" href="../../public/main.css">
+      <meta name="docfx:navrel" content="../../toc.html">
+      <meta name="docfx:tocrel" content="../../toc.html">
+      
+      <meta name="docfx:rel" content="../../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/DiagnosticsObservationCorrelation.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../../index.html">
+            <img id="logo" class="svg" src="../../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="diagnostics--observation-correlation-contract">Diagnostics / Observation Correlation Contract</h1>
+
+<p>This document defines conservative boundaries for correlating parser diagnostics with runtime observations in <code>Utils.Parser</code>.</p>
+<p>It extends the current passive runtime observation model without changing runtime behavior, parser authority, or export authority.</p>
+<p>See also:</p>
+<ul>
+<li><a href="RuntimeStateOwnership.html"><code>docs/parser/RuntimeStateOwnership.md</code></a></li>
+<li><a href="RuntimeObservationAndExportContract.html"><code>docs/parser/RuntimeObservationAndExportContract.md</code></a></li>
+<li><a href="ParserMetadataAndRuntimeLimitations.html"><code>docs/parser/ParserMetadataAndRuntimeLimitations.md</code></a></li>
+</ul>
+<h2 id="1-contract-intent">1) Contract intent</h2>
+<p>Correlation is allowed only as descriptive metadata for tooling.</p>
+<p>The preferred conservative model is one-way:</p>
+<ul>
+<li><code>Diagnostic -&gt; RuntimeObservationId?</code></li>
+</ul>
+<p>This means a diagnostic may optionally carry an immutable descriptive identifier that points to an observed runtime event in the same parser run.</p>
+<p>No reverse ownership link is implied.</p>
+<h2 id="2-authority-and-ownership-boundaries">2) Authority and ownership boundaries</h2>
+<p>These boundaries are mandatory:</p>
+<ul>
+<li>Diagnostics remain parser-authoritative.</li>
+<li>Runtime observations remain passive and descriptive.</li>
+<li>Correlation identifiers do not transfer ownership between diagnostics and observations.</li>
+<li>Correlation identifiers do not change parser scheduling, parse acceptance, parse-tree shape, or diagnostic authority.</li>
+</ul>
+<p>A correlation identifier is not an execution handle.</p>
+<h2 id="3-why-direct-object-references-are-forbidden">3) Why direct object references are forbidden</h2>
+<p>Direct references such as <code>Diagnostic -&gt; Observation object</code> or <code>Observation -&gt; Diagnostic[]</code> are intentionally forbidden because they would:</p>
+<ul>
+<li>blur ownership boundaries,</li>
+<li>create graph-navigation pressure,</li>
+<li>risk accidental replay expectations,</li>
+<li>increase coupling to mutable runtime internals,</li>
+<li>make export contracts harder to keep deterministic and non-authoritative.</li>
+</ul>
+<p>To preserve determinism and ownership boundaries, correlation must stay identifier-based and immutable.</p>
+<h2 id="4-correlation-identifier-semantics">4) Correlation identifier semantics</h2>
+<p>Any future correlation identifier must be interpreted as:</p>
+<ul>
+<li>descriptive only,</li>
+<li>scoped to a single observed parser run unless explicitly documented otherwise,</li>
+<li>optional (<code>null</code> / missing is valid),</li>
+<li>non-authoritative,</li>
+<li>non-navigational.</li>
+</ul>
+<p>A correlation identifier must not imply:</p>
+<ul>
+<li>runtime state reachability,</li>
+<li>runtime object access,</li>
+<li>replay capability,</li>
+<li>scheduler authority,</li>
+<li>parser-control authority,</li>
+<li>cross-run stability by default.</li>
+</ul>
+<h2 id="5-non-goals">5) Non-goals</h2>
+<p>This contract does not introduce:</p>
+<ul>
+<li>runtime graph construction,</li>
+<li>bidirectional diagnostic/observation links,</li>
+<li>mutable correlation registries,</li>
+<li>ID-based runtime lookup APIs,</li>
+<li>trace replay,</li>
+<li>diagnostic-driven parsing,</li>
+<li>observation-driven parsing,</li>
+<li>parser execution control.</li>
+</ul>
+<h2 id="6-export-facing-expectations">6) Export-facing expectations</h2>
+<p>If correlation appears in future text or JSON exports, the field must remain descriptive and optional.</p>
+<p>Export constraints remain:</p>
+<ul>
+<li>exports are deterministic for the same input sequence,</li>
+<li>exports are not replay formats,</li>
+<li>exports must not expose mutable runtime internals,</li>
+<li>absence of correlation data must be valid and expected.</li>
+</ul>
+<h2 id="7-recommended-future-shape-documentation-only">7) Recommended future shape (documentation-only)</h2>
+<p>If a runtime identifier type is added in future code, keep it minimal and immutable (for example a small readonly value type).</p>
+<p>Any adoption should remain conservative and behavior-neutral:</p>
+<ul>
+<li>no global mutable ID registry,</li>
+<li>no runtime lookup service,</li>
+<li>no ownership transfer,</li>
+<li>no parser-control surface.</li>
+</ul>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/DiagnosticsObservationCorrelation.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

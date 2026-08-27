@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Runtime Observation and Export Contract | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Runtime Observation and Export Contract | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../../favicon.ico">
+      <link rel="stylesheet" href="../../public/docfx.min.css">
+      <link rel="stylesheet" href="../../public/main.css">
+      <meta name="docfx:navrel" content="../../toc.html">
+      <meta name="docfx:tocrel" content="../../toc.html">
+      
+      <meta name="docfx:rel" content="../../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/RuntimeObservationAndExportContract.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../../index.html">
+            <img id="logo" class="svg" src="../../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="runtime-observation-and-export-contract">Runtime Observation and Export Contract</h1>
+
+<p>This document defines the contract boundaries for parser runtime observation in <code>Utils.Parser</code>.</p>
+<p>It intentionally separates:</p>
+<ol>
+<li>the <strong>runtime observation contract</strong> (what the parser runtime emits), and</li>
+<li>the <strong>export contract</strong> (how tooling can render/export those observations).</li>
+</ol>
+<p>Observation and export remain passive, descriptive, and non-authoritative.</p>
+<p>See also:</p>
+<ul>
+<li><a href="../../Utils.Parser/ROADMAP.md"><code>Utils.Parser/ROADMAP.md</code></a></li>
+<li><a href="RuntimeStateOwnership.html"><code>docs/parser/RuntimeStateOwnership.md</code></a></li>
+<li><a href="ParserMetadataAndRuntimeLimitations.html"><code>docs/parser/ParserMetadataAndRuntimeLimitations.md</code></a></li>
+<li><a href="DiagnosticsObservationCorrelation.html"><code>docs/parser/DiagnosticsObservationCorrelation.md</code></a></li>
+</ul>
+<h2 id="1-runtime-observation-contract">1) Runtime observation contract</h2>
+<p>Applicable types:</p>
+<ul>
+<li><code>AlternativeRuntimeObservation</code></li>
+<li><code>ParserRuntimeObservationKind</code></li>
+<li><code>ParserRuntimeObservationStatus</code></li>
+<li><code>IParserRuntimeObserver</code></li>
+</ul>
+<h3 id="guarantees">Guarantees</h3>
+<ul>
+<li>Observations are emitted in the deterministic scheduling order of a deterministic parser run.</li>
+<li>Observation payloads are immutable (<code>AlternativeRuntimeObservation</code> record values).</li>
+<li>Observation callbacks are passive and non-authoritative.</li>
+<li>Observer callback exceptions are isolated and must not alter parser execution semantics.</li>
+<li><code>Kind</code> describes <strong>which scheduler event was observed</strong>.</li>
+<li><code>Status</code> describes <strong>the observed runtime status at that moment</strong>.</li>
+<li><code>Kind</code> and <code>Status</code> are distinct dimensions and must not be collapsed into a single semantic channel.</li>
+<li>Runtime observation does not grant replay, control, or execution authority.</li>
+</ul>
+<h3 id="non-guarantees">Non-guarantees</h3>
+<ul>
+<li>No guarantee of exhaustive internal scheduler state exposure.</li>
+<li>No exposure of <code>ActiveParseState</code> internals via observation payloads.</li>
+<li>No proof of semantic equivalence from observations alone.</li>
+<li>No branch replay/resume contract.</li>
+<li>No commitment that every future runtime internal detail will be surfaced in observations.</li>
+<li>No commitment that observation payload fields model complete runtime internals.</li>
+</ul>
+<h2 id="2-export-contract">2) Export contract</h2>
+<p>Applicable types:</p>
+<ul>
+<li><code>RuntimeObservationTextWriter</code></li>
+<li><code>RuntimeObservationJsonWriter</code></li>
+</ul>
+<p>Exports are tooling-oriented diagnostics. They are not parser execution contracts.</p>
+<h3 id="shared-guarantees">Shared guarantees</h3>
+<ul>
+<li>Export functions are deterministic for the same input observation sequence.</li>
+<li>Exports are descriptive only and not authoritative parse state.</li>
+<li>Exports are not replay formats.</li>
+<li>Exports do not expose internal runtime structures such as <code>ActiveParseState</code>.</li>
+</ul>
+<h3 id="text-export-contract">Text export contract</h3>
+<p><code>RuntimeObservationTextWriter.Write</code> outputs one line per observation with:</p>
+<ul>
+<li>invariant token labels,</li>
+<li>stable field order,</li>
+<li>no trailing newline (lines separated by <code>\n</code>).</li>
+</ul>
+<p>Intended use:</p>
+<ul>
+<li>deterministic diagnostics,</li>
+<li>snapshot-like tooling comparisons.</li>
+</ul>
+<h3 id="json-export-contract">JSON export contract</h3>
+<p><code>RuntimeObservationJsonWriter.Write</code> outputs a JSON array with one object per observation.</p>
+<p>Current object field names are:</p>
+<ul>
+<li><code>Kind</code></li>
+<li><code>Status</code></li>
+<li><code>Rule</code></li>
+<li><code>Alternative</code></li>
+<li><code>CurrentInputPosition</code></li>
+<li><code>OriginInputPosition</code></li>
+<li><code>Priority</code></li>
+</ul>
+<p>Additional expectations:</p>
+<ul>
+<li>enum values are emitted as enum names (<code>ToString()</code> representation),</li>
+<li>object property order is stable for the current implementation and covered by tests,</li>
+<li>output is intentionally minimal and descriptive.</li>
+</ul>
+<h2 id="3-stability-boundary">3) Stability boundary</h2>
+<p>Within the current major line, this contract is intended to be stable for tooling-oriented comparisons, while staying explicitly non-authoritative for runtime execution.</p>
+<p>If future runtime internals evolve, observation/export additions should preserve these passive boundaries and avoid implying execution or replay semantics.</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/RuntimeObservationAndExportContract.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
