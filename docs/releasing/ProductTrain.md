@@ -4,6 +4,8 @@
 
 The train contains Core; IO; XML; Net; Data; Fonts; Imaging; Geography; Reflection; Mathematics; Collections; OData; NumberToString; VirtualMachine; DependencyInjection; four source generators; and the six parser packages. Demonstrations, tests, syntax implementation projects, the VSIX, its worker, and generated acceptance consumers are explicitly excluded.
 
+Collections is a manifested member of the train (packed, inspected, API-compared like every other package) but is marked `"versionPolicy": "provisional"` and ships at its own literal `0.0.1` instead of `ProductTrainVersion` - see [provisional versioning](ProvisionalVersioning.md).
+
 The manifest is authoritative, but publication order is not handwritten. `eng/analyze-package-graph.ps1` evaluates `ProjectReference` items through MSBuild, validates an acyclic graph, and writes the derived order under `artifacts/reports`.
 
 All candidates are built and packed before inspection. None of the quality-gate scripts publishes a package. The publication workflow only downloads already validated archives, verifies their hashes and remote all-or-none state, and emits a dry-run plan.

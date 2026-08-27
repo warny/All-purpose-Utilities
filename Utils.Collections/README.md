@@ -111,4 +111,10 @@ list.CopyTo(dest, 0);
 - `omy.Utils` – core utilities including `LRUCache<K,V>`, `IndexedList<K,V>`, and `EnumerableEx` extensions.
 
 
-[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v0.0.1/)
+
+> **Provisional release.** `omy.Utils.Collections` is versioned independently of the `omy.Utils`
+> product train (currently `2.0.0-rc.1`): it only contains `SkipList`/`SkipListDictionary` today
+> and is not yet considered mature enough to join the train as a stable component. It will jump
+> directly to the product train's stable version once it does. See
+> [Provisional versioning](https://github.com/warny/All-purpose-Utilities/blob/master/docs/releasing/ProvisionalVersioning.md).

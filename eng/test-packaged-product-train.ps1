@@ -70,7 +70,7 @@ if ($TestNativeRunnerOnly) {
 
 $expectedPackages = @{}
 foreach ($package in $manifest.packages) {
-    $expectedPackages[$package.packageId] = [string]$manifest.version
+    $expectedPackages[$package.packageId] = Get-PackageVersion $manifest $package
 }
 
 <# Verifies that the package directory still contains the exact canonical artifact set. #>
@@ -84,8 +84,9 @@ function Get-ValidatedCanonicalPackages {
         throw "Canonical package report identity, version, or commit does not match this validation run."
     }
     $expectedFiles = @($manifest.packages | ForEach-Object {
-        "$($_.packageId).$($manifest.version).nupkg"
-        if ($_.symbolPackage) { "$($_.packageId).$($manifest.version).snupkg" }
+        $version = Get-PackageVersion $manifest $_
+        "$($_.packageId).$version.nupkg"
+        if ($_.symbolPackage) { "$($_.packageId).$version.snupkg" }
     } | Sort-Object)
     $reportedFiles = @($report.packages.file | Sort-Object)
     $actualFiles = @(Get-ChildItem $packagesPath -File | Where-Object Extension -in @(".nupkg", ".snupkg") | Select-Object -ExpandProperty Name | Sort-Object)
@@ -194,7 +195,7 @@ try {
             New-Item $projectRoot -ItemType Directory -Force | Out-Null
             $referenceMetadata = if ($package.kind -eq "analyzer") { ' OutputItemType="Analyzer" ReferenceOutputAssembly="false"' } else { '' }
             @"
-<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net9.0</TargetFramework><EnablePreviewFeatures>false</EnablePreviewFeatures></PropertyGroup><ItemGroup><PackageReference Include="$($package.packageId)" Version="$($manifest.version)"$referenceMetadata /></ItemGroup></Project>
+<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net9.0</TargetFramework><EnablePreviewFeatures>false</EnablePreviewFeatures></PropertyGroup><ItemGroup><PackageReference Include="$($package.packageId)" Version="$($expectedPackages[$package.packageId])"$referenceMetadata /></ItemGroup></Project>
 "@ | Set-Content (Join-Path $projectRoot "Consumer.csproj")
             if ($package.kind -eq "analyzer") {
                 'Console.WriteLine("analyzer-loaded");' | Set-Content (Join-Path $projectRoot "Program.cs")
@@ -208,7 +209,7 @@ try {
             $automaticAssets = Get-Content (Join-Path $projectRoot "obj/project.assets.json") -Raw | ConvertFrom-Json
             foreach ($library in $automaticAssets.libraries.PSObject.Properties | Where-Object Name -like "omy.*/*") {
                 $parts = $library.Name -split "/"
-                if (-not $expectedPackages.ContainsKey($parts[0]) -or $parts[1] -ne $manifest.version) { throw "$($package.packageId) restored divergent internal asset '$($library.Name)'." }
+                if (-not $expectedPackages.ContainsKey($parts[0]) -or $parts[1] -ne $expectedPackages[$parts[0]]) { throw "$($package.packageId) restored divergent internal asset '$($library.Name)'." }
             }
             $buildOutput = & Invoke-AcceptanceDotNet build $automaticProject --configuration $Configuration --no-restore 2>&1
             if ($LASTEXITCODE -ne 0 -or ($buildOutput -match "CS8032")) { $buildOutput | Write-Host; throw "Automatic compile/load gate failed for $($package.packageId)." }

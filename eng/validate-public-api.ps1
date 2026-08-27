@@ -38,7 +38,7 @@ function Get-DeclaredAssembly {
 foreach ($package in $manifest.packages) {
     if (-not @($package.apiAssemblies).Count) { throw "$($package.packageId): apiAssemblies must be declared explicitly." }
     $candidateRoot = Join-Path $workRoot "candidate/$($package.packageId)"
-    Expand-ZipArchive (Join-Path $packageRoot "$($package.packageId).$($manifest.version).nupkg") $candidateRoot
+    Expand-ZipArchive (Join-Path $packageRoot "$($package.packageId).$(Get-PackageVersion $manifest $package).nupkg") $candidateRoot
     $candidateAssemblies = @($package.apiAssemblies | ForEach-Object { Get-DeclaredAssembly $candidateRoot $_ $package.packageId 'candidate API' })
     $allowedAssemblyNames = @($candidateAssemblies.Name) + @($package.embeddedAssemblies)
     $unexpected = @(Get-ChildItem $candidateRoot -Filter *.dll -File -Recurse | Where-Object FullName -match '[\\/](lib|analyzers)[\\/]' | Where-Object Name -notin $allowedAssemblyNames)

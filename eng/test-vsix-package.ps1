@@ -68,6 +68,12 @@ if ($isProductTrainPrerelease) {
     if ($vsixVersion -ne $productTrainVersion) { throw "Product train '$productTrainVersion' is stable, so the VSIX version must match it exactly per docs/releasing/VisualStudioExtension.md; found '$vsixVersion'." }
 }
 
+$expectedIconManifestPath = 'Resources\AllPurposeUtilities_logo.png'
+$iconElement = $manifestXml.PackageManifest.Metadata.Icon
+if ([string]$iconElement -ne $expectedIconManifestPath) { throw "extension.vsixmanifest <Icon> is '$iconElement', expected '$expectedIconManifestPath'." }
+$iconArchivePath = Join-Path $extractDir 'Resources/AllPurposeUtilities_logo.png'
+if (-not (Test-Path $iconArchivePath)) { throw "'Resources/AllPurposeUtilities_logo.png' declared by <Icon> is missing from the VSIX archive." }
+
 $workerExeRelativePath = 'worker/Utils.Parser.VisualStudio.Worker.exe'
 $workerExePath = Join-Path $extractDir 'worker/Utils.Parser.VisualStudio.Worker.exe'
 if (-not (Test-Path $workerExePath)) { throw "'$workerExeRelativePath' is missing from the VSIX. PluginWorkerProcess.TryCreate() resolves the worker at '<extensionDir>\worker\Utils.Parser.VisualStudio.Worker.exe'; without it every installed extension silently degrades to in-process-only classification." }
@@ -116,6 +122,7 @@ Write-ReleaseJson ([ordered]@{
     publisher       = $identity.Publisher
     displayName     = $manifestXml.PackageManifest.Metadata.DisplayName
     vsixVersion     = $vsixVersion
+    icon            = [string]$iconElement
     productTrainVersion = $productTrainVersion
     versionPolicy   = if ($isProductTrainPrerelease) { 'provisional-0.0.x' } else { 'tracks-product-train' }
     entryCount      = $allEntries.Count

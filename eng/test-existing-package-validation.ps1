@@ -5,6 +5,7 @@ Validates the existing-package acceptance entry point without building or networ
 [CmdletBinding()]
 param()
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "Release.Common.ps1")
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $manifest = Get-Content (Join-Path $PSScriptRoot "product-train-manifest.json") -Raw | ConvertFrom-Json
 $relativeArtifacts = "artifacts/existing-package-test-$([guid]::NewGuid().ToString('N'))"
@@ -13,8 +14,9 @@ $packageRoot = Join-Path $artifactRoot "packages"
 try {
     New-Item $packageRoot -ItemType Directory -Force | Out-Null
     foreach ($package in $manifest.packages) {
+        $version = Get-PackageVersion $manifest $package
         foreach ($extension in @("nupkg", "snupkg")) {
-            [IO.File]::WriteAllText((Join-Path $packageRoot "$($package.packageId).$($manifest.version).$extension"), "$($package.packageId)-$extension")
+            [IO.File]::WriteAllText((Join-Path $packageRoot "$($package.packageId).$version.$extension"), "$($package.packageId)-$extension")
         }
     }
     & (Join-Path $PSScriptRoot "write-canonical-package-report.ps1") -ArtifactsPath $relativeArtifacts

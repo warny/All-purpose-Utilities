@@ -251,6 +251,9 @@
         "windows"
       ],
       "publicApiPolicy": "first-candidate",
+      "versionPolicy": "provisional",
+      "provisionalVersion": "0.0.1",
+      "provisionalReason": "Only contains SkipList; not yet mature enough to join the 2.0 product train as a stable component.",
       "symbolPackage": true,
       "apiAssemblies": [
         "lib/net8.0/Utils.Collections.dll"

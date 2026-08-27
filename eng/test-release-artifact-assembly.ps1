@@ -6,6 +6,7 @@ Validates complete canonical package assembly and failure diagnostics without ne
 param()
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.IO.Compression.FileSystem
+. (Join-Path $PSScriptRoot "Release.Common.ps1")
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $manifest = Get-Content (Join-Path $PSScriptRoot "product-train-manifest.json") -Raw | ConvertFrom-Json
 $commit = (& git -C $repoRoot rev-parse HEAD).Trim()
@@ -26,8 +27,9 @@ try {
     $canonicalPackages = @()
     New-Item (Join-Path $root "canonical/packages") -ItemType Directory -Force | Out-Null
     foreach ($package in $manifest.packages) {
+        $packageVersion = Get-PackageVersion $manifest $package
         foreach ($extension in @("nupkg", "snupkg")) {
-            $name = "$($package.packageId).$($manifest.version).$extension"
+            $name = "$($package.packageId).$packageVersion.$extension"
             $path = Join-Path $root "canonical/packages/$name"
             $archive = [IO.Compression.ZipFile]::Open($path, [IO.Compression.ZipArchiveMode]::Create)
             try {

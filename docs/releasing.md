@@ -8,7 +8,7 @@ Use this guide to align GitHub releases with NuGet publishing for the `omy.Utils
 2. Add release notes to `CHANGELOG.md` under a new version heading.
 3. Create a Git tag matching the package version (for example `v2.0.0-rc.1`).
 
-The 24 manifested projects use `ProductTrainVersion` from `Directory.Build.props` as their only version authority. The release gate rejects project-local `PackageVersion`, assembly/file version overrides, hard-coded versions, divergent evaluated MSBuild properties, dependencies, assets, or artifacts.
+Most of the 24 manifested projects use `ProductTrainVersion` from `Directory.Build.props` as their version authority. A small number are explicitly marked `"versionPolicy": "provisional"` in `eng/product-train-manifest.json` and instead declare their own literal version - see [provisional versioning](releasing/ProvisionalVersioning.md). Either way, the release gate rejects project-local `PackageVersion`, assembly/file version overrides, undeclared hard-coded versions, divergent evaluated MSBuild properties, dependencies, assets, or artifacts.
 
 ## GitHub release flow
 
@@ -51,3 +51,18 @@ provisional version series until the train reaches a stable `2.0.0`. See the
 [VSIX versioning and release guide](releasing/VisualStudioExtension.md) for the policy, and
 [`Utils.Parser.VisualStudio/README.md`](../Utils.Parser.VisualStudio/README.md) for the
 Marketplace-facing description, features, and manual publication checklist.
+
+## Provisional components
+
+`omy.Utils.Collections` and the `Utils.Parser.VisualStudio` VSIX both ship at independent,
+provisional versions rather than the product train's version, for different reasons. See
+[provisional versioning](releasing/ProvisionalVersioning.md) for the shared policy and how it is
+enforced.
+
+## Solution logo
+
+Every publishable NuGet package and the VSIX use the same source image,
+[`res/AllPurposeUtilities_logo.png`](../res/AllPurposeUtilities_logo.png), centralized via
+`Directory.Build.props`'s `SolutionLogoPath` property. See
+[provisional versioning](releasing/ProvisionalVersioning.md#solution-logo) for how it is wired up;
+no project keeps its own copy of the image.

@@ -45,6 +45,16 @@
         </None>
     </ItemGroup>
 
+    <!-- Solution logo, reused from res/AllPurposeUtilities_logo.png (Directory.Build.props: SolutionLogoPath) -
+         no source copy lives under this project. Linked at Resources\ to match the <Icon> path declared in
+         source.extension.vsixmanifest. -->
+    <ItemGroup Condition="Exists('$(SolutionLogoPath)')">
+        <Content Include="$(SolutionLogoPath)">
+            <Link>Resources\AllPurposeUtilities_logo.png</Link>
+            <IncludeInVSIX>true</IncludeInVSIX>
+        </Content>
+    </ItemGroup>
+
     <!--
         Build the plugin worker process and copy its output next to the extension DLL.
         The tagger looks for the worker at $(OutputPath)worker\Utils.Parser.VisualStudio.Worker.exe.

@@ -11,8 +11,9 @@ $manifest = Get-ProductTrainManifest $repoRoot
 $artifactRoot = Resolve-RepositoryPath $repoRoot $ArtifactsPath
 $packageRoot = Join-Path $artifactRoot "packages"
 $expectedFiles = @($manifest.packages | ForEach-Object {
-    "$($_.packageId).$($manifest.version).nupkg"
-    if ($_.symbolPackage) { "$($_.packageId).$($manifest.version).snupkg" }
+    $version = Get-PackageVersion $manifest $_
+    "$($_.packageId).$version.nupkg"
+    if ($_.symbolPackage) { "$($_.packageId).$version.snupkg" }
 } | Sort-Object)
 $actualFiles = @(Get-ChildItem $packageRoot -File | Where-Object Extension -in @(".nupkg", ".snupkg") | Select-Object -ExpandProperty Name | Sort-Object)
 $difference = Compare-Object $expectedFiles $actualFiles

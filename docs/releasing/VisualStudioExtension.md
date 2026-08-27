@@ -67,6 +67,18 @@ When the product train reaches `2.0.0` stable, set the VSIX `Version` to `2.0.0`
 any further `0.0.x` numbers), and from then on keep it aligned with `ProductTrainVersion` on
 subsequent stable releases.
 
+## Icon
+
+The VSIX uses the solution's common logo, [`res/AllPurposeUtilities_logo.png`](../../res/AllPurposeUtilities_logo.png)
+(also reused by every NuGet package - see [provisional versioning](ProvisionalVersioning.md#solution-logo)),
+via `Directory.Build.props`'s `SolutionLogoPath` property. `Utils.Parser.VisualStudio.csproj` links it
+into the VSIX at `Resources\AllPurposeUtilities_logo.png` (no source copy under this project), and
+`source.extension.vsixmanifest` declares `<Icon>Resources\AllPurposeUtilities_logo.png</Icon>` in
+`<Metadata>`, positioned before `<Tags>` - `PackageManifestSchema.Metadata.xsd` enforces a strict
+element order (`Icon` before `PreviewImage` before `Tags`), and the build fails with `VSSDK1062`
+schema-validation errors if that order is violated. No `<PreviewImage>` is declared; a Marketplace
+preview image is out of scope for this change and left as a distinct future step.
+
 ## CI
 
 `.github/workflows/nuget-publish.yml` already builds, and — on pushes to `release`/`releases/**` —
@@ -75,7 +87,9 @@ publishes the VSIX via `tfx extension publish`, gated on the `VS_MARKETPLACE_PUB
 from the `build-visual-studio-extensions` job before those secrets are ever read) fails the build
 before publish is even reachable if: more than one `.vsix` is produced, the manifest is missing or
 malformed, the `Id`/`Publisher` differ from the recorded expected values, the `Version` does not
-match the policy above, or the `worker/` payload described below is missing from the archive.
+match the policy above (or disagrees with `UtilsParserVisualStudioExtension.cs`'s own
+`ExtensionMetadata` version), the `<Icon>` element or the icon file itself is missing from the
+archive, or the `worker/` payload described below is missing from the archive.
 
 ## Manual Marketplace publication checklist (first publication)
 
@@ -85,7 +99,7 @@ an intentionally manual, one-time act by a maintainer with access to the target 
 **Automated by the repository:**
 - [x] Building the VSIX in Release configuration (`dotnet build Utils.Parser.VisualStudio/Utils.Parser.VisualStudio.csproj -c Release`).
 - [x] Bundling the out-of-process worker and its dependencies inside the VSIX.
-- [x] Validating the manifest, `Id` stability, version policy, and archive contents (`eng/test-vsix-package.ps1`, wired into CI).
+- [x] Validating the manifest, `Id` stability, version policy, icon presence, and archive contents (`eng/test-vsix-package.ps1`, wired into CI).
 - [x] Publishing to the Marketplace via `tfx extension publish`, once triggered by a push to `release`/`releases/**` with the Marketplace secrets configured.
 
 **Manual, one-time, human-only:**
@@ -93,7 +107,7 @@ an intentionally manual, one-time act by a maintainer with access to the target 
 - [ ] Confirm the Publisher identity matches the `Publisher` value in `source.extension.vsixmanifest` (currently `Olivier MARTY`), or update the manifest deliberately if it must differ.
 - [ ] Create the new extension listing on the Marketplace (first publication only; later versions update the existing listing).
 - [ ] Configure the `VS_MARKETPLACE_PUBLISHER`, `VS_MARKETPLACE_EXTENSION_ID`, and `VS_MARKETPLACE_PAT` repository secrets used by `.github/workflows/nuget-publish.yml`.
-- [ ] Upload the Release VSIX (or let CI do it) and fill in the fields the manifest does not carry: categories, the extension logo/icon (explicitly out of scope for this change — see `Utils.Parser.VisualStudio/README.md`), a Q&A/support link, and any additional screenshots.
+- [ ] Upload the Release VSIX (or let CI do it) and fill in the fields the manifest does not carry: categories, a dedicated Marketplace preview image (the packaged `<Icon>` covers the Extension Manager/listing icon already; a larger preview image is a distinct future step - see `Utils.Parser.VisualStudio/README.md`), a Q&A/support link, and any additional screenshots.
 - [ ] Leave the listing private/unlisted for the initial `0.0.x` provisional releases if the Marketplace UI offers that option.
 - [ ] Install the published VSIX from the Marketplace into a clean Visual Studio instance and verify syntax colorization and the out-of-process worker both work (see "Build and debug" below for what to check).
 - [ ] Only then make the listing public.

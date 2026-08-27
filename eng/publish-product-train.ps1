@@ -15,8 +15,10 @@ param(
     [string] $CandidateManifestPath
 )
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "Release.Common.ps1")
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $manifest = Get-Content (Join-Path $PSScriptRoot "product-train-manifest.json") -Raw | ConvertFrom-Json
+$manifestById = @{}; $manifest.packages | ForEach-Object { $manifestById[$_.packageId] = $_ }
 $artifactRoot = [IO.Path]::GetFullPath((Join-Path $repoRoot $ArtifactsPath))
 $packagesPath = Join-Path $artifactRoot "packages"
 if ($Publish -and $PreflightPackageIdsOnly) { throw "PreflightPackageIdsOnly can never publish packages." }
@@ -49,7 +51,8 @@ if (-not $PreflightPackageIdsOnly) {
     }
     $listedFiles = @()
     foreach ($item in $candidate.packages) {
-        if ($item.version -ne $manifest.version -or $item.acceptanceResult -ne 'passed' -or $item.warningsResult -ne 'passed' -or $item.sourceLinkResult -ne 'passed') {
+        $expectedItemVersion = Get-PackageVersion $manifest $manifestById[$item.packageId]
+        if ($item.version -ne $expectedItemVersion -or $item.acceptanceResult -ne 'passed' -or $item.warningsResult -ne 'passed' -or $item.sourceLinkResult -ne 'passed') {
             throw "$($item.packageId): one or more mandatory candidate gates did not pass."
         }
         if ($item.apiCompatibilityResult -notin @('compatible', 'accepted-major-version-breaks', 'baseline-created')) {
@@ -76,10 +79,11 @@ if ($ValidateCandidateOnly) { Write-Host "Validated candidate manifest and packa
 
 $states = foreach ($package in $manifest.packages) {
     $id = [string]$package.packageId
+    $expectedVersion = Get-PackageVersion $manifest $package
     $url = "https://api.nuget.org/v3-flatcontainer/$($id.ToLowerInvariant())/index.json"
-    try { $exists = @((Invoke-RestMethod -Uri $url -ErrorAction Stop).versions) -contains [string]$manifest.version }
+    try { $exists = @((Invoke-RestMethod -Uri $url -ErrorAction Stop).versions) -contains $expectedVersion }
     catch { if ($_.Exception.Response.StatusCode.value__ -eq 404) { $exists = $false } else { throw } }
-    [pscustomobject]@{ packageId = $id; version = [string]$manifest.version; exists = $exists }
+    [pscustomobject]@{ packageId = $id; version = $expectedVersion; exists = $exists }
 }
 $present = @($states | Where-Object exists)
 if ($present.Count -ne 0 -and $present.Count -ne $states.Count) {

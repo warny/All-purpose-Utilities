@@ -215,3 +215,50 @@ function Get-RepositoryRelativePath {
     $relative = [IO.Path]::GetRelativePath($RepositoryRoot, [IO.Path]::GetFullPath($Path))
     return ConvertTo-RepositoryPath $relative
 }
+
+<#
+Returns a manifest package's version maturity policy: "product-train" (default, follows
+ProductTrainVersion) or the explicit "provisional" declared on the package entry. Only an
+explicit, non-empty value on the package itself is honored - never inferred from
+publicApiPolicy or any other field, so the classification stays unambiguous.
+#>
+function Get-PackageVersionPolicy {
+    param([Parameter(Mandatory)] $Package)
+    $declared = $Package.PSObject.Properties['versionPolicy']
+    if ($null -ne $declared -and -not [string]::IsNullOrWhiteSpace([string]$declared.Value)) { return [string]$declared.Value }
+    return "product-train"
+}
+
+<#
+Resolves the single version a manifest package must evaluate, pack, and publish at:
+ProductTrainVersion (from the manifest) for "product-train" packages, or the package's own
+declared provisionalVersion for "provisional" packages. This is the sole per-package version
+authority consulted by the release-gate scripts; callers must not fall back to the manifest's
+train-level version for a provisional package.
+#>
+function Get-PackageVersion {
+    param([Parameter(Mandatory)] $Manifest, [Parameter(Mandatory)] $Package)
+    $policy = Get-PackageVersionPolicy $Package
+    switch ($policy) {
+        "product-train" { return [string]$Manifest.version }
+        "provisional" {
+            $provisional = [string]$Package.provisionalVersion
+            if ([string]::IsNullOrWhiteSpace($provisional)) { throw "$($Package.packageId): versionPolicy 'provisional' requires a non-empty provisionalVersion." }
+            return $provisional
+        }
+        default { throw "$($Package.packageId): unknown versionPolicy '$policy'." }
+    }
+}
+
+<#
+Derives the four-part AssemblyVersion/FileVersion the .NET SDK generates from a NuGet <Version>
+when no AssemblyVersion/FileVersion override is present: the prerelease suffix is dropped, the
+three remaining numeric parts are kept, and a trailing ".0" revision is appended.
+#>
+function Get-PackageAssemblyVersion {
+    param([Parameter(Mandatory)][string] $Version)
+    $core = $Version.Split('-', 2)[0]
+    $parts = @($core.Split('.'))
+    while ($parts.Count -lt 3) { $parts += "0" }
+    return "{0}.{1}.{2}.0" -f $parts[0], $parts[1], $parts[2]
+}

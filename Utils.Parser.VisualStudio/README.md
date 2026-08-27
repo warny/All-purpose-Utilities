@@ -51,7 +51,7 @@ extension itself and does not depend on any Marketplace-side setting.
 
 ### Known limitations (this provisional release)
 
-- No product logo/icon yet (tracked separately; the Marketplace listing will use a default icon until then).
+- No dedicated Marketplace preview image yet (the Extension Manager/listing icon is the solution's common logo, `res/AllPurposeUtilities_logo.png`; a larger preview image is tracked separately).
 - No `.vsixlangpack`/localized manifest strings; `DisplayName`/`Description`/`Tags` are English-only.
 - The AppContainer sandbox and Authenticode plugin verification (see "Security architecture") are Windows-only; there is no reduced-security fallback path documented for non-Windows Visual Studio hosts.
 

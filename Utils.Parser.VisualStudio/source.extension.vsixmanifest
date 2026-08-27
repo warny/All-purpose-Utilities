@@ -22,6 +22,8 @@
             Publisher="Olivier MARTY" />
         <DisplayName>Utils Parser for Visual Studio</DisplayName>
         <Description xml:space="preserve">Syntax highlighting for custom languages defined with .syntaxcolor descriptors, powered by Utils.Parser with isolated out-of-process extensions.</Description>
+        <!-- Schema order is strict (PackageManifestSchema.Metadata.xsd): Icon must precede Tags. -->
+        <Icon>Resources\AllPurposeUtilities_logo.png</Icon>
         <Tags>syntax;syntax highlighting;colorization;parser;language;editor;utils</Tags>
     </Metadata>
     <Installation>

@@ -31,8 +31,9 @@ if ($canonical.productTrain -ne $manifest.productTrain -or $canonical.version -n
     throw "Canonical package report identity, version, or commit does not match the assembly commit."
 }
 $expectedFiles = @($manifest.packages | ForEach-Object {
-    "$($_.packageId).$($manifest.version).nupkg"
-    if ($_.symbolPackage) { "$($_.packageId).$($manifest.version).snupkg" }
+    $version = Get-PackageVersion $manifest $_
+    "$($_.packageId).$version.nupkg"
+    if ($_.symbolPackage) { "$($_.packageId).$version.snupkg" }
 } | Sort-Object)
 $canonicalFiles = @($canonical.packages.file | Sort-Object)
 if (Compare-Object $expectedFiles $canonicalFiles) { throw "Canonical report does not contain the exact product-train package set." }
