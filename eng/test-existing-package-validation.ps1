@@ -14,7 +14,7 @@ $packageRoot = Join-Path $artifactRoot "packages"
 try {
     New-Item $packageRoot -ItemType Directory -Force | Out-Null
     foreach ($package in $manifest.packages) {
-        $version = Get-PackageVersion $manifest $package
+        $version = [string]$manifest.version
         foreach ($extension in @("nupkg", "snupkg")) {
             [IO.File]::WriteAllText((Join-Path $packageRoot "$($package.packageId).$version.$extension"), "$($package.packageId)-$extension")
         }

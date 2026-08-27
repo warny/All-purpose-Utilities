@@ -12,11 +12,13 @@
         <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <!-- Provisional version (see eng/product-train-manifest.json: versionPolicy=provisional and
-             docs/releasing/VisualStudioExtension.md's provisional-version policy). Only contains
-             SkipList; not yet mature enough to join the 2.0 product train. Bump this literal, and
-             the manifest's provisionalVersion together, when publishing a new 0.0.x candidate; jump
-             directly to the stable product-train version once this package is considered mature. -->
+        <!-- Independent provisional version - this project is intentionally outside the
+             product train (see eng/product-train-manifest.json's exclusions[] entry and
+             docs/releasing/ProvisionalVersioning.md). Only contains SkipList/SkipListDictionary;
+             not yet mature enough to join the 2.0 product train. Bump this literal when publishing
+             a new 0.0.x candidate; when this package is considered mature, remove this literal,
+             switch to <Version>$(ProductTrainVersion)</Version>, and move the manifest entry from
+             exclusions[] to packages[] - no 1.x intermediate is required. -->
         <Version>0.0.1</Version>
         <Description>Skip list implementation providing fast search, insertion, and deletion for sorted data sets.</Description>
         <PackageTags>omy;utilities;collections;skiplist;data-structures</PackageTags>

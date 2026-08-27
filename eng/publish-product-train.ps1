@@ -51,7 +51,7 @@ if (-not $PreflightPackageIdsOnly) {
     }
     $listedFiles = @()
     foreach ($item in $candidate.packages) {
-        $expectedItemVersion = Get-PackageVersion $manifest $manifestById[$item.packageId]
+        $expectedItemVersion = [string]$manifest.version
         if ($item.version -ne $expectedItemVersion -or $item.acceptanceResult -ne 'passed' -or $item.warningsResult -ne 'passed' -or $item.sourceLinkResult -ne 'passed') {
             throw "$($item.packageId): one or more mandatory candidate gates did not pass."
         }
@@ -79,7 +79,7 @@ if ($ValidateCandidateOnly) { Write-Host "Validated candidate manifest and packa
 
 $states = foreach ($package in $manifest.packages) {
     $id = [string]$package.packageId
-    $expectedVersion = Get-PackageVersion $manifest $package
+    $expectedVersion = [string]$manifest.version
     $url = "https://api.nuget.org/v3-flatcontainer/$($id.ToLowerInvariant())/index.json"
     try { $exists = @((Invoke-RestMethod -Uri $url -ErrorAction Stop).versions) -contains $expectedVersion }
     catch { if ($_.Exception.Response.StatusCode.value__ -eq 404) { $exists = $false } else { throw } }

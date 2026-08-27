@@ -70,7 +70,7 @@ if ($TestNativeRunnerOnly) {
 
 $expectedPackages = @{}
 foreach ($package in $manifest.packages) {
-    $expectedPackages[$package.packageId] = Get-PackageVersion $manifest $package
+    $expectedPackages[$package.packageId] = [string]$manifest.version
 }
 
 <# Verifies that the package directory still contains the exact canonical artifact set. #>
@@ -84,9 +84,8 @@ function Get-ValidatedCanonicalPackages {
         throw "Canonical package report identity, version, or commit does not match this validation run."
     }
     $expectedFiles = @($manifest.packages | ForEach-Object {
-        $version = Get-PackageVersion $manifest $_
-        "$($_.packageId).$version.nupkg"
-        if ($_.symbolPackage) { "$($_.packageId).$version.snupkg" }
+        "$($_.packageId).$($manifest.version).nupkg"
+        if ($_.symbolPackage) { "$($_.packageId).$($manifest.version).snupkg" }
     } | Sort-Object)
     $reportedFiles = @($report.packages.file | Sort-Object)
     $actualFiles = @(Get-ChildItem $packagesPath -File | Where-Object Extension -in @(".nupkg", ".snupkg") | Select-Object -ExpandProperty Name | Sort-Object)

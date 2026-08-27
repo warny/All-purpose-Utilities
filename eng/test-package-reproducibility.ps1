@@ -70,7 +70,7 @@ try {
     }
     $comparisons = @()
     foreach ($package in $manifest.packages) {
-        $packageVersion = Get-PackageVersion $manifest $package
+        $packageVersion = [string]$manifest.version
         foreach ($extension in @('nupkg', 'snupkg')) {
             $name = "$($package.packageId).$packageVersion.$extension"
             $one = Join-Path $artifactRoot "reproducibility/run1/packages/$name"

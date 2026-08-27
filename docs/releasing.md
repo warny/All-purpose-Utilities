@@ -4,11 +4,13 @@ Use this guide to align GitHub releases with NuGet publishing for the `omy.Utils
 
 ## Versioning and tags
 
-1. Update `ProductTrainVersion` in `Directory.Build.props` when preparing a release. Do not version individual `.csproj` files independently (except for packages explicitly marked `"versionPolicy": "provisional"` in `eng/product-train-manifest.json` - see [provisional versioning](releasing/ProvisionalVersioning.md)).
+1. Update `ProductTrainVersion` in `Directory.Build.props` when preparing a release. Do not version individual `.csproj` files independently for any project listed in `eng/product-train-manifest.json`'s `packages` array. A small number of components are deliberately kept out of that array entirely and declare their own literal version instead - see [provisional versioning](releasing/ProvisionalVersioning.md).
 2. Add release notes to `CHANGELOG.md` under a new version heading.
 3. Create a Git tag matching the package version (for example `v2.0.0-rc.1`).
 
-Most of the manifested projects (see `eng/product-train-manifest.json`'s `packages` array for the current count) use `ProductTrainVersion` from `Directory.Build.props` as their version authority. A small number are explicitly marked `"versionPolicy": "provisional"` in `eng/product-train-manifest.json` and instead declare their own literal version - see [provisional versioning](releasing/ProvisionalVersioning.md). Either way, the release gate rejects project-local `PackageVersion`, assembly/file version overrides, undeclared hard-coded versions, divergent evaluated MSBuild properties, dependencies, assets, or artifacts.
+Every product-train package (every entry in `eng/product-train-manifest.json`'s `packages` array) uses `ProductTrainVersion` from `Directory.Build.props` as its version authority - there is no per-package exception inside that array. The release gate rejects project-local `PackageVersion`, assembly/file version overrides, undeclared hard-coded versions, divergent evaluated MSBuild properties, dependencies, assets, or artifacts.
+
+A small number of components are intentionally kept out of the `packages` array and versioned independently instead: `omy.Utils.Collections` is currently packaged and published separately at its own literal `0.0.1`. See [provisional versioning](releasing/ProvisionalVersioning.md) for the full policy.
 
 ## GitHub release flow
 

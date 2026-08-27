@@ -47,7 +47,7 @@ foreach ($archivePath in Get-ChildItem $packagePath -File | Where-Object Extensi
         $changed = $false
         foreach ($dependency in $nuspec.SelectNodes("//*[local-name()='dependency']")) {
             $lowerId = $dependency.id.ToLowerInvariant()
-            if ($internalIds -contains $lowerId) { $dependency.version = "[$(Get-PackageVersion $manifest $byLowerId[$lowerId])]"; $changed = $true }
+            if ($internalIds -contains $lowerId) { $dependency.version = "[$($manifest.version)]"; $changed = $true }
         }
         if ($changed) {
             $name = $nuspecEntry.FullName; $nuspecEntry.Delete(); $replacement = $archive.CreateEntry($name, [IO.Compression.CompressionLevel]::Optimal)
@@ -59,7 +59,7 @@ foreach ($archivePath in Get-ChildItem $packagePath -File | Where-Object Extensi
 $actual = @(Get-ChildItem $packagePath -Filter *.nupkg -File | Where-Object Extension -eq '.nupkg')
 if ($actual.Count -ne $manifest.packages.Count) { throw "Expected $($manifest.packages.Count) packages, found $($actual.Count)." }
 foreach ($package in $manifest.packages) {
-    $expected = Join-Path $packagePath "$($package.packageId).$(Get-PackageVersion $manifest $package).nupkg"
+    $expected = Join-Path $packagePath "$($package.packageId).$($manifest.version).nupkg"
     if (-not (Test-Path $expected)) { throw "Expected package '$expected' is missing." }
 }
 Write-Host "Pack: complete train staged; no package was published."

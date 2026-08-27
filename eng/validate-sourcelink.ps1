@@ -16,7 +16,7 @@ Invoke-NativeCommand -FilePath 'dotnet' -ArgumentList @('tool', 'install', 'sour
 $tool = Join-Path $toolRoot $(if ($IsWindows) { 'sourcelink.exe' } else { 'sourcelink' })
 $results = @()
 foreach ($package in $manifest.packages) {
-    $symbolPackage = Join-Path $packageRoot "$($package.packageId).$(Get-PackageVersion $manifest $package).snupkg"
+    $symbolPackage = Join-Path $packageRoot "$($package.packageId).$($manifest.version).snupkg"
     if (-not (Test-Path $symbolPackage)) { throw "$($package.packageId): symbol package is missing." }
     $extract = Join-Path $workRoot $package.packageId; Expand-ZipArchive $symbolPackage $extract
     $pdbs = @(Get-ChildItem $extract -Filter *.pdb -File -Recurse)

@@ -113,12 +113,16 @@ list.CopyTo(dest, 0);
 
 [Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)
 
-> **Provisional release.** `omy.Utils.Collections` is versioned independently of the `omy.Utils`
-> product train (currently `2.0.0-rc.1`): it only contains `SkipList`/`SkipListDictionary` today
-> and is not yet considered mature enough to join the train as a stable component. The NuGet
-> package itself is `0.0.1`, but the API documentation above is generated once for the whole
-> repository under the product-train's version label (`.github/workflows/docs.yml` derives a
-> single label from `Utils/Utils.csproj`, not per-package) - it still documents this package's
-> current API. `omy.Utils.Collections` will jump directly to the product train's stable version
-> once it is considered mature. See
+> **Provisional release, temporarily outside the product train.** `omy.Utils.Collections` is
+> listed in `eng/product-train-manifest.json`'s `exclusions` array (`"classification":
+> "provisional-package"`), not in the synchronized `packages` array: it only contains
+> `SkipList`/`SkipListDictionary` today and is not yet considered mature enough to join the
+> `omy.Utils` product train (currently `2.0.0-rc.1`) as a stable component. It is packed and
+> published independently, at its own literal `0.0.1`, and is never part of the train's canonical
+> package set, candidate manifest, publication order, or all-or-none publish preflight. The API
+> documentation above is still generated once for the whole repository under the product-train's
+> version label (see `docs/releasing.md`) - it documents this package's current API even though the
+> package version itself does not match that label. `omy.Utils.Collections` will move directly into
+> the `packages` array at the product train's then-current version once it is considered mature -
+> there is no obligation to pass through an intermediate `1.x`. See
 > [Provisional versioning](https://github.com/warny/All-purpose-Utilities/blob/master/docs/releasing/ProvisionalVersioning.md).

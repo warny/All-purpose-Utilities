@@ -63,8 +63,8 @@ All notable changes to this project will be documented in this file.
 ### Geography
 - `omy.Utils.Geography` moves from 1.2.1.
 
-### Mathematics and collections
-- `omy.Utils.Mathematics` moves from 1.2.1 while `omy.Utils.Collections` establishes its first public baseline; existing breaking mathematics changes remain documented below.
+### Mathematics
+- `omy.Utils.Mathematics` moves from 1.2.1; existing breaking mathematics changes remain documented below. `omy.Utils.Collections` is not part of this release candidate: it is an independent, provisional NuGet package at `0.0.1`, packaged and published separately - see [provisional versioning](docs/releasing/ProvisionalVersioning.md).
 
 ### OData
 - `omy.Utils.OData` moves from its published 0.0.1 and `omy.Utils.OData.Generators` moves from 0.0.1.

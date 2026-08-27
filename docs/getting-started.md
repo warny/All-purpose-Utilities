@@ -11,7 +11,7 @@ Pick the smallest package that matches your use case.
 | Package | Purpose | TFM |
 |---|---|---|
 | `omy.Utils` | Shared foundation helpers used across the ecosystem. | `net8.0` |
-| `omy.Utils.Collections` | Collection structures and helpers (including skip list). Manifested in the product train, but at an independent **provisional `0.0.x` version** rather than the shared product-train version — see [provisional versioning](releasing/ProvisionalVersioning.md). | `net8.0` |
+| `omy.Utils.Collections` | Collection structures and helpers (including skip list). **Provisional `0.0.x` version**, temporarily outside the product train and packaged/published independently — see [provisional versioning](releasing/ProvisionalVersioning.md). | `net8.0` |
 | `omy.Utils.Data` | Map `IDataRecord` / `IDataReader` to typed objects. | `net8.0` |
 | `omy.Utils.DependencyInjection` | Attribute-driven DI registration helpers. | `net9.0` |
 | `omy.Utils.Expressions.CSyntax` | C-like expression compiler targeting LINQ expression trees. | `net8.0` |

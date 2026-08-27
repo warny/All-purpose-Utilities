@@ -29,7 +29,7 @@ foreach ($file in $archives) {
         $metadata = $nuspec.package.metadata; $id = ([string]$metadata.id).ToLowerInvariant(); $version = [string]$metadata.version
         if (-not $manifestById.ContainsKey($id)) { throw "$($file.Name): unexpected package '$id'." }
         $definition = $manifestById[$id]
-        $expectedVersion = Get-PackageVersion $manifest $definition
+        $expectedVersion = [string]$manifest.version
         if ($version -ne $expectedVersion) { throw "${id}: version '$version' differs from '$expectedVersion'." }
         if ($seen.ContainsKey($id)) { throw "Duplicate package '$id'." }; $seen[$id] = $true
         foreach ($required in @('README.md', 'LICENSE-apache-2.0.txt', 'AllPurposeUtilities_logo.png')) { if ($entries -notcontains $required) { throw "${id}: '$required' is missing." } }
@@ -46,7 +46,7 @@ foreach ($file in $archives) {
         $expectedInternal = @($expectedRuntimeDependencies[$id] | Sort-Object)
         if (($actualInternal -join ',') -ne ($expectedInternal -join ',')) { throw "${id}: internal dependencies '$($actualInternal -join ',')' differ from graph '$($expectedInternal -join ',')'." }
         foreach ($dependency in $actualInternal) {
-            $expectedDependencyVersion = "[$(Get-PackageVersion $manifest $manifestById[$dependency])]"
+            $expectedDependencyVersion = "[$($manifest.version)]"
             if ($deps[$dependency] -ne $expectedDependencyVersion) { throw "${id}: dependency '$dependency' must use the exact candidate version '$expectedDependencyVersion', not '$($deps[$dependency])'." }
         }
         if ([string]$metadata.repository.url -ne $manifest.repository) { throw "${id}: repository URL is incorrect." }
@@ -78,11 +78,11 @@ foreach ($id in $manifestById.Keys) { if (-not $seen.ContainsKey($id)) { throw "
 # Embedded parser support assemblies must remain byte-identical to their runtime package copies.
 $generator = $manifest.packages | Where-Object packageId -eq 'omy.Utils.Parser.Generators'
 if ($generator) {
-    $generatorArchive = [IO.Compression.ZipFile]::OpenRead((Join-Path $packageDirectory "$($generator.packageId).$(Get-PackageVersion $manifest $generator).nupkg"))
+    $generatorArchive = [IO.Compression.ZipFile]::OpenRead((Join-Path $packageDirectory "$($generator.packageId).$($manifest.version).nupkg"))
     try { foreach ($name in @($generator.embeddedAssemblies)) {
         $embeddedEntry = $generatorArchive.Entries | Where-Object { [IO.Path]::GetFileName($_.FullName) -eq $name } | Select-Object -First 1
         $runtimeId = "omy.$([IO.Path]::GetFileNameWithoutExtension($name))"; $runtimePackage = $manifest.packages | Where-Object packageId -eq $runtimeId
-        $runtimeArchive = [IO.Compression.ZipFile]::OpenRead((Join-Path $packageDirectory "$($runtimePackage.packageId).$(Get-PackageVersion $manifest $runtimePackage).nupkg"))
+        $runtimeArchive = [IO.Compression.ZipFile]::OpenRead((Join-Path $packageDirectory "$($runtimePackage.packageId).$($manifest.version).nupkg"))
         try { $runtimeEntry = $runtimeArchive.Entries | Where-Object { [IO.Path]::GetFileName($_.FullName) -eq $name } | Select-Object -First 1; $a=$embeddedEntry.Open(); $b=$runtimeEntry.Open(); $sha=[Security.Cryptography.SHA256]::Create(); try { $ha=[Convert]::ToHexString($sha.ComputeHash($a)); $hb=[Convert]::ToHexString($sha.ComputeHash($b)); if($ha -ne $hb){throw "Embedded '$name' differs from runtime package."} } finally {$sha.Dispose();$a.Dispose();$b.Dispose()} } finally {$runtimeArchive.Dispose()}
     } } finally {$generatorArchive.Dispose()}
 }

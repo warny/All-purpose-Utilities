@@ -11,7 +11,7 @@ It is designed for consumers who want small, task-oriented packages (networking,
 | Project | Package (if published) | Purpose | README |
 |---|---|---|---|
 | `Utils` | `omy.Utils` | Shared foundational helpers. | [Utils/README.md](Utils/README.md) |
-| `Utils.Collections` | `omy.Utils.Collections` | Collection and indexing primitives. Manifested in the product train, but at an independent **provisional `0.0.x` version** rather than the shared product-train version — see [provisional versioning](docs/releasing/ProvisionalVersioning.md). | [Utils.Collections/README.md](Utils.Collections/README.md) |
+| `Utils.Collections` | `omy.Utils.Collections` | Collection and indexing primitives. **Provisional `0.0.x` version**, temporarily outside the product train and packaged/published independently — see [provisional versioning](docs/releasing/ProvisionalVersioning.md). | [Utils.Collections/README.md](Utils.Collections/README.md) |
 | `Utils.Data` | `omy.Utils.Data` | Data-record to object mapping and SQL helpers. | [Utils.Data/README.md](Utils.Data/README.md) |
 | `Utils.DependencyInjection` | `omy.Utils.DependencyInjection` | DI registration helpers. | [Utils.DependencyInjection/README.md](Utils.DependencyInjection/README.md) |
 | `Utils.Expressions.CSyntax` | `omy.Utils.Expressions.CSyntax` | C-like expression compiler. | [Utils.Expressions.CSyntax/README.md](Utils.Expressions.CSyntax/README.md) |

@@ -27,7 +27,7 @@ try {
     $canonicalPackages = @()
     New-Item (Join-Path $root "canonical/packages") -ItemType Directory -Force | Out-Null
     foreach ($package in $manifest.packages) {
-        $packageVersion = Get-PackageVersion $manifest $package
+        $packageVersion = [string]$manifest.version
         foreach ($extension in @("nupkg", "snupkg")) {
             $name = "$($package.packageId).$packageVersion.$extension"
             $path = Join-Path $root "canonical/packages/$name"
@@ -71,6 +71,28 @@ try {
     $candidateManifest = Join-Path $output "manifests/release-candidate-manifest.json"
     if (-not (Test-Path -LiteralPath $candidateManifest -PathType Leaf)) { throw "Complete assembly did not produce the release-candidate manifest." }
     & (Join-Path $PSScriptRoot "publish-product-train.ps1") -ArtifactsPath $relativeOutput -ValidateCandidateOnly
+
+    # omy.Utils.Collections is an independent provisional package (see
+    # docs/releasing/ProvisionalVersioning.md) and must never re-enter the train's canonical
+    # package set, candidate manifest, or publication order - even though it already ships its
+    # own 0.0.1 nupkg independently. No network access is needed: the manifest itself, and the
+    # candidate manifest derived from it, are asserted directly.
+    if ($manifest.packages.packageId -contains 'omy.Utils.Collections') {
+        throw "omy.Utils.Collections must not be listed in the product train's packages[] array."
+    }
+    $collectionsExclusion = @($manifest.exclusions | Where-Object project -eq 'Utils.Collections/Utils.Collections.csproj')
+    if ($collectionsExclusion.Count -ne 1 -or $collectionsExclusion[0].classification -ne 'provisional-package') {
+        throw "omy.Utils.Collections must have exactly one exclusions[] entry classified 'provisional-package'."
+    }
+    $candidateJson = Get-Content $candidateManifest -Raw | ConvertFrom-Json
+    if ($candidateJson.packages.packageId -contains 'omy.Utils.Collections' -or $candidateJson.publicationOrder -contains 'omy.Utils.Collections') {
+        throw "The release-candidate manifest must not reference omy.Utils.Collections."
+    }
+    # publish-product-train.ps1's remote all-or-none preflight (and -PreflightPackageIdsOnly)
+    # only ever iterates $manifest.packages, so the assertion above that omy.Utils.Collections is
+    # absent from that array is sufficient proof it can never enter the preflight's expected-ID
+    # or remote-state computation, regardless of whether omy.Utils.Collections 0.0.1 already
+    # exists independently on NuGet.
 
     # Candidate-only inspection accepts PR fixtures, but publication-capable modes
     # reject them before contacting NuGet.
