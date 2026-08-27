@@ -28,7 +28,23 @@ plan a dry run → **a human runs the actual push manually**, not push-on-merge:
 1. **`.github/workflows/nuget-publish.yml`** (`Validate NuGet Release`, runs on pushes to `release`/`releases/**`) builds the solution, packs and runs packaged-consumer acceptance against the manifest-selected packages (`eng/test-packaged-product-train.ps1`), then checks NuGet package-ID *availability only* (`eng/publish-product-train.ps1 -PreflightPackageIdsOnly`) - it does not validate a specific candidate manifest and does not push anything. It also builds and validates the VSIX in a separate job, again without publishing it anywhere.
 2. **`.github/workflows/release-quality-gates.yml`** (`Full release quality gates`, runs on pushes to `master`, on version tags, weekly, or via manual dispatch) runs the complete validation chain - canonical packaging, Ubuntu/Windows packaged acceptance, API compatibility, SourceLink, reproducibility, release-warnings, dependency audit - and assembles the immutable `FullRelease` candidate, uploading it as the `full-product-train-<sha>` artifact. This is the run whose ID feeds the next step.
 3. **`.github/workflows/publish-validated-product-train.yml`** (`Plan validated product-train publication`, manual `workflow_dispatch` only, taking a `validation-run-id` input) downloads that exact `full-product-train-<sha>` artifact from the specified `release-quality-gates.yml` run and calls `eng/publish-product-train.ps1 -ArtifactsPath artifacts` **without `-Publish`** - it verifies the candidate's hashes and remote NuGet state (zero or all packages already present) and uploads a dry-run `publication-plan.json`. It still does not push anything.
-4. **The actual publish is a deliberate, manual, human-run command** against those same validated artifacts: `./eng/publish-product-train.ps1 -ArtifactsPath <path-to-the-downloaded-artifact> -Publish -ApiKey <NuGet API key>`. This is the only code path that calls `dotnet nuget push`, and it is intentionally not wired into any workflow trigger. Before the first publish, it queries every manifested NuGet package ID; exactly zero or all of them may exist, and a partial remote train fails with a diagnostic rather than pushing anything.
+4. **The actual publish is a deliberate, manual, human-run command** against those same validated artifacts. This is the only code path that calls `dotnet nuget push`, and it is intentionally not wired into any workflow trigger. It always queries every manifested NuGet package ID first, and always pushes each package's `.nupkg` (with `--no-symbols`) and then its `.snupkg` separately - never relying on `dotnet nuget push`'s automatic "also push the matching symbol package" behavior, since that would push every `.snupkg` twice (once automatically, once explicitly) and fail or conflict on the second push.
+
+   **Normal publication** requires the remote state to be entirely empty (no manifested package/version already exists):
+
+   ```powershell
+   ./eng/publish-product-train.ps1 -ArtifactsPath <path-to-the-downloaded-artifact> -Publish -ApiKey <NuGet API key>
+   ```
+
+   A *partial* remote state (some but not all manifested packages already published at this version) is never auto-accepted here - it fails with a diagnostic, whether this is a dry run, `-PreflightPackageIdsOnly`, or this exact `-Publish` command without the flag below. This is deliberate: an unexpected partial state (out-of-band push, corruption) must not be silently treated as a resume.
+
+   **Resuming a known, previously-interrupted publication** of this exact candidate is the only way to proceed past a partial remote state, and it must be requested explicitly:
+
+   ```powershell
+   ./eng/publish-product-train.ps1 -ArtifactsPath <path-to-the-downloaded-artifact> -Publish -ResumePartialPublication -ApiKey <NuGet API key>
+   ```
+
+   This reuses the same validated candidate and pushes every package's `.nupkg` and `.snupkg` again, but adds `--skip-duplicate` to each push: NuGet guarantees a published id+version's content is immutable, so a re-push of an already-published artifact is turned into a harmless no-op instead of an error, while an artifact that never actually made it (for example, a `.snupkg` whose push failed right after its `.nupkg` succeeded) still gets a real, effective push. `-ResumePartialPublication` requires `-Publish` and does nothing on its own. Do not reach for it to explain away a partial state whose origin you have not actually confirmed to be a known interrupted run of this script - it exists for that one specific, deliberate scenario, not as a general-purpose override.
 
 ## Validating packages
 
@@ -75,7 +91,7 @@ it packs the real project, inspects the resulting archives, validates SourceLink
 builds/runs a minimal real consumer against the packed `.nupkg`:
 
 ```bash
-./eng/test-provisional-package.ps1
+pwsh -NoProfile -File ./eng/test-provisional-package.ps1
 dotnet pack Utils.Collections/Utils.Collections.csproj -c Release -o artifacts/provisional
 dotnet nuget push artifacts/provisional/omy.Utils.Collections.0.0.1.nupkg --api-key <NuGet API key> --source https://api.nuget.org/v3/index.json
 ```

@@ -1,7 +1,9 @@
 <#
 .SYNOPSIS
 Packs, inspects, and functionally exercises every manifest-excluded "provisional-package" NuGet
-package (currently omy.Utils.Collections) without contacting NuGet.
+package (currently omy.Utils.Collections). Does not publish anything, but does contact nuget.org
+(restoring the consumer project and installing the `sourcelink` tool) and GitHub (SourceLink's
+remote-retrieval check of the raw source URLs embedded in the PDB) - it is not a fully offline check.
 .DESCRIPTION
 These packages are deliberately outside eng/product-train-manifest.json's packages array (see
 docs/releasing/ProvisionalVersioning.md) and therefore skip every train-wide gate: canonical

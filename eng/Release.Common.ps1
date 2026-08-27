@@ -228,3 +228,35 @@ function Get-PackageAssemblyVersion {
     while ($parts.Count -lt 3) { $parts += "0" }
     return "{0}.{1}.{2}.0" -f $parts[0], $parts[1], $parts[2]
 }
+
+<#
+.SYNOPSIS
+Decides whether eng/publish-product-train.ps1 may proceed against an observed remote package
+state, and whether that is a resume.
+.DESCRIPTION
+Pure decision logic with no network, filesystem, or external-process access, so it can be
+exercised directly by a lightweight self-test. $Exists is one boolean per manifested package
+(true = that package/version already exists on the remote feed). A state where some but not all
+packages already exist ("partial") is only ever allowed to proceed when both -Publish and
+-ResumePartialPublication are set; every other combination (a dry run, -PreflightPackageIdsOnly,
+or a plain -Publish) rejects it. This mirrors, as a single source of truth, the same rule
+eng/publish-product-train.ps1 enforces.
+#>
+function Get-PublicationDecision {
+    param(
+        [Parameter(Mandatory)][bool[]] $Exists,
+        [switch] $Publish,
+        [switch] $ResumePartialPublication
+    )
+    if ($ResumePartialPublication -and -not $Publish) {
+        return [pscustomobject]@{ allowed = $false; resuming = $false; nothingToPublish = $false; reason = "-ResumePartialPublication requires -Publish." }
+    }
+    $total = $Exists.Count
+    $presentCount = @($Exists | Where-Object { $_ }).Count
+    $isPartial = $presentCount -ne 0 -and $presentCount -ne $total
+    $resuming = [bool]($Publish -and $ResumePartialPublication)
+    if ($isPartial -and -not $resuming) {
+        return [pscustomobject]@{ allowed = $false; resuming = $false; nothingToPublish = $false; reason = "Partial remote state requires explicit -Publish -ResumePartialPublication." }
+    }
+    return [pscustomobject]@{ allowed = $true; resuming = $resuming; nothingToPublish = ($presentCount -eq $total); reason = $null }
+}
