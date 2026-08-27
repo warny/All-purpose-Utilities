@@ -73,35 +73,28 @@
         <article data-uid="">
 <h1 id="product-package-graph">Product package graph</h1>
 
-<p>The graph is computed from evaluated <code>ProjectReference</code> metadata. References are classified as NuGet runtime dependencies, private build dependencies, or embedded analyzer dependencies. A reference from a product project to an excluded project is invalid.</p>
-<p>The current derived publication order is:</p>
-<ol>
-<li><code>omy.Utils</code></li>
-<li><code>omy.Utils.XML</code></li>
-<li><code>omy.Utils.Reflection</code></li>
-<li><code>omy.Utils.Collections</code></li>
-<li><code>omy.Utils.OData.Generators</code></li>
-<li><code>omy.Utils.IO.Serialization.Generators</code></li>
-<li><code>omy.Utils.DependencyInjection.Generators</code></li>
-<li><code>omy.Utils.Parser.Source</code></li>
-<li><code>omy.Utils.Parser.Antlr4.Common</code></li>
-<li><code>omy.Utils.IO</code></li>
-<li><code>omy.Utils.Net</code></li>
-<li><code>omy.Utils.Geography</code></li>
-<li><code>omy.Utils.Mathematics</code></li>
-<li><code>omy.Utils.OData</code></li>
-<li><code>omy.Utils.NumberToString</code></li>
-<li><code>omy.Utils.VirtualMachine</code></li>
-<li><code>omy.Utils.DependencyInjection</code></li>
-<li><code>omy.Utils.Parser.Diagnostics</code></li>
-<li><code>omy.Utils.Fonts</code></li>
-<li><code>omy.Utils.Parser</code></li>
-<li><code>omy.Utils.Parser.Generators</code></li>
-<li><code>omy.Utils.Data</code></li>
-<li><code>omy.Utils.Imaging</code></li>
-<li><code>omy.Utils.Parser.Expressions</code></li>
-</ol>
-<p>Independent nodes may have more than one valid ordering. The generated report, not this explanatory snapshot, controls packaging and future publication.</p>
+<p>The graph is computed from evaluated <code>ProjectReference</code> metadata. References are classified as
+NuGet runtime dependencies, private build dependencies, or embedded analyzer dependencies. A
+reference from a product project to an excluded project is invalid.</p>
+<h2 id="getting-the-authoritative-publication-order">Getting the authoritative publication order</h2>
+<p>The publication order is derived, not hand-maintained: <code>eng/analyze-package-graph.ps1</code> evaluates
+every manifested project's <code>ProjectReference</code> items through MSBuild, validates that the resulting
+dependency graph is acyclic, and writes the derived order to
+<code>artifacts/reports/package-publication-order.txt</code> (plus the full edge list in
+<code>artifacts/reports/package-graph.json</code>). Independent nodes (packages with no dependency relationship
+between them) may have more than one valid ordering; both files reflect one specific valid ordering
+for the current source tree, not a stable ranking.</p>
+<p>A hand-written snapshot of that order used to live in this document. It went stale every time a
+package joined or left the train (most recently when <code>omy.Utils.Expressions.CSyntax</code>/
+<code>omy.Utils.Expressions.VBSyntax</code> joined, and when <code>omy.Utils.Collections</code> left - see
+<a href="ProvisionalVersioning.html">provisional versioning</a>), so it has been removed rather than
+re-synchronized again. To see the current order, run the graph analysis and read its report instead
+of trusting prose here:</p>
+<pre><code class="lang-powershell">./eng/analyze-package-graph.ps1 -Configuration Release
+Get-Content artifacts/reports/package-publication-order.txt
+</code></pre>
+<p><code>omy.Utils.Collections</code> is not part of this graph at all: it is excluded from the product train (see
+<a href="ProvisionalVersioning.html">provisional versioning</a>) and is packed/published independently.</p>
 
 </article>
 

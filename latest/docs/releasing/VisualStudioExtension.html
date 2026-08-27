@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Visual Studio extension (VSIX) versioning and release | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Visual Studio extension (VSIX) versioning and release | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../../favicon.ico">
+      <link rel="stylesheet" href="../../public/docfx.min.css">
+      <link rel="stylesheet" href="../../public/main.css">
+      <meta name="docfx:navrel" content="../../toc.html">
+      <meta name="docfx:tocrel" content="../../toc.html">
+      
+      <meta name="docfx:rel" content="../../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/blob/master/docs/releasing/VisualStudioExtension.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../../index.html">
+            <img id="logo" class="svg" src="../../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="visual-studio-extension-vsix-versioning-and-release">Visual Studio extension (VSIX) versioning and release</h1>
+
+<p><code>Utils.Parser.VisualStudio</code> packages as a VSIX, not a NuGet package. It is explicitly excluded from
+the synchronized <code>omy.Utils</code> product train (<code>eng/product-train-manifest.json</code>, <code>exclusions</code> section,
+<code>classification: &quot;vsix&quot;</code>) because the VSIX Marketplace version format cannot carry a SemVer
+prerelease suffix such as <code>2.0.0-rc.1</code>.</p>
+<h2 id="why-the-vsix-version-differs-from-producttrainversion">Why the VSIX version differs from <code>ProductTrainVersion</code></h2>
+<p><code>Directory.Build.props</code> declares <code>&lt;ProductTrainVersion&gt;2.0.0-rc.1&lt;/ProductTrainVersion&gt;</code> for the
+manifested NuGet packages (see <a href="ProductTrain.html"><code>ProductTrain.md</code></a> for the current count). The
+VSIX cannot use this value directly:</p>
+<ul>
+<li>the Marketplace/<code>VSIXVersion</code> format is a plain <code>Major.Minor.Build[.Revision]</code> with no prerelease
+label, so <code>2.0.0-rc.1</code> has no faithful representation, and</li>
+<li>inventing a lossy encoding (for example <code>2.0.0.1</code> for <code>rc.1</code>) would risk colliding with, or
+sorting incorrectly against, the eventual stable <code>2.0.0</code>.</li>
+</ul>
+<p>Instead the VSIX follows an independent, provisional version series while the product train is a
+2.0.0 prerelease:</p>
+<table>
+<thead>
+<tr>
+<th>Product train (<code>ProductTrainVersion</code>)</th>
+<th>VSIX version</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>2.0.0-rc.1</code>, <code>2.0.0-rc.2</code>, ... (any 2.0.0 prerelease)</td>
+<td><code>0.0.1</code>, <code>0.0.2</code>, ... (provisional series)</td>
+</tr>
+<tr>
+<td><code>2.0.0</code> (first stable)</td>
+<td><code>2.0.0</code></td>
+</tr>
+<tr>
+<td><code>2.0.1</code>, <code>2.1.0</code>, ... (later stable trains)</td>
+<td>tracks the product train version</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>0.0.x</code> series communicates &quot;provisional, pre-2.0, not the final identity&quot; to anyone who
+installs it from the Marketplace before the 2.0.0 stable release. Once the product train reaches
+<code>2.0.0</code>, the VSIX jumps directly to <code>2.0.0</code> and should track the product train version from then on
+— it does not need to keep incrementing independently once both are stable.</p>
+<h2 id="source-of-authority">Source of authority</h2>
+<p>The <code>Version</code> attribute on <code>&lt;Identity&gt;</code> in
+<a href="../../Utils.Parser.VisualStudio/source.extension.vsixmanifest"><code>Utils.Parser.VisualStudio/source.extension.vsixmanifest</code></a>
+is the single authoritative value for the VSIX version — it is what <code>dotnet build</code>, <code>VsixPublisher.exe</code>
+(see &quot;Publishing tooling&quot; below), and Visual Studio's Extension Manager all read directly. This
+document only records the <em>policy</em> that value must follow; it does not derive or override it.</p>
+<p>A literal, hand-edited value (rather than a central MSBuild property substituted into the manifest)
+was a deliberate choice: the manifest's tokenization/detokenization pipeline
+(<code>DetokenizeVsixManifestFile</code>, <code>VsixReplacement</code> items) depends on the classic VSSDK targets being
+importable (<code>$(VSToolsPath)\vssdk\Microsoft.VsSDK.targets</code>), which in turn depends on which Visual
+Studio component set is installed on the build machine. Making the manifest self-contained avoids a
+version silently failing to substitute in an environment where that import does not resolve. The
+manifest's <code>&lt;Identity&gt;</code> also carries an inline comment restating this policy for anyone editing it
+directly.</p>
+<h2 id="stability-of-the-vsix-id">Stability of the VSIX <code>Id</code></h2>
+<p>The <code>Id</code> in <code>&lt;Identity Id=&quot;Utils.Parser.VisualStudio.ef18346f-f79e-4e44-86f4-bf8094951570&quot; ...&gt;</code> must
+never change once the extension has been published once — Visual Studio and the Marketplace use it
+to decide whether a new upload is an update to an existing extension or a brand-new listing. It must
+stay identical across the <code>0.0.x</code> provisional series, the first <code>2.0.0</code> stable release, and every
+release after that.</p>
+<h2 id="bumping-the-provisional-version">Bumping the provisional version</h2>
+<p>To publish another <code>0.0.x</code> prerelease build before the product train reaches <code>2.0.0</code> stable:</p>
+<ol>
+<li>Increment the <code>Version</code> attribute in <code>source.extension.vsixmanifest</code> (<code>0.0.1</code> → <code>0.0.2</code>, etc.).</li>
+<li>Do <strong>not</strong> touch <code>ProductTrainVersion</code> in <code>Directory.Build.props</code> for this — the two are
+intentionally decoupled until the product train stabilizes.</li>
+<li>Do <strong>not</strong> touch the <code>Id</code>.</li>
+</ol>
+<p>When the product train reaches <code>2.0.0</code> stable, set the VSIX <code>Version</code> to <code>2.0.0</code> directly (skipping
+any further <code>0.0.x</code> numbers), and from then on keep it aligned with <code>ProductTrainVersion</code> on
+subsequent stable releases.</p>
+<h2 id="icon">Icon</h2>
+<p>The VSIX uses the solution's common logo, <a href="../../res/AllPurposeUtilities_logo.png"><code>res/AllPurposeUtilities_logo.png</code></a>
+(also reused by every NuGet package - see <a href="ProvisionalVersioning.html#solution-logo">provisional versioning</a>),
+via <code>Directory.Build.props</code>'s <code>SolutionLogoPath</code> property. <code>Utils.Parser.VisualStudio.csproj</code> links it
+into the VSIX at <code>Resources\AllPurposeUtilities_logo.png</code> (no source copy under this project), and
+<code>source.extension.vsixmanifest</code> declares <code>&lt;Icon&gt;Resources\AllPurposeUtilities_logo.png&lt;/Icon&gt;</code> in
+<code>&lt;Metadata&gt;</code>, positioned before <code>&lt;Tags&gt;</code> - <code>PackageManifestSchema.Metadata.xsd</code> enforces a strict
+element order (<code>Icon</code> before <code>PreviewImage</code> before <code>Tags</code>), and the build fails with <code>VSSDK1062</code>
+schema-validation errors if that order is violated. No <code>&lt;PreviewImage&gt;</code> is declared; a Marketplace
+preview image is out of scope for this change and left as a distinct future step.</p>
+<h2 id="marketplace-blocker-taggers-are-a-preview-api-vsextpreview_taggers">Marketplace blocker: Taggers are a Preview API (<code>VSEXTPREVIEW_TAGGERS</code>)</h2>
+<p><code>Utils.Parser.VisualStudio.csproj</code> explicitly suppresses the <code>VSEXTPREVIEW_TAGGERS</code> diagnostic
+(<code>&lt;NoWarn&gt;$(NoWarn);1591;VSEXTPREVIEW_TAGGERS&lt;/NoWarn&gt;</code>) because the extension's syntax
+colorization is built on <code>ITextViewTaggerProvider</code>/<code>TextViewTagger&lt;&gt;</code>, which
+<code>Microsoft.VisualStudio.Extensibility</code> currently ships as an experimental (<code>[Experimental]</code>-attributed)
+API - the diagnostic exists specifically to flag that dependency at compile time.</p>
+<p>Per Microsoft's own current guidance on the VisualStudio.Extensibility preview surface and on the
+extension compatibility model:</p>
+<ul>
+<li>&quot;There are a few of our APIs that don't yet meet this bar for stability... These APIs are
+explicitly labeled using the <code>[Experimental]</code> attribute&quot; (<em>About VisualStudio.Extensibility
+(Preview)</em>, &quot;Experimental APIs and Breaking Changes&quot;).</li>
+<li>&quot;New APIs are additive and preview first. Preview APIs may change or be removed and <strong>are not
+supported for production extensions or publishing to the Visual Studio Marketplace</strong>.&quot; (<em>Extension
+compatibility model for Visual Studio</em>, <a href="https://learn.microsoft.com/visualstudio/extensibility/migration/extension-compatibility">https://learn.microsoft.com/visualstudio/extensibility/migration/extension-compatibility</a>)</li>
+</ul>
+<p><strong>This is not fixed by this PR and is not a merge blocker for this preparation work</strong> - the VSIX is
+still not being published by anything in this repository. It <strong>is</strong> a blocker for <strong>any upload to
+the Visual Studio Marketplace, public or private</strong>: Microsoft's compatibility-model statement quoted
+above says Preview APIs &quot;are not supported for production extensions or <strong>publishing to the Visual
+Studio Marketplace</strong>&quot; - it draws no distinction between a public listing and a private one, because
+both are the same act of <em>publishing to the Marketplace</em> (<code>VsixPublisher.exe publish</code>), just with a
+different visibility flag on the same uploaded artifact. Whether an actual upload would be
+technically rejected is not something this repository can claim one way or the other; the point is
+that this extension should not be uploaded to the Marketplace under either visibility setting while
+this dependency exists. Resolving it requires either an in-proc fallback for classification (see
+<a href="https://learn.microsoft.com/visualstudio/extensibility/visualstudio.extensibility/get-started/in-proc-extensions">In-proc extensions</a>)
+or waiting for the Taggers API to graduate out of preview - both are functional changes outside the
+scope of this packaging/release-preparation work and are tracked as a separate, distinct follow-up.</p>
+<p>Preparing to publish is not the same as publishing, so the following remain fine to do while the
+blocker is open: creating/selecting the Marketplace Publisher account, and preparing
+<code>publishManifest.json</code>. What must wait for the blocker to be resolved is any actual
+<code>VsixPublisher.exe publish</code> invocation, public or private. For manual testing in the meantime, use
+the Visual Studio experimental instance that a normal VSIX debug session already launches (see
+&quot;Build and debug&quot; in
+<a href="../../Utils.Parser.VisualStudio/README.md"><code>Utils.Parser.VisualStudio/README.md</code></a> - pressing F5
+runs <code>devenv.exe /RootSuffix Exp</code> automatically; see also Microsoft's
+<a href="https://learn.microsoft.com/visualstudio/extensibility/the-experimental-instance">The Experimental Instance</a>),
+or a locally built/sideloaded <code>.vsix</code> - neither requires any Marketplace upload. The manual
+publication checklist below reflects this explicitly.</p>
+<h2 id="publishing-tooling-not-tfx">Publishing tooling: not <code>tfx</code></h2>
+<p><code>tfx-cli</code>/<code>tfx extension publish</code> is the packaging and publishing tool for <strong>Azure DevOps</strong>
+extensions, not Visual Studio IDE extensions - it happened to be wired into
+<code>.github/workflows/nuget-publish.yml</code> but was never the correct mechanism for this VSIX, and has
+been removed rather than used to publish anything.</p>
+<p>The correct command-line tool for the Visual Studio Marketplace is <strong><code>VsixPublisher.exe</code></strong>, shipped
+with the Visual Studio SDK at <code>${VSInstallDir}\VSSDK\VisualStudioIntegration\Tools\Bin\VsixPublisher.exe</code>:</p>
+<pre><code>VsixPublisher.exe publish -payload &quot;&lt;path to .vsix&gt;&quot; -publishManifest &quot;&lt;path to publishManifest.json&gt;&quot; -personalAccessToken &quot;&lt;PAT&gt;&quot;
+</code></pre>
+<p>It reads a <code>publishManifest.json</code> (Marketplace-only fields not carried by the VSIX itself) plus an
+<code>overview.md</code> (long-form listing description). For a VSIX-sourced extension, <code>publishManifest.json</code>
+only needs <code>identity.internalName</code> - the rest of the identity (name, version, icon, description) is
+read directly from <code>source.extension.vsixmanifest</code>.</p>
+<p><a href="../../Utils.Parser.VisualStudio/marketplace/overview.md"><code>Utils.Parser.VisualStudio/marketplace/overview.md</code></a>
+is ready. <code>publishManifest.json</code> is <strong>not</strong> checked into the repository yet, because its <code>publisher</code>
+field is the real Visual Studio Marketplace Publisher identifier, which is not yet known (see
+&quot;Publisher: VSIX metadata vs. Marketplace account&quot; below) - inventing a placeholder there risks it
+being used as-is. Once that identifier exists, create
+<code>Utils.Parser.VisualStudio/marketplace/publishManifest.json</code> from this template:</p>
+<pre><code class="lang-json">{
+    &quot;$schema&quot;: &quot;http://json.schemastore.org/vsix-publish&quot;,
+    &quot;categories&quot;: [&quot;Coding&quot;],
+    &quot;identity&quot;: {
+        &quot;internalName&quot;: &quot;Utils.Parser.VisualStudio&quot;
+    },
+    &quot;overview&quot;: &quot;overview.md&quot;,
+    &quot;priceCategory&quot;: &quot;free&quot;,
+    &quot;publisher&quot;: &quot;&lt;REPLACE with the real Visual Studio Marketplace publisher identifier&gt;&quot;,
+    &quot;private&quot;: true,
+    &quot;qna&quot;: true,
+    &quot;repo&quot;: &quot;https://github.com/warny/All-purpose-Utilities&quot;
+}
+</code></pre>
+<p>Leave <code>&quot;private&quot;: true</code> for the initial <code>0.0.x</code> provisional releases (see the checklist below); the
+<code>&quot;categories&quot;</code> list can grow beyond <code>&quot;Coding&quot;</code> once a maintainer picks the best Marketplace category
+fit.</p>
+<h2 id="publisher-vsix-metadata-vs-marketplace-account">Publisher: VSIX metadata vs. Marketplace account</h2>
+<p>Do not confuse two different <code>Publisher</code>-shaped values:</p>
+<ol>
+<li><code>Publisher=&quot;Olivier MARTY&quot;</code> in <code>source.extension.vsixmanifest</code> (and the matching
+<code>publisherName: &quot;Olivier MARTY&quot;</code> in <code>UtilsParserVisualStudioExtension.cs</code>) - this is
+human-readable metadata embedded in the VSIX/its activation contract, shown in the Extension
+Manager UI. It does not need to change for this repository.</li>
+<li>The Visual Studio <strong>Marketplace Publisher account identifier</strong> - a separate, registered identity
+at <a href="https://marketplace.visualstudio.com/manage/publishers">https://marketplace.visualstudio.com/manage/publishers</a> that owns the listing, is passed to
+<code>VsixPublisher.exe</code>/referenced in <code>publishManifest.json</code>'s <code>&quot;publisher&quot;</code> field, and is what the
+(now-removed) <code>VS_MARKETPLACE_PUBLISHER</code> secret was meant to hold. It is <strong>not</strong> necessarily the
+literal string <code>&quot;Olivier MARTY&quot;</code> - it is whatever identifier is chosen when the Marketplace
+Publisher account is created, and is not yet known.</li>
+</ol>
+<p>Only change the manifest's <code>Publisher</code> attribute if the VSIX metadata itself should say something
+different; do not change it merely to match whatever the Marketplace account identifier turns out
+to be.</p>
+<h2 id="ci">CI</h2>
+<p><code>.github/workflows/nuget-publish.yml</code>'s <code>build-visual-studio-extensions</code> job builds the VSIX and runs
+<code>eng/test-vsix-package.ps1</code> on every push to <code>release</code>/<code>releases/**</code>; the same gate now also runs on
+every pull request that touches the extension (<code>.github/workflows/dotnetcore.yml</code>) and as part of the
+full release quality gates (<code>.github/workflows/release-quality-gates.yml</code>). It fails the build if:
+more than one <code>.vsix</code> is produced, the manifest is missing or malformed, the <code>Id</code>/<code>Publisher</code> differ
+from the recorded expected values, the <code>Version</code> does not match the policy above, <code>displayName</code>/
+<code>description</code>/<code>publisherName</code> disagree between the manifest and
+<code>UtilsParserVisualStudioExtension.cs</code>'s <code>ExtensionMetadata</code> (note: <code>Id</code> is deliberately <em>not</em>
+compared - see &quot;What must vs. must not stay in sync&quot; below), the <code>&lt;Icon&gt;</code>/<code>&lt;License&gt;</code>/<code>&lt;MoreInfo&gt;</code>
+elements or the files they point at are missing, or the <code>worker/</code> payload described below is missing
+from the archive. <strong>No workflow publishes the VSIX anywhere.</strong></p>
+<h2 id="what-must-vs-must-not-stay-in-sync-between-the-manifest-and-the-c-metadata">What must vs. must not stay in sync between the manifest and the C# metadata</h2>
+<p><code>UtilsParserVisualStudioExtension.cs</code> declares a second, independent <code>ExtensionMetadata</code> consumed by
+the <code>Microsoft.VisualStudio.Extensibility</code> framework, separate from <code>source.extension.vsixmanifest</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Manifest</th>
+<th><code>ExtensionMetadata</code></th>
+<th>Kept in sync?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Version</td>
+<td><code>&lt;Identity Version&gt;</code></td>
+<td><code>version:</code></td>
+<td>Yes - same fact, two files</td>
+</tr>
+<tr>
+<td>Display name</td>
+<td><code>&lt;DisplayName&gt;</code></td>
+<td><code>displayName:</code></td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Description</td>
+<td><code>&lt;Description&gt;</code></td>
+<td><code>description:</code></td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Publisher</td>
+<td><code>&lt;Identity Publisher&gt;</code></td>
+<td><code>publisherName:</code></td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Identifier</td>
+<td><code>&lt;Identity Id&gt;</code> (GUID-suffixed, VSIX/Marketplace package identity)</td>
+<td><code>id:</code> (short activation-contract identifier, no GUID)</td>
+<td><strong>No</strong> - different kind of identifier for a different consumer; see below</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>Id</code>s are not the same kind of value: <code>&lt;Identity Id&gt;</code> is what Visual Studio and the Marketplace
+use to recognize a new upload as an update to the same extension (must never change - see &quot;Stability
+of the VSIX <code>Id</code>&quot; above). <code>ExtensionMetadata.Id</code> is a short identifier used internally by the
+<code>VisualStudio.Extensibility</code> activation contract. Forcing them to be textually identical would not
+make either one more correct, and neither the framework's documentation nor the generated
+<code>manifest.json</code>/<code>catalog.json</code> packaging artifacts (which mirror the vsixmanifest's <code>Identity</code>, not
+the C# class) suggest they should match. <code>eng/test-vsix-package.ps1</code> therefore does not compare them.</p>
+<h2 id="manual-marketplace-publication-checklist-first-publication">Manual Marketplace publication checklist (first publication)</h2>
+<p>Nothing in this repository publishes to the Marketplace or creates a Marketplace listing — that is
+an intentionally manual, one-time act by a maintainer with access to the target Publisher account.</p>
+<p><strong>Automated by the repository:</strong></p>
+<ul>
+<li>[x] Building the VSIX in Release configuration (<code>dotnet build Utils.Parser.VisualStudio/Utils.Parser.VisualStudio.csproj -c Release</code>).</li>
+<li>[x] Bundling the out-of-process worker and its dependencies inside the VSIX.</li>
+<li>[x] Validating the manifest, <code>Id</code> stability, version policy, icon/license/more-info presence, cross-file metadata sync, and archive contents (<code>eng/test-vsix-package.ps1</code>, wired into pull-request CI, release CI, and full release quality gates).</li>
+<li>[x] Preparing <code>Utils.Parser.VisualStudio/marketplace/overview.md</code> for <code>VsixPublisher.exe</code>.</li>
+<li>[ ] Publishing anywhere - deliberately <strong>not</strong> automated. See &quot;Publishing tooling&quot; above for why <code>tfx</code> was removed and what a future automated <code>VsixPublisher.exe</code> step would need.</li>
+</ul>
+<p><strong>Manual, one-time, human-only - can be done now, does not touch the Marketplace:</strong></p>
+<ul>
+<li>[ ] Create or select the target Publisher identity at <a href="https://marketplace.visualstudio.com/manage/publishers">https://marketplace.visualstudio.com/manage/publishers</a>, and note its real identifier (see &quot;Publisher: VSIX metadata vs. Marketplace account&quot; above - it does not have to be <code>Olivier MARTY</code>).</li>
+<li>[ ] Create <code>Utils.Parser.VisualStudio/marketplace/publishManifest.json</code> from the template above with that real identifier. Leave <code>&quot;private&quot;: true</code> in the template - it is the correct setting for whenever the first real publish eventually happens, but does not itself upload anything.</li>
+<li>[ ] Fill in the fields neither the manifest nor <code>publishManifest.json</code> carry: a dedicated Marketplace preview image (the packaged <code>&lt;Icon&gt;</code> covers the Extension Manager/listing icon already; a larger preview image is a distinct future step - see <code>Utils.Parser.VisualStudio/README.md</code>), and any additional screenshots.</li>
+<li>[ ] Validate the extension by debugging it into the Visual Studio experimental instance (see &quot;Build and debug&quot; in <code>Utils.Parser.VisualStudio/README.md</code>) and/or by sideloading a locally built <code>.vsix</code> - verify syntax colorization and the out-of-process worker both work. Neither step contacts the Marketplace.</li>
+</ul>
+<p><strong>Blocking - must wait for <code>VSEXTPREVIEW_TAGGERS</code> to be resolved (see &quot;Marketplace blocker&quot; above):</strong></p>
+<ul>
+<li>[ ] <strong>Do not run <code>VsixPublisher.exe publish</code> with any visibility setting - public or private - before this is resolved.</strong> Per Microsoft's compatibility-model statement, this restriction is about publishing to the Marketplace at all, not about the listing's visibility flag. This does not block merging this preparation PR; it only blocks the actual upload step.</li>
+<li>[ ] Once resolved, create the new extension listing on the Marketplace (first publication only; later versions update the existing listing) by running <code>VsixPublisher.exe publish</code> locally with <code>publishManifest.json</code>'s <code>&quot;private&quot;: true</code>, or decide whether/when to wire this into CI as a separate, deliberate follow-up.</li>
+<li>[ ] Install the now-published (private) VSIX from the Marketplace into a clean Visual Studio instance as a final sanity check beyond the experimental-instance testing above.</li>
+<li>[ ] Only after that private listing is verified, set <code>&quot;private&quot;: false</code> and republish to make the listing public.</li>
+</ul>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/docs/releasing/VisualStudioExtension.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

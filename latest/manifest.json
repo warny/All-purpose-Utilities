@@ -15403,10 +15403,30 @@
     },
     {
       "type": "Conceptual",
+      "source_relative_path": "docs/releasing/ProvisionalVersioning.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/releasing/ProvisionalVersioning.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
       "source_relative_path": "docs/releasing/ReleaseQualityGates.md",
       "output": {
         ".html": {
           "relative_path": "docs/releasing/ReleaseQualityGates.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/releasing/VisualStudioExtension.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/releasing/VisualStudioExtension.html"
         }
       },
       "version": ""

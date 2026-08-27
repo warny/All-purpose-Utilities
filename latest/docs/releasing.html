@@ -76,11 +76,12 @@
 <p>Use this guide to align GitHub releases with NuGet publishing for the <code>omy.Utils</code> package family.</p>
 <h2 id="versioning-and-tags">Versioning and tags</h2>
 <ol>
-<li>Update the synchronized solution version in <code>Directory.Build.targets</code> when preparing a release. Do not version individual <code>.csproj</code> files independently.</li>
+<li>Update <code>ProductTrainVersion</code> in <code>Directory.Build.props</code> when preparing a release. Do not version individual <code>.csproj</code> files independently for any project listed in <code>eng/product-train-manifest.json</code>'s <code>packages</code> array. A small number of components are deliberately kept out of that array entirely and declare their own literal version instead - see <a href="releasing/ProvisionalVersioning.html">provisional versioning</a>.</li>
 <li>Add release notes to <code>CHANGELOG.md</code> under a new version heading.</li>
 <li>Create a Git tag matching the package version (for example <code>v2.0.0-rc.1</code>).</li>
 </ol>
-<p>The 24 manifested projects use <code>ProductTrainVersion</code> from <code>Directory.Build.props</code> as their only version authority. The release gate rejects project-local <code>PackageVersion</code>, assembly/file version overrides, hard-coded versions, divergent evaluated MSBuild properties, dependencies, assets, or artifacts.</p>
+<p>Every product-train package (every entry in <code>eng/product-train-manifest.json</code>'s <code>packages</code> array) uses <code>ProductTrainVersion</code> from <code>Directory.Build.props</code> as its version authority - there is no per-package exception inside that array. The release gate rejects project-local <code>PackageVersion</code>, assembly/file version overrides, undeclared hard-coded versions, divergent evaluated MSBuild properties, dependencies, assets, or artifacts.</p>
+<p>A small number of components are intentionally kept out of the <code>packages</code> array and versioned independently instead: <code>omy.Utils.Collections</code> is currently packaged and published separately at its own literal <code>0.0.1</code>. See <a href="releasing/ProvisionalVersioning.html">provisional versioning</a> for the full policy.</p>
 <h2 id="github-release-flow">GitHub release flow</h2>
 <ol>
 <li>Push the release commit to the <code>release</code> branch.</li>
@@ -88,13 +89,29 @@
 <li>Attach any additional binaries or documentation if needed.</li>
 </ol>
 <h2 id="ci-publishing-pipeline">CI publishing pipeline</h2>
-<ul>
-<li>The <code>Publish NuGet</code> workflow (<code>.github/workflows/nuget-publish.yml</code>) runs on pushes to the <code>release</code> branch.</li>
-<li>It validates and packs only the 24 manifest-selected packages, then checks package metadata, assemblies, internal dependencies, isolated consumer assets, API compatibility, and reproducibility.</li>
-<li>Before the first push, it queries all 24 NuGet package IDs. Exactly zero or all 24 may exist. A partial remote train fails with a diagnostic and no automatic push.</li>
-<li>A fully absent train is pushed in manifest topological order as the single logical <code>omy 2.0.0-rc.1</code> release; the dry-run command omits <code>-Publish</code>.</li>
-<li>Packages are pushed using the <code>NUGET_API_KEY</code> secret configured in the repository settings.</li>
-</ul>
+<p>No workflow in this repository pushes a package to NuGet. <code>NUGET_API_KEY</code> is not referenced by any
+workflow; <code>dotnet nuget push</code> only happens inside <code>eng/publish-product-train.ps1</code>'s <code>-Publish</code> code
+path, which nothing here invokes automatically. The pipeline is validate → assemble a candidate →
+plan a dry run → <strong>a human runs the actual push manually</strong>, not push-on-merge:</p>
+<ol>
+<li><p><strong><code>.github/workflows/nuget-publish.yml</code></strong> (<code>Validate NuGet Release</code>, runs on pushes to <code>release</code>/<code>releases/**</code>) builds the solution, packs and runs packaged-consumer acceptance against the manifest-selected packages (<code>eng/test-packaged-product-train.ps1</code>), then checks NuGet package-ID <em>availability only</em> (<code>eng/publish-product-train.ps1 -PreflightPackageIdsOnly</code>) - it does not validate a specific candidate manifest and does not push anything. It also builds and validates the VSIX in a separate job, again without publishing it anywhere.</p>
+</li>
+<li><p><strong><code>.github/workflows/release-quality-gates.yml</code></strong> (<code>Full release quality gates</code>, runs on pushes to <code>master</code>, on version tags, weekly, or via manual dispatch) runs the complete validation chain - canonical packaging, Ubuntu/Windows packaged acceptance, API compatibility, SourceLink, reproducibility, release-warnings, dependency audit - and assembles the immutable <code>FullRelease</code> candidate, uploading it as the <code>full-product-train-&lt;sha&gt;</code> artifact. This is the run whose ID feeds the next step.</p>
+</li>
+<li><p><strong><code>.github/workflows/publish-validated-product-train.yml</code></strong> (<code>Plan validated product-train publication</code>, manual <code>workflow_dispatch</code> only, taking a <code>validation-run-id</code> input) downloads that exact <code>full-product-train-&lt;sha&gt;</code> artifact from the specified <code>release-quality-gates.yml</code> run and calls <code>eng/publish-product-train.ps1 -ArtifactsPath artifacts</code> <strong>without <code>-Publish</code></strong> - it verifies the candidate's hashes and remote NuGet state (zero or all packages already present) and uploads a dry-run <code>publication-plan.json</code>. It still does not push anything.</p>
+</li>
+<li><p><strong>The actual publish is a deliberate, manual, human-run command</strong> against those same validated artifacts. This is the only code path that calls <code>dotnet nuget push</code>, and it is intentionally not wired into any workflow trigger. It always queries every manifested NuGet package ID first, and always pushes each package's <code>.nupkg</code> (with <code>--no-symbols</code>) and then its <code>.snupkg</code> separately - never relying on <code>dotnet nuget push</code>'s automatic &quot;also push the matching symbol package&quot; behavior, since that would push every <code>.snupkg</code> twice (once automatically, once explicitly) and fail or conflict on the second push.</p>
+<p><strong>Normal publication</strong> requires the remote state to be entirely empty (no manifested package/version already exists):</p>
+<pre><code class="lang-powershell">./eng/publish-product-train.ps1 -ArtifactsPath &lt;path-to-the-downloaded-artifact&gt; -Publish -ApiKey &lt;NuGet API key&gt;
+</code></pre>
+<p>A <em>partial</em> remote state (some but not all manifested packages already published at this version) is never auto-accepted here - it fails with a diagnostic, whether this is a dry run, <code>-PreflightPackageIdsOnly</code>, or this exact <code>-Publish</code> command without the flag below. This is deliberate: an unexpected partial state (out-of-band push, corruption) must not be silently treated as a resume.</p>
+<p><strong>Resuming a known, previously-interrupted publication</strong> of this exact candidate is the only way to proceed past a partial remote state, and it must be requested explicitly:</p>
+<pre><code class="lang-powershell">./eng/publish-product-train.ps1 -ArtifactsPath &lt;path-to-the-downloaded-artifact&gt; -Publish -ResumePartialPublication -ApiKey &lt;NuGet API key&gt;
+</code></pre>
+<p>This reuses the same validated candidate and pushes every package's <code>.nupkg</code> and <code>.snupkg</code> again, but adds <code>--skip-duplicate</code> to each push: NuGet guarantees a published id+version's content is immutable, so a re-push of an already-published artifact is turned into a harmless no-op instead of an error, while an artifact that never actually made it (for example, a <code>.snupkg</code> whose push failed right after its <code>.nupkg</code> succeeded) still gets a real, effective push. <code>-ResumePartialPublication</code> requires <code>-Publish</code> and does nothing on its own. Do not reach for it to explain away a partial state whose origin you have not actually confirmed to be a known interrupted run of this script - it exists for that one specific, deliberate scenario, not as a general-purpose override.</p>
+<p>The remote-state scan only checks each package's <code>.nupkg</code> - NuGet does not expose a symbol-package existence query - so a run that fails on the very last package's <code>.snupkg</code> leaves every <code>.nupkg</code> looking published. <code>-ResumePartialPublication</code> is also the right (and only) way to complete that case: without it, <code>-Publish</code> alone would see every <code>.nupkg</code> present, report &quot;nothing to publish&quot;, and leave that one stranded <code>.snupkg</code> unpublished forever. With <code>-ResumePartialPublication</code>, every artifact for every package is re-attempted with <code>--skip-duplicate</code>, so the 24 already-complete packages are harmless no-ops and the missing <code>.snupkg</code> gets a real, effective push.</p>
+</li>
+</ol>
 <h2 id="validating-packages">Validating packages</h2>
 <p>After a release completes:</p>
 <ul>
@@ -111,6 +128,38 @@ dotnet add package omy.Utils --version 2.0.0-rc.1
 </ul>
 <h2 id="repository-wide-200-candidate">Repository-wide 2.0.0 candidate</h2>
 <p>The complete process is documented in the <a href="releasing/ProductTrain.html">product-train overview</a>, <a href="releasing/ReleaseQualityGates.html">quality-gate reference</a>, <a href="releasing/PackageGraph.html">derived package graph</a>, and <a href="releasing/MigrationTo2.0.html">2.0 migration guide</a>. The release candidate covers every manifested library and source generator, not only parser packages.</p>
+<h2 id="visual-studio-extension-vsix">Visual Studio extension (VSIX)</h2>
+<p><code>Utils.Parser.VisualStudio</code> is excluded from the NuGet product train above and follows its own
+provisional version series until the train reaches a stable <code>2.0.0</code>. See the
+<a href="releasing/VisualStudioExtension.html">VSIX versioning and release guide</a> for the policy, and
+<a href="../Utils.Parser.VisualStudio/README.md"><code>Utils.Parser.VisualStudio/README.md</code></a> for the
+Marketplace-facing description, features, and manual publication checklist.</p>
+<h2 id="provisional-components">Provisional components</h2>
+<p><code>omy.Utils.Collections</code> and the <code>Utils.Parser.VisualStudio</code> VSIX both ship at independent,
+provisional versions rather than the product train's version, for different reasons. See
+<a href="releasing/ProvisionalVersioning.html">provisional versioning</a> for the shared policy and how it is
+enforced.</p>
+<p>Neither is touched by the CI publishing pipeline above: <code>eng/product-train-manifest.json</code>'s
+<code>packages</code> array (what every step in that pipeline iterates) excludes both. <code>omy.Utils.Collections</code>
+is packed and published as its own, entirely separate, manual step - there is no dedicated workflow
+for it today, so it also skips every train-wide package gate (canonical packaging, inspection,
+SourceLink validation, packaged-consumer acceptance, API compatibility, reproducibility). Run
+<code>eng/test-provisional-package.ps1</code> first as a lighter, package-scoped substitute for those gates -
+it packs the real project, inspects the resulting archives, validates SourceLink, and restores/
+builds/runs a minimal real consumer against the packed <code>.nupkg</code>:</p>
+<pre><code class="lang-bash">pwsh -NoProfile -File ./eng/test-provisional-package.ps1
+dotnet pack Utils.Collections/Utils.Collections.csproj -c Release -o artifacts/provisional
+dotnet nuget push artifacts/provisional/omy.Utils.Collections.0.0.1.nupkg --api-key &lt;NuGet API key&gt; --source https://api.nuget.org/v3/index.json
+</code></pre>
+<p>The VSIX's first Marketplace publication is likewise manual - see
+<a href="releasing/VisualStudioExtension.html">VSIX versioning and release</a> for its checklist (and its
+separate <code>VSEXTPREVIEW_TAGGERS</code> blocker, unrelated to NuGet publishing).</p>
+<h2 id="solution-logo">Solution logo</h2>
+<p>Every publishable NuGet package and the VSIX use the same source image,
+<a href="../res/AllPurposeUtilities_logo.png"><code>res/AllPurposeUtilities_logo.png</code></a>, centralized via
+<code>Directory.Build.props</code>'s <code>SolutionLogoPath</code> property. See
+<a href="releasing/ProvisionalVersioning.html#solution-logo">provisional versioning</a> for how it is wired up;
+no project keeps its own copy of the image.</p>
 
 </article>
 

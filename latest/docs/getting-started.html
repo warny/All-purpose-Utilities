@@ -95,7 +95,7 @@
 </tr>
 <tr>
 <td><code>omy.Utils.Collections</code></td>
-<td>Collection structures and helpers (including skip list).</td>
+<td>Collection structures and helpers (including skip list). <strong>Provisional <code>0.0.x</code> version</strong>, temporarily outside the product train and packaged/published independently — see <a href="releasing/ProvisionalVersioning.html">provisional versioning</a>.</td>
 <td><code>net8.0</code></td>
 </tr>
 <tr>
@@ -107,6 +107,16 @@
 <td><code>omy.Utils.DependencyInjection</code></td>
 <td>Attribute-driven DI registration helpers.</td>
 <td><code>net9.0</code></td>
+</tr>
+<tr>
+<td><code>omy.Utils.Expressions.CSyntax</code></td>
+<td>C-like expression compiler targeting LINQ expression trees.</td>
+<td><code>net8.0</code></td>
+</tr>
+<tr>
+<td><code>omy.Utils.Expressions.VBSyntax</code></td>
+<td>VB-like expression compiler targeting LINQ expression trees.</td>
+<td><code>net8.0</code></td>
 </tr>
 <tr>
 <td><code>omy.Utils.Fonts</code></td>
@@ -125,7 +135,7 @@
 </tr>
 <tr>
 <td><code>omy.Utils.Imaging</code></td>
-<td>Imaging and drawing utilities.</td>
+<td>Imaging and drawing utilities. <strong>Windows only</strong> (<code>System.Drawing.Common</code>).</td>
 <td><code>net8.0</code></td>
 </tr>
 <tr>
@@ -201,13 +211,26 @@
 </tbody>
 </table>
 <h2 id="2-install">2) Install</h2>
-<pre><code class="lang-bash">dotnet add package omy.Utils
+<p>Most packages already have a published stable release, so a plain <code>dotnet add package</code> installs
+that stable version, <strong>not</strong> the <code>2.0.0-rc.1</code> release candidate this repository's docs describe:</p>
+<pre><code class="lang-bash"># Latest stable
+dotnet add package omy.Utils
 # or
 dotnet add package omy.Utils.IO
 </code></pre>
-<p>For source-generator packages:</p>
-<pre><code class="lang-bash">dotnet add package omy.Utils.DependencyInjection.Generators
+<p>To try the <code>2.0.0-rc.1</code> candidate itself, pin it explicitly:</p>
+<pre><code class="lang-bash"># 2.0 release candidate
+dotnet add package omy.Utils --version 2.0.0-rc.1
+# or
+dotnet add package omy.Utils.IO --version 2.0.0-rc.1
 </code></pre>
+<p>For source-generator packages:</p>
+<pre><code class="lang-bash">dotnet add package omy.Utils.DependencyInjection.Generators --version 2.0.0-rc.1
+</code></pre>
+<p><code>omy.Utils.NumberToString</code>, the <code>omy.Utils.Parser*</code> family, and
+<code>omy.Utils.Expressions.CSyntax</code>/<code>Expressions.VBSyntax</code> have <strong>no published stable release yet</strong> -
+<code>2.0.0-rc.1</code> is their first publication, so <code>--version 2.0.0-rc.1</code> is required for those (NuGet does
+not install a prerelease by default), not just a way to get the newer candidate.</p>
 <h2 id="3-minimal-usage-snippet">3) Minimal usage snippet</h2>
 <pre><code class="lang-csharp">using Utils.Arrays;
 
