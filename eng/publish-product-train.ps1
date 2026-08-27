@@ -85,21 +85,39 @@ $states = foreach ($package in $manifest.packages) {
     [pscustomobject]@{ packageId = $id; version = $expectedVersion; exists = $exists }
 }
 $present = @($states | Where-Object exists)
-if ($present.Count -ne 0 -and $present.Count -ne $states.Count) {
+if (-not $Publish -and $present.Count -ne 0 -and $present.Count -ne $states.Count) {
+    # A dry run or ID-only preflight has no way to push anything, so a partial remote state here
+    # can only mean an out-of-band or corrupted train - it must not be silently reported as fine.
+    # An actual -Publish run may legitimately see this exact state after resuming a prior partial
+    # publication; see the resume handling below.
     throw "Incoherent remote product-train state; no package was pushed: $(($states | ForEach-Object { "$($_.packageId)=$($_.exists)" }) -join ', ')."
 }
-$state = if ($present.Count -eq $states.Count) { "fully-published" } else { "fully-available" }
-$plan = [ordered]@{ generatedAtUtc = [DateTime]::UtcNow.ToString('O'); productTrain = [string]$manifest.productTrain; version = [string]$manifest.version; state = $state; packageIdsOnly = [bool]$PreflightPackageIdsOnly; publicationEnabled = [bool]$Publish; order = $publicationOrder; packages = $states; published = @(); notPublished = @($states.packageId); nextManualAction = "Publish only the immutable candidate artifacts after explicit approval." }
+$state = if ($present.Count -eq $states.Count) { "fully-published" } elseif ($present.Count -eq 0) { "fully-available" } else { "partially-published" }
+$plan = [ordered]@{ generatedAtUtc = [DateTime]::UtcNow.ToString('O'); productTrain = [string]$manifest.productTrain; version = [string]$manifest.version; state = $state; packageIdsOnly = [bool]$PreflightPackageIdsOnly; publicationEnabled = [bool]$Publish; order = $publicationOrder; packages = $states; published = @($present.packageId); notPublished = @($states | Where-Object { -not $_.exists } | ForEach-Object packageId); nextManualAction = "Publish only the immutable candidate artifacts after explicit approval." }
 $reportRoot = Join-Path $artifactRoot "reports"
 New-Item $reportRoot -ItemType Directory -Force | Out-Null
 $plan | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $reportRoot "publication-plan.json")
 if ($present.Count -eq $states.Count) { Write-Host "All packages already exist; nothing to publish."; return }
 if (-not $Publish) { Write-Host "Dry run passed: all package IDs are available at $($manifest.version)."; return }
 if ([string]::IsNullOrWhiteSpace($ApiKey)) { throw "An API key is required for publication." }
+if ($present.Count -gt 0) {
+    Write-Host "Resuming publication: $($present.Count) of $($states.Count) packages already exist at $($manifest.version) and will be skipped."
+}
+$presentIds = @($present.packageId)
 $candidateById = @{}; $candidate.packages | ForEach-Object { $candidateById[$_.packageId] = $_ }
 foreach ($packageId in $publicationOrder) {
-    foreach ($artifact in @($candidateById[$packageId].nupkg, $candidateById[$packageId].snupkg)) {
-        & dotnet nuget push (Join-Path $packagesPath $artifact.file) --api-key $ApiKey --source "https://api.nuget.org/v3/index.json"
-        if ($LASTEXITCODE -ne 0) { throw "Publication stopped after failure pushing '$($artifact.file)'." }
+    if ($presentIds -contains $packageId) {
+        Write-Host "Skip: $packageId $($manifest.version) already exists on NuGet."
+        continue
     }
+    # Push only the .nupkg: `dotnet nuget push` publishes the matching .snupkg from the same
+    # directory automatically unless -n/--no-symbols is passed. Pushing both explicitly would
+    # push every symbol package twice - the second push then fails or conflicts with the first.
+    # --skip-duplicate turns a 409 (this exact immutable id+version already published - NuGet
+    # never allows different content under an existing version) into a warning instead of a hard
+    # failure, so a transient failure earlier in this same loop can be safely retried by rerunning
+    # this command; it does not skip a package this run has not attempted yet.
+    $nupkg = $candidateById[$packageId].nupkg
+    & dotnet nuget push (Join-Path $packagesPath $nupkg.file) --api-key $ApiKey --source "https://api.nuget.org/v3/index.json" --skip-duplicate
+    if ($LASTEXITCODE -ne 0) { throw "Publication stopped after failure pushing '$($nupkg.file)'." }
 }

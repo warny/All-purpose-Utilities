@@ -52,13 +52,31 @@ It is designed for consumers who want small, task-oriented packages (networking,
 
 ## Quick install
 
-Install only the package you need:
+Install only the package you need. Most packages already have a published stable release, so a
+plain `dotnet add package` installs that stable version, **not** the `2.0.0-rc.1` release candidate
+described throughout this README and its linked docs:
 
 ```bash
+# Latest stable
 dotnet add package omy.Utils
 # or
 dotnet add package omy.Utils.Net
 ```
+
+To try the `2.0.0-rc.1` candidate itself (the version this documentation describes), pin it
+explicitly:
+
+```bash
+# 2.0 release candidate
+dotnet add package omy.Utils --version 2.0.0-rc.1
+# or
+dotnet add package omy.Utils.Net --version 2.0.0-rc.1
+```
+
+A handful of packages (`omy.Utils.NumberToString`, the `omy.Utils.Parser*` family,
+`omy.Utils.Expressions.CSyntax`/`Expressions.VBSyntax`) have **no published stable release yet** -
+`2.0.0-rc.1` is their first publication, so the `--version 2.0.0-rc.1` form is required for those,
+not just recommended; see each package's own README for its exact install command.
 
 ## Usage example
 

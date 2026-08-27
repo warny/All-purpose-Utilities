@@ -68,9 +68,14 @@ enforced.
 Neither is touched by the CI publishing pipeline above: `eng/product-train-manifest.json`'s
 `packages` array (what every step in that pipeline iterates) excludes both. `omy.Utils.Collections`
 is packed and published as its own, entirely separate, manual step - there is no dedicated workflow
-for it today:
+for it today, so it also skips every train-wide package gate (canonical packaging, inspection,
+SourceLink validation, packaged-consumer acceptance, API compatibility, reproducibility). Run
+`eng/test-provisional-package.ps1` first as a lighter, package-scoped substitute for those gates -
+it packs the real project, inspects the resulting archives, validates SourceLink, and restores/
+builds/runs a minimal real consumer against the packed `.nupkg`:
 
 ```bash
+./eng/test-provisional-package.ps1
 dotnet pack Utils.Collections/Utils.Collections.csproj -c Release -o artifacts/provisional
 dotnet nuget push artifacts/provisional/omy.Utils.Collections.0.0.1.nupkg --api-key <NuGet API key> --source https://api.nuget.org/v3/index.json
 ```

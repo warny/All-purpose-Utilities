@@ -29,6 +29,16 @@ of the train, and never part of the train's canonical package set, candidate man
 order, or all-or-none publish preflight (`eng/publish-product-train.ps1` only ever iterates the
 manifest's `packages` array).
 
+A `"classification": "provisional-package"` exclusion skips every train-wide package gate (canonical
+packaging, `inspect-packages.ps1`, `validate-sourcelink.ps1`, packaged-consumer acceptance, API
+compatibility, reproducibility), since none of them iterate anything outside `packages[]`.
+`eng/test-provisional-package.ps1` is a lighter, package-scoped substitute: it packs the real
+project, inspects the resulting `.nupkg`/`.snupkg` (version, README, license, icon), validates
+SourceLink, and restores/builds/runs a minimal real consumer against the packed package. Run it
+before publishing any `provisional-package` exclusion, and add a case for a new one if it is ever
+added - the script fails closed (throws) rather than silently skipping functional verification for
+a provisional package it does not yet know how to exercise.
+
 `omy.Utils.Collections` will jump directly to the product train's *then-current* version (for
 example `2.0.0` or later) once it is considered mature enough - there is no obligation to publish
 an intermediate `1.x`, and no obligation to keep incrementing `0.0.x` once the train itself is
