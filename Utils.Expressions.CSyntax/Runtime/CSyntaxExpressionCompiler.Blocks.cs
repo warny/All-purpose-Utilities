@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -328,11 +329,33 @@ public sealed partial class CSyntaxExpressionCompiler
         {
             return ResolveNativeType(token, importedNamespaces);
         }
-        catch (Exception) when (true)
+        catch (Exception ex) when (IsUnresolvableTypeTokenFailure(ex))
         {
             return null;
         }
     }
+
+    /// <summary>
+    /// Indicates whether an exception raised while resolving a native type token represents an
+    /// expected "this token is not a resolvable type" outcome, as opposed to an internal compiler
+    /// defect that must propagate instead of being silently reinterpreted as an unknown type.
+    /// </summary>
+    /// <param name="exception">Exception raised by <see cref="ResolveNativeType"/> or one of the
+    /// members it calls (<see cref="ResolveComplexType"/>, <see cref="FindTypeByName"/>).</param>
+    /// <returns>
+    /// <c>true</c> for the exception shapes that type resolution is documented (or known, via
+    /// <see cref="Type.MakeGenericType"/>/<see cref="Type.MakeArrayType()"/>/<see cref="Type.GetType(string, bool)"/>)
+    /// to raise for a token that simply does not name a resolvable CLR type - specifically:
+    /// <see cref="NotSupportedException"/> (the explicit "Unsupported type" case thrown by
+    /// <see cref="ResolveComplexType"/> when no type is found), <see cref="ArgumentException"/>
+    /// (malformed generic syntax, or a generic type argument that violates the generic
+    /// definition's constraints), and <see cref="TypeLoadException"/> (a constructed generic or
+    /// array type that cannot be loaded). Programming-error exceptions such as
+    /// <see cref="NullReferenceException"/> or <see cref="IndexOutOfRangeException"/> are
+    /// deliberately excluded and left to propagate.
+    /// </returns>
+    private static bool IsUnresolvableTypeTokenFailure(Exception exception) =>
+        exception is NotSupportedException or ArgumentException or TypeLoadException;
 
     /// <summary>
     /// Reads an identifier token from source text.
@@ -1201,9 +1224,10 @@ public sealed partial class CSyntaxExpressionCompiler
     /// </summary>
     /// <param name="genericMethod">Generic method definition.</param>
     /// <param name="arguments">Invocation arguments.</param>
-    /// <param name="closedMethod">Constructed generic method when inference succeeds.</param>
+    /// <param name="closedMethod">Constructed generic method when inference succeeds. Non-<c>null</c>
+    /// whenever this method returns <c>true</c>.</param>
     /// <returns><c>true</c> when inference succeeds; otherwise <c>false</c>.</returns>
-    private static bool TryCloseGenericMethod(MethodInfo genericMethod, IReadOnlyList<Expression> arguments, out MethodInfo? closedMethod)
+    private static bool TryCloseGenericMethod(MethodInfo genericMethod, IReadOnlyList<Expression> arguments, [NotNullWhen(true)] out MethodInfo? closedMethod)
     {
         closedMethod = null;
         ParameterInfo[] parameters = genericMethod.GetParameters();
@@ -1465,12 +1489,13 @@ public sealed partial class CSyntaxExpressionCompiler
     /// </summary>
     /// <param name="handlerType">Handler CLR type.</param>
     /// <param name="template">Parsed interpolated string template.</param>
-    /// <param name="handlerExpression">Generated handler expression.</param>
+    /// <param name="handlerExpression">Generated handler expression. Non-<c>null</c> whenever this
+    /// method returns <c>true</c>.</param>
     /// <returns><c>true</c> when construction succeeded; otherwise <c>false</c>.</returns>
     private static bool TryBuildInterpolatedStringHandlerExpression(
         Type handlerType,
         InterpolatedStringTemplateExpression template,
-        out Expression? handlerExpression)
+        [NotNullWhen(true)] out Expression? handlerExpression)
     {
         handlerExpression = null;
 
@@ -2006,6 +2031,8 @@ public sealed partial class CSyntaxExpressionCompiler
     /// <param name="Compiler">Owning compiler instance.</param>
     /// <param name="ImportedNamespaces">Namespaces imported by <c>using</c> directives in the source.</param>
     /// <param name="BlockScope">Per-node variable lists populated by descent handlers.</param>
+    /// <param name="IsInLoopContext">Indicates whether compilation is currently descending through a loop body.</param>
+    /// <param name="LoopContextDepth">Number of nested loop bodies currently being compiled.</param>
     private sealed record CompilationContext(
         IReadOnlyDictionary<string, Expression> Symbols,
         ExpressionCompilerContext? RuntimeContext,

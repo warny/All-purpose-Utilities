@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using System.Linq;
+using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Expressions;
 using Utils.Expressions.CSyntax.Runtime;
@@ -462,6 +463,84 @@ public class CSyntaxExpressionCompilerTests
         Expression.Lambda<Func<int>>(Expression.Convert(expr, typeof(int))).Compile().Invoke();
 
         Assert.IsTrue(callCount > 0, "The initializer side effect must still execute even when the variable is unused.");
+    }
+
+    /// <summary>
+    /// A leading identifier that names a real CLR type must be resolved as a native type so that a
+    /// following <c>.Member(...)</c> segment compiles to a static method call (regression coverage
+    /// for the <c>TryResolveNativeTypeToken</c> success path).
+    /// </summary>
+    [TestMethod]
+    public void Compile_QualifiedStaticMethodCall_ResolvesNativeTypeForStaticAccess()
+    {
+        var compiler = new CSyntaxExpressionCompiler();
+        Expression expression = compiler.Compile("Math.Abs(-42)");
+        double result = Expression.Lambda<Func<double>>(Expression.Convert(expression, typeof(double))).Compile()();
+
+        Assert.AreEqual(42d, result);
+    }
+
+    /// <summary>
+    /// A leading identifier that is neither a resolvable native type nor a known symbol must fail
+    /// with the compiler's own controlled "unable to resolve identifier" error, not with an
+    /// unrelated or unhandled exception leaking out of native type resolution (regression coverage
+    /// for the <c>TryResolveNativeTypeToken</c> "unknown token" fallback path).
+    /// </summary>
+    [TestMethod]
+    public void Compile_UnknownIdentifier_FallsBackToControlledResolutionError()
+    {
+        var compiler = new CSyntaxExpressionCompiler();
+
+        InvalidOperationException exception = Assert.ThrowsExactly<InvalidOperationException>(
+            () => compiler.Compile("thisIdentifierIsDefinitelyNotDefinedAnywhere"));
+
+        StringAssert.Contains(exception.Message, "thisIdentifierIsDefinitelyNotDefinedAnywhere");
+    }
+
+    /// <summary>
+    /// Exercises <c>TryResolveNativeTypeToken</c> and its exception filter directly via reflection,
+    /// since the single production call site only ever passes plain identifiers and cannot reach
+    /// every exception shape the filter is documented to handle. Confirms both halves of the CS7095
+    /// fix: expected resolution failures still yield <c>null</c> (unchanged, pre-existing
+    /// behavior), and the predicate that decides what gets swallowed no longer accepts arbitrary
+    /// exceptions - a defect exception type is correctly classified as "must propagate".
+    /// </summary>
+    [TestMethod]
+    public void TryResolveNativeTypeToken_UnknownToken_ReturnsNullWithoutThrowing()
+    {
+        MethodInfo method = typeof(CSyntaxExpressionCompiler).GetMethod(
+            "TryResolveNativeTypeToken",
+            BindingFlags.NonPublic | BindingFlags.Static)
+            ?? throw new InvalidOperationException("TryResolveNativeTypeToken was not found via reflection.");
+
+        object? result = method.Invoke(null, [ "ThisTypeDoesNotExistAnywhere12345", System.Array.Empty<string>() ]);
+
+        Assert.IsNull(result);
+    }
+
+    /// <summary>
+    /// The exception filter backing <c>TryResolveNativeTypeToken</c> must classify the documented
+    /// "expected type-resolution failure" exception types as swallow-able, and any other exception
+    /// type (representing an internal compiler defect) as something that must propagate instead of
+    /// being silently reinterpreted as "unknown type".
+    /// </summary>
+    [TestMethod]
+    public void IsUnresolvableTypeTokenFailure_ClassifiesExpectedFailuresOnly()
+    {
+        MethodInfo method = typeof(CSyntaxExpressionCompiler).GetMethod(
+            "IsUnresolvableTypeTokenFailure",
+            BindingFlags.NonPublic | BindingFlags.Static)
+            ?? throw new InvalidOperationException("IsUnresolvableTypeTokenFailure was not found via reflection.");
+
+        bool Classify(Exception exception) => (bool)method.Invoke(null, [exception])!;
+
+        Assert.IsTrue(Classify(new NotSupportedException("Unsupported type 'Whatever'.")), "NotSupportedException must be treated as an expected resolution failure.");
+        Assert.IsTrue(Classify(new ArgumentException("Malformed generic type syntax.")), "ArgumentException must be treated as an expected resolution failure.");
+        Assert.IsTrue(Classify(new TypeLoadException("Constructed type cannot be loaded.")), "TypeLoadException must be treated as an expected resolution failure.");
+
+        Assert.IsFalse(Classify(new InvalidOperationException("Internal compiler defect.")), "InvalidOperationException must NOT be swallowed as a resolution failure.");
+        Assert.IsFalse(Classify(new NullReferenceException()), "NullReferenceException must NOT be swallowed as a resolution failure.");
+        Assert.IsFalse(Classify(new IndexOutOfRangeException()), "IndexOutOfRangeException must NOT be swallowed as a resolution failure.");
     }
 
     /// <summary>
