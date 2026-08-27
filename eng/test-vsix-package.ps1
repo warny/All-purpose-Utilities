@@ -74,6 +74,14 @@ if ([string]$iconElement -ne $expectedIconManifestPath) { throw "extension.vsixm
 $iconArchivePath = Join-Path $extractDir 'Resources/AllPurposeUtilities_logo.png'
 if (-not (Test-Path $iconArchivePath)) { throw "'Resources/AllPurposeUtilities_logo.png' declared by <Icon> is missing from the VSIX archive." }
 
+$licenseElement = [string]$manifestXml.PackageManifest.Metadata.License
+if ([string]::IsNullOrWhiteSpace($licenseElement)) { throw "extension.vsixmanifest has no <License> element." }
+$licenseArchivePath = Join-Path $extractDir $licenseElement
+if (-not (Test-Path $licenseArchivePath)) { throw "'<License>$licenseElement</License>' does not correspond to a file in the VSIX archive." }
+
+$moreInfoElement = [string]$manifestXml.PackageManifest.Metadata.MoreInfo
+if ([string]::IsNullOrWhiteSpace($moreInfoElement)) { throw "extension.vsixmanifest has no <MoreInfo> element." }
+
 $workerExeRelativePath = 'worker/Utils.Parser.VisualStudio.Worker.exe'
 $workerExePath = Join-Path $extractDir 'worker/Utils.Parser.VisualStudio.Worker.exe'
 if (-not (Test-Path $workerExePath)) { throw "'$workerExeRelativePath' is missing from the VSIX. PluginWorkerProcess.TryCreate() resolves the worker at '<extensionDir>\worker\Utils.Parser.VisualStudio.Worker.exe'; without it every installed extension silently degrades to in-process-only classification." }
@@ -100,17 +108,41 @@ if ($missingWorkerFiles.Count -gt 0) { throw "The VSIX worker payload is incompl
 
 
 <#
-    UtilsParserVisualStudioExtension.cs declares a second, independent ExtensionMetadata(version: ...)
-    consumed by Microsoft.VisualStudio.Extensibility at build time. It is not generated from the
+    UtilsParserVisualStudioExtension.cs declares a second, independent ExtensionMetadata consumed by
+    Microsoft.VisualStudio.Extensibility at build/activation time. It is not generated from the
     manifest, so nothing keeps it in sync automatically; catch drift here rather than at Marketplace
-    review time.
+    review time. Only fields that represent the SAME fact in both files are compared:
+    version/displayName/description/publisherName. ExtensionMetadata.Id is deliberately NOT compared
+    against the manifest's Identity/Id - the former is a short activation-contract identifier for the
+    VisualStudio.Extensibility framework, the latter is the VSIX package identity Visual Studio and
+    the Marketplace use to recognize updates; they are not the same kind of value and forcing them
+    equal would misrepresent the SDK's own model (see docs/releasing/VisualStudioExtension.md).
 #>
 $extensionSourcePath = Join-Path $projectDir 'UtilsParserVisualStudioExtension.cs'
 $extensionSource = Get-Content $extensionSourcePath -Raw
+
 $extensionVersionMatch = [regex]::Match($extensionSource, 'new Version\((\d+),\s*(\d+),\s*(\d+)\)')
 if (-not $extensionVersionMatch.Success) { throw "Could not find an ExtensionMetadata 'new Version(major, minor, build)' call in '$extensionSourcePath'." }
 $extensionVersion = "{0}.{1}.{2}" -f $extensionVersionMatch.Groups[1].Value, $extensionVersionMatch.Groups[2].Value, $extensionVersionMatch.Groups[3].Value
 if ($extensionVersion -ne $vsixVersion) { throw "Version mismatch: source.extension.vsixmanifest declares '$vsixVersion' but UtilsParserVisualStudioExtension.cs declares '$extensionVersion'. Update both together." }
+
+function Get-ExtensionSourceStringArgument {
+    param([Parameter(Mandatory)][string] $Source, [Parameter(Mandatory)][string] $ArgumentName)
+    $match = [regex]::Match($Source, "${ArgumentName}\s*:\s*`"([^`"]*)`"")
+    if (-not $match.Success) { throw "Could not find a '${ArgumentName}: `"...`"' argument in '$extensionSourcePath'." }
+    return $match.Groups[1].Value
+}
+
+$fieldsToCompare = [ordered]@{
+    displayName   = [string]$manifestXml.PackageManifest.Metadata.DisplayName
+    description   = [string]$manifestXml.PackageManifest.Metadata.Description.InnerText
+    publisherName = $identity.Publisher
+}
+foreach ($field in $fieldsToCompare.Keys) {
+    $extensionValue = Get-ExtensionSourceStringArgument -Source $extensionSource -ArgumentName $field
+    $manifestValue = $fieldsToCompare[$field]
+    if ($extensionValue -ne $manifestValue) { throw "Metadata mismatch on '$field': source.extension.vsixmanifest has '$manifestValue' but UtilsParserVisualStudioExtension.cs declares '$extensionValue'. Update both together." }
+}
 
 $allEntries = @(Get-ChildItem $extractDir -File -Recurse | ForEach-Object { Get-RepositoryRelativePath $extractDir $_.FullName })
 $suspiciousEntries = @($allEntries | Where-Object { $_ -match '(?i)\.(tmp|bak|log|received)$|(?i)(^|/)tests?[./]' })

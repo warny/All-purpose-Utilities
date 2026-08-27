@@ -1,8 +1,8 @@
 # The synchronized `omy.Utils` product train
 
-`2.0.0-rc.1` is one release candidate for all 24 publishable libraries and analyzers. `Directory.Build.props` owns the only version property, while `eng/product-train-manifest.json` explicitly owns package selection, classification, frameworks, platforms, acceptance profiles, published API baselines, and package-specific assets.
+`2.0.0-rc.1` is one release candidate for the publishable libraries and analyzers manifested in `eng/product-train-manifest.json` (see that file's `packages` array for the exact, current count - it changes as packages join or leave the train; do not hard-code a number here). `Directory.Build.props` owns the only product-train-wide version property, while `eng/product-train-manifest.json` explicitly owns package selection, classification, frameworks, platforms, acceptance profiles, published API baselines, and package-specific assets.
 
-The train contains Core; IO; XML; Net; Data; Fonts; Imaging; Geography; Reflection; Mathematics; Collections; OData; NumberToString; VirtualMachine; DependencyInjection; four source generators; and the six parser packages. Demonstrations, tests, syntax implementation projects, the VSIX, its worker, and generated acceptance consumers are explicitly excluded.
+The train contains Core; IO; XML; Net; Data; Fonts; Imaging; Geography; Reflection; Mathematics; Collections; Expressions.CSyntax; Expressions.VBSyntax; OData; NumberToString; VirtualMachine; DependencyInjection; four source generators; and the six parser packages. Demonstrations, tests, the VSIX, its worker, and generated acceptance consumers are explicitly excluded.
 
 Collections is a manifested member of the train (packed, inspected, API-compared like every other package) but is marked `"versionPolicy": "provisional"` and ships at its own literal `0.0.1` instead of `ProductTrainVersion` - see [provisional versioning](ProvisionalVersioning.md).
 

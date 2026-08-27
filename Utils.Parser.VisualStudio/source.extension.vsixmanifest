@@ -22,21 +22,35 @@
             Publisher="Olivier MARTY" />
         <DisplayName>Utils Parser for Visual Studio</DisplayName>
         <Description xml:space="preserve">Syntax highlighting for custom languages defined with .syntaxcolor descriptors, powered by Utils.Parser with isolated out-of-process extensions.</Description>
-        <!-- Schema order is strict (PackageManifestSchema.Metadata.xsd): Icon must precede Tags. -->
+        <!--
+            Schema order is strict (PackageManifestSchema.Metadata.xsd sequence): Description,
+            MoreInfo, License, [GettingStartedGuide], [ReleaseNotes], Icon, [PreviewImage], Tags,
+            [Preview], [Version]. Moving License/MoreInfo after Icon/Tags fails the build with a
+            VSSDK1062 schema-validation error (confirmed empirically).
+        -->
+        <MoreInfo>https://github.com/warny/All-purpose-Utilities</MoreInfo>
+        <License>LICENSE-apache-2.0.txt</License>
         <Icon>Resources\AllPurposeUtilities_logo.png</Icon>
         <Tags>syntax;syntax highlighting;colorization;parser;language;editor;utils</Tags>
     </Metadata>
     <Installation>
-        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0,)">
+        <!--
+            17.14: matches the minimum major.minor of the referenced Microsoft.VisualStudio.Extensibility
+            package (17.14.2098). Per that SDK's own documentation, an unspecified
+            ExtensionMetadata.InstallationTargetVersion defaults to the referenced library's own
+            major.minor as the included minimum - this manifest-level bound mirrors that default rather
+            than overriding it down to an earlier, unverified version. Visual Studio 2022 17.9 is the
+            first version documented to load out-of-process VisualStudio.Extensibility extensions on
+            .NET 8 at all, but that does not establish that this specific 17.14-era SDK build works on
+            17.9-17.13; 17.14 is the honest, verifiable floor.
+        -->
+        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.14,)">
             <ProductArchitecture>amd64</ProductArchitecture>
         </InstallationTarget>
     </Installation>
     <Prerequisites>
-        <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[17.0,)" DisplayName="Visual Studio core editor" />
+        <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[17.14,)" DisplayName="Visual Studio core editor" />
     </Prerequisites>
-    <Dependencies>
-        <Dependency Id="Microsoft.Framework.NDP" DisplayName=".NET" d:Source="Manual" Version="[8.0,)" />
-    </Dependencies>
     <Assets>
         <Asset
             Type="Microsoft.VisualStudio.Extensibility"

@@ -55,6 +55,15 @@
         </Content>
     </ItemGroup>
 
+    <!-- Repository license, linked (not copied) into the VSIX root to match <License> in
+         source.extension.vsixmanifest. -->
+    <ItemGroup Condition="Exists('$(MSBuildThisFileDirectory)..\LICENSE-apache-2.0.txt')">
+        <Content Include="$(MSBuildThisFileDirectory)..\LICENSE-apache-2.0.txt">
+            <Link>LICENSE-apache-2.0.txt</Link>
+            <IncludeInVSIX>true</IncludeInVSIX>
+        </Content>
+    </ItemGroup>
+
     <!--
         Build the plugin worker process and copy its output next to the extension DLL.
         The tagger looks for the worker at $(OutputPath)worker\Utils.Parser.VisualStudio.Worker.exe.

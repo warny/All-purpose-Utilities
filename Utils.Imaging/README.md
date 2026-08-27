@@ -10,6 +10,13 @@ dotnet add package omy.Utils.Imaging
 ## Supported frameworks
 - net8.0
 
+## Supported platforms
+**Windows only.** `BitmapArgb32Accessor` and other members build on `System.Drawing.Common`, which
+Microsoft supports only on Windows starting with .NET 6 (see [`System.Drawing.Common` platform
+support](https://learn.microsoft.com/dotnet/core/compatibility/core-libraries/6.0/system-drawing-common-windows-only)).
+The assembly is annotated `[SupportedOSPlatform("windows")]`; consumers targeting other platforms
+will see a build-time platform-compatibility warning.
+
 ## Features
 - `ColorArgb32` / `ColorArgb64` / `ColorArgb` — 8-bit, 16-bit, and floating-point ARGB colors.
 - `ColorAhsv32` / `ColorAhsv64` / `ColorAhsv` — HSV color representations with ARGB conversion.

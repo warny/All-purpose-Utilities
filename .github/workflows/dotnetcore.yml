@@ -27,6 +27,7 @@ jobs:
         outputs:
             train: ${{ steps.scope.outputs.runProductTrain }}
             scripts: ${{ steps.scope.outputs.runReleaseScriptTests }}
+            vsix: ${{ steps.scope.outputs.runVsix }}
         steps:
             - uses: actions/checkout@v4
               with:
@@ -230,9 +231,33 @@ jobs:
                       artifacts/logs/**
                   if-no-files-found: warn
 
+    vsix-validation:
+        needs: changes
+        if: needs.changes.outputs.vsix == 'true'
+        runs-on: windows-latest
+        timeout-minutes: 20
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: '9.0.x'
+                  cache: true
+                  cache-dependency-path: ${{ env.DOTNET_CACHE_PATHS }}
+            - name: Build and validate the Utils.Parser.VisualStudio VSIX
+              shell: pwsh
+              run: ./eng/test-vsix-package.ps1 -Configuration Release
+            - uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: vsix-validation-${{ github.sha }}
+                  path: |
+                      artifacts/reports/vsix-package.json
+                      artifacts/vsix-validation/build.log
+                  if-no-files-found: warn
+
     required:
         if: always()
-        needs: [changes, build, unit-tests, functional-tests, security-tests, canonical-packages, packaged-validation-ubuntu, packaged-validation-windows-light, source-gates-ubuntu]
+        needs: [changes, build, unit-tests, functional-tests, security-tests, canonical-packages, packaged-validation-ubuntu, packaged-validation-windows-light, source-gates-ubuntu, vsix-validation]
         runs-on: ubuntu-latest
         timeout-minutes: 5
         steps:
@@ -262,6 +287,7 @@ jobs:
                       ubuntuPackageValidationPassed = '${{ needs.packaged-validation-ubuntu.result }}' -eq 'success'
                       windowsPackageValidationPassed = '${{ needs.packaged-validation-windows-light.result }}' -eq 'success'
                       sourceGatesPassed = '${{ needs.source-gates-ubuntu.result }}' -eq 'success'
+                      vsixValidationPassed = '${{ needs.changes.outputs.vsix }}' -ne 'true' -or '${{ needs.vsix-validation.result }}' -eq 'success'
                   } | ConvertTo-Json | Set-Content artifacts/reports/pull-request-validation.json
             - uses: actions/upload-artifact@v4
               if: always()
@@ -284,4 +310,7 @@ jobs:
                       test '${{ needs.packaged-validation-ubuntu.result }}' = success
                       test '${{ needs.packaged-validation-windows-light.result }}' = success
                       test '${{ needs.source-gates-ubuntu.result }}' = success
+                  fi
+                  if test '${{ needs.changes.outputs.vsix }}' = true; then
+                      test '${{ needs.vsix-validation.result }}' = success
                   fi

@@ -155,7 +155,6 @@
         "net8.0"
       ],
       "platforms": [
-        "linux",
         "windows"
       ],
       "publicApiPolicy": "published-baseline",
@@ -506,6 +505,42 @@
       ]
     },
     {
+      "project": "Utils.Expressions.CSyntax/Utils.Expressions.CSyntax.csproj",
+      "packageId": "omy.Utils.Expressions.CSyntax",
+      "kind": "library",
+      "acceptanceProfile": "standard-library",
+      "targetFrameworks": [
+        "net8.0"
+      ],
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "publicApiPolicy": "first-candidate",
+      "symbolPackage": true,
+      "apiAssemblies": [
+        "lib/net8.0/Utils.Expressions.CSyntax.dll"
+      ]
+    },
+    {
+      "project": "Utils.Expressions.VBSyntax/Utils.Expressions.VBSyntax.csproj",
+      "packageId": "omy.Utils.Expressions.VBSyntax",
+      "kind": "library",
+      "acceptanceProfile": "standard-library",
+      "targetFrameworks": [
+        "net8.0"
+      ],
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "publicApiPolicy": "first-candidate",
+      "symbolPackage": true,
+      "apiAssemblies": [
+        "lib/net8.0/Utils.Expressions.VBSyntax.dll"
+      ]
+    },
+    {
       "project": "Utils.Parser.Generators/Utils.Parser.Generators.csproj",
       "packageId": "omy.Utils.Parser.Generators",
       "kind": "analyzer",
@@ -557,16 +592,6 @@
       "project": "UtilsTest.Security/UtilsTest.Security.csproj",
       "classification": "test",
       "reason": "security-invariant test project"
-    },
-    {
-      "project": "Utils.Expressions.CSyntax/Utils.Expressions.CSyntax.csproj",
-      "classification": "non-packable",
-      "reason": "internal syntax implementation"
-    },
-    {
-      "project": "Utils.Expressions.VBSyntax/Utils.Expressions.VBSyntax.csproj",
-      "classification": "non-packable",
-      "reason": "internal syntax implementation"
     },
     {
       "project": "Utils.Parser.VisualStudio/Utils.Parser.VisualStudio.csproj",

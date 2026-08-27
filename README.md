@@ -11,14 +11,15 @@ It is designed for consumers who want small, task-oriented packages (networking,
 | Project | Package (if published) | Purpose | README |
 |---|---|---|---|
 | `Utils` | `omy.Utils` | Shared foundational helpers. | [Utils/README.md](Utils/README.md) |
-| `Utils.Collections` | `omy.Utils.Collections` | Collection and indexing primitives. | [Utils.Collections/README.md](Utils.Collections/README.md) |
+| `Utils.Collections` | `omy.Utils.Collections` | Collection and indexing primitives. **Provisional `0.0.x` version** (not yet part of the product train — see [provisional versioning](docs/releasing/ProvisionalVersioning.md)). | [Utils.Collections/README.md](Utils.Collections/README.md) |
 | `Utils.Data` | `omy.Utils.Data` | Data-record to object mapping and SQL helpers. | [Utils.Data/README.md](Utils.Data/README.md) |
 | `Utils.DependencyInjection` | `omy.Utils.DependencyInjection` | DI registration helpers. | [Utils.DependencyInjection/README.md](Utils.DependencyInjection/README.md) |
-| `Utils.Expressions.CSyntax` | `omy.Utils.Expressions.CSyntax` | C-like expression compiler. | [Utils.Expressions.CSyntax/readme.md](Utils.Expressions.CSyntax/readme.md) |
+| `Utils.Expressions.CSyntax` | `omy.Utils.Expressions.CSyntax` | C-like expression compiler. | [Utils.Expressions.CSyntax/README.md](Utils.Expressions.CSyntax/README.md) |
+| `Utils.Expressions.VBSyntax` | `omy.Utils.Expressions.VBSyntax` | VB-like expression compiler. | [Utils.Expressions.VBSyntax/README.md](Utils.Expressions.VBSyntax/README.md) |
 | `Utils.Fonts` | `omy.Utils.Fonts` | Font parsing and typography helpers. | [Utils.Fonts/README.md](Utils.Fonts/README.md) |
 | `Utils.Geography` | `omy.Utils.Geography` | Coordinate/projection utilities. | [Utils.Geography/README.md](Utils.Geography/README.md) |
 | `Utils.IO` | `omy.Utils.IO` | Stream, serialization, and encoding helpers. | [Utils.IO/README.md](Utils.IO/README.md) |
-| `Utils.Imaging` | `omy.Utils.Imaging` | Imaging and drawing primitives. | [Utils.Imaging/README.md](Utils.Imaging/README.md) |
+| `Utils.Imaging` | `omy.Utils.Imaging` | Imaging and drawing primitives. **Windows only** (`System.Drawing.Common`). | [Utils.Imaging/README.md](Utils.Imaging/README.md) |
 | `Utils.Mathematics` | `omy.Utils.Mathematics` | Math, algebra, and symbolic tooling. | [Utils.Mathematics/README.md](Utils.Mathematics/README.md) |
 | `Utils.Net` | `omy.Utils.Net` | Networking protocols and helpers. | [Utils.Net/README.md](Utils.Net/README.md) |
 | `Utils.NumberToString` | `omy.Utils.NumberToString` | Number-to-string conversion helpers. | [Utils.NumberToString/README.md](Utils.NumberToString/README.md) |
@@ -156,4 +157,4 @@ Apache 2.0 (`LICENSE-apache-2.0.txt`).
 
 ## Synchronized 2.0 release candidate
 
-All publishable `omy.Utils` libraries and source generators are prepared as one `2.0.0-rc.1` product train. Contributors can review the [product-train inventory and release boundary](docs/releasing/ProductTrain.md); consumers upgrading from published packages should start with the [2.0 migration guide](docs/releasing/MigrationTo2.0.md).
+Most publishable `omy.Utils` libraries and source generators are prepared as one `2.0.0-rc.1` product train. A small number of components are explicitly `provisional` and ship at their own independent version instead (`omy.Utils.Collections` at `0.0.1` today; see [provisional versioning](docs/releasing/ProvisionalVersioning.md), which also covers the `Utils.Parser.VisualStudio` Visual Studio extension's own `0.0.x` series). Contributors can review the [product-train inventory and release boundary](docs/releasing/ProductTrain.md); consumers upgrading from published packages should start with the [2.0 migration guide](docs/releasing/MigrationTo2.0.md).

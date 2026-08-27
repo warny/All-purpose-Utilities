@@ -4,7 +4,7 @@ Use this guide to align GitHub releases with NuGet publishing for the `omy.Utils
 
 ## Versioning and tags
 
-1. Update the synchronized solution version in `Directory.Build.targets` when preparing a release. Do not version individual `.csproj` files independently.
+1. Update `ProductTrainVersion` in `Directory.Build.props` when preparing a release. Do not version individual `.csproj` files independently (except for packages explicitly marked `"versionPolicy": "provisional"` in `eng/product-train-manifest.json` - see [provisional versioning](releasing/ProvisionalVersioning.md)).
 2. Add release notes to `CHANGELOG.md` under a new version heading.
 3. Create a Git tag matching the package version (for example `v2.0.0-rc.1`).
 
@@ -19,8 +19,8 @@ Most of the 24 manifested projects use `ProductTrainVersion` from `Directory.Bui
 ## CI publishing pipeline
 
 - The `Publish NuGet` workflow (`.github/workflows/nuget-publish.yml`) runs on pushes to the `release` branch.
-- It validates and packs only the 24 manifest-selected packages, then checks package metadata, assemblies, internal dependencies, isolated consumer assets, API compatibility, and reproducibility.
-- Before the first push, it queries all 24 NuGet package IDs. Exactly zero or all 24 may exist. A partial remote train fails with a diagnostic and no automatic push.
+- It validates and packs only the manifest-selected packages (see `eng/product-train-manifest.json`'s `packages` array for the current count), then checks package metadata, assemblies, internal dependencies, isolated consumer assets, API compatibility, and reproducibility.
+- Before the first push, it queries every manifested NuGet package ID. Exactly zero or all of them may exist. A partial remote train fails with a diagnostic and no automatic push.
 - A fully absent train is pushed in manifest topological order as the single logical `omy 2.0.0-rc.1` release; the dry-run command omits `-Publish`.
 - Packages are pushed using the `NUGET_API_KEY` secret configured in the repository settings.
 

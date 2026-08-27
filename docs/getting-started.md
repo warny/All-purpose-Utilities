@@ -11,13 +11,15 @@ Pick the smallest package that matches your use case.
 | Package | Purpose | TFM |
 |---|---|---|
 | `omy.Utils` | Shared foundation helpers used across the ecosystem. | `net8.0` |
-| `omy.Utils.Collections` | Collection structures and helpers (including skip list). | `net8.0` |
+| `omy.Utils.Collections` | Collection structures and helpers (including skip list). **Provisional `0.0.x` version**, not yet part of the product train — see [provisional versioning](releasing/ProvisionalVersioning.md). | `net8.0` |
 | `omy.Utils.Data` | Map `IDataRecord` / `IDataReader` to typed objects. | `net8.0` |
 | `omy.Utils.DependencyInjection` | Attribute-driven DI registration helpers. | `net9.0` |
+| `omy.Utils.Expressions.CSyntax` | C-like expression compiler targeting LINQ expression trees. | `net8.0` |
+| `omy.Utils.Expressions.VBSyntax` | VB-like expression compiler targeting LINQ expression trees. | `net8.0` |
 | `omy.Utils.Fonts` | Font parsing and glyph/encoding helpers. | `net8.0` |
 | `omy.Utils.Geography` | Coordinates, projections, and map/tile helpers. | `net8.0` |
 | `omy.Utils.IO` | Streams, conversion helpers, and serialization primitives. | `net8.0` |
-| `omy.Utils.Imaging` | Imaging and drawing utilities. | `net8.0` |
+| `omy.Utils.Imaging` | Imaging and drawing utilities. **Windows only** (`System.Drawing.Common`). | `net8.0` |
 | `omy.Utils.Mathematics` | Math helpers, FFT, and algebra-related types. | `net8.0` |
 | `omy.Utils.Net` | Networking helpers (DNS, ICMP, WOL, URI tooling). | `net9.0` |
 | `omy.Utils.NumberToString` | Number-to-string conversion helpers. | `net8.0` |

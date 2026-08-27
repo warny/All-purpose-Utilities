@@ -21,12 +21,12 @@ This section is the source for the Visual Studio Marketplace listing fields that
 
 ### Prerequisites
 
-- Visual Studio 2022 (17.0) or later, Community/Professional/Enterprise (`Microsoft.VisualStudio.Component.CoreEditor` workload component).
-- .NET 8.0 runtime or later on the machine running Visual Studio (declared as `Microsoft.Framework.NDP` `[8.0,)` in the manifest).
+- Visual Studio 2022 **17.14** or later, Community/Professional/Enterprise (`Microsoft.VisualStudio.Component.CoreEditor` workload component). This floor matches the `Microsoft.VisualStudio.Extensibility` SDK version this extension is built against; see [VSIX versioning and release](../docs/releasing/VisualStudioExtension.md) for why it is not an earlier 17.x version.
+- .NET 8 (declared via `ExtensionMetadata.DotnetTargetVersions` in code, the SDK-recommended mechanism for out-of-process extensions — not the classic VSIX `Microsoft.Framework.NDP` dependency, which denotes the legacy .NET Framework and does not apply here).
 
 ### Supported Visual Studio versions and architecture
 
-- `InstallationTarget`: `Microsoft.VisualStudio.Community`, version range `[17.0,)` — this also covers Professional and Enterprise editions, which share the same SKU family for extension installation purposes.
+- `InstallationTarget`: `Microsoft.VisualStudio.Community`, version range `[17.14,)` — this also covers Professional and Enterprise editions, which share the same SKU family for extension installation purposes.
 - `ProductArchitecture`: `amd64`.
 
 ### Installation

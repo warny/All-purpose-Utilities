@@ -65,3 +65,22 @@ All publishable NuGet packages and the VSIX reuse a single source file,
 
 Only the packaged copies inside `.nupkg`/`.vsix` archives are packaging artifacts; the repository
 itself keeps exactly one physical copy of the image.
+
+## Versioned API documentation for a provisional package
+
+`.github/workflows/docs.yml` builds and deploys **one** DocFX site covering every project in the
+repository, labeled with a single version derived from `Utils/Utils.csproj`'s `<Version>` (the
+product train's version) - it does not generate a separate site per package version. A provisional
+package's own README should therefore keep linking to the product-train's version label (currently
+`v2.0.0-rc.1`), not to its own package version (`v0.0.1` would be a dead link, since that folder is
+never generated), and should say so explicitly so the discrepancy reads as intentional rather than
+a mistake. See `Utils.Collections/README.md` for the wording used.
+
+## Package count
+
+`docs/releasing/ProductTrain.md` and `docs/releasing.md` describe the *set* of manifested packages
+rather than hard-coding a count anywhere that could drift; if you need the current number, count
+`eng/product-train-manifest.json`'s `packages` array (`(Get-Content eng/product-train-manifest.json -Raw | ConvertFrom-Json).packages.Count`)
+rather than trusting a number written in prose - it changes whenever a package joins or leaves the
+train (for example, `omy.Utils.Expressions.CSyntax`/`omy.Utils.Expressions.VBSyntax` joining as
+product-train packages).
