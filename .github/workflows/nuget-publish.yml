@@ -8,9 +8,25 @@ on:
         branches:
             - release
             - releases/**
+    workflow_dispatch:
+        inputs:
+            validation-run-id:
+                description: release-quality-gates.yml run containing the validated product-train artifact to publish
+                required: true
+                type: string
+            confirm-version:
+                description: Must exactly match the product-train version (see eng/product-train-manifest.json) - a typo guard against an accidental dispatch
+                required: true
+                type: string
+            resume-partial-publication:
+                description: Only for resuming a known, previously-interrupted publication of this exact candidate (see docs/releasing.md)
+                required: true
+                type: boolean
+                default: false
 
 jobs:
     build:
+        if: github.event_name == 'push'
         runs-on: ubuntu-latest
         strategy:
             matrix:
@@ -42,6 +58,7 @@ jobs:
                   if-no-files-found: error
 
     build-visual-studio-extensions:
+        if: github.event_name == 'push'
         runs-on: windows-latest
         strategy:
             matrix:
@@ -110,3 +127,89 @@ jobs:
     # publication of this VSIX is intentionally manual - see
     # docs/releasing/VisualStudioExtension.md for the checklist and for `VsixPublisher.exe` notes
     # on automating a later publication.
+
+    # Real NuGet publication, manual workflow_dispatch only. nuget.org's Trusted Publishing policy
+    # for this account is locked to this exact workflow file name (nuget-publish.yml) and the
+    # "Production" environment - see https://learn.microsoft.com/nuget/nuget-org/trusted-publishing.
+    # No long-lived NUGET_API_KEY is used or needed: the job exchanges a short-lived GitHub OIDC
+    # token for a NuGet API key that is valid for one hour and can be used exactly once.
+    publish-to-nuget:
+        if: github.event_name == 'workflow_dispatch'
+        runs-on: ubuntu-latest
+        environment: Production
+        permissions:
+            contents: read
+            actions: read
+            id-token: write
+        steps:
+            - name: Resolve and validate the validation run
+              id: validation
+              uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+              env:
+                  VALIDATION_RUN_ID: ${{ inputs.validation-run-id }}
+              with:
+                  script: |
+                      const runId = Number(process.env.VALIDATION_RUN_ID);
+                      if (!Number.isSafeInteger(runId) || runId <= 0) {
+                          core.setFailed('validation-run-id must be a positive workflow run ID.');
+                          return;
+                      }
+                      const { data: run } = await github.rest.actions.getWorkflowRun({
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          run_id: runId
+                      });
+                      if (run.head_repository?.full_name !== `${context.repo.owner}/${context.repo.repo}`) {
+                          core.setFailed(`Validation run ${runId} does not belong to this repository.`);
+                          return;
+                      }
+                      if (run.path !== '.github/workflows/release-quality-gates.yml') {
+                          core.setFailed(`Validation run ${runId} came from unexpected workflow '${run.path}'.`);
+                          return;
+                      }
+                      if (run.status !== 'completed' || run.conclusion !== 'success') {
+                          core.setFailed(`Validation run ${runId} must be completed successfully; status=${run.status}, conclusion=${run.conclusion}.`);
+                          return;
+                      }
+                      core.setOutput('head_sha', run.head_sha);
+            - uses: actions/checkout@v4
+              with:
+                  ref: ${{ steps.validation.outputs.head_sha }}
+                  fetch-depth: 0
+            - uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: 9.0.x
+            - uses: actions/download-artifact@v4
+              with:
+                  pattern: full-product-train-*
+                  path: artifacts
+                  run-id: ${{ inputs.validation-run-id }}
+                  merge-multiple: true
+                  github-token: ${{ github.token }}
+            - name: Confirm publish version (typo guard)
+              shell: pwsh
+              run: |
+                  $manifest = Get-Content 'eng/product-train-manifest.json' -Raw | ConvertFrom-Json
+                  if ('${{ inputs.confirm-version }}' -ne $manifest.version) {
+                      throw "confirm-version ('${{ inputs.confirm-version }}') must exactly match the product-train version ('$($manifest.version)') to publish. Refusing to proceed."
+                  }
+                  Write-Host "Confirmed: publishing product-train version $($manifest.version)."
+            - name: NuGet login (OIDC -> short-lived API key)
+              id: nuget-login
+              uses: NuGet/login@v1
+              with:
+                  user: Warny
+            - name: PUBLISH - push the validated candidate to NuGet.org
+              shell: pwsh
+              env:
+                  NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
+              run: |
+                  $arguments = @('-ArtifactsPath', 'artifacts', '-Publish', '-ApiKey', $env:NUGET_API_KEY)
+                  if ('${{ inputs.resume-partial-publication }}' -eq 'true') { $arguments += '-ResumePartialPublication' }
+                  & ./eng/publish-product-train.ps1 @arguments
+            - name: Upload publication result
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: product-train-publication-plan
+                  path: artifacts/reports/publication-plan.json
