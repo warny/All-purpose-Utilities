@@ -204,8 +204,13 @@ jobs:
               env:
                   NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
               run: |
-                  $arguments = @('-ArtifactsPath', 'artifacts', '-Publish', '-ApiKey', $env:NUGET_API_KEY)
-                  if ('${{ inputs.resume-partial-publication }}' -eq 'true') { $arguments += '-ResumePartialPublication' }
+                  # Hashtable splatting, not array splatting: an array (@('-ArtifactsPath', ...))
+                  # binds every element positionally and does not re-parse '-Name' strings as
+                  # parameter names for a PowerShell script/cmdlet target - only a hashtable does
+                  # named-parameter splatting. publish-product-train.ps1 has no positional
+                  # parameters, so array splatting here silently mis-binds everything.
+                  $arguments = @{ ArtifactsPath = 'artifacts'; Publish = $true; ApiKey = $env:NUGET_API_KEY }
+                  if ('${{ inputs.resume-partial-publication }}' -eq 'true') { $arguments.ResumePartialPublication = $true }
                   & ./eng/publish-product-train.ps1 @arguments
             - name: Upload publication result
               if: always()
