@@ -1,4 +1,4 @@
-name: Plan or publish validated product-train
+name: Plan validated product-train publication
 
 on:
     workflow_dispatch:
@@ -7,27 +7,13 @@ on:
                 description: Workflow run containing the validated product-train artifact
                 required: true
                 type: string
-            publish:
-                description: Actually push to NuGet.org (irreversible). Leave false for a dry-run plan only.
-                required: true
-                type: boolean
-                default: false
-            confirm-version:
-                description: Required only when publish=true. Must exactly match the product-train version (see Directory.Build.props) to guard against an accidental dispatch.
-                required: false
-                type: string
-            resume-partial-publication:
-                description: Required only when publish=true and a prior publish of this exact candidate was interrupted. See docs/releasing.md.
-                required: false
-                type: boolean
-                default: false
 
 permissions:
     contents: read
     actions: read
 
 jobs:
-    publish-or-plan:
+    dry-run-publication-plan:
         runs-on: ubuntu-latest
         steps:
             - name: Resolve and validate the validation run
@@ -74,30 +60,10 @@ jobs:
                   run-id: ${{ inputs.validation-run-id }}
                   merge-multiple: true
                   github-token: ${{ github.token }}
-            - name: Confirm publish version (typo guard)
-              if: inputs.publish == true
-              shell: pwsh
-              run: |
-                  $manifest = Get-Content 'eng/product-train-manifest.json' -Raw | ConvertFrom-Json
-                  if ('${{ inputs.confirm-version }}' -ne $manifest.version) {
-                      throw "confirm-version ('${{ inputs.confirm-version }}') must exactly match the product-train version ('$($manifest.version)') to publish. Refusing to proceed."
-                  }
-                  Write-Host "Confirmed: publishing product-train version $($manifest.version)."
-            - name: Dry-run - verify exact validated artifacts and NuGet state
-              if: inputs.publish == false
+            - name: Verify exact validated artifacts and NuGet state
               shell: pwsh
               run: ./eng/publish-product-train.ps1 -ArtifactsPath artifacts
-            - name: PUBLISH - push the validated candidate to NuGet.org
-              if: inputs.publish == true
-              shell: pwsh
-              env:
-                  NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-              run: |
-                  $arguments = @('-ArtifactsPath', 'artifacts', '-Publish', '-ApiKey', $env:NUGET_API_KEY)
-                  if ('${{ inputs.resume-partial-publication }}' -eq 'true') { $arguments += '-ResumePartialPublication' }
-                  & ./eng/publish-product-train.ps1 @arguments
-            - name: Upload publication plan/result
-              if: always()
+            - name: Upload dry-run plan
               uses: actions/upload-artifact@v4
               with:
                   name: product-train-publication-plan
