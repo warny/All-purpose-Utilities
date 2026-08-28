@@ -89,30 +89,57 @@
 <li>Attach any additional binaries or documentation if needed.</li>
 </ol>
 <h2 id="ci-publishing-pipeline">CI publishing pipeline</h2>
-<p>No workflow in this repository pushes a package to NuGet. <code>NUGET_API_KEY</code> is not referenced by any
-workflow; <code>dotnet nuget push</code> only happens inside <code>eng/publish-product-train.ps1</code>'s <code>-Publish</code> code
-path, which nothing here invokes automatically. The pipeline is validate → assemble a candidate →
-plan a dry run → <strong>a human runs the actual push manually</strong>, not push-on-merge:</p>
+<p>Nothing pushes a package to NuGet automatically (no push-on-merge). Publishing is a deliberate,
+manual <code>workflow_dispatch</code> using <strong>NuGet.org Trusted Publishing</strong> (OIDC) - see
+<a href="https://learn.microsoft.com/nuget/nuget-org/trusted-publishing">https://learn.microsoft.com/nuget/nuget-org/trusted-publishing</a>. There is no long-lived NuGet API
+key involved in the automated path: the publish job exchanges a short-lived GitHub Actions OIDC
+token for a NuGet API key that nuget.org issues, valid for one hour and usable exactly once. The
+account's Trusted Publishing policy is locked to one exact workflow file
+(<code>.github/workflows/nuget-publish.yml</code>) and one GitHub Actions environment (<code>Production</code>), which
+this repository configured with a required reviewer - so an actual publish dispatch always waits
+for an explicit human approval in the GitHub UI before it runs, in addition to the safeguards below.</p>
 <ol>
-<li><p><strong><code>.github/workflows/nuget-publish.yml</code></strong> (<code>Validate NuGet Release</code>, runs on pushes to <code>release</code>/<code>releases/**</code>) builds the solution, packs and runs packaged-consumer acceptance against the manifest-selected packages (<code>eng/test-packaged-product-train.ps1</code>), then checks NuGet package-ID <em>availability only</em> (<code>eng/publish-product-train.ps1 -PreflightPackageIdsOnly</code>) - it does not validate a specific candidate manifest and does not push anything. It also builds and validates the VSIX in a separate job, again without publishing it anywhere.</p>
-</li>
-<li><p><strong><code>.github/workflows/release-quality-gates.yml</code></strong> (<code>Full release quality gates</code>, runs on pushes to <code>master</code>, on version tags, weekly, or via manual dispatch) runs the complete validation chain - canonical packaging, Ubuntu/Windows packaged acceptance, API compatibility, SourceLink, reproducibility, release-warnings, dependency audit - and assembles the immutable <code>FullRelease</code> candidate, uploading it as the <code>full-product-train-&lt;sha&gt;</code> artifact. This is the run whose ID feeds the next step.</p>
-</li>
-<li><p><strong><code>.github/workflows/publish-validated-product-train.yml</code></strong> (<code>Plan or publish validated product-train</code>, manual <code>workflow_dispatch</code> only) downloads the exact <code>full-product-train-&lt;sha&gt;</code> artifact from a specified <code>release-quality-gates.yml</code> run (<code>validation-run-id</code> input) and calls <code>eng/publish-product-train.ps1</code>, either as a dry-run or as the actual publish, controlled entirely by its inputs:</p>
+<li><strong><code>.github/workflows/nuget-publish.yml</code></strong> (<code>Validate NuGet Release</code>) has two independent triggers:
 <ul>
-<li><strong><code>validation-run-id</code></strong> (required): the <code>release-quality-gates.yml</code> run ID whose candidate to use.</li>
-<li><strong><code>publish</code></strong> (boolean, default <code>false</code>): leave <code>false</code> for a dry-run that verifies the candidate's hashes and remote NuGet state and uploads <code>publication-plan.json</code> without pushing anything. Set <code>true</code> to actually push.</li>
-<li><strong><code>confirm-version</code></strong> (required only when <code>publish=true</code>): must exactly match the product-train version (<code>eng/product-train-manifest.json</code>'s <code>version</code>, currently <code>2.0.0-rc.1</code>) - a typo guard against an accidental real publish from a stale or mistyped dispatch.</li>
-<li><strong><code>resume-partial-publication</code></strong> (boolean, default <code>false</code>, only meaningful when <code>publish=true</code>): see the resume explanation below.</li>
+<li><p><strong>On push to <code>release</code>/<code>releases/**</code>:</strong> builds the solution, packs and runs packaged-consumer acceptance against the manifest-selected packages (<code>eng/test-packaged-product-train.ps1</code>), then checks NuGet package-ID <em>availability only</em> (<code>eng/publish-product-train.ps1 -PreflightPackageIdsOnly</code>) - it does not validate a specific candidate manifest and does not push anything. It also builds and validates the VSIX in a separate job, again without publishing it anywhere.</p>
+</li>
+<li><p><strong>On manual <code>workflow_dispatch</code>:</strong> runs the <code>publish-to-nuget</code> job - the only place in this repository that actually pushes to NuGet.org. Inputs:</p>
+<ul>
+<li><strong><code>validation-run-id</code></strong> (required): the <code>release-quality-gates.yml</code> run ID whose validated <code>full-product-train-&lt;sha&gt;</code> candidate to publish.</li>
+<li><strong><code>confirm-version</code></strong> (required): must exactly match the product-train version (<code>eng/product-train-manifest.json</code>'s <code>version</code>, currently <code>2.0.0-rc.1</code>) - a typo guard against an accidental dispatch.</li>
+<li><strong><code>resume-partial-publication</code></strong> (boolean, default <code>false</code>): see the resume explanation below.</li>
 </ul>
-<p>The workflow uses the repository's <code>NUGET_API_KEY</code> secret directly (<code>env: NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}</code> on the publish step) - nobody needs to handle the key locally to trigger a real publish. It always queries every manifested NuGet package ID first, and always pushes each package's <code>.nupkg</code> (with <code>--no-symbols</code>) and then its <code>.snupkg</code> separately - never relying on <code>dotnet nuget push</code>'s automatic &quot;also push the matching symbol package&quot; behavior, since that would push every <code>.snupkg</code> twice (once automatically, once explicitly) and fail or conflict on the second push.</p>
-<p><strong>Normal publication</strong> (<code>publish=true</code>, <code>resume-partial-publication=false</code>) requires the remote state to be entirely empty (no manifested package/version already exists). A <em>partial</em> remote state (some but not all manifested packages already published at this version) is never auto-accepted - it fails with a diagnostic, whether this is a dry run or a plain publish dispatch without the resume input. This is deliberate: an unexpected partial state (out-of-band push, corruption) must not be silently treated as a resume.</p>
-<p><strong>Resuming a known, previously-interrupted publication</strong> of this exact candidate (<code>publish=true</code>, <code>resume-partial-publication=true</code>) is the only way to proceed past a partial remote state. It reuses the same validated candidate and pushes every package's <code>.nupkg</code> and <code>.snupkg</code> again, but adds <code>--skip-duplicate</code> to each push: NuGet guarantees a published id+version's content is immutable, so a re-push of an already-published artifact is turned into a harmless no-op instead of an error, while an artifact that never actually made it (for example, a <code>.snupkg</code> whose push failed right after its <code>.nupkg</code> succeeded) still gets a real, effective push. Do not set it to explain away a partial state whose origin you have not actually confirmed to be a known interrupted run - it exists for that one specific, deliberate scenario, not as a general-purpose override.</p>
-<p>The remote-state scan only checks each package's <code>.nupkg</code> - NuGet does not expose a symbol-package existence query - so a run that fails on the very last package's <code>.snupkg</code> leaves every <code>.nupkg</code> looking published. <code>resume-partial-publication</code> is also the right (and only) way to complete that case: without it, a plain publish dispatch would see every <code>.nupkg</code> present, report &quot;nothing to publish&quot;, and leave that one stranded <code>.snupkg</code> unpublished forever.</p>
+<p>The job runs under the <code>Production</code> environment (triggering the required-reviewer approval), downloads and hash-verifies the exact validated candidate, exchanges the OIDC token for a temporary key via the <a href="https://github.com/NuGet/login"><code>NuGet/login</code></a> action, then calls <code>eng/publish-product-train.ps1 -Publish [-ResumePartialPublication] -ApiKey &lt;temporary key&gt;</code>. It always pushes each package's <code>.nupkg</code> (with <code>--no-symbols</code>) and then its <code>.snupkg</code> separately - never relying on <code>dotnet nuget push</code>'s automatic &quot;also push the matching symbol package&quot; behavior, since that would push every <code>.snupkg</code> twice (once automatically, once explicitly) and fail or conflict on the second push.</p>
 </li>
-<li><p><strong>A local, manual invocation of the same script</strong> remains available as an alternative to the workflow above (for example, without repository Actions permissions, or to inspect the hash verification step interactively): <code>./eng/publish-product-train.ps1 -ArtifactsPath &lt;path-to-the-downloaded-artifact&gt; -Publish [-ResumePartialPublication] -ApiKey &lt;NuGet API key&gt;</code>. It is the exact same code path and the exact same rules as above; only the source of the API key and the artifact download differ.</p>
+</ul>
 </li>
+<li><strong><code>.github/workflows/release-quality-gates.yml</code></strong> (<code>Full release quality gates</code>, runs on pushes to <code>master</code>, on version tags, weekly, or via manual dispatch) runs the complete validation chain - canonical packaging, Ubuntu/Windows packaged acceptance, API compatibility, SourceLink, reproducibility, release-warnings, dependency audit - and assembles the immutable <code>FullRelease</code> candidate, uploading it as the <code>full-product-train-&lt;sha&gt;</code> artifact. This is the run whose ID feeds the publish dispatch above.</li>
+<li><strong><code>.github/workflows/publish-validated-product-train.yml</code></strong> (<code>Plan validated product-train publication</code>, manual <code>workflow_dispatch</code> only, taking a <code>validation-run-id</code> input) downloads that same candidate and calls <code>eng/publish-product-train.ps1 -ArtifactsPath artifacts</code> <strong>without <code>-Publish</code></strong> - a read-only dry run that verifies the candidate's hashes and remote NuGet state and uploads <code>publication-plan.json</code>. Use this to double-check a candidate before dispatching the real publish above; it still never pushes anything.</li>
 </ol>
+<p><strong>Normal publication</strong> (<code>resume-partial-publication=false</code>) requires the remote state to be entirely
+empty (no manifested package/version already exists). A <em>partial</em> remote state (some but not all
+manifested packages already published at this version) is never auto-accepted - it fails with a
+diagnostic, whether this is a dry run or a plain publish dispatch without the resume input. This is
+deliberate: an unexpected partial state (out-of-band push, corruption) must not be silently treated
+as a resume.</p>
+<p><strong>Resuming a known, previously-interrupted publication</strong> of this exact candidate
+(<code>resume-partial-publication=true</code>) is the only way to proceed past a partial remote state. It
+reuses the same validated candidate and pushes every package's <code>.nupkg</code> and <code>.snupkg</code> again, but
+adds <code>--skip-duplicate</code> to each push: NuGet guarantees a published id+version's content is
+immutable, so a re-push of an already-published artifact is turned into a harmless no-op instead of
+an error, while an artifact that never actually made it (for example, a <code>.snupkg</code> whose push failed
+right after its <code>.nupkg</code> succeeded) still gets a real, effective push. Do not set it to explain away
+a partial state whose origin you have not actually confirmed to be a known interrupted run - it
+exists for that one specific, deliberate scenario, not as a general-purpose override.</p>
+<p>The remote-state scan only checks each package's <code>.nupkg</code> - NuGet does not expose a symbol-package
+existence query - so a run that fails on the very last package's <code>.snupkg</code> leaves every <code>.nupkg</code>
+looking published. <code>resume-partial-publication</code> is also the right (and only) way to complete that
+case: without it, a plain publish dispatch would see every <code>.nupkg</code> present, report &quot;nothing to
+publish&quot;, and leave that one stranded <code>.snupkg</code> unpublished forever.</p>
+<p>A local, manual invocation of <code>eng/publish-product-train.ps1 -Publish [-ResumePartialPublication] -ApiKey &lt;key&gt;</code> remains possible outside CI (for example without repository Actions permissions), but
+requires obtaining a NuGet API key by some other means - Trusted Publishing's short-lived tokens are
+only available to a workflow run matching the registered policy. It is the exact same code path and
+the exact same rules as above; only the source of the API key and the artifact download differ.</p>
 <h2 id="validating-packages">Validating packages</h2>
 <p>After a release completes:</p>
 <ul>
