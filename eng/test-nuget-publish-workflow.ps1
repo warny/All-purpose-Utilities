@@ -75,15 +75,19 @@ if ($workflow -match 'secrets\.NUGET_API_KEY') {
     throw "publish-to-nuget must not fall back to a long-lived NUGET_API_KEY secret - Trusted Publishing replaces it entirely."
 }
 
-# The arguments actually passed to the publication script: -Publish must always be present,
-# and -ResumePartialPublication must be conditional on the matching input rather than always on
-# (which would silently weaken every publish to --skip-duplicate) or always off (which would
-# make the resume input a no-op).
-if ($workflow -notmatch [regex]::Escape("@('-ArtifactsPath', 'artifacts', '-Publish', '-ApiKey', `$env:NUGET_API_KEY)")) {
-    throw "publish-to-nuget must call eng/publish-product-train.ps1 with -ArtifactsPath, -Publish, and -ApiKey from the temporary key."
+# The arguments actually passed to the publication script must use hashtable splatting
+# (@{ Name = value }), not array splatting (@('-Name', value)): publish-product-train.ps1 has no
+# positional parameters, so array-splatted '-Name' strings are not re-parsed as parameter names
+# and bind positionally instead, silently mis-binding every argument (a real production incident:
+# array splatting here made ApiKey receive the literal string '-ArtifactsPath').
+if ($workflow -match [regex]::Escape('$arguments = @(''-ArtifactsPath''')) {
+    throw "publish-to-nuget must not array-splat arguments into eng/publish-product-train.ps1 - use hashtable splatting."
 }
-if ($workflow -notmatch [regex]::Escape("if ('`${{ inputs.resume-partial-publication }}' -eq 'true') { `$arguments += '-ResumePartialPublication' }")) {
-    throw "publish-to-nuget must add -ResumePartialPublication only when the matching input is true."
+if ($workflow -notmatch [regex]::Escape("`$arguments = @{ ArtifactsPath = 'artifacts'; Publish = `$true; ApiKey = `$env:NUGET_API_KEY }")) {
+    throw "publish-to-nuget must call eng/publish-product-train.ps1 with -ArtifactsPath, -Publish, and -ApiKey from the temporary key, via hashtable splatting."
+}
+if ($workflow -notmatch [regex]::Escape("if ('`${{ inputs.resume-partial-publication }}' -eq 'true') { `$arguments.ResumePartialPublication = `$true }")) {
+    throw "publish-to-nuget must add ResumePartialPublication to the splat hashtable only when the matching input is true."
 }
 
 Write-Host 'NuGet publish workflow contract tests passed.'
