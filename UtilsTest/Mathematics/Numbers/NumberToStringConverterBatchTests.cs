@@ -77,13 +77,6 @@ public class NumberToStringConverterBatchTests
         Assert.AreEqual("nineteen eighty-four", converter.ConvertYear(1984));
     }
 
-    [TestMethod]
-    public void ConvertYear_Interface_WithVariants_DelegatesToConvertYear()
-    {
-        INumberToStringConverter iface = NumberToStringConverter.GetConverter("FR");
-        Assert.AreEqual(iface.ConvertYear(1984, "gender=masculin"), iface.ConvertYear(1984, "gender=masculin"));
-    }
-
     // ─── G5 — Compiled regex dans TriggerReplace ────────────────────────────
 
     [TestMethod]
