@@ -62,8 +62,10 @@ public abstract class ExpressionTransformer
     protected virtual Expression PrepareExpression(Expression e) => e;
 
     /// <summary>
-    /// Immutable snapshot produced by <see cref="PrepareTransform"/> and consumed by
-    /// <see cref="TryTransform"/>/<see cref="TryInvokeTransformMethod"/>. Pure implementation detail of
+    /// Readonly context produced by <see cref="PrepareTransform"/> and consumed by
+    /// <see cref="TryTransform"/>/<see cref="TryInvokeTransformMethod"/>. Its own fields cannot be
+    /// reassigned, but <see cref="ExpressionParameters"/> and <see cref="Parameters"/> are arrays whose
+    /// elements are not protected from mutation. Pure implementation detail of
     /// <see cref="Transform(Expression)"/>: never exposed outside this class.
     /// </summary>
     private readonly struct TransformContext
