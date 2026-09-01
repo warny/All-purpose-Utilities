@@ -134,6 +134,13 @@ public class ExpressionTransformerTests
             => ReplaceArguments(e, oldParameters, newParameters);
 
         /// <summary>
+        /// Calls the protected <see cref="ExpressionTransformer.Transform"/> method. This transformer
+        /// declares no <see cref="ExpressionSignatureAttribute"/>-annotated rule, so every call falls
+        /// through to <see cref="FinalizeExpression"/>.
+        /// </summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>
         /// Copies the expression with the supplied sub-expressions so the transformer does not
         /// throw when no signature method matches (required by the abstract base class contract).
         /// </summary>
@@ -306,5 +313,332 @@ public class ExpressionTransformerTests
         // 5 > 0 → 5 * 2 = 10
         double value = Expression.Lambda<Func<double>>(result).Compile()();
         Assert.AreEqual(10.0, value, 1e-9);
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Coverage added for the structural refactor of Transform(Expression) into PrepareTransform/
+    // TryTransform/TryInvokeTransformMethod. These tests document pre-existing behavior; none of
+    // them change what is being asserted about the transformer's observable output.
+    // ---------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// A lone <see cref="ConstantExpression"/> with no matching rule must reach
+    /// <see cref="ExpressionTransformer.FinalizeExpression"/> with an empty sub-expression array.
+    /// </summary>
+    [TestMethod]
+    public void Transform_ConstantExpression_Isolated_ReachesFinalize()
+    {
+        var transformer = new ExposedTransformer();
+        ConstantExpression constant = Expression.Constant(5.0);
+
+        Expression result = transformer.ExposeTransform(constant);
+
+        var resultConstant = result as ConstantExpression;
+        Assert.IsNotNull(resultConstant, "Result should still be a ConstantExpression.");
+        Assert.AreEqual(5.0, resultConstant.Value);
+    }
+
+    /// <summary>
+    /// A lone <see cref="ParameterExpression"/> with no matching rule must reach
+    /// <see cref="ExpressionTransformer.FinalizeExpression"/> and come back unchanged
+    /// (<see cref="ExpressionTransformer.CopyExpression"/> passes Parameter nodes through as-is).
+    /// </summary>
+    [TestMethod]
+    public void Transform_ParameterExpression_Isolated_ReachesFinalize()
+    {
+        var transformer = new ExposedTransformer();
+        ParameterExpression parameter = Expression.Parameter(typeof(double), "x");
+
+        Expression result = transformer.ExposeTransform(parameter);
+
+        Assert.AreSame(parameter, result);
+    }
+
+    /// <summary>
+    /// A lone <see cref="UnaryExpression"/> (<c>-x</c>) with no matching rule must be rebuilt with the
+    /// same <see cref="ExpressionType"/> and operand.
+    /// </summary>
+    [TestMethod]
+    public void Transform_UnaryExpression_Isolated_PreservesNodeTypeAndOperand()
+    {
+        var transformer = new ExposedTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        UnaryExpression negate = Expression.Negate(x);
+
+        Expression result = transformer.ExposeTransform(negate);
+
+        var resultUnary = result as UnaryExpression;
+        Assert.IsNotNull(resultUnary, "Result should still be a UnaryExpression.");
+        Assert.AreEqual(ExpressionType.Negate, resultUnary.NodeType);
+        Assert.AreSame(x, resultUnary.Operand);
+    }
+
+    /// <summary>A transformer with a single rule reducing <c>x + 0</c> to <c>x</c>.</summary>
+    private sealed class AddZeroTransformer : ExpressionTransformer
+    {
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Reduces <c>left + 0</c> to <c>left</c>; leaves other additions unmatched.</summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        private Expression AddZero(BinaryExpression e, Expression left, ConstantExpression right)
+        {
+            return Convert.ToDouble(right.Value) == 0.0 ? left : null;
+        }
+
+        /// <inheritdoc cref="ExpressionTransformer.FinalizeExpression"/>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
+            => CopyExpression(e, parameters);
+    }
+
+    /// <summary>
+    /// The body of a <see cref="LambdaExpression"/> must be recursively transformed via the direct
+    /// <c>Transform(le.Body)</c> call inside the Lambda preparation step (not merely copied).
+    /// </summary>
+    [TestMethod]
+    public void Transform_LambdaExpression_Isolated_BodyIsTransformedRecursively()
+    {
+        var transformer = new AddZeroTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        Expression body = Expression.Add(x, Expression.Constant(0.0)); // reducible to x
+        var lambda = Expression.Lambda<Func<double, double>>(body, x);
+
+        Expression result = transformer.ExposeTransform(lambda);
+
+        var resultLambda = result as LambdaExpression;
+        Assert.IsNotNull(resultLambda, "Result should still be a LambdaExpression.");
+        Assert.AreSame(x, resultLambda.Body, "The body should have been reduced to the bare parameter x.");
+    }
+
+    /// <summary>A transformer whose only rule can never match a BinaryExpression node.</summary>
+    private sealed class IncompatibleRuleTransformer : ExpressionTransformer
+    {
+        /// <summary>Whether <see cref="NeverMatches"/> was ever invoked.</summary>
+        public bool RuleWasInvoked { get; private set; }
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>
+        /// Declares <see cref="ExpressionType.Add"/> (so <c>attr.Match</c> succeeds) but requires a
+        /// <see cref="ConstantExpression"/> as the first parameter, which a <see cref="BinaryExpression"/>
+        /// node can never satisfy.
+        /// </summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        private Expression NeverMatches(ConstantExpression e)
+        {
+            RuleWasInvoked = true;
+            return e;
+        }
+
+        /// <inheritdoc cref="ExpressionTransformer.FinalizeExpression"/>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
+            => CopyExpression(e, parameters);
+    }
+
+    /// <summary>
+    /// A rule whose <see cref="ExpressionSignatureAttribute"/> matches the node type but whose first
+    /// parameter type is incompatible with the actual node must be skipped, falling through to
+    /// <see cref="ExpressionTransformer.FinalizeExpression"/> without ever being invoked.
+    /// </summary>
+    [TestMethod]
+    public void Transform_IncompatibleRule_IsSkipped_FallsThroughToFinalize()
+    {
+        var transformer = new IncompatibleRuleTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        BinaryExpression add = Expression.Add(x, Expression.Constant(1.0));
+
+        Expression result = transformer.ExposeTransform(add);
+
+        Assert.IsFalse(transformer.RuleWasInvoked, "The incompatible rule must never be invoked.");
+        Assert.AreEqual(ExpressionType.Add, result.NodeType);
+    }
+
+    /// <summary>
+    /// Two rules registered for the same <see cref="ExpressionType"/>: the first returns
+    /// <see langword="null"/> (multi-parameter branch), which must let the second, compatible rule
+    /// run instead of aborting the dispatch.
+    /// </summary>
+    private sealed class NullThenMatchTransformer : ExpressionTransformer
+    {
+        /// <summary>Whether <see cref="FirstRuleReturnsNull"/> was invoked.</summary>
+        public bool FirstRuleInvoked { get; private set; }
+
+        /// <summary>Whether <see cref="SecondRuleMatches"/> was invoked.</summary>
+        public bool SecondRuleInvoked { get; private set; }
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Always matches but always defers to the next rule by returning <see langword="null"/>.</summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        private Expression FirstRuleReturnsNull(BinaryExpression e, Expression left, Expression right)
+        {
+            FirstRuleInvoked = true;
+            return null;
+        }
+
+        /// <summary>Matches after <see cref="FirstRuleReturnsNull"/> defers, returning a fixed constant.</summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        private Expression SecondRuleMatches(BinaryExpression e, Expression left, Expression right)
+        {
+            SecondRuleInvoked = true;
+            return Expression.Constant(42.0);
+        }
+
+        /// <inheritdoc cref="ExpressionTransformer.FinalizeExpression"/>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
+            => CopyExpression(e, parameters);
+    }
+
+    /// <summary>
+    /// A rule returning <see langword="null"/> from the multi-parameter invocation branch must not
+    /// stop the dispatch: the next matching rule must still run and its result must be returned.
+    /// </summary>
+    [TestMethod]
+    public void Transform_RuleReturningNull_MultiParameterBranch_FallsThroughToNextRule()
+    {
+        var transformer = new NullThenMatchTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        BinaryExpression add = Expression.Add(x, Expression.Constant(1.0));
+
+        Expression result = transformer.ExposeTransform(add);
+
+        Assert.IsTrue(transformer.FirstRuleInvoked, "The null-returning rule must have been tried.");
+        Assert.IsTrue(transformer.SecondRuleInvoked, "The next matching rule must have run afterwards.");
+        var resultConstant = result as ConstantExpression;
+        Assert.IsNotNull(resultConstant);
+        Assert.AreEqual(42.0, resultConstant.Value);
+    }
+
+    /// <summary>A transformer whose rule uses the special <c>Expression[]</c> second-parameter shape.</summary>
+    private sealed class ExpressionArrayRuleTransformer : ExpressionTransformer
+    {
+        /// <summary>The sub-expression array received by <see cref="CaptureArgs"/>, for assertions.</summary>
+        public Expression[] CapturedArgs { get; private set; }
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>
+        /// Matches any <see cref="ExpressionType.Call"/> node and records the full array of prepared
+        /// sub-expressions it receives via the special <c>Expression[]</c> second-parameter shape.
+        /// </summary>
+        [ExpressionSignature(ExpressionType.Call)]
+        private Expression CaptureArgs(Expression e, Expression[] args)
+        {
+            CapturedArgs = args;
+            return CopyExpression(e, args);
+        }
+
+        /// <inheritdoc cref="ExpressionTransformer.FinalizeExpression"/>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
+            => CopyExpression(e, parameters);
+    }
+
+    /// <summary>
+    /// A rule declared with a second parameter of exactly type <c>Expression[]</c> must receive the
+    /// full array of prepared sub-expressions, in order, rather than positional typed parameters.
+    /// </summary>
+    [TestMethod]
+    public void Transform_ExpressionArrayShapedRule_ReceivesAllSubExpressions()
+    {
+        var transformer = new ExpressionArrayRuleTransformer();
+        MethodInfo max = typeof(Math).GetMethod(nameof(Math.Max), new[] { typeof(double), typeof(double) })!;
+        MethodCallExpression call = Expression.Call(max, Expression.Constant(3.0), Expression.Constant(4.0));
+
+        transformer.ExposeTransform(call);
+
+        Assert.IsNotNull(transformer.CapturedArgs);
+        Assert.AreEqual(2, transformer.CapturedArgs.Length);
+        Assert.AreEqual(3.0, ((ConstantExpression)transformer.CapturedArgs[0]).Value);
+        Assert.AreEqual(4.0, ((ConstantExpression)transformer.CapturedArgs[1]).Value);
+    }
+
+    /// <summary>A transformer whose rule declares only a single (node) parameter.</summary>
+    private sealed class SingleParameterRuleTransformer : ExpressionTransformer
+    {
+        /// <summary>The exact node instance passed to <see cref="DoubleConstant"/>, for assertions.</summary>
+        public ConstantExpression ReceivedParameter { get; private set; }
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>
+        /// A rule declaring exactly one parameter (the node itself): doubles a numeric constant.
+        /// </summary>
+        [ExpressionSignature(ExpressionType.Constant)]
+        private Expression DoubleConstant(ConstantExpression cc)
+        {
+            ReceivedParameter = cc;
+            return Expression.Constant(Convert.ToDouble(cc.Value) * 2.0);
+        }
+
+        /// <inheritdoc cref="ExpressionTransformer.FinalizeExpression"/>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
+            => CopyExpression(e, parameters);
+    }
+
+    /// <summary>
+    /// A rule declaring exactly one parameter must be invoked with that single node instance.
+    /// </summary>
+    [TestMethod]
+    public void Transform_SingleParameterRule_MatchesExactExpressionInstance()
+    {
+        var transformer = new SingleParameterRuleTransformer();
+        ConstantExpression constant = Expression.Constant(5.0);
+
+        Expression result = transformer.ExposeTransform(constant);
+
+        Assert.AreSame(constant, transformer.ReceivedParameter);
+        var resultConstant = result as ConstantExpression;
+        Assert.IsNotNull(resultConstant);
+        Assert.AreEqual(10.0, resultConstant.Value);
+    }
+
+    /// <summary>A transformer whose rule restricts a parameter to a specific constant value.</summary>
+    private sealed class ConstantConstrainedRuleTransformer : ExpressionTransformer
+    {
+        /// <summary>Whether <see cref="AddOne"/> was invoked.</summary>
+        public bool Invoked { get; private set; }
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>
+        /// Matches <c>left + 1.0</c> only: the <see cref="ConstantNumericAttribute"/> on <paramref name="right"/>
+        /// restricts this rule to that specific constant value.
+        /// </summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        private Expression AddOne(BinaryExpression e, Expression left, [ConstantNumeric(1.0)] ConstantExpression right)
+        {
+            Invoked = true;
+            return left;
+        }
+
+        /// <inheritdoc cref="ExpressionTransformer.FinalizeExpression"/>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
+            => CopyExpression(e, parameters);
+    }
+
+    /// <summary>
+    /// A rule parameter carrying its own <see cref="ExpressionSignatureAttribute"/>-derived attribute
+    /// (here <see cref="ConstantNumericAttribute"/>) must filter out otherwise type-compatible
+    /// sub-expressions that don't satisfy that attribute, while accepting ones that do.
+    /// </summary>
+    [TestMethod]
+    public void Transform_ParameterWithExpressionSignatureConstraint_FiltersCorrectly()
+    {
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+
+        var matchingTransformer = new ConstantConstrainedRuleTransformer();
+        Expression matchingResult = matchingTransformer.ExposeTransform(Expression.Add(x, Expression.Constant(1.0)));
+        Assert.IsTrue(matchingTransformer.Invoked, "The rule must run when the constant satisfies ConstantNumeric(1.0).");
+        Assert.AreSame(x, matchingResult);
+
+        var nonMatchingTransformer = new ConstantConstrainedRuleTransformer();
+        Expression nonMatchingResult = nonMatchingTransformer.ExposeTransform(Expression.Add(x, Expression.Constant(2.0)));
+        Assert.IsFalse(nonMatchingTransformer.Invoked, "The rule must be skipped when the constant is not 1.0.");
+        Assert.AreEqual(ExpressionType.Add, nonMatchingResult.NodeType);
     }
 }
