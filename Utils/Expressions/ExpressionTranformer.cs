@@ -17,39 +17,247 @@ namespace Utils.Expressions;
 public abstract class ExpressionTransformer
 {
     /// <summary>
-    /// A reference to the <see cref="System.Linq.Expressions.Expression"/> type, used for validation checks.
+    /// A reference to the <see cref="System.Linq.Expressions.Expression"/> type, used to validate that
+    /// a candidate transform method's return type is compatible.
     /// </summary>
     private static readonly Type _typeOfExpression = typeof(Expression);
 
     /// <summary>
-    /// A list of instance methods on this transformer type that are decorated with
-    /// <see cref="ExpressionSignatureAttribute"/>. Each entry stores the method,
-    /// the attribute itself, and its parameter info.
+    /// The sentinel value <see cref="ExpressionSignatureAttribute"/> uses for its <c>ExpressionType</c>
+    /// to mean "matches any node type" (see <see cref="ExpressionSignatureAttribute.Match(Expression)"/>).
     /// </summary>
-    private readonly IReadOnlyList<(MethodInfo Method, ExpressionSignatureAttribute Attribute, ParameterInfo[] Parameters)> _transformMethods;
+    private const ExpressionType WildcardExpressionType = (ExpressionType)(-1);
 
     /// <summary>
-    /// Caches the reflection scan of <see cref="ExpressionSignatureAttribute"/>-annotated methods per
-    /// concrete transformer type, since that scan only depends on the type and never on instance state.
-    /// This lets subclasses cheaply construct a fresh instance per operation (e.g. to isolate per-call
-    /// state instead of mutating a shared field) without repeating <see cref="Type.GetMethods(BindingFlags)"/>
-    /// reflection on every construction.
+    /// Every value of <see cref="System.Linq.Expressions.ExpressionType"/>, used to eagerly build one
+    /// candidate bucket per node type when a transformer's <see cref="TransformPlan"/> is constructed.
     /// </summary>
-    private static readonly System.Collections.Concurrent.ConcurrentDictionary<Type, IReadOnlyList<(MethodInfo Method, ExpressionSignatureAttribute Attribute, ParameterInfo[] Parameters)>> _transformMethodsCache = new();
+    private static readonly ExpressionType[] _allExpressionTypes = Enum.GetValues<ExpressionType>();
+
+    /// <summary>
+    /// Precomputed, immutable metadata for a single parameter of a transform rule method: its declared
+    /// type and (if present) its own <see cref="ExpressionSignatureAttribute"/>-derived constraint.
+    /// Replaces repeated <c>ParameterInfo.GetCustomAttributes&lt;T&gt;()</c> calls on every dispatch
+    /// with a one-time lookup performed while building the owning <see cref="TransformPlan"/>. Safe to
+    /// reuse the same attribute instance across every dispatch because every
+    /// <see cref="ExpressionSignatureAttribute"/>-derived attribute defined in this codebase
+    /// (<see cref="ExpressionSignatureAttribute"/> itself, <see cref="ExpressionCallSignatureAttribute"/>,
+    /// <see cref="ConstantNumericAttribute"/>, <see cref="ReturnTypeAttribute"/>) is immutable: its
+    /// fields are set once in its constructor and never reassigned, so <c>Match</c> depends only on
+    /// those fields and the expression being tested — never on external or mutable state.
+    /// </summary>
+    private readonly struct TransformParameter
+    {
+        /// <summary>The parameter's declared CLR type.</summary>
+        public Type ParameterType { get; }
+
+        /// <summary>
+        /// The parameter's own <see cref="ExpressionSignatureAttribute"/>-derived constraint, if any;
+        /// <see langword="null"/> when the parameter carries no such attribute.
+        /// </summary>
+        public ExpressionSignatureAttribute? Signature { get; }
+
+        /// <summary>Initializes a new <see cref="TransformParameter"/>.</summary>
+        /// <param name="parameterType">The parameter's declared CLR type.</param>
+        /// <param name="signature">The parameter's own signature constraint, if any.</param>
+        public TransformParameter(Type parameterType, ExpressionSignatureAttribute? signature)
+        {
+            ParameterType = parameterType;
+            Signature = signature;
+        }
+    }
+
+    /// <summary>
+    /// The shape of the argument list a transform rule method expects, precomputed once so
+    /// <see cref="TryInvokeTransformMethod"/> can dispatch on a simple enum instead of re-inspecting
+    /// parameter count and types on every call.
+    /// </summary>
+    private enum InvocationKind
+    {
+        /// <summary>
+        /// The method declares no parameters. It can never actually be reached (a rule always needs at
+        /// least the node parameter, and <see cref="TryTransform"/> indexes <c>Parameters[0]</c> before
+        /// invocation is attempted), preserved only to mirror this pre-existing (unreachable) case.
+        /// </summary>
+        None,
+
+        /// <summary>The method declares exactly one parameter: the node itself.</summary>
+        Single,
+
+        /// <summary>
+        /// The method's second parameter is exactly <c>Expression[]</c>: it receives the full prepared
+        /// sub-expression array instead of positional typed parameters.
+        /// </summary>
+        ExpressionArray,
+
+        /// <summary>The method declares more than one parameter, matched and passed positionally.</summary>
+        Positional,
+    }
+
+    /// <summary>
+    /// Precomputed, immutable metadata for a single <see cref="ExpressionSignatureAttribute"/>-annotated
+    /// transform rule method: everything <see cref="TryTransform"/> and
+    /// <see cref="TryInvokeTransformMethod"/> need without re-reading reflection metadata on the hot path.
+    /// </summary>
+    private sealed class TransformRule
+    {
+        /// <summary>The annotated transform rule method.</summary>
+        public MethodInfo Method { get; }
+
+        /// <summary>The method-level <see cref="ExpressionSignatureAttribute"/> that makes this a candidate rule.</summary>
+        public ExpressionSignatureAttribute Signature { get; }
+
+        /// <summary>Precomputed metadata for every parameter of <see cref="Method"/>, in declaration order.</summary>
+        public TransformParameter[] Parameters { get; }
+
+        /// <summary>The precomputed invocation shape of <see cref="Method"/>.</summary>
+        public InvocationKind Kind { get; }
+
+        /// <summary>Whether <see cref="Method"/>'s return type is assignable to <see cref="Expression"/>.</summary>
+        public bool ReturnsExpression { get; }
+
+        /// <summary>Initializes a new <see cref="TransformRule"/> with its precomputed dispatch metadata.</summary>
+        public TransformRule(
+            MethodInfo method,
+            ExpressionSignatureAttribute signature,
+            TransformParameter[] parameters,
+            InvocationKind kind,
+            bool returnsExpression)
+        {
+            Method = method;
+            Signature = signature;
+            Parameters = parameters;
+            Kind = kind;
+            ReturnsExpression = returnsExpression;
+        }
+    }
+
+    /// <summary>
+    /// Precomputed dispatch plan for a concrete transformer type: for every possible
+    /// <see cref="ExpressionType"/>, the ordered list of candidate rules that could apply to a node of
+    /// that type. A rule appears in a bucket either because it declares that exact
+    /// <see cref="ExpressionType"/> or because it is a wildcard rule
+    /// (<see cref="WildcardExpressionType"/>) — wildcard rules therefore appear in every bucket, since a
+    /// rule matching "any node type" must remain a candidate no matter which node is being transformed.
+    /// Within a bucket, rules keep the exact relative order they were declared in (the order
+    /// <see cref="Type.GetMethods(BindingFlags)"/> returned), because that order is an implicit part of
+    /// existing transformer behavior: a rule returning <see langword="null"/> defers to the next one, so
+    /// reordering candidates would change which rule "wins". Built once per concrete transformer type
+    /// and shared by every instance; immutable once constructed, so it is safe to read concurrently
+    /// without locking.
+    /// </summary>
+    private sealed class TransformPlan
+    {
+        private readonly Dictionary<ExpressionType, TransformRule[]> _rulesByNodeType;
+
+        /// <summary>Initializes a new <see cref="TransformPlan"/> from its precomputed buckets.</summary>
+        public TransformPlan(Dictionary<ExpressionType, TransformRule[]> rulesByNodeType)
+        {
+            _rulesByNodeType = rulesByNodeType;
+        }
+
+        /// <summary>
+        /// Returns the ordered candidate rules for <paramref name="nodeType"/>. This is a coarse filter
+        /// only: callers must still evaluate each candidate's <see cref="TransformRule.Signature"/>
+        /// <c>Match</c> before invoking it, since specialized attributes (e.g. one restricting a call to
+        /// a specific method name) apply constraints this index does not encode.
+        /// </summary>
+        /// <param name="nodeType">The <see cref="ExpressionType"/> of the node being transformed.</param>
+        /// <returns>The candidate rules for that node type, or an empty array if none exist.</returns>
+        public TransformRule[] GetCandidates(ExpressionType nodeType)
+            => _rulesByNodeType.TryGetValue(nodeType, out TransformRule[]? candidates)
+                ? candidates
+                : Array.Empty<TransformRule>();
+    }
+
+    /// <summary>
+    /// This transformer type's precomputed dispatch plan, shared with every other instance of the same
+    /// concrete type via <see cref="_transformPlanCache"/>.
+    /// </summary>
+    private readonly TransformPlan _transformPlan;
+
+    /// <summary>
+    /// Caches the built <see cref="TransformPlan"/> per concrete transformer type, since it only
+    /// depends on the type and never on instance state. This lets subclasses cheaply construct a fresh
+    /// instance per operation (e.g. to isolate per-call state instead of mutating a shared field)
+    /// without repeating the reflection scan and plan construction on every construction.
+    /// </summary>
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<Type, TransformPlan> _transformPlanCache = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ExpressionTransformer"/> class.
-    /// During construction, it gathers all methods marked with <see cref="ExpressionSignatureAttribute"/>
-    /// from the derived type.
+    /// During construction, it retrieves (or, on first use of the concrete type, builds and caches) the
+    /// <see cref="TransformPlan"/> gathering every method marked with
+    /// <see cref="ExpressionSignatureAttribute"/> from the derived type.
     /// </summary>
     protected ExpressionTransformer()
     {
-        _transformMethods = _transformMethodsCache.GetOrAdd(GetType(), static t =>
-            t.GetMethods(Public | NonPublic | InvokeMethod | Instance)
-             .Select(m => (Method: m, Attr: m.GetCustomAttributes<ExpressionSignatureAttribute>().FirstOrDefault()))
-             .Where(ma => ma.Attr != null)
-             .Select(ma => (ma.Method, ma.Attr, ma.Method.GetParameters()))
-             .ToImmutableList());
+        _transformPlan = _transformPlanCache.GetOrAdd(GetType(), static t => BuildPlan(t));
+    }
+
+    /// <summary>
+    /// Scans <paramref name="transformerType"/> for <see cref="ExpressionSignatureAttribute"/>-annotated
+    /// methods, precomputes a <see cref="TransformRule"/> for each, and buckets them by
+    /// <see cref="ExpressionType"/> (with wildcard rules included in every bucket) while preserving
+    /// their original relative order.
+    /// </summary>
+    /// <param name="transformerType">The concrete transformer type to scan.</param>
+    /// <returns>The resulting <see cref="TransformPlan"/>.</returns>
+    private static TransformPlan BuildPlan(Type transformerType)
+    {
+        List<TransformRule> rules = transformerType
+            .GetMethods(Public | NonPublic | InvokeMethod | Instance)
+            .Select(m => (Method: m, Attr: m.GetCustomAttributes<ExpressionSignatureAttribute>().FirstOrDefault()))
+            .Where(ma => ma.Attr != null)
+            .Select(ma => BuildRule(ma.Method, ma.Attr!))
+            .ToList();
+
+        var rulesByNodeType = new Dictionary<ExpressionType, TransformRule[]>();
+        foreach (ExpressionType nodeType in _allExpressionTypes)
+        {
+            TransformRule[] candidates = rules
+                .Where(r => r.Signature.ExpressionType == WildcardExpressionType || r.Signature.ExpressionType == nodeType)
+                .ToArray();
+            if (candidates.Length > 0)
+            {
+                rulesByNodeType[nodeType] = candidates;
+            }
+        }
+
+        return new TransformPlan(rulesByNodeType);
+    }
+
+    /// <summary>
+    /// Precomputes a <see cref="TransformRule"/> for a single annotated transform method: its
+    /// per-parameter metadata (type and any <see cref="ExpressionSignatureAttribute"/>-derived
+    /// constraint), its invocation shape, and whether its return type is a valid <see cref="Expression"/>.
+    /// </summary>
+    /// <param name="method">The annotated transform rule method.</param>
+    /// <param name="signature">The method-level <see cref="ExpressionSignatureAttribute"/>.</param>
+    /// <returns>The resulting <see cref="TransformRule"/>.</returns>
+    private static TransformRule BuildRule(MethodInfo method, ExpressionSignatureAttribute signature)
+    {
+        ParameterInfo[] parameterInfos = method.GetParameters();
+        var parameters = new TransformParameter[parameterInfos.Length];
+        for (int i = 0; i < parameterInfos.Length; i++)
+        {
+            ExpressionSignatureAttribute? paramSignature = parameterInfos[i]
+                .GetCustomAttributes<ExpressionSignatureAttribute>()
+                .FirstOrDefault();
+            parameters[i] = new TransformParameter(parameterInfos[i].ParameterType, paramSignature);
+        }
+
+        InvocationKind kind = parameters.Length switch
+        {
+            > 1 when parameters[1].ParameterType == typeof(Expression[]) => InvocationKind.ExpressionArray,
+            > 1 => InvocationKind.Positional,
+            1 => InvocationKind.Single,
+            _ => InvocationKind.None,
+        };
+
+        bool returnsExpression = _typeOfExpression.IsAssignableFrom(method.ReturnType);
+
+        return new TransformRule(method, signature, parameters, kind, returnsExpression);
     }
 
     /// <summary>
@@ -297,36 +505,38 @@ public abstract class ExpressionTransformer
         => new(e, Array.Empty<Expression>(), [e]);
 
     /// <summary>
-    /// Iterates <see cref="_transformMethods"/> in declaration-scan order looking for a rule whose
-    /// <see cref="ExpressionSignatureAttribute"/> matches <paramref name="context"/>'s expression and
-    /// whose first parameter accepts it; delegates the invocation itself to
-    /// <see cref="TryInvokeTransformMethod"/>. Mirrors the original inline foreach loop exactly,
-    /// including which conditions continue to the next rule vs. return.
+    /// Iterates the candidate rules for <c>context.Expression.NodeType</c> — from
+    /// <see cref="_transformPlan"/>, in original declaration order (see <see cref="TransformPlan"/>) —
+    /// looking for one whose <see cref="ExpressionSignatureAttribute"/> matches and whose first
+    /// parameter accepts the node; delegates the invocation itself to
+    /// <see cref="TryInvokeTransformMethod"/>. The plan only narrows the search to plausible candidates:
+    /// <c>Signature.Match</c> is still evaluated for every one of them below, so specialized attributes
+    /// (e.g. constraining a call to a specific method name) keep filtering exactly as before. Mirrors
+    /// the original foreach loop's semantics, including which conditions continue to the next rule vs.
+    /// return.
     /// </summary>
     private bool TryTransform(TransformContext context, out Expression? result)
     {
         Expression e = context.Expression;
-        Expression[] expressionParameters = context.ExpressionParameters;
         object[] parameters = context.Parameters;
 
-        // Attempt to find a matching transform method marked with ExpressionSignatureAttribute.
-        foreach ((MethodInfo method, ExpressionSignatureAttribute attr, ParameterInfo[] parametersInfo) in _transformMethods)
+        foreach (TransformRule rule in _transformPlan.GetCandidates(e.NodeType))
         {
-            // If the attribute doesn't match the expression type, skip
-            if (!attr.Match(e))
+            // If the attribute doesn't match the expression, skip
+            if (!rule.Signature.Match(e))
                 continue;
 
             // The method must return an Expression (or derived) type
-            if (!_typeOfExpression.IsAssignableFrom(method.ReturnType))
+            if (!rule.ReturnsExpression)
             {
                 throw new InvalidProgramException("Transform method must return an Expression type.");
             }
 
             // The first parameter must match the main expression
-            if (!parametersInfo[0].ParameterType.IsInstanceOfType(parameters[0]))
+            if (!rule.Parameters[0].ParameterType.IsInstanceOfType(parameters[0]))
                 continue;
 
-            if (!TryInvokeTransformMethod(method, parametersInfo, e, expressionParameters, parameters, out object? invokeResult))
+            if (!TryInvokeTransformMethod(rule, context, out object? invokeResult))
                 continue;
 
             result = (Expression?)invokeResult;
@@ -340,67 +550,62 @@ public abstract class ExpressionTransformer
     /// <summary>
     /// Reproduces the three original invocation branches (<c>Expression[]</c>-shaped overload,
     /// multi-parameter overload with per-parameter compatibility checks, single-parameter overload) and
-    /// the "zero extra parameters" no-op case. Returns <see langword="false"/> exactly where the original
-    /// code executed <c>continue</c> against the outer foreach (incompatible parameter, invalid
-    /// parameter, null result from the multi-parameter branch, or no usable parameter list). Does NOT
-    /// wrap <see cref="MethodBase.Invoke(object, object[])"/> in a try/catch: any
+    /// the "zero extra parameters" no-op case, now dispatching on the precomputed
+    /// <see cref="TransformRule.Kind"/> instead of re-inspecting <see cref="ParameterInfo"/>. Returns
+    /// <see langword="false"/> exactly where the original code executed <c>continue</c> against the
+    /// outer foreach (incompatible parameter, invalid parameter, null result from the multi-parameter
+    /// branch, or no usable parameter list). Does NOT wrap
+    /// <see cref="MethodBase.Invoke(object, object[])"/> in a try/catch: any
     /// <see cref="System.Reflection.TargetInvocationException"/> thrown by the invoked rule propagates
     /// unchanged.
     /// </summary>
-    private bool TryInvokeTransformMethod(
-        MethodInfo method,
-        ParameterInfo[] parametersInfo,
-        Expression e,
-        Expression[] expressionParameters,
-        object[] parameters,
-        out object? result)
+    private bool TryInvokeTransformMethod(TransformRule rule, TransformContext context, out object? result)
     {
-        // If more than one parameter, handle special cases for Expression[] or typed arguments
-        if (parametersInfo.Length > 1)
+        TransformParameter[] ruleParameters = rule.Parameters;
+        object[] parameters = context.Parameters;
+
+        switch (rule.Kind)
         {
-            if (parametersInfo[1].ParameterType == typeof(Expression[]))
-            {
+            case InvocationKind.ExpressionArray:
                 // The second parameter is the array of sub-expressions
-                result = method.Invoke(this, new object[] { e, expressionParameters });
+                result = rule.Method.Invoke(this, new object[] { context.Expression, context.ExpressionParameters });
                 return true;
-            }
 
-            // Validate each expression parameter against the method parameter types
-            for (int i = 1; i < parametersInfo.Length; i++)
-            {
-                if (parameters[i] is Expression paramExpr)
+            case InvocationKind.Positional:
+                // Validate each expression parameter against the method parameter types
+                for (int i = 1; i < ruleParameters.Length; i++)
                 {
-                    if (!CheckParameter(paramExpr, parametersInfo[i]))
+                    if (parameters[i] is Expression paramExpr)
                     {
-                        result = null;
-                        return false;
+                        if (!CheckParameter(paramExpr, ruleParameters[i]))
+                        {
+                            result = null;
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        // If it's not an Expression, check if we can assign directly
+                        if (!ruleParameters[i].ParameterType.IsAssignableFrom(parameters[i].GetType()))
+                        {
+                            result = null;
+                            return false;
+                        }
                     }
                 }
-                else
-                {
-                    // If it's not an Expression, check if we can assign directly
-                    if (!parametersInfo[i].ParameterType.IsAssignableFrom(parameters[i].GetType()))
-                    {
-                        result = null;
-                        return false;
-                    }
-                }
-            }
 
-            result = method.Invoke(this, parameters);
-            return result is not null;
+                result = rule.Method.Invoke(this, parameters);
+                return result is not null;
+
+            case InvocationKind.Single:
+                result = rule.Method.Invoke(this, new[] { parameters[0] });
+                return true;
+
+            default:
+                // No valid parameters => skip
+                result = null;
+                return false;
         }
-
-        // If exactly one parameter, just invoke with [ expressionObject ]
-        if (parametersInfo.Length == 1)
-        {
-            result = method.Invoke(this, new[] { parameters[0] });
-            return true;
-        }
-
-        // No valid parameters => skip
-        result = null;
-        return false;
     }
 
     /// <summary>
@@ -612,22 +817,20 @@ public abstract class ExpressionTransformer
 
     /// <summary>
     /// Checks whether the given expression matches the type specified by <paramref name="parameter"/>,
-    /// and if it has a custom <see cref="ExpressionSignatureAttribute"/>, verifies that as well.
+    /// and if it carries its own <see cref="ExpressionSignatureAttribute"/>-derived constraint, verifies
+    /// that as well.
     /// </summary>
     /// <param name="e">The expression to validate.</param>
-    /// <param name="parameter">The parameter that declared a signature requirement.</param>
+    /// <param name="parameter">The precomputed parameter metadata to validate against.</param>
     /// <returns>True if <paramref name="e"/> is valid for the parameter; otherwise false.</returns>
-    private static bool CheckParameter(Expression e, ParameterInfo parameter)
+    private static bool CheckParameter(Expression e, TransformParameter parameter)
     {
         // Check if the expression type is compatible with the parameter
         if (!parameter.ParameterType.IsAssignableFrom(e.GetType()))
             return false;
 
         // If the parameter has its own ExpressionSignatureAttribute, ensure it matches
-        var attribute = parameter.GetCustomAttributes<ExpressionSignatureAttribute>().FirstOrDefault();
-        if (attribute is null) return true;
-
-        return attribute.Match(e);
+        return parameter.Signature is null || parameter.Signature.Match(e);
     }
 }
 
