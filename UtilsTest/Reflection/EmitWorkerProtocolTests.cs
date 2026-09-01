@@ -380,30 +380,6 @@ public class EmitWorkerProtocolTests
         EmitWorkerHost.Run(input, output); // Must not throw or block.
     }
 
-    // ─── Item 12: exact argument count validation ─────────────────────────────────
-
-    [TestMethod]
-    public void Run_CallWithWrongArgumentCount_WritesFailureResponse()
-    {
-        // Issue 12: missing argument entries must be rejected, not silently treated as null.
-        // We can't actually test this through Run without a loaded handle, but we test the
-        // descriptors round-trip (the prerequisite for correct call routing).
-        // The actual argument-count check in HandleCall is validated via integration tests.
-        // Here we document the expected behavior for the protocol test suite.
-        Assert.IsTrue(true, "Argument-count validation is exercised in EmitWorkerHostLoopTests.");
-    }
-
-    // ─── Item 13: unsolicited response ID detection ───────────────────────────────
-
-    [TestMethod]
-    public void WorkerResponse_UnknownId_IsDistinguishedFromLateResponse()
-    {
-        // This tests the design contract: unsolicited IDs (never registered in pending) are
-        // protocol violations; late responses (IDs that timed out) are safe to drop silently.
-        // The actual runtime behavior is validated by EmitWorkerProcessTests.
-        Assert.IsTrue(true, "Runtime unsolicited-ID detection is covered in EmitWorkerProcessTests.");
-    }
-
     // ─── Item 38: method token restricted to loaded interface ────────────────────
     // (Replaced by item 1's private method IDs — the following tests verify the new scheme.)
 
