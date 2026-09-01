@@ -376,14 +376,17 @@ public class ExpressionTransformerTests
     /// <summary>A transformer with a single rule reducing <c>x + 0</c> to <c>x</c>.</summary>
     private sealed class AddZeroTransformer : ExpressionTransformer
     {
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Reduces <c>left + 0</c> to <c>left</c>; leaves other additions unmatched.</summary>
         [ExpressionSignature(ExpressionType.Add)]
         private Expression AddZero(BinaryExpression e, Expression left, ConstantExpression right)
         {
             return Convert.ToDouble(right.Value) == 0.0 ? left : null;
         }
 
+        /// <inheritdoc cref="ExpressionTransformer.FinalizeExpression"/>
         protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
             => CopyExpression(e, parameters);
     }
@@ -410,12 +413,17 @@ public class ExpressionTransformerTests
     /// <summary>A transformer whose only rule can never match a BinaryExpression node.</summary>
     private sealed class IncompatibleRuleTransformer : ExpressionTransformer
     {
+        /// <summary>Whether <see cref="NeverMatches"/> was ever invoked.</summary>
         public bool RuleWasInvoked { get; private set; }
 
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
-        // Declares ExpressionType.Add (so attr.Match succeeds) but requires a ConstantExpression as
-        // the first parameter, which a BinaryExpression node can never satisfy.
+        /// <summary>
+        /// Declares <see cref="ExpressionType.Add"/> (so <c>attr.Match</c> succeeds) but requires a
+        /// <see cref="ConstantExpression"/> as the first parameter, which a <see cref="BinaryExpression"/>
+        /// node can never satisfy.
+        /// </summary>
         [ExpressionSignature(ExpressionType.Add)]
         private Expression NeverMatches(ConstantExpression e)
         {
@@ -423,6 +431,7 @@ public class ExpressionTransformerTests
             return e;
         }
 
+        /// <inheritdoc cref="ExpressionTransformer.FinalizeExpression"/>
         protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
             => CopyExpression(e, parameters);
     }
@@ -452,11 +461,16 @@ public class ExpressionTransformerTests
     /// </summary>
     private sealed class NullThenMatchTransformer : ExpressionTransformer
     {
+        /// <summary>Whether <see cref="FirstRuleReturnsNull"/> was invoked.</summary>
         public bool FirstRuleInvoked { get; private set; }
+
+        /// <summary>Whether <see cref="SecondRuleMatches"/> was invoked.</summary>
         public bool SecondRuleInvoked { get; private set; }
 
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Always matches but always defers to the next rule by returning <see langword="null"/>.</summary>
         [ExpressionSignature(ExpressionType.Add)]
         private Expression FirstRuleReturnsNull(BinaryExpression e, Expression left, Expression right)
         {
@@ -464,6 +478,7 @@ public class ExpressionTransformerTests
             return null;
         }
 
+        /// <summary>Matches after <see cref="FirstRuleReturnsNull"/> defers, returning a fixed constant.</summary>
         [ExpressionSignature(ExpressionType.Add)]
         private Expression SecondRuleMatches(BinaryExpression e, Expression left, Expression right)
         {
@@ -471,6 +486,7 @@ public class ExpressionTransformerTests
             return Expression.Constant(42.0);
         }
 
+        /// <inheritdoc cref="ExpressionTransformer.FinalizeExpression"/>
         protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
             => CopyExpression(e, parameters);
     }
@@ -498,10 +514,16 @@ public class ExpressionTransformerTests
     /// <summary>A transformer whose rule uses the special <c>Expression[]</c> second-parameter shape.</summary>
     private sealed class ExpressionArrayRuleTransformer : ExpressionTransformer
     {
+        /// <summary>The sub-expression array received by <see cref="CaptureArgs"/>, for assertions.</summary>
         public Expression[] CapturedArgs { get; private set; }
 
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>
+        /// Matches any <see cref="ExpressionType.Call"/> node and records the full array of prepared
+        /// sub-expressions it receives via the special <c>Expression[]</c> second-parameter shape.
+        /// </summary>
         [ExpressionSignature(ExpressionType.Call)]
         private Expression CaptureArgs(Expression e, Expression[] args)
         {
@@ -509,6 +531,7 @@ public class ExpressionTransformerTests
             return CopyExpression(e, args);
         }
 
+        /// <inheritdoc cref="ExpressionTransformer.FinalizeExpression"/>
         protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
             => CopyExpression(e, parameters);
     }
@@ -535,10 +558,15 @@ public class ExpressionTransformerTests
     /// <summary>A transformer whose rule declares only a single (node) parameter.</summary>
     private sealed class SingleParameterRuleTransformer : ExpressionTransformer
     {
+        /// <summary>The exact node instance passed to <see cref="DoubleConstant"/>, for assertions.</summary>
         public ConstantExpression ReceivedParameter { get; private set; }
 
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>
+        /// A rule declaring exactly one parameter (the node itself): doubles a numeric constant.
+        /// </summary>
         [ExpressionSignature(ExpressionType.Constant)]
         private Expression DoubleConstant(ConstantExpression cc)
         {
@@ -546,6 +574,7 @@ public class ExpressionTransformerTests
             return Expression.Constant(Convert.ToDouble(cc.Value) * 2.0);
         }
 
+        /// <inheritdoc cref="ExpressionTransformer.FinalizeExpression"/>
         protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
             => CopyExpression(e, parameters);
     }
@@ -570,10 +599,16 @@ public class ExpressionTransformerTests
     /// <summary>A transformer whose rule restricts a parameter to a specific constant value.</summary>
     private sealed class ConstantConstrainedRuleTransformer : ExpressionTransformer
     {
+        /// <summary>Whether <see cref="AddOne"/> was invoked.</summary>
         public bool Invoked { get; private set; }
 
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>
+        /// Matches <c>left + 1.0</c> only: the <see cref="ConstantNumericAttribute"/> on <paramref name="right"/>
+        /// restricts this rule to that specific constant value.
+        /// </summary>
         [ExpressionSignature(ExpressionType.Add)]
         private Expression AddOne(BinaryExpression e, Expression left, [ConstantNumeric(1.0)] ConstantExpression right)
         {
@@ -581,6 +616,7 @@ public class ExpressionTransformerTests
             return left;
         }
 
+        /// <inheritdoc cref="ExpressionTransformer.FinalizeExpression"/>
         protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
             => CopyExpression(e, parameters);
     }

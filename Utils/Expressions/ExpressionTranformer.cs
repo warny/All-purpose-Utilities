@@ -91,6 +91,13 @@ public abstract class ExpressionTransformer
         /// </summary>
         public object[] Parameters { get; }
 
+        /// <summary>
+        /// Initializes a new <see cref="TransformContext"/> with the already-prepared expression,
+        /// sub-expressions, and invocation argument list.
+        /// </summary>
+        /// <param name="expression">The (possibly rebuilt) expression to match/finalize.</param>
+        /// <param name="expressionParameters">The prepared sub-expressions of <paramref name="expression"/>.</param>
+        /// <param name="parameters">The positional argument list used to match and invoke a transform method.</param>
         public TransformContext(Expression expression, Expression[] expressionParameters, object[] parameters)
         {
             Expression = expression;
@@ -142,9 +149,22 @@ public abstract class ExpressionTransformer
         _ => PrepareDefault(e),
     };
 
+    /// <summary>
+    /// Prepares a <see cref="ConstantExpression"/>: it has no sub-expressions, and the argument list
+    /// passed to candidate transform methods is the node itself followed by its boxed <c>Value</c>.
+    /// </summary>
+    /// <param name="cc">The constant expression to prepare.</param>
+    /// <returns>The resulting <see cref="TransformContext"/>.</returns>
     private TransformContext PrepareConstant(ConstantExpression cc)
         => new(cc, Array.Empty<Expression>(), [cc, cc.Value]);
 
+    /// <summary>
+    /// Prepares a <see cref="UnaryExpression"/> by preparing its <c>Operand</c> and rebuilding the
+    /// node via <see cref="CopyExpression"/> so that candidate transform methods observe the prepared
+    /// operand rather than the original one.
+    /// </summary>
+    /// <param name="ue">The unary expression to prepare.</param>
+    /// <returns>The resulting <see cref="TransformContext"/>.</returns>
     private TransformContext PrepareUnary(UnaryExpression ue)
     {
         Expression[] expressionParameters = [PrepareExpression(ue.Operand)];
@@ -152,6 +172,14 @@ public abstract class ExpressionTransformer
         return new TransformContext(copied, expressionParameters, [copied, copied.Operand]);
     }
 
+    /// <summary>
+    /// Prepares a <see cref="BinaryExpression"/> by preparing its <c>Left</c> and <c>Right</c>
+    /// operands and rebuilding the node via <see cref="CopyExpression"/> (which preserves
+    /// <see cref="BinaryExpression.Method"/>, <see cref="BinaryExpression.IsLiftedToNull"/>, and
+    /// <see cref="BinaryExpression.Conversion"/>).
+    /// </summary>
+    /// <param name="be">The binary expression to prepare.</param>
+    /// <returns>The resulting <see cref="TransformContext"/>.</returns>
     private TransformContext PrepareBinary(BinaryExpression be)
     {
         Expression[] expressionParameters =
@@ -163,6 +191,13 @@ public abstract class ExpressionTransformer
         return new TransformContext(copied, expressionParameters, [copied, copied.Left, copied.Right]);
     }
 
+    /// <summary>
+    /// Prepares a <see cref="MethodCallExpression"/> by preparing the instance receiver (if any) and
+    /// every argument, then rebuilding the call inline (rather than through <see cref="CopyExpression"/>)
+    /// so the prepared receiver is preserved.
+    /// </summary>
+    /// <param name="mce">The method-call expression to prepare.</param>
+    /// <returns>The resulting <see cref="TransformContext"/>.</returns>
     private TransformContext PrepareMethodCall(MethodCallExpression mce)
     {
         // Transform the instance receiver alongside the arguments. The previous code
@@ -181,6 +216,12 @@ public abstract class ExpressionTransformer
         return new TransformContext(copied, expressionParameters, parameters);
     }
 
+    /// <summary>
+    /// Prepares a <see cref="ConditionalExpression"/> by preparing its <c>Test</c>, <c>IfTrue</c>, and
+    /// <c>IfFalse</c> branches and rebuilding the node via <see cref="CopyExpression"/>.
+    /// </summary>
+    /// <param name="ce">The conditional expression to prepare.</param>
+    /// <returns>The resulting <see cref="TransformContext"/>.</returns>
     private TransformContext PrepareConditional(ConditionalExpression ce)
     {
         // A ternary has exactly three sub-expressions (Test, IfTrue, IfFalse). Without an
@@ -197,9 +238,21 @@ public abstract class ExpressionTransformer
         return new TransformContext(copied, expressionParameters, [copied, copied.Test, copied.IfTrue, copied.IfFalse]);
     }
 
+    /// <summary>
+    /// Prepares a <see cref="ParameterExpression"/>: it is a leaf node with no sub-expressions, so it
+    /// is returned unchanged.
+    /// </summary>
+    /// <param name="pe">The parameter expression to prepare.</param>
+    /// <returns>The resulting <see cref="TransformContext"/>.</returns>
     private TransformContext PrepareParameter(ParameterExpression pe)
         => new(pe, Array.Empty<Expression>(), [pe]);
 
+    /// <summary>
+    /// Prepares an <see cref="InvocationExpression"/> by preparing the invoked target expression and
+    /// every argument, then rebuilding the node via <see cref="Expression.Invoke(Expression, Expression[])"/>.
+    /// </summary>
+    /// <param name="ie">The invocation expression to prepare.</param>
+    /// <returns>The resulting <see cref="TransformContext"/>.</returns>
     private TransformContext PrepareInvocation(InvocationExpression ie)
     {
         Expression invokedExpression = PrepareExpression(ie.Expression);
@@ -212,6 +265,13 @@ public abstract class ExpressionTransformer
         return new TransformContext(copied, expressionParameters, parameters);
     }
 
+    /// <summary>
+    /// Prepares a <see cref="LambdaExpression"/> by preparing its parameters and recursively calling
+    /// <see cref="Transform(Expression)"/> directly on its body (rather than <see cref="PrepareExpression"/>),
+    /// then rebuilding the lambda.
+    /// </summary>
+    /// <param name="le">The lambda expression to prepare.</param>
+    /// <returns>The resulting <see cref="TransformContext"/>.</returns>
     private TransformContext PrepareLambda(LambdaExpression le)
     {
         // Recursively transform the body, and prepare parameter expressions
@@ -226,6 +286,13 @@ public abstract class ExpressionTransformer
         return new TransformContext(copied, expressionParameters, parameters);
     }
 
+    /// <summary>
+    /// Prepares any expression node not handled by a more specific <c>Prepare*</c> method (e.g.
+    /// <see cref="MemberExpression"/>, <see cref="NewExpression"/>): no sub-expression preparation is
+    /// attempted, and the node is passed through unchanged.
+    /// </summary>
+    /// <param name="e">The expression to prepare.</param>
+    /// <returns>The resulting <see cref="TransformContext"/>.</returns>
     private TransformContext PrepareDefault(Expression e)
         => new(e, Array.Empty<Expression>(), [e]);
 
