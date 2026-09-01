@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -640,5 +641,277 @@ public class ExpressionTransformerTests
         Expression nonMatchingResult = nonMatchingTransformer.ExposeTransform(Expression.Add(x, Expression.Constant(2.0)));
         Assert.IsFalse(nonMatchingTransformer.Invoked, "The rule must be skipped when the constant is not 1.0.");
         Assert.AreEqual(ExpressionType.Add, nonMatchingResult.NodeType);
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Coverage added for the dispatcher optimization (TransformPlan / TransformRule / TransformParameter
+    // indexing candidate rules by ExpressionType). These tests lock in the properties the index must
+    // preserve: a rule for a different ExpressionType is never even considered, same-type rules keep
+    // their exact declaration order, wildcard rules remain candidates for every node type, wildcard and
+    // type-specific rules interleave in their original order rather than being grouped, and specialized
+    // Match() constraints (e.g. by call target) still filter within a bucket.
+    // ---------------------------------------------------------------------------------------------
+
+    /// <summary>A transformer with one rule per <see cref="ExpressionType"/>, each recording whether it ran.</summary>
+    private sealed class DistinctTypeRulesTransformer : ExpressionTransformer
+    {
+        /// <summary>Whether <see cref="OnAdd"/> was invoked.</summary>
+        public bool AddRuleInvoked { get; private set; }
+
+        /// <summary>Whether <see cref="OnMultiply"/> was invoked.</summary>
+        public bool MultiplyRuleInvoked { get; private set; }
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Matches any <see cref="ExpressionType.Add"/> node.</summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        private Expression OnAdd(BinaryExpression e, Expression left, Expression right)
+        {
+            AddRuleInvoked = true;
+            return Expression.Constant(1.0);
+        }
+
+        /// <summary>Matches any <see cref="ExpressionType.Multiply"/> node; must never run for an Add node.</summary>
+        [ExpressionSignature(ExpressionType.Multiply)]
+        private Expression OnMultiply(BinaryExpression e, Expression left, Expression right)
+        {
+            MultiplyRuleInvoked = true;
+            return Expression.Constant(2.0);
+        }
+    }
+
+    /// <summary>
+    /// A rule declared for one <see cref="ExpressionType"/> must never be considered a candidate for a
+    /// node of a different type: the index must exclude it, not merely rely on <c>Match</c> to reject it.
+    /// </summary>
+    [TestMethod]
+    public void Transform_RuleForDifferentExpressionType_IsNeverInvoked()
+    {
+        var transformer = new DistinctTypeRulesTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        BinaryExpression add = Expression.Add(x, Expression.Constant(3.0));
+
+        Expression result = transformer.ExposeTransform(add);
+
+        Assert.IsTrue(transformer.AddRuleInvoked, "The Add rule must run for an Add node.");
+        Assert.IsFalse(transformer.MultiplyRuleInvoked,
+            "The Multiply rule belongs to a different ExpressionType bucket and must never run for an Add node.");
+        Assert.AreEqual(1.0, ((ConstantExpression)result).Value);
+    }
+
+    /// <summary>Three rules for the same <see cref="ExpressionType.Add"/>: the first two defer via <see langword="null"/>.</summary>
+    private sealed class ThreeAddRulesTransformer : ExpressionTransformer
+    {
+        /// <summary>The names of the rules invoked, in the order they ran.</summary>
+        public List<string> InvokedOrder { get; } = new();
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Always defers to the next rule.</summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        private Expression Rule1(BinaryExpression e, Expression left, Expression right)
+        {
+            InvokedOrder.Add(nameof(Rule1));
+            return null;
+        }
+
+        /// <summary>Runs after <see cref="Rule1"/> defers and wins; <see cref="Rule3"/> must never run afterwards.</summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        private Expression Rule2(BinaryExpression e, Expression left, Expression right)
+        {
+            InvokedOrder.Add(nameof(Rule2));
+            return Expression.Constant(99.0);
+        }
+
+        /// <summary>Would run third, but the dispatch must already have returned <see cref="Rule2"/>'s result.</summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        private Expression Rule3(BinaryExpression e, Expression left, Expression right)
+        {
+            InvokedOrder.Add(nameof(Rule3));
+            return Expression.Constant(-1.0);
+        }
+    }
+
+    /// <summary>
+    /// Multiple rules for the same <see cref="ExpressionType"/> must be tried in their exact declaration
+    /// order: the first one's <see langword="null"/> must defer to the second, and the second's non-null
+    /// result must short-circuit before the third rule ever runs.
+    /// </summary>
+    [TestMethod]
+    public void Transform_MultipleRulesForSameExpressionType_PreserveDeclarationOrder()
+    {
+        var transformer = new ThreeAddRulesTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        BinaryExpression add = Expression.Add(x, Expression.Constant(3.0));
+
+        Expression result = transformer.ExposeTransform(add);
+
+        CollectionAssert.AreEqual(new[] { "Rule1", "Rule2" }, transformer.InvokedOrder,
+            "Rule1 must run and defer via null, Rule2 must run next and win; Rule3 must never run.");
+        Assert.AreEqual(99.0, ((ConstantExpression)result).Value);
+    }
+
+    /// <summary>A transformer with a single wildcard (<c>ExpressionType == -1</c>) rule.</summary>
+    private sealed class WildcardRuleTransformer : ExpressionTransformer
+    {
+        /// <summary>The node types <see cref="OnAny"/> was invoked for, in invocation order.</summary>
+        public List<ExpressionType> MatchedNodeTypes { get; } = new();
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Matches every node type via the <c>(ExpressionType)(-1)</c> wildcard sentinel.</summary>
+        [ExpressionSignature((ExpressionType)(-1))]
+        private Expression OnAny(Expression e)
+        {
+            MatchedNodeTypes.Add(e.NodeType);
+            return e;
+        }
+    }
+
+    /// <summary>
+    /// A rule declared with the <c>ExpressionType == -1</c> wildcard sentinel must remain a candidate
+    /// for every node type, not just the type of the first expression it happens to see.
+    /// </summary>
+    [TestMethod]
+    public void Transform_WildcardRule_IsCandidateForMultipleNodeTypes()
+    {
+        var transformer = new WildcardRuleTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+
+        transformer.ExposeTransform(x);
+        transformer.ExposeTransform(Expression.Constant(1.0));
+        transformer.ExposeTransform(Expression.Add(x, Expression.Constant(1.0)));
+
+        CollectionAssert.AreEqual(
+            new[] { ExpressionType.Parameter, ExpressionType.Constant, ExpressionType.Add },
+            transformer.MatchedNodeTypes);
+    }
+
+    /// <summary>
+    /// Two wildcard rules interleaved with two <see cref="ExpressionType.Add"/>-specific rules, in this
+    /// exact declaration order: Wildcard1, Add1, Wildcard2, Add2. The first three defer via
+    /// <see langword="null"/>.
+    /// </summary>
+    private sealed class WildcardAndSpecificOrderTransformer : ExpressionTransformer
+    {
+        /// <summary>The names of the rules invoked, in the order they ran.</summary>
+        public List<string> InvokedOrder { get; } = new();
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>A wildcard rule, declared first; always defers.</summary>
+        [ExpressionSignature((ExpressionType)(-1))]
+        private Expression Wildcard1(BinaryExpression e, Expression left, Expression right)
+        {
+            InvokedOrder.Add(nameof(Wildcard1));
+            return null;
+        }
+
+        /// <summary>An <see cref="ExpressionType.Add"/>-specific rule, declared second; always defers.</summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        private Expression Add1(BinaryExpression e, Expression left, Expression right)
+        {
+            InvokedOrder.Add(nameof(Add1));
+            return null;
+        }
+
+        /// <summary>A second wildcard rule, declared third; always defers.</summary>
+        [ExpressionSignature((ExpressionType)(-1))]
+        private Expression Wildcard2(BinaryExpression e, Expression left, Expression right)
+        {
+            InvokedOrder.Add(nameof(Wildcard2));
+            return null;
+        }
+
+        /// <summary>An <see cref="ExpressionType.Add"/>-specific rule, declared last; wins.</summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        private Expression Add2(BinaryExpression e, Expression left, Expression right)
+        {
+            InvokedOrder.Add(nameof(Add2));
+            return Expression.Constant(123.0);
+        }
+    }
+
+    /// <summary>
+    /// The most important ordering guarantee: wildcard and type-specific rules must be tried in their
+    /// exact original interleaved declaration order. Grouping all type-specific rules before (or after)
+    /// all wildcard rules — a natural-looking but incorrect optimization — would reorder this sequence
+    /// and must NOT happen.
+    /// </summary>
+    [TestMethod]
+    public void Transform_CombinedWildcardAndSpecificRules_PreserveExactDeclarationOrder()
+    {
+        var transformer = new WildcardAndSpecificOrderTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        BinaryExpression add = Expression.Add(x, Expression.Constant(3.0));
+
+        Expression result = transformer.ExposeTransform(add);
+
+        CollectionAssert.AreEqual(
+            new[] { "Wildcard1", "Add1", "Wildcard2", "Add2" },
+            transformer.InvokedOrder,
+            "Declaration order must be preserved exactly as interleaved, not grouped by wildcard vs. specific.");
+        Assert.AreEqual(123.0, ((ConstantExpression)result).Value);
+    }
+
+    /// <summary>
+    /// Two <see cref="ExpressionCallSignatureAttribute"/> rules that both declare
+    /// <see cref="ExpressionType.Call"/> (so both share the same index bucket) but constrain different
+    /// method names.
+    /// </summary>
+    private sealed class CallSignatureRuleTransformer : ExpressionTransformer
+    {
+        /// <summary>Whether <see cref="OnSqrt"/> was invoked.</summary>
+        public bool SqrtRuleInvoked { get; private set; }
+
+        /// <summary>Whether <see cref="OnAbs"/> was invoked.</summary>
+        public bool AbsRuleInvoked { get; private set; }
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Matches only calls to <see cref="double.Sqrt(double)"/>.</summary>
+        [ExpressionCallSignature(typeof(double), nameof(double.Sqrt))]
+        private Expression OnSqrt(Expression e, Expression[] args)
+        {
+            SqrtRuleInvoked = true;
+            return Expression.Constant(-1.0);
+        }
+
+        /// <summary>Matches only calls to <see cref="double.Abs(double)"/>; must not run for a Sqrt call.</summary>
+        [ExpressionCallSignature(typeof(double), nameof(double.Abs))]
+        private Expression OnAbs(Expression e, Expression[] args)
+        {
+            AbsRuleInvoked = true;
+            return Expression.Constant(-2.0);
+        }
+
+        /// <inheritdoc cref="ExpressionTransformer.FinalizeExpression"/>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
+            => CopyExpression(e, parameters);
+    }
+
+    /// <summary>
+    /// Sharing the same <see cref="ExpressionType.Call"/> index bucket must not be enough to select a
+    /// rule: <see cref="ExpressionCallSignatureAttribute.Match(Expression)"/>'s function-name constraint
+    /// must still be evaluated to pick the right one.
+    /// </summary>
+    [TestMethod]
+    public void Transform_SpecializedCallSignatureAttribute_StillFiltersWithinTheCallBucket()
+    {
+        var transformer = new CallSignatureRuleTransformer();
+        MethodInfo sqrt = typeof(double).GetMethod(nameof(double.Sqrt), new[] { typeof(double) })!;
+        MethodCallExpression call = Expression.Call(sqrt, Expression.Constant(4.0));
+
+        Expression result = transformer.ExposeTransform(call);
+
+        Assert.IsTrue(transformer.SqrtRuleInvoked, "The Sqrt-specific rule must run.");
+        Assert.IsFalse(transformer.AbsRuleInvoked,
+            "The Abs-specific rule shares the Call bucket with the Sqrt rule but must be excluded by Match's function-name check.");
+        Assert.AreEqual(-1.0, ((ConstantExpression)result).Value);
     }
 }
