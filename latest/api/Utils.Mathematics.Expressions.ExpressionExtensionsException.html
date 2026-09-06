@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class ExpressionExtensionsException | omy.Utils Documentation ">
       
-      <meta name="description" content="Represents a custom exception related to expression extension operations.">
+      <meta name="description" content="Represents validation errors that occur while building derivative expressions.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,15 +89,15 @@
 
 
   <h1 id="Utils_Mathematics_Expressions_ExpressionExtensionsException" data-uid="Utils.Mathematics.Expressions.ExpressionExtensionsException" class="text-break">
-Class ExpressionExtensionsException  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionExtensions.cs/#L30"><i class="bi bi-code-slash"></i></a>
+Class ExpressionExtensionsException  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L530"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
     <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Mathematics.html">Mathematics</a>.<a class="xref" href="Utils.Mathematics.Expressions.html">Expressions</a></dd></dl>
-  <dl><dt>Assembly</dt><dd>Utils.dll</dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.Mathematics.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Represents a custom exception related to expression extension operations.</p>
+  <div class="markdown summary"><p>Represents validation errors that occur while building derivative expressions.</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -285,11 +285,10 @@ Class ExpressionExtensionsException  <a class="header-action link-secondary" tit
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionExtensionsException__ctor_System_String_" data-uid="Utils.Mathematics.Expressions.ExpressionExtensionsException.#ctor(System.String)">
   ExpressionExtensionsException(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionExtensions.cs/#L37"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L536"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Mathematics.Expressions.ExpressionExtensionsException.html">ExpressionExtensionsException</a> class
-with the specified error message.</p>
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Mathematics.Expressions.ExpressionExtensionsException.html">ExpressionExtensionsException</a> class with the provided message.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -300,7 +299,7 @@ with the specified error message.</p>
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>msg</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>A brief message that describes the error.</p>
+    <dd><p>Explanation of the validation failure.</p>
 </dd>
   </dl>
 
@@ -319,11 +318,10 @@ with the specified error message.</p>
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionExtensionsException__ctor_System_String_System_Exception_" data-uid="Utils.Mathematics.Expressions.ExpressionExtensionsException.#ctor(System.String,System.Exception)">
   ExpressionExtensionsException(string, Exception)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionExtensions.cs/#L48"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L543"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Mathematics.Expressions.ExpressionExtensionsException.html">ExpressionExtensionsException</a> class
-with the specified error message and an inner exception.</p>
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Mathematics.Expressions.ExpressionExtensionsException.html">ExpressionExtensionsException</a> class with the provided message and inner exception.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -334,10 +332,10 @@ with the specified error message and an inner exception.</p>
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>msg</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>A brief message that describes the error.</p>
+    <dd><p>Explanation of the validation failure.</p>
 </dd>
     <dt><code>innerException</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.exception">Exception</a></dt>
-    <dd><p>The exception that caused this error.</p>
+    <dd><p>Inner exception that caused the validation error.</p>
 </dd>
   </dl>
 
@@ -356,7 +354,7 @@ with the specified error message and an inner exception.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionExtensions.cs/#L30" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L530" class="edit-link">Edit this page</a>
         </div>
 
 
