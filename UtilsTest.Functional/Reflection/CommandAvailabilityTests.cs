@@ -100,4 +100,24 @@ public class CommandAvailabilityTests
             Directory.Delete(tempDirectory, recursive: true);
         }
     }
+
+    [TestMethod]
+    public void TryResolve_NonExistentCommand_ReturnsFalse()
+    {
+        bool found = CommandAvailability.TryResolve("does_not_exist_xyz_12345", out string? path);
+
+        Assert.IsFalse(found);
+        Assert.IsNull(path);
+    }
+
+    [TestMethod]
+    public void TryResolve_WhenFound_Exists_ReturnsTrue()
+    {
+        // Exists is documented as equivalent to TryResolve(name, out _); verify consistency.
+        bool found = CommandAvailability.TryResolve("does_not_exist_xyz_12345", out _);
+        bool exists = CommandAvailability.Exists("does_not_exist_xyz_12345");
+
+        Assert.AreEqual(found, exists,
+            "Exists must agree with TryResolve for the same command name.");
+    }
 }

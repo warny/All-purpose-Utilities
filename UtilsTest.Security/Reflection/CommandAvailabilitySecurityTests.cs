@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Runtime.InteropServices;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -9,22 +8,11 @@ using Utils.Reflection.ProcessIsolation;
 namespace UtilsTest.Reflection;
 
 /// <summary>
-/// Validates <see cref="CommandAvailability.TryResolve"/> path-resolution logic.
+/// Verifies that command resolution retains canonical absolute executable paths.
 /// </summary>
 [TestClass]
-public class CommandAvailabilityTests
+public class CommandAvailabilitySecurityTests
 {
-    // ─── Item 56: resolve and retain canonical absolute executable path ──────────
-
-    [TestMethod]
-    public void TryResolve_NonExistentCommand_ReturnsFalse()
-    {
-        bool found = CommandAvailability.TryResolve("does_not_exist_xyz_12345", out string? path);
-
-        Assert.IsFalse(found);
-        Assert.IsNull(path);
-    }
-
     [TestMethod]
     public void TryResolve_ExistingAbsolutePath_ReturnsTrueWithCanonicalPath()
     {
@@ -58,17 +46,6 @@ public class CommandAvailabilityTests
         // Path.GetFullPath normalises . and .. segments; the result must match the input when the
         // input is already a canonical absolute path (no relative segments).
         Assert.AreEqual(Path.GetFullPath(processPath), resolved);
-    }
-
-    [TestMethod]
-    public void TryResolve_WhenFound_Exists_ReturnsTrue()
-    {
-        // Exists is documented as equivalent to TryResolve(name, out _); verify consistency.
-        bool found = CommandAvailability.TryResolve("does_not_exist_xyz_12345", out _);
-        bool exists = CommandAvailability.Exists("does_not_exist_xyz_12345");
-
-        Assert.AreEqual(found, exists,
-            "Exists must agree with TryResolve for the same command name.");
     }
 
     [TestMethod]
