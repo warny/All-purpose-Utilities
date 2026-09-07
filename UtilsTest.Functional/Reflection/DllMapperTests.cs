@@ -1,55 +1,88 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Runtime.InteropServices;
-using System.Text;
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
 using Utils.Reflection;
 
 namespace UtilsTest.Reflection;
 
-public interface IKernel32 : IDisposable
+/// <summary>
+/// Defines the portable native scalar operation used by the interface mapper test.
+/// </summary>
+public interface INativeMath : IDisposable
 {
-    [External("GetTempPathA")]
-    uint GetTempPath(uint nBufferLength, [Out] StringBuilder lpBuffer);
+    /// <summary>
+    /// Returns the absolute value of <paramref name="value"/>.
+    /// </summary>
+    [External("abs")]
+    int Abs(int value);
 }
 
-public class User32 : LibraryMapper
+/// <summary>
+/// Maps the platform C runtime absolute-value function through a mapper class.
+/// </summary>
+public class NativeMathMapper : LibraryMapper
 {
-    private delegate uint GetTempPathDelegate(uint nBufferLength, [Out] StringBuilder lpBuffer);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate int AbsDelegate(int value);
 
 #pragma warning disable CS0649, IDE0044
-    [External("GetTempPathA")]
-    private GetTempPathDelegate __GetTempPath;
+    [External("abs")]
+    private AbsDelegate abs = null!;
 #pragma warning restore CS0649, IDE0044
 
-    public uint GetTempPath(uint nBufferLength, [Out] StringBuilder lpBuffer) => __GetTempPath(nBufferLength, lpBuffer);
+    /// <summary>
+    /// Returns the absolute value of <paramref name="value"/> through the native C runtime.
+    /// </summary>
+    public int Abs(int value) => abs(value);
 }
 
+/// <summary>
+/// Validates native library mapping against a portable C-runtime function.
+/// </summary>
 [TestClass]
-[Ignore]
 public class DllMapperTests
 {
-    [DllImport("kernel32.dll")]
-    static extern uint GetTempPath(uint nBufferLength, [Out] StringBuilder lpBuffer);
-
+    /// <summary>
+    /// Verifies direct in-process mapping of a trusted interface.
+    /// </summary>
     [TestMethod]
     public void MapFromInterfaceTest()
     {
-        using (var kernel32 = LibraryMapper.Emit<IKernel32>("kernel32.dll", CallingConvention.Winapi))
-        {
-            StringBuilder tempPath = new StringBuilder(' ', 1024);
-            var i = kernel32.GetTempPath(261, tempPath);
-            Assert.AreEqual((int)i, tempPath.ToString().Length);
-        }
+        string nativeLibrary = GetNativeLibrary();
+#pragma warning disable UTILSREFL001 // This test deliberately validates the trusted in-process mapping API.
+        using INativeMath mapper = LibraryMapper.EmitInProcess<INativeMath>(nativeLibrary, CallingConvention.Cdecl);
+#pragma warning restore UTILSREFL001
+
+        Assert.AreEqual(42, mapper.Abs(-42));
     }
 
+    /// <summary>
+    /// Verifies native mapping into a concrete <see cref="LibraryMapper"/> subclass.
+    /// </summary>
     [TestMethod]
     public void MapFromClassTest()
     {
-        using (User32 kernel32 = LibraryMapper.Create<User32>("kernel32.dll"))
-        {
-            StringBuilder tempPath = new StringBuilder(' ', 1024);
-            var i = kernel32.GetTempPath(261, tempPath);
-            Assert.AreEqual((int)i, tempPath.ToString().Length);
-        }
+        string nativeLibrary = GetNativeLibrary();
+        using NativeMathMapper mapper = LibraryMapper.Create<NativeMathMapper>(nativeLibrary);
+
+        Assert.AreEqual(42, mapper.Abs(-42));
+    }
+
+    /// <summary>
+    /// Gets the platform C runtime library containing the portable <c>abs</c> export.
+    /// </summary>
+    private static string GetNativeLibrary()
+    {
+        if (OperatingSystem.IsWindows())
+            return "msvcrt.dll";
+        if (OperatingSystem.IsLinux())
+            return "libc.so.6";
+        if (OperatingSystem.IsMacOS())
+            return "/usr/lib/libSystem.B.dylib";
+
+        Assert.Inconclusive("The platform C runtime library is not known for this operating system.");
+        return string.Empty;
     }
 }
