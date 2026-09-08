@@ -85,7 +85,7 @@
 
     <Target Name="CopyLibraryMapperTestHost" AfterTargets="Build">
         <ItemGroup>
-            <LibraryMapperTestHostFiles Include="..\UtilsTest.LibraryMapperHost\bin\$(Configuration)\net9.0\*" />
+            <LibraryMapperTestHostFiles Include="..\UtilsTest.LibraryMapperHost\bin\$(Configuration)\$(TargetFramework)\*" />
         </ItemGroup>
         <Copy SourceFiles="@(LibraryMapperTestHostFiles)" DestinationFolder="$(OutDir)LibraryMapperTestHost" />
     </Target>

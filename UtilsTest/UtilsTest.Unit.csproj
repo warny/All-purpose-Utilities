@@ -12,6 +12,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Compile Include="..\UtilsTest.Shared\NativeRuntimeLibraryResolver.cs" Link="NativeRuntimeLibraryResolver.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<EmbeddedResource Remove="Resources\TestResource.fr.resx" />
 		<EmbeddedResource Remove="Resources\TestResource.resx" />
 		<AdditionalFiles Include="Parser\Exp.g4">
