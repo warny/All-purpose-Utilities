@@ -1266,4 +1266,465 @@ public class ExpressionTransformerTests
             "A wildcard rule must remain a candidate for a node type outside the real ExpressionType enum " +
             "values too, not just for the ~80 pre-populated buckets.");
     }
+
+    // ------------------------------------------------------------------------------------------
+    // Characterization tests for the MethodInfo.Invoke-based dispatch, written and locked in
+    // BEFORE introducing a MethodInvoker-based fast path (see the PR that added this section).
+    // Every test below must pass unmodified both before and after that change: they pin down
+    // exactly how a rule's exception is wrapped, and exactly what happens for malformed rule
+    // signatures (too few/too many declared parameters relative to the node's sub-expressions),
+    // so that a future optimization of the invocation mechanism cannot silently change either.
+    // ------------------------------------------------------------------------------------------
+
+    /// <summary>A transformer whose single positional (3-parameter) rule always throws.</summary>
+    private sealed class PositionalThrowsTransformer : ExpressionTransformer
+    {
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Unconditionally throws to characterize how the positional invocation branch wraps a rule's exception.</summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        private Expression Rule(BinaryExpression e, Expression left, Expression right)
+            => throw new InvalidOperationException("positional rule failure");
+
+        /// <inheritdoc cref="ExpressionTransformer.FinalizeExpression"/>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
+            => CopyExpression(e, parameters);
+    }
+
+    /// <summary>
+    /// A rule invoked through the <c>InvocationKind.Positional</c> branch that throws must have
+    /// its exception surface wrapped in <see cref="TargetInvocationException"/> (the behavior of
+    /// <see cref="MethodBase.Invoke(object, object[])"/>), with the rule's own exception as
+    /// <see cref="Exception.InnerException"/> and its message preserved.
+    /// </summary>
+    [TestMethod]
+    public void Transform_PositionalRuleThrows_WrappedInTargetInvocationException()
+    {
+        var transformer = new PositionalThrowsTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        BinaryExpression add = Expression.Add(x, Expression.Constant(1.0));
+
+        var thrown = Assert.ThrowsExactly<TargetInvocationException>(() => transformer.ExposeTransform(add));
+
+        Assert.IsInstanceOfType<InvalidOperationException>(thrown.InnerException);
+        Assert.AreEqual("positional rule failure", thrown.InnerException!.Message);
+    }
+
+    /// <summary>A transformer whose single-parameter rule always throws.</summary>
+    private sealed class SingleThrowsTransformer : ExpressionTransformer
+    {
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Unconditionally throws to characterize how the single-parameter invocation branch wraps a rule's exception.</summary>
+        [ExpressionSignature(ExpressionType.Parameter)]
+        private Expression Rule(ParameterExpression e)
+            => throw new InvalidOperationException("single rule failure");
+    }
+
+    /// <summary>
+    /// A rule invoked through the <c>InvocationKind.Single</c> branch that throws must also
+    /// surface wrapped in <see cref="TargetInvocationException"/>, exactly like the positional branch.
+    /// </summary>
+    [TestMethod]
+    public void Transform_SingleParameterRuleThrows_WrappedInTargetInvocationException()
+    {
+        var transformer = new SingleThrowsTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+
+        var thrown = Assert.ThrowsExactly<TargetInvocationException>(() => transformer.ExposeTransform(x));
+
+        Assert.IsInstanceOfType<InvalidOperationException>(thrown.InnerException);
+        Assert.AreEqual("single rule failure", thrown.InnerException!.Message);
+    }
+
+    /// <summary>A transformer whose <c>Expression[]</c>-shaped rule always throws.</summary>
+    private sealed class ExpressionArrayThrowsTransformer : ExpressionTransformer
+    {
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Unconditionally throws to characterize how the <c>Expression[]</c> invocation branch wraps a rule's exception.</summary>
+        [ExpressionSignature(ExpressionType.Call)]
+        private Expression Rule(Expression e, Expression[] args)
+            => throw new InvalidOperationException("expression-array rule failure");
+    }
+
+    /// <summary>
+    /// A rule invoked through the <c>InvocationKind.ExpressionArray</c> branch that throws must
+    /// also surface wrapped in <see cref="TargetInvocationException"/>.
+    /// </summary>
+    [TestMethod]
+    public void Transform_ExpressionArrayRuleThrows_WrappedInTargetInvocationException()
+    {
+        var transformer = new ExpressionArrayThrowsTransformer();
+        MethodInfo sqrt = typeof(Math).GetMethod(nameof(Math.Sqrt), [typeof(double)])!;
+        MethodCallExpression call = Expression.Call(sqrt, Expression.Constant(4.0));
+
+        var thrown = Assert.ThrowsExactly<TargetInvocationException>(() => transformer.ExposeTransform(call));
+
+        Assert.IsInstanceOfType<InvalidOperationException>(thrown.InnerException);
+        Assert.AreEqual("expression-array rule failure", thrown.InnerException!.Message);
+    }
+
+    /// <summary>A transformer whose rule throws an <see cref="ArgumentException"/> rather than a generic exception.</summary>
+    private sealed class ArgumentExceptionRuleTransformer : ExpressionTransformer
+    {
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Unconditionally throws <see cref="ArgumentException"/>.</summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        private Expression Rule(BinaryExpression e, Expression left, Expression right)
+            => throw new ArgumentException("argument rule failure");
+
+        /// <inheritdoc cref="ExpressionTransformer.FinalizeExpression"/>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
+            => CopyExpression(e, parameters);
+    }
+
+    /// <summary>
+    /// A rule throwing <see cref="ArgumentException"/> — a type that <em>could</em> otherwise be
+    /// (mis)interpreted as an argument-count/type error coming from the invocation mechanism itself —
+    /// must still be treated as the rule's own exception and wrapped in
+    /// <see cref="TargetInvocationException"/>, not re-thrown directly or swallowed. This guards against
+    /// a future fast-path implementation that conflates "the rule threw ArgumentException" with
+    /// "the invoker itself rejected the call".
+    /// </summary>
+    [TestMethod]
+    public void Transform_RuleThrowsArgumentException_WrappedInTargetInvocationException()
+    {
+        var transformer = new ArgumentExceptionRuleTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        BinaryExpression add = Expression.Add(x, Expression.Constant(1.0));
+
+        var thrown = Assert.ThrowsExactly<TargetInvocationException>(() => transformer.ExposeTransform(add));
+
+        Assert.IsInstanceOfType<ArgumentException>(thrown.InnerException);
+        Assert.AreEqual("argument rule failure", thrown.InnerException!.Message);
+    }
+
+    /// <summary>A transformer whose rule throws <see cref="OutOfMemoryException"/> rather than a generic exception.</summary>
+    private sealed class OutOfMemoryExceptionRuleTransformer : ExpressionTransformer
+    {
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Unconditionally throws <see cref="OutOfMemoryException"/>.</summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        private Expression Rule(BinaryExpression e, Expression left, Expression right)
+            => throw new OutOfMemoryException("oom rule failure");
+
+        /// <inheritdoc cref="ExpressionTransformer.FinalizeExpression"/>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
+            => CopyExpression(e, parameters);
+    }
+
+    /// <summary>
+    /// A rule throwing <see cref="OutOfMemoryException"/> must be treated exactly like any other rule
+    /// exception and wrapped in <see cref="TargetInvocationException"/> — <see cref="MethodBase.Invoke(object, object[])"/>
+    /// does not special-case it, so a fast-path implementation that excludes
+    /// <see cref="OutOfMemoryException"/> from its wrapping (e.g. a <c>catch (Exception ex) when (ex is not
+    /// OutOfMemoryException)</c> filter, reasoning that genuine out-of-memory conditions shouldn't be
+    /// masked) would diverge from that historical contract for this reproducible, non-memory-pressure case
+    /// (a rule deliberately constructing and throwing the exception).
+    /// </summary>
+    [TestMethod]
+    public void Transform_RuleThrowsOutOfMemoryException_WrappedInTargetInvocationException()
+    {
+        var transformer = new OutOfMemoryExceptionRuleTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        BinaryExpression add = Expression.Add(x, Expression.Constant(1.0));
+
+        var thrown = Assert.ThrowsExactly<TargetInvocationException>(() => transformer.ExposeTransform(add));
+
+        Assert.IsInstanceOfType<OutOfMemoryException>(thrown.InnerException);
+        Assert.AreEqual("oom rule failure", thrown.InnerException!.Message);
+    }
+
+    /// <summary>A transformer whose rule itself throws an already-constructed <see cref="TargetInvocationException"/>.</summary>
+    private sealed class NestedTargetInvocationExceptionRuleTransformer : ExpressionTransformer
+    {
+        /// <summary>The exact exception instance the rule throws, for identity comparison by the test.</summary>
+        public static readonly InvalidOperationException InnermostException = new("innermost failure");
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Unconditionally throws a <see cref="TargetInvocationException"/> wrapping <see cref="InnermostException"/>.</summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        private Expression Rule(BinaryExpression e, Expression left, Expression right)
+            => throw new TargetInvocationException(InnermostException);
+
+        /// <inheritdoc cref="ExpressionTransformer.FinalizeExpression"/>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
+            => CopyExpression(e, parameters);
+    }
+
+    /// <summary>
+    /// When the rule itself throws a <see cref="TargetInvocationException"/> (rather than some other
+    /// exception type), <see cref="MethodBase.Invoke(object, object[])"/> wraps it exactly like any other
+    /// exception: the result is a <em>new, distinct</em> <see cref="TargetInvocationException"/> whose
+    /// <see cref="Exception.InnerException"/> is the <see cref="TargetInvocationException"/> the rule
+    /// threw (which itself wraps the innermost exception one level deeper). A future optimization must
+    /// not special-case <c>catch (TargetInvocationException) { throw; }</c> to "avoid double wrapping":
+    /// that would not be equivalent to this historical double-wrap behavior.
+    /// </summary>
+    [TestMethod]
+    public void Transform_RuleThrowsTargetInvocationException_IsDoubleWrapped()
+    {
+        var transformer = new NestedTargetInvocationExceptionRuleTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        BinaryExpression add = Expression.Add(x, Expression.Constant(1.0));
+
+        var outer = Assert.ThrowsExactly<TargetInvocationException>(() => transformer.ExposeTransform(add));
+
+        var middle = outer.InnerException as TargetInvocationException;
+        Assert.IsNotNull(middle, "The outer exception's InnerException must itself be a TargetInvocationException " +
+            "(the exact instance the rule threw), not the innermost exception directly.");
+        Assert.AreNotSame(outer, middle, "The outer exception must be a NEW TargetInvocationException, distinct from the one the rule threw.");
+        Assert.AreSame(NestedTargetInvocationExceptionRuleTransformer.InnermostException, middle!.InnerException,
+            "The rule-thrown TargetInvocationException's own InnerException must survive unchanged one level deeper.");
+    }
+
+    /// <summary>
+    /// A positional rule declaring FEWER parameters than the node's context supplies (here: only
+    /// <c>left</c>, omitting <c>right</c>, for a 3-slot <see cref="ExpressionType.Add"/> context).
+    /// </summary>
+    private sealed class TooFewParametersRuleTransformer : ExpressionTransformer
+    {
+        /// <summary>Whether <see cref="Rule"/> was ever entered (it should never be, per the characterization below).</summary>
+        public bool RuleWasInvoked { get; private set; }
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Declares only 2 parameters (e, left) though the Add context supplies 3 (e, left, right).</summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        private Expression Rule(BinaryExpression e, Expression left)
+        {
+            RuleWasInvoked = true;
+            return left;
+        }
+    }
+
+    /// <summary>
+    /// Historical behavior (pinned down before introducing any fast invocation path): a positional rule
+    /// declaring fewer parameters than the node's context array supplies passes per-parameter validation
+    /// (which only checks the parameters the rule actually declares) and then reaches
+    /// <see cref="MethodBase.Invoke(object, object[])"/> with an argument array longer than the method's
+    /// parameter list, which throws <see cref="TargetParameterCountException"/> — an error of the
+    /// invocation mechanism itself, NOT of the rule body, and therefore must never be wrapped in
+    /// <see cref="TargetInvocationException"/>. A future fast path must reproduce this exact failure
+    /// (or fall back to <see cref="MethodBase.Invoke(object, object[])"/> for this shape) rather than
+    /// silently "repairing" the call by truncating the argument list to the first two elements.
+    /// </summary>
+    [TestMethod]
+    public void Transform_PositionalRuleWithFewerParametersThanContext_ThrowsTargetParameterCountException()
+    {
+        var transformer = new TooFewParametersRuleTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        BinaryExpression add = Expression.Add(x, Expression.Constant(1.0));
+
+        Assert.ThrowsExactly<TargetParameterCountException>(() => transformer.ExposeTransform(add));
+    }
+
+    /// <summary>
+    /// A positional rule declaring MORE parameters than the node's context supplies (here: 4 parameters
+    /// for a 3-slot <see cref="ExpressionType.Add"/> context, with a trailing unmatched <c>extra</c>).
+    /// </summary>
+    private sealed class TooManyParametersRuleTransformer : ExpressionTransformer
+    {
+        /// <summary>Whether <see cref="Rule"/> was ever entered (it should never be, per the characterization below).</summary>
+        public bool RuleWasInvoked { get; private set; }
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Declares 4 parameters (e, left, right, extra) though the Add context only supplies 3.</summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        private Expression Rule(BinaryExpression e, Expression left, Expression right, Expression extra)
+        {
+            RuleWasInvoked = true;
+            return left;
+        }
+    }
+
+    /// <summary>
+    /// Historical behavior (pinned down before introducing any fast invocation path): a positional rule
+    /// declaring more parameters than the node's context array supplies fails during per-parameter
+    /// validation itself — the loop indexes <c>context.Parameters[i]</c> up to <c>rule.Parameters.Length - 1</c>,
+    /// which runs past the end of the (shorter) context array — throwing <see cref="IndexOutOfRangeException"/>
+    /// before <see cref="MethodBase.Invoke(object, object[])"/> is ever reached. A future fast path must not
+    /// convert this into a silent "rule doesn't match, try the next one" outcome.
+    /// </summary>
+    [TestMethod]
+    public void Transform_PositionalRuleWithMoreParametersThanContext_ThrowsIndexOutOfRangeException()
+    {
+        var transformer = new TooManyParametersRuleTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        BinaryExpression add = Expression.Add(x, Expression.Constant(1.0));
+
+        Assert.ThrowsExactly<IndexOutOfRangeException>(() => transformer.ExposeTransform(add));
+        Assert.IsFalse(transformer.RuleWasInvoked, "The rule body must never run: the failure happens during parameter validation.");
+    }
+
+    /// <summary>A transformer whose single-parameter rule always matches but returns null.</summary>
+    private sealed class SingleReturnsNullTransformer : ExpressionTransformer
+    {
+        /// <summary>Whether <see cref="Rule"/> was invoked.</summary>
+        public bool RuleWasInvoked { get; private set; }
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Always matches a Parameter node but returns null.</summary>
+        [ExpressionSignature(ExpressionType.Parameter)]
+        private Expression Rule(ParameterExpression e)
+        {
+            RuleWasInvoked = true;
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Unlike the positional branch, a single-parameter rule returning <see langword="null"/> is
+    /// considered to have been APPLIED (it is not retried against the next candidate rule):
+    /// <see cref="ExpressionTransformer.Transform(Expression)"/> itself returns <see langword="null"/>.
+    /// This historical inconsistency between invocation shapes (see the private InvocationKind enum) is
+    /// deliberately preserved, not normalized, by this PR.
+    /// </summary>
+    [TestMethod]
+    public void Transform_SingleParameterRuleReturningNull_IsConsideredApplied_TransformReturnsNull()
+    {
+        var transformer = new SingleReturnsNullTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+
+        Expression result = transformer.ExposeTransform(x);
+
+        Assert.IsTrue(transformer.RuleWasInvoked);
+        Assert.IsNull(result);
+    }
+
+    /// <summary>A transformer whose <c>Expression[]</c>-shaped rule always matches but returns null.</summary>
+    private sealed class ExpressionArrayReturnsNullTransformer : ExpressionTransformer
+    {
+        /// <summary>Whether <see cref="Rule"/> was invoked.</summary>
+        public bool RuleWasInvoked { get; private set; }
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Always matches a Call node but returns null.</summary>
+        [ExpressionSignature(ExpressionType.Call)]
+        private Expression Rule(Expression e, Expression[] args)
+        {
+            RuleWasInvoked = true;
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Like the single-parameter branch (and unlike the positional branch), an <c>Expression[]</c>-shaped
+    /// rule returning <see langword="null"/> is also considered to have been APPLIED:
+    /// <see cref="ExpressionTransformer.Transform(Expression)"/> itself returns <see langword="null"/>
+    /// rather than trying the next candidate rule.
+    /// </summary>
+    [TestMethod]
+    public void Transform_ExpressionArrayRuleReturningNull_IsConsideredApplied_TransformReturnsNull()
+    {
+        var transformer = new ExpressionArrayReturnsNullTransformer();
+        MethodInfo sqrt = typeof(Math).GetMethod(nameof(Math.Sqrt), [typeof(double)])!;
+        MethodCallExpression call = Expression.Call(sqrt, Expression.Constant(4.0));
+
+        Expression result = transformer.ExposeTransform(call);
+
+        Assert.IsTrue(transformer.RuleWasInvoked);
+        Assert.IsNull(result);
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // Regression tests for the MethodInvoker-based fast path (see TryCreateFastInvoker,
+    // BuildFastInvoker, and the Invoke*Rule helpers). These exercise shapes the characterization
+    // tests above don't: a 4-parameter positional rule (the widest shape the fast path supports,
+    // matching the widest context this class ever builds — Conditional), and a 5-parameter
+    // positional rule (one wider than the fast path's cap, which must still work correctly via the
+    // classic MethodBase.Invoke fallback, not just fail gracefully).
+    // ------------------------------------------------------------------------------------------
+
+    /// <summary>A transformer whose Conditional rule declares all 4 positional parameters (e, test, ifTrue, ifFalse).</summary>
+    private sealed class ConditionalFourParameterRuleTransformer : ExpressionTransformer
+    {
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Swaps the two branches, so the test can tell the rule actually ran (using all 4 arguments) from a no-op.</summary>
+        [ExpressionSignature(ExpressionType.Conditional)]
+        private Expression Rule(ConditionalExpression e, Expression test, Expression ifTrue, Expression ifFalse)
+            => Expression.Condition(test, ifFalse, ifTrue);
+    }
+
+    /// <summary>
+    /// No shipped rule in this repository declares 4 positional parameters (the widest is a
+    /// <see cref="BinaryExpression"/> rule with 3), so this is the only coverage of the fast path's
+    /// 4-argument <see cref="MethodInvoker"/> overload — the widest one it uses (see
+    /// <c>MaxFastInvokerParameterCount</c>'s remarks). All 4 arguments (node, test, ifTrue,
+    /// ifFalse) must be threaded through correctly, whichever invocation path is taken.
+    /// </summary>
+    [TestMethod]
+    public void Transform_PositionalRuleWithFourParameters_ThreadsAllFourArgumentsCorrectly()
+    {
+        var transformer = new ConditionalFourParameterRuleTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(bool), "x");
+        ConditionalExpression conditional = Expression.Condition(x, Expression.Constant(1), Expression.Constant(2));
+
+        var result = (ConditionalExpression)transformer.ExposeTransform(conditional);
+
+        Assert.AreEqual(2, ((ConstantExpression)result.IfTrue).Value);
+        Assert.AreEqual(1, ((ConstantExpression)result.IfFalse).Value);
+    }
+
+    /// <summary>A transformer whose Call rule declares 5 positional parameters (e, a, b, c, d).</summary>
+    private sealed class FiveParameterFallbackRuleTransformer : ExpressionTransformer
+    {
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>A trivial 4-argument static method, used only to build a matching 5-slot Call context (node + 4 arguments).</summary>
+        public static double Sum4(double a, double b, double c, double d) => a + b + c + d;
+
+        /// <summary>
+        /// Declares 5 positional parameters — one more than <c>MaxFastInvokerParameterCount</c> — so
+        /// this rule is always dispatched through the classic <see cref="MethodBase.Invoke(object, object[])"/>
+        /// fallback, never the <see cref="MethodInvoker"/> fast path. Returns <paramref name="d"/> (the last
+        /// argument) so the test can confirm all 5 positional slots were threaded through correctly.
+        /// </summary>
+        [ExpressionSignature(ExpressionType.Call)]
+        private Expression Rule(MethodCallExpression e, Expression a, Expression b, Expression c, Expression d)
+            => d;
+    }
+
+    /// <summary>
+    /// A positional rule wider than the fast path's <c>MaxFastInvokerParameterCount</c> cap must
+    /// still work correctly — not merely fail predictably — via the classic
+    /// <see cref="MethodBase.Invoke(object, object[])"/> fallback (see that constant's remarks: the
+    /// <c>Span&lt;object?&gt;</c> <see cref="MethodInvoker"/> overload measured slower than
+    /// <see cref="MethodBase.Invoke(object, object[])"/> for 5 arguments, so this shape deliberately never
+    /// gets a <c>TransformRule.FastInvoker</c> at all).
+    /// </summary>
+    [TestMethod]
+    public void Transform_PositionalRuleWithFiveParameters_FallsBackToMethodInfoInvoke_AndStillWorksCorrectly()
+    {
+        var transformer = new FiveParameterFallbackRuleTransformer();
+        MethodInfo sum4 = typeof(FiveParameterFallbackRuleTransformer).GetMethod(nameof(FiveParameterFallbackRuleTransformer.Sum4))!;
+        MethodCallExpression call = Expression.Call(
+            sum4,
+            Expression.Constant(1.0), Expression.Constant(2.0), Expression.Constant(3.0), Expression.Constant(4.0));
+
+        Expression result = transformer.ExposeTransform(call);
+
+        var constant = (ConstantExpression)result;
+        Assert.AreEqual(4.0, constant.Value);
+    }
 }

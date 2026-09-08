@@ -170,19 +170,85 @@ public abstract class ExpressionTransformer
         /// <summary>Whether <see cref="Method"/>'s return type is assignable to <see cref="Expression"/>.</summary>
         public bool ReturnsExpression { get; }
 
+        /// <summary>
+        /// Whether <see cref="Method"/>'s shape is one <see cref="ExpressionTransformer.IsFastInvokerEligible"/>
+        /// considers safe to fast-path — computed once, cheaply (no reflection beyond inspecting metadata
+        /// already fetched for <see cref="Method"/> and <see cref="Parameters"/>), when this rule is built.
+        /// Does not by itself mean a <see cref="System.Reflection.MethodInvoker"/> has been built yet — see
+        /// <see cref="FastInvoker"/>, which defers that (comparatively expensive) step to first use.
+        /// </summary>
+        private readonly bool _fastInvokerEligible;
+
+        private MethodInvoker? _fastInvoker;
+        private volatile bool _fastInvokerInitialized;
+
+        /// <summary>
+        /// A cached <see cref="System.Reflection.MethodInvoker"/> for <see cref="Method"/>, used by
+        /// <see cref="TryInvokeTransformMethod"/> as a faster, allocation-reduced alternative to
+        /// <see cref="MethodBase.Invoke(object, object[])"/> — <see langword="null"/> when
+        /// <see cref="Method"/>'s shape isn't one <see cref="ExpressionTransformer.IsFastInvokerEligible"/>
+        /// considers safe to fast-path, in which case every dispatch falls back to <see cref="Method"/>.Invoke
+        /// exactly as before this optimization.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="System.Reflection.MethodInvoker.Create(MethodBase)"/> is deferred to the first actual
+        /// read of this property rather than performed eagerly while building the owning
+        /// <see cref="TransformPlan"/> (i.e. for every eligible rule, whether or not it is ever actually
+        /// invoked): a transformer type can declare far more rules than a given call ever dispatches
+        /// through, so eagerly constructing an invoker for every one of them measurably regressed
+        /// construction-time cost and allocations (see the PR description that introduced this laziness)
+        /// for no corresponding end-to-end benefit.
+        /// <para>
+        /// This uses a hand-rolled double-checked pattern — a <see langword="volatile"/>
+        /// <c>_fastInvokerInitialized</c> flag guarding a plain <c>_fastInvoker</c> field, the flag written
+        /// only after the field — rather than <see cref="System.Threading.LazyInitializer.EnsureInitialized{T}(ref T, ref bool, ref object?, Func{T})"/>:
+        /// that overload requires a <see cref="Func{TResult}"/> factory, and a property getter would have to
+        /// allocate a fresh closure over <c>this</c> on every single read to supply one — even on the
+        /// overwhelmingly common already-initialized read that never actually invokes it — defeating the
+        /// point of caching. <see cref="ExpressionTransformer.CreateFastInvokerCore"/> is a pure,
+        /// side-effect-free function of <see cref="Method"/>, so a benign race that runs it more than once
+        /// under contention is acceptable (both threads compute an equivalent result; the CLR guarantees
+        /// the reference-field write itself is atomic, so no reader ever observes a torn value) — the
+        /// volatile flag exists only to distinguish "not yet computed" from "computed as null" (an eligible
+        /// method whose <c>Create</c> call itself failed), which a plain nullable field alone could not.
+        /// </para>
+        /// </remarks>
+        public MethodInvoker? FastInvoker
+        {
+            get
+            {
+                if (!_fastInvokerEligible)
+                {
+                    return null;
+                }
+
+                if (_fastInvokerInitialized)
+                {
+                    return _fastInvoker;
+                }
+
+                MethodInvoker? invoker = CreateFastInvokerCore(Method);
+                _fastInvoker = invoker;
+                _fastInvokerInitialized = true;
+                return invoker;
+            }
+        }
+
         /// <summary>Initializes a new <see cref="TransformRule"/> with its precomputed dispatch metadata.</summary>
         public TransformRule(
             MethodInfo method,
             ExpressionSignatureAttribute signature,
             TransformParameter[] parameters,
             InvocationKind kind,
-            bool returnsExpression)
+            bool returnsExpression,
+            bool fastInvokerEligible)
         {
             Method = method;
             Signature = signature;
             Parameters = parameters;
             Kind = kind;
             ReturnsExpression = returnsExpression;
+            _fastInvokerEligible = fastInvokerEligible;
         }
     }
 
@@ -413,8 +479,137 @@ public abstract class ExpressionTransformer
         };
 
         bool returnsExpression = _typeOfExpression.IsAssignableFrom(method.ReturnType);
+        bool fastInvokerEligible = DetermineFastInvokerEligibility(method, parameters, kind);
 
-        return new TransformRule(method, signature, parameters, kind, returnsExpression);
+        return new TransformRule(method, signature, parameters, kind, returnsExpression, fastInvokerEligible);
+    }
+
+    /// <summary>
+    /// The maximum number of arguments <see cref="TryCreateFastInvoker"/> considers for the
+    /// <see cref="System.Reflection.MethodInvoker"/> fast path. A standalone benchmark comparing every
+    /// invocation shape this class actually uses (see the PR description that introduced this constant)
+    /// measured the fixed-argument <c>MethodInvoker.Invoke</c> overloads (1 through 4 arguments) 1.35x to
+    /// 3.2x faster than <see cref="MethodBase.Invoke(object, object[])"/>, and allocation-free for the two
+    /// shapes (<see cref="InvocationKind.Single"/>, <see cref="InvocationKind.ExpressionArray"/>) that
+    /// previously allocated a fresh invocation array on every call. The same benchmark measured the
+    /// <c>Span&lt;object?&gt;</c> overload — the only <see cref="System.Reflection.MethodInvoker"/> overload
+    /// available for 5+ arguments — SLOWER than <see cref="MethodBase.Invoke(object, object[])"/> for a
+    /// 5-argument call, so rules with more parameters than this deliberately stay on the historical
+    /// <see cref="MethodBase.Invoke(object, object[])"/> path instead of routing through that slower
+    /// overload. In practice, no shipped rule (across <c>Utils</c>, <c>Utils.Mathematics</c>, and their
+    /// test doubles) declares more than 3 parameters (the widest shape is a <see cref="BinaryExpression"/>
+    /// rule: node, left, right); this constant is set to 4 — matching the widest context this class ever
+    /// builds, the 4-slot <see cref="ExpressionType.Conditional"/> context (node, test, ifTrue, ifFalse) —
+    /// as forward-looking headroom rather than the narrowest value that happens to cover today's rules.
+    /// </summary>
+    private const int MaxFastInvokerParameterCount = 4;
+
+    /// <summary>
+    /// Determines whether <paramref name="method"/>'s shape, for its precomputed <paramref name="kind"/>,
+    /// is safe to fast-path via <see cref="System.Reflection.MethodInvoker"/> — the actual (comparatively
+    /// expensive) <see cref="MethodInvoker.Create(MethodBase)"/> call is deferred to
+    /// <see cref="TransformRule.FastInvoker"/>'s first read (see its remarks for why), so this method only
+    /// performs cheap metadata inspection of data already fetched for <paramref name="method"/> and
+    /// <paramref name="parameters"/>, no reflection calls of its own.
+    /// </summary>
+    /// <remarks>
+    /// Returns <see langword="false"/> — meaning the historical <see cref="MethodBase.Invoke(object, object[])"/>
+    /// path must be used instead — for any method shape this fast path cannot safely reproduce:
+    /// <list type="bullet">
+    /// <item><description>
+    /// an open generic method or one still containing generic parameters: <see cref="MethodInvoker.Create"/>
+    /// succeeds for these, but the resulting invoker's <c>Invoke</c> then throws
+    /// <see cref="InvalidOperationException"/> UNWRAPPED — exactly like <see cref="MethodBase.Invoke(object, object[])"/>
+    /// does for the same method, but our wrapping helper cannot tell that apart from a rule genuinely
+    /// throwing <see cref="InvalidOperationException"/> itself, which must be wrapped;
+    /// </description></item>
+    /// <item><description>a VarArgs calling convention;</description></item>
+    /// <item><description>a by-ref return type;</description></item>
+    /// <item><description>any ref/out/pointer/by-ref-like parameter (copy-back and marshaling semantics differ from <see cref="MethodBase.Invoke(object, object[])"/>, and are not needed by any shipped rule);</description></item>
+    /// <item><description>more than <see cref="MaxFastInvokerParameterCount"/> parameters (see that constant's remarks);</description></item>
+    /// <item><description>an abstract method (never actually reachable here since <see cref="BuildPlan"/> only scans the concrete, instantiated transformer type, which cannot have any abstract members left — kept for defense in depth);</description></item>
+    /// <item><description>
+    /// for <see cref="InvocationKind.ExpressionArray"/> specifically, anything other than exactly 2 declared
+    /// parameters: <see cref="TryInvokeTransformMethod"/> always invokes such a rule with exactly the node
+    /// and its <c>Expression[]</c> sub-expressions, regardless of how many parameters the method actually
+    /// declares, so a fast invoker built for a rule declaring 3 or more parameters (2nd one
+    /// <c>Expression[]</c>, still bucketed as <see cref="InvocationKind.ExpressionArray"/> by the switch in
+    /// <see cref="BuildRule"/>) would be invoked with fewer arguments than it expects.
+    /// </description></item>
+    /// </list>
+    /// Even when this returns <see langword="true"/>, <see cref="TransformRule.FastInvoker"/> can still end
+    /// up <see langword="null"/> at first use if <see cref="MethodInvoker.Create(MethodBase)"/> itself then
+    /// throws for some other shape not enumerated above, rather than letting that surface as a transformer
+    /// construction (or, now, first-dispatch) failure; <see cref="OutOfMemoryException"/> is deliberately
+    /// left unhandled there.
+    /// <para>
+    /// Even for a method this returns <see langword="true"/> for, <see cref="System.Reflection.MethodInvoker"/>'s
+    /// own documented remarks note that the target method "may be inlined for performance and not appear
+    /// in stack traces" — unlike <see cref="MethodBase.Invoke(object, object[])"/>. The exception TYPE and
+    /// wrapping structure the fast path reproduces (see <see cref="InvokeSingleRule"/> and its siblings)
+    /// are therefore guaranteed identical to the historical behavior, but the exact
+    /// stack-trace shape of an exception thrown through the fast path is not.
+    /// </para>
+    /// </remarks>
+    /// <param name="method">The annotated transform rule method.</param>
+    /// <param name="parameters">The method's precomputed per-parameter metadata.</param>
+    /// <param name="kind">The method's precomputed invocation shape.</param>
+    /// <returns><see langword="true"/> if safe to fast-path; otherwise <see langword="false"/>.</returns>
+    private static bool DetermineFastInvokerEligibility(MethodInfo method, TransformParameter[] parameters, InvocationKind kind)
+    {
+        if (kind is not (InvocationKind.Single or InvocationKind.ExpressionArray or InvocationKind.Positional))
+        {
+            return false;
+        }
+
+        if (kind == InvocationKind.ExpressionArray && parameters.Length != 2)
+        {
+            return false;
+        }
+
+        if (method.IsAbstract
+            || method.IsGenericMethodDefinition
+            || method.ContainsGenericParameters
+            || (method.CallingConvention & CallingConventions.VarArgs) != 0
+            || method.ReturnType.IsByRef
+            || parameters.Length == 0
+            || parameters.Length > MaxFastInvokerParameterCount)
+        {
+            return false;
+        }
+
+        foreach (TransformParameter parameter in parameters)
+        {
+            Type parameterType = parameter.ParameterType;
+            if (parameterType.IsByRef || parameterType.IsPointer || parameterType.IsByRefLike)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Actually constructs a <see cref="System.Reflection.MethodInvoker"/> for <paramref name="method"/>,
+    /// called only once per rule (by <see cref="TransformRule.FastInvoker"/>, lazily, on its first read —
+    /// see that property's remarks for why this is deferred rather than performed eagerly for every
+    /// <see cref="DetermineFastInvokerEligibility"/>-approved rule while building the owning
+    /// <see cref="TransformPlan"/>). Never called for a method <see cref="DetermineFastInvokerEligibility"/>
+    /// rejected.
+    /// </summary>
+    /// <param name="method">The annotated transform rule method, already known eligible.</param>
+    /// <returns>The constructed invoker, or <see langword="null"/> if <see cref="MethodInvoker.Create(MethodBase)"/> itself throws.</returns>
+    private static MethodInvoker? CreateFastInvokerCore(MethodInfo method)
+    {
+        try
+        {
+            return MethodInvoker.Create(method);
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -725,7 +920,7 @@ public abstract class ExpressionTransformer
         {
             case InvocationKind.ExpressionArray:
                 // The second parameter is the array of sub-expressions
-                result = rule.Method.Invoke(this, new object[] { context.Expression, context.ExpressionParameters });
+                result = InvokeExpressionArrayRule(rule, context.Expression, context.ExpressionParameters);
                 return true;
 
             case InvocationKind.Positional:
@@ -751,11 +946,11 @@ public abstract class ExpressionTransformer
                     }
                 }
 
-                result = rule.Method.Invoke(this, parameters);
+                result = InvokePositionalRule(rule, parameters);
                 return result is not null;
 
             case InvocationKind.Single:
-                result = rule.Method.Invoke(this, new[] { parameters[0] });
+                result = InvokeSingleRule(rule, parameters[0]);
                 return true;
 
             default:
@@ -763,6 +958,109 @@ public abstract class ExpressionTransformer
                 result = null;
                 return false;
         }
+    }
+
+    /// <summary>
+    /// Invokes a <see cref="InvocationKind.Single"/>-shaped rule: <paramref name="node"/> is the sole
+    /// argument. Uses <see cref="TransformRule.FastInvoker"/> when available (no invocation array is
+    /// allocated, unlike the <c>[node]</c> array literal the fallback below still builds); otherwise falls back to
+    /// <see cref="MethodBase.Invoke(object, object[])"/> exactly as before this optimization.
+    /// </summary>
+    /// <param name="rule">The rule to invoke.</param>
+    /// <param name="node">The node being transformed, i.e. the rule's sole argument.</param>
+    /// <returns>The rule's return value.</returns>
+    private object? InvokeSingleRule(TransformRule rule, object node)
+    {
+        if (rule.FastInvoker is MethodInvoker invoker)
+        {
+            try
+            {
+                return invoker.Invoke(this, node);
+            }
+            catch (Exception ex)
+            {
+                // Reproduces MethodBase.Invoke's contract: any exception surfacing from the rule body
+                // (guaranteed here, since TryCreateFastInvoker already validated the argument shape) is
+                // wrapped in a NEW TargetInvocationException, even when it is itself already one (see the
+                // Transform_RuleThrowsTargetInvocationException_IsDoubleWrapped regression test) or an
+                // OutOfMemoryException (see Transform_RuleThrowsOutOfMemoryException_WrappedInTargetInvocationException
+                // — MethodBase.Invoke does not treat it specially either).
+                throw new TargetInvocationException(ex);
+            }
+        }
+
+        return rule.Method.Invoke(this, [node]);
+    }
+
+    /// <summary>
+    /// Invokes an <see cref="InvocationKind.ExpressionArray"/>-shaped rule: <paramref name="expression"/>
+    /// and <paramref name="expressionParameters"/> are its two arguments. Uses
+    /// <see cref="TransformRule.FastInvoker"/> when available (no invocation array is allocated, unlike
+    /// the <c>[expression, expressionParameters]</c> array literal the fallback below still builds); otherwise falls back to
+    /// <see cref="MethodBase.Invoke(object, object[])"/> exactly as before this optimization.
+    /// </summary>
+    /// <param name="rule">The rule to invoke.</param>
+    /// <param name="expression">The (possibly rebuilt) node being transformed.</param>
+    /// <param name="expressionParameters">Its prepared sub-expressions.</param>
+    /// <returns>The rule's return value.</returns>
+    private object? InvokeExpressionArrayRule(TransformRule rule, Expression expression, Expression[] expressionParameters)
+    {
+        if (rule.FastInvoker is MethodInvoker invoker)
+        {
+            try
+            {
+                return invoker.Invoke(this, expression, expressionParameters);
+            }
+            catch (Exception ex)
+            {
+                // See InvokeSingleRule's remarks: wraps exactly like MethodBase.Invoke, including
+                // double-wrapping a rule-thrown TargetInvocationException and wrapping a rule-thrown
+                // OutOfMemoryException.
+                throw new TargetInvocationException(ex);
+            }
+        }
+
+        return rule.Method.Invoke(this, [expression, expressionParameters]);
+    }
+
+    /// <summary>
+    /// Invokes an <see cref="InvocationKind.Positional"/>-shaped rule with <paramref name="parameters"/>.
+    /// Uses <see cref="TransformRule.FastInvoker"/> only when <paramref name="parameters"/>' length
+    /// exactly matches <see cref="TransformRule.Parameters"/>' length — the same node type can supply a
+    /// different number of arguments than a given rule declares (e.g. a <see cref="MethodCallExpression"/>
+    /// with a varying argument count), and a mismatch must keep reaching
+    /// <see cref="MethodBase.Invoke(object, object[])"/> to reproduce its historical
+    /// <see cref="TargetParameterCountException"/> (too many) — the "too few" case never reaches this
+    /// method at all: it fails earlier, in <see cref="TryInvokeTransformMethod"/>'s per-parameter
+    /// validation loop, with an <see cref="IndexOutOfRangeException"/>. Otherwise falls back to
+    /// <see cref="MethodBase.Invoke(object, object[])"/> exactly as before this optimization.
+    /// </summary>
+    /// <param name="rule">The rule to invoke.</param>
+    /// <param name="parameters">The full positional argument list (node followed by its sub-expressions/operands).</param>
+    /// <returns>The rule's return value.</returns>
+    private object? InvokePositionalRule(TransformRule rule, object[] parameters)
+    {
+        if (rule.FastInvoker is MethodInvoker invoker && parameters.Length == rule.Parameters.Length)
+        {
+            try
+            {
+                switch (parameters.Length)
+                {
+                    case 2: return invoker.Invoke(this, parameters[0], parameters[1]);
+                    case 3: return invoker.Invoke(this, parameters[0], parameters[1], parameters[2]);
+                    case 4: return invoker.Invoke(this, parameters[0], parameters[1], parameters[2], parameters[3]);
+                }
+            }
+            catch (Exception ex)
+            {
+                // See InvokeSingleRule's remarks: wraps exactly like MethodBase.Invoke, including
+                // double-wrapping a rule-thrown TargetInvocationException and wrapping a rule-thrown
+                // OutOfMemoryException.
+                throw new TargetInvocationException(ex);
+            }
+        }
+
+        return rule.Method.Invoke(this, parameters);
     }
 
     /// <summary>
