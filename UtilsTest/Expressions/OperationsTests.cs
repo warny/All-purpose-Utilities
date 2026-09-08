@@ -28,13 +28,6 @@ public class OperationsTests
 
     }
 
-    [Ignore("Null-conditional operator ?. is not supported by the grammar")]
-    [TestMethod]
-    public void NullOrMemberTest()
-    {
-        // Grammar has no null-conditional operator; test kept for reference only.
-    }
-
     /// <summary>
     /// Ensures compound logical operations return expected results.
     /// </summary>

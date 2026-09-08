@@ -27,6 +27,25 @@ public class EmitWorkerProcessTests
             arguments);
     }
 
+    /// <summary>
+    /// Verifies that a Unix apphost whose extensionless name contains periods is recognized as the
+    /// entry executable instead of being mistaken for a generic launcher.
+    /// </summary>
+    [TestMethod]
+    public void BuildWorkerArguments_ExtensionlessDottedAppHost_OmitsAssemblyPath()
+    {
+        string entryAssemblyLocation = Assembly.GetEntryAssembly()!.Location;
+        string exePath = System.IO.Path.Combine(
+            System.IO.Path.GetDirectoryName(entryAssemblyLocation)!,
+            System.IO.Path.GetFileNameWithoutExtension(entryAssemblyLocation));
+
+        string[] arguments = EmitWorkerProcess.BuildWorkerArguments(exePath, "pipe-name");
+
+        CollectionAssert.AreEqual(
+            new[] { "--utils-reflection-emit-worker", "pipe-name" },
+            arguments);
+    }
+
     [TestMethod]
     public void BuildWorkerArguments_GenericLauncher_PrependsEntryAssemblyPath()
     {

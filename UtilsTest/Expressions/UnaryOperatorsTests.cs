@@ -83,20 +83,6 @@ public class UnaryOperatorsTests
         }
     }
 
-    [Ignore("typeof/sizeof are not supported by the grammar")]
-    [TestMethod]
-    public void SizeofTypeofTest()
-    {
-        // Grammar has no typeof/sizeof rules; test kept for reference only.
-    }
-
-    [Ignore("'new' expressions are not supported by the grammar")]
-    [TestMethod]
-    public void NewTest()
-    {
-        // Grammar has no new-expression rule; test kept for reference only.
-    }
-
     [TestMethod]
     public void CastTests()
     {
