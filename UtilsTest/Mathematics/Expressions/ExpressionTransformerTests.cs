@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -640,5 +641,629 @@ public class ExpressionTransformerTests
         Expression nonMatchingResult = nonMatchingTransformer.ExposeTransform(Expression.Add(x, Expression.Constant(2.0)));
         Assert.IsFalse(nonMatchingTransformer.Invoked, "The rule must be skipped when the constant is not 1.0.");
         Assert.AreEqual(ExpressionType.Add, nonMatchingResult.NodeType);
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Coverage added for the dispatcher optimization (TransformPlan / TransformRule / TransformParameter
+    // indexing candidate rules by ExpressionType). These tests lock in the properties the index must
+    // preserve: a rule for a different ExpressionType is never even considered, same-type rules keep
+    // their exact declaration order, wildcard rules remain candidates for every node type, wildcard and
+    // type-specific rules interleave in their original order rather than being grouped, and specialized
+    // Match() constraints (e.g. by call target) still filter within a bucket.
+    // ---------------------------------------------------------------------------------------------
+
+    /// <summary>A transformer with one rule per <see cref="ExpressionType"/>, each recording whether it ran.</summary>
+    private sealed class DistinctTypeRulesTransformer : ExpressionTransformer
+    {
+        /// <summary>Whether <see cref="OnAdd"/> was invoked.</summary>
+        public bool AddRuleInvoked { get; private set; }
+
+        /// <summary>Whether <see cref="OnMultiply"/> was invoked.</summary>
+        public bool MultiplyRuleInvoked { get; private set; }
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Matches any <see cref="ExpressionType.Add"/> node.</summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        private Expression OnAdd(BinaryExpression e, Expression left, Expression right)
+        {
+            AddRuleInvoked = true;
+            return Expression.Constant(1.0);
+        }
+
+        /// <summary>Matches any <see cref="ExpressionType.Multiply"/> node; must never run for an Add node.</summary>
+        [ExpressionSignature(ExpressionType.Multiply)]
+        private Expression OnMultiply(BinaryExpression e, Expression left, Expression right)
+        {
+            MultiplyRuleInvoked = true;
+            return Expression.Constant(2.0);
+        }
+    }
+
+    /// <summary>
+    /// A rule declared for one <see cref="ExpressionType"/> must never be considered a candidate for a
+    /// node of a different type: the index must exclude it, not merely rely on <c>Match</c> to reject it.
+    /// </summary>
+    [TestMethod]
+    public void Transform_RuleForDifferentExpressionType_IsNeverInvoked()
+    {
+        var transformer = new DistinctTypeRulesTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        BinaryExpression add = Expression.Add(x, Expression.Constant(3.0));
+
+        Expression result = transformer.ExposeTransform(add);
+
+        Assert.IsTrue(transformer.AddRuleInvoked, "The Add rule must run for an Add node.");
+        Assert.IsFalse(transformer.MultiplyRuleInvoked,
+            "The Multiply rule belongs to a different ExpressionType bucket and must never run for an Add node.");
+        Assert.AreEqual(1.0, ((ConstantExpression)result).Value);
+    }
+
+    /// <summary>Three rules for the same <see cref="ExpressionType.Add"/>: the first two defer via <see langword="null"/>.</summary>
+    private sealed class ThreeAddRulesTransformer : ExpressionTransformer
+    {
+        /// <summary>The names of the rules invoked, in the order they ran.</summary>
+        public List<string> InvokedOrder { get; } = new();
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Always defers to the next rule.</summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        private Expression Rule1(BinaryExpression e, Expression left, Expression right)
+        {
+            InvokedOrder.Add(nameof(Rule1));
+            return null;
+        }
+
+        /// <summary>Runs after <see cref="Rule1"/> defers and wins; <see cref="Rule3"/> must never run afterwards.</summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        private Expression Rule2(BinaryExpression e, Expression left, Expression right)
+        {
+            InvokedOrder.Add(nameof(Rule2));
+            return Expression.Constant(99.0);
+        }
+
+        /// <summary>Would run third, but the dispatch must already have returned <see cref="Rule2"/>'s result.</summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        private Expression Rule3(BinaryExpression e, Expression left, Expression right)
+        {
+            InvokedOrder.Add(nameof(Rule3));
+            return Expression.Constant(-1.0);
+        }
+    }
+
+    /// <summary>
+    /// Multiple rules for the same <see cref="ExpressionType"/> must be tried in their exact declaration
+    /// order: the first one's <see langword="null"/> must defer to the second, and the second's non-null
+    /// result must short-circuit before the third rule ever runs.
+    /// </summary>
+    [TestMethod]
+    public void Transform_MultipleRulesForSameExpressionType_PreserveDeclarationOrder()
+    {
+        var transformer = new ThreeAddRulesTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        BinaryExpression add = Expression.Add(x, Expression.Constant(3.0));
+
+        Expression result = transformer.ExposeTransform(add);
+
+        CollectionAssert.AreEqual(new[] { "Rule1", "Rule2" }, transformer.InvokedOrder,
+            "Rule1 must run and defer via null, Rule2 must run next and win; Rule3 must never run.");
+        Assert.AreEqual(99.0, ((ConstantExpression)result).Value);
+    }
+
+    /// <summary>A transformer with a single wildcard (<c>ExpressionType == -1</c>) rule.</summary>
+    private sealed class WildcardRuleTransformer : ExpressionTransformer
+    {
+        /// <summary>The node types <see cref="OnAny"/> was invoked for, in invocation order.</summary>
+        public List<ExpressionType> MatchedNodeTypes { get; } = new();
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Matches every node type via the <c>(ExpressionType)(-1)</c> wildcard sentinel.</summary>
+        [ExpressionSignature((ExpressionType)(-1))]
+        private Expression OnAny(Expression e)
+        {
+            MatchedNodeTypes.Add(e.NodeType);
+            return e;
+        }
+    }
+
+    /// <summary>
+    /// A rule declared with the <c>ExpressionType == -1</c> wildcard sentinel must remain a candidate
+    /// for every node type, not just the type of the first expression it happens to see.
+    /// </summary>
+    [TestMethod]
+    public void Transform_WildcardRule_IsCandidateForMultipleNodeTypes()
+    {
+        var transformer = new WildcardRuleTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+
+        transformer.ExposeTransform(x);
+        transformer.ExposeTransform(Expression.Constant(1.0));
+        transformer.ExposeTransform(Expression.Add(x, Expression.Constant(1.0)));
+
+        CollectionAssert.AreEqual(
+            new[] { ExpressionType.Parameter, ExpressionType.Constant, ExpressionType.Add },
+            transformer.MatchedNodeTypes);
+    }
+
+    /// <summary>
+    /// Two wildcard rules interleaved with two <see cref="ExpressionType.Add"/>-specific rules, in this
+    /// exact declaration order: Wildcard1, Add1, Wildcard2, Add2. The first three defer via
+    /// <see langword="null"/>.
+    /// </summary>
+    private sealed class WildcardAndSpecificOrderTransformer : ExpressionTransformer
+    {
+        /// <summary>The names of the rules invoked, in the order they ran.</summary>
+        public List<string> InvokedOrder { get; } = new();
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>A wildcard rule, declared first; always defers.</summary>
+        [ExpressionSignature((ExpressionType)(-1))]
+        private Expression Wildcard1(BinaryExpression e, Expression left, Expression right)
+        {
+            InvokedOrder.Add(nameof(Wildcard1));
+            return null;
+        }
+
+        /// <summary>An <see cref="ExpressionType.Add"/>-specific rule, declared second; always defers.</summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        private Expression Add1(BinaryExpression e, Expression left, Expression right)
+        {
+            InvokedOrder.Add(nameof(Add1));
+            return null;
+        }
+
+        /// <summary>A second wildcard rule, declared third; always defers.</summary>
+        [ExpressionSignature((ExpressionType)(-1))]
+        private Expression Wildcard2(BinaryExpression e, Expression left, Expression right)
+        {
+            InvokedOrder.Add(nameof(Wildcard2));
+            return null;
+        }
+
+        /// <summary>An <see cref="ExpressionType.Add"/>-specific rule, declared last; wins.</summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        private Expression Add2(BinaryExpression e, Expression left, Expression right)
+        {
+            InvokedOrder.Add(nameof(Add2));
+            return Expression.Constant(123.0);
+        }
+    }
+
+    /// <summary>
+    /// The most important ordering guarantee: wildcard and type-specific rules must be tried in their
+    /// exact original interleaved declaration order. Grouping all type-specific rules before (or after)
+    /// all wildcard rules — a natural-looking but incorrect optimization — would reorder this sequence
+    /// and must NOT happen.
+    /// </summary>
+    [TestMethod]
+    public void Transform_CombinedWildcardAndSpecificRules_PreserveExactDeclarationOrder()
+    {
+        var transformer = new WildcardAndSpecificOrderTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        BinaryExpression add = Expression.Add(x, Expression.Constant(3.0));
+
+        Expression result = transformer.ExposeTransform(add);
+
+        CollectionAssert.AreEqual(
+            new[] { "Wildcard1", "Add1", "Wildcard2", "Add2" },
+            transformer.InvokedOrder,
+            "Declaration order must be preserved exactly as interleaved, not grouped by wildcard vs. specific.");
+        Assert.AreEqual(123.0, ((ConstantExpression)result).Value);
+    }
+
+    /// <summary>
+    /// Two <see cref="ExpressionCallSignatureAttribute"/> rules that both declare
+    /// <see cref="ExpressionType.Call"/> (so both share the same index bucket) but constrain different
+    /// method names.
+    /// </summary>
+    private sealed class CallSignatureRuleTransformer : ExpressionTransformer
+    {
+        /// <summary>Whether <see cref="OnSqrt"/> was invoked.</summary>
+        public bool SqrtRuleInvoked { get; private set; }
+
+        /// <summary>Whether <see cref="OnAbs"/> was invoked.</summary>
+        public bool AbsRuleInvoked { get; private set; }
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Matches only calls to <see cref="double.Sqrt(double)"/>.</summary>
+        [ExpressionCallSignature(typeof(double), nameof(double.Sqrt))]
+        private Expression OnSqrt(Expression e, Expression[] args)
+        {
+            SqrtRuleInvoked = true;
+            return Expression.Constant(-1.0);
+        }
+
+        /// <summary>Matches only calls to <see cref="double.Abs(double)"/>; must not run for a Sqrt call.</summary>
+        [ExpressionCallSignature(typeof(double), nameof(double.Abs))]
+        private Expression OnAbs(Expression e, Expression[] args)
+        {
+            AbsRuleInvoked = true;
+            return Expression.Constant(-2.0);
+        }
+
+        /// <inheritdoc cref="ExpressionTransformer.FinalizeExpression"/>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
+            => CopyExpression(e, parameters);
+    }
+
+    /// <summary>
+    /// Sharing the same <see cref="ExpressionType.Call"/> index bucket must not be enough to select a
+    /// rule: <see cref="ExpressionCallSignatureAttribute.Match(Expression)"/>'s function-name constraint
+    /// must still be evaluated to pick the right one.
+    /// </summary>
+    [TestMethod]
+    public void Transform_SpecializedCallSignatureAttribute_StillFiltersWithinTheCallBucket()
+    {
+        var transformer = new CallSignatureRuleTransformer();
+        MethodInfo sqrt = typeof(double).GetMethod(nameof(double.Sqrt), new[] { typeof(double) })!;
+        MethodCallExpression call = Expression.Call(sqrt, Expression.Constant(4.0));
+
+        Expression result = transformer.ExposeTransform(call);
+
+        Assert.IsTrue(transformer.SqrtRuleInvoked, "The Sqrt-specific rule must run.");
+        Assert.IsFalse(transformer.AbsRuleInvoked,
+            "The Abs-specific rule shares the Call bucket with the Sqrt rule but must be excluded by Match's function-name check.");
+        Assert.AreEqual(-1.0, ((ConstantExpression)result).Value);
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Coverage for the compatibility fix requested during PR #573 review: ExpressionSignatureAttribute
+    // is public with a virtual Match, so a third-party subclass could legally (1) override Match to
+    // accept a node type other than the one declared to the constructor, or (2) be stateful. Both must
+    // keep working exactly as they did before the ExpressionType-bucketing/parameter-caching indexing
+    // was introduced: (1) requires the rule to remain a dispatch candidate for every node type rather
+    // than only the declared one, and (2) requires CheckParameter to keep re-fetching (and therefore
+    // re-constructing) a fresh attribute instance on every check instead of reusing a single cached one.
+    // ---------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// A custom method-level signature attribute whose <see cref="Match"/> override accepts
+    /// <see cref="ExpressionType.Subtract"/> nodes even though it is declared (constructed) with
+    /// <see cref="ExpressionType.Add"/>. Not one of the attribute types shipped in
+    /// <c>ExpressionTranformer.cs</c>, so the transformer cannot assume it only matches its declared type.
+    /// </summary>
+    private sealed class WidensMatchBeyondDeclaredTypeAttribute : ExpressionSignatureAttribute
+    {
+        public WidensMatchBeyondDeclaredTypeAttribute() : base(ExpressionType.Add) { }
+
+        public override bool Match(Expression e) => e.NodeType is ExpressionType.Add or ExpressionType.Subtract;
+    }
+
+    /// <summary>
+    /// A transformer whose only rule is declared "Add" but, via a custom attribute, actually matches
+    /// both Add and Subtract nodes.
+    /// </summary>
+    private sealed class CustomWideningAttributeTransformer : ExpressionTransformer
+    {
+        /// <summary>The node types <see cref="OnAddOrSubtract"/> was invoked for, in invocation order.</summary>
+        public List<ExpressionType> InvokedNodeTypes { get; } = new();
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Declared "Add" but, via <see cref="WidensMatchBeyondDeclaredTypeAttribute"/>, also matches Subtract.</summary>
+        [WidensMatchBeyondDeclaredType]
+        private Expression OnAddOrSubtract(BinaryExpression e, Expression left, Expression right)
+        {
+            InvokedNodeTypes.Add(e.NodeType);
+            return Expression.Constant(e.NodeType == ExpressionType.Add ? 1.0 : 2.0);
+        }
+    }
+
+    /// <summary>
+    /// A rule whose custom attribute's <see cref="ExpressionSignatureAttribute.Match(Expression)"/>
+    /// override accepts a node type other than the one declared to the attribute's constructor must
+    /// still be considered a dispatch candidate for that other node type. Bucketing solely by the
+    /// declared <see cref="ExpressionSignatureAttribute.ExpressionType"/> would otherwise silently drop
+    /// it for the Subtract node before <c>Match</c> even runs — a regression this test guards against.
+    /// </summary>
+    [TestMethod]
+    public void Transform_CustomAttributeWideningMatchBeyondDeclaredType_StillConsideredForTheWidenedType()
+    {
+        var transformer = new CustomWideningAttributeTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+
+        Expression addResult = transformer.ExposeTransform(Expression.Add(x, Expression.Constant(1.0)));
+        Expression subtractResult = transformer.ExposeTransform(Expression.Subtract(x, Expression.Constant(1.0)));
+
+        CollectionAssert.AreEqual(new[] { ExpressionType.Add, ExpressionType.Subtract }, transformer.InvokedNodeTypes,
+            "The rule must run for both the declared type (Add) and the type Match widens into (Subtract).");
+        Assert.AreEqual(1.0, ((ConstantExpression)addResult).Value);
+        Assert.AreEqual(2.0, ((ConstantExpression)subtractResult).Value);
+    }
+
+    /// <summary>
+    /// A custom parameter-level signature attribute that only matches the first time it is asked,
+    /// via mutable instance state. Not one of the attribute types shipped in
+    /// <c>ExpressionTranformer.cs</c>, so the transformer cannot assume it is safe to cache a single
+    /// instance across every check.
+    /// </summary>
+    private sealed class MatchesOnceAttribute : ExpressionSignatureAttribute
+    {
+        private bool _used;
+
+        public MatchesOnceAttribute() : base(WildcardExpressionTypeForTests) { }
+
+        public override bool Match(Expression e)
+        {
+            if (_used) return false;
+            _used = true;
+            return true;
+        }
+    }
+
+    /// <summary>The wildcard sentinel, re-exposed for <see cref="MatchesOnceAttribute"/>'s base constructor call.</summary>
+    private const ExpressionType WildcardExpressionTypeForTests = (ExpressionType)(-1);
+
+    /// <summary>
+    /// A transformer with two Add rules, each constraining its right operand with a fresh
+    /// <see cref="MatchesOnceAttribute"/> instance (one per parameter declaration): both must match,
+    /// because <see cref="MatchesOnceAttribute"/> is stateful per-instance and each attribute usage
+    /// is its own instance — the point under test is that the transformer doesn't introduce cross-check
+    /// state sharing of its own by caching and reusing one materialized instance across dispatches.
+    /// </summary>
+    private sealed class StatefulParameterAttributeTransformer : ExpressionTransformer
+    {
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Constrains its constant operand with a stateful, match-once custom attribute.</summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        private Expression AddWithOnceConstrainedConstant(BinaryExpression e, Expression left, [MatchesOnce] ConstantExpression right)
+            => left;
+    }
+
+    /// <summary>
+    /// A parameter-level custom attribute whose <see cref="ExpressionSignatureAttribute.Match(Expression)"/>
+    /// is stateful must be re-fetched (and therefore re-constructed) fresh for every check, exactly like
+    /// the pre-indexing implementation always did for every parameter attribute. If the transformer
+    /// instead cached and reused a single materialized instance across dispatches (as it safely does for
+    /// the four attribute types shipped in <c>ExpressionTranformer.cs</c>, which are known to be
+    /// stateless), only the very first Add node encountered by this transformer instance would ever
+    /// match; every subsequent one would wrongly fall through to <see cref="FinalizeExpression"/> and
+    /// throw, because the cached instance's <c>_used</c> flag would already be set.
+    /// </summary>
+    [TestMethod]
+    public void Transform_CustomStatefulParameterAttribute_MatchesAgainOnASecondIndependentDispatch()
+    {
+        var transformer = new StatefulParameterAttributeTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+
+        // Two independent Add nodes, dispatched one after another on the same transformer instance.
+        Expression first = transformer.ExposeTransform(Expression.Add(x, Expression.Constant(1.0)));
+        Expression second = transformer.ExposeTransform(Expression.Add(x, Expression.Constant(2.0)));
+
+        Assert.AreSame(x, first, "The first Add node must match: a fresh MatchesOnceAttribute instance always matches once.");
+        Assert.AreSame(x, second,
+            "The second, independent Add node must also match: reusing a single cached attribute instance across " +
+            "dispatches would incorrectly make it look 'already used' by the first check.");
+    }
+
+    /// <summary>
+    /// A custom parameter-level signature attribute that counts its own constructions, to pin down
+    /// exactly when (not just whether) it is instantiated.
+    /// </summary>
+    private sealed class ConstructionCountingAttribute : ExpressionSignatureAttribute
+    {
+        /// <summary>The number of times this attribute type has been constructed; reset by each test.</summary>
+        public static int ConstructionCount;
+
+        public ConstructionCountingAttribute() : base(WildcardExpressionTypeForTests)
+        {
+            ConstructionCount++;
+        }
+
+        public override bool Match(Expression e) => true;
+    }
+
+    /// <summary>A transformer whose rule constrains a parameter with <see cref="ConstructionCountingAttribute"/>.</summary>
+    private sealed class ConstructionCountingParameterAttributeTransformer : ExpressionTransformer
+    {
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Constrains its constant operand with a construction-counting custom attribute.</summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        private Expression AddWithCountedConstant(BinaryExpression e, Expression left, [ConstructionCounting] ConstantExpression right)
+            => left;
+    }
+
+    /// <summary>
+    /// A custom parameter-level attribute must not be instantiated merely to build the
+    /// <see cref="ExpressionTransformer"/>'s dispatch plan (i.e. it must not be constructed, used to
+    /// read its runtime type, and discarded): <c>BuildRule</c> must determine whether an attribute's
+    /// type is known-safe to cache via <c>CustomAttributeData</c> (which exposes the attribute's type
+    /// without invoking its constructor), never by instantiating it first and inspecting the instance.
+    /// A custom attribute's constructor could have observable side effects or throw, and the
+    /// pre-indexing implementation only ever constructed it inside <c>CheckParameter</c>, on demand.
+    /// </summary>
+    [TestMethod]
+    public void Transform_CustomParameterAttribute_IsNotConstructedBeforeItIsActuallyChecked()
+    {
+        ConstructionCountingAttribute.ConstructionCount = 0;
+
+        var transformer = new ConstructionCountingParameterAttributeTransformer();
+        Assert.AreEqual(0, ConstructionCountingAttribute.ConstructionCount,
+            "Building the transformer's dispatch plan must not construct a custom parameter attribute merely to inspect its type.");
+
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        transformer.ExposeTransform(Expression.Add(x, Expression.Constant(1.0)));
+        Assert.AreEqual(1, ConstructionCountingAttribute.ConstructionCount,
+            "The first dispatch that actually checks the parameter must construct exactly one instance.");
+
+        transformer.ExposeTransform(Expression.Add(x, Expression.Constant(2.0)));
+        Assert.AreEqual(2, ConstructionCountingAttribute.ConstructionCount,
+            "A second, independent dispatch must construct a fresh instance rather than reusing a cached one.");
+    }
+
+    /// <summary>A transformer whose only rule declares an <see cref="ExpressionType"/> value outside the real enum.</summary>
+    private sealed class OutOfRangeExpressionTypeRuleTransformer : ExpressionTransformer
+    {
+        /// <summary>Whether <see cref="NeverMatchesAnything"/> was ever invoked.</summary>
+        public bool RuleWasInvoked { get; private set; }
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>
+        /// Nothing in the public API stops a caller from writing an out-of-range <see cref="ExpressionType"/>
+        /// value that is neither a real node type nor the <c>-1</c> wildcard sentinel; such a rule must
+        /// simply never match anything, exactly as <c>e.NodeType == ExpressionType</c> never would have.
+        /// </summary>
+        [ExpressionSignature((ExpressionType)123456)]
+        private Expression NeverMatchesAnything(Expression e)
+        {
+            RuleWasInvoked = true;
+            return e;
+        }
+
+        /// <inheritdoc cref="ExpressionTransformer.FinalizeExpression"/>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
+            => CopyExpression(e, parameters);
+    }
+
+    /// <summary>
+    /// A rule declaring an <see cref="ExpressionType"/> value outside the real enum values (and not the
+    /// wildcard sentinel) must not make dispatch-plan construction throw <see cref="KeyNotFoundException"/>
+    /// — the plan's per-type buckets are only pre-populated for <see cref="Enum.GetValues{TEnum}"/>'s real
+    /// values, so indexing straight into the dictionary for an out-of-range declared type would throw as
+    /// soon as the transformer is constructed, before any expression is ever transformed.
+    /// </summary>
+    [TestMethod]
+    public void Transform_RuleWithExpressionTypeOutsideTheRealEnum_ConstructsAndNeverMatches()
+    {
+        var transformer = new OutOfRangeExpressionTypeRuleTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        BinaryExpression add = Expression.Add(x, Expression.Constant(1.0));
+
+        Expression result = transformer.ExposeTransform(add);
+
+        Assert.IsFalse(transformer.RuleWasInvoked,
+            "A rule declaring an ExpressionType outside the real enum values must never be invoked.");
+        Assert.AreEqual(ExpressionType.Add, result.NodeType);
+    }
+
+    /// <summary>
+    /// A transformer whose only rule is declared on a <see langword="virtual"/> base method, with a
+    /// <see cref="ConstantNumericAttribute"/> constraint on one of its parameters. The concrete
+    /// transformer under test overrides that method without repeating either attribute, relying on
+    /// <see cref="AttributeUsageAttribute.Inherited"/> being <see langword="true"/> on
+    /// <see cref="ExpressionSignatureAttribute"/> for both the method-level and parameter-level
+    /// constraints to still apply to the override.
+    /// </summary>
+    private abstract class BaseWithConstrainedVirtualRuleTransformer : ExpressionTransformer
+    {
+        /// <summary>Whether <see cref="Rule"/> was invoked.</summary>
+        public bool RuleWasInvoked { get; protected set; }
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>
+        /// Matches <c>left + 0</c> only: the <see cref="ConstantNumericAttribute"/> on <paramref name="right"/>
+        /// restricts this rule to that specific constant value. Declared <see langword="virtual"/> so a
+        /// derived class can override it without repeating either attribute.
+        /// </summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        protected virtual Expression Rule(BinaryExpression e, Expression left, [ConstantNumeric(0)] ConstantExpression right)
+        {
+            RuleWasInvoked = true;
+            return left;
+        }
+
+        /// <inheritdoc cref="ExpressionTransformer.FinalizeExpression"/>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
+            => CopyExpression(e, parameters);
+    }
+
+    /// <summary>
+    /// Overrides <see cref="BaseWithConstrainedVirtualRuleTransformer.Rule"/> without repeating either
+    /// the method-level <see cref="ExpressionSignatureAttribute"/> or the parameter-level
+    /// <see cref="ConstantNumericAttribute"/> — both must still apply via .NET attribute inheritance.
+    /// </summary>
+    private sealed class DerivedWithConstrainedVirtualRuleTransformer : BaseWithConstrainedVirtualRuleTransformer
+    {
+        /// <inheritdoc />
+        protected override Expression Rule(BinaryExpression e, Expression left, ConstantExpression right)
+            => base.Rule(e, left, right);
+    }
+
+    /// <summary>
+    /// A parameter-level <see cref="ExpressionSignatureAttribute"/>-derived constraint declared on a base
+    /// virtual method's parameter must still apply when a derived class overrides that method without
+    /// repeating the attribute — exactly as plain .NET reflection resolves it via
+    /// <see cref="AttributeUsageAttribute.Inherited"/>. <c>BuildRule</c> must not use an attribute-lookup
+    /// API that skips this inheritance chain to decide how to precompute the override's parameter
+    /// metadata, or the constraint would be silently dropped instead of merely handled less efficiently.
+    /// </summary>
+    [TestMethod]
+    public void Transform_ParameterAttributeInheritedFromOverriddenBaseMethod_StillConstrainsTheOverride()
+    {
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+
+        var matchingTransformer = new DerivedWithConstrainedVirtualRuleTransformer();
+        Expression matchingResult = matchingTransformer.ExposeTransform(Expression.Add(x, Expression.Constant(0.0)));
+        Assert.IsTrue(matchingTransformer.RuleWasInvoked,
+            "The rule must run when the constant satisfies the inherited ConstantNumeric(0) constraint.");
+        Assert.AreSame(x, matchingResult);
+
+        var nonMatchingTransformer = new DerivedWithConstrainedVirtualRuleTransformer();
+        Expression nonMatchingResult = nonMatchingTransformer.ExposeTransform(Expression.Add(x, Expression.Constant(2.0)));
+        Assert.IsFalse(nonMatchingTransformer.RuleWasInvoked,
+            "The rule must be skipped when the constant doesn't satisfy the inherited ConstantNumeric(0) " +
+            "constraint, even though the override itself carries no attribute at all.");
+        Assert.AreEqual(ExpressionType.Add, nonMatchingResult.NodeType);
+    }
+
+    /// <summary>
+    /// A custom <see cref="Expression"/> subclass whose <c>NodeType</c> returns a value outside the real
+    /// <see cref="ExpressionType"/> enum values. Legal: <see cref="Expression"/> is publicly derivable
+    /// (its constructor is <see langword="protected"/>) and its <c>NodeType</c> property is
+    /// <see langword="virtual"/>, so nothing in the public API stops this.
+    /// </summary>
+    private sealed class OutOfRangeNodeTypeExpression : Expression
+    {
+        /// <inheritdoc />
+        public override ExpressionType NodeType => (ExpressionType)123456;
+
+        /// <inheritdoc />
+        public override Type Type => typeof(double);
+    }
+
+    /// <summary>
+    /// The dispatch-plan buckets only cover the real <see cref="ExpressionType"/> values known at build
+    /// time (<see cref="Enum.GetValues{TEnum}"/>); a node whose <c>NodeType</c> falls outside all of them
+    /// (see <see cref="OutOfRangeNodeTypeExpression"/>) must still be offered every rule as candidates —
+    /// both a rule declared for that exact out-of-range value and a wildcard rule — exactly as the
+    /// pre-indexing linear scan evaluated every rule's <c>Match</c> against every node regardless of its
+    /// <c>NodeType</c>. Reuses <see cref="OutOfRangeExpressionTypeRuleTransformer"/> (whose rule is
+    /// declared for the exact same out-of-range value used here) and <see cref="WildcardRuleTransformer"/>.
+    /// </summary>
+    [TestMethod]
+    public void Transform_ExpressionWithOutOfRangeNodeType_StillDispatchesMatchingAndWildcardRules()
+    {
+        var customNode = new OutOfRangeNodeTypeExpression();
+
+        var specificTransformer = new OutOfRangeExpressionTypeRuleTransformer();
+        specificTransformer.ExposeTransform(customNode);
+        Assert.IsTrue(specificTransformer.RuleWasInvoked,
+            "A rule declared for the exact out-of-range ExpressionType a custom Expression subclass's " +
+            "NodeType returns must still be invoked for it: no bucket was ever pre-populated for that " +
+            "value, so the dispatcher must fall back to the complete, unfiltered rule list.");
+
+        var wildcardTransformer = new WildcardRuleTransformer();
+        wildcardTransformer.ExposeTransform(customNode);
+        CollectionAssert.Contains(wildcardTransformer.MatchedNodeTypes, customNode.NodeType,
+            "A wildcard rule must remain a candidate for a node type outside the real ExpressionType enum " +
+            "values too, not just for the ~80 pre-populated buckets.");
     }
 }
