@@ -839,6 +839,18 @@ public abstract class ExpressionTransformer
 /// When used on a method, the method is considered for transformation if its attribute matches the current node type.
 /// When used on a parameter, it further restricts which sub-expressions are permissible.
 /// </summary>
+/// <remarks>
+/// <b>Contract for <see cref="Match"/> overrides:</b> a derived attribute's <see cref="Match"/> must only
+/// return <see langword="true"/> for expressions whose <see cref="Expression.NodeType"/> equals
+/// <see cref="ExpressionType"/> (or for any node when <see cref="ExpressionType"/> is the wildcard sentinel
+/// <c>-1</c>). <see cref="ExpressionTransformer"/> buckets every method-level rule by <see cref="ExpressionType"/>
+/// once per concrete transformer type (see its <c>TransformPlan</c>) so that <see cref="Match"/> is only
+/// evaluated for nodes of that declared type; a rule whose <see cref="Match"/> override accepts a different
+/// node type than the one passed to this attribute's constructor will never be considered a candidate for
+/// that other node type, even though a pre-bucketing implementation would have evaluated it. The three
+/// <see cref="Match"/> overrides shipped in this file (<see cref="ExpressionCallSignatureAttribute"/>,
+/// <see cref="ConstantNumericAttribute"/>, <see cref="ReturnTypeAttribute"/>) all honor this contract.
+/// </remarks>
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Parameter, AllowMultiple = false, Inherited = true)]
 public class ExpressionSignatureAttribute : Attribute
 {
@@ -864,6 +876,12 @@ public class ExpressionSignatureAttribute : Attribute
     /// </summary>
     /// <param name="e">The expression to match.</param>
     /// <returns>True if it matches; otherwise false.</returns>
+    /// <remarks>
+    /// Overrides must not widen the set of matched node types beyond <see cref="ExpressionType"/> (or
+    /// beyond every node type when it is the wildcard sentinel <c>-1</c>) — see the class-level
+    /// <see cref="ExpressionSignatureAttribute"/> remarks for why <see cref="ExpressionTransformer"/>
+    /// depends on this.
+    /// </remarks>
     public virtual bool Match(Expression e)
     {
         return ExpressionType == (ExpressionType)(-1) || e.NodeType == ExpressionType;
