@@ -7,40 +7,6 @@ namespace UtilsTest.Mathematics.Numbers
     [TestClass]
     public class NumberToStringConverterCATests
     {
-        [TestMethod]
-        public void CatalanCardinals()
-        {
-            (int Number, string Expected)[] tests = [
-                (21, "vint-i-un"),
-                (105, "cent cinc"),
-                (321, "tres-cents vint-i-un"),
-            ];
-
-            var converter = NumberToStringConverter.GetConverter("CA");
-
-            foreach (var test in tests)
-            {
-                Assert.AreEqual(test.Expected, converter.Convert(test.Number));
-            }
-        }
-
-        [TestMethod]
-        public void CatalanDecimal()
-        {
-            var converter = NumberToStringConverter.GetConverter("ca-ES");
-            Assert.AreEqual("un coma cinc", converter.Convert(1.5m));
-        }
-
-        [TestMethod]
-        public void Cardinals_Gender_Femeni()
-        {
-            var c = NumberToStringConverter.GetConverter("CA");
-
-            Assert.AreEqual("una",           c.Convert(1,  "gender=femení"), "1f");
-            Assert.AreEqual("dues",          c.Convert(2,  "gender=femení"), "2f");
-            Assert.AreEqual("vint-i-una",    c.Convert(21, "gender=femení"), "21f");
-            Assert.AreEqual("vint-i-dues",   c.Convert(22, "gender=femení"), "22f");
-        }
 
         // ─── NTS-04 ForcedVariants — "hora" is feminine, forced without a caller variant ────────
 

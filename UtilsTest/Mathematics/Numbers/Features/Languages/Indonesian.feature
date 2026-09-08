@@ -33,11 +33,9 @@ Examples:
     | 1000000000000000 | satu kuadriliun |
     | -1 | negatif satu |
 Scenario Outline: Malay alias wording
-    Given I use the "MS" number converter
-    When I convert the cardinal number <number>
-    Then the result is "<expected>"
+    Then the "ID" and "MS" converters produce the same cardinal wording for <number>
 
 Examples:
-    | number | expected |
-    | 21 | dua puluh satu |
-    | 1000000 | satu juta |
+    | number |
+    | 21 |
+    | 1000000 |

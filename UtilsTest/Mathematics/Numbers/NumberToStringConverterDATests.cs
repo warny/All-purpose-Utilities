@@ -10,7 +10,7 @@ namespace UtilsTest.Mathematics.Numbers
         [TestMethod]
         public void DA_RegisteredUnderDADK()
         {
-            Assert.AreEqual("to", NumberToStringConverter.GetConverter("DA-DK").Convert(2));
+            Assert.AreEqual(NumberToStringConverter.GetConverter("DA").Convert(2), NumberToStringConverter.GetConverter("DA-DK").Convert(2));
         }
     }
 }

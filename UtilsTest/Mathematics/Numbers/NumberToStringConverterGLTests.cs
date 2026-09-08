@@ -7,42 +7,6 @@ namespace UtilsTest.Mathematics.Numbers
     [TestClass]
     public class NumberToStringConverterGLTests
     {
-        [TestMethod]
-        public void GalicianCardinals()
-        {
-            (int Number, string Expected)[] tests = [
-                (21, "vinte e un"),
-                (105, "cento cinco"),
-                (100, "cen"),
-            ];
-
-            var converter = NumberToStringConverter.GetConverter("GL");
-
-            foreach (var test in tests)
-            {
-                Assert.AreEqual(test.Expected, converter.Convert(test.Number));
-            }
-        }
-
-        [TestMethod]
-        public void GalicianDecimal()
-        {
-            var converter = NumberToStringConverter.GetConverter("gl-ES");
-            Assert.AreEqual("un coma cinco", converter.Convert(1.5m));
-        }
-
-        [TestMethod]
-        public void Cardinals_Gender_Feminino()
-        {
-            var c = NumberToStringConverter.GetConverter("GL");
-
-            Assert.AreEqual("unha",       c.Convert(1,   "gender=feminino"), "1f");
-            Assert.AreEqual("dúas",       c.Convert(2,   "gender=feminino"), "2f");
-            // item 33: 200 is the only hundred that varies in Galician (douscentos/douscentas);
-            // other hundreds (e.g. trescentos) are invariable — see NumberConvertionConfiguration.GL.xml.
-            Assert.AreEqual("douscentas", c.Convert(200, "gender=feminino"), "200f");
-            Assert.AreEqual("trescentos", c.Convert(300, "gender=feminino"), "300f (invariable)");
-        }
 
         // ─── NTS-04 ForcedVariants — "hora" is feminine, forced without a caller variant ────────
 

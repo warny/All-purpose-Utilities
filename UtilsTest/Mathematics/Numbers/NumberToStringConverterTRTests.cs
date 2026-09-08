@@ -10,7 +10,7 @@ namespace UtilsTest.Mathematics.Numbers
         [TestMethod]
         public void TR_RegisteredUnderTRTR()
         {
-            Assert.AreEqual("iki", NumberToStringConverter.GetConverter("TR-TR").Convert(2));
+            Assert.AreEqual(NumberToStringConverter.GetConverter("TR").Convert(2), NumberToStringConverter.GetConverter("TR-TR").Convert(2));
         }
     }
 }

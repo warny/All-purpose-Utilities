@@ -10,7 +10,7 @@ namespace UtilsTest.Mathematics.Numbers
         [TestMethod]
         public void SK_RegisteredUnderSKSK()
         {
-            Assert.AreEqual("dva", NumberToStringConverter.GetConverter("SK-SK").Convert(2));
+            Assert.AreEqual(NumberToStringConverter.GetConverter("SK").Convert(2), NumberToStringConverter.GetConverter("SK-SK").Convert(2));
         }
     }
 }

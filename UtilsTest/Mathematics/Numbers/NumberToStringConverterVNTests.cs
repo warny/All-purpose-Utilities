@@ -7,6 +7,9 @@ namespace UtilsTest.Mathematics.Numbers
     public class NumberToStringConverterVNTests
     {
 
+        /// <summary>
+        /// Verifies that values above the Vietnamese converter maximum are rejected.
+        /// </summary>
         [TestMethod]
         public void Cardinals_AboveMaximum_Throws()
         {

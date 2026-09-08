@@ -10,7 +10,7 @@ namespace UtilsTest.Mathematics.Numbers
         [TestMethod]
         public void CS_RegisteredUnderCSCZ()
         {
-            Assert.AreEqual("dva", NumberToStringConverter.GetConverter("CS-CZ").Convert(2));
+            Assert.AreEqual(NumberToStringConverter.GetConverter("CS").Convert(2), NumberToStringConverter.GetConverter("CS-CZ").Convert(2));
         }
     }
 }

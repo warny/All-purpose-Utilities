@@ -45,5 +45,15 @@ public sealed class NumberToStringLanguageSteps
     [Then("the result is {string}")]
     public void ThenTheResultIs(string expected) => Assert.AreEqual(expected, result);
 
+    /// <summary>Verifies observable cardinal-wording equivalence between two converter registrations.</summary>
+    [Then("the {string} and {string} converters produce the same cardinal wording for {word}")]
+    public void ThenConvertersProduceTheSameCardinalWording(string firstCulture, string secondCulture, string number)
+    {
+        BigInteger value = BigInteger.Parse(number, CultureInfo.InvariantCulture);
+        Assert.AreEqual(
+            NumberToStringConverter.GetConverter(firstCulture).Convert(value, variants),
+            NumberToStringConverter.GetConverter(secondCulture).Convert(value, variants));
+    }
+
     private INumberToStringConverter Converter => converter ?? throw new InvalidOperationException("A converter must be selected before conversion.");
 }

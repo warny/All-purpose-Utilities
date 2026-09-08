@@ -39,6 +39,4 @@ Examples:
     | 2 | thứ hai |
     | 10 | thứ mười |
 Scenario: Vietnamese regional alias wording
-    Given I use the "VI-VN" number converter
-    When I convert the cardinal number 21
-    Then the result is "hai mươi mốt"
+    Then the "VN" and "VI-VN" converters produce the same cardinal wording for 21

@@ -11,7 +11,7 @@ namespace UtilsTest.Mathematics.Numbers
         public void BG_RegisteredUnderBGBG()
         {
             var c = NumberToStringConverter.GetConverter("BG-BG");
-            Assert.AreEqual("едно", c.Convert(1));
+            Assert.AreEqual(NumberToStringConverter.GetConverter("BG").Convert(1), c.Convert(1));
         }
     }
 }

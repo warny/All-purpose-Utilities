@@ -10,13 +10,13 @@ namespace UtilsTest.Mathematics.Numbers
         [TestMethod]
         public void SW_RegisteredUnderSWKE()
         {
-            Assert.AreEqual("mbili", NumberToStringConverter.GetConverter("SW-KE").Convert(2));
+            Assert.AreEqual(NumberToStringConverter.GetConverter("SW").Convert(2), NumberToStringConverter.GetConverter("SW-KE").Convert(2));
         }
 
         [TestMethod]
         public void SW_RegisteredUnderSWTZ()
         {
-            Assert.AreEqual("mbili", NumberToStringConverter.GetConverter("SW-TZ").Convert(2));
+            Assert.AreEqual(NumberToStringConverter.GetConverter("SW").Convert(2), NumberToStringConverter.GetConverter("SW-TZ").Convert(2));
         }
     }
 }

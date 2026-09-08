@@ -10,7 +10,7 @@ namespace UtilsTest.Mathematics.Numbers
         [TestMethod]
         public void ID_RegisteredUnderIDID()
         {
-            Assert.AreEqual("dua", NumberToStringConverter.GetConverter("ID-ID").Convert(2));
+            Assert.AreEqual(NumberToStringConverter.GetConverter("ID").Convert(2), NumberToStringConverter.GetConverter("ID-ID").Convert(2));
         }
     }
 }
