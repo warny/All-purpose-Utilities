@@ -33,7 +33,7 @@ namespace UtilsTest.Mathematics.Numbers
         {
             var c = NumberToStringConverter.GetConverter("SV");
             // "ett tusen" is elided to "tusen"
-            Assert.AreEqual("tusen",     c.Convert(1_000));
+            Assert.AreEqual("tusen", c.Convert(1_000));
             Assert.AreEqual("två tusen", c.Convert(2_000));
         }
 
@@ -41,12 +41,13 @@ namespace UtilsTest.Mathematics.Numbers
         public void Cardinals_LongScale()
         {
             var c = NumberToStringConverter.GetConverter("SV");
-            Assert.AreEqual("ett miljon",     c.Convert(1_000_000));
-            Assert.AreEqual("två miljoner",   c.Convert(2_000_000));
-            Assert.AreEqual("ett miljard",    c.Convert(1_000_000_000));
-            Assert.AreEqual("tre miljarder",  c.Convert(3_000_000_000L));
-            Assert.AreEqual("ett biljon",     c.Convert(1_000_000_000_000L));
-            Assert.AreEqual("ett biljard",    c.Convert(1_000_000_000_000_000L));
+            Assert.AreEqual("ett miljon", c.Convert(1_000_000));
+            Assert.AreEqual("två miljoner", c.Convert(2_000_000));
+            Assert.AreEqual("ett miljard", c.Convert(1_000_000_000));
+            Assert.AreEqual("tre miljarder", c.Convert(3_000_000_000L));
+            Assert.AreEqual("ett biljon", c.Convert(1_000_000_000_000L));
+            Assert.AreEqual("ett biljard", c.Convert(1_000_000_000_000_000L));
+            Assert.AreEqual("ett kvadriljon", c.Convert(new System.Numerics.BigInteger(1_000_000_000_000_000_000L) * 1_000_000));
         }
 
         [TestMethod]

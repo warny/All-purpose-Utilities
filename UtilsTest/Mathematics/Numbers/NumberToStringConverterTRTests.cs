@@ -36,10 +36,20 @@ namespace UtilsTest.Mathematics.Numbers
         {
             var c = NumberToStringConverter.GetConverter("TR");
             // 1 000 = "bin" (replacement "bir bin" → "bin")
-            Assert.AreEqual("bin",      c.Convert(1_000));
-            Assert.AreEqual("iki bin",  c.Convert(2_000));
-            Assert.AreEqual("on bin",   c.Convert(10_000));
+            Assert.AreEqual("bin", c.Convert(1_000));
+            Assert.AreEqual("iki bin", c.Convert(2_000));
+            Assert.AreEqual("on bin", c.Convert(10_000));
             Assert.AreEqual("bir milyon", c.Convert(1_000_000));
+        }
+
+        [TestMethod]
+        public void Cardinals_LargeScalesBeyondMillion()
+        {
+            var c = NumberToStringConverter.GetConverter("TR");
+            Assert.AreEqual("bir milyar", c.Convert(1_000_000_000));
+            Assert.AreEqual("bir trilyon", c.Convert(1_000_000_000_000L));
+            Assert.AreEqual("bir katrilyon", c.Convert(1_000_000_000_000_000L));
+            Assert.AreEqual("bir kentilyon", c.Convert(1_000_000_000_000_000_000L));
         }
 
         [TestMethod]

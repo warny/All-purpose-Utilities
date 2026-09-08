@@ -36,9 +36,18 @@ namespace UtilsTest.Mathematics.Numbers
         {
             var c = NumberToStringConverter.GetConverter("SW");
             // 1 000 = "elfu" (replacement: "moja elfu" → "elfu")
-            Assert.AreEqual("elfu",       c.Convert(1_000));
+            Assert.AreEqual("elfu", c.Convert(1_000));
             Assert.AreEqual("mbili elfu", c.Convert(2_000));
-            Assert.AreEqual("kumi elfu",  c.Convert(10_000));
+            Assert.AreEqual("kumi elfu", c.Convert(10_000));
+        }
+
+        [TestMethod]
+        public void Cardinals_LargeScales()
+        {
+            var c = NumberToStringConverter.GetConverter("SW");
+            Assert.AreEqual("moja milioni", c.Convert(1_000_000));
+            Assert.AreEqual("moja bilioni", c.Convert(1_000_000_000));
+            Assert.AreEqual("moja trilioni", c.Convert(1_000_000_000_000L));
         }
 
         [TestMethod]

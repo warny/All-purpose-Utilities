@@ -36,10 +36,28 @@ namespace UtilsTest.Mathematics.Numbers
         {
             var c = NumberToStringConverter.GetConverter("ID");
             // 1 000 = "seribu" (replacement: "satu ribu" → "seribu")
-            Assert.AreEqual("seribu",     c.Convert(1_000));
-            Assert.AreEqual("dua ribu",   c.Convert(2_000));
+            Assert.AreEqual("seribu", c.Convert(1_000));
+            Assert.AreEqual("dua ribu", c.Convert(2_000));
             Assert.AreEqual("sepuluh ribu", c.Convert(10_000));
-            Assert.AreEqual("satu juta",   c.Convert(1_000_000));
+            Assert.AreEqual("satu juta", c.Convert(1_000_000));
+        }
+
+        [TestMethod]
+        public void Cardinals_LargeScalesBeyondMillion()
+        {
+            var c = NumberToStringConverter.GetConverter("ID");
+            Assert.AreEqual("satu miliar", c.Convert(1_000_000_000));
+            Assert.AreEqual("satu triliun", c.Convert(1_000_000_000_000L));
+            Assert.AreEqual("satu kuadriliun", c.Convert(1_000_000_000_000_000L));
+        }
+
+        [TestMethod]
+        public void MS_UsesIndonesianBehavior()
+        {
+            var id = NumberToStringConverter.GetConverter("ID");
+            var ms = NumberToStringConverter.GetConverter("MS");
+            Assert.AreEqual(id.Convert(21), ms.Convert(21));
+            Assert.AreEqual(id.Convert(1_000_000), ms.Convert(1_000_000));
         }
 
         [TestMethod]

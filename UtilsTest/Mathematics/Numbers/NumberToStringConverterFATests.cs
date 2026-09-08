@@ -37,10 +37,26 @@ namespace UtilsTest.Mathematics.Numbers
         {
             var c = NumberToStringConverter.GetConverter("FA");
             // 1 000 = "هزار" (replacement drops "یک هزار" → "هزار")
-            Assert.AreEqual("هزار",        c.Convert(1_000));
-            Assert.AreEqual("دو هزار",     c.Convert(2_000));
-            Assert.AreEqual("ده هزار",     c.Convert(10_000));
-            Assert.AreEqual("یک میلیون",   c.Convert(1_000_000));
+            Assert.AreEqual("هزار", c.Convert(1_000));
+            Assert.AreEqual("دو هزار", c.Convert(2_000));
+            Assert.AreEqual("ده هزار", c.Convert(10_000));
+            Assert.AreEqual("یک میلیون", c.Convert(1_000_000));
+        }
+
+        [TestMethod]
+        public void Cardinals_LargeScalesBeyondMillion()
+        {
+            var c = NumberToStringConverter.GetConverter("FA");
+            Assert.AreEqual("یک میلیارد", c.Convert(1_000_000_000));
+            Assert.AreEqual("یک تریلیون", c.Convert(1_000_000_000_000L));
+        }
+
+        [TestMethod]
+        public void Cardinals_AboveMaximum_Throws()
+        {
+            var c = NumberToStringConverter.GetConverter("FA");
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(
+                () => c.Convert(new System.Numerics.BigInteger(1_000_000_000_000_000L)));
         }
 
         [TestMethod]

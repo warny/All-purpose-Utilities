@@ -40,17 +40,29 @@ namespace UtilsTest.Mathematics.Numbers
         }
 
         [TestMethod]
+        public void Cardinals_LongScale()
+        {
+            var c = NumberToStringConverter.GetConverter("RU");
+            Assert.AreEqual("один миллион", c.Convert(1_000_000));
+            Assert.AreEqual("два миллион", c.Convert(2_000_000));
+            Assert.AreEqual("один миллиард", c.Convert(1_000_000_000));
+            Assert.AreEqual("один биллион", c.Convert(1_000_000_000_000L));
+            Assert.AreEqual("один биллиард", c.Convert(1_000_000_000_000_000L));
+            Assert.AreEqual("один триллион", c.Convert(1_000_000_000_000_000_000L));
+        }
+
+        [TestMethod]
         public void Ordinals_NominativeExceptions()
         {
             var c = NumberToStringConverter.GetConverter("RU");
 
-            Assert.AreEqual("первый",    c.ConvertOrdinal(1));
-            Assert.AreEqual("второй",    c.ConvertOrdinal(2));
-            Assert.AreEqual("третий",    c.ConvertOrdinal(3));
+            Assert.AreEqual("первый", c.ConvertOrdinal(1));
+            Assert.AreEqual("второй", c.ConvertOrdinal(2));
+            Assert.AreEqual("третий", c.ConvertOrdinal(3));
             Assert.AreEqual("четвёртый", c.ConvertOrdinal(4));
-            Assert.AreEqual("десятый",   c.ConvertOrdinal(10));
-            Assert.AreEqual("сотый",     c.ConvertOrdinal(100));
-            Assert.AreEqual("тысячный",  c.ConvertOrdinal(1_000));
+            Assert.AreEqual("десятый", c.ConvertOrdinal(10));
+            Assert.AreEqual("сотый", c.ConvertOrdinal(100));
+            Assert.AreEqual("тысячный", c.ConvertOrdinal(1_000));
         }
 
         [TestMethod]
@@ -58,10 +70,10 @@ namespace UtilsTest.Mathematics.Numbers
         {
             var c = NumberToStringConverter.GetConverter("RU");
 
-            Assert.AreEqual("первый",  c.ConvertOrdinal(1));
-            Assert.AreEqual("первая",  c.ConvertOrdinal(1, "gender=feminin"));
-            Assert.AreEqual("первое",  c.ConvertOrdinal(1, "gender=neutrum"));
-            Assert.AreEqual("первые",  c.ConvertOrdinal(1, "gender=plural"));
+            Assert.AreEqual("первый", c.ConvertOrdinal(1));
+            Assert.AreEqual("первая", c.ConvertOrdinal(1, "gender=feminin"));
+            Assert.AreEqual("первое", c.ConvertOrdinal(1, "gender=neutrum"));
+            Assert.AreEqual("первые", c.ConvertOrdinal(1, "gender=plural"));
         }
     }
 }

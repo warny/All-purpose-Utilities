@@ -34,7 +34,7 @@ namespace UtilsTest.Mathematics.Numbers
         {
             var c = NumberToStringConverter.GetConverter("VN");
             // "một nghìn" is elided to "nghìn"
-            Assert.AreEqual("nghìn",     c.Convert(1_000));
+            Assert.AreEqual("nghìn", c.Convert(1_000));
             Assert.AreEqual("hai nghìn", c.Convert(2_000));
         }
 
@@ -44,7 +44,18 @@ namespace UtilsTest.Mathematics.Numbers
             var c = NumberToStringConverter.GetConverter("VN");
             // "một triệu"/"một tỷ" are correct Vietnamese; no elision at these scales
             Assert.AreEqual("một triệu", c.Convert(1_000_000));
-            Assert.AreEqual("một tỷ",    c.Convert(1_000_000_000));
+            Assert.AreEqual("hai triệu", c.Convert(2_000_000));
+            Assert.AreEqual("một tỷ", c.Convert(1_000_000_000));
+            Assert.AreEqual(
+                "chín trăm chín mươi chín tỷ chín trăm chín mươi chín triệu chín trăm chín mươi chín nghìn chín trăm chín mươi chín",
+                c.Convert(999_999_999_999L));
+        }
+
+        [TestMethod]
+        public void Cardinals_AboveMaximum_Throws()
+        {
+            var c = NumberToStringConverter.GetConverter("VN");
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => c.Convert(1_000_000_000_000L));
         }
 
         [TestMethod]
@@ -53,7 +64,8 @@ namespace UtilsTest.Mathematics.Numbers
             var c = NumberToStringConverter.GetConverter("VN");
             Assert.IsTrue(c.SupportsOrdinals);
             Assert.AreEqual("thứ nhất", c.ConvertOrdinal(1));  // exception, not "thứ một"
-            Assert.AreEqual("thứ hai",  c.ConvertOrdinal(2));
+            Assert.AreEqual("thứ hai", c.ConvertOrdinal(2));
+            Assert.AreEqual("thứ mười", c.ConvertOrdinal(10));
         }
 
         [TestMethod]
@@ -62,6 +74,9 @@ namespace UtilsTest.Mathematics.Numbers
             Assert.IsNotNull(NumberToStringConverter.GetConverter("VN"));
             Assert.IsNotNull(NumberToStringConverter.GetConverter("VI"));
             Assert.IsNotNull(NumberToStringConverter.GetConverter("VI-VN"));
+            Assert.AreEqual(
+                NumberToStringConverter.GetConverter("VN").Convert(21),
+                NumberToStringConverter.GetConverter("VI-VN").Convert(21));
         }
     }
 }

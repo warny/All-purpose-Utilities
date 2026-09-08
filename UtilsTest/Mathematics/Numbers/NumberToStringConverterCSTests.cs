@@ -26,6 +26,7 @@ namespace UtilsTest.Mathematics.Numbers
                 (100, "sto"),
                 (200, "dvě stě"),
                 (300, "tři sta"),
+                (500, "pět set"),
             ];
             foreach (var (n, expected) in cases)
                 Assert.AreEqual(expected, c.Convert(n), $"CS {n}");
@@ -35,9 +36,21 @@ namespace UtilsTest.Mathematics.Numbers
         public void Cardinals_Thousands()
         {
             var c = NumberToStringConverter.GetConverter("CS");
-            Assert.AreEqual("tisíc",      c.Convert(1_000));
-            Assert.AreEqual("dva tisíc",  c.Convert(2_000));
+            Assert.AreEqual("tisíc", c.Convert(1_000));
+            Assert.AreEqual("dva tisíc", c.Convert(2_000));
             Assert.AreEqual("deset tisíc", c.Convert(10_000));
+        }
+
+        [TestMethod]
+        public void Cardinals_LongScale()
+        {
+            var c = NumberToStringConverter.GetConverter("CS");
+            Assert.AreEqual("jedna milion", c.Convert(1_000_000));
+            Assert.AreEqual("dva milion", c.Convert(2_000_000));
+            Assert.AreEqual("jedna miliard", c.Convert(1_000_000_000));
+            Assert.AreEqual("jedna bilion", c.Convert(1_000_000_000_000L));
+            Assert.AreEqual("jedna biliard", c.Convert(1_000_000_000_000_000L));
+            Assert.AreEqual("jedna trilion", c.Convert(1_000_000_000_000_000_000L));
         }
 
         [TestMethod]

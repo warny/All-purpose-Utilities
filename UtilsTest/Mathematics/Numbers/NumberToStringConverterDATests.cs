@@ -23,6 +23,8 @@ namespace UtilsTest.Mathematics.Numbers
                 (20,  "tyve"),
                 (21,  "en og tyve"),
                 (30,  "tredive"),
+                (50,  "halvtreds"),
+                (99,  "ni og halvfems"),
                 (100, "hundrede"),
                 (101, "hundrede og en"),
                 (200, "to hundrede"),
@@ -36,8 +38,20 @@ namespace UtilsTest.Mathematics.Numbers
         {
             var c = NumberToStringConverter.GetConverter("DA");
             // Replacement drops "en" before "tusind" for 1 000
-            Assert.AreEqual("tusind",     c.Convert(1_000));
-            Assert.AreEqual("to tusind",  c.Convert(2_000));
+            Assert.AreEqual("tusind", c.Convert(1_000));
+            Assert.AreEqual("to tusind", c.Convert(2_000));
+        }
+
+        [TestMethod]
+        public void Cardinals_LongScale()
+        {
+            var c = NumberToStringConverter.GetConverter("DA");
+            Assert.AreEqual("en million", c.Convert(1_000_000));
+            Assert.AreEqual("to millioner", c.Convert(2_000_000));
+            Assert.AreEqual("en milliard", c.Convert(1_000_000_000));
+            Assert.AreEqual("to milliarder", c.Convert(2_000_000_000L));
+            Assert.AreEqual("en billion", c.Convert(1_000_000_000_000L));
+            Assert.AreEqual("en billiard", c.Convert(1_000_000_000_000_000L));
         }
 
         [TestMethod]
