@@ -1151,4 +1151,76 @@ public class ExpressionTransformerTests
             "A rule declaring an ExpressionType outside the real enum values must never be invoked.");
         Assert.AreEqual(ExpressionType.Add, result.NodeType);
     }
+
+    /// <summary>
+    /// A transformer whose only rule is declared on a <see langword="virtual"/> base method, with a
+    /// <see cref="ConstantNumericAttribute"/> constraint on one of its parameters. The concrete
+    /// transformer under test overrides that method without repeating either attribute, relying on
+    /// <see cref="AttributeUsageAttribute.Inherited"/> being <see langword="true"/> on
+    /// <see cref="ExpressionSignatureAttribute"/> for both the method-level and parameter-level
+    /// constraints to still apply to the override.
+    /// </summary>
+    private abstract class BaseWithConstrainedVirtualRuleTransformer : ExpressionTransformer
+    {
+        /// <summary>Whether <see cref="Rule"/> was invoked.</summary>
+        public bool RuleWasInvoked { get; protected set; }
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>
+        /// Matches <c>left + 0</c> only: the <see cref="ConstantNumericAttribute"/> on <paramref name="right"/>
+        /// restricts this rule to that specific constant value. Declared <see langword="virtual"/> so a
+        /// derived class can override it without repeating either attribute.
+        /// </summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        protected virtual Expression Rule(BinaryExpression e, Expression left, [ConstantNumeric(0)] ConstantExpression right)
+        {
+            RuleWasInvoked = true;
+            return left;
+        }
+
+        /// <inheritdoc cref="ExpressionTransformer.FinalizeExpression"/>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
+            => CopyExpression(e, parameters);
+    }
+
+    /// <summary>
+    /// Overrides <see cref="BaseWithConstrainedVirtualRuleTransformer.Rule"/> without repeating either
+    /// the method-level <see cref="ExpressionSignatureAttribute"/> or the parameter-level
+    /// <see cref="ConstantNumericAttribute"/> — both must still apply via .NET attribute inheritance.
+    /// </summary>
+    private sealed class DerivedWithConstrainedVirtualRuleTransformer : BaseWithConstrainedVirtualRuleTransformer
+    {
+        /// <inheritdoc />
+        protected override Expression Rule(BinaryExpression e, Expression left, ConstantExpression right)
+            => base.Rule(e, left, right);
+    }
+
+    /// <summary>
+    /// A parameter-level <see cref="ExpressionSignatureAttribute"/>-derived constraint declared on a base
+    /// virtual method's parameter must still apply when a derived class overrides that method without
+    /// repeating the attribute — exactly as plain .NET reflection resolves it via
+    /// <see cref="AttributeUsageAttribute.Inherited"/>. <c>BuildRule</c> must not use an attribute-lookup
+    /// API that skips this inheritance chain to decide how to precompute the override's parameter
+    /// metadata, or the constraint would be silently dropped instead of merely handled less efficiently.
+    /// </summary>
+    [TestMethod]
+    public void Transform_ParameterAttributeInheritedFromOverriddenBaseMethod_StillConstrainsTheOverride()
+    {
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+
+        var matchingTransformer = new DerivedWithConstrainedVirtualRuleTransformer();
+        Expression matchingResult = matchingTransformer.ExposeTransform(Expression.Add(x, Expression.Constant(0.0)));
+        Assert.IsTrue(matchingTransformer.RuleWasInvoked,
+            "The rule must run when the constant satisfies the inherited ConstantNumeric(0) constraint.");
+        Assert.AreSame(x, matchingResult);
+
+        var nonMatchingTransformer = new DerivedWithConstrainedVirtualRuleTransformer();
+        Expression nonMatchingResult = nonMatchingTransformer.ExposeTransform(Expression.Add(x, Expression.Constant(2.0)));
+        Assert.IsFalse(nonMatchingTransformer.RuleWasInvoked,
+            "The rule must be skipped when the constant doesn't satisfy the inherited ConstantNumeric(0) " +
+            "constraint, even though the override itself carries no attribute at all.");
+        Assert.AreEqual(ExpressionType.Add, nonMatchingResult.NodeType);
+    }
 }

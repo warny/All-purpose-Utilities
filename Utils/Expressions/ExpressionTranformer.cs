@@ -327,9 +327,26 @@ public abstract class ExpressionTransformer
     {
         ParameterInfo[] parameterInfos = method.GetParameters();
         var parameters = new TransformParameter[parameterInfos.Length];
+
+        // ExpressionSignatureAttribute declares [AttributeUsage(..., Inherited = true)], so a parameter
+        // of an override can inherit its constraint from the corresponding parameter of the base virtual
+        // method it overrides even when the override itself carries no attribute at all.
+        // ParameterInfo.GetCustomAttributesData() below never walks that inheritance chain — unlike
+        // GetCustomAttributes<T>() (used by CheckParameter's dynamic fallback), which does. For an
+        // override, therefore, every parameter unconditionally falls back to that dynamic path instead
+        // of being (mis)classified from data that can't see an inherited attribute; only a method that
+        // doesn't override anything has no inheritance chain for GetCustomAttributesData() to miss.
+        bool isOverride = method.GetBaseDefinition() != method;
+
         for (int i = 0; i < parameterInfos.Length; i++)
         {
             ParameterInfo parameterInfo = parameterInfos[i];
+
+            if (isOverride)
+            {
+                parameters[i] = new TransformParameter(parameterInfo.ParameterType, null, parameterInfo);
+                continue;
+            }
 
             // Inspect CustomAttributeData first: it exposes the attribute's runtime type (AttributeType)
             // without invoking its constructor. Only known-safe attribute types (see
