@@ -1,0 +1,66 @@
+@NumberToString @IT
+Feature: Italian number conversion
+
+Background:
+    Given I use the "IT" number converter
+
+Scenario Outline: Cardinal numbers
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1 | uno |
+    | 11 | undici |
+    | 20 | venti |
+    | 21 | venti uno |
+    | 22 | venti due |
+    | 29 | venti nove |
+    | 100 | cento |
+    | 1000 | mille |
+    | 2000 | due mila |
+
+Scenario Outline: Feminine cardinal numbers
+    Given I use the variants "gender=femminile"
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1 | una |
+    | 21 | venti una |
+    | 22 | venti due |
+
+Scenario Outline: Ordinal numbers
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1 | primo |
+    | 2 | secondo |
+    | 3 | terzo |
+    | 10 | decimo |
+    | 11 | undicesimo |
+    | 20 | ventesimo |
+    | 100 | centesimo |
+
+Scenario Outline: Feminine ordinal numbers
+    Given I use the variants "gender=femminile"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1 | prima |
+    | 2 | seconda |
+    | 11 | undicesima |
+
+Scenario Outline: Decimal numbers
+    When I convert the decimal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1.5 | uno virgola cinque |
+    | 12.34 | dodici virgola tre quattro |

@@ -266,3 +266,6 @@ __pycache__/
 *.pyc
 /AllPurposeUtilities/trunk/Imaging/Processing
 /AllPurposeUtilities/UtilsForm
+
+# ReqnRoll generated test sources
+*.feature.cs
