@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 
 using Utils.Reflection;
+using UtilsTest.NativeInterop;
 
 namespace UtilsTest.LibraryMapperHost;
 
@@ -24,20 +25,21 @@ public static class Program
     /// <summary>
     /// Runs the mapper worker when requested, or performs one end-to-end native call in normal mode.
     /// </summary>
-    /// <param name="args">The unmodified process arguments, with the native library path in normal mode.</param>
+    /// <param name="args">The unmodified process arguments.</param>
     /// <returns>Zero when worker dispatch or the end-to-end native call succeeds; otherwise a nonzero value.</returns>
     public static int Main(string[] args)
     {
         if (LibraryMapper.RunWorkerIfRequested(args))
             return 0;
 
-        if (args.Length != 1)
+        if (args.Length != 0)
         {
-            Console.Error.WriteLine("Expected one native library path argument.");
+            Console.Error.WriteLine("No arguments are expected in normal host mode.");
             return 2;
         }
 
-        using INativeMath mapper = LibraryMapper.Emit<INativeMath>(args[0], CallingConvention.Cdecl);
+        string nativeLibrary = NativeRuntimeLibraryResolver.ResolveWithExport("abs");
+        using INativeMath mapper = LibraryMapper.Emit<INativeMath>(nativeLibrary, CallingConvention.Cdecl);
         int result = mapper.Abs(-42);
         Console.WriteLine(result);
         return result == 42 ? 0 : 1;

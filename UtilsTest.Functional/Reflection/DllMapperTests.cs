@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Utils.Reflection;
+using UtilsTest.NativeInterop;
 
 namespace UtilsTest.Reflection;
 
@@ -58,7 +59,7 @@ public class DllMapperTests
             ? "UtilsTest.LibraryMapperHost.exe"
             : "UtilsTest.LibraryMapperHost";
         string executablePath = Path.Combine(AppContext.BaseDirectory, "LibraryMapperTestHost", executableName);
-        string nativeLibrary = GetNativeLibrary();
+        _ = GetNativeLibrary();
 
         using var process = new Process
         {
@@ -70,7 +71,6 @@ public class DllMapperTests
             },
         };
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-        process.StartInfo.ArgumentList.Add(nativeLibrary);
         process.StartInfo.Environment["DOTNET_ROOT"] = GetDotnetRoot();
 
         Assert.IsTrue(process.Start(), "The controlled LibraryMapper host did not start.");
@@ -131,14 +131,14 @@ public class DllMapperTests
     /// </summary>
     private static string GetNativeLibrary()
     {
-        if (OperatingSystem.IsWindows())
-            return "msvcrt.dll";
-        if (OperatingSystem.IsLinux())
-            return "libc.so.6";
-        if (OperatingSystem.IsMacOS())
-            return "/usr/lib/libSystem.B.dylib";
-
-        Assert.Inconclusive("The platform C runtime library is not known for this operating system.");
-        return string.Empty;
+        try
+        {
+            return NativeRuntimeLibraryResolver.ResolveWithExport("abs");
+        }
+        catch (PlatformNotSupportedException exception)
+        {
+            Assert.Inconclusive(exception.Message);
+            return string.Empty;
+        }
     }
 }

@@ -26,6 +26,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<Compile Include="..\UtilsTest.Shared\NativeRuntimeLibraryResolver.cs" Link="NativeRuntimeLibraryResolver.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<ProjectReference Include="..\Utils.Net\Utils.Net.csproj" />
 		<ProjectReference Include="..\Utils.Data\Utils.Data.csproj" />
 		<ProjectReference Include="..\Utils.Fonts\Utils.Fonts.csproj" />

@@ -9,6 +9,9 @@
         <RootNamespace>UtilsTest.LibraryMapperHost</RootNamespace>
     </PropertyGroup>
     <ItemGroup>
+        <Compile Include="..\UtilsTest.Shared\NativeRuntimeLibraryResolver.cs" Link="NativeRuntimeLibraryResolver.cs" />
+    </ItemGroup>
+    <ItemGroup>
         <ProjectReference Include="..\Utils.Reflection\Utils.Reflection.csproj" />
     </ItemGroup>
 </Project>
