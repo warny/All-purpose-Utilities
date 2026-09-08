@@ -1047,4 +1047,108 @@ public class ExpressionTransformerTests
             "The second, independent Add node must also match: reusing a single cached attribute instance across " +
             "dispatches would incorrectly make it look 'already used' by the first check.");
     }
+
+    /// <summary>
+    /// A custom parameter-level signature attribute that counts its own constructions, to pin down
+    /// exactly when (not just whether) it is instantiated.
+    /// </summary>
+    private sealed class ConstructionCountingAttribute : ExpressionSignatureAttribute
+    {
+        /// <summary>The number of times this attribute type has been constructed; reset by each test.</summary>
+        public static int ConstructionCount;
+
+        public ConstructionCountingAttribute() : base(WildcardExpressionTypeForTests)
+        {
+            ConstructionCount++;
+        }
+
+        public override bool Match(Expression e) => true;
+    }
+
+    /// <summary>A transformer whose rule constrains a parameter with <see cref="ConstructionCountingAttribute"/>.</summary>
+    private sealed class ConstructionCountingParameterAttributeTransformer : ExpressionTransformer
+    {
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Constrains its constant operand with a construction-counting custom attribute.</summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        private Expression AddWithCountedConstant(BinaryExpression e, Expression left, [ConstructionCounting] ConstantExpression right)
+            => left;
+    }
+
+    /// <summary>
+    /// A custom parameter-level attribute must not be instantiated merely to build the
+    /// <see cref="ExpressionTransformer"/>'s dispatch plan (i.e. it must not be constructed, used to
+    /// read its runtime type, and discarded): <c>BuildRule</c> must determine whether an attribute's
+    /// type is known-safe to cache via <c>CustomAttributeData</c> (which exposes the attribute's type
+    /// without invoking its constructor), never by instantiating it first and inspecting the instance.
+    /// A custom attribute's constructor could have observable side effects or throw, and the
+    /// pre-indexing implementation only ever constructed it inside <c>CheckParameter</c>, on demand.
+    /// </summary>
+    [TestMethod]
+    public void Transform_CustomParameterAttribute_IsNotConstructedBeforeItIsActuallyChecked()
+    {
+        ConstructionCountingAttribute.ConstructionCount = 0;
+
+        var transformer = new ConstructionCountingParameterAttributeTransformer();
+        Assert.AreEqual(0, ConstructionCountingAttribute.ConstructionCount,
+            "Building the transformer's dispatch plan must not construct a custom parameter attribute merely to inspect its type.");
+
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        transformer.ExposeTransform(Expression.Add(x, Expression.Constant(1.0)));
+        Assert.AreEqual(1, ConstructionCountingAttribute.ConstructionCount,
+            "The first dispatch that actually checks the parameter must construct exactly one instance.");
+
+        transformer.ExposeTransform(Expression.Add(x, Expression.Constant(2.0)));
+        Assert.AreEqual(2, ConstructionCountingAttribute.ConstructionCount,
+            "A second, independent dispatch must construct a fresh instance rather than reusing a cached one.");
+    }
+
+    /// <summary>A transformer whose only rule declares an <see cref="ExpressionType"/> value outside the real enum.</summary>
+    private sealed class OutOfRangeExpressionTypeRuleTransformer : ExpressionTransformer
+    {
+        /// <summary>Whether <see cref="NeverMatchesAnything"/> was ever invoked.</summary>
+        public bool RuleWasInvoked { get; private set; }
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>
+        /// Nothing in the public API stops a caller from writing an out-of-range <see cref="ExpressionType"/>
+        /// value that is neither a real node type nor the <c>-1</c> wildcard sentinel; such a rule must
+        /// simply never match anything, exactly as <c>e.NodeType == ExpressionType</c> never would have.
+        /// </summary>
+        [ExpressionSignature((ExpressionType)123456)]
+        private Expression NeverMatchesAnything(Expression e)
+        {
+            RuleWasInvoked = true;
+            return e;
+        }
+
+        /// <inheritdoc cref="ExpressionTransformer.FinalizeExpression"/>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
+            => CopyExpression(e, parameters);
+    }
+
+    /// <summary>
+    /// A rule declaring an <see cref="ExpressionType"/> value outside the real enum values (and not the
+    /// wildcard sentinel) must not make dispatch-plan construction throw <see cref="KeyNotFoundException"/>
+    /// — the plan's per-type buckets are only pre-populated for <see cref="Enum.GetValues{TEnum}"/>'s real
+    /// values, so indexing straight into the dictionary for an out-of-range declared type would throw as
+    /// soon as the transformer is constructed, before any expression is ever transformed.
+    /// </summary>
+    [TestMethod]
+    public void Transform_RuleWithExpressionTypeOutsideTheRealEnum_ConstructsAndNeverMatches()
+    {
+        var transformer = new OutOfRangeExpressionTypeRuleTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        BinaryExpression add = Expression.Add(x, Expression.Constant(1.0));
+
+        Expression result = transformer.ExposeTransform(add);
+
+        Assert.IsFalse(transformer.RuleWasInvoked,
+            "A rule declaring an ExpressionType outside the real enum values must never be invoked.");
+        Assert.AreEqual(ExpressionType.Add, result.NodeType);
+    }
 }

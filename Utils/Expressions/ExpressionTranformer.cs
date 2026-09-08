@@ -292,10 +292,15 @@ public abstract class ExpressionTransformer
                     bucket.Add(rule);
                 }
             }
-            else
+            else if (rulesByNodeType.TryGetValue(rule.Signature.ExpressionType, out List<TransformRule>? bucket))
             {
-                rulesByNodeType[rule.Signature.ExpressionType].Add(rule);
+                bucket.Add(rule);
             }
+            // else: ExpressionType is a value outside the real ExpressionType enum (nothing stops a
+            // caller from writing e.g. [ExpressionSignature((ExpressionType)123456)]) and isn't the
+            // wildcard sentinel either. No bucket exists for it, so the rule matches no node type at
+            // all — exactly what the pre-indexing Match() comparison against a real e.NodeType would
+            // have produced, just without ever needing to evaluate it.
         }
 
         var result = new Dictionary<ExpressionType, TransformRule[]>();
@@ -324,17 +329,32 @@ public abstract class ExpressionTransformer
         var parameters = new TransformParameter[parameterInfos.Length];
         for (int i = 0; i < parameterInfos.Length; i++)
         {
-            ExpressionSignatureAttribute? paramSignature = parameterInfos[i]
-                .GetCustomAttributes<ExpressionSignatureAttribute>()
-                .FirstOrDefault();
+            ParameterInfo parameterInfo = parameterInfos[i];
 
-            // No attribute, or a known-safe one: cache the instance (or the absence of one).
-            // A custom/third-party attribute type: don't cache it (it could be stateful); instead
-            // keep the ParameterInfo so CheckParameter re-fetches a fresh instance on every check,
-            // exactly like the pre-indexing implementation always did for every parameter attribute.
-            parameters[i] = paramSignature is null || IsKnownSignatureAttributeType(paramSignature.GetType())
-                ? new TransformParameter(parameterInfos[i].ParameterType, paramSignature, null)
-                : new TransformParameter(parameterInfos[i].ParameterType, null, parameterInfos[i]);
+            // Inspect CustomAttributeData first: it exposes the attribute's runtime type (AttributeType)
+            // without invoking its constructor. Only known-safe attribute types (see
+            // IsKnownSignatureAttributeType) are then actually instantiated here, since a custom/
+            // third-party attribute's constructor could have observable side effects or throw — it must
+            // only ever be constructed where the pre-indexing implementation constructed it: inside
+            // CheckParameter, on demand, once per check.
+            CustomAttributeData? signatureAttributeData = parameterInfo.GetCustomAttributesData()
+                .FirstOrDefault(data => typeof(ExpressionSignatureAttribute).IsAssignableFrom(data.AttributeType));
+
+            if (signatureAttributeData is null)
+            {
+                parameters[i] = new TransformParameter(parameterInfo.ParameterType, null, null);
+            }
+            else if (IsKnownSignatureAttributeType(signatureAttributeData.AttributeType))
+            {
+                ExpressionSignatureAttribute? paramSignature = parameterInfo
+                    .GetCustomAttributes<ExpressionSignatureAttribute>()
+                    .FirstOrDefault();
+                parameters[i] = new TransformParameter(parameterInfo.ParameterType, paramSignature, null);
+            }
+            else
+            {
+                parameters[i] = new TransformParameter(parameterInfo.ParameterType, null, parameterInfo);
+            }
         }
 
         InvocationKind kind = parameters.Length switch
@@ -946,16 +966,18 @@ public abstract class ExpressionTransformer
 /// When used on a parameter, it further restricts which sub-expressions are permissible.
 /// </summary>
 /// <remarks>
-/// <b>Contract for <see cref="Match"/> overrides:</b> a derived attribute's <see cref="Match"/> must only
-/// return <see langword="true"/> for expressions whose <see cref="Expression.NodeType"/> equals
+/// The three <see cref="Match"/> overrides shipped in this file (<see cref="ExpressionCallSignatureAttribute"/>,
+/// <see cref="ConstantNumericAttribute"/>, <see cref="ReturnTypeAttribute"/>) only ever return
+/// <see langword="true"/> for expressions whose <see cref="Expression.NodeType"/> equals
 /// <see cref="ExpressionType"/> (or for any node when <see cref="ExpressionType"/> is the wildcard sentinel
-/// <c>-1</c>). <see cref="ExpressionTransformer"/> buckets every method-level rule by <see cref="ExpressionType"/>
-/// once per concrete transformer type (see its <c>TransformPlan</c>) so that <see cref="Match"/> is only
-/// evaluated for nodes of that declared type; a rule whose <see cref="Match"/> override accepts a different
-/// node type than the one passed to this attribute's constructor will never be considered a candidate for
-/// that other node type, even though a pre-bucketing implementation would have evaluated it. The three
-/// <see cref="Match"/> overrides shipped in this file (<see cref="ExpressionCallSignatureAttribute"/>,
-/// <see cref="ConstantNumericAttribute"/>, <see cref="ReturnTypeAttribute"/>) all honor this contract.
+/// <c>-1</c>). A custom subclass is free to override <see cref="Match"/> with a broader or otherwise
+/// different node-type semantics than <see cref="ExpressionType"/> declares — nothing here prevents that.
+/// <see cref="ExpressionTransformer"/> buckets a method-level rule by its declared <see cref="ExpressionType"/>
+/// only when the attribute's runtime type is one of the four listed above; a rule whose attribute is any
+/// other (custom/third-party) type is conservatively kept a dispatch candidate for every node type, since
+/// its <see cref="Match"/> override might accept node types other than the declared one. This preserves the
+/// pre-indexing behavior (evaluate every annotated rule's <see cref="Match"/> for every node) for custom
+/// attribute types, at the cost of the per-node-type filtering the four shipped types benefit from.
 /// </remarks>
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Parameter, AllowMultiple = false, Inherited = true)]
 public class ExpressionSignatureAttribute : Attribute
@@ -983,10 +1005,10 @@ public class ExpressionSignatureAttribute : Attribute
     /// <param name="e">The expression to match.</param>
     /// <returns>True if it matches; otherwise false.</returns>
     /// <remarks>
-    /// Overrides must not widen the set of matched node types beyond <see cref="ExpressionType"/> (or
-    /// beyond every node type when it is the wildcard sentinel <c>-1</c>) — see the class-level
-    /// <see cref="ExpressionSignatureAttribute"/> remarks for why <see cref="ExpressionTransformer"/>
-    /// depends on this.
+    /// This base implementation never matches a node type other than <see cref="ExpressionType"/> (or
+    /// every type, for the wildcard sentinel <c>-1</c>) — see the class-level
+    /// <see cref="ExpressionSignatureAttribute"/> remarks for how a subclass overriding this to widen
+    /// that set is handled by <see cref="ExpressionTransformer"/>.
     /// </remarks>
     public virtual bool Match(Expression e)
     {
