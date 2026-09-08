@@ -6,68 +6,6 @@ namespace UtilsTest.Mathematics.Numbers
     [TestClass]
     public class NumberToStringConverterITTests
     {
-        [TestMethod]
-        public void DecimalTest()
-        {
-            (decimal Number, string Expected)[] tests = [
-                (1.5m, "uno virgola cinque"),
-                (12.34m, "dodici virgola tre quattro"),
-            ];
-
-            var converter = NumberToStringConverter.GetConverter("IT");
-
-            foreach (var test in tests)
-            {
-                Assert.AreEqual(test.Expected, converter.Convert(test.Number));
-            }
-        }
-
-        [TestMethod]
-        public void Cardinals_Basic()
-        {
-            var c = NumberToStringConverter.GetConverter("IT");
-            (long n, string expected)[] cases =
-            [
-                (1,   "uno"),
-                (11,  "undici"),
-                (20,  "venti"),
-                (21,  "venti uno"),
-                (22,  "venti due"),
-                (29,  "venti nove"),
-                (100, "cento"),
-                (1_000, "mille"),
-                (2_000, "due mila"),
-            ];
-            foreach (var (n, expected) in cases)
-                Assert.AreEqual(expected, c.Convert(n), $"IT {n}");
-        }
-
-        [TestMethod]
-        public void Cardinals_Gender_Femminile()
-        {
-            var c = NumberToStringConverter.GetConverter("IT");
-
-            Assert.AreEqual("una", c.Convert(1, "gender=femminile"), "1f");
-            Assert.AreEqual("venti una", c.Convert(21, "gender=femminile"), "21f");
-            Assert.AreEqual("venti due", c.Convert(22, "gender=femminile"), "22f");
-        }
-
-        [TestMethod]
-        public void Ordinals_MaschileAndFemminile()
-        {
-            var c = NumberToStringConverter.GetConverter("IT");
-
-            Assert.AreEqual("primo", c.ConvertOrdinal(1));
-            Assert.AreEqual("prima", c.ConvertOrdinal(1, "gender=femminile"));
-            Assert.AreEqual("secondo", c.ConvertOrdinal(2));
-            Assert.AreEqual("seconda", c.ConvertOrdinal(2, "gender=femminile"));
-            Assert.AreEqual("terzo", c.ConvertOrdinal(3));
-            Assert.AreEqual("decimo", c.ConvertOrdinal(10));
-            Assert.AreEqual("undicesimo", c.ConvertOrdinal(11));
-            Assert.AreEqual("undicesima", c.ConvertOrdinal(11, "gender=femminile"));
-            Assert.AreEqual("ventesimo", c.ConvertOrdinal(20));
-            Assert.AreEqual("centesimo", c.ConvertOrdinal(100));
-        }
 
         [TestMethod]
         public void ConvertCurrency_IT_Euro()

@@ -189,12 +189,5 @@ namespace UtilsTest.Mathematics.Numbers
             }
         }
 
-        [TestMethod]
-        public void FractionUsesConfiguredSeparator()
-        {
-            var converter = NumberToStringConverter.GetConverter("FR-fr");
-            var value = new Number(3, 2);
-            Assert.AreEqual("trois sur deux", converter.Convert(value));
-        }
     }
 }

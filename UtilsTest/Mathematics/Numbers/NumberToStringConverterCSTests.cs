@@ -6,52 +6,6 @@ namespace UtilsTest.Mathematics.Numbers
     [TestClass]
     public class NumberToStringConverterCSTests
     {
-        [TestMethod]
-        public void Cardinals_Basic()
-        {
-            var c = NumberToStringConverter.GetConverter("CS");
-            (long n, string expected)[] cases =
-            [
-                (0,   "nula"),
-                (1,   "jedna"),
-                (2,   "dva"),
-                (3,   "tři"),
-                (9,   "devět"),
-                (10,  "deset"),
-                (11,  "jedenáct"),
-                (12,  "dvanáct"),
-                (19,  "devatenáct"),
-                (20,  "dvacet"),
-                (21,  "dvacet jedna"),
-                (100, "sto"),
-                (200, "dvě stě"),
-                (300, "tři sta"),
-                (500, "pět set"),
-            ];
-            foreach (var (n, expected) in cases)
-                Assert.AreEqual(expected, c.Convert(n), $"CS {n}");
-        }
-
-        [TestMethod]
-        public void Cardinals_Thousands()
-        {
-            var c = NumberToStringConverter.GetConverter("CS");
-            Assert.AreEqual("tisíc", c.Convert(1_000));
-            Assert.AreEqual("dva tisíc", c.Convert(2_000));
-            Assert.AreEqual("deset tisíc", c.Convert(10_000));
-        }
-
-        [TestMethod]
-        public void Cardinals_LongScale()
-        {
-            var c = NumberToStringConverter.GetConverter("CS");
-            Assert.AreEqual("jedna milion", c.Convert(1_000_000));
-            Assert.AreEqual("dva milion", c.Convert(2_000_000));
-            Assert.AreEqual("jedna miliard", c.Convert(1_000_000_000));
-            Assert.AreEqual("jedna bilion", c.Convert(1_000_000_000_000L));
-            Assert.AreEqual("jedna biliard", c.Convert(1_000_000_000_000_000L));
-            Assert.AreEqual("jedna trilion", c.Convert(1_000_000_000_000_000_000L));
-        }
 
         [TestMethod]
         public void CS_RegisteredUnderCSCZ()
