@@ -35,6 +35,7 @@
 		<ProjectReference Include="..\Utils.NumberToString\Utils.NumberToString.csproj" />
 		<ProjectReference Include="..\Utils.Collections\Utils.Collections.csproj" />
 		<ProjectReference Include="..\Utils.Reflection\Utils.Reflection.csproj" />
+		<ProjectReference Include="..\UtilsTest.LibraryMapperHost\UtilsTest.LibraryMapperHost.csproj" ReferenceOutputAssembly="false" />
 		<ProjectReference Include="..\Utils.VirtualMachine\Utils.VirtualMachine.csproj" />
 		<ProjectReference Include="..\Utils.Xml\Utils.Xml.csproj" />
 		<ProjectReference Include="..\Utils\Utils.csproj" />
@@ -77,5 +78,12 @@
 	<ItemGroup>
 	  <PackageReference Update="Microsoft.SourceLink.GitHub" Version="10.0.400" />
 	</ItemGroup>
+
+    <Target Name="CopyLibraryMapperTestHost" AfterTargets="Build">
+        <ItemGroup>
+            <LibraryMapperTestHostFiles Include="..\UtilsTest.LibraryMapperHost\bin\$(Configuration)\net9.0\*" />
+        </ItemGroup>
+        <Copy SourceFiles="@(LibraryMapperTestHostFiles)" DestinationFolder="$(OutDir)LibraryMapperTestHost" />
+    </Target>
 
 </Project>

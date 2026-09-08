@@ -1,5 +1,9 @@
 using System;
+using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -45,6 +49,50 @@ public class NativeMathMapper : LibraryMapper
 public class DllMapperTests
 {
     /// <summary>
+    /// Verifies the public isolated mapper API through a controlled executable that handles worker startup.
+    /// </summary>
+    [TestMethod]
+    public async Task MapFromInterfaceInIsolatedWorkerTest()
+    {
+        string executableName = OperatingSystem.IsWindows()
+            ? "UtilsTest.LibraryMapperHost.exe"
+            : "UtilsTest.LibraryMapperHost";
+        string executablePath = Path.Combine(AppContext.BaseDirectory, "LibraryMapperTestHost", executableName);
+        string nativeLibrary = GetNativeLibrary();
+
+        using var process = new Process
+        {
+            StartInfo = new ProcessStartInfo(executablePath)
+            {
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+            },
+        };
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        process.StartInfo.ArgumentList.Add(nativeLibrary);
+        process.StartInfo.Environment["DOTNET_ROOT"] = GetDotnetRoot();
+
+        Assert.IsTrue(process.Start(), "The controlled LibraryMapper host did not start.");
+        Task<string> standardOutputTask = process.StandardOutput.ReadToEndAsync(timeout.Token);
+        Task<string> standardErrorTask = process.StandardError.ReadToEndAsync(timeout.Token);
+        try
+        {
+            await process.WaitForExitAsync(timeout.Token);
+        }
+        catch
+        {
+            process.Kill(entireProcessTree: true);
+            throw;
+        }
+
+        string standardOutput = await standardOutputTask;
+        string standardError = await standardErrorTask;
+        Assert.AreEqual(0, process.ExitCode, standardError);
+        Assert.AreEqual("42", standardOutput.Trim());
+    }
+
+    /// <summary>
     /// Verifies direct in-process mapping of a trusted interface.
     /// </summary>
     [TestMethod]
@@ -68,6 +116,14 @@ public class DllMapperTests
         using NativeMathMapper mapper = LibraryMapper.Create<NativeMathMapper>(nativeLibrary);
 
         Assert.AreEqual(42, mapper.Abs(-42));
+    }
+
+    /// <summary>
+    /// Gets the .NET installation root from the runtime directory used by the current test process.
+    /// </summary>
+    private static string GetDotnetRoot()
+    {
+        return Path.GetFullPath(Path.Combine(RuntimeEnvironment.GetRuntimeDirectory(), "..", "..", ".."));
     }
 
     /// <summary>

@@ -944,11 +944,20 @@ internal sealed class EmitWorkerProcess : IDisposable, IAsyncDisposable
     internal static string[] BuildWorkerArguments(string exePath, string pipeName)
     {
         string? entryAssemblyLocation = Assembly.GetEntryAssembly()?.Location;
+        string executableName = System.IO.Path.GetFileName(exePath);
+        if (executableName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+        {
+            executableName = executableName[..^4];
+        }
+
+        string? entryAssemblyName = string.IsNullOrEmpty(entryAssemblyLocation)
+            ? null
+            : System.IO.Path.GetFileNameWithoutExtension(entryAssemblyLocation);
 
         if (!string.IsNullOrEmpty(entryAssemblyLocation) &&
             !string.Equals(
-                System.IO.Path.GetFileNameWithoutExtension(exePath),
-                System.IO.Path.GetFileNameWithoutExtension(entryAssemblyLocation),
+                executableName,
+                entryAssemblyName,
                 StringComparison.OrdinalIgnoreCase))
         {
             return [entryAssemblyLocation, LibraryMapper.WorkerArgumentMarker, pipeName];
