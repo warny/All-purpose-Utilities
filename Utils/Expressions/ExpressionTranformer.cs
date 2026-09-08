@@ -130,7 +130,7 @@ public abstract class ExpressionTransformer
     {
         /// <summary>
         /// The method declares no parameters. It can never actually be reached (a rule always needs at
-        /// least the node parameter, and <see cref="TryTransform"/> indexes <c>Parameters[0]</c> before
+        /// least the node parameter, and <see cref="TryTransform"/> reads the first logical argument before
         /// invocation is attempted), preserved only to mirror this pre-existing (unreachable) case.
         /// </summary>
         None,
@@ -171,7 +171,7 @@ public abstract class ExpressionTransformer
         public bool ReturnsExpression { get; }
 
         /// <summary>
-        /// Whether <see cref="Method"/>'s shape is one <see cref="ExpressionTransformer.IsFastInvokerEligible"/>
+        /// Whether <see cref="Method"/>'s shape is one <see cref="DetermineFastInvokerEligibility"/>
         /// considers safe to fast-path — computed once, cheaply (no reflection beyond inspecting metadata
         /// already fetched for <see cref="Method"/> and <see cref="Parameters"/>), when this rule is built.
         /// Does not by itself mean a <see cref="System.Reflection.MethodInvoker"/> has been built yet — see
@@ -186,7 +186,7 @@ public abstract class ExpressionTransformer
         /// A cached <see cref="System.Reflection.MethodInvoker"/> for <see cref="Method"/>, used by
         /// <see cref="TryInvokeTransformMethod"/> as a faster, allocation-reduced alternative to
         /// <see cref="MethodBase.Invoke(object, object[])"/> — <see langword="null"/> when
-        /// <see cref="Method"/>'s shape isn't one <see cref="ExpressionTransformer.IsFastInvokerEligible"/>
+        /// <see cref="Method"/>'s shape isn't one <see cref="DetermineFastInvokerEligibility"/>
         /// considers safe to fast-path, in which case every dispatch falls back to <see cref="Method"/>.Invoke
         /// exactly as before this optimization.
         /// </summary>
@@ -485,7 +485,7 @@ public abstract class ExpressionTransformer
     }
 
     /// <summary>
-    /// The maximum number of arguments <see cref="TryCreateFastInvoker"/> considers for the
+    /// The maximum number of arguments <see cref="DetermineFastInvokerEligibility"/> considers for the
     /// <see cref="System.Reflection.MethodInvoker"/> fast path. A standalone benchmark comparing every
     /// invocation shape this class actually uses (see the PR description that introduced this constant)
     /// measured the fixed-argument <c>MethodInvoker.Invoke</c> overloads (1 through 4 arguments) 1.35x to
@@ -624,8 +624,8 @@ public abstract class ExpressionTransformer
     /// <summary>
     /// Readonly context produced by <see cref="PrepareTransform"/> and consumed by
     /// <see cref="TryTransform"/>/<see cref="TryInvokeTransformMethod"/>. Its own fields cannot be
-    /// reassigned, but <see cref="ExpressionParameters"/> and <see cref="Parameters"/> are arrays whose
-    /// elements are not protected from mutation. Pure implementation detail of
+    /// reassigned, but <see cref="ExpressionParameters"/> is an array whose elements are not protected
+    /// from mutation. Pure implementation detail of
     /// <see cref="Transform(Expression)"/>: never exposed outside this class.
     /// </summary>
     private readonly struct TransformContext
@@ -644,25 +644,49 @@ public abstract class ExpressionTransformer
         /// </summary>
         public Expression[] ExpressionParameters { get; }
 
-        /// <summary>
-        /// The full positional argument list used to match a candidate transform method's parameters and
-        /// to invoke it (index 0 is always <see cref="Expression"/> itself; for
-        /// <see cref="ConstantExpression"/>, its boxed <c>Value</c> follows at index 1).
-        /// </summary>
-        public object[] Parameters { get; }
+        /// <summary>Gets the number of arguments in the historical positional invocation layout.</summary>
+        public int InvocationArgumentCount => Expression is ConstantExpression ? 2 : ExpressionParameters.Length + 1;
 
         /// <summary>
         /// Initializes a new <see cref="TransformContext"/> with the already-prepared expression,
-        /// sub-expressions, and invocation argument list.
+        /// and sub-expressions.
         /// </summary>
         /// <param name="expression">The (possibly rebuilt) expression to match/finalize.</param>
         /// <param name="expressionParameters">The prepared sub-expressions of <paramref name="expression"/>.</param>
-        /// <param name="parameters">The positional argument list used to match and invoke a transform method.</param>
-        public TransformContext(Expression expression, Expression[] expressionParameters, object[] parameters)
+        public TransformContext(Expression expression, Expression[] expressionParameters)
         {
             Expression = expression;
             ExpressionParameters = expressionParameters;
-            Parameters = parameters;
+        }
+
+        /// <summary>Gets one argument from the historical positional invocation layout without allocating it.</summary>
+        /// <param name="index">The zero-based invocation argument index.</param>
+        /// <returns>The expression, constant value, or prepared sub-expression at <paramref name="index"/>.</returns>
+        public object? GetInvocationArgument(int index)
+        {
+            if (index == 0)
+                return Expression;
+
+            if (Expression is ConstantExpression constant)
+            {
+                if (index == 1)
+                    return constant.Value;
+
+                throw new IndexOutOfRangeException();
+            }
+
+            return ExpressionParameters[index - 1];
+        }
+
+        /// <summary>Materializes the historical positional argument array for reflection invocation.</summary>
+        /// <returns>A new positional array containing the node followed by its logical arguments.</returns>
+        public object[] MaterializeInvocationArguments()
+        {
+            object[] arguments = new object[InvocationArgumentCount];
+            for (int i = 0; i < arguments.Length; i++)
+                arguments[i] = GetInvocationArgument(i)!;
+
+            return arguments;
         }
     }
 
@@ -694,7 +718,7 @@ public abstract class ExpressionTransformer
     /// <summary>
     /// Dispatches to the node-type-specific <c>Prepare*</c> method that prepares/recurses into
     /// sub-expressions via <see cref="PrepareExpression"/>, rebuilds the node where applicable, and
-    /// assembles the parameter arrays later used by <see cref="TryTransform"/>.
+    /// assembles the expression parameter array later used by <see cref="TryTransform"/>.
     /// </summary>
     private TransformContext PrepareTransform(Expression e) => e switch
     {
@@ -716,7 +740,7 @@ public abstract class ExpressionTransformer
     /// <param name="cc">The constant expression to prepare.</param>
     /// <returns>The resulting <see cref="TransformContext"/>.</returns>
     private TransformContext PrepareConstant(ConstantExpression cc)
-        => new(cc, Array.Empty<Expression>(), [cc, cc.Value]);
+        => new(cc, Array.Empty<Expression>());
 
     /// <summary>
     /// Prepares a <see cref="UnaryExpression"/> by preparing its <c>Operand</c> and rebuilding the
@@ -729,7 +753,7 @@ public abstract class ExpressionTransformer
     {
         Expression[] expressionParameters = [PrepareExpression(ue.Operand)];
         var copied = (UnaryExpression)CopyExpression(ue, expressionParameters);
-        return new TransformContext(copied, expressionParameters, [copied, copied.Operand]);
+        return new TransformContext(copied, expressionParameters);
     }
 
     /// <summary>
@@ -748,7 +772,7 @@ public abstract class ExpressionTransformer
             PrepareExpression(be.Right)
         ];
         var copied = (BinaryExpression)CopyExpression(be, expressionParameters);
-        return new TransformContext(copied, expressionParameters, [copied, copied.Left, copied.Right]);
+        return new TransformContext(copied, expressionParameters);
     }
 
     /// <summary>
@@ -770,10 +794,7 @@ public abstract class ExpressionTransformer
             ? Expression.Call(mce.Method, expressionParameters)
             : Expression.Call(transformedObject, mce.Method, expressionParameters);
 
-        object[] parameters = new object[mce.Arguments.Count + 1];
-        parameters[0] = copied;
-        Array.Copy(expressionParameters, 0, parameters, 1, expressionParameters.Length);
-        return new TransformContext(copied, expressionParameters, parameters);
+        return new TransformContext(copied, expressionParameters);
     }
 
     /// <summary>
@@ -795,7 +816,7 @@ public abstract class ExpressionTransformer
             PrepareExpression(ce.IfFalse)
         ];
         var copied = (ConditionalExpression)CopyExpression(ce, expressionParameters);
-        return new TransformContext(copied, expressionParameters, [copied, copied.Test, copied.IfTrue, copied.IfFalse]);
+        return new TransformContext(copied, expressionParameters);
     }
 
     /// <summary>
@@ -805,7 +826,7 @@ public abstract class ExpressionTransformer
     /// <param name="pe">The parameter expression to prepare.</param>
     /// <returns>The resulting <see cref="TransformContext"/>.</returns>
     private TransformContext PrepareParameter(ParameterExpression pe)
-        => new(pe, Array.Empty<Expression>(), [pe]);
+        => new(pe, Array.Empty<Expression>());
 
     /// <summary>
     /// Prepares an <see cref="InvocationExpression"/> by preparing the invoked target expression and
@@ -819,10 +840,7 @@ public abstract class ExpressionTransformer
         Expression[] expressionParameters = ie.Arguments.Select(PrepareExpression).ToArray();
         InvocationExpression copied = Expression.Invoke(invokedExpression, expressionParameters);
 
-        object[] parameters = new object[ie.Arguments.Count + 1];
-        parameters[0] = copied;
-        Array.Copy(expressionParameters, 0, parameters, 1, expressionParameters.Length);
-        return new TransformContext(copied, expressionParameters, parameters);
+        return new TransformContext(copied, expressionParameters);
     }
 
     /// <summary>
@@ -840,10 +858,7 @@ public abstract class ExpressionTransformer
                                                .ToArray();
         LambdaExpression copied = Expression.Lambda(Transform(le.Body), (ParameterExpression[])expressionParameters);
 
-        object[] parameters = new object[le.Parameters.Count + 1];
-        parameters[0] = copied;
-        Array.Copy(expressionParameters, 0, parameters, 1, expressionParameters.Length);
-        return new TransformContext(copied, expressionParameters, parameters);
+        return new TransformContext(copied, expressionParameters);
     }
 
     /// <summary>
@@ -854,7 +869,7 @@ public abstract class ExpressionTransformer
     /// <param name="e">The expression to prepare.</param>
     /// <returns>The resulting <see cref="TransformContext"/>.</returns>
     private TransformContext PrepareDefault(Expression e)
-        => new(e, Array.Empty<Expression>(), [e]);
+        => new(e, Array.Empty<Expression>());
 
     /// <summary>
     /// Iterates the candidate rules for <c>context.Expression.NodeType</c> — from
@@ -870,7 +885,7 @@ public abstract class ExpressionTransformer
     private bool TryTransform(TransformContext context, out Expression? result)
     {
         Expression e = context.Expression;
-        object[] parameters = context.Parameters;
+        object[]? materializedInvocationArguments = null;
 
         foreach (TransformRule rule in _transformPlan.GetCandidates(e.NodeType))
         {
@@ -885,10 +900,13 @@ public abstract class ExpressionTransformer
             }
 
             // The first parameter must match the main expression
-            if (!rule.Parameters[0].ParameterType.IsInstanceOfType(parameters[0]))
+            object? firstArgument = materializedInvocationArguments is null
+                ? context.Expression
+                : materializedInvocationArguments[0];
+            if (!rule.Parameters[0].ParameterType.IsInstanceOfType(firstArgument))
                 continue;
 
-            if (!TryInvokeTransformMethod(rule, context, out object? invokeResult))
+            if (!TryInvokeTransformMethod(rule, context, ref materializedInvocationArguments, out object? invokeResult))
                 continue;
 
             result = (Expression?)invokeResult;
@@ -911,10 +929,13 @@ public abstract class ExpressionTransformer
     /// <see cref="System.Reflection.TargetInvocationException"/> thrown by the invoked rule propagates
     /// unchanged.
     /// </summary>
-    private bool TryInvokeTransformMethod(TransformRule rule, TransformContext context, out object? result)
+    private bool TryInvokeTransformMethod(
+        TransformRule rule,
+        TransformContext context,
+        ref object[]? materializedInvocationArguments,
+        out object? result)
     {
         TransformParameter[] ruleParameters = rule.Parameters;
-        object[] parameters = context.Parameters;
 
         switch (rule.Kind)
         {
@@ -927,7 +948,8 @@ public abstract class ExpressionTransformer
                 // Validate each expression parameter against the method parameter types
                 for (int i = 1; i < ruleParameters.Length; i++)
                 {
-                    if (parameters[i] is Expression paramExpr)
+                    object? argument = GetInvocationArgument(context, materializedInvocationArguments, i);
+                    if (argument is Expression paramExpr)
                     {
                         if (!CheckParameter(paramExpr, ruleParameters[i]))
                         {
@@ -938,7 +960,7 @@ public abstract class ExpressionTransformer
                     else
                     {
                         // If it's not an Expression, check if we can assign directly
-                        if (!ruleParameters[i].ParameterType.IsAssignableFrom(parameters[i].GetType()))
+                        if (!ruleParameters[i].ParameterType.IsAssignableFrom(argument!.GetType()))
                         {
                             result = null;
                             return false;
@@ -946,11 +968,13 @@ public abstract class ExpressionTransformer
                     }
                 }
 
-                result = InvokePositionalRule(rule, parameters);
+                result = InvokePositionalRule(rule, context, ref materializedInvocationArguments);
                 return result is not null;
 
             case InvocationKind.Single:
-                result = InvokeSingleRule(rule, parameters[0]);
+                result = InvokeSingleRule(
+                    rule,
+                    materializedInvocationArguments is null ? context.Expression : materializedInvocationArguments[0]);
                 return true;
 
             default:
@@ -959,6 +983,23 @@ public abstract class ExpressionTransformer
                 return false;
         }
     }
+
+    /// <summary>
+    /// Gets a positional argument from a previously materialized reflection array when present, or
+    /// directly from the logical context otherwise. Reusing the array preserves any reflection-driven
+    /// slot mutations for later candidate rules.
+    /// </summary>
+    /// <param name="context">The logical arguments for the current node.</param>
+    /// <param name="materializedInvocationArguments">The cached reflection array, if one has been created.</param>
+    /// <param name="index">The zero-based invocation argument index.</param>
+    /// <returns>The argument at <paramref name="index"/>.</returns>
+    private static object? GetInvocationArgument(
+        TransformContext context,
+        object[]? materializedInvocationArguments,
+        int index)
+        => materializedInvocationArguments is null
+            ? context.GetInvocationArgument(index)
+            : materializedInvocationArguments[index];
 
     /// <summary>
     /// Invokes a <see cref="InvocationKind.Single"/>-shaped rule: <paramref name="node"/> is the sole
@@ -980,7 +1021,7 @@ public abstract class ExpressionTransformer
             catch (Exception ex)
             {
                 // Reproduces MethodBase.Invoke's contract: any exception surfacing from the rule body
-                // (guaranteed here, since TryCreateFastInvoker already validated the argument shape) is
+                // (guaranteed here, since DetermineFastInvokerEligibility already validated the argument shape) is
                 // wrapped in a NEW TargetInvocationException, even when it is itself already one (see the
                 // Transform_RuleThrowsTargetInvocationException_IsDoubleWrapped regression test) or an
                 // OutOfMemoryException (see Transform_RuleThrowsOutOfMemoryException_WrappedInTargetInvocationException
@@ -1024,8 +1065,8 @@ public abstract class ExpressionTransformer
     }
 
     /// <summary>
-    /// Invokes an <see cref="InvocationKind.Positional"/>-shaped rule with <paramref name="parameters"/>.
-    /// Uses <see cref="TransformRule.FastInvoker"/> only when <paramref name="parameters"/>' length
+    /// Invokes an <see cref="InvocationKind.Positional"/>-shaped rule with the arguments in
+    /// <paramref name="context"/>. Uses <see cref="TransformRule.FastInvoker"/> only when the logical argument count
     /// exactly matches <see cref="TransformRule.Parameters"/>' length — the same node type can supply a
     /// different number of arguments than a given rule declares (e.g. a <see cref="MethodCallExpression"/>
     /// with a varying argument count), and a mismatch must keep reaching
@@ -1036,19 +1077,38 @@ public abstract class ExpressionTransformer
     /// <see cref="MethodBase.Invoke(object, object[])"/> exactly as before this optimization.
     /// </summary>
     /// <param name="rule">The rule to invoke.</param>
-    /// <param name="parameters">The full positional argument list (node followed by its sub-expressions/operands).</param>
+    /// <param name="context">The logical positional arguments for the current node.</param>
+    /// <param name="materializedInvocationArguments">The cached reflection argument array, if already required.</param>
     /// <returns>The rule's return value.</returns>
-    private object? InvokePositionalRule(TransformRule rule, object[] parameters)
+    private object? InvokePositionalRule(
+        TransformRule rule,
+        TransformContext context,
+        ref object[]? materializedInvocationArguments)
     {
-        if (rule.FastInvoker is MethodInvoker invoker && parameters.Length == rule.Parameters.Length)
+        if (rule.FastInvoker is MethodInvoker invoker && context.InvocationArgumentCount == rule.Parameters.Length)
         {
             try
             {
-                switch (parameters.Length)
+                switch (context.InvocationArgumentCount)
                 {
-                    case 2: return invoker.Invoke(this, parameters[0], parameters[1]);
-                    case 3: return invoker.Invoke(this, parameters[0], parameters[1], parameters[2]);
-                    case 4: return invoker.Invoke(this, parameters[0], parameters[1], parameters[2], parameters[3]);
+                    case 2:
+                        return invoker.Invoke(
+                            this,
+                            GetInvocationArgument(context, materializedInvocationArguments, 0),
+                            GetInvocationArgument(context, materializedInvocationArguments, 1));
+                    case 3:
+                        return invoker.Invoke(
+                            this,
+                            GetInvocationArgument(context, materializedInvocationArguments, 0),
+                            GetInvocationArgument(context, materializedInvocationArguments, 1),
+                            GetInvocationArgument(context, materializedInvocationArguments, 2));
+                    case 4:
+                        return invoker.Invoke(
+                            this,
+                            GetInvocationArgument(context, materializedInvocationArguments, 0),
+                            GetInvocationArgument(context, materializedInvocationArguments, 1),
+                            GetInvocationArgument(context, materializedInvocationArguments, 2),
+                            GetInvocationArgument(context, materializedInvocationArguments, 3));
                 }
             }
             catch (Exception ex)
@@ -1060,7 +1120,8 @@ public abstract class ExpressionTransformer
             }
         }
 
-        return rule.Method.Invoke(this, parameters);
+        materializedInvocationArguments ??= context.MaterializeInvocationArguments();
+        return rule.Method.Invoke(this, materializedInvocationArguments);
     }
 
     /// <summary>
