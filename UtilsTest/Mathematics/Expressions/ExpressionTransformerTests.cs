@@ -1605,4 +1605,88 @@ public class ExpressionTransformerTests
         Assert.IsTrue(transformer.RuleWasInvoked);
         Assert.IsNull(result);
     }
+
+    // ------------------------------------------------------------------------------------------
+    // Regression tests for the MethodInvoker-based fast path (see TryCreateFastInvoker,
+    // BuildFastInvoker, and the Invoke*Rule helpers). These exercise shapes the characterization
+    // tests above don't: a 4-parameter positional rule (the widest shape the fast path supports,
+    // matching the widest context this class ever builds — Conditional), and a 5-parameter
+    // positional rule (one wider than the fast path's cap, which must still work correctly via the
+    // classic MethodBase.Invoke fallback, not just fail gracefully).
+    // ------------------------------------------------------------------------------------------
+
+    /// <summary>A transformer whose Conditional rule declares all 4 positional parameters (e, test, ifTrue, ifFalse).</summary>
+    private sealed class ConditionalFourParameterRuleTransformer : ExpressionTransformer
+    {
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Swaps the two branches, so the test can tell the rule actually ran (using all 4 arguments) from a no-op.</summary>
+        [ExpressionSignature(ExpressionType.Conditional)]
+        private Expression Rule(ConditionalExpression e, Expression test, Expression ifTrue, Expression ifFalse)
+            => Expression.Condition(test, ifFalse, ifTrue);
+    }
+
+    /// <summary>
+    /// No shipped rule in this repository declares 4 positional parameters (the widest is a
+    /// <see cref="BinaryExpression"/> rule with 3), so this is the only coverage of the fast path's
+    /// 4-argument <see cref="MethodInvoker"/> overload — the widest one it uses (see
+    /// <c>MaxFastInvokerParameterCount</c>'s remarks). All 4 arguments (node, test, ifTrue,
+    /// ifFalse) must be threaded through correctly, whichever invocation path is taken.
+    /// </summary>
+    [TestMethod]
+    public void Transform_PositionalRuleWithFourParameters_ThreadsAllFourArgumentsCorrectly()
+    {
+        var transformer = new ConditionalFourParameterRuleTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(bool), "x");
+        ConditionalExpression conditional = Expression.Condition(x, Expression.Constant(1), Expression.Constant(2));
+
+        var result = (ConditionalExpression)transformer.ExposeTransform(conditional);
+
+        Assert.AreEqual(2, ((ConstantExpression)result.IfTrue).Value);
+        Assert.AreEqual(1, ((ConstantExpression)result.IfFalse).Value);
+    }
+
+    /// <summary>A transformer whose Call rule declares 5 positional parameters (e, a, b, c, d).</summary>
+    private sealed class FiveParameterFallbackRuleTransformer : ExpressionTransformer
+    {
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>A trivial 4-argument static method, used only to build a matching 5-slot Call context (node + 4 arguments).</summary>
+        public static double Sum4(double a, double b, double c, double d) => a + b + c + d;
+
+        /// <summary>
+        /// Declares 5 positional parameters — one more than <c>MaxFastInvokerParameterCount</c> — so
+        /// this rule is always dispatched through the classic <see cref="MethodBase.Invoke(object, object[])"/>
+        /// fallback, never the <see cref="MethodInvoker"/> fast path. Returns <paramref name="d"/> (the last
+        /// argument) so the test can confirm all 5 positional slots were threaded through correctly.
+        /// </summary>
+        [ExpressionSignature(ExpressionType.Call)]
+        private Expression Rule(MethodCallExpression e, Expression a, Expression b, Expression c, Expression d)
+            => d;
+    }
+
+    /// <summary>
+    /// A positional rule wider than the fast path's <c>MaxFastInvokerParameterCount</c> cap must
+    /// still work correctly — not merely fail predictably — via the classic
+    /// <see cref="MethodBase.Invoke(object, object[])"/> fallback (see that constant's remarks: the
+    /// <c>Span&lt;object?&gt;</c> <see cref="MethodInvoker"/> overload measured slower than
+    /// <see cref="MethodBase.Invoke(object, object[])"/> for 5 arguments, so this shape deliberately never
+    /// gets a <c>TransformRule.FastInvoker</c> at all).
+    /// </summary>
+    [TestMethod]
+    public void Transform_PositionalRuleWithFiveParameters_FallsBackToMethodInfoInvoke_AndStillWorksCorrectly()
+    {
+        var transformer = new FiveParameterFallbackRuleTransformer();
+        MethodInfo sum4 = typeof(FiveParameterFallbackRuleTransformer).GetMethod(nameof(FiveParameterFallbackRuleTransformer.Sum4))!;
+        MethodCallExpression call = Expression.Call(
+            sum4,
+            Expression.Constant(1.0), Expression.Constant(2.0), Expression.Constant(3.0), Expression.Constant(4.0));
+
+        Expression result = transformer.ExposeTransform(call);
+
+        var constant = (ConstantExpression)result;
+        Assert.AreEqual(4.0, constant.Value);
+    }
 }
