@@ -171,14 +171,68 @@ public abstract class ExpressionTransformer
         public bool ReturnsExpression { get; }
 
         /// <summary>
+        /// Whether <see cref="Method"/>'s shape is one <see cref="ExpressionTransformer.IsFastInvokerEligible"/>
+        /// considers safe to fast-path — computed once, cheaply (no reflection beyond inspecting metadata
+        /// already fetched for <see cref="Method"/> and <see cref="Parameters"/>), when this rule is built.
+        /// Does not by itself mean a <see cref="System.Reflection.MethodInvoker"/> has been built yet — see
+        /// <see cref="FastInvoker"/>, which defers that (comparatively expensive) step to first use.
+        /// </summary>
+        private readonly bool _fastInvokerEligible;
+
+        private MethodInvoker? _fastInvoker;
+        private volatile bool _fastInvokerInitialized;
+
+        /// <summary>
         /// A cached <see cref="System.Reflection.MethodInvoker"/> for <see cref="Method"/>, used by
         /// <see cref="TryInvokeTransformMethod"/> as a faster, allocation-reduced alternative to
         /// <see cref="MethodBase.Invoke(object, object[])"/> — <see langword="null"/> when
-        /// <see cref="Method"/>'s shape isn't one <see cref="TryCreateFastInvoker"/> considers safe to
-        /// fast-path, in which case every dispatch falls back to <see cref="Method"/>.Invoke exactly as
-        /// before this optimization.
+        /// <see cref="Method"/>'s shape isn't one <see cref="ExpressionTransformer.IsFastInvokerEligible"/>
+        /// considers safe to fast-path, in which case every dispatch falls back to <see cref="Method"/>.Invoke
+        /// exactly as before this optimization.
         /// </summary>
-        public MethodInvoker? FastInvoker { get; }
+        /// <remarks>
+        /// <see cref="System.Reflection.MethodInvoker.Create(MethodBase)"/> is deferred to the first actual
+        /// read of this property rather than performed eagerly while building the owning
+        /// <see cref="TransformPlan"/> (i.e. for every eligible rule, whether or not it is ever actually
+        /// invoked): a transformer type can declare far more rules than a given call ever dispatches
+        /// through, so eagerly constructing an invoker for every one of them measurably regressed
+        /// construction-time cost and allocations (see the PR description that introduced this laziness)
+        /// for no corresponding end-to-end benefit.
+        /// <para>
+        /// This uses a hand-rolled double-checked pattern — a <see langword="volatile"/>
+        /// <c>_fastInvokerInitialized</c> flag guarding a plain <c>_fastInvoker</c> field, the flag written
+        /// only after the field — rather than <see cref="System.Threading.LazyInitializer.EnsureInitialized{T}(ref T, ref bool, ref object?, Func{T})"/>:
+        /// that overload requires a <see cref="Func{TResult}"/> factory, and a property getter would have to
+        /// allocate a fresh closure over <c>this</c> on every single read to supply one — even on the
+        /// overwhelmingly common already-initialized read that never actually invokes it — defeating the
+        /// point of caching. <see cref="ExpressionTransformer.CreateFastInvokerCore"/> is a pure,
+        /// side-effect-free function of <see cref="Method"/>, so a benign race that runs it more than once
+        /// under contention is acceptable (both threads compute an equivalent result; the CLR guarantees
+        /// the reference-field write itself is atomic, so no reader ever observes a torn value) — the
+        /// volatile flag exists only to distinguish "not yet computed" from "computed as null" (an eligible
+        /// method whose <c>Create</c> call itself failed), which a plain nullable field alone could not.
+        /// </para>
+        /// </remarks>
+        public MethodInvoker? FastInvoker
+        {
+            get
+            {
+                if (!_fastInvokerEligible)
+                {
+                    return null;
+                }
+
+                if (_fastInvokerInitialized)
+                {
+                    return _fastInvoker;
+                }
+
+                MethodInvoker? invoker = CreateFastInvokerCore(Method);
+                _fastInvoker = invoker;
+                _fastInvokerInitialized = true;
+                return invoker;
+            }
+        }
 
         /// <summary>Initializes a new <see cref="TransformRule"/> with its precomputed dispatch metadata.</summary>
         public TransformRule(
@@ -187,14 +241,14 @@ public abstract class ExpressionTransformer
             TransformParameter[] parameters,
             InvocationKind kind,
             bool returnsExpression,
-            MethodInvoker? fastInvoker)
+            bool fastInvokerEligible)
         {
             Method = method;
             Signature = signature;
             Parameters = parameters;
             Kind = kind;
             ReturnsExpression = returnsExpression;
-            FastInvoker = fastInvoker;
+            _fastInvokerEligible = fastInvokerEligible;
         }
     }
 
@@ -425,9 +479,9 @@ public abstract class ExpressionTransformer
         };
 
         bool returnsExpression = _typeOfExpression.IsAssignableFrom(method.ReturnType);
-        MethodInvoker? fastInvoker = BuildFastInvoker(method, parameters, kind);
+        bool fastInvokerEligible = DetermineFastInvokerEligibility(method, parameters, kind);
 
-        return new TransformRule(method, signature, parameters, kind, returnsExpression, fastInvoker);
+        return new TransformRule(method, signature, parameters, kind, returnsExpression, fastInvokerEligible);
     }
 
     /// <summary>
@@ -451,34 +505,15 @@ public abstract class ExpressionTransformer
     private const int MaxFastInvokerParameterCount = 4;
 
     /// <summary>
-    /// Builds the cached <see cref="System.Reflection.MethodInvoker"/> fast path for <paramref name="method"/>,
-    /// when safe for its <paramref name="kind"/> — see <see cref="TryCreateFastInvoker"/> for the general
-    /// safety envelope shared by every invocation kind. <see cref="InvocationKind.ExpressionArray"/>
-    /// additionally requires exactly 2 declared parameters: <see cref="TryInvokeTransformMethod"/> always
-    /// invokes such a rule with exactly the node and its <c>Expression[]</c> sub-expressions, regardless of
-    /// how many parameters the method actually declares, so a fast invoker built for a rule declaring 3 or
-    /// more parameters (2nd one <c>Expression[]</c>, still bucketed as <see cref="InvocationKind.ExpressionArray"/>
-    /// by the switch above) would be invoked with fewer arguments than it expects.
+    /// Determines whether <paramref name="method"/>'s shape, for its precomputed <paramref name="kind"/>,
+    /// is safe to fast-path via <see cref="System.Reflection.MethodInvoker"/> — the actual (comparatively
+    /// expensive) <see cref="MethodInvoker.Create(MethodBase)"/> call is deferred to
+    /// <see cref="TransformRule.FastInvoker"/>'s first read (see its remarks for why), so this method only
+    /// performs cheap metadata inspection of data already fetched for <paramref name="method"/> and
+    /// <paramref name="parameters"/>, no reflection calls of its own.
     /// </summary>
-    /// <param name="method">The annotated transform rule method.</param>
-    /// <param name="parameters">The method's precomputed per-parameter metadata.</param>
-    /// <param name="kind">The method's precomputed invocation shape.</param>
-    /// <returns>A cached invoker safe to reuse for every dispatch of this rule, or <see langword="null"/>.</returns>
-    private static MethodInvoker? BuildFastInvoker(MethodInfo method, TransformParameter[] parameters, InvocationKind kind)
-    {
-        if (kind == InvocationKind.ExpressionArray && parameters.Length != 2)
-        {
-            return null;
-        }
-
-        return kind is InvocationKind.Single or InvocationKind.ExpressionArray or InvocationKind.Positional
-            ? TryCreateFastInvoker(method, parameters)
-            : null;
-    }
-
-    /// <summary>
-    /// Attempts to build a <see cref="System.Reflection.MethodInvoker"/> for <paramref name="method"/>.
-    /// Returns <see langword="null"/> — meaning the historical <see cref="MethodBase.Invoke(object, object[])"/>
+    /// <remarks>
+    /// Returns <see langword="false"/> — meaning the historical <see cref="MethodBase.Invoke(object, object[])"/>
     /// path must be used instead — for any method shape this fast path cannot safely reproduce:
     /// <list type="bullet">
     /// <item><description>
@@ -492,17 +527,46 @@ public abstract class ExpressionTransformer
     /// <item><description>a by-ref return type;</description></item>
     /// <item><description>any ref/out/pointer/by-ref-like parameter (copy-back and marshaling semantics differ from <see cref="MethodBase.Invoke(object, object[])"/>, and are not needed by any shipped rule);</description></item>
     /// <item><description>more than <see cref="MaxFastInvokerParameterCount"/> parameters (see that constant's remarks);</description></item>
-    /// <item><description>an abstract method (never actually reachable here since <see cref="BuildPlan"/> only scans the concrete, instantiated transformer type, which cannot have any abstract members left — kept for defense in depth).</description></item>
+    /// <item><description>an abstract method (never actually reachable here since <see cref="BuildPlan"/> only scans the concrete, instantiated transformer type, which cannot have any abstract members left — kept for defense in depth);</description></item>
+    /// <item><description>
+    /// for <see cref="InvocationKind.ExpressionArray"/> specifically, anything other than exactly 2 declared
+    /// parameters: <see cref="TryInvokeTransformMethod"/> always invokes such a rule with exactly the node
+    /// and its <c>Expression[]</c> sub-expressions, regardless of how many parameters the method actually
+    /// declares, so a fast invoker built for a rule declaring 3 or more parameters (2nd one
+    /// <c>Expression[]</c>, still bucketed as <see cref="InvocationKind.ExpressionArray"/> by the switch in
+    /// <see cref="BuildRule"/>) would be invoked with fewer arguments than it expects.
+    /// </description></item>
     /// </list>
-    /// Also returns <see langword="null"/> if <see cref="MethodInvoker.Create(MethodBase)"/> itself throws
-    /// for some other shape not enumerated above, rather than letting that surface as a transformer
-    /// construction failure; <see cref="OutOfMemoryException"/> is deliberately left unhandled.
-    /// </summary>
+    /// Even when this returns <see langword="true"/>, <see cref="TransformRule.FastInvoker"/> can still end
+    /// up <see langword="null"/> at first use if <see cref="MethodInvoker.Create(MethodBase)"/> itself then
+    /// throws for some other shape not enumerated above, rather than letting that surface as a transformer
+    /// construction (or, now, first-dispatch) failure; <see cref="OutOfMemoryException"/> is deliberately
+    /// left unhandled there.
+    /// <para>
+    /// Even for a method this returns <see langword="true"/> for, <see cref="System.Reflection.MethodInvoker"/>'s
+    /// own documented remarks note that the target method "may be inlined for performance and not appear
+    /// in stack traces" — unlike <see cref="MethodBase.Invoke(object, object[])"/>. The exception TYPE and
+    /// wrapping structure the fast path reproduces (see <see cref="InvokeSingleRule"/> and its siblings)
+    /// are therefore guaranteed identical to the historical behavior, but the exact
+    /// stack-trace shape of an exception thrown through the fast path is not.
+    /// </para>
+    /// </remarks>
     /// <param name="method">The annotated transform rule method.</param>
     /// <param name="parameters">The method's precomputed per-parameter metadata.</param>
-    /// <returns>A cached invoker safe to reuse for every dispatch, or <see langword="null"/>.</returns>
-    private static MethodInvoker? TryCreateFastInvoker(MethodInfo method, TransformParameter[] parameters)
+    /// <param name="kind">The method's precomputed invocation shape.</param>
+    /// <returns><see langword="true"/> if safe to fast-path; otherwise <see langword="false"/>.</returns>
+    private static bool DetermineFastInvokerEligibility(MethodInfo method, TransformParameter[] parameters, InvocationKind kind)
     {
+        if (kind is not (InvocationKind.Single or InvocationKind.ExpressionArray or InvocationKind.Positional))
+        {
+            return false;
+        }
+
+        if (kind == InvocationKind.ExpressionArray && parameters.Length != 2)
+        {
+            return false;
+        }
+
         if (method.IsAbstract
             || method.IsGenericMethodDefinition
             || method.ContainsGenericParameters
@@ -511,7 +575,7 @@ public abstract class ExpressionTransformer
             || parameters.Length == 0
             || parameters.Length > MaxFastInvokerParameterCount)
         {
-            return null;
+            return false;
         }
 
         foreach (TransformParameter parameter in parameters)
@@ -519,10 +583,25 @@ public abstract class ExpressionTransformer
             Type parameterType = parameter.ParameterType;
             if (parameterType.IsByRef || parameterType.IsPointer || parameterType.IsByRefLike)
             {
-                return null;
+                return false;
             }
         }
 
+        return true;
+    }
+
+    /// <summary>
+    /// Actually constructs a <see cref="System.Reflection.MethodInvoker"/> for <paramref name="method"/>,
+    /// called only once per rule (by <see cref="TransformRule.FastInvoker"/>, lazily, on its first read —
+    /// see that property's remarks for why this is deferred rather than performed eagerly for every
+    /// <see cref="DetermineFastInvokerEligibility"/>-approved rule while building the owning
+    /// <see cref="TransformPlan"/>). Never called for a method <see cref="DetermineFastInvokerEligibility"/>
+    /// rejected.
+    /// </summary>
+    /// <param name="method">The annotated transform rule method, already known eligible.</param>
+    /// <returns>The constructed invoker, or <see langword="null"/> if <see cref="MethodInvoker.Create(MethodBase)"/> itself throws.</returns>
+    private static MethodInvoker? CreateFastInvokerCore(MethodInfo method)
+    {
         try
         {
             return MethodInvoker.Create(method);
