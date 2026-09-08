@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Expressions_ExpressionCallSignatureAttribute" data-uid="Utils.Expressions.ExpressionCallSignatureAttribute" class="text-break">
-Class ExpressionCallSignatureAttribute  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L674"><i class="bi bi-code-slash"></i></a>
+Class ExpressionCallSignatureAttribute  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L1070"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -359,7 +359,7 @@ on a specific type. This is a specialized <a class="xref" href="Utils.Expression
 
   <h3 id="Utils_Expressions_ExpressionCallSignatureAttribute__ctor_System_Type_System_String_" data-uid="Utils.Expressions.ExpressionCallSignatureAttribute.#ctor(System.Type,System.String)">
   ExpressionCallSignatureAttribute(Type, string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L692"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L1093"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates a new instance of <a class="xref" href="Utils.Expressions.ExpressionCallSignatureAttribute.html">ExpressionCallSignatureAttribute</a> for calls
@@ -396,7 +396,7 @@ to <code class="paramref">type</code>.<code class="paramref">functionName</code>
 
   <h3 id="Utils_Expressions_ExpressionCallSignatureAttribute__ctor_System_Type___System_String_" data-uid="Utils.Expressions.ExpressionCallSignatureAttribute.#ctor(System.Type[],System.String)">
   ExpressionCallSignatureAttribute(Type[], string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L705"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L1106"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates a new instance of <a class="xref" href="Utils.Expressions.ExpressionCallSignatureAttribute.html">ExpressionCallSignatureAttribute</a> for calls
@@ -437,7 +437,7 @@ to <code class="paramref">types</code>.<code class="paramref">functionName</code
 
   <h3 id="Utils_Expressions_ExpressionCallSignatureAttribute_FunctionName" data-uid="Utils.Expressions.ExpressionCallSignatureAttribute.FunctionName">
   FunctionName
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L684"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L1085"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the method name that should match the call.</p>
@@ -469,7 +469,7 @@ to <code class="paramref">types</code>.<code class="paramref">functionName</code
 
   <h3 id="Utils_Expressions_ExpressionCallSignatureAttribute_Types" data-uid="Utils.Expressions.ExpressionCallSignatureAttribute.Types">
   Types
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L679"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L1080"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the declaring type(s) that should match the method call.</p>
@@ -493,6 +493,11 @@ to <code class="paramref">types</code>.<code class="paramref">functionName</code
 
 
 
+  <h4 class="section" id="Utils_Expressions_ExpressionCallSignatureAttribute_Types_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>This array reference is never reassigned after construction, but — like any get-only array
+property — its elements are not protected from external mutation. Nothing in this codebase
+mutates it after construction.</p>
+</div>
 
 
 
@@ -505,7 +510,7 @@ to <code class="paramref">types</code>.<code class="paramref">functionName</code
 
   <h3 id="Utils_Expressions_ExpressionCallSignatureAttribute_Match_System_Linq_Expressions_Expression_" data-uid="Utils.Expressions.ExpressionCallSignatureAttribute.Match(System.Linq.Expressions.Expression)">
   Match(Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L713"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L1114"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Indicates whether the given expression matches the requirements of this attribute.
@@ -537,6 +542,12 @@ The default implementation checks <a class="xref" href="Utils.Expressions.Expres
 
 
 
+  <h4 class="section" id="Utils_Expressions_ExpressionCallSignatureAttribute_Match_System_Linq_Expressions_Expression__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>This base implementation never matches a node type other than <a class="xref" href="Utils.Expressions.ExpressionSignatureAttribute.html#Utils_Expressions_ExpressionSignatureAttribute_ExpressionType">ExpressionType</a> (or
+every type, for the wildcard sentinel <code>-1</code>) — see the class-level
+<a class="xref" href="Utils.Expressions.ExpressionSignatureAttribute.html">ExpressionSignatureAttribute</a> remarks for how a subclass overriding this to widen
+that set is handled by <a class="xref" href="Utils.Expressions.ExpressionTransformer.html">ExpressionTransformer</a>.</p>
+</div>
 
 
 
@@ -545,7 +556,7 @@ The default implementation checks <a class="xref" href="Utils.Expressions.Expres
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L674" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L1070" class="edit-link">Edit this page</a>
         </div>
 
 

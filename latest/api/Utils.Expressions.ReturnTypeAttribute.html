@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Expressions_ReturnTypeAttribute" data-uid="Utils.Expressions.ReturnTypeAttribute" class="text-break">
-Class ReturnTypeAttribute  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L770"><i class="bi bi-code-slash"></i></a>
+Class ReturnTypeAttribute  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L1171"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -361,7 +361,7 @@ public class ReturnTypeAttribute : ExpressionSignatureAttribute</code></pre>
 
   <h3 id="Utils_Expressions_ReturnTypeAttribute__ctor_System_Type_" data-uid="Utils.Expressions.ReturnTypeAttribute.#ctor(System.Type)">
   ReturnTypeAttribute(Type)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L782"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L1183"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates an attribute requiring the expression type to be assignable to <code class="paramref">returnType</code>.</p>
@@ -398,7 +398,7 @@ public class ReturnTypeAttribute : ExpressionSignatureAttribute</code></pre>
 
   <h3 id="Utils_Expressions_ReturnTypeAttribute_ReturnType" data-uid="Utils.Expressions.ReturnTypeAttribute.ReturnType">
   ReturnType
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L776"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L1177"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the required return type (or interface) for the matched expression.</p>
@@ -434,7 +434,7 @@ public class ReturnTypeAttribute : ExpressionSignatureAttribute</code></pre>
 
   <h3 id="Utils_Expressions_ReturnTypeAttribute_Match_System_Linq_Expressions_Expression_" data-uid="Utils.Expressions.ReturnTypeAttribute.Match(System.Linq.Expressions.Expression)">
   Match(Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L789"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L1190"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Indicates whether the given expression matches the requirements of this attribute.
@@ -466,6 +466,12 @@ The default implementation checks <a class="xref" href="Utils.Expressions.Expres
 
 
 
+  <h4 class="section" id="Utils_Expressions_ReturnTypeAttribute_Match_System_Linq_Expressions_Expression__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>This base implementation never matches a node type other than <a class="xref" href="Utils.Expressions.ExpressionSignatureAttribute.html#Utils_Expressions_ExpressionSignatureAttribute_ExpressionType">ExpressionType</a> (or
+every type, for the wildcard sentinel <code>-1</code>) — see the class-level
+<a class="xref" href="Utils.Expressions.ExpressionSignatureAttribute.html">ExpressionSignatureAttribute</a> remarks for how a subclass overriding this to widen
+that set is handled by <a class="xref" href="Utils.Expressions.ExpressionTransformer.html">ExpressionTransformer</a>.</p>
+</div>
 
 
 
@@ -474,7 +480,7 @@ The default implementation checks <a class="xref" href="Utils.Expressions.Expres
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L770" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L1171" class="edit-link">Edit this page</a>
         </div>
 
 
