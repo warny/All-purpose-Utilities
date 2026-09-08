@@ -29,6 +29,38 @@ public abstract class ExpressionTransformer
     private const ExpressionType WildcardExpressionType = (ExpressionType)(-1);
 
     /// <summary>
+    /// The <see cref="ExpressionSignatureAttribute"/>-derived types shipped in this file, whose
+    /// <see cref="ExpressionSignatureAttribute.Match(Expression)"/> override is known — by manual
+    /// inspection, see the class-level remarks on <see cref="ExpressionSignatureAttribute"/> — to never
+    /// accept a node whose <see cref="Expression.NodeType"/> differs from the <see cref="ExpressionType"/>
+    /// declared to the attribute's constructor (or to accept every node type, for the wildcard sentinel).
+    /// <see cref="BuildPlan"/> and <see cref="BuildRule"/> use this to decide, respectively, whether a
+    /// method-level rule can be safely bucketed by its declared <see cref="ExpressionType"/> and whether a
+    /// parameter-level constraint's attribute instance can be safely cached and reused. A third-party
+    /// <see cref="ExpressionSignatureAttribute"/> subclass not in this set is not assumed to honor either
+    /// invariant, and is instead handled the way the pre-indexing implementation always handled every
+    /// rule: evaluated as a candidate for every node type, with a fresh attribute instance re-fetched on
+    /// every parameter check.
+    /// </summary>
+    private static readonly HashSet<Type> _knownSignatureAttributeTypes =
+    [
+        typeof(ExpressionSignatureAttribute),
+        typeof(ExpressionCallSignatureAttribute),
+        typeof(ConstantNumericAttribute),
+        typeof(ReturnTypeAttribute),
+    ];
+
+    /// <summary>
+    /// Whether <paramref name="attributeType"/> is one of the <see cref="ExpressionSignatureAttribute"/>
+    /// implementations shipped in this file (see <see cref="_knownSignatureAttributeTypes"/>), and
+    /// therefore safe to bucket by declared <see cref="ExpressionType"/> and to cache/reuse as a single
+    /// instance.
+    /// </summary>
+    /// <param name="attributeType">The runtime type of an <see cref="ExpressionSignatureAttribute"/> instance.</param>
+    /// <returns><see langword="true"/> if known-safe; otherwise <see langword="false"/>.</returns>
+    private static bool IsKnownSignatureAttributeType(Type attributeType) => _knownSignatureAttributeTypes.Contains(attributeType);
+
+    /// <summary>
     /// Every value of <see cref="System.Linq.Expressions.ExpressionType"/>, used to eagerly build one
     /// candidate bucket per node type when a transformer's <see cref="TransformPlan"/> is constructed.
     /// </summary>
@@ -37,14 +69,19 @@ public abstract class ExpressionTransformer
     /// <summary>
     /// Precomputed, immutable metadata for a single parameter of a transform rule method: its declared
     /// type and (if present) its own <see cref="ExpressionSignatureAttribute"/>-derived constraint.
-    /// Replaces repeated <c>ParameterInfo.GetCustomAttributes&lt;T&gt;()</c> calls on every dispatch
-    /// with a one-time lookup performed while building the owning <see cref="TransformPlan"/>. Safe to
-    /// reuse the same attribute instance across every dispatch because every
-    /// <see cref="ExpressionSignatureAttribute"/>-derived attribute defined in this codebase
+    /// Replaces repeated <c>ParameterInfo.GetCustomAttributes&lt;T&gt;()</c> calls on every dispatch with
+    /// a one-time lookup performed while building the owning <see cref="TransformPlan"/> — but only for
+    /// the four <see cref="ExpressionSignatureAttribute"/>-derived attribute types shipped in this file
     /// (<see cref="ExpressionSignatureAttribute"/> itself, <see cref="ExpressionCallSignatureAttribute"/>,
-    /// <see cref="ConstantNumericAttribute"/>, <see cref="ReturnTypeAttribute"/>) is immutable: its
-    /// fields are set once in its constructor and never reassigned, so <c>Match</c> depends only on
-    /// those fields and the expression being tested — never on external or mutable state.
+    /// <see cref="ConstantNumericAttribute"/>, <see cref="ReturnTypeAttribute"/>), which are known to be
+    /// safe to instantiate once and reuse across every dispatch (their fields are set once in their
+    /// constructor and never reassigned, so <c>Match</c> depends only on those fields and the expression
+    /// being tested). A parameter carrying a custom, third-party <see cref="ExpressionSignatureAttribute"/>
+    /// subclass cannot be assumed stateless this way — a consumer's <c>Match</c> override could legally
+    /// depend on mutable instance state — so its instance is deliberately <em>not</em> cached here;
+    /// <see cref="UncachedSignatureParameter"/> lets <see cref="CheckParameter"/> keep re-fetching (and
+    /// therefore re-constructing) a fresh attribute instance on every check, exactly as the pre-indexing
+    /// implementation always did for every parameter attribute.
     /// </summary>
     private readonly struct TransformParameter
     {
@@ -52,18 +89,35 @@ public abstract class ExpressionTransformer
         public Type ParameterType { get; }
 
         /// <summary>
-        /// The parameter's own <see cref="ExpressionSignatureAttribute"/>-derived constraint, if any;
-        /// <see langword="null"/> when the parameter carries no such attribute.
+        /// The parameter's own <see cref="ExpressionSignatureAttribute"/>-derived constraint, cached once
+        /// because its runtime type is one of the four shipped in this file; <see langword="null"/> when
+        /// the parameter carries no such attribute, or when it carries one whose type is not known to be
+        /// safe to cache (see <see cref="UncachedSignatureParameter"/>).
         /// </summary>
         public ExpressionSignatureAttribute? Signature { get; }
 
+        /// <summary>
+        /// Set instead of <see cref="Signature"/> when the parameter carries an
+        /// <see cref="ExpressionSignatureAttribute"/>-derived attribute whose runtime type is not one of
+        /// the four shipped in this file: <see cref="CheckParameter"/> re-reads this
+        /// <see cref="System.Reflection.ParameterInfo"/>'s attribute on every check instead of reusing a
+        /// cached instance, since a custom subclass could be stateful. <see langword="null"/> whenever
+        /// <see cref="Signature"/> is set, or when the parameter carries no attribute at all.
+        /// </summary>
+        public ParameterInfo? UncachedSignatureParameter { get; }
+
         /// <summary>Initializes a new <see cref="TransformParameter"/>.</summary>
         /// <param name="parameterType">The parameter's declared CLR type.</param>
-        /// <param name="signature">The parameter's own signature constraint, if any.</param>
-        public TransformParameter(Type parameterType, ExpressionSignatureAttribute? signature)
+        /// <param name="signature">The parameter's own signature constraint, if its type is known to be safe to cache.</param>
+        /// <param name="uncachedSignatureParameter">
+        /// The parameter's <see cref="System.Reflection.ParameterInfo"/>, set only when it carries a
+        /// signature constraint whose type is not known to be safe to cache.
+        /// </param>
+        public TransformParameter(Type parameterType, ExpressionSignatureAttribute? signature, ParameterInfo? uncachedSignatureParameter)
         {
             ParameterType = parameterType;
             Signature = signature;
+            UncachedSignatureParameter = uncachedSignatureParameter;
         }
     }
 
@@ -135,10 +189,13 @@ public abstract class ExpressionTransformer
     /// <summary>
     /// Precomputed dispatch plan for a concrete transformer type: for every possible
     /// <see cref="ExpressionType"/>, the ordered list of candidate rules that could apply to a node of
-    /// that type. A rule appears in a bucket either because it declares that exact
-    /// <see cref="ExpressionType"/> or because it is a wildcard rule
-    /// (<see cref="WildcardExpressionType"/>) — wildcard rules therefore appear in every bucket, since a
-    /// rule matching "any node type" must remain a candidate no matter which node is being transformed.
+    /// that type. A rule appears in exactly one bucket — the one matching its declared
+    /// <see cref="ExpressionType"/> — only when its attribute's runtime type is known-safe (see
+    /// <see cref="IsKnownSignatureAttributeType"/>); it appears in every bucket when it is a wildcard rule
+    /// (<see cref="WildcardExpressionType"/>) or when its attribute's runtime type is not known-safe (a
+    /// custom/third-party <see cref="ExpressionSignatureAttribute"/> subclass could legally override
+    /// <c>Match</c> to accept other node types than the one declared, so it is conservatively kept a
+    /// candidate everywhere, exactly as the pre-indexing linear scan evaluated every rule for every node).
     /// Within a bucket, rules keep the exact relative order they were declared in (the order
     /// <see cref="Type.GetMethods(BindingFlags)"/> returned), because that order is an implicit part of
     /// existing transformer behavior: a rule returning <see langword="null"/> defers to the next one, so
@@ -198,8 +255,13 @@ public abstract class ExpressionTransformer
     /// <summary>
     /// Scans <paramref name="transformerType"/> for <see cref="ExpressionSignatureAttribute"/>-annotated
     /// methods, precomputes a <see cref="TransformRule"/> for each, and buckets them by
-    /// <see cref="ExpressionType"/> (with wildcard rules included in every bucket) while preserving
-    /// their original relative order.
+    /// <see cref="ExpressionType"/> while preserving their original relative order. A rule is bucketed
+    /// solely by its declared <see cref="ExpressionSignatureAttribute.ExpressionType"/> only when that
+    /// attribute's runtime type is known-safe (see <see cref="IsKnownSignatureAttributeType"/>) — i.e.
+    /// its <c>Match</c> override is known to never accept a node type other than the declared one.
+    /// A rule using the wildcard sentinel, <em>or</em> a custom/third-party attribute type we cannot make
+    /// that guarantee about, is conservatively added to every bucket, exactly as the pre-indexing linear
+    /// scan evaluated every such rule against every node.
     /// </summary>
     /// <param name="transformerType">The concrete transformer type to scan.</param>
     /// <returns>The resulting <see cref="TransformPlan"/>.</returns>
@@ -212,19 +274,40 @@ public abstract class ExpressionTransformer
             .Select(ma => BuildRule(ma.Method, ma.Attr!))
             .ToList();
 
-        var rulesByNodeType = new Dictionary<ExpressionType, TransformRule[]>();
+        var rulesByNodeType = new Dictionary<ExpressionType, List<TransformRule>>();
         foreach (ExpressionType nodeType in _allExpressionTypes)
         {
-            TransformRule[] candidates = rules
-                .Where(r => r.Signature.ExpressionType == WildcardExpressionType || r.Signature.ExpressionType == nodeType)
-                .ToArray();
-            if (candidates.Length > 0)
+            rulesByNodeType[nodeType] = new List<TransformRule>();
+        }
+
+        foreach (TransformRule rule in rules)
+        {
+            bool isUnrestrictedCandidate = rule.Signature.ExpressionType == WildcardExpressionType
+                || !IsKnownSignatureAttributeType(rule.Signature.GetType());
+
+            if (isUnrestrictedCandidate)
             {
-                rulesByNodeType[nodeType] = candidates;
+                foreach (List<TransformRule> bucket in rulesByNodeType.Values)
+                {
+                    bucket.Add(rule);
+                }
+            }
+            else
+            {
+                rulesByNodeType[rule.Signature.ExpressionType].Add(rule);
             }
         }
 
-        return new TransformPlan(rulesByNodeType);
+        var result = new Dictionary<ExpressionType, TransformRule[]>();
+        foreach (KeyValuePair<ExpressionType, List<TransformRule>> bucket in rulesByNodeType)
+        {
+            if (bucket.Value.Count > 0)
+            {
+                result[bucket.Key] = bucket.Value.ToArray();
+            }
+        }
+
+        return new TransformPlan(result);
     }
 
     /// <summary>
@@ -244,7 +327,14 @@ public abstract class ExpressionTransformer
             ExpressionSignatureAttribute? paramSignature = parameterInfos[i]
                 .GetCustomAttributes<ExpressionSignatureAttribute>()
                 .FirstOrDefault();
-            parameters[i] = new TransformParameter(parameterInfos[i].ParameterType, paramSignature);
+
+            // No attribute, or a known-safe one: cache the instance (or the absence of one).
+            // A custom/third-party attribute type: don't cache it (it could be stateful); instead
+            // keep the ParameterInfo so CheckParameter re-fetches a fresh instance on every check,
+            // exactly like the pre-indexing implementation always did for every parameter attribute.
+            parameters[i] = paramSignature is null || IsKnownSignatureAttributeType(paramSignature.GetType())
+                ? new TransformParameter(parameterInfos[i].ParameterType, paramSignature, null)
+                : new TransformParameter(parameterInfos[i].ParameterType, null, parameterInfos[i]);
         }
 
         InvocationKind kind = parameters.Length switch
@@ -829,8 +919,24 @@ public abstract class ExpressionTransformer
         if (!parameter.ParameterType.IsAssignableFrom(e.GetType()))
             return false;
 
-        // If the parameter has its own ExpressionSignatureAttribute, ensure it matches
-        return parameter.Signature is null || parameter.Signature.Match(e);
+        // If the parameter has its own known-safe ExpressionSignatureAttribute, ensure it matches
+        // using the cached instance.
+        if (parameter.Signature is not null)
+            return parameter.Signature.Match(e);
+
+        // A custom/third-party attribute type: re-fetch (and therefore re-construct) a fresh instance
+        // on every check, exactly like the pre-indexing implementation always did, since such an
+        // attribute could legally be stateful (see TransformParameter.UncachedSignatureParameter).
+        if (parameter.UncachedSignatureParameter is not null)
+        {
+            ExpressionSignatureAttribute? signature = parameter.UncachedSignatureParameter
+                .GetCustomAttributes<ExpressionSignatureAttribute>()
+                .FirstOrDefault();
+            return signature is null || signature.Match(e);
+        }
+
+        // No signature attribute at all.
+        return true;
     }
 }
 
@@ -897,6 +1003,11 @@ public class ExpressionCallSignatureAttribute : ExpressionSignatureAttribute
     /// <summary>
     /// Gets the declaring type(s) that should match the method call.
     /// </summary>
+    /// <remarks>
+    /// This array reference is never reassigned after construction, but — like any get-only array
+    /// property — its elements are not protected from external mutation. Nothing in this codebase
+    /// mutates it after construction.
+    /// </remarks>
     public Type[] Types { get; }
 
     /// <summary>

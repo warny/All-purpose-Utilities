@@ -914,4 +914,137 @@ public class ExpressionTransformerTests
             "The Abs-specific rule shares the Call bucket with the Sqrt rule but must be excluded by Match's function-name check.");
         Assert.AreEqual(-1.0, ((ConstantExpression)result).Value);
     }
+
+    // ---------------------------------------------------------------------------------------------
+    // Coverage for the compatibility fix requested during PR #573 review: ExpressionSignatureAttribute
+    // is public with a virtual Match, so a third-party subclass could legally (1) override Match to
+    // accept a node type other than the one declared to the constructor, or (2) be stateful. Both must
+    // keep working exactly as they did before the ExpressionType-bucketing/parameter-caching indexing
+    // was introduced: (1) requires the rule to remain a dispatch candidate for every node type rather
+    // than only the declared one, and (2) requires CheckParameter to keep re-fetching (and therefore
+    // re-constructing) a fresh attribute instance on every check instead of reusing a single cached one.
+    // ---------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// A custom method-level signature attribute whose <see cref="Match"/> override accepts
+    /// <see cref="ExpressionType.Subtract"/> nodes even though it is declared (constructed) with
+    /// <see cref="ExpressionType.Add"/>. Not one of the attribute types shipped in
+    /// <c>ExpressionTranformer.cs</c>, so the transformer cannot assume it only matches its declared type.
+    /// </summary>
+    private sealed class WidensMatchBeyondDeclaredTypeAttribute : ExpressionSignatureAttribute
+    {
+        public WidensMatchBeyondDeclaredTypeAttribute() : base(ExpressionType.Add) { }
+
+        public override bool Match(Expression e) => e.NodeType is ExpressionType.Add or ExpressionType.Subtract;
+    }
+
+    /// <summary>
+    /// A transformer whose only rule is declared "Add" but, via a custom attribute, actually matches
+    /// both Add and Subtract nodes.
+    /// </summary>
+    private sealed class CustomWideningAttributeTransformer : ExpressionTransformer
+    {
+        /// <summary>The node types <see cref="OnAddOrSubtract"/> was invoked for, in invocation order.</summary>
+        public List<ExpressionType> InvokedNodeTypes { get; } = new();
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Declared "Add" but, via <see cref="WidensMatchBeyondDeclaredTypeAttribute"/>, also matches Subtract.</summary>
+        [WidensMatchBeyondDeclaredType]
+        private Expression OnAddOrSubtract(BinaryExpression e, Expression left, Expression right)
+        {
+            InvokedNodeTypes.Add(e.NodeType);
+            return Expression.Constant(e.NodeType == ExpressionType.Add ? 1.0 : 2.0);
+        }
+    }
+
+    /// <summary>
+    /// A rule whose custom attribute's <see cref="ExpressionSignatureAttribute.Match(Expression)"/>
+    /// override accepts a node type other than the one declared to the attribute's constructor must
+    /// still be considered a dispatch candidate for that other node type. Bucketing solely by the
+    /// declared <see cref="ExpressionSignatureAttribute.ExpressionType"/> would otherwise silently drop
+    /// it for the Subtract node before <c>Match</c> even runs — a regression this test guards against.
+    /// </summary>
+    [TestMethod]
+    public void Transform_CustomAttributeWideningMatchBeyondDeclaredType_StillConsideredForTheWidenedType()
+    {
+        var transformer = new CustomWideningAttributeTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+
+        Expression addResult = transformer.ExposeTransform(Expression.Add(x, Expression.Constant(1.0)));
+        Expression subtractResult = transformer.ExposeTransform(Expression.Subtract(x, Expression.Constant(1.0)));
+
+        CollectionAssert.AreEqual(new[] { ExpressionType.Add, ExpressionType.Subtract }, transformer.InvokedNodeTypes,
+            "The rule must run for both the declared type (Add) and the type Match widens into (Subtract).");
+        Assert.AreEqual(1.0, ((ConstantExpression)addResult).Value);
+        Assert.AreEqual(2.0, ((ConstantExpression)subtractResult).Value);
+    }
+
+    /// <summary>
+    /// A custom parameter-level signature attribute that only matches the first time it is asked,
+    /// via mutable instance state. Not one of the attribute types shipped in
+    /// <c>ExpressionTranformer.cs</c>, so the transformer cannot assume it is safe to cache a single
+    /// instance across every check.
+    /// </summary>
+    private sealed class MatchesOnceAttribute : ExpressionSignatureAttribute
+    {
+        private bool _used;
+
+        public MatchesOnceAttribute() : base(WildcardExpressionTypeForTests) { }
+
+        public override bool Match(Expression e)
+        {
+            if (_used) return false;
+            _used = true;
+            return true;
+        }
+    }
+
+    /// <summary>The wildcard sentinel, re-exposed for <see cref="MatchesOnceAttribute"/>'s base constructor call.</summary>
+    private const ExpressionType WildcardExpressionTypeForTests = (ExpressionType)(-1);
+
+    /// <summary>
+    /// A transformer with two Add rules, each constraining its right operand with a fresh
+    /// <see cref="MatchesOnceAttribute"/> instance (one per parameter declaration): both must match,
+    /// because <see cref="MatchesOnceAttribute"/> is stateful per-instance and each attribute usage
+    /// is its own instance — the point under test is that the transformer doesn't introduce cross-check
+    /// state sharing of its own by caching and reusing one materialized instance across dispatches.
+    /// </summary>
+    private sealed class StatefulParameterAttributeTransformer : ExpressionTransformer
+    {
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Constrains its constant operand with a stateful, match-once custom attribute.</summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        private Expression AddWithOnceConstrainedConstant(BinaryExpression e, Expression left, [MatchesOnce] ConstantExpression right)
+            => left;
+    }
+
+    /// <summary>
+    /// A parameter-level custom attribute whose <see cref="ExpressionSignatureAttribute.Match(Expression)"/>
+    /// is stateful must be re-fetched (and therefore re-constructed) fresh for every check, exactly like
+    /// the pre-indexing implementation always did for every parameter attribute. If the transformer
+    /// instead cached and reused a single materialized instance across dispatches (as it safely does for
+    /// the four attribute types shipped in <c>ExpressionTranformer.cs</c>, which are known to be
+    /// stateless), only the very first Add node encountered by this transformer instance would ever
+    /// match; every subsequent one would wrongly fall through to <see cref="FinalizeExpression"/> and
+    /// throw, because the cached instance's <c>_used</c> flag would already be set.
+    /// </summary>
+    [TestMethod]
+    public void Transform_CustomStatefulParameterAttribute_MatchesAgainOnASecondIndependentDispatch()
+    {
+        var transformer = new StatefulParameterAttributeTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+
+        // Two independent Add nodes, dispatched one after another on the same transformer instance.
+        Expression first = transformer.ExposeTransform(Expression.Add(x, Expression.Constant(1.0)));
+        Expression second = transformer.ExposeTransform(Expression.Add(x, Expression.Constant(2.0)));
+
+        Assert.AreSame(x, first, "The first Add node must match: a fresh MatchesOnceAttribute instance always matches once.");
+        Assert.AreSame(x, second,
+            "The second, independent Add node must also match: reusing a single cached attribute instance across " +
+            "dispatches would incorrectly make it look 'already used' by the first check.");
+    }
 }
