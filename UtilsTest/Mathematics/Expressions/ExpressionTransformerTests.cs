@@ -1223,4 +1223,47 @@ public class ExpressionTransformerTests
             "constraint, even though the override itself carries no attribute at all.");
         Assert.AreEqual(ExpressionType.Add, nonMatchingResult.NodeType);
     }
+
+    /// <summary>
+    /// A custom <see cref="Expression"/> subclass whose <c>NodeType</c> returns a value outside the real
+    /// <see cref="ExpressionType"/> enum values. Legal: <see cref="Expression"/> is publicly derivable
+    /// (its constructor is <see langword="protected"/>) and its <c>NodeType</c> property is
+    /// <see langword="virtual"/>, so nothing in the public API stops this.
+    /// </summary>
+    private sealed class OutOfRangeNodeTypeExpression : Expression
+    {
+        /// <inheritdoc />
+        public override ExpressionType NodeType => (ExpressionType)123456;
+
+        /// <inheritdoc />
+        public override Type Type => typeof(double);
+    }
+
+    /// <summary>
+    /// The dispatch-plan buckets only cover the real <see cref="ExpressionType"/> values known at build
+    /// time (<see cref="Enum.GetValues{TEnum}"/>); a node whose <c>NodeType</c> falls outside all of them
+    /// (see <see cref="OutOfRangeNodeTypeExpression"/>) must still be offered every rule as candidates —
+    /// both a rule declared for that exact out-of-range value and a wildcard rule — exactly as the
+    /// pre-indexing linear scan evaluated every rule's <c>Match</c> against every node regardless of its
+    /// <c>NodeType</c>. Reuses <see cref="OutOfRangeExpressionTypeRuleTransformer"/> (whose rule is
+    /// declared for the exact same out-of-range value used here) and <see cref="WildcardRuleTransformer"/>.
+    /// </summary>
+    [TestMethod]
+    public void Transform_ExpressionWithOutOfRangeNodeType_StillDispatchesMatchingAndWildcardRules()
+    {
+        var customNode = new OutOfRangeNodeTypeExpression();
+
+        var specificTransformer = new OutOfRangeExpressionTypeRuleTransformer();
+        specificTransformer.ExposeTransform(customNode);
+        Assert.IsTrue(specificTransformer.RuleWasInvoked,
+            "A rule declared for the exact out-of-range ExpressionType a custom Expression subclass's " +
+            "NodeType returns must still be invoked for it: no bucket was ever pre-populated for that " +
+            "value, so the dispatcher must fall back to the complete, unfiltered rule list.");
+
+        var wildcardTransformer = new WildcardRuleTransformer();
+        wildcardTransformer.ExposeTransform(customNode);
+        CollectionAssert.Contains(wildcardTransformer.MatchedNodeTypes, customNode.NodeType,
+            "A wildcard rule must remain a candidate for a node type outside the real ExpressionType enum " +
+            "values too, not just for the ~80 pre-populated buckets.");
+    }
 }

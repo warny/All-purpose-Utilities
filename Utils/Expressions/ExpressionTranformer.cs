@@ -199,18 +199,35 @@ public abstract class ExpressionTransformer
     /// Within a bucket, rules keep the exact relative order they were declared in (the order
     /// <see cref="Type.GetMethods(BindingFlags)"/> returned), because that order is an implicit part of
     /// existing transformer behavior: a rule returning <see langword="null"/> defers to the next one, so
-    /// reordering candidates would change which rule "wins". Built once per concrete transformer type
-    /// and shared by every instance; immutable once constructed, so it is safe to read concurrently
-    /// without locking.
+    /// reordering candidates would change which rule "wins". A bucket exists for every real
+    /// <see cref="ExpressionType"/> value, even an empty one; a node whose <c>NodeType</c> is not one of
+    /// those real values at all (nothing stops a third-party <see cref="Expression"/> subclass from
+    /// overriding the <see langword="virtual"/> <c>NodeType</c> property with an arbitrary value) instead
+    /// gets every rule, unfiltered — see <see cref="TransformPlan.GetCandidates"/>. Built once per
+    /// concrete transformer type and shared by every instance; immutable once constructed, so it is safe
+    /// to read concurrently without locking.
     /// </summary>
     private sealed class TransformPlan
     {
         private readonly Dictionary<ExpressionType, TransformRule[]> _rulesByNodeType;
+        private readonly TransformRule[] _allRules;
 
         /// <summary>Initializes a new <see cref="TransformPlan"/> from its precomputed buckets.</summary>
-        public TransformPlan(Dictionary<ExpressionType, TransformRule[]> rulesByNodeType)
+        /// <param name="rulesByNodeType">
+        /// One entry for every real <see cref="ExpressionType"/> value (see <see cref="_allExpressionTypes"/>),
+        /// even when its candidate array is empty — <see cref="GetCandidates"/> relies on a successful
+        /// dictionary lookup, not just a non-empty result, to distinguish "a real node type with no
+        /// candidate rules" from "not a real node type at all" (see <paramref name="allRules"/>).
+        /// </param>
+        /// <param name="allRules">
+        /// Every rule, in original declaration order, unfiltered by node type — the fallback
+        /// <see cref="GetCandidates"/> returns for an <see cref="ExpressionType"/> outside
+        /// <paramref name="rulesByNodeType"/>'s keys.
+        /// </param>
+        public TransformPlan(Dictionary<ExpressionType, TransformRule[]> rulesByNodeType, TransformRule[] allRules)
         {
             _rulesByNodeType = rulesByNodeType;
+            _allRules = allRules;
         }
 
         /// <summary>
@@ -220,11 +237,22 @@ public abstract class ExpressionTransformer
         /// a specific method name) apply constraints this index does not encode.
         /// </summary>
         /// <param name="nodeType">The <see cref="ExpressionType"/> of the node being transformed.</param>
-        /// <returns>The candidate rules for that node type, or an empty array if none exist.</returns>
+        /// <returns>
+        /// The candidate rules for that node type when it is one of the real <see cref="ExpressionType"/>
+        /// values (an empty array if none apply); otherwise every rule, unfiltered. <see cref="Expression"/>
+        /// is publicly derivable and its <c>NodeType</c> property is <see langword="virtual"/>, so nothing
+        /// stops a third-party <see cref="Expression"/> subclass from returning a value outside
+        /// <see cref="Enum.GetValues{TEnum}"/>'s real <see cref="ExpressionType"/> values (this includes
+        /// values a future .NET version might add and this library doesn't know about yet). The
+        /// pre-indexing linear scan would still evaluate every rule's <c>Match</c> against such a node —
+        /// including wildcard rules, which this index would otherwise wrongly starve of a bucket entirely
+        /// since one was never pre-populated for a value outside the real enum — so this falls back to
+        /// the complete, unfiltered rule list to preserve that behavior exactly.
+        /// </returns>
         public TransformRule[] GetCandidates(ExpressionType nodeType)
             => _rulesByNodeType.TryGetValue(nodeType, out TransformRule[]? candidates)
                 ? candidates
-                : Array.Empty<TransformRule>();
+                : _allRules;
     }
 
     /// <summary>
@@ -303,16 +331,18 @@ public abstract class ExpressionTransformer
             // have produced, just without ever needing to evaluate it.
         }
 
+        // Every real ExpressionType gets an entry here, even an empty one: GetCandidates relies on the
+        // dictionary lookup itself (not merely a non-empty result) to tell "a real node type with no
+        // candidate rules" (fast, correct empty result) apart from "not a real node type at all" (falls
+        // back to the unfiltered allRules array below). Skipping empty buckets here would make every
+        // real-but-ruleless ExpressionType wrongly take that fallback too.
         var result = new Dictionary<ExpressionType, TransformRule[]>();
         foreach (KeyValuePair<ExpressionType, List<TransformRule>> bucket in rulesByNodeType)
         {
-            if (bucket.Value.Count > 0)
-            {
-                result[bucket.Key] = bucket.Value.ToArray();
-            }
+            result[bucket.Key] = bucket.Value.ToArray();
         }
 
-        return new TransformPlan(result);
+        return new TransformPlan(result, rules.ToArray());
     }
 
     /// <summary>
