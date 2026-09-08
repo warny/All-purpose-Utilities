@@ -1359,7 +1359,7 @@ public class ExpressionTransformerTests
     public void Transform_ExpressionArrayRuleThrows_WrappedInTargetInvocationException()
     {
         var transformer = new ExpressionArrayThrowsTransformer();
-        MethodInfo sqrt = typeof(Math).GetMethod(nameof(Math.Sqrt), new[] { typeof(double) })!;
+        MethodInfo sqrt = typeof(Math).GetMethod(nameof(Math.Sqrt), [typeof(double)])!;
         MethodCallExpression call = Expression.Call(sqrt, Expression.Constant(4.0));
 
         var thrown = Assert.ThrowsExactly<TargetInvocationException>(() => transformer.ExposeTransform(call));
@@ -1403,6 +1403,44 @@ public class ExpressionTransformerTests
 
         Assert.IsInstanceOfType<ArgumentException>(thrown.InnerException);
         Assert.AreEqual("argument rule failure", thrown.InnerException!.Message);
+    }
+
+    /// <summary>A transformer whose rule throws <see cref="OutOfMemoryException"/> rather than a generic exception.</summary>
+    private sealed class OutOfMemoryExceptionRuleTransformer : ExpressionTransformer
+    {
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Unconditionally throws <see cref="OutOfMemoryException"/>.</summary>
+        [ExpressionSignature(ExpressionType.Add)]
+        private Expression Rule(BinaryExpression e, Expression left, Expression right)
+            => throw new OutOfMemoryException("oom rule failure");
+
+        /// <inheritdoc cref="ExpressionTransformer.FinalizeExpression"/>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
+            => CopyExpression(e, parameters);
+    }
+
+    /// <summary>
+    /// A rule throwing <see cref="OutOfMemoryException"/> must be treated exactly like any other rule
+    /// exception and wrapped in <see cref="TargetInvocationException"/> — <see cref="MethodBase.Invoke(object, object[])"/>
+    /// does not special-case it, so a fast-path implementation that excludes
+    /// <see cref="OutOfMemoryException"/> from its wrapping (e.g. a <c>catch (Exception ex) when (ex is not
+    /// OutOfMemoryException)</c> filter, reasoning that genuine out-of-memory conditions shouldn't be
+    /// masked) would diverge from that historical contract for this reproducible, non-memory-pressure case
+    /// (a rule deliberately constructing and throwing the exception).
+    /// </summary>
+    [TestMethod]
+    public void Transform_RuleThrowsOutOfMemoryException_WrappedInTargetInvocationException()
+    {
+        var transformer = new OutOfMemoryExceptionRuleTransformer();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        BinaryExpression add = Expression.Add(x, Expression.Constant(1.0));
+
+        var thrown = Assert.ThrowsExactly<TargetInvocationException>(() => transformer.ExposeTransform(add));
+
+        Assert.IsInstanceOfType<OutOfMemoryException>(thrown.InnerException);
+        Assert.AreEqual("oom rule failure", thrown.InnerException!.Message);
     }
 
     /// <summary>A transformer whose rule itself throws an already-constructed <see cref="TargetInvocationException"/>.</summary>
@@ -1597,7 +1635,7 @@ public class ExpressionTransformerTests
     public void Transform_ExpressionArrayRuleReturningNull_IsConsideredApplied_TransformReturnsNull()
     {
         var transformer = new ExpressionArrayReturnsNullTransformer();
-        MethodInfo sqrt = typeof(Math).GetMethod(nameof(Math.Sqrt), new[] { typeof(double) })!;
+        MethodInfo sqrt = typeof(Math).GetMethod(nameof(Math.Sqrt), [typeof(double)])!;
         MethodCallExpression call = Expression.Call(sqrt, Expression.Constant(4.0));
 
         Expression result = transformer.ExposeTransform(call);

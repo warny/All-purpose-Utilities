@@ -884,7 +884,7 @@ public abstract class ExpressionTransformer
     /// <summary>
     /// Invokes a <see cref="InvocationKind.Single"/>-shaped rule: <paramref name="node"/> is the sole
     /// argument. Uses <see cref="TransformRule.FastInvoker"/> when available (no invocation array is
-    /// allocated, unlike the historical <c>new[] { node }</c>); otherwise falls back to
+    /// allocated, unlike the <c>[node]</c> array literal the fallback below still builds); otherwise falls back to
     /// <see cref="MethodBase.Invoke(object, object[])"/> exactly as before this optimization.
     /// </summary>
     /// <param name="rule">The rule to invoke.</param>
@@ -898,24 +898,26 @@ public abstract class ExpressionTransformer
             {
                 return invoker.Invoke(this, node);
             }
-            catch (Exception ex) when (ex is not OutOfMemoryException)
+            catch (Exception ex)
             {
                 // Reproduces MethodBase.Invoke's contract: any exception surfacing from the rule body
                 // (guaranteed here, since TryCreateFastInvoker already validated the argument shape) is
                 // wrapped in a NEW TargetInvocationException, even when it is itself already one (see the
-                // Transform_RuleThrowsTargetInvocationException_IsDoubleWrapped regression test).
+                // Transform_RuleThrowsTargetInvocationException_IsDoubleWrapped regression test) or an
+                // OutOfMemoryException (see Transform_RuleThrowsOutOfMemoryException_WrappedInTargetInvocationException
+                // — MethodBase.Invoke does not treat it specially either).
                 throw new TargetInvocationException(ex);
             }
         }
 
-        return rule.Method.Invoke(this, new[] { node });
+        return rule.Method.Invoke(this, [node]);
     }
 
     /// <summary>
     /// Invokes an <see cref="InvocationKind.ExpressionArray"/>-shaped rule: <paramref name="expression"/>
     /// and <paramref name="expressionParameters"/> are its two arguments. Uses
     /// <see cref="TransformRule.FastInvoker"/> when available (no invocation array is allocated, unlike
-    /// the historical <c>new object[] { expression, expressionParameters }</c>); otherwise falls back to
+    /// the <c>[expression, expressionParameters]</c> array literal the fallback below still builds); otherwise falls back to
     /// <see cref="MethodBase.Invoke(object, object[])"/> exactly as before this optimization.
     /// </summary>
     /// <param name="rule">The rule to invoke.</param>
@@ -930,15 +932,16 @@ public abstract class ExpressionTransformer
             {
                 return invoker.Invoke(this, expression, expressionParameters);
             }
-            catch (Exception ex) when (ex is not OutOfMemoryException)
+            catch (Exception ex)
             {
                 // See InvokeSingleRule's remarks: wraps exactly like MethodBase.Invoke, including
-                // double-wrapping a rule-thrown TargetInvocationException.
+                // double-wrapping a rule-thrown TargetInvocationException and wrapping a rule-thrown
+                // OutOfMemoryException.
                 throw new TargetInvocationException(ex);
             }
         }
 
-        return rule.Method.Invoke(this, new object[] { expression, expressionParameters });
+        return rule.Method.Invoke(this, [expression, expressionParameters]);
     }
 
     /// <summary>
@@ -969,10 +972,11 @@ public abstract class ExpressionTransformer
                     case 4: return invoker.Invoke(this, parameters[0], parameters[1], parameters[2], parameters[3]);
                 }
             }
-            catch (Exception ex) when (ex is not OutOfMemoryException)
+            catch (Exception ex)
             {
                 // See InvokeSingleRule's remarks: wraps exactly like MethodBase.Invoke, including
-                // double-wrapping a rule-thrown TargetInvocationException.
+                // double-wrapping a rule-thrown TargetInvocationException and wrapping a rule-thrown
+                // OutOfMemoryException.
                 throw new TargetInvocationException(ex);
             }
         }
