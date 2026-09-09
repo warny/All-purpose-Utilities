@@ -1,7 +1,7 @@
-@NumberToString
+@NumberToString @FR
 Feature: French number conversion
 
-Scenario Outline: From1To999Test 1
+Scenario Outline: Cardinal numbers below one thousand
     Given I use the "FR-ch" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -39,7 +39,7 @@ Examples:
     | 261 | deux cent soixante et un |
     | 262 | deux cent soixante deux |
 
-Scenario Outline: From1000To9999Test 2
+Scenario Outline: Thousands
     Given I use the "FR-ch" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -70,7 +70,7 @@ Examples:
     | 1261 | mille deux cent soixante et un |
     | 1262 | mille deux cent soixante deux |
 
-Scenario Outline: From10000To99999Test 3
+Scenario Outline: Tens of thousands
     Given I use the "FR-be" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -101,7 +101,7 @@ Examples:
     | 99261 | nonante neuf mille deux cent soixante et un |
     | 99262 | nonante neuf mille deux cent soixante deux |
 
-Scenario Outline: BiggerTest 4
+Scenario Outline: Large cardinal numbers
     Given I use the "FR-be" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"

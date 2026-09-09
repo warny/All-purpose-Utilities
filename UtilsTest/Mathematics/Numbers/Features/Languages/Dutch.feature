@@ -1,7 +1,7 @@
-@NumberToString
+@NumberToString @NL
 Feature: Dutch number conversion
 
-Scenario Outline: DecimalTest 1
+Scenario Outline: Decimal numbers
     Given I use the "NL" number converter
     When I convert the decimal number <number>
     Then the result is "<expected>"
@@ -11,7 +11,7 @@ Examples:
     | 1.5 | een komma vijf |
     | 12.34 | twaalf komma drie vier |
 
-Scenario Outline: Cardinals_Basic 2
+Scenario Outline: Basic cardinal numbers
     Given I use the "NL" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -26,7 +26,7 @@ Examples:
     | 100 | honderd |
     | 1000 | duizend |
 
-Scenario Outline: Ordinals_SuffixAndExceptions 3
+Scenario Outline: Ordinals Suffix And Exceptions
     Given I use the "NL" number converter
     When I convert the ordinal number <number>
     Then the result is "<expected>"

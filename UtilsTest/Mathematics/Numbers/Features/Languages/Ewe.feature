@@ -1,7 +1,7 @@
-@NumberToString
+@NumberToString @EW
 Feature: Ewe number conversion
 
-Scenario Outline: DecimalTest 1
+Scenario Outline: Decimal numbers
     Given I use the "EE" number converter
     When I convert the decimal number <number>
     Then the result is "<expected>"
@@ -11,7 +11,7 @@ Examples:
     | 1.5 | deka kpɔ atɔ |
     | 12.34 | ewo kple eve kpɔ eto ene |
 
-Scenario Outline: Cardinals_Basic 2
+Scenario Outline: Basic cardinal numbers
     Given I use the "EE" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -28,7 +28,7 @@ Examples:
     | 100 | kpeɖe |
     | 1000 | deka akpe |
 
-Scenario Outline: Ordinal_FirstException 3
+Scenario Outline: Ordinal First Exception
     Given I use the "EE" number converter
     When I convert the ordinal number <number>
     Then the result is "<expected>"

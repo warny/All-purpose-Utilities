@@ -1,7 +1,7 @@
-@NumberToString
+@NumberToString @HE
 Feature: Hebrew number conversion
 
-Scenario Outline: DecimalTest 1
+Scenario Outline: Decimal numbers
     Given I use the "HE" number converter
     When I convert the decimal number <number>
     Then the result is "<expected>"
@@ -11,7 +11,7 @@ Examples:
     | 1.5 | אחד נקודה חמש |
     | 12.34 | עשר שתיים נקודה שלוש ארבע |
 
-Scenario Outline: Cardinals_Basic 2
+Scenario Outline: Basic cardinal numbers
     Given I use the "HE" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -27,7 +27,7 @@ Examples:
     | 200 | מאתיים |
     | 1000 | אחד אלף |
 
-Scenario Outline: Cardinals_GenderVariants 3
+Scenario Outline: Masculine cardinal numbers
     Given I use the "HE" number converter
     And I use the variants "gender=zachar"
     When I convert the cardinal number <number>
@@ -41,7 +41,7 @@ Examples:
     | 6 | שישה |
     | 10 | עשרה |
 
-Scenario Outline: Cardinals_GenderVariants 4
+Scenario Outline: Feminine cardinal numbers
     Given I use the "HE" number converter
     And I use the variants "gender=nekeva"
     When I convert the cardinal number <number>
@@ -51,7 +51,7 @@ Examples:
     | number | expected |
     | 1 | אחת |
 
-Scenario Outline: Ordinals_Exceptions 5
+Scenario Outline: Irregular ordinal numbers
     Given I use the "HE" number converter
     When I convert the ordinal number <number>
     Then the result is "<expected>"
@@ -63,7 +63,7 @@ Examples:
     | 3 | שלישי |
     | 10 | עשירי |
 
-Scenario Outline: Ordinals_Exceptions 6
+Scenario Outline: Ordinals Exceptions
     Given I use the "HE" number converter
     And I use the variants "gender=nekeva"
     When I convert the ordinal number <number>

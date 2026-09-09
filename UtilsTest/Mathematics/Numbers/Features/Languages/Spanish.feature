@@ -23,7 +23,16 @@ Scenario Outline: Feminine cardinal numbers
 
 Examples:
     | number | expected |
+    | 1 | una |
     | 21 | veintiuna |
+    | 200 | doscientas |
+    | 300 | trescientas |
+    | 400 | cuatrocientas |
+    | 500 | quinientas |
+    | 600 | seiscientas |
+    | 700 | setecientas |
+    | 800 | ochocientas |
+    | 900 | novecientas |
     | 22 | veintidos |
     | 29 | veintinueve |
 

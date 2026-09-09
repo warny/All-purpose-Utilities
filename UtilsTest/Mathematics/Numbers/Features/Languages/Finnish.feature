@@ -1,7 +1,7 @@
-@NumberToString
+@NumberToString @FI
 Feature: Finnish number conversion
 
-Scenario Outline: Cardinals_Basic 1
+Scenario Outline: Basic cardinal numbers
     Given I use the "FI" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -23,7 +23,7 @@ Examples:
     | 200 | kaksisataa |
     | 101 | sata yksi |
 
-Scenario Outline: Cardinals_Thousands 2
+Scenario Outline: Thousands
     Given I use the "FI" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -33,7 +33,7 @@ Examples:
     | 1000 | tuhat |
     | 2000 | kaksi tuhat |
 
-Scenario Outline: Ordinals_Basic 3
+Scenario Outline: Ordinals Basic
     Given I use the "FI" number converter
     When I convert the ordinal number <number>
     Then the result is "<expected>"
@@ -50,7 +50,7 @@ Examples:
     | 100 | sadas |
     | 1000 | tuhannes |
 
-Scenario Outline: Variants_Partitiivi 4
+Scenario Outline: Variants Partitiivi
     Given I use the "FI" number converter
     And I use the variants "case=partitiivi"
     When I convert the cardinal number <number>
@@ -65,7 +65,7 @@ Examples:
     | 100 | sataa |
     | 1000 | tuhatta |
 
-Scenario Outline: Variants_Genetiivi 5
+Scenario Outline: Variants Genetiivi
     Given I use the "FI" number converter
     And I use the variants "case=genetiivi"
     When I convert the cardinal number <number>

@@ -1,7 +1,7 @@
-@NumberToString
+@NumberToString @DE
 Feature: German number conversion
 
-Scenario Outline: From1To999Test 1
+Scenario Outline: Cardinal numbers below one thousand
     Given I use the "de-DE" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -33,7 +33,7 @@ Examples:
     | 261 | zweihunderteinundsechzig |
     | 262 | zweihundertzweiundsechzig |
 
-Scenario Outline: From1000To9999Test 2
+Scenario Outline: Thousands
     Given I use the "de-CH" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -64,7 +64,7 @@ Examples:
     | 1261 | ein tausend zweihunderteinundsechzig |
     | 1262 | ein tausend zweihundertzweiundsechzig |
 
-Scenario Outline: From10000To99999Test 3
+Scenario Outline: Tens of thousands
     Given I use the "de" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -95,7 +95,7 @@ Examples:
     | 99261 | neunundneunzig tausend zweihunderteinundsechzig |
     | 99262 | neunundneunzig tausend zweihundertzweiundsechzig |
 
-Scenario Outline: BiggerTest 4
+Scenario Outline: Large cardinal numbers
     Given I use the "de-DE" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -108,7 +108,7 @@ Examples:
     | 1000000 | eine Million |
     | 999999999 | neunhundertneunundneunzig Millionen neunhundertneunundneunzig tausend neunhundertneunundneunzig |
 
-Scenario Outline: DecimalTest 5
+Scenario Outline: Decimal numbers
     Given I use the "de-DE" number converter
     When I convert the decimal number <number>
     Then the result is "<expected>"

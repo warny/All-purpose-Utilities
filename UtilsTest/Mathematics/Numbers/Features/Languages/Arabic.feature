@@ -1,7 +1,7 @@
-@NumberToString
+@NumberToString @AR
 Feature: Arabic number conversion
 
-Scenario Outline: DecimalTest 1
+Scenario Outline: Decimal numbers
     Given I use the "AR" number converter
     When I convert the decimal number <number>
     Then the result is "<expected>"
@@ -11,7 +11,7 @@ Examples:
     | 1.5 | واحد فاصل خمسة |
     | 12.34 | عشرة اثنان فاصل ثلاثة أربعة |
 
-Scenario Outline: Cardinals_Basic 2
+Scenario Outline: Basic cardinal numbers
     Given I use the "AR" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -27,7 +27,7 @@ Examples:
     | 100 | مائة |
     | 1000 | ألف |
 
-Scenario Outline: Cardinals_Gender_Muannath 3
+Scenario Outline: Cardinals Gender Muannath
     Given I use the "AR" number converter
     And I use the variants "gender=muʾannath"
     When I convert the cardinal number <number>
@@ -46,7 +46,7 @@ Examples:
     | 9 | تسع |
     | 10 | عشر |
 
-Scenario Outline: Ordinals_Masculine 4
+Scenario Outline: Ordinals Masculine
     Given I use the "AR" number converter
     When I convert the ordinal number <number>
     Then the result is "<expected>"
@@ -61,7 +61,7 @@ Examples:
     | 12 | ثاني عشر |
     | 19 | تاسع عشر |
 
-Scenario Outline: Ordinals_Feminine 5
+Scenario Outline: Ordinals Feminine
     Given I use the "AR" number converter
     And I use the variants "gender=muʾannath"
     When I convert the ordinal number <number>

@@ -1,7 +1,7 @@
-@NumberToString
+@NumberToString @EN
 Feature: English number conversion
 
-Scenario Outline: From1To999Test 1
+Scenario Outline: Cardinal numbers below one thousand
     Given I use the "en-UK" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -36,7 +36,7 @@ Examples:
     | 261 | two hundred and sixty-one |
     | 262 | two hundred and sixty-two |
 
-Scenario Outline: From1000To9999Test 2
+Scenario Outline: Thousands
     Given I use the "en-US" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -67,7 +67,7 @@ Examples:
     | 1261 | one thousand, two hundred and sixty-one |
     | 1262 | one thousand, two hundred and sixty-two |
 
-Scenario Outline: From10000To99999Test 3
+Scenario Outline: Tens of thousands
     Given I use the "en-UK" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -98,7 +98,7 @@ Examples:
     | 99261 | ninety-nine thousand, two hundred and sixty-one |
     | 99262 | ninety-nine thousand, two hundred and sixty-two |
 
-Scenario Outline: BiggerTest 4
+Scenario Outline: Large cardinal numbers
     Given I use the "en-UK" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -111,7 +111,7 @@ Examples:
     | 1000000 | one million |
     | 999999999 | nine hundred and ninety-nine million, nine hundred and ninety-nine thousand, nine hundred and ninety-nine |
 
-Scenario Outline: DecimalTest 5
+Scenario Outline: Decimal numbers
     Given I use the "en-UK" number converter
     When I convert the decimal number <number>
     Then the result is "<expected>"
@@ -120,3 +120,44 @@ Examples:
     | number | expected |
     | 1.5 | one point five tenths |
     | 12.34 | twelve point thirty-four hundredths |
+
+Scenario Outline: Irregular and regular ordinal numbers
+    Given I use the "EN" number converter
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1 | first |
+    | 2 | second |
+    | 3 | third |
+    | 4 | fourth |
+    | 5 | fifth |
+    | 6 | sixth |
+    | 7 | seventh |
+    | 8 | eighth |
+    | 9 | ninth |
+    | 10 | tenth |
+    | 11 | eleventh |
+    | 12 | twelfth |
+    | 13 | thirteenth |
+    | 100 | one hundredth |
+    | 1000 | one thousandth |
+
+Scenario Outline: Compound and negative ordinal numbers
+    Given I use the "EN" number converter
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 21 | twenty-first |
+    | 22 | twenty-second |
+    | 23 | twenty-third |
+    | 24 | twenty-fourth |
+    | 30 | thirtieth |
+    | 31 | thirty-first |
+    | 101 | one hundred and first |
+    | 1001 | one thousand, first |
+    | -1 | minus first |
+    | -21 | minus twenty-first |

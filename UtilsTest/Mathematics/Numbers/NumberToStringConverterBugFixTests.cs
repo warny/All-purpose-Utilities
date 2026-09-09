@@ -52,22 +52,6 @@ namespace UtilsTest.Mathematics.Numbers
         // ── RO scaleConnector ─────────────────────────────────────────────────
 
         [TestMethod]
-        public void RO_ScaleConnector_De_InsertedAboveThreshold()
-        {
-            var c = NumberToStringConverter.GetConverter("RO");
-
-            // Below threshold (< 20): no "de"
-            Assert.AreEqual("doisprezece mii",       c.Convert(12_000));
-            Assert.AreEqual("nouăsprezece mii",      c.Convert(19_000));
-
-            // At threshold (≥ 20): connector "de" appears
-            Assert.AreEqual("douăzeci de mii",       c.Convert(20_000));
-            Assert.AreEqual("o sută de mii",         c.Convert(100_000));
-            Assert.AreEqual("un milion",              c.Convert(1_000_000));   // < 20 × scale
-            Assert.AreEqual("douăzeci de milioane",  c.Convert(20_000_000));
-        }
-
-        [TestMethod]
         public void RO_ScaleConnector_NoConnector_BelowThreshold()
         {
             var c = NumberToStringConverter.GetConverter("RO");

@@ -1,7 +1,7 @@
-@NumberToString
+@NumberToString @EU
 Feature: Basque number conversion
 
-Scenario Outline: BasqueTensAdjustments 1
+Scenario Outline: Basque Tens Adjustments
     Given I use the "eu-ES" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -13,7 +13,7 @@ Examples:
     | 38 | hogeita hemezortzi |
     | 57 | berrogeita hamazazpi |
 
-Scenario Outline: BasqueHundreds 2
+Scenario Outline: Basque Hundreds
     Given I use the "EU" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -23,7 +23,7 @@ Examples:
     | 100 | ehun |
     | 205 | berrehun eta bost |
 
-Scenario Outline: BasqueDecimal 3
+Scenario Outline: Basque Decimal
     Given I use the "EU-es" number converter
     When I convert the decimal number <number>
     Then the result is "<expected>"
@@ -32,7 +32,7 @@ Examples:
     | number | expected |
     | 1.5 | bat koma bost |
 
-Scenario Outline: BasqueThousandsStillApplyTargetedReplacements 4
+Scenario Outline: Basque Thousands Still Apply Targeted Replacements
     Given I use the "EU" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"

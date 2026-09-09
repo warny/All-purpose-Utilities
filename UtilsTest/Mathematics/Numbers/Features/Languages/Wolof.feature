@@ -1,7 +1,7 @@
-@NumberToString
+@NumberToString @WO
 Feature: Wolof number conversion
 
-Scenario Outline: DecimalTest 1
+Scenario Outline: Decimal numbers
     Given I use the "WO" number converter
     When I convert the decimal number <number>
     Then the result is "<expected>"
@@ -11,7 +11,7 @@ Examples:
     | 1.5 | benn pojint juróom |
     | 12.34 | fukk ak ñaar pojint ñett ñent |
 
-Scenario Outline: Cardinals_Basic 2
+Scenario Outline: Basic cardinal numbers
     Given I use the "WO" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -26,7 +26,7 @@ Examples:
     | 100 | téeméer |
     | 1000 | benn junni |
 
-Scenario Outline: Ordinals_SuffixAndException 3
+Scenario Outline: Ordinals Suffix And Exception
     Given I use the "WO" number converter
     When I convert the ordinal number <number>
     Then the result is "<expected>"

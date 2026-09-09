@@ -1,7 +1,7 @@
-@NumberToString
+@NumberToString @FR
 Feature: FrenchRegional number conversion
 
-Scenario Outline: From1To999Test 1
+Scenario Outline: Cardinal numbers below one thousand
     Given I use the "FR-fr" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -33,7 +33,7 @@ Examples:
     | 261 | deux cent soixante et un |
     | 262 | deux cent soixante deux |
 
-Scenario Outline: From1000To9999Test 2
+Scenario Outline: Thousands
     Given I use the "FR-fr" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -64,7 +64,7 @@ Examples:
     | 1261 | mille deux cent soixante et un |
     | 1262 | mille deux cent soixante deux |
 
-Scenario Outline: From10000To99999Test 3
+Scenario Outline: Tens of thousands
     Given I use the "FR-fr" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -95,7 +95,7 @@ Examples:
     | 99261 | quatre-vingt dix neuf mille deux cent soixante et un |
     | 99262 | quatre-vingt dix neuf mille deux cent soixante deux |
 
-Scenario Outline: BiggerTest 4
+Scenario Outline: Large cardinal numbers
     Given I use the "FR-fr" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -108,7 +108,7 @@ Examples:
     | 1000000 | un million |
     | 999999999 | neuf cent quatre-vingt dix neuf millions neuf cent quatre-vingt dix neuf mille neuf cent quatre-vingt dix neuf |
 
-Scenario Outline: DecimalTest 5
+Scenario Outline: Decimal numbers
     Given I use the "FR-fr" number converter
     When I convert the decimal number <number>
     Then the result is "<expected>"
@@ -117,3 +117,74 @@ Examples:
     | number | expected |
     | 1.5 | un virgule cinq dixièmes |
     | 12.34 | douze virgule trente quatre centièmes |
+
+Scenario Outline: French ordinal numbers
+    Given I use the "FR" number converter
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1 | premier |
+    | 2 | deuxième |
+    | 3 | troisième |
+    | 4 | quatrième |
+    | 5 | cinquième |
+    | 6 | sixième |
+    | 8 | huitième |
+    | 9 | neuvième |
+    | 10 | dixième |
+    | 11 | onzième |
+    | 20 | vingtième |
+    | 21 | vingt et unième |
+    | 100 | centième |
+    | 1000 | millième |
+
+Scenario Outline: French feminine cardinal numbers
+    Given I use the "FR" number converter
+    And I use the variants "gender=feminin"
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1 | une |
+    | 21 | vingt et une |
+    | 31 | trente et une |
+    | 61 | soixante et une |
+    | 1000000 | un million |
+    | 1000021 | un million vingt et une |
+
+Scenario Outline: Belgian French feminine cardinal numbers
+    Given I use the "FR-be" number converter
+    And I use the variants "gender=feminin"
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1 | une |
+    | 21 | vingt et une |
+    | 71 | septante et une |
+    | 81 | huitante et une |
+    | 91 | nonante et une |
+    | 1000000 | un million |
+
+Scenario Outline: Belgian French ordinal numbers
+    Given I use the "FR-be" number converter
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1 | premier |
+    | 2 | deuxième |
+    | 5 | cinquième |
+    | 9 | neuvième |
+    | 21 | vingt et unième |
+    | 70 | septantième |
+    | 71 | septante et unième |
+    | 80 | huitantième |
+    | 81 | huitante et unième |
+    | 90 | nonantième |
+    | 91 | nonante et unième |

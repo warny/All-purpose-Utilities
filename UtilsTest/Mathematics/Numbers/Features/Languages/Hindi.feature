@@ -1,7 +1,7 @@
-@NumberToString
+@NumberToString @HI
 Feature: Hindi number conversion
 
-Scenario Outline: DecimalTest 1
+Scenario Outline: Decimal numbers
     Given I use the "HI" number converter
     When I convert the decimal number <number>
     Then the result is "<expected>"

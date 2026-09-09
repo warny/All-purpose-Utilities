@@ -40,3 +40,27 @@ Examples:
     | 10 | thứ mười |
 Scenario: Vietnamese regional alias wording
     Then the "VN" and "VI-VN" converters produce the same cardinal wording for 21
+
+Scenario Outline: Hundreds use the connecting word before a final digit
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 101 | một trăm linh một |
+    | 102 | một trăm linh hai |
+    | 105 | một trăm linh năm |
+    | 109 | một trăm linh chín |
+    | 201 | hai trăm linh một |
+    | 209 | hai trăm linh chín |
+
+Scenario Outline: The connecting word is omitted when it is not needed
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 5 | năm |
+    | 110 | một trăm mười |
+    | 121 | một trăm hai mươi mốt |
+    | 200 | hai trăm |

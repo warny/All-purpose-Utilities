@@ -1,7 +1,7 @@
-@NumberToString
+@NumberToString @HU
 Feature: Hungarian number conversion
 
-Scenario Outline: Cardinals_Basic 1
+Scenario Outline: Basic cardinal numbers
     Given I use the "HU" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -11,8 +11,16 @@ Examples:
     | 0 | nulla |
     | 1 | egy |
     | 2 | kettő |
+    | 3 | három |
+    | 10 | tíz |
+    | 11 | tizenegy |
+    | 12 | tizenkét |
+    | 20 | húsz |
+    | 21 | huszonegy |
+    | 30 | harminc |
+    | 31 | harmincegy |
 
-Scenario Outline: Cardinals_Hundreds 2
+Scenario Outline: Hundreds
     Given I use the "HU" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -22,9 +30,11 @@ Examples:
     | 100 | száz |
     | 101 | százegy |
     | 200 | kétszáz |
+    | 300 | háromszáz |
+    | 400 | négyszáz |
     | 221 | kétszázhuszonegy |
 
-Scenario Outline: Cardinals_Thousands 3
+Scenario Outline: Thousands
     Given I use the "HU" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -35,7 +45,7 @@ Examples:
     | 2000 | kétezer |
     | 10000 | tízezer |
 
-Scenario Outline: Cardinals_LongScale 4
+Scenario Outline: Long-scale cardinal numbers
     Given I use the "HU" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -47,7 +57,7 @@ Examples:
     | 1000000000 | milliárd |
     | 1000000000000 | billió |
 
-Scenario Outline: Ordinals_Exceptions 5
+Scenario Outline: Irregular ordinal numbers
     Given I use the "HU" number converter
     When I convert the ordinal number <number>
     Then the result is "<expected>"
