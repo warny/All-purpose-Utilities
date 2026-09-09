@@ -218,6 +218,39 @@ public class ExpressionSimplifierFinalizationTests
     }
 
     // ------------------------------------------------------------------------------------------
+    // Discriminating test: proves the fast path itself is exercised, not merely that the fallback
+    // returns a node distinct from the *original* test-tree expression (true in both the old and
+    // new fallback, since Prepare* already rebuilds the node once before FinalizeExpression is
+    // ever called -- deleting the fast path entirely would still leave every "AreNotSame(original,
+    // result)" assertion above green). Calling FinalizeExpression directly, bypassing Transform/
+    // PrepareTransform, isolates exactly the property the fast path is supposed to add: given an
+    // already-prepared node the fast path claims, the exact built-in type must return that very
+    // same reference, not a fresh CopyExpression-built copy.
+    // ------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// For the exact <see cref="ExpressionSimplifier"/> runtime type, <c>FinalizeExpression</c>
+    /// called directly with an already-prepared <see cref="UnaryExpression"/> (no rule and no
+    /// canonicalization apply to <c>Not</c>) must return that same node instance. This fails
+    /// against the pre-fast-path fallback (which always returns a fresh <c>CopyExpression</c>-built
+    /// copy here) and passes only because the fast path returns <c>e</c> unchanged.
+    /// </summary>
+    [TestMethod]
+    public void FinalizeExpression_ExactSimplifierType_UnaryWithoutRule_ReturnsSamePreparedNode()
+    {
+        var simplifier = new ExpressionSimplifier();
+        UnaryExpression prepared = Expression.Not(Expression.Parameter(typeof(bool), "x"));
+
+        MethodInfo finalizeExpression = typeof(ExpressionSimplifier).GetMethod(
+            "FinalizeExpression", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+        var result = (Expression)finalizeExpression.Invoke(
+            simplifier, [prepared, new Expression[] { prepared.Operand }])!;
+
+        Assert.AreSame(prepared, result);
+    }
+
+    // ------------------------------------------------------------------------------------------
     // I/J: canonicalization still takes priority over the (future) fast path.
     // ------------------------------------------------------------------------------------------
 
@@ -232,9 +265,13 @@ public class ExpressionSimplifierFinalizationTests
         Expression result1 = simplifier.Simplify(Expression.Add(a, b));
         Expression result2 = simplifier.Simplify(Expression.Add(b, a));
 
-        var compiled1 = Expression.Lambda<Func<double, double, double>>((Expression)result1, a, b).Compile();
-        var compiled2 = Expression.Lambda<Func<double, double, double>>((Expression)result2, a, b).Compile();
-        Assert.AreEqual(compiled1.ToString(), compiled2.ToString());
+        // Compare the expression trees themselves. A compiled delegate's ToString() is always the
+        // same generic "System.Func`3[...]" string regardless of the underlying expression, so it
+        // would not actually prove canonicalization normalized the two orderings to the same tree.
+        Assert.AreEqual(result1.ToString(), result2.ToString());
+
+        var compiled = Expression.Lambda<Func<double, double, double>>(result1, a, b).Compile();
+        Assert.AreEqual(7.0, compiled(3.0, 4.0));
     }
 
     /// <summary>Multiplicative canonicalization still applies to an <see cref="ExpressionType.Multiply"/> node that reaches the fallback.</summary>
@@ -248,9 +285,12 @@ public class ExpressionSimplifierFinalizationTests
         Expression result1 = simplifier.Simplify(Expression.Multiply(a, b));
         Expression result2 = simplifier.Simplify(Expression.Multiply(b, a));
 
-        var compiled1 = Expression.Lambda<Func<double, double, double>>((Expression)result1, a, b).Compile();
-        var compiled2 = Expression.Lambda<Func<double, double, double>>((Expression)result2, a, b).Compile();
-        Assert.AreEqual(compiled1.ToString(), compiled2.ToString());
+        // Compare the expression trees themselves (see the Add test above for why comparing a
+        // compiled delegate's ToString() would not actually exercise canonicalization).
+        Assert.AreEqual(result1.ToString(), result2.ToString());
+
+        var compiled = Expression.Lambda<Func<double, double, double>>(result1, a, b).Compile();
+        Assert.AreEqual(12.0, compiled(3.0, 4.0));
     }
 
     // ------------------------------------------------------------------------------------------
@@ -295,6 +335,7 @@ public class ExpressionSimplifierFinalizationTests
 
         Expression result = simplifier.Simplify(original);
 
+        Assert.AreNotSame(original, result);
         Assert.IsInstanceOfType(result, typeof(ConstantExpression));
         Assert.AreEqual(42.0, ((ConstantExpression)result).Value);
     }
