@@ -102,6 +102,10 @@ public sealed class NumberToStringLanguageSteps
         DateTime.ParseExact(value, "yyyy-MM-dd'T'HH:mm:ss", CultureInfo.InvariantCulture),
         variants);
 
+    /// <summary>Converts an invariant year through the public API.</summary>
+    [When("I convert the year {int}")]
+    public void WhenIConvertTheYear(int value) => result = Converter.ConvertYear(value, variants);
+
     /// <summary>Verifies the exact localized result.</summary>
     [Then("the result is {string}")]
     public void ThenTheResultIs(string expected) => Assert.AreEqual(expected, result);

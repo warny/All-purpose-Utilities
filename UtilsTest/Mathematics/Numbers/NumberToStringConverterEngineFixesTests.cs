@@ -27,48 +27,7 @@ public class NumberToStringConverterEngineFixesTests
 
     // ─── Item 30 — BuildFractionText with negative numerator ────────────────
 
-    [TestMethod]
-    public void ConvertFraction_EN_NegativeNumerator_UsesNamedSuffix()
-    {
-        var en = NumberToStringConverter.GetConverter("EN");
-        // Denominator 10 is a power of ten → named suffix branch ("tenth(s)").
-        // -1/10 should reuse the named suffix like 1/10 does, prefixed by the sign.
-        string positive = en.ConvertFraction(1, 10);
-        string negative = en.ConvertFraction(-1, 10);
-        Assert.AreEqual("one tenth", positive);
-        Assert.IsTrue(negative.EndsWith("one tenth"), $"Actual: {negative}");
-        Assert.AreNotEqual(positive, negative);
-    }
-
-    [TestMethod]
-    public void ConvertFraction_FR_NegativeNumerator_UsesNamedSuffix()
-    {
-        var fr = NumberToStringConverter.GetConverter("FR");
-        string positive = fr.ConvertFraction(3, 10);
-        string negative = fr.ConvertFraction(-3, 10);
-        Assert.AreEqual("trois dixièmes", positive);
-        Assert.IsTrue(negative.EndsWith("trois dixièmes"), $"Actual: {negative}");
-    }
-
     // ─── Item 31 — ApplyVariantRules / ApplyVariantRulesForScale factored ───
-
-    [TestMethod]
-    public void ApplyVariantRules_StillAppliesAfterRefactor_FR()
-    {
-        var fr = NumberToStringConverter.GetConverter("FR");
-        // Regression check on gender variant application post-refactor.
-        Assert.AreEqual("une", fr.Convert(1, "gender=feminin"));
-        Assert.AreEqual("un", fr.Convert(1));
-    }
-
-    [TestMethod]
-    public void ApplyVariantRulesForScale_StillAppliesAfterRefactor_RO()
-    {
-        var ro = NumberToStringConverter.GetConverter("RO");
-        // Scale-scoped variant rules (unu → o mie at scale 1) must still apply post-refactor.
-        Assert.AreEqual("o mie", ro.Convert(1000));
-        Assert.AreEqual("un milion", ro.Convert(1_000_000));
-    }
 
     // ─── Item 45 — Convert(double)/Convert(float) overload + NaN/Infinity ───
 

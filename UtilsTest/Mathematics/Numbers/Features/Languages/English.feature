@@ -235,3 +235,43 @@ Scenario: Temporal conversion is supported
     Given I use the "EN" number converter
     Then the converter supports time conversion
     And the converter supports date conversion
+
+Scenario Outline: Year wording
+    Given I use the "EN" number converter
+    When I convert the year <year>
+    Then the result is "<expected>"
+
+Examples:
+    | year | expected                  |
+    | 1984 | nineteen eighty-four      |
+    | 1900 | nineteen hundred          |
+    | 1905 | nineteen oh five           |
+    | 1100 | eleven hundred             |
+    | 2024 | twenty twenty-four         |
+    | 2010 | twenty ten                 |
+    | 2000 | two thousand               |
+    | 2005 | two thousand, five         |
+    | 1066 | one thousand, sixty-six    |
+
+Scenario Outline: Caller-defined dollar wording
+    Given I use the "EN" number converter
+    And I use this currency definition
+        | property         | value   |
+        | unit singular    | dollar  |
+        | unit plural      | dollars |
+        | subunit singular | cent    |
+        | subunit plural   | cents   |
+        | connector        | and     |
+    When I convert the currency amount <amount>
+    Then the result is "<expected>"
+
+Examples:
+    | amount | expected                            |
+    | 0      | zero dollars                        |
+    | 1      | one dollar                          |
+    | 2      | two dollars                         |
+    | 1.50   | one dollar and fifty cents          |
+    | 12.01  | twelve dollars and one cent         |
+    | -5.50  | minus five dollars and fifty cents  |
+    | 1.999  | two dollars                         |
+    | 0.995  | one dollar                          |

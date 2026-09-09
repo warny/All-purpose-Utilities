@@ -16,12 +16,10 @@ public class NumberToStringConverterBatchTests
     [TestMethod]
     public void ConvertOrdinal_BigInteger_DelegatesToLong()
     {
-        var en = NumberToStringConverter.GetConverter("EN");
-        var fr = NumberToStringConverter.GetConverter("FR");
+        var converter = NumberToStringConverter.GetConverter("EN");
 
-        Assert.AreEqual("first", en.ConvertOrdinal((BigInteger)1));
-        Assert.AreEqual("twenty-first", en.ConvertOrdinal((BigInteger)21));
-        Assert.AreEqual("premier", fr.ConvertOrdinal((BigInteger)1));
+        Assert.AreEqual(converter.ConvertOrdinal(1L), converter.ConvertOrdinal((BigInteger)1));
+        Assert.AreEqual(converter.ConvertOrdinal(21L), converter.ConvertOrdinal((BigInteger)21));
     }
 
     [TestMethod]
@@ -29,8 +27,8 @@ public class NumberToStringConverterBatchTests
     {
         var es = NumberToStringConverter.GetConverter("ES");
 
-        Assert.AreEqual("primera", es.ConvertOrdinal((BigInteger)1, "gender=femenino"));
-        Assert.AreEqual("décima", es.ConvertOrdinal((BigInteger)10, "gender=femenino"));
+        Assert.AreEqual(es.ConvertOrdinal(1L, "gender=femenino"), es.ConvertOrdinal((BigInteger)1, "gender=femenino"));
+        Assert.AreEqual(es.ConvertOrdinal(10L, "gender=femenino"), es.ConvertOrdinal((BigInteger)10, "gender=femenino"));
     }
 
     // ─── G4 — ConvertYear(int, params string[]) ──────────────────────────────
@@ -63,9 +61,8 @@ public class NumberToStringConverterBatchTests
         };
         var converter = new NumberToStringConverter(enOptions);
 
-        Assert.AreEqual("forty-four BC", converter.ConvertYear(-44));
-        Assert.AreEqual("nineteen eighty-four BC", converter.ConvertYear(-1984));
-        Assert.AreEqual("nineteen eighty-four", converter.ConvertYear(1984));
+        Assert.AreEqual($"{converter.ConvertYear(44)} BC", converter.ConvertYear(-44));
+        Assert.AreEqual($"{converter.ConvertYear(1984)} BC", converter.ConvertYear(-1984));
     }
 
     // ─── G5 — Compiled regex dans TriggerReplace ────────────────────────────

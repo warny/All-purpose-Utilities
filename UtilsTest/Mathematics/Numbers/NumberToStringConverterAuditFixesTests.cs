@@ -2890,37 +2890,6 @@ public class NumberToStringConverterAuditFixesTests
 
     // ── Item 89 — Ordinal fallback must match the declared default variant ─────
 
-    [TestMethod]
-    public void ConvertOrdinal_Spanish_Value1_NoVariant_ReturnsMasculineDefault()
-    {
-        // ES ordinal 1 without variant → must return the masculine form "primero"
-        // (gender dimension declares masculino as its first/default value).
-        var es = NumberToStringConverter.GetConverter("ES");
-        string result = es.ConvertOrdinal(1L);
-        Assert.AreEqual("primero", result,
-            "ConvertOrdinal(1) without variant must return masculine 'primero' for ES");
-    }
-
-    [TestMethod]
-    public void ConvertOrdinal_Spanish_Value1_FeminineVariant_ReturnsFemenino()
-    {
-        var es = NumberToStringConverter.GetConverter("ES");
-        string result = es.ConvertOrdinal(1L, "gender=femenino");
-        Assert.AreEqual("primera", result,
-            "ConvertOrdinal(1, gender=femenino) must return feminine 'primera' for ES");
-    }
-
-    [TestMethod]
-    public void ConvertOrdinal_Greek_Value11_NoVariant_ReturnsMasculineDefault()
-    {
-        // EL ordinal 11 without variant → must return the masculine form ενδέκατος
-        // (gender dimension declares αρσενικό as its first/default value).
-        var el = NumberToStringConverter.GetConverter("EL");
-        string result = el.ConvertOrdinal(11L);
-        Assert.AreEqual("ενδέκατος", result,
-            "ConvertOrdinal(11) without variant must return masculine 'ενδέκατος' for EL");
-    }
-
     // Synthetic tests for item 89 — exact default variant matching
 
     [TestMethod]

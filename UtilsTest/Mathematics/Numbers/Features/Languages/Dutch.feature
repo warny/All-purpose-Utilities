@@ -73,3 +73,14 @@ Examples:
 Scenario: Ordinal conversion is supported
     Given I use the "NL" number converter
     Then the converter supports ordinal conversion
+
+Scenario Outline: Year wording
+    Given I use the "NL" number converter
+    When I convert the year <year>
+    Then the result is "<expected>"
+
+Examples:
+    | year | expected                  |
+    | 1984 | negentien vierentachtig   |
+    | 1900 | negentien honderd         |
+    | 1100 | elf honderd               |

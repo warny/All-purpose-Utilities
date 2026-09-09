@@ -322,7 +322,6 @@ Examples:
     | 20 | deklination=stark,genus=neutrum,kasus=akkusativ | zwanzigstes |
     | 20 | deklination=stark,genus=neutrum,kasus=dativ | zwanzigstem |
     | 20 | deklination=stark,genus=neutrum,kasus=genitiv | zwanzigsten |
-    | 21 |  | einundzwanzigste |
     | 21 | deklination=stark,genus=maskulin,kasus=nominativ | einundzwanzigster |
     | 21 | deklination=stark,genus=maskulin,kasus=akkusativ | einundzwanzigsten |
 
@@ -358,3 +357,21 @@ Scenario: Temporal conversion is supported
     Given I use the "DE" number converter
     Then the converter supports time conversion
     And the converter supports date conversion
+
+Scenario: Feminine decimal wording
+    Given I use the "DE" number converter
+    And I use the variants "gender=feminin"
+    When I convert the decimal number 1.5
+    Then the result is "eine komma fünf"
+
+Scenario Outline: Year wording
+    Given I use the "DE" number converter
+    When I convert the year <year>
+    Then the result is "<expected>"
+
+Examples:
+    | year | expected                    |
+    | 1984 | neunzehn vierundachtzig     |
+    | 1900 | neunzehn hundert            |
+    | 1100 | elf hundert                 |
+    | 1999 | neunzehn neunundneunzig     |

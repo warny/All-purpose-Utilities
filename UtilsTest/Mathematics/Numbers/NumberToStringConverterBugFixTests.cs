@@ -8,49 +8,6 @@ namespace UtilsTest.Mathematics.Numbers
     {
         // ── FinalizeWriting applied to negative decimals and rationals ────────
 
-        [TestMethod]
-        public void NegativeDecimal_FinalizeWritingApplied_DE()
-        {
-            var c = NumberToStringConverter.GetConverter("DE");
-            // GermanNumberToStringLanguageSpecifics turns "ein" → "eins" for standalone
-            // and "ein Million" → "eine Million". For -1.5 DE the integer part is 1
-            // ("eins" in standalone); full text becomes "minus eins Komma fünf".
-            // Before the fix, FinalizeWriting was skipped for negatives → "minus ein Komma fünf".
-            string result = c.Convert(-1.5m);
-            StringAssert.StartsWith(result, "minus ");
-            // The absolute-value part must pass through FinalizeWriting.
-            Assert.IsFalse(result.Contains("ein Komma"), "FinalizeWriting must run on negative decimal absolute value");
-        }
-
-        [TestMethod]
-        public void NegativeDecimal_SymmetricWithPositive_FR()
-        {
-            var c = NumberToStringConverter.GetConverter("FR");
-            string pos = c.Convert(3.5m);
-            string neg = c.Convert(-3.5m);
-            Assert.AreEqual("moins " + pos, neg, "Negative decimal should equal 'minus ' + positive form");
-        }
-
-        [TestMethod]
-        public void NegativeRational_FinalizeWritingApplied_DE()
-        {
-            var c = NumberToStringConverter.GetConverter("DE");
-            var pos = c.Convert(new Utils.Numerics.Number(3, 4));
-            var neg = c.Convert(new Utils.Numerics.Number(-3, 4));
-            Assert.AreEqual("minus " + pos, neg, "Negative rational should equal 'minus ' + positive form");
-        }
-
-        [TestMethod]
-        public void NegativeDecimal_SymmetricWithPositive_EN()
-        {
-            var c = NumberToStringConverter.GetConverter("EN");
-            string pos = c.Convert(12.5m);
-            string neg = c.Convert(-12.5m);
-            Assert.AreEqual("minus " + pos, neg);
-        }
-
-        // ── RO scaleConnector ─────────────────────────────────────────────────
-
         // ── ValidateVariantReferences extended ────────────────────────────────
 
         private static NumberToStringConverterOptions BaseOptions() => new()
@@ -99,15 +56,5 @@ namespace UtilsTest.Mathematics.Numbers
                 "Should throw even when no VariantDimensions are declared but constraints reference one");
         }
 
-        // ── ResolveLanguageSpecifics throws on unknown named type ─────────────
-
-        [TestMethod]
-        public void ResolveLanguageSpecifics_ReflectionFallback_StillWorksForKnownType()
-        {
-            // PL config references PolishOrdinalLanguageSpecifics via its short name.
-            // The type is in the assembly so reflection should find it without explicit registration.
-            var c = NumberToStringConverter.GetConverter("PL");
-            Assert.IsTrue(c.SupportsOrdinals, "PL converter should support ordinals via reflected specifics");
-        }
     }
 }

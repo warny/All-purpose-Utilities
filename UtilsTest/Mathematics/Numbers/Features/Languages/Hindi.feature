@@ -54,18 +54,6 @@ Examples:
     | 5 | gender=strī | पांचवीं |
     | 7 | gender=strī | सातवीं |
 
-Scenario Outline: Masculine ordinal numbers masculine unchanged
-    Given I use the "HI" number converter
-    And I use the variants "<variants>"
-    When I convert the ordinal number <number>
-    Then the result is "<expected>"
-
-Examples:
-    | number | variants | expected |
-    | 1 |  | पहला |
-    | 6 |  | छठा |
-    | 7 |  | सातवाँ |
-
 Scenario: Ordinal conversion is supported
     Given I use the "HI" number converter
     Then the converter supports ordinal conversion

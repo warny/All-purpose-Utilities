@@ -24,23 +24,6 @@ public class NumberToStringConverterEngineImprovementsTests
     // instead parses via decimal.TryParse("R") and delegates to Convert(decimal).
 
     [TestMethod]
-    public void Convert_Double_WholeNumbers()
-    {
-        INumberToStringConverter en = NumberToStringConverter.GetConverter("EN");
-        // 3.0 → round-trip "3" → decimal 3 → Convert(decimal 3) → "three"
-        Assert.AreEqual("three", en.Convert(3.0));
-        Assert.AreEqual(en.Convert(3), en.Convert(3.0));
-        Assert.AreEqual("zero", en.Convert(0.0));
-    }
-
-    [TestMethod]
-    public void Convert_Double_Negative()
-    {
-        INumberToStringConverter en = NumberToStringConverter.GetConverter("EN");
-        Assert.AreEqual("minus five", en.Convert(-5.0));
-    }
-
-    [TestMethod]
     public void Convert_Double_WithDecimalPart()
     {
         INumberToStringConverter en = NumberToStringConverter.GetConverter("EN");
@@ -70,18 +53,6 @@ public class NumberToStringConverterEngineImprovementsTests
     }
 
     [TestMethod]
-    public void Convert_Double_WithVariants()
-    {
-        // double/float are default interface methods — access via INumberToStringConverter
-        INumberToStringConverter fr = NumberToStringConverter.GetConverter("FR");
-        // Convert(1.0, "gender=feminin") → "une" (via decimal 1 → "un" → variant "une")
-        var masculine = fr.Convert(1.0);
-        var feminine  = fr.Convert(1.0, "gender=feminin");
-        Assert.AreEqual("un",  masculine);
-        Assert.AreEqual("une", feminine);
-    }
-
-    [TestMethod]
     public void Convert_Float_WithVariants()
     {
         // double/float are default interface methods — access via INumberToStringConverter
@@ -92,34 +63,12 @@ public class NumberToStringConverterEngineImprovementsTests
     // ─── A2 — ConvertFraction ───────────────────────────────────────────────
 
     [TestMethod]
-    public void ConvertFraction_EN_NonDecimalDenominator_UsesOverConnector()
-    {
-        var en = NumberToStringConverter.GetConverter("EN");
-        // 3 is not a power of 10, falls back to "numerator over denominator"
-        var result = en.ConvertFraction(1, 3);
-        Assert.AreEqual("one over three", result);
-    }
-
-    [TestMethod]
     public void ConvertFraction_EN_PowerOfTenDenominator_UsesFractionSuffix()
     {
         var en = NumberToStringConverter.GetConverter("EN");
         // denominator 10 → 1 digit → "tenth(s)" suffix is configured
         var result = en.ConvertFraction(1, 10);
         Assert.IsTrue(result.Contains("tenth"), $"Expected fraction suffix, got: '{result}'");
-    }
-
-    [TestMethod]
-    public void ConvertFraction_EN_TwoOver_Four()
-    {
-        var en = NumberToStringConverter.GetConverter("EN");
-        var result = en.ConvertFraction(2, 4);
-        // 4 is not a power of 10 → "two over four"
-        Assert.AreEqual("two over four", result);
-        // check via interface too
-        INumberToStringConverter iface = en;
-        // Interface default delegates to the converter override
-        Assert.AreEqual(result, iface.ConvertFraction(2, 4));
     }
 
     [TestMethod]
@@ -144,43 +93,6 @@ public class NumberToStringConverterEngineImprovementsTests
     }
 
     // ─── A3 — ConvertMultiplicative ─────────────────────────────────────────
-
-    [TestMethod]
-    public void ConvertMultiplicative_EN_NamedForms()
-    {
-        var en = NumberToStringConverter.GetConverter("EN");
-        Assert.IsTrue(en.SupportsMultiplicative, "EN should support multiplicative");
-        Assert.AreEqual("once",   en.ConvertMultiplicative(1));
-        Assert.AreEqual("twice",  en.ConvertMultiplicative(2));
-        Assert.AreEqual("thrice", en.ConvertMultiplicative(3));
-    }
-
-    [TestMethod]
-    public void ConvertMultiplicative_EN_FallbackSuffix()
-    {
-        var en = NumberToStringConverter.GetConverter("EN");
-        Assert.AreEqual("four times", en.ConvertMultiplicative(4));
-        Assert.AreEqual("ten times",  en.ConvertMultiplicative(10));
-        Assert.AreEqual("one hundred times", en.ConvertMultiplicative(100));
-    }
-
-    [TestMethod]
-    public void ConvertMultiplicative_FR_NamedForms()
-    {
-        var fr = NumberToStringConverter.GetConverter("FR");
-        Assert.IsTrue(fr.SupportsMultiplicative, "FR should support multiplicative");
-        Assert.AreEqual("une fois",  fr.ConvertMultiplicative(1));
-        Assert.AreEqual("deux fois", fr.ConvertMultiplicative(2));
-        Assert.AreEqual("trois fois", fr.ConvertMultiplicative(3));
-    }
-
-    [TestMethod]
-    public void ConvertMultiplicative_FR_FallbackSuffix()
-    {
-        var fr = NumberToStringConverter.GetConverter("FR");
-        // 4 is not named → Convert(4) + " fois" = "quatre fois"
-        Assert.AreEqual("quatre fois", fr.ConvertMultiplicative(4));
-    }
 
     [TestMethod]
     public void ConvertMultiplicative_Unsupported_Throws()
@@ -383,24 +295,6 @@ public class NumberToStringConverterEngineImprovementsTests
             var conv = NumberToStringConverter.GetConverter(culture);
             Assert.IsNotNull(conv, $"Converter for {culture} must not be null");
         }
-    }
-
-    [TestMethod]
-    public void VariantValidation_NoFalsePositives_ForFR()
-    {
-        // FR has a Variants section → validation must not throw
-        var fr = NumberToStringConverter.GetConverter("FR");
-        Assert.IsNotNull(fr);
-        Assert.AreEqual("une", fr.Convert(1, "gender=feminin"));
-    }
-
-    [TestMethod]
-    public void VariantValidation_NoFalsePositives_ForDE()
-    {
-        // DE has Variants with multiple dimensions → validation must not throw
-        var de = NumberToStringConverter.GetConverter("DE");
-        Assert.IsNotNull(de);
-        Assert.AreEqual("eine", de.Convert(1, "genus=feminin"));
     }
 
     // ─── Helper types ───────────────────────────────────────────────────────

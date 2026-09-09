@@ -74,19 +74,7 @@ Examples:
     | 1 | ראשונה |
     | 2 | שנייה |
     | 3 | שלישית |
-
-Scenario Outline: Additional feminine ordinal numbers
-    Given I use the "HE" number converter
-    And I use the variants "<variants>"
-    When I convert the ordinal number <number>
-    Then the result is "<expected>"
-
-Examples:
-    | number | variants | expected |
-    | 1 | gender=nekeva | ראשונה |
-    | 2 | gender=nekeva | שנייה |
-    | 3 | gender=nekeva | שלישית |
-    | 10 | gender=nekeva | עשירית |
+    | 10 | עשירית |
 
 Scenario: Ordinal above the configured range falls back to cardinal wording
     Given I use the "HE" number converter

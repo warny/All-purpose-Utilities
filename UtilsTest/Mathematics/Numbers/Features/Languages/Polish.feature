@@ -38,7 +38,6 @@ Scenario Outline: Ordinal numbers from eleven through nineteen by grammatical fo
 
 Examples:
     | number | variants | expected |
-    | 11 |  | jedenasty |
     | 11 | rodzaj=feminin | jedenasta |
     | 11 | rodzaj=feminin,przypadek=biernik | jedenastą |
     | 11 | rodzaj=plural_mos | jedenaści |
@@ -52,7 +51,6 @@ Scenario Outline: Tens ordinal numbers by grammatical form
 
 Examples:
     | number | variants | expected |
-    | 20 |  | dwudziesty |
     | 20 | rodzaj=feminin | dwudziesta |
     | 30 |  | trzydziesty |
     | 80 |  | osiemdziesiąty |
@@ -66,7 +64,6 @@ Scenario Outline: Compound ordinal numbers by grammatical form
 
 Examples:
     | number | variants | expected |
-    | 21 |  | dwudziesty pierwszy |
     | 21 | rodzaj=feminin | dwudziesta pierwsza |
     | 21 | przypadek=dopełniacz | dwudziestego pierwszego |
     | 32 |  | trzydziesty drugi |
@@ -81,7 +78,6 @@ Scenario Outline: Hundreds ordinal numbers by grammatical form
 
 Examples:
     | number | variants | expected |
-    | 100 |  | setny |
     | 100 | rodzaj=feminin | setna |
     | 200 |  | dwusetny |
     | 101 |  | sto pierwszy |

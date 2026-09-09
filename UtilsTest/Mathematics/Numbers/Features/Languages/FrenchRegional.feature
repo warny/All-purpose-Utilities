@@ -311,3 +311,20 @@ Scenario: Temporal conversion is supported
     Given I use the "FR" number converter
     Then the converter supports time conversion
     And the converter supports date conversion
+
+Scenario Outline: Caller-defined euro wording
+    Given I use the "FR" number converter
+    And I use this currency definition
+        | property         | value     |
+        | unit singular    | euro      |
+        | unit plural      | euros     |
+        | subunit singular | centime   |
+        | subunit plural   | centimes  |
+        | connector        | et        |
+    When I convert the currency amount <amount>
+    Then the result is "<expected>"
+
+Examples:
+    | amount | expected                                  |
+    | 1      | un euro                                   |
+    | 21.50  | vingt et un euros et cinquante centimes   |
