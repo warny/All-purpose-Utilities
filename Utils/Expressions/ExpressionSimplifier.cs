@@ -753,6 +753,18 @@ namespace Utils.Mathematics.Expressions
                 }
             }
 
+            // The exact-runtime-type check deliberately excludes subclasses. FinalizeExpression is
+            // protected virtual, and a derived simplifier can observe that base.FinalizeExpression
+            // historically performs another CopyExpression after Prepare* has rebuilt the node. Only
+            // the built-in concrete ExpressionSimplifier can safely reuse that private intermediate
+            // node because no external override can observe it; a subclass calling
+            // base.FinalizeExpression must keep receiving the second, historically-distinct copy.
+            if (e is UnaryExpression or BinaryExpression or MethodCallExpression or ConditionalExpression
+                && GetType() == typeof(ExpressionSimplifier))
+            {
+                return e;
+            }
+
             return CopyExpression(e, parameters);
         }
 
