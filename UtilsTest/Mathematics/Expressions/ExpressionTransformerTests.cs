@@ -1554,7 +1554,7 @@ public class ExpressionTransformerTests
     /// <summary>
     /// Historical behavior (pinned down before introducing any fast invocation path): a positional rule
     /// declaring more parameters than the node's context array supplies fails during per-parameter
-    /// validation itself — the loop indexes <c>context.Parameters[i]</c> up to <c>rule.Parameters.Length - 1</c>,
+    /// validation itself — the loop indexes the logical invocation argument at <c>i</c> up to <c>rule.Parameters.Length - 1</c>,
     /// which runs past the end of the (shorter) context array — throwing <see cref="IndexOutOfRangeException"/>
     /// before <see cref="MethodBase.Invoke(object, object[])"/> is ever reached. A future fast path must not
     /// convert this into a silent "rule doesn't match, try the next one" outcome.
@@ -1644,9 +1644,131 @@ public class ExpressionTransformerTests
         Assert.IsNull(result);
     }
 
+    /// <summary>A transformer that exposes the historical positional constant-value rule.</summary>
+    private sealed class NullConstantValueTransformer : ExpressionTransformer
+    {
+        /// <summary>Calls the protected transform method for direct testing.</summary>
+        public Expression ExposeTransform(Expression expression) => Transform(expression);
+
+        /// <summary>Returns the constant after positional validation of its value.</summary>
+        [ExpressionSignature(ExpressionType.Constant)]
+        private Expression Rule(ConstantExpression expression, object value) => expression;
+    }
+
+    /// <summary>Verifies the historical failure produced while validating a null positional constant value.</summary>
+    [TestMethod]
+    public void Transform_NullConstantValue_PreservesPositionalValidationFailure()
+    {
+        var transformer = new NullConstantValueTransformer();
+        ConstantExpression expression = Expression.Constant(null, typeof(string));
+
+        Assert.ThrowsExactly<NullReferenceException>(() => transformer.ExposeTransform(expression));
+    }
+
+    /// <summary>A transformer that records the positional argument supplied for an instance call.</summary>
+    private sealed class InstanceCallArgumentTransformer : ExpressionTransformer
+    {
+        /// <summary>Gets the positional argument observed by the rule.</summary>
+        public Expression? ObservedArgument { get; private set; }
+
+        /// <summary>Calls the protected transform method for direct testing.</summary>
+        public Expression ExposeTransform(Expression expression) => Transform(expression);
+
+        /// <summary>Records and returns the call's positional argument.</summary>
+        [ExpressionSignature(ExpressionType.Call)]
+        private Expression Rule(MethodCallExpression expression, Expression argument)
+        {
+            ObservedArgument = argument;
+            return expression;
+        }
+    }
+
+    /// <summary>Verifies that an instance receiver is rebuilt but excluded from positional arguments.</summary>
+    [TestMethod]
+    public void Transform_InstanceMethodCall_ExcludesReceiverFromPositionalArguments()
+    {
+        var transformer = new InstanceCallArgumentTransformer();
+        ConstantExpression receiver = Expression.Constant("value");
+        ConstantExpression argument = Expression.Constant("v");
+        MethodCallExpression call = Expression.Call(receiver, typeof(string).GetMethod(nameof(string.StartsWith), [typeof(string)])!, argument);
+
+        transformer.ExposeTransform(call);
+
+        Assert.AreSame(argument, transformer.ObservedArgument);
+        Assert.AreNotSame(receiver, transformer.ObservedArgument);
+    }
+
+    /// <summary>A transformer that records the positional argument supplied for an invocation.</summary>
+    private sealed class InvocationArgumentTransformer : ExpressionTransformer
+    {
+        /// <summary>Gets the positional argument observed by the rule.</summary>
+        public Expression? ObservedArgument { get; private set; }
+
+        /// <summary>Calls the protected transform method for direct testing.</summary>
+        public Expression ExposeTransform(Expression expression) => Transform(expression);
+
+        /// <summary>Records and returns the invocation's positional argument.</summary>
+        [ExpressionSignature(ExpressionType.Invoke)]
+        private Expression Rule(InvocationExpression expression, Expression argument)
+        {
+            ObservedArgument = argument;
+            return expression;
+        }
+    }
+
+    /// <summary>Verifies that the invocation target is excluded from positional arguments.</summary>
+    [TestMethod]
+    public void Transform_Invocation_ExcludesTargetFromPositionalArguments()
+    {
+        var transformer = new InvocationArgumentTransformer();
+        ParameterExpression target = Expression.Parameter(typeof(Func<int, int>), "target");
+        ConstantExpression argument = Expression.Constant(7);
+        InvocationExpression invocation = Expression.Invoke(target, argument);
+
+        transformer.ExposeTransform(invocation);
+
+        Assert.AreSame(argument, transformer.ObservedArgument);
+        Assert.AreNotSame(target, transformer.ObservedArgument);
+    }
+
+    /// <summary>A transformer that records the positional parameter supplied for a lambda.</summary>
+    private sealed class LambdaParameterTransformer : ExpressionTransformer
+    {
+        /// <summary>Gets the positional lambda parameter observed by the rule.</summary>
+        public ParameterExpression? ObservedParameter { get; private set; }
+
+        /// <summary>Calls the protected transform method for direct testing.</summary>
+        public Expression ExposeTransform(Expression expression) => Transform(expression);
+
+        /// <summary>Returns expressions unchanged when recursive lambda-body processing has no rule.</summary>
+        protected override Expression FinalizeExpression(Expression expression, Expression[] parameters) => expression;
+
+        /// <summary>Records and returns the lambda's positional parameter.</summary>
+        [ExpressionSignature(ExpressionType.Lambda)]
+        private Expression Rule(LambdaExpression expression, ParameterExpression parameter)
+        {
+            ObservedParameter = parameter;
+            return expression;
+        }
+    }
+
+    /// <summary>Verifies that lambda parameters, rather than the body, form its positional arguments.</summary>
+    [TestMethod]
+    public void Transform_Lambda_UsesDeclaredParameterAsPositionalArgument()
+    {
+        var transformer = new LambdaParameterTransformer();
+        ParameterExpression parameter = Expression.Parameter(typeof(int), "value");
+        LambdaExpression lambda = Expression.Lambda(Expression.Add(parameter, Expression.Constant(1)), parameter);
+
+        transformer.ExposeTransform(lambda);
+
+        Assert.AreSame(parameter, transformer.ObservedParameter);
+        Assert.AreNotSame(lambda.Body, transformer.ObservedParameter);
+    }
+
     // ------------------------------------------------------------------------------------------
-    // Regression tests for the MethodInvoker-based fast path (see TryCreateFastInvoker,
-    // BuildFastInvoker, and the Invoke*Rule helpers). These exercise shapes the characterization
+    // Regression tests for the MethodInvoker-based fast path (see DetermineFastInvokerEligibility,
+    // CreateFastInvokerCore, and the Invoke*Rule helpers). These exercise shapes the characterization
     // tests above don't: a 4-parameter positional rule (the widest shape the fast path supports,
     // matching the widest context this class ever builds — Conditional), and a 5-parameter
     // positional rule (one wider than the fast path's cap, which must still work correctly via the
