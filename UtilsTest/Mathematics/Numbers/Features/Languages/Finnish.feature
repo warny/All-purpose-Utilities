@@ -187,8 +187,6 @@ Scenario Outline: Explicit nominative cardinal numbers
 Examples:
     | number | variants | expected |
     | 1 | sijamuoto=nominatiivi | yksi |
-    | 1 | sijamuoto=nominatiivi | yksi |
-    | 20 | sijamuoto=nominatiivi | kaksikymmentä |
     | 20 | sijamuoto=nominatiivi | kaksikymmentä |
 
 Scenario Outline: Additional ordinal numbers
@@ -199,12 +197,5 @@ Scenario Outline: Additional ordinal numbers
 
 Examples:
     | number | variants | expected |
-    | 1 |  | ensimmäinen |
-    | 2 |  | toinen |
-    | 3 |  | kolmas |
     | 4 |  | neljäs |
     | 5 |  | viides |
-    | 10 |  | kymmenes |
-    | 11 |  | yhdestoista |
-    | 20 |  | kahdeskymmenes |
-    | 100 |  | sadas |

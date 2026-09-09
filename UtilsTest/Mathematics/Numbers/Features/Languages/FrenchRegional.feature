@@ -218,10 +218,15 @@ Examples:
     | 01:21:21 | une heure vingt et une minutes vingt et une secondes |
     | 02:30:00 | deux heures trente minutes |
 
-Scenario: Time-of-day wording
+Scenario Outline: Time-of-day wording
     Given I use the "FR" number converter
-    When I convert the time "14:30:00"
-    Then the result is "quatorze heures trente minutes"
+    When I convert the time "<value>"
+    Then the result is "<expected>"
+
+Examples:
+    | value | expected |
+    | 14:30:00 | quatorze heures trente minutes |
+    | 01:21:21 | une heure vingt et une minutes vingt et une secondes |
 
 Scenario Outline: Date wording
     Given I use the "FR" number converter

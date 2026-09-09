@@ -19,6 +19,7 @@ public class NumberToStringConverterTemporalCapabilityTests
 
     // ─── SupportsTimeConversion / SupportsDateConversion feature flags ──────
 
+    /// <summary>Verifies that the English, French, and German converters advertise time conversion support.</summary>
     [TestMethod]
     public void SupportsTimeConversion_EN_FR_DE_True()
     {
@@ -27,6 +28,7 @@ public class NumberToStringConverterTemporalCapabilityTests
         Assert.IsTrue(NumberToStringConverter.GetConverter("DE").SupportsTimeConversion);
     }
 
+    /// <summary>Verifies that the Croatian and Hungarian converters do not advertise time conversion support.</summary>
     [TestMethod]
     public void SupportsTimeConversion_HR_HU_False()
     {
@@ -34,6 +36,7 @@ public class NumberToStringConverterTemporalCapabilityTests
         Assert.IsFalse(NumberToStringConverter.GetConverter("HU").SupportsTimeConversion);
     }
 
+    /// <summary>Verifies that the English, French, and German converters advertise date conversion support.</summary>
     [TestMethod]
     public void SupportsDateConversion_EN_FR_DE_True()
     {
@@ -42,6 +45,7 @@ public class NumberToStringConverterTemporalCapabilityTests
         Assert.IsTrue(NumberToStringConverter.GetConverter("DE").SupportsDateConversion);
     }
 
+    /// <summary>Verifies that converting time with an unsupported converter throws.</summary>
     [TestMethod]
     public void NotSupported_TimeConversion_Throws()
     {
@@ -52,6 +56,7 @@ public class NumberToStringConverterTemporalCapabilityTests
 
     // ─── EN-GB (British English, derived from EN via baseOn) ──────────────────
 
+    /// <summary>Verifies that British English inherits cardinal conversion behavior from English.</summary>
     [TestMethod]
     public void Convert_EN_GB_BasicNumbers_SameAsEN()
     {
@@ -65,6 +70,7 @@ public class NumberToStringConverterTemporalCapabilityTests
         Assert.AreEqual(en.Convert(1_000_000), gb.Convert(1_000_000));
     }
 
+    /// <summary>Verifies that British English inherits ordinal capability and conversion behavior from English.</summary>
     [TestMethod]
     public void Convert_EN_GB_Ordinals_SameAsEN()
     {
@@ -76,6 +82,7 @@ public class NumberToStringConverterTemporalCapabilityTests
         Assert.AreEqual(en.ConvertOrdinal(21), gb.ConvertOrdinal(21));
     }
 
+    /// <summary>Verifies that British English inherits short-scale names from English.</summary>
     [TestMethod]
     public void Convert_EN_GB_ScaleNames_InheritedFromScaleShort()
     {

@@ -184,6 +184,42 @@ public class NumberToStringConverterForcedVariantsTests
         Assert.AreEqual("one-FEM", synthetic.Convert(1, "gender=feminine"));
     }
 
+    /// <summary>Verifies that a forced variant overrides a conflicting caller variant for its constituent.</summary>
+    [TestMethod]
+    public void Convert_Synthetic_ForcedVariantOverridesConflictingCallerVariant()
+    {
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        {
+            LanguageSpecifics = new DefaultNumberToStringLanguageSpecifics(),
+            VariantDimensions =
+            [
+                new NumberToStringConverter.VariantDimension("gender", ["masculine", "feminine"]),
+            ],
+            VariantRules =
+            [
+                new NumberToStringConverter.VariantRule(
+                    new Dictionary<string, string> { ["gender"] = "masculine" },
+                    [new NumberToStringConverter.ReplacementRule("one", "one-MASC", ReplacementScope.Standalone)]),
+                new NumberToStringConverter.VariantRule(
+                    new Dictionary<string, string> { ["gender"] = "feminine" },
+                    [new NumberToStringConverter.ReplacementRule("one", "one-FEM", ReplacementScope.Standalone)]),
+            ],
+            TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)>
+            {
+                ["hour"] = ("unit", "units", null),
+            },
+            TimeUnitForcedVariants = new Dictionary<string, ForcedVariantSet>
+            {
+                ["hour"] = ForcedVariantSet.Create(("gender", "feminine")),
+            },
+        };
+        var synthetic = new NumberToStringConverter(options);
+
+        Assert.AreEqual(
+            "one-FEM unit",
+            synthetic.Convert(new TimeSpan(1, 0, 0), "gender=masculine"));
+    }
+
     [TestMethod]
     public void Convert_Synthetic_NoStateLeakAcrossDifferentlyConstrainedConstituents()
     {
