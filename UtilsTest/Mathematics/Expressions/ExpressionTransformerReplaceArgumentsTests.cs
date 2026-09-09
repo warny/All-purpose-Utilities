@@ -32,8 +32,16 @@ public class ExpressionTransformerReplaceArgumentsTests
     /// <summary>An instance method used to verify a method call's receiver is replaced, not discarded.</summary>
     private sealed class Box
     {
+        /// <summary>Gets the scale factor applied by <see cref="Scale"/>.</summary>
         public double Factor { get; }
+
+        /// <summary>Initializes a box with the specified scale factor.</summary>
+        /// <param name="factor">The scale factor.</param>
         public Box(double factor) => Factor = factor;
+
+        /// <summary>Scales <paramref name="x"/> by this box's <see cref="Factor"/>.</summary>
+        /// <param name="x">The value to scale.</param>
+        /// <returns>The scaled value.</returns>
         public double Scale(double x) => x * Factor;
     }
 
