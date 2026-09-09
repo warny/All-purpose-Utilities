@@ -1849,4 +1849,292 @@ public class ExpressionTransformerTests
         var constant = (ConstantExpression)result;
         Assert.AreEqual(4.0, constant.Value);
     }
+
+    // ------------------------------------------------------------------------------------------
+    // Characterization tests for the Select(...).ToArray() sites in PrepareMethodCall,
+    // PrepareInvocation, and PrepareLambda (see the perf audit that replaces them with
+    // index-based loops). These lock in: call order (receiver/target before arguments, lambda
+    // parameters before body), the ParameterExpression[] runtime type of the lambda parameter
+    // array, the InvalidCastException raised for a misbehaving PrepareExpression override, and
+    // the Array.Empty<T>() identity of the zero-element case.
+    // ------------------------------------------------------------------------------------------
+
+    /// <summary>A no-op method used to build a zero-argument <see cref="MethodCallExpression"/>.</summary>
+    private static double NoArguments() => 42.0;
+
+    /// <summary>A transformer that records, in order, every expression handed to <see cref="PrepareExpression"/>.</summary>
+    private sealed class RecordingOrderTransformer : ExpressionTransformer
+    {
+        /// <summary>The expressions observed by <see cref="PrepareExpression"/>, in call order.</summary>
+        public List<Expression> ObservedOrder { get; } = [];
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <inheritdoc/>
+        protected override Expression PrepareExpression(Expression e)
+        {
+            ObservedOrder.Add(e);
+            return e;
+        }
+
+        /// <summary>No rule is declared, so every node reaches here; the return value is not exercised by the tests.</summary>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters) => e;
+    }
+
+    /// <summary>
+    /// <see cref="ExpressionTransformer.PrepareExpression"/> must be called on a method call's
+    /// instance receiver before its arguments, in argument order.
+    /// </summary>
+    [TestMethod]
+    public void Transform_MethodCall_PreparesReceiverBeforeArgumentsInOrder()
+    {
+        var transformer = new RecordingOrderTransformer();
+        ConstantExpression receiver = Expression.Constant("value");
+        ConstantExpression arg0 = Expression.Constant("old");
+        ConstantExpression arg1 = Expression.Constant("new");
+        MethodInfo replace = typeof(string).GetMethod(nameof(string.Replace), [typeof(string), typeof(string)])!;
+        MethodCallExpression call = Expression.Call(receiver, replace, arg0, arg1);
+
+        transformer.ExposeTransform(call);
+
+        CollectionAssert.AreEqual(new Expression[] { receiver, arg0, arg1 }, transformer.ObservedOrder);
+    }
+
+    /// <summary>
+    /// <see cref="ExpressionTransformer.PrepareExpression"/> must be called on an invocation's
+    /// target before its arguments, in argument order.
+    /// </summary>
+    [TestMethod]
+    public void Transform_Invocation_PreparesTargetBeforeArgumentsInOrder()
+    {
+        var transformer = new RecordingOrderTransformer();
+        ParameterExpression target = Expression.Parameter(typeof(Func<int, int, int>), "target");
+        ConstantExpression arg0 = Expression.Constant(1);
+        ConstantExpression arg1 = Expression.Constant(2);
+        InvocationExpression invocation = Expression.Invoke(target, arg0, arg1);
+
+        transformer.ExposeTransform(invocation);
+
+        CollectionAssert.AreEqual(new Expression[] { target, arg0, arg1 }, transformer.ObservedOrder);
+    }
+
+    /// <summary>A transformer that records lambda-parameter preparation and body entry, in order.</summary>
+    private sealed class LambdaOrderTransformer : ExpressionTransformer
+    {
+        /// <summary>The parameters (via <see cref="PrepareExpression"/>) and the marker "body", in order.</summary>
+        public List<object> ObservedOrder { get; } = [];
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <inheritdoc/>
+        protected override Expression PrepareExpression(Expression e)
+        {
+            ObservedOrder.Add(e);
+            return e;
+        }
+
+        /// <summary>Matches the lambda's (constant) body and records entry into it.</summary>
+        [ExpressionSignature(ExpressionType.Constant)]
+        private Expression RecordBody(ConstantExpression e)
+        {
+            ObservedOrder.Add("body");
+            return e;
+        }
+
+        /// <summary>No rule matches the lambda node itself; the return value is not exercised by the test.</summary>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters) => e;
+    }
+
+    /// <summary>
+    /// A lambda's parameters must all be prepared, in declaration order, before its body is
+    /// transformed — the body must not be entered early.
+    /// </summary>
+    [TestMethod]
+    public void Transform_Lambda_PreparesParametersInOrderBeforeBody()
+    {
+        var transformer = new LambdaOrderTransformer();
+        ParameterExpression p0 = Expression.Parameter(typeof(int), "p0");
+        ParameterExpression p1 = Expression.Parameter(typeof(int), "p1");
+        ConstantExpression body = Expression.Constant(0);
+        LambdaExpression lambda = Expression.Lambda(body, p0, p1);
+
+        transformer.ExposeTransform(lambda);
+
+        CollectionAssert.AreEqual(new object[] { p0, p1, "body" }, transformer.ObservedOrder);
+    }
+
+    /// <summary>A transformer whose Lambda rule captures the raw <c>Expression[]</c> parameter array it receives.</summary>
+    private sealed class LambdaExpressionArrayCaptureTransformer : ExpressionTransformer
+    {
+        /// <summary>The array captured by <see cref="Rule"/>.</summary>
+        public Expression[]? CapturedParameters { get; private set; }
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Matches any lambda and captures its prepared parameter array via the <c>Expression[]</c> shape.</summary>
+        [ExpressionSignature(ExpressionType.Lambda)]
+        private Expression Rule(LambdaExpression expression, Expression[] parameters)
+        {
+            CapturedParameters = parameters;
+            return expression;
+        }
+
+        /// <summary>Matches the lambda's (constant) body so it can be finalized without throwing.</summary>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters) => e;
+    }
+
+    /// <summary>
+    /// Even though it is stored as <c>Expression[]</c>, the array built for a lambda's parameters
+    /// must remain runtime-typed <c>ParameterExpression[]</c> (the code depends on this to cast it
+    /// back for <see cref="Expression.Lambda(Expression, ParameterExpression[])"/>).
+    /// </summary>
+    [TestMethod]
+    public void Transform_Lambda_ExpressionArrayRule_ReceivesParameterExpressionArrayRuntimeType()
+    {
+        var transformer = new LambdaExpressionArrayCaptureTransformer();
+        ParameterExpression p0 = Expression.Parameter(typeof(int), "p0");
+        LambdaExpression lambda = Expression.Lambda(Expression.Constant(0), p0);
+
+        transformer.ExposeTransform(lambda);
+
+        Assert.IsNotNull(transformer.CapturedParameters);
+        Assert.AreEqual(1, transformer.CapturedParameters.Length);
+        Assert.AreEqual(typeof(ParameterExpression[]), transformer.CapturedParameters.GetType());
+    }
+
+    /// <summary>
+    /// A parameterless lambda must still produce a runtime-typed <c>ParameterExpression[]</c>, and
+    /// baseline reuses the shared <see cref="System.Array.Empty{T}"/> instance rather than allocating
+    /// a new zero-length array; the replacement loop must preserve that identity.
+    /// </summary>
+    [TestMethod]
+    public void Transform_Lambda_ZeroParameters_ProducesEmptyParameterExpressionArrayIdenticalToArrayEmpty()
+    {
+        var transformer = new LambdaExpressionArrayCaptureTransformer();
+        LambdaExpression lambda = Expression.Lambda(Expression.Constant(0));
+
+        transformer.ExposeTransform(lambda);
+
+        Assert.IsNotNull(transformer.CapturedParameters);
+        Assert.AreEqual(0, transformer.CapturedParameters.Length);
+        Assert.AreEqual(typeof(ParameterExpression[]), transformer.CapturedParameters.GetType());
+        Assert.AreSame(System.Array.Empty<ParameterExpression>(), transformer.CapturedParameters);
+    }
+
+    /// <summary>A transformer whose Call rule captures the raw <c>Expression[]</c> argument array it receives.</summary>
+    private sealed class CallExpressionArrayCaptureTransformer : ExpressionTransformer
+    {
+        /// <summary>The array captured by <see cref="Rule"/>.</summary>
+        public Expression[]? CapturedArgs { get; private set; }
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Matches any call and captures its prepared argument array via the <c>Expression[]</c> shape.</summary>
+        [ExpressionSignature(ExpressionType.Call)]
+        private Expression Rule(Expression e, Expression[] parameters)
+        {
+            CapturedArgs = parameters;
+            return e;
+        }
+    }
+
+    /// <summary>
+    /// A zero-argument static call must produce an empty argument array; baseline reuses the shared
+    /// <see cref="System.Array.Empty{T}"/> instance, and the replacement loop must preserve that identity.
+    /// </summary>
+    [TestMethod]
+    public void Transform_MethodCall_ZeroArguments_ProducesEmptyArrayIdenticalToArrayEmpty()
+    {
+        var transformer = new CallExpressionArrayCaptureTransformer();
+        MethodInfo method = typeof(ExpressionTransformerTests).GetMethod(nameof(NoArguments), BindingFlags.NonPublic | BindingFlags.Static)!;
+        MethodCallExpression call = Expression.Call(method);
+
+        transformer.ExposeTransform(call);
+
+        Assert.IsNotNull(transformer.CapturedArgs);
+        Assert.AreEqual(0, transformer.CapturedArgs.Length);
+        Assert.AreSame(System.Array.Empty<Expression>(), transformer.CapturedArgs);
+    }
+
+    /// <summary>A transformer whose Invoke rule captures the raw <c>Expression[]</c> argument array it receives.</summary>
+    private sealed class InvokeExpressionArrayCaptureTransformer : ExpressionTransformer
+    {
+        /// <summary>The array captured by <see cref="Rule"/>.</summary>
+        public Expression[]? CapturedArgs { get; private set; }
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Matches any invocation and captures its prepared argument array via the <c>Expression[]</c> shape.</summary>
+        [ExpressionSignature(ExpressionType.Invoke)]
+        private Expression Rule(Expression e, Expression[] parameters)
+        {
+            CapturedArgs = parameters;
+            return e;
+        }
+    }
+
+    /// <summary>
+    /// A zero-argument invocation must produce an empty argument array; baseline reuses the shared
+    /// <see cref="System.Array.Empty{T}"/> instance, and the replacement loop must preserve that identity.
+    /// </summary>
+    [TestMethod]
+    public void Transform_Invocation_ZeroArguments_ProducesEmptyArrayIdenticalToArrayEmpty()
+    {
+        var transformer = new InvokeExpressionArrayCaptureTransformer();
+        ParameterExpression target = Expression.Parameter(typeof(Func<int>), "target");
+        InvocationExpression invocation = Expression.Invoke(target);
+
+        transformer.ExposeTransform(invocation);
+
+        Assert.IsNotNull(transformer.CapturedArgs);
+        Assert.AreEqual(0, transformer.CapturedArgs.Length);
+        Assert.AreSame(System.Array.Empty<Expression>(), transformer.CapturedArgs);
+    }
+
+    /// <summary>A transformer whose <see cref="PrepareExpression"/> override returns the wrong type for a lambda parameter.</summary>
+    private sealed class WrongTypeLambdaParameterTransformer : ExpressionTransformer
+    {
+        /// <summary>Set if the lambda body is ever reached; must stay <see langword="false"/> once the cast fails.</summary>
+        public bool BodyTransformed { get; private set; }
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Replaces any parameter with a non-<see cref="ParameterExpression"/>, forcing the explicit cast in <c>PrepareLambda</c> to fail.</summary>
+        protected override Expression PrepareExpression(Expression e)
+            => e is ParameterExpression ? Expression.Constant(1) : e;
+
+        /// <summary>Would record that the body was reached, if the cast failure did not short-circuit preparation first.</summary>
+        [ExpressionSignature(ExpressionType.Constant)]
+        private Expression RecordBody(ConstantExpression e)
+        {
+            BodyTransformed = true;
+            return e;
+        }
+
+        /// <inheritdoc/>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters) => e;
+    }
+
+    /// <summary>
+    /// When a <see cref="ExpressionTransformer.PrepareExpression"/> override returns a
+    /// non-<see cref="ParameterExpression"/> for a lambda parameter, the explicit cast in
+    /// <c>PrepareLambda</c> must throw <see cref="InvalidCastException"/> immediately — before the
+    /// lambda body is ever transformed.
+    /// </summary>
+    [TestMethod]
+    public void Transform_Lambda_PrepareExpressionReturnsWrongTypeForParameter_ThrowsInvalidCastExceptionBeforeBody()
+    {
+        var transformer = new WrongTypeLambdaParameterTransformer();
+        ParameterExpression p0 = Expression.Parameter(typeof(int), "p0");
+        LambdaExpression lambda = Expression.Lambda(Expression.Constant(0), p0);
+
+        Assert.ThrowsExactly<InvalidCastException>(() => transformer.ExposeTransform(lambda));
+        Assert.IsFalse(transformer.BodyTransformed);
+    }
 }

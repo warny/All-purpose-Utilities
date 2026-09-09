@@ -789,7 +789,20 @@ public abstract class ExpressionTransformer
         // expression. Rebuilding inline (rather than through CopyExpression) lets us
         // pass the transformed receiver without adding an extra parameter slot.
         Expression? transformedObject = mce.Object is null ? null : PrepareExpression(mce.Object);
-        Expression[] expressionParameters = mce.Arguments.Select(PrepareExpression).ToArray();
+
+        // Indexed loop instead of Select(...).ToArray(): mce.Arguments is a ReadOnlyCollection
+        // (already IList-backed, so ToArray() would allocate the same exact-size array), but this
+        // avoids the iterator/delegate overhead of Select for what is a hot path. The receiver above
+        // is still prepared before any argument, and arguments are prepared strictly in order.
+        int argumentCount = mce.Arguments.Count;
+        Expression[] expressionParameters = argumentCount == 0
+            ? Array.Empty<Expression>()
+            : new Expression[argumentCount];
+        for (int i = 0; i < argumentCount; i++)
+        {
+            expressionParameters[i] = PrepareExpression(mce.Arguments[i]);
+        }
+
         MethodCallExpression copied = transformedObject is null
             ? Expression.Call(mce.Method, expressionParameters)
             : Expression.Call(transformedObject, mce.Method, expressionParameters);
@@ -837,7 +850,19 @@ public abstract class ExpressionTransformer
     private TransformContext PrepareInvocation(InvocationExpression ie)
     {
         Expression invokedExpression = PrepareExpression(ie.Expression);
-        Expression[] expressionParameters = ie.Arguments.Select(PrepareExpression).ToArray();
+
+        // Indexed loop instead of Select(...).ToArray(): the target is prepared before any
+        // argument, and arguments are prepared strictly in order (see PrepareMethodCall for why
+        // this avoids Select's iterator/delegate overhead without changing allocation counts).
+        int argumentCount = ie.Arguments.Count;
+        Expression[] expressionParameters = argumentCount == 0
+            ? Array.Empty<Expression>()
+            : new Expression[argumentCount];
+        for (int i = 0; i < argumentCount; i++)
+        {
+            expressionParameters[i] = PrepareExpression(ie.Arguments[i]);
+        }
+
         InvocationExpression copied = Expression.Invoke(invokedExpression, expressionParameters);
 
         return new TransformContext(copied, expressionParameters);
@@ -852,11 +877,24 @@ public abstract class ExpressionTransformer
     /// <returns>The resulting <see cref="TransformContext"/>.</returns>
     private TransformContext PrepareLambda(LambdaExpression le)
     {
-        // Recursively transform the body, and prepare parameter expressions
-        Expression[] expressionParameters = le.Parameters
-                                               .Select(a => (ParameterExpression)PrepareExpression(a))
-                                               .ToArray();
-        LambdaExpression copied = Expression.Lambda(Transform(le.Body), (ParameterExpression[])expressionParameters);
+        // Indexed loop instead of Select(...).ToArray(): parameters must all be prepared, in
+        // order, before Transform(le.Body) runs below (a subclass may rely on that ordering).
+        // The array is declared and allocated as ParameterExpression[], not Expression[], so its
+        // runtime type stays ParameterExpression[] even though it is stored through the
+        // Expression[]-typed TransformContext.ExpressionParameters field — code elsewhere (and the
+        // Expression.Lambda call just below) still depends on that runtime type. The explicit cast
+        // is preserved so a PrepareExpression override returning the wrong type still throws
+        // InvalidCastException immediately, before the body is ever transformed.
+        int parameterCount = le.Parameters.Count;
+        ParameterExpression[] expressionParameters = parameterCount == 0
+            ? Array.Empty<ParameterExpression>()
+            : new ParameterExpression[parameterCount];
+        for (int i = 0; i < parameterCount; i++)
+        {
+            expressionParameters[i] = (ParameterExpression)PrepareExpression(le.Parameters[i]);
+        }
+
+        LambdaExpression copied = Expression.Lambda(Transform(le.Body), expressionParameters);
 
         return new TransformContext(copied, expressionParameters);
     }
