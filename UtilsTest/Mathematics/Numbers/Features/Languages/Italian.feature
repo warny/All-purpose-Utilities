@@ -64,3 +64,32 @@ Examples:
     | number | expected |
     | 1.5 | uno virgola cinque |
     | 12.34 | dodici virgola tre quattro |
+
+Scenario Outline: Masculine ordinal numbers
+    Given I use the "IT" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 1 |  | primo |
+    | 2 |  | secondo |
+    | 11 |  | undicesimo |
+    | 20 |  | ventesimo |
+    | 100 |  | centesimo |
+    | 1000 |  | millesimo |
+
+Scenario Outline: Additional feminine ordinal numbers
+    Given I use the "IT" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 1 | gender=femminile | prima |
+    | 2 | gender=femminile | seconda |
+    | 11 | gender=femminile | undicesima |
+    | 20 | gender=femminile | ventesima |
+    | 1000 | gender=femminile | millesima |

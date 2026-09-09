@@ -161,3 +161,50 @@ Examples:
     | 1001 | one thousand, first |
     | -1 | minus first |
     | -21 | minus twenty-first |
+
+Scenario Outline: Duration wording
+    Given I use the "EN" number converter
+    When I convert the duration "<value>"
+    Then the result is "<expected>"
+
+Examples:
+    | value | expected |
+    | 01:00:00 | one hour |
+    | 02:30:05 | two hours thirty minutes five seconds |
+    | 00:30:10 | thirty minutes ten seconds |
+
+Scenario: Time-of-day wording
+    Given I use the "EN" number converter
+    When I convert the time "14:30:00"
+    Then the result is "fourteen hours thirty minutes"
+
+Scenario Outline: American date wording
+    Given I use the "EN-US" number converter
+    When I convert the date "<value>"
+    Then the result is "<expected>"
+
+Examples:
+    | value | expected |
+    | 2026-07-01 | July first, twenty twenty-six |
+    | 2026-07-02 | July second, twenty twenty-six |
+
+Scenario Outline: British date wording
+    Given I use the "<culture>" number converter
+    When I convert the date "<value>"
+    Then the result is "<expected>"
+
+Examples:
+    | culture | value | expected |
+    | EN-GB | 2026-07-01 | first July twenty twenty-six |
+    | EN-GB | 2026-07-02 | second July twenty twenty-six |
+    | EN-uk | 2026-07-02 | second July twenty twenty-six |
+
+Scenario Outline: Date and time wording
+    Given I use the "<culture>" number converter
+    When I convert the date and time "2026-07-02T14:30:05"
+    Then the result is "<expected>"
+
+Examples:
+    | culture | expected |
+    | EN-US | July second, twenty twenty-six fourteen hours thirty minutes five seconds |
+    | EN-GB | second July twenty twenty-six fourteen hours thirty minutes five seconds |

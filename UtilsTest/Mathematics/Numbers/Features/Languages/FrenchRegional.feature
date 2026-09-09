@@ -188,3 +188,62 @@ Examples:
     | 81 | huitante et unième |
     | 90 | nonantième |
     | 91 | nonante et unième |
+
+Scenario Outline: Explicit masculine cardinal numbers
+    Given I use the "<culture>" number converter
+    And I use the variants "gender=masculin"
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | culture | number | expected |
+    | FR | 1 | un |
+    | FR | 21 | vingt et un |
+    | FR-be | 1 | un |
+    | FR-be | 71 | septante et un |
+
+Scenario Outline: Duration wording
+    Given I use the "FR" number converter
+    When I convert the duration "<value>"
+    Then the result is "<expected>"
+
+Examples:
+    | value | expected |
+    | 01:00:00 | une heure |
+    | 21:00:00 | vingt et une heures |
+    | 00:01:00 | une minute |
+    | 00:21:00 | vingt et une minutes |
+    | 00:00:01 | une seconde |
+    | 00:00:21 | vingt et une secondes |
+    | 01:21:21 | une heure vingt et une minutes vingt et une secondes |
+    | 02:30:00 | deux heures trente minutes |
+
+Scenario: Time-of-day wording
+    Given I use the "FR" number converter
+    When I convert the time "14:30:00"
+    Then the result is "quatorze heures trente minutes"
+
+Scenario Outline: Date wording
+    Given I use the "FR" number converter
+    When I convert the date "<value>"
+    Then the result is "<expected>"
+
+Examples:
+    | value | expected |
+    | 2026-07-01 | premier juillet deux mille vingt six |
+    | 2026-07-02 | deux juillet deux mille vingt six |
+
+Scenario: Date and time wording
+    Given I use the "FR" number converter
+    When I convert the date and time "2026-07-02T14:30:05"
+    Then the result is "deux juillet deux mille vingt six quatorze heures trente minutes cinq secondes"
+
+Scenario Outline: Feminine first ordinal
+    Given I use the "FR" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 1 | gender=feminin | première |

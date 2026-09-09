@@ -26,7 +26,7 @@ Examples:
     | 100 | téeméer |
     | 1000 | benn junni |
 
-Scenario Outline: Ordinals Suffix And Exception
+Scenario Outline: Irregular and suffixed ordinal numbers
     Given I use the "WO" number converter
     When I convert the ordinal number <number>
     Then the result is "<expected>"

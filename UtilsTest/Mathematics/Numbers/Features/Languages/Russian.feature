@@ -72,3 +72,28 @@ Examples:
     | number | expected |
     | 1.5 | один запятая пять |
     | 12.34 | двенадцать запятая три четыре |
+
+Scenario Outline: Additional irregular and suffixed ordinal numbers
+    Given I use the "RU" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 1 |  | первый |
+    | 2 |  | второй |
+    | 3 |  | третий |
+    | 4 |  | четвёртый |
+    | 5 |  | пятый |
+    | 6 |  | шестой |
+    | 7 |  | седьмой |
+    | 8 |  | восьмой |
+    | 9 |  | девятый |
+    | 10 |  | десятый |
+    | 11 |  | одиннадцатый |
+    | 20 |  | двадцатый |
+    | 21 |  | двадцать первый |
+    | 40 |  | сороковой |
+    | 100 |  | сотый |
+    | 1000 |  | тысячный |

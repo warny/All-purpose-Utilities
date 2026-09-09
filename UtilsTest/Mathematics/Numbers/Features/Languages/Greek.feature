@@ -61,3 +61,23 @@ Examples:
     | number | expected |
     | 1 | πρώτο |
     | 11 | ενδέκατο |
+
+Scenario Outline: Additional ordinal numbers and variants
+    Given I use the "EL" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 1 |  | πρώτος |
+    | 2 |  | δεύτερος |
+    | 3 |  | τρίτος |
+    | 10 |  | δέκατος |
+    | 11 |  | ενδέκατος |
+    | 20 |  | εικοστός |
+    | 100 |  | εκατοστός |
+    | 1 | gender=θηλυκό | πρώτη |
+    | 2 | gender=θηλυκό | δεύτερη |
+    | 1 | gender=ουδέτερο | πρώτο |
+    | 20 | gender=θηλυκό | εικοστή |

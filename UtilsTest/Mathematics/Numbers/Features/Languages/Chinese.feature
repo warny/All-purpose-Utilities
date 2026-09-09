@@ -24,7 +24,7 @@ Examples:
     | 100 | 一百 |
     | 1000 | 一 千 |
 
-Scenario Outline: Ordinals Prefix Di
+Scenario Outline: Prefixed ordinal numbersed ordinal numbers
     Given I use the "ZH" number converter
     When I convert the ordinal number <number>
     Then the result is "<expected>"

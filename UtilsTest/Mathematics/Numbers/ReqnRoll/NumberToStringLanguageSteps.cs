@@ -41,6 +41,30 @@ public sealed class NumberToStringLanguageSteps
     [When(@"I convert the fraction (\d+)/(\d+)")]
     public void WhenIConvertTheFraction(int numerator, int denominator) => result = Converter.Convert(new Number(numerator, denominator), variants);
 
+    /// <summary>Converts an invariant duration through the public API.</summary>
+    [When("I convert the duration {string}")]
+    public void WhenIConvertTheDuration(string value) => result = Converter.Convert(
+        TimeSpan.ParseExact(value, [@"hh\:mm\:ss", @"d\.hh\:mm\:ss"], CultureInfo.InvariantCulture),
+        variants);
+
+    /// <summary>Converts an invariant time of day through the public API.</summary>
+    [When("I convert the time {string}")]
+    public void WhenIConvertTheTime(string value) => result = Converter.Convert(
+        TimeOnly.ParseExact(value, "HH:mm:ss", CultureInfo.InvariantCulture),
+        variants);
+
+    /// <summary>Converts an invariant calendar date through the public API.</summary>
+    [When("I convert the date {string}")]
+    public void WhenIConvertTheDate(string value) => result = Converter.Convert(
+        DateOnly.ParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture),
+        variants);
+
+    /// <summary>Converts an invariant date and time through the public API.</summary>
+    [When("I convert the date and time {string}")]
+    public void WhenIConvertTheDateAndTime(string value) => result = Converter.Convert(
+        DateTime.ParseExact(value, "yyyy-MM-dd'T'HH:mm:ss", CultureInfo.InvariantCulture),
+        variants);
+
     /// <summary>Verifies the exact localized result.</summary>
     [Then("the result is {string}")]
     public void ThenTheResultIs(string expected) => Assert.AreEqual(expected, result);

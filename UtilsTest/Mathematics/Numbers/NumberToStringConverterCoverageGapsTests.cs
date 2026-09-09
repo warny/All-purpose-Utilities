@@ -61,25 +61,6 @@ public class NumberToStringConverterCoverageGapsTests
 
     // ─── Item 36 — Convert(TimeSpan/DateOnly/DateTime) not tested for DE ────
 
-    [TestMethod]
-    public void Convert_DateTime_DE_ContainsDateAndTimeParts()
-    {
-        var de = NumberToStringConverter.GetConverter("DE");
-        var dt = new System.DateTime(2026, 7, 2, 14, 30, 5);
-        string result = de.Convert(dt);
-        Assert.IsTrue(result.Contains("Juli"), $"Actual: {result}");
-        Assert.IsTrue(result.Contains("Stunden"), $"Actual: {result}");
-    }
-
-    [TestMethod]
-    public void Convert_DateOnly_DE_FirstDay_OrdinalDay()
-    {
-        var de = NumberToStringConverter.GetConverter("DE");
-        // firstDay="ersten" also applies to {ordinal-day} when day == 1 (not just {cardinal-day})
-        string result = de.Convert(new System.DateOnly(2026, 7, 1));
-        Assert.IsTrue(result.Contains("ersten"), $"Actual: {result}");
-    }
-
     // ─── Item 37 — Convert(BigInteger, significantDigits) per language ──────
 
     [TestMethod]

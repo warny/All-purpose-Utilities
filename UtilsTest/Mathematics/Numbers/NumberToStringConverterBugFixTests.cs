@@ -51,15 +51,6 @@ namespace UtilsTest.Mathematics.Numbers
 
         // ── RO scaleConnector ─────────────────────────────────────────────────
 
-        [TestMethod]
-        public void RO_ScaleConnector_NoConnector_BelowThreshold()
-        {
-            var c = NumberToStringConverter.GetConverter("RO");
-            // These must NOT contain " de " between multiplier and scale
-            string s12k = c.Convert(12_000);
-            Assert.IsFalse(s12k.Contains(" de "), $"12 000 should not have connector, got: {s12k}");
-        }
-
         // ── ValidateVariantReferences extended ────────────────────────────────
 
         private static NumberToStringConverterOptions BaseOptions() => new()

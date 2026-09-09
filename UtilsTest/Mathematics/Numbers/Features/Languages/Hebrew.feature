@@ -63,7 +63,7 @@ Examples:
     | 3 | שלישי |
     | 10 | עשירי |
 
-Scenario Outline: Ordinals Exceptions
+Scenario Outline: Feminine ordinal numbers
     Given I use the "HE" number converter
     And I use the variants "gender=nekeva"
     When I convert the ordinal number <number>
@@ -74,3 +74,16 @@ Examples:
     | 1 | ראשונה |
     | 2 | שנייה |
     | 3 | שלישית |
+
+Scenario Outline: Additional feminine ordinal numbers
+    Given I use the "HE" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 1 | gender=nekeva | ראשונה |
+    | 2 | gender=nekeva | שנייה |
+    | 3 | gender=nekeva | שלישית |
+    | 10 | gender=nekeva | עשירית |

@@ -34,7 +34,7 @@ Examples:
     | 2000 | 이 천 |
     | 10000 | 십 천 |
 
-Scenario Outline: Ordinals Prefix
+Scenario Outline: Prefixed ordinal numbers
     Given I use the "KO" number converter
     When I convert the ordinal number <number>
     Then the result is "<expected>"
@@ -46,7 +46,7 @@ Examples:
     | 10 | 제십 |
     | 11 | 제십일 |
 
-Scenario Outline: Negative
+Scenario Outline: Negative cardinal numbers
     Given I use the "KO" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"

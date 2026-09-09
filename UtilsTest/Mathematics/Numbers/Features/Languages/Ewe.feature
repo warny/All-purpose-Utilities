@@ -1,4 +1,4 @@
-@NumberToString @EW
+@NumberToString @EE
 Feature: Ewe number conversion
 
 Scenario Outline: Decimal numbers
@@ -28,7 +28,7 @@ Examples:
     | 100 | kpeɖe |
     | 1000 | deka akpe |
 
-Scenario Outline: Ordinal First Exception
+Scenario Outline: Irregular first ordinal
     Given I use the "EE" number converter
     When I convert the ordinal number <number>
     Then the result is "<expected>"
@@ -36,3 +36,15 @@ Scenario Outline: Ordinal First Exception
 Examples:
     | number | expected |
     | 1 | etsõ gbãtõ |
+
+Scenario Outline: Prefixed ordinal numbers
+    Given I use the "EE" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 2 |  | etsõ eve |
+    | 3 |  | etsõ eto |
+    | 9 |  | etsõ asea |

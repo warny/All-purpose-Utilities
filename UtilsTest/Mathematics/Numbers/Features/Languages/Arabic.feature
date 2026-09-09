@@ -27,7 +27,7 @@ Examples:
     | 100 | مائة |
     | 1000 | ألف |
 
-Scenario Outline: Cardinals Gender Muannath
+Scenario Outline: Feminine cardinal numbers
     Given I use the "AR" number converter
     And I use the variants "gender=muʾannath"
     When I convert the cardinal number <number>
@@ -46,7 +46,7 @@ Examples:
     | 9 | تسع |
     | 10 | عشر |
 
-Scenario Outline: Ordinals Masculine
+Scenario Outline: Masculine ordinal numbers
     Given I use the "AR" number converter
     When I convert the ordinal number <number>
     Then the result is "<expected>"
@@ -61,7 +61,7 @@ Examples:
     | 12 | ثاني عشر |
     | 19 | تاسع عشر |
 
-Scenario Outline: Ordinals Feminine
+Scenario Outline: Feminine ordinal numbers
     Given I use the "AR" number converter
     And I use the variants "gender=muʾannath"
     When I convert the ordinal number <number>
@@ -75,3 +75,50 @@ Examples:
     | 10 | عاشرة |
     | 11 | حادية عشرة |
     | 19 | تاسعة عشرة |
+
+Scenario Outline: Additional feminine ordinal numbers
+    Given I use the "AR" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 1 | gender=muʾannath | أولى |
+    | 2 | gender=muʾannath | ثانية |
+    | 3 | gender=muʾannath | ثالثة |
+    | 4 | gender=muʾannath | رابعة |
+    | 5 | gender=muʾannath | خامسة |
+    | 6 | gender=muʾannath | سادسة |
+    | 7 | gender=muʾannath | سابعة |
+    | 8 | gender=muʾannath | ثامنة |
+    | 9 | gender=muʾannath | تاسعة |
+    | 10 | gender=muʾannath | عاشرة |
+
+Scenario Outline: Masculine ordinal numbers from eleven through nineteen
+    Given I use the "AR" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 11 |  | حادي عشر |
+    | 12 |  | ثاني عشر |
+    | 13 |  | ثالث عشر |
+    | 15 |  | خامس عشر |
+    | 19 |  | تاسع عشر |
+
+Scenario Outline: Feminine ordinal numbers from eleven through nineteen
+    Given I use the "AR" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 11 | gender=muʾannath | حادية عشرة |
+    | 12 | gender=muʾannath | ثانية عشرة |
+    | 13 | gender=muʾannath | ثالثة عشرة |
+    | 15 | gender=muʾannath | خامسة عشرة |
+    | 19 | gender=muʾannath | تاسعة عشرة |

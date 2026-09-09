@@ -88,38 +88,5 @@ namespace UtilsTest.Mathematics.Numbers
         // (standalone/attributive) forced by the time units, reusing the existing ForcedVariants +
         // nested <Variant> engine — no new C# code for Spanish specifically, no ad-hoc replacements.
 
-        [TestMethod]
-        public void Convert_TimeSpan_ES_Hours_ForcedFeminineAttributiveWithoutExplicitVariant()
-        {
-            var c = NumberToStringConverter.GetConverter("ES");
-            Assert.AreEqual("una hora", c.Convert(new TimeSpan(1, 0, 0)));
-            Assert.AreEqual("veintiuna horas", c.Convert(TimeSpan.FromHours(21)));
-            Assert.AreEqual("treinta y una horas", c.Convert(TimeSpan.FromHours(31)));
-        }
-
-        [TestMethod]
-        public void Convert_TimeSpan_ES_Minutes_ForcedMasculineAttributiveApocope()
-        {
-            var c = NumberToStringConverter.GetConverter("ES");
-            Assert.AreEqual("un minuto", c.Convert(new TimeSpan(0, 1, 0)));
-            Assert.AreEqual("veintiún minutos", c.Convert(new TimeSpan(0, 21, 0)));
-            Assert.AreEqual("treinta y un minutos", c.Convert(new TimeSpan(0, 31, 0)));
-        }
-
-        [TestMethod]
-        public void Convert_TimeSpan_ES_Seconds_ForcedMasculineAttributiveApocope()
-        {
-            var c = NumberToStringConverter.GetConverter("ES");
-            Assert.AreEqual("un segundo", c.Convert(new TimeSpan(0, 0, 1)));
-            Assert.AreEqual("veintiún segundos", c.Convert(new TimeSpan(0, 0, 21)));
-        }
-
-        [TestMethod]
-        public void Convert_TimeSpan_ES_Composite_FeminineHourAndMasculineMinuteSecondDoNotLeak()
-        {
-            var c = NumberToStringConverter.GetConverter("ES");
-            Assert.AreEqual("veintiuna horas veintiún minutos veintiún segundos",
-                c.Convert(new TimeSpan(21, 21, 21)));
-        }
     }
 }

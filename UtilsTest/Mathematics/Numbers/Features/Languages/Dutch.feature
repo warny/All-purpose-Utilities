@@ -26,7 +26,7 @@ Examples:
     | 100 | honderd |
     | 1000 | duizend |
 
-Scenario Outline: Ordinals Suffix And Exceptions
+Scenario Outline: Irregular and suffixed ordinal numbers
     Given I use the "NL" number converter
     When I convert the ordinal number <number>
     Then the result is "<expected>"
@@ -41,3 +41,38 @@ Examples:
     | 10 | tiende |
     | 20 | twintigste |
     | 100 | honderdste |
+
+Scenario Outline: Additional ordinal numbers for units and teens
+    Given I use the "NL" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 2 |  | tweede |
+    | 3 |  | derde |
+    | 4 |  | vierde |
+    | 5 |  | vijfde |
+    | 6 |  | zesde |
+    | 7 |  | zevende |
+    | 8 |  | achtste |
+    | 9 |  | negende |
+    | 10 |  | tiende |
+    | 11 |  | elfde |
+    | 12 |  | twaalfde |
+    | 13 |  | dertiende |
+    | 19 |  | negentiende |
+
+Scenario Outline: Tens and compound ordinal numbers
+    Given I use the "NL" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 20 |  | twintigste |
+    | 21 |  | eenentwintigste |
+    | 100 |  | honderdste |
+    | 101 |  | honderd eerste |
