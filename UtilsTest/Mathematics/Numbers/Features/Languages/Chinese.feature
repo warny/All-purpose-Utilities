@@ -35,3 +35,7 @@ Examples:
     | 2 | 第二 |
     | 10 | 第十 |
     | 100 | 第一百 |
+
+Scenario: Ordinal conversion is supported
+    Given I use the "ZH" number converter
+    Then the converter supports ordinal conversion

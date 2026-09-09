@@ -64,3 +64,11 @@ Examples:
     | 110 | một trăm mười |
     | 121 | một trăm hai mươi mốt |
     | 200 | hai trăm |
+
+Scenario: Supported aliases use Vietnamese wording
+    Then the "VN" and "VI" converters produce the same cardinal wording for 2
+    And the "VN" and "VI-VN" converters produce the same cardinal wording for 2
+
+Scenario: Values above the supported maximum are rejected
+    When I attempt to convert the cardinal number 1000000000000
+    Then conversion is rejected because the value is out of range

@@ -87,3 +87,12 @@ Examples:
     | 2 | gender=nekeva | שנייה |
     | 3 | gender=nekeva | שלישית |
     | 10 | gender=nekeva | עשירית |
+
+Scenario: Ordinal above the configured range falls back to cardinal wording
+    Given I use the "HE" number converter
+    When I convert the ordinal number 20
+    Then the result is "עשרים"
+
+Scenario: Ordinal conversion is supported
+    Given I use the "HE" number converter
+    Then the converter supports ordinal conversion

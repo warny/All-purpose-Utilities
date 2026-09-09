@@ -81,3 +81,7 @@ Examples:
     | 2 | gender=θηλυκό | δεύτερη |
     | 1 | gender=ουδέτερο | πρώτο |
     | 20 | gender=θηλυκό | εικοστή |
+
+Scenario: Ordinal conversion is supported
+    Given I use the "EL" number converter
+    Then the converter supports ordinal conversion

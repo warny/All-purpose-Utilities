@@ -40,3 +40,7 @@ Examples:
     | number | variants | expected |
     | 1 |  | 第一 |
     | 3 |  | 第三 |
+
+Scenario: Ordinal conversion is supported
+    Given I use the "JA" number converter
+    Then the converter supports ordinal conversion

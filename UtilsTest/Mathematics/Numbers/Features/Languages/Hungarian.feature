@@ -70,3 +70,14 @@ Examples:
     | 10 | tizedik |
     | 100 | századik |
     | 1000 | ezredik |
+
+Scenario: Ordinal conversion is supported
+    Given I use the "HU" number converter
+    Then the converter supports ordinal conversion
+
+Scenario: Temporal conversion is unsupported
+    Given I use the "HU" number converter
+    Then the converter does not support time conversion
+
+Scenario: The regional alias uses Hungarian wording
+    Then the "HU" and "HU-HU" converters produce the same cardinal wording for 2

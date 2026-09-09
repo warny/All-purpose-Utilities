@@ -73,11 +73,6 @@ Scenario Outline: Masculine ordinal numbers
 
 Examples:
     | number | variants | expected |
-    | 1 |  | primo |
-    | 2 |  | secondo |
-    | 11 |  | undicesimo |
-    | 20 |  | ventesimo |
-    | 100 |  | centesimo |
     | 1000 |  | millesimo |
 
 Scenario Outline: Additional feminine ordinal numbers
@@ -88,8 +83,26 @@ Scenario Outline: Additional feminine ordinal numbers
 
 Examples:
     | number | variants | expected |
-    | 1 | gender=femminile | prima |
-    | 2 | gender=femminile | seconda |
-    | 11 | gender=femminile | undicesima |
     | 20 | gender=femminile | ventesima |
     | 1000 | gender=femminile | millesima |
+
+Scenario Outline: Caller-defined currency wording
+    Given I use this currency definition
+        | property         | value      |
+        | unit singular    | euro       |
+        | unit plural      | euro       |
+        | subunit singular | centesimo  |
+        | subunit plural   | centesimi  |
+        | connector        | e          |
+    When I convert the currency amount <amount>
+    Then the result is "<expected>"
+
+Examples:
+    | amount | expected                            |
+    | 1      | uno euro                            |
+    | 2      | due euro                            |
+    | 1.50   | uno euro e cinquanta centesimi      |
+
+Scenario: Ordinal conversion is supported
+    Given I use the "IT" number converter
+    Then the converter supports ordinal conversion

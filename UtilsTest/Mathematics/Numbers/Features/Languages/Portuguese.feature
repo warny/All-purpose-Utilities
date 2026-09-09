@@ -132,3 +132,11 @@ Examples:
     | 21 | gender=feminino | vinte e primeira |
     | 22 | gender=feminino | vinte e segunda |
     | 23 | gender=feminino | vinte e terceira |
+
+Scenario: Time conversion is supported
+    Given I use the "PT" number converter
+    Then the converter supports time conversion
+
+Scenario: Ordinal conversion is supported
+    Given I use the "PT" number converter
+    Then the converter supports ordinal conversion

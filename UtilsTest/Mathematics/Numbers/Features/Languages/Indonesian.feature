@@ -39,3 +39,6 @@ Examples:
     | number |
     | 21 |
     | 1000000 |
+
+Scenario: The regional alias uses Indonesian wording
+    Then the "ID" and "ID-ID" converters produce the same cardinal wording for 2

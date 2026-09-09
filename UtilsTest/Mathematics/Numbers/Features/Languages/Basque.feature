@@ -69,3 +69,7 @@ Examples:
     | 20 |  | hogeigarren |
     | 21 |  | hogeita batgarren |
     | 1000 |  | milagarren |
+
+Scenario: Ordinal conversion is supported
+    Given I use the "EU" number converter
+    Then the converter supports ordinal conversion

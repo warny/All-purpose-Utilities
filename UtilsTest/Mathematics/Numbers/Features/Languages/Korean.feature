@@ -54,3 +54,10 @@ Scenario Outline: Negative cardinal numbers
 Examples:
     | number | expected |
     | -1 | 마이너스 일 |
+
+Scenario: The converter is available
+    Given I use the "KO" number converter
+
+Scenario: Ordinal conversion is supported
+    Given I use the "KO" number converter
+    Then the converter supports ordinal conversion

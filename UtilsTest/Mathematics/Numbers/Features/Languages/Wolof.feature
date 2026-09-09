@@ -36,3 +36,7 @@ Examples:
     | 1 | bu njëkk |
     | 2 | ñaarël |
     | 10 | fukkël |
+
+Scenario: Ordinal conversion is supported
+    Given I use the "WO" number converter
+    Then the converter supports ordinal conversion

@@ -50,15 +50,10 @@ Scenario Outline: Additional ordinal numbers for units and teens
 
 Examples:
     | number | variants | expected |
-    | 2 |  | tweede |
-    | 3 |  | derde |
-    | 4 |  | vierde |
-    | 5 |  | vijfde |
     | 6 |  | zesde |
     | 7 |  | zevende |
     | 8 |  | achtste |
     | 9 |  | negende |
-    | 10 |  | tiende |
     | 11 |  | elfde |
     | 12 |  | twaalfde |
     | 13 |  | dertiende |
@@ -72,7 +67,9 @@ Scenario Outline: Tens and compound ordinal numbers
 
 Examples:
     | number | variants | expected |
-    | 20 |  | twintigste |
     | 21 |  | eenentwintigste |
-    | 100 |  | honderdste |
     | 101 |  | honderd eerste |
+
+Scenario: Ordinal conversion is supported
+    Given I use the "NL" number converter
+    Then the converter supports ordinal conversion

@@ -199,3 +199,7 @@ Examples:
     | number | variants | expected |
     | 4 |  | neljäs |
     | 5 |  | viides |
+
+Scenario: Ordinal conversion is supported
+    Given I use the "FI" number converter
+    Then the converter supports ordinal conversion

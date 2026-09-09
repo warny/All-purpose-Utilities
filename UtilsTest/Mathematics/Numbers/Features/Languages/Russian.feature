@@ -97,3 +97,7 @@ Examples:
     | 40 |  | сороковой |
     | 100 |  | сотый |
     | 1000 |  | тысячный |
+
+Scenario: Ordinal conversion is supported
+    Given I use the "RU" number converter
+    Then the converter supports ordinal conversion

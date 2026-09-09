@@ -87,3 +87,7 @@ Examples:
     | 101 |  | sto pierwszy |
     | 101 | rodzaj=feminin | sto pierwsza |
     | 221 |  | dwieście dwudziesty pierwszy |
+
+Scenario: Ordinal conversion is supported
+    Given I use the "PL" number converter
+    Then the converter supports ordinal conversion

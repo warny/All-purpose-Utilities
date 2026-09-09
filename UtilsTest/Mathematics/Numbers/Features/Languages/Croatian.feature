@@ -55,3 +55,10 @@ Examples:
     | 1 | prvi |
     | 2 | drugi |
     | 3 | treći |
+
+Scenario: Temporal conversion is unsupported
+    Given I use the "HR" number converter
+    Then the converter does not support time conversion
+
+Scenario: The regional alias uses Croatian wording
+    Then the "HR" and "HR-HR" converters produce the same cardinal wording for 2

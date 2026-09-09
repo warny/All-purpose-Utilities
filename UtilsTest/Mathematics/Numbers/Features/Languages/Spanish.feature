@@ -96,3 +96,55 @@ Examples:
     | 2 | gender=femenino | segunda |
     | 10 | gender=femenino | décima |
     | 20 | gender=femenino | vigésima |
+
+Scenario Outline: Caller-defined currency wording
+    Given I use this currency definition
+        | property         | value     |
+        | unit singular    | euro      |
+        | unit plural      | euros     |
+        | subunit singular | céntimo   |
+        | subunit plural   | céntimos  |
+        | connector        | con       |
+    When I convert the currency amount <amount>
+    Then the result is "<expected>"
+
+Examples:
+    | amount | expected                         |
+    | 1      | uno euro                         |
+    | 2      | dos euros                        |
+    | 1.50   | uno euro con cincuenta céntimos  |
+
+Scenario: Castilian aliases preserve decimal wording
+    Then the "ES" and "es-ES" converters produce the same decimal wording for 21.4
+    And the "ES" and "ES-es" converters produce the same cardinal wording for 1000
+
+Scenario Outline: Composite thousands preserve the terminal unit
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected             |
+    | 1000   | mil                  |
+    | 21000  | veintiuno mil        |
+    | 31000  | treinta y uno mil    |
+
+Scenario Outline: Feminine caller-defined currency wording
+    Given I use the variants "gender=femenino"
+    And I use this currency definition
+        | property         | value     |
+        | unit singular    | peseta    |
+        | unit plural      | pesetas   |
+        | subunit singular | céntimo   |
+        | subunit plural   | céntimos  |
+        | connector        | con       |
+    When I convert the currency amount <amount>
+    Then the result is "<expected>"
+
+Examples:
+    | amount | expected                    |
+    | 1      | una peseta                  |
+    | 31     | treinta y una pesetas       |
+
+Scenario: Ordinal conversion is supported
+    Given I use the "ES" number converter
+    Then the converter supports ordinal conversion

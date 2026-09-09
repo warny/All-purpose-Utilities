@@ -208,3 +208,30 @@ Examples:
     | culture | expected |
     | EN-US | July second, twenty twenty-six fourteen hours thirty minutes five seconds |
     | EN-GB | second July twenty twenty-six fourteen hours thirty minutes five seconds |
+
+@HugeNumber
+Scenario Outline: Very large short-scale cardinal numbers
+    Given I use the "EN" number converter
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number                                                                          | expected                  |
+    | 1000000000000000000000000000000                                                 | one nonillion             |
+    | 1000000000000000000000000000000000000000000000000000000000000                 | one novendecillion        |
+    | 1000000000000000000000000000000000000000000000000000000000000000000000000000  | one quattuorvingtillion   |
+
+@HugeNumber
+Scenario: A very large cardinal number follows the shipped scale vocabulary
+    Given I use the "en-UK" number converter
+    When I convert the cardinal number 1852673427797059126777135760139006525652319754650249024631321344126610074238975
+    Then the result is "one quinquavingtillion, eight hundred and fifty-two quattuorvingtillion, six hundred and seventy-three tresvingtillion, four hundred and twenty-seven duovingtillion, seven hundred and ninety-seven univingtillion, fifty-nine vingtillion, one hundred and twenty-six novendecillion, seven hundred and seventy-seven octodecillion, one hundred and thirty-five septendecillion, seven hundred and sixty sedecillion, one hundred and thirty-nine quinquadecillion, six quattuordecillion, five hundred and twenty-five tredecillion, six hundred and fifty-two duodecillion, three hundred and nineteen unidecillion, seven hundred and fifty-four decillion, six hundred and fifty nonillion, two hundred and forty-nine octillion, twenty-four septillion, six hundred and thirty-one sextillion, three hundred and twenty-one quintillion, three hundred and forty-four quadrillion, one hundred and twenty-six trillion, six hundred and ten billion, seventy-four million, two hundred and thirty-eight thousand, nine hundred and seventy-five"
+
+Scenario: Ordinal conversion is supported
+    Given I use the "EN" number converter
+    Then the converter supports ordinal conversion
+
+Scenario: Temporal conversion is supported
+    Given I use the "EN" number converter
+    Then the converter supports time conversion
+    And the converter supports date conversion

@@ -48,3 +48,7 @@ Examples:
     | 2 |  | etsõ eve |
     | 3 |  | etsõ eto |
     | 9 |  | etsõ asea |
+
+Scenario: Ordinal conversion is supported
+    Given I use the "EE" number converter
+    Then the converter supports ordinal conversion

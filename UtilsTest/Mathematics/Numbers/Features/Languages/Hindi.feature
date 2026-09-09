@@ -65,3 +65,7 @@ Examples:
     | 1 |  | पहला |
     | 6 |  | छठा |
     | 7 |  | सातवाँ |
+
+Scenario: Ordinal conversion is supported
+    Given I use the "HI" number converter
+    Then the converter supports ordinal conversion

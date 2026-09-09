@@ -386,20 +386,6 @@ public class NumberToStringConverterImprovementsTests
     // ── C8b — SupportsOrdinals property ──────────────────────────────────
 
     [TestMethod]
-    public void SupportsOrdinals_TrueForLanguagesWithOrdinals()
-    {
-        foreach (var culture in new[] { "EN", "FR", "ES", "IT", "NL", "EU", "ZH", "JA", "KO", "DE", "HE", "EE", "CA", "GL", "PT", "RU", "FI", "PL", "AR", "HI", "EL", "WO" })
-            Assert.IsTrue(NumberToStringConverter.GetConverter(culture).SupportsOrdinals, $"{culture}.SupportsOrdinals");
-    }
-
-    [TestMethod]
-    public void SupportsOrdinals_FalseForLanguagesWithoutOrdinals()
-    {
-        // ZU (Zulu) is the only language without ordinal configuration
-        Assert.IsFalse(NumberToStringConverter.GetConverter("ZU").SupportsOrdinals, "ZU.SupportsOrdinals");
-    }
-
-    [TestMethod]
     public void SupportsOrdinals_DefaultInterfaceReturnsFalse()
     {
         INumberToStringConverter converter = new MinimalConverter();

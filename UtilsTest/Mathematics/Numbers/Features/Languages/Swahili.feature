@@ -31,3 +31,7 @@ Examples:
     | 1000000000 | moja bilioni |
     | 1000000000000 | moja trilioni |
     | -1 | hasi moja |
+
+Scenario: Regional aliases use Swahili wording
+    Then the "SW" and "SW-KE" converters produce the same cardinal wording for 2
+    And the "SW" and "SW-TZ" converters produce the same cardinal wording for 2

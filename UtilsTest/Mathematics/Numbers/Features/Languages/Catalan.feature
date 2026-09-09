@@ -96,3 +96,11 @@ Examples:
     | number | variants | expected |
     | 21 | gender=femení | vint-i-unena |
     | 22 | gender=femení | vint-i-dosena |
+
+Scenario: Time conversion is supported
+    Given I use the "CA" number converter
+    Then the converter supports time conversion
+
+Scenario: Ordinal conversion is supported
+    Given I use the "CA" number converter
+    Then the converter supports ordinal conversion

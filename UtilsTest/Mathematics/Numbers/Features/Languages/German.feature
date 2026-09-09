@@ -325,3 +325,36 @@ Examples:
     | 21 |  | einundzwanzigste |
     | 21 | deklination=stark,genus=maskulin,kasus=nominativ | einundzwanzigster |
     | 21 | deklination=stark,genus=maskulin,kasus=akkusativ | einundzwanzigsten |
+
+Scenario Outline: Caller-defined currency wording
+    Given I use the "DE" number converter
+    And I use this currency definition
+        | property         | value |
+        | unit singular    | Euro  |
+        | unit plural      | Euro  |
+        | subunit singular | Cent  |
+        | subunit plural   | Cent  |
+        | connector        | und   |
+    When I convert the currency amount <amount>
+    Then the result is "<expected>"
+
+Examples:
+    | amount | expected                       |
+    | 1      | eins Euro                      |
+    | 2      | zwei Euro                      |
+    | 1.50   | eins Euro und fünfzig Cent     |
+
+@HugeNumber
+Scenario: A very large cardinal number follows the shipped scale vocabulary
+    Given I use the "de-DE" number converter
+    When I convert the cardinal number 1852673427797059126777135760139006525652319754650249024631321344126610074238975
+    Then the result is "eine Tredezillion achthundertzweiundfünfzig Duodezilliarden sechshundertdreiundsiebzig Duodezillionen vierhundertsiebenundzwanzig Unidezilliarden siebenhundertsiebenundneunzig Unidezillionen neunundfünfzig Dezilliarden einhundertsechsundzwanzig Dezillionen siebenhundertsiebenundsiebzig Nonilliarden einhundertfünfunddreißig Nonillionen siebenhundertsechzig Octilliarden einhundertneununddreißig Octillionen sechs Septilliarden fünfhundertfünfundzwanzig Septillionen sechshundertzweiundfünfzig Sextilliarden dreihundertneunzehn Sextillionen siebenhundertvierundfünfzig Quintilliarden sechshundertfünfzig Quintillionen zweihundertneunundvierzig Quadrilliarden vierundzwanzig Quadrillionen sechshunderteinunddreißig Trilliarden dreihunderteinundzwanzig Trillionen dreihundertvierundvierzig Billiarden einhundertsechsundzwanzig Billionen sechshundertzehn Milliarden vierundsiebzig Millionen zweihundertachtunddreißig tausend neunhundertfünfundsiebzig"
+
+Scenario: Ordinal conversion is supported
+    Given I use the "DE" number converter
+    Then the converter supports ordinal conversion
+
+Scenario: Temporal conversion is supported
+    Given I use the "DE" number converter
+    Then the converter supports time conversion
+    And the converter supports date conversion
