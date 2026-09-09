@@ -1184,51 +1184,130 @@ public abstract class ExpressionTransformer
     /// <param name="newParameters">The new expressions that replace <paramref name="oldParameters"/>.</param>
     /// <returns>A copy of <paramref name="e"/> where specified parameters are replaced.</returns>
     protected Expression ReplaceArguments(Expression e, ParameterExpression[] oldParameters, Expression[] newParameters)
+        => ReplaceArgumentsCore(e, oldParameters, newParameters);
+
+    /// <summary>
+    /// Collection-based core of <see cref="ReplaceArguments"/>. Accepts <see cref="IReadOnlyList{T}"/>
+    /// rather than arrays so a caller that already holds a
+    /// <see cref="System.Collections.ObjectModel.ReadOnlyCollection{T}"/> (e.g.
+    /// <see cref="LambdaExpression.Parameters"/>, <see cref="InvocationExpression.Arguments"/>) can
+    /// pass it directly instead of copying it into an array first. <paramref name="oldParameters"/>
+    /// and <paramref name="newParameters"/> are deliberately not validated up front: a node type this
+    /// switch does not recognize (see the default fallthrough) returns <paramref name="e"/> unchanged
+    /// without ever consulting either list, and <see cref="ReplaceArguments"/>'s historical
+    /// null/short-array exception behavior for the protected array-based overload depends on that lazy
+    /// access timing.
+    /// </summary>
+    /// <param name="e">The expression in which parameter references are replaced.</param>
+    /// <param name="oldParameters">
+    /// The parameters to remove; may be <see langword="null"/> if only node types that never read it are
+    /// encountered.
+    /// </param>
+    /// <param name="newParameters">
+    /// The replacement expressions; may be <see langword="null"/> if only node types that never read it
+    /// are encountered.
+    /// </param>
+    /// <returns>A copy of <paramref name="e"/> where specified parameters are replaced.</returns>
+    internal Expression ReplaceArgumentsCore(Expression e, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters)
     {
         switch (e)
         {
             case ParameterExpression pe:
                 {
-                    int i = Array.IndexOf(oldParameters, pe);
-                    return i >= 0 ? newParameters[i] : e;
+                    // Array.IndexOf is used directly whenever oldParameters actually is (or is a null
+                    // reference of static type) ParameterExpression[] -- i.e. whenever this call
+                    // originates from the protected array-based overload -- so that overload keeps its
+                    // exact original first-match/equality/null-exception behavior. A non-null,
+                    // non-array IReadOnlyList<ParameterExpression> (the new collection-based callers,
+                    // e.g. LambdaExpression.Parameters) falls back to an equivalent manual scan.
+                    int i = oldParameters is ParameterExpression[] array
+                        ? Array.IndexOf(array, pe)
+                        : oldParameters is null
+                            ? Array.IndexOf<ParameterExpression>(null!, pe)
+                            : IndexOfParameter(oldParameters, pe);
+
+                    if (i < 0) return e;
+
+                    // Same reasoning as above, mirrored for newParameters: a real Expression[] is
+                    // indexed natively so a too-short array still throws IndexOutOfRangeException (not
+                    // an interface-dispatch-flavored exception), and a null reference throws on the
+                    // element access exactly like the historical array-typed overload did.
+                    return newParameters is Expression[] newArray ? newArray[i] : newParameters![i];
                 }
             case UnaryExpression ue:
-                return CopyExpression(ue, ReplaceArguments(ue.Operand, oldParameters, newParameters));
+                return CopyExpression(ue, ReplaceArgumentsCore(ue.Operand, oldParameters, newParameters));
 
             case BinaryExpression be:
                 {
-                    var left = ReplaceArguments(be.Left, oldParameters, newParameters);
-                    var right = ReplaceArguments(be.Right, oldParameters, newParameters);
+                    var left = ReplaceArgumentsCore(be.Left, oldParameters, newParameters);
+                    var right = ReplaceArgumentsCore(be.Right, oldParameters, newParameters);
                     return CopyExpression(be, left, right);
                 }
             case InvocationExpression ie:
                 {
-                    Expression invokedExpression = ReplaceArguments(ie.Expression, oldParameters, newParameters);
-                    var arguments = ie.Arguments
-                                      .Select(a => ReplaceArguments(a, oldParameters, newParameters))
-                                      .ToArray();
+                    Expression invokedExpression = ReplaceArgumentsCore(ie.Expression, oldParameters, newParameters);
+
+                    int argumentCount = ie.Arguments.Count;
+                    Expression[] arguments = argumentCount == 0
+                        ? Array.Empty<Expression>()
+                        : new Expression[argumentCount];
+                    for (int i = 0; i < argumentCount; i++)
+                    {
+                        arguments[i] = ReplaceArgumentsCore(ie.Arguments[i], oldParameters, newParameters);
+                    }
+
                     return Expression.Invoke(invokedExpression, arguments);
                 }
             case MethodCallExpression mce:
                 {
                     Expression? replacedObject = mce.Object is null
                         ? null
-                        : ReplaceArguments(mce.Object, oldParameters, newParameters);
-                    var arguments = mce.Arguments
-                                       .Select(a => ReplaceArguments(a, oldParameters, newParameters))
-                                       .ToArray();
+                        : ReplaceArgumentsCore(mce.Object, oldParameters, newParameters);
+
+                    int argumentCount = mce.Arguments.Count;
+                    Expression[] arguments = argumentCount == 0
+                        ? Array.Empty<Expression>()
+                        : new Expression[argumentCount];
+                    for (int i = 0; i < argumentCount; i++)
+                    {
+                        arguments[i] = ReplaceArgumentsCore(mce.Arguments[i], oldParameters, newParameters);
+                    }
+
                     return replacedObject is null
                         ? Expression.Call(mce.Method, arguments)
                         : Expression.Call(replacedObject, mce.Method, arguments);
                 }
             case ConditionalExpression ce:
                 return Expression.Condition(
-                    ReplaceArguments(ce.Test, oldParameters, newParameters),
-                    ReplaceArguments(ce.IfTrue, oldParameters, newParameters),
-                    ReplaceArguments(ce.IfFalse, oldParameters, newParameters),
+                    ReplaceArgumentsCore(ce.Test, oldParameters, newParameters),
+                    ReplaceArgumentsCore(ce.IfTrue, oldParameters, newParameters),
+                    ReplaceArgumentsCore(ce.IfFalse, oldParameters, newParameters),
                     ce.Type);
         }
         return e;
+    }
+
+    /// <summary>
+    /// Linear scan matching <see cref="Array.IndexOf{T}(T[], T)"/>'s first-match-wins semantics and
+    /// default equality comparer, for an <see cref="IReadOnlyList{T}"/> that is not itself an array
+    /// (the collection-based callers of <see cref="ReplaceArgumentsCore"/> pass a
+    /// <see cref="System.Collections.ObjectModel.ReadOnlyCollection{T}"/> here, e.g.
+    /// <see cref="LambdaExpression.Parameters"/>).
+    /// </summary>
+    /// <param name="list">The list to search.</param>
+    /// <param name="value">The value to find.</param>
+    /// <returns>The index of the first matching element, or -1 if none is found.</returns>
+    private static int IndexOfParameter(IReadOnlyList<ParameterExpression> list, ParameterExpression value)
+    {
+        for (int i = 0; i < list.Count; i++)
+        {
+            if (EqualityComparer<ParameterExpression>.Default.Equals(list[i], value))
+            {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     /// <summary>

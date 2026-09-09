@@ -716,9 +716,10 @@ namespace Utils.Mathematics.Expressions
         {
             if (expression.Expression is LambdaExpression le)
             {
-                var newArguments = expression.Arguments.ToArray();
-                var oldArguments = le.Parameters.ToArray();
-                return Transform(ReplaceArguments(le.Body, oldArguments, newArguments));
+                // le.Parameters and expression.Arguments are already indexable ReadOnlyCollection<T>
+                // instances; ReplaceArgumentsCore accepts them directly, so no array copy is needed
+                // just to adapt them to the historical array-based ReplaceArguments signature.
+                return Transform(ReplaceArgumentsCore(le.Body, le.Parameters, expression.Arguments));
             }
             return expression;
         }
