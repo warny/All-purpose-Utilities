@@ -9,12 +9,17 @@ namespace UtilsTest.Mathematics.Expressions;
 /// <summary>
 /// Characterization coverage for <c>ExpressionSimplifier.Math.TransformCall</c>, the private helper
 /// shared by every <c>double</c> static-method conversion rule (<c>Sqrt</c>, <c>Max</c>, <c>Clamp</c>,
-/// and about twenty others). It currently builds its method-lookup signature via
-/// <c>Enumerable.Repeat(...).ToArray()</c> and converts its arguments via <c>Select(...).ToArray()</c>.
-/// These tests lock in every observable behavior of that helper (argument order, argument-instance
-/// reuse for already-<c>double</c> expressions, non-mutation of the caller's array, exact validation
-/// and exception ordering) so that a later LINQ-removal change can be verified not to alter anything
-/// beyond the removed iterator/delegate machinery.
+/// and about twenty others). #583 removed this helper's original LINQ scaffolding
+/// (<c>Enumerable.Repeat(...).ToArray()</c> / <c>Select(...).ToArray()</c>). The remaining repeated
+/// work on every call is building the all-<c>double</c> <c>Type[]</c> lookup signature and calling
+/// <see cref="Type.GetMethod(string, BindingFlags, Type[])"/>. These tests characterize that behavior
+/// (argument order, argument-instance reuse for already-<c>double</c> expressions, non-mutation of the
+/// caller's array, exact validation and exception ordering, and — critically — that the same rule can
+/// resolve different overloads depending on how many arguments it is called with, since
+/// <see cref="ExpressionCallSignatureAttribute"/> matches only the declaring type and method name, not
+/// the full parameter signature) so that a subsequent resolution-cache optimization can be verified not
+/// to alter any of it beyond removing the redundant signature array and reflection lookup on repeated
+/// successful resolutions.
 /// </summary>
 [TestClass]
 public class ExpressionSimplifierMathTransformCallTests
@@ -23,7 +28,9 @@ public class ExpressionSimplifierMathTransformCallTests
     /// Exposes a handful of <see cref="ExpressionSimplifier"/>'s protected <c>double</c>-conversion
     /// rules as public wrappers, without changing their accessibility on the production type. Covers
     /// one rule of each arity actually used by <c>TransformCall</c>: <c>Sqrt</c> (1 argument),
-    /// <c>Max</c> (2 arguments), and <c>Clamp</c> (3 arguments).
+    /// <c>Max</c> (2 arguments), and <c>Clamp</c> (3 arguments); plus <c>Abs</c>, <c>Log</c>, and
+    /// <c>Round</c> for the resolution-cache characterization (same-name/different-arity overloads,
+    /// and the deliberate non-reuse of a source call's own <see cref="MethodInfo"/>).
     /// </summary>
     private sealed class ExposedMathSimplifier : ExpressionSimplifier
     {
@@ -44,6 +51,24 @@ public class ExpressionSimplifierMathTransformCallTests
         /// <param name="expressions">The three argument expressions.</param>
         /// <returns>Whatever <c>ClampConversionMath</c> returns.</returns>
         public Expression Clamp(Expression e, Expression[] expressions) => ClampConversionMath(e, expressions);
+
+        /// <summary>Publicly exposes <c>AbsConversionMath</c>.</summary>
+        /// <param name="e">The original expression node passed through to the protected rule.</param>
+        /// <param name="expressions">The single argument expression.</param>
+        /// <returns>Whatever <c>AbsConversionMath</c> returns.</returns>
+        public Expression Abs(Expression e, Expression[] expressions) => AbsConversionMath(e, expressions);
+
+        /// <summary>Publicly exposes <c>LogConversionMath</c>.</summary>
+        /// <param name="e">The original expression node passed through to the protected rule.</param>
+        /// <param name="expressions">One or two argument expressions (<c>double.Log(double)</c> or <c>double.Log(double,double)</c>).</param>
+        /// <returns>Whatever <c>LogConversionMath</c> returns.</returns>
+        public Expression Log(Expression e, Expression[] expressions) => LogConversionMath(e, expressions);
+
+        /// <summary>Publicly exposes <c>RoundConversionMath</c>.</summary>
+        /// <param name="e">The original expression node passed through to the protected rule.</param>
+        /// <param name="expressions">The argument expressions.</param>
+        /// <returns>Whatever <c>RoundConversionMath</c> returns.</returns>
+        public Expression Round(Expression e, Expression[] expressions) => RoundConversionMath(e, expressions);
     }
 
     /// <summary>A placeholder "original expression" argument, since <c>TransformCall</c> only null-checks it.</summary>
@@ -287,5 +312,163 @@ public class ExpressionSimplifierMathTransformCallTests
         var simplifier = new ExposedMathSimplifier();
 
         Assert.ThrowsExactly<NullReferenceException>(() => simplifier.Sqrt(DummySource, [null!]));
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // Resolution-cache characterization (#586): a future cache keyed only by method name, or one
+    // MethodInfo per protected rule, would be incorrect. The minimum correct lookup identity is
+    // (functionName, expressions.Length).
+    // ------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// Two different single-argument rules (<c>Sqrt</c> and <c>Abs</c>) must resolve to their own,
+    /// distinct methods — not collapse onto each other under a cache keyed only by argument count.
+    /// </summary>
+    [TestMethod]
+    public void TransformCall_DifferentNamesSameArity_RemainDistinct()
+    {
+        var simplifier = new ExposedMathSimplifier();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        MethodInfo sqrtMethod = typeof(double).GetMethod(
+            nameof(double.Sqrt), BindingFlags.Public | BindingFlags.Static, [typeof(double)])!;
+        MethodInfo absMethod = typeof(double).GetMethod(
+            nameof(double.Abs), BindingFlags.Public | BindingFlags.Static, [typeof(double)])!;
+
+        var sqrt1 = (MethodCallExpression)simplifier.Sqrt(DummySource, [x]);
+        var abs1 = (MethodCallExpression)simplifier.Abs(DummySource, [x]);
+        var sqrt2 = (MethodCallExpression)simplifier.Sqrt(DummySource, [x]);
+
+        Assert.AreSame(sqrtMethod, sqrt1.Method);
+        Assert.AreSame(absMethod, abs1.Method);
+        Assert.AreSame(sqrtMethod, sqrt2.Method, "A repeated Sqrt call must still resolve double.Sqrt, not the Abs method seen in between.");
+    }
+
+    /// <summary>
+    /// The same rule name (<c>Log</c>) called with a different argument count must resolve a different
+    /// overload each time: <see cref="ExpressionCallSignatureAttribute"/> matches only the declaring
+    /// type and method name, so the same protected rule can legitimately receive either
+    /// <see cref="double.Log(double)"/> or <see cref="double.Log(double, double)"/>'s arguments. A cache
+    /// keyed only by name — or one <see cref="MethodInfo"/> cached per protected rule — would be wrong.
+    /// </summary>
+    [TestMethod]
+    public void TransformCall_SameNameDifferentArity_ResolvesDistinctOverloads()
+    {
+        var simplifier = new ExposedMathSimplifier();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        ParameterExpression y = Expression.Parameter(typeof(double), "y");
+        MethodInfo logUnary = typeof(double).GetMethod(
+            nameof(double.Log), BindingFlags.Public | BindingFlags.Static, [typeof(double)])!;
+        MethodInfo logBinary = typeof(double).GetMethod(
+            nameof(double.Log), BindingFlags.Public | BindingFlags.Static, [typeof(double), typeof(double)])!;
+
+        var call1 = (MethodCallExpression)simplifier.Log(DummySource, [x]);
+        var call2 = (MethodCallExpression)simplifier.Log(DummySource, [x, y]);
+        var call3 = (MethodCallExpression)simplifier.Log(DummySource, [x]);
+
+        Assert.AreSame(logUnary, call1.Method);
+        Assert.AreEqual(1, call1.Arguments.Count);
+        Assert.AreSame(logBinary, call2.Method);
+        Assert.AreEqual(2, call2.Arguments.Count);
+        Assert.AreSame(logUnary, call3.Method, "The third Log call (arity 1) must resolve double.Log(double) again, not the arity-2 overload seen in between.");
+        Assert.AreEqual(1, call3.Arguments.Count);
+    }
+
+    /// <summary>
+    /// The two-argument <see cref="double.Log(double, double)"/> overload resolved through <c>Log</c>
+    /// must compute the expected base-change semantics once compiled and executed.
+    /// </summary>
+    [TestMethod]
+    public void TransformCall_TwoArgumentLog_ComputesExpectedSemantics()
+    {
+        var simplifier = new ExposedMathSimplifier();
+        ParameterExpression value = Expression.Parameter(typeof(double), "value");
+        ParameterExpression newBase = Expression.Parameter(typeof(double), "newBase");
+
+        var call = (MethodCallExpression)simplifier.Log(DummySource, [value, newBase]);
+        var compiled = Expression.Lambda<Func<double, double, double>>(call, value, newBase).Compile();
+
+        Assert.AreEqual(Math.Log(8.0, 2.0), compiled(8.0, 2.0), 1e-9);
+    }
+
+    /// <summary>
+    /// <c>TransformCall</c> must never reuse the source <see cref="MethodCallExpression.Method"/>: it
+    /// always resolves from <c>functionName</c> plus an all-<see cref="double"/> signature built from
+    /// <c>expressions.Length</c>. A real <see cref="double.Round(double, int)"/> source call passed
+    /// through <c>Round</c> with two arguments still fails to resolve, because the lookup signature is
+    /// <c>(double, double)</c>, not <c>(double, int)</c> — <see cref="double.Round(double, double)"/>
+    /// does not exist. If a future optimization shortcut ever read <c>((MethodCallExpression)e).Method</c>
+    /// instead, this exact case would silently start succeeding with the wrong (source) method — a
+    /// historical-behavior change this test forbids.
+    /// </summary>
+    [TestMethod]
+    public void TransformCall_RoundDoubleInt_DoesNotReuseSourceMethodInfo_ThrowsInvalidOperationException()
+    {
+        var simplifier = new ExposedMathSimplifier();
+        MethodInfo roundDoubleInt = typeof(double).GetMethod(
+            nameof(double.Round), BindingFlags.Public | BindingFlags.Static, [typeof(double), typeof(int)])!;
+        ParameterExpression value = Expression.Parameter(typeof(double), "value");
+        ParameterExpression digits = Expression.Parameter(typeof(int), "digits");
+        MethodCallExpression sourceCall = Expression.Call(roundDoubleInt, value, digits);
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => simplifier.Round(sourceCall, [value, digits]));
+    }
+
+    /// <summary>
+    /// A failed resolution (wrong arity) must not affect a later, valid resolution of the same
+    /// function name, and must still fail again afterward — failed lookups must never be cached,
+    /// including as a side effect of a preceding successful one.
+    /// </summary>
+    [TestMethod]
+    public void TransformCall_FailedArityDoesNotPoisonLaterValidLookup()
+    {
+        var simplifier = new ExposedMathSimplifier();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        ParameterExpression y = Expression.Parameter(typeof(double), "y");
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => simplifier.Sqrt(DummySource, [x, y]));
+
+        var call = (MethodCallExpression)simplifier.Sqrt(DummySource, [x]);
+        MethodInfo expected = typeof(double).GetMethod(
+            nameof(double.Sqrt), BindingFlags.Public | BindingFlags.Static, [typeof(double)])!;
+        Assert.AreSame(expected, call.Method);
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => simplifier.Sqrt(DummySource, [x, y]));
+    }
+
+    /// <summary>
+    /// After a valid <c>(functionName, arity)</c> key has already been resolved once (and would be
+    /// cached by a resolution-cache optimization), a later call with an invalid element at that same
+    /// valid arity must still pass method resolution and fail while inspecting the element during
+    /// argument conversion — not surface a different, cache-related exception.
+    /// </summary>
+    [TestMethod]
+    public void TransformCall_ValidCachedKeyThenInvalidElement_ThrowsNullReferenceException()
+    {
+        var simplifier = new ExposedMathSimplifier();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+
+        simplifier.Sqrt(DummySource, [x]);
+
+        Assert.ThrowsExactly<NullReferenceException>(() => simplifier.Sqrt(DummySource, [null!]));
+    }
+
+    /// <summary>
+    /// Concurrent callers resolving the same <c>(functionName, arity)</c> key must all observe the
+    /// correct <see cref="MethodInfo"/>. Deterministic and timing-independent: no timing assertions, no
+    /// sleeps, no dependency on whether any cache was already warm.
+    /// </summary>
+    [TestMethod]
+    public void TransformCall_ConcurrentInvocations_AllResolveExpectedMethod()
+    {
+        var simplifier = new ExposedMathSimplifier();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        MethodInfo expected = typeof(double).GetMethod(
+            nameof(double.Abs), BindingFlags.Public | BindingFlags.Static, [typeof(double)])!;
+
+        System.Threading.Tasks.Parallel.For(0, 200, _ =>
+        {
+            var call = (MethodCallExpression)simplifier.Abs(DummySource, [x]);
+            Assert.AreSame(expected, call.Method);
+        });
     }
 }
