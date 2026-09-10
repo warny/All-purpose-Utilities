@@ -15,12 +15,14 @@ public class NumberToStringConverterEngineFixesTests
     private const string NamedFractionConfiguration = """
         <?xml version="1.0" encoding="utf-8" ?>
         <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
-          <Language groupSize="3" separator=" " groupSeparator="" zero="ZERO" minus="SIGN *" decimalSeparator="DOT">
+          <Language groupSize="3" separator=" " groupSeparator="" zero="ZERO" minus="SIGN *" decimalSeparator="DOT" fractionSeparator="CONNECTOR">
             <Culture>TEST-NAMED-FRACTION</Culture>
             <Groups>
               <Group level="1">
                 <Digit digit="0" string="" />
                 <Digit digit="1" string="UNIT" />
+                <Digit digit="2" string="LEFT" />
+                <Digit digit="3" string="RIGHT" />
               </Group>
             </Groups>
             <NumberScale firstLetterUpperCase="false">
@@ -55,6 +57,16 @@ public class NumberToStringConverterEngineFixesTests
 
         Assert.AreEqual("UNIT PART", converter.ConvertFraction(1, 10));
         Assert.AreEqual("SIGN UNIT PART", converter.ConvertFraction(-1, 10));
+    }
+
+    /// <summary>Verifies that ordinary fractions use the configured synthetic connector.</summary>
+    [TestMethod]
+    public void ConvertFraction_OrdinaryDenominator_UsesSyntheticConnector()
+    {
+        NumberToStringConverter converter = LegacyNumberToStringFixture
+            .ReadConfiguration(NamedFractionConfiguration)["TEST-NAMED-FRACTION"];
+
+        Assert.AreEqual("LEFT CONNECTOR RIGHT", converter.ConvertFraction(2, 3));
     }
 
     // ─── Item 31 — ApplyVariantRules / ApplyVariantRulesForScale factored ───

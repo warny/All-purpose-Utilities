@@ -127,31 +127,31 @@ public class NumberToStringConverterAuditFixesTests
         var c = EN;
         var eur = new CurrencyDefinition
         {
-            UnitSingular = "euro", UnitPlural = "euros",
-            SubunitSingular = "cent", SubunitPlural = "cents",
+            UnitSingular = "UNIT", UnitPlural = "UNITS",
+            SubunitSingular = "SUBUNIT", SubunitPlural = "SUBUNITS",
             SubunitDigits = 2
         };
         // long.MaxValue = 9223372036854775807; use a value just above it as decimal
         decimal largeAmount = (decimal)long.MaxValue + 1000m;
         string result = c.ConvertCurrency(largeAmount, eur);
         Assert.IsNotNull(result);
-        StringAssert.Contains(result, "euro");
+        StringAssert.Contains(result, "UNIT");
     }
 
     [TestMethod]
     public void ConvertCurrency_Decimal_MinValue_DoesNotThrowOverflow()
     {
-        var c = EN;
+        var c = new NumberToStringConverter(new NumberToStringConverterOptions(EN) { Minus = "SIGN *" });
         var eur = new CurrencyDefinition
         {
-            UnitSingular = "euro", UnitPlural = "euros",
-            SubunitSingular = "cent", SubunitPlural = "cents",
+            UnitSingular = "UNIT", UnitPlural = "UNITS",
+            SubunitSingular = "SUBUNIT", SubunitPlural = "SUBUNITS",
             SubunitDigits = 2
         };
         // Should produce a valid "minus N euros..." result, not throw OverflowException
         string result = c.ConvertCurrency(decimal.MinValue, eur);
         Assert.IsNotNull(result);
-        StringAssert.StartsWith(result, "minus ");
+        StringAssert.StartsWith(result, "SIGN ");
     }
 
     // ── Item 49 — SubunitDigits validation ───────────────────────────────────
@@ -177,13 +177,13 @@ public class NumberToStringConverterAuditFixesTests
         var c = EN;
         var noSubunit = new CurrencyDefinition
         {
-            UnitSingular = "dollar", UnitPlural = "dollars",
-            SubunitSingular = "cent", SubunitPlural = "cents",
+            UnitSingular = "UNIT", UnitPlural = "UNITS",
+            SubunitSingular = "SUBUNIT", SubunitPlural = "SUBUNITS",
             SubunitDigits = 0
         };
         string result = c.ConvertCurrency(5m, noSubunit);
-        StringAssert.Contains(result, "dollar");
-        Assert.IsFalse(result.Contains("cent"), $"SubunitDigits=0 should produce no subunit part; got: {result}");
+        StringAssert.Contains(result, "UNIT");
+        Assert.IsFalse(result.Contains("SUBUNIT"), $"SubunitDigits=0 should produce no subunit part; got: {result}");
     }
 
     [TestMethod]
@@ -297,14 +297,22 @@ public class NumberToStringConverterAuditFixesTests
     // ── Item 62 — Cardinal zero bypasses variants, triggers, finalization ─────
 
     [TestMethod]
-    public void Convert_Zero_WithVariants_VariantRulesApplied_DE()
+    public void Convert_Zero_WithVariants_AppliesSyntheticVariantRules()
     {
-        var de = NumberToStringConverter.GetConverter("DE");
-        // In German, zero with gender=feminin should still go through the pipeline.
-        // Even if the output is the same "null", the pipeline must run without error.
-        string result = de.Convert(0, "gender=feminin");
-        Assert.IsNotNull(result);
-        Assert.IsFalse(string.IsNullOrWhiteSpace(result));
+        var options = new NumberToStringConverterOptions(EN)
+        {
+            Zero = "ZERO",
+            VariantDimensions = [new NumberToStringConverter.VariantDimension("form", ["base", "alternate"])],
+            VariantRules =
+            [
+                new NumberToStringConverter.VariantRule(
+                    new Dictionary<string, string> { ["form"] = "alternate" },
+                    [new NumberToStringConverter.ReplacementRule("ZERO", "ZERO_ALT", ReplacementScope.Standalone)]),
+            ],
+        };
+        var converter = new NumberToStringConverter(options);
+
+        Assert.AreEqual("ZERO_ALT", converter.Convert(0, "form=alternate"));
     }
 
     [TestMethod]
@@ -3178,9 +3186,9 @@ public class NumberToStringConverterAuditFixesTests
     public void Convert_TimeSpan_SubSecondOnly_RendersAsZero()
     {
         // A duration of 500 ms only has no second component → must produce Zero text.
-        var fr = NumberToStringConverter.GetConverter("FR");
-        string result = fr.Convert(TimeSpan.FromMilliseconds(500));
-        Assert.AreEqual(fr.Zero, result,
+        var converter = NumberToStringConverter.GetConverter("EN");
+        string result = converter.Convert(TimeSpan.FromMilliseconds(500));
+        Assert.AreEqual(converter.Zero, result,
             "Convert(TimeSpan) for a sub-second-only duration must render as Zero");
     }
 
@@ -3188,15 +3196,11 @@ public class NumberToStringConverterAuditFixesTests
     public void Convert_TimeSpan_WithMilliseconds_MillisecondsAreDiscarded()
     {
         // 1 hour, 30 minutes, 500 ms → must mention hours and minutes but not milliseconds.
-        var fr = NumberToStringConverter.GetConverter("FR");
-        string result = fr.Convert(TimeSpan.FromHours(1).Add(TimeSpan.FromMinutes(30)).Add(TimeSpan.FromMilliseconds(500)));
-        StringAssert.Contains(result, "heure",
-            "Convert(TimeSpan) for 1h30m500ms must mention the hour component");
-        StringAssert.Contains(result, "minute",
-            "Convert(TimeSpan) for 1h30m500ms must mention the minute component");
-        // milliseconds are silently discarded per the documented precision contract
-        Assert.IsFalse(result.Contains("millisecon"),
-            $"Convert(TimeSpan) must not mention milliseconds; got: {result}");
+        var converter = NumberToStringConverter.GetConverter("EN");
+        TimeSpan wholeSeconds = TimeSpan.FromHours(1).Add(TimeSpan.FromMinutes(30));
+        TimeSpan withMilliseconds = wholeSeconds.Add(TimeSpan.FromMilliseconds(500));
+
+        Assert.AreEqual(converter.Convert(wholeSeconds), converter.Convert(withMilliseconds));
     }
 
     // ── Item 95 — Fraction digit key validation ───────────────────────────────
@@ -3227,10 +3231,10 @@ public class NumberToStringConverterAuditFixesTests
         // Keys > 28 are valid: ConvertFraction(BigInteger, BigInteger) can resolve denominators
         // beyond decimal precision (e.g. 10^29). The 28 cap applies only to Convert(decimal).
         var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"));
-        options.Fractions = new Dictionary<int, string> { { 29, "nonillionths" } };
+        options.Fractions = new Dictionary<int, string> { { 29, "FRACTION(s)" } };
         var conv = new NumberToStringConverter(options);
         string result = conv.ConvertFraction(System.Numerics.BigInteger.One, System.Numerics.BigInteger.Pow(10, 29));
-        Assert.AreEqual("one nonillionths", result,
+        Assert.AreEqual($"{conv.Convert(BigInteger.One)} FRACTION", result,
             "Key 29 must be accepted and resolve when denominator is 10^29");
     }
 
