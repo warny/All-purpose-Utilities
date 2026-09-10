@@ -629,13 +629,15 @@ public abstract class ExpressionTransformer
     /// <see cref="Transform(Expression)"/>: never exposed outside this class.
     /// </summary>
     /// <remarks>
-    /// For every node type except <see cref="BinaryExpression"/>, the backing <c>expressionParameters</c>
-    /// field always holds a real (possibly empty) <see cref="Expression"/> array, exactly as before this
-    /// type gained a lazy representation. For a <see cref="BinaryExpression"/> prepared by
-    /// <see cref="PrepareBinary"/>, that field is instead <see langword="null"/>: a private sentinel
-    /// meaning "the two logical parameters are <c>((BinaryExpression)Expression).Left</c> and <c>.Right</c>,
-    /// and have not been array-materialized" — this lets <see cref="PrepareBinary"/> skip the
-    /// <see cref="Expression"/>[2] allocation entirely on paths that only ever need positional or
+    /// For every node type except <see cref="UnaryExpression"/> and <see cref="BinaryExpression"/>, the
+    /// backing <c>expressionParameters</c> field always holds a real (possibly empty) <see cref="Expression"/>
+    /// array, exactly as before this type gained a lazy representation. For a <see cref="UnaryExpression"/>
+    /// prepared by <see cref="PrepareUnary"/> or a <see cref="BinaryExpression"/> prepared by
+    /// <see cref="PrepareBinary"/>, that field is instead <see langword="null"/>: a private sentinel meaning
+    /// "the logical parameter(s) live directly on the rebuilt node — <c>((UnaryExpression)Expression).Operand</c>
+    /// for Unary, <c>((BinaryExpression)Expression).Left</c>/<c>.Right</c> for Binary — and have not been
+    /// array-materialized" — this lets <see cref="PrepareUnary"/>/<see cref="PrepareBinary"/> skip the
+    /// <see cref="Expression"/>[1]/[2] allocation entirely on paths that only ever need positional or
     /// <see cref="InvocationKind.Single"/> access (see <see cref="GetExpressionParameter"/> and
     /// <see cref="GetInvocationArgument"/>). <see langword="null"/> is not used as a general lazy-list
     /// abstraction for any other node type: every other <c>Prepare*</c> method keeps constructing this
@@ -645,7 +647,8 @@ public abstract class ExpressionTransformer
     {
         /// <summary>
         /// The prepared sub-expressions of <see cref="Expression"/>, or <see langword="null"/> exactly
-        /// when <see cref="Expression"/> is a <see cref="BinaryExpression"/> prepared by
+        /// when <see cref="Expression"/> is a <see cref="UnaryExpression"/> prepared by
+        /// <see cref="PrepareUnary"/> or a <see cref="BinaryExpression"/> prepared by
         /// <see cref="PrepareBinary"/> without materializing an array — see the type-level remarks.
         /// </summary>
         private readonly Expression[]? expressionParameters;
@@ -659,9 +662,14 @@ public abstract class ExpressionTransformer
 
         /// <summary>
         /// The logical parameter count of <see cref="Expression"/>: the real array's length when one was
-        /// materialized, or 2 for a lazy <see cref="BinaryExpression"/> context (<c>Left</c>/<c>Right</c>).
+        /// materialized, or — for a lazy context, see the type-level remarks — 2 for a
+        /// <see cref="BinaryExpression"/> (<c>Left</c>/<c>Right</c>) or 1 for a <see cref="UnaryExpression"/>
+        /// (<c>Operand</c>). Binary is checked first: it is the more allocation-sensitive hot path this
+        /// struct was originally introduced for (see the PR that added binary laziness), so this ordering
+        /// keeps its dispatch a single type test, same as before <see cref="UnaryExpression"/> gained the
+        /// same lazy representation.
         /// </summary>
-        private int ExpressionParameterCount => expressionParameters?.Length ?? 2;
+        private int ExpressionParameterCount => expressionParameters?.Length ?? (Expression is BinaryExpression ? 2 : 1);
 
         /// <summary>Gets the number of arguments in the historical positional invocation layout.</summary>
         public int InvocationArgumentCount => Expression is ConstantExpression ? 2 : ExpressionParameterCount + 1;
@@ -691,9 +699,23 @@ public abstract class ExpressionTransformer
         }
 
         /// <summary>
+        /// Initializes a new lazy <see cref="TransformContext"/> for a prepared <see cref="UnaryExpression"/>
+        /// whose single logical parameter (<c>Operand</c>) has not been array-materialized — see the
+        /// type-level remarks.
+        /// </summary>
+        /// <param name="expression">The rebuilt unary expression to match/finalize.</param>
+        public TransformContext(UnaryExpression expression)
+        {
+            Expression = expression;
+            expressionParameters = null;
+        }
+
+        /// <summary>
         /// Gets one logical sub-expression of <see cref="Expression"/> without requiring an array to have
-        /// been materialized: reads the real array when one exists, or <c>Left</c>/<c>Right</c> directly
-        /// off a lazy <see cref="BinaryExpression"/> context.
+        /// been materialized: reads the real array when one exists, or — for a lazy context — <c>Left</c>/
+        /// <c>Right</c> directly off a <see cref="BinaryExpression"/>, or <c>Operand</c> directly off a
+        /// <see cref="UnaryExpression"/>. Binary is checked first, matching <see cref="ExpressionParameterCount"/>'s
+        /// ordering.
         /// </summary>
         /// <param name="index">The zero-based logical parameter index.</param>
         /// <returns>The sub-expression at <paramref name="index"/>.</returns>
@@ -707,20 +729,30 @@ public abstract class ExpressionTransformer
                 return expressionParameters[index];
             }
 
-            BinaryExpression binary = (BinaryExpression)Expression;
+            if (Expression is BinaryExpression binary)
+            {
+                return index switch
+                {
+                    0 => binary.Left,
+                    1 => binary.Right,
+                    _ => throw new IndexOutOfRangeException(),
+                };
+            }
+
+            UnaryExpression unary = (UnaryExpression)Expression;
             return index switch
             {
-                0 => binary.Left,
-                1 => binary.Right,
+                0 => unary.Operand,
                 _ => throw new IndexOutOfRangeException(),
             };
         }
 
         /// <summary>
         /// Returns the real <see cref="Expression"/> array backing this context, materializing it now for
-        /// a lazy <see cref="BinaryExpression"/> context (allocating a fresh <c>[Left, Right]</c> array),
-        /// or returning the existing array by reference for every other context — the same array identity
-        /// callers observed before this type gained a lazy representation.
+        /// a lazy context (allocating a fresh <c>[Left, Right]</c> array for a <see cref="BinaryExpression"/>,
+        /// or <c>[Operand]</c> for a <see cref="UnaryExpression"/>), or returning the existing array by
+        /// reference for every other context — the same array identity callers observed before this type
+        /// gained a lazy representation.
         /// </summary>
         /// <returns>The materialized sub-expression array.</returns>
         public Expression[] MaterializeExpressionParameters()
@@ -730,8 +762,13 @@ public abstract class ExpressionTransformer
                 return expressionParameters;
             }
 
-            BinaryExpression binary = (BinaryExpression)Expression;
-            return [binary.Left, binary.Right];
+            if (Expression is BinaryExpression binary)
+            {
+                return [binary.Left, binary.Right];
+            }
+
+            UnaryExpression unary = (UnaryExpression)Expression;
+            return [unary.Operand];
         }
 
         /// <summary>Gets one argument from the historical positional invocation layout without allocating it.</summary>
@@ -819,16 +856,25 @@ public abstract class ExpressionTransformer
 
     /// <summary>
     /// Prepares a <see cref="UnaryExpression"/> by preparing its <c>Operand</c> and rebuilding the
-    /// node via <see cref="CopyExpression"/> so that candidate transform methods observe the prepared
-    /// operand rather than the original one.
+    /// node via <see cref="CopyUnaryExpression"/> so that candidate transform methods observe the
+    /// prepared operand rather than the original one.
     /// </summary>
     /// <param name="ue">The unary expression to prepare.</param>
     /// <returns>The resulting <see cref="TransformContext"/>.</returns>
+    /// <remarks>
+    /// Unlike <see cref="PrepareMethodCall"/>, <see cref="PrepareConditional"/>, etc., this deliberately
+    /// does not build an <see cref="Expression"/>[1] array: <see cref="CopyUnaryExpression"/> rebuilds the
+    /// node directly from the local <c>operand</c> variable, and the unary-specific
+    /// <see cref="TransformContext"/> constructor stores no array — see <see cref="TransformContext"/>'s
+    /// remarks. The rebuilt node's own <c>Operand</c> becomes the logical storage for its one prepared
+    /// child, materialized into a real array only if a rule or <see cref="FinalizeExpression"/> actually
+    /// needs one (<see cref="TransformContext.MaterializeExpressionParameters"/>).
+    /// </remarks>
     private TransformContext PrepareUnary(UnaryExpression ue)
     {
-        Expression[] expressionParameters = [PrepareExpression(ue.Operand)];
-        var copied = (UnaryExpression)CopyExpression(ue, expressionParameters);
-        return new TransformContext(copied, expressionParameters);
+        Expression operand = PrepareExpression(ue.Operand);
+        UnaryExpression copied = CopyUnaryExpression(ue, operand);
+        return new TransformContext(copied);
     }
 
     /// <summary>
@@ -840,12 +886,12 @@ public abstract class ExpressionTransformer
     /// <param name="be">The binary expression to prepare.</param>
     /// <returns>The resulting <see cref="TransformContext"/>.</returns>
     /// <remarks>
-    /// Unlike every other <c>Prepare*</c> method, this deliberately does not build an
-    /// <see cref="Expression"/>[2] array: <see cref="CopyBinaryExpression"/> rebuilds the node directly
-    /// from the local <c>left</c>/<c>right</c> variables, and the binary-specific
-    /// <see cref="TransformContext"/> constructor stores no array — see <see cref="TransformContext"/>'s
-    /// remarks. The rebuilt node's own <c>Left</c>/<c>Right</c> become the logical storage for its two
-    /// prepared children, materialized into a real array only if a rule or
+    /// Unlike most other <c>Prepare*</c> methods (only <see cref="PrepareUnary"/> shares this), this
+    /// deliberately does not build an <see cref="Expression"/>[2] array: <see cref="CopyBinaryExpression"/>
+    /// rebuilds the node directly from the local <c>left</c>/<c>right</c> variables, and the
+    /// binary-specific <see cref="TransformContext"/> constructor stores no array — see
+    /// <see cref="TransformContext"/>'s remarks. The rebuilt node's own <c>Left</c>/<c>Right</c> become the
+    /// logical storage for its two prepared children, materialized into a real array only if a rule or
     /// <see cref="FinalizeExpression"/> actually needs one (<see cref="TransformContext.MaterializeExpressionParameters"/>).
     /// </remarks>
     private TransformContext PrepareBinary(BinaryExpression be)
@@ -1423,6 +1469,58 @@ public abstract class ExpressionTransformer
             expression.IsLiftedToNull,
             expression.Method,
             expression.Conversion);
+    }
+
+    /// <summary>
+    /// Rebuilds a <see cref="UnaryExpression"/> from its (already prepared) <paramref name="operand"/>,
+    /// dispatching on <paramref name="expression"/>'s <see cref="Expression.NodeType"/>.
+    /// </summary>
+    /// <remarks>
+    /// Intentionally mirrors <see cref="CopyExpression"/>'s own <see cref="UnaryExpression"/> branches
+    /// case-for-case, rather than using a single generic
+    /// <see cref="Expression.MakeUnary(ExpressionType, Expression, Type, MethodInfo)"/> call: the
+    /// historical per-node-type factories used here (<see cref="Expression.Negate(Expression)"/>,
+    /// <see cref="Expression.Convert(Expression, Type)"/>, etc.) do not forward
+    /// <see cref="UnaryExpression.Method"/> the way <see cref="CopyBinaryExpression"/> forwards
+    /// <see cref="BinaryExpression.Method"/> via <see cref="Expression.MakeBinary(ExpressionType, Expression, Expression, bool, MethodInfo, LambdaExpression)"/>
+    /// — an explicit method on the original node is silently dropped, and a typed <c>Throw</c>'s declared
+    /// <see cref="Expression.Type"/> is likewise not reproduced (<see cref="Expression.Throw(Expression)"/>,
+    /// not the typed overload). Both are pre-existing, historical quirks of <see cref="CopyExpression"/>;
+    /// this helper exists purely to let <see cref="PrepareUnary"/> skip the params-array
+    /// <see cref="CopyExpression"/> overload's <see cref="Expression"/>[] allocation, not to change what
+    /// gets reconstructed — see the characterization tests in
+    /// <c>ExpressionTransformerUnaryLazyParametersTests</c> that pin this down against
+    /// <see cref="CopyExpression"/> as the behavioral oracle.
+    /// </remarks>
+    /// <param name="expression">The original unary expression being copied.</param>
+    /// <param name="operand">The (already prepared) operand.</param>
+    /// <returns>A unary expression with the same node type and (where reproduced) metadata but the supplied operand.</returns>
+    private static UnaryExpression CopyUnaryExpression(UnaryExpression expression, Expression operand)
+    {
+        return expression.NodeType switch
+        {
+            ExpressionType.ArrayLength => Expression.ArrayLength(operand),
+            ExpressionType.Convert => Expression.Convert(operand, expression.Type),
+            ExpressionType.ConvertChecked => Expression.ConvertChecked(operand, expression.Type),
+            ExpressionType.Negate => Expression.Negate(operand),
+            ExpressionType.UnaryPlus => Expression.UnaryPlus(operand),
+            ExpressionType.NegateChecked => Expression.NegateChecked(operand),
+            ExpressionType.Not => Expression.Not(operand),
+            ExpressionType.Quote => Expression.Quote(operand),
+            ExpressionType.TypeAs => Expression.TypeAs(operand, expression.Type),
+            ExpressionType.Decrement => Expression.Decrement(operand),
+            ExpressionType.Increment => Expression.Increment(operand),
+            ExpressionType.Throw => Expression.Throw(operand),
+            ExpressionType.Unbox => Expression.Unbox(operand, expression.Type),
+            ExpressionType.PreIncrementAssign => Expression.PreIncrementAssign(operand),
+            ExpressionType.PreDecrementAssign => Expression.PreDecrementAssign(operand),
+            ExpressionType.PostIncrementAssign => Expression.PostIncrementAssign(operand),
+            ExpressionType.PostDecrementAssign => Expression.PostDecrementAssign(operand),
+            ExpressionType.OnesComplement => Expression.OnesComplement(operand),
+            ExpressionType.IsTrue => Expression.IsTrue(operand),
+            ExpressionType.IsFalse => Expression.IsFalse(operand),
+            _ => throw new NotSupportedException($"Expression type '{expression.NodeType}' is not supported."),
+        };
     }
 
     /// <summary>
