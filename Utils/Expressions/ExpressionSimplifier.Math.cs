@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Numerics;
 using System.Reflection;
 using Utils.Expressions;
@@ -61,18 +60,23 @@ public partial class ExpressionSimplifier
             throw new InvalidOperationException($"{FloatingPointType} does not implement {requiredInterface}.");
         }
 
-        Type[] signature = Enumerable.Repeat(FloatingPointType, expressions.Length).ToArray();
+        Type[] signature = expressions.Length == 0 ? [] : new Type[expressions.Length];
+        Array.Fill(signature, FloatingPointType);
+
         MethodInfo? method = FloatingPointType.GetMethod(functionName, BindingFlags.Public | BindingFlags.Static, signature);
         if (method is null)
         {
             throw new InvalidOperationException($"The method {functionName} could not be located on {FloatingPointType}.");
         }
 
-        Expression[] convertedExpressions = expressions
-            .Select(static expression => expression.Type == FloatingPointType
+        Expression[] convertedExpressions = expressions.Length == 0 ? [] : new Expression[expressions.Length];
+        for (int i = 0; i < expressions.Length; i++)
+        {
+            Expression expression = expressions[i];
+            convertedExpressions[i] = expression.Type == FloatingPointType
                 ? expression
-                : Expression.Convert(expression, FloatingPointType))
-            .ToArray();
+                : Expression.Convert(expression, FloatingPointType);
+        }
 
         return Expression.Call(method, convertedExpressions);
     }
