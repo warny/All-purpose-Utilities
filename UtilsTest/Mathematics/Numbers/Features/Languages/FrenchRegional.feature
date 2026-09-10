@@ -328,3 +328,8 @@ Examples:
     | amount | expected                                  |
     | 1      | un euro                                   |
     | 21.50  | vingt et un euros et cinquante centimes   |
+
+Scenario: Fraction connector wording
+    Given I use the "FR-fr" number converter
+    When I convert the fraction 3/2
+    Then the result is "trois sur deux"

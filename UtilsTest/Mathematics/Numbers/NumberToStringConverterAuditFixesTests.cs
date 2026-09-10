@@ -93,31 +93,30 @@ public class NumberToStringConverterAuditFixesTests
     [TestMethod]
     public void Convert_Decimal_MinValue_DoesNotThrowOverflow()
     {
-        var c = EN;
+        var c = new NumberToStringConverter(new NumberToStringConverterOptions(EN) { Minus = "SIGN *" });
         // decimal.MinValue should not throw OverflowException — it is a valid decimal value
         string result = c.Convert(decimal.MinValue);
         Assert.IsNotNull(result);
-        StringAssert.StartsWith(result, "minus ");
+        StringAssert.StartsWith(result, "SIGN ");
     }
 
     [TestMethod]
     public void Convert_Decimal_MinValue_NegativeSymmetricWithMaxValue()
     {
-        var c = EN;
+        var c = new NumberToStringConverter(new NumberToStringConverterOptions(EN) { Minus = "SIGN *" });
         string maxResult = c.Convert(decimal.MaxValue);
         string minResult = c.Convert(decimal.MinValue);
-        // MinValue text should be "minus " + MaxValue text
-        Assert.AreEqual("minus " + maxResult, minResult);
+        Assert.AreEqual("SIGN " + maxResult, minResult);
     }
 
     [TestMethod]
     public void Convert_Decimal_NearMinValue_Succeeds()
     {
-        var c = EN;
+        var c = new NumberToStringConverter(new NumberToStringConverterOptions(EN) { Minus = "SIGN *" });
         decimal nearMin = decimal.MinValue + 0.1m;
         string result = c.Convert(nearMin);
         Assert.IsNotNull(result);
-        StringAssert.StartsWith(result, "minus ");
+        StringAssert.StartsWith(result, "SIGN ");
     }
 
     // ── Item 48 — Currency restricted to long ────────────────────────────────

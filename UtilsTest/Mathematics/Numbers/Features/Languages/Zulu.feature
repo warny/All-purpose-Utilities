@@ -14,3 +14,8 @@ Examples:
 Scenario: Ordinal conversion is unsupported
     Given I use the "ZU" number converter
     Then the converter does not support ordinal conversion
+
+Scenario: Fraction connector wording
+    Given I use the "ZU" number converter
+    When I convert the fraction 3/2
+    Then the result is "kuthathu ngaphezu kubili"

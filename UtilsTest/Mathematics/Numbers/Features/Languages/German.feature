@@ -375,3 +375,8 @@ Examples:
     | 1900 | neunzehn hundert            |
     | 1100 | elf hundert                 |
     | 1999 | neunzehn neunundneunzig     |
+
+Scenario: Fraction connector wording
+    Given I use the "DE" number converter
+    When I convert the fraction 3/2
+    Then the result is "drei durch zwei"

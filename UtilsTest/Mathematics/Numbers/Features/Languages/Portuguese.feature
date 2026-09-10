@@ -140,3 +140,8 @@ Scenario: Time conversion is supported
 Scenario: Ordinal conversion is supported
     Given I use the "PT" number converter
     Then the converter supports ordinal conversion
+
+Scenario: Fraction connector wording
+    Given I use the "PT" number converter
+    When I convert the fraction 3/2
+    Then the result is "três sobre dois"

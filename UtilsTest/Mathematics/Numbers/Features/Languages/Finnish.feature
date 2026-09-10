@@ -203,3 +203,8 @@ Examples:
 Scenario: Ordinal conversion is supported
     Given I use the "FI" number converter
     Then the converter supports ordinal conversion
+
+Scenario: Fraction connector wording
+    Given I use the "FI" number converter
+    When I convert the fraction 3/2
+    Then the result is "kolme yli kaksi"

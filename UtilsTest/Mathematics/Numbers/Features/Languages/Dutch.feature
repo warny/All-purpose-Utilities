@@ -84,3 +84,8 @@ Examples:
     | 1984 | negentien vierentachtig   |
     | 1900 | negentien honderd         |
     | 1100 | elf honderd               |
+
+Scenario: Fraction connector wording
+    Given I use the "NL" number converter
+    When I convert the fraction 3/2
+    Then the result is "drie op twee"

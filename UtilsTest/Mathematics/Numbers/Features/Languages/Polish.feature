@@ -87,3 +87,8 @@ Examples:
 Scenario: Ordinal conversion is supported
     Given I use the "PL" number converter
     Then the converter supports ordinal conversion
+
+Scenario: Fraction connector wording
+    Given I use the "PL" number converter
+    When I convert the fraction 3/2
+    Then the result is "trzy przez dwa"

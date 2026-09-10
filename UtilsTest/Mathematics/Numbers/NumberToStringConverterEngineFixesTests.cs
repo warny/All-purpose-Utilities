@@ -12,6 +12,25 @@ namespace UtilsTest.Mathematics.Numbers;
 [TestClass]
 public class NumberToStringConverterEngineFixesTests
 {
+    private const string NamedFractionConfiguration = """
+        <?xml version="1.0" encoding="utf-8" ?>
+        <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+          <Language groupSize="3" separator=" " groupSeparator="" zero="ZERO" minus="SIGN *" decimalSeparator="DOT">
+            <Culture>TEST-NAMED-FRACTION</Culture>
+            <Groups>
+              <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="UNIT" />
+              </Group>
+            </Groups>
+            <NumberScale firstLetterUpperCase="false">
+              <StaticNames><Scale value="0" string="" /></StaticNames>
+            </NumberScale>
+            <Fractions><Fraction digits="1" string="PART(s)" /></Fractions>
+          </Language>
+        </Numbers>
+        """;
+
     // ─── Item 29 — GetMonthName catch scoped to expected exceptions ─────────
 
     [TestMethod]
@@ -26,6 +45,17 @@ public class NumberToStringConverterEngineFixesTests
     }
 
     // ─── Item 30 — BuildFractionText with negative numerator ────────────────
+
+    /// <summary>Verifies that a negative numerator retains the named power-of-ten fraction suffix.</summary>
+    [TestMethod]
+    public void ConvertFraction_NegativeNumerator_UsesSyntheticNamedSuffix()
+    {
+        NumberToStringConverter converter = LegacyNumberToStringFixture
+            .ReadConfiguration(NamedFractionConfiguration)["TEST-NAMED-FRACTION"];
+
+        Assert.AreEqual("UNIT PART", converter.ConvertFraction(1, 10));
+        Assert.AreEqual("SIGN UNIT PART", converter.ConvertFraction(-1, 10));
+    }
 
     // ─── Item 31 — ApplyVariantRules / ApplyVariantRulesForScale factored ───
 

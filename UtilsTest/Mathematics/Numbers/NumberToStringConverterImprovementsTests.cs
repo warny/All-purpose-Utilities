@@ -40,6 +40,7 @@ public class NumberToStringConverterImprovementsTests
         int callCount = 0;
         var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
         {
+            Minus = "SIGN *",
             AdjustFunction = s => { callCount++; return s; }
         };
         var converter = new NumberToStringConverter(options);
@@ -47,7 +48,7 @@ public class NumberToStringConverterImprovementsTests
         string result = converter.Convert(-1);
 
         Assert.AreEqual(1, callCount, "AdjustFunction must be called exactly once for negative numbers.");
-        Assert.IsTrue(result.StartsWith("minus ", StringComparison.Ordinal));
+        Assert.IsTrue(result.StartsWith("SIGN ", StringComparison.Ordinal));
     }
 
     // ─── B1 — Convert(Number) exposed on interface ─────────────────────────
@@ -186,15 +187,16 @@ public class NumberToStringConverterImprovementsTests
         // Regression: before the fix, AdjustFunction ran before ordinal rules,
         // so an uppercase AdjustFunction turned "twenty-one" into "TWENTY-ONE"
         // and the word rule "one"→"first" never matched, producing "TWENTY-ONEth".
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        var source = NumberToStringConverter.GetConverter("EN");
+        var options = new NumberToStringConverterOptions(source)
         {
             AdjustFunction = s => s.ToUpperInvariant()
         };
         var converter = new NumberToStringConverter(options);
 
-        Assert.AreEqual("TWENTY-FIRST", converter.ConvertOrdinal(21));
-        Assert.AreEqual("THIRTIETH",    converter.ConvertOrdinal(30));
-        Assert.AreEqual("FORTY-SECOND", converter.ConvertOrdinal(42));
+        Assert.AreEqual(source.ConvertOrdinal(21).ToUpperInvariant(), converter.ConvertOrdinal(21));
+        Assert.AreEqual(source.ConvertOrdinal(30).ToUpperInvariant(), converter.ConvertOrdinal(30));
+        Assert.AreEqual(source.ConvertOrdinal(42).ToUpperInvariant(), converter.ConvertOrdinal(42));
     }
 
     // ─── C4 — Ordinal conversion (Belgian/Swiss French) ────────────────────

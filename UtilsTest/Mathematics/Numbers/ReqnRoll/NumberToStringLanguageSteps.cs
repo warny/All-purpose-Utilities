@@ -76,7 +76,7 @@ public sealed class NumberToStringLanguageSteps
 
     /// <summary>Converts an invariant fraction through the public API.</summary>
     [When(@"I convert the fraction (\d+)/(\d+)")]
-    public void WhenIConvertTheFraction(int numerator, int denominator) => result = Converter.Convert(new Utils.Numerics.Number(numerator, denominator), variants);
+    public void WhenIConvertTheFraction(int numerator, int denominator) => result = Converter.ConvertFraction(numerator, denominator, variants);
 
     /// <summary>Converts an invariant duration through the public API.</summary>
     [When("I convert the duration {string}")]

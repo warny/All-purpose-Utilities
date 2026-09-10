@@ -275,3 +275,8 @@ Examples:
     | -5.50  | minus five dollars and fifty cents  |
     | 1.999  | two dollars                         |
     | 0.995  | one dollar                          |
+
+Scenario: Fraction connector wording
+    Given I use the "EN" number converter
+    When I convert the fraction 3/2
+    Then the result is "three over two"

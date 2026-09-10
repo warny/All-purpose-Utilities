@@ -106,3 +106,8 @@ Examples:
 Scenario: Ordinal conversion is supported
     Given I use the "IT" number converter
     Then the converter supports ordinal conversion
+
+Scenario: Fraction connector wording
+    Given I use the "IT" number converter
+    When I convert the fraction 3/2
+    Then the result is "tre su due"
