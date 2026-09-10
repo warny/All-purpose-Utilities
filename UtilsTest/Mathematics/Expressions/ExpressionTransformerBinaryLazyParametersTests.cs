@@ -7,16 +7,17 @@ using Utils.Expressions;
 namespace UtilsTest.Mathematics.Expressions;
 
 /// <summary>
-/// Characterization tests for <see cref="ExpressionTransformer"/>'s handling of
-/// <see cref="BinaryExpression"/> nodes, written and validated against the unmodified baseline before a
-/// planned change that removes the unconditional <c>Expression[2]</c> allocation <c>PrepareBinary</c>
-/// currently performs eagerly for every binary node. These tests pin down every externally observable
-/// behavior that change must preserve: preparation order, the exact array a rule or
-/// <see cref="ExpressionTransformer.FinalizeExpression"/> receives (contents, independence from the
-/// prepared node, and — for the <c>Expression[]</c>-shaped rule overload — runtime array type), and
-/// which invocation paths never require an array at all. None of these tests assert anything about
-/// allocation counts (that belongs in a separate benchmark, not a unit test); they assert only observable
-/// object identity, array contents, and control flow.
+/// Characterization and regression tests for <see cref="ExpressionTransformer"/>'s handling of
+/// <see cref="BinaryExpression"/> parameters. Before this optimization, <c>PrepareBinary</c> eagerly
+/// allocated an <c>Expression[2]</c> for every binary node. These tests pin down every externally
+/// observable behavior that must be preserved now that the two logical parameters are materialized into
+/// a real array only when an <c>Expression[]</c>-shaped rule or
+/// <see cref="ExpressionTransformer.FinalizeExpression"/> actually requires one: preparation order, the
+/// exact array a rule or <c>FinalizeExpression</c> receives (contents, independence from the prepared
+/// node, and — for the <c>Expression[]</c>-shaped rule overload — runtime array type), and which
+/// invocation paths never require an array at all. Allocation counts are intentionally verified by a
+/// separate benchmark, not by these unit tests, which assert only observable object identity, array
+/// contents, and control flow.
 /// </summary>
 [TestClass]
 public class ExpressionTransformerBinaryLazyParametersTests
@@ -103,23 +104,35 @@ public class ExpressionTransformerBinaryLazyParametersTests
     // Test B — preparation order.
     // ---------------------------------------------------------------------------------------------
 
-    /// <summary>A transformer recording every expression passed to <see cref="ExpressionTransformer.PrepareExpression"/>, optionally throwing when a specific instance is encountered.</summary>
+    /// <summary>
+    /// A transformer recording a single, strictly ordered sequence of events — preparation of the known
+    /// <c>Left</c>/<c>Right</c> instances and invocation of the rule — into one list, so a test can assert
+    /// their exact relative order instead of only two separately-checked facts (which cannot by
+    /// themselves rule out an interleaving such as "prepare Left, run rule, prepare Right"). Optionally
+    /// throws when a specific instance is encountered, to simulate a failure while preparing an operand.
+    /// </summary>
     private sealed class PreparationOrderTransformer : ExpressionTransformer
     {
+        private readonly Expression _leftExpression;
+        private readonly Expression _rightExpression;
         private readonly Expression? _throwOn;
 
-        /// <summary>Initializes the transformer, optionally simulating a failure while preparing <paramref name="throwOn"/>.</summary>
+        /// <summary>Initializes the transformer with the known Left/Right instances to recognize, optionally simulating a failure while preparing <paramref name="throwOn"/>.</summary>
+        /// <param name="leftExpression">The exact instance expected as the binary node's <c>Left</c> operand.</param>
+        /// <param name="rightExpression">The exact instance expected as the binary node's <c>Right</c> operand.</param>
         /// <param name="throwOn">The exact sub-expression instance to throw for, or <see langword="null"/> to never throw.</param>
-        public PreparationOrderTransformer(Expression? throwOn)
+        public PreparationOrderTransformer(Expression leftExpression, Expression rightExpression, Expression? throwOn)
         {
+            _leftExpression = leftExpression;
+            _rightExpression = rightExpression;
             _throwOn = throwOn;
         }
 
-        /// <summary>Every sub-expression successfully prepared, in order.</summary>
-        public List<Expression> PreparedOrder { get; } = new();
-
-        /// <summary>Whether the rule was invoked.</summary>
-        public bool RuleInvoked { get; private set; }
+        /// <summary>
+        /// The single, strictly ordered sequence of events observed: <c>"Left"</c> and <c>"Right"</c> when
+        /// the corresponding known instance is prepared, and <c>"Rule"</c> when the rule runs.
+        /// </summary>
+        public List<string> Events { get; } = new();
 
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
@@ -132,7 +145,15 @@ public class ExpressionTransformerBinaryLazyParametersTests
                 throw new InvalidOperationException("Simulated failure while preparing an operand.");
             }
 
-            PreparedOrder.Add(e);
+            if (ReferenceEquals(e, _leftExpression))
+            {
+                Events.Add("Left");
+            }
+            else if (ReferenceEquals(e, _rightExpression))
+            {
+                Events.Add("Right");
+            }
+
             return e;
         }
 
@@ -140,26 +161,29 @@ public class ExpressionTransformerBinaryLazyParametersTests
         [ExpressionSignature(ExpressionType.AndAlso)]
         private Expression Rule(BinaryExpression e, Expression left, Expression right)
         {
-            RuleInvoked = true;
+            Events.Add("Rule");
             return e;
         }
     }
 
     /// <summary>
-    /// <c>Left</c> must be prepared before <c>Right</c>, and both must be prepared before the rule runs.
+    /// <c>Left</c> must be prepared, then <c>Right</c>, then the rule must run — strictly in that order.
+    /// Asserting the three events as one ordered sequence (rather than checking preparation order and
+    /// rule invocation separately) is what actually rules out a faulty interleaving such as
+    /// "prepare Left, run rule, prepare Right", which would still satisfy two independent checks.
     /// </summary>
     [TestMethod]
     public void BinaryPreparation_PreparesLeftThenRightThenRunsRule()
     {
         ParameterExpression x = Expression.Parameter(typeof(bool), "x");
         ParameterExpression y = Expression.Parameter(typeof(bool), "y");
-        var transformer = new PreparationOrderTransformer(throwOn: null);
+        var transformer = new PreparationOrderTransformer(x, y, throwOn: null);
         BinaryExpression andAlso = Expression.AndAlso(x, y);
 
         transformer.ExposeTransform(andAlso);
 
-        CollectionAssert.AreEqual(new Expression[] { x, y }, transformer.PreparedOrder);
-        Assert.IsTrue(transformer.RuleInvoked);
+        CollectionAssert.AreEqual(new[] { "Left", "Right", "Rule" }, transformer.Events,
+            "PrepareBinary must prepare Left, then Right, then invoke the rule — strictly in that order.");
     }
 
     /// <summary>
@@ -170,13 +194,13 @@ public class ExpressionTransformerBinaryLazyParametersTests
     {
         ParameterExpression x = Expression.Parameter(typeof(bool), "x");
         ParameterExpression y = Expression.Parameter(typeof(bool), "y");
-        var transformer = new PreparationOrderTransformer(throwOn: x);
+        var transformer = new PreparationOrderTransformer(x, y, throwOn: x);
         BinaryExpression andAlso = Expression.AndAlso(x, y);
 
         Assert.ThrowsExactly<InvalidOperationException>(() => transformer.ExposeTransform(andAlso));
 
-        Assert.AreEqual(0, transformer.PreparedOrder.Count, "Right must never be prepared when Left throws.");
-        Assert.IsFalse(transformer.RuleInvoked);
+        CollectionAssert.AreEqual(System.Array.Empty<string>(), transformer.Events,
+            "Right must never be prepared and the rule must never run when Left throws.");
     }
 
     // ---------------------------------------------------------------------------------------------
