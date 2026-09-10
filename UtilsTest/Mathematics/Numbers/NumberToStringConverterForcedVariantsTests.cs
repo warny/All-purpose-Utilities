@@ -228,9 +228,14 @@ public class NumberToStringConverterForcedVariantsTests
         NumberToStringConverter source = NumberToStringConverter.GetConverter("FR");
         NumberToStringConverterOptions options = NumberToStringConverterOptions.FromCulture("FR");
 
-        CollectionAssert.AreEquivalent(
-            source.TimeUnitForcedVariants.Keys.ToArray(),
-            options.TimeUnitForcedVariants.Keys.ToArray());
+        Assert.AreEqual(source.TimeUnitForcedVariants.Count, options.TimeUnitForcedVariants.Count);
+        foreach (var (unit, sourceVariants) in source.TimeUnitForcedVariants)
+        {
+            Assert.IsTrue(options.TimeUnitForcedVariants.TryGetValue(unit, out ForcedVariantSet? rebuiltVariants));
+            CollectionAssert.AreEquivalent(
+                sourceVariants.Constraints.Values.Select(pair => $"{pair.Key}={pair.Value}").ToArray(),
+                rebuiltVariants!.Constraints.Values.Select(pair => $"{pair.Key}={pair.Value}").ToArray());
+        }
     }
 
     // ─── Caller validation is unaffected by ForcedVariants ─────────────────────────────────────

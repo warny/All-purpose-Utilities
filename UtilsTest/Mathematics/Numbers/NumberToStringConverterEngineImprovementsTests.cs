@@ -92,11 +92,18 @@ public class NumberToStringConverterEngineImprovementsTests
     public void GroupConnector_NullDisablesInjectionAndRoundTrips()
     {
         NumberToStringConverter source = NumberToStringConverter.GetConverter("EN");
-        var options = new NumberToStringConverterOptions(source) { GroupConnector = null };
-        var converter = new NumberToStringConverter(options);
+        var enabled = new NumberToStringConverter(new NumberToStringConverterOptions(source)
+        {
+            GroupConnector = "LINK",
+            GroupConnectorThreshold = 100,
+        });
+        StringAssert.Contains(enabled.Convert(1001), " LINK ");
 
-        Assert.IsNull(new NumberToStringConverterOptions(converter).GroupConnector);
-        Assert.IsFalse(converter.Convert(1001).Contains("LINK", StringComparison.Ordinal));
+        var options = new NumberToStringConverterOptions(enabled) { GroupConnector = null };
+        var disabled = new NumberToStringConverter(options);
+
+        Assert.IsNull(new NumberToStringConverterOptions(disabled).GroupConnector);
+        Assert.IsFalse(disabled.Convert(1001).Contains("LINK", StringComparison.Ordinal));
         Assert.AreEqual(100, options.GroupConnectorThreshold);
     }
 
