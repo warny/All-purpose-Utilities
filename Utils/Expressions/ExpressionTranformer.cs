@@ -842,7 +842,7 @@ public abstract class ExpressionTransformer
     /// <remarks>
     /// Unlike every other <c>Prepare*</c> method, this deliberately does not build an
     /// <see cref="Expression"/>[2] array: <see cref="CopyBinaryExpression"/> rebuilds the node directly
-    /// from <paramref name="left"/>/<paramref name="right"/> locals, and the binary-specific
+    /// from the local <c>left</c>/<c>right</c> variables, and the binary-specific
     /// <see cref="TransformContext"/> constructor stores no array — see <see cref="TransformContext"/>'s
     /// remarks. The rebuilt node's own <c>Left</c>/<c>Right</c> become the logical storage for its two
     /// prepared children, materialized into a real array only if a rule or
@@ -1396,18 +1396,6 @@ public abstract class ExpressionTransformer
     }
 
     /// <summary>
-    /// Creates a new expression of the same <see cref="ExpressionType"/> as <paramref name="e"/>,
-    /// using the supplied <paramref name="parameters"/> as sub-expressions or arguments.
-    /// If certain <see cref="ExpressionType"/> values are not supported by this switch,
-    /// they are simply returned as-is or an exception is thrown.
-    /// </summary>
-    /// <param name="e">The original expression to copy.</param>
-    /// <param name="parameters">The sub-expressions to insert into the copied expression.</param>
-    /// <returns>
-    /// A new expression replicating the structure of <paramref name="e"/> with
-    /// possibly different sub-expressions.
-    /// </returns>
-    /// <summary>
     /// Rebuilds a <see cref="BinaryExpression"/> from its (already prepared) <paramref name="left"/> and
     /// <paramref name="right"/> operands, preserving <see cref="BinaryExpression.Method"/>,
     /// <see cref="BinaryExpression.IsLiftedToNull"/>, and <see cref="BinaryExpression.Conversion"/>.
@@ -1437,6 +1425,18 @@ public abstract class ExpressionTransformer
             expression.Conversion);
     }
 
+    /// <summary>
+    /// Creates a new expression of the same <see cref="ExpressionType"/> as <paramref name="e"/>,
+    /// using the supplied <paramref name="parameters"/> as sub-expressions or arguments.
+    /// If certain <see cref="ExpressionType"/> values are not supported by this switch,
+    /// they are simply returned as-is or an exception is thrown.
+    /// </summary>
+    /// <param name="e">The original expression to copy.</param>
+    /// <param name="parameters">The sub-expressions to insert into the copied expression.</param>
+    /// <returns>
+    /// A new expression replicating the structure of <paramref name="e"/> with
+    /// possibly different sub-expressions.
+    /// </returns>
     protected static Expression CopyExpression(Expression e, params Expression[] parameters)
     {
         // Delegates to CopyBinaryExpression (see its remarks for why MakeBinary specifically is used)
