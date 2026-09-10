@@ -1,6 +1,8 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Numerics;
+using System.Collections.Generic;
+using System.Linq;
 using Utils.NumberToString;
 
 namespace UtilsTest.Mathematics.Numbers;
@@ -30,13 +32,24 @@ public class NumberToStringConverterEngineImprovementsTests
     [TestMethod]
     public void Convert_Float_WithVariants_DelegatesToDouble()
     {
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        NumberToStringConverter source = NumberToStringConverter.GetConverter("EN");
+        var options = new NumberToStringConverterOptions(source)
         {
             VariantDimensions = [new NumberToStringConverter.VariantDimension("form", ["base", "alternate"])],
+            VariantRules =
+            [
+                new NumberToStringConverter.VariantRule(
+                    new Dictionary<string, string> { ["form"] = "alternate" },
+                    [new NumberToStringConverter.ReplacementRule(source.Convert(5), "ALT", ReplacementScope.Anywhere)]),
+            ],
         };
         INumberToStringConverter converter = new NumberToStringConverter(options);
 
-        Assert.AreEqual(converter.Convert(2.5, "form=alternate"), converter.Convert((float)2.5, "form=alternate"));
+        string doubleResult = converter.Convert(2.5, "form=alternate");
+        string floatResult = converter.Convert((float)2.5, "form=alternate");
+
+        StringAssert.Contains(doubleResult, "ALT");
+        Assert.AreEqual(doubleResult, floatResult);
     }
 
     /// <summary>Verifies the language-neutral fraction fallback supplied by the interface.</summary>
@@ -55,6 +68,95 @@ public class NumberToStringConverterEngineImprovementsTests
         Assert.IsFalse(converter.SupportsMultiplicative);
         Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertMultiplicative(1));
     }
+
+    /// <summary>Verifies that a group connector is used only when the lower group is below its threshold.</summary>
+    [TestMethod]
+    public void GroupConnector_ObservesConfiguredThreshold()
+    {
+        NumberToStringConverter source = NumberToStringConverter.GetConverter("EN");
+        var options = new NumberToStringConverterOptions(source)
+        {
+            GroupConnector = "LINK",
+            GroupConnectorThreshold = 100,
+        };
+        var converter = new NumberToStringConverter(options);
+
+        StringAssert.Contains(converter.Convert(1001), " LINK ");
+        StringAssert.Contains(converter.Convert(1099), " LINK ");
+        Assert.IsFalse(converter.Convert(1100).Contains(" LINK ", StringComparison.Ordinal));
+        Assert.IsFalse(converter.Convert(1101).Contains(" LINK ", StringComparison.Ordinal));
+    }
+
+    /// <summary>Verifies that a null group connector disables connector injection and round-trips through options.</summary>
+    [TestMethod]
+    public void GroupConnector_NullDisablesInjectionAndRoundTrips()
+    {
+        NumberToStringConverter source = NumberToStringConverter.GetConverter("EN");
+        var options = new NumberToStringConverterOptions(source) { GroupConnector = null };
+        var converter = new NumberToStringConverter(options);
+
+        Assert.IsNull(new NumberToStringConverterOptions(converter).GroupConnector);
+        Assert.IsFalse(converter.Convert(1001).Contains("LINK", StringComparison.Ordinal));
+        Assert.AreEqual(100, options.GroupConnectorThreshold);
+    }
+
+    /// <summary>Verifies start-scoped replacements affect only text at the beginning.</summary>
+    [TestMethod]
+    public void ReplacementScope_StartsWith_AffectsOnlyBeginning()
+    {
+        NumberToStringConverter source = NumberToStringConverter.GetConverter("EN");
+        string token = source.Convert(1) + " ";
+        var converter = WithReplacement(source, new(token, "PREFIX ", ReplacementScope.StartsWith));
+
+        StringAssert.StartsWith(converter.Convert(100), "PREFIX ");
+        Assert.AreEqual(source.Convert(21), converter.Convert(21));
+    }
+
+    /// <summary>Verifies end-scoped replacements affect only text at the end.</summary>
+    [TestMethod]
+    public void ReplacementScope_EndsWith_AffectsOnlyEnding()
+    {
+        NumberToStringConverter source = NumberToStringConverter.GetConverter("EN");
+        string token = source.Convert(1);
+        var converter = WithReplacement(source, new(token, "SUFFIX", ReplacementScope.EndsWith));
+
+        StringAssert.EndsWith(converter.Convert(21), "SUFFIX");
+        Assert.AreEqual(source.Convert(100), converter.Convert(100));
+    }
+
+    /// <summary>Verifies start and end scopes are honored when replacements are selected by variants.</summary>
+    [TestMethod]
+    public void ReplacementScope_VariantRules_HonorStartAndEndScopes()
+    {
+        NumberToStringConverter source = NumberToStringConverter.GetConverter("EN");
+        string one = source.Convert(1);
+        var options = new NumberToStringConverterOptions(source)
+        {
+            VariantDimensions = [new NumberToStringConverter.VariantDimension("form", ["start", "end"])],
+            VariantRules =
+            [
+                new NumberToStringConverter.VariantRule(
+                    new Dictionary<string, string> { ["form"] = "start" },
+                    [new NumberToStringConverter.ReplacementRule(one + " ", "PREFIX ", ReplacementScope.StartsWith)]),
+                new NumberToStringConverter.VariantRule(
+                    new Dictionary<string, string> { ["form"] = "end" },
+                    [new NumberToStringConverter.ReplacementRule(one, "SUFFIX", ReplacementScope.EndsWith)]),
+            ],
+        };
+        var converter = new NumberToStringConverter(options);
+
+        StringAssert.StartsWith(converter.Convert(100, "form=start"), "PREFIX ");
+        StringAssert.EndsWith(converter.Convert(21, "form=end"), "SUFFIX");
+    }
+
+    /// <summary>Creates a converter with one additional global replacement rule.</summary>
+    private static NumberToStringConverter WithReplacement(
+        NumberToStringConverter source,
+        NumberToStringConverter.ReplacementRule replacement)
+        => new(new NumberToStringConverterOptions(source)
+        {
+            Replacements = source.Replacements.Append(replacement).ToList(),
+        });
 
     /// <summary>Minimal language-neutral implementation used to exercise default interface members.</summary>
     private sealed class MinimalConverter : INumberToStringConverter

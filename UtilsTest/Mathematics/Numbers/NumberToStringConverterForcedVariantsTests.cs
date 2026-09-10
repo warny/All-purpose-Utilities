@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Utils.NumberToString;
 
 namespace UtilsTest.Mathematics.Numbers;
@@ -154,13 +155,21 @@ public class NumberToStringConverterForcedVariantsTests
     [TestMethod]
     public void TimeUnitForcedVariants_MutatingSourceDictionaryAfterConstruction_DoesNotAffectConverter()
     {
+        NumberToStringConverter sourceConverter = NumberToStringConverter.GetConverter("EN");
+        string baseToken = sourceConverter.Convert(1);
         var source = new Dictionary<string, ForcedVariantSet>
         {
             ["hour"] = ForcedVariantSet.Create(("form", "alternate")),
         };
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(sourceConverter)
         {
             VariantDimensions = [new NumberToStringConverter.VariantDimension("form", ["base", "alternate"])],
+            VariantRules =
+            [
+                new NumberToStringConverter.VariantRule(
+                    new Dictionary<string, string> { ["form"] = "alternate" },
+                    [new NumberToStringConverter.ReplacementRule(baseToken, "ALT", ReplacementScope.Standalone)]),
+            ],
             TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)>
             {
                 ["hour"] = ("UNIT", "UNITS", null),
@@ -168,19 +177,77 @@ public class NumberToStringConverterForcedVariantsTests
             TimeUnitForcedVariants = source,
         };
         var converter = new NumberToStringConverter(options);
-        string beforeMutation = converter.Convert(new TimeSpan(1, 0, 0));
+        Assert.AreEqual("ALT UNIT", converter.Convert(new TimeSpan(1, 0, 0)));
 
         source["hour"] = ForcedVariantSet.Empty;
-        source["minute"] = ForcedVariantSet.Create(("form", "alternate"));
 
-        Assert.AreEqual(beforeMutation, converter.Convert(new TimeSpan(1, 0, 0)));
+        Assert.AreEqual("ALT UNIT", converter.Convert(new TimeSpan(1, 0, 0)));
+        Assert.AreEqual($"{baseToken} UNIT", new NumberToStringConverter(options).Convert(new TimeSpan(1, 0, 0)));
     }
 
     // ─── Dimension alias canonicalization ──────────────────────────────────────────────────────
 
+    /// <summary>Verifies duplicate canonical and local dimension names are rejected for forced time-unit variants.</summary>
+    [TestMethod]
+    public void TimeUnitForcedVariants_CanonicalAndAliasDuplicate_ThrowsUnts004()
+    {
+        var options = CreateAliasedVariantOptions();
+        options.TimeUnitForcedVariants = new Dictionary<string, ForcedVariantSet>
+        {
+            ["hour"] = ForcedVariantSet.Parse("form=alternate,localForm=base"),
+        };
+
+        var exception = Assert.ThrowsExactly<NumberToStringConfigurationException>(() => new NumberToStringConverter(options));
+        Assert.AreEqual("UNTS004", exception.ErrorCode);
+    }
+
+    /// <summary>Verifies duplicate canonical and local dimension names are rejected for currency forced variants.</summary>
+    [TestMethod]
+    public void CurrencyForcedVariants_CanonicalAndAliasDuplicate_ThrowsUnts004()
+    {
+        var converter = new NumberToStringConverter(CreateAliasedVariantOptions());
+        var currency = new CurrencyDefinition
+        {
+            UnitSingular = "UNIT",
+            UnitPlural = "UNITS",
+            SubunitSingular = "SUBUNIT",
+            SubunitPlural = "SUBUNITS",
+            UnitForcedVariants = ForcedVariantSet.Parse("form=alternate,localForm=base"),
+        };
+
+        var exception = Assert.ThrowsExactly<NumberToStringConfigurationException>(() => converter.ConvertCurrency(1m, currency));
+        Assert.AreEqual("UNTS004", exception.ErrorCode);
+    }
+
     // ─── FromCulture round-trip ─────────────────────────────────────────────────────────────────
 
+    /// <summary>Verifies that loading options from a registered culture preserves forced-variant metadata.</summary>
+    [TestMethod]
+    public void FromCulture_PreservesTimeUnitForcedVariants()
+    {
+        NumberToStringConverter source = NumberToStringConverter.GetConverter("FR");
+        NumberToStringConverterOptions options = NumberToStringConverterOptions.FromCulture("FR");
+
+        CollectionAssert.AreEquivalent(
+            source.TimeUnitForcedVariants.Keys.ToArray(),
+            options.TimeUnitForcedVariants.Keys.ToArray());
+    }
+
     // ─── Caller validation is unaffected by ForcedVariants ─────────────────────────────────────
+
+    /// <summary>Verifies caller variants are validated before a constituent's forced overlay is applied.</summary>
+    [TestMethod]
+    public void Convert_TimeSpan_InvalidCallerVariant_ThrowsBeforeForcedOverlay()
+    {
+        var options = CreateAliasedVariantOptions();
+        options.TimeUnitForcedVariants = new Dictionary<string, ForcedVariantSet>
+        {
+            ["hour"] = ForcedVariantSet.Create(("form", "alternate")),
+        };
+        var converter = new NumberToStringConverter(options);
+
+        Assert.ThrowsExactly<ArgumentException>(() => converter.Convert(TimeSpan.FromHours(1), "form=invalid"));
+    }
 
     // ─── ForcedVariantSet.Create — programmatic construction edge cases ───────────────────────
 
@@ -325,4 +392,18 @@ public class NumberToStringConverterForcedVariantsTests
             return text;
         }
     }
+
+    /// <summary>Creates synthetic options with one canonical dimension, one local alias, and one time unit.</summary>
+    private static NumberToStringConverterOptions CreateAliasedVariantOptions()
+        => new(NumberToStringConverter.GetConverter("EN"))
+        {
+            VariantDimensions =
+            [
+                new NumberToStringConverter.VariantDimension("form", ["base", "alternate"], "localForm"),
+            ],
+            TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)>
+            {
+                ["hour"] = ("UNIT", "UNITS", null),
+            },
+        };
 }
