@@ -1792,10 +1792,36 @@ public class ExpressionCallSignatureAttribute : ExpressionSignatureAttribute
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// Evaluates the declaring-type constraint(s) in <see cref="Types"/> BEFORE the method-name
+    /// comparison, and stops at the first matching type — exactly mirroring the historical
+    /// <c>Types.Any(ec.Method.DeclaringType.IsDefinedBy)</c> traversal this indexed loop replaces.
+    /// This ordering is observable: a null element in <see cref="Types"/> still throws (via
+    /// <see cref="TypeEx.IsDefinedBy"/>'s own null-guard) even when <see cref="FunctionName"/> would
+    /// not have matched the call. <see cref="Types"/> itself is read on every call rather than
+    /// snapshotted, so external mutation of its elements remains observable, matching the historical
+    /// behavior of reading the live array through <c>Enumerable.Any</c>. A null <see cref="Types"/>
+    /// array raises the same <see cref="ArgumentNullException"/> (<c>ParamName</c> <c>"source"</c>)
+    /// that <c>Enumerable.Any</c>'s own null-source guard used to raise, rather than letting the loop
+    /// fail with an unrelated <see cref="NullReferenceException"/> on <c>types.Length</c>.
+    /// </remarks>
     public override bool Match(Expression e)
     {
         if (e is not MethodCallExpression ec) return false;
-        return Types.Any(ec.Method.DeclaringType.IsDefinedBy) && ec.Method.Name == FunctionName;
+
+        Type[] types = Types;
+        if (types is null) throw new ArgumentNullException("source");
+
+        Type? declaringType = ec.Method.DeclaringType;
+        for (int i = 0; i < types.Length; i++)
+        {
+            if (declaringType!.IsDefinedBy(types[i]))
+            {
+                return ec.Method.Name == FunctionName;
+            }
+        }
+
+        return false;
     }
 }
 
@@ -1831,16 +1857,33 @@ public class ConstantNumericAttribute : ExpressionSignatureAttribute
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// <c>Convert.ToDouble(cc.Value)</c> is deliberately re-evaluated for each candidate in
+    /// <see cref="Values"/> rather than hoisted out of the loop: <see cref="NumberUtils.IsNumeric(object)"/>
+    /// accepts any runtime type implementing <c>INumber&lt;TSelf&gt;</c>, not just CLR primitives, so a
+    /// third-party numeric type's conversion could in principle have observable per-call side effects.
+    /// This mirrors the historical per-element <c>Convert.ToDouble</c> call inside
+    /// <c>Values.Any(v => v == Convert.ToDouble(cc.Value))</c>.
+    /// </remarks>
     public override bool Match(Expression e)
     {
         if (e is not ConstantExpression cc) return false;
         if (!NumberUtils.IsNumeric(cc.Value)) return false;
 
         // If no specific allowed values, any numeric constant is fine
-        if (Values == null) return true;
+        IReadOnlyList<double>? values = Values;
+        if (values is null) return true;
 
         // Otherwise, ensure the constant's value is among the specified set
-        return Values.Any(v => v == Convert.ToDouble(cc.Value));
+        for (int i = 0; i < values.Count; i++)
+        {
+            if (values[i] == Convert.ToDouble(cc.Value))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
 
