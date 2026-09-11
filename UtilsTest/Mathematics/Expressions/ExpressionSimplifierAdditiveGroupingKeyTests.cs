@@ -132,6 +132,8 @@ public class ExpressionSimplifierAdditiveGroupingKeyTests
     {
     }
 
+    /// <summary>Creates a double parameter expression named <c>x</c> for grouping-key characterization tests.</summary>
+    /// <returns>A double parameter expression named <c>x</c>.</returns>
     private static ParameterExpression X() => Expression.Parameter(typeof(double), "x");
 
     // ------------------------------------------------------------------------------------------
