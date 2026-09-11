@@ -38,56 +38,45 @@ public partial class ExpressionSimplifier
     #region TransformTo INumber functions
 
     /// <summary>
-    /// Holds successfully resolved <see cref="TransformCall"/> target methods, keyed by function name
-    /// and argument count. Nested so the <see cref="ConcurrentDictionary{TKey, TValue}"/> itself is not
-    /// constructed until the first math-method lookup actually happens — <see cref="ExpressionSimplifier"/>
-    /// is used for plenty of non-math simplification, and #583 deliberately avoided adding static
-    /// initialization cost to that path; a nested type's static constructor runs on first access to a
-    /// member of the nested type, not merely when the outer <see cref="ExpressionSimplifier"/> type
-    /// itself is touched.
+    /// Holds lazily built all-<see cref="FloatingPointType"/> lookup-signature arrays, indexed by arity
+    /// only. Nested so the <see cref="ConcurrentDictionary{TKey, TValue}"/> itself is not constructed
+    /// until the first math-method lookup actually happens — <see cref="ExpressionSimplifier"/> is used
+    /// for plenty of non-math simplification, and #583 deliberately avoided adding static initialization
+    /// cost to that path; a nested type's static constructor runs on first access to a member of the
+    /// nested type, not merely when the outer <see cref="ExpressionSimplifier"/> type itself is touched.
     /// </summary>
-    private static class TransformCallMethodCache
+    /// <remarks>
+    /// A cache keyed by <c>(functionName, arity)</c> and storing the resolved <see cref="MethodInfo"/>
+    /// itself was measured to also remove the <see cref="Type.GetMethod(string, BindingFlags, Type[])"/>
+    /// reflection call on a hit, but reproducibly regressed CPU time by roughly 15-18% for an end-to-end
+    /// <see cref="ExpressionSimplifier.Simplify(Expression)"/> call resolving several different target
+    /// methods within one recursive transformation (e.g. <c>Sqrt(Abs(Sin(x)))</c>) — confirmed across 15
+    /// interleaved rounds with non-overlapping baseline/candidate ranges, while direct, non-recursive
+    /// calls to the same cache were reproducibly faster. Since the arity-only signature array does not
+    /// depend on the function name, indexing by arity alone remains correct (unlike a full method cache,
+    /// which must include the name — see <see cref="TransformCall"/>'s remarks) and avoids whatever
+    /// interaction caused that regression, while still removing the temporary <see cref="Type"/>[]
+    /// allocation. <see cref="Type.GetMethod(string, BindingFlags, Type[])"/> itself still runs on every
+    /// call.
+    /// </remarks>
+    private static class TransformCallSignatureCache
     {
         /// <summary>
-        /// Successfully resolved target methods, indexed by function name and the argument count (arity)
-        /// they were resolved for. <see cref="ExpressionCallSignatureAttribute"/> matches only the
-        /// declaring type and method name — not the full parameter signature — so the same protected
-        /// conversion rule (e.g. <c>LogConversionMath</c>) can legitimately be invoked with different
-        /// argument counts corresponding to different overloads (<see cref="double.Log(double)"/> vs.
-        /// <see cref="double.Log(double, double)"/>); the function name alone is not a valid cache key.
-        /// Only successful resolutions are ever stored here — see <see cref="ResolveTransformCallMethod"/>.
+        /// Lazily built all-<see cref="FloatingPointType"/> signature arrays, indexed by arity. Every
+        /// entry is safe to share across every function name: the content depends only on the arity.
         /// </summary>
-        internal static readonly ConcurrentDictionary<(string FunctionName, int Arity), MethodInfo> Methods = new();
+        internal static readonly ConcurrentDictionary<int, Type[]> Signatures = new();
     }
 
     /// <summary>
-    /// Resolves (and caches) the <see cref="FloatingPointType"/> static method named
-    /// <paramref name="functionName"/> whose parameters are all <see cref="FloatingPointType"/>, one per
-    /// <paramref name="arity"/>.
+    /// Resolves (and caches) the all-<see cref="FloatingPointType"/> lookup-signature array for
+    /// <paramref name="arity"/> parameters.
     /// </summary>
-    /// <remarks>
-    /// A cache hit skips both the temporary all-<see cref="FloatingPointType"/> <see cref="Type"/>[]
-    /// lookup-signature allocation and the <see cref="Type.GetMethod(string, BindingFlags, Type[])"/>
-    /// reflection call. Only successful resolutions are cached (see
-    /// <see cref="TransformCallMethodCache.Methods"/>): <see cref="TransformCall"/>'s protected callers
-    /// accept an arbitrary <see cref="Expression"/>[], so an external subclass could otherwise turn
-    /// arbitrary invalid arities into process-lifetime-retained cache entries for no benefit. A benign
-    /// race where two threads both perform the first reflection lookup for the same key is acceptable —
-    /// both resolve an equivalent <see cref="MethodInfo"/>, and <see cref="ConcurrentDictionary{TKey, TValue}.TryAdd"/>
-    /// makes whichever one wins irrelevant to callers.
-    /// </remarks>
-    /// <param name="functionName">The name of the method to resolve.</param>
-    /// <param name="arity">The number of <see cref="FloatingPointType"/> parameters the method must declare.</param>
-    /// <returns>The resolved, cached <see cref="MethodInfo"/>.</returns>
-    /// <exception cref="InvalidOperationException">
-    /// No matching <paramref name="functionName"/>/<paramref name="arity"/> method exists on
-    /// <see cref="FloatingPointType"/>.
-    /// </exception>
-    private static MethodInfo ResolveTransformCallMethod(string functionName, int arity)
+    /// <param name="arity">The number of <see cref="FloatingPointType"/> parameters the signature must contain.</param>
+    /// <returns>A signature array containing <paramref name="arity"/> copies of <see cref="FloatingPointType"/>.</returns>
+    private static Type[] ResolveTransformCallSignature(int arity)
     {
-        (string FunctionName, int Arity) key = (functionName, arity);
-
-        if (TransformCallMethodCache.Methods.TryGetValue(key, out MethodInfo? cached))
+        if (TransformCallSignatureCache.Signatures.TryGetValue(arity, out Type[]? cached))
         {
             return cached;
         }
@@ -95,15 +84,9 @@ public partial class ExpressionSimplifier
         Type[] signature = arity == 0 ? [] : new Type[arity];
         Array.Fill(signature, FloatingPointType);
 
-        MethodInfo? method = FloatingPointType.GetMethod(functionName, BindingFlags.Public | BindingFlags.Static, signature);
-        if (method is null)
-        {
-            throw new InvalidOperationException($"The method {functionName} could not be located on {FloatingPointType}.");
-        }
+        TransformCallSignatureCache.Signatures.TryAdd(arity, signature);
 
-        TransformCallMethodCache.Methods.TryAdd(key, method);
-
-        return method;
+        return signature;
     }
 
     /// <summary>
@@ -119,6 +102,13 @@ public partial class ExpressionSimplifier
     /// <returns>
     /// A transformed <see cref="Expression.Call(MethodInfo, Expression[])"/> targeting the floating-point method.
     /// </returns>
+    /// <remarks>
+    /// Resolution still calls <see cref="Type.GetMethod(string, BindingFlags, Type[])"/> on every
+    /// invocation — see <see cref="TransformCallSignatureCache"/>'s remarks for why a full
+    /// <c>(functionName, arity) -&gt; MethodInfo</c> cache was measured and rejected. Only the temporary
+    /// all-<see cref="FloatingPointType"/> lookup-signature array is reused, via
+    /// <see cref="ResolveTransformCallSignature"/>.
+    /// </remarks>
     private Expression TransformCall(Type requiredInterface, string functionName, Expression e, Expression[] expressions)
     {
         ArgumentNullException.ThrowIfNull(e);
@@ -130,7 +120,13 @@ public partial class ExpressionSimplifier
             throw new InvalidOperationException($"{FloatingPointType} does not implement {requiredInterface}.");
         }
 
-        MethodInfo method = ResolveTransformCallMethod(functionName, expressions.Length);
+        Type[] signature = ResolveTransformCallSignature(expressions.Length);
+
+        MethodInfo? method = FloatingPointType.GetMethod(functionName, BindingFlags.Public | BindingFlags.Static, signature);
+        if (method is null)
+        {
+            throw new InvalidOperationException($"The method {functionName} could not be located on {FloatingPointType}.");
+        }
 
         Expression[] convertedExpressions = expressions.Length == 0 ? [] : new Expression[expressions.Length];
         for (int i = 0; i < expressions.Length; i++)
