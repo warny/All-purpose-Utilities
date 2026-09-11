@@ -902,20 +902,29 @@ namespace Utils.Mathematics.Expressions
         /// </summary>
         /// <param name="expression">Expression for which to compute a grouping key.</param>
         /// <returns>A deterministic key suitable for additive grouping.</returns>
+        /// <remarks>
+        /// The argument-list portion is produced with the generic <see cref="string.Join{T}(string, IEnumerable{T})"/>
+        /// overload directly over <c>Arguments</c>, calling each argument's <see cref="object.ToString"/> exactly
+        /// once, left to right, with no escaping of the "|" separator — the same observable behavior as the
+        /// previous <c>Arguments.Select(GetCanonicalExpressionKey)</c> adapter, minus the intermediate
+        /// <see cref="System.Linq.Enumerable.Select{TSource, TResult}(IEnumerable{TSource}, Func{TSource, TResult})"/>
+        /// iterator. <see cref="GetCanonicalExpressionKey"/> itself is unchanged and still used for every other
+        /// canonical-key computation in this class.
+        /// </remarks>
         private static string GetAdditiveGroupingKey(Expression expression)
         {
             if (expression is BinaryExpression powerExpression
                 && powerExpression.NodeType == ExpressionType.Power
                 && powerExpression.Left is MethodCallExpression powerMethodCallExpression)
             {
-                string argumentsKey = string.Join("|", powerMethodCallExpression.Arguments.Select(GetCanonicalExpressionKey));
+                string argumentsKey = string.Join<Expression>("|", powerMethodCallExpression.Arguments);
                 int categoryOrder = GetFunctionCategoryOrder(powerMethodCallExpression.Method.Name);
                 return $"func:{argumentsKey}:{categoryOrder}";
             }
 
             if (expression is MethodCallExpression methodCallExpression)
             {
-                string argumentsKey = string.Join("|", methodCallExpression.Arguments.Select(GetCanonicalExpressionKey));
+                string argumentsKey = string.Join<Expression>("|", methodCallExpression.Arguments);
                 int categoryOrder = GetFunctionCategoryOrder(methodCallExpression.Method.Name);
                 return $"func:{argumentsKey}:{categoryOrder}";
             }

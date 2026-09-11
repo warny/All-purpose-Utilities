@@ -86,24 +86,28 @@ public class TypeExIsDefinedByTests
     // Class-path negative controls (untouched code path)
     // ------------------------------------------------------------------------------------------
 
+    /// <summary>A class checked against itself matches via the leading <c>type == baseType</c> check — an unchanged control path.</summary>
     [TestMethod]
     public void IsDefinedBy_ExactSameType_ReturnsTrue()
     {
         Assert.IsTrue(typeof(string).IsDefinedBy(typeof(string)));
     }
 
+    /// <summary>A class matches one of its base classes via the class-hierarchy walk — an unchanged control path, not the interface branches #588 modifies.</summary>
     [TestMethod]
     public void IsDefinedBy_DerivedClassToBaseClass_ReturnsTrue()
     {
         Assert.IsTrue(typeof(string).IsDefinedBy(typeof(object)));
     }
 
+    /// <summary>Two unrelated classes never match, regardless of the class or interface walk.</summary>
     [TestMethod]
     public void IsDefinedBy_UnrelatedClasses_ReturnsFalse()
     {
         Assert.IsFalse(typeof(string).IsDefinedBy(typeof(Exception)));
     }
 
+    /// <summary>A closed generic class matches its own open generic type definition.</summary>
     [TestMethod]
     public void IsDefinedBy_ClosedGenericClassToGenericClassDefinition_ReturnsTrue()
     {
@@ -114,20 +118,25 @@ public class TypeExIsDefinedByTests
     // Non-generic interface branch
     // ------------------------------------------------------------------------------------------
 
+    /// <summary>A directly implemented non-generic interface is found by scanning <see cref="Type.GetInterfaces"/>.</summary>
     [TestMethod]
     public void IsDefinedBy_DirectNonGenericInterfaceImplementation_ReturnsTrue()
     {
         Assert.IsTrue(typeof(List<int>).IsDefinedBy(typeof(IEnumerable)));
     }
 
+    /// <summary>
+    /// <see cref="IEnumerable{T}"/> closed over <see cref="int"/> is generic but NOT a generic type
+    /// definition, so this intentionally goes through the non-generic-interface branch
+    /// (<c>baseType.IsGenericTypeDefinition == false</c>), matched by direct reference equality.
+    /// </summary>
     [TestMethod]
     public void IsDefinedBy_ClosedGenericInterfaceAsBaseType_ReturnsTrue()
     {
-        // IEnumerable<int> is generic but NOT a generic type definition, so this intentionally
-        // goes through the non-generic-interface branch (baseType.IsGenericTypeDefinition == false).
         Assert.IsTrue(typeof(List<int>).IsDefinedBy(typeof(IEnumerable<int>)));
     }
 
+    /// <summary>An interface absent from the full interface array never matches on the non-generic branch.</summary>
     [TestMethod]
     public void IsDefinedBy_NonGenericInterface_NoMatch_ReturnsFalse()
     {
@@ -138,24 +147,28 @@ public class TypeExIsDefinedByTests
     // Generic-interface-definition branch
     // ------------------------------------------------------------------------------------------
 
+    /// <summary>An implemented closed generic interface matches its open generic definition through the interface scan.</summary>
     [TestMethod]
     public void IsDefinedBy_GenericInterfaceDefinition_ImplementedThroughInterfaceScan_ReturnsTrue()
     {
         Assert.IsTrue(typeof(List<int>).IsDefinedBy(typeof(IEnumerable<>)));
     }
 
+    /// <summary>The BCL generic-math interface <see cref="INumber{TSelf}"/> is found on <see cref="double"/> through the interface scan.</summary>
     [TestMethod]
     public void IsDefinedBy_GenericMathInterface_Double_INumber_ReturnsTrue()
     {
         Assert.IsTrue(typeof(double).IsDefinedBy(typeof(INumber<>)));
     }
 
+    /// <summary>The BCL generic-math interface <see cref="IBinaryInteger{TSelf}"/> is found on <see cref="int"/> through the interface scan.</summary>
     [TestMethod]
     public void IsDefinedBy_GenericMathInterface_Int_IBinaryInteger_ReturnsTrue()
     {
         Assert.IsTrue(typeof(int).IsDefinedBy(typeof(IBinaryInteger<>)));
     }
 
+    /// <summary>The BCL generic-math interface <see cref="IFloatingPoint{TSelf}"/> is found on <see cref="double"/> through the interface scan.</summary>
     [TestMethod]
     public void IsDefinedBy_GenericMathInterface_Double_IFloatingPoint_ReturnsTrue()
     {
@@ -184,12 +197,14 @@ public class TypeExIsDefinedByTests
     // Generic interface inheritance (test-only hierarchy)
     // ------------------------------------------------------------------------------------------
 
+    /// <summary>A class matches a generic interface it directly implements.</summary>
     [TestMethod]
     public void IsDefinedBy_GenericInterfaceInheritance_DirectInterface_ReturnsTrue()
     {
         Assert.IsTrue(typeof(ImplementsDerived).IsDefinedBy(typeof(IDerived<>)));
     }
 
+    /// <summary>A class also matches a generic interface reached only transitively, through a directly implemented interface's own base interface.</summary>
     [TestMethod]
     public void IsDefinedBy_GenericInterfaceInheritance_InheritedInterface_ReturnsTrue()
     {
