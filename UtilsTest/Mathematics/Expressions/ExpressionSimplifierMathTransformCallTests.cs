@@ -10,16 +10,18 @@ namespace UtilsTest.Mathematics.Expressions;
 /// Characterization coverage for <c>ExpressionSimplifier.Math.TransformCall</c>, the private helper
 /// shared by every <c>double</c> static-method conversion rule (<c>Sqrt</c>, <c>Max</c>, <c>Clamp</c>,
 /// and about twenty others). #583 removed this helper's original LINQ scaffolding
-/// (<c>Enumerable.Repeat(...).ToArray()</c> / <c>Select(...).ToArray()</c>). The remaining repeated
-/// work on every call is building the all-<c>double</c> <c>Type[]</c> lookup signature and calling
-/// <see cref="Type.GetMethod(string, BindingFlags, Type[])"/>. These tests characterize that behavior
-/// (argument order, argument-instance reuse for already-<c>double</c> expressions, non-mutation of the
-/// caller's array, exact validation and exception ordering, and — critically — that the same rule can
-/// resolve different overloads depending on how many arguments it is called with, since
-/// <see cref="ExpressionCallSignatureAttribute"/> matches only the declaring type and method name, not
-/// the full parameter signature) so that a subsequent resolution-cache optimization can be verified not
-/// to alter any of it beyond removing the redundant signature array and reflection lookup on repeated
-/// successful resolutions.
+/// (<c>Enumerable.Repeat(...).ToArray()</c> / <c>Select(...).ToArray()</c>); #586 then cached the
+/// all-<c>double</c> <c>Type[]</c> lookup signature for the three arities every shipped conversion rule
+/// actually uses (1-3) — <see cref="Type.GetMethod(string, BindingFlags, Type[])"/> itself still runs on
+/// every call; method-resolution results are never cached (a full <c>(functionName, arity) -&gt; MethodInfo</c>
+/// cache was tried and measured to reproducibly regress end-to-end CPU time — see
+/// <c>ExpressionSimplifier.Math.cs</c>'s remarks on <c>ResolveTransformCallSignature</c>). These tests
+/// characterize the helper's observable behavior (argument order, argument-instance reuse for
+/// already-<c>double</c> expressions, non-mutation of the caller's array, exact validation and exception
+/// ordering, and — critically — that the same rule can resolve different overloads depending on how many
+/// arguments it is called with, since <see cref="ExpressionCallSignatureAttribute"/> matches only the
+/// declaring type and method name, not the full parameter signature) so that the signature-array cache
+/// can be verified not to alter any of it.
 /// </summary>
 [TestClass]
 public class ExpressionSimplifierMathTransformCallTests
@@ -315,9 +317,11 @@ public class ExpressionSimplifierMathTransformCallTests
     }
 
     // ------------------------------------------------------------------------------------------
-    // Resolution-cache characterization (#586): a future cache keyed only by method name, or one
-    // MethodInfo per protected rule, would be incorrect. The minimum correct lookup identity is
-    // (functionName, expressions.Length).
+    // Signature-array cache characterization (#586): TransformCall never caches a resolved
+    // MethodInfo, and never caches by function name alone — the cached all-double Type[] lookup
+    // signature depends only on argument count (arity), shared across every function name at that
+    // arity, and Type.GetMethod itself still runs on every call regardless of whether that array
+    // was cached or freshly built.
     // ------------------------------------------------------------------------------------------
 
     /// <summary>
@@ -415,8 +419,10 @@ public class ExpressionSimplifierMathTransformCallTests
 
     /// <summary>
     /// A failed resolution (wrong arity) must not affect a later, valid resolution of the same
-    /// function name, and must still fail again afterward — failed lookups must never be cached,
-    /// including as a side effect of a preceding successful one.
+    /// function name, and must still fail again afterward. <c>TransformCall</c> never caches a
+    /// resolved <see cref="MethodInfo"/> — only the shared, arity-only lookup-signature array,
+    /// which never depends on whether resolution actually succeeds for any particular function
+    /// name — so a failing call can never "poison" (or benefit from) a subsequent one.
     /// </summary>
     [TestMethod]
     public void TransformCall_FailedArityDoesNotPoisonLaterValidLookup()
@@ -436,10 +442,35 @@ public class ExpressionSimplifierMathTransformCallTests
     }
 
     /// <summary>
-    /// After a valid <c>(functionName, arity)</c> key has already been resolved once (and would be
-    /// cached by a resolution-cache optimization), a later call with an invalid element at that same
-    /// valid arity must still pass method resolution and fail while inspecting the element during
-    /// argument conversion — not surface a different, cache-related exception.
+    /// An arity outside the three <c>TransformCall</c> caches (1-3) must keep failing with the
+    /// historical <see cref="InvalidOperationException"/> across many distinct out-of-range arities.
+    /// <c>TransformCall</c>'s protected callers accept an arbitrary <see cref="Expression"/>[], so an
+    /// external subclass could otherwise call e.g. <c>SqrtConversionMath</c> with an unbounded set of
+    /// distinct malformed argument counts; a cache keyed by arity alone (an earlier design considered
+    /// for #586) would have retained one array per distinct out-of-range arity for the remaining
+    /// lifetime of the process. The shipped design caches only the three known arities as fixed static
+    /// fields — structurally incapable of growing — so every other arity is always built fresh and
+    /// never retained.
+    /// </summary>
+    [TestMethod]
+    public void TransformCall_ManyDistinctOutOfRangeArities_AlwaysThrowInvalidOperationException()
+    {
+        var simplifier = new ExposedMathSimplifier();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+
+        for (int arity = 4; arity < 54; arity++)
+        {
+            Expression[] tooMany = new Expression[arity];
+            System.Array.Fill(tooMany, x);
+            Assert.ThrowsExactly<InvalidOperationException>(() => simplifier.Sqrt(DummySource, tooMany));
+        }
+    }
+
+    /// <summary>
+    /// After a given arity's lookup-signature array has already been resolved once (and cached, for
+    /// the arities <c>TransformCall</c> caches), a later call with an invalid element at that same
+    /// arity must still pass method resolution and fail while inspecting the element during argument
+    /// conversion — not surface a different, cache-related exception.
     /// </summary>
     [TestMethod]
     public void TransformCall_ValidCachedKeyThenInvalidElement_ThrowsNullReferenceException()
