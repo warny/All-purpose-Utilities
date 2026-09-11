@@ -195,15 +195,45 @@ public static class TypeEx
                 }
 
                 // Check if any of the type’s interfaces is a generic instantiation
-                // of the given base interface
-                return type.GetInterfaces().Any(i =>
-                    i.IsGenericType
-                    && i.GetGenericTypeDefinition() == baseType);
+                // of the given base interface. Indexed loop rather than
+                // Enumerable.Any(...) to avoid the bound-delegate and array-enumerator
+                // allocations on this hot dispatch path (#588); a null array (only
+                // reachable through a custom Type.GetInterfaces() override — ordinary
+                // CLR types never return null here) still raises the same
+                // ArgumentNullException("source") that Enumerable.Any's own null-source
+                // guard used to raise, rather than an unrelated NullReferenceException
+                // on interfaces.Length.
+                Type[] interfaces = type.GetInterfaces();
+                if (interfaces is null) throw new ArgumentNullException("source");
+
+                for (int i = 0; i < interfaces.Length; i++)
+                {
+                    Type currentInterface = interfaces[i];
+                    if (currentInterface.IsGenericType
+                        && currentInterface.GetGenericTypeDefinition() == baseType)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
             }
             else
             {
-                // Non-generic interface: simply check if 'type' implements it
-                return type.GetInterfaces().Any(i => i == baseType);
+                // Non-generic interface: simply check if 'type' implements it.
+                // Same indexed-loop rationale as the generic-interface-definition branch above.
+                Type[] interfaces = type.GetInterfaces();
+                if (interfaces is null) throw new ArgumentNullException("source");
+
+                for (int i = 0; i < interfaces.Length; i++)
+                {
+                    if (interfaces[i] == baseType)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
             }
         }
 
