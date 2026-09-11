@@ -37,6 +37,90 @@ public partial class ExpressionSimplifier
     #region TransformTo INumber functions
 
     /// <summary>
+    /// Holds the lazily built all-<see cref="FloatingPointType"/> lookup-signature array for a
+    /// single-parameter <c>TransformCall</c> resolution (e.g. <c>Sqrt</c>, <c>Abs</c>, <c>Log(double)</c>).
+    /// A dedicated nested holder per supported arity (see also <see cref="BinaryTransformCallSignature"/>,
+    /// <see cref="TernaryTransformCallSignature"/>) keeps each array's construction independently deferred
+    /// — <see cref="ExpressionSimplifier"/> is used for plenty of non-math simplification, and #583
+    /// deliberately avoided adding static initialization cost to that path; a nested type's static
+    /// constructor runs on first access to a member of the nested type, not merely when the outer
+    /// <see cref="ExpressionSimplifier"/> type itself is touched, and using only unary rules never
+    /// touches the binary/ternary arrays.
+    /// </summary>
+    private static class UnaryTransformCallSignature
+    {
+        /// <summary>The cached one-element all-<see cref="FloatingPointType"/> signature array.</summary>
+        internal static readonly Type[] Value = [FloatingPointType];
+    }
+
+    /// <summary>Holds the lazily built all-<see cref="FloatingPointType"/> lookup-signature array for a two-parameter <c>TransformCall</c> resolution (e.g. <c>Max</c>, <c>Log(double, double)</c>). See <see cref="UnaryTransformCallSignature"/>'s remarks.</summary>
+    private static class BinaryTransformCallSignature
+    {
+        /// <summary>The cached two-element all-<see cref="FloatingPointType"/> signature array.</summary>
+        internal static readonly Type[] Value = [FloatingPointType, FloatingPointType];
+    }
+
+    /// <summary>Holds the lazily built all-<see cref="FloatingPointType"/> lookup-signature array for a three-parameter <c>TransformCall</c> resolution (<c>Clamp</c>). See <see cref="UnaryTransformCallSignature"/>'s remarks.</summary>
+    private static class TernaryTransformCallSignature
+    {
+        /// <summary>The cached three-element all-<see cref="FloatingPointType"/> signature array.</summary>
+        internal static readonly Type[] Value = [FloatingPointType, FloatingPointType, FloatingPointType];
+    }
+
+    /// <summary>
+    /// Resolves the all-<see cref="FloatingPointType"/> lookup-signature array for <paramref name="arity"/>
+    /// parameters, reusing a cached array for the three arities <c>TransformCall</c>'s protected callers
+    /// actually use (1-3) and building a fresh, uncached one for any other <paramref name="arity"/>.
+    /// </summary>
+    /// <remarks>
+    /// A cache keyed by <c>(functionName, arity)</c> and storing the resolved <see cref="MethodInfo"/>
+    /// itself was measured to also remove the <see cref="Type.GetMethod(string, BindingFlags, Type[])"/>
+    /// reflection call on a hit, but reproducibly regressed CPU time by roughly 15-18% for an end-to-end
+    /// <see cref="ExpressionSimplifier.Simplify(Expression)"/> call resolving several different target
+    /// methods within one recursive transformation (e.g. <c>Sqrt(Abs(Sin(x)))</c>) — confirmed across 15
+    /// interleaved rounds with non-overlapping baseline/candidate ranges, while direct, non-recursive
+    /// calls to the same cache were reproducibly faster. <see cref="Type.GetMethod(string, BindingFlags, Type[])"/>
+    /// itself still runs on every <c>TransformCall</c> invocation; only the temporary <see cref="Type"/>[]
+    /// allocation is avoided, and only for the three arities every shipped conversion rule actually
+    /// declares.
+    /// <para>
+    /// A first attempt cached by arity alone in a <c>ConcurrentDictionary&lt;int, Type[]&gt;</c>, with an
+    /// entry added for any arity ever seen — including one supplied by a malformed call. Because
+    /// <c>TransformCall</c>'s protected callers accept an arbitrary <see cref="Expression"/>[], an
+    /// external subclass could call e.g. <c>SqrtConversionMath</c> with thousands of distinct
+    /// out-of-range argument counts, each failing <see cref="Type.GetMethod(string, BindingFlags, Type[])"/>
+    /// with the historical <see cref="InvalidOperationException"/> but — unlike the historical
+    /// unconditionally-fresh array, which the GC could reclaim immediately — permanently retaining that
+    /// arity's array for the remaining lifetime of the process. Restricting the cache to the three known
+    /// arities removes that unbounded-growth path entirely: an unsupported arity is never cached, exactly
+    /// like the historical behavior for it.
+    /// </para>
+    /// </remarks>
+    /// <param name="arity">The number of <see cref="FloatingPointType"/> parameters the signature must contain.</param>
+    /// <returns>A signature array containing <paramref name="arity"/> copies of <see cref="FloatingPointType"/>.</returns>
+    private static Type[] ResolveTransformCallSignature(int arity) => arity switch
+    {
+        1 => UnaryTransformCallSignature.Value,
+        2 => BinaryTransformCallSignature.Value,
+        3 => TernaryTransformCallSignature.Value,
+        _ => CreateUncachedTransformCallSignature(arity),
+    };
+
+    /// <summary>
+    /// Builds a fresh all-<see cref="FloatingPointType"/> lookup-signature array for an
+    /// <paramref name="arity"/> outside the three cached arities (see <see cref="ResolveTransformCallSignature"/>),
+    /// exactly as the historical uncached implementation always did — never retained.
+    /// </summary>
+    /// <param name="arity">The number of <see cref="FloatingPointType"/> parameters the signature must contain.</param>
+    /// <returns>A new signature array containing <paramref name="arity"/> copies of <see cref="FloatingPointType"/>.</returns>
+    private static Type[] CreateUncachedTransformCallSignature(int arity)
+    {
+        Type[] signature = arity == 0 ? [] : new Type[arity];
+        Array.Fill(signature, FloatingPointType);
+        return signature;
+    }
+
+    /// <summary>
     /// Builds a method call on the <see cref="double"/> type for the given
     /// <paramref name="functionName"/>, passing <paramref name="expressions"/> as arguments.
     /// </summary>
@@ -49,6 +133,13 @@ public partial class ExpressionSimplifier
     /// <returns>
     /// A transformed <see cref="Expression.Call(MethodInfo, Expression[])"/> targeting the floating-point method.
     /// </returns>
+    /// <remarks>
+    /// Resolution still calls <see cref="Type.GetMethod(string, BindingFlags, Type[])"/> on every
+    /// invocation — see <see cref="ResolveTransformCallSignature"/>'s remarks for why a full
+    /// <c>(functionName, arity) -&gt; MethodInfo</c> cache was measured and rejected. Only the temporary
+    /// all-<see cref="FloatingPointType"/> lookup-signature array is reused, via
+    /// <see cref="ResolveTransformCallSignature"/>.
+    /// </remarks>
     private Expression TransformCall(Type requiredInterface, string functionName, Expression e, Expression[] expressions)
     {
         ArgumentNullException.ThrowIfNull(e);
@@ -60,8 +151,7 @@ public partial class ExpressionSimplifier
             throw new InvalidOperationException($"{FloatingPointType} does not implement {requiredInterface}.");
         }
 
-        Type[] signature = expressions.Length == 0 ? [] : new Type[expressions.Length];
-        Array.Fill(signature, FloatingPointType);
+        Type[] signature = ResolveTransformCallSignature(expressions.Length);
 
         MethodInfo? method = FloatingPointType.GetMethod(functionName, BindingFlags.Public | BindingFlags.Static, signature);
         if (method is null)
