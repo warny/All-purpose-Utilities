@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Utils.NumberToString;
 
 namespace UtilsTest.Mathematics.Numbers;
@@ -17,208 +18,13 @@ public class NumberToStringConverterForcedVariantsTests
 {
     // ─── Red tests — reproduce the pre-fix defect (French time units default to masculine) ────
 
-    [TestMethod]
-    public void Convert_TimeSpan_FR_OneHour_NoExplicitVariant_IsFeminine()
-    {
-        var fr = NumberToStringConverter.GetConverter("FR");
-        // "heure" is intrinsically feminine; the caller must not need to know that.
-        Assert.AreEqual("une heure", fr.Convert(new TimeSpan(1, 0, 0)));
-    }
-
-    [TestMethod]
-    public void Convert_TimeSpan_FR_TwentyOneHours_NoExplicitVariant_IsFeminine()
-    {
-        var fr = NumberToStringConverter.GetConverter("FR");
-        // A compound number: Count1Form alone (count==1 only) cannot fix this — the whole
-        // cardinal fragment must be built with gender=feminin in its variant query.
-        Assert.AreEqual("vingt et une heures", fr.Convert(TimeSpan.FromHours(21)));
-    }
-
-    [TestMethod]
-    public void Convert_TimeSpan_FR_OneMinute_NoExplicitVariant_IsFeminine()
-    {
-        var fr = NumberToStringConverter.GetConverter("FR");
-        Assert.AreEqual("une minute", fr.Convert(new TimeSpan(0, 1, 0)));
-    }
-
-    [TestMethod]
-    public void Convert_TimeSpan_FR_TwentyOneMinutes_NoExplicitVariant_IsFeminine()
-    {
-        var fr = NumberToStringConverter.GetConverter("FR");
-        Assert.AreEqual("vingt et une minutes", fr.Convert(new TimeSpan(0, 21, 0)));
-    }
-
-    [TestMethod]
-    public void Convert_TimeSpan_FR_OneSecond_NoExplicitVariant_IsFeminine()
-    {
-        var fr = NumberToStringConverter.GetConverter("FR");
-        Assert.AreEqual("une seconde", fr.Convert(new TimeSpan(0, 0, 1)));
-    }
-
-    [TestMethod]
-    public void Convert_TimeSpan_FR_TwentyOneSeconds_NoExplicitVariant_IsFeminine()
-    {
-        var fr = NumberToStringConverter.GetConverter("FR");
-        Assert.AreEqual("vingt et une secondes", fr.Convert(new TimeSpan(0, 0, 21)));
-    }
-
-    [TestMethod]
-    public void Convert_TimeOnly_FR_OneHourTwentyOneMinutesTwentyOneSeconds_AllFeminine()
-    {
-        var fr = NumberToStringConverter.GetConverter("FR");
-        // Composite proof: each constituent (hour/minute/second) independently forces its own
-        // gender on its own fragment — no leakage between them.
-        Assert.AreEqual("une heure vingt et une minutes vingt et une secondes",
-            fr.Convert(new TimeOnly(1, 21, 21)));
-    }
-
-    [TestMethod]
-    public void Convert_TimeSpan_FR_TwentyOneHours_ExplicitMasculineIsOverriddenByForcedFeminine()
-    {
-        var fr = NumberToStringConverter.GetConverter("FR");
-        // "Forced means forced": a contradictory caller-supplied value does not win locally.
-        Assert.AreEqual("vingt et une heures", fr.Convert(TimeSpan.FromHours(21), "gender=masculin"));
-    }
-
     // ─── Non-regression — ForcedVariants must not leak into the global cardinal default ────────
-
-    [TestMethod]
-    public void Convert_FR_OrdinaryCardinal_RemainsMasculineByDefault()
-    {
-        var fr = NumberToStringConverter.GetConverter("FR");
-        Assert.AreEqual("un", fr.Convert(1));
-        Assert.AreEqual("vingt et un", fr.Convert(21));
-    }
 
     // ─── Non-regression — EN/DE time output unchanged ───────────────────────────────────────────
 
-    [TestMethod]
-    public void Convert_TimeSpan_EN_Unaffected()
-    {
-        var en = NumberToStringConverter.GetConverter("EN");
-        Assert.AreEqual("one hour", en.Convert(new TimeSpan(1, 0, 0)));
-        Assert.AreEqual("two hours thirty minutes five seconds", en.Convert(new TimeSpan(2, 30, 5)));
-    }
-
-    [TestMethod]
-    public void Convert_TimeSpan_DE_Unaffected_Count1FormStillApplies()
-    {
-        var de = NumberToStringConverter.GetConverter("DE");
-        Assert.AreEqual("eine Stunde", de.Convert(new TimeSpan(1, 0, 0)));
-    }
-
     // ─── Anti-leak — sequential conversions on the same converter instance ─────────────────────
 
-    [TestMethod]
-    public void Convert_FR_SequentialCalls_DoNotLeakForcedVariantStateAcrossCalls()
-    {
-        var fr = NumberToStringConverter.GetConverter("FR");
-        Assert.AreEqual("une heure", fr.Convert(new TimeSpan(1, 0, 0)));
-        Assert.AreEqual("un", fr.Convert(1));
-        Assert.AreEqual("une", fr.Convert(1, "gender=feminin"));
-        Assert.AreEqual("un", fr.Convert(1));
-    }
-
     // ─── Currency — unit and subunit force independent local variants ─────────────────────────
-
-    private static CurrencyDefinition EuroCurrency() => new()
-    {
-        UnitSingular = "euro",
-        UnitPlural = "euros",
-        SubunitSingular = "centime",
-        SubunitPlural = "centimes",
-        Connector = "et",
-        // Masculine is already the FR default: no forcing needed (spec point 19).
-    };
-
-    private static CurrencyDefinition LivreCurrency() => new()
-    {
-        UnitSingular = "livre",
-        UnitPlural = "livres",
-        SubunitSingular = "sou",
-        SubunitPlural = "sous",
-        Connector = "et",
-        UnitForcedVariants = ForcedVariantSet.Create(("gender", "feminin")),
-        SubunitForcedVariants = ForcedVariantSet.Create(("gender", "feminin")),
-    };
-
-    [TestMethod]
-    public void ConvertCurrency_FR_MasculineCurrency_NoExplicitVariant()
-    {
-        var fr = NumberToStringConverter.GetConverter("FR");
-        var euro = EuroCurrency();
-        Assert.AreEqual("un euro", fr.ConvertCurrency(1m, euro));
-        Assert.AreEqual("vingt et un euros", fr.ConvertCurrency(21m, euro));
-    }
-
-    [TestMethod]
-    public void ConvertCurrency_FR_FeminineCurrency_ForcedByUnitAlone_NoExplicitVariant()
-    {
-        var fr = NumberToStringConverter.GetConverter("FR");
-        var livre = LivreCurrency();
-        Assert.AreEqual("une livre", fr.ConvertCurrency(1m, livre));
-        Assert.AreEqual("vingt et une livres", fr.ConvertCurrency(21m, livre));
-    }
-
-    [TestMethod]
-    public void ConvertCurrency_FR_UnitAndSubunit_ForceIndependentVariants_InSamePhrase()
-    {
-        var fr = NumberToStringConverter.GetConverter("FR");
-        // Synthetic currency: masculine main unit ("franc"), feminine subunit ("centime" forced
-        // feminine here purely to exercise the mechanism — not real French grammar).
-        var mixed = new CurrencyDefinition
-        {
-            UnitSingular = "franc",
-            UnitPlural = "francs",
-            SubunitSingular = "centime",
-            SubunitPlural = "centimes",
-            Connector = "et",
-            SubunitForcedVariants = ForcedVariantSet.Create(("gender", "feminin")),
-        };
-
-        string unitsPart = fr.Convert(21L);                     // masculine default: "vingt et un"
-        string subunitsPart = fr.Convert(21L, "gender=feminin"); // forced feminine: "vingt et une"
-        string expected = $"{unitsPart} francs et {subunitsPart} centimes";
-
-        Assert.AreEqual(expected, fr.ConvertCurrency(21.21m, mixed));
-    }
-
-    [TestMethod]
-    public void ConvertCurrency_FR_FeminineVariant_ExistingCallerOnlyBehaviorUnchanged()
-    {
-        // Regression: a CurrencyDefinition with no ForcedVariants still relies entirely on the
-        // caller-supplied variant for both fragments, exactly as before NTS-04.
-        var fr = NumberToStringConverter.GetConverter("FR");
-        var livre = new CurrencyDefinition
-        {
-            UnitSingular = "livre",
-            UnitPlural = "livres",
-            SubunitSingular = "sou",
-            SubunitPlural = "sous",
-            Connector = "et",
-        };
-        Assert.AreEqual("vingt et un livres", fr.ConvertCurrency(21m, livre));
-        Assert.AreEqual("vingt et une livres", fr.ConvertCurrency(21m, livre, "gender=feminin"));
-    }
-
-    // ─── Fractions — a configured fraction term forces the numerator's variant ─────────────────
-
-    [TestMethod]
-    public void ConvertFraction_FR_SyntheticFractionTerm_ForcesFeminineNumerator()
-    {
-        var fr = NumberToStringConverter.GetConverter("FR");
-        var options = new NumberToStringConverterOptions(fr)
-        {
-            Fractions = new Dictionary<int, string> { [1] = "dixième(s)" },
-            FractionForcedVariants = new Dictionary<int, ForcedVariantSet> { [1] = ForcedVariantSet.Create(("gender", "feminin")) },
-        };
-        var synthetic = new NumberToStringConverter(options);
-
-        Assert.AreEqual("vingt et une dixièmes", synthetic.ConvertFraction(21, 10));
-        // Non-regression: ordinary cardinal on the same converter stays masculine by default —
-        // the forced variant is local to the fraction numerator, not global.
-        Assert.AreEqual("vingt et un", synthetic.Convert(21));
-    }
 
     // ─── Engine-level proof — synthetic converter, independent of French linguistic data ───────
 
@@ -227,7 +33,9 @@ public class NumberToStringConverterForcedVariantsTests
     {
         // Two independent variant dimensions. The "hour" unit forces only "gender"; a caller-
         // supplied "case" value must remain visible to a rule that depends only on "case".
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        var sourceConverter = NumberToStringConverter.GetConverter("EN");
+        string baseToken = sourceConverter.Convert(1);
+        var options = new NumberToStringConverterOptions(sourceConverter)
         {
             LanguageSpecifics = new DefaultNumberToStringLanguageSpecifics(),
             VariantDimensions =
@@ -241,11 +49,11 @@ public class NumberToStringConverterForcedVariantsTests
                 // AND gender=feminine), so the engine requires an explicit tie-break to stay deterministic.
                 new NumberToStringConverter.VariantRule(
                     new Dictionary<string, string> { ["case"] = "dative" },
-                    [new NumberToStringConverter.ReplacementRule("one", "one-DAT", ReplacementScope.Standalone)],
+                    [new NumberToStringConverter.ReplacementRule(baseToken, baseToken + "-DAT", ReplacementScope.Standalone)],
                     priority: 0),
                 new NumberToStringConverter.VariantRule(
                     new Dictionary<string, string> { ["gender"] = "feminine" },
-                    [new NumberToStringConverter.ReplacementRule("one", "one-FEM", ReplacementScope.Standalone)],
+                    [new NumberToStringConverter.ReplacementRule(baseToken, baseToken + "-FEM", ReplacementScope.Standalone)],
                     priority: 1),
             ],
             TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)>
@@ -262,18 +70,58 @@ public class NumberToStringConverterForcedVariantsTests
         // The "hour" constituent forces gender=feminine only. The caller's case=dative survives
         // the overlay, so the case-only rule still fires — proving the forced overlay merges
         // dimension-by-dimension rather than replacing the whole query.
-        Assert.AreEqual("one-DAT unit", synthetic.Convert(new TimeSpan(1, 0, 0), "case=dative", "gender=masculine"));
+        Assert.AreEqual($"{baseToken}-DAT unit", synthetic.Convert(new TimeSpan(1, 0, 0), "case=dative", "gender=masculine"));
 
         // Independently, an ordinary cardinal with an explicit gender=feminine (no case) exercises
         // the gender-only rule, proving the forced value on the constituent is a real, working
         // dimension value and not a name collision with the rule above.
-        Assert.AreEqual("one-FEM", synthetic.Convert(1, "gender=feminine"));
+        Assert.AreEqual($"{baseToken}-FEM", synthetic.Convert(1, "gender=feminine"));
+    }
+
+    /// <summary>Verifies that a forced variant overrides a conflicting caller variant for its constituent.</summary>
+    [TestMethod]
+    public void Convert_Synthetic_ForcedVariantOverridesConflictingCallerVariant()
+    {
+        var sourceConverter = NumberToStringConverter.GetConverter("EN");
+        string baseToken = sourceConverter.Convert(1);
+        var options = new NumberToStringConverterOptions(sourceConverter)
+        {
+            LanguageSpecifics = new DefaultNumberToStringLanguageSpecifics(),
+            VariantDimensions =
+            [
+                new NumberToStringConverter.VariantDimension("gender", ["masculine", "feminine"]),
+            ],
+            VariantRules =
+            [
+                new NumberToStringConverter.VariantRule(
+                    new Dictionary<string, string> { ["gender"] = "masculine" },
+                    [new NumberToStringConverter.ReplacementRule(baseToken, baseToken + "-MASC", ReplacementScope.Standalone)]),
+                new NumberToStringConverter.VariantRule(
+                    new Dictionary<string, string> { ["gender"] = "feminine" },
+                    [new NumberToStringConverter.ReplacementRule(baseToken, baseToken + "-FEM", ReplacementScope.Standalone)]),
+            ],
+            TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)>
+            {
+                ["hour"] = ("unit", "units", null),
+            },
+            TimeUnitForcedVariants = new Dictionary<string, ForcedVariantSet>
+            {
+                ["hour"] = ForcedVariantSet.Create(("gender", "feminine")),
+            },
+        };
+        var synthetic = new NumberToStringConverter(options);
+
+        Assert.AreEqual(
+            $"{baseToken}-FEM unit",
+            synthetic.Convert(new TimeSpan(1, 0, 0), "gender=masculine"));
     }
 
     [TestMethod]
     public void Convert_Synthetic_NoStateLeakAcrossDifferentlyConstrainedConstituents()
     {
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        var sourceConverter = NumberToStringConverter.GetConverter("EN");
+        string baseToken = sourceConverter.Convert(1);
+        var options = new NumberToStringConverterOptions(sourceConverter)
         {
             LanguageSpecifics = new DefaultNumberToStringLanguageSpecifics(),
             VariantDimensions = [new NumberToStringConverter.VariantDimension("gender", ["masculine", "feminine"])],
@@ -281,7 +129,7 @@ public class NumberToStringConverterForcedVariantsTests
             [
                 new NumberToStringConverter.VariantRule(
                     new Dictionary<string, string> { ["gender"] = "feminine" },
-                    [new NumberToStringConverter.ReplacementRule("one", "one-FEM", ReplacementScope.Standalone)]),
+                    [new NumberToStringConverter.ReplacementRule(baseToken, baseToken + "-FEM", ReplacementScope.Standalone)]),
             ],
         };
         var femToken = new CurrencyDefinition
@@ -297,9 +145,9 @@ public class NumberToStringConverterForcedVariantsTests
         };
         var synthetic = new NumberToStringConverter(options);
 
-        Assert.AreEqual("one-FEM token", synthetic.ConvertCurrency(1m, femToken));
-        Assert.AreEqual("one token", synthetic.ConvertCurrency(1m, mascToken));
-        Assert.AreEqual("one", synthetic.Convert(1));
+        Assert.AreEqual($"{baseToken}-FEM token", synthetic.ConvertCurrency(1m, femToken));
+        Assert.AreEqual($"{baseToken} token", synthetic.ConvertCurrency(1m, mascToken));
+        Assert.AreEqual(baseToken, synthetic.Convert(1));
     }
 
     // ─── Immutability / snapshot ────────────────────────────────────────────────────────────────
@@ -307,101 +155,103 @@ public class NumberToStringConverterForcedVariantsTests
     [TestMethod]
     public void TimeUnitForcedVariants_MutatingSourceDictionaryAfterConstruction_DoesNotAffectConverter()
     {
+        NumberToStringConverter sourceConverter = NumberToStringConverter.GetConverter("EN");
+        string baseToken = sourceConverter.Convert(1);
         var source = new Dictionary<string, ForcedVariantSet>
         {
-            ["hour"] = ForcedVariantSet.Create(("gender", "feminin")),
+            ["hour"] = ForcedVariantSet.Create(("form", "alternate")),
         };
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("FR"))
+        var options = new NumberToStringConverterOptions(sourceConverter)
         {
+            VariantDimensions = [new NumberToStringConverter.VariantDimension("form", ["base", "alternate"])],
+            VariantRules =
+            [
+                new NumberToStringConverter.VariantRule(
+                    new Dictionary<string, string> { ["form"] = "alternate" },
+                    [new NumberToStringConverter.ReplacementRule(baseToken, "ALT", ReplacementScope.Standalone)]),
+            ],
+            TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)>
+            {
+                ["hour"] = ("UNIT", "UNITS", null),
+            },
             TimeUnitForcedVariants = source,
         };
         var converter = new NumberToStringConverter(options);
+        Assert.AreEqual("ALT UNIT", converter.Convert(new TimeSpan(1, 0, 0)));
 
         source["hour"] = ForcedVariantSet.Empty;
-        source["minute"] = ForcedVariantSet.Create(("gender", "feminin"));
 
-        Assert.AreEqual("une heure", converter.Convert(new TimeSpan(1, 0, 0)));
+        Assert.AreEqual("ALT UNIT", converter.Convert(new TimeSpan(1, 0, 0)));
+        Assert.AreEqual($"{baseToken} UNIT", new NumberToStringConverter(options).Convert(new TimeSpan(1, 0, 0)));
     }
 
     // ─── Dimension alias canonicalization ──────────────────────────────────────────────────────
 
+    /// <summary>Verifies duplicate canonical and local dimension names are rejected for forced time-unit variants.</summary>
     [TestMethod]
-    public void TimeUnitForcedVariants_FR_LocalNameAlias_BehavesIdenticallyToCanonicalName()
+    public void TimeUnitForcedVariants_CanonicalAndAliasDuplicate_ThrowsUnts004()
     {
-        var fr = NumberToStringConverter.GetConverter("FR");
-        // French declares <Dimension name="gender" localName="genre" ...>: "genre=feminin" must
-        // canonicalize to "gender=feminin" and actually override the base query's canonical
-        // "gender=masculin" default — not sit alongside it as an inert, differently-keyed entry.
-        var options = new NumberToStringConverterOptions(fr)
+        var options = CreateAliasedVariantOptions();
+        options.TimeUnitForcedVariants = new Dictionary<string, ForcedVariantSet>
         {
-            TimeUnitForcedVariants = new Dictionary<string, ForcedVariantSet>
-            {
-                ["hour"] = ForcedVariantSet.Parse("genre=feminin"),
-            },
+            ["hour"] = ForcedVariantSet.Parse("form=alternate,localForm=base"),
         };
-        var aliased = new NumberToStringConverter(options);
 
-        Assert.AreEqual("une heure", aliased.Convert(new TimeSpan(1, 0, 0)));
-        Assert.AreEqual("vingt et une heures", aliased.Convert(TimeSpan.FromHours(21)));
-        // Non-regression: identical to forcing the canonical name directly.
-        Assert.AreEqual(fr.Convert(TimeSpan.FromHours(21)), aliased.Convert(TimeSpan.FromHours(21)));
+        var exception = Assert.ThrowsExactly<NumberToStringConfigurationException>(() => new NumberToStringConverter(options));
+        Assert.AreEqual("UNTS004", exception.ErrorCode);
     }
 
+    /// <summary>Verifies duplicate canonical and local dimension names are rejected for currency forced variants.</summary>
     [TestMethod]
-    public void TimeUnitForcedVariants_FR_CanonicalAndAliasForSameDimension_ThrowsDuplicateDimension()
+    public void CurrencyForcedVariants_CanonicalAndAliasDuplicate_ThrowsUnts004()
     {
-        // "gender" (canonical) and "genre" (its declared localName) both resolve to the same
-        // declared VariantDimension: forcing both must fail deterministically rather than let one
-        // value silently win.
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("FR"))
+        var converter = new NumberToStringConverter(CreateAliasedVariantOptions());
+        var currency = new CurrencyDefinition
         {
-            TimeUnitForcedVariants = new Dictionary<string, ForcedVariantSet>
-            {
-                ["hour"] = ForcedVariantSet.Parse("gender=feminin,genre=masculin"),
-            },
+            UnitSingular = "UNIT",
+            UnitPlural = "UNITS",
+            SubunitSingular = "SUBUNIT",
+            SubunitPlural = "SUBUNITS",
+            UnitForcedVariants = ForcedVariantSet.Parse("form=alternate,localForm=base"),
         };
 
-        var ex = Assert.ThrowsExactly<NumberToStringConfigurationException>(() => new NumberToStringConverter(options));
-        Assert.AreEqual("UNTS004", ex.ErrorCode);
-    }
-
-    [TestMethod]
-    public void ConvertCurrency_FR_CanonicalAndAliasForSameDimension_ThrowsDuplicateDimension()
-    {
-        // Same duplicate-alias proof through the CurrencyDefinition validation path, which
-        // canonicalizes per call rather than once at construction.
-        var fr = NumberToStringConverter.GetConverter("FR");
-        var invalid = new CurrencyDefinition
-        {
-            UnitSingular = "livre",
-            UnitPlural = "livres",
-            SubunitSingular = "sou",
-            SubunitPlural = "sous",
-            UnitForcedVariants = ForcedVariantSet.Parse("gender=feminin,genre=masculin"),
-        };
-
-        var ex = Assert.ThrowsExactly<NumberToStringConfigurationException>(() => fr.ConvertCurrency(21m, invalid));
-        Assert.AreEqual("UNTS004", ex.ErrorCode);
+        var exception = Assert.ThrowsExactly<NumberToStringConfigurationException>(() => converter.ConvertCurrency(1m, currency));
+        Assert.AreEqual("UNTS004", exception.ErrorCode);
     }
 
     // ─── FromCulture round-trip ─────────────────────────────────────────────────────────────────
 
+    /// <summary>Verifies that loading options from a registered culture preserves forced-variant metadata.</summary>
     [TestMethod]
-    public void FromCulture_FR_PreservesTimeUnitForcedVariants()
+    public void FromCulture_PreservesTimeUnitForcedVariants()
     {
-        var options = NumberToStringConverterOptions.FromCulture("FR");
-        var rebuilt = new NumberToStringConverter(options);
+        NumberToStringConverter source = NumberToStringConverter.GetConverter("FR");
+        NumberToStringConverterOptions options = NumberToStringConverterOptions.FromCulture("FR");
 
-        Assert.AreEqual("vingt et une heures", rebuilt.Convert(TimeSpan.FromHours(21)));
+        Assert.AreEqual(source.TimeUnitForcedVariants.Count, options.TimeUnitForcedVariants.Count);
+        foreach (var (unit, sourceVariants) in source.TimeUnitForcedVariants)
+        {
+            Assert.IsTrue(options.TimeUnitForcedVariants.TryGetValue(unit, out ForcedVariantSet? rebuiltVariants));
+            CollectionAssert.AreEquivalent(
+                sourceVariants.Constraints.Values.Select(pair => $"{pair.Key}={pair.Value}").ToArray(),
+                rebuiltVariants!.Constraints.Values.Select(pair => $"{pair.Key}={pair.Value}").ToArray());
+        }
     }
 
     // ─── Caller validation is unaffected by ForcedVariants ─────────────────────────────────────
 
+    /// <summary>Verifies caller variants are validated before a constituent's forced overlay is applied.</summary>
     [TestMethod]
-    public void Convert_TimeSpan_FR_InvalidCallerVariant_StillThrowsBeforeForcedOverlay()
+    public void Convert_TimeSpan_InvalidCallerVariant_ThrowsBeforeForcedOverlay()
     {
-        var fr = NumberToStringConverter.GetConverter("FR");
-        Assert.ThrowsExactly<ArgumentException>(() => fr.Convert(new TimeSpan(1, 0, 0), "gender=banana"));
+        var options = CreateAliasedVariantOptions();
+        options.TimeUnitForcedVariants = new Dictionary<string, ForcedVariantSet>
+        {
+            ["hour"] = ForcedVariantSet.Create(("form", "alternate")),
+        };
+        var converter = new NumberToStringConverter(options);
+
+        Assert.ThrowsExactly<ArgumentException>(() => converter.Convert(TimeSpan.FromHours(1), "form=invalid"));
     }
 
     // ─── ForcedVariantSet.Create — programmatic construction edge cases ───────────────────────
@@ -505,35 +355,36 @@ public class NumberToStringConverterForcedVariantsTests
     [TestMethod]
     public void TimeUnitForcedVariants_KeyWithoutMatchingTimeUnitsEntry_ThrowsArgumentException()
     {
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("FR"))
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
         {
             TimeUnitForcedVariants = new Dictionary<string, ForcedVariantSet>
             {
-                ["nonexistent"] = ForcedVariantSet.Create(("gender", "feminin")),
+                ["nonexistent"] = ForcedVariantSet.Empty,
             },
         };
         Assert.ThrowsExactly<ArgumentException>(() => new NumberToStringConverter(options));
     }
 
     [TestMethod]
-    public void ConvertCurrency_FR_InvalidUnitForcedVariant_ThrowsBeforeRenderingAnyFragment()
+    public void ConvertCurrency_InvalidUnitForcedVariant_ThrowsBeforeRenderingAnyFragment()
     {
         int finalizeCallCount = 0;
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("FR"))
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
         {
             LanguageSpecifics = new CountingLanguageSpecifics(() => finalizeCallCount++),
+            VariantDimensions = [new NumberToStringConverter.VariantDimension("form", ["base", "alternate"])],
         };
-        var fr = new NumberToStringConverter(options);
+        var converter = new NumberToStringConverter(options);
         var invalid = new CurrencyDefinition
         {
-            UnitSingular = "euro",
-            UnitPlural = "euros",
-            SubunitSingular = "centime",
-            SubunitPlural = "centimes",
-            UnitForcedVariants = ForcedVariantSet.Create(("gender", "banana")),
+            UnitSingular = "UNIT",
+            UnitPlural = "UNITS",
+            SubunitSingular = "SUBUNIT",
+            SubunitPlural = "SUBUNITS",
+            UnitForcedVariants = ForcedVariantSet.Create(("form", "invalid")),
         };
 
-        Assert.ThrowsExactly<NumberToStringConfigurationException>(() => fr.ConvertCurrency(21m, invalid));
+        Assert.ThrowsExactly<NumberToStringConfigurationException>(() => converter.ConvertCurrency(21m, invalid));
         Assert.AreEqual(0, finalizeCallCount);
     }
 
@@ -546,4 +397,18 @@ public class NumberToStringConverterForcedVariantsTests
             return text;
         }
     }
+
+    /// <summary>Creates synthetic options with one canonical dimension, one local alias, and one time unit.</summary>
+    private static NumberToStringConverterOptions CreateAliasedVariantOptions()
+        => new(NumberToStringConverter.GetConverter("EN"))
+        {
+            VariantDimensions =
+            [
+                new NumberToStringConverter.VariantDimension("form", ["base", "alternate"], "localForm"),
+            ],
+            TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)>
+            {
+                ["hour"] = ("UNIT", "UNITS", null),
+            },
+        };
 }

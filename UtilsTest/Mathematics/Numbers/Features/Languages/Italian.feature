@@ -64,3 +64,50 @@ Examples:
     | number | expected |
     | 1.5 | uno virgola cinque |
     | 12.34 | dodici virgola tre quattro |
+
+Scenario Outline: Masculine ordinal numbers
+    Given I use the "IT" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 1000 |  | millesimo |
+
+Scenario Outline: Additional feminine ordinal numbers
+    Given I use the "IT" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 20 | gender=femminile | ventesima |
+    | 1000 | gender=femminile | millesima |
+
+Scenario Outline: Caller-defined currency wording
+    Given I use this currency definition
+        | property         | value      |
+        | unit singular    | euro       |
+        | unit plural      | euro       |
+        | subunit singular | centesimo  |
+        | subunit plural   | centesimi  |
+        | connector        | e          |
+    When I convert the currency amount <amount>
+    Then the result is "<expected>"
+
+Examples:
+    | amount | expected                            |
+    | 1      | uno euro                            |
+    | 2      | due euro                            |
+    | 1.50   | uno euro e cinquanta centesimi      |
+
+Scenario: Ordinal conversion is supported
+    Given I use the "IT" number converter
+    Then the converter supports ordinal conversion
+
+Scenario: Fraction connector wording
+    Given I use the "IT" number converter
+    When I convert the fraction 3/2
+    Then the result is "tre su due"

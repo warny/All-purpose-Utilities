@@ -30,3 +30,9 @@ Examples:
     | 1000000000000 | ett biljon |
     | 1000000000000000 | ett biljard |
     | 1000000000000000000000000 | ett kvadriljon |
+
+Scenario: Ordinal conversion is unsupported
+    Then the converter does not support ordinal conversion
+
+Scenario: The regional alias uses Swedish wording
+    Then the "SV" and "SV-SE" converters produce the same cardinal wording for 2

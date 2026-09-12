@@ -34,3 +34,6 @@ Examples:
     | 2000000000 | to milliarder |
     | 1000000000000 | en billion |
     | 1000000000000000 | en billiard |
+
+Scenario: The regional alias uses Danish wording
+    Then the "DA" and "DA-DK" converters produce the same cardinal wording for 2

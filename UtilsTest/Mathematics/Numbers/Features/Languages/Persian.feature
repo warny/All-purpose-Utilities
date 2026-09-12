@@ -33,3 +33,10 @@ Examples:
     | 1000000000000 | یک تریلیون |
     | -1 | منفی یک |
     | -10 | منفی ده |
+
+Scenario: The regional alias uses Persian wording
+    Then the "FA" and "FA-IR" converters produce the same cardinal wording for 2
+
+Scenario: Values above the supported maximum are rejected
+    When I attempt to convert the cardinal number 1000000000000000
+    Then conversion is rejected because the value is out of range

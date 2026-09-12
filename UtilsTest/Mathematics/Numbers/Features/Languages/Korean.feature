@@ -1,7 +1,7 @@
-@NumberToString
+@NumberToString @KO
 Feature: Korean number conversion
 
-Scenario Outline: Cardinals_Basic 1
+Scenario Outline: Basic cardinal numbers
     Given I use the "KO" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -23,7 +23,7 @@ Examples:
     | 101 | 백일 |
     | 200 | 이백 |
 
-Scenario Outline: Cardinals_Thousands 2
+Scenario Outline: Thousands
     Given I use the "KO" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -34,7 +34,7 @@ Examples:
     | 2000 | 이 천 |
     | 10000 | 십 천 |
 
-Scenario Outline: Ordinals_Prefix 3
+Scenario Outline: Prefixed ordinal numbers
     Given I use the "KO" number converter
     When I convert the ordinal number <number>
     Then the result is "<expected>"
@@ -46,7 +46,7 @@ Examples:
     | 10 | 제십 |
     | 11 | 제십일 |
 
-Scenario Outline: Negative 4
+Scenario Outline: Negative cardinal numbers
     Given I use the "KO" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -54,3 +54,15 @@ Scenario Outline: Negative 4
 Examples:
     | number | expected |
     | -1 | 마이너스 일 |
+
+Scenario: The converter is available
+    Given I use the "KO" number converter
+
+Scenario: Ordinal conversion is supported
+    Given I use the "KO" number converter
+    Then the converter supports ordinal conversion
+
+Scenario: Fraction connector wording
+    Given I use the "KO" number converter
+    When I convert the fraction 3/2
+    Then the result is "삼 나누기 이"

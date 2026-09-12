@@ -1,7 +1,7 @@
-@NumberToString
+@NumberToString @FR
 Feature: FrenchRegional number conversion
 
-Scenario Outline: From1To999Test 1
+Scenario Outline: Cardinal numbers below one thousand
     Given I use the "FR-fr" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -33,7 +33,7 @@ Examples:
     | 261 | deux cent soixante et un |
     | 262 | deux cent soixante deux |
 
-Scenario Outline: From1000To9999Test 2
+Scenario Outline: Thousands
     Given I use the "FR-fr" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -64,7 +64,7 @@ Examples:
     | 1261 | mille deux cent soixante et un |
     | 1262 | mille deux cent soixante deux |
 
-Scenario Outline: From10000To99999Test 3
+Scenario Outline: Tens of thousands
     Given I use the "FR-fr" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -95,7 +95,7 @@ Examples:
     | 99261 | quatre-vingt dix neuf mille deux cent soixante et un |
     | 99262 | quatre-vingt dix neuf mille deux cent soixante deux |
 
-Scenario Outline: BiggerTest 4
+Scenario Outline: Large cardinal numbers
     Given I use the "FR-fr" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -108,7 +108,7 @@ Examples:
     | 1000000 | un million |
     | 999999999 | neuf cent quatre-vingt dix neuf millions neuf cent quatre-vingt dix neuf mille neuf cent quatre-vingt dix neuf |
 
-Scenario Outline: DecimalTest 5
+Scenario Outline: Decimal numbers
     Given I use the "FR-fr" number converter
     When I convert the decimal number <number>
     Then the result is "<expected>"
@@ -117,3 +117,219 @@ Examples:
     | number | expected |
     | 1.5 | un virgule cinq dixièmes |
     | 12.34 | douze virgule trente quatre centièmes |
+
+Scenario Outline: French ordinal numbers
+    Given I use the "FR" number converter
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1 | premier |
+    | 2 | deuxième |
+    | 3 | troisième |
+    | 4 | quatrième |
+    | 5 | cinquième |
+    | 6 | sixième |
+    | 8 | huitième |
+    | 9 | neuvième |
+    | 10 | dixième |
+    | 11 | onzième |
+    | 20 | vingtième |
+    | 21 | vingt et unième |
+    | 100 | centième |
+    | 1000 | millième |
+
+Scenario Outline: French feminine cardinal numbers
+    Given I use the "FR" number converter
+    And I use the variants "gender=feminin"
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1 | une |
+    | 21 | vingt et une |
+    | 31 | trente et une |
+    | 61 | soixante et une |
+    | 1000000 | un million |
+    | 1000021 | un million vingt et une |
+
+Scenario Outline: Belgian French feminine cardinal numbers
+    Given I use the "FR-be" number converter
+    And I use the variants "gender=feminin"
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1 | une |
+    | 21 | vingt et une |
+    | 71 | septante et une |
+    | 81 | huitante et une |
+    | 91 | nonante et une |
+    | 1000000 | un million |
+
+Scenario Outline: Belgian French ordinal numbers
+    Given I use the "FR-be" number converter
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1 | premier |
+    | 2 | deuxième |
+    | 5 | cinquième |
+    | 9 | neuvième |
+    | 21 | vingt et unième |
+    | 70 | septantième |
+    | 71 | septante et unième |
+    | 80 | huitantième |
+    | 81 | huitante et unième |
+    | 90 | nonantième |
+    | 91 | nonante et unième |
+
+Scenario Outline: Explicit masculine cardinal numbers
+    Given I use the "<culture>" number converter
+    And I use the variants "gender=masculin"
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | culture | number | expected |
+    | FR | 1 | un |
+    | FR | 21 | vingt et un |
+    | FR-be | 1 | un |
+    | FR-be | 71 | septante et un |
+
+Scenario Outline: Duration wording
+    Given I use the "FR" number converter
+    When I convert the duration "<value>"
+    Then the result is "<expected>"
+
+Examples:
+    | value | expected |
+    | 01:00:00 | une heure |
+    | 21:00:00 | vingt et une heures |
+    | 00:01:00 | une minute |
+    | 00:21:00 | vingt et une minutes |
+    | 00:00:01 | une seconde |
+    | 00:00:21 | vingt et une secondes |
+    | 01:21:21 | une heure vingt et une minutes vingt et une secondes |
+    | 02:30:00 | deux heures trente minutes |
+
+Scenario Outline: Time-of-day wording
+    Given I use the "FR" number converter
+    When I convert the time "<value>"
+    Then the result is "<expected>"
+
+Examples:
+    | value | expected |
+    | 14:30:00 | quatorze heures trente minutes |
+    | 01:21:21 | une heure vingt et une minutes vingt et une secondes |
+
+Scenario Outline: Date wording
+    Given I use the "FR" number converter
+    When I convert the date "<value>"
+    Then the result is "<expected>"
+
+Examples:
+    | value | expected |
+    | 2026-07-01 | premier juillet deux mille vingt six |
+    | 2026-07-02 | deux juillet deux mille vingt six |
+
+Scenario: Date and time wording
+    Given I use the "FR" number converter
+    When I convert the date and time "2026-07-02T14:30:05"
+    Then the result is "deux juillet deux mille vingt six quatorze heures trente minutes cinq secondes"
+
+Scenario Outline: Feminine first ordinal
+    Given I use the "FR" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 1 | gender=feminin | première |
+
+Scenario Outline: Common long-scale cardinal numbers
+    Given I use the "FR" number converter
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number           | expected       |
+    | 1000000          | un million     |
+    | 1000000000       | un milliard    |
+    | 1000000000000    | un billion     |
+    | 1000000000000000 | un billiard    |
+
+@HugeNumber
+Scenario Outline: Very large long-scale cardinal numbers
+    Given I use the "FR" number converter
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number                                                                          | expected          |
+    | 1000000000000000000000000000000000000000000000000000000000000                 | un decillion      |
+    | 1000000000000000000000000000000000000000000000000000000000000000              | un decilliard     |
+    | 1000000000000000000000000000000000000000000000000000000000000000000           | un unidecillion   |
+    | 1000000000000000000000000000000000000000000000000000000000000000000000        | un unidecilliard  |
+    | 1000000000000000000000000000000000000000000000000000000000000000000000000     | un duodecillion   |
+    | 1000000000000000000000000000000000000000000000000000000000000000000000000000  | un duodecilliard  |
+    | 1000000000000000000000000000000000000000000000000000000000000000000000000000000 | un tredecillion |
+
+@HugeNumber
+Scenario: A composed very large long-scale cardinal number
+    Given I use the "FR" number converter
+    When I convert the cardinal number 3000000000000000000000000000000000000000000000000000000000000002000123456789
+    Then the result is "trois duodecilliards deux billions cent vingt trois millions quatre cent cinquante six mille sept cent quatre vingt neuf"
+
+@HugeNumber
+Scenario: A very large cardinal number follows the shipped scale vocabulary
+    Given I use the "FR-fr" number converter
+    When I convert the cardinal number 1852673427797059126777135760139006525652319754650249024631321344126610074238975
+    Then the result is "un tredecillion huit cent cinquante deux duodecilliards six cent soixante treize duodecillions quatre cent vingt sept unidecilliards sept cent quatre-vingt dix sept unidecillions cinquante neuf decilliards cent vingt six decillions sept cent soixante dix sept nonilliards cent trente cinq nonillions sept cent soixante octilliards cent trente neuf octillions six septilliards cinq cent vingt cinq septillions six cent cinquante deux sextilliards trois cent dix neuf sextillions sept cent cinquante quatre quintilliards six cent cinquante quintillions deux cent quarante neuf quadrilliards vingt quatre quadrillions six cent trente et un trilliards trois cent vingt et un trillions trois cent quarante quatre billiards cent vingt six billions six cent dix milliards soixante quatorze millions deux cent trente huit mille neuf cent soixante quinze"
+
+Scenario Outline: Composite thousands preserve the terminal unit in metropolitan French
+    Given I use the "FR-fr" number converter
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected                  |
+    | 21000  | vingt et un mille         |
+    | 401000 | quatre cent un mille      |
+
+Scenario: Ordinal conversion is supported
+    Given I use the "FR" number converter
+    Then the converter supports ordinal conversion
+
+Scenario: Temporal conversion is supported
+    Given I use the "FR" number converter
+    Then the converter supports time conversion
+    And the converter supports date conversion
+
+Scenario Outline: Caller-defined euro wording
+    Given I use the "FR" number converter
+    And I use this currency definition
+        | property         | value     |
+        | unit singular    | euro      |
+        | unit plural      | euros     |
+        | subunit singular | centime   |
+        | subunit plural   | centimes  |
+        | connector        | et        |
+    When I convert the currency amount <amount>
+    Then the result is "<expected>"
+
+Examples:
+    | amount | expected                                  |
+    | 1      | un euro                                   |
+    | 21.50  | vingt et un euros et cinquante centimes   |
+
+Scenario: Fraction connector wording
+    Given I use the "FR-fr" number converter
+    When I convert the fraction 3/2
+    Then the result is "trois sur deux"

@@ -1,7 +1,7 @@
-@NumberToString
+@NumberToString @PT
 Feature: Portuguese number conversion
 
-Scenario Outline: DecimalTest 1
+Scenario Outline: Decimal numbers
     Given I use the "PT" number converter
     When I convert the decimal number <number>
     Then the result is "<expected>"
@@ -11,7 +11,7 @@ Examples:
     | 1.5 | um vírgula cinco |
     | 12.34 | doze vírgula três quatro |
 
-Scenario Outline: Cardinals_Basic 2
+Scenario Outline: Basic cardinal numbers
     Given I use the "PT" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -27,7 +27,7 @@ Examples:
     | 200 | duzentos |
     | 1000 | mil |
 
-Scenario Outline: Cardinals_Gender_Feminino 3
+Scenario Outline: Feminine cardinal numbers
     Given I use the "PT" number converter
     And I use the variants "gender=feminino"
     When I convert the cardinal number <number>
@@ -37,9 +37,16 @@ Examples:
     | number | expected |
     | 1 | uma |
     | 2 | duas |
+    | 21 | vinte e uma |
+    | 22 | vinte e duas |
     | 200 | duzentas |
+    | 201 | duzentas e uma |
+    | 202 | duzentas e duas |
+    | 300 | trezentas |
+    | 400 | quatrocentas |
+    | 500 | quinhentas |
 
-Scenario Outline: Ordinals_MasculinoAndFeminino 4
+Scenario Outline: Masculine ordinal numbers
     Given I use the "PT" number converter
     When I convert the ordinal number <number>
     Then the result is "<expected>"
@@ -53,7 +60,7 @@ Examples:
     | 100 | centésimo |
     | 1000 | milésimo |
 
-Scenario Outline: Ordinals_MasculinoAndFeminino 5
+Scenario Outline: Feminine ordinal numbers
     Given I use the "PT" number converter
     And I use the variants "gender=feminino"
     When I convert the ordinal number <number>
@@ -64,3 +71,77 @@ Examples:
     | 1 | primeira |
     | 2 | segunda |
     | 10 | décima |
+
+Scenario Outline: Duration wording
+    Given I use the "PT" number converter
+    When I convert the duration "<value>"
+    Then the result is "<expected>"
+
+Examples:
+    | value | expected |
+    | 01:00:00 | uma hora |
+    | 02:00:00 | duas horas |
+    | 21:00:00 | vinte e uma horas |
+    | 22:00:00 | vinte e duas horas |
+    | 00:02:00 | dois minutos |
+    | 02:02:00 | duas horas dois minutos |
+
+Scenario Outline: Explicit masculine ordinal numbers
+    Given I use the "PT" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 1 |  | primeiro |
+    | 9 |  | nono |
+    | 10 |  | décimo |
+    | 11 |  | décimo primeiro |
+    | 19 |  | décimo nono |
+    | 20 |  | vigésimo |
+    | 30 |  | trigésimo |
+    | 100 |  | centésimo |
+    | 1000 |  | milésimo |
+
+Scenario Outline: Additional feminine ordinal numbers
+    Given I use the "PT" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 1 | gender=feminino | primeira |
+    | 9 | gender=feminino | nona |
+    | 10 | gender=feminino | décima |
+    | 11 | gender=feminino | décima primeira |
+    | 19 | gender=feminino | décima nona |
+    | 20 | gender=feminino | vigésima |
+    | 100 | gender=feminino | centésima |
+    | 1000 | gender=feminino | milésima |
+
+Scenario Outline: Feminine ordinal numbers compound
+    Given I use the "PT" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 21 | gender=feminino | vinte e primeira |
+    | 22 | gender=feminino | vinte e segunda |
+    | 23 | gender=feminino | vinte e terceira |
+
+Scenario: Time conversion is supported
+    Given I use the "PT" number converter
+    Then the converter supports time conversion
+
+Scenario: Ordinal conversion is supported
+    Given I use the "PT" number converter
+    Then the converter supports ordinal conversion
+
+Scenario: Fraction connector wording
+    Given I use the "PT" number converter
+    When I convert the fraction 3/2
+    Then the result is "três sobre dois"

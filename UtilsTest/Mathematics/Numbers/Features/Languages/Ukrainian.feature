@@ -27,3 +27,9 @@ Examples:
     | 1000000000 | один мільярд |
     | 1000000000000 | один більйон |
     | 1000000000000000000 | один трильйон |
+
+Scenario: Ordinal conversion is unsupported
+    Then the converter does not support ordinal conversion
+
+Scenario: The regional alias uses Ukrainian wording
+    Then the "UK" and "UK-UA" converters produce the same cardinal wording for 2

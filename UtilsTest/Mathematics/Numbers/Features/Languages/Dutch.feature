@@ -1,7 +1,7 @@
-@NumberToString
+@NumberToString @NL
 Feature: Dutch number conversion
 
-Scenario Outline: DecimalTest 1
+Scenario Outline: Decimal numbers
     Given I use the "NL" number converter
     When I convert the decimal number <number>
     Then the result is "<expected>"
@@ -11,7 +11,7 @@ Examples:
     | 1.5 | een komma vijf |
     | 12.34 | twaalf komma drie vier |
 
-Scenario Outline: Cardinals_Basic 2
+Scenario Outline: Basic cardinal numbers
     Given I use the "NL" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -26,7 +26,7 @@ Examples:
     | 100 | honderd |
     | 1000 | duizend |
 
-Scenario Outline: Ordinals_SuffixAndExceptions 3
+Scenario Outline: Irregular and suffixed ordinal numbers
     Given I use the "NL" number converter
     When I convert the ordinal number <number>
     Then the result is "<expected>"
@@ -41,3 +41,51 @@ Examples:
     | 10 | tiende |
     | 20 | twintigste |
     | 100 | honderdste |
+
+Scenario Outline: Additional ordinal numbers for units and teens
+    Given I use the "NL" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 6 |  | zesde |
+    | 7 |  | zevende |
+    | 8 |  | achtste |
+    | 9 |  | negende |
+    | 11 |  | elfde |
+    | 12 |  | twaalfde |
+    | 13 |  | dertiende |
+    | 19 |  | negentiende |
+
+Scenario Outline: Tens and compound ordinal numbers
+    Given I use the "NL" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 21 |  | eenentwintigste |
+    | 101 |  | honderd eerste |
+
+Scenario: Ordinal conversion is supported
+    Given I use the "NL" number converter
+    Then the converter supports ordinal conversion
+
+Scenario Outline: Year wording
+    Given I use the "NL" number converter
+    When I convert the year <year>
+    Then the result is "<expected>"
+
+Examples:
+    | year | expected                  |
+    | 1984 | negentien vierentachtig   |
+    | 1900 | negentien honderd         |
+    | 1100 | elf honderd               |
+
+Scenario: Fraction connector wording
+    Given I use the "NL" number converter
+    When I convert the fraction 3/2
+    Then the result is "drie op twee"

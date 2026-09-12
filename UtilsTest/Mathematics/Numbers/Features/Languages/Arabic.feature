@@ -1,7 +1,7 @@
-@NumberToString
+@NumberToString @AR
 Feature: Arabic number conversion
 
-Scenario Outline: DecimalTest 1
+Scenario Outline: Decimal numbers
     Given I use the "AR" number converter
     When I convert the decimal number <number>
     Then the result is "<expected>"
@@ -11,7 +11,7 @@ Examples:
     | 1.5 | واحد فاصل خمسة |
     | 12.34 | عشرة اثنان فاصل ثلاثة أربعة |
 
-Scenario Outline: Cardinals_Basic 2
+Scenario Outline: Basic cardinal numbers
     Given I use the "AR" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -27,7 +27,7 @@ Examples:
     | 100 | مائة |
     | 1000 | ألف |
 
-Scenario Outline: Cardinals_Gender_Muannath 3
+Scenario Outline: Feminine cardinal numbers
     Given I use the "AR" number converter
     And I use the variants "gender=muʾannath"
     When I convert the cardinal number <number>
@@ -46,7 +46,7 @@ Examples:
     | 9 | تسع |
     | 10 | عشر |
 
-Scenario Outline: Ordinals_Masculine 4
+Scenario Outline: Masculine ordinal numbers
     Given I use the "AR" number converter
     When I convert the ordinal number <number>
     Then the result is "<expected>"
@@ -61,7 +61,7 @@ Examples:
     | 12 | ثاني عشر |
     | 19 | تاسع عشر |
 
-Scenario Outline: Ordinals_Feminine 5
+Scenario Outline: Feminine ordinal numbers
     Given I use the "AR" number converter
     And I use the variants "gender=muʾannath"
     When I convert the ordinal number <number>
@@ -75,3 +75,50 @@ Examples:
     | 10 | عاشرة |
     | 11 | حادية عشرة |
     | 19 | تاسعة عشرة |
+
+Scenario Outline: Additional feminine ordinal numbers
+    Given I use the "AR" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 4 | gender=muʾannath | رابعة |
+    | 5 | gender=muʾannath | خامسة |
+    | 6 | gender=muʾannath | سادسة |
+    | 7 | gender=muʾannath | سابعة |
+    | 8 | gender=muʾannath | ثامنة |
+    | 9 | gender=muʾannath | تاسعة |
+
+Scenario Outline: Masculine ordinal numbers from eleven through nineteen
+    Given I use the "AR" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 13 |  | ثالث عشر |
+    | 15 |  | خامس عشر |
+
+Scenario Outline: Feminine ordinal numbers from eleven through nineteen
+    Given I use the "AR" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 12 | gender=muʾannath | ثانية عشرة |
+    | 13 | gender=muʾannath | ثالثة عشرة |
+    | 15 | gender=muʾannath | خامسة عشرة |
+
+Scenario: Ordinal conversion is supported
+    Given I use the "AR" number converter
+    Then the converter supports ordinal conversion
+
+Scenario: Fraction connector wording
+    Given I use the "AR" number converter
+    When I convert the fraction 3/2
+    Then the result is "ثلاثة على اثنان"
