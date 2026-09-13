@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Mathematics_Expressions_ExpressionComparer" data-uid="Utils.Mathematics.Expressions.ExpressionComparer" class="text-break">
-Class ExpressionComparer  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionComparer.cs/#L12"><i class="bi bi-code-slash"></i></a>
+Class ExpressionComparer  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionComparer.cs/#L30"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -246,6 +246,21 @@ before checking for structural and semantic equivalence.</p>
 
 
 
+  <h2 id="Utils_Mathematics_Expressions_ExpressionComparer_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>This comparer is a correctness primitive: <a class="xref" href="Utils.Mathematics.Expressions.ExpressionSimplifier.html">ExpressionSimplifier</a> uses it to decide whether
+algebraic rewrites (common-term cancellation, power combination, trigonometric identities, ...) are
+legal. A false positive here can silently change the mathematical result of a simplified expression, so
+equality and hashing are implemented structurally, with explicit, scope-aware parameter binding for
+lambda alpha-equivalence and an exact (not floating-point-approximate) numeric model for cross-type
+numeric constants. See <code>Utils/TODO-2026-09-12-expression-simplifier-roadmap.md</code>, stage S1, for the
+audit this hardening addresses and for remaining known limitations.</p>
+<p>Only the node kinds already recognized before this hardening participate in structural equality:
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.lambdaexpression">LambdaExpression</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.constantexpression">ConstantExpression</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.parameterexpression">ParameterExpression</a>,
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.unaryexpression">UnaryExpression</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.binaryexpression">BinaryExpression</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.methodcallexpression">MethodCallExpression</a> and
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.memberexpression">MemberExpression</a>. Two distinct instances of any other node kind (for example
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.newexpression">NewExpression</a> or <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.conditionalexpression">ConditionalExpression</a>) are conservatively treated as
+unequal; broadening node coverage is left to a future S1 follow-up.</p>
+</div>
 
 
   <h2 class="section" id="properties">Properties
@@ -256,7 +271,7 @@ before checking for structural and semantic equivalence.</p>
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionComparer_Default" data-uid="Utils.Mathematics.Expressions.ExpressionComparer.Default">
   Default
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionComparer.cs/#L28"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionComparer.cs/#L46"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the default <a class="xref" href="Utils.Mathematics.Expressions.ExpressionComparer.html">ExpressionComparer</a> instance for global usage.</p>
@@ -292,7 +307,7 @@ before checking for structural and semantic equivalence.</p>
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionComparer_Equals_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionComparer.Equals(System.Linq.Expressions.Expression,System.Linq.Expressions.Expression)">
   Equals(Expression?, Expression?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionComparer.cs/#L40"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionComparer.cs/#L73"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether two <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a> objects are equal by simplifying
@@ -328,6 +343,21 @@ otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/
 
 
 
+  <h4 class="section" id="Utils_Mathematics_Expressions_ExpressionComparer_Equals_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>ReferenceEquals(object?, object?) is checked first, before either side is simplified.
+This both implements conventional null semantics (<code>null</code>/<code>null</code> is equal, exactly one
+<code>null</code> is not) and guarantees reflexivity for expression kinds the structural comparer does not
+understand: <a class="xref" href="Utils.Mathematics.Expressions.ExpressionSimplifier.html">ExpressionSimplifier</a> may rebuild an unsupported node into a new,
+no-longer-reference-equal instance, and the comparer itself does not claim structural equality for
+such kinds, so without this early check the very same source object could compare unequal to itself.
+Neither operand is ever passed to <a class="xref" href="Utils.Mathematics.Expressions.ExpressionSimplifier.html#Utils_Mathematics_Expressions_ExpressionSimplifier_Simplify_System_Linq_Expressions_Expression_">Simplify(Expression)</a> while <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.
+This top-level check is intentionally the <em>only</em> place a bare ReferenceEquals(object?, object?)
+shortcut is used: at this point <code class="paramref">x</code> and <code class="paramref">y</code> are being compared with
+themselves under a single, unambiguous binding context, so &quot;same object&quot; trivially means &quot;same
+meaning&quot;. <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">EqualsCore(Expression, Expression, ParameterBindingContext)</a>'s internal recursion deliberately has no equivalent shortcut,
+because a shared sub-expression object reached through two lambdas can carry two different meanings
+depending on how each lambda binds its parameters - see <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">EqualsCore(Expression, Expression, ParameterBindingContext)</a>'s remarks.</p>
+</div>
 
 
 
@@ -336,11 +366,13 @@ otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionComparer_GetHashCode_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionComparer.GetHashCode(System.Linq.Expressions.Expression)">
   GetHashCode(Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionComparer.cs/#L167"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionComparer.cs/#L286"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Returns a hash code for the specified <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a> by simplifying it and taking
-the hash code of its string representation.</p>
+  <div class="markdown level1 summary"><p>Returns a hash code for the specified <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a> by simplifying it and computing a
+structural hash that mirrors <a class="xref" href="Utils.Mathematics.Expressions.ExpressionComparer.html#Utils_Mathematics_Expressions_ExpressionComparer_Equals_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression_">Equals(Expression?, Expression?)</a>: alpha-equivalent
+lambdas and exact cross-type numeric constants hash identically, satisfying the
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.iequalitycomparer-1">IEqualityComparer&lt;T&gt;</a> contract that equal objects have equal hash codes.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -358,7 +390,7 @@ the hash code of its string representation.</p>
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>An integer hash code based on the simplified expression's string representation.</p>
+    <dd><p>An integer hash code consistent with <a class="xref" href="Utils.Mathematics.Expressions.ExpressionComparer.html#Utils_Mathematics_Expressions_ExpressionComparer_Equals_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression_">Equals(Expression?, Expression?)</a>.</p>
 </dd>
   </dl>
 
@@ -376,7 +408,7 @@ the hash code of its string representation.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionComparer.cs/#L12" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionComparer.cs/#L30" class="edit-link">Edit this page</a>
         </div>
 
 
