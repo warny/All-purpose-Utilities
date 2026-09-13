@@ -63,20 +63,28 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// no-longer-reference-equal instance, and the comparer itself does not claim structural equality for
     /// such kinds, so without this early check the very same source object could compare unequal to itself.
     /// Neither operand is ever passed to <see cref="ExpressionSimplifier.Simplify"/> while <see langword="null"/>.
+    /// This top-level check is intentionally the <em>only</em> place a bare <see cref="ReferenceEquals(object?, object?)"/>
+    /// shortcut is used: at this point <paramref name="x"/> and <paramref name="y"/> are being compared with
+    /// themselves under a single, unambiguous binding context, so "same object" trivially means "same
+    /// meaning". <see cref="EqualsCore"/>'s internal recursion deliberately has no equivalent shortcut,
+    /// because a shared sub-expression object reached through two lambdas can carry two different meanings
+    /// depending on how each lambda binds its parameters - see <see cref="EqualsCore"/>'s remarks.
     /// </remarks>
     public bool Equals(Expression? x, Expression? y)
     {
         if (ReferenceEquals(x, y)) return true;
         if (x is null || y is null) return false;
 
-        // ExpressionTransformer.PrepareLambda rebuilds every lambda it visits via
-        // Expression.Lambda(Transform(le.Body), expressionParameters), which does not preserve the
-        // original TailCall flag (it always comes back false). Comparing TailCall on the two ORIGINAL,
-        // not-yet-simplified root expressions protects this one root-level metadata bit cheaply and
-        // safely, entirely inside this comparer. The same erasure happens again for every lambda nested
-        // inside the body, where there is no comparably cheap hook to recover the original value; that
-        // remaining gap is tracked under S1 in the roadmap rather than fixed here.
-        if (x is LambdaExpression xRoot && y is LambdaExpression yRoot && xRoot.TailCall != yRoot.TailCall)
+        // ExpressionTransformer.PrepareLambda rebuilds every lambda it visits via the type-inferring
+        // Expression.Lambda(Transform(le.Body), expressionParameters) overload, which preserves neither the
+        // original TailCall flag (it always comes back false) nor a custom delegate type (it always infers
+        // a Func<...>/Action<...>). Comparing both on the two ORIGINAL, not-yet-simplified root expressions
+        // protects this root-level metadata cheaply and safely, entirely inside this comparer. The same
+        // erasure happens again for every lambda nested inside the body, where there is no comparably cheap
+        // hook to recover the original values; that remaining gap is tracked under S1 in the roadmap rather
+        // than fixed here.
+        if (x is LambdaExpression xRoot && y is LambdaExpression yRoot
+            && (xRoot.TailCall != yRoot.TailCall || xRoot.Type != yRoot.Type))
         {
             return false;
         }
@@ -96,11 +104,18 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// <param name="context">The per-comparison-call parameter binding stack. Never shared across calls to the public <see cref="Equals(Expression?, Expression?)"/>.</param>
     /// <returns><see langword="true"/> if the two sub-expressions are structurally equivalent.</returns>
     /// <remarks>
-    /// <see cref="ParameterExpression"/> is resolved through <paramref name="context"/> <em>before</em> the
-    /// generic <see cref="ReferenceEquals(object?, object?)"/> shortcut below it: the very same
-    /// <see cref="ParameterExpression"/> instance can be declared at different positions in two lambdas
-    /// being compared (for example <c>(p, q) => p</c> versus <c>(q, p) => p</c>), and only depends on its
-    /// binding position, not on being "the same object", to mean the same argument on both sides.
+    /// <see cref="ParameterExpression"/> is resolved through <paramref name="context"/>, never by a generic
+    /// <see cref="ReferenceEquals(object?, object?)"/> shortcut: the very same <see cref="ParameterExpression"/>
+    /// instance can be declared at different positions in two lambdas being compared (for example
+    /// <c>(p, q) => p</c> versus <c>(q, p) => p</c>), and only its binding position, not object identity,
+    /// determines which argument it means on each side. This is also why <em>no other</em> node kind here
+    /// gets a bare <c>ReferenceEquals(x, y)</c> shortcut either: a larger shared sub-expression object (for
+    /// example a <see cref="MemberExpression"/> that both lambdas use as their body) can still contain a
+    /// <see cref="ParameterExpression"/> whose meaning differs between the two binding contexts, so treating
+    /// the shared object as trivially equal to itself would skip exactly the check that matters. Recursing
+    /// structurally even into identical shared objects is the only safe option; the one place object
+    /// identity is a valid shortcut is the outermost, single-binding-context comparison in the public
+    /// <see cref="Equals(Expression?, Expression?)"/>.
     /// </remarks>
     private static bool EqualsCore(Expression? x, Expression? y, ParameterBindingContext context)
     {
@@ -112,8 +127,6 @@ public class ExpressionComparer : IEqualityComparer<Expression>
             return context.AreEquivalent(xp, yp);
         }
 
-        if (ReferenceEquals(x, y)) return true;
-
         if (x is ConstantExpression xc && y is ConstantExpression yc)
         {
             return ConstantsEqual(xc, yc);
@@ -121,38 +134,51 @@ public class ExpressionComparer : IEqualityComparer<Expression>
 
         if (x.Type != y.Type) return false;
 
-        switch (x)
+        return (x, y) switch
         {
-            case LambdaExpression xl when y is LambdaExpression yl:
-                return LambdasEqual(xl, yl, context);
+            (LambdaExpression xl, LambdaExpression yl) => LambdasEqual(xl, yl, context),
+            (UnaryExpression xu, UnaryExpression yu) => UnaryEqual(xu, yu, context),
+            (BinaryExpression xb, BinaryExpression yb) => BinaryEqual(xb, yb, context),
+            (MethodCallExpression xm, MethodCallExpression ym) => MethodCallsEqual(xm, ym, context),
+            (MemberExpression xme, MemberExpression yme) => MemberEqual(xme, yme, context),
 
-            case UnaryExpression xu when y is UnaryExpression yu:
-                return object.Equals(xu.Method, yu.Method)
-                    && xu.IsLifted == yu.IsLifted
-                    && xu.IsLiftedToNull == yu.IsLiftedToNull
-                    && EqualsCore(xu.Operand, yu.Operand, context);
-
-            case BinaryExpression xb when y is BinaryExpression yb:
-                return object.Equals(xb.Method, yb.Method)
-                    && xb.IsLifted == yb.IsLifted
-                    && xb.IsLiftedToNull == yb.IsLiftedToNull
-                    && EqualsCore(xb.Left, yb.Left, context)
-                    && EqualsCore(xb.Right, yb.Right, context)
-                    && EqualsCore(xb.Conversion, yb.Conversion, context);
-
-            case MethodCallExpression xm when y is MethodCallExpression ym:
-                return MethodCallsEqual(xm, ym, context);
-
-            case MemberExpression xme when y is MemberExpression yme:
-                return object.Equals(xme.Member, yme.Member)
-                    && EqualsCore(xme.Expression, yme.Expression, context);
-
-            default:
-                // Unsupported node kind: two distinct instances are conservatively unequal. The shared
-                // ReferenceEquals check above already handled the case of a reused sub-expression object.
-                return false;
-        }
+            // Unsupported node kind: conservatively unequal, even for a shared/reused instance - see this
+            // method's remarks on why no ReferenceEquals shortcut is used here.
+            _ => false,
+        };
     }
+
+    /// <summary>Compares two <see cref="UnaryExpression"/> nodes: operator method, lifting flags, then the operand.</summary>
+    /// <param name="x">The first unary expression.</param>
+    /// <param name="y">The second unary expression.</param>
+    /// <param name="context">The active parameter binding context.</param>
+    /// <returns><see langword="true"/> if the unary expressions are structurally equivalent.</returns>
+    private static bool UnaryEqual(UnaryExpression x, UnaryExpression y, ParameterBindingContext context)
+        => object.Equals(x.Method, y.Method)
+            && x.IsLifted == y.IsLifted
+            && x.IsLiftedToNull == y.IsLiftedToNull
+            && EqualsCore(x.Operand, y.Operand, context);
+
+    /// <summary>Compares two <see cref="BinaryExpression"/> nodes: operator method, lifting flags, operands, then the coalesce conversion lambda.</summary>
+    /// <param name="x">The first binary expression.</param>
+    /// <param name="y">The second binary expression.</param>
+    /// <param name="context">The active parameter binding context.</param>
+    /// <returns><see langword="true"/> if the binary expressions are structurally equivalent.</returns>
+    private static bool BinaryEqual(BinaryExpression x, BinaryExpression y, ParameterBindingContext context)
+        => object.Equals(x.Method, y.Method)
+            && x.IsLifted == y.IsLifted
+            && x.IsLiftedToNull == y.IsLiftedToNull
+            && EqualsCore(x.Left, y.Left, context)
+            && EqualsCore(x.Right, y.Right, context)
+            && EqualsCore(x.Conversion, y.Conversion, context);
+
+    /// <summary>Compares two <see cref="MemberExpression"/> nodes: member identity, then the receiver.</summary>
+    /// <param name="x">The first member access.</param>
+    /// <param name="y">The second member access.</param>
+    /// <param name="context">The active parameter binding context.</param>
+    /// <returns><see langword="true"/> if the member accesses are structurally equivalent.</returns>
+    private static bool MemberEqual(MemberExpression x, MemberExpression y, ParameterBindingContext context)
+        => object.Equals(x.Member, y.Member) && EqualsCore(x.Expression, y.Expression, context);
 
     /// <summary>Compares two <see cref="LambdaExpression"/> nodes: metadata, parameter types (positionally), then the body under a pushed binding scope.</summary>
     /// <param name="x">The first lambda.</param>
@@ -161,15 +187,18 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// <returns><see langword="true"/> if the lambdas are alpha-equivalent.</returns>
     /// <remarks>
     /// <see cref="LambdaExpression.Type"/> (the delegate type) is already required equal by the caller's
-    /// blanket <c>x.Type != y.Type</c> check. <see cref="LambdaExpression.Name"/> is debug metadata and
-    /// deliberately excluded from equality, as documented in the S1 roadmap entry for this PR. This
-    /// <see cref="LambdaExpression.TailCall"/> check is still useful for a lambda nested inside a body
-    /// (both sides pass through the same simplification/rebuild, so a genuine difference between the two
-    /// original nested lambdas could in principle survive if the rebuild is ever changed), but on today's
-    /// <c>ExpressionTransformer.PrepareLambda</c> behavior nested <c>TailCall</c> is always rebuilt as
-    /// <see langword="false"/> on both sides, so this check alone cannot recover a real nested difference;
-    /// only the root level is protected, via <see cref="Equals(Expression?, Expression?)"/> comparing the
-    /// original, not-yet-simplified lambdas before this method ever runs.
+    /// blanket <c>x.Type != y.Type</c> check - but only in the sense that both sides must still agree once
+    /// simplified; <c>ExpressionTransformer.PrepareLambda</c>'s type-inferring rebuild can erase a genuine
+    /// original difference before this method (or the blanket check) ever sees it, exactly like
+    /// <see cref="LambdaExpression.TailCall"/> below. <see cref="LambdaExpression.Name"/> is debug metadata
+    /// and deliberately excluded from equality, as documented in the S1 roadmap entry for this PR. Both the
+    /// <see cref="LambdaExpression.TailCall"/> and <see cref="LambdaExpression.Type"/> checks here remain
+    /// useful for a lambda nested inside a body (a genuine difference between two nested lambdas could in
+    /// principle survive if the rebuild is ever changed), but on today's <c>PrepareLambda</c> behavior a
+    /// nested difference in either is always erased identically on both sides, so these checks alone cannot
+    /// recover a real nested difference; only the root level is protected, via
+    /// <see cref="Equals(Expression?, Expression?)"/> comparing the original, not-yet-simplified lambdas
+    /// before this method ever runs.
     /// </remarks>
     private static bool LambdasEqual(LambdaExpression x, LambdaExpression y, ParameterBindingContext context)
     {
@@ -266,100 +295,155 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// <param name="e">The (already simplified) expression to hash, or <see langword="null"/> for an absent optional sub-expression.</param>
     /// <param name="scopes">The active lambda parameter scope stack for the single tree being hashed.</param>
     /// <returns>A hash code such that structurally/alpha-equivalent expressions produce the same value.</returns>
-    private static int Hash(Expression? e, ParameterScopeStack scopes)
+    private static int Hash(Expression? e, ParameterScopeStack scopes) => e switch
     {
-        if (e is null) return 0;
+        null => 0,
+        LambdaExpression le => HashLambda(le, scopes),
+        ParameterExpression pe => HashParameter(pe, scopes),
+        ConstantExpression ce => HashConstant(ce),
+        UnaryExpression ue => HashUnary(ue, scopes),
+        BinaryExpression be => HashBinary(be, scopes),
+        MethodCallExpression mce => HashMethodCall(mce, scopes),
+        MemberExpression me => HashMember(me, scopes),
+        _ => HashUnsupported(e),
+    };
 
+    /// <summary>Hashes a <see cref="LambdaExpression"/>: metadata, parameter types, then the body under a pushed scope.</summary>
+    /// <param name="le">The lambda to hash.</param>
+    /// <param name="scopes">The active parameter scope stack.</param>
+    /// <returns>A hash code mirroring the metadata <see cref="LambdasEqual"/> compares.</returns>
+    private static int HashLambda(LambdaExpression le, ParameterScopeStack scopes)
+    {
         var hc = new HashCode();
-        switch (e)
+        hc.Add(ExpressionType.Lambda);
+        hc.Add(le.Type);
+        hc.Add(le.TailCall);
+        hc.Add(le.Parameters.Count);
+        foreach (var p in le.Parameters) hc.Add(p.Type);
+
+        scopes.Push(le.Parameters);
+        hc.Add(Hash(le.Body, scopes));
+        scopes.Pop();
+
+        return hc.ToHashCode();
+    }
+
+    /// <summary>Hashes a <see cref="ParameterExpression"/> by its relative binding depth and declaration position when bound, or by reference identity when free.</summary>
+    /// <param name="pe">The parameter to hash.</param>
+    /// <param name="scopes">The active parameter scope stack.</param>
+    /// <returns>A hash code such that alpha-equivalent bound parameters, or the same free parameter, produce the same value.</returns>
+    private static int HashParameter(ParameterExpression pe, ParameterScopeStack scopes)
+    {
+        var hc = new HashCode();
+        hc.Add(ExpressionType.Parameter);
+        if (scopes.TryLocate(pe, out int depth, out int position))
         {
-            case LambdaExpression le:
-                hc.Add(ExpressionType.Lambda);
-                hc.Add(le.Type);
-                hc.Add(le.TailCall);
-                hc.Add(le.Parameters.Count);
-                foreach (var p in le.Parameters) hc.Add(p.Type);
+            hc.Add(depth);
+            hc.Add(position);
+        }
+        else
+        {
+            hc.Add(RuntimeHelpers.GetHashCode(pe));
+        }
+        hc.Add(pe.Type);
 
-                scopes.Push(le.Parameters);
-                hc.Add(Hash(le.Body, scopes));
-                scopes.Pop();
-                break;
+        return hc.ToHashCode();
+    }
 
-            case ParameterExpression pe:
-                hc.Add(ExpressionType.Parameter);
-                if (scopes.TryLocate(pe, out int depth, out int position))
-                {
-                    hc.Add(depth);
-                    hc.Add(position);
-                }
-                else
-                {
-                    hc.Add(RuntimeHelpers.GetHashCode(pe));
-                }
-                hc.Add(pe.Type);
-                break;
-
-            case ConstantExpression ce:
-                hc.Add(ExpressionType.Constant);
-                if (TryGetExactNumericValue(ce, out ExactNumericValue numeric))
-                {
-                    hc.Add(true);
-                    hc.Add(numeric);
-                }
-                else
-                {
-                    hc.Add(false);
-                    hc.Add(ce.Type);
-                    hc.Add(ce.Value?.GetHashCode() ?? 0);
-                }
-                break;
-
-            case UnaryExpression ue:
-                hc.Add(ue.NodeType);
-                hc.Add(ue.Type);
-                hc.Add(ue.Method);
-                hc.Add(ue.IsLifted);
-                hc.Add(ue.IsLiftedToNull);
-                hc.Add(Hash(ue.Operand, scopes));
-                break;
-
-            case BinaryExpression be:
-                hc.Add(be.NodeType);
-                hc.Add(be.Type);
-                hc.Add(be.Method);
-                hc.Add(be.IsLifted);
-                hc.Add(be.IsLiftedToNull);
-                hc.Add(Hash(be.Left, scopes));
-                hc.Add(Hash(be.Right, scopes));
-                hc.Add(Hash(be.Conversion, scopes));
-                break;
-
-            case MethodCallExpression mce:
-                hc.Add(ExpressionType.Call);
-                hc.Add(mce.Type);
-                hc.Add(mce.Method);
-                hc.Add(Hash(mce.Object, scopes));
-                hc.Add(mce.Arguments.Count);
-                foreach (var a in mce.Arguments) hc.Add(Hash(a, scopes));
-                break;
-
-            case MemberExpression me:
-                hc.Add(ExpressionType.MemberAccess);
-                hc.Add(me.Type);
-                hc.Add(me.Member);
-                hc.Add(Hash(me.Expression, scopes));
-                break;
-
-            default:
-                // Coarse, conservative hash for unsupported node kinds: collisions between distinct
-                // unequal nodes are acceptable, but this must never disagree with EqualsCore's "false".
-                hc.Add(e.NodeType);
-                hc.Add(e.Type);
-                break;
+    /// <summary>Hashes a <see cref="ConstantExpression"/>, using the exact numeric key (without the original CLR type) for native numeric constants, and <see cref="Expression.Type"/> plus the boxed value's hash otherwise.</summary>
+    /// <param name="ce">The constant to hash.</param>
+    /// <returns>A hash code mirroring the value comparison <see cref="ConstantsEqual"/> performs.</returns>
+    private static int HashConstant(ConstantExpression ce)
+    {
+        var hc = new HashCode();
+        hc.Add(ExpressionType.Constant);
+        if (TryGetExactNumericValue(ce, out ExactNumericValue numeric))
+        {
+            hc.Add(true);
+            hc.Add(numeric);
+        }
+        else
+        {
+            hc.Add(false);
+            hc.Add(ce.Type);
+            hc.Add(ce.Value?.GetHashCode() ?? 0);
         }
 
         return hc.ToHashCode();
     }
+
+    /// <summary>Hashes a <see cref="UnaryExpression"/>: node type, result type, operator method, lifting flags, then the operand.</summary>
+    /// <param name="ue">The unary expression to hash.</param>
+    /// <param name="scopes">The active parameter scope stack.</param>
+    /// <returns>A hash code mirroring the metadata <see cref="EqualsCore"/>'s unary case compares.</returns>
+    private static int HashUnary(UnaryExpression ue, ParameterScopeStack scopes)
+    {
+        var hc = new HashCode();
+        hc.Add(ue.NodeType);
+        hc.Add(ue.Type);
+        hc.Add(ue.Method);
+        hc.Add(ue.IsLifted);
+        hc.Add(ue.IsLiftedToNull);
+        hc.Add(Hash(ue.Operand, scopes));
+
+        return hc.ToHashCode();
+    }
+
+    /// <summary>Hashes a <see cref="BinaryExpression"/>: node type, result type, operator method, lifting flags, operands, then the coalesce conversion lambda.</summary>
+    /// <param name="be">The binary expression to hash.</param>
+    /// <param name="scopes">The active parameter scope stack.</param>
+    /// <returns>A hash code mirroring the metadata <see cref="EqualsCore"/>'s binary case compares.</returns>
+    private static int HashBinary(BinaryExpression be, ParameterScopeStack scopes)
+    {
+        var hc = new HashCode();
+        hc.Add(be.NodeType);
+        hc.Add(be.Type);
+        hc.Add(be.Method);
+        hc.Add(be.IsLifted);
+        hc.Add(be.IsLiftedToNull);
+        hc.Add(Hash(be.Left, scopes));
+        hc.Add(Hash(be.Right, scopes));
+        hc.Add(Hash(be.Conversion, scopes));
+
+        return hc.ToHashCode();
+    }
+
+    /// <summary>Hashes a <see cref="MethodCallExpression"/>: method identity, receiver, then arguments in order.</summary>
+    /// <param name="mce">The method call to hash.</param>
+    /// <param name="scopes">The active parameter scope stack.</param>
+    /// <returns>A hash code mirroring the metadata <see cref="MethodCallsEqual"/> compares.</returns>
+    private static int HashMethodCall(MethodCallExpression mce, ParameterScopeStack scopes)
+    {
+        var hc = new HashCode();
+        hc.Add(ExpressionType.Call);
+        hc.Add(mce.Type);
+        hc.Add(mce.Method);
+        hc.Add(Hash(mce.Object, scopes));
+        hc.Add(mce.Arguments.Count);
+        foreach (var a in mce.Arguments) hc.Add(Hash(a, scopes));
+
+        return hc.ToHashCode();
+    }
+
+    /// <summary>Hashes a <see cref="MemberExpression"/>: member identity, then the receiver.</summary>
+    /// <param name="me">The member access to hash.</param>
+    /// <param name="scopes">The active parameter scope stack.</param>
+    /// <returns>A hash code mirroring the metadata <see cref="EqualsCore"/>'s member case compares.</returns>
+    private static int HashMember(MemberExpression me, ParameterScopeStack scopes)
+    {
+        var hc = new HashCode();
+        hc.Add(ExpressionType.MemberAccess);
+        hc.Add(me.Type);
+        hc.Add(me.Member);
+        hc.Add(Hash(me.Expression, scopes));
+
+        return hc.ToHashCode();
+    }
+
+    /// <summary>Computes a coarse, conservative hash for an unsupported node kind: collisions between distinct unequal nodes are acceptable, but this must never disagree with <see cref="EqualsCore"/>'s "false" for that node kind.</summary>
+    /// <param name="e">The unsupported expression to hash.</param>
+    /// <returns>A hash code based only on <see cref="Expression.NodeType"/> and <see cref="Expression.Type"/>.</returns>
+    private static int HashUnsupported(Expression e) => HashCode.Combine(e.NodeType, e.Type);
 
     /// <summary>
     /// A per-<see cref="Equals(Expression?, Expression?)"/>-call, mutable stack of paired
@@ -471,11 +555,19 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// </summary>
     private readonly struct ExactNumericValue : IEquatable<ExactNumericValue>
     {
+        /// <summary>The category of an <see cref="ExactNumericValue"/>: an exact finite rational, or one of the three non-finite IEEE categories.</summary>
         private enum NumericKind
         {
+            /// <summary>A finite value, stored as an exact <c>numerator / denominator</c> rational.</summary>
             Finite,
+
+            /// <summary>Any not-a-number value; all NaN bit patterns collapse to this single category.</summary>
             NaN,
+
+            /// <summary>Positive infinity.</summary>
             PositiveInfinity,
+
+            /// <summary>Negative infinity.</summary>
             NegativeInfinity,
         }
 
@@ -483,6 +575,10 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         private readonly BigInteger _numerator;
         private readonly BigInteger _denominator;
 
+        /// <summary>Initializes an already-normalized exact numeric value. Use <see cref="Normalize"/> rather than calling this directly for a <see cref="NumericKind.Finite"/> value.</summary>
+        /// <param name="kind">The value's category.</param>
+        /// <param name="numerator">The exact numerator; meaningful only when <paramref name="kind"/> is <see cref="NumericKind.Finite"/>.</param>
+        /// <param name="denominator">The exact, positive denominator; meaningful only when <paramref name="kind"/> is <see cref="NumericKind.Finite"/>.</param>
         private ExactNumericValue(NumericKind kind, BigInteger numerator, BigInteger denominator)
         {
             _kind = kind;
@@ -511,8 +607,14 @@ public class ExpressionComparer : IEqualityComparer<Expression>
             throw new NotSupportedException($"Unsupported numeric constant type '{type}'.");
         }
 
+        /// <summary>Builds the exact value of a native signed or unsigned integer, widened to <see cref="BigInteger"/> without loss.</summary>
+        /// <param name="value">The integer value.</param>
+        /// <returns>The exact value, as <c>value / 1</c>.</returns>
         private static ExactNumericValue FromInteger(BigInteger value) => Normalize(NumericKind.Finite, value, BigInteger.One);
 
+        /// <summary>Builds the exact value of a <see cref="decimal"/> from its 96-bit significand, scale and sign, per <see cref="decimal.GetBits(decimal)"/>.</summary>
+        /// <param name="value">The decimal value.</param>
+        /// <returns>The exact value, as <c>±significand / 10^scale</c>.</returns>
         private static ExactNumericValue FromDecimal(decimal value)
         {
             int[] bits = decimal.GetBits(value);
@@ -527,6 +629,9 @@ public class ExpressionComparer : IEqualityComparer<Expression>
             return Normalize(NumericKind.Finite, numerator, denominator);
         }
 
+        /// <summary>Builds the exact value of a <see cref="float"/> from its IEEE 754 sign/exponent/mantissa bits, handling subnormals; never via <see cref="object.ToString"/> or a round trip through another numeric type.</summary>
+        /// <param name="value">The single-precision value.</param>
+        /// <returns>The exact value, or a <see cref="NumericKind.NaN"/>/infinity category for non-finite input.</returns>
         private static ExactNumericValue FromSingle(float value)
         {
             if (float.IsNaN(value)) return new ExactNumericValue(NumericKind.NaN, default, default);
@@ -555,6 +660,9 @@ public class ExpressionComparer : IEqualityComparer<Expression>
             return FromBinary(significand, binaryExponent);
         }
 
+        /// <summary>Builds the exact value of a <see cref="double"/> from its IEEE 754 sign/exponent/mantissa bits, handling subnormals; never via <see cref="object.ToString"/> or a round trip through another numeric type.</summary>
+        /// <param name="value">The double-precision value.</param>
+        /// <returns>The exact value, or a <see cref="NumericKind.NaN"/>/infinity category for non-finite input.</returns>
         private static ExactNumericValue FromDouble(double value)
         {
             if (double.IsNaN(value)) return new ExactNumericValue(NumericKind.NaN, default, default);
@@ -583,6 +691,10 @@ public class ExpressionComparer : IEqualityComparer<Expression>
             return FromBinary(significand, binaryExponent);
         }
 
+        /// <summary>Converts a <c>significand * 2^binaryExponent</c> pair (as produced by <see cref="FromSingle"/>/<see cref="FromDouble"/>) into a normalized exact rational.</summary>
+        /// <param name="significand">The signed integer significand.</param>
+        /// <param name="binaryExponent">The base-2 exponent applied to <paramref name="significand"/>; may be negative.</param>
+        /// <returns>The normalized exact finite value.</returns>
         private static ExactNumericValue FromBinary(BigInteger significand, int binaryExponent)
         {
             if (binaryExponent >= 0)
@@ -593,6 +705,11 @@ public class ExpressionComparer : IEqualityComparer<Expression>
             return Normalize(NumericKind.Finite, significand, BigInteger.Pow(2, -binaryExponent));
         }
 
+        /// <summary>Reduces a <c>numerator / denominator</c> pair to its canonical form (zero collapses to <c>0/1</c>; otherwise divided by their greatest common divisor), so equal values always compare and hash identically.</summary>
+        /// <param name="kind">The value's category; passed through unchanged.</param>
+        /// <param name="numerator">The signed numerator before reduction.</param>
+        /// <param name="denominator">The positive denominator before reduction.</param>
+        /// <returns>The normalized exact numeric value.</returns>
         private static ExactNumericValue Normalize(NumericKind kind, BigInteger numerator, BigInteger denominator)
         {
             if (numerator.IsZero) return new ExactNumericValue(kind, BigInteger.Zero, BigInteger.One);

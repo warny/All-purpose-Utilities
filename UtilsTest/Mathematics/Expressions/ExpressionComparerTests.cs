@@ -241,6 +241,38 @@ public class ExpressionComparerTests
         Assert.IsFalse(ExpressionComparer.Default.Equals(left, right));
     }
 
+    /// <summary>A delegate type distinct from <see cref="DelegateB"/> despite an identical <c>double -&gt; double</c> signature.</summary>
+    /// <param name="x">The operand.</param>
+    /// <returns>A <see cref="double"/> result.</returns>
+    private delegate double DelegateA(double x);
+
+    /// <summary>A delegate type distinct from <see cref="DelegateA"/> despite an identical <c>double -&gt; double</c> signature.</summary>
+    /// <param name="x">The operand.</param>
+    /// <returns>A <see cref="double"/> result.</returns>
+    private delegate double DelegateB(double x);
+
+    /// <summary>
+    /// Regression: <c>ExpressionTransformer.PrepareLambda</c> rebuilds every lambda via the type-inferring
+    /// <c>Expression.Lambda(body, parameters)</c> overload, which always produces a <c>Func&lt;...&gt;</c> or
+    /// <c>Action&lt;...&gt;</c> delegate type - so a root lambda's original custom delegate type
+    /// (<see cref="DelegateA"/> vs <see cref="DelegateB"/>, both structurally <c>double -&gt; double</c>) is
+    /// erased by the time the two simplified lambdas reach the generic <c>x.Type != y.Type</c> check, which
+    /// then sees the same inferred <c>Func&lt;double, double&gt;</c> on both sides. The root delegate type
+    /// must therefore be compared on the two ORIGINAL, not-yet-simplified lambdas, exactly like
+    /// <see cref="LambdaExpression.TailCall"/>.
+    /// </summary>
+    [TestMethod]
+    public void Lambda_DifferentCustomDelegateType_ReturnsFalse()
+    {
+        ParameterExpression x = P("x");
+        ParameterExpression y = P("y");
+
+        Expression<DelegateA> left = Expression.Lambda<DelegateA>(Expression.Add(x, Expression.Constant(1.0)), x);
+        Expression<DelegateB> right = Expression.Lambda<DelegateB>(Expression.Add(y, Expression.Constant(1.0)), y);
+
+        Assert.IsFalse(ExpressionComparer.Default.Equals(left, right));
+    }
+
     // ------------------------------------------------------------------------------------------
     // Finding 4 - unary metadata
     // ------------------------------------------------------------------------------------------
@@ -395,6 +427,33 @@ public class ExpressionComparerTests
 
         MemberExpression left = Expression.Property(x, first);
         MemberExpression right = Expression.Property(z, first);
+
+        Assert.IsFalse(ExpressionComparer.Default.Equals(left, right));
+    }
+
+    /// <summary>
+    /// Regression: a recursive <c>ReferenceEquals(x, y)</c> shortcut for structurally-supported nodes is
+    /// unsafe once shared sub-expression objects can be reached through two different parameter bindings.
+    /// Here the exact same <see cref="MemberExpression"/> object (<c>body = p.First</c>) is used as the
+    /// body of two lambdas that declare <c>p</c> at different positions: <c>left = (p, q) =&gt; body</c>
+    /// reads its first argument, <c>right = (q, p) =&gt; body</c> reads its second argument (because
+    /// <c>body</c> only ever refers to <c>p</c>, and <c>p</c> is declared second in <c>right</c>). These
+    /// are different functions and must compare <see langword="false"/>, but a shortcut that treats the
+    /// shared <c>body</c> reference as trivially equal to itself would never re-check <c>p</c>'s binding
+    /// and incorrectly report <see langword="true"/>. <see cref="MemberExpression"/> is a realistic vector
+    /// for this because <c>ExpressionTransformer.CopyExpression</c> returns <see cref="ExpressionType.MemberAccess"/>
+    /// nodes unchanged, so the very same object can easily survive independent simplification on both sides.
+    /// </summary>
+    [TestMethod]
+    public void SharedMemberExpressionSubtree_UnderSwappedParameterBindings_ReturnsFalse()
+    {
+        ParameterExpression p = Expression.Parameter(typeof(SampleContainer), "p");
+        ParameterExpression q = Expression.Parameter(typeof(SampleContainer), "q");
+        PropertyInfo first = typeof(SampleContainer).GetProperty(nameof(SampleContainer.First))!;
+        MemberExpression body = Expression.Property(p, first);
+
+        var left = Expression.Lambda<Func<SampleContainer, SampleContainer, int>>(body, p, q);
+        var right = Expression.Lambda<Func<SampleContainer, SampleContainer, int>>(body, q, p);
 
         Assert.IsFalse(ExpressionComparer.Default.Equals(left, right));
     }
