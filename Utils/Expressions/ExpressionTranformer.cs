@@ -873,9 +873,28 @@ public abstract class ExpressionTransformer
     private TransformContext PrepareUnary(UnaryExpression ue)
     {
         Expression operand = PrepareExpression(ue.Operand);
-        UnaryExpression copied = CopyUnaryExpression(ue, operand);
+        UnaryExpression copied = RebuildUnaryExpression(ue, operand);
         return new TransformContext(copied);
     }
+
+    /// <summary>
+    /// Rebuilds a <see cref="UnaryExpression"/> from its (already prepared) <paramref name="operand"/>.
+    /// The base implementation reproduces the historical <see cref="CopyUnaryExpression"/> reconstruction
+    /// (including its metadata-dropping quirks) unchanged.
+    /// </summary>
+    /// <remarks>
+    /// <c>internal virtual</c>, not <c>protected</c>: this is deliberately not a new public/protected
+    /// extensibility point for third-party <see cref="ExpressionTransformer"/> subclasses (which live in
+    /// other assemblies and therefore cannot see or override an <see langword="internal"/> member) — only
+    /// same-assembly code such as <see cref="Utils.Mathematics.Expressions.ExpressionSimplifier"/> can
+    /// override it. See <see cref="Utils.Mathematics.Expressions.ExpressionSimplifier"/>'s override for the
+    /// metadata-faithful reconstruction used by the exact built-in simplifier type.
+    /// </remarks>
+    /// <param name="expression">The original unary expression being rebuilt.</param>
+    /// <param name="operand">The (already prepared) operand.</param>
+    /// <returns>A unary expression with the same node type and the supplied operand.</returns>
+    internal virtual UnaryExpression RebuildUnaryExpression(UnaryExpression expression, Expression operand)
+        => CopyUnaryExpression(expression, operand);
 
     /// <summary>
     /// Prepares a <see cref="BinaryExpression"/> by preparing its <c>Left</c> and <c>Right</c>
@@ -1021,10 +1040,31 @@ public abstract class ExpressionTransformer
             expressionParameters[i] = (ParameterExpression)PrepareExpression(le.Parameters[i]);
         }
 
-        LambdaExpression copied = Expression.Lambda(Transform(le.Body), expressionParameters);
+        Expression preparedBody = Transform(le.Body);
+        LambdaExpression copied = RebuildLambdaExpression(le, preparedBody, expressionParameters);
 
         return new TransformContext(copied, expressionParameters);
     }
+
+    /// <summary>
+    /// Rebuilds a <see cref="LambdaExpression"/> from its (already prepared) <paramref name="body"/> and
+    /// <paramref name="parameters"/>. The base implementation reproduces the historical
+    /// type-inferring <see cref="Expression.Lambda(Expression, ParameterExpression[])"/> reconstruction
+    /// unchanged, which does not preserve a custom delegate <see cref="LambdaExpression.Type"/>,
+    /// <see cref="LambdaExpression.TailCall"/>, or <see cref="LambdaExpression.Name"/>.
+    /// </summary>
+    /// <remarks>
+    /// <c>internal virtual</c> for the same reason as <see cref="RebuildUnaryExpression"/>: not a new
+    /// extensibility point for third-party subclasses. See
+    /// <see cref="Utils.Mathematics.Expressions.ExpressionSimplifier"/>'s override for the metadata-faithful
+    /// reconstruction used by the exact built-in simplifier type, at every nesting depth.
+    /// </remarks>
+    /// <param name="expression">The original lambda expression being rebuilt.</param>
+    /// <param name="body">The (already prepared/transformed) body.</param>
+    /// <param name="parameters">The (already prepared) parameters, in declaration order.</param>
+    /// <returns>A lambda expression with the supplied body and parameters.</returns>
+    internal virtual LambdaExpression RebuildLambdaExpression(LambdaExpression expression, Expression body, ParameterExpression[] parameters)
+        => Expression.Lambda(body, parameters);
 
     /// <summary>
     /// Prepares any expression node not handled by a more specific <c>Prepare*</c> method (e.g.

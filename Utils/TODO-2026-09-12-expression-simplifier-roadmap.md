@@ -82,11 +82,30 @@ Implemented by this PR (`Utils/Expressions/ExpressionComparer.cs`, `UtilsTest/Ma
 - `GetHashCode` is now structural (mirrors `Equals`, using the same scope-relative parameter hashing and exact numeric key) instead of `Simplify(obj).ToString().GetHashCode()`, so alpha-equivalent lambdas and exact cross-type numeric constants now satisfy the `Equals` &#8658; equal-hash contract (verified with `HashSet<Expression>` lookups too);
 - a mandatory end-to-end regression proves the old `Method`-blind binary comparison could let `sin(x) / cos(x) -> tan(x)` fire across two operands built from different custom operator methods; the hardened comparer blocks it while leaving the ordinary built-in trigonometric/power identity matrix unchanged.
 
-Remaining S1 work (deliberately out of scope for this PR):
+Remaining S1 work as of 2026-09-13 (addressed below on 2026-09-14, except the last item):
 
-- `ExpressionTransformer.CopyUnaryExpression` does not preserve an original custom unary operator `Method` through simplification, so two unary nodes that differ only in that method can no longer be distinguished once both sides have been simplified; fixing this would require changing `ExpressionTransformer`, which this PR intentionally avoids;
-- similarly, a `TailCall` (or other lossy metadata) difference on a lambda *nested inside* a compared body is not recoverable, because `PrepareLambda` rebuilds every lambda it visits, not only the root one; only the root-level flag is protected here;
-- broader `Expression` node-family coverage (`Conditional`, `New`, `Block`, etc.) remains conservatively "unequal for distinct instances", as intended - see "Do not broaden node-family support" guidance for this stage.
+- ~~`ExpressionTransformer.CopyUnaryExpression` does not preserve an original custom unary operator `Method` through simplification~~ - fixed, see the 2026-09-14 entry below;
+- ~~a `TailCall` (or other lossy metadata) difference on a lambda *nested inside* a compared body is not recoverable~~ - fixed for `Type`/`TailCall`/`Name` at every nesting depth, see below;
+- broader `Expression` node-family coverage (`Conditional`, `New`, `Block`, etc.) remains conservatively "unequal for distinct instances", as intended - see "Do not broaden node-family support" guidance for this stage. This is an optional/conservative follow-up, not a correctness bug: the comparer never claims false equality for these kinds, it is simply silent (returns `false`) on them.
+
+#### S1 progress (2026-09-14) — reconstruction fidelity
+
+`ExpressionComparer` (2026-09-13) still received already-damaged trees from `ExpressionSimplifier.Simplify`, because the exact built-in simplifier inherited two lossy reconstruction behaviors from the generic public `ExpressionTransformer`:
+
+- `PrepareUnary`'s historical reconstruction (`CopyUnaryExpression`) rebuilds each unary family through its narrow factory (`Expression.Negate(operand)`, `Expression.Throw(operand)`, ...), silently dropping an explicit `UnaryExpression.Method` and a typed `Throw`'s declared result `Type` - not just a comparer problem: `new ExpressionSimplifier().Simplify(Expression.Negate(x, customMethod))` changed the expression's actual execution semantics whenever `customMethod` was not ordinary arithmetic negation;
+- `PrepareLambda`'s historical reconstruction rebuilds via the type-inferring `Expression.Lambda(body, parameters)` overload, which cannot preserve a custom delegate `Type`, `TailCall`, or `Name` - and does this at *every* nesting depth, not just the root PR #590 could patch around from the comparer side.
+
+Fixed by introducing two narrowly-scoped `internal virtual` reconstruction hooks on `ExpressionTransformer` (`RebuildUnaryExpression`, `RebuildLambdaExpression`), wired into `PrepareUnary`/`PrepareLambda` in place of the old direct calls. `internal`, not `protected`, so this is not a new extensibility contract for third-party subclasses in other assemblies. The base implementation of each hook reproduces the exact historical behavior unchanged (`CopyUnaryExpression` / `Expression.Lambda(body, parameters)`), so every existing `ExpressionTransformer` characterization test (`ExpressionTransformerUnaryLazyParametersTests` et al.) keeps passing unmodified, and any *derived* `ExpressionSimplifier` subclass keeps the historical, metadata-dropping behavior too.
+
+Only the exact built-in `new ExpressionSimplifier()` runtime type overrides both hooks, guarded by `GetType() == typeof(ExpressionSimplifier)` (the same pattern `FinalizeExpression` already used):
+
+- unary reconstruction uses `Expression.MakeUnary(expression.NodeType, operand, expression.Type, expression.Method)`, which - verified empirically across all 22 historical `CopyUnaryExpression` node families, including a typed `Throw` and a null-operand `Rethrow` - preserves `Method`, `Type`, and lifting flags in one uniform call, no per-family switch needed;
+- lambda reconstruction uses `Expression.Lambda(expression.Type, body, expression.Name, expression.TailCall, parameters)`, preserving all three at every recursion depth since the same simplifier instance drives every nested `PrepareLambda` call;
+- `ExpressionSimplifier.PrepareExpression` also gained a `null`-input short-circuit (again gated to the exact type) fixing a `NullReferenceException` that `Simplify(Expression.Rethrow())` threw before reconstruction ever ran, for the same historical reason (`Transform(null)` dereferences a null `context.Expression`).
+
+`ExpressionComparer` was not changed in this PR; it now simply receives metadata-faithful trees when comparing output from the exact built-in simplifier, closing the remaining custom-unary-method and nested-lambda-metadata false positives characterized in `UtilsTest/Mathematics/Expressions/ExpressionSimplifierReconstructionFidelityTests.cs`.
+
+**This PR does not claim custom/user-defined arithmetic operators are now fully safe for symbolic algebra** - reconstruction fidelity means a custom operator's metadata *survives* simplification, not that every algebraic rule already checks for it before rewriting. See the new S3 finding below.
 
 ### S2 — Audit unreachable / dead simplification rules
 
@@ -114,6 +133,21 @@ The contract should distinguish at least:
 - custom/user-defined operators, which must not be treated as ordinary commutative arithmetic unless explicitly proven safe.
 
 Comments such as "preserving semantics" should be tightened where they currently overstate the floating-point guarantee.
+
+#### S3 finding (2026-09-14) — custom/user-defined unary operators are not yet proven safe for algebraic rules
+
+Reconstruction fidelity (S1, 2026-09-14) means a custom `UnaryExpression.Method` now *survives* simplification instead of being silently dropped. It does **not** mean every algebraic rule that pattern-matches `ExpressionType.Negate` already accounts for it. At least the following rules currently treat any `Negate` node as ordinary mathematical negation without checking whether `Method` is `null` (i.e. without proving intrinsic/CLR-default semantics) before rewriting:
+
+- `AdditionWithNegate`
+- `SubstractionWithNegate`
+- `MultiplicationWithNegate`
+- `DivisionWithNegate`
+- `NegateWithSubstraction`
+- `CollectAdditiveTerms`
+
+A custom-method `Negate` node placed inside one of these shapes can still be rewritten as if it were ordinary negation, which can change the evaluated result for a numeric type whose unary minus operator is not equivalent to CLR default negation. Before treating a `Negate` node as safe to fold into a commutative/associative rewrite, these rules must prove `Method is null` (or another explicit, narrow, safe condition) first - the same conservative pattern `CanCanonicalizeCommutativeBinary` already applies for binary nodes (`binaryExpression.Method is null`) and which can serve as the model here. Individual binary arithmetic rules should also be audited for the same `BinaryExpression.Method != null` gap, beyond the commutative-binary entry point.
+
+This audit and fix is tracked as high-priority future S3 work, deliberately **not** implemented as part of the 2026-09-14 S1 reconstruction-fidelity PR (whose scope is limited to reconstruction, not rule-level operator safety).
 
 ### S4 — Replace textual canonical identity with structural canonical keys
 
