@@ -29,11 +29,69 @@ namespace Utils.Mathematics.Expressions
         /// Prepares an expression for transformation by calling <see cref="ExpressionTransformer.Transform"/>
         /// Subclasses can override for custom logic, but here it simply re-applies <see cref="ExpressionTransformer.Transform"/>
         /// </summary>
-        /// <param name="e">The expression to prepare.</param>
-        /// <returns>The transformed expression.</returns>
+        /// <param name="e">The expression to prepare, or <see langword="null"/> for an absent optional sub-expression such as <see cref="Expression.Rethrow"/>'s <see langword="null"/> operand.</param>
+        /// <returns>The transformed expression, or <see langword="null"/> unchanged, for the exact built-in type.</returns>
+        /// <remarks>
+        /// The null short-circuit is gated to the exact built-in runtime type for the same reason as
+        /// <see cref="RebuildUnaryExpression"/>/<see cref="RebuildLambdaExpression"/>: without it,
+        /// <see cref="ExpressionTransformer.Transform(Expression)"/> dereferences a null
+        /// <c>context.Expression</c> and throws <see cref="NullReferenceException"/> — historically true for
+        /// every runtime type, including a derived subclass, which therefore still observes it unless it
+        /// overrides this method itself.
+        /// </remarks>
         protected override Expression PrepareExpression(Expression e)
         {
+            if (e is null && GetType() == typeof(ExpressionSimplifier))
+            {
+                return null;
+            }
+
             return Transform(e);
+        }
+
+        /// <summary>
+        /// For the exact built-in <see cref="ExpressionSimplifier"/> runtime type, reconstructs a unary node
+        /// via <see cref="Expression.MakeUnary(ExpressionType, Expression, Type, MethodInfo)"/>, preserving
+        /// <see cref="UnaryExpression.Method"/> and <see cref="Expression.Type"/> (notably a typed
+        /// <see cref="Expression.Throw(Expression, Type)"/>'s declared result type) instead of the
+        /// historical, metadata-dropping per-node-type factories. A derived <see cref="ExpressionSimplifier"/>
+        /// subclass keeps the historical <see cref="ExpressionTransformer"/> behavior unless it explicitly
+        /// overrides this itself, mirroring <see cref="FinalizeExpression"/>'s own exact-runtime-type guard.
+        /// </summary>
+        /// <param name="expression">The original unary expression being rebuilt.</param>
+        /// <param name="operand">The (already prepared) operand.</param>
+        /// <returns>A unary expression preserving the original node's metadata, for the exact built-in type; the historical reconstruction otherwise.</returns>
+        internal override UnaryExpression RebuildUnaryExpression(UnaryExpression expression, Expression operand)
+        {
+            if (GetType() != typeof(ExpressionSimplifier))
+            {
+                return base.RebuildUnaryExpression(expression, operand);
+            }
+
+            return (UnaryExpression)Expression.MakeUnary(expression.NodeType, operand, expression.Type, expression.Method);
+        }
+
+        /// <summary>
+        /// For the exact built-in <see cref="ExpressionSimplifier"/> runtime type, reconstructs a lambda
+        /// preserving its original <see cref="LambdaExpression.Type"/> (delegate type),
+        /// <see cref="LambdaExpression.Name"/>, and <see cref="LambdaExpression.TailCall"/>, at every nesting
+        /// depth (this method runs recursively, once per lambda encountered, on the same simplifier
+        /// instance). A derived <see cref="ExpressionSimplifier"/> subclass keeps the historical,
+        /// metadata-dropping <see cref="ExpressionTransformer"/> reconstruction unless it explicitly
+        /// overrides this itself.
+        /// </summary>
+        /// <param name="expression">The original lambda expression being rebuilt.</param>
+        /// <param name="body">The (already prepared/transformed) body.</param>
+        /// <param name="parameters">The (already prepared) parameters, in declaration order.</param>
+        /// <returns>A lambda expression preserving the original node's metadata, for the exact built-in type; the historical reconstruction otherwise.</returns>
+        internal override LambdaExpression RebuildLambdaExpression(LambdaExpression expression, Expression body, ParameterExpression[] parameters)
+        {
+            if (GetType() != typeof(ExpressionSimplifier))
+            {
+                return base.RebuildLambdaExpression(expression, body, parameters);
+            }
+
+            return Expression.Lambda(expression.Type, body, expression.Name, expression.TailCall, parameters);
         }
 
         #region Operations with 0 and 1
