@@ -53,7 +53,7 @@ It is designed for consumers who want small, task-oriented packages (networking,
 ## Quick install
 
 Install only the package you need. Most packages already have a published stable release, so a
-plain `dotnet add package` installs that stable version, **not** the `2.0.0-rc.1` release candidate
+plain `dotnet add package` installs that stable version, **not** the `2.0.0-rc.2` release candidate
 described throughout this README and its linked docs:
 
 ```bash
@@ -63,19 +63,19 @@ dotnet add package omy.Utils
 dotnet add package omy.Utils.Net
 ```
 
-To try the `2.0.0-rc.1` candidate itself (the version this documentation describes), pin it
+To try the `2.0.0-rc.2` candidate itself (the version this documentation describes), pin it
 explicitly:
 
 ```bash
 # 2.0 release candidate
-dotnet add package omy.Utils --version 2.0.0-rc.1
+dotnet add package omy.Utils --version 2.0.0-rc.2
 # or
-dotnet add package omy.Utils.Net --version 2.0.0-rc.1
+dotnet add package omy.Utils.Net --version 2.0.0-rc.2
 ```
 
 A handful of packages (`omy.Utils.NumberToString`, the `omy.Utils.Parser*` family,
 `omy.Utils.Expressions.CSyntax`/`Expressions.VBSyntax`) have **no published stable release yet** -
-`2.0.0-rc.1` is their first publication, so the `--version 2.0.0-rc.1` form is required for those,
+`2.0.0-rc.2` is their first publication, so the `--version 2.0.0-rc.2` form is required for those,
 not just recommended; see each package's own README for its exact install command.
 
 ## Usage example
@@ -175,4 +175,4 @@ Apache 2.0 (`LICENSE-apache-2.0.txt`).
 
 ## Synchronized 2.0 release candidate
 
-Most publishable `omy.Utils` libraries and source generators are prepared as one `2.0.0-rc.1` product train. A small number of components are explicitly `provisional` and ship at their own independent version instead (`omy.Utils.Collections` at `0.0.1` today; see [provisional versioning](docs/releasing/ProvisionalVersioning.md), which also covers the `Utils.Parser.VisualStudio` Visual Studio extension's own `0.0.x` series). Contributors can review the [product-train inventory and release boundary](docs/releasing/ProductTrain.md); consumers upgrading from published packages should start with the [2.0 migration guide](docs/releasing/MigrationTo2.0.md).
+Most publishable `omy.Utils` libraries and source generators are prepared as one `2.0.0-rc.2` product train. A small number of components are explicitly `provisional` and ship at their own independent version instead (`omy.Utils.Collections` at `0.0.1` today; see [provisional versioning](docs/releasing/ProvisionalVersioning.md), which also covers the `Utils.Parser.VisualStudio` Visual Studio extension's own `0.0.x` series). Contributors can review the [product-train inventory and release boundary](docs/releasing/ProductTrain.md); consumers upgrading from published packages should start with the [2.0 migration guide](docs/releasing/MigrationTo2.0.md).

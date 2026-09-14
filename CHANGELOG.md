@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.0.0-rc.2] - Release candidate
+
+Compatibility baseline for this candidate moves forward to the published `2.0.0-rc.1` (not the
+legacy 1.x/0.x packages `2.0.0-rc.1` itself was compared against) - see
+[`eng/api-breaking-changes/2.0.0-rc.2.json`](eng/api-breaking-changes/2.0.0-rc.2.json) for the
+exact accepted RC1&rarr;RC2 diagnostics. No public API changed relative to `2.0.0-rc.1` for any
+manifested package as of this candidate.
+
+## [2.0.0-rc.1] - Release candidate
+
 ### `omy.Utils.Fonts`
 
 - **Breaking:** hardened SFNT/TrueType parsing against hostile input (second quality/security audit
@@ -28,8 +38,6 @@ All notable changes to this project will be documented in this file.
 - Preview language features disabled and `LangVersion` pinned for the package (was not actually
   relying on any preview-only feature).
 - See `docs/releasing/MigrationTo2.0.md` and `docs/releasing/AcceptedApiBreaks.md#omy-utils-fonts`.
-
-## [2.0.0-rc.1] - Release candidate
 
 ### `omy.Utils`
 

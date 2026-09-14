@@ -1,6 +1,6 @@
 # ANTLR4 Compatibility Reference
 
-> This is a technical implementation reference, not the product-support promise. The normative guarantees for `2.0.0-rc.1` are defined by the [`Production Support Contract`](./ProductionSupportContract.md).
+> This is a technical implementation reference, not the product-support promise. The normative guarantees for `2.0.0-rc.2` are defined by the [`Production Support Contract`](./ProductionSupportContract.md).
 
 This document lists ANTLR4 grammar features and their support status in Utils.Parser.
 

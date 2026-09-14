@@ -352,4 +352,4 @@ int result = optimised.Compile()(); // 4 — computed without any arithmetic at 
 - `omy.Utils.Net` — networking helpers (DNS, ICMP, Wake-on-LAN)
 
 
-[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.2/)

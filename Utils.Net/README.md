@@ -697,7 +697,7 @@ dotnet list package --vulnerable --include-transitive
 ```
 
 
-[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.2/)
 
 ## Protocol safety in 2.0
 

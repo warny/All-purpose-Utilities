@@ -12,12 +12,12 @@ The main component is `VBSyntaxExpressionCompiler` in the `Utils.Expressions.VBS
 
 ## Installation
 
-This package's first publication is the `2.0.0-rc.1` release candidate - there is no earlier stable
+This package's first publication is the `2.0.0-rc.2` release candidate - there is no earlier stable
 version, so `dotnet add package` requires an explicit version (NuGet does not install a prerelease
 by default):
 
 ```bash
-dotnet add package omy.Utils.Expressions.VBSyntax --version 2.0.0-rc.1
+dotnet add package omy.Utils.Expressions.VBSyntax --version 2.0.0-rc.2
 ```
 
 ## Examples
@@ -249,4 +249,4 @@ int result = sumValues(); // 10
 - For advanced scenarios, use `VBSyntaxCompilerContext` to pre-register symbols and delegates that the compiled code can call.
 - **Keyword operator disambiguation** — logical keyword operators are extracted using regex patterns with word-boundary anchors (`\b`). This guarantees that `OrElse` is never misidentified as `Or`, and `AndAlso` is never split into `And` + `Also`, even when multiple chained operators appear in a single expression.
 
-[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.2/)

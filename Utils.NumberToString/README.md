@@ -4,12 +4,12 @@ Number-to-string conversion for multiple languages and cultures, with support fo
 
 ## Install
 
-This package's first publication is the `2.0.0-rc.1` release candidate - there is no earlier stable
+This package's first publication is the `2.0.0-rc.2` release candidate - there is no earlier stable
 version, so `dotnet add package` requires an explicit version (NuGet does not install a prerelease
 by default):
 
 ```bash
-dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.1
+dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 ```
 
 ## Supported frameworks
@@ -1660,7 +1660,7 @@ and `<OrdinalException>`:
 - `omy.Utils.Mathematics` — provides `MathEx.RoundToSignificantDigits` used by the significant-digits precision overload.
 
 
-[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.2/)
 # Configuration validation and runtime contracts
 
 Configuration completeness is validated only after all `baseOn` inheritance has been resolved.

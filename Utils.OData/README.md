@@ -208,4 +208,4 @@ ODataQueryCompilation compiled = query.CompileToODataQuery();
 - `omy.Utils` – foundational helpers shared across the family.
 
 
-[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.2/)
