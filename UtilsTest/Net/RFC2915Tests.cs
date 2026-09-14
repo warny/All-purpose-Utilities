@@ -8,7 +8,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Net.DNS;
 using Utils.Net.DNS.RFC1876;
 using Utils.Net.DNS.RFC2915;
-using Utils.Randomization;
 
 namespace UtilsTest.Net
 {
@@ -84,18 +83,16 @@ namespace UtilsTest.Net
         [TestMethod]
         public void WriteReadNAPTRTest()
         {
-            Random random = new Random();
-
             var header1 = new DNSHeader();
             header1.Requests.Add(new DNSRequestRecord("NAPTR", "example.com", DNSClassId.IN));
             header1.Responses.Add(new DNSResponseRecord("example.com", 3600, new NAPTR
             {
-                Order = (ushort)random.Next(0, 65535),
-                Flags = random.RandomString(5, 20),
-                Service = random.RandomString(5, 20),
-                Preference = (ushort)random.Next(0, 65535),
-                Regexp = @"\w+",
-                Replacement = random.RandomString(5, 20)
+                Order = 100,
+                Flags = "U",
+                Service = "E2U+sip",
+                Preference = 10,
+                Regexp = "!^.*$!sip:info@example.com!",
+                Replacement = "replacement.example.com"
             }));
 
             var datagram = DNSPacketWriter.Default.Write(header1);

@@ -285,22 +285,22 @@ public class EmitWorkerProtocolTests
         EmitWorkerHost.LoadedInterfaceState.CallLease? lease = state.TryAcquireCallLease();
         Assert.IsNotNull(lease);
 
-        bool closeCompleted = false;
-        var closeThread = new Thread(() =>
+        Task closeTask = Task.Run(() => state.CloseAndDispose(force: false));
+        using CancellationTokenSource closingDeadline = new(TimeSpan.FromSeconds(2));
+        while (!closingDeadline.IsCancellationRequested)
         {
-            state.CloseAndDispose(force: false);
-            closeCompleted = true;
-        });
-        closeThread.Start();
+            EmitWorkerHost.LoadedInterfaceState.CallLease? temporaryLease = state.TryAcquireCallLease();
+            if (temporaryLease is null)
+                break;
+            temporaryLease.Dispose();
+            Thread.Yield();
+        }
 
-        // Give the close thread a chance to block — it should wait for the lease.
-        Thread.Sleep(50);
-        Assert.IsFalse(closeCompleted, "CloseAndDispose must block while a lease is held.");
+        Assert.IsNull(state.TryAcquireCallLease(), "Lease rejection proves that closing has started.");
+        Assert.IsFalse(closeTask.IsCompleted, "CloseAndDispose must remain blocked while the original lease is held.");
 
-        // Releasing the lease should unblock CloseAndDispose.
         lease.Dispose();
-        closeThread.Join(TimeSpan.FromSeconds(2));
-        Assert.IsTrue(closeCompleted, "CloseAndDispose must complete after all leases are released.");
+        closeTask.WaitAsync(TimeSpan.FromSeconds(2)).GetAwaiter().GetResult();
     }
 
     [TestMethod]

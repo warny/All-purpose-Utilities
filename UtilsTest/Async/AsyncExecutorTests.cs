@@ -1,8 +1,6 @@
 using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Threading.Tasks;
 using Utils.Async;
 
@@ -17,10 +15,10 @@ namespace UtilsTest.Async
             IAsyncExecutor executor = new AsyncExecutor();
             List<int> order = [];
 
-            Func<int, Func<Task>> createTask = i => async () =>
+            Func<int, Func<Task>> createTask = i => () =>
             {
                 order.Add(i);
-                await Task.Delay(10);
+                return Task.CompletedTask;
             };
 
             Func<Task>[] tasks =
@@ -35,67 +33,84 @@ namespace UtilsTest.Async
             CollectionAssert.AreEqual(new[] { 0, 1, 2 }, order);
         }
 
+        /// <summary>
+        /// Proves that parallel execution starts every task before any task is released.
+        /// </summary>
         [TestMethod]
-        public async Task ExecuteParallelAsyncRunsFasterThanSequential()
+        public async Task ExecuteParallelAsync_StartsAllTasksBeforeAnyIsReleased()
         {
             IAsyncExecutor executor = new AsyncExecutor();
-            Func<Task> work() => async () => await Task.Delay(100);
-            Func<Task>[] tasks = Enumerable.Range(0, 3).Select(_ => (Func<Task>)work()).ToArray();
+            TaskCompletionSource release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            CountdownEvent entered = new(3);
+            Func<Task> CreateWork() => async () =>
+            {
+                entered.Signal();
+                await release.Task;
+            };
+            Func<Task>[] tasks = [CreateWork(), CreateWork(), CreateWork()];
 
-            Stopwatch sw = Stopwatch.StartNew();
-            await executor.ExecuteSequentialAsync(tasks);
-            sw.Stop();
-            long sequential = sw.ElapsedMilliseconds;
-
-            sw.Restart();
-            await executor.ExecuteParallelAsync(tasks);
-            sw.Stop();
-            long parallel = sw.ElapsedMilliseconds;
-
-            Assert.IsTrue(parallel < sequential);
+            Task execution = executor.ExecuteParallelAsync(tasks);
+            try
+            {
+                Assert.IsTrue(entered.Wait(TimeSpan.FromSeconds(5)), "All parallel tasks must enter before release.");
+            }
+            finally
+            {
+                release.TrySetResult();
+            }
+            await execution.WaitAsync(TimeSpan.FromSeconds(5));
         }
 
+        /// <summary>
+        /// Proves that automatic execution selects parallel mode above the threshold.
+        /// </summary>
         [TestMethod]
         public async Task ExecuteAsyncChoosesParallelWhenCountExceedsThreshold()
         {
             IAsyncExecutor executor = new AsyncExecutor();
-            Func<Task> work() => async () => await Task.Delay(100);
-            Func<Task>[] tasks = Enumerable.Range(0, 5).Select(_ => (Func<Task>)work()).ToArray();
+            TaskCompletionSource release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            CountdownEvent entered = new(5);
+            Func<Task> CreateWork() => async () =>
+            {
+                entered.Signal();
+                await release.Task;
+            };
+            Func<Task>[] tasks = [CreateWork(), CreateWork(), CreateWork(), CreateWork(), CreateWork()];
 
-            Stopwatch sw = Stopwatch.StartNew();
-            await executor.ExecuteAsync(tasks, 3);
-            sw.Stop();
-            long auto = sw.ElapsedMilliseconds;
-
-            sw.Restart();
-            await executor.ExecuteSequentialAsync(tasks);
-            sw.Stop();
-            long sequential = sw.ElapsedMilliseconds;
-
-            Assert.IsTrue(auto < sequential);
+            Task execution = executor.ExecuteAsync(tasks, 3);
+            try
+            {
+                Assert.IsTrue(entered.Wait(TimeSpan.FromSeconds(5)), "Automatic parallel mode must start every task before release.");
+            }
+            finally
+            {
+                release.TrySetResult();
+            }
+            await execution.WaitAsync(TimeSpan.FromSeconds(5));
         }
 
+        /// <summary>
+        /// Proves that automatic execution keeps the second task out while the first sequential task is blocked.
+        /// </summary>
         [TestMethod]
         public async Task ExecuteAsyncChoosesSequentialWhenCountBelowThreshold()
         {
             IAsyncExecutor executor = new AsyncExecutor();
-            List<int> order = [];
-
-            Func<int, Func<Task>> createTask = i => async () =>
-            {
-                order.Add(i);
-                await Task.Delay(10);
-            };
-
+            TaskCompletionSource firstEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            TaskCompletionSource releaseFirst = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            bool secondEntered = false;
             Func<Task>[] tasks =
             [
-                createTask(0),
-                createTask(1),
+                async () => { firstEntered.TrySetResult(); await releaseFirst.Task; },
+                () => { secondEntered = true; return Task.CompletedTask; }
             ];
 
-            await executor.ExecuteAsync(tasks, 3);
-
-            CollectionAssert.AreEqual(new[] { 0, 1 }, order);
+            Task execution = executor.ExecuteAsync(tasks, 3);
+            await firstEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.IsFalse(secondEntered, "The second task cannot enter while the first sequential task is blocked.");
+            releaseFirst.TrySetResult();
+            await execution.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.IsTrue(secondEntered);
         }
 
         // ── Null argument validation ────────────────────────────────────────────
@@ -128,7 +143,7 @@ namespace UtilsTest.Async
         public async Task ExecuteAsync_NegativeThreshold_ThrowsArgumentOutOfRangeException()
         {
             IAsyncExecutor executor = new AsyncExecutor();
-            Func<Task>[] tasks = [async () => await Task.Delay(1)];
+            Func<Task>[] tasks = [() => Task.CompletedTask];
             await Assert.ThrowsExactlyAsync<ArgumentOutOfRangeException>(
                 () => executor.ExecuteAsync(tasks, -1));
         }
@@ -159,8 +174,8 @@ namespace UtilsTest.Async
             IAsyncExecutor executor = new AsyncExecutor();
             Func<Task>[] tasks =
             [
-                async () => await Task.Delay(1),
-                async () => { await Task.Delay(1); throw new InvalidOperationException("boom"); },
+                () => Task.CompletedTask,
+                () => Task.FromException(new InvalidOperationException("boom")),
             ];
 
             await Assert.ThrowsExactlyAsync<InvalidOperationException>(
@@ -175,9 +190,9 @@ namespace UtilsTest.Async
 
             Func<Task>[] tasks =
             [
-                async () => { await Task.Delay(1); executedCount++; },
-                async () => { await Task.Delay(1); throw new InvalidOperationException("stop here"); },
-                async () => { await Task.Delay(1); executedCount++; },
+                () => { executedCount++; return Task.CompletedTask; },
+                () => Task.FromException(new InvalidOperationException("stop here")),
+                () => { executedCount++; return Task.CompletedTask; },
             ];
 
             await Assert.ThrowsExactlyAsync<InvalidOperationException>(

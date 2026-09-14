@@ -68,6 +68,9 @@ public class NetClientProtocolSecurityTests
         private readonly int _bytesBeforeFailure;
         private int _writeCalls;
 
+        /// <summary>Completes when the configured partial write failure has occurred.</summary>
+        public TaskCompletionSource FailureObserved { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
         public PartialFailingWriteStream(Stream inner, int failOnWriteCall, int bytesBeforeFailure)
         {
             _inner = inner;
@@ -91,6 +94,7 @@ public class NetClientProtocolSecurityTests
                 int accepted = Math.Min(_bytesBeforeFailure, count);
                 if (accepted > 0)
                     _inner.Write(buffer, offset, accepted);
+                FailureObserved.TrySetResult();
                 throw new IOException("Simulated partial write failure.");
             }
             _inner.Write(buffer, offset, count);
@@ -104,6 +108,7 @@ public class NetClientProtocolSecurityTests
                 int accepted = Math.Min(_bytesBeforeFailure, buffer.Length);
                 if (accepted > 0)
                     await _inner.WriteAsync(buffer[..accepted], cancellationToken).ConfigureAwait(false);
+                FailureObserved.TrySetResult();
                 throw new IOException("Simulated partial write failure.");
             }
             await _inner.WriteAsync(buffer, cancellationToken).ConfigureAwait(false);
@@ -210,23 +215,29 @@ public class NetClientProtocolSecurityTests
     {
         (DuplexStream stream, StreamWriter writer, StreamReader reader) = CreateTestPair();
         List<string> commands = [];
+        TaskCompletionSource rcptReceived = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseServer = new(TaskCreationOptions.RunContinuationsAsynchronously);
         Task server = Task.Run(async () =>
         {
             await writer.WriteLineAsync("220 ready");
             commands.Add((await reader.ReadLineAsync())!);
             await writer.WriteLineAsync("250 sender accepted");
             commands.Add((await reader.ReadLineAsync())!);
-            await Task.Delay(300);
+            rcptReceived.TrySetResult();
+            await releaseServer.Task;
             while (reader.Peek() >= 0)
                 commands.Add((await reader.ReadLineAsync())!);
         });
         SmtpClient client = new();
         await client.ConnectAsync(stream);
-        using CancellationTokenSource cancellation = new(100);
-        await Assert.ThrowsExactlyAsync<OperationCanceledException>(() =>
-            client.SendMailAsync(SmtpPath.Parse("sender@example.com"), [SmtpPath.Parse("recipient@example.com")], new StringReader("body"), cancellationToken: cancellation.Token));
+        using CancellationTokenSource cancellation = new();
+        Task send = client.SendMailAsync(SmtpPath.Parse("sender@example.com"), [SmtpPath.Parse("recipient@example.com")], new StringReader("body"), cancellationToken: cancellation.Token);
+        await rcptReceived.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        cancellation.Cancel();
+        await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => send);
         Assert.IsFalse(client.IsConnected);
         Assert.IsFalse(commands.Contains("RSET"));
+        releaseServer.TrySetResult();
         await server;
     }
 
@@ -270,7 +281,7 @@ public class NetClientProtocolSecurityTests
             string? mail = await reader.ReadLineAsync();
             transcript.AppendLine(mail);
             await writer.WriteLineAsync("250 sender accepted");
-            await Task.Delay(200);
+            await failingWrites.FailureObserved.Task.WaitAsync(TimeSpan.FromSeconds(5));
             while (clientToServer.Reader.TryRead(out ReadResult result))
             {
                 foreach (ReadOnlyMemory<byte> segment in result.Buffer)
@@ -327,18 +338,10 @@ public class NetClientProtocolSecurityTests
     [TestMethod]
     public async Task SmtpClient_SendMailAsync_InvalidRecipient_NoBytesSentToServer()
     {
-        // Verifies that recipient validation happens before any MAIL FROM is transmitted.
-        (DuplexStream clientStream, StreamWriter sw, StreamReader sr) = CreateTestPair();
-
-        bool mailFromSent = false;
-        Task serverTask = Task.Run(async () =>
-        {
-            await sw.WriteLineAsync("220 smtp.example.com ESMTP");
-            // Respond to MAIL FROM if it arrives
-            string? line = await sr.ReadLineAsync();
-            if (line is not null && line.StartsWith("MAIL FROM", StringComparison.OrdinalIgnoreCase))
-                mailFromSent = true;
-        });
+        Pipe serverToClient = new();
+        MemoryStream recordedWrites = new();
+        DuplexStream clientStream = new(serverToClient.Reader.AsStream(), recordedWrites);
+        await serverToClient.Writer.WriteAsync(Encoding.ASCII.GetBytes("220 smtp.example.com ESMTP\r\n"));
 
         SmtpClient client = new SmtpClient();
         await client.ConnectAsync(clientStream, leaveOpen: false);
@@ -347,8 +350,6 @@ public class NetClientProtocolSecurityTests
         await Assert.ThrowsExactlyAsync<ArgumentException>(() =>
             client.SendMailAsync("sender@example.com", new[] { "good@example.com", "bad\rrecipient" }, "body"));
 
-        // Give the server task a moment to detect MAIL FROM if it had been sent
-        await Task.WhenAny(serverTask, Task.Delay(200));
-        Assert.IsFalse(mailFromSent, "MAIL FROM must not be sent when a recipient fails validation.");
+        Assert.AreEqual(0, recordedWrites.Length, "MAIL FROM must not be sent when a recipient fails validation.");
     }
 }
