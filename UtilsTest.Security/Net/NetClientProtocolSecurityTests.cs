@@ -244,6 +244,9 @@ public class NetClientProtocolSecurityTests
             await server.WaitAsync(TimeSpan.FromSeconds(5));
         }
         Assert.IsFalse(client.IsConnected);
+        Assert.HasCount(2, commands, "The server must drain the complete pre-cancellation SMTP exchange before checking for recovery commands.");
+        StringAssert.StartsWith(commands[0], "MAIL FROM:");
+        StringAssert.StartsWith(commands[1], "RCPT TO:");
         Assert.IsFalse(commands.Contains("RSET"), "RSET must not be transmitted after cancellation poisons the session.");
     }
 
