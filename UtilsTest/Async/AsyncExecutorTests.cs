@@ -98,19 +98,25 @@ namespace UtilsTest.Async
             IAsyncExecutor executor = new AsyncExecutor();
             TaskCompletionSource firstEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
             TaskCompletionSource releaseFirst = new(TaskCreationOptions.RunContinuationsAsynchronously);
-            bool secondEntered = false;
+            TaskCompletionSource secondEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
             Func<Task>[] tasks =
             [
                 async () => { firstEntered.TrySetResult(); await releaseFirst.Task; },
-                () => { secondEntered = true; return Task.CompletedTask; }
+                () => { secondEntered.TrySetResult(); return Task.CompletedTask; }
             ];
 
             Task execution = executor.ExecuteAsync(tasks, 3);
-            await firstEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
-            Assert.IsFalse(secondEntered, "The second task cannot enter while the first sequential task is blocked.");
-            releaseFirst.TrySetResult();
+            try
+            {
+                await firstEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+                Assert.IsFalse(secondEntered.Task.IsCompleted, "The second task cannot enter while the first sequential task is blocked.");
+            }
+            finally
+            {
+                releaseFirst.TrySetResult();
+            }
             await execution.WaitAsync(TimeSpan.FromSeconds(5));
-            Assert.IsTrue(secondEntered);
+            Assert.IsTrue(secondEntered.Task.IsCompleted);
         }
 
         // ── Null argument validation ────────────────────────────────────────────

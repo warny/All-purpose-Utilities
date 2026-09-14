@@ -75,16 +75,23 @@ public class MultiDelegateInvokerTests
         MultiDelegateInvoker<int, int> sequential = new(4);
         using ManualResetEventSlim firstEntered = new(false);
         using ManualResetEventSlim releaseFirst = new(false);
-        bool secondEntered = false;
+        using ManualResetEventSlim secondEntered = new(false);
         sequential.Add<int>(value => { firstEntered.Set(); releaseFirst.Wait(); return value + 1; });
-        sequential.Add<int>(value => { secondEntered = true; return value + 2; });
+        sequential.Add<int>(value => { secondEntered.Set(); return value + 2; });
         sequential.Add<int>(value => value + 3);
 
         Task<int[]> sequentialInvocation = sequential.InvokeSmartAsync(3);
-        Assert.IsTrue(firstEntered.Wait(TimeSpan.FromSeconds(5)));
-        Assert.IsFalse(secondEntered, "A later sequential delegate cannot enter while the first is blocked.");
-        releaseFirst.Set();
+        try
+        {
+            Assert.IsTrue(firstEntered.Wait(TimeSpan.FromSeconds(5)));
+            Assert.IsFalse(secondEntered.IsSet, "A later sequential delegate cannot enter while the first is blocked.");
+        }
+        finally
+        {
+            releaseFirst.Set();
+        }
         CollectionAssert.AreEqual(new[] { 4, 5, 6 }, await sequentialInvocation.WaitAsync(TimeSpan.FromSeconds(5)));
+        Assert.IsTrue(secondEntered.IsSet);
 
         MultiDelegateInvoker<int, int> parallel = new(1);
         using CountdownEvent allEntered = new(3);

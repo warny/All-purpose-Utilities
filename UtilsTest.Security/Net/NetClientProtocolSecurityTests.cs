@@ -232,13 +232,19 @@ public class NetClientProtocolSecurityTests
         await client.ConnectAsync(stream);
         using CancellationTokenSource cancellation = new();
         Task send = client.SendMailAsync(SmtpPath.Parse("sender@example.com"), [SmtpPath.Parse("recipient@example.com")], new StringReader("body"), cancellationToken: cancellation.Token);
-        await rcptReceived.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        cancellation.Cancel();
-        await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => send);
+        try
+        {
+            await rcptReceived.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            cancellation.Cancel();
+            await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => send);
+        }
+        finally
+        {
+            releaseServer.TrySetResult();
+            await server.WaitAsync(TimeSpan.FromSeconds(5));
+        }
         Assert.IsFalse(client.IsConnected);
-        Assert.IsFalse(commands.Contains("RSET"));
-        releaseServer.TrySetResult();
-        await server;
+        Assert.IsFalse(commands.Contains("RSET"), "RSET must not be transmitted after cancellation poisons the session.");
     }
 
     /// <summary>Verifies an AUTH PLAIN transport failure after writing the command poisons the session.</summary>

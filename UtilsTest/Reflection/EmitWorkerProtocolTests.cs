@@ -296,11 +296,16 @@ public class EmitWorkerProtocolTests
             Thread.Yield();
         }
 
-        Assert.IsNull(state.TryAcquireCallLease(), "Lease rejection proves that closing has started.");
-        Assert.IsFalse(closeTask.IsCompleted, "CloseAndDispose must remain blocked while the original lease is held.");
-
-        lease.Dispose();
-        closeTask.WaitAsync(TimeSpan.FromSeconds(2)).GetAwaiter().GetResult();
+        try
+        {
+            Assert.IsNull(state.TryAcquireCallLease(), "Lease rejection proves that closing has started.");
+            Assert.IsFalse(closeTask.IsCompleted, "CloseAndDispose must remain blocked while the original lease is held.");
+        }
+        finally
+        {
+            lease.Dispose();
+            closeTask.WaitAsync(TimeSpan.FromSeconds(2)).GetAwaiter().GetResult();
+        }
     }
 
     [TestMethod]
