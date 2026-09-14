@@ -104,5 +104,5 @@ Scenario: Ordinal conversion is supported
 
 Scenario: Fraction connector wording
     Given I use the "RU" number converter
-    When I convert the fraction 3/2
-    Then the result is "три на два"
+    When I convert the fraction 3/2 through both public fraction APIs
+    Then both fraction results are "три на два"

@@ -221,6 +221,9 @@ public class NumberToStringCompositeFinalizationTests
     public void Convert_NegativeComposite_AppliesSignAfterSingleFinalization()
     {
         AssertNegativeSingleFinalization(
+            converter => converter.Convert(new Number(-3, 4)),
+            converter => converter.Convert(new Number(3, 4)));
+        AssertNegativeSingleFinalization(
             converter => converter.ConvertFraction(-1, 2),
             converter => converter.ConvertFraction(1, 2));
         AssertNegativeSingleFinalization(

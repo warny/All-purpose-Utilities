@@ -64,5 +64,5 @@ Scenario: Ordinal conversion is supported
 
 Scenario: Fraction connector wording
     Given I use the "KO" number converter
-    When I convert the fraction 3/2
-    Then the result is "삼 나누기 이"
+    When I convert the fraction 3/2 through both public fraction APIs
+    Then both fraction results are "삼 나누기 이"

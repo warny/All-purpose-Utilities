@@ -60,5 +60,10 @@ Scenario: Temporal conversion is unsupported
     Given I use the "HR" number converter
     Then the converter does not support time conversion
 
+Scenario: Unsupported time conversion fails closed
+    Given I use the "HR" number converter
+    When I attempt to convert the duration "01:00:00"
+    Then conversion is rejected because time conversion is not supported
+
 Scenario: The regional alias uses Croatian wording
     Then the "HR" and "HR-HR" converters produce the same cardinal wording for 2

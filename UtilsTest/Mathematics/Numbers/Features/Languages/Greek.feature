@@ -88,5 +88,5 @@ Scenario: Ordinal conversion is supported
 
 Scenario: Fraction connector wording
     Given I use the "EL" number converter
-    When I convert the fraction 3/2
-    Then the result is "τρία διά δύο"
+    When I convert the fraction 3/2 through both public fraction APIs
+    Then both fraction results are "τρία διά δύο"

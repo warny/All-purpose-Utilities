@@ -90,5 +90,5 @@ Scenario: Ordinal conversion is supported
 
 Scenario: Fraction connector wording
     Given I use the "PL" number converter
-    When I convert the fraction 3/2
-    Then the result is "trzy przez dwa"
+    When I convert the fraction 3/2 through both public fraction APIs
+    Then both fraction results are "trzy przez dwa"

@@ -87,5 +87,5 @@ Scenario: Ordinal conversion is supported
 
 Scenario: Fraction connector wording
     Given I use the "HE" number converter
-    When I convert the fraction 3/2
-    Then the result is "שלוש על שתיים"
+    When I convert the fraction 3/2 through both public fraction APIs
+    Then both fraction results are "שלוש על שתיים"

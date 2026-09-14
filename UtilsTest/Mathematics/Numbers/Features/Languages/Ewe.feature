@@ -55,5 +55,5 @@ Scenario: Ordinal conversion is supported
 
 Scenario: Fraction connector wording
     Given I use the "EE" number converter
-    When I convert the fraction 3/2
-    Then the result is "eto kple eve"
+    When I convert the fraction 3/2 through both public fraction APIs
+    Then both fraction results are "eto kple eve"

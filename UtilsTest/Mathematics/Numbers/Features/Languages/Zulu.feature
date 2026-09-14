@@ -17,5 +17,5 @@ Scenario: Ordinal conversion is unsupported
 
 Scenario: Fraction connector wording
     Given I use the "ZU" number converter
-    When I convert the fraction 3/2
-    Then the result is "kuthathu ngaphezu kubili"
+    When I convert the fraction 3/2 through both public fraction APIs
+    Then both fraction results are "kuthathu ngaphezu kubili"

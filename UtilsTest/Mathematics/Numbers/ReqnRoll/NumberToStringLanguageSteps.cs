@@ -3,6 +3,7 @@ using System.Numerics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Reqnroll;
 using Utils.NumberToString;
+using Utils.Numerics;
 
 namespace UtilsTest.Mathematics.Numbers.ReqnRoll;
 
@@ -15,6 +16,7 @@ public sealed class NumberToStringLanguageSteps
     private INumberToStringConverter? converter;
     private string[] variants = [];
     private string? result;
+    private string? secondaryResult;
     private CurrencyDefinition? currency;
     private Exception? exception;
 
@@ -49,6 +51,7 @@ public sealed class NumberToStringLanguageSteps
     [When("I attempt to convert the cardinal number {word}")]
     public void WhenIAttemptToConvertTheCardinalNumber(string number)
     {
+        ResetAttemptState();
         try
         {
             result = Converter.Convert(BigInteger.Parse(number, CultureInfo.InvariantCulture), variants);
@@ -78,11 +81,46 @@ public sealed class NumberToStringLanguageSteps
     [When(@"I convert the fraction (\d+)/(\d+)")]
     public void WhenIConvertTheFraction(int numerator, int denominator) => result = Converter.ConvertFraction(numerator, denominator, variants);
 
+    /// <summary>Converts an invariant rational through the concrete public <see cref="NumberToStringConverter.Convert(Number)"/> API.</summary>
+    [When(@"I convert the rational number (-?\d+)/(\d+)")]
+    public void WhenIConvertTheRationalNumber(string numerator, string denominator)
+    {
+        secondaryResult = null;
+        result = ConcreteConverter.Convert(ParseNumber(numerator, denominator));
+    }
+
+    /// <summary>Converts an invariant fraction through both distinct public fraction APIs.</summary>
+    [When(@"I convert the fraction (-?\d+)/(\d+) through both public fraction APIs")]
+    public void WhenIConvertTheFractionThroughBothPublicApis(string numerator, string denominator)
+    {
+        BigInteger parsedNumerator = BigInteger.Parse(numerator, CultureInfo.InvariantCulture);
+        BigInteger parsedDenominator = BigInteger.Parse(denominator, CultureInfo.InvariantCulture);
+        result = Converter.ConvertFraction(parsedNumerator, parsedDenominator, variants);
+        secondaryResult = ConcreteConverter.Convert(new Number(parsedNumerator, parsedDenominator));
+    }
+
     /// <summary>Converts an invariant duration through the public API.</summary>
     [When("I convert the duration {string}")]
     public void WhenIConvertTheDuration(string value) => result = Converter.Convert(
         TimeSpan.ParseExact(value, [@"hh\:mm\:ss", @"d\.hh\:mm\:ss"], CultureInfo.InvariantCulture),
         variants);
+
+    /// <summary>Attempts an invariant duration conversion and captures its public failure.</summary>
+    [When("I attempt to convert the duration {string}")]
+    public void WhenIAttemptToConvertTheDuration(string value)
+    {
+        ResetAttemptState();
+        try
+        {
+            result = Converter.Convert(
+                TimeSpan.ParseExact(value, [@"hh\:mm\:ss", @"d\.hh\:mm\:ss"], CultureInfo.InvariantCulture),
+                variants);
+        }
+        catch (Exception caught)
+        {
+            exception = caught;
+        }
+    }
 
     /// <summary>Converts an invariant time of day through the public API.</summary>
     [When("I convert the time {string}")]
@@ -109,6 +147,29 @@ public sealed class NumberToStringLanguageSteps
     /// <summary>Verifies the exact localized result.</summary>
     [Then("the result is {string}")]
     public void ThenTheResultIs(string expected) => Assert.AreEqual(expected, result);
+
+    /// <summary>Verifies the exact localized result from both public fraction APIs.</summary>
+    [Then("both fraction results are {string}")]
+    public void ThenBothFractionResultsAre(string expected)
+    {
+        Assert.AreEqual(expected, result, "ConvertFraction returned unexpected wording.");
+        Assert.AreEqual(expected, secondaryResult, "Convert(Number) returned unexpected wording.");
+    }
+
+    /// <summary>Verifies the selected converter's complete public variant-dimension metadata.</summary>
+    [Then("the converter exposes exactly these variant dimensions")]
+    public void ThenTheConverterExposesExactlyTheseVariantDimensions(Table table)
+    {
+        Assert.AreEqual(table.RowCount, Converter.VariantDimensions.Count);
+        foreach (var row in table.Rows)
+        {
+            NumberToStringConverter.VariantDimension dimension = Converter.VariantDimensions.Single(item => item.Name == row["name"]);
+            Assert.AreEqual(row["local name"], dimension.LocalName);
+            CollectionAssert.AreEqual(
+                row["values"].Split(',', StringSplitOptions.TrimEntries),
+                dimension.Values.ToArray());
+        }
+    }
 
     /// <summary>Verifies that the selected converter advertises ordinal conversion.</summary>
     [Then("the converter supports ordinal conversion")]
@@ -138,6 +199,11 @@ public sealed class NumberToStringLanguageSteps
     [Then("conversion is rejected because the value is out of range")]
     public void ThenConversionIsRejectedBecauseTheValueIsOutOfRange() => Assert.IsInstanceOfType<ArgumentOutOfRangeException>(exception);
 
+    /// <summary>Verifies that an unsupported temporal operation fails closed.</summary>
+    [Then("conversion is rejected because time conversion is not supported")]
+    public void ThenConversionIsRejectedBecauseTimeConversionIsNotSupported() =>
+        Assert.AreEqual(typeof(NotSupportedException), exception?.GetType());
+
     /// <summary>Verifies observable cardinal-wording equivalence between two converter registrations.</summary>
     [Then("the {string} and {string} converters produce the same cardinal wording for {word}")]
     public void ThenConvertersProduceTheSameCardinalWording(string firstCulture, string secondCulture, string number)
@@ -160,4 +226,21 @@ public sealed class NumberToStringLanguageSteps
 
     /// <summary>Gets the converter selected for the current scenario.</summary>
     private INumberToStringConverter Converter => converter ?? throw new InvalidOperationException("A converter must be selected before conversion.");
+
+    /// <summary>Gets the concrete converter required to exercise its rational-number implementation.</summary>
+    private NumberToStringConverter ConcreteConverter => Converter as NumberToStringConverter
+        ?? throw new InvalidOperationException("The selected converter must use the concrete rational-number implementation.");
+
+    /// <summary>Parses an invariant numerator and denominator into a rational number.</summary>
+    private static Number ParseNumber(string numerator, string denominator) => new(
+        BigInteger.Parse(numerator, CultureInfo.InvariantCulture),
+        BigInteger.Parse(denominator, CultureInfo.InvariantCulture));
+
+    /// <summary>Clears result and exception state before an attempted conversion.</summary>
+    private void ResetAttemptState()
+    {
+        result = null;
+        secondaryResult = null;
+        exception = null;
+    }
 }

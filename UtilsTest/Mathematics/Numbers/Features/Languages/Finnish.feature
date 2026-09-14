@@ -206,5 +206,11 @@ Scenario: Ordinal conversion is supported
 
 Scenario: Fraction connector wording
     Given I use the "FI" number converter
-    When I convert the fraction 3/2
-    Then the result is "kolme yli kaksi"
+    When I convert the fraction 3/2 through both public fraction APIs
+    Then both fraction results are "kolme yli kaksi"
+
+Scenario: Finnish variant metadata
+    Given I use the "FI" number converter
+    Then the converter exposes exactly these variant dimensions
+        | name | local name | values                               |
+        | case | sijamuoto  | nominatiivi,partitiivi,genetiivi     |

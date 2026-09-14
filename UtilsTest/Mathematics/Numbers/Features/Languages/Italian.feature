@@ -109,5 +109,5 @@ Scenario: Ordinal conversion is supported
 
 Scenario: Fraction connector wording
     Given I use the "IT" number converter
-    When I convert the fraction 3/2
-    Then the result is "tre su due"
+    When I convert the fraction 3/2 through both public fraction APIs
+    Then both fraction results are "tre su due"

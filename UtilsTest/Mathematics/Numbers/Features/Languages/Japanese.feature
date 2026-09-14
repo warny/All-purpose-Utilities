@@ -47,5 +47,5 @@ Scenario: Ordinal conversion is supported
 
 Scenario: Fraction connector wording
     Given I use the "JA" number converter
-    When I convert the fraction 3/2
-    Then the result is "三 割る 二"
+    When I convert the fraction 3/2 through both public fraction APIs
+    Then both fraction results are "三 割る 二"

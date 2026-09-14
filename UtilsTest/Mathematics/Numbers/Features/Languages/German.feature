@@ -378,5 +378,23 @@ Examples:
 
 Scenario: Fraction connector wording
     Given I use the "DE" number converter
-    When I convert the fraction 3/2
-    Then the result is "drei durch zwei"
+    When I convert the fraction 3/2 through both public fraction APIs
+    Then both fraction results are "drei durch zwei"
+
+Scenario Outline: Swiss German ordinal inheritance
+    Given I use the "de-CH" number converter
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected   |
+    | 1      | erste      |
+    | 1000   | tausendste |
+
+Scenario: German variant metadata
+    Given I use the "DE" number converter
+    Then the converter exposes exactly these variant dimensions
+        | name       | local name  | values                            |
+        | gender     | genus       | maskulin,feminin,neutrum          |
+        | case       | kasus       | nominativ,akkusativ,dativ,genitiv |
+        | declension | deklination | schwach,stark                     |

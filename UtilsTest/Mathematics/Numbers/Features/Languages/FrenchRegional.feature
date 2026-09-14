@@ -331,5 +331,10 @@ Examples:
 
 Scenario: Fraction connector wording
     Given I use the "FR-fr" number converter
-    When I convert the fraction 3/2
-    Then the result is "trois sur deux"
+    When I convert the fraction 3/2 through both public fraction APIs
+    Then both fraction results are "trois sur deux"
+
+Scenario: Swiss French rational wording does not use a named fraction
+    Given I use the "FR-ch" number converter
+    When I convert the rational number 1/10
+    Then the result is "un sur dix"
