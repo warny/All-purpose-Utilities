@@ -28,3 +28,10 @@ Examples:
     | 3000000000 | tre milliarder |
     | 1000000000000 | en billion |
     | 1000000000000000 | en billiard |
+
+Scenario: Ordinal conversion is unsupported
+    Then the converter does not support ordinal conversion
+
+Scenario: Supported aliases use Norwegian wording
+    Then the "NO" and "NB" converters produce the same cardinal wording for 2
+    And the "NO" and "NB-NO" converters produce the same cardinal wording for 2

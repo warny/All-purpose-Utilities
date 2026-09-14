@@ -1,7 +1,7 @@
-@NumberToString
+@NumberToString @FR
 Feature: French number conversion
 
-Scenario Outline: From1To999Test 1
+Scenario Outline: Cardinal numbers below one thousand
     Given I use the "FR-ch" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -39,7 +39,7 @@ Examples:
     | 261 | deux cent soixante et un |
     | 262 | deux cent soixante deux |
 
-Scenario Outline: From1000To9999Test 2
+Scenario Outline: Thousands
     Given I use the "FR-ch" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -70,7 +70,7 @@ Examples:
     | 1261 | mille deux cent soixante et un |
     | 1262 | mille deux cent soixante deux |
 
-Scenario Outline: From10000To99999Test 3
+Scenario Outline: Tens of thousands
     Given I use the "FR-be" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -101,7 +101,7 @@ Examples:
     | 99261 | nonante neuf mille deux cent soixante et un |
     | 99262 | nonante neuf mille deux cent soixante deux |
 
-Scenario Outline: BiggerTest 4
+Scenario Outline: Large cardinal numbers
     Given I use the "FR-be" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -113,3 +113,19 @@ Examples:
     | 999999 | neuf cent nonante neuf mille neuf cent nonante neuf |
     | 1000000 | un million |
     | 999999999 | neuf cent nonante neuf millions neuf cent nonante neuf mille neuf cent nonante neuf |
+
+@HugeNumber
+Scenario: A very large cardinal number follows the shipped scale vocabulary
+    Given I use the "FR-ch" number converter
+    When I convert the cardinal number 1852673427797059126777135760139006525652319754650249024631321344126610074238975
+    Then the result is "un tredecillion huit cent cinquante deux duodecilliards six cent septante trois duodecillions quatre cent vingt sept unidecilliards sept cent nonante sept unidecillions cinquante neuf decilliards cent vingt six decillions sept cent septante sept nonilliards cent trente cinq nonillions sept cent soixante octilliards cent trente neuf octillions six septilliards cinq cent vingt cinq septillions six cent cinquante deux sextilliards trois cent dix neuf sextillions sept cent cinquante quatre quintilliards six cent cinquante quintillions deux cent quarante neuf quadrilliards vingt quatre quadrillions six cent trente et un trilliards trois cent vingt et un trillions trois cent quarante quatre billiards cent vingt six billions six cent dix milliards septante quatre millions deux cent trente huit mille neuf cent septante cinq"
+
+Scenario Outline: Composite thousands preserve the terminal unit
+    Given I use the "FR-ch" number converter
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected                  |
+    | 21000  | vingt et un mille         |
+    | 401000 | quatre cent un mille      |

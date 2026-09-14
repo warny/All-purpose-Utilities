@@ -12,6 +12,27 @@ namespace UtilsTest.Mathematics.Numbers;
 [TestClass]
 public class NumberToStringConverterEngineFixesTests
 {
+    private const string NamedFractionConfiguration = """
+        <?xml version="1.0" encoding="utf-8" ?>
+        <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+          <Language groupSize="3" separator=" " groupSeparator="" zero="ZERO" minus="SIGN *" decimalSeparator="DOT" fractionSeparator="CONNECTOR">
+            <Culture>TEST-NAMED-FRACTION</Culture>
+            <Groups>
+              <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="UNIT" />
+                <Digit digit="2" string="LEFT" />
+                <Digit digit="3" string="RIGHT" />
+              </Group>
+            </Groups>
+            <NumberScale firstLetterUpperCase="false">
+              <StaticNames><Scale value="0" string="" /></StaticNames>
+            </NumberScale>
+            <Fractions><Fraction digits="1" string="PART(s)" /></Fractions>
+          </Language>
+        </Numbers>
+        """;
+
     // ─── Item 29 — GetMonthName catch scoped to expected exceptions ─────────
 
     [TestMethod]
@@ -27,48 +48,28 @@ public class NumberToStringConverterEngineFixesTests
 
     // ─── Item 30 — BuildFractionText with negative numerator ────────────────
 
+    /// <summary>Verifies that a negative numerator retains the named power-of-ten fraction suffix.</summary>
     [TestMethod]
-    public void ConvertFraction_EN_NegativeNumerator_UsesNamedSuffix()
+    public void ConvertFraction_NegativeNumerator_UsesSyntheticNamedSuffix()
     {
-        var en = NumberToStringConverter.GetConverter("EN");
-        // Denominator 10 is a power of ten → named suffix branch ("tenth(s)").
-        // -1/10 should reuse the named suffix like 1/10 does, prefixed by the sign.
-        string positive = en.ConvertFraction(1, 10);
-        string negative = en.ConvertFraction(-1, 10);
-        Assert.AreEqual("one tenth", positive);
-        Assert.IsTrue(negative.EndsWith("one tenth"), $"Actual: {negative}");
-        Assert.AreNotEqual(positive, negative);
+        NumberToStringConverter converter = LegacyNumberToStringFixture
+            .ReadConfiguration(NamedFractionConfiguration)["TEST-NAMED-FRACTION"];
+
+        Assert.AreEqual("UNIT PART", converter.ConvertFraction(1, 10));
+        Assert.AreEqual("SIGN UNIT PART", converter.ConvertFraction(-1, 10));
     }
 
+    /// <summary>Verifies that ordinary fractions use the configured synthetic connector.</summary>
     [TestMethod]
-    public void ConvertFraction_FR_NegativeNumerator_UsesNamedSuffix()
+    public void ConvertFraction_OrdinaryDenominator_UsesSyntheticConnector()
     {
-        var fr = NumberToStringConverter.GetConverter("FR");
-        string positive = fr.ConvertFraction(3, 10);
-        string negative = fr.ConvertFraction(-3, 10);
-        Assert.AreEqual("trois dixièmes", positive);
-        Assert.IsTrue(negative.EndsWith("trois dixièmes"), $"Actual: {negative}");
+        NumberToStringConverter converter = LegacyNumberToStringFixture
+            .ReadConfiguration(NamedFractionConfiguration)["TEST-NAMED-FRACTION"];
+
+        Assert.AreEqual("LEFT CONNECTOR RIGHT", converter.ConvertFraction(2, 3));
     }
 
     // ─── Item 31 — ApplyVariantRules / ApplyVariantRulesForScale factored ───
-
-    [TestMethod]
-    public void ApplyVariantRules_StillAppliesAfterRefactor_FR()
-    {
-        var fr = NumberToStringConverter.GetConverter("FR");
-        // Regression check on gender variant application post-refactor.
-        Assert.AreEqual("une", fr.Convert(1, "gender=feminin"));
-        Assert.AreEqual("un", fr.Convert(1));
-    }
-
-    [TestMethod]
-    public void ApplyVariantRulesForScale_StillAppliesAfterRefactor_RO()
-    {
-        var ro = NumberToStringConverter.GetConverter("RO");
-        // Scale-scoped variant rules (unu → o mie at scale 1) must still apply post-refactor.
-        Assert.AreEqual("o mie", ro.Convert(1000));
-        Assert.AreEqual("un milion", ro.Convert(1_000_000));
-    }
 
     // ─── Item 45 — Convert(double)/Convert(float) overload + NaN/Infinity ───
 

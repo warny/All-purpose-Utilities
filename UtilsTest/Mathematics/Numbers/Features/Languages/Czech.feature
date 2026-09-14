@@ -34,3 +34,6 @@ Examples:
     | 1000000000000 | jedna bilion |
     | 1000000000000000 | jedna biliard |
     | 1000000000000000000 | jedna trilion |
+
+Scenario: The regional alias uses Czech wording
+    Then the "CS" and "CS-CZ" converters produce the same cardinal wording for 2

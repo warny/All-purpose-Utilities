@@ -33,3 +33,6 @@ Examples:
     | 1000000000000000 | bir katrilyon |
     | 1000000000000000000 | bir kentilyon |
     | -1 | eksi bir |
+
+Scenario: The regional alias uses Turkish wording
+    Then the "TR" and "TR-TR" converters produce the same cardinal wording for 2

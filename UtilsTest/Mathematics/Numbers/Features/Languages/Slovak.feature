@@ -29,3 +29,6 @@ Examples:
     | 2000 | dva tisíc |
     | 10000 | desať tisíc |
     | -1 | mínus jeden |
+
+Scenario: The regional alias uses Slovak wording
+    Then the "SK" and "SK-SK" converters produce the same cardinal wording for 2
