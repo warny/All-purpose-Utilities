@@ -18,8 +18,12 @@ public class SimpleComputationTests
         var e = (LambdaExpression)compiler.Compile("(int x, int y) => x + y");
         var f = (Func<int, int, int>)e.Compile();
 
-        foreach ((int x, int y) in new (int, int)[] { (0, 0), (1, -1), (-42, 17), (123_456, 654_321) })
-            Assert.AreEqual(x + y, f(x, y));
+        foreach ((int x, int y) in new (int, int)[]
+        {
+            (0, 0), (1, -1), (-42, 17), (123_456, 654_321),
+            (int.MaxValue, 1), (int.MinValue, -1), (int.MaxValue, int.MaxValue)
+        })
+            Assert.AreEqual(unchecked(x + y), f(x, y));
 
     }
 

@@ -284,6 +284,7 @@ public class NetClientProtocolSecurityTests
         };
         StreamReader reader = new(clientToServer.Reader.AsStream(), Encoding.ASCII);
         StringBuilder transcript = new();
+        TaskCompletionSource clientOperationCompleted = new(TaskCreationOptions.RunContinuationsAsynchronously);
         Task server = Task.Run(async () =>
         {
             await writer.WriteLineAsync("220 ready");
@@ -291,6 +292,7 @@ public class NetClientProtocolSecurityTests
             transcript.AppendLine(mail);
             await writer.WriteLineAsync("250 sender accepted");
             await failingWrites.FailureObserved.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await clientOperationCompleted.Task.WaitAsync(TimeSpan.FromSeconds(5));
             while (clientToServer.Reader.TryRead(out ReadResult result))
             {
                 foreach (ReadOnlyMemory<byte> segment in result.Buffer)
@@ -300,8 +302,15 @@ public class NetClientProtocolSecurityTests
         });
         SmtpClient client = new();
         await client.ConnectAsync(stream);
-        await Assert.ThrowsExactlyAsync<IOException>(() =>
-            client.SendMailAsync(SmtpPath.Parse("sender@example.com"), [SmtpPath.Parse("recipient@example.com")], new StringReader("body")));
+        try
+        {
+            await Assert.ThrowsExactlyAsync<IOException>(() =>
+                client.SendMailAsync(SmtpPath.Parse("sender@example.com"), [SmtpPath.Parse("recipient@example.com")], new StringReader("body")));
+        }
+        finally
+        {
+            clientOperationCompleted.TrySetResult();
+        }
         Assert.IsFalse(client.IsConnected);
         Assert.IsNotNull(client.SessionFailure);
         await server;

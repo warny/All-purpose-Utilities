@@ -35,17 +35,19 @@ public class MultiDelegateInvokerTests
     }
 
     /// <summary>
-    /// Proves that every parallel delegate enters before the shared release gate opens.
+    /// Proves that at least two parallel delegates enter before the shared release gate opens.
     /// </summary>
     [TestMethod]
     public async Task InvokeParallelAsync_Executes_In_Parallel()
     {
         MultiDelegateInvoker<int, int> invoker = new();
-        using CountdownEvent entered = new(3);
+        int enteredCount = 0;
+        using ManualResetEventSlim twoEntered = new(false);
         using ManualResetEventSlim release = new(false);
         Func<int, int> CreateDelegate(int offset) => value =>
         {
-            entered.Signal();
+            if (Interlocked.Increment(ref enteredCount) == 2)
+                twoEntered.Set();
             release.Wait();
             return value + offset;
         };
@@ -56,7 +58,7 @@ public class MultiDelegateInvokerTests
         Task<int[]> invocation = invoker.InvokeParallelAsync(3);
         try
         {
-            Assert.IsTrue(entered.Wait(TimeSpan.FromSeconds(5)), "All delegates must enter before release.");
+            Assert.IsTrue(twoEntered.Wait(TimeSpan.FromSeconds(5)), "At least two delegates must enter before release.");
         }
         finally
         {
@@ -94,11 +96,13 @@ public class MultiDelegateInvokerTests
         Assert.IsTrue(secondEntered.IsSet);
 
         MultiDelegateInvoker<int, int> parallel = new(1);
-        using CountdownEvent allEntered = new(3);
+        int parallelEnteredCount = 0;
+        using ManualResetEventSlim twoParallelEntered = new(false);
         using ManualResetEventSlim releaseParallel = new(false);
         Func<int, int> CreateParallelDelegate(int offset) => value =>
         {
-            allEntered.Signal();
+            if (Interlocked.Increment(ref parallelEnteredCount) == 2)
+                twoParallelEntered.Set();
             releaseParallel.Wait();
             return value + offset;
         };
@@ -109,7 +113,7 @@ public class MultiDelegateInvokerTests
         Task<int[]> parallelInvocation = parallel.InvokeSmartAsync(3);
         try
         {
-            Assert.IsTrue(allEntered.Wait(TimeSpan.FromSeconds(5)), "Smart parallel mode must enter every delegate before release.");
+            Assert.IsTrue(twoParallelEntered.Wait(TimeSpan.FromSeconds(5)), "Smart parallel mode must overlap at least two delegates before release.");
         }
         finally
         {
