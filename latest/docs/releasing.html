@@ -78,7 +78,7 @@
 <ol>
 <li>Update <code>ProductTrainVersion</code> in <code>Directory.Build.props</code> when preparing a release. Do not version individual <code>.csproj</code> files independently for any project listed in <code>eng/product-train-manifest.json</code>'s <code>packages</code> array. A small number of components are deliberately kept out of that array entirely and declare their own literal version instead - see <a href="releasing/ProvisionalVersioning.html">provisional versioning</a>.</li>
 <li>Add release notes to <code>CHANGELOG.md</code> under a new version heading.</li>
-<li>Create a Git tag matching the package version (for example <code>v2.0.0-rc.1</code>).</li>
+<li>Create a Git tag matching the package version (for example <code>v2.0.0-rc.2</code>).</li>
 </ol>
 <p>Every product-train package (every entry in <code>eng/product-train-manifest.json</code>'s <code>packages</code> array) uses <code>ProductTrainVersion</code> from <code>Directory.Build.props</code> as its version authority - there is no per-package exception inside that array. The release gate rejects project-local <code>PackageVersion</code>, assembly/file version overrides, undeclared hard-coded versions, divergent evaluated MSBuild properties, dependencies, assets, or artifacts.</p>
 <p>A small number of components are intentionally kept out of the <code>packages</code> array and versioned independently instead: <code>omy.Utils.Collections</code> is currently packaged and published separately at its own literal <code>0.0.1</code>. See <a href="releasing/ProvisionalVersioning.html">provisional versioning</a> for the full policy.</p>
@@ -106,7 +106,7 @@ for an explicit human approval in the GitHub UI before it runs, in addition to t
 <li><p><strong>On manual <code>workflow_dispatch</code>:</strong> runs the <code>publish-to-nuget</code> job - the only place in this repository that actually pushes to NuGet.org. Inputs:</p>
 <ul>
 <li><strong><code>validation-run-id</code></strong> (required): the <code>release-quality-gates.yml</code> run ID whose validated <code>full-product-train-&lt;sha&gt;</code> candidate to publish.</li>
-<li><strong><code>confirm-version</code></strong> (required): must exactly match the product-train version (<code>eng/product-train-manifest.json</code>'s <code>version</code>, currently <code>2.0.0-rc.1</code>) - a typo guard against an accidental dispatch.</li>
+<li><strong><code>confirm-version</code></strong> (required): must exactly match the product-train version (<code>eng/product-train-manifest.json</code>'s <code>version</code>, currently <code>2.0.0-rc.2</code>) - a typo guard against an accidental dispatch.</li>
 <li><strong><code>resume-partial-publication</code></strong> (boolean, default <code>false</code>): see the resume explanation below.</li>
 </ul>
 <p>The job runs under the <code>Production</code> environment (triggering the required-reviewer approval), downloads and hash-verifies the exact validated candidate, exchanges the OIDC token for a temporary key via the <a href="https://github.com/NuGet/login"><code>NuGet/login</code></a> action, then calls <code>eng/publish-product-train.ps1 -Publish [-ResumePartialPublication] -ApiKey &lt;temporary key&gt;</code>. It always pushes each package's <code>.nupkg</code> (with <code>--no-symbols</code>) and then its <code>.snupkg</code> separately - never relying on <code>dotnet nuget push</code>'s automatic &quot;also push the matching symbol package&quot; behavior, since that would push every <code>.snupkg</code> twice (once automatically, once explicitly) and fail or conflict on the second push.</p>
@@ -149,7 +149,7 @@ the exact same rules as above; only the source of the API key and the artifact d
 </ul>
 <pre><code class="lang-bash">dotnet new console -n UtilsPackageCheck
 cd UtilsPackageCheck
-dotnet add package omy.Utils --version 2.0.0-rc.1
+dotnet add package omy.Utils --version 2.0.0-rc.2
 </code></pre>
 <ul>
 <li>Review the package page on nuget.org to confirm the README and metadata render correctly.</li>

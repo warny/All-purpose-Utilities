@@ -76,7 +76,7 @@
 <p>This index consolidates the parser documentation set and gives a short summary of each file.</p>
 <h2 id="core-contracts-and-boundaries">Core contracts and boundaries</h2>
 <ul>
-<li><a href="ProductionSupportContract.html"><code>ProductionSupportContract.md</code></a>: Normative <code>2.0.0-rc.1</code> product-support contract and first entry point for deciding what is guaranteed, including the explicit non-thread-safe generated static facade boundary; unlike the technical compatibility matrices, it defines the RC commitment rather than only describing implementation state.</li>
+<li><a href="ProductionSupportContract.html"><code>ProductionSupportContract.md</code></a>: Normative <code>2.0.0-rc.2</code> product-support contract and first entry point for deciding what is guaranteed, including the explicit non-thread-safe generated static facade boundary; unlike the technical compatibility matrices, it defines the RC commitment rather than only describing implementation state.</li>
 <li><a href="RuntimeStateOwnership.html"><code>RuntimeStateOwnership.md</code></a>: Canonical authority map for runtime responsibilities (parse decisions, diagnostics, parse-tree ownership, scheduler/registry boundaries).</li>
 <li><a href="ParserMetadataAndRuntimeLimitations.html"><code>ParserMetadataAndRuntimeLimitations.md</code></a>: Limitations-first reference that clarifies metadata-only semantics, unsupported runtime semantics, and activation preconditions.</li>
 <li><a href="RuntimeObservationAndExportContract.html"><code>RuntimeObservationAndExportContract.md</code></a>: Defines what runtime observations are allowed to emit and how exporters must remain passive and non-authoritative.</li>
@@ -115,7 +115,7 @@
 <p><code>ProductionSupportContract.md</code> now also records the manifest-driven <code>omy.Utils</code>/<code>omy.Utils.Parser.*</code> package graph, isolated-feed acceptance boundary, analyzer support-assembly strategy, and the distribution properties that remain unclaimed.</p>
 <p>The packaging audit additionally records package-only runtime/generator import scenarios, graph-changing incremental builds, deterministic graph diagnostics, and the precise boundary between portable-symbol checks and unvalidated SourceLink mappings.</p>
 <h2 id="synchronized-product-train-release-gate">Synchronized product-train release gate</h2>
-<p><code>PackagingAudit.md</code> now records the single <code>omy</code> 2.0.0-rc.1 version authority, strict topological order, the published <code>omy.Utils</code> 1.2.1 API comparison boundary, and first candidate baselines for parser packages.</p>
+<p><code>PackagingAudit.md</code> now records the single <code>omy</code> 2.0.0-rc.2 version authority, strict topological order, and the published <code>omy.Utils</code> 2.0.0-rc.1 API comparison boundary shared by every manifested package, including the parser packages.</p>
 <h2 id="global-product-train-integration">Global product-train integration</h2>
 <p><code>PackagingAudit.md</code> now describes how the retained parser-specific packaged scenarios are nested within the repository-wide 24-package discovery, graph, generic-consumer, integrity, and dry-run publication chain. <code>ProductionSupportContract.md</code> clarifies that these distribution gates do not expand parser behavioral guarantees.</p>
 

@@ -78,12 +78,12 @@ the synchronized <code>omy.Utils</code> product train (<code>eng/product-train-m
 <code>classification: &quot;vsix&quot;</code>) because the VSIX Marketplace version format cannot carry a SemVer
 prerelease suffix such as <code>2.0.0-rc.1</code>.</p>
 <h2 id="why-the-vsix-version-differs-from-producttrainversion">Why the VSIX version differs from <code>ProductTrainVersion</code></h2>
-<p><code>Directory.Build.props</code> declares <code>&lt;ProductTrainVersion&gt;2.0.0-rc.1&lt;/ProductTrainVersion&gt;</code> for the
+<p><code>Directory.Build.props</code> declares <code>&lt;ProductTrainVersion&gt;2.0.0-rc.2&lt;/ProductTrainVersion&gt;</code> for the
 manifested NuGet packages (see <a href="ProductTrain.html"><code>ProductTrain.md</code></a> for the current count). The
 VSIX cannot use this value directly:</p>
 <ul>
 <li>the Marketplace/<code>VSIXVersion</code> format is a plain <code>Major.Minor.Build[.Revision]</code> with no prerelease
-label, so <code>2.0.0-rc.1</code> has no faithful representation, and</li>
+label, so <code>2.0.0-rc.2</code> has no faithful representation, and</li>
 <li>inventing a lossy encoding (for example <code>2.0.0.1</code> for <code>rc.1</code>) would risk colliding with, or
 sorting incorrectly against, the eventual stable <code>2.0.0</code>.</li>
 </ul>

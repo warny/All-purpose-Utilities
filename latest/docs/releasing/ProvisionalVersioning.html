@@ -76,7 +76,7 @@
 <p>Every package in <code>eng/product-train-manifest.json</code>'s <code>packages</code> array follows the synchronized
 <code>omy.Utils</code> product train: it declares <code>&lt;Version&gt;$(ProductTrainVersion)&lt;/Version&gt;</code> and is
 validated, packed, and published at exactly <code>ProductTrainVersion</code> (<code>Directory.Build.props</code>,
-currently <code>2.0.0-rc.1</code>). There is no per-package exception inside <code>packages</code> - every release gate
+currently <code>2.0.0-rc.2</code>). There is no per-package exception inside <code>packages</code> - every release gate
 (<code>eng/validate-product-train.ps1</code> and everything downstream of it) enforces the single rule
 <code>manifest package version == ProductTrainVersion</code> for the whole array.</p>
 <p>A small number of components are not yet mature enough to make that train-wide commitment, but
@@ -158,7 +158,7 @@ itself keeps exactly one physical copy of the image.</p>
 repository, labeled with a single version derived from the product train's version (see
 <code>docs/releasing.md</code>) - it does not generate a separate site per package version. A provisional
 package's own README should therefore keep linking to the product-train's version label (currently
-<code>v2.0.0-rc.1</code>), not to its own package version (<code>v0.0.1</code> would be a dead link, since that folder is
+<code>v2.0.0-rc.2</code>), not to its own package version (<code>v0.0.1</code> would be a dead link, since that folder is
 never generated), and should say so explicitly so the discrepancy reads as intentional rather than
 a mistake. See <code>Utils.Collections/README.md</code> for the wording used.</p>
 <h2 id="package-count">Package count</h2>
