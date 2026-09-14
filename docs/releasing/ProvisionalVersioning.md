@@ -3,7 +3,7 @@
 Every package in `eng/product-train-manifest.json`'s `packages` array follows the synchronized
 `omy.Utils` product train: it declares `<Version>$(ProductTrainVersion)</Version>` and is
 validated, packed, and published at exactly `ProductTrainVersion` (`Directory.Build.props`,
-currently `2.0.0-rc.1`). There is no per-package exception inside `packages` - every release gate
+currently `2.0.0-rc.2`). There is no per-package exception inside `packages` - every release gate
 (`eng/validate-product-train.ps1` and everything downstream of it) enforces the single rule
 `manifest package version == ProductTrainVersion` for the whole array.
 
@@ -77,7 +77,7 @@ itself keeps exactly one physical copy of the image.
 repository, labeled with a single version derived from the product train's version (see
 `docs/releasing.md`) - it does not generate a separate site per package version. A provisional
 package's own README should therefore keep linking to the product-train's version label (currently
-`v2.0.0-rc.1`), not to its own package version (`v0.0.1` would be a dead link, since that folder is
+`v2.0.0-rc.2`), not to its own package version (`v0.0.1` would be a dead link, since that folder is
 never generated), and should say so explicitly so the discrepancy reads as intentional rather than
 a mistake. See `Utils.Collections/README.md` for the wording used.
 

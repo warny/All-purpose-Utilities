@@ -1,8 +1,8 @@
-# Production Support Contract for `Utils.Parser 2.0.0-rc.1`
+# Production Support Contract for `Utils.Parser 2.0.0-rc.2`
 
 ## 1. Purpose and scope
 
-This document is the normative product-support contract for `Utils.Parser 2.0.0-rc.1`. This version is a release candidate: it is suitable for evaluation and controlled production use within the boundaries below, but it does not yet carry the final binary-compatibility promise of `2.0.0`.
+This document is the normative product-support contract for `Utils.Parser 2.0.0-rc.2`. This version is a release candidate: it is suitable for evaluation and controlled production use within the boundaries below, but it does not yet carry the final binary-compatibility promise of `2.0.0`.
 
 `Utils.Parser` implements a tested subset of ANTLR4 grammar ingestion and execution; it is not a drop-in or exhaustive replacement for ANTLR4. The supported scope is grammars owned or reviewed by trusted developers, validated with application-specific tests, and resolved in a controlled environment. Arbitrary grammars or embedded code supplied by untrusted users are excluded.
 
@@ -25,7 +25,7 @@ This document is the normative product-support contract for `Utils.Parser 2.0.0-
 - **Metadata-only:** syntax or information is recognized and preserved, but it has no execution authority. This status never means supported execution.
 - **Rejected with diagnostic:** the construct is not accepted for the relevant surface and produces a documented deterministic diagnostic.
 - **Preparatory/internal:** infrastructure exists for future work but is not a consumer execution contract.
-- **Out of scope for `2.0.0-rc.1`:** no production-support commitment is made for that capability in this RC.
+- **Out of scope for `2.0.0-rc.2`:** no production-support commitment is made for that capability in this RC.
 
 ## 4. Support matrix
 
@@ -92,12 +92,12 @@ The RC covers grammars written or reviewed by trusted developers, embedded C# tr
 
 ## 10. Non-goals
 
-`2.0.0-rc.1` does not promise exhaustive ANTLR4 compatibility, GLL, adaptive LL, continuation replay, shared-prefix execution, parsing-internal parallelism, async runtime parsing, full rollback of external effects, action buffering, typed ANTLR rule signatures, arbitrary argument expressions, complete lexer embedded code, or a sandbox for untrusted code execution.
+`2.0.0-rc.2` does not promise exhaustive ANTLR4 compatibility, GLL, adaptive LL, continuation replay, shared-prefix execution, parsing-internal parallelism, async runtime parsing, full rollback of external effects, action buffering, typed ANTLR rule signatures, arbitrary argument expressions, complete lexer embedded code, or a sandbox for untrusted code execution.
 
 ## 11. Package-train distribution boundary
 
-The `2.0.0-rc.1` parser packages share one centrally declared version. Runtime package dependencies are `Source -> Diagnostics -> Parser`, with `Antlr4.Common -> Parser`; `Parser.Expressions` depends exactly on `Parser` and `omy.Utils` 2.0.0-rc.1. The generator is a compiler analyzer package that embeds only its Source, Diagnostics, and Antlr4.Common compiler-host support DLLs. Package-only consumers are restored with an isolated global-package cache and source mapping that resolves every `omy.*` candidate from the local feed. This distribution validation does not broaden the functional compatibility matrix and does not establish reproducibility, performance, trimming/AOT, signing, or transactional multi-package publication guarantees.
+The `2.0.0-rc.2` parser packages share one centrally declared version. Runtime package dependencies are `Source -> Diagnostics -> Parser`, with `Antlr4.Common -> Parser`; `Parser.Expressions` depends exactly on `Parser` and `omy.Utils` 2.0.0-rc.2. The generator is a compiler analyzer package that embeds only its Source, Diagnostics, and Antlr4.Common compiler-host support DLLs. Package-only consumers are restored with an isolated global-package cache and source mapping that resolves every `omy.*` candidate from the local feed. This distribution validation does not broaden the functional compatibility matrix and does not establish reproducibility, performance, trimming/AOT, signing, or transactional multi-package publication guarantees.
 
 Package acceptance for this release candidate now crosses both runtime and generated composition paths. It executes direct/transitive imports, `tokenVocab`, separate lexer/parser grammars, populated and empty modes, local masking, root ownership, collision precedence, graph diagnostics, and generator rebuild replacement after graph changes. This evidence is distribution validation of the already documented subset; it does not expand the ANTLR4 compatibility contract.
 
-The parser packages are released only as part of the synchronized repository-wide `omy.Utils` 2.0.0-rc.1 product train. Global packaging, API, warning, SourceLink, reproducibility, dependency, and artifact-integrity gates strengthen distribution evidence without expanding the parser behavior or ANTLR4 feature guarantees in this contract.
+The parser packages are released only as part of the synchronized repository-wide `omy.Utils` 2.0.0-rc.2 product train. Global packaging, API, warning, SourceLink, reproducibility, dependency, and artifact-integrity gates strengthen distribution evidence without expanding the parser behavior or ANTLR4 feature guarantees in this contract.

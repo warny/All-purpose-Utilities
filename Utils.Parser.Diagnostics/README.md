@@ -16,12 +16,11 @@ Human-readable source-location contracts such as `SourceCodeLocation` and `Sourc
 
 The package is typically consumed transitively by parser packages. Reference it directly when building custom tooling that needs to exchange diagnostics with `omy.Utils.Parser` or `omy.Utils.Parser.Generators`.
 
-This package's first publication is the `2.0.0-rc.1` release candidate - there is no earlier stable
-version, so `dotnet add package` requires an explicit version (NuGet does not install a prerelease
-by default):
+First published as `2.0.0-rc.1`; the current candidate is `2.0.0-rc.2`. No stable release exists yet,
+so `dotnet add package` requires an explicit version (NuGet does not install a prerelease by default):
 
 ```bash
-dotnet add package omy.Utils.Parser.Diagnostics --version 2.0.0-rc.1
+dotnet add package omy.Utils.Parser.Diagnostics --version 2.0.0-rc.2
 ```
 
 ## Diagnostic code catalogue
@@ -130,4 +129,4 @@ These diagnostics describe language support, compilation, and execution boundari
 See the repository root README for installation and package selection guidance.
 
 
-[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.2/)

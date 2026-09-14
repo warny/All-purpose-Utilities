@@ -7,13 +7,13 @@ no reflection, no extra dependencies in your output.
 ## Install
 
 ```bash
-dotnet add package omy.Utils.Parser.Generators --version 2.0.0-rc.1
+dotnet add package omy.Utils.Parser.Generators --version 2.0.0-rc.2
 ```
 
 You also need the runtime library:
 
 ```bash
-dotnet add package omy.Utils.Parser --version 2.0.0-rc.1
+dotnet add package omy.Utils.Parser --version 2.0.0-rc.2
 ```
 
 ## Supported frameworks
@@ -56,8 +56,8 @@ Or with NuGet packages:
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="omy.Utils.Parser" Version="2.0.0-rc.1" />
-  <PackageReference Include="omy.Utils.Parser.Generators" Version="2.0.0-rc.1"
+  <PackageReference Include="omy.Utils.Parser" Version="2.0.0-rc.2" />
+  <PackageReference Include="omy.Utils.Parser.Generators" Version="2.0.0-rc.2"
                     OutputItemType="Analyzer"
                     ReferenceOutputAssembly="false" />
 </ItemGroup>
@@ -149,11 +149,11 @@ internal static partial class ExpGrammar
 }
 ```
 
-`BuildDefinition()` currently constructs and resolves a new definition. `Build()` calls `RuleResolver.Resolve(BuildDefinition())`, so it resolves that result a second time. This documents the emitted behavior as it exists in `2.0.0-rc.1`; whether the duplicate resolution should be removed is a separate functional concern. `Grammar` is the single initialized `CompiledGrammar` cached by the generated facade. `Parse(...)` is conservative. Supported generated hooks execute only through `ParseWithEmbeddedCode(...)` or a policy explicitly created and used by the caller.
+`BuildDefinition()` currently constructs and resolves a new definition. `Build()` calls `RuleResolver.Resolve(BuildDefinition())`, so it resolves that result a second time. This documents the emitted behavior as it exists in `2.0.0-rc.2`; whether the duplicate resolution should be removed is a separate functional concern. `Grammar` is the single initialized `CompiledGrammar` cached by the generated facade. `Parse(...)` is conservative. Supported generated hooks execute only through `ParseWithEmbeddedCode(...)` or a policy explicitly created and used by the caller.
 
 The cached static `Grammar` owns one mutable `LexerEngine` and one mutable `ParserEngine`. Concurrent calls to the generated static `Parse(...)` or `Tokenize(...)` facade are therefore not safe. Concurrent consumers must synchronize access or create a separate `CompiledGrammar` instance for each concurrent operation. Execution contexts and reusable generated policies are mutable as well and must not be shared concurrently.
 
-See the normative [`2.0.0-rc.1 production support contract`](../docs/parser/ProductionSupportContract.md) for the guaranteed generator subset. In particular, direct and transitive imports are emitted from the common composition plan: effective parser/lexer rules, fragments, modes, declared tokens, and channels execute from the generated facade. `tokenVocab` remains lexer-only, the entry owns the root/options/actions, and `APU0107` covers only uniquely resolved effective parser targets. Qualified alias calls remain unsupported.
+See the normative [`2.0.0-rc.2 production support contract`](../docs/parser/ProductionSupportContract.md) for the guaranteed generator subset. In particular, direct and transitive imports are emitted from the common composition plan: effective parser/lexer rules, fragments, modes, declared tokens, and channels execute from the generated facade. `tokenVocab` remains lexer-only, the entry owns the root/options/actions, and `APU0107` covers only uniquely resolved effective parser targets. Qualified alias calls remain unsupported.
 
 Until the release workflow publishes a versioned RC directory, use the current [`latest` API documentation](https://warny.github.io/All-purpose-Utilities/latest/). A version-specific link will be added when the corresponding documentation artifact is deployed.
 
@@ -595,9 +595,9 @@ The generator's `G4Grammar` model can now be adapted to the same Roslyn-free gra
 
 ## NuGet analyzer packaging strategy
 
-The `2.0.0-rc.1` analyzer package places `Utils.Parser.Generators.dll` and its narrowly required `Utils.Parser.Source`, `Utils.Parser.Diagnostics`, and `Utils.Parser.Antlr4.Common` support assemblies together under `analyzers/dotnet/cs`. `SuppressDependenciesWhenPacking` prevents those compiler-host dependencies from becoming runtime dependencies in consuming applications. The package also supplies `buildTransitive/omy.Utils.Parser.Generators.targets` for generated-file attachment and compiler-visible options. The product-train acceptance suite builds before `dotnet pack --no-build`, inspects this exact layout, and compiles real package-only consumers with both `EmitCompilerGeneratedFiles` and `UtilsParserAttachGeneratedFiles` enabled and disabled.
+The `2.0.0-rc.2` analyzer package places `Utils.Parser.Generators.dll` and its narrowly required `Utils.Parser.Source`, `Utils.Parser.Diagnostics`, and `Utils.Parser.Antlr4.Common` support assemblies together under `analyzers/dotnet/cs`. `SuppressDependenciesWhenPacking` prevents those compiler-host dependencies from becoming runtime dependencies in consuming applications. The package also supplies `buildTransitive/omy.Utils.Parser.Generators.targets` for generated-file attachment and compiler-visible options. The product-train acceptance suite builds before `dotnet pack --no-build`, inspects this exact layout, and compiles real package-only consumers with both `EmitCompilerGeneratedFiles` and `UtilsParserAttachGeneratedFiles` enabled and disabled.
 
-[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.2/)
 
 ### Package-only incremental acceptance
 

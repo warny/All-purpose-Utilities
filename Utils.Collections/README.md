@@ -111,13 +111,13 @@ list.CopyTo(dest, 0);
 - `omy.Utils` – core utilities including `LRUCache<K,V>`, `IndexedList<K,V>`, and `EnumerableEx` extensions.
 
 
-[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.2/)
 
 > **Provisional release, temporarily outside the product train.** `omy.Utils.Collections` is
 > listed in `eng/product-train-manifest.json`'s `exclusions` array (`"classification":
 > "provisional-package"`), not in the synchronized `packages` array: it only contains
 > `SkipList`/`SkipListDictionary` today and is not yet considered mature enough to join the
-> `omy.Utils` product train (currently `2.0.0-rc.1`) as a stable component. It is packed and
+> `omy.Utils` product train (currently `2.0.0-rc.2`) as a stable component. It is packed and
 > published independently, at its own literal `0.0.1`, and is never part of the train's canonical
 > package set, candidate manifest, publication order, or all-or-none publish preflight. The API
 > documentation above is still generated once for the whole repository under the product-train's

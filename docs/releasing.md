@@ -6,7 +6,7 @@ Use this guide to align GitHub releases with NuGet publishing for the `omy.Utils
 
 1. Update `ProductTrainVersion` in `Directory.Build.props` when preparing a release. Do not version individual `.csproj` files independently for any project listed in `eng/product-train-manifest.json`'s `packages` array. A small number of components are deliberately kept out of that array entirely and declare their own literal version instead - see [provisional versioning](releasing/ProvisionalVersioning.md).
 2. Add release notes to `CHANGELOG.md` under a new version heading.
-3. Create a Git tag matching the package version (for example `v2.0.0-rc.1`).
+3. Create a Git tag matching the package version (for example `v2.0.0-rc.2`).
 
 Every product-train package (every entry in `eng/product-train-manifest.json`'s `packages` array) uses `ProductTrainVersion` from `Directory.Build.props` as its version authority - there is no per-package exception inside that array. The release gate rejects project-local `PackageVersion`, assembly/file version overrides, undeclared hard-coded versions, divergent evaluated MSBuild properties, dependencies, assets, or artifacts.
 
@@ -34,7 +34,7 @@ for an explicit human approval in the GitHub UI before it runs, in addition to t
    - **On push to `release`/`releases/**`:** builds the solution, packs and runs packaged-consumer acceptance against the manifest-selected packages (`eng/test-packaged-product-train.ps1`), then checks NuGet package-ID *availability only* (`eng/publish-product-train.ps1 -PreflightPackageIdsOnly`) - it does not validate a specific candidate manifest and does not push anything. It also builds and validates the VSIX in a separate job, again without publishing it anywhere.
    - **On manual `workflow_dispatch`:** runs the `publish-to-nuget` job - the only place in this repository that actually pushes to NuGet.org. Inputs:
      - **`validation-run-id`** (required): the `release-quality-gates.yml` run ID whose validated `full-product-train-<sha>` candidate to publish.
-     - **`confirm-version`** (required): must exactly match the product-train version (`eng/product-train-manifest.json`'s `version`, currently `2.0.0-rc.1`) - a typo guard against an accidental dispatch.
+     - **`confirm-version`** (required): must exactly match the product-train version (`eng/product-train-manifest.json`'s `version`, currently `2.0.0-rc.2`) - a typo guard against an accidental dispatch.
      - **`resume-partial-publication`** (boolean, default `false`): see the resume explanation below.
 
      The job runs under the `Production` environment (triggering the required-reviewer approval), downloads and hash-verifies the exact validated candidate, exchanges the OIDC token for a temporary key via the [`NuGet/login`](https://github.com/NuGet/login) action, then calls `eng/publish-product-train.ps1 -Publish [-ResumePartialPublication] -ApiKey <temporary key>`. It always pushes each package's `.nupkg` (with `--no-symbols`) and then its `.snupkg` separately - never relying on `dotnet nuget push`'s automatic "also push the matching symbol package" behavior, since that would push every `.snupkg` twice (once automatically, once explicitly) and fail or conflict on the second push.
@@ -81,7 +81,7 @@ After a release completes:
 ```bash
 dotnet new console -n UtilsPackageCheck
 cd UtilsPackageCheck
-dotnet add package omy.Utils --version 2.0.0-rc.1
+dotnet add package omy.Utils --version 2.0.0-rc.2
 ```
 
 - Review the package page on nuget.org to confirm the README and metadata render correctly.

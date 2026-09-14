@@ -1,0 +1,133 @@
+{
+  "version": "2.0.0",
+  "policy": "Only exact ApiCompat diagnostics declared below are accepted; new and stale entries fail validation. This file covers only changes introduced AFTER the published 2.0.0-rc.1 baseline (candidate 2.0.0-rc.2 and later 2.0.0 prereleases, until the next baseline advance). It intentionally does NOT replay the historical 1.x/0.x -> 2.0.0-rc.1 major-version breaks recorded in eng/api-breaking-changes/2.0.0.json - that file remains the historical migration record for the original major-version transition.",
+  "candidateVersion": "2.0.0-rc.2",
+  "baselineVersion": "2.0.0-rc.1",
+  "packages": [
+    {
+      "packageId": "omy.Utils",
+      "baselineVersion": "2.0.0-rc.1",
+      "acceptedDiagnostics": []
+    },
+    {
+      "packageId": "omy.Utils.IO",
+      "baselineVersion": "2.0.0-rc.1",
+      "acceptedDiagnostics": []
+    },
+    {
+      "packageId": "omy.Utils.XML",
+      "baselineVersion": "2.0.0-rc.1",
+      "acceptedDiagnostics": []
+    },
+    {
+      "packageId": "omy.Utils.Net",
+      "baselineVersion": "2.0.0-rc.1",
+      "acceptedDiagnostics": []
+    },
+    {
+      "packageId": "omy.Utils.Data",
+      "baselineVersion": "2.0.0-rc.1",
+      "acceptedDiagnostics": []
+    },
+    {
+      "packageId": "omy.Utils.Fonts",
+      "baselineVersion": "2.0.0-rc.1",
+      "acceptedDiagnostics": []
+    },
+    {
+      "packageId": "omy.Utils.Imaging",
+      "baselineVersion": "2.0.0-rc.1",
+      "acceptedDiagnostics": []
+    },
+    {
+      "packageId": "omy.Utils.Geography",
+      "baselineVersion": "2.0.0-rc.1",
+      "acceptedDiagnostics": []
+    },
+    {
+      "packageId": "omy.Utils.Reflection",
+      "baselineVersion": "2.0.0-rc.1",
+      "acceptedDiagnostics": []
+    },
+    {
+      "packageId": "omy.Utils.Mathematics",
+      "baselineVersion": "2.0.0-rc.1",
+      "acceptedDiagnostics": []
+    },
+    {
+      "packageId": "omy.Utils.OData",
+      "baselineVersion": "2.0.0-rc.1",
+      "acceptedDiagnostics": []
+    },
+    {
+      "packageId": "omy.Utils.NumberToString",
+      "baselineVersion": "2.0.0-rc.1",
+      "acceptedDiagnostics": []
+    },
+    {
+      "packageId": "omy.Utils.VirtualMachine",
+      "baselineVersion": "2.0.0-rc.1",
+      "acceptedDiagnostics": []
+    },
+    {
+      "packageId": "omy.Utils.DependencyInjection",
+      "baselineVersion": "2.0.0-rc.1",
+      "acceptedDiagnostics": []
+    },
+    {
+      "packageId": "omy.Utils.OData.Generators",
+      "baselineVersion": "2.0.0-rc.1",
+      "acceptedDiagnostics": []
+    },
+    {
+      "packageId": "omy.Utils.IO.Serialization.Generators",
+      "baselineVersion": "2.0.0-rc.1",
+      "acceptedDiagnostics": []
+    },
+    {
+      "packageId": "omy.Utils.DependencyInjection.Generators",
+      "baselineVersion": "2.0.0-rc.1",
+      "acceptedDiagnostics": []
+    },
+    {
+      "packageId": "omy.Utils.Parser.Source",
+      "baselineVersion": "2.0.0-rc.1",
+      "acceptedDiagnostics": []
+    },
+    {
+      "packageId": "omy.Utils.Parser.Diagnostics",
+      "baselineVersion": "2.0.0-rc.1",
+      "acceptedDiagnostics": []
+    },
+    {
+      "packageId": "omy.Utils.Parser.Antlr4.Common",
+      "baselineVersion": "2.0.0-rc.1",
+      "acceptedDiagnostics": []
+    },
+    {
+      "packageId": "omy.Utils.Parser",
+      "baselineVersion": "2.0.0-rc.1",
+      "acceptedDiagnostics": []
+    },
+    {
+      "packageId": "omy.Utils.Parser.Expressions",
+      "baselineVersion": "2.0.0-rc.1",
+      "acceptedDiagnostics": []
+    },
+    {
+      "packageId": "omy.Utils.Expressions.CSyntax",
+      "baselineVersion": "2.0.0-rc.1",
+      "acceptedDiagnostics": []
+    },
+    {
+      "packageId": "omy.Utils.Expressions.VBSyntax",
+      "baselineVersion": "2.0.0-rc.1",
+      "acceptedDiagnostics": []
+    },
+    {
+      "packageId": "omy.Utils.Parser.Generators",
+      "baselineVersion": "2.0.0-rc.1",
+      "acceptedDiagnostics": []
+    }
+  ]
+}
