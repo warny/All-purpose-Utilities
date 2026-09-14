@@ -26,6 +26,24 @@ public class NumberToStringCompositeFinalizationTests
         AssertSingleFinalization(converter => converter.ConvertFraction(1, 2));
     }
 
+    /// <summary>Verifies rational conversion composes complete multi-group numerator and denominator cardinals.</summary>
+    [TestMethod]
+    public void Convert_ComplexRational_ComposesBothCompleteCardinals()
+    {
+        var converter = new NumberToStringConverter(new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        {
+            Separator = "|",
+            FractionSeparator = "CONNECTOR",
+            LanguageSpecifics = null,
+        });
+        string numerator = converter.Convert(117);
+        string denominator = converter.Convert(1013);
+
+        Assert.AreEqual(
+            $"{numerator}|CONNECTOR|{denominator}",
+            converter.Convert(new Number(117, 1013)));
+    }
+
     /// <summary>Verifies currencies with and without subunits are finalized only after assembly.</summary>
     [TestMethod]
     public void ConvertCurrency_FinalizesCompletePhraseOnce()

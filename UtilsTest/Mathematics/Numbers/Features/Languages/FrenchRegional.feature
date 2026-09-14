@@ -334,7 +334,12 @@ Scenario: Fraction connector wording
     When I convert the fraction 3/2 through both public fraction APIs
     Then both fraction results are "trois sur deux"
 
-Scenario: Swiss French rational wording does not use a named fraction
+Scenario Outline: Swiss French rational wording
     Given I use the "FR-ch" number converter
-    When I convert the rational number 1/10
-    Then the result is "un sur dix"
+    When I convert the rational number <fraction>
+    Then the result is "<expected>"
+
+Examples:
+    | fraction | expected       |
+    | 3/2      | trois sur deux |
+    | 1/10     | un sur dix     |
