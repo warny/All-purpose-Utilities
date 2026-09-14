@@ -9,7 +9,7 @@
 | Expressions -> Parser, Utils | Two explicit NuGet dependencies | Expression policies implement parser interfaces and use Utils expression contracts | `net8.0` |
 | Generators -> Diagnostics, Antlr4.Common (Diagnostics -> Source) | Embedded analyzer-host DLLs, suppressed from runtime dependency groups | Not application runtime API | Generator and support DLLs `netstandard2.0` |
 
-Within the parser-related subgraph, dependencies place `Utils`, `Source`, and `Antlr4.Common` before `Diagnostics` and `Parser`, followed by `Generators` and `Expressions`; the global graph derives the complete 24-package order. All seven packages use the single documented `2.0.0-rc.1` product-train version. `omy.Utils` is intentionally a major-version candidate relative to its published 1.2.1 API; the parser packages use their first candidate baseline.
+Within the parser-related subgraph, dependencies place `Utils`, `Source`, and `Antlr4.Common` before `Diagnostics` and `Parser`, followed by `Generators` and `Expressions`; the global graph derives the complete 24-package order. All seven packages use the single documented `2.0.0-rc.2` product-train version. Every package, including `omy.Utils` and the parser packages, is now compared against the published `2.0.0-rc.1` API baseline rather than legacy 1.x/0.x packages - see [`eng/api-breaking-changes/2.0.0-rc.2.json`](../../eng/api-breaking-changes/2.0.0-rc.2.json).
 
 ## Generator findings
 

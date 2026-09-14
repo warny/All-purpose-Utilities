@@ -4,7 +4,7 @@ This index consolidates the parser documentation set and gives a short summary o
 
 ## Core contracts and boundaries
 
-- [`ProductionSupportContract.md`](./ProductionSupportContract.md): Normative `2.0.0-rc.1` product-support contract and first entry point for deciding what is guaranteed, including the explicit non-thread-safe generated static facade boundary; unlike the technical compatibility matrices, it defines the RC commitment rather than only describing implementation state.
+- [`ProductionSupportContract.md`](./ProductionSupportContract.md): Normative `2.0.0-rc.2` product-support contract and first entry point for deciding what is guaranteed, including the explicit non-thread-safe generated static facade boundary; unlike the technical compatibility matrices, it defines the RC commitment rather than only describing implementation state.
 - [`RuntimeStateOwnership.md`](./RuntimeStateOwnership.md): Canonical authority map for runtime responsibilities (parse decisions, diagnostics, parse-tree ownership, scheduler/registry boundaries).
 - [`ParserMetadataAndRuntimeLimitations.md`](./ParserMetadataAndRuntimeLimitations.md): Limitations-first reference that clarifies metadata-only semantics, unsupported runtime semantics, and activation preconditions.
 - [`RuntimeObservationAndExportContract.md`](./RuntimeObservationAndExportContract.md): Defines what runtime observations are allowed to emit and how exporters must remain passive and non-authoritative.
@@ -59,7 +59,7 @@ The packaging audit additionally records package-only runtime/generator import s
 
 ## Synchronized product-train release gate
 
-`PackagingAudit.md` now records the single `omy` 2.0.0-rc.1 version authority, strict topological order, the published `omy.Utils` 1.2.1 API comparison boundary, and first candidate baselines for parser packages.
+`PackagingAudit.md` now records the single `omy` 2.0.0-rc.2 version authority, strict topological order, and the published `omy.Utils` 2.0.0-rc.1 API comparison boundary shared by every manifested package, including the parser packages.
 
 ## Global product-train integration
 

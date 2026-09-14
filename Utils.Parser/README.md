@@ -6,7 +6,7 @@ at runtime (without mandatory code generation).
 ## Install
 
 ```bash
-dotnet add package omy.Utils.Parser --version 2.0.0-rc.1
+dotnet add package omy.Utils.Parser --version 2.0.0-rc.2
 ```
 
 > For compile-time grammar compilation (zero runtime `.g4` parsing), see
@@ -41,7 +41,7 @@ If a grammar relies on one of these areas, validate it with targeted tests befor
 
 ### Detailed compatibility reference
 
-Start with the normative [`2.0.0-rc.1 production support contract`](../docs/parser/ProductionSupportContract.md) to determine what the RC guarantees. For a detailed, implementation-aligned inventory (including diagnostics mapping and architectural limits), see [`docs/parser/Antlr4CompatibilityMatrix.md`](../docs/parser/Antlr4CompatibilityMatrix.md); that technical matrix does not expand the product contract.
+Start with the normative [`2.0.0-rc.2 production support contract`](../docs/parser/ProductionSupportContract.md) to determine what the RC guarantees. For a detailed, implementation-aligned inventory (including diagnostics mapping and architectural limits), see [`docs/parser/Antlr4CompatibilityMatrix.md`](../docs/parser/Antlr4CompatibilityMatrix.md); that technical matrix does not expand the product contract.
 
 Until the release workflow publishes a versioned RC directory, use the current [`latest` API documentation](https://warny.github.io/All-purpose-Utilities/latest/). A version-specific link will be added when the corresponding documentation artifact is deployed.
 
@@ -623,11 +623,11 @@ Entry declarations mask imported declarations. Distinct imported declarations wi
 
 `tokenVocab` contributes lexer rules and modes only unless the same grammar is also reached by a full import. Every graph edge preserves both its originally declared dependency kind and the effective kind after lexer-only visibility propagation, including transitive full imports below a `tokenVocab` edge. The plan records separate deterministic lexer-only and full paths, so each effective rule's provenance actually establishes its reported visibility; rules reachable through both paths use the first full path. The entry grammar alone owns the root, options (including `language`, `superClass`, `caseInsensitive`, and custom options), and grammar actions. Imported options/actions are retained only through source provenance and are not silently merged. `ParserDefinition.Imports` remains descriptive; execution requires the effective merged definition returned by the project compiler.
 
-## `2.0.0-rc.1` package train
+## `2.0.0-rc.2` package train
 
-Direct consumers normally reference `omy.Utils.Parser`; generator users additionally reference `omy.Utils.Parser.Generators` as an analyzer, and expression-policy users reference `omy.Utils.Parser.Expressions`. `omy.Utils.Parser.Source`, `omy.Utils.Parser.Diagnostics`, and `omy.Utils.Parser.Antlr4.Common` are primarily shared infrastructure dependencies. All seven packages use the synchronized `2.0.0-rc.1` product-train version. Runtime dependencies are expressed as NuGet dependencies, while generator support assemblies are embedded beside the Roslyn analyzer. Candidate archives are selected by `eng/product-train-manifest.json` and validated through an isolated local feed before publication. Publishing the train cannot be transactional and must follow dependency order.
+Direct consumers normally reference `omy.Utils.Parser`; generator users additionally reference `omy.Utils.Parser.Generators` as an analyzer, and expression-policy users reference `omy.Utils.Parser.Expressions`. `omy.Utils.Parser.Source`, `omy.Utils.Parser.Diagnostics`, and `omy.Utils.Parser.Antlr4.Common` are primarily shared infrastructure dependencies. All seven packages use the synchronized `2.0.0-rc.2` product-train version. Runtime dependencies are expressed as NuGet dependencies, while generator support assemblies are embedded beside the Roslyn analyzer. Candidate archives are selected by `eng/product-train-manifest.json` and validated through an isolated local feed before publication. Publishing the train cannot be transactional and must follow dependency order.
 
-[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.2/)
 
 ### Packaged composition acceptance
 

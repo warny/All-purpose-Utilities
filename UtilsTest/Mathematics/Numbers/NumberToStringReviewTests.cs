@@ -17,17 +17,19 @@ public class NumberToStringReviewTests
         var generated = new NumberToStringConverter(new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
         {
             Multiplicatives = new Dictionary<int, string>(),
-            MultiplicativeSuffix = " times",
+            MultiplicativeSuffix = " MULTI",
+            Minus = "SIGN *",
+            Zero = "ZERO",
         });
         var named = new NumberToStringConverter(new NumberToStringConverterOptions(generated)
         {
-            Multiplicatives = new Dictionary<int, string> { [0] = "never" },
+            Multiplicatives = new Dictionary<int, string> { [0] = "NEVER" },
         });
 
-        Assert.AreEqual("zero times", generated.ConvertMultiplicative(0));
-        Assert.AreEqual("never", named.ConvertMultiplicative(0));
-        StringAssert.StartsWith(generated.ConvertMultiplicative(-2), "minus ");
-        StringAssert.StartsWith(generated.ConvertMultiplicative(int.MinValue), "minus ");
+        Assert.AreEqual("ZERO MULTI", generated.ConvertMultiplicative(0));
+        Assert.AreEqual("NEVER", named.ConvertMultiplicative(0));
+        StringAssert.StartsWith(generated.ConvertMultiplicative(-2), "SIGN ");
+        StringAssert.StartsWith(generated.ConvertMultiplicative(int.MinValue), "SIGN ");
     }
 
     /// <summary>Verifies that date values resembling tokens are emitted literally.</summary>
@@ -40,7 +42,7 @@ public class NumberToStringReviewTests
             DateFirstDay = "{year}",
         });
 
-        Assert.AreEqual("{year}/twenty twenty-six", converter.Convert(new DateOnly(2026, 1, 1)));
+        Assert.AreEqual($"{{year}}/{converter.ConvertYear(2026)}", converter.Convert(new DateOnly(2026, 1, 1)));
     }
 
     /// <summary>Verifies that malformed and unknown date tokens fail during construction.</summary>

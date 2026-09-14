@@ -207,4 +207,4 @@ bmp.Save("blurred.png");
 - `omy.Utils.Mathematics` – numerical helpers leveraged by drawing routines.
 
 
-[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.2/)

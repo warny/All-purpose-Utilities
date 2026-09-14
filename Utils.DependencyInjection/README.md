@@ -225,4 +225,4 @@ foreach (CheckError<string> e in errors)
 - `omy.Utils` – shared helpers consumed by the DI components.
 
 
-[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.2/)

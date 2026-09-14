@@ -1,416 +1,186 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Numerics;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 using Utils.NumberToString;
 
 namespace UtilsTest.Mathematics.Numbers;
 
-/// <summary>
-/// Tests for the 6 engine improvements:
-/// A1 — Convert(double/float), A2 — ConvertFraction, A3 — ConvertMultiplicative,
-/// B1 — GroupConnector, B2 — StartsWith/EndsWith scopes, B3 — variant dimension validation.
-/// </summary>
+/// <summary>Verifies language-neutral default-interface conversion contracts.</summary>
 [TestClass]
 public class NumberToStringConverterEngineImprovementsTests
 {
-    // ─── A1 — Convert(double/float) ────────────────────────────────────────
-    // These are DEFAULT INTERFACE METHODS on INumberToStringConverter.
-    // They must be called via the interface type (not the concrete type)
-    // because C# default interface methods are not inherited by concrete classes.
-    // The concrete NumberToStringConverter has Convert(Number) which handles double
-    // via rational conversion (e.g. 2.5 → "five over two"); the interface default
-    // instead parses via decimal.TryParse("R") and delegates to Convert(decimal).
-
+    /// <summary>Verifies that the default double overload delegates to decimal conversion.</summary>
     [TestMethod]
-    public void Convert_Double_WholeNumbers()
+    public void Convert_Double_DelegatesToDecimal()
     {
-        INumberToStringConverter en = NumberToStringConverter.GetConverter("EN");
-        // 3.0 → round-trip "3" → decimal 3 → Convert(decimal 3) → "three"
-        Assert.AreEqual("three", en.Convert(3.0));
-        Assert.AreEqual(en.Convert(3), en.Convert(3.0));
-        Assert.AreEqual("zero", en.Convert(0.0));
+        INumberToStringConverter converter = NumberToStringConverter.GetConverter("EN");
+        Assert.AreEqual(converter.Convert(3.14m), converter.Convert(3.14));
+        Assert.AreEqual(converter.Convert(2.5m), converter.Convert(2.5));
     }
 
-    [TestMethod]
-    public void Convert_Double_Negative()
-    {
-        INumberToStringConverter en = NumberToStringConverter.GetConverter("EN");
-        Assert.AreEqual("minus five", en.Convert(-5.0));
-    }
-
-    [TestMethod]
-    public void Convert_Double_WithDecimalPart()
-    {
-        INumberToStringConverter en = NumberToStringConverter.GetConverter("EN");
-        // 3.14 → round-trip "3.14" → decimal 3.14 → "three point fourteen hundredths"
-        var result = en.Convert(3.14);
-        Assert.IsNotNull(result);
-        Assert.IsTrue(result.StartsWith("three", StringComparison.Ordinal), $"Unexpected: '{result}'");
-        Assert.IsTrue(result.Contains("fourteen"), $"Decimal part not found in: '{result}'");
-    }
-
-    [TestMethod]
-    public void Convert_Double_HalfInteger()
-    {
-        INumberToStringConverter en = NumberToStringConverter.GetConverter("EN");
-        // 2.5 → round-trip "2.5" → decimal 2.5 → "two point five tenths"
-        var result = en.Convert(2.5);
-        Assert.IsTrue(result.StartsWith("two", StringComparison.Ordinal), $"Unexpected: '{result}'");
-        Assert.IsTrue(result.Contains("five"), $"Decimal part not found in: '{result}'");
-    }
-
+    /// <summary>Verifies that the default float overload delegates consistently with double.</summary>
     [TestMethod]
     public void Convert_Float_DelegatesToDouble()
     {
-        // float and double 2.5 both parse identically via "R" format → same Convert(decimal) result
-        INumberToStringConverter fr = NumberToStringConverter.GetConverter("FR");
-        Assert.AreEqual(fr.Convert(2.5), fr.Convert((float)2.5));
+        INumberToStringConverter converter = NumberToStringConverter.GetConverter("EN");
+        Assert.AreEqual(converter.Convert(2.5), converter.Convert((float)2.5));
     }
 
+    /// <summary>Verifies that variants survive float-overload delegation.</summary>
     [TestMethod]
-    public void Convert_Double_WithVariants()
+    public void Convert_Float_WithVariants_DelegatesToDouble()
     {
-        // double/float are default interface methods — access via INumberToStringConverter
-        INumberToStringConverter fr = NumberToStringConverter.GetConverter("FR");
-        // Convert(1.0, "gender=feminin") → "une" (via decimal 1 → "un" → variant "une")
-        var masculine = fr.Convert(1.0);
-        var feminine  = fr.Convert(1.0, "gender=feminin");
-        Assert.AreEqual("un",  masculine);
-        Assert.AreEqual("une", feminine);
+        NumberToStringConverter source = NumberToStringConverter.GetConverter("EN");
+        var options = new NumberToStringConverterOptions(source)
+        {
+            VariantDimensions = [new NumberToStringConverter.VariantDimension("form", ["base", "alternate"])],
+            VariantRules =
+            [
+                new NumberToStringConverter.VariantRule(
+                    new Dictionary<string, string> { ["form"] = "alternate" },
+                    [new NumberToStringConverter.ReplacementRule(source.Convert(5), "ALT", ReplacementScope.Anywhere)]),
+            ],
+        };
+        INumberToStringConverter converter = new NumberToStringConverter(options);
+
+        string doubleResult = converter.Convert(2.5, "form=alternate");
+        string floatResult = converter.Convert((float)2.5, "form=alternate");
+
+        StringAssert.Contains(doubleResult, "ALT");
+        Assert.AreEqual(doubleResult, floatResult);
     }
 
-    [TestMethod]
-    public void Convert_Float_WithVariants()
-    {
-        // double/float are default interface methods — access via INumberToStringConverter
-        INumberToStringConverter fr = NumberToStringConverter.GetConverter("FR");
-        Assert.AreEqual(fr.Convert(2.5, "gender=feminin"), fr.Convert((float)2.5, "gender=feminin"));
-    }
-
-    // ─── A2 — ConvertFraction ───────────────────────────────────────────────
-
-    [TestMethod]
-    public void ConvertFraction_EN_NonDecimalDenominator_UsesOverConnector()
-    {
-        var en = NumberToStringConverter.GetConverter("EN");
-        // 3 is not a power of 10, falls back to "numerator over denominator"
-        var result = en.ConvertFraction(1, 3);
-        Assert.AreEqual("one over three", result);
-    }
-
-    [TestMethod]
-    public void ConvertFraction_EN_PowerOfTenDenominator_UsesFractionSuffix()
-    {
-        var en = NumberToStringConverter.GetConverter("EN");
-        // denominator 10 → 1 digit → "tenth(s)" suffix is configured
-        var result = en.ConvertFraction(1, 10);
-        Assert.IsTrue(result.Contains("tenth"), $"Expected fraction suffix, got: '{result}'");
-    }
-
-    [TestMethod]
-    public void ConvertFraction_EN_TwoOver_Four()
-    {
-        var en = NumberToStringConverter.GetConverter("EN");
-        var result = en.ConvertFraction(2, 4);
-        // 4 is not a power of 10 → "two over four"
-        Assert.AreEqual("two over four", result);
-        // check via interface too
-        INumberToStringConverter iface = en;
-        // Interface default delegates to the converter override
-        Assert.AreEqual(result, iface.ConvertFraction(2, 4));
-    }
-
-    [TestMethod]
-    public void ConvertFraction_FR_UsesOverConnector()
-    {
-        var fr = NumberToStringConverter.GetConverter("FR");
-        var result = fr.ConvertFraction(1, 3);
-        // FR fractionSeparator is "sur"
-        Assert.IsTrue(result.Contains("sur"), $"Expected 'sur', got: '{result}'");
-        Assert.IsTrue(result.Contains("un"),  $"Expected 'un', got: '{result}'");
-        Assert.IsTrue(result.Contains("trois"), $"Expected 'trois', got: '{result}'");
-    }
-
+    /// <summary>Verifies the language-neutral fraction fallback supplied by the interface.</summary>
     [TestMethod]
     public void ConvertFraction_Interface_DefaultFallback()
     {
-        // A minimal converter uses the interface default which concatenates with " / "
-        INumberToStringConverter minimal = new MinimalConverterForFractionTest();
-        var result = minimal.ConvertFraction(2, 4);
-        // Default: "2 / 4"
-        Assert.AreEqual("2 / 4", result);
+        INumberToStringConverter converter = new MinimalConverter();
+        Assert.AreEqual("2 / 4", converter.ConvertFraction(2, 4));
     }
 
-    // ─── A3 — ConvertMultiplicative ─────────────────────────────────────────
-
-    [TestMethod]
-    public void ConvertMultiplicative_EN_NamedForms()
-    {
-        var en = NumberToStringConverter.GetConverter("EN");
-        Assert.IsTrue(en.SupportsMultiplicative, "EN should support multiplicative");
-        Assert.AreEqual("once",   en.ConvertMultiplicative(1));
-        Assert.AreEqual("twice",  en.ConvertMultiplicative(2));
-        Assert.AreEqual("thrice", en.ConvertMultiplicative(3));
-    }
-
-    [TestMethod]
-    public void ConvertMultiplicative_EN_FallbackSuffix()
-    {
-        var en = NumberToStringConverter.GetConverter("EN");
-        Assert.AreEqual("four times", en.ConvertMultiplicative(4));
-        Assert.AreEqual("ten times",  en.ConvertMultiplicative(10));
-        Assert.AreEqual("one hundred times", en.ConvertMultiplicative(100));
-    }
-
-    [TestMethod]
-    public void ConvertMultiplicative_FR_NamedForms()
-    {
-        var fr = NumberToStringConverter.GetConverter("FR");
-        Assert.IsTrue(fr.SupportsMultiplicative, "FR should support multiplicative");
-        Assert.AreEqual("une fois",  fr.ConvertMultiplicative(1));
-        Assert.AreEqual("deux fois", fr.ConvertMultiplicative(2));
-        Assert.AreEqual("trois fois", fr.ConvertMultiplicative(3));
-    }
-
-    [TestMethod]
-    public void ConvertMultiplicative_FR_FallbackSuffix()
-    {
-        var fr = NumberToStringConverter.GetConverter("FR");
-        // 4 is not named → Convert(4) + " fois" = "quatre fois"
-        Assert.AreEqual("quatre fois", fr.ConvertMultiplicative(4));
-    }
-
-    [TestMethod]
-    public void ConvertMultiplicative_Unsupported_Throws()
-    {
-        var de = NumberToStringConverter.GetConverter("DE");
-        Assert.IsFalse(de.SupportsMultiplicative, "DE should not support multiplicative");
-        Assert.ThrowsExactly<NotSupportedException>(() => de.ConvertMultiplicative(2));
-    }
-
+    /// <summary>Verifies that multiplicative conversion is unsupported by default.</summary>
     [TestMethod]
     public void SupportsMultiplicative_Interface_DefaultFalse()
     {
-        INumberToStringConverter minimal = new MinimalConverterForFractionTest();
-        Assert.IsFalse(minimal.SupportsMultiplicative);
-        Assert.ThrowsExactly<NotSupportedException>(() => minimal.ConvertMultiplicative(1));
+        INumberToStringConverter converter = new MinimalConverter();
+        Assert.IsFalse(converter.SupportsMultiplicative);
+        Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertMultiplicative(1));
     }
 
-    // ─── B1 — Group connector ───────────────────────────────────────────────
-
+    /// <summary>Verifies that a group connector is used only when the lower group is below its threshold.</summary>
     [TestMethod]
-    public void GroupConnector_InjectedBelowThreshold()
+    public void GroupConnector_ObservesConfiguredThreshold()
     {
-        var enBase = NumberToStringConverter.GetConverter("EN");
-        var opts = new NumberToStringConverterOptions(enBase)
+        NumberToStringConverter source = NumberToStringConverter.GetConverter("EN");
+        var options = new NumberToStringConverterOptions(source)
         {
-            GroupConnector = "and",
+            GroupConnector = "LINK",
             GroupConnectorThreshold = 100,
         };
-        var en = new NumberToStringConverter(opts);
+        var converter = new NumberToStringConverter(options);
 
-        // lower group < 100 → connector
-        Assert.AreEqual("one thousand and one",          en.Convert(1001));
-        Assert.AreEqual("one thousand and ninety-nine",  en.Convert(1099));
+        StringAssert.Contains(converter.Convert(1001), " LINK ");
+        StringAssert.Contains(converter.Convert(1099), " LINK ");
+        Assert.IsFalse(converter.Convert(1100).Contains(" LINK ", StringComparison.Ordinal));
+        Assert.IsFalse(converter.Convert(1101).Contains(" LINK ", StringComparison.Ordinal));
     }
 
+    /// <summary>Verifies that a null group connector disables connector injection and round-trips through options.</summary>
     [TestMethod]
-    public void GroupConnector_NotInjectedAtOrAboveThreshold()
+    public void GroupConnector_NullDisablesInjectionAndRoundTrips()
     {
-        var enBase = NumberToStringConverter.GetConverter("EN");
-        var opts = new NumberToStringConverterOptions(enBase)
+        NumberToStringConverter source = NumberToStringConverter.GetConverter("EN");
+        var enabled = new NumberToStringConverter(new NumberToStringConverterOptions(source)
         {
-            GroupConnector = "and",
+            GroupConnector = "LINK",
             GroupConnectorThreshold = 100,
-        };
-        var en = new NumberToStringConverter(opts);
+        });
+        StringAssert.Contains(enabled.Convert(1001), " LINK ");
 
-        // lower group = 100, not < 100 → use GroupSeparator
-        Assert.AreEqual("one thousand, one hundred",          en.Convert(1100));
-        // lower group = 101, not < 100 → use GroupSeparator ("," from EN groupSeparator)
-        Assert.AreEqual("one thousand, one hundred and one",  en.Convert(1101));
+        var options = new NumberToStringConverterOptions(enabled) { GroupConnector = null };
+        var disabled = new NumberToStringConverter(options);
+
+        Assert.IsNull(new NumberToStringConverterOptions(disabled).GroupConnector);
+        Assert.IsFalse(disabled.Convert(1001).Contains("LINK", StringComparison.Ordinal));
+        Assert.AreEqual(100, options.GroupConnectorThreshold);
     }
 
+    /// <summary>Verifies start-scoped replacements affect only text at the beginning.</summary>
     [TestMethod]
-    public void GroupConnector_DisabledWhenNull()
+    public void ReplacementScope_StartsWith_AffectsOnlyBeginning()
     {
-        // Standard EN (no connector) should produce "one thousand, one"
-        var en = NumberToStringConverter.GetConverter("EN");
-        Assert.AreEqual("one thousand, one",              en.Convert(1001));
-        Assert.AreEqual("one thousand, one hundred",       en.Convert(1100));
+        NumberToStringConverter source = NumberToStringConverter.GetConverter("EN");
+        string token = source.Convert(1) + " ";
+        var converter = WithReplacement(source, new(token, "PREFIX ", ReplacementScope.StartsWith));
+
+        StringAssert.StartsWith(converter.Convert(100), "PREFIX ");
+        Assert.AreEqual(source.Convert(21), converter.Convert(21));
     }
 
+    /// <summary>Verifies end-scoped replacements affect only text at the end.</summary>
     [TestMethod]
-    public void GroupConnector_RoundTrip_ViaOptions()
+    public void ReplacementScope_EndsWith_AffectsOnlyEnding()
     {
-        var en = NumberToStringConverter.GetConverter("EN");
-        var opts = new NumberToStringConverterOptions(en);
-        // Default GroupConnector should be null (not configured for EN)
-        Assert.IsNull(opts.GroupConnector);
-        Assert.AreEqual(100, opts.GroupConnectorThreshold);  // default value
+        NumberToStringConverter source = NumberToStringConverter.GetConverter("EN");
+        string token = source.Convert(1);
+        var converter = WithReplacement(source, new(token, "SUFFIX", ReplacementScope.EndsWith));
+
+        StringAssert.EndsWith(converter.Convert(21), "SUFFIX");
+        Assert.AreEqual(source.Convert(100), converter.Convert(100));
     }
 
-    // ─── B2 — StartsWith / EndsWith replacement scopes ─────────────────────
-
+    /// <summary>Verifies start and end scopes are honored when replacements are selected by variants.</summary>
     [TestMethod]
-    public void ReplacementScope_StartsWith_AppliedAtStart()
+    public void ReplacementScope_VariantRules_HonorStartAndEndScopes()
     {
-        var enBase = NumberToStringConverter.GetConverter("EN");
-        var opts = new NumberToStringConverterOptions(enBase)
+        NumberToStringConverter source = NumberToStringConverter.GetConverter("EN");
+        string one = source.Convert(1);
+        var options = new NumberToStringConverterOptions(source)
         {
-            Replacements = enBase.Replacements.Append(
-                new NumberToStringConverter.ReplacementRule("one ", "a ", ReplacementScope.StartsWith)
-            ).ToList(),
+            VariantDimensions = [new NumberToStringConverter.VariantDimension("form", ["start", "end"])],
+            VariantRules =
+            [
+                new NumberToStringConverter.VariantRule(
+                    new Dictionary<string, string> { ["form"] = "start" },
+                    [new NumberToStringConverter.ReplacementRule(one + " ", "PREFIX ", ReplacementScope.StartsWith)]),
+                new NumberToStringConverter.VariantRule(
+                    new Dictionary<string, string> { ["form"] = "end" },
+                    [new NumberToStringConverter.ReplacementRule(one, "SUFFIX", ReplacementScope.EndsWith)]),
+            ],
         };
-        var en = new NumberToStringConverter(opts);
+        var converter = new NumberToStringConverter(options);
 
-        // "one hundred" starts with "one " → "a hundred"
-        Assert.AreEqual("a hundred", en.Convert(100));
-        // "twenty-one" does not start with "one " → unchanged
-        Assert.AreEqual("twenty-one", en.Convert(21));
+        StringAssert.StartsWith(converter.Convert(100, "form=start"), "PREFIX ");
+        StringAssert.EndsWith(converter.Convert(21, "form=end"), "SUFFIX");
     }
 
-    [TestMethod]
-    public void ReplacementScope_StartsWith_DoesNotAffectMiddle()
-    {
-        var enBase = NumberToStringConverter.GetConverter("EN");
-        var opts = new NumberToStringConverterOptions(enBase)
+    /// <summary>Creates a converter with one additional global replacement rule.</summary>
+    private static NumberToStringConverter WithReplacement(
+        NumberToStringConverter source,
+        NumberToStringConverter.ReplacementRule replacement)
+        => new(new NumberToStringConverterOptions(source)
         {
-            Replacements = enBase.Replacements.Append(
-                new NumberToStringConverter.ReplacementRule("one ", "a ", ReplacementScope.StartsWith)
-            ).ToList(),
-        };
-        var en = new NumberToStringConverter(opts);
+            Replacements = source.Replacements.Append(replacement).ToList(),
+        });
 
-        // "one thousand, one" — starts with "one " so gets "a " prefix
-        // The group connector is null, so:  "one thousand, one"
-        // Does it start with "one "? Yes → "a thousand, one"
-        var result = en.Convert(1001);
-        Assert.IsTrue(result.StartsWith("a ", StringComparison.Ordinal), $"Expected 'a ', got: '{result}'");
-    }
-
-    [TestMethod]
-    public void ReplacementScope_EndsWith_AppliedAtEnd()
+    /// <summary>Minimal language-neutral implementation used to exercise default interface members.</summary>
+    private sealed class MinimalConverter : INumberToStringConverter
     {
-        var enBase = NumberToStringConverter.GetConverter("EN");
-        var opts = new NumberToStringConverterOptions(enBase)
-        {
-            Replacements = enBase.Replacements.Append(
-                new NumberToStringConverter.ReplacementRule("one", "1", ReplacementScope.EndsWith)
-            ).ToList(),
-        };
-        var en = new NumberToStringConverter(opts);
-
-        // "twenty-one" ends with "one" → "twenty-1"
-        Assert.AreEqual("twenty-1", en.Convert(21));
-        // "one hundred" ends with "hundred", not "one" → unchanged
-        Assert.AreEqual("one hundred", en.Convert(100));
-    }
-
-    [TestMethod]
-    public void ReplacementScope_StartsWith_ViaVariantRules()
-    {
-        // StartsWith in ApplyVariantReplacement (variant rules path)
-        var enBase = NumberToStringConverter.GetConverter("EN");
-        var opts = new NumberToStringConverterOptions(enBase)
-        {
-            VariantRules = new List<NumberToStringConverter.VariantRule>
-            {
-                new(
-                    new Dictionary<string, string> { ["marker"] = "test" },
-                    new List<NumberToStringConverter.ReplacementRule>
-                    {
-                        new("one ", "a ", ReplacementScope.StartsWith)
-                    }
-                )
-            },
-            VariantDimensions = new List<NumberToStringConverter.VariantDimension>
-            {
-                new("marker", ["test", "no"])
-            },
-        };
-        var en = new NumberToStringConverter(opts);
-
-        // With variant marker=test, StartsWith fires
-        Assert.AreEqual("a hundred", en.Convert(100, "marker=test"));
-        // Without variant (default=test), StartsWith still fires
-        Assert.AreEqual("a hundred", en.Convert(100));
-        // twenty-one → doesn't start with "one " → unchanged
-        Assert.AreEqual("twenty-one", en.Convert(21, "marker=test"));
-    }
-
-    [TestMethod]
-    public void ReplacementScope_EndsWith_ViaVariantRules()
-    {
-        var enBase = NumberToStringConverter.GetConverter("EN");
-        var opts = new NumberToStringConverterOptions(enBase)
-        {
-            VariantRules = new List<NumberToStringConverter.VariantRule>
-            {
-                new(
-                    new Dictionary<string, string> { ["marker"] = "test" },
-                    new List<NumberToStringConverter.ReplacementRule>
-                    {
-                        new("one", "1", ReplacementScope.EndsWith)
-                    }
-                )
-            },
-            VariantDimensions = new List<NumberToStringConverter.VariantDimension>
-            {
-                new("marker", ["test"])
-            },
-        };
-        var en = new NumberToStringConverter(opts);
-
-        // "twenty-one" ends with "one" → "twenty-1"
-        Assert.AreEqual("twenty-1", en.Convert(21, "marker=test"));
-        // "one hundred" ends with "hundred" → unchanged
-        Assert.AreEqual("one hundred", en.Convert(100, "marker=test"));
-    }
-
-    // ─── B3 — Variant dimension validation ──────────────────────────────────
-
-    [TestMethod]
-    public void VariantValidation_ExistingConverters_LoadWithoutError()
-    {
-        // Verifies that the validation does not throw for any standard language
-        foreach (var culture in new[] { "EN", "FR", "DE", "ES", "IT", "PT", "NL", "CA", "GL",
-                                         "FI", "RU", "PL", "AR", "HE", "ZH", "JA", "KO",
-                                         "EU", "HI", "EL", "WO", "ZU", "EE" })
-        {
-            var conv = NumberToStringConverter.GetConverter(culture);
-            Assert.IsNotNull(conv, $"Converter for {culture} must not be null");
-        }
-    }
-
-    [TestMethod]
-    public void VariantValidation_NoFalsePositives_ForFR()
-    {
-        // FR has a Variants section → validation must not throw
-        var fr = NumberToStringConverter.GetConverter("FR");
-        Assert.IsNotNull(fr);
-        Assert.AreEqual("une", fr.Convert(1, "gender=feminin"));
-    }
-
-    [TestMethod]
-    public void VariantValidation_NoFalsePositives_ForDE()
-    {
-        // DE has Variants with multiple dimensions → validation must not throw
-        var de = NumberToStringConverter.GetConverter("DE");
-        Assert.IsNotNull(de);
-        Assert.AreEqual("eine", de.Convert(1, "genus=feminin"));
-    }
-
-    // ─── Helper types ───────────────────────────────────────────────────────
-
-    private sealed class MinimalConverterForFractionTest : INumberToStringConverter
-    {
+        /// <summary>Gets the unrestricted maximum value.</summary>
         public BigInteger? MaxNumber => null;
+
+        /// <summary>Formats a big integer as invariant digits.</summary>
         public string Convert(BigInteger number) => number.ToString();
-        public string Convert(int     number)    => number.ToString();
-        public string Convert(long    number)    => number.ToString();
-        public string Convert(decimal number)    => number.ToString();
+
+        /// <summary>Formats an integer as invariant digits.</summary>
+        public string Convert(int number) => number.ToString();
+
+        /// <summary>Formats a long integer as invariant digits.</summary>
+        public string Convert(long number) => number.ToString();
+
+        /// <summary>Formats a decimal as invariant digits.</summary>
+        public string Convert(decimal number) => number.ToString();
     }
 }

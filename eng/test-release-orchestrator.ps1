@@ -60,3 +60,6 @@ if (-not $?) { throw "Release warning orchestration tests failed." }
 
 & (Join-Path $PSScriptRoot "test-release-project-discovery.ps1")
 if (-not $?) { throw "Release project discovery tests failed." }
+
+& (Join-Path $PSScriptRoot "test-validate-public-api.ps1")
+if (-not $?) { throw "API baseline/diagnostic-allowlist decision tests failed." }
