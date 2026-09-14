@@ -29,7 +29,7 @@ namespace Utils.Mathematics.Expressions
         /// Prepares an expression for transformation by calling <see cref="ExpressionTransformer.Transform"/>
         /// Subclasses can override for custom logic, but here it simply re-applies <see cref="ExpressionTransformer.Transform"/>
         /// </summary>
-        /// <param name="e">The expression to prepare, or <see langword="null"/> for an absent optional sub-expression such as <see cref="Expression.Rethrow"/>'s <see langword="null"/> operand.</param>
+        /// <param name="e">The expression to prepare, or <see langword="null"/> for an absent optional sub-expression such as <see cref="Expression.Rethrow()"/>'s <see langword="null"/> operand.</param>
         /// <returns>The transformed expression, or <see langword="null"/> unchanged, for the exact built-in type.</returns>
         /// <remarks>
         /// The null short-circuit is gated to the exact built-in runtime type for the same reason as
@@ -51,7 +51,7 @@ namespace Utils.Mathematics.Expressions
 
         /// <summary>
         /// For the exact built-in <see cref="ExpressionSimplifier"/> runtime type, reconstructs a unary node
-        /// via <see cref="Expression.MakeUnary(ExpressionType, Expression, Type, MethodInfo)"/>, preserving
+        /// via <see cref="Expression.MakeUnary(ExpressionType, Expression, Type, System.Reflection.MethodInfo)"/>, preserving
         /// <see cref="UnaryExpression.Method"/> and <see cref="Expression.Type"/> (notably a typed
         /// <see cref="Expression.Throw(Expression, Type)"/>'s declared result type) instead of the
         /// historical, metadata-dropping per-node-type factories. A derived <see cref="ExpressionSimplifier"/>
