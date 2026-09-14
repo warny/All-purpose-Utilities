@@ -54,7 +54,7 @@ foreach ($package in $manifest.packages) {
     if ($versions -notcontains $baselineVersion) { throw "$($package.packageId): baseline '$baselineVersion' does not exist." }
     $latestStable = @($versions | Where-Object { $_ -notmatch '-' } | Select-Object -Last 1)[0]
     if (-not (Test-ApiBaselineVersion -CandidateVersion ([string]$manifest.version) -BaselineVersion $baselineVersion -PublishedVersions $versions)) {
-        throw "$($package.packageId): baseline '$baselineVersion' is not an acceptable API baseline for candidate '$($manifest.version)' - it must be either the latest stable release ('$latestStable') or, if the candidate is itself a prerelease and an earlier prerelease of the same major.minor.patch line has already been published, exactly the most recent such prerelease (the immediate predecessor), not an older one and not a superseded stable release."
+        throw "$($package.packageId): baseline '$baselineVersion' is not an acceptable API baseline for candidate '$($manifest.version)' - it must be either the most recently published version sharing the candidate's exact major.minor.patch core and sorting before it (the immediate predecessor, if one has been published), or, only when no such version exists yet, the latest stable release ('$latestStable')."
     }
     $baselineFile = Join-Path $workRoot "$($package.packageId).$baselineVersion.nupkg"
     Invoke-WebRequest "https://api.nuget.org/v3-flatcontainer/$($package.packageId.ToLowerInvariant())/$baselineVersion/$($package.packageId.ToLowerInvariant()).$baselineVersion.nupkg" -OutFile $baselineFile

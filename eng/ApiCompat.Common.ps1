@@ -12,17 +12,21 @@ Decides whether a configured, already-confirmed-to-exist API baseline version is
 comparison point for a candidate version.
 .DESCRIPTION
 Accepted in exactly two shapes, tried in this priority order:
-  1. If the candidate is itself a prerelease and at least one earlier prerelease within the exact
-     same major.minor.patch line has already been published, the baseline MUST be the most recent
-     such prerelease (the immediate predecessor) - for example candidate 2.0.0-rc.3 requires baseline
-     2.0.0-rc.2, not 2.0.0-rc.1 and not the last stable release. This is deliberately not "any earlier
-     prerelease": once a closer baseline has been published, comparing against an older one (or an
-     already-superseded stable release) could hide a real API break introduced in between.
-  2. Otherwise (no earlier same-line prerelease exists yet - typically the very first prerelease of a
-     line, such as 2.0.0-rc.1 itself - or the candidate is itself stable), the baseline must be the
-     latest stable release among $PublishedVersions. This is the original, still-supported policy.
+  1. If at least one other published version shares the candidate's exact major.minor.patch core and
+     sorts strictly before it - regardless of whether that predecessor or the candidate itself is a
+     prerelease - the baseline MUST be the most recent such version (the immediate predecessor). This
+     covers every step of a release line uniformly: 2.0.0-rc.2 requires baseline 2.0.0-rc.1;
+     2.0.0-rc.3 requires 2.0.0-rc.2; and - because a prerelease always sorts before the release of its
+     own core version - the eventual stable 2.0.0 requires baseline 2.0.0-rc.<latest>, not an old
+     stable release from a different core version such as 1.2.1. This is deliberately not "any earlier
+     same-core version": once a closer baseline has been published, comparing against an older one
+     could hide a real API break introduced in between.
+  2. Otherwise (no other published version shares the candidate's exact core - typically the very
+     first prerelease of a new line, such as 2.0.0-rc.1 itself, or the first patch/minor/major bump
+     after a stable release, such as 2.0.1 following 2.0.0), the baseline must be the latest stable
+     release among $PublishedVersions. This is the original, still-supported policy.
 .PARAMETER CandidateVersion
-The product-train candidate version (for example '2.0.0-rc.2').
+The product-train candidate version (for example '2.0.0-rc.2', or eventually '2.0.0').
 .PARAMETER BaselineVersion
 The package's configured baseline version (for example '2.0.0-rc.1' or '1.2.1').
 .PARAMETER PublishedVersions
@@ -37,16 +41,21 @@ function Test-ApiBaselineVersion {
     $candidateSemVer = [System.Management.Automation.SemanticVersion]$CandidateVersion
     $baselineSemVer = [System.Management.Automation.SemanticVersion]$BaselineVersion
 
-    if ($candidateSemVer.PreReleaseLabel) {
-        $sameLinePrereleases = @(
-            $PublishedVersions | Where-Object { $_ -match '-' } | ForEach-Object { [System.Management.Automation.SemanticVersion]$_ } | Where-Object {
-                $_.Major -eq $candidateSemVer.Major -and $_.Minor -eq $candidateSemVer.Minor -and $_.Patch -eq $candidateSemVer.Patch -and $_ -lt $candidateSemVer
-            }
-        )
-        if ($sameLinePrereleases.Count -gt 0) {
-            $immediatePredecessor = @($sameLinePrereleases | Sort-Object | Select-Object -Last 1)[0]
-            return $baselineSemVer -eq $immediatePredecessor
+    # Not every published version is valid SemVer - some legacy releases (e.g. a stray four-part
+    # "1.1.1.1") predate this repository's strict-SemVer discipline. TryParse skips those instead of
+    # throwing: a version that isn't even valid SemVer can never share the candidate's exact
+    # major.minor.patch core, so it is correctly excluded from the search either way.
+    $sameCorePredecessors = @(
+        $PublishedVersions | Where-Object { $_ -ne $CandidateVersion } | ForEach-Object {
+            $parsed = $null
+            if ([System.Management.Automation.SemanticVersion]::TryParse($_, [ref] $parsed)) { $parsed }
+        } | Where-Object {
+            $_.Major -eq $candidateSemVer.Major -and $_.Minor -eq $candidateSemVer.Minor -and $_.Patch -eq $candidateSemVer.Patch -and $_ -lt $candidateSemVer
         }
+    )
+    if ($sameCorePredecessors.Count -gt 0) {
+        $immediatePredecessor = @($sameCorePredecessors | Sort-Object | Select-Object -Last 1)[0]
+        return $baselineSemVer -eq $immediatePredecessor
     }
 
     $latestStable = @($PublishedVersions | Where-Object { $_ -notmatch '-' } | Select-Object -Last 1)[0]

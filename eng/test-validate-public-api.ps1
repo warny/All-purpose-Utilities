@@ -16,7 +16,7 @@ function Assert-True { param([bool]$Condition, [string]$Message) if (-not $Condi
 function Assert-False { param([bool]$Condition, [string]$Message) if ($Condition) { throw $Message } }
 
 # ---------------------------------------------------------------------------------------------
-# Scenario: a prerelease baseline that exists on NuGet, in the candidate's own prerelease line,
+# Scenario: a prerelease baseline that exists on NuGet, shares the candidate's exact core version,
 # and precedes it, is accepted (the RC1-as-RC2-baseline policy this PR introduces).
 # ---------------------------------------------------------------------------------------------
 Assert-True (Test-ApiBaselineVersion -CandidateVersion '2.0.0-rc.2' -BaselineVersion '2.0.0-rc.1' -PublishedVersions @('2.0.0-rc.1')) `
@@ -74,11 +74,34 @@ Assert-False (Test-ApiBaselineVersion -CandidateVersion '1.2.1' -BaselineVersion
     "A superseded stable baseline must not be accepted."
 
 # ---------------------------------------------------------------------------------------------
-# Scenario: a candidate that is itself stable (no prerelease label) cannot use a prerelease
-# baseline via the prerelease-line exception (only the latest-stable path applies to it).
+# Scenario (regression - human review finding): the immediate-predecessor rule applies uniformly
+# across the RC-to-stable transition too, not only RC-to-RC. Once 2.0.0-rc.1 and 2.0.0-rc.2 have
+# been published, the eventual stable 2.0.0 candidate must require baseline 2.0.0-rc.2 (a
+# prerelease always sorts before the release of its own core version) - NOT an old, unrelated
+# stable release such as 1.2.1, which would miss any API break introduced across the RC series.
 # ---------------------------------------------------------------------------------------------
-Assert-False (Test-ApiBaselineVersion -CandidateVersion '2.0.0' -BaselineVersion '2.0.0-rc.1' -PublishedVersions @('2.0.0-rc.1', '2.0.0')) `
-    "A stable candidate must not accept a prerelease baseline through the prerelease-line exception."
+Assert-True (Test-ApiBaselineVersion -CandidateVersion '2.0.0' -BaselineVersion '2.0.0-rc.2' -PublishedVersions @('1.2.1', '2.0.0-rc.1', '2.0.0-rc.2')) `
+    "A stable candidate must require its own line's latest prerelease as baseline, once one has been published."
+Assert-False (Test-ApiBaselineVersion -CandidateVersion '2.0.0' -BaselineVersion '1.2.1' -PublishedVersions @('1.2.1', '2.0.0-rc.1', '2.0.0-rc.2')) `
+    "A stable candidate must not fall back to an old, unrelated stable release once its own line's prerelease exists."
+
+# ---------------------------------------------------------------------------------------------
+# Scenario: once a core version has actually shipped stable, the NEXT core version (a new patch/
+# minor/major with no prereleases of its own published yet) correctly falls back to the latest
+# stable release - here the 2.0.0 that was just used as a baseline candidate above.
+# ---------------------------------------------------------------------------------------------
+Assert-True (Test-ApiBaselineVersion -CandidateVersion '2.0.1' -BaselineVersion '2.0.0' -PublishedVersions @('1.2.1', '2.0.0-rc.1', '2.0.0-rc.2', '2.0.0')) `
+    "The first candidate of a new core version must fall back to the latest stable release."
+
+# ---------------------------------------------------------------------------------------------
+# Scenario (regression - found via the real end-to-end pipeline run, not by this test file
+# alone): several real packages in this repository have a legacy four-part published version
+# (e.g. '1.1.1.1'), which is not valid SemVer. Searching every published version for a same-core
+# predecessor must tolerate that instead of throwing - a version that cannot even be parsed as
+# SemVer can never share the candidate's exact three-part core anyway.
+# ---------------------------------------------------------------------------------------------
+Assert-True (Test-ApiBaselineVersion -CandidateVersion '2.0.0-rc.1' -BaselineVersion '1.2.1' -PublishedVersions @('1.0.0', '1.1.1.1', '1.2.0', '1.2.1')) `
+    "A published version list containing a non-SemVer legacy entry must not throw, and must still resolve the correct latest-stable baseline."
 
 Write-Host "Test-ApiBaselineVersion scenarios passed."
 
