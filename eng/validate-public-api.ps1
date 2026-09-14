@@ -11,66 +11,11 @@ param(
 )
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "Release.Common.ps1")
+. (Join-Path $PSScriptRoot "ApiCompat.Common.ps1")
 
 function Normalize-ApiMessage {
     param([string]$Message)
     return $Message.Trim().TrimEnd('.')
-}
-
-<#
-.SYNOPSIS
-Decides whether a configured, already-confirmed-to-exist API baseline version is an acceptable
-comparison point for a candidate version.
-.DESCRIPTION
-Accepted in exactly two shapes: (1) the latest stable release among $PublishedVersions - the
-original, still-supported policy, used once a package has shipped a stable major.minor.patch and the
-candidate is being compared against it - or (2) an already-published prerelease within the exact same
-major.minor.patch line as the candidate that sorts before it (for example candidate 2.0.0-rc.2
-baselined against the already-published 2.0.0-rc.1). This intentionally does not accept an arbitrary
-prerelease - one from a different major.minor.patch line, or one that does not sort before the
-candidate.
-.PARAMETER CandidateVersion
-The product-train candidate version (for example '2.0.0-rc.2').
-.PARAMETER BaselineVersion
-The package's configured baseline version (for example '2.0.0-rc.1' or '1.2.1').
-.PARAMETER PublishedVersions
-Every version string published for the package on NuGet, used only to compute the latest stable.
-#>
-function Test-ApiBaselineVersion {
-    param(
-        [Parameter(Mandatory)] [string] $CandidateVersion,
-        [Parameter(Mandatory)] [string] $BaselineVersion,
-        [Parameter(Mandatory)] [string[]] $PublishedVersions
-    )
-    $latestStable = @($PublishedVersions | Where-Object { $_ -notmatch '-' } | Select-Object -Last 1)[0]
-    if ($latestStable -eq $BaselineVersion) { return $true }
-    $candidateSemVer = [System.Management.Automation.SemanticVersion]$CandidateVersion
-    $baselineSemVer = [System.Management.Automation.SemanticVersion]$BaselineVersion
-    $sameLine = $baselineSemVer.Major -eq $candidateSemVer.Major -and $baselineSemVer.Minor -eq $candidateSemVer.Minor -and $baselineSemVer.Patch -eq $candidateSemVer.Patch
-    $isPrerelease = [bool]$baselineSemVer.PreReleaseLabel -and [bool]$candidateSemVer.PreReleaseLabel
-    return [bool]($sameLine -and $isPrerelease -and $baselineSemVer -lt $candidateSemVer)
-}
-
-<#
-.SYNOPSIS
-Computes the exact-match difference between an accepted API-diagnostic allowlist and the diagnostics
-actually observed, mirroring Compare-Object's SideIndicator convention ('<=' stale accepted entry with
-no matching actual diagnostic, '=>' new actual diagnostic with no matching accepted entry) without
-Compare-Object's inability to accept two empty arrays directly.
-.PARAMETER AcceptedKeys
-The "diagnosticId|normalizedMessage" keys explicitly accepted in the allowlist.
-.PARAMETER ActualKeys
-The "diagnosticId|normalizedMessage" keys ApiCompat actually produced.
-#>
-function Get-ApiDiagnosticDifference {
-    param(
-        [string[]] $AcceptedKeys,
-        [string[]] $ActualKeys
-    )
-    if ($AcceptedKeys.Count -eq 0 -and $ActualKeys.Count -eq 0) { return @() }
-    if ($AcceptedKeys.Count -eq 0) { return @($ActualKeys | ForEach-Object { [pscustomobject]@{ InputObject = $_; SideIndicator = '=>' } }) }
-    if ($ActualKeys.Count -eq 0) { return @($AcceptedKeys | ForEach-Object { [pscustomobject]@{ InputObject = $_; SideIndicator = '<=' } }) }
-    return @(Compare-Object ($AcceptedKeys | Sort-Object) ($ActualKeys | Sort-Object))
 }
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $manifest = Get-ProductTrainManifest $repoRoot
@@ -109,7 +54,7 @@ foreach ($package in $manifest.packages) {
     if ($versions -notcontains $baselineVersion) { throw "$($package.packageId): baseline '$baselineVersion' does not exist." }
     $latestStable = @($versions | Where-Object { $_ -notmatch '-' } | Select-Object -Last 1)[0]
     if (-not (Test-ApiBaselineVersion -CandidateVersion ([string]$manifest.version) -BaselineVersion $baselineVersion -PublishedVersions $versions)) {
-        throw "$($package.packageId): baseline '$baselineVersion' is neither the latest stable '$latestStable' nor an earlier prerelease within candidate '$($manifest.version)`'s prerelease line."
+        throw "$($package.packageId): baseline '$baselineVersion' is not an acceptable API baseline for candidate '$($manifest.version)' - it must be either the latest stable release ('$latestStable') or, if the candidate is itself a prerelease and an earlier prerelease of the same major.minor.patch line has already been published, exactly the most recent such prerelease (the immediate predecessor), not an older one and not a superseded stable release."
     }
     $baselineFile = Join-Path $workRoot "$($package.packageId).$baselineVersion.nupkg"
     Invoke-WebRequest "https://api.nuget.org/v3-flatcontainer/$($package.packageId.ToLowerInvariant())/$baselineVersion/$($package.packageId.ToLowerInvariant()).$baselineVersion.nupkg" -OutFile $baselineFile

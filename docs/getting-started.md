@@ -64,8 +64,8 @@ dotnet add package omy.Utils.DependencyInjection.Generators --version 2.0.0-rc.2
 
 `omy.Utils.NumberToString`, the `omy.Utils.Parser*` family, and
 `omy.Utils.Expressions.CSyntax`/`Expressions.VBSyntax` have **no published stable release yet** -
-`2.0.0-rc.2` is their first publication, so `--version 2.0.0-rc.2` is required for those (NuGet does
-not install a prerelease by default), not just a way to get the newer candidate.
+they were first published as `2.0.0-rc.1`, so `--version 2.0.0-rc.2` is required for those (NuGet
+does not install a prerelease by default), not just a way to get the newer candidate.
 
 ## 3) Minimal usage snippet
 

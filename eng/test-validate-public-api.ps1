@@ -1,43 +1,16 @@
 <#
 .SYNOPSIS
-Validates the API-baseline-acceptance and diagnostic-allowlist decision functions extracted from
+Validates the API-baseline-acceptance and diagnostic-allowlist decision functions used by
 validate-public-api.ps1, without invoking NuGet, ApiCompat, or any packaged product-train artifact.
 #>
 [CmdletBinding()]
 param()
 $ErrorActionPreference = "Stop"
 
-# validate-public-api.ps1 is a top-to-bottom script, not a module; dot-sourcing it with real
-# parameters would immediately run the whole pipeline (NuGet, ApiCompat, packaged artifacts). Instead,
-# re-declare the two pure decision functions under test here, kept byte-for-byte identical to the
-# script's own copies, so this test never needs network access, a built product train, or the
-# ApiCompat tool. If the two diverge, the corresponding scenario below (or the real end-to-end
-# pipeline run recorded in the PR) will surface the mismatch.
-function Test-ApiBaselineVersion {
-    param(
-        [Parameter(Mandatory)] [string] $CandidateVersion,
-        [Parameter(Mandatory)] [string] $BaselineVersion,
-        [Parameter(Mandatory)] [string[]] $PublishedVersions
-    )
-    $latestStable = @($PublishedVersions | Where-Object { $_ -notmatch '-' } | Select-Object -Last 1)[0]
-    if ($latestStable -eq $BaselineVersion) { return $true }
-    $candidateSemVer = [System.Management.Automation.SemanticVersion]$CandidateVersion
-    $baselineSemVer = [System.Management.Automation.SemanticVersion]$BaselineVersion
-    $sameLine = $baselineSemVer.Major -eq $candidateSemVer.Major -and $baselineSemVer.Minor -eq $candidateSemVer.Minor -and $baselineSemVer.Patch -eq $candidateSemVer.Patch
-    $isPrerelease = [bool]$baselineSemVer.PreReleaseLabel -and [bool]$candidateSemVer.PreReleaseLabel
-    return [bool]($sameLine -and $isPrerelease -and $baselineSemVer -lt $candidateSemVer)
-}
-
-function Get-ApiDiagnosticDifference {
-    param(
-        [string[]] $AcceptedKeys,
-        [string[]] $ActualKeys
-    )
-    if ($AcceptedKeys.Count -eq 0 -and $ActualKeys.Count -eq 0) { return @() }
-    if ($AcceptedKeys.Count -eq 0) { return @($ActualKeys | ForEach-Object { [pscustomobject]@{ InputObject = $_; SideIndicator = '=>' } }) }
-    if ($ActualKeys.Count -eq 0) { return @($AcceptedKeys | ForEach-Object { [pscustomobject]@{ InputObject = $_; SideIndicator = '<=' } }) }
-    return @(Compare-Object ($AcceptedKeys | Sort-Object) ($ActualKeys | Sort-Object))
-}
+# Dot-source the exact same shared functions validate-public-api.ps1 itself dot-sources - not a
+# hand-maintained copy - so a regression in production logic cannot leave this test green by
+# accident.
+. (Join-Path $PSScriptRoot "ApiCompat.Common.ps1")
 
 function Assert-True { param([bool]$Condition, [string]$Message) if (-not $Condition) { throw $Message } }
 function Assert-False { param([bool]$Condition, [string]$Message) if ($Condition) { throw $Message } }
@@ -50,10 +23,37 @@ Assert-True (Test-ApiBaselineVersion -CandidateVersion '2.0.0-rc.2' -BaselineVer
     "RC1 baseline for RC2 candidate must be accepted."
 
 # ---------------------------------------------------------------------------------------------
-# Scenario: the latest-stable policy (the original, pre-existing behavior) still works.
+# Scenario: the latest-stable policy (the original, pre-existing behavior) still works when no
+# same-line prerelease has been published yet (the very first prerelease of a line, e.g. rc.1).
 # ---------------------------------------------------------------------------------------------
 Assert-True (Test-ApiBaselineVersion -CandidateVersion '2.0.0-rc.1' -BaselineVersion '1.2.1' -PublishedVersions @('1.0.0', '1.2.0', '1.2.1')) `
-    "Latest-stable baseline must still be accepted."
+    "Latest-stable baseline must still be accepted for the first prerelease of a line."
+
+# ---------------------------------------------------------------------------------------------
+# Scenario (regression - human review finding): once a same-line prerelease has been published,
+# it takes PRIORITY over the latest stable release, even if the latest stable release is also
+# technically a valid version string. A stale/mistaken 'publishedVersion: 1.2.1' must NOT be
+# silently accepted for an RC2 candidate once 2.0.0-rc.1 exists - that could hide a real API break
+# introduced between RC1 and RC2 that a 1.2.1 comparison would never see.
+# ---------------------------------------------------------------------------------------------
+Assert-False (Test-ApiBaselineVersion -CandidateVersion '2.0.0-rc.2' -BaselineVersion '1.2.1' -PublishedVersions @('1.0.0', '1.2.0', '1.2.1', '2.0.0-rc.1')) `
+    "A stale stable baseline must be rejected once a same-line prerelease predecessor has been published."
+
+# ---------------------------------------------------------------------------------------------
+# Scenario (regression - human review finding): the baseline must be the IMMEDIATE predecessor,
+# not merely any earlier same-line prerelease. Candidate rc.3 with rc.1 and rc.2 both published
+# must require rc.2, not rc.1 (skipping rc.2 could hide a break introduced in rc.2).
+# ---------------------------------------------------------------------------------------------
+Assert-False (Test-ApiBaselineVersion -CandidateVersion '2.0.0-rc.3' -BaselineVersion '2.0.0-rc.1' -PublishedVersions @('2.0.0-rc.1', '2.0.0-rc.2', '2.0.0-rc.3')) `
+    "A baseline older than the immediate predecessor prerelease must be rejected."
+Assert-True (Test-ApiBaselineVersion -CandidateVersion '2.0.0-rc.3' -BaselineVersion '2.0.0-rc.2' -PublishedVersions @('2.0.0-rc.1', '2.0.0-rc.2', '2.0.0-rc.3')) `
+    "The immediate predecessor prerelease (rc.2 for candidate rc.3) must be accepted."
+
+# ---------------------------------------------------------------------------------------------
+# Scenario: numeric (not lexical) prerelease ordering - rc.2 must sort before rc.10.
+# ---------------------------------------------------------------------------------------------
+Assert-True (Test-ApiBaselineVersion -CandidateVersion '2.0.0-rc.10' -BaselineVersion '2.0.0-rc.9' -PublishedVersions @('2.0.0-rc.1', '2.0.0-rc.2', '2.0.0-rc.9', '2.0.0-rc.10')) `
+    "Prerelease ordering must be numeric: rc.9 is the immediate predecessor of rc.10, not rc.2."
 
 # ---------------------------------------------------------------------------------------------
 # Scenario: a configured baseline that does not sort before the candidate fails (wrong/future baseline).

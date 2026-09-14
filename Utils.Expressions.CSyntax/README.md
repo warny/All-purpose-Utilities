@@ -14,9 +14,8 @@ The main component is `CSyntaxExpressionCompiler` in the `Utils.Expressions.CSyn
 
 ## Installation
 
-This package's first publication is the `2.0.0-rc.2` release candidate - there is no earlier stable
-version, so `dotnet add package` requires an explicit version (NuGet does not install a prerelease
-by default):
+First published as `2.0.0-rc.1`; the current candidate is `2.0.0-rc.2`. No stable release exists yet,
+so `dotnet add package` requires an explicit version (NuGet does not install a prerelease by default):
 
 ```bash
 dotnet add package omy.Utils.Expressions.CSyntax --version 2.0.0-rc.2

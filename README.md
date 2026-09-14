@@ -75,7 +75,7 @@ dotnet add package omy.Utils.Net --version 2.0.0-rc.2
 
 A handful of packages (`omy.Utils.NumberToString`, the `omy.Utils.Parser*` family,
 `omy.Utils.Expressions.CSyntax`/`Expressions.VBSyntax`) have **no published stable release yet** -
-`2.0.0-rc.2` is their first publication, so the `--version 2.0.0-rc.2` form is required for those,
+they were first published as `2.0.0-rc.1`, so the `--version 2.0.0-rc.2` form is required for those,
 not just recommended; see each package's own README for its exact install command.
 
 ## Usage example
