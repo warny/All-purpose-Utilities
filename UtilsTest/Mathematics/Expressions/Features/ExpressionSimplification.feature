@@ -42,3 +42,54 @@ Examples:
     | a,b,c      | (c + b) - a                                                   | -a + (b + c)       |
     | a,b,c      | (c - b) - a                                                   | -a + (-b + c)      |
     | a,b,c      | (a / b) / c                                                   | a / (b * c)        |
+
+Scenario Outline: Simplify one algebraic rule at a time
+    Given the double parameters "<parameters>"
+    And the source C-syntax expression "<source>"
+    When I simplify the expression
+    Then the transformed expression is structurally equivalent to "<expected>"
+
+Examples:
+    | parameters | source                    | expected          |
+    | x          | x + 0.0                   | x                 |
+    | x          | 0.0 + x                   | x                 |
+    | x          | x - 0.0                   | x                 |
+    | x          | 0.0 - x                   | -x                |
+    | x          | x * 0.0                   | 0.0               |
+    | x          | x * 1.0                   | x                 |
+    | x          | 0.0 * x                   | 0.0               |
+    | x          | 1.0 * x                   | x                 |
+    | x          | x / 1.0                   | x                 |
+    | x          | 0.0 / x                   | 0.0               |
+    | x          | 0.0**x                    | 0.0               |
+    | x          | 1.0**x                    | 1.0               |
+    | x          | x**0.0                    | 1.0               |
+    | x          | x**1.0                    | x                 |
+    |             | 2.0 + 3.0                | 5.0               |
+    |             | 5.0 - 3.0                | 2.0               |
+    |             | 2.0 * 3.0                | 6.0               |
+    |             | 6.0 / 3.0                | 2.0               |
+    | x,y        | x + (-y)                  | x - y             |
+    | x          | x + (-x)                  | 0.0               |
+    | x,y        | (-x) + y                  | y - x             |
+    | x          | (-x) + x                  | 0.0               |
+    | x,y        | x - (-y)                  | x + y             |
+    | x,y        | (-x) - y                  | -(x+y)            |
+    | x,y        | -(x-y)                    | -(x+(0.0-y))      |
+    | x,y,z      | x - (y+z)                 | (x-y)-z           |
+    | x,y,z      | x - (y-z)                 | (x-y)-(0.0-z)     |
+    | x          | 2.0*x + 3.0*x             | 5.0*x             |
+    | x,y        | 2.0*x + 2.0*y             | (x+y)*2.0         |
+    | x          | 3.0*x - 2.0*x             | x                 |
+    | x,y        | 2.0*x - 2.0*y             | (x-y)*2.0         |
+    | x          | x*2.0                     | 2.0*x             |
+    | x          | 2.0*(3.0*x)               | 6.0*x             |
+    | x,y        | (2.0*x)*(3.0*y)           | 6.0*(x*y)         |
+    | x,y        | x*(-y)                    | -(x*y)            |
+    | x,y        | (-x)*y                    | -(x*y)            |
+    | x,y        | x/(-y)                    | -(x/y)            |
+    | x,y        | (-x)/y                    | -(x/y)            |
+    | x,y        | (2.0*x)*y                 | 2.0*(x*y)         |
+    | x,y        | x*(2.0*y)                 | 2.0*(x*y)         |
+    | x,y,z,w    | (x/y)/(z/w)               | (x*w)/(y*z)       |
+    | x,y,z      | x/(y/z)                   | (x*z)/y           |

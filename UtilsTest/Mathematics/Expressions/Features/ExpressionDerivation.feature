@@ -25,3 +25,20 @@ Examples:
     | Tan(x)                       | 1/(Cos(x)*Cos(x))           | 0,0.3,-0.5,1               | 1e-9      |
     | x/(x*x+1.0)                  | (1.0-x*x)/(x*x+1.0)**2.0    | -2,-1,0,1,2                | 1e-9      |
     | 5.0                          | 0.0                         | 42                         | 1e-9      |
+    | -x                           | -1.0                        | -2,-1,0,1,2               | 1e-9      |
+    | x + x                        | 2.0                         | -2,-1,0,1,2               | 1e-9      |
+    | x - x                        | 0.0                         | -2,-1,0,1,2               | 1e-9      |
+    | x*x                          | 2.0*x                       | -2,-1,0,1,2               | 1e-9      |
+    | x/(x+1.0)                    | 1.0/(x+1.0)**2.0            | -0.5,0,0.5,1,2            | 1e-9      |
+    | (2.0*x)**3.0                 | 6.0*(2.0*x)**2.0            | -2,-1,0,1,2               | 1e-9      |
+    | x**x                         | x**x*(Log(x)+1.0)           | 0.5,1,2,3                 | 1e-9      |
+    | Cos(2.0*x)                   | -2.0*Sin(2.0*x)             | -2,-1,0,1,2               | 1e-9      |
+    | Log(2.0*x)                   | 1.0/x                       | 0.5,1,2,3                 | 1e-9      |
+    | Log10(2.0*x)                 | 1.0/(x*Log(10.0))           | 0.5,1,2,3                 | 1e-9      |
+    | Tan(2.0*x)                   | 2.0/(Cos(2.0*x)**2.0)       | -0.5,-0.2,0,0.2,0.5      | 1e-9      |
+
+Scenario: Differentiate a non-target parameter
+    Given the double parameters "x,y"
+    And the source C-syntax expression "y"
+    When I derive the expression with respect to "x"
+    Then the transformed expression is structurally equivalent to "0.0"
