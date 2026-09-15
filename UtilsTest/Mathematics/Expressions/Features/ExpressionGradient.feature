@@ -7,7 +7,7 @@ Scenario: Calculate a single-variable gradient
     When I calculate the gradient
     Then the gradient is structurally equivalent to
         | variable | expression |
-        | x        | 2*x        |
+        | x        | 2.0*x      |
 
 Scenario: Calculate both partial derivatives
     Given the double parameters "x,y"
@@ -24,12 +24,12 @@ Scenario: Calculate an explicit subset of a gradient
     When I calculate the gradient with respect to "x"
     Then the gradient is structurally equivalent to
         | variable | expression |
-        | x        | 2*x        |
+        | x        | 2.0*x      |
 
 Scenario: Calculate the gradient of a constant
     Given the double parameters "x"
-    And the source C-syntax expression "5"
+    And the source C-syntax expression "5.0"
     When I calculate the gradient
     Then the gradient is structurally equivalent to
         | variable | expression |
-        | x        | 0          |
+        | x        | 0.0        |

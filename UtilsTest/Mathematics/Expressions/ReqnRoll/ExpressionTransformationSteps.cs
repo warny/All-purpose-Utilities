@@ -189,7 +189,7 @@ public sealed class ExpressionTransformationSteps
     private LambdaExpression CompileExpression(string expressionText)
     {
         ParameterExpression[] sharedParameters = Parameters;
-        LambdaExpression compiled = sharedParameters.Length switch
+        return sharedParameters.Length switch
         {
             0 => compiler.CompileExpression<Func<double>>(expressionText, sharedParameters, typeof(double), false),
             1 => compiler.CompileExpression<Func<double, double>>(expressionText, sharedParameters, typeof(double), false),
@@ -198,7 +198,6 @@ public sealed class ExpressionTransformationSteps
             4 => compiler.CompileExpression<Func<double, double, double, double, double>>(expressionText, sharedParameters, typeof(double), false),
             _ => throw new NotSupportedException("Expression transformation scenarios support at most four parameters.")
         };
-        return (LambdaExpression)NumericLiteralPromotionVisitor.Instance.Visit(compiled)!;
     }
 
     /// <summary>
@@ -228,58 +227,4 @@ public sealed class ExpressionTransformationSteps
     private Expression Transformed =>
         transformed ?? throw new InvalidOperationException("Transform the source expression before asserting its result.");
 
-    /// <summary>
-    /// Promotes compiler-generated converted integer literals to double constants so the compiled
-    /// trees match the statically typed double expressions used by the symbolic APIs.
-    /// </summary>
-    private sealed class NumericLiteralPromotionVisitor : ExpressionVisitor
-    {
-        /// <summary>Gets the stateless visitor instance.</summary>
-        public static NumericLiteralPromotionVisitor Instance { get; } = new();
-
-        /// <summary>
-        /// Replaces an implicit integer-to-double conversion around a literal with the equivalent double literal.
-        /// </summary>
-        /// <param name="node">The unary expression to inspect.</param>
-        /// <returns>The promoted constant, or the normally visited expression.</returns>
-        protected override Expression VisitUnary(UnaryExpression node)
-        {
-            if (node.NodeType == System.Linq.Expressions.ExpressionType.Convert
-                && node.Type == typeof(double)
-                && TryReadIntegerLiteral(node.Operand, out int value))
-            {
-                return Expression.Constant((double)value);
-            }
-
-            return base.VisitUnary(node);
-        }
-
-        /// <summary>
-        /// Reads a positive or unary-negative integer literal from a compiler expression.
-        /// </summary>
-        /// <param name="expression">The potential integer literal expression.</param>
-        /// <param name="value">The signed integer value when recognized.</param>
-        /// <returns><see langword="true"/> when the expression is an integer literal.</returns>
-        private static bool TryReadIntegerLiteral(Expression expression, out int value)
-        {
-            if (expression is ConstantExpression { Type: not null, Value: int constant })
-            {
-                value = constant;
-                return true;
-            }
-
-            if (expression is UnaryExpression
-                {
-                    NodeType: System.Linq.Expressions.ExpressionType.Negate,
-                    Operand: ConstantExpression { Type: not null, Value: int magnitude }
-                })
-            {
-                value = -magnitude;
-                return true;
-            }
-
-            value = default;
-            return false;
-        }
-    }
 }

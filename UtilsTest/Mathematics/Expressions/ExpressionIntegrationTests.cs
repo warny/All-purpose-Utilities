@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Utils.Expressions;
 using Utils.Mathematics.Expressions;
 
 namespace UtilsTest.Mathematics.Expressions;
@@ -67,6 +68,27 @@ public class ExpressionIntegrationTests
         foreach (double value in new[] { 0.5, 1.0, Math.E, 5.0 })
         {
             Assert.AreEqual(Math.Log(value), compiled(value), 1e-9, $"Integral of x^(-1) at x={value}");
+        }
+    }
+
+    /// <summary>
+    /// Ensures a constant divided by a manually represented first power uses the dedicated
+    /// <c>Divide(Constant, Power)</c> integration rule and returns the scaled logarithm.
+    /// </summary>
+    [TestMethod]
+    public void Integrate_ConstantDividedByX_ReturnsConstantTimesLog()
+    {
+        var x = Expression.Parameter(typeof(double), "x");
+        var body = Expression.Divide(
+            Expression.Constant(3.0),
+            Expression.Power(x, Expression.Constant(1.0)));
+        var function = Expression.Lambda<Func<double, double>>(body, x);
+        var result = (Expression<Func<double, double>>)integration.Integrate(function);
+        var compiled = result.Compile();
+
+        foreach (double value in new[] { 0.5, 1.0, Math.E, 5.0 })
+        {
+            Assert.AreEqual(3.0 * Math.Log(value), compiled(value), 1e-9, $"Integral of 3/(x^1) at x={value}");
         }
     }
 

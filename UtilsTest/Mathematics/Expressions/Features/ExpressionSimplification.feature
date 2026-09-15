@@ -9,18 +9,18 @@ Scenario Outline: Simplify mathematical identities
 
 Examples:
     | source                                | expected     |
-    | Pow(Cos(x), 2) + Pow(Sin(x), 2)       | 1            |
+    | Pow(Cos(x), 2.0) + Pow(Sin(x), 2.0)   | 1.0          |
     | Sin(x) / Cos(x)                       | Tan(x)       |
-    | Cos(x) / Sin(x)                       | 1 / Tan(x)   |
+    | Cos(x) / Sin(x)                       | 1.0 / Tan(x) |
     | Cos(x) * Tan(x)                       | Sin(x)       |
     | Tan(x) * Cos(x)                       | Sin(x)       |
     | Sin(x) / Tan(x)                       | Cos(x)       |
-    | 3*x + 2*x                             | 5*x          |
-    | 3*x + x*2                             | 5*x          |
-    | x + 2*x                               | 3*x          |
-    | x - 2*x                               | -x           |
-    | 2*x - 2*x                             | 0            |
-    | -2*x + 2*x                            | 0            |
+    | 3.0*x + 2.0*x                         | 5.0*x        |
+    | 3.0*x + x*2.0                         | 5.0*x        |
+    | x + 2.0*x                             | 3.0*x        |
+    | x - 2.0*x                             | -x           |
+    | 2.0*x - 2.0*x                         | 0.0          |
+    | -2.0*x + 2.0*x                        | 0.0          |
 
 Scenario Outline: Put numeric expressions into canonical order
     Given the double parameters "<parameters>"
@@ -37,7 +37,7 @@ Examples:
     | a,b        | a + b - a                                                     | b                  |
     | x,y        | Cos(y) + Cos(x)                                               | Cos(x) + Cos(y)    |
     | x          | Sin(x) + Cos(x)                                               | Cos(x) + Sin(x)    |
-    | x,y        | Pow(Cos(x), 2) + Pow(Cos(y), 2) + Pow(Sin(x), 2) + Pow(Sin(y), 2) | 2               |
+    | x,y        | Pow(Cos(x), 2.0) + Pow(Cos(y), 2.0) + Pow(Sin(x), 2.0) + Pow(Sin(y), 2.0) | 2.0       |
     | a,b,c      | (a + b) + c                                                   | a + (b + c)        |
     | a,b,c      | (c + b) - a                                                   | -a + (b + c)       |
     | a,b,c      | (c - b) - a                                                   | -a + (-b + c)      |
