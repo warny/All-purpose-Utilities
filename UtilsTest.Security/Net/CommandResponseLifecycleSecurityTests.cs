@@ -284,11 +284,14 @@ public class CommandResponseLifecycleSecurityTests
         using CommandResponseClient client = new();
         await client.ConnectAsync(clientStream, leaveOpen: true);
 
+        TaskCompletionSource<Exception> callbackObserved = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        client.CallbackError += ex => callbackObserved.TrySetResult(ex);
         client.UnsolicitedResponseReceived += _ => throw new InvalidOperationException("Subscriber fault");
 
         await serverWriter.WriteLineAsync("220 Welcome");
-        await Task.Delay(200);
+        Exception callbackError = await callbackObserved.Task.WaitAsync(Timeout5);
 
+        Assert.IsInstanceOfType<InvalidOperationException>(callbackError);
         Assert.IsTrue(client.IsConnected, "Client must remain connected after subscriber exception.");
 
         Task<IReadOnlyList<ServerResponse>> sendTask = client.SendCommandAsync("PING");
