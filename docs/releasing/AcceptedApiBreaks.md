@@ -601,8 +601,12 @@ private test fixtures - was already updated as part of this change):
   `public override Expression Transform(Expression expression) => TransformCore(expression);`
 - Every internal recursive call that used to say `Transform(subNode)` to continue transforming a
   sub-expression as part of an in-flight transformation must now say `TransformCore(subNode)` instead.
-  Only a genuinely new, top-level invocation of the transformer (for example on a freshly constructed
-  worker instance, as `ExpressionDerivation<T>.Derivate`/`ExpressionIntegration<T>.Integrate` do) should
-  still call the public `Transform`.
+  The public `Transform` is the semantic entry point for a *consumer* of the transformer. Once a method
+  has already resolved its own context and constructed a fully configured internal worker - as
+  `ExpressionDerivation<T>.Derivate`/`ExpressionIntegration<T>.Integrate` do - it starts the engine
+  directly via `worker.TransformCore(...)`, not `worker.Transform(...)`: the worker is already known to be
+  correctly configured, so routing back through the public entry point's dispatch logic would be redundant
+  (and, for a non-lambda body, would not even follow the intended code path). All recursion from that
+  point on then stays within `TransformCore`.
 - `TransformCore` remains `protected`, exactly as `Transform` was before this change, so existing access
   from a subclass is unaffected beyond the rename.
