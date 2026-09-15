@@ -346,6 +346,68 @@ being erased by simplification. The exact built-in `ExpressionSimplifier` now pr
 every nesting depth. Update those comments when touching the comparer for S3 regression coverage; no
 comparer behavior change is required for that cleanup.
 
+#### S3 progress (2026-09-15) — contract documented, unsafe rewrites blocked
+
+S3 is implemented. The chosen contract is documented in XML doc on `ExpressionSimplifier`'s class remarks
+and on `Simplify`: symbolic algebra, not bit-for-bit CLR/IEEE-754 execution preservation; algebraic rewrites
+assume pure/referentially-transparent operands (no general side-effect analyzer added); domain-sensitive
+identities (logarithm combination, power rules) are valid on their documented common domain only, with no
+general domain/constraint solver added.
+
+**Centralized operator-safety predicates** (`Utils/Expressions/ExpressionSimplifier.cs`, "Operator safety
+(S3 symbolic-equivalence contract)" region): `IsOrdinaryUnaryNegate`, `IsOrdinaryBinaryArithmetic`, and the
+narrower `IsOrdinaryFieldDivision` (for identities requiring field, not ring, division). Rather than
+hard-coding "`Method is null`" or a fixed `Math.Pow` assumption, each predicate consults a table built once
+by structurally probing every `Types.Number` entry against the real `Expression.Add`/`Subtract`/`Multiply`/
+`Divide`/`Power`/`Negate` factories and recording the resulting `.Method` (`null` for CLR-intrinsic
+primitives such as `double`/`int`, a genuine operator method such as `Decimal.op_Addition` for `decimal`,
+absent entirely for an unsupported combination such as `Power` on any non-`double` type or any arithmetic
+operator on `byte`/`sbyte`). A node is "ordinary" only when it is non-lifted
+(`!IsLifted && !IsLiftedToNull`) and its actual `Method` matches the probed default for its `(NodeType, Type)`
+pair. This uniformly resolves the custom-operator, lifted-nullable, and `decimal`-is-not-`null`-but-still-
+ordinary cases with one mechanism instead of three ad hoc checks.
+
+**Guarded rule families**, all in `Utils/Expressions/ExpressionSimplifier.cs` unless noted:
+
+| Rule family | Previous status | Guard applied | Regression test |
+| --- | --- | --- | --- |
+| `AdditionWithZero`, `SubstractionWithZero`, `MultiplicationWithZeroOrOne`, `DivideWithZeroOrOne`, `DivideWithZero`, `PowerOfZeroOrOne`, `PowerByZeroOrOne` | No outer-operator check; also silently collapsed lifted nullable results (e.g. `int? x * 0` with `x == null`) | `IsOrdinaryBinaryArithmetic(e)` on the outer node (rejects custom `Method` and lifted/`IsLiftedToNull`) | `CustomAdd_WithZero_...`, `CustomSubtract_WithZero_...`, `CustomMultiply_ByOne_...`, `CustomDivide_ByOne_...`, `LiftedNullableMultiplicationByZero_...`, `LiftedNullableDivisionOfZero_...`, `NonLiftedIntMultiplicationByZero_StillSimplifies` (positive control) |
+| `AdditionOfConstants`, `SubstractionOfConstants`, `MultiplicationOfConstants`, `DivisionOfConstants`, `PowerOfConstants` | Folded two constants via ordinary CLR `dynamic` arithmetic regardless of the outer node's custom `Method` | `IsOrdinaryBinaryArithmetic(e)` | Covered indirectly by the root-identity tests above (constant folding is one of the candidate rules for those shapes) |
+| `AdditionWithNegate` (×2), `SubstractionWithNegate` (×2), `NegateWithSubstraction` | Treated any `Negate`/outer op as ordinary regardless of `Method`/lifting (the originally-known S3 hazard) | `IsOrdinaryBinaryArithmetic` on the outer node **and** `IsOrdinaryUnaryNegate` on the `Negate` operand | `CustomNegate_InsideAdditionWithNegateShape_KeepsCustomMethod`, `CustomNegate_OuterNegateOfSubtraction_KeepsCustomMethod` |
+| `SubstractionWithAddition`, `SubstractionWithSubstraction` | No check on the outer `Subtract` or the nested `Add`/`Subtract` | `IsOrdinaryBinaryArithmetic` on both | Covered by `AdditiveCanonicalization_WithNestedCustomNegate_DoesNotFlipSign` exercising the same reassociation path; no dedicated test needed since these rules only reshape already-guarded nodes |
+| `AdditionOfEqualsElements`, `SubstractionOfEqualsElements` (factoring) | Decomposed any nested `Multiply` by `NodeType` alone, ignoring outer op or inner `Method` | `IsOrdinaryBinaryArithmetic(e)`; nested `Multiply` only decomposed via `IsOrdinaryBinaryArithmetic` on that inner node, otherwise treated as an atomic `1 * term` | Exercised indirectly through canonicalization tests; no separate factoring-specific reachability test added (out of scope beyond the audited hazard) |
+| `Multiplication` (commute-with-constant, constant×constant-times-rest, constant×constant product-combine) | Commuted/combined regardless of outer or nested `Method` | `IsOrdinaryBinaryArithmetic` on outer and any nested `Multiply` operand | `OrdinaryMultiplication_WithNestedCustomMultiply_KeepsInnerNodeAtomic` |
+| `MultiplicationOfEqualsElements` (constant-distribute ×2, power-combine) | Distributed/combined regardless of outer/nested `Method`; power-combine only checked `leftleft.Type != typeof(double)`, not `Method` | `IsOrdinaryBinaryArithmetic` on outer and any nested `Multiply`/`Power` operand before decomposing it | `OrdinaryMultiplication_WithNestedCustomMultiply_KeepsInnerNodeAtomic`, `OrdinaryDouble_StandardPower_StillSimplifies` (positive control) |
+| `MultiplicationWithNegate` (×2), `DivisionWithNegate` (×2) | Same `Negate`-consuming hazard as the additive family | `IsOrdinaryBinaryArithmetic` on outer **and** `IsOrdinaryUnaryNegate` on the operand | Covered by the negate-preservation tests above via the shared helper; no separate test needed (identical guard shape) |
+| `DivisionOfDivision` (×3 overloads: `(x/y)/(z/w)`, `x/(y/z)`, `(x/y)/z`) | Field-style reassociation applied to **any** numeric `Divide`, including truncating integer division (`8 / (3 / 2)` source `8` vs. rewritten `5`) | `IsOrdinaryFieldDivision` (adds `Types.FloatingPointNumber.Contains(Type)`) on the outer node and every nested `Divide` operand involved | `IntegerDivisionOfDivision_XOverYOverZ_...`, `IntegerDivisionOfDivision_XOverYAllOverZOverW_...`, `FloatingPointDivisionOfDivision_StillReassociates` (positive control) |
+| Logarithm combination (`LogarithmSimplificationAddNumber`/`SubstractNumber`, `Logarithm10Simplification...`), trig identities (`AdditionOfCos2andSin2Number`, `DivisionOfCosAndSinNumber`, `DivisionOfSinAndCosNumber`, `MultiplicationOfCosAndTanNumber`, `MultiplicationOfTanAndCosNumber`, `DivisionOfSinAndTanNumber`) in `ExpressionSimplifier.INumber.cs` | Checked the inner `Log`/`Sin`/`Cos`/`Tan` calls but never the OUTER `Add`/`Subtract`/`Multiply`/`Divide` node's `Method` | `IsOrdinaryBinaryArithmetic` on the outer node (cast from the `Expression e` parameter) | `CustomAdd_OfTwoLogCalls_DoesNotCombineIntoLogOfProduct`, `CustomDivide_OfSinAndCos_DoesNotBecomeTan`, `OrdinaryDouble_LogarithmCombination_...`/`OrdinaryDouble_SinOverCos_...` (positive controls) |
+| `CanCanonicalizeCommutativeBinary` | Checked `Method is null` only (missed lifted nullable rejection) | Delegates to `IsOrdinaryBinaryArithmetic` | Covered by every canonicalization test above |
+| `CollectAdditiveTerms`, `CollectMultiplicativeFactors` | Flattened any nested `Add`/`Subtract`/`Negate`/`Multiply` by `NodeType` alone, silently erasing a nested custom operator even though S1 preserved its `Method` up to that point | Flatten only when `IsOrdinaryBinaryArithmetic`/`IsOrdinaryUnaryNegate` accepts the nested node; otherwise keep it as one atomic term/factor | `OrdinaryAddition_WithNestedCustomAdd_...`, `OrdinaryAddition_WithNestedCustomSubtract_...`, `OrdinaryMultiplication_WithNestedCustomMultiply_...`, `AdditiveCanonicalization_WithNestedCustomNegate_...` |
+
+**`ExpressionComparer` regression:** `Comparer_CustomAdditionWithZero_IsNotEqualToPlainOperand` proves a
+custom-method `Add(x, 0)` no longer pre-comparison-simplifies to plain `x`, closing the false-equivalence
+path described in the audit (this test failed on the pre-S3 baseline: `Equals` returned `true`).
+
+**Baseline verification:** `UtilsTest/Mathematics/Expressions/ExpressionSimplifierSymbolicContractTests.cs`
+was written and run against the pre-fix baseline first; 17 of its 27 tests failed there (the custom-operator,
+nested-canonicalization, log/trig-outer-operator, integer-division, and lifted-nullable cases above), 10
+positive controls already passed. All 27 pass after the fix; the full `Mathematics.Expressions` namespace
+(379 tests) and the existing S1/S2/logarithm/comparer/finalization suites remain green, unchanged.
+
+**Deliberately deferred / out of scope for S3:**
+
+- No general side-effect/purity analyzer (documented assumption instead).
+- No general mathematical-domain/constraint solver; logarithm and power identities keep their existing
+  positive-finite/precondition assumptions, now stated explicitly in the XML doc contract.
+- `decimal` is classified as an *ordinary* operand type by the structural probe (its real `op_Addition`
+  etc. match the probed default), so decimal identities keep firing; this was a deliberate design choice
+  over a blanket "any non-null `Method` is unsafe" rule, verified with a positive-control test
+  (`OrdinaryDecimal_AdditionWithZero_PositiveControl`).
+- `ExpressionTransformer.BuildPlan`, `ExpressionCallSignatureAttribute`, S4 structural canonical keys, and
+  `ExpressionOptimiser` (tracked separately as O0) were not touched.
+- No S5 allocation/performance cleanup beyond the guard checks themselves, which are simple dictionary
+  lookups against a table built once per process.
+
 ### S4 — Replace textual canonical identity with structural canonical keys
 
 Current additive/multiplicative canonical ordering uses `Expression.ToString()` as a canonical key. This is useful but not a true structural identity and is affected by parameter names and custom `ToString()` overrides.
