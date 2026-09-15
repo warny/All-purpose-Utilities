@@ -108,6 +108,40 @@ public class ExpressionSimplifierLogarithmRuleTests
     }
 
     /// <summary>
+    /// Verifies that subtracting two-argument logarithms with different bases retains both base operands
+    /// and source semantics instead of being consumed by the unary natural-log subtraction rule.
+    /// </summary>
+    [TestMethod]
+    public void Simplify_SubtractedTwoArgumentLogsWithDifferentBases_AreNotCombined()
+    {
+        Expression<Func<double, double, double, double, double>> source =
+            (value1, base1, value2, base2) => double.Log(value1, base1) - double.Log(value2, base2);
+
+        var simplified = (Expression<Func<double, double, double, double, double>>)
+            new ExpressionSimplifier().Simplify(source);
+
+        AssertTwoBinaryLogCallsRemain(simplified.Body);
+        Assert.AreEqual(source.Compile()(8.0, 2.0, 100.0, 10.0), simplified.Compile()(8.0, 2.0, 100.0, 10.0), 1e-12);
+    }
+
+    /// <summary>
+    /// Verifies that subtracting two-argument logarithms sharing a base remains a negative control and
+    /// does not introduce a same-base logarithm feature through the unary natural-log subtraction rule.
+    /// </summary>
+    [TestMethod]
+    public void Simplify_SubtractedTwoArgumentLogsWithSameBase_AreNotCombined()
+    {
+        Expression<Func<double, double, double, double>> source =
+            (x, y, newBase) => double.Log(x, newBase) - double.Log(y, newBase);
+
+        var simplified = (Expression<Func<double, double, double, double>>)
+            new ExpressionSimplifier().Simplify(source);
+
+        AssertTwoBinaryLogCallsRemain(simplified.Body);
+        Assert.AreEqual(source.Compile()(8.0, 32.0, 2.0), simplified.Compile()(8.0, 32.0, 2.0), 1e-12);
+    }
+
+    /// <summary>
     /// Characterizes the current input-family boundary: direct <see cref="Math.Log(double)"/> calls are
     /// preserved rather than normalized or combined, while the simplifier's active logarithm conversion
     /// and combination rules target static methods declared by <see cref="double"/>.
