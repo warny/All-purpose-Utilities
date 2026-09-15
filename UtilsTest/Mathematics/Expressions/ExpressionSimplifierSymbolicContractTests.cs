@@ -43,18 +43,39 @@ public class ExpressionSimplifierSymbolicContractTests
     /// <summary>Observably different from ordinary unary negation.</summary>
     private static double CustomNegate(double a) => -a - 1000.0;
 
+    /// <summary>Reflected <see cref="MethodInfo"/> for <see cref="CustomAdd"/>, used as the explicit custom <c>Method</c> on a hand-built <see cref="BinaryExpression"/>.</summary>
     private static readonly MethodInfo CustomAddMethod = Method(nameof(CustomAdd));
+
+    /// <summary>Reflected <see cref="MethodInfo"/> for <see cref="CustomSubtract"/>, used as the explicit custom <c>Method</c> on a hand-built <see cref="BinaryExpression"/>.</summary>
     private static readonly MethodInfo CustomSubtractMethod = Method(nameof(CustomSubtract));
+
+    /// <summary>Reflected <see cref="MethodInfo"/> for <see cref="CustomMultiply"/>, used as the explicit custom <c>Method</c> on a hand-built <see cref="BinaryExpression"/>.</summary>
     private static readonly MethodInfo CustomMultiplyMethod = Method(nameof(CustomMultiply));
+
+    /// <summary>Reflected <see cref="MethodInfo"/> for <see cref="CustomDivide"/>, used as the explicit custom <c>Method</c> on a hand-built <see cref="BinaryExpression"/>.</summary>
     private static readonly MethodInfo CustomDivideMethod = Method(nameof(CustomDivide));
+
+    /// <summary>Reflected <see cref="MethodInfo"/> for <see cref="CustomPower"/>, used as the explicit custom <c>Method</c> on a hand-built <see cref="BinaryExpression"/>.</summary>
     private static readonly MethodInfo CustomPowerMethod = Method(nameof(CustomPower));
+
+    /// <summary>Reflected <see cref="MethodInfo"/> for <see cref="CustomNegate"/>, used as the explicit custom <c>Method</c> on a hand-built <see cref="UnaryExpression"/>.</summary>
     private static readonly MethodInfo CustomNegateMethod = Method(nameof(CustomNegate));
 
+    /// <summary>Resolves the private static <see cref="MethodInfo"/> for one of this class's own custom-operator fixture methods, by name.</summary>
+    /// <param name="name">The fixture method's name, typically supplied via <see langword="nameof"/>.</param>
+    /// <returns>The resolved <see cref="MethodInfo"/>.</returns>
     private static MethodInfo Method(string name) =>
         typeof(ExpressionSimplifierSymbolicContractTests).GetMethod(name, BindingFlags.NonPublic | BindingFlags.Static)!;
 
+    /// <summary>Creates a fresh <see cref="double"/> parameter expression, defaulting to the name <c>x</c>.</summary>
+    /// <param name="name">The parameter's display name.</param>
+    /// <returns>A new <see cref="double"/> <see cref="ParameterExpression"/>.</returns>
     private static ParameterExpression X(string name = "x") => Expression.Parameter(typeof(double), name);
 
+    /// <summary>Builds a call to a public static <see cref="double"/> method (for example <see cref="double.Log(double)"/>, <see cref="double.Sin(double)"/>) with the given arguments, resolving the overload by an all-<see cref="double"/> parameter list.</summary>
+    /// <param name="methodName">The name of the <see cref="double"/> static method to call.</param>
+    /// <param name="args">The call's argument expressions, one per <see cref="double"/> parameter.</param>
+    /// <returns>The resulting <see cref="MethodCallExpression"/>.</returns>
     private static MethodCallExpression CallDouble(string methodName, params Expression[] args)
     {
         var parameterTypes = new Type[args.Length];
@@ -66,14 +87,21 @@ public class ExpressionSimplifierSymbolicContractTests
     /// <summary>Recursively records every non-null <see cref="UnaryExpression.Method"/>/<see cref="BinaryExpression.Method"/> found in a tree, using the standard <see cref="ExpressionVisitor"/> walk rather than a hand-rolled traversal.</summary>
     private sealed class MethodCollectingVisitor : ExpressionVisitor
     {
+        /// <summary>The distinct non-null operator <see cref="MethodInfo"/> instances encountered so far by this visitor.</summary>
         public HashSet<MethodInfo> Methods { get; } = new();
 
+        /// <summary>Records <paramref name="node"/>'s <see cref="UnaryExpression.Method"/>, if any, into <see cref="Methods"/> before visiting its operand.</summary>
+        /// <param name="node">The unary node being visited.</param>
+        /// <returns>The (possibly rewritten) node, per the base <see cref="ExpressionVisitor"/> contract.</returns>
         protected override Expression VisitUnary(UnaryExpression node)
         {
             if (node.Method is not null) Methods.Add(node.Method);
             return base.VisitUnary(node);
         }
 
+        /// <summary>Records <paramref name="node"/>'s <see cref="BinaryExpression.Method"/>, if any, into <see cref="Methods"/> before visiting its operands.</summary>
+        /// <param name="node">The binary node being visited.</param>
+        /// <returns>The (possibly rewritten) node, per the base <see cref="ExpressionVisitor"/> contract.</returns>
         protected override Expression VisitBinary(BinaryExpression node)
         {
             if (node.Method is not null) Methods.Add(node.Method);
@@ -81,6 +109,10 @@ public class ExpressionSimplifierSymbolicContractTests
         }
     }
 
+    /// <summary>Determines whether <paramref name="method"/> appears as the explicit operator <c>Method</c> of any <see cref="UnaryExpression"/>/<see cref="BinaryExpression"/> anywhere in <paramref name="tree"/>, proving the operator survived simplification atomically instead of being flattened or folded away.</summary>
+    /// <param name="tree">The expression tree to search.</param>
+    /// <param name="method">The operator method to look for.</param>
+    /// <returns><see langword="true"/> when <paramref name="method"/> is found; otherwise <see langword="false"/>.</returns>
     private static bool ContainsMethod(Expression tree, MethodInfo method)
     {
         var visitor = new MethodCollectingVisitor();
@@ -119,6 +151,7 @@ public class ExpressionSimplifierSymbolicContractTests
     // 1. Root custom operator identities must not consume the custom Method.
     // ================================================================================================
 
+    /// <summary>Regression: a custom-<c>Method</c> <c>Add(x, 0)</c> must not be collapsed by <c>AdditionWithZero</c> into plain <c>x</c>, which would silently discard the custom operator's actual behavior.</summary>
     [TestMethod]
     public void CustomAdd_WithZero_KeepsCustomMethod_RootIdentityNotApplied()
     {
@@ -131,6 +164,7 @@ public class ExpressionSimplifierSymbolicContractTests
         AssertSameBehavior(source, simplified, 3.0);
     }
 
+    /// <summary>Regression: a custom-<c>Method</c> <c>Subtract(x, 0)</c> must not be collapsed by <c>SubstractionWithZero</c> into plain <c>x</c>.</summary>
     [TestMethod]
     public void CustomSubtract_WithZero_KeepsCustomMethod_RootIdentityNotApplied()
     {
@@ -143,6 +177,7 @@ public class ExpressionSimplifierSymbolicContractTests
         AssertSameBehavior(source, simplified, 3.0);
     }
 
+    /// <summary>Regression: a custom-<c>Method</c> <c>Multiply(x, 1)</c> must not be collapsed by <c>MultiplicationWithZeroOrOne</c> into plain <c>x</c>.</summary>
     [TestMethod]
     public void CustomMultiply_ByOne_KeepsCustomMethod_RootIdentityNotApplied()
     {
@@ -155,6 +190,7 @@ public class ExpressionSimplifierSymbolicContractTests
         AssertSameBehavior(source, simplified, 3.0);
     }
 
+    /// <summary>Regression: a custom-<c>Method</c> <c>Divide(x, 1)</c> must not be collapsed by <c>DivideWithZeroOrOne</c> into plain <c>x</c>.</summary>
     [TestMethod]
     public void CustomDivide_ByOne_KeepsCustomMethod_RootIdentityNotApplied()
     {
@@ -167,6 +203,7 @@ public class ExpressionSimplifierSymbolicContractTests
         AssertSameBehavior(source, simplified, 3.0);
     }
 
+    /// <summary>Regression: a custom-<c>Method</c> <c>Power(x, 1)</c> must not be collapsed by <c>PowerByZeroOrOne</c> into plain <c>x</c>.</summary>
     [TestMethod]
     public void CustomPower_ByOne_KeepsCustomMethod_RootIdentityNotApplied()
     {
@@ -179,6 +216,7 @@ public class ExpressionSimplifierSymbolicContractTests
         AssertSameBehavior(source, simplified, 3.0);
     }
 
+    /// <summary>Regression: <c>x + (-customY)</c>, where the <see cref="ExpressionType.Negate"/> operand carries a custom <c>Method</c>, must not be rewritten by <c>AdditionWithNegate</c> as if it were ordinary sign flip (which would drop the custom negation's actual behavior).</summary>
     [TestMethod]
     public void CustomNegate_InsideAdditionWithNegateShape_KeepsCustomMethod()
     {
@@ -194,6 +232,7 @@ public class ExpressionSimplifierSymbolicContractTests
         AssertSameBehavior(source, simplified, 2.0, 7.0);
     }
 
+    /// <summary>Regression: <c>-(x - y)</c> built with a custom-<c>Method</c> outer <see cref="ExpressionType.Negate"/> must not be rewritten by <c>NegateWithSubstraction</c> into <c>-y + x</c>, which would replace the custom negation with an ordinary sign flip.</summary>
     [TestMethod]
     public void CustomNegate_OuterNegateOfSubtraction_KeepsCustomMethod()
     {
@@ -213,6 +252,7 @@ public class ExpressionSimplifierSymbolicContractTests
     // 2. Nested custom Add/Subtract/Multiply/Negate must survive canonicalization atomically.
     // ================================================================================================
 
+    /// <summary>Regression: ordinary <c>Add(customAdd(x, y), z)</c> must keep the inner custom-<c>Method</c> <c>Add</c> as one atomic term through additive canonicalization (<c>CollectAdditiveTerms</c>), instead of flattening it into ordinary <c>Add</c> nodes and losing its <c>Method</c>.</summary>
     [TestMethod]
     public void OrdinaryAddition_WithNestedCustomAdd_KeepsInnerNodeAtomic()
     {
@@ -228,6 +268,7 @@ public class ExpressionSimplifierSymbolicContractTests
         AssertSameBehavior(source, simplified, 1.0, 2.0, 3.0);
     }
 
+    /// <summary>Regression: ordinary <c>Add(customSubtract(x, y), z)</c> must keep the inner custom-<c>Method</c> <c>Subtract</c> as one atomic term through additive canonicalization.</summary>
     [TestMethod]
     public void OrdinaryAddition_WithNestedCustomSubtract_KeepsInnerNodeAtomic()
     {
@@ -243,6 +284,7 @@ public class ExpressionSimplifierSymbolicContractTests
         AssertSameBehavior(source, simplified, 4.0, 1.0, 6.0);
     }
 
+    /// <summary>Regression: ordinary <c>Multiply(customMultiply(x, y), z)</c> must keep the inner custom-<c>Method</c> <c>Multiply</c> as one atomic factor through multiplicative canonicalization (<c>CollectMultiplicativeFactors</c>).</summary>
     [TestMethod]
     public void OrdinaryMultiplication_WithNestedCustomMultiply_KeepsInnerNodeAtomic()
     {
@@ -258,6 +300,7 @@ public class ExpressionSimplifierSymbolicContractTests
         AssertSameBehavior(source, simplified, 2.0, 3.0, 4.0);
     }
 
+    /// <summary>Regression: a custom-<c>Method</c> <see cref="ExpressionType.Negate"/> nested inside additive canonicalization must remain atomic instead of being reinterpreted as an ordinary sign flip by <c>CollectAdditiveTerms</c>.</summary>
     [TestMethod]
     public void AdditiveCanonicalization_WithNestedCustomNegate_DoesNotFlipSign()
     {
@@ -278,6 +321,7 @@ public class ExpressionSimplifierSymbolicContractTests
     // 3. Custom outer operator around log/trig operands must not trigger the built-in identities.
     // ================================================================================================
 
+    /// <summary>Regression: <c>Log(x) + Log(y)</c> built with a custom-<c>Method</c> outer <see cref="ExpressionType.Add"/> must not be combined by <c>LogarithmSimplificationAddNumber</c> into <c>Log(x*y)</c>, which checks only the inner calls, not the outer operator.</summary>
     [TestMethod]
     public void CustomAdd_OfTwoLogCalls_DoesNotCombineIntoLogOfProduct()
     {
@@ -293,6 +337,7 @@ public class ExpressionSimplifierSymbolicContractTests
         AssertSameBehavior(source, simplified, 2.0, 3.0);
     }
 
+    /// <summary>Regression: <c>Sin(x) / Cos(x)</c> built with a custom-<c>Method</c> outer <see cref="ExpressionType.Divide"/> must not be rewritten by <c>DivisionOfCosAndSinNumber</c> into <c>Tan(x)</c>.</summary>
     [TestMethod]
     public void CustomDivide_OfSinAndCos_DoesNotBecomeTan()
     {
@@ -307,6 +352,7 @@ public class ExpressionSimplifierSymbolicContractTests
         AssertSameBehavior(source, simplified, 0.7);
     }
 
+    /// <summary>Regression: <c>sin(x)^2 + cos(x)^2</c>, where the <c>sin(x)^2</c> factor is a custom-<c>Method</c> <see cref="ExpressionType.Power"/>, must not be collapsed by <c>AdditionOfCos2andSin2Number</c> into the constant <c>1</c>; that identity checked the outer <see cref="ExpressionType.Add"/>'s <c>Method</c> but, before this fix, never the two <see cref="ExpressionType.Power"/> operands' <c>Method</c>.</summary>
     [TestMethod]
     public void CustomPower_InsideSinSquaredPlusCosSquared_DoesNotCollapseToOne()
     {
@@ -331,6 +377,7 @@ public class ExpressionSimplifierSymbolicContractTests
     // 4. ExpressionComparer must not regain false equivalence through pre-comparison simplification.
     // ================================================================================================
 
+    /// <summary>Regression: <see cref="ExpressionComparer"/> simplifies both operands before comparing them structurally, so a bad root-identity rewrite could still make it report a false equivalence even though its structural core correctly compares <c>Method</c> metadata. A custom-<c>Method</c> <c>Add(x, 0)</c> must therefore not compare equal to plain <c>y</c>.</summary>
     [TestMethod]
     public void Comparer_CustomAdditionWithZero_IsNotEqualToPlainOperand()
     {
@@ -346,6 +393,7 @@ public class ExpressionSimplifierSymbolicContractTests
     // 5. Integer nested-division counterexamples: field-style reassociation is invalid under truncation.
     // ================================================================================================
 
+    /// <summary>Regression: <c>x / (y / z)</c> over <see cref="int"/> operands must not be reassociated by <c>DivisionOfDivision</c> into the field-style <c>(x*z) / y</c>, which is invalid under truncating integer division. Discriminating counterexample: <c>8 / (3 / 2)</c> is <c>8</c> under truncation but <c>(8*2) / 3</c> is <c>5</c>.</summary>
     [TestMethod]
     public void IntegerDivisionOfDivision_XOverYOverZ_MatchesTruncatingSourceSemantics()
     {
@@ -364,6 +412,7 @@ public class ExpressionSimplifierSymbolicContractTests
         Assert.AreEqual(compiledSource(8, 3, 2), compiledSimplified(8, 3, 2));
     }
 
+    /// <summary>Regression: <c>(x / y) / (z / w)</c> over <see cref="int"/> operands must not be reassociated by <c>DivisionOfDivision</c> into the field-style <c>(x*w) / (y*z)</c>. Discriminating counterexample: <c>(9/2)/(4/3)</c> is <c>4</c> under truncation but <c>(9*3) / (2*4)</c> is <c>3</c>.</summary>
     [TestMethod]
     public void IntegerDivisionOfDivision_XOverYAllOverZOverW_MatchesTruncatingSourceSemantics()
     {
@@ -384,6 +433,7 @@ public class ExpressionSimplifierSymbolicContractTests
         Assert.AreEqual(compiledSource(9, 2, 4, 3), compiledSimplified(9, 2, 4, 3));
     }
 
+    /// <summary>Positive control: <see cref="Utils.Objects.Types.FloatingPointNumber"/> types are not truncating rings, so <c>DivisionOfDivision</c>'s field-style reassociation of <c>x / (y / z)</c> must remain available (and behavior-preserving) for <see cref="double"/> operands.</summary>
     [TestMethod]
     public void FloatingPointDivisionOfDivision_StillReassociates()
     {
@@ -402,6 +452,7 @@ public class ExpressionSimplifierSymbolicContractTests
     // 6. Lifted nullable arithmetic must preserve null propagation.
     // ================================================================================================
 
+    /// <summary>Regression: lifted <c>int? x * 0</c> must preserve <see langword="null"/> propagation (<c>x == null</c> implies a <see langword="null"/> result) rather than being collapsed by <c>MultiplicationWithZeroOrOne</c> into the non-null constant <c>0</c>.</summary>
     [TestMethod]
     public void LiftedNullableMultiplicationByZero_PreservesNullPropagation()
     {
@@ -417,6 +468,7 @@ public class ExpressionSimplifierSymbolicContractTests
         Assert.AreEqual(compiledSource(5), compiledSimplified(5));
     }
 
+    /// <summary>Regression: lifted <c>0 / int? x</c> must preserve <see langword="null"/> propagation rather than being collapsed by <c>DivideWithZero</c> into the non-null constant <c>0</c>.</summary>
     [TestMethod]
     public void LiftedNullableDivisionOfZero_PreservesNullPropagation()
     {
@@ -432,6 +484,7 @@ public class ExpressionSimplifierSymbolicContractTests
         Assert.AreEqual(compiledSource(5), compiledSimplified(5));
     }
 
+    /// <summary>Positive control: an ordinary, non-lifted <see cref="int"/> <c>x * 0</c> must still simplify to the constant <c>0</c>; the new lifted-arithmetic guard must not over-reject non-nullable operands.</summary>
     [TestMethod]
     public void NonLiftedIntMultiplicationByZero_StillSimplifies()
     {
@@ -448,6 +501,7 @@ public class ExpressionSimplifierSymbolicContractTests
     // 7. Positive controls: ordinary built-in simplification keeps working.
     // ================================================================================================
 
+    /// <summary>Positive control: ordinary <see cref="double"/> <c>x + 0</c> must still simplify to plain <c>x</c>; the new operator-safety guards must not disable this built-in identity.</summary>
     [TestMethod]
     public void OrdinaryDouble_AdditionWithZero_StillSimplifies()
     {
@@ -459,6 +513,7 @@ public class ExpressionSimplifierSymbolicContractTests
         Assert.AreEqual(4.0, simplified.Compile()(4.0));
     }
 
+    /// <summary>Positive control: ordinary <see cref="double"/> <c>x * 1</c> must still simplify to plain <c>x</c>.</summary>
     [TestMethod]
     public void OrdinaryDouble_MultiplicationByOne_StillSimplifies()
     {
@@ -470,6 +525,7 @@ public class ExpressionSimplifierSymbolicContractTests
         Assert.AreEqual(6.0, simplified.Compile()(6.0));
     }
 
+    /// <summary>Positive control: ordinary, non-lifted, non-custom commutative <see cref="double"/> addition must still canonicalize identically regardless of operand order, so <see cref="ExpressionComparer"/> still reports the two orderings as equal.</summary>
     [TestMethod]
     public void OrdinaryDouble_CanonicalAdditiveOrdering_StillReordersDeterministically()
     {
@@ -484,6 +540,7 @@ public class ExpressionSimplifierSymbolicContractTests
         Assert.IsTrue(ExpressionComparer.Default.Equals(left, right), "Ordinary commutative addition must still canonicalize for comparison.");
     }
 
+    /// <summary>Positive control: a standard, non-custom <c>Expression.Power(double, double)</c> node (whose default <c>Method</c> resolves to <see cref="Math.Pow(double, double)"/>) must still be recognized as ordinary, so <c>x^1</c> still simplifies to plain <c>x</c>.</summary>
     [TestMethod]
     public void OrdinaryDouble_StandardPower_StillSimplifies()
     {
@@ -496,6 +553,7 @@ public class ExpressionSimplifierSymbolicContractTests
         Assert.AreEqual(7.0, simplified.Compile()(7.0));
     }
 
+    /// <summary>Positive control: ordinary <c>Log(x) + Log(y)</c> on the supported positive finite domain must still combine into <c>Log(x*y)</c>; the new outer-operator guard must not accidentally disable this S2-restored identity for the ordinary (non-custom) case.</summary>
     [TestMethod]
     public void OrdinaryDouble_LogarithmCombination_StillSimplifiesOnPositiveFiniteDomain()
     {
@@ -508,6 +566,7 @@ public class ExpressionSimplifierSymbolicContractTests
         AssertSameBehavior(source, simplified, 0.5, 8.0);
     }
 
+    /// <summary>Positive control: ordinary <c>Sin(x) / Cos(x)</c> must still become <c>Tan(x)</c>; the new outer-operator guard must not disable this identity for the ordinary (non-custom) case.</summary>
     [TestMethod]
     public void OrdinaryDouble_SinOverCos_StillBecomesTan()
     {
@@ -519,6 +578,7 @@ public class ExpressionSimplifierSymbolicContractTests
         AssertSameBehavior(source, simplified, 1.3);
     }
 
+    /// <summary>Positive control: unlike an arbitrary user-defined operator, <see cref="decimal"/>'s <c>op_Addition</c> is a genuine predefined CLR operator method (not a hard-coded <c>null</c>-<c>Method</c> assumption), so the structurally-probed operator-safety table classifies it as ordinary and <c>x + 0m</c> must still simplify to plain <c>x</c>.</summary>
     [TestMethod]
     public void OrdinaryDecimal_AdditionWithZero_PositiveControl()
     {
