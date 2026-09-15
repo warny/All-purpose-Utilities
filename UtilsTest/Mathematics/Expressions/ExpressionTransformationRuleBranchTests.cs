@@ -10,8 +10,8 @@ namespace UtilsTest.Mathematics.Expressions;
 [TestClass]
 public sealed class ExpressionTransformationRuleBranchTests
 {
-    /// <summary>Exposes the three protected power-call conversion rules independently.</summary>
-    private sealed class ExposedPowerSimplifier : ExpressionSimplifier
+    /// <summary>Exposes protected simplifier rules that require direct body characterization.</summary>
+    private sealed class ExposedSimplifier : ExpressionSimplifier
     {
         /// <summary>Invokes <c>PowerConvertionNumber1</c>.</summary>
         public Expression ConvertNumberPower(Expression source, Expression left, Expression right) => PowerConvertionNumber1(source, left, right);
@@ -21,6 +21,33 @@ public sealed class ExpressionTransformationRuleBranchTests
 
         /// <summary>Invokes <c>PowerConversionMath</c>.</summary>
         public Expression ConvertDoublePower(Expression source, Expression left, Expression right) => PowerConversionMath(source, left, right);
+
+        /// <summary>Invokes <c>NegateWithSubstraction</c> without recursive operand preparation.</summary>
+        public Expression RewriteNegatedSubtraction(UnaryExpression source, BinaryExpression operand) => NegateWithSubstraction(source, operand);
+
+        /// <summary>Invokes <c>SubstractionWithSubstraction</c> without recursive right-operand preparation.</summary>
+        public Expression RewriteNestedSubtraction(BinaryExpression source, Expression left, BinaryExpression right) => SubstractionWithSubstraction(source, left, right);
+    }
+
+    /// <summary>Verifies direct public dispatch to the derivation addition rule without pre-simplification.</summary>
+    [TestMethod]
+    public void Derivate_Transform_Add_DispatchesDedicatedRule()
+    {
+        AssertDirectDerivationRule(ExpressionType.Add, ExpressionType.Add, 1.0);
+    }
+
+    /// <summary>Verifies direct public dispatch to the derivation subtraction rule without pre-simplification.</summary>
+    [TestMethod]
+    public void Derivate_Transform_Subtract_DispatchesDedicatedRule()
+    {
+        AssertDirectDerivationRule(ExpressionType.Subtract, ExpressionType.Subtract, 1.0);
+    }
+
+    /// <summary>Verifies direct public dispatch to the derivation product rule without pre-simplification.</summary>
+    [TestMethod]
+    public void Derivate_Transform_Multiply_DispatchesDedicatedRule()
+    {
+        AssertDirectDerivationRule(ExpressionType.Multiply, ExpressionType.Add, 3.0);
     }
 
     /// <summary>Verifies successful same-type checked conversion differentiation.</summary>
@@ -261,6 +288,40 @@ public sealed class ExpressionTransformationRuleBranchTests
         AssertPowerConversion((simplifier, source, left, right) => simplifier.ConvertDoublePower(source, left, right));
     }
 
+    /// <summary>Characterizes the prepared-away negate-with-subtraction rule body directly.</summary>
+    [TestMethod]
+    public void Simplify_NegateWithSubstraction_DirectRuleBody_RewritesOperands()
+    {
+        var simplifier = new ExposedSimplifier();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        ParameterExpression y = Expression.Parameter(typeof(double), "y");
+        BinaryExpression operand = Expression.Subtract(x, y);
+        UnaryExpression source = Expression.Negate(operand);
+
+        Expression result = simplifier.RewriteNegatedSubtraction(source, operand);
+
+        Assert.AreEqual(ExpressionType.Add, result.NodeType);
+        Assert.AreEqual(5.0, Expression.Lambda<Func<double, double, double>>(result, x, y).Compile()(2.0, 7.0), 1e-9);
+    }
+
+    /// <summary>Characterizes the prepared-away nested-subtraction rule body directly.</summary>
+    [TestMethod]
+    public void Simplify_SubstractionWithSubstraction_DirectRuleBody_ReassociatesOperands()
+    {
+        var simplifier = new ExposedSimplifier();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        ParameterExpression y = Expression.Parameter(typeof(double), "y");
+        ParameterExpression z = Expression.Parameter(typeof(double), "z");
+        BinaryExpression right = Expression.Subtract(y, z);
+        BinaryExpression source = Expression.Subtract(x, right);
+
+        Expression result = simplifier.RewriteNestedSubtraction(source, x, right);
+
+        var subtraction = (BinaryExpression)result;
+        Assert.AreEqual(ExpressionType.Add, subtraction.Left.NodeType);
+        Assert.AreEqual(3.0, Expression.Lambda<Func<double, double, double, double>>(result, x, y, z).Compile()(2.0, 3.0, 4.0), 1e-9);
+    }
+
     /// <summary>Asserts a symbolic integral numerically over the supplied sample domain.</summary>
     private static void AssertIntegral(Func<ParameterExpression, Expression> bodyFactory, Func<double, double> expected, double[] samples)
     {
@@ -272,6 +333,22 @@ public sealed class ExpressionTransformationRuleBranchTests
         {
             Assert.AreEqual(expected(sample), actual(sample), 1e-9, $"Unexpected integral at x={sample}.");
         }
+    }
+
+    /// <summary>Asserts direct public dispatch to one bare binary derivation rule.</summary>
+    /// <param name="sourceNodeType">The source binary operation.</param>
+    /// <param name="expectedNodeType">The expected top-level derivative operation.</param>
+    /// <param name="expectedValue">The derivative value at the representative inputs.</param>
+    private static void AssertDirectDerivationRule(ExpressionType sourceNodeType, ExpressionType expectedNodeType, double expectedValue)
+    {
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        ParameterExpression y = Expression.Parameter(typeof(double), "y");
+        Expression source = Expression.MakeBinary(sourceNodeType, x, y);
+
+        Expression result = new ExpressionDerivation<double>(x).Transform(source);
+
+        Assert.AreEqual(expectedNodeType, result.NodeType);
+        Assert.AreEqual(expectedValue, Expression.Lambda<Func<double, double, double>>(result, x, y).Compile()(2.0, 3.0), 1e-9);
     }
 
     /// <summary>Creates a double.Pow call with an explicitly supplied exponent node.</summary>
@@ -287,9 +364,9 @@ public sealed class ExpressionTransformationRuleBranchTests
         Assert.AreEqual(expected, new ExpressionSimplifier().Simplify(source), ExpressionComparer.Default);
 
     /// <summary>Asserts one protected power conversion independently of dispatcher selection.</summary>
-    private static void AssertPowerConversion(Func<ExposedPowerSimplifier, Expression, Expression, Expression, Expression> conversion)
+    private static void AssertPowerConversion(Func<ExposedSimplifier, Expression, Expression, Expression, Expression> conversion)
     {
-        var simplifier = new ExposedPowerSimplifier();
+        var simplifier = new ExposedSimplifier();
         ParameterExpression left = Expression.Parameter(typeof(double), "x");
         ConstantExpression right = Expression.Constant(2.0);
         MethodCallExpression source = CreatePowCall(left, right);
