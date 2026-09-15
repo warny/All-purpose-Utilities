@@ -117,6 +117,40 @@ Known candidate from the 2026-09-12 audit:
 
 For every candidate, add a behavior test that fails before the fix and passes afterward. Keep each fix narrow and avoid mixing unrelated rule semantics.
 
+#### S2 progress (2026-09-15) — production rule reachability audit complete
+
+Audited all 66 production transformation rules declared by `ExpressionSimplifier` across
+`ExpressionSimplifier.cs`, `ExpressionSimplifier.Math.cs`, and `ExpressionSimplifier.INumber.cs` against
+`ExpressionTransformer.BuildPlan`, including each method-level signature and node bucket, positional
+parameter shape, parameter-level constraint, same-name overload exposure, neighboring-rule metadata,
+and end-to-end test coverage. No dispatcher defect was found and `BuildPlan` was not changed.
+
+The audit confirmed two reachability defects and one rule-shape/executability hazard in the four intended
+unary logarithm-combination rules:
+
+- `Logarithm10SimplificationAddNumber` had parameter constraints but no method-level `Add` signature, so
+  it was absent from the dispatch plan. It now has `[ExpressionSignature(ExpressionType.Add)]`.
+- `Logarithm10SimplificationSubstractNumber` was registered in the `Subtract` bucket but constrained both
+  operands to `Math.Log10`, while the active call conversion and the other three combination rules use
+  concrete methods declared by `double`. Both constraints now consistently target `double.Log10`.
+- `ExpressionCallSignatureAttribute` intentionally matches only declaring type and method name, so the
+  natural-log rules also accepted `double.Log(value, base)` and silently ignored each base. All four rules
+  now require two calls to the exact same concrete unary method and conservatively return `null` for any
+  other shape. Combined results preserve that concrete method rather than emitting a static-abstract
+  interface `MethodInfo`, making the simplified lambdas directly compilable and executable.
+
+Dedicated end-to-end tests now simplify, structurally inspect, compile, and execute natural-log and
+base-10 addition/subtraction over positive finite values. Negative controls prove that different-base and
+same-base two-argument `Log` calls keep both base arguments and their source semantics. A reflection-based
+test also prevents any future method with parameter-level signature constraints from silently lacking the
+method-level signature required for plan registration. Direct-input characterization confirmed that the
+active simplifier representation is the `double.*` method family; direct `Math.Log` and `Math.Log10` calls
+remain preserved and are not broadened into new combination behavior.
+
+No other unreachable or parameter-incompatible production transformation rule was found. S2 is complete.
+S3 remains open: logarithm domains, IEEE-754 details, and custom-operator algebra policy are deliberately
+unchanged and continue to be tracked below.
+
 ### S3 — Formalize the symbolic-equivalence contract
 
 The current simplifier intentionally performs algebraic rewrites that are not guaranteed to preserve bit-for-bit CLR/IEEE-754 evaluation for every floating-point input, for example reassociation/reordering of addition and multiplication and identities such as `x * 0 -> 0`.

@@ -2,7 +2,6 @@
 using System.Numerics;
 using System.Reflection;
 using Utils.Expressions;
-using Utils.Reflection;
 
 namespace Utils.Mathematics.Expressions;
 
@@ -51,9 +50,12 @@ public partial class ExpressionSimplifier
             [ExpressionCallSignature(typeof(double), nameof(ILogarithmicFunctions<double>.Log))] MethodCallExpression left,
             [ExpressionCallSignature(typeof(double), nameof(ILogarithmicFunctions<double>.Log))] MethodCallExpression right)
     {
-        return Expression.Call(
-                typeof(ILogarithmicFunctions<>).GetStaticMethod([left.Type], "Log", [left.Type]),
-                Transform(Expression.Multiply(left.Arguments[0], right.Arguments[0])));
+        if (!CanCombineUnaryLogCalls(left, right))
+        {
+            return null;
+        }
+
+        return Expression.Call(left.Method, Transform(Expression.Multiply(left.Arguments[0], right.Arguments[0])));
     }
 
     /// <summary>
@@ -68,9 +70,12 @@ public partial class ExpressionSimplifier
             [ExpressionCallSignature(typeof(double), nameof(ILogarithmicFunctions<double>.Log))] MethodCallExpression left,
             [ExpressionCallSignature(typeof(double), nameof(ILogarithmicFunctions<double>.Log))] MethodCallExpression right)
     {
-        return Expression.Call(
-    typeof(ILogarithmicFunctions<>).GetStaticMethod([left.Type], "Log", [left.Type]),
-    Transform(Expression.Divide(left.Arguments[0], right.Arguments[0])));
+        if (!CanCombineUnaryLogCalls(left, right))
+        {
+            return null;
+        }
+
+        return Expression.Call(left.Method, Transform(Expression.Divide(left.Arguments[0], right.Arguments[0])));
     }
 
     /// <summary>
@@ -80,13 +85,17 @@ public partial class ExpressionSimplifier
     /// <param name="left">Left base-10 logarithm call.</param>
     /// <param name="right">Right base-10 logarithm call.</param>
     /// <returns>A combined logarithm expression when the arguments are compatible; otherwise <see langword="null"/>.</returns>
+    [ExpressionSignature(ExpressionType.Add)]
     protected Expression Logarithm10SimplificationAddNumber(Expression e,
             [ExpressionCallSignature(typeof(double), nameof(ILogarithmicFunctions<double>.Log10))] MethodCallExpression left,
             [ExpressionCallSignature(typeof(double), nameof(ILogarithmicFunctions<double>.Log10))] MethodCallExpression right)
     {
-        return Expression.Call(
-    typeof(ILogarithmicFunctions<>).GetStaticMethod([left.Type], "Log10", [left.Type]),
-    Transform(Expression.Multiply(left.Arguments[0], right.Arguments[0])));
+        if (!CanCombineUnaryLogCalls(left, right))
+        {
+            return null;
+        }
+
+        return Expression.Call(left.Method, Transform(Expression.Multiply(left.Arguments[0], right.Arguments[0])));
     }
 
     /// <summary>
@@ -98,12 +107,30 @@ public partial class ExpressionSimplifier
     /// <returns>A combined logarithm expression when the arguments are compatible; otherwise <see langword="null"/>.</returns>
     [ExpressionSignature(ExpressionType.Subtract)]
     protected Expression Logarithm10SimplificationSubstractNumber(Expression e,
-            [ExpressionCallSignature(typeof(Math), nameof(ILogarithmicFunctions<double>.Log10))] MethodCallExpression left,
-            [ExpressionCallSignature(typeof(Math), nameof(ILogarithmicFunctions<double>.Log10))] MethodCallExpression right)
+            [ExpressionCallSignature(typeof(double), nameof(ILogarithmicFunctions<double>.Log10))] MethodCallExpression left,
+            [ExpressionCallSignature(typeof(double), nameof(ILogarithmicFunctions<double>.Log10))] MethodCallExpression right)
     {
-        return Expression.Call(
-            typeof(ILogarithmicFunctions<>).GetStaticMethod([left.Type], "Log10", [left.Type]),
-            Transform(Expression.Divide(left.Arguments[0], right.Arguments[0])));
+        if (!CanCombineUnaryLogCalls(left, right))
+        {
+            return null;
+        }
+
+        return Expression.Call(left.Method, Transform(Expression.Divide(left.Arguments[0], right.Arguments[0])));
+    }
+
+    /// <summary>
+    /// Determines whether two logarithm calls are the same concrete unary overload understood by the
+    /// existing combination rules. Rejecting other shapes prevents overload bases or mixed call families
+    /// from being discarded during the binary rewrite.
+    /// </summary>
+    /// <param name="left">The left logarithm call.</param>
+    /// <param name="right">The right logarithm call.</param>
+    /// <returns><see langword="true"/> only for matching concrete unary logarithm methods.</returns>
+    private static bool CanCombineUnaryLogCalls(MethodCallExpression left, MethodCallExpression right)
+    {
+        return left.Arguments.Count == 1
+            && right.Arguments.Count == 1
+            && left.Method == right.Method;
     }
 
     #endregion
