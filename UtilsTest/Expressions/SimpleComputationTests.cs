@@ -10,6 +10,11 @@ namespace UtilsTest.Expressions;
 [TestClass]
 public class SimpleComputationTests
 {
+    /// <summary>
+    /// Represents the first positive integer that binary32 cannot represent exactly.
+    /// </summary>
+    private const double BeyondSinglePrecisionInteger = 16_777_217d;
+
     CSyntaxExpressionCompiler compiler = new CSyntaxExpressionCompiler();
 
     [TestMethod]
@@ -44,7 +49,11 @@ public class SimpleComputationTests
         var e = (LambdaExpression)compiler.Compile("(double x, double y) => x * y");
         var f = (Func<double, double, double>)e.Compile();
 
-        foreach ((double x, double y) in new (double, double)[] { (0, 3.5), (1.25, -4), (-2.5, -8), (123.5, 0.25) })
+        foreach ((double x, double y) in new (double, double)[]
+        {
+            (0, 3.5), (1.25, -4), (-2.5, -8), (123.5, 0.25),
+            (BeyondSinglePrecisionInteger, 1d)
+        })
             Assert.AreEqual(x * y, f(x, y));
 
     }
@@ -55,7 +64,11 @@ public class SimpleComputationTests
         var e = (LambdaExpression)compiler.Compile("(double x, double y) => x / y");
         var f = (Func<double, double, double>)e.Compile();
 
-        foreach ((double x, double y) in new (double, double)[] { (0, 3.5), (1.25, -4), (-2.5, -8), (123.5, 0.25) })
+        foreach ((double x, double y) in new (double, double)[]
+        {
+            (0, 3.5), (1.25, -4), (-2.5, -8), (123.5, 0.25),
+            (BeyondSinglePrecisionInteger, 1d)
+        })
             Assert.AreEqual(x / y, f(x, y));
 
     }
@@ -66,7 +79,11 @@ public class SimpleComputationTests
         var e = (LambdaExpression)compiler.Compile("(double x, double y, double z) => x * y + z");
         var f = (Func<double, double, double, double>)e.Compile();
 
-        foreach ((double x, double y, double z) in new (double, double, double)[] { (0, 2, 3), (1.5, -4, 2.25), (-3, -2.5, -7), (100, 0.125, -4) })
+        foreach ((double x, double y, double z) in new (double, double, double)[]
+        {
+            (0, 2, 3), (1.5, -4, 2.25), (-3, -2.5, -7), (100, 0.125, -4),
+            (BeyondSinglePrecisionInteger, 1d, 1d)
+        })
             Assert.AreEqual(x * y + z, f(x, y, z));
 
     }
@@ -77,7 +94,11 @@ public class SimpleComputationTests
         var e = (LambdaExpression)compiler.Compile("(double x, double y, double z) => x + y * z");
         var f = (Func<double, double, double, double>)e.Compile();
 
-        foreach ((double x, double y, double z) in new (double, double, double)[] { (0, 2, 3), (1.5, -4, 2.25), (-3, -2.5, -7), (100, 0.125, -4) })
+        foreach ((double x, double y, double z) in new (double, double, double)[]
+        {
+            (0, 2, 3), (1.5, -4, 2.25), (-3, -2.5, -7), (100, 0.125, -4),
+            (1d, BeyondSinglePrecisionInteger, 1d)
+        })
             Assert.AreEqual(x + y * z, f(x, y, z));
 
     }
@@ -88,7 +109,11 @@ public class SimpleComputationTests
         var e = (LambdaExpression)compiler.Compile("(double x, double y, double z) => x * (y + z)");
         var f = (Func<double, double, double, double>)e.Compile();
 
-        foreach ((double x, double y, double z) in new (double, double, double)[] { (0, 2, 3), (1.5, -4, 2.25), (-3, -2.5, -7), (100, 0.125, -4) })
+        foreach ((double x, double y, double z) in new (double, double, double)[]
+        {
+            (0, 2, 3), (1.5, -4, 2.25), (-3, -2.5, -7), (100, 0.125, -4),
+            (1d, BeyondSinglePrecisionInteger, 1d)
+        })
             Assert.AreEqual(x * (y + z), f(x, y, z));
 
     }
@@ -99,7 +124,11 @@ public class SimpleComputationTests
         var e = (LambdaExpression)compiler.Compile("(double x, double y, double z) => (x + y) * z");
         var f = (Func<double, double, double, double>)e.Compile();
 
-        foreach ((double x, double y, double z) in new (double, double, double)[] { (0, 2, 3), (1.5, -4, 2.25), (-3, -2.5, -7), (100, 0.125, -4) })
+        foreach ((double x, double y, double z) in new (double, double, double)[]
+        {
+            (0, 2, 3), (1.5, -4, 2.25), (-3, -2.5, -7), (100, 0.125, -4),
+            (BeyondSinglePrecisionInteger, 1d, 1d)
+        })
             Assert.AreEqual((x + y) * z, f(x, y, z));
 
     }
