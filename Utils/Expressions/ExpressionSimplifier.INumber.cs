@@ -180,6 +180,7 @@ public partial class ExpressionSimplifier
             [ExpressionSignature(ExpressionType.Power)] BinaryExpression right)
     {
         if (e is not BinaryExpression outer || !IsOrdinaryBinaryArithmetic(outer)) return null;
+        if (!IsOrdinaryBinaryArithmetic(left) || !IsOrdinaryBinaryArithmetic(right)) return null;
         if (!left.Type.IsOfGenericType(typeof(ITrigonometricFunctions<>))) return null;
         if (right.Type != left.Type) return null;
 

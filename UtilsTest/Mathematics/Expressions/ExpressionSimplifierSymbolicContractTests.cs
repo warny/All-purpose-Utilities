@@ -307,6 +307,26 @@ public class ExpressionSimplifierSymbolicContractTests
         AssertSameBehavior(source, simplified, 0.7);
     }
 
+    [TestMethod]
+    public void CustomPower_InsideSinSquaredPlusCosSquared_DoesNotCollapseToOne()
+    {
+        // AdditionOfCos2andSin2Number checks the outer Add's Method but, before this fix, never checked
+        // the two Power operands' Method: a custom Power(sin(x), 2) could still be consumed by the
+        // sin^2(x)+cos^2(x) -> 1 identity even though its actual value need not be an ordinary square.
+        ParameterExpression x = X("x");
+        MethodCallExpression sinX = CallDouble(nameof(double.Sin), x);
+        MethodCallExpression cosX = CallDouble(nameof(double.Cos), x);
+        BinaryExpression customSinSquared = Expression.Power(sinX, Expression.Constant(2.0), CustomPowerMethod);
+        BinaryExpression cosSquared = Expression.Power(cosX, Expression.Constant(2.0));
+        var source = Expression.Lambda<Func<double, double>>(Expression.Add(customSinSquared, cosSquared), x);
+
+        var simplified = (Expression<Func<double, double>>)new ExpressionSimplifier().Simplify(source);
+
+        Assert.IsTrue(ContainsMethod(simplified.Body, CustomPowerMethod), "A custom Power(sin(x), 2) must not be consumed by the sin^2+cos^2 -> 1 identity.");
+        AssertSameBehavior(source, simplified, 0.7);
+        AssertSameBehavior(source, simplified, 1.3);
+    }
+
     // ================================================================================================
     // 4. ExpressionComparer must not regain false equivalence through pre-comparison simplification.
     // ================================================================================================
