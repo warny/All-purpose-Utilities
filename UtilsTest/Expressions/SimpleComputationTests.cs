@@ -20,7 +20,7 @@ public class SimpleComputationTests
     [TestMethod]
     public void AdditionTests()
     {
-        var e = (LambdaExpression)compiler.Compile("(int x, int y) => x + y");
+        var e = (LambdaExpression)compiler.CompileExpression("(int x, int y) => x + y");
         var f = (Func<int, int, int>)e.Compile();
 
         foreach ((int x, int y) in new (int, int)[]
@@ -35,7 +35,7 @@ public class SimpleComputationTests
     [TestMethod]
     public void SubstractionTest()
     {
-        var e = (LambdaExpression)compiler.Compile("(int x, int y) => x - y");
+        var e = (LambdaExpression)compiler.CompileExpression("(int x, int y) => x - y");
         var f = (Func<int, int, int>)e.Compile();
 
         foreach ((int x, int y) in new (int, int)[] { (0, 0), (1, -1), (-42, 17), (654_321, 123_456) })
@@ -46,7 +46,7 @@ public class SimpleComputationTests
     [TestMethod]
     public void MultiplicationTests()
     {
-        var e = (LambdaExpression)compiler.Compile("(double x, double y) => x * y");
+        var e = (LambdaExpression)compiler.CompileExpression("(double x, double y) => x * y");
         var f = (Func<double, double, double>)e.Compile();
 
         foreach ((double x, double y) in new (double, double)[]
@@ -61,7 +61,7 @@ public class SimpleComputationTests
     [TestMethod]
     public void DivisionTest()
     {
-        var e = (LambdaExpression)compiler.Compile("(double x, double y) => x / y");
+        var e = (LambdaExpression)compiler.CompileExpression("(double x, double y) => x / y");
         var f = (Func<double, double, double>)e.Compile();
 
         foreach ((double x, double y) in new (double, double)[]
@@ -76,7 +76,7 @@ public class SimpleComputationTests
     [TestMethod]
     public void PriorityTest1()
     {
-        var e = (LambdaExpression)compiler.Compile("(double x, double y, double z) => x * y + z");
+        var e = (LambdaExpression)compiler.CompileExpression("(double x, double y, double z) => x * y + z");
         var f = (Func<double, double, double, double>)e.Compile();
 
         foreach ((double x, double y, double z) in new (double, double, double)[]
@@ -91,7 +91,7 @@ public class SimpleComputationTests
     [TestMethod]
     public void PriorityTest2()
     {
-        var e = (LambdaExpression)compiler.Compile("(double x, double y, double z) => x + y * z");
+        var e = (LambdaExpression)compiler.CompileExpression("(double x, double y, double z) => x + y * z");
         var f = (Func<double, double, double, double>)e.Compile();
 
         foreach ((double x, double y, double z) in new (double, double, double)[]
@@ -106,7 +106,7 @@ public class SimpleComputationTests
     [TestMethod]
     public void ParenthesisTest1()
     {
-        var e = (LambdaExpression)compiler.Compile("(double x, double y, double z) => x * (y + z)");
+        var e = (LambdaExpression)compiler.CompileExpression("(double x, double y, double z) => x * (y + z)");
         var f = (Func<double, double, double, double>)e.Compile();
 
         foreach ((double x, double y, double z) in new (double, double, double)[]
@@ -121,7 +121,7 @@ public class SimpleComputationTests
     [TestMethod]
     public void ParenthesisTest2()
     {
-        var e = (LambdaExpression)compiler.Compile("(double x, double y, double z) => (x + y) * z");
+        var e = (LambdaExpression)compiler.CompileExpression("(double x, double y, double z) => (x + y) * z");
         var f = (Func<double, double, double, double>)e.Compile();
 
         foreach ((double x, double y, double z) in new (double, double, double)[]
@@ -142,7 +142,7 @@ public class SimpleComputationTests
     public void Compile_ArithmeticExpression_RespectsPrecedence()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        var expression = compiler.Compile("(10 + 2) * 3 - 6 / 2");
+        var expression = compiler.CompileExpression("(10 + 2) * 3 - 6 / 2");
         var lambda = Expression.Lambda<Func<int>>(Expression.Convert(expression, typeof(int))).Compile();
 
         Assert.AreEqual(33, lambda());

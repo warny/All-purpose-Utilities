@@ -444,8 +444,8 @@ public sealed partial class CSyntaxExpressionCompiler
             }
 
             arguments.Add(context.RuntimeContext is null
-                ? context.Compiler.Compile(trimmed, context.Symbols)
-                : context.Compiler.Compile(trimmed, context.RuntimeContext));
+                ? context.Compiler.CompileExpression(trimmed, context.Symbols)
+                : context.Compiler.CompileExpression(trimmed, context.RuntimeContext));
         }
 
         return arguments;
@@ -1962,14 +1962,18 @@ public sealed partial class CSyntaxExpressionCompiler
     }
 
     /// <summary>
-    /// Converts an expression to a target type when needed.
+    /// Converts an expression to a target type when needed. A <see langword="void"/> target is never
+    /// converted: <see cref="Expression.Lambda(System.Linq.Expressions.Expression, System.Linq.Expressions.ParameterExpression[])"/>
+    /// already permits a non-void body for a <see langword="void"/>-returning delegate (its value is
+    /// simply discarded), and <see cref="Expression.Convert(Expression, Type)"/> does not support
+    /// converting to <see langword="void"/> at all.
     /// </summary>
     /// <param name="expression">Source expression.</param>
     /// <param name="targetType">Target CLR type.</param>
     /// <returns>Converted or original expression.</returns>
     private static Expression ConvertIfNeeded(Expression expression, Type targetType)
     {
-        if (expression.Type == targetType)
+        if (targetType == typeof(void) || expression.Type == targetType)
         {
             return expression;
         }

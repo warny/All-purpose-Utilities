@@ -614,7 +614,7 @@ public abstract class ExpressionTransformer
 
     /// <summary>
     /// Prepares an expression for transformation. Subclasses can override this to apply
-    /// initial logic before the main <see cref="Transform(Expression)"/> switch (e.g., caching).
+    /// initial logic before the main <see cref="TransformCore(Expression)"/> switch (e.g., caching).
     /// The default implementation returns the expression unchanged.
     /// </summary>
     /// <param name="e">The expression to prepare.</param>
@@ -626,7 +626,7 @@ public abstract class ExpressionTransformer
     /// <see cref="TryTransform"/>/<see cref="TryInvokeTransformMethod"/>. Its own fields cannot be
     /// reassigned, but the array returned by <see cref="MaterializeExpressionParameters"/> is not
     /// protected from mutation. Pure implementation detail of
-    /// <see cref="Transform(Expression)"/>: never exposed outside this class.
+    /// <see cref="TransformCore(Expression)"/>: never exposed outside this class.
     /// </summary>
     /// <remarks>
     /// For every node type except <see cref="UnaryExpression"/> and <see cref="BinaryExpression"/>, the
@@ -803,14 +803,26 @@ public abstract class ExpressionTransformer
     }
 
     /// <summary>
+    /// Public entry point for this transformer. Concrete transformers implement this to perform any
+    /// one-time preparation their state requires (if any), then delegate to <see cref="TransformCore"/>
+    /// to run the actual recursive rule-matching engine.
+    /// </summary>
+    /// <param name="expression">The expression to transform.</param>
+    /// <returns>A possibly rewritten expression.</returns>
+    public abstract Expression Transform(Expression expression);
+
+    /// <summary>
     /// Applies transformation rules to a given expression, returning a (potentially) modified expression.
     /// This method checks for known signatures (via <see cref="ExpressionSignatureAttribute"/>-annotated methods)
     /// and if a match is found, invokes the corresponding transformation function.
     /// If no signature method matches, it calls <see cref="FinalizeExpression"/> by default.
+    /// This is the internal recursive engine invoked by a subclass's public <see cref="Transform"/>
+    /// override; it never re-enters <see cref="Transform"/> itself, so recursive continuations here
+    /// cannot accidentally reset a transformer's per-call state.
     /// </summary>
     /// <param name="e">The expression to transform.</param>
     /// <returns>A possibly rewritten expression.</returns>
-    protected Expression Transform(Expression e)
+    protected Expression TransformCore(Expression e)
     {
         TransformContext context = PrepareTransform(e);
 
@@ -1016,7 +1028,7 @@ public abstract class ExpressionTransformer
 
     /// <summary>
     /// Prepares a <see cref="LambdaExpression"/> by preparing its parameters and recursively calling
-    /// <see cref="Transform(Expression)"/> directly on its body (rather than <see cref="PrepareExpression"/>),
+    /// <see cref="TransformCore(Expression)"/> directly on its body (rather than <see cref="PrepareExpression"/>),
     /// then rebuilding the lambda.
     /// </summary>
     /// <param name="le">The lambda expression to prepare.</param>
@@ -1024,7 +1036,7 @@ public abstract class ExpressionTransformer
     private TransformContext PrepareLambda(LambdaExpression le)
     {
         // Indexed loop instead of Select(...).ToArray(): parameters must all be prepared, in
-        // order, before Transform(le.Body) runs below (a subclass may rely on that ordering).
+        // order, before TransformCore(le.Body) runs below (a subclass may rely on that ordering).
         // The array is declared and allocated as ParameterExpression[], not Expression[], so its
         // runtime type stays ParameterExpression[] even though it is stored through the
         // Expression[]-typed TransformContext.expressionParameters field — code elsewhere (and the
@@ -1040,7 +1052,7 @@ public abstract class ExpressionTransformer
             expressionParameters[i] = (ParameterExpression)PrepareExpression(le.Parameters[i]);
         }
 
-        Expression preparedBody = Transform(le.Body);
+        Expression preparedBody = TransformCore(le.Body);
         LambdaExpression copied = RebuildLambdaExpression(le, preparedBody, expressionParameters);
 
         return new TransformContext(copied, expressionParameters);

@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Utils.Expressions;
 using Utils.Expressions.CSyntax.Runtime;
 using Utils.Mathematics.Expressions;
 
@@ -47,8 +48,8 @@ public class ExpressionDerivationTests
 
         foreach (var test in tests)
         {
-            var function = compiler.Compile<Func<double, double>>(test.function, parameters, typeof(double), false);
-            var derivative = compiler.Compile<Func<double, double>>(test.derivative, parameters, typeof(double), false);
+            var function = compiler.CompileExpression<Func<double, double>>(test.function, parameters, typeof(double), false);
+            var derivative = compiler.CompileExpression<Func<double, double>>(test.derivative, parameters, typeof(double), false);
 
             var result = derivation.Derivate(function);
 
@@ -73,7 +74,7 @@ public class ExpressionDerivationTests
     public void Compile_PolynomialExpression_ForDerivativeWorkflow()
     {
         var x = Expression.Parameter(typeof(double), "x");
-        var expression = compiler.Compile("x * x + 2 * x", new Dictionary<string, Expression> { ["x"] = x });
+        var expression = compiler.CompileExpression("x * x + 2 * x", new Dictionary<string, Expression> { ["x"] = x });
         var lambda = Expression.Lambda<Func<double, double>>(Expression.Convert(expression, typeof(double)), x).Compile();
 
         Assert.AreEqual(15d, lambda(3d), 1e-9);
@@ -512,7 +513,7 @@ public class ExpressionDerivationTests
     /// be mistaken for a constant: previously, <c>ContainsParameter</c> only recognized a hand-picked
     /// subset of node kinds (via a <c>switch</c> defaulting to <c>false</c>) and would have silently
     /// returned a zero derivative for these two node kinds instead of ever reaching
-    /// <see cref="Transform"/>. Since differentiating a <see cref="MemberExpression"/> is not itself
+    /// <c>TransformCore</c>. Since differentiating a <see cref="MemberExpression"/> is not itself
     /// implemented, the correct behavior once the dependency is detected is an explicit failure — not a
     /// silently wrong zero.
     /// </summary>
@@ -640,6 +641,57 @@ public class ExpressionDerivationTests
         ExpressionDerivation<double> derivationByForeign = new(foreign);
 
         Assert.ThrowsExactly<SymbolicParameterException>(() => derivationByForeign.Derivate(f));
+    }
+
+    /// <summary>
+    /// <see cref="ExpressionTransformer.Transform(Expression)"/> is the public contract every transformer
+    /// must implement. For <see cref="ExpressionDerivation{T}"/>, a <see cref="LambdaExpression"/> carries
+    /// the parameter list needed to resolve the differentiation variable, so <c>Transform</c> must
+    /// actually differentiate against <c>x</c> - not silently treat it as an unrelated free variable
+    /// (which would wrongly return a zero derivative, since the target parameter is only resolved inside
+    /// <see cref="ExpressionDerivation{T}.Derivate(LambdaExpression)"/>, never by the public constructors).
+    /// </summary>
+    [TestMethod]
+    public void Transform_OnLambdaExpression_DifferentiatesAgainstItsParameter()
+    {
+        Expression<Func<double, double>> f = x => x;
+        var derivation = new ExpressionDerivation<double>("x");
+
+        var viaTransform = (Expression<Func<double, double>>)derivation.Transform(f);
+        var viaDerivate = (Expression<Func<double, double>>)derivation.Derivate(f);
+
+        Assert.AreEqual(1.0, viaTransform.Compile()(5.0), 1e-9);
+        Assert.AreEqual(viaDerivate, viaTransform, ExpressionComparer.Default);
+    }
+
+    /// <summary>
+    /// Without a <see cref="LambdaExpression"/>, <see cref="ExpressionDerivation{T}.Transform(Expression)"/>
+    /// has no declared parameter list to resolve the differentiation variable from, and must fail
+    /// explicitly rather than silently guessing or corrupting shared state.
+    /// </summary>
+    [TestMethod]
+    public void Transform_OnBareExpression_ThrowsNotSupported()
+    {
+        var derivation = new ExpressionDerivation<double>("x");
+
+        Assert.ThrowsExactly<NotSupportedException>(() => derivation.Transform(Expression.Constant(5.0)));
+    }
+
+    /// <summary>
+    /// When this instance was constructed with an exact <see cref="ParameterExpression"/> identity, the
+    /// differentiation variable is already unambiguously known, so <c>Transform</c> can differentiate a
+    /// bare (non-lambda) expression directly instead of requiring a carrier <see cref="LambdaExpression"/>.
+    /// </summary>
+    [TestMethod]
+    public void Transform_OnBareExpression_WithParameterIdentityConstructor_Differentiates()
+    {
+        var x = Expression.Parameter(typeof(double), "x");
+        var derivation = new ExpressionDerivation<double>(x);
+
+        Expression result = derivation.Transform(Expression.Multiply(x, x));
+        var compiled = Expression.Lambda<Func<double, double>>(result, x).Compile();
+
+        Assert.AreEqual(10.0, compiled(5.0), 1e-9, "d/dx[x*x] = 2x");
     }
 
 }

@@ -30,8 +30,16 @@ using System.Linq.Expressions;
 using Utils.Expressions.CSyntax.Runtime;
 
 var compiler = new CSyntaxExpressionCompiler();
-Expression expression = compiler.Compile("1 + 2 * 3");
+Expression expression = compiler.CompileExpression("1 + 2 * 3");
 var lambda = Expression.Lambda<Func<double>>(Expression.Convert(expression, typeof(double))).Compile();
+
+double result = lambda(); // 7
+```
+
+Recommended pattern for a self-contained expression: `Compile<TDelegate>` compiles straight to a real delegate, skipping the manual `Expression.Lambda(...).Compile()` step:
+
+```csharp
+Func<double> lambda = compiler.Compile<Func<double>>("1 + 2 * 3");
 
 double result = lambda(); // 7
 ```
@@ -43,7 +51,7 @@ using System.Linq.Expressions;
 using Utils.Expressions.CSyntax.Runtime;
 
 var compiler = new CSyntaxExpressionCompiler();
-Expression expression = compiler.Compile("3 > 1 && 4 <= 4");
+Expression expression = compiler.CompileExpression("3 > 1 && 4 <= 4");
 var lambda = Expression.Lambda<Func<bool>>(Expression.Convert(expression, typeof(bool))).Compile();
 
 bool result = lambda(); // true
@@ -58,7 +66,7 @@ using Utils.Expressions.CSyntax.Runtime;
 var compiler = new CSyntaxExpressionCompiler();
 ParameterExpression x = Expression.Parameter(typeof(double), "x");
 
-Expression expression = compiler.Compile("x * 2 + 1", new Dictionary<string, Expression>
+Expression expression = compiler.CompileExpression("x * 2 + 1", new Dictionary<string, Expression>
 {
     ["x"] = x,
 });
@@ -74,7 +82,7 @@ double result = lambda(4); // 9
 using Utils.Expressions.CSyntax.Runtime;
 
 var compiler = new CSyntaxExpressionCompiler();
-Expression<Func<int, int>> expression = compiler.Compile<Func<int, int>>("(x) => x + 1");
+Expression<Func<int, int>> expression = compiler.CompileExpression<Func<int, int>>("(x) => x + 1");
 Func<int, int> function = expression.Compile();
 
 int result = function(41); // 42
@@ -113,7 +121,7 @@ var compiler = new CSyntaxExpressionCompiler();
 var context = new ExpressionCompilerContext();
 context.Set("increment", (Func<double, double>)(x => x + 1));
 
-Expression expression = compiler.Compile("increment(41)", context);
+Expression expression = compiler.CompileExpression("increment(41)", context);
 var lambda = Expression.Lambda<Func<double>>(Expression.Convert(expression, typeof(double))).Compile();
 
 double result = lambda(); // 42
@@ -218,7 +226,7 @@ context.WriteToStream(stream);
 stream.Position = 0;
 
 ExpressionCompilerContext restored = ExpressionCompilerContext.ReadFromStream(stream);
-Expression expression = compiler.Compile("twice(21)", restored);
+Expression expression = compiler.CompileExpression("twice(21)", restored);
 int result = Expression.Lambda<Func<int>>(Expression.Convert(expression, typeof(int))).Compile()(); // 42
 ```
 

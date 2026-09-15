@@ -32,7 +32,7 @@ public class SimpleExpressionParserTest
 
         foreach (var test in tests)
         {
-            var result = (LambdaExpression)compiler.Compile<Func<double, double, double>>(test.Expression, parameters);
+            var result = (LambdaExpression)compiler.CompileExpression<Func<double, double, double>>(test.Expression, parameters);
             Assert.AreEqual(test.Expected, result, ExpressionComparer.Default);
         }
     }
@@ -57,7 +57,7 @@ public class SimpleExpressionParserTest
 
         foreach (var test in tests)
         {
-            var result = (LambdaExpression)compiler.Compile<Func<double, double, double, double>>(test.Expression, parameters);
+            var result = (LambdaExpression)compiler.CompileExpression<Func<double, double, double, double>>(test.Expression, parameters);
             var resultFunc = (Func<double, double, double, double>)result.Compile();
             var expectedFunc = ((Expression<Func<double, double, double, double>>)test.Expected).Compile();
 
@@ -82,7 +82,7 @@ public class SimpleExpressionParserTest
 
         foreach (var test in tests)
         {
-            var result = (LambdaExpression)compiler.Compile<Func<double, double>>(test.Expression, parameters, typeof(Math), false);
+            var result = (LambdaExpression)compiler.CompileExpression<Func<double, double>>(test.Expression, parameters, typeof(Math), false);
             Assert.AreEqual(test.Expected, result, ExpressionComparer.Default);
         }
     }
@@ -94,7 +94,7 @@ public class SimpleExpressionParserTest
                 Expression.Parameter(typeof(double), "x"),
             };
 
-        var result = (LambdaExpression)compiler.Compile<Func<double, double>>("Max(x, 1.5)", parameters, typeof(Math), false);
+        var result = (LambdaExpression)compiler.CompileExpression<Func<double, double>>("Max(x, 1.5)", parameters, typeof(Math), false);
         var resultFunc = (Func<double, double>)result.Compile();
 
         Assert.AreEqual(2.2d, resultFunc(2.2d), 1e-9);
@@ -111,7 +111,7 @@ public class SimpleExpressionParserTest
         var x = Expression.Parameter(typeof(double), "x");
         var y = Expression.Parameter(typeof(double), "y");
         var symbols = new Dictionary<string, Expression> { ["x"] = x, ["y"] = y };
-        var expression = compiler.Compile("x + y", symbols);
+        var expression = compiler.CompileExpression("x + y", symbols);
         var lambda = Expression.Lambda<Func<double, double, double>>(Expression.Convert(expression, typeof(double)), x, y).Compile();
 
         Assert.AreEqual(7d, lambda(3d, 4d), 1e-9);

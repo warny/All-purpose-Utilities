@@ -22,7 +22,7 @@ public class StringTests
             ["s"] = Expression.Constant("compiler")
         };
 
-        var expression = compiler.Compile("s.Length", symbols);
+        var expression = compiler.CompileExpression("s.Length", symbols);
         var lambda = Expression.Lambda<Func<int>>(Expression.Convert(expression, typeof(int))).Compile();
 
         Assert.AreEqual(8, lambda());

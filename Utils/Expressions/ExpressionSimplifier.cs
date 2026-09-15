@@ -16,7 +16,16 @@ namespace Utils.Mathematics.Expressions
     public partial class ExpressionSimplifier : ExpressionTransformer
     {
         /// <summary>
-        /// Simplifies the given <paramref name="e"/> by calling <see cref="ExpressionTransformer.Transform"/>.
+        /// The exact built-in <see cref="ExpressionSimplifier"/> requires no extra preparation beyond
+        /// what <see cref="ExpressionTransformer.TransformCore(Expression)"/> already does, so this
+        /// simply delegates to it.
+        /// </summary>
+        /// <param name="expression">The expression to transform.</param>
+        /// <returns>A possibly rewritten expression.</returns>
+        public override Expression Transform(Expression expression) => TransformCore(expression);
+
+        /// <summary>
+        /// Simplifies the given <paramref name="e"/> by calling <see cref="Transform(Expression)"/>.
         /// </summary>
         /// <param name="e">The <see cref="Expression"/> to simplify.</param>
         /// <returns>A simplified version of <paramref name="e"/>, if any transformation rules match.</returns>
@@ -26,15 +35,15 @@ namespace Utils.Mathematics.Expressions
         }
 
         /// <summary>
-        /// Prepares an expression for transformation by calling <see cref="ExpressionTransformer.Transform"/>
-        /// Subclasses can override for custom logic, but here it simply re-applies <see cref="ExpressionTransformer.Transform"/>
+        /// Prepares an expression for transformation by calling <see cref="ExpressionTransformer.TransformCore(Expression)"/>
+        /// Subclasses can override for custom logic, but here it simply re-applies <see cref="ExpressionTransformer.TransformCore(Expression)"/>
         /// </summary>
         /// <param name="e">The expression to prepare, or <see langword="null"/> for an absent optional sub-expression such as <see cref="Expression.Rethrow()"/>'s <see langword="null"/> operand.</param>
         /// <returns>The transformed expression, or <see langword="null"/> unchanged, for the exact built-in type.</returns>
         /// <remarks>
         /// The null short-circuit is gated to the exact built-in runtime type for the same reason as
         /// <see cref="RebuildUnaryExpression"/>/<see cref="RebuildLambdaExpression"/>: without it,
-        /// <see cref="ExpressionTransformer.Transform(Expression)"/> dereferences a null
+        /// <see cref="ExpressionTransformer.TransformCore(Expression)"/> dereferences a null
         /// <c>context.Expression</c> and throws <see cref="NullReferenceException"/> — historically true for
         /// every runtime type, including a derived subclass, which therefore still observes it unless it
         /// overrides this method itself.
@@ -46,7 +55,7 @@ namespace Utils.Mathematics.Expressions
                 return null;
             }
 
-            return Transform(e);
+            return TransformCore(e);
         }
 
         /// <summary>
@@ -102,7 +111,7 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Add)]
         public Expression AdditionWithZero(BinaryExpression e, Expression left, [ConstantNumeric(0)] ConstantExpression right)
         {
-            if (NumberUtils.CompareNumeric(right.Value, 0) == 0) return Transform(left);
+            if (NumberUtils.CompareNumeric(right.Value, 0) == 0) return TransformCore(left);
             return null;
         }
 
@@ -132,7 +141,7 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Subtract)]
         public Expression SubstractionWithZero(BinaryExpression e, [ConstantNumeric(0)] ConstantExpression left, Expression right)
         {
-            if (NumberUtils.CompareNumeric(left.Value, 0) == 0) return Transform(Expression.Negate(right));
+            if (NumberUtils.CompareNumeric(left.Value, 0) == 0) return TransformCore(Expression.Negate(right));
             return null;
         }
 
@@ -200,9 +209,9 @@ namespace Utils.Mathematics.Expressions
         public Expression PowerByZeroOrOne(BinaryExpression e, Expression left, ConstantExpression right)
         {
             if (NumberUtils.CompareNumeric(right.Value, 0) == 0) return Expression.Constant(Convert.ChangeType(1, right.Type));
-            if (NumberUtils.CompareNumeric(right.Value, 1) == 0) return Transform(left);
-            if (NumberUtils.CompareNumeric(right.Value, -1) == 0) return Transform(Expression.Divide(Expression.Constant(Convert.ChangeType(1, left.Type)), left));
-            if (NumberUtils.CompareNumeric(right.Value, 0) == -1) return Expression.Divide(Expression.Constant(Convert.ChangeType(1, left.Type)), Transform(Expression.Power(left, Expression.Constant(-(double)Convert.ChangeType(right.Value, typeof(double))))));
+            if (NumberUtils.CompareNumeric(right.Value, 1) == 0) return TransformCore(left);
+            if (NumberUtils.CompareNumeric(right.Value, -1) == 0) return TransformCore(Expression.Divide(Expression.Constant(Convert.ChangeType(1, left.Type)), left));
+            if (NumberUtils.CompareNumeric(right.Value, 0) == -1) return Expression.Divide(Expression.Constant(Convert.ChangeType(1, left.Type)), TransformCore(Expression.Power(left, Expression.Constant(-(double)Convert.ChangeType(right.Value, typeof(double))))));
             return null;
         }
 
@@ -230,7 +239,7 @@ namespace Utils.Mathematics.Expressions
                 return Expression.Constant(Convert.ChangeType(0, left.Type), left.Type);
             }
 
-            return Transform(Expression.Subtract(left, right.Operand));
+            return TransformCore(Expression.Subtract(left, right.Operand));
         }
 
         /// <summary>
@@ -245,7 +254,7 @@ namespace Utils.Mathematics.Expressions
                 return Expression.Constant(Convert.ChangeType(0, right.Type), right.Type);
             }
 
-            return Transform(Expression.Subtract(right, left.Operand));
+            return TransformCore(Expression.Subtract(right, left.Operand));
         }
 
         /// <summary>
@@ -254,7 +263,7 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Subtract)]
         protected Expression SubstractionWithNegate(BinaryExpression e, Expression left, [ExpressionSignature(ExpressionType.Negate)] UnaryExpression right)
         {
-            return Transform(Expression.Add(left, right.Operand));
+            return TransformCore(Expression.Add(left, right.Operand));
         }
 
         /// <summary>
@@ -263,7 +272,7 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Subtract)]
         protected Expression SubstractionWithNegate(BinaryExpression e, [ExpressionSignature(ExpressionType.Negate)] UnaryExpression left, Expression right)
         {
-            return Transform(Expression.Negate(Expression.Add(left.Operand, right)));
+            return TransformCore(Expression.Negate(Expression.Add(left.Operand, right)));
         }
 
         /// <summary>
@@ -272,7 +281,7 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Negate)]
         protected Expression NegateWithSubstraction(UnaryExpression e, [ExpressionSignature(ExpressionType.Subtract)] BinaryExpression operand)
         {
-            return Transform(Expression.Add(Expression.Negate(operand.Left), operand.Right));
+            return TransformCore(Expression.Add(Expression.Negate(operand.Left), operand.Right));
         }
 
         /// <summary>
@@ -526,7 +535,7 @@ namespace Utils.Mathematics.Expressions
             {
                 return Expression.Multiply(
                     Expression.Constant((object)((dynamic)leftLeft.Value * (dynamic)rightLeft.Value)),
-                    Transform(Expression.Multiply(left.Right, right.Right))
+                    TransformCore(Expression.Multiply(left.Right, right.Right))
                 );
             }
             return null;
@@ -551,7 +560,7 @@ namespace Utils.Mathematics.Expressions
         protected Expression MultiplicationWithNegate(BinaryExpression e, Expression left, [ExpressionSignature(ExpressionType.Negate)] UnaryExpression right)
         {
             return Expression.Negate(
-                Transform(Expression.Multiply(left, right.Operand))
+                TransformCore(Expression.Multiply(left, right.Operand))
             );
         }
 
@@ -562,7 +571,7 @@ namespace Utils.Mathematics.Expressions
         protected Expression MultiplicationWithNegate(BinaryExpression e, [ExpressionSignature(ExpressionType.Negate)] UnaryExpression left, Expression right)
         {
             return Expression.Negate(
-                Transform(Expression.Multiply(left.Operand, right))
+                TransformCore(Expression.Multiply(left.Operand, right))
             );
         }
 
@@ -573,7 +582,7 @@ namespace Utils.Mathematics.Expressions
         protected Expression DivisionWithNegate(BinaryExpression e, Expression left, [ExpressionSignature(ExpressionType.Negate)] UnaryExpression right)
         {
             return Expression.Negate(
-                Transform(Expression.Divide(left, right.Operand))
+                TransformCore(Expression.Divide(left, right.Operand))
             );
         }
 
@@ -584,7 +593,7 @@ namespace Utils.Mathematics.Expressions
         protected Expression DivisionWithNegate(BinaryExpression e, [ExpressionSignature(ExpressionType.Negate)] UnaryExpression left, Expression right)
         {
             return Expression.Negate(
-                Transform(Expression.Divide(left.Operand, right))
+                TransformCore(Expression.Divide(left.Operand, right))
             );
         }
 
@@ -613,7 +622,7 @@ namespace Utils.Mathematics.Expressions
                 return null;
             }
 
-            return Transform(
+            return TransformCore(
                 Expression.Multiply(
                     constant,
                     Expression.Multiply(leftpart, right)
@@ -646,7 +655,7 @@ namespace Utils.Mathematics.Expressions
                 return null;
             }
 
-            return Transform(
+            return TransformCore(
                 Expression.Multiply(
                     constant,
                     Expression.Multiply(left, rightpart)
@@ -696,10 +705,10 @@ namespace Utils.Mathematics.Expressions
                 // the expression stays as repeated multiplications, which all handlers support.
                 if (leftleft.Type != typeof(double)) return null;
 
-                return Transform(
+                return TransformCore(
                     Expression.Power(
                         leftleft,
-                        Transform(Expression.Add(leftright, rightright))
+                        TransformCore(Expression.Add(leftright, rightright))
                     )
                 );
             }
@@ -715,8 +724,8 @@ namespace Utils.Mathematics.Expressions
             [ExpressionSignature(ExpressionType.Divide)] BinaryExpression right)
         {
             return Expression.Divide(
-                Transform(Expression.Multiply(left.Left, right.Right)),
-                Transform(Expression.Multiply(left.Right, right.Left))
+                TransformCore(Expression.Multiply(left.Left, right.Right)),
+                TransformCore(Expression.Multiply(left.Right, right.Left))
             );
         }
 
@@ -727,7 +736,7 @@ namespace Utils.Mathematics.Expressions
         protected Expression DivisionOfDivision(BinaryExpression e, Expression left, [ExpressionSignature(ExpressionType.Divide)] BinaryExpression right)
         {
             return Expression.Divide(
-                Transform(Expression.Multiply(left, right.Right)),
+                TransformCore(Expression.Multiply(left, right.Right)),
                 right.Left
             );
         }
@@ -742,7 +751,7 @@ namespace Utils.Mathematics.Expressions
         {
             return Expression.Divide(
                 left.Left,
-                Transform(Expression.Multiply(left.Right, right))
+                TransformCore(Expression.Multiply(left.Right, right))
             );
         }
 
@@ -777,7 +786,7 @@ namespace Utils.Mathematics.Expressions
                 // le.Parameters and expression.Arguments are already indexable ReadOnlyCollection<T>
                 // instances; ReplaceArgumentsCore accepts them directly, so no array copy is needed
                 // just to adapt them to the historical array-based ReplaceArguments signature.
-                return Transform(ReplaceArgumentsCore(le.Body, le.Parameters, expression.Arguments));
+                return TransformCore(ReplaceArgumentsCore(le.Body, le.Parameters, expression.Arguments));
             }
             return expression;
         }

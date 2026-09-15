@@ -20,7 +20,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_ArithmeticExpression_RespectsPrecedence()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        Expression expression = compiler.Compile("1 + 2 * 3");
+        Expression expression = compiler.CompileExpression("1 + 2 * 3");
         Func<double> lambda = Expression.Lambda<Func<double>>(Expression.Convert(expression, typeof(double))).Compile();
 
         Assert.AreEqual(7d, lambda());
@@ -42,7 +42,7 @@ public class CSyntaxExpressionCompilerTests
             ["y"] = y,
         };
 
-        Expression expression = compiler.Compile("x + y", symbols);
+        Expression expression = compiler.CompileExpression("x + y", symbols);
         Func<int, int, int> lambda = Expression.Lambda<Func<int, int, int>>(Expression.Convert(expression, typeof(int)), x, y).Compile();
 
         for (int i = 0; i < 10; i++)
@@ -69,7 +69,7 @@ public class CSyntaxExpressionCompilerTests
             ["y"] = y,
         };
 
-        Expression expression = compiler.Compile("x - y", symbols);
+        Expression expression = compiler.CompileExpression("x - y", symbols);
         Func<int, int, int> lambda = Expression.Lambda<Func<int, int, int>>(Expression.Convert(expression, typeof(int)), x, y).Compile();
 
         for (int i = 0; i < 10; i++)
@@ -96,8 +96,8 @@ public class CSyntaxExpressionCompilerTests
             ["y"] = y,
         };
 
-        Expression multiply = compiler.Compile("x * y", symbols);
-        Expression divide = compiler.Compile("x / y", symbols);
+        Expression multiply = compiler.CompileExpression("x * y", symbols);
+        Expression divide = compiler.CompileExpression("x / y", symbols);
         Func<double, double, double> multiplyLambda = Expression.Lambda<Func<double, double, double>>(Expression.Convert(multiply, typeof(double)), x, y).Compile();
         Func<double, double, double> divideLambda = Expression.Lambda<Func<double, double, double>>(Expression.Convert(divide, typeof(double)), x, y).Compile();
 
@@ -129,16 +129,16 @@ public class CSyntaxExpressionCompilerTests
         };
 
         Func<double, double, double, double> priority1 = Expression.Lambda<Func<double, double, double, double>>(
-            Expression.Convert(compiler.Compile("x * y + z", symbols), typeof(double)),
+            Expression.Convert(compiler.CompileExpression("x * y + z", symbols), typeof(double)),
             x, y, z).Compile();
         Func<double, double, double, double> priority2 = Expression.Lambda<Func<double, double, double, double>>(
-            Expression.Convert(compiler.Compile("x + y * z", symbols), typeof(double)),
+            Expression.Convert(compiler.CompileExpression("x + y * z", symbols), typeof(double)),
             x, y, z).Compile();
         Func<double, double, double, double> parenthesis1 = Expression.Lambda<Func<double, double, double, double>>(
-            Expression.Convert(compiler.Compile("x * (y + z)", symbols), typeof(double)),
+            Expression.Convert(compiler.CompileExpression("x * (y + z)", symbols), typeof(double)),
             x, y, z).Compile();
         Func<double, double, double, double> parenthesis2 = Expression.Lambda<Func<double, double, double, double>>(
-            Expression.Convert(compiler.Compile("(x + y) * z", symbols), typeof(double)),
+            Expression.Convert(compiler.CompileExpression("(x + y) * z", symbols), typeof(double)),
             x, y, z).Compile();
 
         for (int i = 0; i < 10; i++)
@@ -162,7 +162,7 @@ public class CSyntaxExpressionCompilerTests
     {
         var compiler = new CSyntaxExpressionCompiler();
         ParameterExpression x = Expression.Parameter(typeof(double), "x");
-        Expression expression = compiler.Compile("x * 2 + 1", new Dictionary<string, Expression>(StringComparer.Ordinal)
+        Expression expression = compiler.CompileExpression("x * 2 + 1", new Dictionary<string, Expression>(StringComparer.Ordinal)
         {
             ["x"] = x,
         });
@@ -179,7 +179,7 @@ public class CSyntaxExpressionCompilerTests
     {
         var compiler = new CSyntaxExpressionCompiler();
         ParameterExpression local = Expression.Variable(typeof(double), "value");
-        Expression assignment = compiler.Compile("value = 10 + 5", new Dictionary<string, Expression>(StringComparer.Ordinal)
+        Expression assignment = compiler.CompileExpression("value = 10 + 5", new Dictionary<string, Expression>(StringComparer.Ordinal)
         {
             ["value"] = local,
         });
@@ -200,7 +200,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_BlockWithUnusedDeclaration_IgnoresUnusedVariable()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        Expression expression = compiler.Compile("{ int used = 1; int unused = 2; used }");
+        Expression expression = compiler.CompileExpression("{ int used = 1; int unused = 2; used }");
 
         Assert.IsInstanceOfType<BlockExpression>(expression);
         var block = (BlockExpression)expression;
@@ -218,7 +218,7 @@ public class CSyntaxExpressionCompilerTests
     {
         var compiler = new CSyntaxExpressionCompiler();
         var context = new ExpressionCompilerContext();
-        compiler.Compile("public double add(double a, double b) { a + b }", context);
+        compiler.CompileExpression("public double add(double a, double b) { a + b }", context);
 
         Assert.IsTrue(context.TryGet("add", out object? addSymbol));
         Assert.IsInstanceOfType<Func<double, double, double>>(addSymbol);
@@ -256,7 +256,7 @@ public class CSyntaxExpressionCompilerTests
         var context = new ExpressionCompilerContext();
         context.Set("add", (Func<double, double, double>)((a, b) => a + b));
 
-        Expression invocation = compiler.Compile("add(2, 3)", context);
+        Expression invocation = compiler.CompileExpression("add(2, 3)", context);
         Func<double> lambda = Expression.Lambda<Func<double>>(Expression.Convert(invocation, typeof(double))).Compile();
         Assert.AreEqual(5d, lambda());
     }
@@ -271,7 +271,7 @@ public class CSyntaxExpressionCompilerTests
         var context = new ExpressionCompilerContext();
         context.Set("increment", (Func<double, double>)(x => x + 1d));
 
-        Expression invocation = compiler.Compile("increment(41)", context);
+        Expression invocation = compiler.CompileExpression("increment(41)", context);
         Func<double> lambda = Expression.Lambda<Func<double>>(Expression.Convert(invocation, typeof(double))).Compile();
         Assert.AreEqual(42d, lambda());
     }
@@ -280,7 +280,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_WhileInstruction_ProducesTryCatchWrapper()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        Expression expression = compiler.Compile("while (true) 1", new ExpressionCompilerContext());
+        Expression expression = compiler.CompileExpression("while (true) 1", new ExpressionCompilerContext());
         Assert.AreEqual(ExpressionType.Try, expression.NodeType,
             "while loops are wrapped in a try-catch to support break statements.");
     }
@@ -289,7 +289,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_IfInstruction_WithoutElse_ProducesConditionalExpression()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        Expression expression = compiler.Compile("if (true) 1", new ExpressionCompilerContext());
+        Expression expression = compiler.CompileExpression("if (true) 1", new ExpressionCompilerContext());
         Assert.IsInstanceOfType<ConditionalExpression>(expression);
     }
 
@@ -297,7 +297,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_IfInstruction_WithElse_EvaluatesTrueBranch()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        Expression expression = compiler.Compile("if (true) 1 else 2", new ExpressionCompilerContext());
+        Expression expression = compiler.CompileExpression("if (true) 1 else 2", new ExpressionCompilerContext());
         Assert.IsInstanceOfType<ConditionalExpression>(expression);
         Func<int> execute = Expression.Lambda<Func<int>>(Expression.Convert(expression, typeof(int))).Compile();
         Assert.AreEqual(1, execute());
@@ -307,7 +307,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_SwitchInstruction_CompilesToNonDefaultExpression()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        Expression expression = compiler.Compile("switch (1) { case 1: 2 default: 3 }", new ExpressionCompilerContext());
+        Expression expression = compiler.CompileExpression("switch (1) { case 1: 2 default: 3 }", new ExpressionCompilerContext());
         Assert.IsNotNull(expression);
         Assert.AreNotEqual(ExpressionType.Default, expression.NodeType);
     }
@@ -325,7 +325,7 @@ public class CSyntaxExpressionCompilerTests
         context.Set("i", iterator);
         context.Set("sum", accumulator);
 
-        Expression loop = compiler.Compile("for (i = 0; i < 4; i = i + 1) sum = sum + i", context);
+        Expression loop = compiler.CompileExpression("for (i = 0; i < 4; i = i + 1) sum = sum + i", context);
 
         var executeBlock = Expression.Block(
             [iterator, accumulator],
@@ -348,7 +348,7 @@ public class CSyntaxExpressionCompilerTests
         context.Set("sum", accumulator);
         context.Set("values", new[] { 1, 2, 3, 4 });
 
-        Expression loop = compiler.Compile("foreach (int item in values) sum = sum + item", context);
+        Expression loop = compiler.CompileExpression("foreach (int item in values) sum = sum + item", context);
 
         var executeBlock = Expression.Block(
             [accumulator],
@@ -375,7 +375,7 @@ public class CSyntaxExpressionCompilerTests
         var context = new ExpressionCompilerContext();
         context.Set("sample", new SampleContainer());
 
-        Expression expression = compiler.Compile(source, context);
+        Expression expression = compiler.CompileExpression(source, context);
         Func<int> execute = Expression.Lambda<Func<int>>(Expression.Convert(expression, typeof(int))).Compile();
         Assert.AreEqual(expected, execute());
     }
@@ -395,7 +395,7 @@ public class CSyntaxExpressionCompilerTests
             {
                 ["s"] = Expression.Constant(value),
             };
-            Expression expression = compiler.Compile("s.Length", symbols);
+            Expression expression = compiler.CompileExpression("s.Length", symbols);
             Func<int> lambda = Expression.Lambda<Func<int>>(Expression.Convert(expression, typeof(int))).Compile();
             Assert.AreEqual(value.Length, lambda());
         }
@@ -410,7 +410,7 @@ public class CSyntaxExpressionCompilerTests
         var compiler = new CSyntaxExpressionCompiler();
         var context = new ExpressionCompilerContext();
 
-        Expression expression = compiler.Compile("(double x) => x + 1", context);
+        Expression expression = compiler.CompileExpression("(double x) => x + 1", context);
         Assert.IsInstanceOfType<LambdaExpression>(expression);
         var lambda = (LambdaExpression)expression;
         Assert.AreEqual(1, lambda.Parameters.Count);
@@ -426,7 +426,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_GenericLambdaWithUntypedParameters_UsesAliasTypeConversions()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        Expression<Func<int, int>> expression = compiler.Compile<Func<int, int>>("(value) => value + 1");
+        Expression<Func<int, int>> expression = compiler.CompileExpression<Func<int, int>>("(value) => value + 1");
         Func<int, int> function = expression.Compile();
 
         Assert.AreEqual(42, function(41));
@@ -474,7 +474,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_QualifiedStaticMethodCall_ResolvesNativeTypeForStaticAccess()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        Expression expression = compiler.Compile("Math.Abs(-42)");
+        Expression expression = compiler.CompileExpression("Math.Abs(-42)");
         double result = Expression.Lambda<Func<double>>(Expression.Convert(expression, typeof(double))).Compile()();
 
         Assert.AreEqual(42d, result);
@@ -492,7 +492,7 @@ public class CSyntaxExpressionCompilerTests
         var compiler = new CSyntaxExpressionCompiler();
 
         InvalidOperationException exception = Assert.ThrowsExactly<InvalidOperationException>(
-            () => compiler.Compile("thisIdentifierIsDefinitelyNotDefinedAnywhere"));
+            () => compiler.CompileExpression("thisIdentifierIsDefinitelyNotDefinedAnywhere"));
 
         StringAssert.Contains(exception.Message, "thisIdentifierIsDefinitelyNotDefinedAnywhere");
     }
@@ -517,6 +517,114 @@ public class CSyntaxExpressionCompilerTests
         object? result = method.Invoke(null, [ "ThisTypeDoesNotExistAnywhere12345", System.Array.Empty<string>() ]);
 
         Assert.IsNull(result);
+    }
+
+    /// <summary>
+    /// <see cref="IDelegateCompiler.Compile(string)"/> compiles a bare, non-lambda expression directly
+    /// to an executable <see cref="Delegate"/>, skipping the manual <c>Expression.Lambda(...).Compile()</c>
+    /// step that <see cref="IExpressionCompiler.CompileExpression(string, IReadOnlyDictionary{string, Expression}?)"/> requires.
+    /// </summary>
+    [TestMethod]
+    public void Compile_SimpleExpression_ReturnsWorkingDelegate()
+    {
+        var compiler = new CSyntaxExpressionCompiler();
+
+        // Non-generic Compile has no target type to convert to, so the delegate matches the
+        // compiled expression's own type (an integer literal expression compiles to int here).
+        Delegate compiled = compiler.Compile("1 + 2 * 3");
+        var lambda = (Func<int>)compiled;
+
+        Assert.AreEqual(7, lambda());
+    }
+
+    /// <summary>
+    /// <see cref="IDelegateCompiler.Compile{TDelegate}(string)"/> on an explicit, fully-typed lambda
+    /// returns the delegate directly, already compiled.
+    /// </summary>
+    [TestMethod]
+    public void Compile_Generic_ExplicitLambda_ReturnsWorkingDelegate()
+    {
+        var compiler = new CSyntaxExpressionCompiler();
+
+        Func<int, int> function = compiler.Compile<Func<int, int>>("(int value) => value + 1");
+
+        Assert.AreEqual(42, function(41));
+    }
+
+    /// <summary>
+    /// The README's recommended one-liner pattern: a bare expression (no lambda syntax) compiled
+    /// directly to a parameterless delegate. This requires <see cref="IExpressionCompiler.CompileExpression{TDelegate}(string)"/>
+    /// to wrap a non-lambda result in a parameterless lambda when the target delegate has no parameters.
+    /// </summary>
+    [TestMethod]
+    public void Compile_Generic_BareExpressionWithParameterlessDelegate_ReturnsWorkingDelegate()
+    {
+        var compiler = new CSyntaxExpressionCompiler();
+
+        Func<double> lambda = compiler.Compile<Func<double>>("1 + 2 * 3");
+
+        Assert.AreEqual(7d, lambda());
+    }
+
+    /// <summary>
+    /// The bare-expression wrapping path must convert the expression's own type to the delegate's
+    /// declared return type (here <c>int</c> arithmetic converted to <c>double</c>), not merely wrap it
+    /// as-is and let an invalid-cast surface at invocation time.
+    /// </summary>
+    [TestMethod]
+    public void CompileExpression_Generic_BareExpression_ConvertsReturnType()
+    {
+        var compiler = new CSyntaxExpressionCompiler();
+
+        Expression<Func<double>> expression = compiler.CompileExpression<Func<double>>("2 + 3");
+
+        Assert.AreEqual(typeof(double), expression.Body.Type);
+        Assert.AreEqual(5d, expression.Compile()());
+    }
+
+    /// <summary>
+    /// A bare (non-lambda) expression cannot be compiled against a delegate type that declares
+    /// parameters: there is no parameter list in the source to bind names from, so the compiler must
+    /// fail explicitly rather than guess or silently ignore the parameters.
+    /// </summary>
+    [TestMethod]
+    public void CompileExpression_Generic_BareExpressionWithParameterizedDelegate_ThrowsExplicitly()
+    {
+        var compiler = new CSyntaxExpressionCompiler();
+
+        Assert.ThrowsExactly<InvalidOperationException>(
+            () => compiler.CompileExpression<Func<int, int>>("1 + 2 * 3"));
+    }
+
+    /// <summary>
+    /// A <see langword="void"/>-returning delegate (<see cref="Action"/>) must accept a lambda whose body
+    /// produces a value: <see cref="Expression.Lambda(Expression, ParameterExpression[])"/> already permits
+    /// this (the body's value is simply discarded), so <c>ConvertIfNeeded</c> must not attempt to convert
+    /// the body to <see langword="void"/> (which <see cref="Expression.Convert(Expression, Type)"/> does
+    /// not support at all).
+    /// </summary>
+    [TestMethod]
+    public void Compile_Generic_ActionDelegateWithValueProducingBody_DoesNotThrow()
+    {
+        var compiler = new CSyntaxExpressionCompiler();
+
+        Action action = compiler.Compile<Action>("() => 1");
+
+        action();
+    }
+
+    /// <summary>
+    /// Same as <see cref="Compile_Generic_ActionDelegateWithValueProducingBody_DoesNotThrow"/> but through
+    /// <see cref="IExpressionCompiler.CompileExpression{TDelegate}(string)"/> directly.
+    /// </summary>
+    [TestMethod]
+    public void CompileExpression_Generic_ActionDelegateWithValueProducingBody_DoesNotThrow()
+    {
+        var compiler = new CSyntaxExpressionCompiler();
+
+        Expression<Action> expression = compiler.CompileExpression<Action>("() => 1");
+
+        expression.Compile()();
     }
 
     /// <summary>

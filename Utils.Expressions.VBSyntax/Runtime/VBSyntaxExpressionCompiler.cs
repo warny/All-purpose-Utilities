@@ -47,7 +47,7 @@ public sealed partial class VBSyntaxExpressionCompiler : IExpressionCompiler
     /// Optional symbol table mapping identifier names to existing expressions.
     /// </param>
     /// <returns>Compiled expression tree.</returns>
-    public Expression Compile(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
+    public Expression CompileExpression(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
     {
         ArgumentNullException.ThrowIfNull(content);
         ParseNode root = _parser.Parse(content);
@@ -55,12 +55,33 @@ public sealed partial class VBSyntaxExpressionCompiler : IExpressionCompiler
     }
 
     /// <summary>
+    /// Compiles source text directly to an executable delegate, via <see cref="CompileExpression(string, IReadOnlyDictionary{string, Expression})"/>.
+    /// </summary>
+    /// <param name="content">VB-like source text.</param>
+    /// <returns>The compiled delegate.</returns>
+    public Delegate Compile(string content)
+    {
+        Expression expression = CompileExpression(content);
+        return expression is LambdaExpression lambda ? lambda.Compile() : Expression.Lambda(expression).Compile();
+    }
+
+    /// <summary>
+    /// Compiles source text directly to an executable delegate of type <typeparamref name="TDelegate"/>,
+    /// via <see cref="CompileExpression{TDelegate}(string)"/>.
+    /// </summary>
+    /// <typeparam name="TDelegate">The delegate type to compile to.</typeparam>
+    /// <param name="content">VB-like lambda or expression body source.</param>
+    /// <returns>The compiled delegate.</returns>
+    public TDelegate Compile<TDelegate>(string content) where TDelegate : Delegate
+        => CompileExpression<TDelegate>(content).Compile();
+
+    /// <summary>
     /// Parses and compiles a VB-like expression using a rich runtime context.
     /// </summary>
     /// <param name="content">VB-like source text.</param>
     /// <param name="context">Runtime context providing and receiving symbols.</param>
     /// <returns>Compiled expression tree.</returns>
-    public Expression Compile(string content, VBSyntaxCompilerContext context)
+    public Expression CompileExpression(string content, VBSyntaxCompilerContext context)
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(context);
@@ -98,16 +119,24 @@ public sealed partial class VBSyntaxExpressionCompiler : IExpressionCompiler
 
     /// <summary>
     /// Compiles a VB-like lambda source into a typed delegate expression.
+    /// When <typeparamref name="T"/> has no parameters, <paramref name="content"/> may also be a bare
+    /// expression (no lambda syntax); it is wrapped in a parameterless lambda, converting its result
+    /// to the delegate's return type if needed.
     /// </summary>
     /// <typeparam name="T">Target delegate type.</typeparam>
     /// <param name="content">VB-like lambda or expression body source.</param>
     /// <returns>Typed lambda expression.</returns>
-    public Expression<T> Compile<T>(string content) where T : Delegate
+    public Expression<T> CompileExpression<T>(string content) where T : Delegate
     {
         ArgumentNullException.ThrowIfNull(content);
-        Expression result = Compile(content);
+        MethodInfo invokeMethod = typeof(T).GetMethod("Invoke")!;
+        Expression result = CompileExpression(content);
         if (result is Expression<T> typed) return typed;
-        if (result is LambdaExpression lam) return Expression.Lambda<T>(lam.Body, lam.Parameters);
+        if (result is LambdaExpression lam) return Expression.Lambda<T>(ConvertIfNeeded(lam.Body, invokeMethod.ReturnType), lam.Parameters);
+        if (invokeMethod.GetParameters().Length == 0)
+        {
+            return Expression.Lambda<T>(ConvertIfNeeded(result, invokeMethod.ReturnType));
+        }
         throw new InvalidOperationException(
             $"Compiled expression cannot be converted to {typeof(T).Name}.");
     }
@@ -119,7 +148,7 @@ public sealed partial class VBSyntaxExpressionCompiler : IExpressionCompiler
     /// <param name="content">Expression body (no lambda header required).</param>
     /// <param name="parameters">Lambda parameters to bind as symbols.</param>
     /// <returns>Lambda expression compatible with <typeparamref name="T"/>.</returns>
-    public LambdaExpression Compile<T>(string content, ParameterExpression[] parameters) where T : Delegate
+    public LambdaExpression CompileExpression<T>(string content, ParameterExpression[] parameters) where T : Delegate
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(parameters);
@@ -128,7 +157,7 @@ public sealed partial class VBSyntaxExpressionCompiler : IExpressionCompiler
         Type returnType = invoke.ReturnType;
         var symbols = parameters.ToDictionary(static p => p.Name!, static p => (Expression)p,
             StringComparer.OrdinalIgnoreCase);
-        Expression body = Compile(content, symbols);
+        Expression body = CompileExpression(content, symbols);
         return Expression.Lambda(ConvertIfNeeded(body, returnType), parameters);
     }
 

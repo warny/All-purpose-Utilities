@@ -138,6 +138,40 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     }
 
     /// <summary>
+    /// Public entry point required by <see cref="ExpressionTransformer"/>. A <see cref="LambdaExpression"/>
+    /// is always routed through <see cref="Derivate(LambdaExpression)"/> (which also validates, for the
+    /// parameter-identity constructor, that the instance is actually declared by the lambda). For a bare
+    /// expression, the differentiation variable can only be resolved when this instance was constructed
+    /// with an exact <see cref="ParameterExpression"/> identity (see <see cref="ExpressionDerivation(ParameterExpression, bool)"/>) -
+    /// the name-based constructor has no parameter list to resolve a name against outside of a lambda.
+    /// </summary>
+    /// <param name="expression">The lambda expression, or a bare expression when this instance was
+    /// constructed with an exact <see cref="ParameterExpression"/> identity, to differentiate.</param>
+    /// <returns>The simplified derivative expression.</returns>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when <paramref name="expression"/> is not a <see cref="LambdaExpression"/> and this
+    /// instance was constructed by parameter name: there is no declared parameter list, nor an explicit
+    /// parameter identity, from which to resolve the differentiation variable. Construct with an exact
+    /// <see cref="ParameterExpression"/> instance instead to differentiate a bare expression directly.
+    /// </exception>
+    public override Expression Transform(Expression expression)
+    {
+        if (expression is LambdaExpression lambda)
+        {
+            return Derivate(lambda);
+        }
+
+        if (explicitTargetParameter is not null)
+        {
+            var worker = new ExpressionDerivation<T>(ParameterName, explicitTargetParameter, AllowNumericalFallback);
+            return worker.TransformCore(expression);
+        }
+
+        throw new NotSupportedException(
+            $"{nameof(ExpressionDerivation<T>)}<T>.{nameof(Transform)} requires either a {nameof(LambdaExpression)} (to resolve the differentiation variable by name from its declared parameters) or construction with an exact {nameof(ParameterExpression)} identity (to differentiate a bare expression directly).");
+    }
+
+    /// <summary>
     /// Builds the derivative of the provided lambda expression with respect to the configured parameter.
     /// </summary>
     /// <param name="e">Lambda expression to differentiate.</param>
@@ -204,7 +238,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         // state (see TODO-2026-07-11-pass3.md items #31 and #32). usedNumericalFallback is likewise
         // scoped to this single worker instance, never shared across calls (see item #42).
         var worker = new ExpressionDerivation<T>(ParameterName, resolvedParameter, AllowNumericalFallback);
-        var result = Expression.Lambda(worker.Transform(e.Body.Simplify()).Simplify(), e.Parameters);
+        var result = Expression.Lambda(worker.TransformCore(e.Body.Simplify()).Simplify(), e.Parameters);
         isExact = !worker.usedNumericalFallback;
         return result;
     }
@@ -256,7 +290,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         Expression operand
     )
     {
-        return Expression.Negate(Transform(operand));
+        return Expression.Negate(TransformCore(operand));
     }
 
     /// <summary>
@@ -273,7 +307,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         Expression operand
     )
     {
-        return PreserveConversion(e, Transform(operand), isChecked: false);
+        return PreserveConversion(e, TransformCore(operand), isChecked: false);
     }
 
     /// <summary>
@@ -295,7 +329,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         Expression operand
     )
     {
-        return PreserveConversion(e, Transform(operand), isChecked: true);
+        return PreserveConversion(e, TransformCore(operand), isChecked: true);
     }
 
     /// <summary>
@@ -344,8 +378,8 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     )
     {
         return Expression.Add(
-            Transform(left),
-            Transform(right)
+            TransformCore(left),
+            TransformCore(right)
         );
     }
 
@@ -364,8 +398,8 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     )
     {
         return Expression.Subtract(
-            Transform(left),
-            Transform(right)
+            TransformCore(left),
+            TransformCore(right)
         );
     }
 
@@ -384,8 +418,8 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     )
     {
         return Expression.Add(
-            Expression.Multiply(Transform(left), right),
-            Expression.Multiply(left, Transform(right))
+            Expression.Multiply(TransformCore(left), right),
+            Expression.Multiply(left, TransformCore(right))
         );
     }
 
@@ -406,8 +440,8 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         // Quotient rule: (f'g − fg') / g²
         return Expression.Divide(
             Expression.Subtract(
-                Expression.Multiply(Transform(left), right),
-                Expression.Multiply(left, Transform(right))),
+                Expression.Multiply(TransformCore(left), right),
+                Expression.Multiply(left, TransformCore(right))),
             Expression.Power(right, ExpressionEx.CreateConstant(T.CreateChecked(2d))));
     }
 
@@ -428,7 +462,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
             right,
             Expression.Multiply(
                 Expression.Power(left, Expression.Subtract(right, ExpressionEx.CreateConstant(T.CreateChecked(1d)))),
-                Transform(left)
+                TransformCore(left)
                 )
             );
     }
@@ -463,12 +497,12 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
                     Expression.Subtract(right, ExpressionEx.CreateConstant(T.CreateChecked(1d)))
                 ),
                 Expression.Add(
-                    Expression.Multiply(right, Transform(left)),
+                    Expression.Multiply(right, TransformCore(left)),
                     Expression.Multiply(
                         left,
                         Expression.Multiply(
                             Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log)), left),
-                            Transform(right)
+                            TransformCore(right)
                         )
                     )
 
@@ -489,7 +523,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     {
         return
             Expression.Multiply(
-                Transform(operand),
+                TransformCore(operand),
                 Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Exp)), operand)
             );
     }
@@ -506,7 +540,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         Expression operand)
     {
         return Expression.Divide(
-            Transform(operand),
+            TransformCore(operand),
             operand
             );
     }
@@ -523,7 +557,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
             Expression operand)
     {
         return Expression.Divide(
-            Transform(operand),
+            TransformCore(operand),
             Expression.Multiply(
                 operand,
                 ExpressionEx.CreateConstant(T.CreateChecked(double.Log(10d)))
@@ -543,7 +577,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         Expression operand)
     {
         return Expression.Multiply(
-            Transform(operand),
+            TransformCore(operand),
             Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Cos)), operand));
     }
 
@@ -560,7 +594,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     {
         return Expression.Negate(
             Expression.Multiply(
-            Transform(operand),
+            TransformCore(operand),
             Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Sin)), operand)));
     }
 
@@ -578,7 +612,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         // Applying Simplify to Sin(x)/Cos(x) can rebuild Tan(x), causing infinite recursion.
         // Use the direct identity instead: (tan(f))' = f'(x) / cos²(f(x))
         return Expression.Divide(
-            Transform(operand),
+            TransformCore(operand),
             Expression.Power(
                 Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Cos)), operand),
                 ExpressionEx.CreateConstant(T.CreateChecked(2d))
@@ -653,7 +687,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
             ExpressionEx.CreateConstant(T.One));
         var epsilon = Expression.Multiply(stepBase, operandMagnitude);
         var twoEpsilon = Expression.Multiply(ExpressionEx.CreateConstant(T.CreateChecked(2d)), epsilon);
-        var operandDerivative = Transform(operand);
+        var operandDerivative = TransformCore(operand);
 
         var plus = Expression.Call(methodCallExpression.Method, Expression.Add(operand, epsilon));
         var minus = Expression.Call(methodCallExpression.Method, Expression.Subtract(operand, epsilon));

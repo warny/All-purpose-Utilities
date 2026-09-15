@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Utils.Expressions;
 using Utils.Expressions.CSyntax.Runtime;
 using Utils.Mathematics.Expressions;
 
@@ -35,8 +36,8 @@ public class ExpressionIntegrationTests
 
         foreach (var test in tests)
         {
-            var func = compiler.Compile<Func<double, double>>(test.function, parameters, typeof(double), false);
-            var expected = simplifier.Simplify(compiler.Compile<Func<double, double>>(test.integral, parameters, typeof(double), false));
+            var func = compiler.CompileExpression<Func<double, double>>(test.function, parameters, typeof(double), false);
+            var expected = simplifier.Simplify(compiler.CompileExpression<Func<double, double>>(test.integral, parameters, typeof(double), false));
             var result = simplifier.Simplify(integration.Integrate(func));
             Assert.AreEqual(expected, result, ExpressionComparer.Default);
         }
@@ -50,7 +51,7 @@ public class ExpressionIntegrationTests
     public void Compile_TrigExpression_ForIntegrationWorkflow()
     {
         var x = Expression.Parameter(typeof(double), "x");
-        var expression = compiler.Compile("x * x + 1", new Dictionary<string, Expression> { ["x"] = x });
+        var expression = compiler.CompileExpression("x * x + 1", new Dictionary<string, Expression> { ["x"] = x });
         var lambda = Expression.Lambda<Func<double, double>>(Expression.Convert(expression, typeof(double)), x).Compile();
 
         Assert.AreEqual(10d, lambda(3d), 1e-9);
@@ -130,7 +131,7 @@ public class ExpressionIntegrationTests
     public void Integrate_XSquared_ReturnsXCubedOver3()
     {
         var parameters = new ParameterExpression[] { Expression.Parameter(typeof(double), "x") };
-        var f = compiler.Compile<Func<double, double>>("x**2", parameters, typeof(double), false);
+        var f = compiler.CompileExpression<Func<double, double>>("x**2", parameters, typeof(double), false);
         var result = (Expression<Func<double, double>>)integration.Integrate(f);
         var compiled = result.Compile();
 
@@ -576,6 +577,58 @@ public class ExpressionIntegrationTests
         ExpressionIntegration<double> integrationByForeign = new(foreign);
 
         Assert.ThrowsExactly<SymbolicParameterException>(() => integrationByForeign.Integrate(f));
+    }
+
+    /// <summary>
+    /// <see cref="ExpressionTransformer.Transform(Expression)"/> is the public contract every transformer
+    /// must implement. For <see cref="ExpressionIntegration{T}"/>, a <see cref="LambdaExpression"/> carries
+    /// the parameter list needed to resolve the integration variable, so <c>Transform</c> must actually
+    /// integrate against <c>x</c> - not silently treat it as an unrelated free variable (which would
+    /// crash or produce a wrong result, since the target parameter is only resolved inside
+    /// <see cref="ExpressionIntegration{T}.Integrate(LambdaExpression)"/>, never by the public constructors).
+    /// </summary>
+    [TestMethod]
+    public void Transform_OnLambdaExpression_IntegratesAgainstItsParameter()
+    {
+        Expression<Func<double, double>> f = x => 1.0;
+        var localIntegration = new ExpressionIntegration<double>("x");
+
+        var viaTransform = (Expression<Func<double, double>>)localIntegration.Transform(f);
+        var viaIntegrate = (Expression<Func<double, double>>)localIntegration.Integrate(f);
+
+        Assert.AreEqual(3.0, viaTransform.Compile()(3.0), 1e-9);
+        Assert.AreEqual(viaIntegrate, viaTransform, ExpressionComparer.Default);
+    }
+
+    /// <summary>
+    /// Without a <see cref="LambdaExpression"/>, <see cref="ExpressionIntegration{T}.Transform(Expression)"/>
+    /// has no declared parameter list to resolve the integration variable from, and must fail explicitly
+    /// rather than silently guessing or corrupting shared state.
+    /// </summary>
+    [TestMethod]
+    public void Transform_OnBareExpression_ThrowsNotSupported()
+    {
+        var localIntegration = new ExpressionIntegration<double>("x");
+
+        Assert.ThrowsExactly<NotSupportedException>(() => localIntegration.Transform(Expression.Constant(5.0)));
+    }
+
+    /// <summary>
+    /// When this instance was constructed with an exact <see cref="ParameterExpression"/> identity, the
+    /// integration variable is already unambiguously known, so <c>Transform</c> can integrate a bare
+    /// (non-lambda) expression directly instead of requiring a carrier <see cref="LambdaExpression"/>.
+    /// </summary>
+    [TestMethod]
+    public void Transform_OnBareExpression_WithParameterIdentityConstructor_Integrates()
+    {
+        var x = Expression.Parameter(typeof(double), "x");
+        var localIntegration = new ExpressionIntegration<double>(x);
+
+        Expression result = localIntegration.Transform(x);
+        var compiled = Expression.Lambda<Func<double, double>>(result, x).Compile();
+
+        const double xv = 3.0;
+        Assert.AreEqual(xv * xv / 2.0, compiled(xv), 1e-9, "∫x dx = x²/2");
     }
 
 }

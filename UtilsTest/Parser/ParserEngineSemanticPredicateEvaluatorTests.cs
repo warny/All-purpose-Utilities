@@ -308,19 +308,47 @@ public class ParserEngineSemanticPredicateEvaluatorTests
         }
     }
 
+    /// <summary>Fake <see cref="IExpressionCompiler"/> that always fails, to exercise error handling paths.</summary>
     private sealed class ThrowingExpressionCompiler : IExpressionCompiler
     {
-        public Expression Compile(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
+        /// <summary>Always throws, simulating a compiler failure.</summary>
+        public Expression CompileExpression(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
         {
             throw new InvalidOperationException("boom");
         }
+
+        /// <summary>Always throws, simulating a compiler failure.</summary>
+        public Expression<TDelegate> CompileExpression<TDelegate>(string content) where TDelegate : Delegate
+            => throw new InvalidOperationException("boom");
+
+        /// <summary>Always throws, simulating a compiler failure.</summary>
+        public Delegate Compile(string content)
+            => throw new InvalidOperationException("boom");
+
+        /// <summary>Always throws, simulating a compiler failure.</summary>
+        public TDelegate Compile<TDelegate>(string content) where TDelegate : Delegate
+            => throw new InvalidOperationException("boom");
     }
 
+    /// <summary>Fake <see cref="IExpressionCompiler"/> that always compiles to a non-boolean constant.</summary>
     private sealed class NonBooleanExpressionCompiler : IExpressionCompiler
     {
-        public Expression Compile(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
+        /// <summary>Always returns a non-boolean constant expression.</summary>
+        public Expression CompileExpression(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
         {
             return Expression.Constant(42);
         }
+
+        /// <summary>Not supported by this fake; only the symbol-table overload is exercised by these tests.</summary>
+        public Expression<TDelegate> CompileExpression<TDelegate>(string content) where TDelegate : Delegate
+            => throw new NotSupportedException("This fake only supports the symbol-table overload.");
+
+        /// <summary>Not supported by this fake; only the symbol-table overload is exercised by these tests.</summary>
+        public Delegate Compile(string content)
+            => throw new NotSupportedException("This fake only supports the symbol-table overload.");
+
+        /// <summary>Not supported by this fake; only the symbol-table overload is exercised by these tests.</summary>
+        public TDelegate Compile<TDelegate>(string content) where TDelegate : Delegate
+            => throw new NotSupportedException("This fake only supports the symbol-table overload.");
     }
 }

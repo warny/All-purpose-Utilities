@@ -327,7 +327,7 @@ public sealed class StringFormatBuilder : IStringFormatBuilder
 
                 case FormattedPart formattedPart:
                     Expression expression = Expression.Convert(
-                        _compiler.Compile(formattedPart.ExpressionText, symbols),
+                        _compiler.CompileExpression(formattedPart.ExpressionText, symbols),
                         typeof(object));
 
                     builder.Add(

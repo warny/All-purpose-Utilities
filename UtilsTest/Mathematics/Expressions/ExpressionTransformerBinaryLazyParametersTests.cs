@@ -54,6 +54,9 @@ public class ExpressionTransformerBinaryLazyParametersTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
+
         /// <inheritdoc />
         protected override Expression PrepareExpression(Expression e)
             => _replacements.TryGetValue(e, out Expression? replacement) ? replacement : e;
@@ -137,6 +140,9 @@ public class ExpressionTransformerBinaryLazyParametersTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
+
         /// <inheritdoc />
         protected override Expression PrepareExpression(Expression e)
         {
@@ -219,6 +225,9 @@ public class ExpressionTransformerBinaryLazyParametersTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
+
         /// <summary>Matches any <see cref="ExpressionType.AndAlso"/> node and captures the full sub-expression array.</summary>
         [ExpressionSignature(ExpressionType.AndAlso)]
         private Expression Rule(BinaryExpression e, Expression[] parameters)
@@ -259,6 +268,9 @@ public class ExpressionTransformerBinaryLazyParametersTests
 
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Matches any <see cref="ExpressionType.AndAlso"/> node and mutates slot 0 of its sub-expression array.</summary>
         [ExpressionSignature(ExpressionType.AndAlso)]
@@ -305,6 +317,9 @@ public class ExpressionTransformerBinaryLazyParametersTests
 
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Matches any <see cref="ExpressionType.AndAlso"/> node but always returns null.</summary>
         [ExpressionSignature(ExpressionType.AndAlso)]
@@ -359,6 +374,9 @@ public class ExpressionTransformerBinaryLazyParametersTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
+
         /// <inheritdoc />
         protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
         {
@@ -407,6 +425,9 @@ public class ExpressionTransformerBinaryLazyParametersTests
 
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <inheritdoc />
         protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
@@ -466,6 +487,9 @@ public class ExpressionTransformerBinaryLazyParametersTests
 
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Declared first; always defers via <see langword="null"/>.</summary>
         [ExpressionSignature(ExpressionType.AndAlso)]
@@ -541,6 +565,9 @@ public class ExpressionTransformerBinaryLazyParametersTests
 
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Always defers via <see langword="null"/>.</summary>
         [ExpressionSignature(ExpressionType.AndAlso)]

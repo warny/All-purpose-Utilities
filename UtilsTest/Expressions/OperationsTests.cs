@@ -18,7 +18,7 @@ public class OperationsTests
         string[] tests = ["a", "ab", "abc"];
         var expression = "(string s) => s.Length";
 
-        var e = (LambdaExpression)compiler.Compile(expression);
+        var e = (LambdaExpression)compiler.CompileExpression(expression);
         var f = (Func<string, int>)e.Compile();
 
         foreach (var test in tests)
@@ -34,7 +34,7 @@ public class OperationsTests
     [TestMethod]
     public void Compile_BooleanOperations_ReturnsExpectedValue()
     {
-        var expression = compiler.Compile("(2 < 3) && (5 >= 5)");
+        var expression = compiler.CompileExpression("(2 < 3) && (5 >= 5)");
         var lambda = Expression.Lambda<Func<bool>>(Expression.Convert(expression, typeof(bool))).Compile();
 
         Assert.IsTrue(lambda());
