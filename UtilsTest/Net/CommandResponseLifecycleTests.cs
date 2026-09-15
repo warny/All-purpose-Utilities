@@ -343,7 +343,13 @@ public class CommandResponseLifecycleTests
         await client.ConnectAsync(clientStream, leaveOpen: true);
 
         List<ServerResponse> unsolicited = new();
-        client.UnsolicitedResponseReceived += r => unsolicited.Add(r);
+        TaskCompletionSource<ServerResponse> markerReceived = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        client.UnsolicitedResponseReceived += response =>
+        {
+            unsolicited.Add(response);
+            if (response.Message == "UNSOLICITED-MARKER")
+                markerReceived.TrySetResult(response);
+        };
 
         Task<IReadOnlyList<ServerResponse>> sendTask = client.SendCommandAsync("PING");
         string? received = await WithTimeout(Task.Run(() => serverReader.ReadLine()), "Server did not see PING.");
@@ -353,8 +359,10 @@ public class CommandResponseLifecycleTests
         Assert.AreEqual(1, responses.Count);
         Assert.AreEqual("250", responses[0].Code);
 
-        await Task.Delay(50);
-        Assert.AreEqual(0, unsolicited.Count, "Solicited response must not be raised as unsolicited.");
+        await serverWriter.WriteLineAsync("100 UNSOLICITED-MARKER");
+        ServerResponse marker = await WithTimeout(markerReceived.Task, "Did not receive unsolicited marker within 5s.");
+        Assert.AreEqual("UNSOLICITED-MARKER", marker.Message);
+        Assert.AreEqual(1, unsolicited.Count, "Only the explicit marker may be raised as unsolicited.");
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -399,7 +407,9 @@ public class CommandResponseLifecycleTests
 
         cts.Cancel();
 
-        await Task.Delay(200);
+        using CancellationTokenSource deadline = new(Timeout5);
+        while (client.IsConnected && !deadline.IsCancellationRequested)
+            await Task.Yield();
         Assert.IsFalse(client.IsConnected, "Client must report disconnected after cancellation.");
     }
 

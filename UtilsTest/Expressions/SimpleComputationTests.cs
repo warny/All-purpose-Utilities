@@ -10,141 +10,126 @@ namespace UtilsTest.Expressions;
 [TestClass]
 public class SimpleComputationTests
 {
+    /// <summary>
+    /// Represents the first positive integer that binary32 cannot represent exactly.
+    /// </summary>
+    private const double BeyondSinglePrecisionInteger = 16_777_217d;
+
     CSyntaxExpressionCompiler compiler = new CSyntaxExpressionCompiler();
 
     [TestMethod]
     public void AdditionTests()
     {
-        var r = new Random();
-
         var e = (LambdaExpression)compiler.Compile("(int x, int y) => x + y");
         var f = (Func<int, int, int>)e.Compile();
 
-        for (int i = 0; i < 10; i++)
+        foreach ((int x, int y) in new (int, int)[]
         {
-            (int x, int y) = (r.Next(), r.Next());
-
-            Assert.AreEqual(x + y, f(x, y));
-        }
+            (0, 0), (1, -1), (-42, 17), (123_456, 654_321),
+            (int.MaxValue, 1), (int.MinValue, -1), (int.MaxValue, int.MaxValue)
+        })
+            Assert.AreEqual(unchecked(x + y), f(x, y));
 
     }
 
     [TestMethod]
     public void SubstractionTest()
     {
-        var r = new Random();
-
         var e = (LambdaExpression)compiler.Compile("(int x, int y) => x - y");
         var f = (Func<int, int, int>)e.Compile();
 
-        for (int i = 0; i < 10; i++)
-        {
-            (int x, int y) = (r.Next(), r.Next());
-
+        foreach ((int x, int y) in new (int, int)[] { (0, 0), (1, -1), (-42, 17), (654_321, 123_456) })
             Assert.AreEqual(x - y, f(x, y));
-        }
 
     }
 
     [TestMethod]
     public void MultiplicationTests()
     {
-        var r = new Random();
-
         var e = (LambdaExpression)compiler.Compile("(double x, double y) => x * y");
         var f = (Func<double, double, double>)e.Compile();
 
-        for (int i = 0; i < 10; i++)
+        foreach ((double x, double y) in new (double, double)[]
         {
-            (double x, double y) = (r.Next(), r.Next());
-
+            (0, 3.5), (1.25, -4), (-2.5, -8), (123.5, 0.25),
+            (BeyondSinglePrecisionInteger, 1d)
+        })
             Assert.AreEqual(x * y, f(x, y));
-        }
 
     }
 
     [TestMethod]
     public void DivisionTest()
     {
-        var r = new Random();
-
         var e = (LambdaExpression)compiler.Compile("(double x, double y) => x / y");
         var f = (Func<double, double, double>)e.Compile();
 
-        for (int i = 0; i < 10; i++)
+        foreach ((double x, double y) in new (double, double)[]
         {
-            (double x, double y) = (r.Next(), r.Next());
-
+            (0, 3.5), (1.25, -4), (-2.5, -8), (123.5, 0.25),
+            (BeyondSinglePrecisionInteger, 1d)
+        })
             Assert.AreEqual(x / y, f(x, y));
-        }
 
     }
 
     [TestMethod]
     public void PriorityTest1()
     {
-        var r = new Random();
-
         var e = (LambdaExpression)compiler.Compile("(double x, double y, double z) => x * y + z");
         var f = (Func<double, double, double, double>)e.Compile();
 
-        for (int i = 0; i < 10; i++)
+        foreach ((double x, double y, double z) in new (double, double, double)[]
         {
-            (double x, double y, double z) = (r.Next(), r.Next(), r.Next());
-
+            (0, 2, 3), (1.5, -4, 2.25), (-3, -2.5, -7), (100, 0.125, -4),
+            (BeyondSinglePrecisionInteger, 1d, 1d)
+        })
             Assert.AreEqual(x * y + z, f(x, y, z));
-        }
 
     }
 
     [TestMethod]
     public void PriorityTest2()
     {
-        var r = new Random();
-
         var e = (LambdaExpression)compiler.Compile("(double x, double y, double z) => x + y * z");
         var f = (Func<double, double, double, double>)e.Compile();
 
-        for (int i = 0; i < 10; i++)
+        foreach ((double x, double y, double z) in new (double, double, double)[]
         {
-            (double x, double y, double z) = (r.Next(), r.Next(), r.Next());
-
+            (0, 2, 3), (1.5, -4, 2.25), (-3, -2.5, -7), (100, 0.125, -4),
+            (1d, BeyondSinglePrecisionInteger, 1d)
+        })
             Assert.AreEqual(x + y * z, f(x, y, z));
-        }
 
     }
 
     [TestMethod]
     public void ParenthesisTest1()
     {
-        var r = new Random();
-
         var e = (LambdaExpression)compiler.Compile("(double x, double y, double z) => x * (y + z)");
         var f = (Func<double, double, double, double>)e.Compile();
 
-        for (int i = 0; i < 10; i++)
+        foreach ((double x, double y, double z) in new (double, double, double)[]
         {
-            (double x, double y, double z) = (r.Next(), r.Next(), r.Next());
-
+            (0, 2, 3), (1.5, -4, 2.25), (-3, -2.5, -7), (100, 0.125, -4),
+            (1d, BeyondSinglePrecisionInteger, 1d)
+        })
             Assert.AreEqual(x * (y + z), f(x, y, z));
-        }
 
     }
 
     [TestMethod]
     public void ParenthesisTest2()
     {
-        var r = new Random();
-
         var e = (LambdaExpression)compiler.Compile("(double x, double y, double z) => (x + y) * z");
         var f = (Func<double, double, double, double>)e.Compile();
 
-        for (int i = 0; i < 10; i++)
+        foreach ((double x, double y, double z) in new (double, double, double)[]
         {
-            (double x, double y, double z) = (r.Next(), r.Next(), r.Next());
-
+            (0, 2, 3), (1.5, -4, 2.25), (-3, -2.5, -7), (100, 0.125, -4),
+            (BeyondSinglePrecisionInteger, 1d, 1d)
+        })
             Assert.AreEqual((x + y) * z, f(x, y, z));
-        }
 
     }
 
