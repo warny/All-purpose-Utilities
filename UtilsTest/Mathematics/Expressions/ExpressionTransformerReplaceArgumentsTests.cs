@@ -279,6 +279,51 @@ public class ExpressionTransformerReplaceArgumentsTests
         Assert.AreEqual(100.0, value, 1e-9); // boxA.Scale(10) = 10 * 10
     }
 
+    /// <summary>
+    /// Ensures replacement traverses both the invocation target and its argument list.
+    /// </summary>
+    [TestMethod]
+    public void ReplaceArguments_InvocationExpression_ReplacesParametersInTarget()
+    {
+        var transformer = new ExposedTransformer();
+        ParameterExpression parameter = Expression.Parameter(typeof(double), "p");
+        Func<double, double> multiplyByTwo = value => value * 2.0;
+        Func<double, double> multiplyByThree = value => value * 3.0;
+        Expression target = Expression.Condition(
+            Expression.GreaterThan(parameter, Expression.Constant(0.0)),
+            Expression.Constant(multiplyByTwo),
+            Expression.Constant(multiplyByThree));
+        Expression invocation = Expression.Invoke(target, parameter);
+
+        Expression result = transformer.ExposeReplaceArguments(
+            invocation,
+            [parameter],
+            [Expression.Constant(4.0)]);
+
+        Assert.AreEqual(8.0, Expression.Lambda<Func<double>>(result).Compile()(), 1e-9);
+    }
+
+    /// <summary>
+    /// Ensures replacement traverses the test and both result branches of a conditional expression.
+    /// </summary>
+    [TestMethod]
+    public void ReplaceArguments_ConditionalExpression_ReplacesParametersInAllBranches()
+    {
+        var transformer = new ExposedTransformer();
+        ParameterExpression parameter = Expression.Parameter(typeof(double), "p");
+        Expression conditional = Expression.Condition(
+            Expression.GreaterThan(parameter, Expression.Constant(0.0)),
+            Expression.Multiply(parameter, Expression.Constant(2.0)),
+            Expression.Multiply(parameter, Expression.Constant(-1.0)));
+
+        Expression result = transformer.ExposeReplaceArguments(
+            conditional,
+            [parameter],
+            [Expression.Constant(5.0)]);
+
+        Assert.AreEqual(10.0, Expression.Lambda<Func<double>>(result).Compile()(), 1e-9);
+    }
+
     // ------------------------------------------------------------------------------------------
     // ExpressionSimplifier.InvokeExpression: end-to-end lambda inlining via the collection-based core.
     // ------------------------------------------------------------------------------------------
