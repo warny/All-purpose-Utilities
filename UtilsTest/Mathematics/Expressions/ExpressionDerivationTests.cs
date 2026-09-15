@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Utils.Expressions;
 using Utils.Expressions.CSyntax.Runtime;
 using Utils.Mathematics.Expressions;
 
@@ -73,7 +74,7 @@ public class ExpressionDerivationTests
     public void Compile_PolynomialExpression_ForDerivativeWorkflow()
     {
         var x = Expression.Parameter(typeof(double), "x");
-        var expression = compiler.Compile("x * x + 2 * x", new Dictionary<string, Expression> { ["x"] = x });
+        var expression = compiler.CompileExpression("x * x + 2 * x", new Dictionary<string, Expression> { ["x"] = x });
         var lambda = Expression.Lambda<Func<double, double>>(Expression.Convert(expression, typeof(double)), x).Compile();
 
         Assert.AreEqual(15d, lambda(3d), 1e-9);
@@ -512,7 +513,7 @@ public class ExpressionDerivationTests
     /// be mistaken for a constant: previously, <c>ContainsParameter</c> only recognized a hand-picked
     /// subset of node kinds (via a <c>switch</c> defaulting to <c>false</c>) and would have silently
     /// returned a zero derivative for these two node kinds instead of ever reaching
-    /// <see cref="Transform"/>. Since differentiating a <see cref="MemberExpression"/> is not itself
+    /// <c>TransformCore</c>. Since differentiating a <see cref="MemberExpression"/> is not itself
     /// implemented, the correct behavior once the dependency is detected is an explicit failure — not a
     /// silently wrong zero.
     /// </summary>
@@ -640,6 +641,32 @@ public class ExpressionDerivationTests
         ExpressionDerivation<double> derivationByForeign = new(foreign);
 
         Assert.ThrowsExactly<SymbolicParameterException>(() => derivationByForeign.Derivate(f));
+    }
+
+    /// <summary>Exposes the protected <c>TransformCore</c> engine for direct comparison against <c>Transform</c>.</summary>
+    private sealed class ExposedDerivation : ExpressionDerivation<double>
+    {
+        public ExposedDerivation(string parameterName) : base(parameterName) { }
+
+        public Expression ExposeTransformCore(Expression e) => TransformCore(e);
+    }
+
+    /// <summary>
+    /// <see cref="ExpressionDerivation{T}.Transform(Expression)"/> performs no extra preparation beyond
+    /// <c>TransformCore</c> for this transformer (the target parameter is already resolved at
+    /// construction time), so calling it directly - as opposed to going through <see cref="ExpressionDerivation{T}.Derivate(LambdaExpression)"/> -
+    /// must not corrupt state or produce a different result.
+    /// </summary>
+    [TestMethod]
+    public void Transform_OnWorkerInstance_IsEquivalentToTransformCore()
+    {
+        var exposed = new ExposedDerivation("x");
+        Expression constant = Expression.Constant(5.0);
+
+        var viaTransform = exposed.Transform(constant);
+        var viaTransformCore = exposed.ExposeTransformCore(constant);
+
+        Assert.AreEqual(viaTransformCore, viaTransform, ExpressionComparer.Default);
     }
 
 }

@@ -444,7 +444,7 @@ public sealed partial class CSyntaxExpressionCompiler
             }
 
             arguments.Add(context.RuntimeContext is null
-                ? context.Compiler.Compile(trimmed, context.Symbols)
+                ? context.Compiler.CompileExpression(trimmed, context.Symbols)
                 : context.Compiler.Compile(trimmed, context.RuntimeContext));
         }
 

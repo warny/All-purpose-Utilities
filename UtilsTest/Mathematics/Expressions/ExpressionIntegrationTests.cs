@@ -1,5 +1,7 @@
 using System.Linq.Expressions;
+using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Utils.Expressions;
 using Utils.Expressions.CSyntax.Runtime;
 using Utils.Mathematics.Expressions;
 
@@ -50,7 +52,7 @@ public class ExpressionIntegrationTests
     public void Compile_TrigExpression_ForIntegrationWorkflow()
     {
         var x = Expression.Parameter(typeof(double), "x");
-        var expression = compiler.Compile("x * x + 1", new Dictionary<string, Expression> { ["x"] = x });
+        var expression = compiler.CompileExpression("x * x + 1", new Dictionary<string, Expression> { ["x"] = x });
         var lambda = Expression.Lambda<Func<double, double>>(Expression.Convert(expression, typeof(double)), x).Compile();
 
         Assert.AreEqual(10d, lambda(3d), 1e-9);
@@ -576,6 +578,42 @@ public class ExpressionIntegrationTests
         ExpressionIntegration<double> integrationByForeign = new(foreign);
 
         Assert.ThrowsExactly<SymbolicParameterException>(() => integrationByForeign.Integrate(f));
+    }
+
+    /// <summary>
+    /// Exposes the protected <c>TransformCore</c> engine for direct comparison against <c>Transform</c>,
+    /// with the private per-call worker's resolved integration parameter set via reflection: the public
+    /// constructors never populate it (only the internal worker created by <see cref="ExpressionIntegration{T}.Integrate(LambdaExpression)"/> does), but every terminal rule needs it.
+    /// </summary>
+    private sealed class ExposedIntegration : ExpressionIntegration<double>
+    {
+        public ExposedIntegration(ParameterExpression parameter) : base(parameter)
+        {
+            typeof(ExpressionIntegration<double>)
+                .GetField("parameter", BindingFlags.NonPublic | BindingFlags.Instance)!
+                .SetValue(this, parameter);
+        }
+
+        public Expression ExposeTransformCore(Expression e) => TransformCore(e);
+    }
+
+    /// <summary>
+    /// <see cref="ExpressionIntegration{T}.Transform(Expression)"/> performs no extra preparation beyond
+    /// <c>TransformCore</c> for this transformer (the target parameter is already resolved at
+    /// construction time), so calling it directly - as opposed to going through <see cref="ExpressionIntegration{T}.Integrate(LambdaExpression)"/> -
+    /// must not corrupt state or produce a different result.
+    /// </summary>
+    [TestMethod]
+    public void Transform_OnWorkerInstance_IsEquivalentToTransformCore()
+    {
+        var x = Expression.Parameter(typeof(double), "x");
+        var exposed = new ExposedIntegration(x);
+        Expression constant = Expression.Constant(5.0);
+
+        var viaTransform = exposed.Transform(constant);
+        var viaTransformCore = exposed.ExposeTransformCore(constant);
+
+        Assert.AreEqual(viaTransformCore, viaTransform, ExpressionComparer.Default);
     }
 
 }

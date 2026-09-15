@@ -524,3 +524,39 @@ The entries below were verified byte-for-byte by ApiCompat against the published
 - NNTP NEWNEWS returns message-id strings, and NEXT returns null only for code 421.
 - SMTP string envelopes are parsed strictly and typed overloads separate paths from ESMTP options.
 - Negative responses use `ProtocolResponseException`; lost framing makes the session permanently unusable.
+
+<a id="expression-compiler-capability-split"></a>
+## 2.0.0-rc.2: expression compiler capability split
+
+This human-review section summarizes the exact machine-enforced diagnostics in `eng/api-breaking-changes/2.0.0-rc.2.json`. That JSON file remains authoritative; every addition or stale acceptance fails the API gate. Unlike the `2.0.0.json` breaks documented above (the original 1.x/0.x → 2.0.0-rc.1 major-version migration), this section covers changes introduced strictly *after* the published `2.0.0-rc.1` baseline.
+
+**Why**: `IExpressionCompiler.Compile(string, IReadOnlyDictionary<string, Expression>?)` was ambiguous — it could only ever mean "compile to an `Expression`", yet the same verb is also the natural name for "compile to an executable delegate". The compilation surface was split into four independent capability interfaces:
+
+- `IDelegateCompiler` — `Compile(string)` / `Compile<TDelegate>(string)`, compiling straight to an executable delegate.
+- `IExpressionCompiler : IDelegateCompiler` — `CompileExpression(string, symbols?)` / `CompileExpression<TDelegate>(string)`, compiling to a LINQ expression tree (the renamed former `Compile`).
+- `ITypeCompiler` — `CompileType(string)` / `CompileType<T>(string)` (new, no production implementation yet).
+- `IAssemblyCompiler` — `CompileAssembly(string)` (new, no production implementation yet).
+
+This is a deliberate, clean rename with no `[Obsolete]` compatibility shim: keeping a `Compile` overload that still returned `Expression` would have recreated exactly the ambiguity this split exists to remove. `CSyntaxExpressionCompiler` and `VBSyntaxExpressionCompiler` (the two production `IExpressionCompiler` implementations) were updated accordingly, and `Utils.Parser.Expressions`'s public constructors/adapters that accept an `IExpressionCompiler` are affected transitively since the interface shape they depend on changed.
+
+- Published baseline: `2.0.0-rc.1`
+
+### omy.Utils
+
+- `CP0002` — `System.Linq.Expressions.Expression Utils.Expressions.IExpressionCompiler.Compile(string, System.Collections.Generic.IReadOnlyDictionary<string, System.Linq.Expressions.Expression>?)` removed (renamed to `CompileExpression`)
+- `CP0006` — `System.Linq.Expressions.Expression Utils.Expressions.IExpressionCompiler.CompileExpression(string, System.Collections.Generic.IReadOnlyDictionary<string, System.Linq.Expressions.Expression>?)` added
+- `CP0006` — `System.Linq.Expressions.Expression<TDelegate> Utils.Expressions.IExpressionCompiler.CompileExpression<TDelegate>(string)` added
+
+### omy.Utils.Expressions.CSyntax
+
+- `CP0002` — `System.Linq.Expressions.Expression Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(string, System.Collections.Generic.IReadOnlyDictionary<string, System.Linq.Expressions.Expression>?)` removed (renamed to `CompileExpression`)
+- `CP0002` — `System.Linq.Expressions.Expression<T> Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile<T>(string)` removed (renamed to `CompileExpression<T>`; the new `Compile<TDelegate>` returns a real delegate instead)
+
+### omy.Utils.Expressions.VBSyntax
+
+- `CP0002` — `System.Linq.Expressions.Expression Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile(string, System.Collections.Generic.IReadOnlyDictionary<string, System.Linq.Expressions.Expression>?)` removed (renamed to `CompileExpression`)
+- `CP0002` — `System.Linq.Expressions.Expression<T> Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile<T>(string)` removed (renamed to `CompileExpression<T>`; the new `Compile<TDelegate>` returns a real delegate instead)
+
+### omy.Utils.Parser.Expressions
+
+No breaking ApiCompat diagnostics: its public constructors accept `IExpressionCompiler` by parameter type, and referencing a type whose *own* shape changed elsewhere does not itself change this package's public surface. No `acceptedDiagnostics` entry is needed for this package.

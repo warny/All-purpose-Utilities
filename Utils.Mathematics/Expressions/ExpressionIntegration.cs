@@ -151,7 +151,13 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         this.parameter = parameter;
     }
 
-
+    /// <summary>
+    /// The target parameter is already resolved at construction time (see the private constructor), so
+    /// no extra preparation is needed beyond <see cref="ExpressionTransformer.TransformCore(Expression)"/>.
+    /// </summary>
+    /// <param name="expression">The expression to transform.</param>
+    /// <returns>A possibly rewritten expression.</returns>
+    public override Expression Transform(Expression expression) => TransformCore(expression);
 
     /// <summary>
     /// Integrates the wrapped operand and re-applies the conversion's declared result type when the
@@ -167,7 +173,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         Expression operand
     )
     {
-        return PreserveConversion(e, Transform(operand), isChecked: false);
+        return PreserveConversion(e, TransformCore(operand), isChecked: false);
     }
 
     /// <summary>
@@ -189,7 +195,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         Expression operand
     )
     {
-        return PreserveConversion(e, Transform(operand), isChecked: true);
+        return PreserveConversion(e, TransformCore(operand), isChecked: true);
     }
 
     /// <summary>
@@ -249,7 +255,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         Expression operand
     )
     {
-        return Expression.Negate(Transform(operand));
+        return Expression.Negate(TransformCore(operand));
     }
 
     /// <summary>
@@ -293,8 +299,8 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     )
     {
         return Expression.Add(
-            Transform(left),
-            Transform(right)
+            TransformCore(left),
+            TransformCore(right)
             );
     }
 
@@ -313,8 +319,8 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     )
     {
         return Expression.Subtract(
-            Transform(left),
-            Transform(right)
+            TransformCore(left),
+            TransformCore(right)
         );
     }
 
@@ -332,7 +338,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         Expression right
     )
     {
-        return Expression.Multiply(left, Transform(right));
+        return Expression.Multiply(left, TransformCore(right));
     }
 
     /// <summary>
@@ -349,7 +355,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         [ConstantNumeric] ConstantExpression right
     )
     {
-        return Expression.Multiply(right, Transform(left));
+        return Expression.Multiply(right, TransformCore(left));
     }
 
     /// <summary>
@@ -366,7 +372,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         [ConstantNumeric] ConstantExpression right
     )
     {
-        return Expression.Divide(Transform(left), right);
+        return Expression.Divide(TransformCore(left), right);
     }
 
     /// <summary>

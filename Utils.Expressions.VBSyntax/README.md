@@ -28,8 +28,16 @@ using System.Linq.Expressions;
 using Utils.Expressions.VBSyntax.Runtime;
 
 var compiler = new VBSyntaxExpressionCompiler();
-Expression expression = compiler.Compile("1 + 2 * 3");
+Expression expression = compiler.CompileExpression("1 + 2 * 3");
 var lambda = Expression.Lambda<Func<double>>(Expression.Convert(expression, typeof(double))).Compile();
+
+double result = lambda(); // 7
+```
+
+Recommended pattern for a self-contained expression: `Compile<TDelegate>` compiles straight to a real delegate, skipping the manual `Expression.Lambda(...).Compile()` step:
+
+```csharp
+Func<double> lambda = compiler.Compile<Func<double>>("1 + 2 * 3");
 
 double result = lambda(); // 7
 ```
@@ -41,7 +49,7 @@ using System.Linq.Expressions;
 using Utils.Expressions.VBSyntax.Runtime;
 
 var compiler = new VBSyntaxExpressionCompiler();
-Expression expression = compiler.Compile("2.0 ^ 10");
+Expression expression = compiler.CompileExpression("2.0 ^ 10");
 var lambda = Expression.Lambda<Func<double>>(expression).Compile();
 
 double result = lambda(); // 1024
@@ -54,7 +62,7 @@ using System.Linq.Expressions;
 using Utils.Expressions.VBSyntax.Runtime;
 
 var compiler = new VBSyntaxExpressionCompiler();
-Expression expression = compiler.Compile("3 > 1 AndAlso 4 <= 4");
+Expression expression = compiler.CompileExpression("3 > 1 AndAlso 4 <= 4");
 var lambda = Expression.Lambda<Func<bool>>(expression).Compile();
 
 bool result = lambda(); // True
@@ -69,7 +77,7 @@ using Utils.Expressions.VBSyntax.Runtime;
 var compiler = new VBSyntaxExpressionCompiler();
 ParameterExpression x = Expression.Parameter(typeof(double), "x");
 
-Expression expression = compiler.Compile("x * 2 + 1", new Dictionary<string, Expression>
+Expression expression = compiler.CompileExpression("x * 2 + 1", new Dictionary<string, Expression>
 {
     ["x"] = x,
 });
@@ -158,7 +166,7 @@ using System.Text;
 using Utils.Expressions.VBSyntax.Runtime;
 
 var compiler = new VBSyntaxExpressionCompiler();
-Expression expression = compiler.Compile("New System.Text.StringBuilder()");
+Expression expression = compiler.CompileExpression("New System.Text.StringBuilder()");
 var lambda = Expression.Lambda<Func<object>>(
     Expression.Convert(expression, typeof(object))).Compile();
 

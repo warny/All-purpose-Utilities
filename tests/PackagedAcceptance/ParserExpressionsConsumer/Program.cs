@@ -41,12 +41,24 @@ internal static class Program
     private sealed class AcceptanceExpressionCompiler : IExpressionCompiler
     {
         /// <inheritdoc />
-        public Expression Compile(string content, IReadOnlyDictionary<string, Expression>? symbols = null) => content switch
+        public Expression CompileExpression(string content, IReadOnlyDictionary<string, Expression>? symbols = null) => content switch
         {
             "true" => Expression.Constant(true),
             "false" => Expression.Constant(false),
             "ruleName == \"start\"" => Expression.Equal(symbols!["ruleName"], Expression.Constant("start")),
             _ => throw new InvalidOperationException("Invalid acceptance expression.")
         };
+
+        /// <inheritdoc />
+        public Expression<TDelegate> CompileExpression<TDelegate>(string content) where TDelegate : Delegate
+            => throw new NotSupportedException("This acceptance fake only supports the symbol-table overload.");
+
+        /// <inheritdoc />
+        public Delegate Compile(string content)
+            => throw new NotSupportedException("This acceptance fake only supports the symbol-table overload.");
+
+        /// <inheritdoc />
+        public TDelegate Compile<TDelegate>(string content) where TDelegate : Delegate
+            => throw new NotSupportedException("This acceptance fake only supports the symbol-table overload.");
     }
 }

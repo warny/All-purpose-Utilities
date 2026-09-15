@@ -59,6 +59,8 @@ public class ExpressionTransformerUnaryLazyParametersTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        public override Expression Transform(Expression e) => TransformCore(e);
+
         /// <inheritdoc />
         protected override Expression PrepareExpression(Expression e)
             => ReferenceEquals(e, _original) ? _replacement : e;
@@ -115,6 +117,8 @@ public class ExpressionTransformerUnaryLazyParametersTests
 
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
+
+        public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <inheritdoc />
         protected override Expression PrepareExpression(Expression e)
@@ -198,6 +202,8 @@ public class ExpressionTransformerUnaryLazyParametersTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        public override Expression Transform(Expression e) => TransformCore(e);
+
         /// <inheritdoc />
         protected override Expression PrepareExpression(Expression e)
             => ReferenceEquals(e, _original) ? _replacement : e;
@@ -263,6 +269,8 @@ public class ExpressionTransformerUnaryLazyParametersTests
 
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
+
+        public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Matches any <see cref="ExpressionType.Negate"/> node and captures (and optionally mutates) the sub-expression array.</summary>
         [ExpressionSignature(ExpressionType.Negate)]
@@ -333,6 +341,8 @@ public class ExpressionTransformerUnaryLazyParametersTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        public override Expression Transform(Expression e) => TransformCore(e);
+
         /// <summary>Matches any <see cref="ExpressionType.Negate"/> node but always returns null.</summary>
         [ExpressionSignature(ExpressionType.Negate)]
         private Expression? Rule(UnaryExpression e, Expression[] parameters)
@@ -393,6 +403,8 @@ public class ExpressionTransformerUnaryLazyParametersTests
 
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
+
+        public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <inheritdoc />
         protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
@@ -479,6 +491,8 @@ public class ExpressionTransformerUnaryLazyParametersTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        public override Expression Transform(Expression e) => TransformCore(e);
+
         /// <summary>Declared first; always defers via <see langword="null"/>.</summary>
         [ExpressionSignature(ExpressionType.Negate)]
         private Expression? First(UnaryExpression e, Expression operand)
@@ -543,6 +557,8 @@ public class ExpressionTransformerUnaryLazyParametersTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        public override Expression Transform(Expression e) => TransformCore(e);
+
         /// <summary>Always defers via <see langword="null"/>.</summary>
         [ExpressionSignature(ExpressionType.Negate)]
         private Expression? Rule(UnaryExpression e, Expression operand)
@@ -594,6 +610,8 @@ public class ExpressionTransformerUnaryLazyParametersTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        public override Expression Transform(Expression e) => TransformCore(e);
+
         /// <summary>Declares 3 parameters (e, operand, extra) though the unary context only supplies 2.</summary>
         [ExpressionSignature(ExpressionType.Negate)]
         private Expression Rule(UnaryExpression e, Expression operand, Expression extra)
@@ -635,6 +653,8 @@ public class ExpressionTransformerUnaryLazyParametersTests
     {
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
+
+        public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Exposes the protected static <see cref="ExpressionTransformer.CopyExpression"/> as the historical reconstruction oracle.</summary>
         /// <param name="e">The original expression to copy.</param>

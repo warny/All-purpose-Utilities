@@ -29,7 +29,7 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
     /// (typically <see cref="ParameterExpression"/> instances).
     /// </param>
     /// <returns>Compiled expression tree.</returns>
-    public Expression Compile(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
+    public Expression CompileExpression(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
     {
         ArgumentNullException.ThrowIfNull(content);
         content = PreprocessCompoundAssignments(content);
@@ -39,6 +39,27 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
         ParseNode root = _parser.Parse(content);
         return Compile(root, symbols, content, null, importedNamespaces);
     }
+
+    /// <summary>
+    /// Compiles source text directly to an executable delegate, via <see cref="CompileExpression(string, IReadOnlyDictionary{string, Expression})"/>.
+    /// </summary>
+    /// <param name="content">C-like content to parse and compile.</param>
+    /// <returns>The compiled delegate.</returns>
+    public Delegate Compile(string content)
+    {
+        Expression expression = CompileExpression(content);
+        return expression is LambdaExpression lambda ? lambda.Compile() : Expression.Lambda(expression).Compile();
+    }
+
+    /// <summary>
+    /// Compiles source text directly to an executable delegate of type <typeparamref name="TDelegate"/>,
+    /// via <see cref="CompileExpression{TDelegate}(string)"/>.
+    /// </summary>
+    /// <typeparam name="TDelegate">The delegate type to compile to.</typeparam>
+    /// <param name="content">C-like lambda source.</param>
+    /// <returns>The compiled delegate.</returns>
+    public TDelegate Compile<TDelegate>(string content) where TDelegate : Delegate
+        => CompileExpression<TDelegate>(content).Compile();
 
     /// <summary>
     /// Parses and compiles C-like source while using and mutating a rich runtime context.
@@ -87,7 +108,7 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
     /// <typeparam name="T">Target delegate type.</typeparam>
     /// <param name="content">C-like lambda source.</param>
     /// <returns>Typed lambda expression.</returns>
-    public Expression<T> Compile<T>(string content) where T : Delegate
+    public Expression<T> CompileExpression<T>(string content) where T : Delegate
     {
         ArgumentNullException.ThrowIfNull(content);
         MethodInfo invokeMethod = typeof(T).GetMethod("Invoke")!;
@@ -107,7 +128,7 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
             }
         }
 
-        Expression result = Compile(content);
+        Expression result = CompileExpression(content);
         if (result is Expression<T> typed) return typed;
         if (result is LambdaExpression lambda) return Expression.Lambda<T>(lambda.Body, lambda.Parameters);
         throw new InvalidOperationException($"Compiled expression cannot be converted to {typeof(T).Name}.");
@@ -157,7 +178,7 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
             RegisterStaticCallableSymbols(importType, symbols);
         }
 
-        Expression body = Compile(content, symbols);
+        Expression body = CompileExpression(content, symbols);
         Expression convertedBody = ConvertIfNeeded(body, returnType);
         return Expression.Lambda(convertedBody, parameters);
     }
@@ -177,7 +198,7 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
         ArgumentNullException.ThrowIfNull(parameters);
         ArgumentNullException.ThrowIfNull(returnType);
         Dictionary<string, Expression> symbols = parameters.ToDictionary(static p => p.Name!, static p => (Expression)p, StringComparer.Ordinal);
-        Expression body = Compile(content, symbols);
+        Expression body = CompileExpression(content, symbols);
         Expression convertedBody = ConvertIfNeeded(body, returnType);
         return Expression.Lambda(convertedBody, parameters);
     }

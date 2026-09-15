@@ -7,7 +7,26 @@
     {
       "packageId": "omy.Utils",
       "baselineVersion": "2.0.0-rc.1",
-      "acceptedDiagnostics": []
+      "acceptedDiagnostics": [
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Linq.Expressions.Expression Utils.Expressions.IExpressionCompiler.Compile(string, System.Collections.Generic.IReadOnlyDictionary<string, System.Linq.Expressions.Expression>?)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "IExpressionCompiler.Compile was renamed to CompileExpression as part of splitting compilation capabilities (IDelegateCompiler/IExpressionCompiler/ITypeCompiler/IAssemblyCompiler); Compile now means 'compile to an executable delegate' on IDelegateCompiler.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#expression-compiler-capability-split"
+        },
+        {
+          "diagnosticId": "CP0006",
+          "message": "Cannot add interface member 'System.Linq.Expressions.Expression Utils.Expressions.IExpressionCompiler.CompileExpression(string, System.Collections.Generic.IReadOnlyDictionary<string, System.Linq.Expressions.Expression>?)' to {candidateAssembly} because it does not exist on {baselineAssembly}",
+          "reason": "New name for the renamed expression-compilation member; see the Compile removal entry above.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#expression-compiler-capability-split"
+        },
+        {
+          "diagnosticId": "CP0006",
+          "message": "Cannot add interface member 'System.Linq.Expressions.Expression<TDelegate> Utils.Expressions.IExpressionCompiler.CompileExpression<TDelegate>(string)' to {candidateAssembly} because it does not exist on {baselineAssembly}",
+          "reason": "New generic overload for the renamed expression-compilation member; see the Compile removal entry above.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#expression-compiler-capability-split"
+        }
+      ]
     },
     {
       "packageId": "omy.Utils.IO",
@@ -117,12 +136,38 @@
     {
       "packageId": "omy.Utils.Expressions.CSyntax",
       "baselineVersion": "2.0.0-rc.1",
-      "acceptedDiagnostics": []
+      "acceptedDiagnostics": [
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Linq.Expressions.Expression Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(string, System.Collections.Generic.IReadOnlyDictionary<string, System.Linq.Expressions.Expression>?)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "CSyntaxExpressionCompiler.Compile was renamed to CompileExpression as part of the IExpressionCompiler capability split; Compile now returns a real delegate via the new IDelegateCompiler members.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#expression-compiler-capability-split"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Linq.Expressions.Expression<T> Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile<T>(string)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "CSyntaxExpressionCompiler.Compile<T> was renamed to CompileExpression<T> as part of the IExpressionCompiler capability split; the new Compile<TDelegate> returns a real delegate via IDelegateCompiler.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#expression-compiler-capability-split"
+        }
+      ]
     },
     {
       "packageId": "omy.Utils.Expressions.VBSyntax",
       "baselineVersion": "2.0.0-rc.1",
-      "acceptedDiagnostics": []
+      "acceptedDiagnostics": [
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Linq.Expressions.Expression Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile(string, System.Collections.Generic.IReadOnlyDictionary<string, System.Linq.Expressions.Expression>?)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "VBSyntaxExpressionCompiler.Compile was renamed to CompileExpression as part of the IExpressionCompiler capability split; Compile now returns a real delegate via the new IDelegateCompiler members.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#expression-compiler-capability-split"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Linq.Expressions.Expression<T> Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile<T>(string)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "VBSyntaxExpressionCompiler.Compile<T> was renamed to CompileExpression<T> as part of the IExpressionCompiler capability split; the new Compile<TDelegate> returns a real delegate via IDelegateCompiler.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#expression-compiler-capability-split"
+        }
+      ]
     },
     {
       "packageId": "omy.Utils.Parser.Generators",

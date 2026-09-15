@@ -18,7 +18,7 @@ public class InterpolatedStringTests
     [TestMethod]
     public void SimpleInterpolation()
     {
-        var expr = compiler.Compile<Func<string, string, string>>("(a, b) => $\"{a} {b}!\"");
+        var expr = compiler.CompileExpression<Func<string, string, string>>("(a, b) => $\"{a} {b}!\"");
         var func = expr.Compile();
         Assert.AreEqual("hello world!", func("hello", "world"));
     }
@@ -30,7 +30,7 @@ public class InterpolatedStringTests
     [TestMethod]
     public void Compile_StringLiteral_ReturnsValue()
     {
-        var expression = compiler.Compile("\"Hello World!\"");
+        var expression = compiler.CompileExpression("\"Hello World!\"");
         var lambda = Expression.Lambda<Func<string>>(Expression.Convert(expression, typeof(string))).Compile();
 
         Assert.AreEqual("Hello World!", lambda());
@@ -76,7 +76,7 @@ public class InterpolatedStringTests
     [TestMethod]
     public void ConstructorOverloadPrefersInterpolatedStringHandler()
     {
-        var expression = compiler.Compile<Func<int, object>>("(value) => new UtilsTest.Expressions.InterpolatedHandlerCtorTarget($\"Ctor={value}\")");
+        var expression = compiler.CompileExpression<Func<int, object>>("(value) => new UtilsTest.Expressions.InterpolatedHandlerCtorTarget($\"Ctor={value}\")");
         var function = expression.Compile();
         var result = function(7);
 

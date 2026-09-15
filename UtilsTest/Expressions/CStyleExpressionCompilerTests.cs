@@ -20,7 +20,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_ArithmeticExpression_RespectsPrecedence()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        Expression expression = compiler.Compile("1 + 2 * 3");
+        Expression expression = compiler.CompileExpression("1 + 2 * 3");
         Func<double> lambda = Expression.Lambda<Func<double>>(Expression.Convert(expression, typeof(double))).Compile();
 
         Assert.AreEqual(7d, lambda());
@@ -42,7 +42,7 @@ public class CSyntaxExpressionCompilerTests
             ["y"] = y,
         };
 
-        Expression expression = compiler.Compile("x + y", symbols);
+        Expression expression = compiler.CompileExpression("x + y", symbols);
         Func<int, int, int> lambda = Expression.Lambda<Func<int, int, int>>(Expression.Convert(expression, typeof(int)), x, y).Compile();
 
         for (int i = 0; i < 10; i++)
@@ -69,7 +69,7 @@ public class CSyntaxExpressionCompilerTests
             ["y"] = y,
         };
 
-        Expression expression = compiler.Compile("x - y", symbols);
+        Expression expression = compiler.CompileExpression("x - y", symbols);
         Func<int, int, int> lambda = Expression.Lambda<Func<int, int, int>>(Expression.Convert(expression, typeof(int)), x, y).Compile();
 
         for (int i = 0; i < 10; i++)
@@ -96,8 +96,8 @@ public class CSyntaxExpressionCompilerTests
             ["y"] = y,
         };
 
-        Expression multiply = compiler.Compile("x * y", symbols);
-        Expression divide = compiler.Compile("x / y", symbols);
+        Expression multiply = compiler.CompileExpression("x * y", symbols);
+        Expression divide = compiler.CompileExpression("x / y", symbols);
         Func<double, double, double> multiplyLambda = Expression.Lambda<Func<double, double, double>>(Expression.Convert(multiply, typeof(double)), x, y).Compile();
         Func<double, double, double> divideLambda = Expression.Lambda<Func<double, double, double>>(Expression.Convert(divide, typeof(double)), x, y).Compile();
 
@@ -129,16 +129,16 @@ public class CSyntaxExpressionCompilerTests
         };
 
         Func<double, double, double, double> priority1 = Expression.Lambda<Func<double, double, double, double>>(
-            Expression.Convert(compiler.Compile("x * y + z", symbols), typeof(double)),
+            Expression.Convert(compiler.CompileExpression("x * y + z", symbols), typeof(double)),
             x, y, z).Compile();
         Func<double, double, double, double> priority2 = Expression.Lambda<Func<double, double, double, double>>(
-            Expression.Convert(compiler.Compile("x + y * z", symbols), typeof(double)),
+            Expression.Convert(compiler.CompileExpression("x + y * z", symbols), typeof(double)),
             x, y, z).Compile();
         Func<double, double, double, double> parenthesis1 = Expression.Lambda<Func<double, double, double, double>>(
-            Expression.Convert(compiler.Compile("x * (y + z)", symbols), typeof(double)),
+            Expression.Convert(compiler.CompileExpression("x * (y + z)", symbols), typeof(double)),
             x, y, z).Compile();
         Func<double, double, double, double> parenthesis2 = Expression.Lambda<Func<double, double, double, double>>(
-            Expression.Convert(compiler.Compile("(x + y) * z", symbols), typeof(double)),
+            Expression.Convert(compiler.CompileExpression("(x + y) * z", symbols), typeof(double)),
             x, y, z).Compile();
 
         for (int i = 0; i < 10; i++)
@@ -162,7 +162,7 @@ public class CSyntaxExpressionCompilerTests
     {
         var compiler = new CSyntaxExpressionCompiler();
         ParameterExpression x = Expression.Parameter(typeof(double), "x");
-        Expression expression = compiler.Compile("x * 2 + 1", new Dictionary<string, Expression>(StringComparer.Ordinal)
+        Expression expression = compiler.CompileExpression("x * 2 + 1", new Dictionary<string, Expression>(StringComparer.Ordinal)
         {
             ["x"] = x,
         });
@@ -179,7 +179,7 @@ public class CSyntaxExpressionCompilerTests
     {
         var compiler = new CSyntaxExpressionCompiler();
         ParameterExpression local = Expression.Variable(typeof(double), "value");
-        Expression assignment = compiler.Compile("value = 10 + 5", new Dictionary<string, Expression>(StringComparer.Ordinal)
+        Expression assignment = compiler.CompileExpression("value = 10 + 5", new Dictionary<string, Expression>(StringComparer.Ordinal)
         {
             ["value"] = local,
         });
@@ -200,7 +200,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_BlockWithUnusedDeclaration_IgnoresUnusedVariable()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        Expression expression = compiler.Compile("{ int used = 1; int unused = 2; used }");
+        Expression expression = compiler.CompileExpression("{ int used = 1; int unused = 2; used }");
 
         Assert.IsInstanceOfType<BlockExpression>(expression);
         var block = (BlockExpression)expression;
@@ -395,7 +395,7 @@ public class CSyntaxExpressionCompilerTests
             {
                 ["s"] = Expression.Constant(value),
             };
-            Expression expression = compiler.Compile("s.Length", symbols);
+            Expression expression = compiler.CompileExpression("s.Length", symbols);
             Func<int> lambda = Expression.Lambda<Func<int>>(Expression.Convert(expression, typeof(int))).Compile();
             Assert.AreEqual(value.Length, lambda());
         }
@@ -426,7 +426,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_GenericLambdaWithUntypedParameters_UsesAliasTypeConversions()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        Expression<Func<int, int>> expression = compiler.Compile<Func<int, int>>("(value) => value + 1");
+        Expression<Func<int, int>> expression = compiler.CompileExpression<Func<int, int>>("(value) => value + 1");
         Func<int, int> function = expression.Compile();
 
         Assert.AreEqual(42, function(41));
@@ -474,7 +474,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_QualifiedStaticMethodCall_ResolvesNativeTypeForStaticAccess()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        Expression expression = compiler.Compile("Math.Abs(-42)");
+        Expression expression = compiler.CompileExpression("Math.Abs(-42)");
         double result = Expression.Lambda<Func<double>>(Expression.Convert(expression, typeof(double))).Compile()();
 
         Assert.AreEqual(42d, result);
@@ -492,7 +492,7 @@ public class CSyntaxExpressionCompilerTests
         var compiler = new CSyntaxExpressionCompiler();
 
         InvalidOperationException exception = Assert.ThrowsExactly<InvalidOperationException>(
-            () => compiler.Compile("thisIdentifierIsDefinitelyNotDefinedAnywhere"));
+            () => compiler.CompileExpression("thisIdentifierIsDefinitelyNotDefinedAnywhere"));
 
         StringAssert.Contains(exception.Message, "thisIdentifierIsDefinitelyNotDefinedAnywhere");
     }

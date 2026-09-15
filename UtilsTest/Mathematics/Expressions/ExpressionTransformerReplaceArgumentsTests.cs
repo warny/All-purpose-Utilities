@@ -27,6 +27,8 @@ public class ExpressionTransformerReplaceArgumentsTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.ReplaceArguments"/> method.</summary>
         public Expression ExposeReplaceArguments(Expression e, ParameterExpression[] oldParameters, Expression[] newParameters)
             => ReplaceArguments(e, oldParameters, newParameters);
+
+        public override Expression Transform(Expression e) => TransformCore(e);
     }
 
     /// <summary>An instance method used to verify a method call's receiver is replaced, not discarded.</summary>

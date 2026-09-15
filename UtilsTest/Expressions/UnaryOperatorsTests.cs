@@ -17,7 +17,7 @@ public class UnaryOperatorsTests
     {
         var r = new Random();
 
-        var e = (LambdaExpression)compiler.Compile("(int x) => +x");
+        var e = (LambdaExpression)compiler.CompileExpression("(int x) => +x");
         var f = (Func<int, int>)e.Compile();
 
         for (int i = 0; i < 10; i++)
@@ -32,7 +32,7 @@ public class UnaryOperatorsTests
     {
         var r = new Random();
 
-        var e = (LambdaExpression)compiler.Compile("(int x) => -x");
+        var e = (LambdaExpression)compiler.CompileExpression("(int x) => -x");
         var f = (Func<int, int>)e.Compile();
 
         for (int i = 0; i < 10; i++)
@@ -50,7 +50,7 @@ public class UnaryOperatorsTests
         for (int i = 0; i < 10; i++)
         {
             var x = r.Next(i);
-            var body = compiler.Compile($"-{x}");
+            var body = compiler.CompileExpression($"-{x}");
             var f = Expression.Lambda<Func<int>>(Expression.Convert(body, typeof(int))).Compile();
             Assert.AreEqual(-x, f());
         }
@@ -59,7 +59,7 @@ public class UnaryOperatorsTests
     [TestMethod]
     public void NotTest()
     {
-        var e = (LambdaExpression)compiler.Compile("(bool x) => !x");
+        var e = (LambdaExpression)compiler.CompileExpression("(bool x) => !x");
         var f = (Func<bool, bool>)e.Compile();
 
         foreach (var x in new bool[] { true, false })
@@ -73,7 +73,7 @@ public class UnaryOperatorsTests
     {
         var r = new Random();
 
-        var e = (LambdaExpression)compiler.Compile("(int x) => ~x");
+        var e = (LambdaExpression)compiler.CompileExpression("(int x) => ~x");
         var f = (Func<int, int>)e.Compile();
 
         for (int i = 0; i < 10; i++)
@@ -89,7 +89,7 @@ public class UnaryOperatorsTests
         // Cast syntax (double)x is not supported by the grammar; use arithmetic promotion instead.
         var r = new Random();
 
-        var e = (LambdaExpression)compiler.Compile("(int x) => x + 0.0");
+        var e = (LambdaExpression)compiler.CompileExpression("(int x) => x + 0.0");
         var f = (Func<int, double>)e.Compile();
 
         for (int i = 0; i < 10; i++)
@@ -105,7 +105,7 @@ public class UnaryOperatorsTests
     [TestMethod]
     public void Compile_UnaryNegation_ReturnsExpectedValue()
     {
-        var expression = compiler.Compile("-(3)");
+        var expression = compiler.CompileExpression("-(3)");
         var lambda = Expression.Lambda<Func<int>>(Expression.Convert(expression, typeof(int))).Compile();
 
         Assert.AreEqual(-3, lambda());

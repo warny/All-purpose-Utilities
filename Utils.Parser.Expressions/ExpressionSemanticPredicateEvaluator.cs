@@ -60,7 +60,7 @@ public sealed class ExpressionSemanticPredicateEvaluator : ISemanticPredicateEva
         try
         {
             var symbols = BuildSymbols(context);
-            var expression = _compiler.Compile(predicateCode, symbols);
+            var expression = _compiler.CompileExpression(predicateCode, symbols);
             if (expression.Type != typeof(bool))
             {
                 return () => SemanticPredicateEvaluationOutcome.NotEvaluated(

@@ -29,7 +29,7 @@ public partial class ExpressionSimplifier
     [ExpressionCallSignature(typeof(double), nameof(double.Pow))]
     protected Expression PowerConversionMath(Expression e, Expression left, Expression right)
     {
-        return Transform(Expression.Power(left, right));
+        return TransformCore(Expression.Power(left, right));
     }
 
     #endregion

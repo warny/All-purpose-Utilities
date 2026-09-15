@@ -245,7 +245,7 @@ public sealed partial class VBSyntaxExpressionCompiler
             if (trimmed.Length == 0) continue;
 
             arguments.Add(context.RuntimeContext is null
-                ? context.Compiler.Compile(trimmed, context.Symbols)
+                ? context.Compiler.CompileExpression(trimmed, context.Symbols)
                 : context.Compiler.Compile(trimmed, context.RuntimeContext));
         }
 

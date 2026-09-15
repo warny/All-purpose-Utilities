@@ -20,7 +20,7 @@ public class VBSyntaxExpressionCompilerTests
     [TestMethod]
     public void Compile_ArithmeticExpression_RespectsPrecedence()
     {
-        Expression expr = _compiler.Compile("1 + 2 * 3");
+        Expression expr = _compiler.CompileExpression("1 + 2 * 3");
         double result = Expression.Lambda<Func<double>>(
             Expression.Convert(expr, typeof(double))).Compile()();
 
@@ -33,7 +33,7 @@ public class VBSyntaxExpressionCompilerTests
     [TestMethod]
     public void Compile_SubtractionExpression_ReturnsCorrectValue()
     {
-        Expression expr = _compiler.Compile("10 - 3");
+        Expression expr = _compiler.CompileExpression("10 - 3");
         int result = Expression.Lambda<Func<int>>(expr).Compile()();
 
         Assert.AreEqual(7, result);
@@ -45,7 +45,7 @@ public class VBSyntaxExpressionCompilerTests
     [TestMethod]
     public void Compile_PowerOperator_ComputesExponentiation()
     {
-        Expression expr = _compiler.Compile("2.0 ^ 10");
+        Expression expr = _compiler.CompileExpression("2.0 ^ 10");
         double result = Expression.Lambda<Func<double>>(expr).Compile()();
 
         Assert.AreEqual(1024d, result);
@@ -59,7 +59,7 @@ public class VBSyntaxExpressionCompilerTests
     [TestMethod]
     public void Compile_AndAlso_EvaluatesShortCircuit()
     {
-        Expression expr = _compiler.Compile("True AndAlso False");
+        Expression expr = _compiler.CompileExpression("True AndAlso False");
         bool result = Expression.Lambda<Func<bool>>(expr).Compile()();
 
         Assert.IsFalse(result);
@@ -71,7 +71,7 @@ public class VBSyntaxExpressionCompilerTests
     [TestMethod]
     public void Compile_OrElse_EvaluatesShortCircuit()
     {
-        Expression expr = _compiler.Compile("False OrElse True");
+        Expression expr = _compiler.CompileExpression("False OrElse True");
         bool result = Expression.Lambda<Func<bool>>(expr).Compile()();
 
         Assert.IsTrue(result);
@@ -83,7 +83,7 @@ public class VBSyntaxExpressionCompilerTests
     [TestMethod]
     public void Compile_Not_NegatesBoolean()
     {
-        Expression expr = _compiler.Compile("Not True");
+        Expression expr = _compiler.CompileExpression("Not True");
         bool result = Expression.Lambda<Func<bool>>(expr).Compile()();
 
         Assert.IsFalse(result);
@@ -101,7 +101,7 @@ public class VBSyntaxExpressionCompilerTests
         {
             ["x"] = Expression.Constant(42),
         };
-        Expression expr = _compiler.Compile("x = 42", symbols);
+        Expression expr = _compiler.CompileExpression("x = 42", symbols);
         bool result = Expression.Lambda<Func<bool>>(expr).Compile()();
 
         Assert.IsTrue(result);
@@ -117,7 +117,7 @@ public class VBSyntaxExpressionCompilerTests
         {
             ["x"] = Expression.Constant(42),
         };
-        Expression expr = _compiler.Compile("x <> 0", symbols);
+        Expression expr = _compiler.CompileExpression("x <> 0", symbols);
         bool result = Expression.Lambda<Func<bool>>(expr).Compile()();
 
         Assert.IsTrue(result);
@@ -135,7 +135,7 @@ public class VBSyntaxExpressionCompilerTests
         {
             ["greeting"] = Expression.Constant("Hello"),
         };
-        Expression expr = _compiler.Compile("greeting & \", World!\"", symbols);
+        Expression expr = _compiler.CompileExpression("greeting & \", World!\"", symbols);
         string result = Expression.Lambda<Func<string>>(expr).Compile()();
 
         Assert.AreEqual("Hello, World!", result);
@@ -149,8 +149,8 @@ public class VBSyntaxExpressionCompilerTests
     [TestMethod]
     public void Compile_BooleanLiterals_ProduceConstants()
     {
-        Expression trueExpr  = _compiler.Compile("True");
-        Expression falseExpr = _compiler.Compile("False");
+        Expression trueExpr  = _compiler.CompileExpression("True");
+        Expression falseExpr = _compiler.CompileExpression("False");
 
         Assert.IsInstanceOfType(trueExpr,  typeof(ConstantExpression));
         Assert.IsInstanceOfType(falseExpr, typeof(ConstantExpression));
@@ -164,7 +164,7 @@ public class VBSyntaxExpressionCompilerTests
     [TestMethod]
     public void Compile_StringLiteral_UnescapesDoubleQuotes()
     {
-        Expression expr = _compiler.Compile("\"say \"\"hi\"\"\"");
+        Expression expr = _compiler.CompileExpression("\"say \"\"hi\"\"\"");
         string result = Expression.Lambda<Func<string>>(expr).Compile()();
 
         Assert.AreEqual("say \"hi\"", result);
@@ -182,7 +182,7 @@ public class VBSyntaxExpressionCompilerTests
         {
             ["value"] = Expression.Constant(99),
         };
-        Expression expr = _compiler.Compile("value", symbols);
+        Expression expr = _compiler.CompileExpression("value", symbols);
         int result = Expression.Lambda<Func<int>>(expr).Compile()();
 
         Assert.AreEqual(99, result);
@@ -238,7 +238,7 @@ public class VBSyntaxExpressionCompilerTests
         {
             ["text"] = Expression.Constant("hello"),
         };
-        Expression expr = _compiler.Compile("text.Length", symbols);
+        Expression expr = _compiler.CompileExpression("text.Length", symbols);
         int result = Expression.Lambda<Func<int>>(expr).Compile()();
 
         Assert.AreEqual(5, result);
@@ -299,7 +299,7 @@ public class VBSyntaxExpressionCompilerTests
     [TestMethod]
     public void Compile_ObjectCreation_CreatesInstance()
     {
-        Expression expr = _compiler.Compile("New System.Text.StringBuilder()");
+        Expression expr = _compiler.CompileExpression("New System.Text.StringBuilder()");
         object result = Expression.Lambda<Func<object>>(
             Expression.Convert(expr, typeof(object))).Compile()();
 

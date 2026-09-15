@@ -20,7 +20,7 @@ public partial class ExpressionSimplifier
     [ExpressionCallSignature(typeof(double), nameof(IPowerFunctions<double>.Pow))]
     protected Expression PowerConvertionNumber1(Expression e, Expression left, Expression right)
     {
-        return Transform(Expression.Power(left, right));
+        return TransformCore(Expression.Power(left, right));
     }
 
     /// <summary>
@@ -33,7 +33,7 @@ public partial class ExpressionSimplifier
     [ExpressionCallSignature(typeof(Math), nameof(Math.Pow))]
     protected Expression PowerConvertionNumber2(Expression e, Expression left, Expression right)
     {
-        return Transform(Expression.Power(left, right));
+        return TransformCore(Expression.Power(left, right));
     }
     #endregion
 
@@ -53,7 +53,7 @@ public partial class ExpressionSimplifier
     {
         return Expression.Call(
                 typeof(ILogarithmicFunctions<>).GetStaticMethod([left.Type], "Log", [left.Type]),
-                Transform(Expression.Multiply(left.Arguments[0], right.Arguments[0])));
+                TransformCore(Expression.Multiply(left.Arguments[0], right.Arguments[0])));
     }
 
     /// <summary>
@@ -70,7 +70,7 @@ public partial class ExpressionSimplifier
     {
         return Expression.Call(
     typeof(ILogarithmicFunctions<>).GetStaticMethod([left.Type], "Log", [left.Type]),
-    Transform(Expression.Divide(left.Arguments[0], right.Arguments[0])));
+    TransformCore(Expression.Divide(left.Arguments[0], right.Arguments[0])));
     }
 
     /// <summary>
@@ -86,7 +86,7 @@ public partial class ExpressionSimplifier
     {
         return Expression.Call(
     typeof(ILogarithmicFunctions<>).GetStaticMethod([left.Type], "Log10", [left.Type]),
-    Transform(Expression.Multiply(left.Arguments[0], right.Arguments[0])));
+    TransformCore(Expression.Multiply(left.Arguments[0], right.Arguments[0])));
     }
 
     /// <summary>
@@ -103,7 +103,7 @@ public partial class ExpressionSimplifier
     {
         return Expression.Call(
             typeof(ILogarithmicFunctions<>).GetStaticMethod([left.Type], "Log10", [left.Type]),
-            Transform(Expression.Divide(left.Arguments[0], right.Arguments[0])));
+            TransformCore(Expression.Divide(left.Arguments[0], right.Arguments[0])));
     }
 
     #endregion

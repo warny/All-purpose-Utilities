@@ -138,6 +138,14 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     }
 
     /// <summary>
+    /// The target parameter is already resolved at construction time (see the private constructor), so
+    /// no extra preparation is needed beyond <see cref="ExpressionTransformer.TransformCore(Expression)"/>.
+    /// </summary>
+    /// <param name="expression">The expression to transform.</param>
+    /// <returns>A possibly rewritten expression.</returns>
+    public override Expression Transform(Expression expression) => TransformCore(expression);
+
+    /// <summary>
     /// Builds the derivative of the provided lambda expression with respect to the configured parameter.
     /// </summary>
     /// <param name="e">Lambda expression to differentiate.</param>
@@ -256,7 +264,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         Expression operand
     )
     {
-        return Expression.Negate(Transform(operand));
+        return Expression.Negate(TransformCore(operand));
     }
 
     /// <summary>
@@ -273,7 +281,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         Expression operand
     )
     {
-        return PreserveConversion(e, Transform(operand), isChecked: false);
+        return PreserveConversion(e, TransformCore(operand), isChecked: false);
     }
 
     /// <summary>
@@ -295,7 +303,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         Expression operand
     )
     {
-        return PreserveConversion(e, Transform(operand), isChecked: true);
+        return PreserveConversion(e, TransformCore(operand), isChecked: true);
     }
 
     /// <summary>
@@ -344,8 +352,8 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     )
     {
         return Expression.Add(
-            Transform(left),
-            Transform(right)
+            TransformCore(left),
+            TransformCore(right)
         );
     }
 
@@ -364,8 +372,8 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     )
     {
         return Expression.Subtract(
-            Transform(left),
-            Transform(right)
+            TransformCore(left),
+            TransformCore(right)
         );
     }
 
@@ -384,8 +392,8 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     )
     {
         return Expression.Add(
-            Expression.Multiply(Transform(left), right),
-            Expression.Multiply(left, Transform(right))
+            Expression.Multiply(TransformCore(left), right),
+            Expression.Multiply(left, TransformCore(right))
         );
     }
 
@@ -406,8 +414,8 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         // Quotient rule: (f'g − fg') / g²
         return Expression.Divide(
             Expression.Subtract(
-                Expression.Multiply(Transform(left), right),
-                Expression.Multiply(left, Transform(right))),
+                Expression.Multiply(TransformCore(left), right),
+                Expression.Multiply(left, TransformCore(right))),
             Expression.Power(right, ExpressionEx.CreateConstant(T.CreateChecked(2d))));
     }
 
@@ -428,7 +436,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
             right,
             Expression.Multiply(
                 Expression.Power(left, Expression.Subtract(right, ExpressionEx.CreateConstant(T.CreateChecked(1d)))),
-                Transform(left)
+                TransformCore(left)
                 )
             );
     }
@@ -463,12 +471,12 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
                     Expression.Subtract(right, ExpressionEx.CreateConstant(T.CreateChecked(1d)))
                 ),
                 Expression.Add(
-                    Expression.Multiply(right, Transform(left)),
+                    Expression.Multiply(right, TransformCore(left)),
                     Expression.Multiply(
                         left,
                         Expression.Multiply(
                             Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log)), left),
-                            Transform(right)
+                            TransformCore(right)
                         )
                     )
 
@@ -489,7 +497,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     {
         return
             Expression.Multiply(
-                Transform(operand),
+                TransformCore(operand),
                 Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Exp)), operand)
             );
     }
@@ -506,7 +514,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         Expression operand)
     {
         return Expression.Divide(
-            Transform(operand),
+            TransformCore(operand),
             operand
             );
     }
@@ -523,7 +531,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
             Expression operand)
     {
         return Expression.Divide(
-            Transform(operand),
+            TransformCore(operand),
             Expression.Multiply(
                 operand,
                 ExpressionEx.CreateConstant(T.CreateChecked(double.Log(10d)))
@@ -543,7 +551,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         Expression operand)
     {
         return Expression.Multiply(
-            Transform(operand),
+            TransformCore(operand),
             Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Cos)), operand));
     }
 
@@ -560,7 +568,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     {
         return Expression.Negate(
             Expression.Multiply(
-            Transform(operand),
+            TransformCore(operand),
             Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Sin)), operand)));
     }
 
@@ -578,7 +586,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         // Applying Simplify to Sin(x)/Cos(x) can rebuild Tan(x), causing infinite recursion.
         // Use the direct identity instead: (tan(f))' = f'(x) / cos²(f(x))
         return Expression.Divide(
-            Transform(operand),
+            TransformCore(operand),
             Expression.Power(
                 Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Cos)), operand),
                 ExpressionEx.CreateConstant(T.CreateChecked(2d))
@@ -653,7 +661,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
             ExpressionEx.CreateConstant(T.One));
         var epsilon = Expression.Multiply(stepBase, operandMagnitude);
         var twoEpsilon = Expression.Multiply(ExpressionEx.CreateConstant(T.CreateChecked(2d)), epsilon);
-        var operandDerivative = Transform(operand);
+        var operandDerivative = TransformCore(operand);
 
         var plus = Expression.Call(methodCallExpression.Method, Expression.Add(operand, epsilon));
         var minus = Expression.Call(methodCallExpression.Method, Expression.Subtract(operand, epsilon));

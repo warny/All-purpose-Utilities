@@ -310,17 +310,35 @@ public class ParserEngineSemanticPredicateEvaluatorTests
 
     private sealed class ThrowingExpressionCompiler : IExpressionCompiler
     {
-        public Expression Compile(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
+        public Expression CompileExpression(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
         {
             throw new InvalidOperationException("boom");
         }
+
+        public Expression<TDelegate> CompileExpression<TDelegate>(string content) where TDelegate : Delegate
+            => throw new InvalidOperationException("boom");
+
+        public Delegate Compile(string content)
+            => throw new InvalidOperationException("boom");
+
+        public TDelegate Compile<TDelegate>(string content) where TDelegate : Delegate
+            => throw new InvalidOperationException("boom");
     }
 
     private sealed class NonBooleanExpressionCompiler : IExpressionCompiler
     {
-        public Expression Compile(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
+        public Expression CompileExpression(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
         {
             return Expression.Constant(42);
         }
+
+        public Expression<TDelegate> CompileExpression<TDelegate>(string content) where TDelegate : Delegate
+            => throw new NotSupportedException("This fake only supports the symbol-table overload.");
+
+        public Delegate Compile(string content)
+            => throw new NotSupportedException("This fake only supports the symbol-table overload.");
+
+        public TDelegate Compile<TDelegate>(string content) where TDelegate : Delegate
+            => throw new NotSupportedException("This fake only supports the symbol-table overload.");
     }
 }

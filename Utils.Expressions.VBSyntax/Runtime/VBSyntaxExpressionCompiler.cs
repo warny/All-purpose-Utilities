@@ -47,12 +47,33 @@ public sealed partial class VBSyntaxExpressionCompiler : IExpressionCompiler
     /// Optional symbol table mapping identifier names to existing expressions.
     /// </param>
     /// <returns>Compiled expression tree.</returns>
-    public Expression Compile(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
+    public Expression CompileExpression(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
     {
         ArgumentNullException.ThrowIfNull(content);
         ParseNode root = _parser.Parse(content);
         return Compile(root, symbols, content, null);
     }
+
+    /// <summary>
+    /// Compiles source text directly to an executable delegate, via <see cref="CompileExpression(string, IReadOnlyDictionary{string, Expression})"/>.
+    /// </summary>
+    /// <param name="content">VB-like source text.</param>
+    /// <returns>The compiled delegate.</returns>
+    public Delegate Compile(string content)
+    {
+        Expression expression = CompileExpression(content);
+        return expression is LambdaExpression lambda ? lambda.Compile() : Expression.Lambda(expression).Compile();
+    }
+
+    /// <summary>
+    /// Compiles source text directly to an executable delegate of type <typeparamref name="TDelegate"/>,
+    /// via <see cref="CompileExpression{TDelegate}(string)"/>.
+    /// </summary>
+    /// <typeparam name="TDelegate">The delegate type to compile to.</typeparam>
+    /// <param name="content">VB-like lambda or expression body source.</param>
+    /// <returns>The compiled delegate.</returns>
+    public TDelegate Compile<TDelegate>(string content) where TDelegate : Delegate
+        => CompileExpression<TDelegate>(content).Compile();
 
     /// <summary>
     /// Parses and compiles a VB-like expression using a rich runtime context.
@@ -102,10 +123,10 @@ public sealed partial class VBSyntaxExpressionCompiler : IExpressionCompiler
     /// <typeparam name="T">Target delegate type.</typeparam>
     /// <param name="content">VB-like lambda or expression body source.</param>
     /// <returns>Typed lambda expression.</returns>
-    public Expression<T> Compile<T>(string content) where T : Delegate
+    public Expression<T> CompileExpression<T>(string content) where T : Delegate
     {
         ArgumentNullException.ThrowIfNull(content);
-        Expression result = Compile(content);
+        Expression result = CompileExpression(content);
         if (result is Expression<T> typed) return typed;
         if (result is LambdaExpression lam) return Expression.Lambda<T>(lam.Body, lam.Parameters);
         throw new InvalidOperationException(
@@ -128,7 +149,7 @@ public sealed partial class VBSyntaxExpressionCompiler : IExpressionCompiler
         Type returnType = invoke.ReturnType;
         var symbols = parameters.ToDictionary(static p => p.Name!, static p => (Expression)p,
             StringComparer.OrdinalIgnoreCase);
-        Expression body = Compile(content, symbols);
+        Expression body = CompileExpression(content, symbols);
         return Expression.Lambda(ConvertIfNeeded(body, returnType), parameters);
     }
 

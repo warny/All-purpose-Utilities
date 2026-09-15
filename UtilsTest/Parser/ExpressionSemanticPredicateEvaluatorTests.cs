@@ -162,7 +162,7 @@ public class ExpressionSemanticPredicateEvaluatorTests
         /// <inheritdoc />
         private bool _toggleState;
 
-        public Expression Compile(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
+        public Expression CompileExpression(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
         {
             CompileCount++;
 
@@ -188,5 +188,14 @@ public class ExpressionSemanticPredicateEvaluatorTests
             _toggleState = !_toggleState;
             return _toggleState;
         }
+
+        public Expression<TDelegate> CompileExpression<TDelegate>(string content) where TDelegate : Delegate
+            => throw new NotSupportedException("This fake only supports the symbol-table overload.");
+
+        public Delegate Compile(string content)
+            => throw new NotSupportedException("This fake only supports the symbol-table overload.");
+
+        public TDelegate Compile<TDelegate>(string content) where TDelegate : Delegate
+            => throw new NotSupportedException("This fake only supports the symbol-table overload.");
     }
 }

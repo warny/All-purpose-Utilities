@@ -36,7 +36,7 @@ public class StringFormatBuilderTests
     public void CSyntaxCompiler_ImplementsExpressionCompilerInterface()
     {
         IExpressionCompiler compiler = new CSyntaxExpressionCompiler();
-        Expression expression = compiler.Compile("1 + 2");
+        Expression expression = compiler.CompileExpression("1 + 2");
         Func<double> lambda = Expression.Lambda<Func<double>>(Expression.Convert(expression, typeof(double))).Compile();
 
         Assert.AreEqual(3d, lambda());
@@ -53,7 +53,7 @@ public class StringFormatBuilderTests
         public List<string> CompiledExpressions { get; } = new();
 
         /// <inheritdoc />
-        public Expression Compile(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
+        public Expression CompileExpression(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
         {
             CompiledExpressions.Add(content);
 
@@ -64,5 +64,17 @@ public class StringFormatBuilderTests
 
             return Expression.Constant(0d);
         }
+
+        /// <inheritdoc />
+        public Expression<TDelegate> CompileExpression<TDelegate>(string content) where TDelegate : Delegate
+            => throw new NotSupportedException("This recording fake only supports the symbol-table overload.");
+
+        /// <inheritdoc />
+        public Delegate Compile(string content)
+            => throw new NotSupportedException("This recording fake only supports the symbol-table overload.");
+
+        /// <inheritdoc />
+        public TDelegate Compile<TDelegate>(string content) where TDelegate : Delegate
+            => throw new NotSupportedException("This recording fake only supports the symbol-table overload.");
     }
 }

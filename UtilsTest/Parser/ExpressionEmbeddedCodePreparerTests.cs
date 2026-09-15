@@ -767,7 +767,7 @@ public class ExpressionEmbeddedCodePreparerTests
         public IReadOnlyDictionary<string, Expression>? LastSymbols { get; private set; }
 
         /// <inheritdoc />
-        public Expression Compile(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
+        public Expression CompileExpression(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
         {
             CompileCount++;
             LastContent = content;
@@ -797,6 +797,18 @@ public class ExpressionEmbeddedCodePreparerTests
                 _ => Expression.Empty()
             };
         }
+
+        /// <inheritdoc />
+        public Expression<TDelegate> CompileExpression<TDelegate>(string content) where TDelegate : Delegate
+            => throw new NotSupportedException("This fake only supports the symbol-table overload.");
+
+        /// <inheritdoc />
+        public Delegate Compile(string content)
+            => throw new NotSupportedException("This fake only supports the symbol-table overload.");
+
+        /// <inheritdoc />
+        public TDelegate Compile<TDelegate>(string content) where TDelegate : Delegate
+            => throw new NotSupportedException("This fake only supports the symbol-table overload.");
 
         /// <summary>
         /// Increments the execution counter.

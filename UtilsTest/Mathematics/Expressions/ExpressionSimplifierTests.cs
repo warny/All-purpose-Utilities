@@ -169,5 +169,23 @@ namespace UtilsTest.Mathematics.Expressions
 
             Assert.AreEqual(expected, simplified, ExpressionComparer.Default);
         }
+
+        /// <summary>
+        /// <see cref="ExpressionSimplifier.Transform(Expression)"/> (the public
+        /// <see cref="ExpressionTransformer"/> contract) and <see cref="ExpressionSimplifier.Simplify(Expression)"/>
+        /// (the historical convenience name) call the same code path and must produce structurally
+        /// identical results.
+        /// </summary>
+        [TestMethod]
+        public void Transform_And_Simplify_ProduceEquivalentResults()
+        {
+            Expression<Func<double, double>> source = x => double.Pow(double.Cos(x), 2) + double.Pow(double.Sin(x), 2);
+            var simplifier = new ExpressionSimplifier();
+
+            var viaTransform = simplifier.Transform(source);
+            var viaSimplify = simplifier.Simplify(source);
+
+            Assert.AreEqual(viaSimplify, viaTransform, ExpressionComparer.Default);
+        }
     }
 }

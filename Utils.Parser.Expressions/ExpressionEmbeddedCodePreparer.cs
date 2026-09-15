@@ -74,7 +74,7 @@ public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<Prepa
         {
             TransformedEmbeddedCode transformedCode = TransformSource(source, context, ParserEmbeddedCodeLocation.SemanticPredicate);
             var runtimeContext = Expression.Parameter(typeof(SemanticPredicateEvaluationContext), "context");
-            var expression = _compiler.Compile(transformedCode.Text, BuildSemanticPredicateSymbols(runtimeContext, context.SupportedSymbols));
+            var expression = _compiler.CompileExpression(transformedCode.Text, BuildSemanticPredicateSymbols(runtimeContext, context.SupportedSymbols));
             if (expression.Type != typeof(bool))
             {
                 return EmbeddedCodePreparationResult<PreparedExpressionSemanticPredicate>.CompilationFailed(
@@ -131,7 +131,7 @@ public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<Prepa
         {
             TransformedEmbeddedCode transformedCode = TransformSource(source, context, ParserEmbeddedCodeLocation.InlineAction);
             var runtimeContext = Expression.Parameter(typeof(ParserActionExecutionContext), "context");
-            var expression = _compiler.Compile(transformedCode.Text, BuildParserActionSymbols(runtimeContext, context.SupportedSymbols));
+            var expression = _compiler.CompileExpression(transformedCode.Text, BuildParserActionSymbols(runtimeContext, context.SupportedSymbols));
             var executableExpression = expression.Type == typeof(void)
                 ? expression
                 : Expression.Block(expression, Expression.Empty());
