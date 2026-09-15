@@ -2,7 +2,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.IO;
 using Utils.IO.Serialization;
-using Utils.Randomization;
 
 namespace UtilsTest.Streams;
 
@@ -18,21 +17,16 @@ public class NewReaderWriterTest
             Assert.AreEqual(expected, actual, typeof(T).Name);
         }
 
-        var r = new Random();
-
-        (byte b, short s, int i, long l, float f, double d, DateTime dt1)[] tests = [
-    (0, 0, 0, 0, 0, 0, DateTime.Now),
+        (byte b, short s, int i, long l, float f, double d, DateTime dt1)[] tests =
+        [
+            (0, 0, 0, 0, 0, 0, new DateTime(2000, 2, 29, 12, 34, 56, DateTimeKind.Unspecified)),
             (byte.MinValue, short.MinValue, int.MinValue, long.MinValue, float.MinValue, double.MinValue, DateTime.MinValue),
             (byte.MaxValue, short.MaxValue, int.MaxValue, long.MaxValue, float.MaxValue, double.MaxValue, DateTime.MaxValue),
-            (r.RandomByte(),r.RandomShort(),r.RandomInt(),r.RandomLong(),float.Epsilon,double.Epsilon,new DateTime(r.Next(1, 9999), r.Next(1,12), r.Next(1, 28), r.Next(1, 23), r.Next(1,59), r.Next(1,59))),
-            (r.RandomByte(),r.RandomShort(),r.RandomInt(),r.RandomLong(),-float.Epsilon,-double.Epsilon,new DateTime(r.Next(1, 9999), r.Next(1,12), r.Next(1, 28), r.Next(1, 23), r.Next(1,59), r.Next(1,59))),
-            (r.RandomByte(),r.RandomShort(),r.RandomInt(),r.RandomLong(),r.RandomFloat(),r.RandomDouble(),new DateTime(r.Next(1, 9999), r.Next(1,12), r.Next(1, 28), r.Next(1, 23), r.Next(1,59), r.Next(1,59))),
-            (r.RandomByte(),r.RandomShort(),r.RandomInt(),r.RandomLong(),r.RandomFloat(),r.RandomDouble(),new DateTime(r.Next(1, 9999), r.Next(1,12), r.Next(1, 28), r.Next(1, 23), r.Next(1,59), r.Next(1,59))),
-            (r.RandomByte(),r.RandomShort(),r.RandomInt(),r.RandomLong(),r.RandomFloat(),r.RandomDouble(),new DateTime(r.Next(1, 9999), r.Next(1,12), r.Next(1, 28), r.Next(1, 23), r.Next(1,59), r.Next(1,59))),
-            (r.RandomByte(),r.RandomShort(),r.RandomInt(),r.RandomLong(),r.RandomFloat(),r.RandomDouble(),new DateTime(r.Next(1, 9999), r.Next(1,12), r.Next(1, 28), r.Next(1, 23), r.Next(1,59), r.Next(1,59))),
-            (r.RandomByte(),r.RandomShort(),r.RandomInt(),r.RandomLong(),r.RandomFloat(),r.RandomDouble(),new DateTime(r.Next(1, 9999), r.Next(1,12), r.Next(1, 28), r.Next(1, 23), r.Next(1,59), r.Next(1,59))),
-            (r.RandomByte(),r.RandomShort(),r.RandomInt(),r.RandomLong(),r.RandomFloat(),r.RandomDouble(),new DateTime(r.Next(1, 9999), r.Next(1,12), r.Next(1, 28), r.Next(1, 23), r.Next(1,59), r.Next(1,59)))
-];
+            (1, -1, -42, -1234567890123, float.Epsilon, double.Epsilon, new DateTime(2024, 2, 29, 23, 59, 58, DateTimeKind.Utc)),
+            (254, 1234, 42, 1234567890123, -float.Epsilon, -double.Epsilon, new DateTime(2023, 7, 15, 8, 30, 1, DateTimeKind.Local)),
+            (127, -1234, -987654321, -9876543210123, 123.5f, -9876.125, new DateTime(1985, 10, 26, 1, 21, 0, DateTimeKind.Unspecified)),
+            (128, 2345, 987654321, 9876543210123, -456.25f, 0.03125, new DateTime(2038, 1, 19, 3, 14, 7, DateTimeKind.Utc))
+        ];
 
         var converters = (Writer: new RawWriter(), Reader: new RawReader());
 

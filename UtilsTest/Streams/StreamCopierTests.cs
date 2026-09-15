@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Utils.Collections;
 using Utils.IO;
-using Utils.Randomization;
 
 namespace UtilsTest.Streams;
 
@@ -20,8 +19,7 @@ public class StreamCopierTests
     {
         using MemoryStream target1 = new MemoryStream();
         using MemoryStream target2 = new MemoryStream();
-        var r = new Random();
-        byte[] reference = r.NextBytes(10, 20);
+        byte[] reference = [0x00, 0x01, 0x7F, 0x80, 0xFE, 0xFF, 0x23, 0x42, 0xA5, 0x5A, 0x10, 0xEF];
 
         StreamCopier copier = new StreamCopier(target1, target2);
 

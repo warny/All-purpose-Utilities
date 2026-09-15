@@ -83,18 +83,13 @@ public class BlockTests
     [TestMethod]
     public void WhileTest()
     {
-        Random random = new Random();
         var expression = "(char c, int length) =>  { string result=\"\"; while (result.Length < length) { result += c.ToString(); }; result; }";
 
         var e = (LambdaExpression)compiler.CompileExpression(expression);
         var f = (Func<char, int, string>)e.Compile();
 
-        char[] tests = ['a', 'b', 'c'];
-        foreach (var test in tests)
-        {
-            var length = random.Next(5, 10);
-            Assert.AreEqual(new string(test, length), f(test, length));
-        }
+        foreach ((char character, int length) in new (char, int)[] { ('a', 0), ('b', 1), ('c', 5), ('x', 12) })
+            Assert.AreEqual(new string(character, length), f(character, length));
     }
 
     [TestMethod]
@@ -208,7 +203,6 @@ public class BlockTests
     [TestMethod]
     public void ForTest()
     {
-        Random random = new Random();
         var expression =
             """
             (char c, int length) => { 
@@ -223,18 +217,13 @@ public class BlockTests
         var e = (LambdaExpression)compiler.CompileExpression(expression);
         var f = (Func<char, int, string>)e.Compile();
 
-        char[] tests = ['a', 'b', 'c'];
-        foreach (var test in tests)
-        {
-            var length = random.Next(5, 10);
-            Assert.AreEqual(new string(test, length), f(test, length));
-        }
+        foreach ((char character, int length) in new (char, int)[] { ('a', 0), ('b', 1), ('c', 5), ('x', 12) })
+            Assert.AreEqual(new string(character, length), f(character, length));
     }
 
     [TestMethod]
     public void ForEachTest1()
     {
-        Random random = new Random();
         var expression =
             """
             (int[] test) => { 
@@ -249,23 +238,13 @@ public class BlockTests
         var e = (LambdaExpression)compiler.CompileExpression(expression);
         var f = (Func<int[], int>)e.Compile();
 
-        for (int i = 0; i < 10; i++)
-        {
-            int[] test = new int[random.Next(5, 10)];
-            for (int j = 0; j < test.Length; j++)
-            {
-                test[j] = random.Next(0, 100);
-            }
-
-            var length = random.Next(5, 10);
+        foreach (int[] test in new int[][] { [], [7], [1, 2, 3, 4], [10, -3, 0, -7, 5] })
             Assert.AreEqual(test.Sum(), f(test));
-        }
     }
 
     [TestMethod]
     public void ForEachTest2()
     {
-        Random random = new Random();
         var expression =
             """
             using System.Collections;
@@ -283,23 +262,13 @@ public class BlockTests
         var e = (LambdaExpression)compiler.CompileExpression(expression);
         var f = (Func<IEnumerable<int>, int>)e.Compile();
 
-        for (int i = 0; i < 10; i++)
-        {
-            int[] test = new int[random.Next(5, 10)];
-            for (int j = 0; j < test.Length; j++)
-            {
-                test[j] = random.Next(0, 100);
-            }
-
-            var length = random.Next(5, 10);
+        foreach (int[] test in new int[][] { [], [7], [1, 2, 3, 4], [10, -3, 0, -7, 5] })
             Assert.AreEqual(test.Sum(), f(test));
-        }
     }
 
     [TestMethod]
     public void ForEachTest3()
     {
-        Random random = new Random();
         var expression =
             """
             using System.Collections;
@@ -317,17 +286,8 @@ public class BlockTests
         var e = (LambdaExpression)compiler.CompileExpression(expression);
         var f = (Func<IEnumerable, int>)e.Compile();
 
-        for (int i = 0; i < 10; i++)
-        {
-            int[] test = new int[random.Next(5, 10)];
-            for (int j = 0; j < test.Length; j++)
-            {
-                test[j] = random.Next(0, 100);
-            }
-
-            var length = random.Next(5, 10);
+        foreach (int[] test in new int[][] { [], [7], [1, 2, 3, 4], [10, -3, 0, -7, 5] })
             Assert.AreEqual(test.Sum(), f(test));
-        }
     }
 
     /// <summary>

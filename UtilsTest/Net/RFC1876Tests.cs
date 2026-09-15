@@ -61,13 +61,11 @@ namespace UtilsTest.Net
             var packetWriter = DNSPacketWriter.Default;
             var packetReader = DNSPacketReader.Default;
 
-            Random random = new Random();
-
-            for (int i = 0; i < 20; i++)
+            foreach ((double altitude, double latitude, double longitude) in new (double, double, double)[]
             {
-                double altitude = random.Next(-120000, 90000) / 10d;
-                double latitude = random.Next(-90_000, 90_000) / 1000d;
-                double longitude = random.Next(-180_000, 180_000) / 1000d;
+                (-9999.9, -89.999, -179.999), (8999.9, 89.999, 179.999), (35.0, 48.856, 2.352), (381.0, 40.748, -73.985)
+            })
+            {
 
                 DNSHeader header = new DNSHeader();
                 var loc = new LOC();

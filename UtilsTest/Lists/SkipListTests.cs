@@ -132,8 +132,9 @@ namespace UtilsTest.Lists
         [TestMethod]
         public void ContainsTestLargeArray()
         {
-            Random rng = new Random();
-            int[] result = rng.RandomArray(10000, (i) => rng.RandomInt());
+            const int ShuffleSeed = 20_260_914;
+            Random rng = new Random(ShuffleSeed);
+            int[] result = Enumerable.Range(0, 10_000).OrderBy(_ => rng.Next()).ToArray();
             TestContains(5, result);
 
         }
@@ -177,9 +178,9 @@ namespace UtilsTest.Lists
         [TestMethod]
         public void RemoveTestLargeArray()
         {
-            Random rng = new Random();
-            int[] result = rng.RandomArray(1000, (i) => rng.RandomInt());
-            result = [.. result.Distinct()];
+            const int ShuffleSeed = 20_260_914;
+            Random rng = new Random(ShuffleSeed);
+            int[] result = Enumerable.Range(0, 1_000).OrderBy(_ => rng.Next()).ToArray();
             TestRemove(5, result);
         }
 

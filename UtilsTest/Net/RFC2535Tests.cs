@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.IO.Serialization;
 using Utils.Net.DNS;
@@ -19,9 +20,7 @@ namespace UtilsTest.Net
         [TestMethod]
         public void KEYExtendedFieldRoundTripTest()
         {
-            var random = new Random();
-            var key = new byte[64];
-            random.NextBytes(key);
+            byte[] key = Enumerable.Range(0, 64).Select(index => (byte)((index * 37 + 11) & 0xFF)).ToArray();
 
             var sourceHeader = new DNSHeader();
             sourceHeader.Requests.Add(new DNSRequestRecord("DNSKEY", "example.com"));

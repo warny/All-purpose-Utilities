@@ -15,14 +15,11 @@ public class UnaryOperatorsTests
     [TestMethod]
     public void PlusTest()
     {
-        var r = new Random();
-
         var e = (LambdaExpression)compiler.CompileExpression("(int x) => +x");
         var f = (Func<int, int>)e.Compile();
 
-        for (int i = 0; i < 10; i++)
+        foreach (int x in new int[] { 0, 1, -1, 42, -42, 123_456_789, -123_456_789 })
         {
-            var x = r.Next(i);
             Assert.AreEqual(x, f(x));
         }
     }
@@ -30,14 +27,11 @@ public class UnaryOperatorsTests
     [TestMethod]
     public void MinusTest1()
     {
-        var r = new Random();
-
         var e = (LambdaExpression)compiler.CompileExpression("(int x) => -x");
         var f = (Func<int, int>)e.Compile();
 
-        for (int i = 0; i < 10; i++)
+        foreach (int x in new int[] { 0, 1, -1, 42, -42, 123_456_789, -123_456_789 })
         {
-            var x = r.Next(i);
             Assert.AreEqual(-x, f(x));
         }
     }
@@ -45,11 +39,8 @@ public class UnaryOperatorsTests
     [TestMethod]
     public void MinusTest2()
     {
-        var r = new Random();
-
-        for (int i = 0; i < 10; i++)
+        foreach (int x in new int[] { 0, 1, -1, 42, -42, 123_456_789, -123_456_789 })
         {
-            var x = r.Next(i);
             var body = compiler.CompileExpression($"-{x}");
             var f = Expression.Lambda<Func<int>>(Expression.Convert(body, typeof(int))).Compile();
             Assert.AreEqual(-x, f());
@@ -71,14 +62,11 @@ public class UnaryOperatorsTests
     [TestMethod]
     public void ComplementTest()
     {
-        var r = new Random();
-
         var e = (LambdaExpression)compiler.CompileExpression("(int x) => ~x");
         var f = (Func<int, int>)e.Compile();
 
-        for (int i = 0; i < 10; i++)
+        foreach (int x in new int[] { 0, 1, -1, 42, -42, 123_456_789, -123_456_789 })
         {
-            var x = r.Next(i);
             Assert.AreEqual(~x, f(x));
         }
     }
@@ -87,14 +75,11 @@ public class UnaryOperatorsTests
     public void CastTests()
     {
         // Cast syntax (double)x is not supported by the grammar; use arithmetic promotion instead.
-        var r = new Random();
-
         var e = (LambdaExpression)compiler.CompileExpression("(int x) => x + 0.0");
         var f = (Func<int, double>)e.Compile();
 
-        for (int i = 0; i < 10; i++)
+        foreach (int x in new int[] { 0, 1, -1, 42, -42, 123_456_789, -123_456_789 })
         {
-            var x = r.Next(i);
             Assert.AreEqual((double)x, f(x));
         }
     }
