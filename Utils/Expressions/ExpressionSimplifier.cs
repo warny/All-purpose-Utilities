@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using Utils.Expressions;
 using Utils.Objects;
 
@@ -13,6 +14,52 @@ namespace Utils.Mathematics.Expressions
     /// This partial class works alongside other parts of <see cref="ExpressionSimplifier"/> to compose
     /// a complete transformation pipeline.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Symbolic-equivalence contract (stage S3).</b> <see cref="ExpressionSimplifier"/> is a
+    /// <em>symbolic algebra</em> simplifier. It is <b>not</b> a strict CLR/IEEE-754 execution-preserving
+    /// optimizer. Reassociation/reordering of addition and multiplication, and identities such as
+    /// <c>x * 0 -&gt; 0</c> or <c>x^0 -&gt; 1</c>, are algebraic identities over the assumed mathematical
+    /// domain; they are not promised to be bit-for-bit identical to the original CLR evaluation for every
+    /// floating-point/decimal input. In particular, <see cref="Simplify(Expression)"/> does not guarantee
+    /// identical rounding, reassociation order, <c>NaN</c> propagation, infinities, signed-zero behavior,
+    /// overflow, or exception timing across a rewrite. Consumers that require exact CLR execution semantics
+    /// must not rely on a simplified expression evaluating identically to the source expression in every
+    /// corner case; they must rely only on symbolic/mathematical equivalence over the identity's domain.
+    /// </para>
+    /// <para>
+    /// <b>Purity assumption.</b> Every algebraic rewrite (cancellation, factoring, canonical reordering,
+    /// constant folding, and <see cref="InvokeExpression"/>'s direct beta-substitution) assumes its operand
+    /// sub-expressions are pure/referentially transparent. Evaluation count and order are not guaranteed to
+    /// be preserved for an expression tree with observable side effects (a method call with a side effect,
+    /// a property with an observable getter, etc.): a rewrite may evaluate a sub-expression zero, one, or
+    /// more times relative to the source. This stage deliberately does not add a general side-effect/purity
+    /// analyzer; callers who need side-effecting sub-expressions to run in the original count/order must not
+    /// pass such expressions through this simplifier.
+    /// </para>
+    /// <para>
+    /// <b>Domain-sensitive identities.</b> Rules with a mathematical precondition are valid only on their
+    /// common domain. <c>Log(x) + Log(y) -&gt; Log(x*y)</c> (and the <c>Log10</c>/subtraction variants)
+    /// assume <c>x</c> and <c>y</c> lie in the supported positive finite real domain; power identities such
+    /// as <c>0^x -&gt; 0</c> and <c>x^a * x^b -&gt; x^(a+b)</c> likewise have base/exponent preconditions not
+    /// represented in the expression tree. This stage does not introduce a general domain/constraint solver:
+    /// it characterizes and preserves these identities on their intended domain rather than restricting or
+    /// broadening it.
+    /// </para>
+    /// <para>
+    /// <b>What the symbolic contract does NOT authorize.</b> The above does not license treating a
+    /// custom/user-defined operator as ordinary commutative arithmetic, collapsing lifted
+    /// (<see cref="BinaryExpression.IsLifted"/>/<see cref="BinaryExpression.IsLiftedToNull"/>) nullable
+    /// semantics, or turning truncating integer division into field-style division. Those are production
+    /// correctness bugs, not accepted symbolic-vs-exact differences, and every algebraic rule that folds,
+    /// reorders, factors, or discards a node must first prove the node is ordinary, non-lifted,
+    /// predefined-operator arithmetic via <see cref="IsOrdinaryUnaryNegate(UnaryExpression)"/>,
+    /// <see cref="IsOrdinaryBinaryArithmetic(BinaryExpression)"/>, or the narrower
+    /// <see cref="IsOrdinaryFieldDivision(BinaryExpression)"/> for identities that require field (not ring)
+    /// division. See those methods' remarks for how "ordinary" is determined structurally rather than by a
+    /// fragile hard-coded assumption.
+    /// </para>
+    /// </remarks>
     public partial class ExpressionSimplifier : ExpressionTransformer
     {
         /// <summary>
@@ -29,6 +76,13 @@ namespace Utils.Mathematics.Expressions
         /// </summary>
         /// <param name="e">The <see cref="Expression"/> to simplify.</param>
         /// <returns>A simplified version of <paramref name="e"/>, if any transformation rules match.</returns>
+        /// <remarks>
+        /// See the "Symbolic-equivalence contract" section of this type's remarks: the result is
+        /// symbolically/mathematically equivalent to <paramref name="e"/> over the algebraic identities'
+        /// assumed domain and under the assumption that <paramref name="e"/>'s sub-expressions are pure. It
+        /// is not guaranteed to be a bit-for-bit CLR/IEEE-754-identical evaluator, and it never treats a
+        /// custom operator, lifted nullable arithmetic, or truncating integer division as ordinary algebra.
+        /// </remarks>
         public Expression Simplify(Expression e)
         {
             return Transform(e);
@@ -111,6 +165,7 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Add)]
         public Expression AdditionWithZero(BinaryExpression e, Expression left, [ConstantNumeric(0)] ConstantExpression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e)) return null;
             if (NumberUtils.CompareNumeric(right.Value, 0) == 0) return TransformCore(left);
             return null;
         }
@@ -121,6 +176,7 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Add)]
         public Expression AdditionWithZero(BinaryExpression e, [ConstantNumeric(0)] ConstantExpression left, Expression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e)) return null;
             if (NumberUtils.CompareNumeric(left.Value, 0) == 0) return right;
             return null;
         }
@@ -131,6 +187,7 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Subtract)]
         public Expression SubstractionWithZero(BinaryExpression e, Expression left, [ConstantNumeric(0)] ConstantExpression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e)) return null;
             if (NumberUtils.CompareNumeric(right.Value, 0) == 0) return left;
             return null;
         }
@@ -141,6 +198,7 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Subtract)]
         public Expression SubstractionWithZero(BinaryExpression e, [ConstantNumeric(0)] ConstantExpression left, Expression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e)) return null;
             if (NumberUtils.CompareNumeric(left.Value, 0) == 0) return TransformCore(Expression.Negate(right));
             return null;
         }
@@ -151,6 +209,7 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Multiply)]
         public Expression MultiplicationWithZeroOrOne(BinaryExpression e, Expression left, [ConstantNumeric(0, 1, -1)] ConstantExpression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e)) return null;
             if (NumberUtils.CompareNumeric(right.Value, 0) == 0) return right;  // x * 0 => 0
             if (NumberUtils.CompareNumeric(right.Value, 1) == 0) return left;   // x * 1 => x
             if (NumberUtils.CompareNumeric(right.Value, -1) == 0) return Expression.Negate(left); // x * -1 => -x
@@ -163,6 +222,7 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Multiply)]
         public Expression MultiplicationWithZeroOrOne(BinaryExpression e, [ConstantNumeric(0, 1, -1)] ConstantExpression left, Expression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e)) return null;
             if (NumberUtils.CompareNumeric(left.Value, 0) == 0) return left;
             if (NumberUtils.CompareNumeric(left.Value, 1) == 0) return right;
             if (NumberUtils.CompareNumeric(left.Value, -1) == 0) return Expression.Negate(right);
@@ -175,6 +235,7 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Divide)]
         public Expression DivideWithZeroOrOne(BinaryExpression e, Expression left, ConstantExpression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e)) return null;
             if (NumberUtils.CompareNumeric(right.Value, 0) == 0) throw new DivideByZeroException();
             if (NumberUtils.CompareNumeric(right.Value, 1) == 0) return left;
             if (NumberUtils.CompareNumeric(right.Value, -1) == 0) return Expression.Negate(left);
@@ -187,6 +248,7 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Divide)]
         public Expression DivideWithZero(BinaryExpression e, [ConstantNumeric(0)] ConstantExpression left, Expression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e)) return null;
             if (NumberUtils.CompareNumeric(left.Value, 0) == 0) return left;
             return null;
         }
@@ -197,6 +259,7 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Power)]
         public Expression PowerOfZeroOrOne(BinaryExpression e, [ConstantNumeric(0, 1)] ConstantExpression left, Expression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e)) return null;
             if (NumberUtils.CompareNumeric(left.Value, 0) == 0) return left; // 0^x => 0
             if (NumberUtils.CompareNumeric(left.Value, 1) == 0) return left; // 1^x => 1
             return null;
@@ -208,6 +271,7 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Power)]
         public Expression PowerByZeroOrOne(BinaryExpression e, Expression left, ConstantExpression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e)) return null;
             if (NumberUtils.CompareNumeric(right.Value, 0) == 0) return Expression.Constant(Convert.ChangeType(1, right.Type));
             if (NumberUtils.CompareNumeric(right.Value, 1) == 0) return TransformCore(left);
             if (NumberUtils.CompareNumeric(right.Value, -1) == 0) return TransformCore(Expression.Divide(Expression.Constant(Convert.ChangeType(1, left.Type)), left));
@@ -225,6 +289,7 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Add)]
         protected Expression AdditionOfConstants(BinaryExpression e, [ConstantNumeric] ConstantExpression left, [ConstantNumeric] ConstantExpression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e)) return null;
             return Expression.Constant((object)((dynamic)left.Value + (dynamic)right.Value));
         }
 
@@ -234,6 +299,8 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Add)]
         protected Expression AdditionWithNegate(BinaryExpression e, Expression left, [ExpressionSignature(ExpressionType.Negate)] UnaryExpression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryUnaryNegate(right)) return null;
+
             if (ExpressionComparer.Default.Equals(left, right.Operand))
             {
                 return Expression.Constant(Convert.ChangeType(0, left.Type), left.Type);
@@ -249,6 +316,8 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Add)]
         protected Expression AdditionWithNegate(BinaryExpression e, [ExpressionSignature(ExpressionType.Negate)] UnaryExpression left, Expression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryUnaryNegate(left)) return null;
+
             if (ExpressionComparer.Default.Equals(left.Operand, right))
             {
                 return Expression.Constant(Convert.ChangeType(0, right.Type), right.Type);
@@ -263,6 +332,8 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Subtract)]
         protected Expression SubstractionWithNegate(BinaryExpression e, Expression left, [ExpressionSignature(ExpressionType.Negate)] UnaryExpression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryUnaryNegate(right)) return null;
+
             return TransformCore(Expression.Add(left, right.Operand));
         }
 
@@ -272,6 +343,8 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Subtract)]
         protected Expression SubstractionWithNegate(BinaryExpression e, [ExpressionSignature(ExpressionType.Negate)] UnaryExpression left, Expression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryUnaryNegate(left)) return null;
+
             return TransformCore(Expression.Negate(Expression.Add(left.Operand, right)));
         }
 
@@ -281,6 +354,8 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Negate)]
         protected Expression NegateWithSubstraction(UnaryExpression e, [ExpressionSignature(ExpressionType.Subtract)] BinaryExpression operand)
         {
+            if (!IsOrdinaryUnaryNegate(e) || !IsOrdinaryBinaryArithmetic(operand)) return null;
+
             return TransformCore(Expression.Add(Expression.Negate(operand.Left), operand.Right));
         }
 
@@ -290,6 +365,8 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Subtract)]
         protected Expression SubstractionWithAddition(BinaryExpression e, Expression left, [ExpressionSignature(ExpressionType.Add)] BinaryExpression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryBinaryArithmetic(right)) return null;
+
             return Expression.Subtract(
                 Expression.Subtract(left, right.Left),
                 right.Right
@@ -302,6 +379,8 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Subtract)]
         protected Expression SubstractionWithSubstraction(BinaryExpression e, Expression left, [ExpressionSignature(ExpressionType.Subtract)] BinaryExpression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryBinaryArithmetic(right)) return null;
+
             return Expression.Subtract(
                 Expression.Add(left, right.Right),
                 right.Left
@@ -314,6 +393,7 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Subtract)]
         protected Expression SubstractionOfConstants(BinaryExpression e, [ConstantNumeric] ConstantExpression left, [ConstantNumeric] ConstantExpression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e)) return null;
             return Expression.Constant((object)((dynamic)left.Value - (dynamic)right.Value));
         }
 
@@ -324,6 +404,7 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Add)]
         protected Expression AdditionOfEqualsElements(BinaryExpression e, Expression left, Expression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e)) return null;
             if (!Types.Number.Contains(left.Type) || !Types.Number.Contains(right.Type))
             {
                 return null;
@@ -332,10 +413,10 @@ namespace Utils.Mathematics.Expressions
             bool leftAugmented = false;
             Expression leftleft;
             Expression leftright;
-            if (left.NodeType == ExpressionType.Multiply)
+            if (left is BinaryExpression leftBinary && leftBinary.NodeType == ExpressionType.Multiply && IsOrdinaryBinaryArithmetic(leftBinary))
             {
-                leftleft = ((BinaryExpression)left).Left;
-                leftright = ((BinaryExpression)left).Right;
+                leftleft = leftBinary.Left;
+                leftright = leftBinary.Right;
             }
             else
             {
@@ -347,10 +428,10 @@ namespace Utils.Mathematics.Expressions
             bool rightAugmented = false;
             Expression rightleft;
             Expression rightright;
-            if (right.NodeType == ExpressionType.Multiply)
+            if (right is BinaryExpression rightBinary && rightBinary.NodeType == ExpressionType.Multiply && IsOrdinaryBinaryArithmetic(rightBinary))
             {
-                rightleft = ((BinaryExpression)right).Left;
-                rightright = ((BinaryExpression)right).Right;
+                rightleft = rightBinary.Left;
+                rightright = rightBinary.Right;
             }
             else
             {
@@ -405,6 +486,7 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Subtract)]
         protected Expression SubstractionOfEqualsElements(BinaryExpression e, Expression left, Expression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e)) return null;
             if (!Types.Number.Contains(left.Type) || !Types.Number.Contains(right.Type))
             {
                 return null;
@@ -413,10 +495,10 @@ namespace Utils.Mathematics.Expressions
             bool leftAugmented = false;
             Expression leftleft;
             Expression leftright;
-            if (left.NodeType == ExpressionType.Multiply)
+            if (left is BinaryExpression leftBinary && leftBinary.NodeType == ExpressionType.Multiply && IsOrdinaryBinaryArithmetic(leftBinary))
             {
-                leftleft = ((BinaryExpression)left).Left;
-                leftright = ((BinaryExpression)left).Right;
+                leftleft = leftBinary.Left;
+                leftright = leftBinary.Right;
             }
             else
             {
@@ -428,10 +510,10 @@ namespace Utils.Mathematics.Expressions
             bool rightAugmented = false;
             Expression rightleft;
             Expression rightright;
-            if (right.NodeType == ExpressionType.Multiply)
+            if (right is BinaryExpression rightBinary && rightBinary.NodeType == ExpressionType.Multiply && IsOrdinaryBinaryArithmetic(rightBinary))
             {
-                rightleft = ((BinaryExpression)right).Left;
-                rightright = ((BinaryExpression)right).Right;
+                rightleft = rightBinary.Left;
+                rightright = rightBinary.Right;
             }
             else
             {
@@ -490,6 +572,7 @@ namespace Utils.Mathematics.Expressions
             [ConstantNumeric] ConstantExpression left,
             [ConstantNumeric] ConstantExpression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e)) return null;
             return Expression.Constant((object)((dynamic)left.Value * (dynamic)right.Value));
         }
 
@@ -499,6 +582,7 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Multiply)]
         protected Expression Multiplication(BinaryExpression e, Expression left, [ConstantNumeric] ConstantExpression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e)) return null;
             return Expression.Multiply(right, left);
         }
 
@@ -511,6 +595,8 @@ namespace Utils.Mathematics.Expressions
             [ConstantNumeric] ConstantExpression left,
             [ExpressionSignature(ExpressionType.Multiply)] BinaryExpression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryBinaryArithmetic(right)) return null;
+
             if (right.Left is ConstantExpression rightLeftConst)
             {
                 return Expression.Multiply(
@@ -531,6 +617,8 @@ namespace Utils.Mathematics.Expressions
             [ExpressionSignature(ExpressionType.Multiply)] BinaryExpression left,
             [ExpressionSignature(ExpressionType.Multiply)] BinaryExpression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryBinaryArithmetic(left) || !IsOrdinaryBinaryArithmetic(right)) return null;
+
             if (left.Left is ConstantExpression leftLeft && right.Left is ConstantExpression rightLeft)
             {
                 return Expression.Multiply(
@@ -550,6 +638,7 @@ namespace Utils.Mathematics.Expressions
             [ConstantNumeric] ConstantExpression left,
             [ConstantNumeric] ConstantExpression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e)) return null;
             return Expression.Constant((object)((dynamic)left.Value / (dynamic)right.Value));
         }
 
@@ -559,6 +648,8 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Multiply)]
         protected Expression MultiplicationWithNegate(BinaryExpression e, Expression left, [ExpressionSignature(ExpressionType.Negate)] UnaryExpression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryUnaryNegate(right)) return null;
+
             return Expression.Negate(
                 TransformCore(Expression.Multiply(left, right.Operand))
             );
@@ -570,6 +661,8 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Multiply)]
         protected Expression MultiplicationWithNegate(BinaryExpression e, [ExpressionSignature(ExpressionType.Negate)] UnaryExpression left, Expression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryUnaryNegate(left)) return null;
+
             return Expression.Negate(
                 TransformCore(Expression.Multiply(left.Operand, right))
             );
@@ -581,6 +674,8 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Divide)]
         protected Expression DivisionWithNegate(BinaryExpression e, Expression left, [ExpressionSignature(ExpressionType.Negate)] UnaryExpression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryUnaryNegate(right)) return null;
+
             return Expression.Negate(
                 TransformCore(Expression.Divide(left, right.Operand))
             );
@@ -592,6 +687,8 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Divide)]
         protected Expression DivisionWithNegate(BinaryExpression e, [ExpressionSignature(ExpressionType.Negate)] UnaryExpression left, Expression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryUnaryNegate(left)) return null;
+
             return Expression.Negate(
                 TransformCore(Expression.Divide(left.Operand, right))
             );
@@ -604,6 +701,8 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Multiply)]
         protected Expression MultiplicationOfEqualsElements(BinaryExpression e, [ExpressionSignature(ExpressionType.Multiply)] BinaryExpression left, Expression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryBinaryArithmetic(left)) return null;
+
             Expression constant;
             Expression leftpart;
 
@@ -637,6 +736,8 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Multiply)]
         protected Expression MultiplicationOfEqualsElements(BinaryExpression e, Expression left, [ExpressionSignature(ExpressionType.Multiply)] BinaryExpression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryBinaryArithmetic(right)) return null;
+
             Expression constant;
             Expression rightpart;
 
@@ -670,13 +771,14 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Multiply)]
         protected Expression MultiplicationOfEqualsElements(BinaryExpression e, Expression left, Expression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e)) return null;
+
             Expression leftleft;
             Expression leftright;
-            if (left.NodeType == ExpressionType.Power)
+            if (left is BinaryExpression leftPower && leftPower.NodeType == ExpressionType.Power && IsOrdinaryBinaryArithmetic(leftPower))
             {
-                var _left = (BinaryExpression)left;
-                leftleft = _left.Left;
-                leftright = _left.Right;
+                leftleft = leftPower.Left;
+                leftright = leftPower.Right;
             }
             else
             {
@@ -686,11 +788,10 @@ namespace Utils.Mathematics.Expressions
 
             Expression rightleft;
             Expression rightright;
-            if (right.NodeType == ExpressionType.Power)
+            if (right is BinaryExpression rightPower && rightPower.NodeType == ExpressionType.Power && IsOrdinaryBinaryArithmetic(rightPower))
             {
-                var _right = (BinaryExpression)right;
-                rightleft = _right.Left;
-                rightright = _right.Right;
+                rightleft = rightPower.Left;
+                rightright = rightPower.Right;
             }
             else
             {
@@ -723,6 +824,8 @@ namespace Utils.Mathematics.Expressions
             [ExpressionSignature(ExpressionType.Divide)] BinaryExpression left,
             [ExpressionSignature(ExpressionType.Divide)] BinaryExpression right)
         {
+            if (!IsOrdinaryFieldDivision(e) || !IsOrdinaryFieldDivision(left) || !IsOrdinaryFieldDivision(right)) return null;
+
             return Expression.Divide(
                 TransformCore(Expression.Multiply(left.Left, right.Right)),
                 TransformCore(Expression.Multiply(left.Right, right.Left))
@@ -735,6 +838,8 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Divide)]
         protected Expression DivisionOfDivision(BinaryExpression e, Expression left, [ExpressionSignature(ExpressionType.Divide)] BinaryExpression right)
         {
+            if (!IsOrdinaryFieldDivision(e) || !IsOrdinaryFieldDivision(right)) return null;
+
             return Expression.Divide(
                 TransformCore(Expression.Multiply(left, right.Right)),
                 right.Left
@@ -749,6 +854,8 @@ namespace Utils.Mathematics.Expressions
             [ExpressionSignature(ExpressionType.Divide)] BinaryExpression left,
             Expression right)
         {
+            if (!IsOrdinaryFieldDivision(e) || !IsOrdinaryFieldDivision(left)) return null;
+
             return Expression.Divide(
                 left.Left,
                 TransformCore(Expression.Multiply(left.Right, right))
@@ -766,6 +873,7 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Power)]
         protected Expression PowerOfConstants(BinaryExpression e, [ConstantNumeric] ConstantExpression left, [ConstantNumeric] ConstantExpression right)
         {
+            if (!IsOrdinaryBinaryArithmetic(e)) return null;
             var result = double.Pow((double)left.Value, (double)right.Value);
             return Expression.Constant(result);
         }
@@ -894,9 +1002,19 @@ namespace Utils.Mathematics.Expressions
         /// <param name="terms">Destination list containing additive terms and their sign.</param>
         /// <param name="expression">Current expression being processed.</param>
         /// <param name="isNegative">Whether the current branch sign is negative.</param>
+        /// <remarks>
+        /// A nested <see cref="ExpressionType.Add"/>/<see cref="ExpressionType.Subtract"/>/<see cref="ExpressionType.Negate"/>
+        /// node is only flattened when <see cref="IsOrdinaryBinaryArithmetic(BinaryExpression)"/>/
+        /// <see cref="IsOrdinaryUnaryNegate(UnaryExpression)"/> proves it is ordinary, non-lifted,
+        /// predefined-operator arithmetic (see the "Symbolic-equivalence contract" section on
+        /// <see cref="ExpressionSimplifier"/>). A custom-operator node is kept as one atomic term instead:
+        /// flattening it would silently erase its <see cref="BinaryExpression.Method"/>/
+        /// <see cref="UnaryExpression.Method"/> and rebuild it with ordinary <see cref="Expression.Add(Expression, Expression)"/>/
+        /// <see cref="Expression.Subtract(Expression, Expression)"/> factories, changing its evaluated result.
+        /// </remarks>
         private void CollectAdditiveTerms(List<(Expression Term, bool IsNegative)> terms, Expression expression, bool isNegative)
         {
-            if (expression is BinaryExpression binaryExpression)
+            if (expression is BinaryExpression binaryExpression && IsOrdinaryBinaryArithmetic(binaryExpression))
             {
                 if (binaryExpression.NodeType == ExpressionType.Add)
                 {
@@ -913,7 +1031,7 @@ namespace Utils.Mathematics.Expressions
                 }
             }
 
-            if (expression is UnaryExpression unaryExpression && unaryExpression.NodeType == ExpressionType.Negate)
+            if (expression is UnaryExpression unaryExpression && IsOrdinaryUnaryNegate(unaryExpression))
             {
                 CollectAdditiveTerms(terms, unaryExpression.Operand, !isNegative);
                 return;
@@ -927,9 +1045,15 @@ namespace Utils.Mathematics.Expressions
         /// </summary>
         /// <param name="factors">Destination list receiving factors.</param>
         /// <param name="expression">Current expression being processed.</param>
+        /// <remarks>
+        /// Mirrors <see cref="CollectAdditiveTerms"/>'s reasoning: a nested <see cref="ExpressionType.Multiply"/>
+        /// node is only flattened when <see cref="IsOrdinaryBinaryArithmetic(BinaryExpression)"/> proves it
+        /// ordinary; otherwise it is kept as one atomic factor so its custom
+        /// <see cref="BinaryExpression.Method"/> survives canonicalization.
+        /// </remarks>
         private void CollectMultiplicativeFactors(List<Expression> factors, Expression expression)
         {
-            if (expression is BinaryExpression binaryExpression && binaryExpression.NodeType == ExpressionType.Multiply)
+            if (expression is BinaryExpression binaryExpression && binaryExpression.NodeType == ExpressionType.Multiply && IsOrdinaryBinaryArithmetic(binaryExpression))
             {
                 CollectMultiplicativeFactors(factors, binaryExpression.Left);
                 CollectMultiplicativeFactors(factors, binaryExpression.Right);
@@ -1061,9 +1185,168 @@ namespace Utils.Mathematics.Expressions
         /// <param name="binaryExpression">Binary expression candidate.</param>
         /// <returns><see langword="true"/> when canonicalization is safe; otherwise <see langword="false"/>.</returns>
         private static bool CanCanonicalizeCommutativeBinary(BinaryExpression binaryExpression)
+            => IsOrdinaryBinaryArithmetic(binaryExpression);
+
+        #region Operator safety (S3 symbolic-equivalence contract)
+
+        /// <summary>The binary arithmetic operators covered by <see cref="_ordinaryBinaryOperatorMethods"/>.</summary>
+        private static readonly ExpressionType[] OrdinaryBinaryArithmeticOperators =
+        [
+            ExpressionType.Add,
+            ExpressionType.Subtract,
+            ExpressionType.Multiply,
+            ExpressionType.Divide,
+            ExpressionType.Power,
+        ];
+
+        /// <summary>
+        /// Caches, for each numeric type in <see cref="Types.Number"/> and each operator in
+        /// <see cref="OrdinaryBinaryArithmeticOperators"/>, the exact <see cref="BinaryExpression.Method"/>
+        /// a freshly-built, non-lifted <see cref="Expression"/> factory call produces for that (operator,
+        /// type) pair. Built once, structurally, by actually calling <see cref="Expression.Add(Expression, Expression)"/>
+        /// (and the sibling factories) with two same-typed parameters and reading back <c>.Method</c>,
+        /// instead of hard-coding an assumption. This matters because the "default" method is not
+        /// uniformly <see langword="null"/>: it is <see langword="null"/> for the CLR-intrinsic primitives
+        /// (<see cref="int"/>, <see cref="double"/>, ...), but a genuine CLR operator method for
+        /// <see cref="decimal"/> (for example <c>Decimal.op_Addition</c>) - and <see cref="ExpressionType.Power"/>
+        /// resolves to a concrete <see cref="Math.Pow(double, double)"/> method even for the one type
+        /// (<see cref="double"/>) that supports it at all. A (operator, type) pair absent from this table
+        /// means the <see cref="Expression"/> factories do not support that operator for that type without
+        /// an explicit custom method (for example <see cref="ExpressionType.Power"/> for every
+        /// <see cref="Types.Number"/> entry except <see cref="double"/>, or any operator at all for
+        /// <see cref="byte"/>/<see cref="sbyte"/>, which the CLR does not define arithmetic operators on
+        /// directly), so no <see cref="BinaryExpression"/> built from it can ever be classified as ordinary.
+        /// </summary>
+        private static readonly IReadOnlyDictionary<(ExpressionType NodeType, Type Type), MethodInfo?> _ordinaryBinaryOperatorMethods
+            = BuildOrdinaryBinaryOperatorMethods();
+
+        /// <summary>
+        /// Caches, for each type in <see cref="Types.Number"/> that supports it, the exact
+        /// <see cref="UnaryExpression.Method"/> a freshly-built, non-lifted <see cref="Expression.Negate(Expression)"/>
+        /// call produces - mirrors <see cref="_ordinaryBinaryOperatorMethods"/>'s reasoning and structural
+        /// derivation for unary negation (<see langword="null"/> for CLR-intrinsic primitives,
+        /// <c>Decimal.op_UnaryNegation</c> for <see cref="decimal"/>, absent for types such as
+        /// <see cref="byte"/>/<see cref="sbyte"/> that have no unary minus operator at all).
+        /// </summary>
+        private static readonly IReadOnlyDictionary<Type, MethodInfo?> _ordinaryNegateMethods
+            = BuildOrdinaryNegateMethods();
+
+        /// <summary>Builds <see cref="_ordinaryBinaryOperatorMethods"/> once by probing every (operator, type) combination.</summary>
+        private static IReadOnlyDictionary<(ExpressionType, Type), MethodInfo?> BuildOrdinaryBinaryOperatorMethods()
         {
-            return binaryExpression.Method is null
-                && Types.Number.Contains(binaryExpression.Type);
+            var table = new Dictionary<(ExpressionType, Type), MethodInfo?>();
+            foreach (Type type in Types.Number)
+            {
+                ParameterExpression left = Expression.Parameter(type);
+                ParameterExpression right = Expression.Parameter(type);
+                foreach (ExpressionType nodeType in OrdinaryBinaryArithmeticOperators)
+                {
+                    try
+                    {
+                        BinaryExpression probe = nodeType switch
+                        {
+                            ExpressionType.Add => Expression.Add(left, right),
+                            ExpressionType.Subtract => Expression.Subtract(left, right),
+                            ExpressionType.Multiply => Expression.Multiply(left, right),
+                            ExpressionType.Divide => Expression.Divide(left, right),
+                            ExpressionType.Power => Expression.Power(left, right),
+                            _ => throw new InvalidOperationException($"Unsupported probe operator {nodeType}."),
+                        };
+                        table[(nodeType, type)] = probe.Method;
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // The CLR/Expression factories do not define this operator for this type at all:
+                        // leave the pair absent from the table so it is never classified as ordinary.
+                    }
+                }
+            }
+            return table;
         }
+
+        /// <summary>Builds <see cref="_ordinaryNegateMethods"/> once by probing every type in <see cref="Types.Number"/>.</summary>
+        private static IReadOnlyDictionary<Type, MethodInfo?> BuildOrdinaryNegateMethods()
+        {
+            var table = new Dictionary<Type, MethodInfo?>();
+            foreach (Type type in Types.Number)
+            {
+                ParameterExpression operand = Expression.Parameter(type);
+                try
+                {
+                    table[type] = Expression.Negate(operand).Method;
+                }
+                catch (InvalidOperationException)
+                {
+                    // No unary minus operator for this type: leave it absent from the table.
+                }
+            }
+            return table;
+        }
+
+        /// <summary>
+        /// Determines whether <paramref name="unary"/> represents ordinary, non-lifted, predefined numeric
+        /// negation - never a user/custom <see cref="UnaryExpression.Method"/> and never lifted nullable
+        /// arithmetic. Algebraic rules must call this (or <see cref="IsOrdinaryBinaryArithmetic(BinaryExpression)"/>)
+        /// before treating a node as safe to fold, reorder, flatten, or discard - see the "Symbolic-equivalence
+        /// contract" section on <see cref="ExpressionSimplifier"/>.
+        /// </summary>
+        /// <param name="unary">The unary expression to classify.</param>
+        /// <returns><see langword="true"/> when <paramref name="unary"/> is ordinary built-in negation; otherwise <see langword="false"/>.</returns>
+        internal static bool IsOrdinaryUnaryNegate(UnaryExpression unary)
+        {
+            ArgumentNullException.ThrowIfNull(unary);
+
+            return unary.NodeType == ExpressionType.Negate
+                && !unary.IsLifted
+                && !unary.IsLiftedToNull
+                && _ordinaryNegateMethods.TryGetValue(unary.Type, out MethodInfo? expectedMethod)
+                && unary.Method == expectedMethod;
+        }
+
+        /// <summary>
+        /// Determines whether <paramref name="binary"/> represents an ordinary, non-lifted, predefined
+        /// numeric <see cref="ExpressionType.Add"/>, <see cref="ExpressionType.Subtract"/>,
+        /// <see cref="ExpressionType.Multiply"/>, <see cref="ExpressionType.Divide"/> or
+        /// <see cref="ExpressionType.Power"/> operation - never a user/custom
+        /// <see cref="BinaryExpression.Method"/> and never lifted nullable arithmetic. Algebraic rules
+        /// (zero/one identities, constant folding, factoring, multiplicative reassociation, power
+        /// combination, canonicalization, and the outer operator of a logarithm/trigonometric identity)
+        /// must call this before folding, reordering, flattening or discarding a node - see the
+        /// "Symbolic-equivalence contract" section on <see cref="ExpressionSimplifier"/>.
+        /// </summary>
+        /// <param name="binary">The binary expression to classify.</param>
+        /// <returns><see langword="true"/> when <paramref name="binary"/> is ordinary built-in arithmetic; otherwise <see langword="false"/>.</returns>
+        internal static bool IsOrdinaryBinaryArithmetic(BinaryExpression binary)
+        {
+            ArgumentNullException.ThrowIfNull(binary);
+
+            return !binary.IsLifted
+                && !binary.IsLiftedToNull
+                && _ordinaryBinaryOperatorMethods.TryGetValue((binary.NodeType, binary.Type), out MethodInfo? expectedMethod)
+                && binary.Method == expectedMethod;
+        }
+
+        /// <summary>
+        /// Narrower than <see cref="IsOrdinaryBinaryArithmetic(BinaryExpression)"/>: additionally requires
+        /// <paramref name="binary"/>'s type to be a field (<see cref="Types.FloatingPointNumber"/> -
+        /// floating point or <see cref="decimal"/>) rather than a ring with truncating integer division.
+        /// Identities that divide by a divisor and later multiply back (for example
+        /// <c>x / (y / z) -&gt; (x*z) / y</c>) are only valid under field division; applying them to
+        /// truncating integer division can change the result - see the "Symbolic-equivalence contract"
+        /// section on <see cref="ExpressionSimplifier"/> and the S3 roadmap entry for the discriminating
+        /// counterexample <c>8 / (3 / 2)</c> (source: <c>8</c>; field rewrite <c>(8*2)/3</c>: <c>5</c>).
+        /// </summary>
+        /// <param name="binary">The division expression to classify.</param>
+        /// <returns><see langword="true"/> when <paramref name="binary"/> is safe to reassociate as field division; otherwise <see langword="false"/>.</returns>
+        internal static bool IsOrdinaryFieldDivision(BinaryExpression binary)
+        {
+            ArgumentNullException.ThrowIfNull(binary);
+
+            return binary.NodeType == ExpressionType.Divide
+                && IsOrdinaryBinaryArithmetic(binary)
+                && Types.FloatingPointNumber.Contains(binary.Type);
+        }
+
+        #endregion
     }
 }

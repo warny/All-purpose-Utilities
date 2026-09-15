@@ -75,14 +75,18 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         if (ReferenceEquals(x, y)) return true;
         if (x is null || y is null) return false;
 
-        // ExpressionTransformer.PrepareLambda rebuilds every lambda it visits via the type-inferring
-        // Expression.Lambda(Transform(le.Body), expressionParameters) overload, which preserves neither the
-        // original TailCall flag (it always comes back false) nor a custom delegate type (it always infers
-        // a Func<...>/Action<...>). Comparing both on the two ORIGINAL, not-yet-simplified root expressions
-        // protects this root-level metadata cheaply and safely, entirely inside this comparer. The same
-        // erasure happens again for every lambda nested inside the body, where there is no comparably cheap
-        // hook to recover the original values; that remaining gap is tracked under S1 in the roadmap rather
-        // than fixed here.
+        // The base ExpressionTransformer.PrepareLambda rebuilds every lambda it visits via the
+        // type-inferring Expression.Lambda(Transform(le.Body), expressionParameters) overload, which
+        // preserves neither the original TailCall flag (it always comes back false) nor a custom delegate
+        // type (it always infers a Func<...>/Action<...>). The exact built-in ExpressionSimplifier no
+        // longer has this gap: its RebuildLambdaExpression override (see the S1 reconstruction-fidelity
+        // fix) preserves TailCall, Type and Name at every nesting depth, not only at the root. A derived
+        // ExpressionSimplifier subclass that does not override RebuildLambdaExpression itself still keeps
+        // the historical erasing behavior, and _expressionSimplifier above is always the exact built-in
+        // type, so simplification inside this comparer never erases either value. Comparing both here, on
+        // the two ORIGINAL, not-yet-simplified root expressions, remains useful anyway: it protects
+        // root-level metadata even for an expression tree this comparer's structural walk does not
+        // otherwise understand (see this method's XML remarks on the earlier ReferenceEquals check).
         if (x is LambdaExpression xRoot && y is LambdaExpression yRoot
             && (xRoot.TailCall != yRoot.TailCall || xRoot.Type != yRoot.Type))
         {
@@ -187,18 +191,18 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// <returns><see langword="true"/> if the lambdas are alpha-equivalent.</returns>
     /// <remarks>
     /// <see cref="LambdaExpression.Type"/> (the delegate type) is already required equal by the caller's
-    /// blanket <c>x.Type != y.Type</c> check - but only in the sense that both sides must still agree once
-    /// simplified; <c>ExpressionTransformer.PrepareLambda</c>'s type-inferring rebuild can erase a genuine
-    /// original difference before this method (or the blanket check) ever sees it, exactly like
-    /// <see cref="LambdaExpression.TailCall"/> below. <see cref="LambdaExpression.Name"/> is debug metadata
-    /// and deliberately excluded from equality, as documented in the S1 roadmap entry for this PR. Both the
-    /// <see cref="LambdaExpression.TailCall"/> and <see cref="LambdaExpression.Type"/> checks here remain
-    /// useful for a lambda nested inside a body (a genuine difference between two nested lambdas could in
-    /// principle survive if the rebuild is ever changed), but on today's <c>PrepareLambda</c> behavior a
-    /// nested difference in either is always erased identically on both sides, so these checks alone cannot
-    /// recover a real nested difference; only the root level is protected, via
-    /// <see cref="Equals(Expression?, Expression?)"/> comparing the original, not-yet-simplified lambdas
-    /// before this method ever runs.
+    /// blanket <c>x.Type != y.Type</c> check. <see cref="LambdaExpression.Name"/> is debug metadata and
+    /// deliberately excluded from equality, as documented in the S1 roadmap entry for this PR. Since the S1
+    /// reconstruction-fidelity fix, the exact built-in <see cref="ExpressionSimplifier"/> - the only runtime
+    /// type <see cref="_expressionSimplifier"/> ever is - preserves <see cref="LambdaExpression.TailCall"/>
+    /// and <see cref="LambdaExpression.Type"/> for every lambda it rebuilds, at every nesting depth, not
+    /// only at the root: both checks here are therefore live, useful comparisons for a NESTED lambda too, not
+    /// merely defense in depth. A derived <see cref="ExpressionSimplifier"/> subclass that does not override
+    /// <c>RebuildLambdaExpression</c> still erases both at every depth below the root, exactly like the
+    /// historical <c>ExpressionTransformer.PrepareLambda</c> behavior; the root level stays protected for
+    /// such a subclass too, via <see cref="Equals(Expression?, Expression?)"/> comparing the original,
+    /// not-yet-simplified lambdas before this method ever runs - but this comparer always simplifies through
+    /// <see cref="_expressionSimplifier"/> (the exact built-in type), so that fallback is not exercised here.
     /// </remarks>
     private static bool LambdasEqual(LambdaExpression x, LambdaExpression y, ParameterBindingContext context)
     {
