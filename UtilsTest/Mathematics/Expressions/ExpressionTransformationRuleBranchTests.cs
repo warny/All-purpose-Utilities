@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Mathematics.Expressions;
 
@@ -104,18 +103,54 @@ public sealed class ExpressionTransformationRuleBranchTests
             [-2.0, -1.0, 0.0, 1.0, 2.0]);
     }
 
-    /// <summary>Verifies the minus-one branch for a Math.Pow call with a true double constant exponent.</summary>
+    /// <summary>Verifies the minus-one branch after a converted exponent on an actual Power node.</summary>
+    [TestMethod]
+    public void Integrate_Power_ConvertedMinusOneExponent_ReturnsLogAbsoluteValue()
+    {
+        AssertIntegral(
+            x => Expression.Power(x, Expression.Convert(Expression.Constant(-1), typeof(double))),
+            value => double.Log(double.Abs(value)),
+            [-2.0, -0.5, 0.5, 2.0]);
+    }
+
+    /// <summary>Verifies public dispatch to the normal constant-exponent Math.Pow integration branch.</summary>
+    [TestMethod]
+    public void Integrate_PowerMathCall_ConstantExponent_ShiftsExponent()
+    {
+        AssertIntegral(
+            x => CreateMathPowCall(x, Expression.Constant(2.0)),
+            value => double.Pow(value, 3.0) / 3.0,
+            [-2.0, -1.0, 0.0, 1.0, 2.0]);
+    }
+
+    /// <summary>Verifies public dispatch to the minus-one constant-exponent Math.Pow integration branch.</summary>
     [TestMethod]
     public void Integrate_PowerMathCall_ConstantMinusOne_ReturnsLogAbsoluteValue()
     {
-        AssertPowerMathCallIntegral(Expression.Constant(-1.0));
+        AssertIntegral(
+            x => CreateMathPowCall(x, Expression.Constant(-1.0)),
+            value => double.Log(double.Abs(value)),
+            [-2.0, -0.5, 0.5, 2.0]);
     }
 
-    /// <summary>Verifies the minus-one branch after a converted Math.Pow exponent is extracted.</summary>
+    /// <summary>Verifies public dispatch to the normal converted-exponent Math.Pow integration branch.</summary>
+    [TestMethod]
+    public void Integrate_PowerMathCall_ConvertedExponent_ShiftsExponent()
+    {
+        AssertIntegral(
+            x => CreateMathPowCall(x, Expression.Convert(Expression.Constant(2), typeof(double))),
+            value => double.Pow(value, 3.0) / 3.0,
+            [-2.0, -1.0, 0.0, 1.0, 2.0]);
+    }
+
+    /// <summary>Verifies public dispatch to the minus-one converted-exponent Math.Pow integration branch.</summary>
     [TestMethod]
     public void Integrate_PowerMathCall_ConvertedMinusOne_ReturnsLogAbsoluteValue()
     {
-        AssertPowerMathCallIntegral(Expression.Convert(Expression.Constant(-1), typeof(double)));
+        AssertIntegral(
+            x => CreateMathPowCall(x, Expression.Convert(Expression.Constant(-1), typeof(double))),
+            value => double.Log(double.Abs(value)),
+            [-2.0, -0.5, 0.5, 2.0]);
     }
 
     /// <summary>Verifies right-side negative-one multiplication uses an actual negative constant.</summary>
@@ -243,24 +278,9 @@ public sealed class ExpressionTransformationRuleBranchTests
     private static MethodCallExpression CreatePowCall(Expression left, Expression right) =>
         Expression.Call(typeof(double).GetMethod(nameof(double.Pow), [typeof(double), typeof(double)])!, left, right);
 
-    /// <summary>Invokes a specific Math.Pow integration overload directly and verifies its minus-one branch.</summary>
-    private static void AssertPowerMathCallIntegral(Expression exponent)
-    {
-        ParameterExpression x = Expression.Parameter(typeof(double), "x");
-        MethodCallExpression source = CreatePowCall(x, exponent);
-        var integration = new ExpressionIntegration<double>(x);
-        typeof(ExpressionIntegration<double>)
-            .GetField("parameter", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .SetValue(integration, x);
-        Expression result = exponent is ConstantExpression constant
-            ? integration.PowerMathCall(source, x, constant)!
-            : integration.PowerMathCall(source, x, (UnaryExpression)exponent)!;
-        Func<double, double> actual = Expression.Lambda<Func<double, double>>(result, x).Compile();
-        foreach (double sample in new[] { -2.0, -0.5, 0.5, 2.0 })
-        {
-            Assert.AreEqual(double.Log(double.Abs(sample)), actual(sample), 1e-9);
-        }
-    }
+    /// <summary>Creates a genuine System.Math.Pow call for public-dispatch integration coverage.</summary>
+    private static MethodCallExpression CreateMathPowCall(Expression left, Expression right) =>
+        Expression.Call(typeof(Math).GetMethod(nameof(Math.Pow), [typeof(double), typeof(double)])!, left, right);
 
     /// <summary>Asserts the structurally exact simplified result.</summary>
     private static void AssertStructural(Expression source, Expression expected) =>
