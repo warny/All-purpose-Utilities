@@ -1,7 +1,8 @@
 # Expression simplifier roadmap
 
-Audit date: 2026-09-12  
-Baseline: `master` at `0897872cfb9cd0906fabaf28a260e7f28f1e995c` after PR #589.
+Audit date: 2026-09-15  
+Current audit baseline: `master` at `8d9521549696095b9880db26c68def7b3a86900a` after PR #594.  
+Original roadmap baseline: `0897872cfb9cd0906fabaf28a260e7f28f1e995c` after PR #589.
 
 This roadmap deliberately uses stable stage identifiers (`S1`, `S2`, ...) instead of pull-request numbers. Other work may be interleaved between these stages, so the GitHub PR number that implements a stage is not part of the roadmap contract.
 
@@ -20,11 +21,13 @@ The simplifier should produce a mathematically meaningful, deterministic, compac
 - predictable failure/unsupported-case behavior;
 - reasonable construction cost, but only after correctness and robustness.
 
-The simplifier is **not** responsible for choosing the fastest possible machine-level form for the compiled delegate. For example, a compact symbolic power such as `x^2` may be a perfectly reasonable simplifier output even if a future execution optimizer later lowers it back to `x*x`.
+The simplifier is **not** responsible for choosing the fastest possible machine-level form for the compiled delegate. For example, a compact symbolic power such as `x^2` may be a perfectly reasonable simplifier output even if an execution optimizer later lowers it back to `x*x`.
 
-### Optimizer — future work
+### Optimizer — separate workstream
 
-A separate execution optimizer should later transform an already-simplified expression into a form chosen primarily for `Expression.Compile()` runtime performance. Its first-order metric will be repeated execution time of the compiled delegate; construction and compile time come after that unless they enable the runtime improvement.
+The repository already contains the public `Utils.Expressions.ExpressionOptimiser`. The future `O*` stages below therefore describe correctness hardening and benchmark-driven evolution of that existing execution-oriented pass, not an invitation to mix runtime optimization logic into `ExpressionSimplifier`.
+
+An execution optimizer should transform an already-simplified expression into a form chosen primarily for `Expression.Compile()` runtime performance. Its first-order metric is repeated execution time of the compiled delegate; construction and compile time come after that unless they enable the runtime improvement.
 
 Possible optimizer responsibilities include:
 
@@ -41,12 +44,12 @@ The intended pipeline is therefore:
 source expression
     -> simplifier
     -> stable symbolic/canonical form
-    -> execution optimizer (future)
+    -> execution optimizer
     -> Expression.Compile()
     -> hot repeated execution
 ```
 
-Do not automatically run the simplifier again after the future execution optimizer unless that interaction has been explicitly designed: the simplifier could otherwise reconstruct a symbolic form that the optimizer intentionally lowered for execution speed.
+Do not automatically run the simplifier again after the execution optimizer unless that interaction has been explicitly designed: the simplifier could otherwise reconstruct a symbolic form that the optimizer intentionally lowered for execution speed.
 
 ## Simplifier stages
 
@@ -75,7 +78,7 @@ Implemented by this PR (`Utils/Expressions/ExpressionComparer.cs`, `UtilsTest/Ma
 
 - null/reflexivity contract: `Equals(null, null)` is `true`, exactly one `null` is `false`, and a top-level `ReferenceEquals` check (before simplification) makes every expression reflexive, including node kinds the comparer does not structurally understand;
 - scope-aware, binding-position-based parameter equality for lambda alpha-equivalence, replacing `ParameterExpression.Name` lookup; nested captures remain visible while comparing an inner lambda's body; same-named-but-distinct parameters and swapped-position reuse of the same `ParameterExpression` instance are both handled correctly;
-- lambda `TailCall` participates in equality at the root level (captured before simplification, since `ExpressionTransformer.PrepareLambda` does not preserve it through a rebuild);
+- lambda `TailCall` participates in equality at the root level (captured before simplification, since `ExpressionTransformer.PrepareLambda` did not preserve it through a rebuild at that point in the work);
 - unary/binary node metadata (`Method`, `IsLifted`, `IsLiftedToNull`, and `Type` via a blanket check) now participates in equality, closing a false-positive path where two `BinaryExpression` nodes built from different custom operator `Method`s but the same operands were reported equal;
 - `MethodCallExpression.Object` (the receiver) and `MemberExpression.Expression` are now compared structurally/scope-aware instead of by reference or with the previous parameter-array swap bug;
 - nonnumeric constant equality is null-safe and requires matching `Type`; native numeric constant equality (`Types.Number` domain only) is now based on an exact rational/NaN/infinity key derived from each type's bit representation, so it is reflexive/symmetric/transitive and never throws (the previous `Convert.ChangeType` pairwise algorithm could throw `OverflowException`, e.g. comparing `-1L` against `ulong.MaxValue`);
@@ -105,7 +108,7 @@ Only the exact built-in `new ExpressionSimplifier()` runtime type overrides both
 
 `ExpressionComparer` was not changed in this PR; it now simply receives metadata-faithful trees when comparing output from the exact built-in simplifier, closing the remaining custom-unary-method and nested-lambda-metadata false positives characterized in `UtilsTest/Mathematics/Expressions/ExpressionSimplifierReconstructionFidelityTests.cs`.
 
-**This PR does not claim custom/user-defined arithmetic operators are now fully safe for symbolic algebra** - reconstruction fidelity means a custom operator's metadata *survives* simplification, not that every algebraic rule already checks for it before rewriting. See the new S3 finding below.
+**This PR does not claim custom/user-defined arithmetic operators are now fully safe for symbolic algebra** - reconstruction fidelity means a custom operator's metadata *survives* simplification, not that every algebraic rule already checks for it before rewriting. See the S3 findings below.
 
 ### S2 — Audit unreachable / dead simplification rules
 
@@ -148,29 +151,39 @@ active simplifier representation is the `double.*` method family; direct `Math.L
 remain preserved and are not broadened into new combination behavior.
 
 No other unreachable or parameter-incompatible production transformation rule was found. S2 is complete.
-S3 remains open: logarithm domains, IEEE-754 details, and custom-operator algebra policy are deliberately
-unchanged and continue to be tracked below.
+S3 remains open: logarithm domains, IEEE-754 details, evaluation assumptions and custom-operator algebra
+policy are deliberately unchanged and continue to be tracked below.
 
-### S3 — Formalize the symbolic-equivalence contract
+### S3 — Formalize and enforce the symbolic-equivalence contract
 
-The current simplifier intentionally performs algebraic rewrites that are not guaranteed to preserve bit-for-bit CLR/IEEE-754 evaluation for every floating-point input, for example reassociation/reordering of addition and multiplication and identities such as `x * 0 -> 0`.
+Priority: highest remaining simplifier correctness stage.
 
-Document the actual contract explicitly. The intended direction is a **symbolic algebra simplifier**, not a strict IEEE-754 execution-preserving optimizer.
+The simplifier is intended to implement **symbolic algebra**, not strict bit-for-bit CLR execution
+preservation. That distinction must now become an explicit contract and, importantly, rules that are not
+valid even under the chosen symbolic model must be blocked rather than justified by that contract.
 
-The contract should distinguish at least:
+The contract must distinguish at least:
 
-- exact CLR/operator semantics;
-- algebraic identities assumed by the symbolic engine;
-- floating-point rounding/reassociation differences;
-- `NaN`, infinities and signed zero;
-- domain-sensitive identities such as logarithm combination and powers;
-- custom/user-defined operators, which must not be treated as ordinary commutative arithmetic unless explicitly proven safe.
+- exact CLR/operator semantics versus symbolic mathematical identities;
+- floating-point/decimal rounding and reassociation differences;
+- `NaN`, infinities, signed zero, overflow and exception-timing differences;
+- the mathematical domain/preconditions of identities such as logarithm combination and powers;
+- pure/referentially-transparent symbolic sub-expressions versus expressions with observable side effects;
+- predefined numeric operators versus explicit custom/user-defined operator `Method`s;
+- ordinary non-lifted arithmetic versus lifted nullable operators;
+- ring-like arithmetic versus identities that require field-style division.
 
-Comments such as "preserving semantics" should be tightened where they currently overstate the floating-point guarantee.
+Comments such as "preserving semantics" must be tightened where they currently overstate the guarantee.
+The contract should say explicitly whether equivalence is claimed only on the common mathematical domain
+where an identity's preconditions hold. The existing logarithm rules are intentional functionality and
+must remain available for the supported positive-domain use cases; S3 must not silently delete them merely
+because the simplifier has no general domain solver.
 
-#### S3 finding (2026-09-14) — custom/user-defined unary operators are not yet proven safe for algebraic rules
+#### S3 audit (2026-09-15) — operator safety is broader than the known `Negate` gap
 
-Reconstruction fidelity (S1, 2026-09-14) means a custom `UnaryExpression.Method` now *survives* simplification instead of being silently dropped. It does **not** mean every algebraic rule that pattern-matches `ExpressionType.Negate` already accounts for it. At least the following rules currently treat any `Negate` node as ordinary mathematical negation without checking whether `Method` is `null` (i.e. without proving intrinsic/CLR-default semantics) before rewriting:
+Reconstruction fidelity from S1 preserves custom operator metadata, but many algebraic rules still consume
+nodes solely from their `NodeType` and therefore treat an explicit custom method as ordinary arithmetic.
+The previously known unary cases remain affected:
 
 - `AdditionWithNegate`
 - `SubstractionWithNegate`
@@ -179,9 +192,159 @@ Reconstruction fidelity (S1, 2026-09-14) means a custom `UnaryExpression.Method`
 - `NegateWithSubstraction`
 - `CollectAdditiveTerms`
 
-A custom-method `Negate` node placed inside one of these shapes can still be rewritten as if it were ordinary negation, which can change the evaluated result for a numeric type whose unary minus operator is not equivalent to CLR default negation. Before treating a `Negate` node as safe to fold into a commutative/associative rewrite, these rules must prove `Method is null` (or another explicit, narrow, safe condition) first - the same conservative pattern `CanCanonicalizeCommutativeBinary` already applies for binary nodes (`binaryExpression.Method is null`) and which can serve as the model here. Individual binary arithmetic rules should also be audited for the same `BinaryExpression.Method != null` gap, beyond the commutative-binary entry point.
+The same class of defect also exists for binary rules. Representative affected families include:
 
-This audit and fix is tracked as high-priority future S3 work, deliberately **not** implemented as part of the 2026-09-14 S1 reconstruction-fidelity PR (whose scope is limited to reconstruction, not rule-level operator safety).
+- zero/one identities (`AdditionWithZero`, `SubstractionWithZero`, `MultiplicationWithZeroOrOne`,
+  `DivideWithZeroOrOne`, `DivideWithZero`, `PowerOfZeroOrOne`, `PowerByZeroOrOne`);
+- constant folding (`AdditionOfConstants`, `SubstractionOfConstants`, `MultiplicationOfConstants`,
+  `DivisionOfConstants`, `PowerOfConstants`);
+- factoring/reassociation (`AdditionOfEqualsElements`, `SubstractionOfEqualsElements`, the
+  `Multiplication`/`MultiplicationOfEqualsElements` overloads and `DivisionOfDivision`);
+- logarithmic and trigonometric identities in `ExpressionSimplifier.INumber.cs`, whose outer `Add`,
+  `Subtract`, `Multiply` or `Divide` node can itself carry an explicit custom operator method.
+
+For ordinary predefined numeric `Add`/`Subtract`/`Multiply`/`Divide`, expression-tree `Method` is normally
+`null`; an explicitly supplied/user-defined implementation is observable through `BinaryExpression.Method`.
+`ExpressionType.Power` needs separate treatment because the ordinary `double` power node itself has a
+concrete implementing method. S3 should centralize the decision instead of scattering ad-hoc checks and
+must preserve the normal `double` power path while rejecting an explicitly different custom power method.
+
+`ExpressionComparer` amplifies this problem because both `Equals` and `GetHashCode` simplify before their
+structural comparison/hash pass. If an unsafe algebraic rule first erases or consumes a custom operator,
+the comparer can again report a false symbolic equivalence even though its structural core correctly
+compares `Method` metadata. Regression coverage therefore needs both direct `Simplify -> Compile -> Execute`
+tests and comparer-level tests.
+
+#### S3 audit (2026-09-15) — nested custom operators can be erased by canonicalization
+
+`CanCanonicalizeCommutativeBinary` protects only the root node. Once canonicalization starts,
+`CollectAdditiveTerms` recursively flattens every `Add`/`Subtract` node and every `Negate` based only on
+`NodeType`, and `CollectMultiplicativeFactors` does the same for every nested `Multiply`. The rebuild then
+uses ordinary `Expression.Add`, `Expression.Subtract` and `Expression.Multiply` factories.
+
+Therefore an ordinary outer arithmetic node can contain an inner custom `Add`, `Subtract`, `Multiply` or
+`Negate` whose `Method` is preserved by S1 but then lost during flattening. Nested nodes must only be
+flattened when they satisfy the same built-in/symbolic-safety predicate as the root; otherwise they must
+remain atomic terms/factors.
+
+Required regression direction:
+
+- ordinary `Add(customAdd(x, y), z)` must retain the custom inner addition as one term;
+- ordinary `Add(customSubtract(x, y), z)` must retain the custom inner subtraction as one term;
+- ordinary `Multiply(customMultiply(x, y), z)` must retain the custom inner multiplication as one factor;
+- additive canonicalization containing a custom `Negate` must retain that unary node rather than flipping
+  its sign as if it were ordinary negation.
+
+Each test must compare compiled source and simplified delegates using custom methods whose behavior is
+observably different from the corresponding built-in operator.
+
+#### S3 audit (2026-09-15) — integer nested-division identities are not generally valid
+
+At least the denominator-division rewrites are invalid for integer arithmetic because integer division
+truncates toward zero:
+
+```text
+x / (y / z)       -> (x * z) / y
+(x / y) / (z / w) -> (x * w) / (y * z)
+```
+
+For example, with integers `8 / (3 / 2)` evaluates to `8`, while `(8 * 2) / 3` evaluates to `5`.
+These rules must not be applied merely because the node type is `Divide`. A conservative S3 fix may reject
+all `DivisionOfDivision` reassociation for integer result types rather than trying to preserve the subset
+that happens to be valid under truncating arithmetic. Floating/decimal reassociation remains subject to
+the documented symbolic (not bit-for-bit CLR) contract.
+
+#### S3 audit (2026-09-15) — lifted nullable arithmetic requires an explicit policy
+
+`ConstantNumericAttribute` matches numeric constant values, while several zero/one rules do not first
+require the binary result type to be one of the non-nullable `Types.Number` entries. Lifted arithmetic can
+therefore reach algebraic identities that collapse a nullable result to a non-null symbolic constant. In
+particular, `x * 0 -> 0` is not valid for `int? x` when `x` is `null`: lifted arithmetic produces `null`.
+
+S3 should conservatively reject lifted (`IsLifted`/`IsLiftedToNull`) arithmetic from identities unless a
+rule is explicitly proven nullable-safe. Add end-to-end nullable tests rather than relying only on metadata
+checks.
+
+#### S3 audit (2026-09-15) — symbolic rewriting assumes purity and can change evaluation count/order
+
+Several existing transformations are mathematically valid for pure expressions but not execution-equivalent
+for arbitrary expression trees with side effects:
+
+- `x * 0 -> 0` can remove evaluation of `x`;
+- `x + (-x) -> 0`, factoring and cancellation can remove repeated evaluations;
+- additive/multiplicative canonical ordering can reorder method calls/member accesses;
+- `InvokeExpression` performs beta-reduction by substituting invocation arguments directly into the lambda
+  body, so an argument used zero or multiple times can be dropped or evaluated multiple times.
+
+A general side-effect/purity analyser is **not** required as part of S3 unless separately justified. The
+symbolic contract should instead state clearly that algebraic simplification assumes referentially
+transparent symbolic operands. Do not claim execution-order/side-effect preservation for impure trees.
+If a production rule already has a cheap, local way to preserve evaluation count without complicating the
+symbolic tree, it may be considered separately, but do not turn S3 into an execution optimizer.
+
+#### S3 audit (2026-09-15) — IEEE-754 and mathematical-domain behavior must be explicit
+
+Existing identities deliberately differ from exact CLR evaluation in edge cases. Examples include
+reassociation/reordering, `x * 0 -> 0`, cancellation with `NaN`/infinities, signed-zero differences,
+logarithm combination and power identities. These are not all production bugs if the documented contract
+is symbolic algebra rather than exact execution preservation.
+
+Domain-sensitive rules must state their assumptions. In particular:
+
+- `Log(x) + Log(y) -> Log(x * y)` and the subtraction/Log10 variants assume the logarithm arguments lie
+  in the supported positive real domain;
+- power rules such as `0^x -> 0`, `x^a * x^b -> x^(a+b)` and reciprocal-power rewrites have exponent/base
+  preconditions that are not represented by the current expression tree;
+- trigonometric quotient/product identities are symbolic identities on their common mathematical domain,
+  not promises of identical libm rounding or identical behavior at poles/undefined points.
+
+S3 should characterize these boundaries with tests and documentation without disabling the intended
+positive finite logarithm behavior restored in S2.
+
+#### S3 implementation direction
+
+Prefer small centralized safety predicates over one-off guards in every rule. The implementation should
+make it difficult for a future rule to forget operator metadata again. Candidate responsibilities include:
+
+- a helper deciding whether a `UnaryExpression` is ordinary built-in numeric negation and non-lifted;
+- a helper deciding whether a `BinaryExpression` is an ordinary supported built-in arithmetic operation,
+  with explicit handling for `Power` because its normal `double` implementation has a non-null method;
+- a narrower helper for identities requiring field-style division rather than ring/integer arithmetic;
+- collectors that flatten only nodes accepted by those helpers and otherwise treat the node as atomic.
+
+Do **not** change `ExpressionTransformer.BuildPlan`, `ExpressionCallSignatureAttribute`, S4 canonical-key
+identity, or `ExpressionOptimiser` in the S3 simplifier PR. Preserve the historical behavior of external
+`ExpressionSimplifier` subclasses unless a production correctness fix necessarily applies through their
+existing protected rule surface and is covered explicitly by compatibility tests.
+
+Minimum S3 test matrix:
+
+1. custom root `Add`, `Subtract`, `Multiply`, `Divide`, `Power` and `Negate` nodes are not consumed by
+   built-in algebraic identities;
+2. nested custom `Add`/`Subtract`/`Multiply`/`Negate` survive additive/multiplicative canonicalization with
+   their exact `Method` and runtime behavior;
+3. custom outer operators around logarithmic/trigonometric operands do not trigger the built-in identities;
+4. `ExpressionComparer` does not regain false equivalence through pre-comparison simplification of a
+   custom operator expression;
+5. integer nested-division counterexamples remain execution-equivalent after simplification and are not
+   rewritten through field identities;
+6. lifted nullable cases such as `int? x * 0` preserve `null` behavior;
+7. ordinary built-in numeric positive controls continue to simplify (`x + 0`, `x * 1`, canonical ordering,
+   factoring, natural-log/Log10 combination, trigonometric identities);
+8. logarithm tests stay on positive finite values so S3 operator safety does not accidentally become a
+   domain-policy rewrite;
+9. every changed `Utils` behavior is exercised through public `new ExpressionSimplifier().Simplify(...)`,
+   and semantic regressions compile and execute both source and simplified lambdas.
+
+S3 is complete only when the contract is documented, unsafe custom/lifted/integer-field rewrites are
+blocked, the canonical collectors preserve unsafe nested nodes atomically, and the ordinary symbolic
+simplification matrix remains green.
+
+Adjacent documentation cleanup discovered during this audit: `ExpressionComparer` still contains comments
+written before the S1 reconstruction-fidelity fix that describe nested lambda `Type`/`TailCall` metadata as
+being erased by simplification. The exact built-in `ExpressionSimplifier` now preserves that metadata at
+every nesting depth. Update those comments when touching the comparer for S3 regression coverage; no
+comparer behavior change is required for that cleanup.
 
 ### S4 — Replace textual canonical identity with structural canonical keys
 
@@ -211,9 +374,17 @@ Potential remaining areas include:
 
 Construction optimizations should be accepted only when they do not weaken the symbolic contract or complicate the later execution optimizer. Prefer small, benchmarked and causally isolated changes like PRs #577-#589.
 
-## Future execution-optimizer stages
+## Execution-optimizer stages
 
-These are intentionally deferred until the simplifier is structurally solid.
+These remain separate from the simplifier stages above.
+
+### O0 — Audit the existing `ExpressionOptimiser` correctness boundary
+
+Before adding benchmark-driven lowering, audit the already-public `ExpressionOptimiser` for the same
+execution-semantic hazards that an optimizer must preserve rather than merely document away. At minimum
+characterize custom unary/binary operator `Method`s, lifted nullable arithmetic, double-negation rewrites,
+zero identities, side-effect/evaluation-count preservation and exception behavior. This is a separate PR
+from S3: do not fix `ExpressionOptimiser` while formalizing the simplifier's symbolic contract.
 
 ### O1 — Establish compiled-runtime benchmark suite
 
