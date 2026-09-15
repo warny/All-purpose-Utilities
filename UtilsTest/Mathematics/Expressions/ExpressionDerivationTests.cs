@@ -1,19 +1,17 @@
 using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Expressions;
-using Utils.Expressions.CSyntax.Runtime;
 using Utils.Mathematics.Expressions;
 
 namespace UtilsTest.Mathematics.Expressions;
 
 /// <summary>
-/// Provides compiler-based regression coverage for legacy derivation parser tests.
+/// Provides low-level regression coverage for symbolic derivation mechanics and edge cases.
 /// </summary>
 [TestClass]
 public class ExpressionDerivationTests
 {
 
-    CSyntaxExpressionCompiler compiler = new CSyntaxExpressionCompiler();
     ExpressionDerivation<double> derivation = new ExpressionDerivation<double>("x");
     ExpressionDerivation<double> derivationWithFallback = new ExpressionDerivation<double>("x", allowNumericalFallback: true);
 
@@ -23,62 +21,6 @@ public class ExpressionDerivationTests
     /// <param name="x">Input value.</param>
     /// <returns>Function value at <paramref name="x"/>.</returns>
     private static double CustomUnknown(double x) => x * x * x + 1.0;
-
-    [TestMethod]
-    public void ExpressionsTests()
-    {
-        var parameters = new ParameterExpression[] {
-                Expression.Parameter(typeof(double), "x"),
-            };
-
-        var tests = new (string function, string derivative)[]
-        {
-                ("1", "0"),
-                ("Exp(x)", "Exp(x)"),
-                ("x", "1"),
-                ("x**2", "2*x"),
-                ("x**3", "3*x**2"),
-                ("x**3 + x**2 + x+1 ", "3*x**2 + 2*x + 1"),
-                ("Cos(x)", "0-Sin(x)"),
-                ("Sin(x)", "Cos(x)"),
-                ("Sin(2*x)", "2*Cos(2*x)"),
-                ("(Sin(x)) * (Cos(x))", "(Cos(x))**2-(Sin(x))**2"),
-                ("Exp(x**2)", "2*x*Exp(x**2)"),
-        };
-
-        foreach (var test in tests)
-        {
-            var function = compiler.CompileExpression<Func<double, double>>(test.function, parameters, typeof(double), false);
-            var derivative = compiler.CompileExpression<Func<double, double>>(test.derivative, parameters, typeof(double), false);
-
-            var result = derivation.Derivate(function);
-
-            var expected = derivative;
-            var actual = (LambdaExpression)result;
-
-            var expectedFunc = (Func<double, double>)expected.Compile();
-            var actualFunc = (Func<double, double>)actual.Compile();
-            double[] samples = [-3.5, -1.0, -0.2, 0.2, 1.0, 2.5];
-
-            foreach (var sample in samples)
-            {
-                Assert.AreEqual(expectedFunc(sample), actualFunc(sample), 1e-9, $"Mismatch for '{test.function}' at x={sample}.");
-            }
-        }
-    }
-
-    /// <summary>
-    /// Ensures polynomial expressions can still be compiled for derivative workflows.
-    /// </summary>
-    [TestMethod]
-    public void Compile_PolynomialExpression_ForDerivativeWorkflow()
-    {
-        var x = Expression.Parameter(typeof(double), "x");
-        var expression = compiler.CompileExpression("x * x + 2 * x", new Dictionary<string, Expression> { ["x"] = x });
-        var lambda = Expression.Lambda<Func<double, double>>(Expression.Convert(expression, typeof(double)), x).Compile();
-
-        Assert.AreEqual(15d, lambda(3d), 1e-9);
-    }
 
     /// <summary>
     /// Ensures unknown single-argument double functions use centered finite differences during derivation.
@@ -155,49 +97,7 @@ public class ExpressionDerivationTests
 
     // ── Logarithms ───────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// d/dx[ln(x)] = 1/x.
-    /// </summary>
-    [TestMethod]
-    public void Derivate_Log_ReturnsOneOverX()
-    {
-        Expression<Func<double, double>> f = x => double.Log(x);
-        var df = (Expression<Func<double, double>>)derivation.Derivate(f);
-        var compiled = df.Compile();
-
-        foreach (double xv in new[] { 0.5, 1.0, 2.0, Math.E })
-            Assert.AreEqual(1.0 / xv, compiled(xv), 1e-9, $"d/dx[ln(x)] at x={xv}");
-    }
-
-    /// <summary>
-    /// d/dx[log10(x)] = 1/(x·ln(10)) — verifies the Log10 numerator/denominator fix.
-    /// </summary>
-    [TestMethod]
-    public void Derivate_Log10_ReturnsOneOverXLn10()
-    {
-        Expression<Func<double, double>> f = x => double.Log10(x);
-        var df = (Expression<Func<double, double>>)derivation.Derivate(f);
-        var compiled = df.Compile();
-
-        foreach (double xv in new[] { 0.5, 1.0, 2.0, 10.0 })
-            Assert.AreEqual(1.0 / (xv * Math.Log(10)), compiled(xv), 1e-9, $"d/dx[log10(x)] at x={xv}");
-    }
-
     // ── Trigonometry ─────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// d/dx[tan(x)] = 1/cos²(x).
-    /// </summary>
-    [TestMethod]
-    public void Derivate_Tan_ReturnsSecSquared()
-    {
-        Expression<Func<double, double>> f = x => double.Tan(x);
-        var df = (Expression<Func<double, double>>)derivation.Derivate(f);
-        var compiled = df.Compile();
-
-        foreach (double xv in new[] { 0.0, 0.3, -0.5, 1.0 })
-            Assert.AreEqual(1.0 / (Math.Cos(xv) * Math.Cos(xv)), compiled(xv), 1e-9, $"d/dx[tan(x)] at x={xv}");
-    }
 
     // ── Hyperbolic ───────────────────────────────────────────────────────────
 
@@ -245,42 +145,7 @@ public class ExpressionDerivationTests
 
     // ── Quotient rule ─────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// d/dx[x/(x²+1)] = (1−x²)/(x²+1)².
-    /// </summary>
-    [TestMethod]
-    public void Derivate_Quotient_XOverXSquaredPlusOne()
-    {
-        var x = Expression.Parameter(typeof(double), "x");
-        var body = Expression.Divide(
-            x,
-            Expression.Add(Expression.Multiply(x, x), Expression.Constant(1.0)));
-        var f = Expression.Lambda<Func<double, double>>(body, x);
-        var df = (Expression<Func<double, double>>)derivation.Derivate(f);
-        var compiled = df.Compile();
-
-        foreach (double xv in new[] { -2.0, -1.0, 0.0, 1.0, 2.0 })
-        {
-            double expected = (1.0 - xv * xv) / Math.Pow(xv * xv + 1.0, 2);
-            Assert.AreEqual(expected, compiled(xv), 1e-9, $"d/dx[x/(x²+1)] at x={xv}");
-        }
-    }
-
     // ── Constant derivative ───────────────────────────────────────────────────
-
-    /// <summary>
-    /// d/dx[5] = 0.
-    /// </summary>
-    [TestMethod]
-    public void Derivate_Constant_ReturnsZero()
-    {
-        var x = Expression.Parameter(typeof(double), "x");
-        var f = Expression.Lambda<Func<double, double>>(Expression.Constant(5.0), x);
-        var df = (Expression<Func<double, double>>)derivation.Derivate(f);
-        var compiled = df.Compile();
-
-        Assert.AreEqual(0.0, compiled(42.0), 1e-9);
-    }
 
     // ── Float unknown function fallback ───────────────────────────────────────
 

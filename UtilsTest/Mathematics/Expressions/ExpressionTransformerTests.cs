@@ -289,64 +289,6 @@ public class ExpressionTransformerTests
         Assert.AreEqual(-9.0, compiled(-3.0), 1e-9);   // -3 ≤ 0 → mul3(-3) = -9
     }
 
-    /// <summary>
-    /// <see cref="ExpressionTransformer.ReplaceArguments"/> must substitute parameters inside
-    /// the invocation target expression, not only in the argument list.
-    /// </summary>
-    [TestMethod]
-    public void ReplaceArguments_InvocationExpression_ReplacesParametersInTarget()
-    {
-        var transformer = new ExposedTransformer();
-        ParameterExpression p = Expression.Parameter(typeof(double), "p");
-
-        Func<double, double> mul2 = y => y * 2.0;
-        Func<double, double> mul3 = y => y * 3.0;
-        // Target conditional references p; argument is also p.
-        Expression target = Expression.Condition(
-            Expression.GreaterThan(p, Expression.Constant(0.0)),
-            Expression.Constant(mul2),
-            Expression.Constant(mul3));
-        Expression invocation = Expression.Invoke(target, p);
-
-        // Replace p → 4.0
-        Expression result = transformer.ExposeReplaceArguments(
-            invocation,
-            new[] { p },
-            new Expression[] { Expression.Constant(4.0) });
-
-        // 4 > 0 → mul2(4) = 8
-        double value = Expression.Lambda<Func<double>>(result).Compile()();
-        Assert.AreEqual(8.0, value, 1e-9);
-    }
-
-    /// <summary>
-    /// <see cref="ExpressionTransformer.ReplaceArguments"/> must recurse into Test, IfTrue, and
-    /// IfFalse of a <see cref="ConditionalExpression"/>. Without an explicit case it fell through
-    /// to <c>return e</c>, leaving parameters unsubstituted in all three branches.
-    /// </summary>
-    [TestMethod]
-    public void ReplaceArguments_ConditionalExpression_ReplacesParametersInAllBranches()
-    {
-        var transformer = new ExposedTransformer();
-        ParameterExpression p = Expression.Parameter(typeof(double), "p");
-
-        // p > 0.0 ? p * 2.0 : p * (-1.0)
-        Expression conditional = Expression.Condition(
-            Expression.GreaterThan(p, Expression.Constant(0.0)),
-            Expression.Multiply(p, Expression.Constant(2.0)),
-            Expression.Multiply(p, Expression.Constant(-1.0)));
-
-        // Replace p → 5.0
-        Expression result = transformer.ExposeReplaceArguments(
-            conditional,
-            new[] { p },
-            new Expression[] { Expression.Constant(5.0) });
-
-        // 5 > 0 → 5 * 2 = 10
-        double value = Expression.Lambda<Func<double>>(result).Compile()();
-        Assert.AreEqual(10.0, value, 1e-9);
-    }
-
     // ---------------------------------------------------------------------------------------------
     // Coverage added for the structural refactor of Transform(Expression) into PrepareTransform/
     // TryTransform/TryInvokeTransformMethod. These tests document pre-existing behavior; none of

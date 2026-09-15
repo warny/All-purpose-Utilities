@@ -76,6 +76,68 @@ public class ExpressionSimplifierMathTransformCallTests
     /// <summary>A placeholder "original expression" argument, since <c>TransformCall</c> only null-checks it.</summary>
     private static Expression DummySource => Expression.Constant(0.0);
 
+    /// <summary>
+    /// Verifies each forwarding rule not otherwise covered directly resolves its exact double method,
+    /// preserves double argument instances, and computes a representative value.
+    /// </summary>
+    /// <param name="ruleName">The exact protected forwarding-rule method name.</param>
+    /// <param name="expectedMethodName">The expected method on <see cref="double"/>.</param>
+    /// <param name="firstValue">The first representative argument value.</param>
+    /// <param name="secondValue">The second value for binary rules.</param>
+    /// <param name="argumentCount">The expected call argument count.</param>
+    /// <param name="expectedValue">The expected evaluated result.</param>
+    [TestMethod]
+    [DataRow("SignConversionMath", "Sign", -2.0, 0.0, 1, -1.0)]
+    [DataRow("MinConversionMath", "Min", 2.0, 3.0, 2, 2.0)]
+    [DataRow("FloorConversionMath", "Floor", 2.7, 0.0, 1, 2.0)]
+    [DataRow("CeilingConversionMath", "Ceiling", 2.1, 0.0, 1, 3.0)]
+    [DataRow("CbrtConversionMath", "Cbrt", 8.0, 0.0, 1, 2.0)]
+    [DataRow("Log2ConversionMath", "Log2", 8.0, 0.0, 1, 3.0)]
+    [DataRow("Log10ConversionMath", "Log10", 100.0, 0.0, 1, 2.0)]
+    [DataRow("CosConversionMath", "Cos", 0.0, 0.0, 1, 1.0)]
+    [DataRow("SinConversionMath", "Sin", 1.5707963267948966, 0.0, 1, 1.0)]
+    [DataRow("TanConversionMath", "Tan", 0.0, 0.0, 1, 0.0)]
+    [DataRow("ACosConversionMath", "Acos", 1.0, 0.0, 1, 0.0)]
+    [DataRow("ASinConversionMath", "Asin", 1.0, 0.0, 1, 1.5707963267948966)]
+    [DataRow("ATanConversionMath", "Atan", 1.0, 0.0, 1, 0.7853981633974483)]
+    [DataRow("CoshConversionMath", "Cosh", 0.0, 0.0, 1, 1.0)]
+    [DataRow("SinhConversionMath", "Sinh", 0.0, 0.0, 1, 0.0)]
+    [DataRow("TanhConversionMath", "Tanh", 0.0, 0.0, 1, 0.0)]
+    [DataRow("ACoshConversionMath", "Acosh", 1.0, 0.0, 1, 0.0)]
+    [DataRow("ASinhConversionMath", "Asinh", 0.0, 0.0, 1, 0.0)]
+    [DataRow("ATanhConversionMath", "Atanh", 0.0, 0.0, 1, 0.0)]
+    public void MathRule_Forwarder_ResolvesExactDoubleMethod(
+        string ruleName,
+        string expectedMethodName,
+        double firstValue,
+        double secondValue,
+        int argumentCount,
+        double expectedValue)
+    {
+        var simplifier = new ExposedMathSimplifier();
+        ParameterExpression first = Expression.Parameter(typeof(double), "first");
+        ParameterExpression second = Expression.Parameter(typeof(double), "second");
+        Expression[] arguments = argumentCount == 1 ? [first] : [first, second];
+        MethodInfo rule = typeof(ExpressionSimplifier).GetMethod(ruleName, BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+        var call = (MethodCallExpression)rule.Invoke(simplifier, [DummySource, arguments])!;
+
+        Assert.AreEqual(typeof(double), call.Method.DeclaringType);
+        Assert.AreEqual(expectedMethodName, call.Method.Name);
+        Assert.AreEqual(argumentCount, call.Arguments.Count);
+        Assert.AreSame(first, call.Arguments[0]);
+        if (argumentCount == 2)
+        {
+            Assert.AreSame(second, call.Arguments[1]);
+        }
+
+        Delegate compiled = Expression.Lambda(call, argumentCount == 1 ? [first] : [first, second]).Compile();
+        object actual = argumentCount == 1
+            ? compiled.DynamicInvoke(firstValue)!
+            : compiled.DynamicInvoke(firstValue, secondValue)!;
+        Assert.AreEqual(expectedValue, Convert.ToDouble(actual), 1e-12);
+    }
+
     // ------------------------------------------------------------------------------------------
     // A/B/C: argument count, order, and method resolution per arity.
     // ------------------------------------------------------------------------------------------
