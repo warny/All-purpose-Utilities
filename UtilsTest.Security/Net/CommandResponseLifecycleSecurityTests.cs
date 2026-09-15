@@ -308,14 +308,19 @@ public class CommandResponseLifecycleSecurityTests
         await client.ConnectAsync(clientStream, leaveOpen: true);
 
         var errors = new System.Collections.Concurrent.ConcurrentBag<Exception>();
-        client.CallbackError += ex => errors.Add(ex);
+        TaskCompletionSource callbackObserved = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        client.CallbackError += ex =>
+        {
+            errors.Add(ex);
+            callbackObserved.TrySetResult();
+        };
         client.UnsolicitedResponseReceived += _ => throw new InvalidOperationException("Subscriber fault");
 
         await serverWriter.WriteLineAsync("220 Welcome");
-        await Task.Delay(200);
+        await callbackObserved.Task.WaitAsync(Timeout5);
 
         Assert.AreEqual(1, errors.Count, "CallbackError must fire once for the subscriber exception.");
-        Assert.IsInstanceOfType<InvalidOperationException>(errors.First());
+        Assert.IsInstanceOfType<InvalidOperationException>(errors.Single());
         Assert.IsTrue(client.IsConnected, "Client must remain connected after the subscriber exception.");
     }
 
