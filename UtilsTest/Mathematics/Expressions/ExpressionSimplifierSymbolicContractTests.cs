@@ -321,7 +321,7 @@ public class ExpressionSimplifierSymbolicContractTests
     // 3. Custom outer operator around log/trig operands must not trigger the built-in identities.
     // ================================================================================================
 
-    /// <summary>Regression: <c>Log(x) + Log(y)</c> built with a custom-<c>Method</c> outer <see cref="ExpressionType.Add"/> must not be combined by <c>LogarithmSimplificationAddNumber</c> into <c>Log(x*y)</c>, which checks only the inner calls, not the outer operator.</summary>
+    /// <summary>Regression: <c>Log(x) + Log(y)</c> built with a custom-<c>Method</c> outer <see cref="ExpressionType.Add"/> must not be combined by <c>LogarithmSimplificationAddNumber</c> into <c>Log(x*y)</c>; before S3, that rule checked only the inner calls, never the outer operator.</summary>
     [TestMethod]
     public void CustomAdd_OfTwoLogCalls_DoesNotCombineIntoLogOfProduct()
     {
