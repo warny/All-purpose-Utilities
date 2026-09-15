@@ -152,21 +152,38 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     }
 
     /// <summary>
-    /// Public entry point required by <see cref="ExpressionTransformer"/>. The integration variable can
-    /// only be resolved (by name or by instance) from a <see cref="LambdaExpression"/>'s declared
-    /// parameters, so this delegates to <see cref="Integrate(LambdaExpression)"/> when given one.
+    /// Public entry point required by <see cref="ExpressionTransformer"/>. A <see cref="LambdaExpression"/>
+    /// is always routed through <see cref="Integrate(LambdaExpression)"/> (which also validates, for the
+    /// parameter-identity constructor, that the instance is actually declared by the lambda). For a bare
+    /// expression, the integration variable can only be resolved when this instance was constructed with
+    /// an exact <see cref="ParameterExpression"/> identity (see <see cref="ExpressionIntegration(ParameterExpression)"/>) -
+    /// the name-based constructor has no parameter list to resolve a name against outside of a lambda.
     /// </summary>
-    /// <param name="expression">The lambda expression to integrate.</param>
+    /// <param name="expression">The lambda expression, or a bare expression when this instance was
+    /// constructed with an exact <see cref="ParameterExpression"/> identity, to integrate.</param>
     /// <returns>The integrated expression.</returns>
     /// <exception cref="NotSupportedException">
-    /// Thrown when <paramref name="expression"/> is not a <see cref="LambdaExpression"/>: without one,
-    /// there is no declared parameter list from which to resolve the integration variable. Call
-    /// <see cref="Integrate(LambdaExpression)"/> directly once the target parameter is otherwise known.
+    /// Thrown when <paramref name="expression"/> is not a <see cref="LambdaExpression"/> and this
+    /// instance was constructed by parameter name: there is no declared parameter list, nor an explicit
+    /// parameter identity, from which to resolve the integration variable. Construct with an exact
+    /// <see cref="ParameterExpression"/> instance instead to integrate a bare expression directly.
     /// </exception>
-    public override Expression Transform(Expression expression) => expression is LambdaExpression lambda
-        ? Integrate(lambda)
-        : throw new NotSupportedException(
-            $"{nameof(ExpressionIntegration<T>)}<T>.{nameof(Transform)} requires a {nameof(LambdaExpression)} so the integration variable can be resolved from its declared parameters; call {nameof(Integrate)} directly to integrate a bare expression against an already-resolved parameter.");
+    public override Expression Transform(Expression expression)
+    {
+        if (expression is LambdaExpression lambda)
+        {
+            return Integrate(lambda);
+        }
+
+        if (explicitTargetParameter is not null)
+        {
+            var worker = new ExpressionIntegration<T>(ParameterName, explicitTargetParameter);
+            return worker.TransformCore(expression);
+        }
+
+        throw new NotSupportedException(
+            $"{nameof(ExpressionIntegration<T>)}<T>.{nameof(Transform)} requires either a {nameof(LambdaExpression)} (to resolve the integration variable by name from its declared parameters) or construction with an exact {nameof(ParameterExpression)} identity (to integrate a bare expression directly).");
+    }
 
     /// <summary>
     /// Integrates the wrapped operand and re-applies the conversion's declared result type when the

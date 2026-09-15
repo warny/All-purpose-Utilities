@@ -47,7 +47,7 @@ public class InterpolatedStringTests
         context.Set("value", value);
         context.Set("Choose", typeof(InterpolatedHandlerTarget).GetMethods().Where(static method => method.Name == nameof(InterpolatedHandlerTarget.Choose)).ToArray());
 
-        Expression body = compiler.Compile("Choose($\"Value={value}\")", context);
+        Expression body = compiler.CompileExpression("Choose($\"Value={value}\")", context);
         var function = Expression.Lambda<Func<int, string>>(Expression.Convert(body, typeof(string)), value).Compile();
 
         Assert.AreEqual("handler:Value=5", function(5));
@@ -64,7 +64,7 @@ public class InterpolatedStringTests
         context.Set("value", value);
         context.Set("Choose", typeof(InterpolatedHandlerTarget).GetMethods().Where(static method => method.Name == nameof(InterpolatedHandlerTarget.Choose)).ToArray());
 
-        Expression body = compiler.Compile("Choose($\"{value}\")", context);
+        Expression body = compiler.CompileExpression("Choose($\"{value}\")", context);
         var function = Expression.Lambda<Func<int, string>>(Expression.Convert(body, typeof(string)), value).Compile();
 
         Assert.AreEqual("handler:9", function(9));

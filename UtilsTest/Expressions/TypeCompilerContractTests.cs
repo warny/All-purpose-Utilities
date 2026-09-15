@@ -28,6 +28,7 @@ public class TypeCompilerContractTests
     /// </summary>
     private sealed class EmittingTypeCompiler : ITypeCompiler
     {
+        /// <summary>Fabricates a type per named <paramref name="content"/> scenario via <see cref="System.Reflection.Emit"/>.</summary>
         public Type CompileType(string content)
         {
             AssemblyBuilder assembly = AssemblyBuilder.DefineDynamicAssembly(
@@ -61,6 +62,7 @@ public class TypeCompilerContractTests
             return typeBuilder.CreateType();
         }
 
+        /// <summary>Compiles the type then builds a cached factory validating assignability and a parameterless constructor.</summary>
         public Func<T> CompileType<T>(string content)
         {
             Type type = CompileType(content);

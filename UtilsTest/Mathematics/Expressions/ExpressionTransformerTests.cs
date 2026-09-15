@@ -169,6 +169,7 @@ public class ExpressionTransformerTests
         /// </summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>
@@ -410,6 +411,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Reduces <c>left + 0</c> to <c>left</c>; leaves other additions unmatched.</summary>
@@ -452,6 +454,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>
@@ -505,6 +508,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Always matches but always defers to the next rule by returning <see langword="null"/>.</summary>
@@ -557,6 +561,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>
@@ -603,6 +608,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>
@@ -646,6 +652,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>
@@ -706,6 +713,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Matches any <see cref="ExpressionType.Add"/> node.</summary>
@@ -753,6 +761,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Always defers to the next rule.</summary>
@@ -808,6 +817,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Matches every node type via the <c>(ExpressionType)(-1)</c> wildcard sentinel.</summary>
@@ -851,6 +861,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>A wildcard rule, declared first; always defers.</summary>
@@ -924,6 +935,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Matches only calls to <see cref="double.Sqrt(double)"/>.</summary>
@@ -1002,6 +1014,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Declared "Add" but, via <see cref="WidensMatchBeyondDeclaredTypeAttribute"/>, also matches Subtract.</summary>
@@ -1070,6 +1083,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Constrains its constant operand with a stateful, match-once custom attribute.</summary>
@@ -1127,6 +1141,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Constrains its constant operand with a construction-counting custom attribute.</summary>
@@ -1172,6 +1187,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>
@@ -1228,6 +1244,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>
@@ -1344,6 +1361,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Unconditionally throws to characterize how the positional invocation branch wraps a rule's exception.</summary>
@@ -1381,6 +1399,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Unconditionally throws to characterize how the single-parameter invocation branch wraps a rule's exception.</summary>
@@ -1411,6 +1430,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Unconditionally throws to characterize how the <c>Expression[]</c> invocation branch wraps a rule's exception.</summary>
@@ -1442,6 +1462,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Unconditionally throws <see cref="ArgumentException"/>.</summary>
@@ -1481,6 +1502,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Unconditionally throws <see cref="OutOfMemoryException"/>.</summary>
@@ -1524,6 +1546,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Unconditionally throws a <see cref="TargetInvocationException"/> wrapping <see cref="InnermostException"/>.</summary>
@@ -1574,6 +1597,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Declares only 2 parameters (e, left) though the Add context supplies 3 (e, left, right).</summary>
@@ -1618,6 +1642,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Declares 4 parameters (e, left, right, extra) though the Add context only supplies 3.</summary>
@@ -1657,6 +1682,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Always matches a Parameter node but returns null.</summary>
@@ -1696,6 +1722,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Always matches a Call node but returns null.</summary>
@@ -1732,6 +1759,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected transform method for direct testing.</summary>
         public Expression ExposeTransform(Expression expression) => Transform(expression);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression expression) => TransformCore(expression);
 
         /// <summary>Returns the constant after positional validation of its value.</summary>
@@ -1758,6 +1786,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected transform method for direct testing.</summary>
         public Expression ExposeTransform(Expression expression) => Transform(expression);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression expression) => TransformCore(expression);
 
         /// <summary>Records and returns the call's positional argument.</summary>
@@ -1793,6 +1822,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected transform method for direct testing.</summary>
         public Expression ExposeTransform(Expression expression) => Transform(expression);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression expression) => TransformCore(expression);
 
         /// <summary>Records and returns the invocation's positional argument.</summary>
@@ -1828,6 +1858,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected transform method for direct testing.</summary>
         public Expression ExposeTransform(Expression expression) => Transform(expression);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression expression) => TransformCore(expression);
 
         /// <summary>Returns expressions unchanged when recursive lambda-body processing has no rule.</summary>
@@ -1871,6 +1902,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Swaps the two branches, so the test can tell the rule actually ran (using all 4 arguments) from a no-op.</summary>
@@ -1905,6 +1937,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>A trivial 4-argument static method, used only to build a matching 5-slot Call context (node + 4 arguments).</summary>
@@ -1965,6 +1998,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <inheritdoc/>
@@ -2024,6 +2058,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <inheritdoc/>
@@ -2072,6 +2107,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Matches any lambda and captures its prepared parameter array via the <c>Expression[]</c> shape.</summary>
@@ -2133,6 +2169,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Matches any call and captures its prepared argument array via the <c>Expression[]</c> shape.</summary>
@@ -2171,6 +2208,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Matches any invocation and captures its prepared argument array via the <c>Expression[]</c> shape.</summary>
@@ -2209,6 +2247,7 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
         public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Replaces any parameter with a non-<see cref="ParameterExpression"/>, forcing the explicit cast in <c>PrepareLambda</c> to fail.</summary>

@@ -67,7 +67,7 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
     /// <param name="content">C-like source content.</param>
     /// <param name="context">Runtime compilation context.</param>
     /// <returns>Compiled expression tree.</returns>
-    public Expression Compile(string content, ExpressionCompilerContext context)
+    public Expression CompileExpression(string content, ExpressionCompilerContext context)
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(context);
@@ -149,8 +149,8 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
     /// <param name="content">Expression body source (no lambda syntax).</param>
     /// <param name="parameters">Lambda parameters to bind as symbols.</param>
     /// <returns>Lambda expression compatible with <typeparamref name="T"/>.</returns>
-    public LambdaExpression Compile<T>(string content, ParameterExpression[] parameters) where T : Delegate
-        => Compile<T>(content, parameters, null, strictTypes: false);
+    public LambdaExpression CompileExpression<T>(string content, ParameterExpression[] parameters) where T : Delegate
+        => CompileExpression<T>(content, parameters, null, strictTypes: false);
 
     /// <summary>
     /// Compiles a C-like expression body using explicit parameters and optional static member imports.
@@ -163,7 +163,7 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
     /// </param>
     /// <param name="strictTypes">Reserved; currently ignored.</param>
     /// <returns>Lambda expression compatible with <typeparamref name="T"/>.</returns>
-    public LambdaExpression Compile<T>(string content, ParameterExpression[] parameters, Type? importType, bool strictTypes) where T : Delegate
+    public LambdaExpression CompileExpression<T>(string content, ParameterExpression[] parameters, Type? importType, bool strictTypes) where T : Delegate
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(parameters);
@@ -199,7 +199,7 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
     /// <param name="returnType">Expected return type; the body is converted if needed.</param>
     /// <param name="strictTypes">Reserved; currently ignored.</param>
     /// <returns>Lambda expression with the specified parameters and return type.</returns>
-    public LambdaExpression Compile(string content, ParameterExpression[] parameters, Type returnType, bool strictTypes)
+    public LambdaExpression CompileExpression(string content, ParameterExpression[] parameters, Type returnType, bool strictTypes)
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(parameters);
@@ -219,7 +219,7 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
     /// (typically <see cref="ParameterExpression"/> instances).
     /// </param>
     /// <returns>Compiled expression tree.</returns>
-    public Expression Compile(ParseNode root, IReadOnlyDictionary<string, Expression>? symbols = null)
+    public Expression CompileExpression(ParseNode root, IReadOnlyDictionary<string, Expression>? symbols = null)
     {
         ArgumentNullException.ThrowIfNull(root);
         return Compile(root, symbols, string.Empty, null);

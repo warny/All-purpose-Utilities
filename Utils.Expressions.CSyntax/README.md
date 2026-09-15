@@ -121,7 +121,7 @@ var compiler = new CSyntaxExpressionCompiler();
 var context = new ExpressionCompilerContext();
 context.Set("increment", (Func<double, double>)(x => x + 1));
 
-Expression expression = compiler.Compile("increment(41)", context);
+Expression expression = compiler.CompileExpression("increment(41)", context);
 var lambda = Expression.Lambda<Func<double>>(Expression.Convert(expression, typeof(double))).Compile();
 
 double result = lambda(); // 42
@@ -226,7 +226,7 @@ context.WriteToStream(stream);
 stream.Position = 0;
 
 ExpressionCompilerContext restored = ExpressionCompilerContext.ReadFromStream(stream);
-Expression expression = compiler.Compile("twice(21)", restored);
+Expression expression = compiler.CompileExpression("twice(21)", restored);
 int result = Expression.Lambda<Func<int>>(Expression.Convert(expression, typeof(int))).Compile()(); // 42
 ```
 

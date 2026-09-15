@@ -43,7 +43,7 @@ public sealed partial class VBSyntaxExpressionCompiler
         if (m.Groups["init"].Success)
         {
             string initSource = m.Groups["init"].Value.Trim();
-            Expression raw = context.Compiler.Compile(initSource, BuildChildContext(context, variable, name));
+            Expression raw = context.Compiler.CompileExpression(initSource, BuildChildContext(context, variable, name));
             init = ConvertIfNeeded(raw, varType);
         }
         else
@@ -417,7 +417,7 @@ public sealed partial class VBSyntaxExpressionCompiler
         foreach (var p in parameters)
             lambdaContext.Set(p.Name!, (Expression)p);
 
-        Expression body = context.Compiler.Compile(bodySource, lambdaContext);
+        Expression body = context.Compiler.CompileExpression(bodySource, lambdaContext);
         return Expression.Lambda(body, parameters);
     }
 

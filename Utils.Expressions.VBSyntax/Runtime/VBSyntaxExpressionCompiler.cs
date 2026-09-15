@@ -81,7 +81,7 @@ public sealed partial class VBSyntaxExpressionCompiler : IExpressionCompiler
     /// <param name="content">VB-like source text.</param>
     /// <param name="context">Runtime context providing and receiving symbols.</param>
     /// <returns>Compiled expression tree.</returns>
-    public Expression Compile(string content, VBSyntaxCompilerContext context)
+    public Expression CompileExpression(string content, VBSyntaxCompilerContext context)
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(context);
@@ -148,7 +148,7 @@ public sealed partial class VBSyntaxExpressionCompiler : IExpressionCompiler
     /// <param name="content">Expression body (no lambda header required).</param>
     /// <param name="parameters">Lambda parameters to bind as symbols.</param>
     /// <returns>Lambda expression compatible with <typeparamref name="T"/>.</returns>
-    public LambdaExpression Compile<T>(string content, ParameterExpression[] parameters) where T : Delegate
+    public LambdaExpression CompileExpression<T>(string content, ParameterExpression[] parameters) where T : Delegate
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(parameters);

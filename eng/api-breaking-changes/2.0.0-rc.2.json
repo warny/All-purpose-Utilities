@@ -148,6 +148,36 @@
           "message": "Member 'System.Linq.Expressions.Expression<T> Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile<T>(string)' exists on {baselineAssembly} but not on {candidateAssembly}",
           "reason": "CSyntaxExpressionCompiler.Compile<T> was renamed to CompileExpression<T> as part of the IExpressionCompiler capability split; the new Compile<TDelegate> returns a real delegate via IDelegateCompiler.",
           "migrationSection": "docs/releasing/AcceptedApiBreaks.md#expression-compiler-capability-split"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Linq.Expressions.Expression Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(string, Utils.Expressions.ExpressionCompilerContext)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Renamed to CompileExpression as part of the exhaustive IExpressionCompiler capability split: every public overload that returns an Expression/LambdaExpression tree is now named CompileExpression, not just the interface-declared members.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#expression-compiler-capability-split"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Linq.Expressions.LambdaExpression Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile<T>(string, System.Linq.Expressions.ParameterExpression[])' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Renamed to CompileExpression<T> as part of the exhaustive IExpressionCompiler capability split: every public overload that returns an Expression/LambdaExpression tree is now named CompileExpression, not just the interface-declared members.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#expression-compiler-capability-split"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Linq.Expressions.LambdaExpression Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile<T>(string, System.Linq.Expressions.ParameterExpression[], System.Type?, bool)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Renamed to CompileExpression<T> as part of the exhaustive IExpressionCompiler capability split: every public overload that returns an Expression/LambdaExpression tree is now named CompileExpression, not just the interface-declared members.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#expression-compiler-capability-split"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Linq.Expressions.LambdaExpression Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(string, System.Linq.Expressions.ParameterExpression[], System.Type, bool)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Renamed to CompileExpression as part of the exhaustive IExpressionCompiler capability split: every public overload that returns an Expression/LambdaExpression tree is now named CompileExpression, not just the interface-declared members.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#expression-compiler-capability-split"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Linq.Expressions.Expression Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(Utils.Parser.Runtime.ParseNode, System.Collections.Generic.IReadOnlyDictionary<string, System.Linq.Expressions.Expression>?)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Renamed to CompileExpression as part of the exhaustive IExpressionCompiler capability split: every public overload that returns an Expression/LambdaExpression tree is now named CompileExpression, not just the interface-declared members.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#expression-compiler-capability-split"
         }
       ]
     },
@@ -165,6 +195,18 @@
           "diagnosticId": "CP0002",
           "message": "Member 'System.Linq.Expressions.Expression<T> Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile<T>(string)' exists on {baselineAssembly} but not on {candidateAssembly}",
           "reason": "VBSyntaxExpressionCompiler.Compile<T> was renamed to CompileExpression<T> as part of the IExpressionCompiler capability split; the new Compile<TDelegate> returns a real delegate via IDelegateCompiler.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#expression-compiler-capability-split"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Linq.Expressions.Expression Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile(string, Utils.Expressions.VBSyntax.Runtime.VBSyntaxCompilerContext)' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Renamed to CompileExpression as part of the exhaustive IExpressionCompiler capability split: every public overload that returns an Expression/LambdaExpression tree is now named CompileExpression, not just the interface-declared members.",
+          "migrationSection": "docs/releasing/AcceptedApiBreaks.md#expression-compiler-capability-split"
+        },
+        {
+          "diagnosticId": "CP0002",
+          "message": "Member 'System.Linq.Expressions.LambdaExpression Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile<T>(string, System.Linq.Expressions.ParameterExpression[])' exists on {baselineAssembly} but not on {candidateAssembly}",
+          "reason": "Renamed to CompileExpression<T> as part of the exhaustive IExpressionCompiler capability split: every public overload that returns an Expression/LambdaExpression tree is now named CompileExpression, not just the interface-declared members.",
           "migrationSection": "docs/releasing/AcceptedApiBreaks.md#expression-compiler-capability-split"
         }
       ]

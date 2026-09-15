@@ -98,7 +98,7 @@ var compiler = new VBSyntaxExpressionCompiler();
 var context = new VBSyntaxCompilerContext();
 context.Set("pi", 3.14159);
 
-Expression expression = compiler.Compile("pi * 2", context);
+Expression expression = compiler.CompileExpression("pi * 2", context);
 var lambda = Expression.Lambda<Func<double>>(
     Expression.Convert(expression, typeof(double))).Compile();
 
@@ -115,7 +115,7 @@ var compiler = new VBSyntaxExpressionCompiler();
 var context = new VBSyntaxCompilerContext();
 context.Set("greeting", "Hello");
 
-Expression expression = compiler.Compile("greeting & \", World!\"", context);
+Expression expression = compiler.CompileExpression("greeting & \", World!\"", context);
 var lambda = Expression.Lambda<Func<string>>(expression).Compile();
 
 string result = lambda(); // "Hello, World!"
@@ -151,7 +151,7 @@ var compiler = new VBSyntaxExpressionCompiler();
 var context = new VBSyntaxCompilerContext();
 context.Set("increment", (Func<double, double>)(x => x + 1));
 
-Expression expression = compiler.Compile("increment(41)", context);
+Expression expression = compiler.CompileExpression("increment(41)", context);
 var lambda = Expression.Lambda<Func<double>>(
     Expression.Convert(expression, typeof(double))).Compile();
 

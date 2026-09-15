@@ -155,7 +155,7 @@ public class FunctionCallTests
         var context = new ExpressionCompilerContext();
         context.Set("sum", (Func<int, int, int>)((a, b) => a + b));
 
-        var expression = compiler.Compile("sum(4, 7)", context);
+        var expression = compiler.CompileExpression("sum(4, 7)", context);
         var lambda = Expression.Lambda<Func<int>>(Expression.Convert(expression, typeof(int))).Compile();
 
         Assert.AreEqual(11, lambda());
@@ -171,7 +171,7 @@ public class FunctionCallTests
         context.Set("values", new[] { 1, 2, 3 });
         context.Set("concatInt", (Func<int[], string>)(values => string.Concat(values)));
 
-        var expression = compiler.Compile("concatInt(values)", context);
+        var expression = compiler.CompileExpression("concatInt(values)", context);
         var lambda = Expression.Lambda<Func<string>>(Expression.Convert(expression, typeof(string))).Compile();
 
         Assert.AreEqual("123", lambda());
@@ -188,7 +188,7 @@ public class FunctionCallTests
         context.Set("toUpper", (Func<string, string>)(s => s.ToUpperInvariant()));
         context.Set("text", "aBc");
 
-        var expression = compiler.Compile("apply(toUpper, text)", context);
+        var expression = compiler.CompileExpression("apply(toUpper, text)", context);
         var lambda = Expression.Lambda<Func<string>>(Expression.Convert(expression, typeof(string))).Compile();
 
         Assert.AreEqual("ABC", lambda());

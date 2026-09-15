@@ -218,7 +218,7 @@ public class CSyntaxExpressionCompilerTests
     {
         var compiler = new CSyntaxExpressionCompiler();
         var context = new ExpressionCompilerContext();
-        compiler.Compile("public double add(double a, double b) { a + b }", context);
+        compiler.CompileExpression("public double add(double a, double b) { a + b }", context);
 
         Assert.IsTrue(context.TryGet("add", out object? addSymbol));
         Assert.IsInstanceOfType<Func<double, double, double>>(addSymbol);
@@ -256,7 +256,7 @@ public class CSyntaxExpressionCompilerTests
         var context = new ExpressionCompilerContext();
         context.Set("add", (Func<double, double, double>)((a, b) => a + b));
 
-        Expression invocation = compiler.Compile("add(2, 3)", context);
+        Expression invocation = compiler.CompileExpression("add(2, 3)", context);
         Func<double> lambda = Expression.Lambda<Func<double>>(Expression.Convert(invocation, typeof(double))).Compile();
         Assert.AreEqual(5d, lambda());
     }
@@ -271,7 +271,7 @@ public class CSyntaxExpressionCompilerTests
         var context = new ExpressionCompilerContext();
         context.Set("increment", (Func<double, double>)(x => x + 1d));
 
-        Expression invocation = compiler.Compile("increment(41)", context);
+        Expression invocation = compiler.CompileExpression("increment(41)", context);
         Func<double> lambda = Expression.Lambda<Func<double>>(Expression.Convert(invocation, typeof(double))).Compile();
         Assert.AreEqual(42d, lambda());
     }
@@ -280,7 +280,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_WhileInstruction_ProducesTryCatchWrapper()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        Expression expression = compiler.Compile("while (true) 1", new ExpressionCompilerContext());
+        Expression expression = compiler.CompileExpression("while (true) 1", new ExpressionCompilerContext());
         Assert.AreEqual(ExpressionType.Try, expression.NodeType,
             "while loops are wrapped in a try-catch to support break statements.");
     }
@@ -289,7 +289,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_IfInstruction_WithoutElse_ProducesConditionalExpression()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        Expression expression = compiler.Compile("if (true) 1", new ExpressionCompilerContext());
+        Expression expression = compiler.CompileExpression("if (true) 1", new ExpressionCompilerContext());
         Assert.IsInstanceOfType<ConditionalExpression>(expression);
     }
 
@@ -297,7 +297,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_IfInstruction_WithElse_EvaluatesTrueBranch()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        Expression expression = compiler.Compile("if (true) 1 else 2", new ExpressionCompilerContext());
+        Expression expression = compiler.CompileExpression("if (true) 1 else 2", new ExpressionCompilerContext());
         Assert.IsInstanceOfType<ConditionalExpression>(expression);
         Func<int> execute = Expression.Lambda<Func<int>>(Expression.Convert(expression, typeof(int))).Compile();
         Assert.AreEqual(1, execute());
@@ -307,7 +307,7 @@ public class CSyntaxExpressionCompilerTests
     public void Compile_SwitchInstruction_CompilesToNonDefaultExpression()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        Expression expression = compiler.Compile("switch (1) { case 1: 2 default: 3 }", new ExpressionCompilerContext());
+        Expression expression = compiler.CompileExpression("switch (1) { case 1: 2 default: 3 }", new ExpressionCompilerContext());
         Assert.IsNotNull(expression);
         Assert.AreNotEqual(ExpressionType.Default, expression.NodeType);
     }
@@ -325,7 +325,7 @@ public class CSyntaxExpressionCompilerTests
         context.Set("i", iterator);
         context.Set("sum", accumulator);
 
-        Expression loop = compiler.Compile("for (i = 0; i < 4; i = i + 1) sum = sum + i", context);
+        Expression loop = compiler.CompileExpression("for (i = 0; i < 4; i = i + 1) sum = sum + i", context);
 
         var executeBlock = Expression.Block(
             [iterator, accumulator],
@@ -348,7 +348,7 @@ public class CSyntaxExpressionCompilerTests
         context.Set("sum", accumulator);
         context.Set("values", new[] { 1, 2, 3, 4 });
 
-        Expression loop = compiler.Compile("foreach (int item in values) sum = sum + item", context);
+        Expression loop = compiler.CompileExpression("foreach (int item in values) sum = sum + item", context);
 
         var executeBlock = Expression.Block(
             [accumulator],
@@ -375,7 +375,7 @@ public class CSyntaxExpressionCompilerTests
         var context = new ExpressionCompilerContext();
         context.Set("sample", new SampleContainer());
 
-        Expression expression = compiler.Compile(source, context);
+        Expression expression = compiler.CompileExpression(source, context);
         Func<int> execute = Expression.Lambda<Func<int>>(Expression.Convert(expression, typeof(int))).Compile();
         Assert.AreEqual(expected, execute());
     }
@@ -410,7 +410,7 @@ public class CSyntaxExpressionCompilerTests
         var compiler = new CSyntaxExpressionCompiler();
         var context = new ExpressionCompilerContext();
 
-        Expression expression = compiler.Compile("(double x) => x + 1", context);
+        Expression expression = compiler.CompileExpression("(double x) => x + 1", context);
         Assert.IsInstanceOfType<LambdaExpression>(expression);
         var lambda = (LambdaExpression)expression;
         Assert.AreEqual(1, lambda.Parameters.Count);
@@ -594,6 +594,37 @@ public class CSyntaxExpressionCompilerTests
 
         Assert.ThrowsExactly<InvalidOperationException>(
             () => compiler.CompileExpression<Func<int, int>>("1 + 2 * 3"));
+    }
+
+    /// <summary>
+    /// A <see langword="void"/>-returning delegate (<see cref="Action"/>) must accept a lambda whose body
+    /// produces a value: <see cref="Expression.Lambda(Expression, ParameterExpression[])"/> already permits
+    /// this (the body's value is simply discarded), so <c>ConvertIfNeeded</c> must not attempt to convert
+    /// the body to <see langword="void"/> (which <see cref="Expression.Convert(Expression, Type)"/> does
+    /// not support at all).
+    /// </summary>
+    [TestMethod]
+    public void Compile_Generic_ActionDelegateWithValueProducingBody_DoesNotThrow()
+    {
+        var compiler = new CSyntaxExpressionCompiler();
+
+        Action action = compiler.Compile<Action>("() => 1");
+
+        action();
+    }
+
+    /// <summary>
+    /// Same as <see cref="Compile_Generic_ActionDelegateWithValueProducingBody_DoesNotThrow"/> but through
+    /// <see cref="IExpressionCompiler.CompileExpression{TDelegate}(string)"/> directly.
+    /// </summary>
+    [TestMethod]
+    public void CompileExpression_Generic_ActionDelegateWithValueProducingBody_DoesNotThrow()
+    {
+        var compiler = new CSyntaxExpressionCompiler();
+
+        Expression<Action> expression = compiler.CompileExpression<Action>("() => 1");
+
+        expression.Compile()();
     }
 
     /// <summary>

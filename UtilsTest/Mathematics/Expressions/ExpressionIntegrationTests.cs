@@ -36,8 +36,8 @@ public class ExpressionIntegrationTests
 
         foreach (var test in tests)
         {
-            var func = compiler.Compile<Func<double, double>>(test.function, parameters, typeof(double), false);
-            var expected = simplifier.Simplify(compiler.Compile<Func<double, double>>(test.integral, parameters, typeof(double), false));
+            var func = compiler.CompileExpression<Func<double, double>>(test.function, parameters, typeof(double), false);
+            var expected = simplifier.Simplify(compiler.CompileExpression<Func<double, double>>(test.integral, parameters, typeof(double), false));
             var result = simplifier.Simplify(integration.Integrate(func));
             Assert.AreEqual(expected, result, ExpressionComparer.Default);
         }
@@ -131,7 +131,7 @@ public class ExpressionIntegrationTests
     public void Integrate_XSquared_ReturnsXCubedOver3()
     {
         var parameters = new ParameterExpression[] { Expression.Parameter(typeof(double), "x") };
-        var f = compiler.Compile<Func<double, double>>("x**2", parameters, typeof(double), false);
+        var f = compiler.CompileExpression<Func<double, double>>("x**2", parameters, typeof(double), false);
         var result = (Expression<Func<double, double>>)integration.Integrate(f);
         var compiled = result.Compile();
 
@@ -611,6 +611,24 @@ public class ExpressionIntegrationTests
         var localIntegration = new ExpressionIntegration<double>("x");
 
         Assert.ThrowsExactly<NotSupportedException>(() => localIntegration.Transform(Expression.Constant(5.0)));
+    }
+
+    /// <summary>
+    /// When this instance was constructed with an exact <see cref="ParameterExpression"/> identity, the
+    /// integration variable is already unambiguously known, so <c>Transform</c> can integrate a bare
+    /// (non-lambda) expression directly instead of requiring a carrier <see cref="LambdaExpression"/>.
+    /// </summary>
+    [TestMethod]
+    public void Transform_OnBareExpression_WithParameterIdentityConstructor_Integrates()
+    {
+        var x = Expression.Parameter(typeof(double), "x");
+        var localIntegration = new ExpressionIntegration<double>(x);
+
+        Expression result = localIntegration.Transform(x);
+        var compiled = Expression.Lambda<Func<double, double>>(result, x).Compile();
+
+        const double xv = 3.0;
+        Assert.AreEqual(xv * xv / 2.0, compiled(xv), 1e-9, "∫x dx = x²/2");
     }
 
 }

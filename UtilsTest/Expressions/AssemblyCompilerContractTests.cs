@@ -19,6 +19,7 @@ public class AssemblyCompilerContractTests
     /// </summary>
     private sealed class EmittingAssemblyCompiler : IAssemblyCompiler
     {
+        /// <summary>Fabricates one public type per comma-separated name in <paramref name="content"/> via <see cref="System.Reflection.Emit"/>.</summary>
         public Assembly CompileAssembly(string content)
         {
             AssemblyBuilder assembly = AssemblyBuilder.DefineDynamicAssembly(

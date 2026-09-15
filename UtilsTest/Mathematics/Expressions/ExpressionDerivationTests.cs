@@ -48,8 +48,8 @@ public class ExpressionDerivationTests
 
         foreach (var test in tests)
         {
-            var function = compiler.Compile<Func<double, double>>(test.function, parameters, typeof(double), false);
-            var derivative = compiler.Compile<Func<double, double>>(test.derivative, parameters, typeof(double), false);
+            var function = compiler.CompileExpression<Func<double, double>>(test.function, parameters, typeof(double), false);
+            var derivative = compiler.CompileExpression<Func<double, double>>(test.derivative, parameters, typeof(double), false);
 
             var result = derivation.Derivate(function);
 
@@ -675,6 +675,23 @@ public class ExpressionDerivationTests
         var derivation = new ExpressionDerivation<double>("x");
 
         Assert.ThrowsExactly<NotSupportedException>(() => derivation.Transform(Expression.Constant(5.0)));
+    }
+
+    /// <summary>
+    /// When this instance was constructed with an exact <see cref="ParameterExpression"/> identity, the
+    /// differentiation variable is already unambiguously known, so <c>Transform</c> can differentiate a
+    /// bare (non-lambda) expression directly instead of requiring a carrier <see cref="LambdaExpression"/>.
+    /// </summary>
+    [TestMethod]
+    public void Transform_OnBareExpression_WithParameterIdentityConstructor_Differentiates()
+    {
+        var x = Expression.Parameter(typeof(double), "x");
+        var derivation = new ExpressionDerivation<double>(x);
+
+        Expression result = derivation.Transform(Expression.Multiply(x, x));
+        var compiled = Expression.Lambda<Func<double, double>>(result, x).Compile();
+
+        Assert.AreEqual(10.0, compiled(5.0), 1e-9, "d/dx[x*x] = 2x");
     }
 
 }

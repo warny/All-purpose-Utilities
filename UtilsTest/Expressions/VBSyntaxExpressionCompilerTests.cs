@@ -196,7 +196,7 @@ public class VBSyntaxExpressionCompilerTests
     {
         var context = new VBSyntaxCompilerContext();
         context.Set("pi", 3.14);
-        Expression expr = _compiler.Compile("pi", context);
+        Expression expr = _compiler.CompileExpression("pi", context);
         double result = Expression.Lambda<Func<double>>(expr).Compile()();
 
         Assert.AreEqual(3.14, result);
@@ -287,7 +287,7 @@ public class VBSyntaxExpressionCompilerTests
         // The OnError handler in the compiler throws for ErrorNodes.
         var context = new VBSyntaxCompilerContext();
         context.Set("x", Expression.Parameter(typeof(int), "x"));
-        Expression expr = _compiler.Compile("x * 2", context);
+        Expression expr = _compiler.CompileExpression("x * 2", context);
         Assert.IsNotNull(expr);
     }
 
@@ -372,5 +372,31 @@ public class VBSyntaxExpressionCompilerTests
     {
         Assert.ThrowsExactly<InvalidOperationException>(
             () => _compiler.CompileExpression<Func<double, double>>("1 + 2 * 3"));
+    }
+
+    /// <summary>
+    /// A <see langword="void"/>-returning delegate (<see cref="Action"/>) must accept a lambda whose body
+    /// produces a value: <see cref="Expression.Lambda(Expression, ParameterExpression[])"/> already permits
+    /// this (the body's value is simply discarded). VB's <c>ConvertIfNeeded</c> already special-cases
+    /// <see langword="void"/>; this pins that behavior for the generic compilation entry points too.
+    /// </summary>
+    [TestMethod]
+    public void Compile_Generic_ActionDelegateWithValueProducingBody_DoesNotThrow()
+    {
+        Action action = _compiler.Compile<Action>("Function() 1");
+
+        action();
+    }
+
+    /// <summary>
+    /// Same as <see cref="Compile_Generic_ActionDelegateWithValueProducingBody_DoesNotThrow"/> but through
+    /// <see cref="Utils.Expressions.IExpressionCompiler.CompileExpression{TDelegate}(string)"/> directly.
+    /// </summary>
+    [TestMethod]
+    public void CompileExpression_Generic_ActionDelegateWithValueProducingBody_DoesNotThrow()
+    {
+        Expression<Action> expression = _compiler.CompileExpression<Action>("Function() 1");
+
+        expression.Compile()();
     }
 }
