@@ -1930,6 +1930,34 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.IAssemblyCompiler.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.IAssemblyCompiler.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.IAssemblyCompiler",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.IAssemblyCompiler.yml\" sourcestartlinenumber=\"1\">Defines a contract for compilers that turn source text into a compiled <xref href=\"System.Reflection.Assembly\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.IDelegateCompiler.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.IDelegateCompiler.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.IDelegateCompiler",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.IDelegateCompiler.yml\" sourcestartlinenumber=\"1\">Defines a contract for compilers that turn source text into an executable delegate.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.Expressions.IDistanceValue-1.yml",
       "output": {
         ".html": {
@@ -1954,7 +1982,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.Expressions.IExpressionCompiler",
-      "Summary": "<p sourcefile=\"api/Utils.Expressions.IExpressionCompiler.yml\" sourcestartlinenumber=\"1\">Defines a lightweight contract for expression compilers that turn source text into LINQ expression trees.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.IExpressionCompiler.yml\" sourcestartlinenumber=\"1\">Defines a contract for expression compilers that turn source text into LINQ expression trees, and,\nsince a lambda expression tree can always be compiled to a delegate, also exposes delegate compilation.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -1983,6 +2011,20 @@
       "IsMRef": true,
       "Title": "Utils.Expressions.IResolver",
       "Summary": "<p sourcefile=\"api/Utils.Expressions.IResolver.yml\" sourcestartlinenumber=\"1\">Provides functionality to resolve types, constructors, methods, and members at runtime,\nas well as to manage constants in expressions.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ITypeCompiler.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ITypeCompiler.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ITypeCompiler",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ITypeCompiler.yml\" sourcestartlinenumber=\"1\">Defines a contract for compilers that turn source text into a compiled <xref href=\"System.Type\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
     },
     {
       "type": "ManagedReference",

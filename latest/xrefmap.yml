@@ -11238,42 +11238,15 @@ references:
   commentId: T:Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler
   fullName: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler
   nameWithType: CSyntaxExpressionCompiler
-- uid: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Linq.Expressions.Expression})
-  name: Compile(string, IReadOnlyDictionary<string, Expression>?)
-  href: api/Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.html#Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_Compile_System_String_System_Collections_Generic_IReadOnlyDictionary_System_String_System_Linq_Expressions_Expression__
-  commentId: M:Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Linq.Expressions.Expression})
-  name.vb: Compile(String, IReadOnlyDictionary(Of String, Expression))
-  fullName: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(string, System.Collections.Generic.IReadOnlyDictionary<string, System.Linq.Expressions.Expression>?)
-  fullName.vb: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(String, System.Collections.Generic.IReadOnlyDictionary(Of String, System.Linq.Expressions.Expression))
-  nameWithType: CSyntaxExpressionCompiler.Compile(string, IReadOnlyDictionary<string, Expression>?)
-  nameWithType.vb: CSyntaxExpressionCompiler.Compile(String, IReadOnlyDictionary(Of String, Expression))
-- uid: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(System.String,System.Linq.Expressions.ParameterExpression[],System.Type,System.Boolean)
-  name: Compile(string, ParameterExpression[], Type, bool)
-  href: api/Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.html#Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_Compile_System_String_System_Linq_Expressions_ParameterExpression___System_Type_System_Boolean_
-  commentId: M:Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(System.String,System.Linq.Expressions.ParameterExpression[],System.Type,System.Boolean)
-  name.vb: Compile(String, ParameterExpression(), Type, Boolean)
-  fullName: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(string, System.Linq.Expressions.ParameterExpression[], System.Type, bool)
-  fullName.vb: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(String, System.Linq.Expressions.ParameterExpression(), System.Type, Boolean)
-  nameWithType: CSyntaxExpressionCompiler.Compile(string, ParameterExpression[], Type, bool)
-  nameWithType.vb: CSyntaxExpressionCompiler.Compile(String, ParameterExpression(), Type, Boolean)
-- uid: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(System.String,Utils.Expressions.ExpressionCompilerContext)
-  name: Compile(string, ExpressionCompilerContext)
-  href: api/Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.html#Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_Compile_System_String_Utils_Expressions_ExpressionCompilerContext_
-  commentId: M:Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(System.String,Utils.Expressions.ExpressionCompilerContext)
-  name.vb: Compile(String, ExpressionCompilerContext)
-  fullName: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(string, Utils.Expressions.ExpressionCompilerContext)
-  fullName.vb: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(String, Utils.Expressions.ExpressionCompilerContext)
-  nameWithType: CSyntaxExpressionCompiler.Compile(string, ExpressionCompilerContext)
-  nameWithType.vb: CSyntaxExpressionCompiler.Compile(String, ExpressionCompilerContext)
-- uid: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(Utils.Parser.Runtime.ParseNode,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Linq.Expressions.Expression})
-  name: Compile(ParseNode, IReadOnlyDictionary<string, Expression>?)
-  href: api/Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.html#Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_Compile_Utils_Parser_Runtime_ParseNode_System_Collections_Generic_IReadOnlyDictionary_System_String_System_Linq_Expressions_Expression__
-  commentId: M:Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(Utils.Parser.Runtime.ParseNode,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Linq.Expressions.Expression})
-  name.vb: Compile(ParseNode, IReadOnlyDictionary(Of String, Expression))
-  fullName: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(Utils.Parser.Runtime.ParseNode, System.Collections.Generic.IReadOnlyDictionary<string, System.Linq.Expressions.Expression>?)
-  fullName.vb: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(Utils.Parser.Runtime.ParseNode, System.Collections.Generic.IReadOnlyDictionary(Of String, System.Linq.Expressions.Expression))
-  nameWithType: CSyntaxExpressionCompiler.Compile(ParseNode, IReadOnlyDictionary<string, Expression>?)
-  nameWithType.vb: CSyntaxExpressionCompiler.Compile(ParseNode, IReadOnlyDictionary(Of String, Expression))
+- uid: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(System.String)
+  name: Compile(string)
+  href: api/Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.html#Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_Compile_System_String_
+  commentId: M:Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(System.String)
+  name.vb: Compile(String)
+  fullName: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(string)
+  fullName.vb: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(String)
+  nameWithType: CSyntaxExpressionCompiler.Compile(string)
+  nameWithType.vb: CSyntaxExpressionCompiler.Compile(String)
 - uid: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile*
   name: Compile
   href: api/Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.html#Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_Compile_
@@ -11281,6 +11254,76 @@ references:
   isSpec: "True"
   fullName: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile
   nameWithType: CSyntaxExpressionCompiler.Compile
+- uid: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression(System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Linq.Expressions.Expression})
+  name: CompileExpression(string, IReadOnlyDictionary<string, Expression>?)
+  href: api/Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.html#Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_CompileExpression_System_String_System_Collections_Generic_IReadOnlyDictionary_System_String_System_Linq_Expressions_Expression__
+  commentId: M:Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression(System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Linq.Expressions.Expression})
+  name.vb: CompileExpression(String, IReadOnlyDictionary(Of String, Expression))
+  fullName: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression(string, System.Collections.Generic.IReadOnlyDictionary<string, System.Linq.Expressions.Expression>?)
+  fullName.vb: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression(String, System.Collections.Generic.IReadOnlyDictionary(Of String, System.Linq.Expressions.Expression))
+  nameWithType: CSyntaxExpressionCompiler.CompileExpression(string, IReadOnlyDictionary<string, Expression>?)
+  nameWithType.vb: CSyntaxExpressionCompiler.CompileExpression(String, IReadOnlyDictionary(Of String, Expression))
+- uid: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression(System.String,System.Linq.Expressions.ParameterExpression[],System.Type,System.Boolean)
+  name: CompileExpression(string, ParameterExpression[], Type, bool)
+  href: api/Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.html#Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_CompileExpression_System_String_System_Linq_Expressions_ParameterExpression___System_Type_System_Boolean_
+  commentId: M:Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression(System.String,System.Linq.Expressions.ParameterExpression[],System.Type,System.Boolean)
+  name.vb: CompileExpression(String, ParameterExpression(), Type, Boolean)
+  fullName: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression(string, System.Linq.Expressions.ParameterExpression[], System.Type, bool)
+  fullName.vb: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression(String, System.Linq.Expressions.ParameterExpression(), System.Type, Boolean)
+  nameWithType: CSyntaxExpressionCompiler.CompileExpression(string, ParameterExpression[], Type, bool)
+  nameWithType.vb: CSyntaxExpressionCompiler.CompileExpression(String, ParameterExpression(), Type, Boolean)
+- uid: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression(System.String,Utils.Expressions.ExpressionCompilerContext)
+  name: CompileExpression(string, ExpressionCompilerContext)
+  href: api/Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.html#Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_CompileExpression_System_String_Utils_Expressions_ExpressionCompilerContext_
+  commentId: M:Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression(System.String,Utils.Expressions.ExpressionCompilerContext)
+  name.vb: CompileExpression(String, ExpressionCompilerContext)
+  fullName: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression(string, Utils.Expressions.ExpressionCompilerContext)
+  fullName.vb: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression(String, Utils.Expressions.ExpressionCompilerContext)
+  nameWithType: CSyntaxExpressionCompiler.CompileExpression(string, ExpressionCompilerContext)
+  nameWithType.vb: CSyntaxExpressionCompiler.CompileExpression(String, ExpressionCompilerContext)
+- uid: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression(Utils.Parser.Runtime.ParseNode,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Linq.Expressions.Expression})
+  name: CompileExpression(ParseNode, IReadOnlyDictionary<string, Expression>?)
+  href: api/Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.html#Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_CompileExpression_Utils_Parser_Runtime_ParseNode_System_Collections_Generic_IReadOnlyDictionary_System_String_System_Linq_Expressions_Expression__
+  commentId: M:Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression(Utils.Parser.Runtime.ParseNode,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Linq.Expressions.Expression})
+  name.vb: CompileExpression(ParseNode, IReadOnlyDictionary(Of String, Expression))
+  fullName: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression(Utils.Parser.Runtime.ParseNode, System.Collections.Generic.IReadOnlyDictionary<string, System.Linq.Expressions.Expression>?)
+  fullName.vb: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression(Utils.Parser.Runtime.ParseNode, System.Collections.Generic.IReadOnlyDictionary(Of String, System.Linq.Expressions.Expression))
+  nameWithType: CSyntaxExpressionCompiler.CompileExpression(ParseNode, IReadOnlyDictionary<string, Expression>?)
+  nameWithType.vb: CSyntaxExpressionCompiler.CompileExpression(ParseNode, IReadOnlyDictionary(Of String, Expression))
+- uid: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression*
+  name: CompileExpression
+  href: api/Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.html#Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_CompileExpression_
+  commentId: Overload:Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression
+  isSpec: "True"
+  fullName: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression
+  nameWithType: CSyntaxExpressionCompiler.CompileExpression
+- uid: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression``1(System.String)
+  name: CompileExpression<T>(string)
+  href: api/Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.html#Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_CompileExpression__1_System_String_
+  commentId: M:Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression``1(System.String)
+  name.vb: CompileExpression(Of T)(String)
+  fullName: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression<T>(string)
+  fullName.vb: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression(Of T)(String)
+  nameWithType: CSyntaxExpressionCompiler.CompileExpression<T>(string)
+  nameWithType.vb: CSyntaxExpressionCompiler.CompileExpression(Of T)(String)
+- uid: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression``1(System.String,System.Linq.Expressions.ParameterExpression[])
+  name: CompileExpression<T>(string, ParameterExpression[])
+  href: api/Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.html#Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_CompileExpression__1_System_String_System_Linq_Expressions_ParameterExpression___
+  commentId: M:Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression``1(System.String,System.Linq.Expressions.ParameterExpression[])
+  name.vb: CompileExpression(Of T)(String, ParameterExpression())
+  fullName: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression<T>(string, System.Linq.Expressions.ParameterExpression[])
+  fullName.vb: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression(Of T)(String, System.Linq.Expressions.ParameterExpression())
+  nameWithType: CSyntaxExpressionCompiler.CompileExpression<T>(string, ParameterExpression[])
+  nameWithType.vb: CSyntaxExpressionCompiler.CompileExpression(Of T)(String, ParameterExpression())
+- uid: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression``1(System.String,System.Linq.Expressions.ParameterExpression[],System.Type,System.Boolean)
+  name: CompileExpression<T>(string, ParameterExpression[], Type?, bool)
+  href: api/Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.html#Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_CompileExpression__1_System_String_System_Linq_Expressions_ParameterExpression___System_Type_System_Boolean_
+  commentId: M:Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression``1(System.String,System.Linq.Expressions.ParameterExpression[],System.Type,System.Boolean)
+  name.vb: CompileExpression(Of T)(String, ParameterExpression(), Type, Boolean)
+  fullName: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression<T>(string, System.Linq.Expressions.ParameterExpression[], System.Type?, bool)
+  fullName.vb: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression(Of T)(String, System.Linq.Expressions.ParameterExpression(), System.Type, Boolean)
+  nameWithType: CSyntaxExpressionCompiler.CompileExpression<T>(string, ParameterExpression[], Type?, bool)
+  nameWithType.vb: CSyntaxExpressionCompiler.CompileExpression(Of T)(String, ParameterExpression(), Type, Boolean)
 - uid: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileSource(System.String,Utils.Expressions.ExpressionCompilerContext)
   name: CompileSource(string, ExpressionCompilerContext)
   href: api/Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.html#Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_CompileSource_System_String_Utils_Expressions_ExpressionCompilerContext_
@@ -11298,32 +11341,14 @@ references:
   fullName: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileSource
   nameWithType: CSyntaxExpressionCompiler.CompileSource
 - uid: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile``1(System.String)
-  name: Compile<T>(string)
+  name: Compile<TDelegate>(string)
   href: api/Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.html#Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_Compile__1_System_String_
   commentId: M:Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile``1(System.String)
-  name.vb: Compile(Of T)(String)
-  fullName: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile<T>(string)
-  fullName.vb: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(Of T)(String)
-  nameWithType: CSyntaxExpressionCompiler.Compile<T>(string)
-  nameWithType.vb: CSyntaxExpressionCompiler.Compile(Of T)(String)
-- uid: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile``1(System.String,System.Linq.Expressions.ParameterExpression[])
-  name: Compile<T>(string, ParameterExpression[])
-  href: api/Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.html#Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_Compile__1_System_String_System_Linq_Expressions_ParameterExpression___
-  commentId: M:Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile``1(System.String,System.Linq.Expressions.ParameterExpression[])
-  name.vb: Compile(Of T)(String, ParameterExpression())
-  fullName: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile<T>(string, System.Linq.Expressions.ParameterExpression[])
-  fullName.vb: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(Of T)(String, System.Linq.Expressions.ParameterExpression())
-  nameWithType: CSyntaxExpressionCompiler.Compile<T>(string, ParameterExpression[])
-  nameWithType.vb: CSyntaxExpressionCompiler.Compile(Of T)(String, ParameterExpression())
-- uid: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile``1(System.String,System.Linq.Expressions.ParameterExpression[],System.Type,System.Boolean)
-  name: Compile<T>(string, ParameterExpression[], Type?, bool)
-  href: api/Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.html#Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_Compile__1_System_String_System_Linq_Expressions_ParameterExpression___System_Type_System_Boolean_
-  commentId: M:Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile``1(System.String,System.Linq.Expressions.ParameterExpression[],System.Type,System.Boolean)
-  name.vb: Compile(Of T)(String, ParameterExpression(), Type, Boolean)
-  fullName: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile<T>(string, System.Linq.Expressions.ParameterExpression[], System.Type?, bool)
-  fullName.vb: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(Of T)(String, System.Linq.Expressions.ParameterExpression(), System.Type, Boolean)
-  nameWithType: CSyntaxExpressionCompiler.Compile<T>(string, ParameterExpression[], Type?, bool)
-  nameWithType.vb: CSyntaxExpressionCompiler.Compile(Of T)(String, ParameterExpression(), Type, Boolean)
+  name.vb: Compile(Of TDelegate)(String)
+  fullName: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile<TDelegate>(string)
+  fullName.vb: Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(Of TDelegate)(String)
+  nameWithType: CSyntaxExpressionCompiler.Compile<TDelegate>(string)
+  nameWithType.vb: CSyntaxExpressionCompiler.Compile(Of TDelegate)(String)
 - uid: Utils.Expressions.CSyntax.Runtime.CSyntaxToken
   name: CSyntaxToken
   href: api/Utils.Expressions.CSyntax.Runtime.CSyntaxToken.html
@@ -12145,6 +12170,19 @@ references:
   isSpec: "True"
   fullName: Utils.Expressions.ExpressionTransformer.Transform
   nameWithType: ExpressionTransformer.Transform
+- uid: Utils.Expressions.ExpressionTransformer.TransformCore(System.Linq.Expressions.Expression)
+  name: TransformCore(Expression)
+  href: api/Utils.Expressions.ExpressionTransformer.html#Utils_Expressions_ExpressionTransformer_TransformCore_System_Linq_Expressions_Expression_
+  commentId: M:Utils.Expressions.ExpressionTransformer.TransformCore(System.Linq.Expressions.Expression)
+  fullName: Utils.Expressions.ExpressionTransformer.TransformCore(System.Linq.Expressions.Expression)
+  nameWithType: ExpressionTransformer.TransformCore(Expression)
+- uid: Utils.Expressions.ExpressionTransformer.TransformCore*
+  name: TransformCore
+  href: api/Utils.Expressions.ExpressionTransformer.html#Utils_Expressions_ExpressionTransformer_TransformCore_
+  commentId: Overload:Utils.Expressions.ExpressionTransformer.TransformCore
+  isSpec: "True"
+  fullName: Utils.Expressions.ExpressionTransformer.TransformCore
+  nameWithType: ExpressionTransformer.TransformCore
 - uid: Utils.Expressions.ExpressionUtils
   name: ExpressionUtils
   href: api/Utils.Expressions.ExpressionUtils.html
@@ -12309,6 +12347,59 @@ references:
   isSpec: "True"
   fullName: Utils.Expressions.FormattedPart.Format
   nameWithType: FormattedPart.Format
+- uid: Utils.Expressions.IAssemblyCompiler
+  name: IAssemblyCompiler
+  href: api/Utils.Expressions.IAssemblyCompiler.html
+  commentId: T:Utils.Expressions.IAssemblyCompiler
+  fullName: Utils.Expressions.IAssemblyCompiler
+  nameWithType: IAssemblyCompiler
+- uid: Utils.Expressions.IAssemblyCompiler.CompileAssembly(System.String)
+  name: CompileAssembly(string)
+  href: api/Utils.Expressions.IAssemblyCompiler.html#Utils_Expressions_IAssemblyCompiler_CompileAssembly_System_String_
+  commentId: M:Utils.Expressions.IAssemblyCompiler.CompileAssembly(System.String)
+  name.vb: CompileAssembly(String)
+  fullName: Utils.Expressions.IAssemblyCompiler.CompileAssembly(string)
+  fullName.vb: Utils.Expressions.IAssemblyCompiler.CompileAssembly(String)
+  nameWithType: IAssemblyCompiler.CompileAssembly(string)
+  nameWithType.vb: IAssemblyCompiler.CompileAssembly(String)
+- uid: Utils.Expressions.IAssemblyCompiler.CompileAssembly*
+  name: CompileAssembly
+  href: api/Utils.Expressions.IAssemblyCompiler.html#Utils_Expressions_IAssemblyCompiler_CompileAssembly_
+  commentId: Overload:Utils.Expressions.IAssemblyCompiler.CompileAssembly
+  isSpec: "True"
+  fullName: Utils.Expressions.IAssemblyCompiler.CompileAssembly
+  nameWithType: IAssemblyCompiler.CompileAssembly
+- uid: Utils.Expressions.IDelegateCompiler
+  name: IDelegateCompiler
+  href: api/Utils.Expressions.IDelegateCompiler.html
+  commentId: T:Utils.Expressions.IDelegateCompiler
+  fullName: Utils.Expressions.IDelegateCompiler
+  nameWithType: IDelegateCompiler
+- uid: Utils.Expressions.IDelegateCompiler.Compile(System.String)
+  name: Compile(string)
+  href: api/Utils.Expressions.IDelegateCompiler.html#Utils_Expressions_IDelegateCompiler_Compile_System_String_
+  commentId: M:Utils.Expressions.IDelegateCompiler.Compile(System.String)
+  name.vb: Compile(String)
+  fullName: Utils.Expressions.IDelegateCompiler.Compile(string)
+  fullName.vb: Utils.Expressions.IDelegateCompiler.Compile(String)
+  nameWithType: IDelegateCompiler.Compile(string)
+  nameWithType.vb: IDelegateCompiler.Compile(String)
+- uid: Utils.Expressions.IDelegateCompiler.Compile*
+  name: Compile
+  href: api/Utils.Expressions.IDelegateCompiler.html#Utils_Expressions_IDelegateCompiler_Compile_
+  commentId: Overload:Utils.Expressions.IDelegateCompiler.Compile
+  isSpec: "True"
+  fullName: Utils.Expressions.IDelegateCompiler.Compile
+  nameWithType: IDelegateCompiler.Compile
+- uid: Utils.Expressions.IDelegateCompiler.Compile``1(System.String)
+  name: Compile<TDelegate>(string)
+  href: api/Utils.Expressions.IDelegateCompiler.html#Utils_Expressions_IDelegateCompiler_Compile__1_System_String_
+  commentId: M:Utils.Expressions.IDelegateCompiler.Compile``1(System.String)
+  name.vb: Compile(Of TDelegate)(String)
+  fullName: Utils.Expressions.IDelegateCompiler.Compile<TDelegate>(string)
+  fullName.vb: Utils.Expressions.IDelegateCompiler.Compile(Of TDelegate)(String)
+  nameWithType: IDelegateCompiler.Compile<TDelegate>(string)
+  nameWithType.vb: IDelegateCompiler.Compile(Of TDelegate)(String)
 - uid: Utils.Expressions.IDistanceValue`1
   name: IDistanceValue<T>
   href: api/Utils.Expressions.IDistanceValue-1.html
@@ -12358,22 +12449,31 @@ references:
   commentId: T:Utils.Expressions.IExpressionCompiler
   fullName: Utils.Expressions.IExpressionCompiler
   nameWithType: IExpressionCompiler
-- uid: Utils.Expressions.IExpressionCompiler.Compile(System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Linq.Expressions.Expression})
-  name: Compile(string, IReadOnlyDictionary<string, Expression>?)
-  href: api/Utils.Expressions.IExpressionCompiler.html#Utils_Expressions_IExpressionCompiler_Compile_System_String_System_Collections_Generic_IReadOnlyDictionary_System_String_System_Linq_Expressions_Expression__
-  commentId: M:Utils.Expressions.IExpressionCompiler.Compile(System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Linq.Expressions.Expression})
-  name.vb: Compile(String, IReadOnlyDictionary(Of String, Expression))
-  fullName: Utils.Expressions.IExpressionCompiler.Compile(string, System.Collections.Generic.IReadOnlyDictionary<string, System.Linq.Expressions.Expression>?)
-  fullName.vb: Utils.Expressions.IExpressionCompiler.Compile(String, System.Collections.Generic.IReadOnlyDictionary(Of String, System.Linq.Expressions.Expression))
-  nameWithType: IExpressionCompiler.Compile(string, IReadOnlyDictionary<string, Expression>?)
-  nameWithType.vb: IExpressionCompiler.Compile(String, IReadOnlyDictionary(Of String, Expression))
-- uid: Utils.Expressions.IExpressionCompiler.Compile*
-  name: Compile
-  href: api/Utils.Expressions.IExpressionCompiler.html#Utils_Expressions_IExpressionCompiler_Compile_
-  commentId: Overload:Utils.Expressions.IExpressionCompiler.Compile
+- uid: Utils.Expressions.IExpressionCompiler.CompileExpression(System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Linq.Expressions.Expression})
+  name: CompileExpression(string, IReadOnlyDictionary<string, Expression>?)
+  href: api/Utils.Expressions.IExpressionCompiler.html#Utils_Expressions_IExpressionCompiler_CompileExpression_System_String_System_Collections_Generic_IReadOnlyDictionary_System_String_System_Linq_Expressions_Expression__
+  commentId: M:Utils.Expressions.IExpressionCompiler.CompileExpression(System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Linq.Expressions.Expression})
+  name.vb: CompileExpression(String, IReadOnlyDictionary(Of String, Expression))
+  fullName: Utils.Expressions.IExpressionCompiler.CompileExpression(string, System.Collections.Generic.IReadOnlyDictionary<string, System.Linq.Expressions.Expression>?)
+  fullName.vb: Utils.Expressions.IExpressionCompiler.CompileExpression(String, System.Collections.Generic.IReadOnlyDictionary(Of String, System.Linq.Expressions.Expression))
+  nameWithType: IExpressionCompiler.CompileExpression(string, IReadOnlyDictionary<string, Expression>?)
+  nameWithType.vb: IExpressionCompiler.CompileExpression(String, IReadOnlyDictionary(Of String, Expression))
+- uid: Utils.Expressions.IExpressionCompiler.CompileExpression*
+  name: CompileExpression
+  href: api/Utils.Expressions.IExpressionCompiler.html#Utils_Expressions_IExpressionCompiler_CompileExpression_
+  commentId: Overload:Utils.Expressions.IExpressionCompiler.CompileExpression
   isSpec: "True"
-  fullName: Utils.Expressions.IExpressionCompiler.Compile
-  nameWithType: IExpressionCompiler.Compile
+  fullName: Utils.Expressions.IExpressionCompiler.CompileExpression
+  nameWithType: IExpressionCompiler.CompileExpression
+- uid: Utils.Expressions.IExpressionCompiler.CompileExpression``1(System.String)
+  name: CompileExpression<TDelegate>(string)
+  href: api/Utils.Expressions.IExpressionCompiler.html#Utils_Expressions_IExpressionCompiler_CompileExpression__1_System_String_
+  commentId: M:Utils.Expressions.IExpressionCompiler.CompileExpression``1(System.String)
+  name.vb: CompileExpression(Of TDelegate)(String)
+  fullName: Utils.Expressions.IExpressionCompiler.CompileExpression<TDelegate>(string)
+  fullName.vb: Utils.Expressions.IExpressionCompiler.CompileExpression(Of TDelegate)(String)
+  nameWithType: IExpressionCompiler.CompileExpression<TDelegate>(string)
+  nameWithType.vb: IExpressionCompiler.CompileExpression(Of TDelegate)(String)
 - uid: Utils.Expressions.IInterpolatedStringPart
   name: IInterpolatedStringPart
   href: api/Utils.Expressions.IInterpolatedStringPart.html
@@ -12536,6 +12636,37 @@ references:
   isSpec: "True"
   fullName: Utils.Expressions.IResolver.TryGetConstant
   nameWithType: IResolver.TryGetConstant
+- uid: Utils.Expressions.ITypeCompiler
+  name: ITypeCompiler
+  href: api/Utils.Expressions.ITypeCompiler.html
+  commentId: T:Utils.Expressions.ITypeCompiler
+  fullName: Utils.Expressions.ITypeCompiler
+  nameWithType: ITypeCompiler
+- uid: Utils.Expressions.ITypeCompiler.CompileType(System.String)
+  name: CompileType(string)
+  href: api/Utils.Expressions.ITypeCompiler.html#Utils_Expressions_ITypeCompiler_CompileType_System_String_
+  commentId: M:Utils.Expressions.ITypeCompiler.CompileType(System.String)
+  name.vb: CompileType(String)
+  fullName: Utils.Expressions.ITypeCompiler.CompileType(string)
+  fullName.vb: Utils.Expressions.ITypeCompiler.CompileType(String)
+  nameWithType: ITypeCompiler.CompileType(string)
+  nameWithType.vb: ITypeCompiler.CompileType(String)
+- uid: Utils.Expressions.ITypeCompiler.CompileType*
+  name: CompileType
+  href: api/Utils.Expressions.ITypeCompiler.html#Utils_Expressions_ITypeCompiler_CompileType_
+  commentId: Overload:Utils.Expressions.ITypeCompiler.CompileType
+  isSpec: "True"
+  fullName: Utils.Expressions.ITypeCompiler.CompileType
+  nameWithType: ITypeCompiler.CompileType
+- uid: Utils.Expressions.ITypeCompiler.CompileType``1(System.String)
+  name: CompileType<T>(string)
+  href: api/Utils.Expressions.ITypeCompiler.html#Utils_Expressions_ITypeCompiler_CompileType__1_System_String_
+  commentId: M:Utils.Expressions.ITypeCompiler.CompileType``1(System.String)
+  name.vb: CompileType(Of T)(String)
+  fullName: Utils.Expressions.ITypeCompiler.CompileType<T>(string)
+  fullName.vb: Utils.Expressions.ITypeCompiler.CompileType(Of T)(String)
+  nameWithType: ITypeCompiler.CompileType<T>(string)
+  nameWithType.vb: ITypeCompiler.CompileType(Of T)(String)
 - uid: Utils.Expressions.ITypeFinder
   name: ITypeFinder
   href: api/Utils.Expressions.ITypeFinder.html
@@ -13483,24 +13614,15 @@ references:
   commentId: T:Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler
   fullName: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler
   nameWithType: VBSyntaxExpressionCompiler
-- uid: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile(System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Linq.Expressions.Expression})
-  name: Compile(string, IReadOnlyDictionary<string, Expression>?)
-  href: api/Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.html#Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_Compile_System_String_System_Collections_Generic_IReadOnlyDictionary_System_String_System_Linq_Expressions_Expression__
-  commentId: M:Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile(System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Linq.Expressions.Expression})
-  name.vb: Compile(String, IReadOnlyDictionary(Of String, Expression))
-  fullName: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile(string, System.Collections.Generic.IReadOnlyDictionary<string, System.Linq.Expressions.Expression>?)
-  fullName.vb: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile(String, System.Collections.Generic.IReadOnlyDictionary(Of String, System.Linq.Expressions.Expression))
-  nameWithType: VBSyntaxExpressionCompiler.Compile(string, IReadOnlyDictionary<string, Expression>?)
-  nameWithType.vb: VBSyntaxExpressionCompiler.Compile(String, IReadOnlyDictionary(Of String, Expression))
-- uid: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile(System.String,Utils.Expressions.VBSyntax.Runtime.VBSyntaxCompilerContext)
-  name: Compile(string, VBSyntaxCompilerContext)
-  href: api/Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.html#Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_Compile_System_String_Utils_Expressions_VBSyntax_Runtime_VBSyntaxCompilerContext_
-  commentId: M:Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile(System.String,Utils.Expressions.VBSyntax.Runtime.VBSyntaxCompilerContext)
-  name.vb: Compile(String, VBSyntaxCompilerContext)
-  fullName: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile(string, Utils.Expressions.VBSyntax.Runtime.VBSyntaxCompilerContext)
-  fullName.vb: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile(String, Utils.Expressions.VBSyntax.Runtime.VBSyntaxCompilerContext)
-  nameWithType: VBSyntaxExpressionCompiler.Compile(string, VBSyntaxCompilerContext)
-  nameWithType.vb: VBSyntaxExpressionCompiler.Compile(String, VBSyntaxCompilerContext)
+- uid: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile(System.String)
+  name: Compile(string)
+  href: api/Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.html#Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_Compile_System_String_
+  commentId: M:Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile(System.String)
+  name.vb: Compile(String)
+  fullName: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile(string)
+  fullName.vb: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile(String)
+  nameWithType: VBSyntaxExpressionCompiler.Compile(string)
+  nameWithType.vb: VBSyntaxExpressionCompiler.Compile(String)
 - uid: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile*
   name: Compile
   href: api/Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.html#Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_Compile_
@@ -13508,6 +13630,49 @@ references:
   isSpec: "True"
   fullName: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile
   nameWithType: VBSyntaxExpressionCompiler.Compile
+- uid: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileExpression(System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Linq.Expressions.Expression})
+  name: CompileExpression(string, IReadOnlyDictionary<string, Expression>?)
+  href: api/Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.html#Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_CompileExpression_System_String_System_Collections_Generic_IReadOnlyDictionary_System_String_System_Linq_Expressions_Expression__
+  commentId: M:Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileExpression(System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Linq.Expressions.Expression})
+  name.vb: CompileExpression(String, IReadOnlyDictionary(Of String, Expression))
+  fullName: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileExpression(string, System.Collections.Generic.IReadOnlyDictionary<string, System.Linq.Expressions.Expression>?)
+  fullName.vb: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileExpression(String, System.Collections.Generic.IReadOnlyDictionary(Of String, System.Linq.Expressions.Expression))
+  nameWithType: VBSyntaxExpressionCompiler.CompileExpression(string, IReadOnlyDictionary<string, Expression>?)
+  nameWithType.vb: VBSyntaxExpressionCompiler.CompileExpression(String, IReadOnlyDictionary(Of String, Expression))
+- uid: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileExpression(System.String,Utils.Expressions.VBSyntax.Runtime.VBSyntaxCompilerContext)
+  name: CompileExpression(string, VBSyntaxCompilerContext)
+  href: api/Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.html#Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_CompileExpression_System_String_Utils_Expressions_VBSyntax_Runtime_VBSyntaxCompilerContext_
+  commentId: M:Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileExpression(System.String,Utils.Expressions.VBSyntax.Runtime.VBSyntaxCompilerContext)
+  name.vb: CompileExpression(String, VBSyntaxCompilerContext)
+  fullName: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileExpression(string, Utils.Expressions.VBSyntax.Runtime.VBSyntaxCompilerContext)
+  fullName.vb: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileExpression(String, Utils.Expressions.VBSyntax.Runtime.VBSyntaxCompilerContext)
+  nameWithType: VBSyntaxExpressionCompiler.CompileExpression(string, VBSyntaxCompilerContext)
+  nameWithType.vb: VBSyntaxExpressionCompiler.CompileExpression(String, VBSyntaxCompilerContext)
+- uid: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileExpression*
+  name: CompileExpression
+  href: api/Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.html#Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_CompileExpression_
+  commentId: Overload:Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileExpression
+  isSpec: "True"
+  fullName: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileExpression
+  nameWithType: VBSyntaxExpressionCompiler.CompileExpression
+- uid: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileExpression``1(System.String)
+  name: CompileExpression<T>(string)
+  href: api/Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.html#Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_CompileExpression__1_System_String_
+  commentId: M:Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileExpression``1(System.String)
+  name.vb: CompileExpression(Of T)(String)
+  fullName: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileExpression<T>(string)
+  fullName.vb: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileExpression(Of T)(String)
+  nameWithType: VBSyntaxExpressionCompiler.CompileExpression<T>(string)
+  nameWithType.vb: VBSyntaxExpressionCompiler.CompileExpression(Of T)(String)
+- uid: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileExpression``1(System.String,System.Linq.Expressions.ParameterExpression[])
+  name: CompileExpression<T>(string, ParameterExpression[])
+  href: api/Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.html#Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_CompileExpression__1_System_String_System_Linq_Expressions_ParameterExpression___
+  commentId: M:Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileExpression``1(System.String,System.Linq.Expressions.ParameterExpression[])
+  name.vb: CompileExpression(Of T)(String, ParameterExpression())
+  fullName: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileExpression<T>(string, System.Linq.Expressions.ParameterExpression[])
+  fullName.vb: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileExpression(Of T)(String, System.Linq.Expressions.ParameterExpression())
+  nameWithType: VBSyntaxExpressionCompiler.CompileExpression<T>(string, ParameterExpression[])
+  nameWithType.vb: VBSyntaxExpressionCompiler.CompileExpression(Of T)(String, ParameterExpression())
 - uid: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileSource(System.String,Utils.Expressions.VBSyntax.Runtime.VBSyntaxCompilerContext)
   name: CompileSource(string, VBSyntaxCompilerContext)
   href: api/Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.html#Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_CompileSource_System_String_Utils_Expressions_VBSyntax_Runtime_VBSyntaxCompilerContext_
@@ -13525,23 +13690,14 @@ references:
   fullName: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileSource
   nameWithType: VBSyntaxExpressionCompiler.CompileSource
 - uid: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile``1(System.String)
-  name: Compile<T>(string)
+  name: Compile<TDelegate>(string)
   href: api/Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.html#Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_Compile__1_System_String_
   commentId: M:Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile``1(System.String)
-  name.vb: Compile(Of T)(String)
-  fullName: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile<T>(string)
-  fullName.vb: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile(Of T)(String)
-  nameWithType: VBSyntaxExpressionCompiler.Compile<T>(string)
-  nameWithType.vb: VBSyntaxExpressionCompiler.Compile(Of T)(String)
-- uid: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile``1(System.String,System.Linq.Expressions.ParameterExpression[])
-  name: Compile<T>(string, ParameterExpression[])
-  href: api/Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.html#Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_Compile__1_System_String_System_Linq_Expressions_ParameterExpression___
-  commentId: M:Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile``1(System.String,System.Linq.Expressions.ParameterExpression[])
-  name.vb: Compile(Of T)(String, ParameterExpression())
-  fullName: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile<T>(string, System.Linq.Expressions.ParameterExpression[])
-  fullName.vb: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile(Of T)(String, System.Linq.Expressions.ParameterExpression())
-  nameWithType: VBSyntaxExpressionCompiler.Compile<T>(string, ParameterExpression[])
-  nameWithType.vb: VBSyntaxExpressionCompiler.Compile(Of T)(String, ParameterExpression())
+  name.vb: Compile(Of TDelegate)(String)
+  fullName: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile<TDelegate>(string)
+  fullName.vb: Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile(Of TDelegate)(String)
+  nameWithType: VBSyntaxExpressionCompiler.Compile<TDelegate>(string)
+  nameWithType.vb: VBSyntaxExpressionCompiler.Compile(Of TDelegate)(String)
 - uid: Utils.Expressions.VBSyntax.Runtime.VBSyntaxToken
   name: VBSyntaxToken
   href: api/Utils.Expressions.VBSyntax.Runtime.VBSyntaxToken.html
@@ -41805,6 +41961,23 @@ references:
   fullName.vb: Utils.Mathematics.Expressions.ExpressionDerivation(Of T).Tan
   nameWithType: ExpressionDerivation<T>.Tan
   nameWithType.vb: ExpressionDerivation(Of T).Tan
+- uid: Utils.Mathematics.Expressions.ExpressionDerivation`1.Transform(System.Linq.Expressions.Expression)
+  name: Transform(Expression)
+  href: api/Utils.Mathematics.Expressions.ExpressionDerivation-1.html#Utils_Mathematics_Expressions_ExpressionDerivation_1_Transform_System_Linq_Expressions_Expression_
+  commentId: M:Utils.Mathematics.Expressions.ExpressionDerivation`1.Transform(System.Linq.Expressions.Expression)
+  fullName: Utils.Mathematics.Expressions.ExpressionDerivation<T>.Transform(System.Linq.Expressions.Expression)
+  fullName.vb: Utils.Mathematics.Expressions.ExpressionDerivation(Of T).Transform(System.Linq.Expressions.Expression)
+  nameWithType: ExpressionDerivation<T>.Transform(Expression)
+  nameWithType.vb: ExpressionDerivation(Of T).Transform(Expression)
+- uid: Utils.Mathematics.Expressions.ExpressionDerivation`1.Transform*
+  name: Transform
+  href: api/Utils.Mathematics.Expressions.ExpressionDerivation-1.html#Utils_Mathematics_Expressions_ExpressionDerivation_1_Transform_
+  commentId: Overload:Utils.Mathematics.Expressions.ExpressionDerivation`1.Transform
+  isSpec: "True"
+  fullName: Utils.Mathematics.Expressions.ExpressionDerivation<T>.Transform
+  fullName.vb: Utils.Mathematics.Expressions.ExpressionDerivation(Of T).Transform
+  nameWithType: ExpressionDerivation<T>.Transform
+  nameWithType.vb: ExpressionDerivation(Of T).Transform
 - uid: Utils.Mathematics.Expressions.ExpressionExtensions
   name: ExpressionExtensions
   href: api/Utils.Mathematics.Expressions.ExpressionExtensions.html
@@ -42441,6 +42614,23 @@ references:
   fullName.vb: Utils.Mathematics.Expressions.ExpressionIntegration(Of T).Tanh
   nameWithType: ExpressionIntegration<T>.Tanh
   nameWithType.vb: ExpressionIntegration(Of T).Tanh
+- uid: Utils.Mathematics.Expressions.ExpressionIntegration`1.Transform(System.Linq.Expressions.Expression)
+  name: Transform(Expression)
+  href: api/Utils.Mathematics.Expressions.ExpressionIntegration-1.html#Utils_Mathematics_Expressions_ExpressionIntegration_1_Transform_System_Linq_Expressions_Expression_
+  commentId: M:Utils.Mathematics.Expressions.ExpressionIntegration`1.Transform(System.Linq.Expressions.Expression)
+  fullName: Utils.Mathematics.Expressions.ExpressionIntegration<T>.Transform(System.Linq.Expressions.Expression)
+  fullName.vb: Utils.Mathematics.Expressions.ExpressionIntegration(Of T).Transform(System.Linq.Expressions.Expression)
+  nameWithType: ExpressionIntegration<T>.Transform(Expression)
+  nameWithType.vb: ExpressionIntegration(Of T).Transform(Expression)
+- uid: Utils.Mathematics.Expressions.ExpressionIntegration`1.Transform*
+  name: Transform
+  href: api/Utils.Mathematics.Expressions.ExpressionIntegration-1.html#Utils_Mathematics_Expressions_ExpressionIntegration_1_Transform_
+  commentId: Overload:Utils.Mathematics.Expressions.ExpressionIntegration`1.Transform
+  isSpec: "True"
+  fullName: Utils.Mathematics.Expressions.ExpressionIntegration<T>.Transform
+  fullName.vb: Utils.Mathematics.Expressions.ExpressionIntegration(Of T).Transform
+  nameWithType: ExpressionIntegration<T>.Transform
+  nameWithType.vb: ExpressionIntegration(Of T).Transform
 - uid: Utils.Mathematics.Expressions.ExpressionSimplifier
   name: ExpressionSimplifier
   href: api/Utils.Mathematics.Expressions.ExpressionSimplifier.html
@@ -43461,6 +43651,19 @@ references:
   isSpec: "True"
   fullName: Utils.Mathematics.Expressions.ExpressionSimplifier.TanhConversionMath
   nameWithType: ExpressionSimplifier.TanhConversionMath
+- uid: Utils.Mathematics.Expressions.ExpressionSimplifier.Transform(System.Linq.Expressions.Expression)
+  name: Transform(Expression)
+  href: api/Utils.Mathematics.Expressions.ExpressionSimplifier.html#Utils_Mathematics_Expressions_ExpressionSimplifier_Transform_System_Linq_Expressions_Expression_
+  commentId: M:Utils.Mathematics.Expressions.ExpressionSimplifier.Transform(System.Linq.Expressions.Expression)
+  fullName: Utils.Mathematics.Expressions.ExpressionSimplifier.Transform(System.Linq.Expressions.Expression)
+  nameWithType: ExpressionSimplifier.Transform(Expression)
+- uid: Utils.Mathematics.Expressions.ExpressionSimplifier.Transform*
+  name: Transform
+  href: api/Utils.Mathematics.Expressions.ExpressionSimplifier.html#Utils_Mathematics_Expressions_ExpressionSimplifier_Transform_
+  commentId: Overload:Utils.Mathematics.Expressions.ExpressionSimplifier.Transform
+  isSpec: "True"
+  fullName: Utils.Mathematics.Expressions.ExpressionSimplifier.Transform
+  nameWithType: ExpressionSimplifier.Transform
 - uid: Utils.Mathematics.Expressions.MathExpressionExtensions
   name: MathExpressionExtensions
   href: api/Utils.Mathematics.Expressions.MathExpressionExtensions.html

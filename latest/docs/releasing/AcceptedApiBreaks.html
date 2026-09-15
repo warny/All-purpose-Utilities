@@ -625,6 +625,83 @@ to restore a best-effort parse with diagnostics instead of an exception.</p>
 <li>SMTP string envelopes are parsed strictly and typed overloads separate paths from ESMTP options.</li>
 <li>Negative responses use <code>ProtocolResponseException</code>; lost framing makes the session permanently unusable.</li>
 </ul>
+<p><a id="expression-compiler-capability-split"></a></p>
+<h2 id="200-rc2-expression-compiler-capability-split">2.0.0-rc.2: expression compiler capability split</h2>
+<p>This human-review section summarizes the exact machine-enforced diagnostics in <code>eng/api-breaking-changes/2.0.0-rc.2.json</code>. That JSON file remains authoritative; every addition or stale acceptance fails the API gate. Unlike the <code>2.0.0.json</code> breaks documented above (the original 1.x/0.x → 2.0.0-rc.1 major-version migration), this section covers changes introduced strictly <em>after</em> the published <code>2.0.0-rc.1</code> baseline.</p>
+<p><strong>Why</strong>: <code>IExpressionCompiler.Compile(string, IReadOnlyDictionary&lt;string, Expression&gt;?)</code> was ambiguous — it could only ever mean &quot;compile to an <code>Expression</code>&quot;, yet the same verb is also the natural name for &quot;compile to an executable delegate&quot;. The compilation surface was split into four independent capability interfaces:</p>
+<ul>
+<li><code>IDelegateCompiler</code> — <code>Compile(string)</code> / <code>Compile&lt;TDelegate&gt;(string)</code>, compiling straight to an executable delegate.</li>
+<li><code>IExpressionCompiler : IDelegateCompiler</code> — <code>CompileExpression(string, symbols?)</code> / <code>CompileExpression&lt;TDelegate&gt;(string)</code>, compiling to a LINQ expression tree (the renamed former <code>Compile</code>).</li>
+<li><code>ITypeCompiler</code> — <code>CompileType(string)</code> / <code>CompileType&lt;T&gt;(string)</code> (new, no production implementation yet).</li>
+<li><code>IAssemblyCompiler</code> — <code>CompileAssembly(string)</code> (new, no production implementation yet).</li>
+</ul>
+<p>This is a deliberate, clean rename with no <code>[Obsolete]</code> compatibility shim: keeping a <code>Compile</code> overload that still returned <code>Expression</code> would have recreated exactly the ambiguity this split exists to remove. <code>CSyntaxExpressionCompiler</code> and <code>VBSyntaxExpressionCompiler</code> (the two production <code>IExpressionCompiler</code> implementations) were updated accordingly, and <code>Utils.Parser.Expressions</code>'s public constructors/adapters that accept an <code>IExpressionCompiler</code> are affected transitively since the interface shape they depend on changed.</p>
+<ul>
+<li>Published baseline: <code>2.0.0-rc.1</code></li>
+</ul>
+<h3 id="omyutils-1">omy.Utils</h3>
+<ul>
+<li><code>CP0002</code> — <code>System.Linq.Expressions.Expression Utils.Expressions.IExpressionCompiler.Compile(string, System.Collections.Generic.IReadOnlyDictionary&lt;string, System.Linq.Expressions.Expression&gt;?)</code> removed (renamed to <code>CompileExpression</code>)</li>
+<li><code>CP0006</code> — <code>System.Linq.Expressions.Expression Utils.Expressions.IExpressionCompiler.CompileExpression(string, System.Collections.Generic.IReadOnlyDictionary&lt;string, System.Linq.Expressions.Expression&gt;?)</code> added</li>
+<li><code>CP0006</code> — <code>System.Linq.Expressions.Expression&lt;TDelegate&gt; Utils.Expressions.IExpressionCompiler.CompileExpression&lt;TDelegate&gt;(string)</code> added</li>
+</ul>
+<h3 id="omyutilsexpressionscsyntax">omy.Utils.Expressions.CSyntax</h3>
+<ul>
+<li><code>CP0002</code> — <code>System.Linq.Expressions.Expression Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(string, System.Collections.Generic.IReadOnlyDictionary&lt;string, System.Linq.Expressions.Expression&gt;?)</code> removed (renamed to <code>CompileExpression</code>)</li>
+<li><code>CP0002</code> — <code>System.Linq.Expressions.Expression&lt;T&gt; Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile&lt;T&gt;(string)</code> removed (renamed to <code>CompileExpression&lt;T&gt;</code>; the new <code>Compile&lt;TDelegate&gt;</code> returns a real delegate instead)</li>
+<li><code>CP0002</code> — <code>System.Linq.Expressions.Expression Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(string, Utils.Expressions.ExpressionCompilerContext)</code> removed (renamed to <code>CompileExpression</code>)</li>
+<li><code>CP0002</code> — <code>System.Linq.Expressions.LambdaExpression Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile&lt;T&gt;(string, System.Linq.Expressions.ParameterExpression[])</code> removed (renamed to <code>CompileExpression&lt;T&gt;</code>)</li>
+<li><code>CP0002</code> — <code>System.Linq.Expressions.LambdaExpression Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile&lt;T&gt;(string, System.Linq.Expressions.ParameterExpression[], System.Type?, bool)</code> removed (renamed to <code>CompileExpression&lt;T&gt;</code>)</li>
+<li><code>CP0002</code> — <code>System.Linq.Expressions.LambdaExpression Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(string, System.Linq.Expressions.ParameterExpression[], System.Type, bool)</code> removed (renamed to <code>CompileExpression</code>)</li>
+<li><code>CP0002</code> — <code>System.Linq.Expressions.Expression Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(Utils.Parser.Runtime.ParseNode, System.Collections.Generic.IReadOnlyDictionary&lt;string, System.Linq.Expressions.Expression&gt;?)</code> removed (renamed to <code>CompileExpression</code>)</li>
+</ul>
+<p>These last five entries close a gap in the initial split: every public overload that returns an
+<code>Expression</code>/<code>LambdaExpression</code> tree is now named <code>CompileExpression</code>, not only the two overloads
+declared directly on the <code>IExpressionCompiler</code> interface. The internal, non-public <code>Compile</code> overloads
+used purely as implementation details are unaffected and keep their name.</p>
+<h3 id="omyutilsexpressionsvbsyntax">omy.Utils.Expressions.VBSyntax</h3>
+<ul>
+<li><code>CP0002</code> — <code>System.Linq.Expressions.Expression Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile(string, System.Collections.Generic.IReadOnlyDictionary&lt;string, System.Linq.Expressions.Expression&gt;?)</code> removed (renamed to <code>CompileExpression</code>)</li>
+<li><code>CP0002</code> — <code>System.Linq.Expressions.Expression&lt;T&gt; Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile&lt;T&gt;(string)</code> removed (renamed to <code>CompileExpression&lt;T&gt;</code>; the new <code>Compile&lt;TDelegate&gt;</code> returns a real delegate instead)</li>
+<li><code>CP0002</code> — <code>System.Linq.Expressions.Expression Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile(string, Utils.Expressions.VBSyntax.Runtime.VBSyntaxCompilerContext)</code> removed (renamed to <code>CompileExpression</code>)</li>
+<li><code>CP0002</code> — <code>System.Linq.Expressions.LambdaExpression Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile&lt;T&gt;(string, System.Linq.Expressions.ParameterExpression[])</code> removed (renamed to <code>CompileExpression&lt;T&gt;</code>)</li>
+</ul>
+<p>These last two entries close the same gap as CSyntax above, for VBSyntax's context- and
+parameter-based overloads.</p>
+<h3 id="omyutilsparserexpressions">omy.Utils.Parser.Expressions</h3>
+<p>No breaking ApiCompat diagnostics: its public constructors accept <code>IExpressionCompiler</code> by parameter type, and referencing a type whose <em>own</em> shape changed elsewhere does not itself change this package's public surface. No <code>acceptedDiagnostics</code> entry is needed for this package.</p>
+<p><a id="expression-transformer-public-entry-point"></a></p>
+<h2 id="200-rc2-expressiontransformer-public-entry-point">2.0.0-rc.2: ExpressionTransformer public entry point</h2>
+<p><code>ExpressionTransformer.Transform(Expression)</code> previously conflated the transformer's public entry point
+with its internal recursive rule-matching engine: it was <code>protected</code>, so a direct subclass could call it
+but also had to rely on it for both &quot;run this transformer&quot; and &quot;continue transforming a sub-node&quot; -
+two conceptually different operations sharing one member.</p>
+<p><strong>Why</strong>: <code>Transform</code> is now <code>public abstract Expression Transform(Expression)</code> - the contract every
+concrete transformer must implement as its public entry point. The historical recursive engine moved,
+unchanged, to <code>protected Expression TransformCore(Expression)</code>. This is <strong>not</strong> tracked by the ApiCompat
+gate's <code>acceptedDiagnostics</code> mechanism: empirically, ApiCompat's forward comparison against the
+<code>2.0.0-rc.1</code> baseline for <code>omy.Utils</code> did not flag this change as a diagnostic requiring acceptance
+(only the <code>IExpressionCompiler</code> renames above did). It is documented here anyway because it is a real,
+deliberate breaking change for any external subclass of <code>ExpressionTransformer</code>.</p>
+<p><strong>Migration for any direct subclass of <code>ExpressionTransformer</code></strong> (outside this repository, since every
+in-repo subclass - <code>ExpressionSimplifier</code>, <code>ExpressionDerivation&lt;T&gt;</code>, <code>ExpressionIntegration&lt;T&gt;</code>, and the
+private test fixtures - was already updated as part of this change):</p>
+<ul>
+<li>Implement <code>public override Expression Transform(Expression expression)</code> as the subclass's own public
+entry point. For a transformer with no extra per-call preparation, this can simply forward:
+<code>public override Expression Transform(Expression expression) =&gt; TransformCore(expression);</code></li>
+<li>Every internal recursive call that used to say <code>Transform(subNode)</code> to continue transforming a
+sub-expression as part of an in-flight transformation must now say <code>TransformCore(subNode)</code> instead.
+The public <code>Transform</code> is the semantic entry point for a <em>consumer</em> of the transformer. Once a method
+has already resolved its own context and constructed a fully configured internal worker - as
+<code>ExpressionDerivation&lt;T&gt;.Derivate</code>/<code>ExpressionIntegration&lt;T&gt;.Integrate</code> do - it starts the engine
+directly via <code>worker.TransformCore(...)</code>, not <code>worker.Transform(...)</code>: the worker is already known to be
+correctly configured, so routing back through the public entry point's dispatch logic would be redundant
+(and, for a non-lambda body, would not even follow the intended code path). All recursion from that
+point on then stays within <code>TransformCore</code>.</li>
+<li><code>TransformCore</code> remains <code>protected</code>, exactly as <code>Transform</code> was before this change, so existing access
+from a subclass is unaffected beyond the rename.</li>
+</ul>
 
 </article>
 

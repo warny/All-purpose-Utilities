@@ -104,7 +104,7 @@ Supports arithmetic, logical and comparison operators, control flow
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public sealed class VBSyntaxExpressionCompiler : IExpressionCompiler</code></pre>
+    <pre><code class="lang-csharp hljs">public sealed class VBSyntaxExpressionCompiler : IExpressionCompiler, IDelegateCompiler</code></pre>
   </div>
 
 
@@ -122,6 +122,7 @@ Supports arithmetic, logical and comparison operators, control flow
     <dt>Implements</dt>
     <dd>
       <div><a class="xref" href="Utils.Expressions.IExpressionCompiler.html">IExpressionCompiler</a></div>
+      <div><a class="xref" href="Utils.Expressions.IDelegateCompiler.html">IDelegateCompiler</a></div>
     </dd>
   </dl>
 
@@ -251,8 +252,47 @@ Supports arithmetic, logical and comparison operators, control flow
 
   <a id="Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_Compile_" data-uid="Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile*"></a>
 
-  <h3 id="Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_Compile_System_String_System_Collections_Generic_IReadOnlyDictionary_System_String_System_Linq_Expressions_Expression__" data-uid="Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile(System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Linq.Expressions.Expression})">
-  Compile(string, IReadOnlyDictionary&lt;string, Expression&gt;?)
+  <h3 id="Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_Compile_System_String_" data-uid="Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile(System.String)">
+  Compile(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Expressions.VBSyntax/Runtime/VBSyntaxExpressionCompiler.cs/#L62"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Compiles source text directly to an executable delegate, via <a class="xref" href="Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.html#Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_CompileExpression_System_String_System_Collections_Generic_IReadOnlyDictionary_System_String_System_Linq_Expressions_Expression__">CompileExpression(string, IReadOnlyDictionary&lt;string, Expression&gt;?)</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Delegate Compile(string content)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>content</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>VB-like source text.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.delegate">Delegate</a></dt>
+    <dd><p>The compiled delegate.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_CompileExpression_" data-uid="Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileExpression*"></a>
+
+  <h3 id="Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_CompileExpression_System_String_System_Collections_Generic_IReadOnlyDictionary_System_String_System_Linq_Expressions_Expression__" data-uid="Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileExpression(System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Linq.Expressions.Expression})">
+  CompileExpression(string, IReadOnlyDictionary&lt;string, Expression&gt;?)
   <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Expressions.VBSyntax/Runtime/VBSyntaxExpressionCompiler.cs/#L50"><i class="bi bi-code-slash"></i></a>
   </h3>
 
@@ -261,7 +301,7 @@ Supports arithmetic, logical and comparison operators, control flow
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Expression Compile(string content, IReadOnlyDictionary&lt;string, Expression&gt;? symbols = null)</code></pre>
+    <pre><code class="lang-csharp hljs">public Expression CompileExpression(string content, IReadOnlyDictionary&lt;string, Expression&gt;? symbols = null)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -291,11 +331,11 @@ Supports arithmetic, logical and comparison operators, control flow
 
 
 
-  <a id="Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_Compile_" data-uid="Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile*"></a>
+  <a id="Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_CompileExpression_" data-uid="Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileExpression*"></a>
 
-  <h3 id="Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_Compile_System_String_Utils_Expressions_VBSyntax_Runtime_VBSyntaxCompilerContext_" data-uid="Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile(System.String,Utils.Expressions.VBSyntax.Runtime.VBSyntaxCompilerContext)">
-  Compile(string, VBSyntaxCompilerContext)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Expressions.VBSyntax/Runtime/VBSyntaxExpressionCompiler.cs/#L63"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_CompileExpression_System_String_Utils_Expressions_VBSyntax_Runtime_VBSyntaxCompilerContext_" data-uid="Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileExpression(System.String,Utils.Expressions.VBSyntax.Runtime.VBSyntaxCompilerContext)">
+  CompileExpression(string, VBSyntaxCompilerContext)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Expressions.VBSyntax/Runtime/VBSyntaxExpressionCompiler.cs/#L84"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Parses and compiles a VB-like expression using a rich runtime context.</p>
@@ -303,7 +343,7 @@ Supports arithmetic, logical and comparison operators, control flow
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Expression Compile(string content, VBSyntaxCompilerContext context)</code></pre>
+    <pre><code class="lang-csharp hljs">public Expression CompileExpression(string content, VBSyntaxCompilerContext context)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -333,11 +373,107 @@ Supports arithmetic, logical and comparison operators, control flow
 
 
 
+  <a id="Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_CompileExpression_" data-uid="Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileExpression*"></a>
+
+  <h3 id="Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_CompileExpression__1_System_String_" data-uid="Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileExpression``1(System.String)">
+  CompileExpression&lt;T&gt;(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Expressions.VBSyntax/Runtime/VBSyntaxExpressionCompiler.cs/#L129"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Compiles a VB-like lambda source into a typed delegate expression.
+When <code class="typeparamref">T</code> has no parameters, <code class="paramref">content</code> may also be a bare
+expression (no lambda syntax); it is wrapped in a parameterless lambda, converting its result
+to the delegate's return type if needed.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Expression&lt;T&gt; CompileExpression&lt;T&gt;(string content) where T : Delegate</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>content</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>VB-like lambda or expression body source.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression-1">Expression</a>&lt;T&gt;</dt>
+    <dd><p>Typed lambda expression.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Target delegate type.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_CompileExpression_" data-uid="Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileExpression*"></a>
+
+  <h3 id="Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_CompileExpression__1_System_String_System_Linq_Expressions_ParameterExpression___" data-uid="Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileExpression``1(System.String,System.Linq.Expressions.ParameterExpression[])">
+  CompileExpression&lt;T&gt;(string, ParameterExpression[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Expressions.VBSyntax/Runtime/VBSyntaxExpressionCompiler.cs/#L151"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Compiles a VB-like expression body with explicit parameters into a typed lambda.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public LambdaExpression CompileExpression&lt;T&gt;(string content, ParameterExpression[] parameters) where T : Delegate</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>content</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Expression body (no lambda header required).</p>
+</dd>
+    <dt><code>parameters</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.parameterexpression">ParameterExpression</a>[]</dt>
+    <dd><p>Lambda parameters to bind as symbols.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.lambdaexpression">LambdaExpression</a></dt>
+    <dd><p>Lambda expression compatible with <code class="typeparamref">T</code>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Target delegate type.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
   <a id="Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_CompileSource_" data-uid="Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileSource*"></a>
 
   <h3 id="Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_CompileSource_System_String_Utils_Expressions_VBSyntax_Runtime_VBSyntaxCompilerContext_" data-uid="Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.CompileSource(System.String,Utils.Expressions.VBSyntax.Runtime.VBSyntaxCompilerContext)">
   CompileSource(string, VBSyntaxCompilerContext)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Expressions.VBSyntax/Runtime/VBSyntaxExpressionCompiler.cs/#L79"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Expressions.VBSyntax/Runtime/VBSyntaxExpressionCompiler.cs/#L100"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Compiles a full VB-like source block (multiple statements / declarations).
@@ -380,16 +516,17 @@ in <code class="paramref">context</code> so they can be retrieved after compilat
   <a id="Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_Compile_" data-uid="Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile*"></a>
 
   <h3 id="Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_Compile__1_System_String_" data-uid="Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile``1(System.String)">
-  Compile&lt;T&gt;(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Expressions.VBSyntax/Runtime/VBSyntaxExpressionCompiler.cs/#L105"><i class="bi bi-code-slash"></i></a>
+  Compile&lt;TDelegate&gt;(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Expressions.VBSyntax/Runtime/VBSyntaxExpressionCompiler.cs/#L75"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Compiles a VB-like lambda source into a typed delegate expression.</p>
+  <div class="markdown level1 summary"><p>Compiles source text directly to an executable delegate of type <code class="typeparamref">TDelegate</code>,
+via <a class="xref" href="Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.html#Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_CompileExpression__1_System_String_">CompileExpression&lt;T&gt;(string)</a>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Expression&lt;T&gt; Compile&lt;T&gt;(string content) where T : Delegate</code></pre>
+    <pre><code class="lang-csharp hljs">public TDelegate Compile&lt;TDelegate&gt;(string content) where TDelegate : Delegate</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -401,63 +538,15 @@ in <code class="paramref">context</code> so they can be retrieved after compilat
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression-1">Expression</a>&lt;T&gt;</dt>
-    <dd><p>Typed lambda expression.</p>
+    <dt><span class="xref">TDelegate</span></dt>
+    <dd><p>The compiled delegate.</p>
 </dd>
   </dl>
 
   <h4 class="section">Type Parameters</h4>
   <dl class="parameters">
-    <dt><code>T</code></dt>
-    <dd><p>Target delegate type.</p>
-</dd>
-  </dl>
-
-
-
-
-
-
-
-
-
-
-  <a id="Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_Compile_" data-uid="Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile*"></a>
-
-  <h3 id="Utils_Expressions_VBSyntax_Runtime_VBSyntaxExpressionCompiler_Compile__1_System_String_System_Linq_Expressions_ParameterExpression___" data-uid="Utils.Expressions.VBSyntax.Runtime.VBSyntaxExpressionCompiler.Compile``1(System.String,System.Linq.Expressions.ParameterExpression[])">
-  Compile&lt;T&gt;(string, ParameterExpression[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Expressions.VBSyntax/Runtime/VBSyntaxExpressionCompiler.cs/#L122"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Compiles a VB-like expression body with explicit parameters into a typed lambda.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public LambdaExpression Compile&lt;T&gt;(string content, ParameterExpression[] parameters) where T : Delegate</code></pre>
-  </div>
-
-  <h4 class="section">Parameters</h4>
-  <dl class="parameters">
-    <dt><code>content</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Expression body (no lambda header required).</p>
-</dd>
-    <dt><code>parameters</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.parameterexpression">ParameterExpression</a>[]</dt>
-    <dd><p>Lambda parameters to bind as symbols.</p>
-</dd>
-  </dl>
-
-  <h4 class="section">Returns</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.lambdaexpression">LambdaExpression</a></dt>
-    <dd><p>Lambda expression compatible with <code class="typeparamref">T</code>.</p>
-</dd>
-  </dl>
-
-  <h4 class="section">Type Parameters</h4>
-  <dl class="parameters">
-    <dt><code>T</code></dt>
-    <dd><p>Target delegate type.</p>
+    <dt><code>TDelegate</code></dt>
+    <dd><p>The delegate type to compile to.</p>
 </dd>
   </dl>
 

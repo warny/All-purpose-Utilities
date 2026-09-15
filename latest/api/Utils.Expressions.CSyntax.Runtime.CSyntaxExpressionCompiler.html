@@ -103,7 +103,7 @@ Class CSyntaxExpressionCompiler  <a class="header-action link-secondary" title="
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public sealed class CSyntaxExpressionCompiler : IExpressionCompiler</code></pre>
+    <pre><code class="lang-csharp hljs">public sealed class CSyntaxExpressionCompiler : IExpressionCompiler, IDelegateCompiler</code></pre>
   </div>
 
 
@@ -121,6 +121,7 @@ Class CSyntaxExpressionCompiler  <a class="header-action link-secondary" title="
     <dt>Implements</dt>
     <dd>
       <div><a class="xref" href="Utils.Expressions.IExpressionCompiler.html">IExpressionCompiler</a></div>
+      <div><a class="xref" href="Utils.Expressions.IDelegateCompiler.html">IDelegateCompiler</a></div>
     </dd>
   </dl>
 
@@ -250,8 +251,47 @@ Class CSyntaxExpressionCompiler  <a class="header-action link-secondary" title="
 
   <a id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_Compile_" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile*"></a>
 
-  <h3 id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_Compile_System_String_System_Collections_Generic_IReadOnlyDictionary_System_String_System_Linq_Expressions_Expression__" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Linq.Expressions.Expression})">
-  Compile(string, IReadOnlyDictionary&lt;string, Expression&gt;?)
+  <h3 id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_Compile_System_String_" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(System.String)">
+  Compile(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Expressions.CSyntax/Runtime/CSyntaxExpressionCompiler.cs/#L48"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Compiles source text directly to an executable delegate, via <a class="xref" href="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.html#Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_CompileExpression_System_String_System_Collections_Generic_IReadOnlyDictionary_System_String_System_Linq_Expressions_Expression__">CompileExpression(string, IReadOnlyDictionary&lt;string, Expression&gt;?)</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Delegate Compile(string content)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>content</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>C-like content to parse and compile.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.delegate">Delegate</a></dt>
+    <dd><p>The compiled delegate.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_CompileExpression_" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression*"></a>
+
+  <h3 id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_CompileExpression_System_String_System_Collections_Generic_IReadOnlyDictionary_System_String_System_Linq_Expressions_Expression__" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression(System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Linq.Expressions.Expression})">
+  CompileExpression(string, IReadOnlyDictionary&lt;string, Expression&gt;?)
   <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Expressions.CSyntax/Runtime/CSyntaxExpressionCompiler.cs/#L32"><i class="bi bi-code-slash"></i></a>
   </h3>
 
@@ -260,7 +300,7 @@ Class CSyntaxExpressionCompiler  <a class="header-action link-secondary" title="
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Expression Compile(string content, IReadOnlyDictionary&lt;string, Expression&gt;? symbols = null)</code></pre>
+    <pre><code class="lang-csharp hljs">public Expression CompileExpression(string content, IReadOnlyDictionary&lt;string, Expression&gt;? symbols = null)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -291,11 +331,11 @@ Class CSyntaxExpressionCompiler  <a class="header-action link-secondary" title="
 
 
 
-  <a id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_Compile_" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile*"></a>
+  <a id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_CompileExpression_" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression*"></a>
 
-  <h3 id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_Compile_System_String_System_Linq_Expressions_ParameterExpression___System_Type_System_Boolean_" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(System.String,System.Linq.Expressions.ParameterExpression[],System.Type,System.Boolean)">
-  Compile(string, ParameterExpression[], Type, bool)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Expressions.CSyntax/Runtime/CSyntaxExpressionCompiler.cs/#L174"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_CompileExpression_System_String_System_Linq_Expressions_ParameterExpression___System_Type_System_Boolean_" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression(System.String,System.Linq.Expressions.ParameterExpression[],System.Type,System.Boolean)">
+  CompileExpression(string, ParameterExpression[], Type, bool)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Expressions.CSyntax/Runtime/CSyntaxExpressionCompiler.cs/#L202"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Compiles a C-like expression body with explicit parameters and return type,
@@ -304,7 +344,7 @@ returning a typed lambda expression.</p>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public LambdaExpression Compile(string content, ParameterExpression[] parameters, Type returnType, bool strictTypes)</code></pre>
+    <pre><code class="lang-csharp hljs">public LambdaExpression CompileExpression(string content, ParameterExpression[] parameters, Type returnType, bool strictTypes)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -340,11 +380,11 @@ returning a typed lambda expression.</p>
 
 
 
-  <a id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_Compile_" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile*"></a>
+  <a id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_CompileExpression_" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression*"></a>
 
-  <h3 id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_Compile_System_String_Utils_Expressions_ExpressionCompilerContext_" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(System.String,Utils.Expressions.ExpressionCompilerContext)">
-  Compile(string, ExpressionCompilerContext)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Expressions.CSyntax/Runtime/CSyntaxExpressionCompiler.cs/#L49"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_CompileExpression_System_String_Utils_Expressions_ExpressionCompilerContext_" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression(System.String,Utils.Expressions.ExpressionCompilerContext)">
+  CompileExpression(string, ExpressionCompilerContext)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Expressions.CSyntax/Runtime/CSyntaxExpressionCompiler.cs/#L70"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Parses and compiles C-like source while using and mutating a rich runtime context.</p>
@@ -352,7 +392,7 @@ returning a typed lambda expression.</p>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Expression Compile(string content, ExpressionCompilerContext context)</code></pre>
+    <pre><code class="lang-csharp hljs">public Expression CompileExpression(string content, ExpressionCompilerContext context)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -382,11 +422,11 @@ returning a typed lambda expression.</p>
 
 
 
-  <a id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_Compile_" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile*"></a>
+  <a id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_CompileExpression_" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression*"></a>
 
-  <h3 id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_Compile_Utils_Parser_Runtime_ParseNode_System_Collections_Generic_IReadOnlyDictionary_System_String_System_Linq_Expressions_Expression__" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile(Utils.Parser.Runtime.ParseNode,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Linq.Expressions.Expression})">
-  Compile(ParseNode, IReadOnlyDictionary&lt;string, Expression&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Expressions.CSyntax/Runtime/CSyntaxExpressionCompiler.cs/#L194"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_CompileExpression_Utils_Parser_Runtime_ParseNode_System_Collections_Generic_IReadOnlyDictionary_System_String_System_Linq_Expressions_Expression__" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression(Utils.Parser.Runtime.ParseNode,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Linq.Expressions.Expression})">
+  CompileExpression(ParseNode, IReadOnlyDictionary&lt;string, Expression&gt;?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Expressions.CSyntax/Runtime/CSyntaxExpressionCompiler.cs/#L222"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Compiles a parsed C-like tree into a LINQ expression tree.</p>
@@ -394,7 +434,7 @@ returning a typed lambda expression.</p>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Expression Compile(ParseNode root, IReadOnlyDictionary&lt;string, Expression&gt;? symbols = null)</code></pre>
+    <pre><code class="lang-csharp hljs">public Expression CompileExpression(ParseNode root, IReadOnlyDictionary&lt;string, Expression&gt;? symbols = null)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -425,11 +465,163 @@ returning a typed lambda expression.</p>
 
 
 
+  <a id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_CompileExpression_" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression*"></a>
+
+  <h3 id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_CompileExpression__1_System_String_" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression``1(System.String)">
+  CompileExpression&lt;T&gt;(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Expressions.CSyntax/Runtime/CSyntaxExpressionCompiler.cs/#L114"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Compiles a C-like lambda source into a typed delegate expression.
+Untyped parameters are resolved from the delegate type <code class="typeparamref">T</code>.
+When <code class="typeparamref">T</code> has no parameters, <code class="paramref">content</code> may also be a bare
+expression (no lambda syntax); it is wrapped in a parameterless lambda, converting its result
+to the delegate's return type if needed.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Expression&lt;T&gt; CompileExpression&lt;T&gt;(string content) where T : Delegate</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>content</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>C-like lambda source, or a bare expression when <code class="typeparamref">T</code> has no parameters.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression-1">Expression</a>&lt;T&gt;</dt>
+    <dd><p>Typed lambda expression.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Target delegate type.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_CompileExpression_" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression*"></a>
+
+  <h3 id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_CompileExpression__1_System_String_System_Linq_Expressions_ParameterExpression___" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression``1(System.String,System.Linq.Expressions.ParameterExpression[])">
+  CompileExpression&lt;T&gt;(string, ParameterExpression[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Expressions.CSyntax/Runtime/CSyntaxExpressionCompiler.cs/#L152"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Compiles a C-like expression body using explicit parameters and infers the return type
+from the provided delegate type.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public LambdaExpression CompileExpression&lt;T&gt;(string content, ParameterExpression[] parameters) where T : Delegate</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>content</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Expression body source (no lambda syntax).</p>
+</dd>
+    <dt><code>parameters</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.parameterexpression">ParameterExpression</a>[]</dt>
+    <dd><p>Lambda parameters to bind as symbols.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.lambdaexpression">LambdaExpression</a></dt>
+    <dd><p>Lambda expression compatible with <code class="typeparamref">T</code>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Target delegate type.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_CompileExpression_" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression*"></a>
+
+  <h3 id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_CompileExpression__1_System_String_System_Linq_Expressions_ParameterExpression___System_Type_System_Boolean_" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileExpression``1(System.String,System.Linq.Expressions.ParameterExpression[],System.Type,System.Boolean)">
+  CompileExpression&lt;T&gt;(string, ParameterExpression[], Type?, bool)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Expressions.CSyntax/Runtime/CSyntaxExpressionCompiler.cs/#L166"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Compiles a C-like expression body using explicit parameters and optional static member imports.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public LambdaExpression CompileExpression&lt;T&gt;(string content, ParameterExpression[] parameters, Type? importType, bool strictTypes) where T : Delegate</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>content</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Expression body source (no lambda syntax).</p>
+</dd>
+    <dt><code>parameters</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.parameterexpression">ParameterExpression</a>[]</dt>
+    <dd><p>Lambda parameters to bind as symbols.</p>
+</dd>
+    <dt><code>importType</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></dt>
+    <dd><p>Optional type whose compatible public static methods are imported as callable symbols.</p>
+</dd>
+    <dt><code>strictTypes</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>Reserved; currently ignored.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.lambdaexpression">LambdaExpression</a></dt>
+    <dd><p>Lambda expression compatible with <code class="typeparamref">T</code>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Target delegate type.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
   <a id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_CompileSource_" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileSource*"></a>
 
   <h3 id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_CompileSource_System_String_Utils_Expressions_ExpressionCompilerContext_" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.CompileSource(System.String,Utils.Expressions.ExpressionCompilerContext)">
   CompileSource(string, ExpressionCompilerContext)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Expressions.CSyntax/Runtime/CSyntaxExpressionCompiler.cs/#L68"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Expressions.CSyntax/Runtime/CSyntaxExpressionCompiler.cs/#L89"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Compiles a full source unit by parsing it as a block so declarations and expressions
@@ -471,17 +663,17 @@ can reference each other in source order.</p>
   <a id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_Compile_" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile*"></a>
 
   <h3 id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_Compile__1_System_String_" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile``1(System.String)">
-  Compile&lt;T&gt;(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Expressions.CSyntax/Runtime/CSyntaxExpressionCompiler.cs/#L90"><i class="bi bi-code-slash"></i></a>
+  Compile&lt;TDelegate&gt;(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Expressions.CSyntax/Runtime/CSyntaxExpressionCompiler.cs/#L61"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Compiles a C-like lambda source into a typed delegate expression.
-Untyped parameters are resolved from the delegate type <code class="typeparamref">T</code>.</p>
+  <div class="markdown level1 summary"><p>Compiles source text directly to an executable delegate of type <code class="typeparamref">TDelegate</code>,
+via <a class="xref" href="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.html#Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_CompileExpression__1_System_String_">CompileExpression&lt;T&gt;(string)</a>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Expression&lt;T&gt; Compile&lt;T&gt;(string content) where T : Delegate</code></pre>
+    <pre><code class="lang-csharp hljs">public TDelegate Compile&lt;TDelegate&gt;(string content) where TDelegate : Delegate</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -493,118 +685,15 @@ Untyped parameters are resolved from the delegate type <code class="typeparamref
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression-1">Expression</a>&lt;T&gt;</dt>
-    <dd><p>Typed lambda expression.</p>
+    <dt><span class="xref">TDelegate</span></dt>
+    <dd><p>The compiled delegate.</p>
 </dd>
   </dl>
 
   <h4 class="section">Type Parameters</h4>
   <dl class="parameters">
-    <dt><code>T</code></dt>
-    <dd><p>Target delegate type.</p>
-</dd>
-  </dl>
-
-
-
-
-
-
-
-
-
-
-  <a id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_Compile_" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile*"></a>
-
-  <h3 id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_Compile__1_System_String_System_Linq_Expressions_ParameterExpression___" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile``1(System.String,System.Linq.Expressions.ParameterExpression[])">
-  Compile&lt;T&gt;(string, ParameterExpression[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Expressions.CSyntax/Runtime/CSyntaxExpressionCompiler.cs/#L124"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Compiles a C-like expression body using explicit parameters and infers the return type
-from the provided delegate type.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public LambdaExpression Compile&lt;T&gt;(string content, ParameterExpression[] parameters) where T : Delegate</code></pre>
-  </div>
-
-  <h4 class="section">Parameters</h4>
-  <dl class="parameters">
-    <dt><code>content</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Expression body source (no lambda syntax).</p>
-</dd>
-    <dt><code>parameters</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.parameterexpression">ParameterExpression</a>[]</dt>
-    <dd><p>Lambda parameters to bind as symbols.</p>
-</dd>
-  </dl>
-
-  <h4 class="section">Returns</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.lambdaexpression">LambdaExpression</a></dt>
-    <dd><p>Lambda expression compatible with <code class="typeparamref">T</code>.</p>
-</dd>
-  </dl>
-
-  <h4 class="section">Type Parameters</h4>
-  <dl class="parameters">
-    <dt><code>T</code></dt>
-    <dd><p>Target delegate type.</p>
-</dd>
-  </dl>
-
-
-
-
-
-
-
-
-
-
-  <a id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_Compile_" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile*"></a>
-
-  <h3 id="Utils_Expressions_CSyntax_Runtime_CSyntaxExpressionCompiler_Compile__1_System_String_System_Linq_Expressions_ParameterExpression___System_Type_System_Boolean_" data-uid="Utils.Expressions.CSyntax.Runtime.CSyntaxExpressionCompiler.Compile``1(System.String,System.Linq.Expressions.ParameterExpression[],System.Type,System.Boolean)">
-  Compile&lt;T&gt;(string, ParameterExpression[], Type?, bool)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Expressions.CSyntax/Runtime/CSyntaxExpressionCompiler.cs/#L138"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Compiles a C-like expression body using explicit parameters and optional static member imports.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public LambdaExpression Compile&lt;T&gt;(string content, ParameterExpression[] parameters, Type? importType, bool strictTypes) where T : Delegate</code></pre>
-  </div>
-
-  <h4 class="section">Parameters</h4>
-  <dl class="parameters">
-    <dt><code>content</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Expression body source (no lambda syntax).</p>
-</dd>
-    <dt><code>parameters</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.parameterexpression">ParameterExpression</a>[]</dt>
-    <dd><p>Lambda parameters to bind as symbols.</p>
-</dd>
-    <dt><code>importType</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></dt>
-    <dd><p>Optional type whose compatible public static methods are imported as callable symbols.</p>
-</dd>
-    <dt><code>strictTypes</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
-    <dd><p>Reserved; currently ignored.</p>
-</dd>
-  </dl>
-
-  <h4 class="section">Returns</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.lambdaexpression">LambdaExpression</a></dt>
-    <dd><p>Lambda expression compatible with <code class="typeparamref">T</code>.</p>
-</dd>
-  </dl>
-
-  <h4 class="section">Type Parameters</h4>
-  <dl class="parameters">
-    <dt><code>T</code></dt>
-    <dd><p>Target delegate type.</p>
+    <dt><code>TDelegate</code></dt>
+    <dd><p>The delegate type to compile to.</p>
 </dd>
   </dl>
 

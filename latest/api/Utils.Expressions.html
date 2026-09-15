@@ -230,6 +230,16 @@ type of an operand beyond its <a class="xref" href="https://learn.microsoft.com/
 Interfaces
 </h3>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.IAssemblyCompiler.html">IAssemblyCompiler</a></dt>
+      <dd><p>Defines a contract for compilers that turn source text into a compiled <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.IDelegateCompiler.html">IDelegateCompiler</a></dt>
+      <dd><p>Defines a contract for compilers that turn source text into an executable delegate.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.Expressions.IDistanceValue-1.html">IDistanceValue&lt;T&gt;</a></dt>
       <dd><p>Represents a pairing of a distance measure and a value, typically used
 for scoring or ranking operations in method or constructor selection.</p>
@@ -237,7 +247,8 @@ for scoring or ranking operations in method or constructor selection.</p>
     </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.Expressions.IExpressionCompiler.html">IExpressionCompiler</a></dt>
-      <dd><p>Defines a lightweight contract for expression compilers that turn source text into LINQ expression trees.</p>
+      <dd><p>Defines a contract for expression compilers that turn source text into LINQ expression trees, and,
+since a lambda expression tree can always be compiled to a delegate, also exposes delegate compilation.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -249,6 +260,11 @@ for scoring or ranking operations in method or constructor selection.</p>
       <dt><a class="xref" href="Utils.Expressions.IResolver.html">IResolver</a></dt>
       <dd><p>Provides functionality to resolve types, constructors, methods, and members at runtime,
 as well as to manage constants in expressions.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ITypeCompiler.html">ITypeCompiler</a></dt>
+      <dd><p>Defines a contract for compilers that turn source text into a compiled <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>.</p>
 </dd>
     </dl>
     <dl class="jumplist">

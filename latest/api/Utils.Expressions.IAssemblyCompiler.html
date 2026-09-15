@@ -2,11 +2,11 @@
 <html>
   <head>
     <meta charset="utf-8">
-      <title>Interface IExpressionCompiler | omy.Utils Documentation </title>
+      <title>Interface IAssemblyCompiler | omy.Utils Documentation </title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="title" content="Interface IExpressionCompiler | omy.Utils Documentation ">
+      <meta name="title" content="Interface IAssemblyCompiler | omy.Utils Documentation ">
       
-      <meta name="description" content="Defines a contract for expression compilers that turn source text into LINQ expression trees, and, since a lambda expression tree can always be compiled to a delegate, also exposes delegate compilation.">
+      <meta name="description" content="Defines a contract for compilers that turn source text into a compiled .">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -16,7 +16,7 @@
       <meta name="docfx:rel" content="../">
       
       
-      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Expressions_IExpressionCompiler.md&amp;value=---%0Auid%3A%20Utils.Expressions.IExpressionCompiler%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Expressions_IAssemblyCompiler.md&amp;value=---%0Auid%3A%20Utils.Expressions.IAssemblyCompiler%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
       <meta name="loc:inThisArticle" content="In this article">
       <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
       <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
@@ -84,12 +84,12 @@
           <nav id="breadcrumb"></nav>
         </div>
 
-        <article data-uid="Utils.Expressions.IExpressionCompiler">
+        <article data-uid="Utils.Expressions.IAssemblyCompiler">
 
 
 
-  <h1 id="Utils_Expressions_IExpressionCompiler" data-uid="Utils.Expressions.IExpressionCompiler" class="text-break">
-Interface IExpressionCompiler  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/IExpressionCompiler.cs/#L31"><i class="bi bi-code-slash"></i></a>
+  <h1 id="Utils_Expressions_IAssemblyCompiler" data-uid="Utils.Expressions.IAssemblyCompiler" class="text-break">
+Interface IAssemblyCompiler  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/IExpressionCompiler.cs/#L75"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,13 +97,12 @@ Interface IExpressionCompiler  <a class="header-action link-secondary" title="Vi
   <dl><dt>Assembly</dt><dd>Utils.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Defines a contract for expression compilers that turn source text into LINQ expression trees, and,
-since a lambda expression tree can always be compiled to a delegate, also exposes delegate compilation.</p>
+  <div class="markdown summary"><p>Defines a contract for compilers that turn source text into a compiled <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a>.</p>
 </div>
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public interface IExpressionCompiler : IDelegateCompiler</code></pre>
+    <pre><code class="lang-csharp hljs">public interface IAssemblyCompiler</code></pre>
   </div>
 
 
@@ -112,16 +111,6 @@ since a lambda expression tree can always be compiled to a delegate, also expose
 
 
 
-  <dl class="typelist inheritedMembers">
-    <dt>Inherited Members</dt>
-    <dd>
-    <div>
-      <a class="xref" href="Utils.Expressions.IDelegateCompiler.html#Utils_Expressions_IDelegateCompiler_Compile_System_String_">IDelegateCompiler.Compile(string)</a>
-    </div>
-    <div>
-      <a class="xref" href="Utils.Expressions.IDelegateCompiler.html#Utils_Expressions_IDelegateCompiler_Compile__1_System_String_">IDelegateCompiler.Compile&lt;TDelegate&gt;(string)</a>
-    </div>
-  </dd></dl>
 
   <dl class="typelist extensionMethods">
     <dt>Extension Methods</dt>
@@ -223,61 +212,19 @@ since a lambda expression tree can always be compiled to a delegate, also expose
 </h2>
 
 
-  <a id="Utils_Expressions_IExpressionCompiler_CompileExpression_" data-uid="Utils.Expressions.IExpressionCompiler.CompileExpression*"></a>
+  <a id="Utils_Expressions_IAssemblyCompiler_CompileAssembly_" data-uid="Utils.Expressions.IAssemblyCompiler.CompileAssembly*"></a>
 
-  <h3 id="Utils_Expressions_IExpressionCompiler_CompileExpression_System_String_System_Collections_Generic_IReadOnlyDictionary_System_String_System_Linq_Expressions_Expression__" data-uid="Utils.Expressions.IExpressionCompiler.CompileExpression(System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Linq.Expressions.Expression})">
-  CompileExpression(string, IReadOnlyDictionary&lt;string, Expression&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/IExpressionCompiler.cs/#L39"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Expressions_IAssemblyCompiler_CompileAssembly_System_String_" data-uid="Utils.Expressions.IAssemblyCompiler.CompileAssembly(System.String)">
+  CompileAssembly(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/IExpressionCompiler.cs/#L82"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Compiles source text to an expression tree.</p>
+  <div class="markdown level1 summary"><p>Compiles source text to an <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">Expression CompileExpression(string content, IReadOnlyDictionary&lt;string, Expression&gt;? symbols = null)</code></pre>
-  </div>
-
-  <h4 class="section">Parameters</h4>
-  <dl class="parameters">
-    <dt><code>content</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Source text to compile.</p>
-</dd>
-    <dt><code>symbols</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a>&gt;</dt>
-    <dd><p>Optional symbol table used for identifier resolution.</p>
-</dd>
-  </dl>
-
-  <h4 class="section">Returns</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
-    <dd><p>The compiled expression.</p>
-</dd>
-  </dl>
-
-
-
-
-
-
-
-
-
-
-
-  <a id="Utils_Expressions_IExpressionCompiler_CompileExpression_" data-uid="Utils.Expressions.IExpressionCompiler.CompileExpression*"></a>
-
-  <h3 id="Utils_Expressions_IExpressionCompiler_CompileExpression__1_System_String_" data-uid="Utils.Expressions.IExpressionCompiler.CompileExpression``1(System.String)">
-  CompileExpression&lt;TDelegate&gt;(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/IExpressionCompiler.cs/#L47"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Compiles source text to a typed lambda expression tree.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">Expression&lt;TDelegate&gt; CompileExpression&lt;TDelegate&gt;(string content) where TDelegate : Delegate</code></pre>
+    <pre><code class="lang-csharp hljs">Assembly CompileAssembly(string content)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -289,17 +236,11 @@ since a lambda expression tree can always be compiled to a delegate, also expose
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression-1">Expression</a>&lt;TDelegate&gt;</dt>
-    <dd><p>The compiled, typed lambda expression tree.</p>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a></dt>
+    <dd><p>The compiled assembly.</p>
 </dd>
   </dl>
 
-  <h4 class="section">Type Parameters</h4>
-  <dl class="parameters">
-    <dt><code>TDelegate</code></dt>
-    <dd><p>The delegate type the compiled lambda expression must match.</p>
-</dd>
-  </dl>
 
 
 
@@ -314,7 +255,7 @@ since a lambda expression tree can always be compiled to a delegate, also expose
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/IExpressionCompiler.cs/#L31" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/IExpressionCompiler.cs/#L75" class="edit-link">Edit this page</a>
         </div>
 
 
