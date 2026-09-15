@@ -305,4 +305,72 @@ public class VBSyntaxExpressionCompilerTests
 
         Assert.IsInstanceOfType(result, typeof(System.Text.StringBuilder));
     }
+
+    // ── IDelegateCompiler ────────────────────────────────────────────────────
+
+    /// <summary>
+    /// <see cref="Utils.Expressions.IDelegateCompiler.Compile(string)"/> compiles a bare, non-lambda
+    /// expression directly to an executable <see cref="Delegate"/>, skipping the manual
+    /// <c>Expression.Lambda(...).Compile()</c> step that <c>CompileExpression</c> requires.
+    /// </summary>
+    [TestMethod]
+    public void Compile_SimpleExpression_ReturnsWorkingDelegate()
+    {
+        Delegate compiled = _compiler.Compile("1 + 2 * 3");
+
+        Assert.AreEqual(7d, Convert.ToDouble(compiled.DynamicInvoke()));
+    }
+
+    /// <summary>
+    /// <see cref="Utils.Expressions.IDelegateCompiler.Compile{TDelegate}(string)"/> on an explicit,
+    /// fully-typed lambda returns the delegate directly, already compiled. The body deliberately does
+    /// not reference the lambda's own parameter: a standalone <c>Function(...)</c> lambda's body is
+    /// compiled against the outer scope before the parameter binding is established (a pre-existing,
+    /// unrelated parser limitation), so only parameter-independent bodies compile at the top level today.
+    /// </summary>
+    [TestMethod]
+    public void Compile_Generic_ExplicitLambda_ReturnsWorkingDelegate()
+    {
+        Func<double, double> function = _compiler.Compile<Func<double, double>>("Function(x As Double) 42");
+
+        Assert.AreEqual(42d, function(7d));
+    }
+
+    /// <summary>
+    /// The README's recommended one-liner pattern: a bare expression (no lambda syntax) compiled
+    /// directly to a parameterless delegate. This requires <c>CompileExpression&lt;TDelegate&gt;</c> to
+    /// wrap a non-lambda result in a parameterless lambda when the target delegate has no parameters.
+    /// </summary>
+    [TestMethod]
+    public void Compile_Generic_BareExpressionWithParameterlessDelegate_ReturnsWorkingDelegate()
+    {
+        Func<double> lambda = _compiler.Compile<Func<double>>("1 + 2 * 3");
+
+        Assert.AreEqual(7d, lambda());
+    }
+
+    /// <summary>
+    /// The bare-expression wrapping path must convert the expression's own type to the delegate's
+    /// declared return type, not merely wrap it as-is and let an invalid-cast surface at invocation time.
+    /// </summary>
+    [TestMethod]
+    public void CompileExpression_Generic_BareExpression_ConvertsReturnType()
+    {
+        Expression<Func<double>> expression = _compiler.CompileExpression<Func<double>>("2 + 3");
+
+        Assert.AreEqual(typeof(double), expression.Body.Type);
+        Assert.AreEqual(5d, expression.Compile()());
+    }
+
+    /// <summary>
+    /// A bare (non-lambda) expression cannot be compiled against a delegate type that declares
+    /// parameters: there is no parameter list in the source to bind names from, so the compiler must
+    /// fail explicitly rather than guess or silently ignore the parameters.
+    /// </summary>
+    [TestMethod]
+    public void CompileExpression_Generic_BareExpressionWithParameterizedDelegate_ThrowsExplicitly()
+    {
+        Assert.ThrowsExactly<InvalidOperationException>(
+            () => _compiler.CompileExpression<Func<double, double>>("1 + 2 * 3"));
+    }
 }

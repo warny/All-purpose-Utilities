@@ -119,6 +119,9 @@ public sealed partial class VBSyntaxExpressionCompiler : IExpressionCompiler
 
     /// <summary>
     /// Compiles a VB-like lambda source into a typed delegate expression.
+    /// When <typeparamref name="T"/> has no parameters, <paramref name="content"/> may also be a bare
+    /// expression (no lambda syntax); it is wrapped in a parameterless lambda, converting its result
+    /// to the delegate's return type if needed.
     /// </summary>
     /// <typeparam name="T">Target delegate type.</typeparam>
     /// <param name="content">VB-like lambda or expression body source.</param>
@@ -126,9 +129,14 @@ public sealed partial class VBSyntaxExpressionCompiler : IExpressionCompiler
     public Expression<T> CompileExpression<T>(string content) where T : Delegate
     {
         ArgumentNullException.ThrowIfNull(content);
+        MethodInfo invokeMethod = typeof(T).GetMethod("Invoke")!;
         Expression result = CompileExpression(content);
         if (result is Expression<T> typed) return typed;
-        if (result is LambdaExpression lam) return Expression.Lambda<T>(lam.Body, lam.Parameters);
+        if (result is LambdaExpression lam) return Expression.Lambda<T>(ConvertIfNeeded(lam.Body, invokeMethod.ReturnType), lam.Parameters);
+        if (invokeMethod.GetParameters().Length == 0)
+        {
+            return Expression.Lambda<T>(ConvertIfNeeded(result, invokeMethod.ReturnType));
+        }
         throw new InvalidOperationException(
             $"Compiled expression cannot be converted to {typeof(T).Name}.");
     }

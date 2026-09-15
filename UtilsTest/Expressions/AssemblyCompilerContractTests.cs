@@ -6,11 +6,9 @@ using Utils.Expressions;
 namespace UtilsTest.Expressions;
 
 /// <summary>
-/// Contract coverage for <see cref="IAssemblyCompiler"/>. There is no production implementation yet, so
-/// these tests exercise the interface shape via a hand-rolled fake that fabricates an assembly with
-/// <see cref="System.Reflection.Emit"/> — the contract only cares that the returned
-/// <see cref="Assembly"/> is exploitable and contains the expected types, not that it came from parsed
-/// source text.
+/// Interface-shape coverage for <see cref="IAssemblyCompiler"/>. There is no production implementation
+/// yet, so this is a form/API test only: it confirms the interface can be implemented and used as
+/// intended via a hand-rolled fake, not that any particular production implementation behaves this way.
 /// </summary>
 [TestClass]
 public class AssemblyCompilerContractTests

@@ -7,10 +7,12 @@ using Utils.Expressions;
 namespace UtilsTest.Expressions;
 
 /// <summary>
-/// Contract coverage for <see cref="ITypeCompiler"/>. There is no production implementation yet, so
-/// these tests exercise the interface shape via a hand-rolled fake that fabricates types with
-/// <see cref="System.Reflection.Emit"/> — the contract only cares about the shape of the returned
-/// <see cref="Type"/>, not that it came from parsed source text.
+/// Interface-shape coverage for <see cref="ITypeCompiler"/>. There is no production implementation yet,
+/// so these are form/API tests only: the assignability and constructor-related exceptions asserted here
+/// come entirely from <see cref="EmittingTypeCompiler"/>'s own logic, not from any behavior mandated by
+/// <see cref="ITypeCompiler"/> itself. They confirm the interface can be implemented and used as
+/// intended, but a future production implementation is not required by these tests to throw the same
+/// exception types or under the same exact conditions.
 /// </summary>
 [TestClass]
 public class TypeCompilerContractTests

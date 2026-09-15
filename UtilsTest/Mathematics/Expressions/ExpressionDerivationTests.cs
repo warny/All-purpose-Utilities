@@ -643,30 +643,38 @@ public class ExpressionDerivationTests
         Assert.ThrowsExactly<SymbolicParameterException>(() => derivationByForeign.Derivate(f));
     }
 
-    /// <summary>Exposes the protected <c>TransformCore</c> engine for direct comparison against <c>Transform</c>.</summary>
-    private sealed class ExposedDerivation : ExpressionDerivation<double>
+    /// <summary>
+    /// <see cref="ExpressionTransformer.Transform(Expression)"/> is the public contract every transformer
+    /// must implement. For <see cref="ExpressionDerivation{T}"/>, a <see cref="LambdaExpression"/> carries
+    /// the parameter list needed to resolve the differentiation variable, so <c>Transform</c> must
+    /// actually differentiate against <c>x</c> - not silently treat it as an unrelated free variable
+    /// (which would wrongly return a zero derivative, since the target parameter is only resolved inside
+    /// <see cref="ExpressionDerivation{T}.Derivate(LambdaExpression)"/>, never by the public constructors).
+    /// </summary>
+    [TestMethod]
+    public void Transform_OnLambdaExpression_DifferentiatesAgainstItsParameter()
     {
-        public ExposedDerivation(string parameterName) : base(parameterName) { }
+        Expression<Func<double, double>> f = x => x;
+        var derivation = new ExpressionDerivation<double>("x");
 
-        public Expression ExposeTransformCore(Expression e) => TransformCore(e);
+        var viaTransform = (Expression<Func<double, double>>)derivation.Transform(f);
+        var viaDerivate = (Expression<Func<double, double>>)derivation.Derivate(f);
+
+        Assert.AreEqual(1.0, viaTransform.Compile()(5.0), 1e-9);
+        Assert.AreEqual(viaDerivate, viaTransform, ExpressionComparer.Default);
     }
 
     /// <summary>
-    /// <see cref="ExpressionDerivation{T}.Transform(Expression)"/> performs no extra preparation beyond
-    /// <c>TransformCore</c> for this transformer (the target parameter is already resolved at
-    /// construction time), so calling it directly - as opposed to going through <see cref="ExpressionDerivation{T}.Derivate(LambdaExpression)"/> -
-    /// must not corrupt state or produce a different result.
+    /// Without a <see cref="LambdaExpression"/>, <see cref="ExpressionDerivation{T}.Transform(Expression)"/>
+    /// has no declared parameter list to resolve the differentiation variable from, and must fail
+    /// explicitly rather than silently guessing or corrupting shared state.
     /// </summary>
     [TestMethod]
-    public void Transform_OnWorkerInstance_IsEquivalentToTransformCore()
+    public void Transform_OnBareExpression_ThrowsNotSupported()
     {
-        var exposed = new ExposedDerivation("x");
-        Expression constant = Expression.Constant(5.0);
+        var derivation = new ExpressionDerivation<double>("x");
 
-        var viaTransform = exposed.Transform(constant);
-        var viaTransformCore = exposed.ExposeTransformCore(constant);
-
-        Assert.AreEqual(viaTransformCore, viaTransform, ExpressionComparer.Default);
+        Assert.ThrowsExactly<NotSupportedException>(() => derivation.Transform(Expression.Constant(5.0)));
     }
 
 }

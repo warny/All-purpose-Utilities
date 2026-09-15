@@ -104,9 +104,12 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
     /// <summary>
     /// Compiles a C-like lambda source into a typed delegate expression.
     /// Untyped parameters are resolved from the delegate type <typeparamref name="T"/>.
+    /// When <typeparamref name="T"/> has no parameters, <paramref name="content"/> may also be a bare
+    /// expression (no lambda syntax); it is wrapped in a parameterless lambda, converting its result
+    /// to the delegate's return type if needed.
     /// </summary>
     /// <typeparam name="T">Target delegate type.</typeparam>
-    /// <param name="content">C-like lambda source.</param>
+    /// <param name="content">C-like lambda source, or a bare expression when <typeparamref name="T"/> has no parameters.</param>
     /// <returns>Typed lambda expression.</returns>
     public Expression<T> CompileExpression<T>(string content) where T : Delegate
     {
@@ -130,7 +133,11 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
 
         Expression result = CompileExpression(content);
         if (result is Expression<T> typed) return typed;
-        if (result is LambdaExpression lambda) return Expression.Lambda<T>(lambda.Body, lambda.Parameters);
+        if (result is LambdaExpression lambda) return Expression.Lambda<T>(ConvertIfNeeded(lambda.Body, invokeMethod.ReturnType), lambda.Parameters);
+        if (invokeParams.Length == 0)
+        {
+            return Expression.Lambda<T>(ConvertIfNeeded(result, invokeMethod.ReturnType));
+        }
         throw new InvalidOperationException($"Compiled expression cannot be converted to {typeof(T).Name}.");
     }
 

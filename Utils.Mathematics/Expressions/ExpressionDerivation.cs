@@ -138,12 +138,21 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     }
 
     /// <summary>
-    /// The target parameter is already resolved at construction time (see the private constructor), so
-    /// no extra preparation is needed beyond <see cref="ExpressionTransformer.TransformCore(Expression)"/>.
+    /// Public entry point required by <see cref="ExpressionTransformer"/>. The differentiation variable
+    /// can only be resolved (by name or by instance) from a <see cref="LambdaExpression"/>'s declared
+    /// parameters, so this delegates to <see cref="Derivate(LambdaExpression)"/> when given one.
     /// </summary>
-    /// <param name="expression">The expression to transform.</param>
-    /// <returns>A possibly rewritten expression.</returns>
-    public override Expression Transform(Expression expression) => TransformCore(expression);
+    /// <param name="expression">The lambda expression to differentiate.</param>
+    /// <returns>The simplified derivative expression.</returns>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when <paramref name="expression"/> is not a <see cref="LambdaExpression"/>: without one,
+    /// there is no declared parameter list from which to resolve the differentiation variable. Call
+    /// <see cref="Derivate(LambdaExpression)"/> directly once the target parameter is otherwise known.
+    /// </exception>
+    public override Expression Transform(Expression expression) => expression is LambdaExpression lambda
+        ? Derivate(lambda)
+        : throw new NotSupportedException(
+            $"{nameof(ExpressionDerivation<T>)}<T>.{nameof(Transform)} requires a {nameof(LambdaExpression)} so the differentiation variable can be resolved from its declared parameters; call {nameof(Derivate)} directly to differentiate a bare expression against an already-resolved parameter.");
 
     /// <summary>
     /// Builds the derivative of the provided lambda expression with respect to the configured parameter.
@@ -212,7 +221,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         // state (see TODO-2026-07-11-pass3.md items #31 and #32). usedNumericalFallback is likewise
         // scoped to this single worker instance, never shared across calls (see item #42).
         var worker = new ExpressionDerivation<T>(ParameterName, resolvedParameter, AllowNumericalFallback);
-        var result = Expression.Lambda(worker.Transform(e.Body.Simplify()).Simplify(), e.Parameters);
+        var result = Expression.Lambda(worker.TransformCore(e.Body.Simplify()).Simplify(), e.Parameters);
         isExact = !worker.usedNumericalFallback;
         return result;
     }

@@ -112,7 +112,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         // re-entrant calls on the same public ExpressionIntegration<T> instance no longer share mutable
         // state (see TODO-2026-07-11-pass3.md item #32).
         var worker = new ExpressionIntegration<T>(ParameterName, resolvedParameter);
-        return Expression.Lambda(worker.Transform(e.Body), e.Parameters);
+        return Expression.Lambda(worker.TransformCore(e.Body), e.Parameters);
     }
 
     /// <summary>
@@ -152,12 +152,21 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     }
 
     /// <summary>
-    /// The target parameter is already resolved at construction time (see the private constructor), so
-    /// no extra preparation is needed beyond <see cref="ExpressionTransformer.TransformCore(Expression)"/>.
+    /// Public entry point required by <see cref="ExpressionTransformer"/>. The integration variable can
+    /// only be resolved (by name or by instance) from a <see cref="LambdaExpression"/>'s declared
+    /// parameters, so this delegates to <see cref="Integrate(LambdaExpression)"/> when given one.
     /// </summary>
-    /// <param name="expression">The expression to transform.</param>
-    /// <returns>A possibly rewritten expression.</returns>
-    public override Expression Transform(Expression expression) => TransformCore(expression);
+    /// <param name="expression">The lambda expression to integrate.</param>
+    /// <returns>The integrated expression.</returns>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when <paramref name="expression"/> is not a <see cref="LambdaExpression"/>: without one,
+    /// there is no declared parameter list from which to resolve the integration variable. Call
+    /// <see cref="Integrate(LambdaExpression)"/> directly once the target parameter is otherwise known.
+    /// </exception>
+    public override Expression Transform(Expression expression) => expression is LambdaExpression lambda
+        ? Integrate(lambda)
+        : throw new NotSupportedException(
+            $"{nameof(ExpressionIntegration<T>)}<T>.{nameof(Transform)} requires a {nameof(LambdaExpression)} so the integration variable can be resolved from its declared parameters; call {nameof(Integrate)} directly to integrate a bare expression against an already-resolved parameter.");
 
     /// <summary>
     /// Integrates the wrapped operand and re-applies the conversion's declared result type when the

@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Expressions;
 using Utils.Expressions.CSyntax.Runtime;
@@ -581,39 +580,37 @@ public class ExpressionIntegrationTests
     }
 
     /// <summary>
-    /// Exposes the protected <c>TransformCore</c> engine for direct comparison against <c>Transform</c>,
-    /// with the private per-call worker's resolved integration parameter set via reflection: the public
-    /// constructors never populate it (only the internal worker created by <see cref="ExpressionIntegration{T}.Integrate(LambdaExpression)"/> does), but every terminal rule needs it.
+    /// <see cref="ExpressionTransformer.Transform(Expression)"/> is the public contract every transformer
+    /// must implement. For <see cref="ExpressionIntegration{T}"/>, a <see cref="LambdaExpression"/> carries
+    /// the parameter list needed to resolve the integration variable, so <c>Transform</c> must actually
+    /// integrate against <c>x</c> - not silently treat it as an unrelated free variable (which would
+    /// crash or produce a wrong result, since the target parameter is only resolved inside
+    /// <see cref="ExpressionIntegration{T}.Integrate(LambdaExpression)"/>, never by the public constructors).
     /// </summary>
-    private sealed class ExposedIntegration : ExpressionIntegration<double>
+    [TestMethod]
+    public void Transform_OnLambdaExpression_IntegratesAgainstItsParameter()
     {
-        public ExposedIntegration(ParameterExpression parameter) : base(parameter)
-        {
-            typeof(ExpressionIntegration<double>)
-                .GetField("parameter", BindingFlags.NonPublic | BindingFlags.Instance)!
-                .SetValue(this, parameter);
-        }
+        Expression<Func<double, double>> f = x => 1.0;
+        var localIntegration = new ExpressionIntegration<double>("x");
 
-        public Expression ExposeTransformCore(Expression e) => TransformCore(e);
+        var viaTransform = (Expression<Func<double, double>>)localIntegration.Transform(f);
+        var viaIntegrate = (Expression<Func<double, double>>)localIntegration.Integrate(f);
+
+        Assert.AreEqual(3.0, viaTransform.Compile()(3.0), 1e-9);
+        Assert.AreEqual(viaIntegrate, viaTransform, ExpressionComparer.Default);
     }
 
     /// <summary>
-    /// <see cref="ExpressionIntegration{T}.Transform(Expression)"/> performs no extra preparation beyond
-    /// <c>TransformCore</c> for this transformer (the target parameter is already resolved at
-    /// construction time), so calling it directly - as opposed to going through <see cref="ExpressionIntegration{T}.Integrate(LambdaExpression)"/> -
-    /// must not corrupt state or produce a different result.
+    /// Without a <see cref="LambdaExpression"/>, <see cref="ExpressionIntegration{T}.Transform(Expression)"/>
+    /// has no declared parameter list to resolve the integration variable from, and must fail explicitly
+    /// rather than silently guessing or corrupting shared state.
     /// </summary>
     [TestMethod]
-    public void Transform_OnWorkerInstance_IsEquivalentToTransformCore()
+    public void Transform_OnBareExpression_ThrowsNotSupported()
     {
-        var x = Expression.Parameter(typeof(double), "x");
-        var exposed = new ExposedIntegration(x);
-        Expression constant = Expression.Constant(5.0);
+        var localIntegration = new ExpressionIntegration<double>("x");
 
-        var viaTransform = exposed.Transform(constant);
-        var viaTransformCore = exposed.ExposeTransformCore(constant);
-
-        Assert.AreEqual(viaTransformCore, viaTransform, ExpressionComparer.Default);
+        Assert.ThrowsExactly<NotSupportedException>(() => localIntegration.Transform(Expression.Constant(5.0)));
     }
 
 }
