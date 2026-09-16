@@ -87,6 +87,17 @@ Examples:
     | 00:02:00 | dois minutos |
     | 02:02:00 | duas horas dois minutos |
 
+Scenario Outline: Time-of-day wording
+    Given I use the "PT" number converter
+    When I convert the time "<value>"
+    Then the result is "<expected>"
+
+Examples:
+    | value | expected |
+    | 01:00:00 | uma hora |
+    | 21:00:00 | vinte e uma horas |
+    | 02:02:00 | duas horas dois minutos |
+
 Scenario Outline: Explicit masculine ordinal numbers
     Given I use the "PT" number converter
     And I use the variants "<variants>"

@@ -71,6 +71,19 @@ Examples:
     | 00:00:21 | veintiún segundos |
     | 21:21:21 | veintiuna horas veintiún minutos veintiún segundos |
 
+Scenario Outline: Time-of-day wording
+    When I convert the time "<value>"
+    Then the result is "<expected>"
+
+Examples:
+    | value | expected |
+    | 01:00:00 | una hora |
+    | 21:00:00 | veintiuna horas |
+    | 21:21:21 | veintiuna horas veintiún minutos veintiún segundos |
+
+Scenario: Time conversion is supported
+    Then the converter supports time conversion
+
 Scenario Outline: Explicit masculine ordinal numbers
     Given I use the "ES" number converter
     And I use the variants "<variants>"

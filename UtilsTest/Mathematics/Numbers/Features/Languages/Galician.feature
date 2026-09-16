@@ -53,6 +53,17 @@ Examples:
     | 00:02:00 | dous minutos |
     | 02:02:00 | dúas horas dous minutos |
 
+Scenario Outline: Time-of-day wording
+    Given I use the "GL" number converter
+    When I convert the time "<value>"
+    Then the result is "<expected>"
+
+Examples:
+    | value | expected |
+    | 01:00:00 | unha hora |
+    | 21:00:00 | vinte e unha horas |
+    | 02:02:00 | dúas horas dous minutos |
+
 Scenario Outline: Explicit masculine ordinal numbers
     Given I use the "GL" number converter
     And I use the variants "<variants>"
