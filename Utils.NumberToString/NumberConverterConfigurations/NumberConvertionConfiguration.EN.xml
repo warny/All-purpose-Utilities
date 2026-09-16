@@ -96,10 +96,11 @@
 			<Unit name="hour"   singular="hour"   plural="hours"   />
 			<Unit name="minute" singular="minute" plural="minutes" />
 			<Unit name="second" singular="second" plural="seconds" />
-			<!-- "midnight"/"noon" replace the numeral hour for the whole hour (e.g. "noon fifteen
-			     minutes"), not just the exact instant — see SpecialHour.wholeHour in Utils.NumberToString/README.md. -->
-			<SpecialHour hour="0"  value="midnight" wholeHour="true" />
-			<SpecialHour hour="12" value="noon"      wholeHour="true" />
+			<!-- "midnight"/"noon" replace the numeral hour only at the exact instant (default
+			     wholeHour="false"): "noon fifteen minutes" is not natural English, unlike French
+			     "midi quinze" — see SpecialHour.wholeHour in Utils.NumberToString/README.md. -->
+			<SpecialHour hour="0"  value="midnight" />
+			<SpecialHour hour="12" value="noon"      />
 		</TimeUnits>
 		<DateFormat pattern="{month} {ordinal-day}, {year}" />
 	</Language>

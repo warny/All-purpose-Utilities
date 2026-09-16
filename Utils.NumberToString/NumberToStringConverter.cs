@@ -277,8 +277,8 @@ namespace Utils.NumberToString
                     if (rule.Hour is < 0 or > 23)
                         throw new ArgumentOutOfRangeException(nameof(options.SpecialHours),
                             $"SpecialHours[{rule.Hour}] must be between 0 and 23; got {rule.Hour}.");
-                    if (string.IsNullOrEmpty(rule.Value))
-                        throw new ArgumentException($"SpecialHours[{rule.Hour}].Value must not be empty.", nameof(options.SpecialHours));
+                    if (string.IsNullOrWhiteSpace(rule.Value))
+                        throw new ArgumentException($"SpecialHours[{rule.Hour}].Value must not be empty or whitespace.", nameof(options.SpecialHours));
                     if (!builder.TryAdd(rule.Hour, rule))
                         throw new ArgumentException($"SpecialHours has more than one rule for hour {rule.Hour}.", nameof(options.SpecialHours));
                 }

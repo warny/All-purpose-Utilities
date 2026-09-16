@@ -55,6 +55,13 @@ public class NumberToStringConverterSpecialHourTests
     }
 
     [TestMethod]
+    public void Constructor_WhitespaceOnlyValue_ThrowsArgumentException()
+    {
+        Assert.ThrowsExactly<ArgumentException>(
+            () => WithSpecialHours(new SpecialHourRule(0, "   ")));
+    }
+
+    [TestMethod]
     public void Constructor_DuplicateHour_ThrowsArgumentException()
     {
         Assert.ThrowsExactly<ArgumentException>(
@@ -64,7 +71,10 @@ public class NumberToStringConverterSpecialHourTests
     [TestMethod]
     public void Constructor_NoSpecialHours_DefaultsToEmpty()
     {
-        var converter = NumberToStringConverter.GetConverter("DE");
+        // A synthetic converter with no SpecialHours configured — independent of any real
+        // language's data, so this "no rules configured" case never breaks if a real language
+        // (e.g. DE's "Mitternacht"/"Mittag") later gains SpecialHours of its own.
+        var converter = WithSpecialHours();
         Assert.AreEqual(0, converter.SpecialHours.Count);
     }
 
@@ -111,10 +121,10 @@ public class NumberToStringConverterSpecialHourTests
     {
         var converter = WithSpecialHours(new SpecialHourRule(0, "MIDNIGHT"));
 
-        string result = converter.Convert(new TimeOnly(0, 1, 0));
-
-        StringAssert.DoesNotMatch(result, new System.Text.RegularExpressions.Regex("MIDNIGHT"));
-        StringAssert.Contains(result, "MINUTE");
+        // Exact equality — not just "MIDNIGHT is absent" — so a regression that drops the hour
+        // fragment entirely (rather than falling back to the numeral) would still fail this test.
+        string expected = $"{converter.Convert(0)}{converter.Separator}HOURS{converter.Separator}{converter.Convert(1)}{converter.Separator}MINUTE";
+        Assert.AreEqual(expected, converter.Convert(new TimeOnly(0, 1, 0)));
     }
 
     // ─── replaceSpecialHours=false — disables substitution entirely ──────────
@@ -124,11 +134,13 @@ public class NumberToStringConverterSpecialHourTests
     {
         var converter = WithSpecialHours(new SpecialHourRule(0, "MIDNIGHT", WholeHour: true), new SpecialHourRule(12, "NOON", WholeHour: true));
 
-        string midnight = converter.Convert(new TimeOnly(0, 0, 0), replaceSpecialHours: false);
-        string noon = converter.Convert(new TimeOnly(12, 0, 0), replaceSpecialHours: false);
+        // Exact equality against the plain numeral-hour rendering — not just "the special word is
+        // absent" — so a regression that drops the hour fragment entirely would still fail this.
+        string expectedMidnight = $"{converter.Convert(0)}{converter.Separator}HOURS";
+        string expectedNoon = $"{converter.Convert(12)}{converter.Separator}HOURS";
 
-        StringAssert.DoesNotMatch(midnight, new System.Text.RegularExpressions.Regex("MIDNIGHT"));
-        StringAssert.DoesNotMatch(noon, new System.Text.RegularExpressions.Regex("NOON"));
+        Assert.AreEqual(expectedMidnight, converter.Convert(new TimeOnly(0, 0, 0), replaceSpecialHours: false));
+        Assert.AreEqual(expectedNoon, converter.Convert(new TimeOnly(12, 0, 0), replaceSpecialHours: false));
     }
 
     [TestMethod]

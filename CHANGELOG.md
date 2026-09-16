@@ -15,8 +15,11 @@ All notable changes to this project will be documented in this file.
   `Convert(DateTime)` — never to `Convert(TimeSpan)`, since a duration has no time-of-day meaning.
   New overloads `Convert(TimeOnly, bool replaceSpecialHours, params string[])` and
   `Convert(DateTime, bool replaceSpecialHours, params string[])` opt out per call; the existing
-  `params`-only overloads default to `true`. Wired into the built-in EN (`midnight`/`noon`) and FR
-  (`minuit`/`midi`) configurations.
+  `params`-only overloads default to `true`. The interface's default implementations of the new
+  overloads forward to the existing `params`-only overload (ignoring the flag), so a third-party
+  `INumberToStringConverter` written before this feature keeps working unchanged. Wired into the
+  built-in EN (`midnight`/`noon`, exact instant only) and FR (`minuit`/`midi`, whole hour —
+  "midi quinze") configurations.
 
 ## [2.0.0-rc.2] - Release candidate
 

@@ -490,9 +490,16 @@ namespace Utils.NumberToString
         /// — a configured special-hour word replaces the numeral hour fragment for a matching
         /// hour. When <see langword="false"/>, the hour is always rendered as a numeral.
         /// </param>
+        /// <remarks>
+        /// The default implementation ignores <paramref name="replaceSpecialHours"/> and forwards
+        /// to <see cref="Convert(TimeOnly, string[])"/>: an implementer written before
+        /// <c>SpecialHourRule</c> existed already knows how to render a <see cref="TimeOnly"/> and
+        /// simply has no special-hour configuration to apply the flag to. Override this overload
+        /// directly to honor <paramref name="replaceSpecialHours"/>.
+        /// </remarks>
         /// <exception cref="NotSupportedException">The converter has no <c>&lt;TimeUnits&gt;</c> configuration (<see cref="SupportsTimeConversion"/> is <see langword="false"/>).</exception>
         string Convert(TimeOnly time, bool replaceSpecialHours, params string[] variants)
-            => throw new NotSupportedException("Time conversion requires <TimeUnits> in the XML configuration.");
+            => Convert(time, variants);
 
         /// <summary>
         /// Converts a <see cref="DateOnly"/> date to its spoken form
@@ -520,8 +527,13 @@ namespace Utils.NumberToString
         /// Forwarded to the time portion exactly as <see cref="Convert(TimeOnly, bool, string[])"/>
         /// describes.
         /// </param>
+        /// <remarks>
+        /// The default implementation ignores <paramref name="replaceSpecialHours"/> and forwards
+        /// to <see cref="Convert(DateTime, string[])"/>, for the same reason as
+        /// <see cref="Convert(TimeOnly, bool, string[])"/>'s default implementation.
+        /// </remarks>
         /// <exception cref="NotSupportedException">The converter has no <c>&lt;DateFormat&gt;</c> or <c>&lt;TimeUnits&gt;</c> configuration.</exception>
         string Convert(DateTime dateTime, bool replaceSpecialHours, params string[] variants)
-            => throw new NotSupportedException("Date/time conversion requires <DateFormat> and <TimeUnits> in the XML configuration.");
+            => Convert(dateTime, variants);
     }
 }

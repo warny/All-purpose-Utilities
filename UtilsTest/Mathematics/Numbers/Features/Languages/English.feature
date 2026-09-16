@@ -308,4 +308,4 @@ Examples:
     | 21:00:00 | twenty-one hours                  |
     | 12:00:00 | noon                               |
     | 00:00:00 | midnight                           |
-    | 00:15:00 | midnight fifteen minutes           |
+    | 00:15:00 | zero hours fifteen minutes         |

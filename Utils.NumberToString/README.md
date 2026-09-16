@@ -769,23 +769,31 @@ properties — so any hour, and any word, can be configured for any language:
     <Unit name="minute" singular="minute" plural="minutes" />
     <Unit name="second" singular="second" plural="seconds" />
 
-    <SpecialHour hour="0" value="midnight" wholeHour="true" />
-    <SpecialHour hour="12" value="noon" wholeHour="true" />
+    <SpecialHour hour="0" value="midnight" />
+    <SpecialHour hour="12" value="noon" />
 </TimeUnits>
 ```
 
 - **`wholeHour="false"`** (default): the word replaces the hour only at the
   exact instant — `12:00:00`. Any non-zero minute or second falls back to the
-  ordinary numeral hour.
+  ordinary numeral hour: `12:15` → `"twelve hours fifteen minutes"`. This is
+  the right choice for English, where "noon fifteen minutes" would not read
+  naturally.
 - **`wholeHour="true"`**: the word replaces the hour for the *entire* hour —
   `12:00:00` through `12:59:59…` — and a non-zero minute/second is still
-  appended after it as usual:
+  appended after it as usual. This reads naturally in French, so the built-in
+  French configuration uses it:
+
+```xml
+<SpecialHour hour="0" value="minuit" wholeHour="true" />
+<SpecialHour hour="12" value="midi" wholeHour="true" />
+```
 
 ```text
-12:00 → "noon"
-12:15 → "noon fifteen minutes"
-00:00 → "midnight"
-00:30 → "midnight thirty minutes"
+12:00 → "midi"
+12:15 → "midi quinze minutes"
+00:00 → "minuit"
+00:30 → "minuit trente minutes"
 ```
 
 Only `Convert(TimeOnly)` and the time portion of `Convert(DateTime)` apply
