@@ -179,6 +179,22 @@ public class NumberToStringConfigurationSchemaTests
             "</NumberScale><Replacements><Replacement oldValue=\"one\" newValue=\"uno\" scope=\"InvalidScope\"/></Replacements>",
             StringComparison.Ordinal));
 
+    /// <summary>Ensures the SpecialHour "hour" attribute's 0-23 range is enforced by the XSD, independently of the runtime constructor check.</summary>
+    [TestMethod]
+    public void ExternalConfiguration_SpecialHourOutOfRange_IsRejected()
+        => AssertSchemaFailure(ValidConfiguration.Replace(
+            "</NumberScale>",
+            "</NumberScale><TimeUnits><Unit name=\"hour\" singular=\"hour\" plural=\"hours\"/><SpecialHour hour=\"24\" value=\"noon\"/></TimeUnits>",
+            StringComparison.Ordinal));
+
+    /// <summary>Ensures the SpecialHour "value" attribute rejects a whitespace-only string via the XSD, independently of the runtime constructor check.</summary>
+    [TestMethod]
+    public void ExternalConfiguration_SpecialHourWhitespaceValue_IsRejected()
+        => AssertSchemaFailure(ValidConfiguration.Replace(
+            "</NumberScale>",
+            "</NumberScale><TimeUnits><Unit name=\"hour\" singular=\"hour\" plural=\"hours\"/><SpecialHour hour=\"12\" value=\"   \"/></TimeUnits>",
+            StringComparison.Ordinal));
+
     /// <summary>Ensures sequence ordering is enforced by external configuration parsing.</summary>
     [TestMethod]
     public void ExternalConfiguration_InvalidElementOrder_IsRejected()

@@ -205,7 +205,14 @@ public class NumberToStringConverterSpecialHourTests
     {
         var converter = WithSpecialHours(new SpecialHourRule(12, "NOON", WholeHour: true));
 
-        StringAssert.Contains(converter.Convert(new DateTime(2026, 9, 16, 12, 0, 0)), "NOON");
+        // The date portion must still be present and lead the phrase — not just "NOON is
+        // somewhere in the result" — so a regression that dropped the date fragment in the new
+        // Convert(DateTime, bool, ...) overload would still fail this.
+        string date = converter.Convert(new DateOnly(2026, 9, 16));
+        string result = converter.Convert(new DateTime(2026, 9, 16, 12, 0, 0), replaceSpecialHours: true);
+
+        StringAssert.StartsWith(result, date);
+        StringAssert.Contains(result, "NOON");
     }
 
     [TestMethod]
@@ -213,10 +220,25 @@ public class NumberToStringConverterSpecialHourTests
     {
         var converter = WithSpecialHours(new SpecialHourRule(12, "NOON", WholeHour: true));
 
+        string date = converter.Convert(new DateOnly(2026, 9, 16));
         string result = converter.Convert(new DateTime(2026, 9, 16, 12, 0, 0), replaceSpecialHours: false);
 
+        StringAssert.StartsWith(result, date);
         StringAssert.DoesNotMatch(result, new System.Text.RegularExpressions.Regex("NOON"));
         StringAssert.Contains(result, "HOUR");
+    }
+
+    [TestMethod]
+    public void Convert_DateTime_DefaultOverload_IsEquivalentToReplaceSpecialHoursTrue()
+    {
+        // Symmetric with the TimeOnly default-overload equivalence test — added at the same time
+        // as the TimeOnly one, so it should be locked in the same way.
+        var converter = WithSpecialHours(new SpecialHourRule(12, "NOON", WholeHour: true));
+        var dateTime = new DateTime(2026, 9, 16, 12, 0, 0);
+
+        Assert.AreEqual(
+            converter.Convert(dateTime, replaceSpecialHours: true),
+            converter.Convert(dateTime));
     }
 
     // ─── TimeSpan (duration) is never affected — 12 hours of duration is not "noon" ───
