@@ -383,6 +383,23 @@ Numbers 1–19 fall through to the XML pipeline (which carries full case/gender 
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.SpecialHourEntry.html">SpecialHourEntry</a></dt>
+      <dd><p>Declares a literal word or phrase replacing the numeral hour fragment for one specific hour
+of the day when rendering Convert(TimeOnly)/Convert(DateTime) (e.g. &quot;midnight&quot; for hour 0,
+&quot;noon&quot; for hour 12).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.SpecialHourRule.html">SpecialHourRule</a></dt>
+      <dd><p>Declares a literal word or phrase that replaces the numeral hour fragment for one specific
+hour of the day (e.g. &quot;midnight&quot; for hour 0, &quot;noon&quot; for hour 12) when rendering a time-of-day
+value via <a class="xref" href="Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_Convert_System_TimeOnly_System_String___">Convert(TimeOnly, params string[])</a> or the time portion
+of <a class="xref" href="Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_Convert_System_DateTime_System_String___">Convert(DateTime, params string[])</a>. Never applies to
+<a class="xref" href="Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_Convert_System_TimeSpan_System_String___">Convert(TimeSpan, params string[])</a>: a duration's hour count is
+not a time of day.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.StaticNamesType.html">StaticNamesType</a></dt>
       <dd><p>Holds the static names mapped to particular scales.</p>
 </dd>

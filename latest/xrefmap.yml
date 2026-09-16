@@ -61443,6 +61443,15 @@ references:
   fullName.vb: Utils.NumberToString.INumberToStringConverter.Convert(System.DateOnly, ParamArray String())
   nameWithType: INumberToStringConverter.Convert(DateOnly, params string[])
   nameWithType.vb: INumberToStringConverter.Convert(DateOnly, ParamArray String())
+- uid: Utils.NumberToString.INumberToStringConverter.Convert(System.DateTime,System.Boolean,System.String[])
+  name: Convert(DateTime, bool, params string[])
+  href: api/Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_Convert_System_DateTime_System_Boolean_System_String___
+  commentId: M:Utils.NumberToString.INumberToStringConverter.Convert(System.DateTime,System.Boolean,System.String[])
+  name.vb: Convert(Date, Boolean, ParamArray String())
+  fullName: Utils.NumberToString.INumberToStringConverter.Convert(System.DateTime, bool, params string[])
+  fullName.vb: Utils.NumberToString.INumberToStringConverter.Convert(Date, Boolean, ParamArray String())
+  nameWithType: INumberToStringConverter.Convert(DateTime, bool, params string[])
+  nameWithType.vb: INumberToStringConverter.Convert(Date, Boolean, ParamArray String())
 - uid: Utils.NumberToString.INumberToStringConverter.Convert(System.DateTime,System.String[])
   name: Convert(DateTime, params string[])
   href: api/Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_Convert_System_DateTime_System_String___
@@ -61602,6 +61611,15 @@ references:
   fullName.vb: Utils.NumberToString.INumberToStringConverter.Convert(Single, ParamArray String())
   nameWithType: INumberToStringConverter.Convert(float, params string[])
   nameWithType.vb: INumberToStringConverter.Convert(Single, ParamArray String())
+- uid: Utils.NumberToString.INumberToStringConverter.Convert(System.TimeOnly,System.Boolean,System.String[])
+  name: Convert(TimeOnly, bool, params string[])
+  href: api/Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_Convert_System_TimeOnly_System_Boolean_System_String___
+  commentId: M:Utils.NumberToString.INumberToStringConverter.Convert(System.TimeOnly,System.Boolean,System.String[])
+  name.vb: Convert(TimeOnly, Boolean, ParamArray String())
+  fullName: Utils.NumberToString.INumberToStringConverter.Convert(System.TimeOnly, bool, params string[])
+  fullName.vb: Utils.NumberToString.INumberToStringConverter.Convert(System.TimeOnly, Boolean, ParamArray String())
+  nameWithType: INumberToStringConverter.Convert(TimeOnly, bool, params string[])
+  nameWithType.vb: INumberToStringConverter.Convert(TimeOnly, Boolean, ParamArray String())
 - uid: Utils.NumberToString.INumberToStringConverter.Convert(System.TimeOnly,System.String[])
   name: Convert(TimeOnly, params string[])
   href: api/Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_Convert_System_TimeOnly_System_String___
@@ -61813,6 +61831,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.INumberToStringConverter.MaxNumber
   nameWithType: INumberToStringConverter.MaxNumber
+- uid: Utils.NumberToString.INumberToStringConverter.OrdinalVariants
+  name: OrdinalVariants
+  href: api/Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_OrdinalVariants
+  commentId: P:Utils.NumberToString.INumberToStringConverter.OrdinalVariants
+  fullName: Utils.NumberToString.INumberToStringConverter.OrdinalVariants
+  nameWithType: INumberToStringConverter.OrdinalVariants
+- uid: Utils.NumberToString.INumberToStringConverter.OrdinalVariants*
+  name: OrdinalVariants
+  href: api/Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_OrdinalVariants_
+  commentId: Overload:Utils.NumberToString.INumberToStringConverter.OrdinalVariants
+  isSpec: "True"
+  fullName: Utils.NumberToString.INumberToStringConverter.OrdinalVariants
+  nameWithType: INumberToStringConverter.OrdinalVariants
 - uid: Utils.NumberToString.INumberToStringConverter.SupportsDateConversion
   name: SupportsDateConversion
   href: api/Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_SupportsDateConversion
@@ -63674,6 +63705,15 @@ references:
   fullName.vb: Utils.NumberToString.NumberToStringConverter.Convert(System.DateOnly, ParamArray String())
   nameWithType: NumberToStringConverter.Convert(DateOnly, params string[])
   nameWithType.vb: NumberToStringConverter.Convert(DateOnly, ParamArray String())
+- uid: Utils.NumberToString.NumberToStringConverter.Convert(System.DateTime,System.Boolean,System.String[])
+  name: Convert(DateTime, bool, params string[])
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_Convert_System_DateTime_System_Boolean_System_String___
+  commentId: M:Utils.NumberToString.NumberToStringConverter.Convert(System.DateTime,System.Boolean,System.String[])
+  name.vb: Convert(Date, Boolean, ParamArray String())
+  fullName: Utils.NumberToString.NumberToStringConverter.Convert(System.DateTime, bool, params string[])
+  fullName.vb: Utils.NumberToString.NumberToStringConverter.Convert(Date, Boolean, ParamArray String())
+  nameWithType: NumberToStringConverter.Convert(DateTime, bool, params string[])
+  nameWithType.vb: NumberToStringConverter.Convert(Date, Boolean, ParamArray String())
 - uid: Utils.NumberToString.NumberToStringConverter.Convert(System.DateTime,System.String[])
   name: Convert(DateTime, params string[])
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_Convert_System_DateTime_System_String___
@@ -63833,6 +63873,15 @@ references:
   fullName.vb: Utils.NumberToString.NumberToStringConverter.Convert(Single, ParamArray String())
   nameWithType: NumberToStringConverter.Convert(float, params string[])
   nameWithType.vb: NumberToStringConverter.Convert(Single, ParamArray String())
+- uid: Utils.NumberToString.NumberToStringConverter.Convert(System.TimeOnly,System.Boolean,System.String[])
+  name: Convert(TimeOnly, bool, params string[])
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_Convert_System_TimeOnly_System_Boolean_System_String___
+  commentId: M:Utils.NumberToString.NumberToStringConverter.Convert(System.TimeOnly,System.Boolean,System.String[])
+  name.vb: Convert(TimeOnly, Boolean, ParamArray String())
+  fullName: Utils.NumberToString.NumberToStringConverter.Convert(System.TimeOnly, bool, params string[])
+  fullName.vb: Utils.NumberToString.NumberToStringConverter.Convert(System.TimeOnly, Boolean, ParamArray String())
+  nameWithType: NumberToStringConverter.Convert(TimeOnly, bool, params string[])
+  nameWithType.vb: NumberToStringConverter.Convert(TimeOnly, Boolean, ParamArray String())
 - uid: Utils.NumberToString.NumberToStringConverter.Convert(System.TimeOnly,System.String[])
   name: Convert(TimeOnly, params string[])
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_Convert_System_TimeOnly_System_String___
@@ -64849,6 +64898,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.Separator
   nameWithType: NumberToStringConverter.Separator
+- uid: Utils.NumberToString.NumberToStringConverter.SpecialHours
+  name: SpecialHours
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_SpecialHours
+  commentId: P:Utils.NumberToString.NumberToStringConverter.SpecialHours
+  fullName: Utils.NumberToString.NumberToStringConverter.SpecialHours
+  nameWithType: NumberToStringConverter.SpecialHours
+- uid: Utils.NumberToString.NumberToStringConverter.SpecialHours*
+  name: SpecialHours
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_SpecialHours_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.SpecialHours
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.SpecialHours
+  nameWithType: NumberToStringConverter.SpecialHours
 - uid: Utils.NumberToString.NumberToStringConverter.SupportsDateConversion
   name: SupportsDateConversion
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_SupportsDateConversion
@@ -65937,6 +65999,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverterOptions.Separator
   nameWithType: NumberToStringConverterOptions.Separator
+- uid: Utils.NumberToString.NumberToStringConverterOptions.SpecialHours
+  name: SpecialHours
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_SpecialHours
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.SpecialHours
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.SpecialHours
+  nameWithType: NumberToStringConverterOptions.SpecialHours
+- uid: Utils.NumberToString.NumberToStringConverterOptions.SpecialHours*
+  name: SpecialHours
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_SpecialHours_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.SpecialHours
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.SpecialHours
+  nameWithType: NumberToStringConverterOptions.SpecialHours
 - uid: Utils.NumberToString.NumberToStringConverterOptions.TimeUnitForcedVariants
   name: TimeUnitForcedVariants
   href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_TimeUnitForcedVariants
@@ -66669,6 +66744,115 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.ReplacementsListType.Replacements
   nameWithType: ReplacementsListType.Replacements
+- uid: Utils.NumberToString.SpecialHourEntry
+  name: SpecialHourEntry
+  href: api/Utils.NumberToString.SpecialHourEntry.html
+  commentId: T:Utils.NumberToString.SpecialHourEntry
+  fullName: Utils.NumberToString.SpecialHourEntry
+  nameWithType: SpecialHourEntry
+- uid: Utils.NumberToString.SpecialHourEntry.Hour
+  name: Hour
+  href: api/Utils.NumberToString.SpecialHourEntry.html#Utils_NumberToString_SpecialHourEntry_Hour
+  commentId: P:Utils.NumberToString.SpecialHourEntry.Hour
+  fullName: Utils.NumberToString.SpecialHourEntry.Hour
+  nameWithType: SpecialHourEntry.Hour
+- uid: Utils.NumberToString.SpecialHourEntry.Hour*
+  name: Hour
+  href: api/Utils.NumberToString.SpecialHourEntry.html#Utils_NumberToString_SpecialHourEntry_Hour_
+  commentId: Overload:Utils.NumberToString.SpecialHourEntry.Hour
+  isSpec: "True"
+  fullName: Utils.NumberToString.SpecialHourEntry.Hour
+  nameWithType: SpecialHourEntry.Hour
+- uid: Utils.NumberToString.SpecialHourEntry.Value
+  name: Value
+  href: api/Utils.NumberToString.SpecialHourEntry.html#Utils_NumberToString_SpecialHourEntry_Value
+  commentId: P:Utils.NumberToString.SpecialHourEntry.Value
+  fullName: Utils.NumberToString.SpecialHourEntry.Value
+  nameWithType: SpecialHourEntry.Value
+- uid: Utils.NumberToString.SpecialHourEntry.Value*
+  name: Value
+  href: api/Utils.NumberToString.SpecialHourEntry.html#Utils_NumberToString_SpecialHourEntry_Value_
+  commentId: Overload:Utils.NumberToString.SpecialHourEntry.Value
+  isSpec: "True"
+  fullName: Utils.NumberToString.SpecialHourEntry.Value
+  nameWithType: SpecialHourEntry.Value
+- uid: Utils.NumberToString.SpecialHourEntry.WholeHour
+  name: WholeHour
+  href: api/Utils.NumberToString.SpecialHourEntry.html#Utils_NumberToString_SpecialHourEntry_WholeHour
+  commentId: P:Utils.NumberToString.SpecialHourEntry.WholeHour
+  fullName: Utils.NumberToString.SpecialHourEntry.WholeHour
+  nameWithType: SpecialHourEntry.WholeHour
+- uid: Utils.NumberToString.SpecialHourEntry.WholeHour*
+  name: WholeHour
+  href: api/Utils.NumberToString.SpecialHourEntry.html#Utils_NumberToString_SpecialHourEntry_WholeHour_
+  commentId: Overload:Utils.NumberToString.SpecialHourEntry.WholeHour
+  isSpec: "True"
+  fullName: Utils.NumberToString.SpecialHourEntry.WholeHour
+  nameWithType: SpecialHourEntry.WholeHour
+- uid: Utils.NumberToString.SpecialHourRule
+  name: SpecialHourRule
+  href: api/Utils.NumberToString.SpecialHourRule.html
+  commentId: T:Utils.NumberToString.SpecialHourRule
+  fullName: Utils.NumberToString.SpecialHourRule
+  nameWithType: SpecialHourRule
+- uid: Utils.NumberToString.SpecialHourRule.#ctor(System.Int32,System.String,System.Boolean)
+  name: SpecialHourRule(int, string, bool)
+  href: api/Utils.NumberToString.SpecialHourRule.html#Utils_NumberToString_SpecialHourRule__ctor_System_Int32_System_String_System_Boolean_
+  commentId: M:Utils.NumberToString.SpecialHourRule.#ctor(System.Int32,System.String,System.Boolean)
+  name.vb: New(Integer, String, Boolean)
+  fullName: Utils.NumberToString.SpecialHourRule.SpecialHourRule(int, string, bool)
+  fullName.vb: Utils.NumberToString.SpecialHourRule.New(Integer, String, Boolean)
+  nameWithType: SpecialHourRule.SpecialHourRule(int, string, bool)
+  nameWithType.vb: SpecialHourRule.New(Integer, String, Boolean)
+- uid: Utils.NumberToString.SpecialHourRule.#ctor*
+  name: SpecialHourRule
+  href: api/Utils.NumberToString.SpecialHourRule.html#Utils_NumberToString_SpecialHourRule__ctor_
+  commentId: Overload:Utils.NumberToString.SpecialHourRule.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.NumberToString.SpecialHourRule.SpecialHourRule
+  fullName.vb: Utils.NumberToString.SpecialHourRule.New
+  nameWithType: SpecialHourRule.SpecialHourRule
+  nameWithType.vb: SpecialHourRule.New
+- uid: Utils.NumberToString.SpecialHourRule.Hour
+  name: Hour
+  href: api/Utils.NumberToString.SpecialHourRule.html#Utils_NumberToString_SpecialHourRule_Hour
+  commentId: P:Utils.NumberToString.SpecialHourRule.Hour
+  fullName: Utils.NumberToString.SpecialHourRule.Hour
+  nameWithType: SpecialHourRule.Hour
+- uid: Utils.NumberToString.SpecialHourRule.Hour*
+  name: Hour
+  href: api/Utils.NumberToString.SpecialHourRule.html#Utils_NumberToString_SpecialHourRule_Hour_
+  commentId: Overload:Utils.NumberToString.SpecialHourRule.Hour
+  isSpec: "True"
+  fullName: Utils.NumberToString.SpecialHourRule.Hour
+  nameWithType: SpecialHourRule.Hour
+- uid: Utils.NumberToString.SpecialHourRule.Value
+  name: Value
+  href: api/Utils.NumberToString.SpecialHourRule.html#Utils_NumberToString_SpecialHourRule_Value
+  commentId: P:Utils.NumberToString.SpecialHourRule.Value
+  fullName: Utils.NumberToString.SpecialHourRule.Value
+  nameWithType: SpecialHourRule.Value
+- uid: Utils.NumberToString.SpecialHourRule.Value*
+  name: Value
+  href: api/Utils.NumberToString.SpecialHourRule.html#Utils_NumberToString_SpecialHourRule_Value_
+  commentId: Overload:Utils.NumberToString.SpecialHourRule.Value
+  isSpec: "True"
+  fullName: Utils.NumberToString.SpecialHourRule.Value
+  nameWithType: SpecialHourRule.Value
+- uid: Utils.NumberToString.SpecialHourRule.WholeHour
+  name: WholeHour
+  href: api/Utils.NumberToString.SpecialHourRule.html#Utils_NumberToString_SpecialHourRule_WholeHour
+  commentId: P:Utils.NumberToString.SpecialHourRule.WholeHour
+  fullName: Utils.NumberToString.SpecialHourRule.WholeHour
+  nameWithType: SpecialHourRule.WholeHour
+- uid: Utils.NumberToString.SpecialHourRule.WholeHour*
+  name: WholeHour
+  href: api/Utils.NumberToString.SpecialHourRule.html#Utils_NumberToString_SpecialHourRule_WholeHour_
+  commentId: Overload:Utils.NumberToString.SpecialHourRule.WholeHour
+  isSpec: "True"
+  fullName: Utils.NumberToString.SpecialHourRule.WholeHour
+  nameWithType: SpecialHourRule.WholeHour
 - uid: Utils.NumberToString.StaticNamesType
   name: StaticNamesType
   href: api/Utils.NumberToString.StaticNamesType.html
@@ -66823,6 +67007,19 @@ references:
   commentId: T:Utils.NumberToString.TimeUnitsType
   fullName: Utils.NumberToString.TimeUnitsType
   nameWithType: TimeUnitsType
+- uid: Utils.NumberToString.TimeUnitsType.SpecialHours
+  name: SpecialHours
+  href: api/Utils.NumberToString.TimeUnitsType.html#Utils_NumberToString_TimeUnitsType_SpecialHours
+  commentId: P:Utils.NumberToString.TimeUnitsType.SpecialHours
+  fullName: Utils.NumberToString.TimeUnitsType.SpecialHours
+  nameWithType: TimeUnitsType.SpecialHours
+- uid: Utils.NumberToString.TimeUnitsType.SpecialHours*
+  name: SpecialHours
+  href: api/Utils.NumberToString.TimeUnitsType.html#Utils_NumberToString_TimeUnitsType_SpecialHours_
+  commentId: Overload:Utils.NumberToString.TimeUnitsType.SpecialHours
+  isSpec: "True"
+  fullName: Utils.NumberToString.TimeUnitsType.SpecialHours
+  nameWithType: TimeUnitsType.SpecialHours
 - uid: Utils.NumberToString.TimeUnitsType.Units
   name: Units
   href: api/Utils.NumberToString.TimeUnitsType.html#Utils_NumberToString_TimeUnitsType_Units

@@ -9294,6 +9294,34 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.SpecialHourEntry.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.SpecialHourEntry.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.SpecialHourEntry",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.SpecialHourEntry.yml\" sourcestartlinenumber=\"1\">Declares a literal word or phrase replacing the numeral hour fragment for one specific hour\nof the day when rendering Convert(TimeOnly)/Convert(DateTime) (e.g. &quot;midnight&quot; for hour 0,\n&quot;noon&quot; for hour 12).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.SpecialHourRule.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.SpecialHourRule.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.SpecialHourRule",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.SpecialHourRule.yml\" sourcestartlinenumber=\"1\">Declares a literal word or phrase that replaces the numeral hour fragment for one specific\nhour of the day (e.g. &quot;midnight&quot; for hour 0, &quot;noon&quot; for hour 12) when rendering a time-of-day\nvalue via <xref href=\"Utils.NumberToString.NumberToStringConverter.Convert(System.TimeOnly%2cSystem.String%5b%5d)\" data-throw-if-not-resolved=\"false\"></xref> or the time portion\nof <xref href=\"Utils.NumberToString.NumberToStringConverter.Convert(System.DateTime%2cSystem.String%5b%5d)\" data-throw-if-not-resolved=\"false\"></xref>. Never applies to\n<xref href=\"Utils.NumberToString.NumberToStringConverter.Convert(System.TimeSpan%2cSystem.String%5b%5d)\" data-throw-if-not-resolved=\"false\"></xref>: a duration's hour count is\nnot a time of day.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.StaticNamesType.yml",
       "output": {
         ".html": {

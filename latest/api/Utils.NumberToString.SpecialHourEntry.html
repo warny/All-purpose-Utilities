@@ -2,11 +2,11 @@
 <html>
   <head>
     <meta charset="utf-8">
-      <title>Class LexicalFormEntry | omy.Utils Documentation </title>
+      <title>Class SpecialHourEntry | omy.Utils Documentation </title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="title" content="Class LexicalFormEntry | omy.Utils Documentation ">
+      <meta name="title" content="Class SpecialHourEntry | omy.Utils Documentation ">
       
-      <meta name="description" content="Maps one lexical form key (e.g. &amp;quot;singular&amp;quot;, &amp;quot;attributive&amp;quot;, &amp;quot;few&amp;quot;) to its localized word.">
+      <meta name="description" content="Declares a literal word or phrase replacing the numeral hour fragment for one specific hour of the day when rendering Convert(TimeOnly)/Convert(DateTime) (e.g. &amp;quot;midnight&amp;quot; for hour 0, &amp;quot;noon&amp;quot; for hour 12).">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -16,7 +16,7 @@
       <meta name="docfx:rel" content="../">
       
       
-      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_LexicalFormEntry.md&amp;value=---%0Auid%3A%20Utils.NumberToString.LexicalFormEntry%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_SpecialHourEntry.md&amp;value=---%0Auid%3A%20Utils.NumberToString.SpecialHourEntry%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
       <meta name="loc:inThisArticle" content="In this article">
       <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
       <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
@@ -84,12 +84,12 @@
           <nav id="breadcrumb"></nav>
         </div>
 
-        <article data-uid="Utils.NumberToString.LexicalFormEntry">
+        <article data-uid="Utils.NumberToString.SpecialHourEntry">
 
 
 
-  <h1 id="Utils_NumberToString_LexicalFormEntry" data-uid="Utils.NumberToString.LexicalFormEntry" class="text-break">
-Class LexicalFormEntry  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L722"><i class="bi bi-code-slash"></i></a>
+  <h1 id="Utils_NumberToString_SpecialHourEntry" data-uid="Utils.NumberToString.SpecialHourEntry" class="text-break">
+Class SpecialHourEntry  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L688"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,12 +97,14 @@ Class LexicalFormEntry  <a class="header-action link-secondary" title="View sour
   <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Maps one lexical form key (e.g. &quot;singular&quot;, &quot;attributive&quot;, &quot;few&quot;) to its localized word.</p>
+  <div class="markdown summary"><p>Declares a literal word or phrase replacing the numeral hour fragment for one specific hour
+of the day when rendering Convert(TimeOnly)/Convert(DateTime) (e.g. &quot;midnight&quot; for hour 0,
+&quot;noon&quot; for hour 12).</p>
 </div>
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class LexicalFormEntry</code></pre>
+    <pre><code class="lang-csharp hljs">public class SpecialHourEntry</code></pre>
   </div>
 
 
@@ -112,7 +114,7 @@ Class LexicalFormEntry  <a class="header-action link-secondary" title="View sour
     <dt>Inheritance</dt>
     <dd>
       <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
-      <div><span class="xref">LexicalFormEntry</span></div>
+      <div><span class="xref">SpecialHourEntry</span></div>
     </dd>
   </dl>
 
@@ -244,19 +246,19 @@ Class LexicalFormEntry  <a class="header-action link-secondary" title="View sour
 </h2>
 
 
-  <a id="Utils_NumberToString_LexicalFormEntry_Key_" data-uid="Utils.NumberToString.LexicalFormEntry.Key*"></a>
+  <a id="Utils_NumberToString_SpecialHourEntry_Hour_" data-uid="Utils.NumberToString.SpecialHourEntry.Hour*"></a>
 
-  <h3 id="Utils_NumberToString_LexicalFormEntry_Key" data-uid="Utils.NumberToString.LexicalFormEntry.Key">
-  Key
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L725"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_NumberToString_SpecialHourEntry_Hour" data-uid="Utils.NumberToString.SpecialHourEntry.Hour">
+  Hour
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L691"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>The form key, looked up by a configured <a class="xref" href="Utils.NumberToString.ILexicalFormSelector.html">ILexicalFormSelector</a>.</p>
+  <div class="markdown level1 summary"><p>The 24-hour clock hour (0-23) this rule applies to.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string Key { get; set; }</code></pre>
+    <pre><code class="lang-csharp hljs">public int Hour { get; set; }</code></pre>
   </div>
 
 
@@ -265,7 +267,7 @@ Class LexicalFormEntry  <a class="header-action link-secondary" title="View sour
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
     <dd></dd>
   </dl>
 
@@ -276,14 +278,14 @@ Class LexicalFormEntry  <a class="header-action link-secondary" title="View sour
 
 
 
-  <a id="Utils_NumberToString_LexicalFormEntry_Value_" data-uid="Utils.NumberToString.LexicalFormEntry.Value*"></a>
+  <a id="Utils_NumberToString_SpecialHourEntry_Value_" data-uid="Utils.NumberToString.SpecialHourEntry.Value*"></a>
 
-  <h3 id="Utils_NumberToString_LexicalFormEntry_Value" data-uid="Utils.NumberToString.LexicalFormEntry.Value">
+  <h3 id="Utils_NumberToString_SpecialHourEntry_Value" data-uid="Utils.NumberToString.SpecialHourEntry.Value">
   Value
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L729"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L695"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>The localized word for this form.</p>
+  <div class="markdown level1 summary"><p>The literal word or phrase replacing the hour fragment (e.g. &quot;midnight&quot;).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -308,11 +310,47 @@ Class LexicalFormEntry  <a class="header-action link-secondary" title="View sour
 
 
 
+  <a id="Utils_NumberToString_SpecialHourEntry_WholeHour_" data-uid="Utils.NumberToString.SpecialHourEntry.WholeHour*"></a>
+
+  <h3 id="Utils_NumberToString_SpecialHourEntry_WholeHour" data-uid="Utils.NumberToString.SpecialHourEntry.WholeHour">
+  WholeHour
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L705"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> (default), the rule applies only when minute and second are
+both zero (sub-second precision is ignored, e.g. 12:00:00.500 still counts). When
+<a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>, it applies for the entire hour (e.g. 12:00:00 through
+12:59:59...); non-zero minutes/seconds are still appended after <a class="xref" href="Utils.NumberToString.SpecialHourEntry.html#Utils_NumberToString_SpecialHourEntry_Value">Value</a> as
+usual.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool WholeHour { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
 
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L722" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L688" class="edit-link">Edit this page</a>
         </div>
 
 
