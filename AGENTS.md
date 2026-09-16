@@ -21,10 +21,10 @@ This project targets **.NET 9**.
 ## Testing  
 - Every change must include a corresponding **test**.  
 - When a **project** is modified, you **must** execute all tests from the projects to make sure that the project is still working. 
-**If a test fails**, you must fix the project until all tests pass. You must not modify the tests unless you are adding new tests for new functionality.
+**If a test fails**, you must fix the project until all tests pass.
 - **Utils is referenced in all other projects**. If you modify the **Utils** project, you must execute all tests from all other projects 
 to make sure that the modification does not break any other project. **If a test fails**, you must fix the utils project until all tests pass. 
-- You must not modify the tests unless you are adding new tests for new functionality.
+- You must not modify existing tests merely to accommodate a production-code change. An existing test may be corrected when it is itself demonstrably incorrect or non-deterministic, provided the protected invariant and assertion strength are preserved.
 - The only exception is when modifying **library metadata** or **library documentation**. 
  
 

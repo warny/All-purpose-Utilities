@@ -322,9 +322,15 @@ public class CommandResponseLifecycleSecurityTests
         await serverWriter.WriteLineAsync("220 Welcome");
         await callbackObserved.Task.WaitAsync(Timeout5);
 
+        Task<IReadOnlyList<ServerResponse>> sendTask = client.SendCommandAsync("PING");
+        await WithTimeout(Task.Run(() => serverReader.ReadLine()), "Server did not see PING after subscriber fault.");
+        await serverWriter.WriteLineAsync("250 OK");
+        IReadOnlyList<ServerResponse> responses = await WithTimeout(sendTask, "Did not receive PING response after subscriber fault.");
+
         Assert.AreEqual(1, errors.Count, "CallbackError must fire once for the subscriber exception.");
         Assert.IsInstanceOfType<InvalidOperationException>(errors.Single());
         Assert.IsTrue(client.IsConnected, "Client must remain connected after the subscriber exception.");
+        Assert.AreEqual("250", responses[0].Code);
     }
 
     // ──────────────────────────────────────────────────────────────
