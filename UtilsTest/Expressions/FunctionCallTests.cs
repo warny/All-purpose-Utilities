@@ -22,7 +22,7 @@ public class FunctionCallTests
         int[] var = [1, 2, 3];
         var expression = "(int[] var) => string.Concat(var)";
 
-        var e = (LambdaExpression)compiler.Compile(expression);
+        var e = (LambdaExpression)compiler.CompileExpression(expression);
         var f = (Func<int[], string>)e.Compile();
 
         Assert.AreEqual(string.Concat(var.Cast<object>().ToArray()), f(var));
@@ -33,7 +33,7 @@ public class FunctionCallTests
     {
         var expression = "() => string.Concat(\"1\", \"2\", \"3\")";
 
-        var e = (LambdaExpression)compiler.Compile(expression);
+        var e = (LambdaExpression)compiler.CompileExpression(expression);
         var f = (Func<string>)e.Compile();
 
         Assert.AreEqual("123", f());
@@ -44,7 +44,7 @@ public class FunctionCallTests
     {
         var expression = "() => string.Concat(\"1\", \"2\", \"3\", \"4\", \"5\", \"6\")";
 
-        var e = (LambdaExpression)compiler.Compile(expression);
+        var e = (LambdaExpression)compiler.CompileExpression(expression);
         var f = (Func<string>)e.Compile();
         Assert.AreEqual("123456", f());
     }
@@ -57,7 +57,7 @@ public class FunctionCallTests
         int[] var = [1, 2, 3];
         var expression = "(int[] var) => string.Concat(var)";
 
-        var e = (LambdaExpression)compiler.Compile(expression);
+        var e = (LambdaExpression)compiler.CompileExpression(expression);
         var f = (Func<int[], string>)e.Compile();
 
         Assert.AreEqual(string.Concat(var.Cast<object>().ToArray()), f(var));
@@ -69,7 +69,7 @@ public class FunctionCallTests
         string[] var = ["1", "2", "3"];
         var expression = "(string[] var) => string.Concat(var)";
 
-        var e = (LambdaExpression)compiler.Compile(expression);
+        var e = (LambdaExpression)compiler.CompileExpression(expression);
         var f = (Func<string[], string>)e.Compile();
 
         Assert.AreEqual(string.Concat(var.Cast<object>().ToArray()), f(var));
@@ -82,7 +82,7 @@ public class FunctionCallTests
         Func<string, string> ToLowerCase = (string s) => s.ToLower();
 
         var expression = "(System.Func<string, string> s, string str) => s(str)";
-        var e = (LambdaExpression)compiler.Compile(expression);
+        var e = (LambdaExpression)compiler.CompileExpression(expression);
         var f = (Func<Func<string, string>, string, string>)e.Compile();
 
         var tests = new List<string>()
@@ -106,7 +106,7 @@ public class FunctionCallTests
     public void LambdaCallTest2()
     {
         var expression = "(string str) => { System.Func<string, string> f = (string s) => s.ToUpper(); f(str) }";
-        var e = (LambdaExpression)compiler.Compile(expression);
+        var e = (LambdaExpression)compiler.CompileExpression(expression);
         var f = (Func<string, string>)e.Compile();
 
         var tests = new List<string>()
@@ -133,7 +133,7 @@ public class FunctionCallTests
             (string[] s, Func<string, string> f) => s.Select(f).ToArray()
             """;
             
-        var e = (LambdaExpression)compiler.Compile(expression);
+        var e = (LambdaExpression)compiler.CompileExpression(expression);
         var f = (Func<string, Func<string, string>, string>)e.Compile();
 
         Func<string, string> ToUpper = (string s) => s.ToUpper();
@@ -155,7 +155,7 @@ public class FunctionCallTests
         var context = new ExpressionCompilerContext();
         context.Set("sum", (Func<int, int, int>)((a, b) => a + b));
 
-        var expression = compiler.Compile("sum(4, 7)", context);
+        var expression = compiler.CompileExpression("sum(4, 7)", context);
         var lambda = Expression.Lambda<Func<int>>(Expression.Convert(expression, typeof(int))).Compile();
 
         Assert.AreEqual(11, lambda());
@@ -171,7 +171,7 @@ public class FunctionCallTests
         context.Set("values", new[] { 1, 2, 3 });
         context.Set("concatInt", (Func<int[], string>)(values => string.Concat(values)));
 
-        var expression = compiler.Compile("concatInt(values)", context);
+        var expression = compiler.CompileExpression("concatInt(values)", context);
         var lambda = Expression.Lambda<Func<string>>(Expression.Convert(expression, typeof(string))).Compile();
 
         Assert.AreEqual("123", lambda());
@@ -188,7 +188,7 @@ public class FunctionCallTests
         context.Set("toUpper", (Func<string, string>)(s => s.ToUpperInvariant()));
         context.Set("text", "aBc");
 
-        var expression = compiler.Compile("apply(toUpper, text)", context);
+        var expression = compiler.CompileExpression("apply(toUpper, text)", context);
         var lambda = Expression.Lambda<Func<string>>(Expression.Convert(expression, typeof(string))).Compile();
 
         Assert.AreEqual("ABC", lambda());

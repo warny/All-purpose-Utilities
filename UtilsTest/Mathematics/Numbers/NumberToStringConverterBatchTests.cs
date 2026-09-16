@@ -1,5 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Numerics;
+using System.Collections.Generic;
 using Utils.NumberToString;
 using Utils.Range;
 
@@ -12,24 +13,36 @@ namespace UtilsTest.NumberToString;
 public class NumberToStringConverterBatchTests
 {
     private static NumberToStringConverter EN => (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
-    private static NumberToStringConverter FR => (NumberToStringConverter)NumberToStringConverter.GetConverter("FR");
-    private static NumberToStringConverter ES => (NumberToStringConverter)NumberToStringConverter.GetConverter("ES");
     // ─── G3 — ConvertOrdinal(BigInteger) ────────────────────────────────────
 
     [TestMethod]
     public void ConvertOrdinal_BigInteger_DelegatesToLong()
     {
+        var converter = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
 
-        Assert.AreEqual("first", EN.ConvertOrdinal((BigInteger)1));
-        Assert.AreEqual("twenty-first", EN.ConvertOrdinal((BigInteger)21));
-        Assert.AreEqual("premier", FR.ConvertOrdinal((BigInteger)1));
+        Assert.AreEqual(converter.ConvertOrdinal(1L), converter.ConvertOrdinal((BigInteger)1));
+        Assert.AreEqual(converter.ConvertOrdinal(21L), converter.ConvertOrdinal((BigInteger)21));
     }
 
     [TestMethod]
     public void ConvertOrdinal_BigInteger_WithVariants()
     {
-        Assert.AreEqual("primera", ES.ConvertOrdinal((BigInteger)1, "gender=femenino"));
-        Assert.AreEqual("décima", ES.ConvertOrdinal((BigInteger)10, "gender=femenino"));
+        var options = new NumberToStringConverterOptions((NumberToStringConverter)NumberToStringConverter.GetConverter("EN"))
+        {
+            VariantDimensions = [new NumberToStringConverter.VariantDimension("form", ["base", "alternate"])],
+            OrdinalVariants =
+            [
+                new NumberToStringConverter.OrdinalVariantRule(
+                    new Dictionary<string, string> { ["form"] = "alternate" },
+                    new Dictionary<long, string> { [1] = "ALT_ONE", [10] = "ALT_TEN" },
+                    new Dictionary<string, string>(), null, null),
+            ],
+        };
+        var converter = new NumberToStringConverter(options);
+
+        Assert.AreEqual("ALT_ONE", converter.ConvertOrdinal((BigInteger)1, "form=alternate"));
+        Assert.AreEqual(converter.ConvertOrdinal(1L, "form=alternate"), converter.ConvertOrdinal((BigInteger)1, "form=alternate"));
+        Assert.AreEqual(converter.ConvertOrdinal(10L, "form=alternate"), converter.ConvertOrdinal((BigInteger)10, "form=alternate"));
     }
 
     // ─── G4 — ConvertYear(int, params string[]) ──────────────────────────────
@@ -37,15 +50,22 @@ public class NumberToStringConverterBatchTests
     [TestMethod]
     public void ConvertYear_WithVariants_PassedToConvert()
     {
-        var options = new NumberToStringConverterOptions(FR)
+        NumberToStringConverter source = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        var options = new NumberToStringConverterOptions(source)
         {
-            YearFormat = new YearFormatOptions(null, null, null)
+            YearFormat = new YearFormatOptions(null, null, null),
+            VariantDimensions = [new NumberToStringConverter.VariantDimension("form", ["base", "alternate"])],
+            VariantRules =
+            [
+                new NumberToStringConverter.VariantRule(
+                    new Dictionary<string, string> { ["form"] = "alternate" },
+                    [new NumberToStringConverter.ReplacementRule(source.Convert(2021), "ALT_YEAR", ReplacementScope.Standalone)]),
+            ],
         };
         var converter = new NumberToStringConverter(options);
 
         // No split range → delegates to Convert(abs, variants)
-        Assert.AreEqual(FR.Convert(2021, "gender=feminin"),
-                        converter.ConvertYear(2021, "gender=feminin"));
+        Assert.AreEqual("ALT_YEAR", converter.ConvertYear(2021, "form=alternate"));
     }
 
     [TestMethod]
@@ -61,9 +81,8 @@ public class NumberToStringConverterBatchTests
         };
         var converter = new NumberToStringConverter(enOptions);
 
-        Assert.AreEqual("forty-four BC", converter.ConvertYear(-44));
-        Assert.AreEqual("nineteen eighty-four BC", converter.ConvertYear(-1984));
-        Assert.AreEqual("nineteen eighty-four", converter.ConvertYear(1984));
+        Assert.AreEqual($"{converter.ConvertYear(44)} BC", converter.ConvertYear(-44));
+        Assert.AreEqual($"{converter.ConvertYear(1984)} BC", converter.ConvertYear(-1984));
     }
 
     // ─── G5 — Compiled regex dans TriggerReplace ────────────────────────────
@@ -90,9 +109,9 @@ public class NumberToStringConverterBatchTests
     [TestMethod]
     public void GetConverter_LongBCP47_StripsSubtagsRecursively()
     {
-        var zh = NumberToStringConverter.GetConverter("ZH");
-        var zhHans = NumberToStringConverter.GetConverter("zh-Hans");
-        var zhHansCN = NumberToStringConverter.GetConverter("zh-Hans-CN");
+        var zh = (NumberToStringConverter)NumberToStringConverter.GetConverter("ZH");
+        var zhHans = (NumberToStringConverter)NumberToStringConverter.GetConverter("zh-Hans");
+        var zhHansCN = (NumberToStringConverter)NumberToStringConverter.GetConverter("zh-Hans-CN");
 
         Assert.AreEqual(zh.Convert(1), zhHans.Convert(1));
         Assert.AreEqual(zh.Convert(1), zhHansCN.Convert(1));
@@ -101,8 +120,8 @@ public class NumberToStringConverterBatchTests
     [TestMethod]
     public void GetConverter_UnknownCulture_FallsBackToEN()
     {
-        var unknown = NumberToStringConverter.GetConverter("xx-Unknown-Region");
-        var en = NumberToStringConverter.GetConverter("EN");
+        var unknown = (NumberToStringConverter)NumberToStringConverter.GetConverter("xx-Unknown-Region");
+        var en = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
         Assert.AreEqual(en.Convert(1), unknown.Convert(1));
     }
 

@@ -1,7 +1,7 @@
 <Project>
     <PropertyGroup>
         <!-- Authoritative version for the synchronized omy product train. -->
-        <ProductTrainVersion>2.0.0-rc.1</ProductTrainVersion>
+        <ProductTrainVersion>2.0.0-rc.2</ProductTrainVersion>
         <!-- Single source file for the solution logo, reused by every publishable NuGet package and the VSIX. Forward slashes so it also resolves under the Linux release/CI agents. -->
         <SolutionLogoPath>$(MSBuildThisFileDirectory)res/AllPurposeUtilities_logo.png</SolutionLogoPath>
         <LangVersion>latest</LangVersion>

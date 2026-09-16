@@ -29,7 +29,7 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
     /// (typically <see cref="ParameterExpression"/> instances).
     /// </param>
     /// <returns>Compiled expression tree.</returns>
-    public Expression Compile(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
+    public Expression CompileExpression(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
     {
         ArgumentNullException.ThrowIfNull(content);
         content = PreprocessCompoundAssignments(content);
@@ -41,12 +41,33 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
     }
 
     /// <summary>
+    /// Compiles source text directly to an executable delegate, via <see cref="CompileExpression(string, IReadOnlyDictionary{string, Expression})"/>.
+    /// </summary>
+    /// <param name="content">C-like content to parse and compile.</param>
+    /// <returns>The compiled delegate.</returns>
+    public Delegate Compile(string content)
+    {
+        Expression expression = CompileExpression(content);
+        return expression is LambdaExpression lambda ? lambda.Compile() : Expression.Lambda(expression).Compile();
+    }
+
+    /// <summary>
+    /// Compiles source text directly to an executable delegate of type <typeparamref name="TDelegate"/>,
+    /// via <see cref="CompileExpression{TDelegate}(string)"/>.
+    /// </summary>
+    /// <typeparam name="TDelegate">The delegate type to compile to.</typeparam>
+    /// <param name="content">C-like lambda source.</param>
+    /// <returns>The compiled delegate.</returns>
+    public TDelegate Compile<TDelegate>(string content) where TDelegate : Delegate
+        => CompileExpression<TDelegate>(content).Compile();
+
+    /// <summary>
     /// Parses and compiles C-like source while using and mutating a rich runtime context.
     /// </summary>
     /// <param name="content">C-like source content.</param>
     /// <param name="context">Runtime compilation context.</param>
     /// <returns>Compiled expression tree.</returns>
-    public Expression Compile(string content, ExpressionCompilerContext context)
+    public Expression CompileExpression(string content, ExpressionCompilerContext context)
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(context);
@@ -83,11 +104,14 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
     /// <summary>
     /// Compiles a C-like lambda source into a typed delegate expression.
     /// Untyped parameters are resolved from the delegate type <typeparamref name="T"/>.
+    /// When <typeparamref name="T"/> has no parameters, <paramref name="content"/> may also be a bare
+    /// expression (no lambda syntax); it is wrapped in a parameterless lambda, converting its result
+    /// to the delegate's return type if needed.
     /// </summary>
     /// <typeparam name="T">Target delegate type.</typeparam>
-    /// <param name="content">C-like lambda source.</param>
+    /// <param name="content">C-like lambda source, or a bare expression when <typeparamref name="T"/> has no parameters.</param>
     /// <returns>Typed lambda expression.</returns>
-    public Expression<T> Compile<T>(string content) where T : Delegate
+    public Expression<T> CompileExpression<T>(string content) where T : Delegate
     {
         ArgumentNullException.ThrowIfNull(content);
         MethodInfo invokeMethod = typeof(T).GetMethod("Invoke")!;
@@ -107,9 +131,13 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
             }
         }
 
-        Expression result = Compile(content);
+        Expression result = CompileExpression(content);
         if (result is Expression<T> typed) return typed;
-        if (result is LambdaExpression lambda) return Expression.Lambda<T>(lambda.Body, lambda.Parameters);
+        if (result is LambdaExpression lambda) return Expression.Lambda<T>(ConvertIfNeeded(lambda.Body, invokeMethod.ReturnType), lambda.Parameters);
+        if (invokeParams.Length == 0)
+        {
+            return Expression.Lambda<T>(ConvertIfNeeded(result, invokeMethod.ReturnType));
+        }
         throw new InvalidOperationException($"Compiled expression cannot be converted to {typeof(T).Name}.");
     }
 
@@ -121,8 +149,8 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
     /// <param name="content">Expression body source (no lambda syntax).</param>
     /// <param name="parameters">Lambda parameters to bind as symbols.</param>
     /// <returns>Lambda expression compatible with <typeparamref name="T"/>.</returns>
-    public LambdaExpression Compile<T>(string content, ParameterExpression[] parameters) where T : Delegate
-        => Compile<T>(content, parameters, null, strictTypes: false);
+    public LambdaExpression CompileExpression<T>(string content, ParameterExpression[] parameters) where T : Delegate
+        => CompileExpression<T>(content, parameters, null, strictTypes: false);
 
     /// <summary>
     /// Compiles a C-like expression body using explicit parameters and optional static member imports.
@@ -135,7 +163,7 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
     /// </param>
     /// <param name="strictTypes">Reserved; currently ignored.</param>
     /// <returns>Lambda expression compatible with <typeparamref name="T"/>.</returns>
-    public LambdaExpression Compile<T>(string content, ParameterExpression[] parameters, Type? importType, bool strictTypes) where T : Delegate
+    public LambdaExpression CompileExpression<T>(string content, ParameterExpression[] parameters, Type? importType, bool strictTypes) where T : Delegate
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(parameters);
@@ -157,7 +185,7 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
             RegisterStaticCallableSymbols(importType, symbols);
         }
 
-        Expression body = Compile(content, symbols);
+        Expression body = CompileExpression(content, symbols);
         Expression convertedBody = ConvertIfNeeded(body, returnType);
         return Expression.Lambda(convertedBody, parameters);
     }
@@ -171,13 +199,13 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
     /// <param name="returnType">Expected return type; the body is converted if needed.</param>
     /// <param name="strictTypes">Reserved; currently ignored.</param>
     /// <returns>Lambda expression with the specified parameters and return type.</returns>
-    public LambdaExpression Compile(string content, ParameterExpression[] parameters, Type returnType, bool strictTypes)
+    public LambdaExpression CompileExpression(string content, ParameterExpression[] parameters, Type returnType, bool strictTypes)
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(parameters);
         ArgumentNullException.ThrowIfNull(returnType);
         Dictionary<string, Expression> symbols = parameters.ToDictionary(static p => p.Name!, static p => (Expression)p, StringComparer.Ordinal);
-        Expression body = Compile(content, symbols);
+        Expression body = CompileExpression(content, symbols);
         Expression convertedBody = ConvertIfNeeded(body, returnType);
         return Expression.Lambda(convertedBody, parameters);
     }
@@ -191,7 +219,7 @@ public sealed partial class CSyntaxExpressionCompiler : IExpressionCompiler
     /// (typically <see cref="ParameterExpression"/> instances).
     /// </param>
     /// <returns>Compiled expression tree.</returns>
-    public Expression Compile(ParseNode root, IReadOnlyDictionary<string, Expression>? symbols = null)
+    public Expression CompileExpression(ParseNode root, IReadOnlyDictionary<string, Expression>? symbols = null)
     {
         ArgumentNullException.ThrowIfNull(root);
         return Compile(root, symbols, string.Empty, null);

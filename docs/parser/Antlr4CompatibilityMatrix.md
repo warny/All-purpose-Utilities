@@ -1,6 +1,6 @@
 # ANTLR4 Compatibility Matrix
 
-> This matrix describes implementation state and does not itself create a production guarantee. Use the normative [`2.0.0-rc.1 Production Support Contract`](./ProductionSupportContract.md) to determine the supported RC perimeter.
+> This matrix describes implementation state and does not itself create a production guarantee. Use the normative [`2.0.0-rc.2 Production Support Contract`](./ProductionSupportContract.md) to determine the supported RC perimeter.
 
 > Rule arguments/returns plan: [`RuleArgumentsAndReturnsPlan.md`](./RuleArgumentsAndReturnsPlan.md) is the design reference for rule parameters, call arguments, returns, labels, rollback, and generated-C# opt-in binding. The matrix rows below describe current behavior only: parameters and returns are metadata plus explicit helper state, raw call arguments are preserved/split syntactically, reusable literal binding policies are explicit opt-in, labels store managed `ParserRuleCallResult` snapshots, and generated C# emitted with `enableGeneratedRuleArgumentBinding` performs narrow automatic positional simple-literal binding on `ParseWithEmbeddedCode(...)` overloads without a `basePolicy`; the shipped AdditionalFiles source-generator exposes this through the project-wide `UtilsParserEnableGeneratedRuleArgumentBinding` MSBuild opt-in, disabled by default.
 

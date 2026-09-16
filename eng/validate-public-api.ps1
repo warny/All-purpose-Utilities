@@ -11,6 +11,7 @@ param(
 )
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "Release.Common.ps1")
+. (Join-Path $PSScriptRoot "ApiCompat.Common.ps1")
 
 function Normalize-ApiMessage {
     param([string]$Message)
@@ -52,7 +53,9 @@ foreach ($package in $manifest.packages) {
     $versions = @((Invoke-RestMethod "https://api.nuget.org/v3-flatcontainer/$($package.packageId.ToLowerInvariant())/index.json").versions)
     if ($versions -notcontains $baselineVersion) { throw "$($package.packageId): baseline '$baselineVersion' does not exist." }
     $latestStable = @($versions | Where-Object { $_ -notmatch '-' } | Select-Object -Last 1)[0]
-    if ($latestStable -ne $baselineVersion) { throw "$($package.packageId): baseline '$baselineVersion' is not latest stable '$latestStable'." }
+    if (-not (Test-ApiBaselineVersion -CandidateVersion ([string]$manifest.version) -BaselineVersion $baselineVersion -PublishedVersions $versions)) {
+        throw "$($package.packageId): baseline '$baselineVersion' is not an acceptable API baseline for candidate '$($manifest.version)' - it must be either the most recently published version sharing the candidate's exact major.minor.patch core and sorting before it (the immediate predecessor, if one has been published), or, only when no such version exists yet, the latest stable release ('$latestStable')."
+    }
     $baselineFile = Join-Path $workRoot "$($package.packageId).$baselineVersion.nupkg"
     Invoke-WebRequest "https://api.nuget.org/v3-flatcontainer/$($package.packageId.ToLowerInvariant())/$baselineVersion/$($package.packageId.ToLowerInvariant()).$baselineVersion.nupkg" -OutFile $baselineFile
     $baselineRoot = Join-Path $workRoot "baseline/$($package.packageId)"; Expand-ZipArchive $baselineFile $baselineRoot
@@ -95,7 +98,7 @@ foreach ($package in $manifest.packages) {
         "$($_.diagnosticId)|$(Normalize-ApiMessage $_.message)"
     })
     if (($acceptedKeys | Sort-Object -Unique).Count -ne $acceptedKeys.Count) { throw "$($package.packageId): duplicate API acceptance diagnostics." }
-    $difference = if ($acceptedKeys.Count -eq 0 -and $actualKeys.Count -eq 0) { @() } elseif ($acceptedKeys.Count -eq 0) { @($actualKeys | ForEach-Object { [pscustomobject]@{ InputObject=$_; SideIndicator='=>' } }) } elseif ($actualKeys.Count -eq 0) { @($acceptedKeys | ForEach-Object { [pscustomobject]@{ InputObject=$_; SideIndicator='<=' } }) } else { @(Compare-Object ($acceptedKeys | Sort-Object) ($actualKeys | Sort-Object)) }
+    $difference = Get-ApiDiagnosticDifference -AcceptedKeys $acceptedKeys -ActualKeys $actualKeys
     if ($difference) { $formattedDifferences = $difference | ForEach-Object { "$($_.SideIndicator) $($_.InputObject)" }; throw "$($package.packageId): API diagnostics differ from the exact allowlist (new or stale entries):`n$($formattedDifferences -join "`n")" }
     $breaking = $actualKeys.Count
     $results += [ordered]@{ packageId=$package.packageId; latestStable=$latestStable; latestPrerelease=($versions | Where-Object {$_ -match '-'} | Select-Object -Last 1); baseline=$baselineVersion; result=if($breaking){'accepted-major-version-breaks'}else{'compatible'}; breakingChanges=$breaking; compatibleAdditions=$additions; candidateAssemblies=@($package.apiAssemblies); baselineAssemblies=@($package.baselineApiAssemblies); acceptance=[string]$package.apiBreakAcceptanceFile }

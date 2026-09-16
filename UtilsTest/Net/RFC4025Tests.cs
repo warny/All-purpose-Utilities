@@ -17,10 +17,7 @@ namespace UtilsTest.Net
         [TestMethod]
         public void IPSECKEYIPV4AdresseTest()
         {
-            Random random = new Random();
-
-            var key = new byte[128];
-            random.NextBytes(key);
+            byte[] key = Enumerable.Range(0, 128).Select(index => (byte)((index * 53 + 7) & 0xFF)).ToArray();
 
             DNSHeader header1 = new DNSHeader();
             header1.Requests.Add(new DNSRequestRecord("DNSKEY", "example.com"));
@@ -45,10 +42,7 @@ namespace UtilsTest.Net
         [TestMethod]
         public void IPSECKEYIPV6AdresseTest()
         {
-            Random random = new Random();
-
-            var key = new byte[128];
-            random.NextBytes(key);
+            byte[] key = Enumerable.Range(0, 128).Select(index => (byte)((index * 53 + 7) & 0xFF)).ToArray();
 
             DNSHeader header1 = new DNSHeader();
             header1.Requests.Add(new DNSRequestRecord("DNSKEY", "example.com"));
@@ -73,10 +67,7 @@ namespace UtilsTest.Net
         [TestMethod]
         public void IPSECKEYDomainTest()
         {
-            Random random = new Random();
-
-            var key = new byte[128];
-            random.NextBytes(key);
+            byte[] key = Enumerable.Range(0, 128).Select(index => (byte)((index * 53 + 7) & 0xFF)).ToArray();
 
             DNSHeader header1 = new DNSHeader();
             header1.Requests.Add(new DNSRequestRecord("DNSKEY", "example.com"));

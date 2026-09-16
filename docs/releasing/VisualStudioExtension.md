@@ -7,12 +7,12 @@ prerelease suffix such as `2.0.0-rc.1`.
 
 ## Why the VSIX version differs from `ProductTrainVersion`
 
-`Directory.Build.props` declares `<ProductTrainVersion>2.0.0-rc.1</ProductTrainVersion>` for the
+`Directory.Build.props` declares `<ProductTrainVersion>2.0.0-rc.2</ProductTrainVersion>` for the
 manifested NuGet packages (see [`ProductTrain.md`](ProductTrain.md) for the current count). The
 VSIX cannot use this value directly:
 
 - the Marketplace/`VSIXVersion` format is a plain `Major.Minor.Build[.Revision]` with no prerelease
-  label, so `2.0.0-rc.1` has no faithful representation, and
+  label, so `2.0.0-rc.2` has no faithful representation, and
 - inventing a lossy encoding (for example `2.0.0.1` for `rc.1`) would risk colliding with, or
   sorting incorrectly against, the eventual stable `2.0.0`.
 

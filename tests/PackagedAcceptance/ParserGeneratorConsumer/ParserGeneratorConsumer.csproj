@@ -8,8 +8,8 @@
         <UtilsParserAttachGeneratedFiles Condition="'$(UtilsParserAttachGeneratedFiles)' == ''">true</UtilsParserAttachGeneratedFiles>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="omy.Utils.Parser" Version="2.0.0-rc.1" />
-        <PackageReference Include="omy.Utils.Parser.Generators" Version="2.0.0-rc.1" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <PackageReference Include="omy.Utils.Parser" Version="2.0.0-rc.2" />
+        <PackageReference Include="omy.Utils.Parser.Generators" Version="2.0.0-rc.2" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
     <ItemGroup>
         <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="Namespace" />

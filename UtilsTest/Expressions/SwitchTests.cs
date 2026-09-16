@@ -17,7 +17,7 @@ public class SwitchTests
     public void Compile_IfExpressionStyleCondition_ReturnsExpectedValue()
     {
         var compiler = new CSyntaxExpressionCompiler();
-        var expression = compiler.Compile("(1 < 2) && (3 > 1)");
+        var expression = compiler.CompileExpression("(1 < 2) && (3 > 1)");
         var lambda = Expression.Lambda<Func<bool>>(Expression.Convert(expression, typeof(bool))).Compile();
 
         Assert.IsTrue(lambda());

@@ -173,7 +173,7 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
             {
                 public void Prepare(IExpressionCompiler compiler)
                 {
-                    compiler.Compile("raw");
+                    compiler.CompileExpression("raw");
                 }
             }
             """;
@@ -181,7 +181,7 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
         string[] violations = FindForbiddenEmbeddedCodePreparerCompileCalls(CreateSampleExpressionCompilerScans("Utils.Parser.Expressions/OtherEmbeddedCodePreparer.cs", source));
 
         Assert.AreEqual(1, violations.Length);
-        StringAssert.StartsWith(violations[0], "Utils.Parser.Expressions/OtherEmbeddedCodePreparer.cs:10: compiler.Compile(\"raw\")");
+        StringAssert.StartsWith(violations[0], "Utils.Parser.Expressions/OtherEmbeddedCodePreparer.cs:10: compiler.CompileExpression(\"raw\")");
     }
 
     /// <summary>
@@ -235,7 +235,7 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
                 && called.Name == "TransformSource"));
             InvocationExpressionSyntax compilerCall = method.DescendantNodes().OfType<InvocationExpressionSyntax>().Single(invocation =>
                 invocation.Expression is MemberAccessExpressionSyntax access
-                && access.Name.Identifier.ValueText == "Compile"
+                && access.Name.Identifier.ValueText == "CompileExpression"
                 && facadeScan.SemanticModel.GetSymbolInfo(access.Expression).Symbol is IFieldSymbol receiver
                 && SymbolEqualityComparer.Default.Equals(receiver, compilerField));
             Assert.IsTrue(compilerCall.Expression is MemberAccessExpressionSyntax memberAccess
@@ -349,9 +349,9 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
         Assert.IsTrue(sharedBuilder.DescendantNodes().OfType<AssignmentExpressionSyntax>().Any(assignment => assignment.Right is InvocationExpressionSyntax invocation && invocation.ToString().Contains("Expression.Property", StringComparison.Ordinal)));
 
         InvocationExpressionSyntax[] expressionCompilerCalls = preparer.DescendantNodes().OfType<InvocationExpressionSyntax>()
-            .Where(static invocation => invocation.ToString().StartsWith("_compiler.Compile", StringComparison.Ordinal))
+            .Where(static invocation => invocation.ToString().StartsWith("_compiler.CompileExpression", StringComparison.Ordinal))
             .ToArray();
-        Assert.AreEqual(2, expressionCompilerCalls.Length, "The preparer must keep exactly one IExpressionCompiler.Compile call per runtime artifact path.");
+        Assert.AreEqual(2, expressionCompilerCalls.Length, "The preparer must keep exactly one IExpressionCompiler.CompileExpression call per runtime artifact path.");
 
         Assert.IsTrue(preparer.DescendantNodes().OfType<InvocationExpressionSyntax>().Any(invocation => invocation.ToString().StartsWith("Expression.Lambda<Func<SemanticPredicateEvaluationContext, bool>>", StringComparison.Ordinal)));
         Assert.IsTrue(preparer.DescendantNodes().OfType<InvocationExpressionSyntax>().Any(invocation => invocation.ToString().StartsWith("Expression.Lambda<Action<ParserActionExecutionContext>>", StringComparison.Ordinal)));
@@ -739,7 +739,7 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
             {
                 public interface IExpressionCompiler
                 {
-                    object Compile(string content, System.Collections.Generic.IReadOnlyDictionary<string, object>? symbols = null);
+                    object CompileExpression(string content, System.Collections.Generic.IReadOnlyDictionary<string, object>? symbols = null);
                 }
             }
 
@@ -791,7 +791,7 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
     }
 
     /// <summary>
-    /// Finds forbidden direct <c>IExpressionCompiler.Compile(...)</c> calls inside embedded-code preparer implementations.
+    /// Finds forbidden direct <c>IExpressionCompiler.CompileExpression(...)</c> calls inside embedded-code preparer implementations.
     /// </summary>
     /// <param name="scans">Semantic source scans to inspect.</param>
     /// <returns>Forbidden direct compile invocation occurrences found in embedded-code preparers.</returns>
@@ -809,7 +809,7 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
     }
 
     /// <summary>
-    /// Finds forbidden direct <c>IExpressionCompiler.Compile(...)</c> calls inside one semantic source scan.
+    /// Finds forbidden direct <c>IExpressionCompiler.CompileExpression(...)</c> calls inside one semantic source scan.
     /// </summary>
     /// <param name="scan">Semantic source scan to inspect.</param>
     /// <param name="preparerContract">Resolved embedded-code preparer contract.</param>
@@ -834,7 +834,7 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
             foreach (InvocationExpressionSyntax invocation in type.DescendantNodes().OfType<InvocationExpressionSyntax>())
             {
                 if (scan.SemanticModel.GetSymbolInfo(invocation).Symbol is IMethodSymbol method
-                    && method.Name == "Compile"
+                    && method.Name == "CompileExpression"
                     && SymbolEqualityComparer.Default.Equals(method.ContainingType, expressionCompilerContract))
                 {
                     FileLinePositionSpan lineSpan = invocation.SyntaxTree.GetLineSpan(invocation.Span);

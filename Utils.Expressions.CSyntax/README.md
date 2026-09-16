@@ -14,12 +14,11 @@ The main component is `CSyntaxExpressionCompiler` in the `Utils.Expressions.CSyn
 
 ## Installation
 
-This package's first publication is the `2.0.0-rc.1` release candidate - there is no earlier stable
-version, so `dotnet add package` requires an explicit version (NuGet does not install a prerelease
-by default):
+First published as `2.0.0-rc.1`; the current candidate is `2.0.0-rc.2`. No stable release exists yet,
+so `dotnet add package` requires an explicit version (NuGet does not install a prerelease by default):
 
 ```bash
-dotnet add package omy.Utils.Expressions.CSyntax --version 2.0.0-rc.1
+dotnet add package omy.Utils.Expressions.CSyntax --version 2.0.0-rc.2
 ```
 
 ## Examples
@@ -31,8 +30,16 @@ using System.Linq.Expressions;
 using Utils.Expressions.CSyntax.Runtime;
 
 var compiler = new CSyntaxExpressionCompiler();
-Expression expression = compiler.Compile("1 + 2 * 3");
+Expression expression = compiler.CompileExpression("1 + 2 * 3");
 var lambda = Expression.Lambda<Func<double>>(Expression.Convert(expression, typeof(double))).Compile();
+
+double result = lambda(); // 7
+```
+
+Recommended pattern for a self-contained expression: `Compile<TDelegate>` compiles straight to a real delegate, skipping the manual `Expression.Lambda(...).Compile()` step:
+
+```csharp
+Func<double> lambda = compiler.Compile<Func<double>>("1 + 2 * 3");
 
 double result = lambda(); // 7
 ```
@@ -44,7 +51,7 @@ using System.Linq.Expressions;
 using Utils.Expressions.CSyntax.Runtime;
 
 var compiler = new CSyntaxExpressionCompiler();
-Expression expression = compiler.Compile("3 > 1 && 4 <= 4");
+Expression expression = compiler.CompileExpression("3 > 1 && 4 <= 4");
 var lambda = Expression.Lambda<Func<bool>>(Expression.Convert(expression, typeof(bool))).Compile();
 
 bool result = lambda(); // true
@@ -59,7 +66,7 @@ using Utils.Expressions.CSyntax.Runtime;
 var compiler = new CSyntaxExpressionCompiler();
 ParameterExpression x = Expression.Parameter(typeof(double), "x");
 
-Expression expression = compiler.Compile("x * 2 + 1", new Dictionary<string, Expression>
+Expression expression = compiler.CompileExpression("x * 2 + 1", new Dictionary<string, Expression>
 {
     ["x"] = x,
 });
@@ -75,7 +82,7 @@ double result = lambda(4); // 9
 using Utils.Expressions.CSyntax.Runtime;
 
 var compiler = new CSyntaxExpressionCompiler();
-Expression<Func<int, int>> expression = compiler.Compile<Func<int, int>>("(x) => x + 1");
+Expression<Func<int, int>> expression = compiler.CompileExpression<Func<int, int>>("(x) => x + 1");
 Func<int, int> function = expression.Compile();
 
 int result = function(41); // 42
@@ -114,7 +121,7 @@ var compiler = new CSyntaxExpressionCompiler();
 var context = new ExpressionCompilerContext();
 context.Set("increment", (Func<double, double>)(x => x + 1));
 
-Expression expression = compiler.Compile("increment(41)", context);
+Expression expression = compiler.CompileExpression("increment(41)", context);
 var lambda = Expression.Lambda<Func<double>>(Expression.Convert(expression, typeof(double))).Compile();
 
 double result = lambda(); // 42
@@ -219,7 +226,7 @@ context.WriteToStream(stream);
 stream.Position = 0;
 
 ExpressionCompilerContext restored = ExpressionCompilerContext.ReadFromStream(stream);
-Expression expression = compiler.Compile("twice(21)", restored);
+Expression expression = compiler.CompileExpression("twice(21)", restored);
 int result = Expression.Lambda<Func<int>>(Expression.Convert(expression, typeof(int))).Compile()(); // 42
 ```
 
@@ -230,4 +237,4 @@ int result = Expression.Lambda<Func<int>>(Expression.Convert(expression, typeof(
 - For advanced scenarios, use `ExpressionCompilerContext` to register symbols, overloaded callables, and persisted runtime values.
 - **Unused variable elimination** — local variable declarations that are never read are silently removed from the compiled block. If the initializer expression has observable side effects (e.g. a method call), the initializer is kept as a standalone statement and the variable itself is dropped. Pure initializers (constants, parameter references) are discarded entirely.
 
-[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.2/)

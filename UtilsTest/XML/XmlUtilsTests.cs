@@ -794,7 +794,7 @@ internal class AsyncReturnsTaskProcessor : XmlDataProcessor
     [Match("//item")]
     protected async Task OnItemAsync()
     {
-        await Task.Delay(1);
+        await Task.Yield();
     }
 }
 

@@ -62,7 +62,7 @@ public class CommandResponseClientTests
     [TestMethod]
     public async Task Client_SendsNoOp_WhenIdle()
     {
-        string? received = null;
+        TaskCompletionSource<string> commandReceived = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TcpListener listener = new(IPAddress.Loopback, 0);
         listener.Start();
         int port = ((IPEndPoint)listener.LocalEndpoint).Port;
@@ -72,7 +72,7 @@ public class CommandResponseClientTests
             using CommandResponseServer server = new();
             server.CommandReceived += (cmd, ct) =>
             {
-                received = cmd;
+                commandReceived.TrySetResult(cmd);
                 return Task.FromResult<IEnumerable<ServerResponse>>([new ServerResponse("200", ResponseSeverity.Completion, "OK")]);
             };
             await server.StartAsync(serverClient.GetStream());
@@ -87,10 +87,9 @@ public class CommandResponseClientTests
         })
         {
             await client.ConnectAsync("127.0.0.1", port);
-            await Task.Delay(300);
+            Assert.AreEqual("NOOP", await commandReceived.Task.WaitAsync(TimeSpan.FromSeconds(5)));
         }
         await serverTask;
-        Assert.AreEqual("NOOP", received);
     }
 
     /// <summary>
@@ -204,6 +203,8 @@ public class CommandResponseClientTests
     [TestMethod]
     public async Task Server_ProcessesPipelinedCommands()
     {
+        TaskCompletionSource firstEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseFirst = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TcpListener listener = new(IPAddress.Loopback, 0);
         listener.Start();
         int port = ((IPEndPoint)listener.LocalEndpoint).Port;
@@ -215,7 +216,8 @@ public class CommandResponseClientTests
             {
                 if (cmd == "FIRST")
                 {
-                    await Task.Delay(200, ct);
+                    firstEntered.TrySetResult();
+                    await releaseFirst.Task.WaitAsync(ct);
                 }
                 return new[] { new ServerResponse("200", ResponseSeverity.Completion, cmd) };
             };
@@ -232,6 +234,8 @@ public class CommandResponseClientTests
 
         await writer.WriteLineAsync("FIRST");
         await writer.WriteLineAsync("SECOND");
+        await firstEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        releaseFirst.TrySetResult();
 
         string? response1 = await reader.ReadLineAsync();
         string? response2 = await reader.ReadLineAsync();
@@ -347,6 +351,7 @@ public class CommandResponseClientTests
     [TestMethod]
     public async Task ConnectAsync_InvokesOnConnectOverride()
     {
+        TaskCompletionSource releaseConnection = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TcpListener listener = new(IPAddress.Loopback, 0);
         listener.Start();
         int port = ((IPEndPoint)listener.LocalEndpoint).Port;
@@ -354,13 +359,14 @@ public class CommandResponseClientTests
         {
             using TcpClient serverClient = await listener.AcceptTcpClientAsync();
             using NetworkStream serverStream = serverClient.GetStream();
-            await Task.Delay(50);
+            await releaseConnection.Task;
             listener.Stop();
         });
 
         using OnConnectClient client = new() { NoOpInterval = Timeout.InfiniteTimeSpan };
         await client.ConnectAsync("127.0.0.1", port);
         Assert.IsTrue(client.OnConnectInvoked, "OnConnect override was not invoked.");
+        releaseConnection.TrySetResult();
         await client.DisconnectAsync();
         await serverTask;
     }
@@ -412,4 +418,3 @@ public class CommandResponseClientTests
         }
     }
 }
-

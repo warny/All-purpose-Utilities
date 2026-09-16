@@ -12,12 +12,11 @@ The main component is `VBSyntaxExpressionCompiler` in the `Utils.Expressions.VBS
 
 ## Installation
 
-This package's first publication is the `2.0.0-rc.1` release candidate - there is no earlier stable
-version, so `dotnet add package` requires an explicit version (NuGet does not install a prerelease
-by default):
+First published as `2.0.0-rc.1`; the current candidate is `2.0.0-rc.2`. No stable release exists yet,
+so `dotnet add package` requires an explicit version (NuGet does not install a prerelease by default):
 
 ```bash
-dotnet add package omy.Utils.Expressions.VBSyntax --version 2.0.0-rc.1
+dotnet add package omy.Utils.Expressions.VBSyntax --version 2.0.0-rc.2
 ```
 
 ## Examples
@@ -29,8 +28,16 @@ using System.Linq.Expressions;
 using Utils.Expressions.VBSyntax.Runtime;
 
 var compiler = new VBSyntaxExpressionCompiler();
-Expression expression = compiler.Compile("1 + 2 * 3");
+Expression expression = compiler.CompileExpression("1 + 2 * 3");
 var lambda = Expression.Lambda<Func<double>>(Expression.Convert(expression, typeof(double))).Compile();
+
+double result = lambda(); // 7
+```
+
+Recommended pattern for a self-contained expression: `Compile<TDelegate>` compiles straight to a real delegate, skipping the manual `Expression.Lambda(...).Compile()` step:
+
+```csharp
+Func<double> lambda = compiler.Compile<Func<double>>("1 + 2 * 3");
 
 double result = lambda(); // 7
 ```
@@ -42,7 +49,7 @@ using System.Linq.Expressions;
 using Utils.Expressions.VBSyntax.Runtime;
 
 var compiler = new VBSyntaxExpressionCompiler();
-Expression expression = compiler.Compile("2.0 ^ 10");
+Expression expression = compiler.CompileExpression("2.0 ^ 10");
 var lambda = Expression.Lambda<Func<double>>(expression).Compile();
 
 double result = lambda(); // 1024
@@ -55,7 +62,7 @@ using System.Linq.Expressions;
 using Utils.Expressions.VBSyntax.Runtime;
 
 var compiler = new VBSyntaxExpressionCompiler();
-Expression expression = compiler.Compile("3 > 1 AndAlso 4 <= 4");
+Expression expression = compiler.CompileExpression("3 > 1 AndAlso 4 <= 4");
 var lambda = Expression.Lambda<Func<bool>>(expression).Compile();
 
 bool result = lambda(); // True
@@ -70,7 +77,7 @@ using Utils.Expressions.VBSyntax.Runtime;
 var compiler = new VBSyntaxExpressionCompiler();
 ParameterExpression x = Expression.Parameter(typeof(double), "x");
 
-Expression expression = compiler.Compile("x * 2 + 1", new Dictionary<string, Expression>
+Expression expression = compiler.CompileExpression("x * 2 + 1", new Dictionary<string, Expression>
 {
     ["x"] = x,
 });
@@ -91,7 +98,7 @@ var compiler = new VBSyntaxExpressionCompiler();
 var context = new VBSyntaxCompilerContext();
 context.Set("pi", 3.14159);
 
-Expression expression = compiler.Compile("pi * 2", context);
+Expression expression = compiler.CompileExpression("pi * 2", context);
 var lambda = Expression.Lambda<Func<double>>(
     Expression.Convert(expression, typeof(double))).Compile();
 
@@ -108,7 +115,7 @@ var compiler = new VBSyntaxExpressionCompiler();
 var context = new VBSyntaxCompilerContext();
 context.Set("greeting", "Hello");
 
-Expression expression = compiler.Compile("greeting & \", World!\"", context);
+Expression expression = compiler.CompileExpression("greeting & \", World!\"", context);
 var lambda = Expression.Lambda<Func<string>>(expression).Compile();
 
 string result = lambda(); // "Hello, World!"
@@ -144,7 +151,7 @@ var compiler = new VBSyntaxExpressionCompiler();
 var context = new VBSyntaxCompilerContext();
 context.Set("increment", (Func<double, double>)(x => x + 1));
 
-Expression expression = compiler.Compile("increment(41)", context);
+Expression expression = compiler.CompileExpression("increment(41)", context);
 var lambda = Expression.Lambda<Func<double>>(
     Expression.Convert(expression, typeof(double))).Compile();
 
@@ -159,7 +166,7 @@ using System.Text;
 using Utils.Expressions.VBSyntax.Runtime;
 
 var compiler = new VBSyntaxExpressionCompiler();
-Expression expression = compiler.Compile("New System.Text.StringBuilder()");
+Expression expression = compiler.CompileExpression("New System.Text.StringBuilder()");
 var lambda = Expression.Lambda<Func<object>>(
     Expression.Convert(expression, typeof(object))).Compile();
 
@@ -249,4 +256,4 @@ int result = sumValues(); // 10
 - For advanced scenarios, use `VBSyntaxCompilerContext` to pre-register symbols and delegates that the compiled code can call.
 - **Keyword operator disambiguation** — logical keyword operators are extracted using regex patterns with word-boundary anchors (`\b`). This guarantees that `OrElse` is never misidentified as `Or`, and `AndAlso` is never split into `And` + `Also`, even when multiple chained operators appear in a single expression.
 
-[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.2/)

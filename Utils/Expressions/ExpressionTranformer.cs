@@ -130,7 +130,7 @@ public abstract class ExpressionTransformer
     {
         /// <summary>
         /// The method declares no parameters. It can never actually be reached (a rule always needs at
-        /// least the node parameter, and <see cref="TryTransform"/> indexes <c>Parameters[0]</c> before
+        /// least the node parameter, and <see cref="TryTransform"/> reads the first logical argument before
         /// invocation is attempted), preserved only to mirror this pre-existing (unreachable) case.
         /// </summary>
         None,
@@ -171,7 +171,7 @@ public abstract class ExpressionTransformer
         public bool ReturnsExpression { get; }
 
         /// <summary>
-        /// Whether <see cref="Method"/>'s shape is one <see cref="ExpressionTransformer.IsFastInvokerEligible"/>
+        /// Whether <see cref="Method"/>'s shape is one <see cref="DetermineFastInvokerEligibility"/>
         /// considers safe to fast-path — computed once, cheaply (no reflection beyond inspecting metadata
         /// already fetched for <see cref="Method"/> and <see cref="Parameters"/>), when this rule is built.
         /// Does not by itself mean a <see cref="System.Reflection.MethodInvoker"/> has been built yet — see
@@ -186,7 +186,7 @@ public abstract class ExpressionTransformer
         /// A cached <see cref="System.Reflection.MethodInvoker"/> for <see cref="Method"/>, used by
         /// <see cref="TryInvokeTransformMethod"/> as a faster, allocation-reduced alternative to
         /// <see cref="MethodBase.Invoke(object, object[])"/> — <see langword="null"/> when
-        /// <see cref="Method"/>'s shape isn't one <see cref="ExpressionTransformer.IsFastInvokerEligible"/>
+        /// <see cref="Method"/>'s shape isn't one <see cref="DetermineFastInvokerEligibility"/>
         /// considers safe to fast-path, in which case every dispatch falls back to <see cref="Method"/>.Invoke
         /// exactly as before this optimization.
         /// </summary>
@@ -485,7 +485,7 @@ public abstract class ExpressionTransformer
     }
 
     /// <summary>
-    /// The maximum number of arguments <see cref="TryCreateFastInvoker"/> considers for the
+    /// The maximum number of arguments <see cref="DetermineFastInvokerEligibility"/> considers for the
     /// <see cref="System.Reflection.MethodInvoker"/> fast path. A standalone benchmark comparing every
     /// invocation shape this class actually uses (see the PR description that introduced this constant)
     /// measured the fixed-argument <c>MethodInvoker.Invoke</c> overloads (1 through 4 arguments) 1.35x to
@@ -614,7 +614,7 @@ public abstract class ExpressionTransformer
 
     /// <summary>
     /// Prepares an expression for transformation. Subclasses can override this to apply
-    /// initial logic before the main <see cref="Transform(Expression)"/> switch (e.g., caching).
+    /// initial logic before the main <see cref="TransformCore(Expression)"/> switch (e.g., caching).
     /// The default implementation returns the expression unchanged.
     /// </summary>
     /// <param name="e">The expression to prepare.</param>
@@ -624,12 +624,35 @@ public abstract class ExpressionTransformer
     /// <summary>
     /// Readonly context produced by <see cref="PrepareTransform"/> and consumed by
     /// <see cref="TryTransform"/>/<see cref="TryInvokeTransformMethod"/>. Its own fields cannot be
-    /// reassigned, but <see cref="ExpressionParameters"/> and <see cref="Parameters"/> are arrays whose
-    /// elements are not protected from mutation. Pure implementation detail of
-    /// <see cref="Transform(Expression)"/>: never exposed outside this class.
+    /// reassigned, but the array returned by <see cref="MaterializeExpressionParameters"/> is not
+    /// protected from mutation. Pure implementation detail of
+    /// <see cref="TransformCore(Expression)"/>: never exposed outside this class.
     /// </summary>
+    /// <remarks>
+    /// For every node type except <see cref="UnaryExpression"/> and <see cref="BinaryExpression"/>, the
+    /// backing <c>expressionParameters</c> field always holds a real (possibly empty) <see cref="Expression"/>
+    /// array, exactly as before this type gained a lazy representation. For a <see cref="UnaryExpression"/>
+    /// prepared by <see cref="PrepareUnary"/> or a <see cref="BinaryExpression"/> prepared by
+    /// <see cref="PrepareBinary"/>, that field is instead <see langword="null"/>: a private sentinel meaning
+    /// "the logical parameter(s) live directly on the rebuilt node — <c>((UnaryExpression)Expression).Operand</c>
+    /// for Unary, <c>((BinaryExpression)Expression).Left</c>/<c>.Right</c> for Binary — and have not been
+    /// array-materialized" — this lets <see cref="PrepareUnary"/>/<see cref="PrepareBinary"/> skip the
+    /// <see cref="Expression"/>[1]/[2] allocation entirely on paths that only ever need positional or
+    /// <see cref="InvocationKind.Single"/> access (see <see cref="GetExpressionParameter"/> and
+    /// <see cref="GetInvocationArgument"/>). <see langword="null"/> is not used as a general lazy-list
+    /// abstraction for any other node type: every other <c>Prepare*</c> method keeps constructing this
+    /// struct through the array-accepting constructor below.
+    /// </remarks>
     private readonly struct TransformContext
     {
+        /// <summary>
+        /// The prepared sub-expressions of <see cref="Expression"/>, or <see langword="null"/> exactly
+        /// when <see cref="Expression"/> is a <see cref="UnaryExpression"/> prepared by
+        /// <see cref="PrepareUnary"/> or a <see cref="BinaryExpression"/> prepared by
+        /// <see cref="PrepareBinary"/> without materializing an array — see the type-level remarks.
+        /// </summary>
+        private readonly Expression[]? expressionParameters;
+
         /// <summary>
         /// The expression to match/finalize: for node types that are rebuilt (Unary, Binary, MethodCall,
         /// Conditional, Invocation, Lambda) this is the rebuilt node; for Constant/Parameter/default it
@@ -638,43 +661,168 @@ public abstract class ExpressionTransformer
         public Expression Expression { get; }
 
         /// <summary>
-        /// The prepared sub-expressions of <see cref="Expression"/> (empty array for Constant/Parameter/
-        /// default). Passed to <see cref="FinalizeExpression"/> and to the special
-        /// <c>Expression[]</c>-shaped transform-method overload.
+        /// The logical parameter count of <see cref="Expression"/>: the real array's length when one was
+        /// materialized, or — for a lazy context, see the type-level remarks — 2 for a
+        /// <see cref="BinaryExpression"/> (<c>Left</c>/<c>Right</c>) or 1 for a <see cref="UnaryExpression"/>
+        /// (<c>Operand</c>). Binary is checked first: it is the more allocation-sensitive hot path this
+        /// struct was originally introduced for (see the PR that added binary laziness), so this ordering
+        /// keeps its dispatch a single type test, same as before <see cref="UnaryExpression"/> gained the
+        /// same lazy representation.
         /// </summary>
-        public Expression[] ExpressionParameters { get; }
+        private int ExpressionParameterCount => expressionParameters?.Length ?? (Expression is BinaryExpression ? 2 : 1);
+
+        /// <summary>Gets the number of arguments in the historical positional invocation layout.</summary>
+        public int InvocationArgumentCount => Expression is ConstantExpression ? 2 : ExpressionParameterCount + 1;
 
         /// <summary>
-        /// The full positional argument list used to match a candidate transform method's parameters and
-        /// to invoke it (index 0 is always <see cref="Expression"/> itself; for
-        /// <see cref="ConstantExpression"/>, its boxed <c>Value</c> follows at index 1).
-        /// </summary>
-        public object[] Parameters { get; }
-
-        /// <summary>
-        /// Initializes a new <see cref="TransformContext"/> with the already-prepared expression,
-        /// sub-expressions, and invocation argument list.
+        /// Initializes a new <see cref="TransformContext"/> with an already-prepared expression and its
+        /// materialized sub-expressions.
         /// </summary>
         /// <param name="expression">The (possibly rebuilt) expression to match/finalize.</param>
         /// <param name="expressionParameters">The prepared sub-expressions of <paramref name="expression"/>.</param>
-        /// <param name="parameters">The positional argument list used to match and invoke a transform method.</param>
-        public TransformContext(Expression expression, Expression[] expressionParameters, object[] parameters)
+        public TransformContext(Expression expression, Expression[] expressionParameters)
         {
             Expression = expression;
-            ExpressionParameters = expressionParameters;
-            Parameters = parameters;
+            this.expressionParameters = expressionParameters;
+        }
+
+        /// <summary>
+        /// Initializes a new lazy <see cref="TransformContext"/> for a prepared <see cref="BinaryExpression"/>
+        /// whose two logical parameters (<c>Left</c>/<c>Right</c>) have not been array-materialized — see
+        /// the type-level remarks.
+        /// </summary>
+        /// <param name="expression">The rebuilt binary expression to match/finalize.</param>
+        public TransformContext(BinaryExpression expression)
+        {
+            Expression = expression;
+            expressionParameters = null;
+        }
+
+        /// <summary>
+        /// Initializes a new lazy <see cref="TransformContext"/> for a prepared <see cref="UnaryExpression"/>
+        /// whose single logical parameter (<c>Operand</c>) has not been array-materialized — see the
+        /// type-level remarks.
+        /// </summary>
+        /// <param name="expression">The rebuilt unary expression to match/finalize.</param>
+        public TransformContext(UnaryExpression expression)
+        {
+            Expression = expression;
+            expressionParameters = null;
+        }
+
+        /// <summary>
+        /// Gets one logical sub-expression of <see cref="Expression"/> without requiring an array to have
+        /// been materialized: reads the real array when one exists, or — for a lazy context — <c>Left</c>/
+        /// <c>Right</c> directly off a <see cref="BinaryExpression"/>, or <c>Operand</c> directly off a
+        /// <see cref="UnaryExpression"/>. Binary is checked first, matching <see cref="ExpressionParameterCount"/>'s
+        /// ordering.
+        /// </summary>
+        /// <param name="index">The zero-based logical parameter index.</param>
+        /// <returns>The sub-expression at <paramref name="index"/>.</returns>
+        /// <exception cref="IndexOutOfRangeException">
+        /// <paramref name="index"/> is outside the valid range, matching native array-indexing behavior.
+        /// </exception>
+        public Expression GetExpressionParameter(int index)
+        {
+            if (expressionParameters is not null)
+            {
+                return expressionParameters[index];
+            }
+
+            if (Expression is BinaryExpression binary)
+            {
+                return index switch
+                {
+                    0 => binary.Left,
+                    1 => binary.Right,
+                    _ => throw new IndexOutOfRangeException(),
+                };
+            }
+
+            UnaryExpression unary = (UnaryExpression)Expression;
+            return index switch
+            {
+                0 => unary.Operand,
+                _ => throw new IndexOutOfRangeException(),
+            };
+        }
+
+        /// <summary>
+        /// Returns the real <see cref="Expression"/> array backing this context, materializing it now for
+        /// a lazy context (allocating a fresh <c>[Left, Right]</c> array for a <see cref="BinaryExpression"/>,
+        /// or <c>[Operand]</c> for a <see cref="UnaryExpression"/>), or returning the existing array by
+        /// reference for every other context — the same array identity callers observed before this type
+        /// gained a lazy representation.
+        /// </summary>
+        /// <returns>The materialized sub-expression array.</returns>
+        public Expression[] MaterializeExpressionParameters()
+        {
+            if (expressionParameters is not null)
+            {
+                return expressionParameters;
+            }
+
+            if (Expression is BinaryExpression binary)
+            {
+                return [binary.Left, binary.Right];
+            }
+
+            UnaryExpression unary = (UnaryExpression)Expression;
+            return [unary.Operand];
+        }
+
+        /// <summary>Gets one argument from the historical positional invocation layout without allocating it.</summary>
+        /// <param name="index">The zero-based invocation argument index.</param>
+        /// <returns>The expression, constant value, or prepared sub-expression at <paramref name="index"/>.</returns>
+        public object? GetInvocationArgument(int index)
+        {
+            if (index == 0)
+                return Expression;
+
+            if (Expression is ConstantExpression constant)
+            {
+                if (index == 1)
+                    return constant.Value;
+
+                throw new IndexOutOfRangeException();
+            }
+
+            return GetExpressionParameter(index - 1);
+        }
+
+        /// <summary>Materializes the historical positional argument array for reflection invocation.</summary>
+        /// <returns>A new positional array containing the node followed by its logical arguments.</returns>
+        public object[] MaterializeInvocationArguments()
+        {
+            object[] arguments = new object[InvocationArgumentCount];
+            for (int i = 0; i < arguments.Length; i++)
+                arguments[i] = GetInvocationArgument(i)!;
+
+            return arguments;
         }
     }
+
+    /// <summary>
+    /// Public entry point for this transformer. Concrete transformers implement this to perform any
+    /// one-time preparation their state requires (if any), then delegate to <see cref="TransformCore"/>
+    /// to run the actual recursive rule-matching engine.
+    /// </summary>
+    /// <param name="expression">The expression to transform.</param>
+    /// <returns>A possibly rewritten expression.</returns>
+    public abstract Expression Transform(Expression expression);
 
     /// <summary>
     /// Applies transformation rules to a given expression, returning a (potentially) modified expression.
     /// This method checks for known signatures (via <see cref="ExpressionSignatureAttribute"/>-annotated methods)
     /// and if a match is found, invokes the corresponding transformation function.
     /// If no signature method matches, it calls <see cref="FinalizeExpression"/> by default.
+    /// This is the internal recursive engine invoked by a subclass's public <see cref="Transform"/>
+    /// override; it never re-enters <see cref="Transform"/> itself, so recursive continuations here
+    /// cannot accidentally reset a transformer's per-call state.
     /// </summary>
     /// <param name="e">The expression to transform.</param>
     /// <returns>A possibly rewritten expression.</returns>
-    protected Expression Transform(Expression e)
+    protected Expression TransformCore(Expression e)
     {
         TransformContext context = PrepareTransform(e);
 
@@ -688,13 +836,13 @@ public abstract class ExpressionTransformer
 
         return context.Expression is ConstantExpression
             ? FinalizeExpression(context.Expression, Array.Empty<Expression>())
-            : FinalizeExpression(context.Expression, context.ExpressionParameters);
+            : FinalizeExpression(context.Expression, context.MaterializeExpressionParameters());
     }
 
     /// <summary>
     /// Dispatches to the node-type-specific <c>Prepare*</c> method that prepares/recurses into
     /// sub-expressions via <see cref="PrepareExpression"/>, rebuilds the node where applicable, and
-    /// assembles the parameter arrays later used by <see cref="TryTransform"/>.
+    /// assembles the expression parameter array later used by <see cref="TryTransform"/>.
     /// </summary>
     private TransformContext PrepareTransform(Expression e) => e switch
     {
@@ -716,21 +864,49 @@ public abstract class ExpressionTransformer
     /// <param name="cc">The constant expression to prepare.</param>
     /// <returns>The resulting <see cref="TransformContext"/>.</returns>
     private TransformContext PrepareConstant(ConstantExpression cc)
-        => new(cc, Array.Empty<Expression>(), [cc, cc.Value]);
+        => new(cc, Array.Empty<Expression>());
 
     /// <summary>
     /// Prepares a <see cref="UnaryExpression"/> by preparing its <c>Operand</c> and rebuilding the
-    /// node via <see cref="CopyExpression"/> so that candidate transform methods observe the prepared
-    /// operand rather than the original one.
+    /// node via <see cref="CopyUnaryExpression"/> so that candidate transform methods observe the
+    /// prepared operand rather than the original one.
     /// </summary>
     /// <param name="ue">The unary expression to prepare.</param>
     /// <returns>The resulting <see cref="TransformContext"/>.</returns>
+    /// <remarks>
+    /// Unlike <see cref="PrepareMethodCall"/>, <see cref="PrepareConditional"/>, etc., this deliberately
+    /// does not build an <see cref="Expression"/>[1] array: <see cref="CopyUnaryExpression"/> rebuilds the
+    /// node directly from the local <c>operand</c> variable, and the unary-specific
+    /// <see cref="TransformContext"/> constructor stores no array — see <see cref="TransformContext"/>'s
+    /// remarks. The rebuilt node's own <c>Operand</c> becomes the logical storage for its one prepared
+    /// child, materialized into a real array only if a rule or <see cref="FinalizeExpression"/> actually
+    /// needs one (<see cref="TransformContext.MaterializeExpressionParameters"/>).
+    /// </remarks>
     private TransformContext PrepareUnary(UnaryExpression ue)
     {
-        Expression[] expressionParameters = [PrepareExpression(ue.Operand)];
-        var copied = (UnaryExpression)CopyExpression(ue, expressionParameters);
-        return new TransformContext(copied, expressionParameters, [copied, copied.Operand]);
+        Expression operand = PrepareExpression(ue.Operand);
+        UnaryExpression copied = RebuildUnaryExpression(ue, operand);
+        return new TransformContext(copied);
     }
+
+    /// <summary>
+    /// Rebuilds a <see cref="UnaryExpression"/> from its (already prepared) <paramref name="operand"/>.
+    /// The base implementation reproduces the historical <see cref="CopyUnaryExpression"/> reconstruction
+    /// (including its metadata-dropping quirks) unchanged.
+    /// </summary>
+    /// <remarks>
+    /// <c>internal virtual</c>, not <c>protected</c>: this is deliberately not a new public/protected
+    /// extensibility point for third-party <see cref="ExpressionTransformer"/> subclasses (which live in
+    /// other assemblies and therefore cannot see or override an <see langword="internal"/> member) — only
+    /// same-assembly code such as <see cref="Utils.Mathematics.Expressions.ExpressionSimplifier"/> can
+    /// override it. See <see cref="Utils.Mathematics.Expressions.ExpressionSimplifier"/>'s override for the
+    /// metadata-faithful reconstruction used by the exact built-in simplifier type.
+    /// </remarks>
+    /// <param name="expression">The original unary expression being rebuilt.</param>
+    /// <param name="operand">The (already prepared) operand.</param>
+    /// <returns>A unary expression with the same node type and the supplied operand.</returns>
+    internal virtual UnaryExpression RebuildUnaryExpression(UnaryExpression expression, Expression operand)
+        => CopyUnaryExpression(expression, operand);
 
     /// <summary>
     /// Prepares a <see cref="BinaryExpression"/> by preparing its <c>Left</c> and <c>Right</c>
@@ -740,15 +916,21 @@ public abstract class ExpressionTransformer
     /// </summary>
     /// <param name="be">The binary expression to prepare.</param>
     /// <returns>The resulting <see cref="TransformContext"/>.</returns>
+    /// <remarks>
+    /// Unlike most other <c>Prepare*</c> methods (only <see cref="PrepareUnary"/> shares this), this
+    /// deliberately does not build an <see cref="Expression"/>[2] array: <see cref="CopyBinaryExpression"/>
+    /// rebuilds the node directly from the local <c>left</c>/<c>right</c> variables, and the
+    /// binary-specific <see cref="TransformContext"/> constructor stores no array — see
+    /// <see cref="TransformContext"/>'s remarks. The rebuilt node's own <c>Left</c>/<c>Right</c> become the
+    /// logical storage for its two prepared children, materialized into a real array only if a rule or
+    /// <see cref="FinalizeExpression"/> actually needs one (<see cref="TransformContext.MaterializeExpressionParameters"/>).
+    /// </remarks>
     private TransformContext PrepareBinary(BinaryExpression be)
     {
-        Expression[] expressionParameters =
-        [
-            PrepareExpression(be.Left),
-            PrepareExpression(be.Right)
-        ];
-        var copied = (BinaryExpression)CopyExpression(be, expressionParameters);
-        return new TransformContext(copied, expressionParameters, [copied, copied.Left, copied.Right]);
+        Expression left = PrepareExpression(be.Left);
+        Expression right = PrepareExpression(be.Right);
+        BinaryExpression copied = CopyBinaryExpression(be, left, right);
+        return new TransformContext(copied);
     }
 
     /// <summary>
@@ -765,15 +947,25 @@ public abstract class ExpressionTransformer
         // expression. Rebuilding inline (rather than through CopyExpression) lets us
         // pass the transformed receiver without adding an extra parameter slot.
         Expression? transformedObject = mce.Object is null ? null : PrepareExpression(mce.Object);
-        Expression[] expressionParameters = mce.Arguments.Select(PrepareExpression).ToArray();
+
+        // Indexed loop instead of Select(...).ToArray(): mce.Arguments is a ReadOnlyCollection
+        // (already IList-backed, so ToArray() would allocate the same exact-size array), but this
+        // avoids the iterator/delegate overhead of Select for what is a hot path. The receiver above
+        // is still prepared before any argument, and arguments are prepared strictly in order.
+        int argumentCount = mce.Arguments.Count;
+        Expression[] expressionParameters = argumentCount == 0
+            ? Array.Empty<Expression>()
+            : new Expression[argumentCount];
+        for (int i = 0; i < argumentCount; i++)
+        {
+            expressionParameters[i] = PrepareExpression(mce.Arguments[i]);
+        }
+
         MethodCallExpression copied = transformedObject is null
             ? Expression.Call(mce.Method, expressionParameters)
             : Expression.Call(transformedObject, mce.Method, expressionParameters);
 
-        object[] parameters = new object[mce.Arguments.Count + 1];
-        parameters[0] = copied;
-        Array.Copy(expressionParameters, 0, parameters, 1, expressionParameters.Length);
-        return new TransformContext(copied, expressionParameters, parameters);
+        return new TransformContext(copied, expressionParameters);
     }
 
     /// <summary>
@@ -795,7 +987,7 @@ public abstract class ExpressionTransformer
             PrepareExpression(ce.IfFalse)
         ];
         var copied = (ConditionalExpression)CopyExpression(ce, expressionParameters);
-        return new TransformContext(copied, expressionParameters, [copied, copied.Test, copied.IfTrue, copied.IfFalse]);
+        return new TransformContext(copied, expressionParameters);
     }
 
     /// <summary>
@@ -805,7 +997,7 @@ public abstract class ExpressionTransformer
     /// <param name="pe">The parameter expression to prepare.</param>
     /// <returns>The resulting <see cref="TransformContext"/>.</returns>
     private TransformContext PrepareParameter(ParameterExpression pe)
-        => new(pe, Array.Empty<Expression>(), [pe]);
+        => new(pe, Array.Empty<Expression>());
 
     /// <summary>
     /// Prepares an <see cref="InvocationExpression"/> by preparing the invoked target expression and
@@ -816,35 +1008,75 @@ public abstract class ExpressionTransformer
     private TransformContext PrepareInvocation(InvocationExpression ie)
     {
         Expression invokedExpression = PrepareExpression(ie.Expression);
-        Expression[] expressionParameters = ie.Arguments.Select(PrepareExpression).ToArray();
+
+        // Indexed loop instead of Select(...).ToArray(): the target is prepared before any
+        // argument, and arguments are prepared strictly in order (see PrepareMethodCall for why
+        // this avoids Select's iterator/delegate overhead without changing allocation counts).
+        int argumentCount = ie.Arguments.Count;
+        Expression[] expressionParameters = argumentCount == 0
+            ? Array.Empty<Expression>()
+            : new Expression[argumentCount];
+        for (int i = 0; i < argumentCount; i++)
+        {
+            expressionParameters[i] = PrepareExpression(ie.Arguments[i]);
+        }
+
         InvocationExpression copied = Expression.Invoke(invokedExpression, expressionParameters);
 
-        object[] parameters = new object[ie.Arguments.Count + 1];
-        parameters[0] = copied;
-        Array.Copy(expressionParameters, 0, parameters, 1, expressionParameters.Length);
-        return new TransformContext(copied, expressionParameters, parameters);
+        return new TransformContext(copied, expressionParameters);
     }
 
     /// <summary>
     /// Prepares a <see cref="LambdaExpression"/> by preparing its parameters and recursively calling
-    /// <see cref="Transform(Expression)"/> directly on its body (rather than <see cref="PrepareExpression"/>),
+    /// <see cref="TransformCore(Expression)"/> directly on its body (rather than <see cref="PrepareExpression"/>),
     /// then rebuilding the lambda.
     /// </summary>
     /// <param name="le">The lambda expression to prepare.</param>
     /// <returns>The resulting <see cref="TransformContext"/>.</returns>
     private TransformContext PrepareLambda(LambdaExpression le)
     {
-        // Recursively transform the body, and prepare parameter expressions
-        Expression[] expressionParameters = le.Parameters
-                                               .Select(a => (ParameterExpression)PrepareExpression(a))
-                                               .ToArray();
-        LambdaExpression copied = Expression.Lambda(Transform(le.Body), (ParameterExpression[])expressionParameters);
+        // Indexed loop instead of Select(...).ToArray(): parameters must all be prepared, in
+        // order, before TransformCore(le.Body) runs below (a subclass may rely on that ordering).
+        // The array is declared and allocated as ParameterExpression[], not Expression[], so its
+        // runtime type stays ParameterExpression[] even though it is stored through the
+        // Expression[]-typed TransformContext.expressionParameters field — code elsewhere (and the
+        // Expression.Lambda call just below) still depends on that runtime type. The explicit cast
+        // is preserved so a PrepareExpression override returning the wrong type still throws
+        // InvalidCastException immediately, before the body is ever transformed.
+        int parameterCount = le.Parameters.Count;
+        ParameterExpression[] expressionParameters = parameterCount == 0
+            ? Array.Empty<ParameterExpression>()
+            : new ParameterExpression[parameterCount];
+        for (int i = 0; i < parameterCount; i++)
+        {
+            expressionParameters[i] = (ParameterExpression)PrepareExpression(le.Parameters[i]);
+        }
 
-        object[] parameters = new object[le.Parameters.Count + 1];
-        parameters[0] = copied;
-        Array.Copy(expressionParameters, 0, parameters, 1, expressionParameters.Length);
-        return new TransformContext(copied, expressionParameters, parameters);
+        Expression preparedBody = TransformCore(le.Body);
+        LambdaExpression copied = RebuildLambdaExpression(le, preparedBody, expressionParameters);
+
+        return new TransformContext(copied, expressionParameters);
     }
+
+    /// <summary>
+    /// Rebuilds a <see cref="LambdaExpression"/> from its (already prepared) <paramref name="body"/> and
+    /// <paramref name="parameters"/>. The base implementation reproduces the historical
+    /// type-inferring <see cref="Expression.Lambda(Expression, ParameterExpression[])"/> reconstruction
+    /// unchanged, which does not preserve a custom delegate <see cref="LambdaExpression.Type"/>,
+    /// <see cref="LambdaExpression.TailCall"/>, or <see cref="LambdaExpression.Name"/>.
+    /// </summary>
+    /// <remarks>
+    /// <c>internal virtual</c> for the same reason as <see cref="RebuildUnaryExpression"/>: not a new
+    /// extensibility point for third-party subclasses. See
+    /// <see cref="Utils.Mathematics.Expressions.ExpressionSimplifier"/>'s override for the metadata-faithful
+    /// reconstruction used by the exact built-in simplifier type, at every nesting depth.
+    /// </remarks>
+    /// <param name="expression">The original lambda expression being rebuilt.</param>
+    /// <param name="body">The (already prepared/transformed) body.</param>
+    /// <param name="parameters">The (already prepared) parameters, in declaration order.</param>
+    /// <returns>A lambda expression with the supplied body and parameters.</returns>
+    internal virtual LambdaExpression RebuildLambdaExpression(LambdaExpression expression, Expression body, ParameterExpression[] parameters)
+        => Expression.Lambda(body, parameters);
 
     /// <summary>
     /// Prepares any expression node not handled by a more specific <c>Prepare*</c> method (e.g.
@@ -854,7 +1086,7 @@ public abstract class ExpressionTransformer
     /// <param name="e">The expression to prepare.</param>
     /// <returns>The resulting <see cref="TransformContext"/>.</returns>
     private TransformContext PrepareDefault(Expression e)
-        => new(e, Array.Empty<Expression>(), [e]);
+        => new(e, Array.Empty<Expression>());
 
     /// <summary>
     /// Iterates the candidate rules for <c>context.Expression.NodeType</c> — from
@@ -870,7 +1102,7 @@ public abstract class ExpressionTransformer
     private bool TryTransform(TransformContext context, out Expression? result)
     {
         Expression e = context.Expression;
-        object[] parameters = context.Parameters;
+        object[]? materializedInvocationArguments = null;
 
         foreach (TransformRule rule in _transformPlan.GetCandidates(e.NodeType))
         {
@@ -885,10 +1117,13 @@ public abstract class ExpressionTransformer
             }
 
             // The first parameter must match the main expression
-            if (!rule.Parameters[0].ParameterType.IsInstanceOfType(parameters[0]))
+            object? firstArgument = materializedInvocationArguments is null
+                ? context.Expression
+                : materializedInvocationArguments[0];
+            if (!rule.Parameters[0].ParameterType.IsInstanceOfType(firstArgument))
                 continue;
 
-            if (!TryInvokeTransformMethod(rule, context, out object? invokeResult))
+            if (!TryInvokeTransformMethod(rule, context, ref materializedInvocationArguments, out object? invokeResult))
                 continue;
 
             result = (Expression?)invokeResult;
@@ -911,23 +1146,31 @@ public abstract class ExpressionTransformer
     /// <see cref="System.Reflection.TargetInvocationException"/> thrown by the invoked rule propagates
     /// unchanged.
     /// </summary>
-    private bool TryInvokeTransformMethod(TransformRule rule, TransformContext context, out object? result)
+    private bool TryInvokeTransformMethod(
+        TransformRule rule,
+        TransformContext context,
+        ref object[]? materializedInvocationArguments,
+        out object? result)
     {
         TransformParameter[] ruleParameters = rule.Parameters;
-        object[] parameters = context.Parameters;
 
         switch (rule.Kind)
         {
             case InvocationKind.ExpressionArray:
-                // The second parameter is the array of sub-expressions
-                result = InvokeExpressionArrayRule(rule, context.Expression, context.ExpressionParameters);
+                // The second parameter is the array of sub-expressions. Materializes it on demand: for a
+                // lazy BinaryExpression context this is the first point an Expression[2] is actually
+                // required (an ExpressionArray rule always terminates dispatch once invoked — see
+                // TransformRule.Kind's remarks — so there is no later fallback that could reuse a
+                // pre-materialized array anyway).
+                result = InvokeExpressionArrayRule(rule, context.Expression, context.MaterializeExpressionParameters());
                 return true;
 
             case InvocationKind.Positional:
                 // Validate each expression parameter against the method parameter types
                 for (int i = 1; i < ruleParameters.Length; i++)
                 {
-                    if (parameters[i] is Expression paramExpr)
+                    object? argument = GetInvocationArgument(context, materializedInvocationArguments, i);
+                    if (argument is Expression paramExpr)
                     {
                         if (!CheckParameter(paramExpr, ruleParameters[i]))
                         {
@@ -938,7 +1181,7 @@ public abstract class ExpressionTransformer
                     else
                     {
                         // If it's not an Expression, check if we can assign directly
-                        if (!ruleParameters[i].ParameterType.IsAssignableFrom(parameters[i].GetType()))
+                        if (!ruleParameters[i].ParameterType.IsAssignableFrom(argument!.GetType()))
                         {
                             result = null;
                             return false;
@@ -946,11 +1189,13 @@ public abstract class ExpressionTransformer
                     }
                 }
 
-                result = InvokePositionalRule(rule, parameters);
+                result = InvokePositionalRule(rule, context, ref materializedInvocationArguments);
                 return result is not null;
 
             case InvocationKind.Single:
-                result = InvokeSingleRule(rule, parameters[0]);
+                result = InvokeSingleRule(
+                    rule,
+                    materializedInvocationArguments is null ? context.Expression : materializedInvocationArguments[0]);
                 return true;
 
             default:
@@ -959,6 +1204,23 @@ public abstract class ExpressionTransformer
                 return false;
         }
     }
+
+    /// <summary>
+    /// Gets a positional argument from a previously materialized reflection array when present, or
+    /// directly from the logical context otherwise. Reusing the array preserves any reflection-driven
+    /// slot mutations for later candidate rules.
+    /// </summary>
+    /// <param name="context">The logical arguments for the current node.</param>
+    /// <param name="materializedInvocationArguments">The cached reflection array, if one has been created.</param>
+    /// <param name="index">The zero-based invocation argument index.</param>
+    /// <returns>The argument at <paramref name="index"/>.</returns>
+    private static object? GetInvocationArgument(
+        TransformContext context,
+        object[]? materializedInvocationArguments,
+        int index)
+        => materializedInvocationArguments is null
+            ? context.GetInvocationArgument(index)
+            : materializedInvocationArguments[index];
 
     /// <summary>
     /// Invokes a <see cref="InvocationKind.Single"/>-shaped rule: <paramref name="node"/> is the sole
@@ -980,7 +1242,7 @@ public abstract class ExpressionTransformer
             catch (Exception ex)
             {
                 // Reproduces MethodBase.Invoke's contract: any exception surfacing from the rule body
-                // (guaranteed here, since TryCreateFastInvoker already validated the argument shape) is
+                // (guaranteed here, since DetermineFastInvokerEligibility already validated the argument shape) is
                 // wrapped in a NEW TargetInvocationException, even when it is itself already one (see the
                 // Transform_RuleThrowsTargetInvocationException_IsDoubleWrapped regression test) or an
                 // OutOfMemoryException (see Transform_RuleThrowsOutOfMemoryException_WrappedInTargetInvocationException
@@ -1024,8 +1286,8 @@ public abstract class ExpressionTransformer
     }
 
     /// <summary>
-    /// Invokes an <see cref="InvocationKind.Positional"/>-shaped rule with <paramref name="parameters"/>.
-    /// Uses <see cref="TransformRule.FastInvoker"/> only when <paramref name="parameters"/>' length
+    /// Invokes an <see cref="InvocationKind.Positional"/>-shaped rule with the arguments in
+    /// <paramref name="context"/>. Uses <see cref="TransformRule.FastInvoker"/> only when the logical argument count
     /// exactly matches <see cref="TransformRule.Parameters"/>' length — the same node type can supply a
     /// different number of arguments than a given rule declares (e.g. a <see cref="MethodCallExpression"/>
     /// with a varying argument count), and a mismatch must keep reaching
@@ -1036,19 +1298,38 @@ public abstract class ExpressionTransformer
     /// <see cref="MethodBase.Invoke(object, object[])"/> exactly as before this optimization.
     /// </summary>
     /// <param name="rule">The rule to invoke.</param>
-    /// <param name="parameters">The full positional argument list (node followed by its sub-expressions/operands).</param>
+    /// <param name="context">The logical positional arguments for the current node.</param>
+    /// <param name="materializedInvocationArguments">The cached reflection argument array, if already required.</param>
     /// <returns>The rule's return value.</returns>
-    private object? InvokePositionalRule(TransformRule rule, object[] parameters)
+    private object? InvokePositionalRule(
+        TransformRule rule,
+        TransformContext context,
+        ref object[]? materializedInvocationArguments)
     {
-        if (rule.FastInvoker is MethodInvoker invoker && parameters.Length == rule.Parameters.Length)
+        if (rule.FastInvoker is MethodInvoker invoker && context.InvocationArgumentCount == rule.Parameters.Length)
         {
             try
             {
-                switch (parameters.Length)
+                switch (context.InvocationArgumentCount)
                 {
-                    case 2: return invoker.Invoke(this, parameters[0], parameters[1]);
-                    case 3: return invoker.Invoke(this, parameters[0], parameters[1], parameters[2]);
-                    case 4: return invoker.Invoke(this, parameters[0], parameters[1], parameters[2], parameters[3]);
+                    case 2:
+                        return invoker.Invoke(
+                            this,
+                            GetInvocationArgument(context, materializedInvocationArguments, 0),
+                            GetInvocationArgument(context, materializedInvocationArguments, 1));
+                    case 3:
+                        return invoker.Invoke(
+                            this,
+                            GetInvocationArgument(context, materializedInvocationArguments, 0),
+                            GetInvocationArgument(context, materializedInvocationArguments, 1),
+                            GetInvocationArgument(context, materializedInvocationArguments, 2));
+                    case 4:
+                        return invoker.Invoke(
+                            this,
+                            GetInvocationArgument(context, materializedInvocationArguments, 0),
+                            GetInvocationArgument(context, materializedInvocationArguments, 1),
+                            GetInvocationArgument(context, materializedInvocationArguments, 2),
+                            GetInvocationArgument(context, materializedInvocationArguments, 3));
                 }
             }
             catch (Exception ex)
@@ -1060,7 +1341,8 @@ public abstract class ExpressionTransformer
             }
         }
 
-        return rule.Method.Invoke(this, parameters);
+        materializedInvocationArguments ??= context.MaterializeInvocationArguments();
+        return rule.Method.Invoke(this, materializedInvocationArguments);
     }
 
     /// <summary>
@@ -1085,51 +1367,212 @@ public abstract class ExpressionTransformer
     /// <param name="newParameters">The new expressions that replace <paramref name="oldParameters"/>.</param>
     /// <returns>A copy of <paramref name="e"/> where specified parameters are replaced.</returns>
     protected Expression ReplaceArguments(Expression e, ParameterExpression[] oldParameters, Expression[] newParameters)
+        => ReplaceArgumentsCore(e, oldParameters, newParameters);
+
+    /// <summary>
+    /// Collection-based core of <see cref="ReplaceArguments"/>. Accepts <see cref="IReadOnlyList{T}"/>
+    /// rather than arrays so a caller that already holds a
+    /// <see cref="System.Collections.ObjectModel.ReadOnlyCollection{T}"/> (e.g.
+    /// <see cref="LambdaExpression.Parameters"/>, <see cref="InvocationExpression.Arguments"/>) can
+    /// pass it directly instead of copying it into an array first. <paramref name="oldParameters"/>
+    /// and <paramref name="newParameters"/> are deliberately not validated up front: a node type this
+    /// switch does not recognize (see the default fallthrough) returns <paramref name="e"/> unchanged
+    /// without ever consulting either list, and <see cref="ReplaceArguments"/>'s historical
+    /// null/short-array exception behavior for the protected array-based overload depends on that lazy
+    /// access timing.
+    /// </summary>
+    /// <param name="e">The expression in which parameter references are replaced.</param>
+    /// <param name="oldParameters">
+    /// The parameters to remove; may be <see langword="null"/> if only node types that never read it are
+    /// encountered.
+    /// </param>
+    /// <param name="newParameters">
+    /// The replacement expressions; may be <see langword="null"/> if only node types that never read it
+    /// are encountered.
+    /// </param>
+    /// <returns>A copy of <paramref name="e"/> where specified parameters are replaced.</returns>
+    internal Expression ReplaceArgumentsCore(Expression e, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters)
     {
         switch (e)
         {
             case ParameterExpression pe:
                 {
-                    int i = Array.IndexOf(oldParameters, pe);
-                    return i >= 0 ? newParameters[i] : e;
+                    // Array.IndexOf is used directly whenever oldParameters actually is (or is a null
+                    // reference of static type) ParameterExpression[] -- i.e. whenever this call
+                    // originates from the protected array-based overload -- so that overload keeps its
+                    // exact original first-match/equality/null-exception behavior. A non-null,
+                    // non-array IReadOnlyList<ParameterExpression> (the new collection-based callers,
+                    // e.g. LambdaExpression.Parameters) falls back to an equivalent manual scan.
+                    int i = oldParameters is ParameterExpression[] array
+                        ? Array.IndexOf(array, pe)
+                        : oldParameters is null
+                            ? Array.IndexOf<ParameterExpression>(null!, pe)
+                            : IndexOfParameter(oldParameters, pe);
+
+                    if (i < 0) return e;
+
+                    // Same reasoning as above, mirrored for newParameters: a real Expression[] is
+                    // indexed natively so a too-short array still throws IndexOutOfRangeException (not
+                    // an interface-dispatch-flavored exception), and a null reference throws on the
+                    // element access exactly like the historical array-typed overload did.
+                    return newParameters is Expression[] newArray ? newArray[i] : newParameters![i];
                 }
             case UnaryExpression ue:
-                return CopyExpression(ue, ReplaceArguments(ue.Operand, oldParameters, newParameters));
+                return CopyExpression(ue, ReplaceArgumentsCore(ue.Operand, oldParameters, newParameters));
 
             case BinaryExpression be:
                 {
-                    var left = ReplaceArguments(be.Left, oldParameters, newParameters);
-                    var right = ReplaceArguments(be.Right, oldParameters, newParameters);
+                    var left = ReplaceArgumentsCore(be.Left, oldParameters, newParameters);
+                    var right = ReplaceArgumentsCore(be.Right, oldParameters, newParameters);
                     return CopyExpression(be, left, right);
                 }
             case InvocationExpression ie:
                 {
-                    Expression invokedExpression = ReplaceArguments(ie.Expression, oldParameters, newParameters);
-                    var arguments = ie.Arguments
-                                      .Select(a => ReplaceArguments(a, oldParameters, newParameters))
-                                      .ToArray();
+                    Expression invokedExpression = ReplaceArgumentsCore(ie.Expression, oldParameters, newParameters);
+
+                    int argumentCount = ie.Arguments.Count;
+                    Expression[] arguments = argumentCount == 0
+                        ? Array.Empty<Expression>()
+                        : new Expression[argumentCount];
+                    for (int i = 0; i < argumentCount; i++)
+                    {
+                        arguments[i] = ReplaceArgumentsCore(ie.Arguments[i], oldParameters, newParameters);
+                    }
+
                     return Expression.Invoke(invokedExpression, arguments);
                 }
             case MethodCallExpression mce:
                 {
                     Expression? replacedObject = mce.Object is null
                         ? null
-                        : ReplaceArguments(mce.Object, oldParameters, newParameters);
-                    var arguments = mce.Arguments
-                                       .Select(a => ReplaceArguments(a, oldParameters, newParameters))
-                                       .ToArray();
+                        : ReplaceArgumentsCore(mce.Object, oldParameters, newParameters);
+
+                    int argumentCount = mce.Arguments.Count;
+                    Expression[] arguments = argumentCount == 0
+                        ? Array.Empty<Expression>()
+                        : new Expression[argumentCount];
+                    for (int i = 0; i < argumentCount; i++)
+                    {
+                        arguments[i] = ReplaceArgumentsCore(mce.Arguments[i], oldParameters, newParameters);
+                    }
+
                     return replacedObject is null
                         ? Expression.Call(mce.Method, arguments)
                         : Expression.Call(replacedObject, mce.Method, arguments);
                 }
             case ConditionalExpression ce:
                 return Expression.Condition(
-                    ReplaceArguments(ce.Test, oldParameters, newParameters),
-                    ReplaceArguments(ce.IfTrue, oldParameters, newParameters),
-                    ReplaceArguments(ce.IfFalse, oldParameters, newParameters),
+                    ReplaceArgumentsCore(ce.Test, oldParameters, newParameters),
+                    ReplaceArgumentsCore(ce.IfTrue, oldParameters, newParameters),
+                    ReplaceArgumentsCore(ce.IfFalse, oldParameters, newParameters),
                     ce.Type);
         }
         return e;
+    }
+
+    /// <summary>
+    /// Linear scan matching <see cref="Array.IndexOf{T}(T[], T)"/>'s first-match-wins semantics and
+    /// default equality comparer, for an <see cref="IReadOnlyList{T}"/> that is not itself an array
+    /// (the collection-based callers of <see cref="ReplaceArgumentsCore"/> pass a
+    /// <see cref="System.Collections.ObjectModel.ReadOnlyCollection{T}"/> here, e.g.
+    /// <see cref="LambdaExpression.Parameters"/>).
+    /// </summary>
+    /// <param name="list">The list to search.</param>
+    /// <param name="value">The value to find.</param>
+    /// <returns>The index of the first matching element, or -1 if none is found.</returns>
+    private static int IndexOfParameter(IReadOnlyList<ParameterExpression> list, ParameterExpression value)
+    {
+        for (int i = 0; i < list.Count; i++)
+        {
+            if (EqualityComparer<ParameterExpression>.Default.Equals(list[i], value))
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    /// <summary>
+    /// Rebuilds a <see cref="BinaryExpression"/> from its (already prepared) <paramref name="left"/> and
+    /// <paramref name="right"/> operands, preserving <see cref="BinaryExpression.Method"/>,
+    /// <see cref="BinaryExpression.IsLiftedToNull"/>, and <see cref="BinaryExpression.Conversion"/>.
+    /// </summary>
+    /// <remarks>
+    /// Uses <see cref="Expression.MakeBinary(ExpressionType, Expression, Expression, bool, MethodInfo, LambdaExpression)"/>
+    /// rather than a type-specific factory (<see cref="Expression.Add(Expression, Expression)"/>, etc.),
+    /// since those silently drop <see cref="BinaryExpression.Method"/>,
+    /// <see cref="BinaryExpression.IsLiftedToNull"/>, and <see cref="BinaryExpression.Conversion"/>. This
+    /// matters for user-defined operators (<c>Method</c>), <c>Coalesce</c> with a conversion lambda
+    /// (<c>Conversion</c>), and lifted nullable operators (<c>IsLiftedToNull</c>). Shared by
+    /// <see cref="PrepareBinary"/> (which calls this directly, without going through the params-array
+    /// <see cref="CopyExpression"/> overload) and by <see cref="CopyExpression"/>'s own binary branch.
+    /// </remarks>
+    /// <param name="expression">The original binary expression being copied.</param>
+    /// <param name="left">The (already prepared) left operand.</param>
+    /// <param name="right">The (already prepared) right operand.</param>
+    /// <returns>A binary expression with the same node type and metadata but the supplied operands.</returns>
+    private static BinaryExpression CopyBinaryExpression(BinaryExpression expression, Expression left, Expression right)
+    {
+        return Expression.MakeBinary(
+            expression.NodeType,
+            left,
+            right,
+            expression.IsLiftedToNull,
+            expression.Method,
+            expression.Conversion);
+    }
+
+    /// <summary>
+    /// Rebuilds a <see cref="UnaryExpression"/> from its (already prepared) <paramref name="operand"/>,
+    /// dispatching on <paramref name="expression"/>'s <see cref="Expression.NodeType"/>.
+    /// </summary>
+    /// <remarks>
+    /// Intentionally mirrors <see cref="CopyExpression"/>'s own <see cref="UnaryExpression"/> branches
+    /// case-for-case, rather than using a single generic
+    /// <see cref="Expression.MakeUnary(ExpressionType, Expression, Type, MethodInfo)"/> call: the
+    /// historical per-node-type factories used here (<see cref="Expression.Negate(Expression)"/>,
+    /// <see cref="Expression.Convert(Expression, Type)"/>, etc.) do not forward
+    /// <see cref="UnaryExpression.Method"/> the way <see cref="CopyBinaryExpression"/> forwards
+    /// <see cref="BinaryExpression.Method"/> via <see cref="Expression.MakeBinary(ExpressionType, Expression, Expression, bool, MethodInfo, LambdaExpression)"/>
+    /// — an explicit method on the original node is silently dropped, and a typed <c>Throw</c>'s declared
+    /// <see cref="Expression.Type"/> is likewise not reproduced (<see cref="Expression.Throw(Expression)"/>,
+    /// not the typed overload). Both are pre-existing, historical quirks of <see cref="CopyExpression"/>;
+    /// this helper exists purely to let <see cref="PrepareUnary"/> skip the params-array
+    /// <see cref="CopyExpression"/> overload's <see cref="Expression"/>[] allocation, not to change what
+    /// gets reconstructed — see the characterization tests in
+    /// <c>ExpressionTransformerUnaryLazyParametersTests</c> that pin this down against
+    /// <see cref="CopyExpression"/> as the behavioral oracle.
+    /// </remarks>
+    /// <param name="expression">The original unary expression being copied.</param>
+    /// <param name="operand">The (already prepared) operand.</param>
+    /// <returns>A unary expression with the same node type and (where reproduced) metadata but the supplied operand.</returns>
+    private static UnaryExpression CopyUnaryExpression(UnaryExpression expression, Expression operand)
+    {
+        return expression.NodeType switch
+        {
+            ExpressionType.ArrayLength => Expression.ArrayLength(operand),
+            ExpressionType.Convert => Expression.Convert(operand, expression.Type),
+            ExpressionType.ConvertChecked => Expression.ConvertChecked(operand, expression.Type),
+            ExpressionType.Negate => Expression.Negate(operand),
+            ExpressionType.UnaryPlus => Expression.UnaryPlus(operand),
+            ExpressionType.NegateChecked => Expression.NegateChecked(operand),
+            ExpressionType.Not => Expression.Not(operand),
+            ExpressionType.Quote => Expression.Quote(operand),
+            ExpressionType.TypeAs => Expression.TypeAs(operand, expression.Type),
+            ExpressionType.Decrement => Expression.Decrement(operand),
+            ExpressionType.Increment => Expression.Increment(operand),
+            ExpressionType.Throw => Expression.Throw(operand),
+            ExpressionType.Unbox => Expression.Unbox(operand, expression.Type),
+            ExpressionType.PreIncrementAssign => Expression.PreIncrementAssign(operand),
+            ExpressionType.PreDecrementAssign => Expression.PreDecrementAssign(operand),
+            ExpressionType.PostIncrementAssign => Expression.PostIncrementAssign(operand),
+            ExpressionType.PostDecrementAssign => Expression.PostDecrementAssign(operand),
+            ExpressionType.OnesComplement => Expression.OnesComplement(operand),
+            ExpressionType.IsTrue => Expression.IsTrue(operand),
+            ExpressionType.IsFalse => Expression.IsFalse(operand),
+            _ => throw new NotSupportedException($"Expression type '{expression.NodeType}' is not supported."),
+        };
     }
 
     /// <summary>
@@ -1146,20 +1589,12 @@ public abstract class ExpressionTransformer
     /// </returns>
     protected static Expression CopyExpression(Expression e, params Expression[] parameters)
     {
-        // Use MakeBinary for every BinaryExpression so that Method, IsLiftedToNull, and
-        // Conversion are all preserved. The type-specific factory methods (Expression.Add, etc.)
-        // silently drop these fields; MakeBinary is the only factory that carries them all.
-        // This matters for: user-defined operators (Method), Coalesce with a conversion lambda
-        // (Conversion), and lifted nullable operators (IsLiftedToNull).
+        // Delegates to CopyBinaryExpression (see its remarks for why MakeBinary specifically is used)
+        // so PrepareBinary can share the exact same reconstruction logic without going through this
+        // params-array overload.
         if (e is BinaryExpression binaryExpr && parameters.Length >= 2)
         {
-            return Expression.MakeBinary(
-                binaryExpr.NodeType,
-                parameters[0],
-                parameters[1],
-                binaryExpr.IsLiftedToNull,
-                binaryExpr.Method,
-                binaryExpr.Conversion);
+            return CopyBinaryExpression(binaryExpr, parameters[0], parameters[1]);
         }
 
         return e.NodeType switch
@@ -1409,10 +1844,36 @@ public class ExpressionCallSignatureAttribute : ExpressionSignatureAttribute
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// Evaluates the declaring-type constraint(s) in <see cref="Types"/> BEFORE the method-name
+    /// comparison, and stops at the first matching type — exactly mirroring the historical
+    /// <c>Types.Any(ec.Method.DeclaringType.IsDefinedBy)</c> traversal this indexed loop replaces.
+    /// This ordering is observable: a null element in <see cref="Types"/> still throws (via
+    /// <see cref="TypeEx.IsDefinedBy"/>'s own null-guard) even when <see cref="FunctionName"/> would
+    /// not have matched the call. <see cref="Types"/> itself is read on every call rather than
+    /// snapshotted, so external mutation of its elements remains observable, matching the historical
+    /// behavior of reading the live array through <c>Enumerable.Any</c>. A null <see cref="Types"/>
+    /// array raises the same <see cref="ArgumentNullException"/> (<c>ParamName</c> <c>"source"</c>)
+    /// that <c>Enumerable.Any</c>'s own null-source guard used to raise, rather than letting the loop
+    /// fail with an unrelated <see cref="NullReferenceException"/> on <c>types.Length</c>.
+    /// </remarks>
     public override bool Match(Expression e)
     {
         if (e is not MethodCallExpression ec) return false;
-        return Types.Any(ec.Method.DeclaringType.IsDefinedBy) && ec.Method.Name == FunctionName;
+
+        Type[] types = Types;
+        if (types is null) throw new ArgumentNullException("source");
+
+        Type? declaringType = ec.Method.DeclaringType;
+        for (int i = 0; i < types.Length; i++)
+        {
+            if (declaringType!.IsDefinedBy(types[i]))
+            {
+                return ec.Method.Name == FunctionName;
+            }
+        }
+
+        return false;
     }
 }
 
@@ -1448,16 +1909,33 @@ public class ConstantNumericAttribute : ExpressionSignatureAttribute
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// <c>Convert.ToDouble(cc.Value)</c> is deliberately re-evaluated for each candidate in
+    /// <see cref="Values"/> rather than hoisted out of the loop: <see cref="NumberUtils.IsNumeric(object)"/>
+    /// accepts any runtime type implementing <c>INumber&lt;TSelf&gt;</c>, not just CLR primitives, so a
+    /// third-party numeric type's conversion could in principle have observable per-call side effects.
+    /// This mirrors the historical per-element <c>Convert.ToDouble</c> call inside
+    /// <c>Values.Any(v => v == Convert.ToDouble(cc.Value))</c>.
+    /// </remarks>
     public override bool Match(Expression e)
     {
         if (e is not ConstantExpression cc) return false;
         if (!NumberUtils.IsNumeric(cc.Value)) return false;
 
         // If no specific allowed values, any numeric constant is fine
-        if (Values == null) return true;
+        IReadOnlyList<double>? values = Values;
+        if (values is null) return true;
 
         // Otherwise, ensure the constant's value is among the specified set
-        return Values.Any(v => v == Convert.ToDouble(cc.Value));
+        for (int i = 0; i < values.Count; i++)
+        {
+            if (values[i] == Convert.ToDouble(cc.Value))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
 

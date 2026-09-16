@@ -1,107 +1,120 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
 using Utils.Randomization;
 
 namespace UtilsTest.Randomization;
 
+/// <summary>
+/// Verifies deterministic contracts of random extension methods.
+/// </summary>
 [TestClass]
 public class RandomExtensionsTests
 {
+    /// <summary>
+    /// Proves that the final character index is passed through without an off-by-one error.
+    /// </summary>
     [TestMethod]
-    public void RandomString_AllCharactersReachable()
+    public void RandomString_CanSelectFinalCharacter()
     {
-        // Regression for off-by-one: the last character of the alphabet must be reachable.
-        var rng = new Random(42);
-        char[] alphabet = ['A', 'B', 'C'];
-        var seen = new HashSet<char>();
+        ScriptedRandom rng = new([2]);
 
-        for (int i = 0; i < 300; i++)
-            foreach (char c in rng.RandomString(10, alphabet))
-                seen.Add(c);
-
-        Assert.IsTrue(seen.Contains('A'), "first char reachable");
-        Assert.IsTrue(seen.Contains('B'), "middle char reachable");
-        Assert.IsTrue(seen.Contains('C'), "last char reachable (was excluded by off-by-one)");
+        Assert.AreEqual("C", rng.RandomString(1, ['A', 'B', 'C']));
     }
 
+    /// <summary>
+    /// Verifies null alphabet validation with a deterministic generator.
+    /// </summary>
     [TestMethod]
     public void RandomString_NullCharArray_Throws()
     {
-        var rng = new Random();
+        ScriptedRandom rng = new([]);
         Assert.ThrowsExactly<ArgumentNullException>(() => rng.RandomString(5, (char[])null));
     }
 
+    /// <summary>
+    /// Verifies null alphabet validation for ranged lengths.
+    /// </summary>
     [TestMethod]
     public void RandomString_NullCharArrayMinMax_Throws()
     {
-        var rng = new Random();
+        ScriptedRandom rng = new([]);
         Assert.ThrowsExactly<ArgumentNullException>(() => rng.RandomString(3, 8, (char[])null));
     }
 
+    /// <summary>
+    /// Verifies integration with the real seeded <see cref="Random"/> implementation.
+    /// </summary>
     [TestMethod]
     public void RandomString_FixedLength_ReturnsCorrectLength()
     {
-        var rng = new Random(1);
-        string result = rng.RandomString(7);
-        Assert.AreEqual(7, result.Length);
+        Random rng = new(1);
+        Assert.AreEqual(7, rng.RandomString(7).Length);
     }
 
+    /// <summary>
+    /// Verifies representative full-range single-precision bit patterns.
+    /// </summary>
     [TestMethod]
-    public void RandomFloat_CanProduceValuesOutsideZeroOneRange()
+    public void RandomFloat_ReinterpretsCompleteBitPattern()
     {
-        // RandomFloat fills the full IEEE-754 bit pattern, unlike Random.NextSingle()'s [0, 1) range.
-        var rng = new Random(12345);
-        bool foundOutsideRange = false;
-        for (int i = 0; i < 1000 && !foundOutsideRange; i++)
+        float[] values = [-12.5f, 42.25f, float.PositiveInfinity, float.NaN];
+        foreach (float expected in values)
         {
-            float value = rng.RandomFloat();
-            if (float.IsNaN(value) || value < 0f || value >= 1f)
-                foundOutsideRange = true;
+            float actual = new ScriptedRandom([], BitConverter.GetBytes(expected)).RandomFloat();
+            if (float.IsNaN(expected))
+                Assert.IsTrue(float.IsNaN(actual));
+            else
+                Assert.AreEqual(expected, actual);
         }
-        Assert.IsTrue(foundOutsideRange, "RandomFloat should be able to produce values outside [0, 1) (including NaN/Infinity).");
     }
 
+    /// <summary>
+    /// Verifies representative full-range double-precision bit patterns.
+    /// </summary>
     [TestMethod]
-    public void RandomDouble_CanProduceValuesOutsideZeroOneRange()
+    public void RandomDouble_ReinterpretsCompleteBitPattern()
     {
-        // RandomDouble fills the full IEEE-754 bit pattern, unlike Random.NextDouble()'s [0, 1) range.
-        var rng = new Random(12345);
-        bool foundOutsideRange = false;
-        for (int i = 0; i < 1000 && !foundOutsideRange; i++)
+        double[] values = [-12.5, 42.25, double.NegativeInfinity, double.NaN];
+        foreach (double expected in values)
         {
-            double value = rng.RandomDouble();
-            if (double.IsNaN(value) || value < 0d || value >= 1d)
-                foundOutsideRange = true;
+            double actual = new ScriptedRandom([], BitConverter.GetBytes(expected)).RandomDouble();
+            if (double.IsNaN(expected))
+                Assert.IsTrue(double.IsNaN(actual));
+            else
+                Assert.AreEqual(expected, actual);
         }
-        Assert.IsTrue(foundOutsideRange, "RandomDouble should be able to produce values outside [0, 1) (including NaN/Infinity).");
     }
 
-    [TestMethod]
-    public void RandomFloat_CanProduceNaNOrInfinity()
+    /// <summary>
+    /// Supplies explicitly scripted integer choices and byte data to random extensions.
+    /// </summary>
+    private sealed class ScriptedRandom(int[] choices, byte[]? bytes = null) : Random
     {
-        var rng = new Random(12345);
-        bool foundNonFinite = false;
-        for (int i = 0; i < 100_000 && !foundNonFinite; i++)
-        {
-            float value = rng.RandomFloat();
-            if (!float.IsFinite(value))
-                foundNonFinite = true;
-        }
-        Assert.IsTrue(foundNonFinite, "RandomFloat should be able to produce NaN or Infinity values.");
-    }
+        private int choiceIndex;
 
-    [TestMethod]
-    public void RandomDouble_CanProduceNaNOrInfinity()
-    {
-        var rng = new Random(12345);
-        bool foundNonFinite = false;
-        for (int i = 0; i < 100_000 && !foundNonFinite; i++)
+        /// <summary>
+        /// Returns the next scripted choice after validating its requested range.
+        /// </summary>
+        public override int Next(int maxValue)
         {
-            double value = rng.RandomDouble();
-            if (!double.IsFinite(value))
-                foundNonFinite = true;
+            int value = choices[choiceIndex++];
+            Assert.IsGreaterThanOrEqualTo(0, value);
+            Assert.IsLessThan(maxValue, value);
+            return value;
         }
-        Assert.IsTrue(foundNonFinite, "RandomDouble should be able to produce NaN or Infinity values.");
+
+        /// <summary>
+        /// Returns a deterministic length for fixed-length requests.
+        /// </summary>
+        public override int Next(int minValue, int maxValue) => minValue;
+
+        /// <summary>
+        /// Copies the scripted binary pattern into the requested buffer.
+        /// </summary>
+        public override void NextBytes(byte[] buffer)
+        {
+            Assert.IsNotNull(bytes);
+            CollectionAssert.AreEqual(new int[] { bytes.Length }, new int[] { buffer.Length });
+            bytes.CopyTo(buffer, 0);
+        }
     }
 }

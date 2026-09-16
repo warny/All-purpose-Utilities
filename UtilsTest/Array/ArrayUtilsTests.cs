@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -39,47 +40,12 @@ namespace UtilsTest.Array
             Assert.AreEqual("abcdefghijklmnopqrstuvwx", resultString);
         }
 
-        private static int[] InitIntArray()
-        {
-            Random random = new Random();
-            return [
-                random.Next(),
-                random.Next(),
-                random.Next(),
-                random.Next(),
-                random.Next(),
-                random.Next(),
-                random.Next(),
-                random.Next(),
-                random.Next(),
-                random.Next(),
-            ];
-        }
-
-        private static double[] InitDoubleArray()
-        {
-            Random random = new Random();
-            double[] values = [
-                random.NextDouble(),
-                random.NextDouble(),
-                random.NextDouble(),
-                random.NextDouble(),
-                random.NextDouble(),
-                random.NextDouble(),
-                random.NextDouble(),
-                random.NextDouble(),
-                random.NextDouble(),
-                random.NextDouble(),
-            ];
-            return values;
-        }
-
         [TestMethod]
         public void ConvertToArrayOfIntTest()
         {
-            int[] values = InitIntArray();
+            int[] values = [0, 1, -1, 42, -42, 1_000_000, -1_000_000];
 
-            var strings = values.Select(v => v.ToString()).ToArray();
+            var strings = values.Select(v => v.ToString(CultureInfo.CurrentCulture)).ToArray();
 
             var result = strings.ConvertToArrayOf<int>();
 
@@ -95,9 +61,9 @@ namespace UtilsTest.Array
         [TestMethod]
         public void ConvertToArrayOfDoubleTest()
         {
-            double[] values = InitDoubleArray();
+            double[] values = [0, 1, -1, 42.5, -42.25, 0.125, -0.03125];
 
-            var strings = values.Select(v => v.ToString()).ToArray();
+            var strings = values.Select(v => v.ToString(CultureInfo.CurrentCulture)).ToArray();
 
             var result = strings.ConvertToArrayOf<double>();
 

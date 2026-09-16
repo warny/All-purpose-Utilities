@@ -199,4 +199,4 @@ Console.WriteLine(second.GetXPath());
 - `omy.Utils` – shared helpers used by the XML utilities.
 
 
-[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.2/)

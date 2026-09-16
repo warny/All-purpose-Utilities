@@ -198,7 +198,7 @@ public class ExpressionParserActionExecutorTests
 
         public List<string> RecordedRules { get; } = [];
 
-        public Expression Compile(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
+        public Expression CompileExpression(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
         {
             CompileCount++;
             return content switch
@@ -211,6 +211,18 @@ public class ExpressionParserActionExecutorTests
                 _ => Expression.Empty()
             };
         }
+
+        /// <summary>Not supported by this fake; only the symbol-table overload is exercised by these tests.</summary>
+        public Expression<TDelegate> CompileExpression<TDelegate>(string content) where TDelegate : Delegate
+            => throw new NotSupportedException("This fake only supports the symbol-table overload.");
+
+        /// <summary>Not supported by this fake; only the symbol-table overload is exercised by these tests.</summary>
+        public Delegate Compile(string content)
+            => throw new NotSupportedException("This fake only supports the symbol-table overload.");
+
+        /// <summary>Not supported by this fake; only the symbol-table overload is exercised by these tests.</summary>
+        public TDelegate Compile<TDelegate>(string content) where TDelegate : Delegate
+            => throw new NotSupportedException("This fake only supports the symbol-table overload.");
 
         public void Increment() => Counter++;
 

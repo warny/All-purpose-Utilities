@@ -327,4 +327,4 @@ double dist = line.DistanceTo(point); // 4  (perpendicular distance)
 - `omy.Utils` – shared primitives and extensions.
 
 
-[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.2/)

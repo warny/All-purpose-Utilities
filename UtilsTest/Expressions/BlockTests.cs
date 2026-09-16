@@ -23,7 +23,7 @@ public class BlockTests
     public void Compile_BlockExpression_ReturnsLastValue()
     {
         var x = Expression.Variable(typeof(int), "x");
-        var expression = compiler.Compile("{ x = 2; x + 3; }", new Dictionary<string, Expression> { ["x"] = x });
+        var expression = compiler.CompileExpression("{ x = 2; x + 3; }", new Dictionary<string, Expression> { ["x"] = x });
         var lambda = Expression.Lambda<Func<int>>(Expression.Block([x], Expression.Convert(expression, typeof(int)))).Compile();
 
         Assert.AreEqual(5, lambda());
@@ -35,7 +35,7 @@ public class BlockTests
         string[] tests = ["1", "2", "3"];
         var expression = "(string s) =>  { s; }";
 
-        var e = (LambdaExpression)compiler.Compile(expression);
+        var e = (LambdaExpression)compiler.CompileExpression(expression);
         var f = (Func<string, string>)e.Compile();
 
         foreach (var test in tests)
@@ -56,7 +56,7 @@ public class BlockTests
             }
             """;
 
-        var e = (LambdaExpression)compiler.Compile(expression);
+        var e = (LambdaExpression)compiler.CompileExpression(expression);
         var f = (Func<string, string>)e.Compile();
 
         foreach (var test in tests)
@@ -70,7 +70,7 @@ public class BlockTests
     {
         var expression = "(string s) =>  { string inner=\"test\"; inner + s; }";
 
-        var e = (LambdaExpression)compiler.Compile(expression);
+        var e = (LambdaExpression)compiler.CompileExpression(expression);
         var f = (Func<string, string>)e.Compile();
 
         string[] tests = ["1", "2", "3"];
@@ -83,18 +83,13 @@ public class BlockTests
     [TestMethod]
     public void WhileTest()
     {
-        Random random = new Random();
         var expression = "(char c, int length) =>  { string result=\"\"; while (result.Length < length) { result += c.ToString(); }; result; }";
 
-        var e = (LambdaExpression)compiler.Compile(expression);
+        var e = (LambdaExpression)compiler.CompileExpression(expression);
         var f = (Func<char, int, string>)e.Compile();
 
-        char[] tests = ['a', 'b', 'c'];
-        foreach (var test in tests)
-        {
-            var length = random.Next(5, 10);
-            Assert.AreEqual(new string(test, length), f(test, length));
-        }
+        foreach ((char character, int length) in new (char, int)[] { ('a', 0), ('b', 1), ('c', 5), ('x', 12) })
+            Assert.AreEqual(new string(character, length), f(character, length));
     }
 
     [TestMethod]
@@ -114,7 +109,7 @@ public class BlockTests
             }
             """;
 
-        var lambda = (LambdaExpression)compiler.Compile(expression);
+        var lambda = (LambdaExpression)compiler.CompileExpression(expression);
         var function = (Func<int, int>)lambda.Compile();
 
         Assert.AreEqual(0, function(0));
@@ -138,7 +133,7 @@ public class BlockTests
             }
             """;
 
-        var lambda = (LambdaExpression)compiler.Compile(expression);
+        var lambda = (LambdaExpression)compiler.CompileExpression(expression);
         var function = (Func<int, int>)lambda.Compile();
 
         Assert.AreEqual(0, function(0));
@@ -163,7 +158,7 @@ public class BlockTests
             }
             """;
 
-        var lambda = (LambdaExpression)compiler.Compile(expression);
+        var lambda = (LambdaExpression)compiler.CompileExpression(expression);
         var function = (Func<int, int>)lambda.Compile();
 
         Assert.AreEqual(0, function(0));
@@ -176,7 +171,7 @@ public class BlockTests
     {
         var expression = "(int max) => { break; max; }";
 
-        var exception = Assert.ThrowsExactly<InvalidOperationException>(() => compiler.Compile(expression));
+        var exception = Assert.ThrowsExactly<InvalidOperationException>(() => compiler.CompileExpression(expression));
         StringAssert.Contains(exception.Message, "inside a loop");
     }
 
@@ -185,7 +180,7 @@ public class BlockTests
     {
         var expression = "(int x) => { string s = \"while\"; break; x; }";
 
-        var exception = Assert.ThrowsExactly<InvalidOperationException>(() => compiler.Compile(expression));
+        var exception = Assert.ThrowsExactly<InvalidOperationException>(() => compiler.CompileExpression(expression));
         StringAssert.Contains(exception.Message, "inside a loop");
     }
 
@@ -201,14 +196,13 @@ public class BlockTests
             }
             """;
 
-        var exception = Assert.ThrowsExactly<InvalidOperationException>(() => compiler.Compile(expression));
+        var exception = Assert.ThrowsExactly<InvalidOperationException>(() => compiler.CompileExpression(expression));
         StringAssert.Contains(exception.Message, "inside a loop");
     }
 
     [TestMethod]
     public void ForTest()
     {
-        Random random = new Random();
         var expression =
             """
             (char c, int length) => { 
@@ -220,21 +214,16 @@ public class BlockTests
             }
             """;
 
-        var e = (LambdaExpression)compiler.Compile(expression);
+        var e = (LambdaExpression)compiler.CompileExpression(expression);
         var f = (Func<char, int, string>)e.Compile();
 
-        char[] tests = ['a', 'b', 'c'];
-        foreach (var test in tests)
-        {
-            var length = random.Next(5, 10);
-            Assert.AreEqual(new string(test, length), f(test, length));
-        }
+        foreach ((char character, int length) in new (char, int)[] { ('a', 0), ('b', 1), ('c', 5), ('x', 12) })
+            Assert.AreEqual(new string(character, length), f(character, length));
     }
 
     [TestMethod]
     public void ForEachTest1()
     {
-        Random random = new Random();
         var expression =
             """
             (int[] test) => { 
@@ -246,26 +235,16 @@ public class BlockTests
             }
             """;
 
-        var e = (LambdaExpression)compiler.Compile(expression);
+        var e = (LambdaExpression)compiler.CompileExpression(expression);
         var f = (Func<int[], int>)e.Compile();
 
-        for (int i = 0; i < 10; i++)
-        {
-            int[] test = new int[random.Next(5, 10)];
-            for (int j = 0; j < test.Length; j++)
-            {
-                test[j] = random.Next(0, 100);
-            }
-
-            var length = random.Next(5, 10);
+        foreach (int[] test in new int[][] { [], [7], [1, 2, 3, 4], [10, -3, 0, -7, 5] })
             Assert.AreEqual(test.Sum(), f(test));
-        }
     }
 
     [TestMethod]
     public void ForEachTest2()
     {
-        Random random = new Random();
         var expression =
             """
             using System.Collections;
@@ -280,26 +259,16 @@ public class BlockTests
             }
             """;
 
-        var e = (LambdaExpression)compiler.Compile(expression);
+        var e = (LambdaExpression)compiler.CompileExpression(expression);
         var f = (Func<IEnumerable<int>, int>)e.Compile();
 
-        for (int i = 0; i < 10; i++)
-        {
-            int[] test = new int[random.Next(5, 10)];
-            for (int j = 0; j < test.Length; j++)
-            {
-                test[j] = random.Next(0, 100);
-            }
-
-            var length = random.Next(5, 10);
+        foreach (int[] test in new int[][] { [], [7], [1, 2, 3, 4], [10, -3, 0, -7, 5] })
             Assert.AreEqual(test.Sum(), f(test));
-        }
     }
 
     [TestMethod]
     public void ForEachTest3()
     {
-        Random random = new Random();
         var expression =
             """
             using System.Collections;
@@ -314,20 +283,11 @@ public class BlockTests
             }
             """;
 
-        var e = (LambdaExpression)compiler.Compile(expression);
+        var e = (LambdaExpression)compiler.CompileExpression(expression);
         var f = (Func<IEnumerable, int>)e.Compile();
 
-        for (int i = 0; i < 10; i++)
-        {
-            int[] test = new int[random.Next(5, 10)];
-            for (int j = 0; j < test.Length; j++)
-            {
-                test[j] = random.Next(0, 100);
-            }
-
-            var length = random.Next(5, 10);
+        foreach (int[] test in new int[][] { [], [7], [1, 2, 3, 4], [10, -3, 0, -7, 5] })
             Assert.AreEqual(test.Sum(), f(test));
-        }
     }
 
     /// <summary>
@@ -338,7 +298,7 @@ public class BlockTests
     {
         var expression = "() => { dynamic obj = new(); obj; }";
 
-        var compiled = (LambdaExpression)compiler.Compile(expression);
+        var compiled = (LambdaExpression)compiler.CompileExpression(expression);
         var function = (Func<object>)compiled.Compile();
         var result = function();
 
@@ -358,7 +318,7 @@ public class BlockTests
     {
         var expression = "() => { var obj = new dynamic; obj; }";
 
-        var compiled = (LambdaExpression)compiler.Compile(expression);
+        var compiled = (LambdaExpression)compiler.CompileExpression(expression);
         var function = (Func<object>)compiled.Compile();
         var result = function();
 
@@ -378,7 +338,7 @@ public class BlockTests
     {
         var expression = "() => { var obj = new(); obj; }";
 
-        var compiled = (LambdaExpression)compiler.Compile(expression);
+        var compiled = (LambdaExpression)compiler.CompileExpression(expression);
         var function = (Func<object>)compiled.Compile();
         var result = function();
 
@@ -398,7 +358,7 @@ public class BlockTests
     {
         var expression = "() => { int value = new int(); value; }";
 
-        var compiled = (LambdaExpression)compiler.Compile(expression);
+        var compiled = (LambdaExpression)compiler.CompileExpression(expression);
         var function = (Func<int>)compiled.Compile();
 
         Assert.AreEqual(0, function());
@@ -412,7 +372,7 @@ public class BlockTests
     {
         var expression = "() => { var obj = new(1, 2); obj; }";
 
-        var exception = Assert.ThrowsExactly<InvalidOperationException>(() => compiler.Compile(expression));
+        var exception = Assert.ThrowsExactly<InvalidOperationException>(() => compiler.CompileExpression(expression));
 
         StringAssert.Contains(exception.Message, "Target-typed new expressions with arguments are not supported.");
     }

@@ -384,7 +384,7 @@ public class PreparedExpressionRuntimePolicyBuilderTests
         public string? LastContent { get; private set; }
 
         /// <inheritdoc />
-        public Expression Compile(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
+        public Expression CompileExpression(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
         {
             CompilationCount++;
             LastSymbols = symbols;
@@ -399,6 +399,18 @@ public class PreparedExpressionRuntimePolicyBuilderTests
                 _ => throw new InvalidOperationException($"Unexpected test expression '{content}'.")
             };
         }
+
+        /// <inheritdoc />
+        public Expression<TDelegate> CompileExpression<TDelegate>(string content) where TDelegate : Delegate
+            => throw new NotSupportedException("This fake only supports the symbol-table overload.");
+
+        /// <inheritdoc />
+        public Delegate Compile(string content)
+            => throw new NotSupportedException("This fake only supports the symbol-table overload.");
+
+        /// <inheritdoc />
+        public TDelegate Compile<TDelegate>(string content) where TDelegate : Delegate
+            => throw new NotSupportedException("This fake only supports the symbol-table overload.");
 
         /// <summary>
         /// Runtime predicate delegate target that returns <c>true</c>.

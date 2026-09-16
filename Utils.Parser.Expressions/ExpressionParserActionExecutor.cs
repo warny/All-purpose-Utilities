@@ -60,7 +60,7 @@ public sealed class ExpressionParserActionExecutor : IParserActionExecutor
         try
         {
             var symbols = BuildSymbols(context);
-            var expression = _compiler.Compile(actionCode, symbols);
+            var expression = _compiler.CompileExpression(actionCode, symbols);
             var action = BuildActionDelegate(expression);
 
             return () =>

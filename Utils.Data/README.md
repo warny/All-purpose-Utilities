@@ -238,4 +238,4 @@ foreach (var cte in select.WithClause!.Definitions)
 - `omy.Utils.IO` – for binary/stream serialization scenarios.
 
 
-[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.2/)

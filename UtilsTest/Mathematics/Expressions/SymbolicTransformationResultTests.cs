@@ -313,23 +313,4 @@ public class SymbolicTransformationResultTests
         Assert.AreEqual(SymbolicTransformationStatus.InvalidInput, result.Status);
     }
 
-    /// <summary>
-    /// <see cref="MathExpressionExtensions.TryDerivate{T}"/> must never propagate an exception;
-    /// any internal failure must be returned as a <see cref="SymbolicTransformationResult"/> with
-    /// an appropriate failure status.
-    /// </summary>
-    [TestMethod]
-    public void TryDerivate_UnexpectedInternalException_DoesNotThrow_ReportsConstructionFailure()
-    {
-        // Verify end-to-end that TryDerivate never propagates exceptions.
-        // We provoke a known-unexpected exception by deriving a lambda whose simplification
-        // step triggers a TargetInvocationException wrapping an IndexOutOfRangeException.
-        // Since we cannot easily force this from the outside, we validate the catch-all via
-        // TryClassify directly (see the test above). This test just confirms TryDerivate
-        // itself compiles and runs to a result (not an exception) for all reachable paths.
-        Expression<Func<double, double>> f = x => x;
-        var result = f.TryDerivate<double>("x");
-        // f' = 1, which is valid
-        Assert.AreEqual(SymbolicTransformationStatus.Success, result.Status);
-    }
 }

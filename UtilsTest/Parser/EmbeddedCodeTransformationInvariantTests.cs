@@ -686,13 +686,25 @@ public sealed class EmbeddedCodeTransformationInvariantTests
 
         public List<IReadOnlyDictionary<string, Expression>> Symbols { get; } = [];
 
-        public Expression Compile(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
+        public Expression CompileExpression(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
         {
             CompileCount++;
             Contents.Add(content);
             Symbols.Add(symbols ?? new Dictionary<string, Expression>());
             return _expression;
         }
+
+        /// <summary>Not supported by this fake; only the symbol-table overload is exercised by these tests.</summary>
+        public Expression<TDelegate> CompileExpression<TDelegate>(string content) where TDelegate : Delegate
+            => throw new NotSupportedException("This recording fake only supports the symbol-table overload.");
+
+        /// <summary>Not supported by this fake; only the symbol-table overload is exercised by these tests.</summary>
+        public Delegate Compile(string content)
+            => throw new NotSupportedException("This recording fake only supports the symbol-table overload.");
+
+        /// <summary>Not supported by this fake; only the symbol-table overload is exercised by these tests.</summary>
+        public TDelegate Compile<TDelegate>(string content) where TDelegate : Delegate
+            => throw new NotSupportedException("This recording fake only supports the symbol-table overload.");
     }
 
     /// <summary>

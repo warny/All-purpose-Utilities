@@ -112,7 +112,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         // re-entrant calls on the same public ExpressionIntegration<T> instance no longer share mutable
         // state (see TODO-2026-07-11-pass3.md item #32).
         var worker = new ExpressionIntegration<T>(ParameterName, resolvedParameter);
-        return Expression.Lambda(worker.Transform(e.Body), e.Parameters);
+        return Expression.Lambda(worker.TransformCore(e.Body), e.Parameters);
     }
 
     /// <summary>
@@ -151,7 +151,39 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         this.parameter = parameter;
     }
 
+    /// <summary>
+    /// Public entry point required by <see cref="ExpressionTransformer"/>. A <see cref="LambdaExpression"/>
+    /// is always routed through <see cref="Integrate(LambdaExpression)"/> (which also validates, for the
+    /// parameter-identity constructor, that the instance is actually declared by the lambda). For a bare
+    /// expression, the integration variable can only be resolved when this instance was constructed with
+    /// an exact <see cref="ParameterExpression"/> identity (see <see cref="ExpressionIntegration(ParameterExpression)"/>) -
+    /// the name-based constructor has no parameter list to resolve a name against outside of a lambda.
+    /// </summary>
+    /// <param name="expression">The lambda expression, or a bare expression when this instance was
+    /// constructed with an exact <see cref="ParameterExpression"/> identity, to integrate.</param>
+    /// <returns>The integrated expression.</returns>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when <paramref name="expression"/> is not a <see cref="LambdaExpression"/> and this
+    /// instance was constructed by parameter name: there is no declared parameter list, nor an explicit
+    /// parameter identity, from which to resolve the integration variable. Construct with an exact
+    /// <see cref="ParameterExpression"/> instance instead to integrate a bare expression directly.
+    /// </exception>
+    public override Expression Transform(Expression expression)
+    {
+        if (expression is LambdaExpression lambda)
+        {
+            return Integrate(lambda);
+        }
 
+        if (explicitTargetParameter is not null)
+        {
+            var worker = new ExpressionIntegration<T>(ParameterName, explicitTargetParameter);
+            return worker.TransformCore(expression);
+        }
+
+        throw new NotSupportedException(
+            $"{nameof(ExpressionIntegration<T>)}<T>.{nameof(Transform)} requires either a {nameof(LambdaExpression)} (to resolve the integration variable by name from its declared parameters) or construction with an exact {nameof(ParameterExpression)} identity (to integrate a bare expression directly).");
+    }
 
     /// <summary>
     /// Integrates the wrapped operand and re-applies the conversion's declared result type when the
@@ -167,7 +199,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         Expression operand
     )
     {
-        return PreserveConversion(e, Transform(operand), isChecked: false);
+        return PreserveConversion(e, TransformCore(operand), isChecked: false);
     }
 
     /// <summary>
@@ -189,7 +221,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         Expression operand
     )
     {
-        return PreserveConversion(e, Transform(operand), isChecked: true);
+        return PreserveConversion(e, TransformCore(operand), isChecked: true);
     }
 
     /// <summary>
@@ -249,7 +281,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         Expression operand
     )
     {
-        return Expression.Negate(Transform(operand));
+        return Expression.Negate(TransformCore(operand));
     }
 
     /// <summary>
@@ -293,8 +325,8 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     )
     {
         return Expression.Add(
-            Transform(left),
-            Transform(right)
+            TransformCore(left),
+            TransformCore(right)
             );
     }
 
@@ -313,8 +345,8 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     )
     {
         return Expression.Subtract(
-            Transform(left),
-            Transform(right)
+            TransformCore(left),
+            TransformCore(right)
         );
     }
 
@@ -332,7 +364,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         Expression right
     )
     {
-        return Expression.Multiply(left, Transform(right));
+        return Expression.Multiply(left, TransformCore(right));
     }
 
     /// <summary>
@@ -349,7 +381,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         [ConstantNumeric] ConstantExpression right
     )
     {
-        return Expression.Multiply(right, Transform(left));
+        return Expression.Multiply(right, TransformCore(left));
     }
 
     /// <summary>
@@ -366,7 +398,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         [ConstantNumeric] ConstantExpression right
     )
     {
-        return Expression.Divide(Transform(left), right);
+        return Expression.Divide(TransformCore(left), right);
     }
 
     /// <summary>

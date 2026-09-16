@@ -255,4 +255,4 @@ int pos = FontSupport.FindName("A", FontSupport.StdNames);
 - `omy.Utils.IO` – stream helpers used by the font parsers.
 
 
-[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.1/)
+[Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.2/)

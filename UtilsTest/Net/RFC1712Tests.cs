@@ -21,16 +21,17 @@ namespace UtilsTest.Net
             var packetWriter = new DNSPacketWriter(factory);
             var packetReader = new DNSPacketReader(factory);
 
-            Random random = new Random();
-
-            for (int i = 0; i < 20; i++)
+            foreach ((double longitude, double latitude, double altitude) in new (double, double, double)[]
+            {
+                (-179.999, -89.999, -8999.9), (179.999, 89.999, 8999.9), (2.3522, 48.8566, 35.0), (-73.9857, 40.7484, 381.0)
+            })
             {
                 DNSHeader header1 = new DNSHeader();
                 var gpos = new GPOS()
                 {
-                    Longitude = random.NextDouble() * 360 - 180,
-                    Latitude = random.NextDouble() * 180 - 90,
-                    Altitude = random.NextDouble() * 18000 - 9000
+                    Longitude = longitude,
+                    Latitude = latitude,
+                    Altitude = altitude
                 };
                 header1.Responses.Add(new DNSResponseRecord("example.com", 1000, gpos));
 

@@ -1,61 +1,18 @@
 using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Utils.Expressions.CSyntax.Runtime;
+using Utils.Expressions;
 using Utils.Mathematics.Expressions;
 
 namespace UtilsTest.Mathematics.Expressions;
 
 /// <summary>
-/// Provides compiler-based regression coverage for legacy integration parser tests.
+/// Provides low-level regression coverage for symbolic integration mechanics and edge cases.
 /// </summary>
 [TestClass]
 public class ExpressionIntegrationTests
 {
-    CSyntaxExpressionCompiler compiler = new CSyntaxExpressionCompiler();
     readonly ExpressionIntegration<double> integration = new ExpressionIntegration<double>("x");
     readonly ExpressionSimplifier simplifier = new ExpressionSimplifier();
-
-    [TestMethod]
-    public void ExpressionsIntegration()
-    {
-        var parameters = new ParameterExpression[]
-        {
-                Expression.Parameter(typeof(double), "x"),
-        };
-
-        var tests = new (string function, string integral)[]
-        {
-            ("1/x", "Log(Abs(x))"),
-            ("1/(x**2)", "-(1.0/x)"),
-            ("1/Sqrt(x)", "2.0*Sqrt(x)"),
-            ("Sinh(x)", "Cosh(x)"),
-            ("Cosh(x)", "Sinh(x)"),
-            ("Tanh(x)", "Log(Cosh(x))"),
-        };
-
-        foreach (var test in tests)
-        {
-            var func = compiler.Compile<Func<double, double>>(test.function, parameters, typeof(double), false);
-            var expected = simplifier.Simplify(compiler.Compile<Func<double, double>>(test.integral, parameters, typeof(double), false));
-            var result = simplifier.Simplify(integration.Integrate(func));
-            Assert.AreEqual(expected, result, ExpressionComparer.Default);
-        }
-    }
-
-
-    /// <summary>
-    /// Ensures trigonometric expressions still compile for integration workflows.
-    /// </summary>
-    [TestMethod]
-    public void Compile_TrigExpression_ForIntegrationWorkflow()
-    {
-        var x = Expression.Parameter(typeof(double), "x");
-        var expression = compiler.Compile("x * x + 1", new Dictionary<string, Expression> { ["x"] = x });
-        var lambda = Expression.Lambda<Func<double, double>>(Expression.Convert(expression, typeof(double)), x).Compile();
-
-        Assert.AreEqual(10d, lambda(3d), 1e-9);
-    }
-
 
     /// <summary>
     /// Ensures generic integration also works for <see cref="float"/> lambdas.
@@ -93,69 +50,30 @@ public class ExpressionIntegrationTests
 
     // ── Basic primitives ─────────────────────────────────────────────────────
 
-    /// <summary>
-    /// ∫1 dx = x.
-    /// </summary>
-    [TestMethod]
-    public void Integrate_Constant_ReturnsX()
-    {
-        Expression<Func<double, double>> f = x => 1.0;
-        var result = (Expression<Func<double, double>>)integration.Integrate(f);
-        var compiled = result.Compile();
-
-        foreach (double xv in new[] { -2.0, -1.0, 0.0, 1.0, 2.5 })
-            Assert.AreEqual(xv, compiled(xv), 1e-9, $"∫1 dx at x={xv}");
-    }
-
-    /// <summary>
-    /// ∫x dx = x²/2.
-    /// </summary>
-    [TestMethod]
-    public void Integrate_X_ReturnsXSquaredOver2()
-    {
-        Expression<Func<double, double>> f = x => x;
-        var result = (Expression<Func<double, double>>)integration.Integrate(f);
-        var compiled = result.Compile();
-
-        foreach (double xv in new[] { -2.0, -1.0, 0.0, 1.0, 2.5 })
-            Assert.AreEqual(xv * xv / 2.0, compiled(xv), 1e-9, $"∫x dx at x={xv}");
-    }
-
     // ── Power rule ────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// ∫x² dx = x³/3 — via the compiler so the exponent is a Power binary node.
-    /// </summary>
-    [TestMethod]
-    public void Integrate_XSquared_ReturnsXCubedOver3()
-    {
-        var parameters = new ParameterExpression[] { Expression.Parameter(typeof(double), "x") };
-        var f = compiler.Compile<Func<double, double>>("x**2", parameters, typeof(double), false);
-        var result = (Expression<Func<double, double>>)integration.Integrate(f);
-        var compiled = result.Compile();
-
-        foreach (double xv in new[] { -2.0, -1.0, 0.0, 1.0, 2.0 })
-            Assert.AreEqual(Math.Pow(xv, 3) / 3.0, compiled(xv), 1e-9, $"∫x² dx at x={xv}");
-    }
-
-    /// <summary>
-    /// ∫x^(-1) dx = ln(x) — verifies the double.Epsilon bug fix in the Power rule.
+    /// Ensures a manually represented power of minus one integrates to the natural logarithm.
+    /// The C-syntax compiler currently represents this shape as a method call, so this structural rule remains in C#.
     /// </summary>
     [TestMethod]
     public void Integrate_PowerMinusOne_ReturnsLog()
     {
         var x = Expression.Parameter(typeof(double), "x");
         var body = Expression.Power(x, Expression.Constant(-1.0));
-        var f = Expression.Lambda<Func<double, double>>(body, x);
-        var result = (Expression<Func<double, double>>)integration.Integrate(f);
+        var function = Expression.Lambda<Func<double, double>>(body, x);
+        var result = (Expression<Func<double, double>>)integration.Integrate(function);
         var compiled = result.Compile();
 
-        foreach (double xv in new[] { 0.5, 1.0, Math.E, 5.0 })
-            Assert.AreEqual(Math.Log(xv), compiled(xv), 1e-9, $"∫x^(-1) dx at x={xv}");
+        foreach (double value in new[] { 0.5, 1.0, Math.E, 5.0 })
+        {
+            Assert.AreEqual(Math.Log(value), compiled(value), 1e-9, $"Integral of x^(-1) at x={value}");
+        }
     }
 
     /// <summary>
-    /// ∫c/x dx = c·ln(x) — verifies the double.Epsilon bug fix in the Divide/Power rule.
+    /// Ensures a constant divided by a manually represented first power uses the dedicated
+    /// <c>Divide(Constant, Power)</c> integration rule and returns the scaled logarithm.
     /// </summary>
     [TestMethod]
     public void Integrate_ConstantDividedByX_ReturnsConstantTimesLog()
@@ -164,133 +82,23 @@ public class ExpressionIntegrationTests
         var body = Expression.Divide(
             Expression.Constant(3.0),
             Expression.Power(x, Expression.Constant(1.0)));
-        var f = Expression.Lambda<Func<double, double>>(body, x);
-        var result = (Expression<Func<double, double>>)integration.Integrate(f);
+        var function = Expression.Lambda<Func<double, double>>(body, x);
+        var result = (Expression<Func<double, double>>)integration.Integrate(function);
         var compiled = result.Compile();
 
-        foreach (double xv in new[] { 0.5, 1.0, Math.E, 5.0 })
-            Assert.AreEqual(3.0 * Math.Log(xv), compiled(xv), 1e-9, $"∫3/x dx at x={xv}");
+        foreach (double value in new[] { 0.5, 1.0, Math.E, 5.0 })
+        {
+            Assert.AreEqual(3.0 * Math.Log(value), compiled(value), 1e-9, $"Integral of 3/(x^1) at x={value}");
+        }
     }
 
     // ── Trigonometry ─────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// ∫sin(x) dx = -cos(x).
-    /// </summary>
-    [TestMethod]
-    public void Integrate_Sin_ReturnsNegCos()
-    {
-        Expression<Func<double, double>> f = x => double.Sin(x);
-        var result = (Expression<Func<double, double>>)integration.Integrate(f);
-        var compiled = result.Compile();
-
-        foreach (double xv in new[] { -Math.PI, -Math.PI / 2, 0.0, Math.PI / 2, Math.PI })
-            Assert.AreEqual(-Math.Cos(xv), compiled(xv), 1e-9, $"∫sin(x) dx at x={xv}");
-    }
-
-    /// <summary>
-    /// ∫cos(x) dx = sin(x).
-    /// </summary>
-    [TestMethod]
-    public void Integrate_Cos_ReturnsSin()
-    {
-        Expression<Func<double, double>> f = x => double.Cos(x);
-        var result = (Expression<Func<double, double>>)integration.Integrate(f);
-        var compiled = result.Compile();
-
-        foreach (double xv in new[] { -Math.PI, -Math.PI / 2, 0.0, Math.PI / 2, Math.PI })
-            Assert.AreEqual(Math.Sin(xv), compiled(xv), 1e-9, $"∫cos(x) dx at x={xv}");
-    }
-
-    /// <summary>
-    /// ∫sin(2x) dx = -cos(2x)/2.
-    /// </summary>
-    [TestMethod]
-    public void Integrate_ScaledSin_ReturnsNegCosOver2()
-    {
-        Expression<Func<double, double>> f = x => double.Sin(2.0 * x);
-        var result = (Expression<Func<double, double>>)integration.Integrate(f);
-        var compiled = result.Compile();
-
-        foreach (double xv in new[] { -Math.PI / 2, 0.0, Math.PI / 4, Math.PI })
-            Assert.AreEqual(-Math.Cos(2.0 * xv) / 2.0, compiled(xv), 1e-9, $"∫sin(2x) dx at x={xv}");
-    }
-
     // ── Exponential ───────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// ∫exp(x) dx = exp(x).
-    /// </summary>
-    [TestMethod]
-    public void Integrate_Exp_ReturnsExp()
-    {
-        Expression<Func<double, double>> f = x => double.Exp(x);
-        var result = (Expression<Func<double, double>>)integration.Integrate(f);
-        var compiled = result.Compile();
-
-        foreach (double xv in new[] { -2.0, -1.0, 0.0, 1.0, 2.0 })
-            Assert.AreEqual(Math.Exp(xv), compiled(xv), 1e-9, $"∫exp(x) dx at x={xv}");
-    }
 
     // ── Logarithms ────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// ∫ln(x) dx = x·(ln(x) - 1).
-    /// </summary>
-    [TestMethod]
-    public void Integrate_Log_ReturnsXTimesLogXMinusOne()
-    {
-        Expression<Func<double, double>> f = x => double.Log(x);
-        var result = (Expression<Func<double, double>>)integration.Integrate(f);
-        var compiled = result.Compile();
-
-        foreach (double xv in new[] { 0.5, 1.0, Math.E, 5.0 })
-            Assert.AreEqual(xv * (Math.Log(xv) - 1.0), compiled(xv), 1e-9, $"∫ln(x) dx at x={xv}");
-    }
-
-    /// <summary>
-    /// ∫log10(x) dx = x·log10(x) - x/ln(10).
-    /// </summary>
-    [TestMethod]
-    public void Integrate_Log10_VerifyFormula()
-    {
-        Expression<Func<double, double>> f = x => double.Log10(x);
-        var result = (Expression<Func<double, double>>)integration.Integrate(f);
-        var compiled = result.Compile();
-
-        foreach (double xv in new[] { 1.0, 2.0, 10.0, 100.0 })
-            Assert.AreEqual(xv * Math.Log10(xv) - xv / Math.Log(10), compiled(xv), 1e-9, $"∫log10(x) dx at x={xv}");
-    }
-
     // ── Linear combinations ───────────────────────────────────────────────────
-
-    /// <summary>
-    /// ∫2·sin(x) dx = -2·cos(x).
-    /// </summary>
-    [TestMethod]
-    public void Integrate_ConstantTimesSin_ReturnsScaledNegCos()
-    {
-        Expression<Func<double, double>> f = x => 2.0 * double.Sin(x);
-        var result = (Expression<Func<double, double>>)integration.Integrate(f);
-        var compiled = result.Compile();
-
-        foreach (double xv in new[] { -Math.PI, 0.0, Math.PI / 2, Math.PI })
-            Assert.AreEqual(-2.0 * Math.Cos(xv), compiled(xv), 1e-9, $"∫2·sin(x) dx at x={xv}");
-    }
-
-    /// <summary>
-    /// ∫(x + sin(x)) dx = x²/2 - cos(x).
-    /// </summary>
-    [TestMethod]
-    public void Integrate_SumXAndSin_ReturnsCombination()
-    {
-        Expression<Func<double, double>> f = x => x + double.Sin(x);
-        var result = (Expression<Func<double, double>>)integration.Integrate(f);
-        var compiled = result.Compile();
-
-        foreach (double xv in new[] { -Math.PI / 2, 0.0, 1.0, Math.PI })
-            Assert.AreEqual(xv * xv / 2.0 - Math.Cos(xv), compiled(xv), 1e-9, $"∫(x+sin(x)) dx at x={xv}");
-    }
 
     // ── Parameter identity (item 31) and re-entrancy (item 32) ───────────────
 
@@ -576,6 +384,58 @@ public class ExpressionIntegrationTests
         ExpressionIntegration<double> integrationByForeign = new(foreign);
 
         Assert.ThrowsExactly<SymbolicParameterException>(() => integrationByForeign.Integrate(f));
+    }
+
+    /// <summary>
+    /// <see cref="ExpressionTransformer.Transform(Expression)"/> is the public contract every transformer
+    /// must implement. For <see cref="ExpressionIntegration{T}"/>, a <see cref="LambdaExpression"/> carries
+    /// the parameter list needed to resolve the integration variable, so <c>Transform</c> must actually
+    /// integrate against <c>x</c> - not silently treat it as an unrelated free variable (which would
+    /// crash or produce a wrong result, since the target parameter is only resolved inside
+    /// <see cref="ExpressionIntegration{T}.Integrate(LambdaExpression)"/>, never by the public constructors).
+    /// </summary>
+    [TestMethod]
+    public void Transform_OnLambdaExpression_IntegratesAgainstItsParameter()
+    {
+        Expression<Func<double, double>> f = x => 1.0;
+        var localIntegration = new ExpressionIntegration<double>("x");
+
+        var viaTransform = (Expression<Func<double, double>>)localIntegration.Transform(f);
+        var viaIntegrate = (Expression<Func<double, double>>)localIntegration.Integrate(f);
+
+        Assert.AreEqual(3.0, viaTransform.Compile()(3.0), 1e-9);
+        Assert.AreEqual(viaIntegrate, viaTransform, ExpressionComparer.Default);
+    }
+
+    /// <summary>
+    /// Without a <see cref="LambdaExpression"/>, <see cref="ExpressionIntegration{T}.Transform(Expression)"/>
+    /// has no declared parameter list to resolve the integration variable from, and must fail explicitly
+    /// rather than silently guessing or corrupting shared state.
+    /// </summary>
+    [TestMethod]
+    public void Transform_OnBareExpression_ThrowsNotSupported()
+    {
+        var localIntegration = new ExpressionIntegration<double>("x");
+
+        Assert.ThrowsExactly<NotSupportedException>(() => localIntegration.Transform(Expression.Constant(5.0)));
+    }
+
+    /// <summary>
+    /// When this instance was constructed with an exact <see cref="ParameterExpression"/> identity, the
+    /// integration variable is already unambiguously known, so <c>Transform</c> can integrate a bare
+    /// (non-lambda) expression directly instead of requiring a carrier <see cref="LambdaExpression"/>.
+    /// </summary>
+    [TestMethod]
+    public void Transform_OnBareExpression_WithParameterIdentityConstructor_Integrates()
+    {
+        var x = Expression.Parameter(typeof(double), "x");
+        var localIntegration = new ExpressionIntegration<double>(x);
+
+        Expression result = localIntegration.Transform(x);
+        var compiled = Expression.Lambda<Func<double, double>>(result, x).Compile();
+
+        const double xv = 3.0;
+        Assert.AreEqual(xv * xv / 2.0, compiled(xv), 1e-9, "∫x dx = x²/2");
     }
 
 }

@@ -17,6 +17,34 @@ namespace UtilsTest.Mathematics.Expressions;
 [TestClass]
 public class ExpressionTransformerTests
 {
+    /// <summary>
+    /// <see cref="ExpressionTransformer.Transform(Expression)"/> is the public entry-point contract every
+    /// concrete transformer must implement.
+    /// </summary>
+    [TestMethod]
+    public void Transform_IsPublicAbstractOnBaseType()
+    {
+        MethodInfo transform = typeof(ExpressionTransformer).GetMethod(nameof(ExpressionTransformer.Transform), BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+
+        Assert.IsNotNull(transform);
+        Assert.IsTrue(transform.IsPublic);
+        Assert.IsTrue(transform.IsAbstract);
+    }
+
+    /// <summary>
+    /// <c>TransformCore</c> is the internal recursive engine and must stay non-public so third-party
+    /// subclasses cannot call into it directly, only through their own <see cref="ExpressionTransformer.Transform(Expression)"/> override.
+    /// </summary>
+    [TestMethod]
+    public void TransformCore_IsProtectedOnBaseType()
+    {
+        MethodInfo transformCore = typeof(ExpressionTransformer).GetMethod("TransformCore", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+
+        Assert.IsNotNull(transformCore);
+        Assert.IsTrue(transformCore.IsFamily);
+        Assert.IsFalse(transformCore.IsPublic);
+    }
+
     /// <summary>A helper carrying an explicit float-typed Pow method for the Power/Method test.</summary>
     private static float FloatPow(float x, float y) => MathF.Pow(x, y);
 
@@ -141,6 +169,9 @@ public class ExpressionTransformerTests
         /// </summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
+
         /// <summary>
         /// Copies the expression with the supplied sub-expressions so the transformer does not
         /// throw when no signature method matches (required by the abstract base class contract).
@@ -258,64 +289,6 @@ public class ExpressionTransformerTests
         Assert.AreEqual(-9.0, compiled(-3.0), 1e-9);   // -3 ≤ 0 → mul3(-3) = -9
     }
 
-    /// <summary>
-    /// <see cref="ExpressionTransformer.ReplaceArguments"/> must substitute parameters inside
-    /// the invocation target expression, not only in the argument list.
-    /// </summary>
-    [TestMethod]
-    public void ReplaceArguments_InvocationExpression_ReplacesParametersInTarget()
-    {
-        var transformer = new ExposedTransformer();
-        ParameterExpression p = Expression.Parameter(typeof(double), "p");
-
-        Func<double, double> mul2 = y => y * 2.0;
-        Func<double, double> mul3 = y => y * 3.0;
-        // Target conditional references p; argument is also p.
-        Expression target = Expression.Condition(
-            Expression.GreaterThan(p, Expression.Constant(0.0)),
-            Expression.Constant(mul2),
-            Expression.Constant(mul3));
-        Expression invocation = Expression.Invoke(target, p);
-
-        // Replace p → 4.0
-        Expression result = transformer.ExposeReplaceArguments(
-            invocation,
-            new[] { p },
-            new Expression[] { Expression.Constant(4.0) });
-
-        // 4 > 0 → mul2(4) = 8
-        double value = Expression.Lambda<Func<double>>(result).Compile()();
-        Assert.AreEqual(8.0, value, 1e-9);
-    }
-
-    /// <summary>
-    /// <see cref="ExpressionTransformer.ReplaceArguments"/> must recurse into Test, IfTrue, and
-    /// IfFalse of a <see cref="ConditionalExpression"/>. Without an explicit case it fell through
-    /// to <c>return e</c>, leaving parameters unsubstituted in all three branches.
-    /// </summary>
-    [TestMethod]
-    public void ReplaceArguments_ConditionalExpression_ReplacesParametersInAllBranches()
-    {
-        var transformer = new ExposedTransformer();
-        ParameterExpression p = Expression.Parameter(typeof(double), "p");
-
-        // p > 0.0 ? p * 2.0 : p * (-1.0)
-        Expression conditional = Expression.Condition(
-            Expression.GreaterThan(p, Expression.Constant(0.0)),
-            Expression.Multiply(p, Expression.Constant(2.0)),
-            Expression.Multiply(p, Expression.Constant(-1.0)));
-
-        // Replace p → 5.0
-        Expression result = transformer.ExposeReplaceArguments(
-            conditional,
-            new[] { p },
-            new Expression[] { Expression.Constant(5.0) });
-
-        // 5 > 0 → 5 * 2 = 10
-        double value = Expression.Lambda<Func<double>>(result).Compile()();
-        Assert.AreEqual(10.0, value, 1e-9);
-    }
-
     // ---------------------------------------------------------------------------------------------
     // Coverage added for the structural refactor of Transform(Expression) into PrepareTransform/
     // TryTransform/TryInvokeTransformMethod. These tests document pre-existing behavior; none of
@@ -380,6 +353,9 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
+
         /// <summary>Reduces <c>left + 0</c> to <c>left</c>; leaves other additions unmatched.</summary>
         [ExpressionSignature(ExpressionType.Add)]
         private Expression AddZero(BinaryExpression e, Expression left, ConstantExpression right)
@@ -419,6 +395,9 @@ public class ExpressionTransformerTests
 
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>
         /// Declares <see cref="ExpressionType.Add"/> (so <c>attr.Match</c> succeeds) but requires a
@@ -471,6 +450,9 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
+
         /// <summary>Always matches but always defers to the next rule by returning <see langword="null"/>.</summary>
         [ExpressionSignature(ExpressionType.Add)]
         private Expression FirstRuleReturnsNull(BinaryExpression e, Expression left, Expression right)
@@ -521,6 +503,9 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
+
         /// <summary>
         /// Matches any <see cref="ExpressionType.Call"/> node and records the full array of prepared
         /// sub-expressions it receives via the special <c>Expression[]</c> second-parameter shape.
@@ -565,6 +550,9 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
+
         /// <summary>
         /// A rule declaring exactly one parameter (the node itself): doubles a numeric constant.
         /// </summary>
@@ -605,6 +593,9 @@ public class ExpressionTransformerTests
 
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>
         /// Matches <c>left + 1.0</c> only: the <see cref="ConstantNumericAttribute"/> on <paramref name="right"/>
@@ -664,6 +655,9 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
+
         /// <summary>Matches any <see cref="ExpressionType.Add"/> node.</summary>
         [ExpressionSignature(ExpressionType.Add)]
         private Expression OnAdd(BinaryExpression e, Expression left, Expression right)
@@ -708,6 +702,9 @@ public class ExpressionTransformerTests
 
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Always defers to the next rule.</summary>
         [ExpressionSignature(ExpressionType.Add)]
@@ -762,6 +759,9 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
+
         /// <summary>Matches every node type via the <c>(ExpressionType)(-1)</c> wildcard sentinel.</summary>
         [ExpressionSignature((ExpressionType)(-1))]
         private Expression OnAny(Expression e)
@@ -802,6 +802,9 @@ public class ExpressionTransformerTests
 
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>A wildcard rule, declared first; always defers.</summary>
         [ExpressionSignature((ExpressionType)(-1))]
@@ -873,6 +876,9 @@ public class ExpressionTransformerTests
 
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Matches only calls to <see cref="double.Sqrt(double)"/>.</summary>
         [ExpressionCallSignature(typeof(double), nameof(double.Sqrt))]
@@ -950,6 +956,9 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
+
         /// <summary>Declared "Add" but, via <see cref="WidensMatchBeyondDeclaredTypeAttribute"/>, also matches Subtract.</summary>
         [WidensMatchBeyondDeclaredType]
         private Expression OnAddOrSubtract(BinaryExpression e, Expression left, Expression right)
@@ -1016,6 +1025,9 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
+
         /// <summary>Constrains its constant operand with a stateful, match-once custom attribute.</summary>
         [ExpressionSignature(ExpressionType.Add)]
         private Expression AddWithOnceConstrainedConstant(BinaryExpression e, Expression left, [MatchesOnce] ConstantExpression right)
@@ -1071,6 +1083,9 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
+
         /// <summary>Constrains its constant operand with a construction-counting custom attribute.</summary>
         [ExpressionSignature(ExpressionType.Add)]
         private Expression AddWithCountedConstant(BinaryExpression e, Expression left, [ConstructionCounting] ConstantExpression right)
@@ -1113,6 +1128,9 @@ public class ExpressionTransformerTests
 
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>
         /// Nothing in the public API stops a caller from writing an out-of-range <see cref="ExpressionType"/>
@@ -1167,6 +1185,9 @@ public class ExpressionTransformerTests
 
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>
         /// Matches <c>left + 0</c> only: the <see cref="ConstantNumericAttribute"/> on <paramref name="right"/>
@@ -1282,6 +1303,9 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
+
         /// <summary>Unconditionally throws to characterize how the positional invocation branch wraps a rule's exception.</summary>
         [ExpressionSignature(ExpressionType.Add)]
         private Expression Rule(BinaryExpression e, Expression left, Expression right)
@@ -1317,6 +1341,9 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
+
         /// <summary>Unconditionally throws to characterize how the single-parameter invocation branch wraps a rule's exception.</summary>
         [ExpressionSignature(ExpressionType.Parameter)]
         private Expression Rule(ParameterExpression e)
@@ -1344,6 +1371,9 @@ public class ExpressionTransformerTests
     {
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Unconditionally throws to characterize how the <c>Expression[]</c> invocation branch wraps a rule's exception.</summary>
         [ExpressionSignature(ExpressionType.Call)]
@@ -1373,6 +1403,9 @@ public class ExpressionTransformerTests
     {
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Unconditionally throws <see cref="ArgumentException"/>.</summary>
         [ExpressionSignature(ExpressionType.Add)]
@@ -1410,6 +1443,9 @@ public class ExpressionTransformerTests
     {
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Unconditionally throws <see cref="OutOfMemoryException"/>.</summary>
         [ExpressionSignature(ExpressionType.Add)]
@@ -1451,6 +1487,9 @@ public class ExpressionTransformerTests
 
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Unconditionally throws a <see cref="TargetInvocationException"/> wrapping <see cref="InnermostException"/>.</summary>
         [ExpressionSignature(ExpressionType.Add)]
@@ -1500,6 +1539,9 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
+
         /// <summary>Declares only 2 parameters (e, left) though the Add context supplies 3 (e, left, right).</summary>
         [ExpressionSignature(ExpressionType.Add)]
         private Expression Rule(BinaryExpression e, Expression left)
@@ -1542,6 +1584,9 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
+
         /// <summary>Declares 4 parameters (e, left, right, extra) though the Add context only supplies 3.</summary>
         [ExpressionSignature(ExpressionType.Add)]
         private Expression Rule(BinaryExpression e, Expression left, Expression right, Expression extra)
@@ -1554,7 +1599,7 @@ public class ExpressionTransformerTests
     /// <summary>
     /// Historical behavior (pinned down before introducing any fast invocation path): a positional rule
     /// declaring more parameters than the node's context array supplies fails during per-parameter
-    /// validation itself — the loop indexes <c>context.Parameters[i]</c> up to <c>rule.Parameters.Length - 1</c>,
+    /// validation itself — the loop indexes the logical invocation argument at <c>i</c> up to <c>rule.Parameters.Length - 1</c>,
     /// which runs past the end of the (shorter) context array — throwing <see cref="IndexOutOfRangeException"/>
     /// before <see cref="MethodBase.Invoke(object, object[])"/> is ever reached. A future fast path must not
     /// convert this into a silent "rule doesn't match, try the next one" outcome.
@@ -1578,6 +1623,9 @@ public class ExpressionTransformerTests
 
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Always matches a Parameter node but returns null.</summary>
         [ExpressionSignature(ExpressionType.Parameter)]
@@ -1616,6 +1664,9 @@ public class ExpressionTransformerTests
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
 
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
+
         /// <summary>Always matches a Call node but returns null.</summary>
         [ExpressionSignature(ExpressionType.Call)]
         private Expression Rule(Expression e, Expression[] args)
@@ -1644,9 +1695,143 @@ public class ExpressionTransformerTests
         Assert.IsNull(result);
     }
 
+    /// <summary>A transformer that exposes the historical positional constant-value rule.</summary>
+    private sealed class NullConstantValueTransformer : ExpressionTransformer
+    {
+        /// <summary>Calls the protected transform method for direct testing.</summary>
+        public Expression ExposeTransform(Expression expression) => Transform(expression);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression expression) => TransformCore(expression);
+
+        /// <summary>Returns the constant after positional validation of its value.</summary>
+        [ExpressionSignature(ExpressionType.Constant)]
+        private Expression Rule(ConstantExpression expression, object value) => expression;
+    }
+
+    /// <summary>Verifies the historical failure produced while validating a null positional constant value.</summary>
+    [TestMethod]
+    public void Transform_NullConstantValue_PreservesPositionalValidationFailure()
+    {
+        var transformer = new NullConstantValueTransformer();
+        ConstantExpression expression = Expression.Constant(null, typeof(string));
+
+        Assert.ThrowsExactly<NullReferenceException>(() => transformer.ExposeTransform(expression));
+    }
+
+    /// <summary>A transformer that records the positional argument supplied for an instance call.</summary>
+    private sealed class InstanceCallArgumentTransformer : ExpressionTransformer
+    {
+        /// <summary>Gets the positional argument observed by the rule.</summary>
+        public Expression? ObservedArgument { get; private set; }
+
+        /// <summary>Calls the protected transform method for direct testing.</summary>
+        public Expression ExposeTransform(Expression expression) => Transform(expression);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression expression) => TransformCore(expression);
+
+        /// <summary>Records and returns the call's positional argument.</summary>
+        [ExpressionSignature(ExpressionType.Call)]
+        private Expression Rule(MethodCallExpression expression, Expression argument)
+        {
+            ObservedArgument = argument;
+            return expression;
+        }
+    }
+
+    /// <summary>Verifies that an instance receiver is rebuilt but excluded from positional arguments.</summary>
+    [TestMethod]
+    public void Transform_InstanceMethodCall_ExcludesReceiverFromPositionalArguments()
+    {
+        var transformer = new InstanceCallArgumentTransformer();
+        ConstantExpression receiver = Expression.Constant("value");
+        ConstantExpression argument = Expression.Constant("v");
+        MethodCallExpression call = Expression.Call(receiver, typeof(string).GetMethod(nameof(string.StartsWith), [typeof(string)])!, argument);
+
+        transformer.ExposeTransform(call);
+
+        Assert.AreSame(argument, transformer.ObservedArgument);
+        Assert.AreNotSame(receiver, transformer.ObservedArgument);
+    }
+
+    /// <summary>A transformer that records the positional argument supplied for an invocation.</summary>
+    private sealed class InvocationArgumentTransformer : ExpressionTransformer
+    {
+        /// <summary>Gets the positional argument observed by the rule.</summary>
+        public Expression? ObservedArgument { get; private set; }
+
+        /// <summary>Calls the protected transform method for direct testing.</summary>
+        public Expression ExposeTransform(Expression expression) => Transform(expression);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression expression) => TransformCore(expression);
+
+        /// <summary>Records and returns the invocation's positional argument.</summary>
+        [ExpressionSignature(ExpressionType.Invoke)]
+        private Expression Rule(InvocationExpression expression, Expression argument)
+        {
+            ObservedArgument = argument;
+            return expression;
+        }
+    }
+
+    /// <summary>Verifies that the invocation target is excluded from positional arguments.</summary>
+    [TestMethod]
+    public void Transform_Invocation_ExcludesTargetFromPositionalArguments()
+    {
+        var transformer = new InvocationArgumentTransformer();
+        ParameterExpression target = Expression.Parameter(typeof(Func<int, int>), "target");
+        ConstantExpression argument = Expression.Constant(7);
+        InvocationExpression invocation = Expression.Invoke(target, argument);
+
+        transformer.ExposeTransform(invocation);
+
+        Assert.AreSame(argument, transformer.ObservedArgument);
+        Assert.AreNotSame(target, transformer.ObservedArgument);
+    }
+
+    /// <summary>A transformer that records the positional parameter supplied for a lambda.</summary>
+    private sealed class LambdaParameterTransformer : ExpressionTransformer
+    {
+        /// <summary>Gets the positional lambda parameter observed by the rule.</summary>
+        public ParameterExpression? ObservedParameter { get; private set; }
+
+        /// <summary>Calls the protected transform method for direct testing.</summary>
+        public Expression ExposeTransform(Expression expression) => Transform(expression);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression expression) => TransformCore(expression);
+
+        /// <summary>Returns expressions unchanged when recursive lambda-body processing has no rule.</summary>
+        protected override Expression FinalizeExpression(Expression expression, Expression[] parameters) => expression;
+
+        /// <summary>Records and returns the lambda's positional parameter.</summary>
+        [ExpressionSignature(ExpressionType.Lambda)]
+        private Expression Rule(LambdaExpression expression, ParameterExpression parameter)
+        {
+            ObservedParameter = parameter;
+            return expression;
+        }
+    }
+
+    /// <summary>Verifies that lambda parameters, rather than the body, form its positional arguments.</summary>
+    [TestMethod]
+    public void Transform_Lambda_UsesDeclaredParameterAsPositionalArgument()
+    {
+        var transformer = new LambdaParameterTransformer();
+        ParameterExpression parameter = Expression.Parameter(typeof(int), "value");
+        LambdaExpression lambda = Expression.Lambda(Expression.Add(parameter, Expression.Constant(1)), parameter);
+
+        transformer.ExposeTransform(lambda);
+
+        Assert.AreSame(parameter, transformer.ObservedParameter);
+        Assert.AreNotSame(lambda.Body, transformer.ObservedParameter);
+    }
+
     // ------------------------------------------------------------------------------------------
-    // Regression tests for the MethodInvoker-based fast path (see TryCreateFastInvoker,
-    // BuildFastInvoker, and the Invoke*Rule helpers). These exercise shapes the characterization
+    // Regression tests for the MethodInvoker-based fast path (see DetermineFastInvokerEligibility,
+    // CreateFastInvokerCore, and the Invoke*Rule helpers). These exercise shapes the characterization
     // tests above don't: a 4-parameter positional rule (the widest shape the fast path supports,
     // matching the widest context this class ever builds — Conditional), and a 5-parameter
     // positional rule (one wider than the fast path's cap, which must still work correctly via the
@@ -1658,6 +1843,9 @@ public class ExpressionTransformerTests
     {
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>Swaps the two branches, so the test can tell the rule actually ran (using all 4 arguments) from a no-op.</summary>
         [ExpressionSignature(ExpressionType.Conditional)]
@@ -1690,6 +1878,9 @@ public class ExpressionTransformerTests
     {
         /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
         public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
 
         /// <summary>A trivial 4-argument static method, used only to build a matching 5-slot Call context (node + 4 arguments).</summary>
         public static double Sum4(double a, double b, double c, double d) => a + b + c + d;
@@ -1726,5 +1917,311 @@ public class ExpressionTransformerTests
 
         var constant = (ConstantExpression)result;
         Assert.AreEqual(4.0, constant.Value);
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // Characterization tests for the Select(...).ToArray() sites in PrepareMethodCall,
+    // PrepareInvocation, and PrepareLambda (see the perf audit that replaces them with
+    // index-based loops). These lock in: call order (receiver/target before arguments, lambda
+    // parameters before body), the ParameterExpression[] runtime type of the lambda parameter
+    // array, the InvalidCastException raised for a misbehaving PrepareExpression override, and
+    // the Array.Empty<T>() identity of the zero-element case.
+    // ------------------------------------------------------------------------------------------
+
+    /// <summary>A no-op method used to build a zero-argument <see cref="MethodCallExpression"/>.</summary>
+    private static double NoArguments() => 42.0;
+
+    /// <summary>A transformer that records, in order, every expression handed to <see cref="PrepareExpression"/>.</summary>
+    private sealed class RecordingOrderTransformer : ExpressionTransformer
+    {
+        /// <summary>The expressions observed by <see cref="PrepareExpression"/>, in call order.</summary>
+        public List<Expression> ObservedOrder { get; } = [];
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
+
+        /// <inheritdoc/>
+        protected override Expression PrepareExpression(Expression e)
+        {
+            ObservedOrder.Add(e);
+            return e;
+        }
+
+        /// <summary>No rule is declared, so every node reaches here; the return value is not exercised by the tests.</summary>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters) => e;
+    }
+
+    /// <summary>
+    /// <see cref="ExpressionTransformer.PrepareExpression"/> must be called on a method call's
+    /// instance receiver before its arguments, in argument order.
+    /// </summary>
+    [TestMethod]
+    public void Transform_MethodCall_PreparesReceiverBeforeArgumentsInOrder()
+    {
+        var transformer = new RecordingOrderTransformer();
+        ConstantExpression receiver = Expression.Constant("value");
+        ConstantExpression arg0 = Expression.Constant("old");
+        ConstantExpression arg1 = Expression.Constant("new");
+        MethodInfo replace = typeof(string).GetMethod(nameof(string.Replace), [typeof(string), typeof(string)])!;
+        MethodCallExpression call = Expression.Call(receiver, replace, arg0, arg1);
+
+        transformer.ExposeTransform(call);
+
+        CollectionAssert.AreEqual(new Expression[] { receiver, arg0, arg1 }, transformer.ObservedOrder);
+    }
+
+    /// <summary>
+    /// <see cref="ExpressionTransformer.PrepareExpression"/> must be called on an invocation's
+    /// target before its arguments, in argument order.
+    /// </summary>
+    [TestMethod]
+    public void Transform_Invocation_PreparesTargetBeforeArgumentsInOrder()
+    {
+        var transformer = new RecordingOrderTransformer();
+        ParameterExpression target = Expression.Parameter(typeof(Func<int, int, int>), "target");
+        ConstantExpression arg0 = Expression.Constant(1);
+        ConstantExpression arg1 = Expression.Constant(2);
+        InvocationExpression invocation = Expression.Invoke(target, arg0, arg1);
+
+        transformer.ExposeTransform(invocation);
+
+        CollectionAssert.AreEqual(new Expression[] { target, arg0, arg1 }, transformer.ObservedOrder);
+    }
+
+    /// <summary>A transformer that records lambda-parameter preparation and body entry, in order.</summary>
+    private sealed class LambdaOrderTransformer : ExpressionTransformer
+    {
+        /// <summary>The parameters (via <see cref="PrepareExpression"/>) and the marker "body", in order.</summary>
+        public List<object> ObservedOrder { get; } = [];
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
+
+        /// <inheritdoc/>
+        protected override Expression PrepareExpression(Expression e)
+        {
+            ObservedOrder.Add(e);
+            return e;
+        }
+
+        /// <summary>Matches the lambda's (constant) body and records entry into it.</summary>
+        [ExpressionSignature(ExpressionType.Constant)]
+        private Expression RecordBody(ConstantExpression e)
+        {
+            ObservedOrder.Add("body");
+            return e;
+        }
+
+        /// <summary>No rule matches the lambda node itself; the return value is not exercised by the test.</summary>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters) => e;
+    }
+
+    /// <summary>
+    /// A lambda's parameters must all be prepared, in declaration order, before its body is
+    /// transformed — the body must not be entered early.
+    /// </summary>
+    [TestMethod]
+    public void Transform_Lambda_PreparesParametersInOrderBeforeBody()
+    {
+        var transformer = new LambdaOrderTransformer();
+        ParameterExpression p0 = Expression.Parameter(typeof(int), "p0");
+        ParameterExpression p1 = Expression.Parameter(typeof(int), "p1");
+        ConstantExpression body = Expression.Constant(0);
+        LambdaExpression lambda = Expression.Lambda(body, p0, p1);
+
+        transformer.ExposeTransform(lambda);
+
+        CollectionAssert.AreEqual(new object[] { p0, p1, "body" }, transformer.ObservedOrder);
+    }
+
+    /// <summary>A transformer whose Lambda rule captures the raw <c>Expression[]</c> parameter array it receives.</summary>
+    private sealed class LambdaExpressionArrayCaptureTransformer : ExpressionTransformer
+    {
+        /// <summary>The array captured by <see cref="Rule"/>.</summary>
+        public Expression[]? CapturedParameters { get; private set; }
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
+
+        /// <summary>Matches any lambda and captures its prepared parameter array via the <c>Expression[]</c> shape.</summary>
+        [ExpressionSignature(ExpressionType.Lambda)]
+        private Expression Rule(LambdaExpression expression, Expression[] parameters)
+        {
+            CapturedParameters = parameters;
+            return expression;
+        }
+
+        /// <summary>Matches the lambda's (constant) body so it can be finalized without throwing.</summary>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters) => e;
+    }
+
+    /// <summary>
+    /// Even though it is stored as <c>Expression[]</c>, the array built for a lambda's parameters
+    /// must remain runtime-typed <c>ParameterExpression[]</c> (the code depends on this to cast it
+    /// back for <see cref="Expression.Lambda(Expression, ParameterExpression[])"/>).
+    /// </summary>
+    [TestMethod]
+    public void Transform_Lambda_ExpressionArrayRule_ReceivesParameterExpressionArrayRuntimeType()
+    {
+        var transformer = new LambdaExpressionArrayCaptureTransformer();
+        ParameterExpression p0 = Expression.Parameter(typeof(int), "p0");
+        LambdaExpression lambda = Expression.Lambda(Expression.Constant(0), p0);
+
+        transformer.ExposeTransform(lambda);
+
+        Assert.IsNotNull(transformer.CapturedParameters);
+        Assert.AreEqual(1, transformer.CapturedParameters.Length);
+        Assert.AreEqual(typeof(ParameterExpression[]), transformer.CapturedParameters.GetType());
+    }
+
+    /// <summary>
+    /// A parameterless lambda must still produce a runtime-typed <c>ParameterExpression[]</c>, and
+    /// baseline reuses the shared <see cref="System.Array.Empty{T}"/> instance rather than allocating
+    /// a new zero-length array; the replacement loop must preserve that identity.
+    /// </summary>
+    [TestMethod]
+    public void Transform_Lambda_ZeroParameters_ProducesEmptyParameterExpressionArrayIdenticalToArrayEmpty()
+    {
+        var transformer = new LambdaExpressionArrayCaptureTransformer();
+        LambdaExpression lambda = Expression.Lambda(Expression.Constant(0));
+
+        transformer.ExposeTransform(lambda);
+
+        Assert.IsNotNull(transformer.CapturedParameters);
+        Assert.AreEqual(0, transformer.CapturedParameters.Length);
+        Assert.AreEqual(typeof(ParameterExpression[]), transformer.CapturedParameters.GetType());
+        Assert.AreSame(System.Array.Empty<ParameterExpression>(), transformer.CapturedParameters);
+    }
+
+    /// <summary>A transformer whose Call rule captures the raw <c>Expression[]</c> argument array it receives.</summary>
+    private sealed class CallExpressionArrayCaptureTransformer : ExpressionTransformer
+    {
+        /// <summary>The array captured by <see cref="Rule"/>.</summary>
+        public Expression[]? CapturedArgs { get; private set; }
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
+
+        /// <summary>Matches any call and captures its prepared argument array via the <c>Expression[]</c> shape.</summary>
+        [ExpressionSignature(ExpressionType.Call)]
+        private Expression Rule(Expression e, Expression[] parameters)
+        {
+            CapturedArgs = parameters;
+            return e;
+        }
+    }
+
+    /// <summary>
+    /// A zero-argument static call must produce an empty argument array; baseline reuses the shared
+    /// <see cref="System.Array.Empty{T}"/> instance, and the replacement loop must preserve that identity.
+    /// </summary>
+    [TestMethod]
+    public void Transform_MethodCall_ZeroArguments_ProducesEmptyArrayIdenticalToArrayEmpty()
+    {
+        var transformer = new CallExpressionArrayCaptureTransformer();
+        MethodInfo method = typeof(ExpressionTransformerTests).GetMethod(nameof(NoArguments), BindingFlags.NonPublic | BindingFlags.Static)!;
+        MethodCallExpression call = Expression.Call(method);
+
+        transformer.ExposeTransform(call);
+
+        Assert.IsNotNull(transformer.CapturedArgs);
+        Assert.AreEqual(0, transformer.CapturedArgs.Length);
+        Assert.AreSame(System.Array.Empty<Expression>(), transformer.CapturedArgs);
+    }
+
+    /// <summary>A transformer whose Invoke rule captures the raw <c>Expression[]</c> argument array it receives.</summary>
+    private sealed class InvokeExpressionArrayCaptureTransformer : ExpressionTransformer
+    {
+        /// <summary>The array captured by <see cref="Rule"/>.</summary>
+        public Expression[]? CapturedArgs { get; private set; }
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
+
+        /// <summary>Matches any invocation and captures its prepared argument array via the <c>Expression[]</c> shape.</summary>
+        [ExpressionSignature(ExpressionType.Invoke)]
+        private Expression Rule(Expression e, Expression[] parameters)
+        {
+            CapturedArgs = parameters;
+            return e;
+        }
+    }
+
+    /// <summary>
+    /// A zero-argument invocation must produce an empty argument array; baseline reuses the shared
+    /// <see cref="System.Array.Empty{T}"/> instance, and the replacement loop must preserve that identity.
+    /// </summary>
+    [TestMethod]
+    public void Transform_Invocation_ZeroArguments_ProducesEmptyArrayIdenticalToArrayEmpty()
+    {
+        var transformer = new InvokeExpressionArrayCaptureTransformer();
+        ParameterExpression target = Expression.Parameter(typeof(Func<int>), "target");
+        InvocationExpression invocation = Expression.Invoke(target);
+
+        transformer.ExposeTransform(invocation);
+
+        Assert.IsNotNull(transformer.CapturedArgs);
+        Assert.AreEqual(0, transformer.CapturedArgs.Length);
+        Assert.AreSame(System.Array.Empty<Expression>(), transformer.CapturedArgs);
+    }
+
+    /// <summary>A transformer whose <see cref="PrepareExpression"/> override returns the wrong type for a lambda parameter.</summary>
+    private sealed class WrongTypeLambdaParameterTransformer : ExpressionTransformer
+    {
+        /// <summary>Set if the lambda body is ever reached; must stay <see langword="false"/> once the cast fails.</summary>
+        public bool BodyTransformed { get; private set; }
+
+        /// <summary>Calls the protected <see cref="ExpressionTransformer.Transform(Expression)"/> method for direct unit testing.</summary>
+        public Expression ExposeTransform(Expression e) => Transform(e);
+
+        /// <summary>Satisfies the abstract <see cref="ExpressionTransformer.Transform(Expression)"/> contract by forwarding to <see cref="ExpressionTransformer.TransformCore(Expression)"/>.</summary>
+        public override Expression Transform(Expression e) => TransformCore(e);
+
+        /// <summary>Replaces any parameter with a non-<see cref="ParameterExpression"/>, forcing the explicit cast in <c>PrepareLambda</c> to fail.</summary>
+        protected override Expression PrepareExpression(Expression e)
+            => e is ParameterExpression ? Expression.Constant(1) : e;
+
+        /// <summary>Would record that the body was reached, if the cast failure did not short-circuit preparation first.</summary>
+        [ExpressionSignature(ExpressionType.Constant)]
+        private Expression RecordBody(ConstantExpression e)
+        {
+            BodyTransformed = true;
+            return e;
+        }
+
+        /// <inheritdoc/>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters) => e;
+    }
+
+    /// <summary>
+    /// When a <see cref="ExpressionTransformer.PrepareExpression"/> override returns a
+    /// non-<see cref="ParameterExpression"/> for a lambda parameter, the explicit cast in
+    /// <c>PrepareLambda</c> must throw <see cref="InvalidCastException"/> immediately — before the
+    /// lambda body is ever transformed.
+    /// </summary>
+    [TestMethod]
+    public void Transform_Lambda_PrepareExpressionReturnsWrongTypeForParameter_ThrowsInvalidCastExceptionBeforeBody()
+    {
+        var transformer = new WrongTypeLambdaParameterTransformer();
+        ParameterExpression p0 = Expression.Parameter(typeof(int), "p0");
+        LambdaExpression lambda = Expression.Lambda(Expression.Constant(0), p0);
+
+        Assert.ThrowsExactly<InvalidCastException>(() => transformer.ExposeTransform(lambda));
+        Assert.IsFalse(transformer.BodyTransformed);
     }
 }

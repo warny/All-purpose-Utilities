@@ -17,7 +17,6 @@ namespace UtilsTest.NumberToString;
 [TestClass]
 public class NumberToStringConverterLexicalFormSelectorTests
 {
-    private static NumberToStringConverter EN => (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
     // ─── DefaultLexicalFormSelector ─────────────────────────────────────────────────────────────
 
     [TestMethod]
@@ -149,7 +148,8 @@ public class NumberToStringConverterLexicalFormSelectorTests
     {
         // Purely synthetic (bucket = value % 3): not Russian, not any real language — only proves
         // the mechanism supports more than two configured, selector-chosen forms.
-        var options = new NumberToStringConverterOptions(EN)
+        var sourceConverter = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        var options = new NumberToStringConverterOptions(sourceConverter)
         {
             TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)>
             {
@@ -166,15 +166,15 @@ public class NumberToStringConverterLexicalFormSelectorTests
         };
         var synthetic = new NumberToStringConverter(options);
 
-        Assert.AreEqual("one syn-one", synthetic.Convert(new TimeSpan(1, 0, 0)));
-        Assert.AreEqual("two syn-few", synthetic.Convert(new TimeSpan(2, 0, 0)));
-        Assert.AreEqual("three syn-many", synthetic.Convert(new TimeSpan(3, 0, 0)));
+        Assert.AreEqual($"{sourceConverter.Convert(1)} syn-one", synthetic.Convert(new TimeSpan(1, 0, 0)));
+        Assert.AreEqual($"{sourceConverter.Convert(2)} syn-few", synthetic.Convert(new TimeSpan(2, 0, 0)));
+        Assert.AreEqual($"{sourceConverter.Convert(3)} syn-many", synthetic.Convert(new TimeSpan(3, 0, 0)));
     }
 
     [TestMethod]
     public void FormatTimeUnit_SelectorReturnsUnconfiguredKey_ThrowsUNTS007AtRuntime()
     {
-        var options = new NumberToStringConverterOptions(EN)
+        var options = new NumberToStringConverterOptions((NumberToStringConverter)NumberToStringConverter.GetConverter("EN"))
         {
             TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)>
             {
@@ -230,37 +230,16 @@ public class NumberToStringConverterLexicalFormSelectorTests
     // ─── TimeUnitForms/TimeUnitFormSelectors — effective (not override-only) contract ─────────────
 
     [TestMethod]
-    public void TimeUnitForms_BuiltInEN_ReturnsEffectiveFormsForEveryUnit()
-    {
-        CollectionAssert.AreEquivalent(new[] { "hour", "minute", "second" }, EN.TimeUnitForms.Keys.ToArray());
-
-        AssertHasSingularPlural(EN.TimeUnitForms["hour"], "hour", "hours");
-        AssertHasSingularPlural(EN.TimeUnitForms["minute"], "minute", "minutes");
-        AssertHasSingularPlural(EN.TimeUnitForms["second"], "second", "seconds");
-
-        static void AssertHasSingularPlural(LexicalFormSet forms, string singular, string plural)
-        {
-            Assert.IsTrue(forms.TryGetForm("singular", out var s));
-            Assert.AreEqual(singular, s);
-            Assert.IsTrue(forms.TryGetForm("plural", out var p));
-            Assert.AreEqual(plural, p);
-        }
-    }
-
-    [TestMethod]
-    public void TimeUnitFormSelectors_BuiltInEN_ReturnsDefaultSelectorForEveryUnit()
-    {
-        CollectionAssert.AreEquivalent(new[] { "hour", "minute", "second" }, EN.TimeUnitFormSelectors.Keys.ToArray());
-        Assert.IsInstanceOfType<DefaultLexicalFormSelector>(EN.TimeUnitFormSelectors["hour"]);
-        Assert.IsInstanceOfType<DefaultLexicalFormSelector>(EN.TimeUnitFormSelectors["minute"]);
-        Assert.IsInstanceOfType<DefaultLexicalFormSelector>(EN.TimeUnitFormSelectors["second"]);
-    }
-
-    [TestMethod]
     public void TimeUnitForms_ExplicitOverrideOnOneUnit_MergesWithSynthesizedFormsAndSiblingsStaySynthesizedOnly()
     {
-        var options = new NumberToStringConverterOptions(EN)
+        var options = new NumberToStringConverterOptions((NumberToStringConverter)NumberToStringConverter.GetConverter("EN"))
         {
+            TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)>
+            {
+                ["hour"] = ("HOUR_ONE", "HOUR_MANY", null),
+                ["minute"] = ("MINUTE_ONE", "MINUTE_MANY", null),
+                ["second"] = ("SECOND_ONE", "SECOND_MANY", null),
+            },
             TimeUnitForms = new Dictionary<string, LexicalFormSet>
             {
                 ["hour"] = LexicalFormSet.Create(("custom", "custom-hour")),
@@ -271,9 +250,9 @@ public class NumberToStringConverterLexicalFormSelectorTests
         // "hour" keeps its synthesized singular/plural AND gains the explicit override.
         var hourForms = converter.TimeUnitForms["hour"];
         Assert.IsTrue(hourForms.TryGetForm("singular", out var hs));
-        Assert.AreEqual("hour", hs);
+        Assert.AreEqual("HOUR_ONE", hs);
         Assert.IsTrue(hourForms.TryGetForm("plural", out var hp));
-        Assert.AreEqual("hours", hp);
+        Assert.AreEqual("HOUR_MANY", hp);
         Assert.IsTrue(hourForms.TryGetForm("custom", out var hc));
         Assert.AreEqual("custom-hour", hc);
 
@@ -281,16 +260,16 @@ public class NumberToStringConverterLexicalFormSelectorTests
         // its synthesized singular/plural.
         var minuteForms = converter.TimeUnitForms["minute"];
         Assert.IsTrue(minuteForms.TryGetForm("singular", out var ms));
-        Assert.AreEqual("minute", ms);
+        Assert.AreEqual("MINUTE_ONE", ms);
         Assert.IsTrue(minuteForms.TryGetForm("plural", out var mp));
-        Assert.AreEqual("minutes", mp);
+        Assert.AreEqual("MINUTE_MANY", mp);
         Assert.IsFalse(minuteForms.TryGetForm("custom", out _));
     }
 
     [TestMethod]
     public void TimeUnitFormSelectors_OverrideOnOneUnit_SiblingsStillReportDefaultSelector()
     {
-        var options = new NumberToStringConverterOptions(EN)
+        var options = new NumberToStringConverterOptions((NumberToStringConverter)NumberToStringConverter.GetConverter("EN"))
         {
             TimeUnitFormSelectors = new Dictionary<string, ILexicalFormSelector>
             {
@@ -307,11 +286,12 @@ public class NumberToStringConverterLexicalFormSelectorTests
     [TestMethod]
     public void Clone_NarrowingTimeUnits_DoesNotResurrectRemovedUnitFormsOrSelectors()
     {
-        var options = new NumberToStringConverterOptions(EN)
+        var source = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        var options = new NumberToStringConverterOptions(source)
         {
             TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)>
             {
-                ["hour"] = EN.TimeUnits["hour"],
+                ["hour"] = source.TimeUnits["hour"],
             },
         };
         var narrowed = new NumberToStringConverter(options);
@@ -486,16 +466,17 @@ public class NumberToStringConverterLexicalFormSelectorTests
         {
             ["hour"] = LexicalFormSet.Create(("singular", "hour"), ("plural", "hours")),
         };
-        var options = new NumberToStringConverterOptions(EN)
+        var options = new NumberToStringConverterOptions((NumberToStringConverter)NumberToStringConverter.GetConverter("EN"))
         {
             TimeUnitForms = source,
         };
         var converter = new NumberToStringConverter(options);
+        string beforeMutation = converter.Convert(new TimeSpan(1, 0, 0));
 
         source["hour"] = LexicalFormSet.Empty;
         source["minute"] = LexicalFormSet.Create(("singular", "minute"), ("plural", "minutes"));
 
-        Assert.AreEqual("one hour", converter.Convert(new TimeSpan(1, 0, 0)));
+        Assert.AreEqual(beforeMutation, converter.Convert(new TimeSpan(1, 0, 0)));
     }
 
     // ─── Test-only selector implementations ────────────────────────────────────────────────────

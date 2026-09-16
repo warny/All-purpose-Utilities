@@ -863,4 +863,4 @@ The package-only acceptance gate now covers runtime and generated direct/transit
 
 **Status: complete.**
 
-The parser package family retains its parser-specific compatibility and acceptance contracts while participating in the single repository-wide `omy.Utils` 2.0.0-rc.1 train. Release selection and ordering are derived from the global manifest and evaluated package graph; this does not alter parser runtime behavior, diagnostics, metadata, or ANTLR4 compatibility.
+The parser package family retains its parser-specific compatibility and acceptance contracts while participating in the single repository-wide `omy.Utils` 2.0.0-rc.2 train. Release selection and ordering are derived from the global manifest and evaluated package graph; this does not alter parser runtime behavior, diagnostics, metadata, or ANTLR4 compatibility.

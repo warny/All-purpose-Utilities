@@ -12,28 +12,6 @@ public class MultiDelegateInvokerTests
     private static int AddOne(int i) => i + 1;
     private static int AddTwo(int i) => i + 2;
 
-    /// <summary>
-    /// Ensures the thread pool can schedule at least <paramref name="minimumWorkerThreads"/> workers,
-    /// executes <paramref name="action"/>, then restores the original pool settings.
-    /// </summary>
-    /// <param name="minimumWorkerThreads">Minimum worker thread count required for the test.</param>
-    /// <param name="action">Asynchronous test action.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    private static async Task WithMinWorkerThreadsAsync(int minimumWorkerThreads, Func<Task> action)
-    {
-        ThreadPool.GetMinThreads(out int originalWorker, out int originalIo);
-        int targetWorker = Math.Max(originalWorker, minimumWorkerThreads);
-        ThreadPool.SetMinThreads(targetWorker, originalIo);
-        try
-        {
-            await action();
-        }
-        finally
-        {
-            ThreadPool.SetMinThreads(originalWorker, originalIo);
-        }
-    }
-
     [TestMethod]
     public void Invoke_Returns_All_Results()
     {
@@ -56,115 +34,92 @@ public class MultiDelegateInvokerTests
         CollectionAssert.AreEqual(new[] { 4, 5 }, results);
     }
 
+    /// <summary>
+    /// Proves that at least two parallel delegates enter before the shared release gate opens.
+    /// </summary>
     [TestMethod]
     public async Task InvokeParallelAsync_Executes_In_Parallel()
     {
-        await WithMinWorkerThreadsAsync(8, async () =>
+        MultiDelegateInvoker<int, int> invoker = new();
+        int enteredCount = 0;
+        using ManualResetEventSlim twoEntered = new(false);
+        using ManualResetEventSlim release = new(false);
+        Func<int, int> CreateDelegate(int offset) => value =>
         {
-            var invoker = new MultiDelegateInvoker<int, int>();
-            ManualResetEventSlim startGate = new(false);
-            int current = 0;
-            int maxConcurrent = 0;
+            if (Interlocked.Increment(ref enteredCount) == 2)
+                twoEntered.Set();
+            release.Wait();
+            return value + offset;
+        };
+        invoker.Add<int>(CreateDelegate(1));
+        invoker.Add<int>(CreateDelegate(2));
+        invoker.Add<int>(CreateDelegate(3));
 
-            Func<int, int> CreateDelegate(int offset) => i =>
-            {
-                startGate.Wait();
-                int now = Interlocked.Increment(ref current);
-                InterlockedExtensions.MaxExchange(ref maxConcurrent, now);
-                Thread.Sleep(200);
-                Interlocked.Decrement(ref current);
-                return i + offset;
-            };
+        Task<int[]> invocation = invoker.InvokeParallelAsync(3);
+        try
+        {
+            Assert.IsTrue(twoEntered.Wait(TimeSpan.FromSeconds(5)), "At least two delegates must enter before release.");
+        }
+        finally
+        {
+            release.Set();
+        }
 
-            invoker.Add<int>(CreateDelegate(1));
-            invoker.Add<int>(CreateDelegate(2));
-            invoker.Add<int>(CreateDelegate(3));
-
-            Task<int[]> invokeTask = invoker.InvokeParallelAsync(3);
-            await Task.Delay(100);
-            startGate.Set();
-            int[] results = await invokeTask;
-
-            CollectionAssert.AreEqual(new[] { 4, 5, 6 }, results);
-            Assert.IsTrue(maxConcurrent >= 2, $"Expected parallel execution but max concurrency was {maxConcurrent}.");
-        });
+        CollectionAssert.AreEqual(new[] { 4, 5, 6 }, await invocation.WaitAsync(TimeSpan.FromSeconds(5)));
     }
 
+    /// <summary>
+    /// Proves that smart invocation selects sequential and parallel threshold branches.
+    /// </summary>
     [TestMethod]
     public async Task InvokeSmartAsync_Switches_Based_On_Threshold()
     {
-        await WithMinWorkerThreadsAsync(8, async () =>
+        MultiDelegateInvoker<int, int> sequential = new(4);
+        using ManualResetEventSlim firstEntered = new(false);
+        using ManualResetEventSlim releaseFirst = new(false);
+        using ManualResetEventSlim secondEntered = new(false);
+        sequential.Add<int>(value => { firstEntered.Set(); releaseFirst.Wait(); return value + 1; });
+        sequential.Add<int>(value => { secondEntered.Set(); return value + 2; });
+        sequential.Add<int>(value => value + 3);
+
+        Task<int[]> sequentialInvocation = sequential.InvokeSmartAsync(3);
+        try
         {
-            var sequential = new MultiDelegateInvoker<int, int>(4);
-            ManualResetEventSlim sequentialGate = new(true);
-            int sequentialCurrent = 0;
-            int sequentialMax = 0;
-
-            Func<int, int> CreateSequentialDelegate(int offset) => i =>
-            {
-                sequentialGate.Wait();
-                int now = Interlocked.Increment(ref sequentialCurrent);
-                InterlockedExtensions.MaxExchange(ref sequentialMax, now);
-                Thread.Sleep(200);
-                Interlocked.Decrement(ref sequentialCurrent);
-                return i + offset;
-            };
-
-            sequential.Add<int>(CreateSequentialDelegate(1));
-            sequential.Add<int>(CreateSequentialDelegate(2));
-            sequential.Add<int>(CreateSequentialDelegate(3));
-            await sequential.InvokeSmartAsync(3);
-
-            ManualResetEventSlim parallelGate = new(false);
-            int parallelCurrent = 0;
-            int parallelMax = 0;
-
-            Func<int, int> CreateParallelDelegate(int offset) => i =>
-            {
-                parallelGate.Wait();
-                int now = Interlocked.Increment(ref parallelCurrent);
-                InterlockedExtensions.MaxExchange(ref parallelMax, now);
-                Thread.Sleep(200);
-                Interlocked.Decrement(ref parallelCurrent);
-                return i + offset;
-            };
-
-            var parallel = new MultiDelegateInvoker<int, int>(1);
-            parallel.Add<int>(CreateParallelDelegate(1));
-            parallel.Add<int>(CreateParallelDelegate(2));
-            parallel.Add<int>(CreateParallelDelegate(3));
-
-            Task parallelInvocation = parallel.InvokeSmartAsync(3);
-            await Task.Delay(100);
-            parallelGate.Set();
-            await parallelInvocation;
-
-            Assert.AreEqual(1, sequentialMax, $"Sequential mode executed with max concurrency {sequentialMax}.");
-            Assert.IsTrue(parallelMax >= 2, $"Parallel mode executed with max concurrency {parallelMax}.");
-        });
-    }
-}
-
-
-/// <summary>
-/// Provides atomic helper operations for test concurrency metrics.
-/// </summary>
-internal static class InterlockedExtensions
-{
-    /// <summary>
-    /// Atomically stores the maximum value observed so far in <paramref name="target"/>.
-    /// </summary>
-    /// <param name="target">Target integer updated in a lock-free way.</param>
-    /// <param name="candidate">Candidate value to compare and store when greater.</param>
-    public static void MaxExchange(ref int target, int candidate)
-    {
-        int snapshot;
-        do
-        {
-            snapshot = Volatile.Read(ref target);
-            if (candidate <= snapshot)
-                return;
+            Assert.IsTrue(firstEntered.Wait(TimeSpan.FromSeconds(5)));
+            Assert.IsFalse(secondEntered.IsSet, "A later sequential delegate cannot enter while the first is blocked.");
         }
-        while (Interlocked.CompareExchange(ref target, candidate, snapshot) != snapshot);
+        finally
+        {
+            releaseFirst.Set();
+        }
+        CollectionAssert.AreEqual(new[] { 4, 5, 6 }, await sequentialInvocation.WaitAsync(TimeSpan.FromSeconds(5)));
+        Assert.IsTrue(secondEntered.IsSet);
+
+        MultiDelegateInvoker<int, int> parallel = new(1);
+        int parallelEnteredCount = 0;
+        using ManualResetEventSlim twoParallelEntered = new(false);
+        using ManualResetEventSlim releaseParallel = new(false);
+        Func<int, int> CreateParallelDelegate(int offset) => value =>
+        {
+            if (Interlocked.Increment(ref parallelEnteredCount) == 2)
+                twoParallelEntered.Set();
+            releaseParallel.Wait();
+            return value + offset;
+        };
+        parallel.Add<int>(CreateParallelDelegate(1));
+        parallel.Add<int>(CreateParallelDelegate(2));
+        parallel.Add<int>(CreateParallelDelegate(3));
+
+        Task<int[]> parallelInvocation = parallel.InvokeSmartAsync(3);
+        try
+        {
+            Assert.IsTrue(twoParallelEntered.Wait(TimeSpan.FromSeconds(5)), "Smart parallel mode must overlap at least two delegates before release.");
+        }
+        finally
+        {
+            releaseParallel.Set();
+        }
+        CollectionAssert.AreEqual(new[] { 4, 5, 6 }, await parallelInvocation.WaitAsync(TimeSpan.FromSeconds(5)));
     }
+
 }
