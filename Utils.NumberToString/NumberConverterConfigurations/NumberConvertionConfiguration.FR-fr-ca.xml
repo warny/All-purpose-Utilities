@@ -123,7 +123,8 @@
 			<Unit name="minute" singular="minute"  plural="minutes"  forceVariants="gender=feminin" />
 			<Unit name="second" singular="seconde" plural="secondes" forceVariants="gender=feminin" />
 			<!-- "minuit"/"midi" replace the numeral hour for the whole hour (e.g. "minuit trente"),
-			     not just the exact instant — see SpecialHour.wholeHour in Utils.NumberToString/README.md. -->
+			     not just when minute and second are both zero — see SpecialHour.wholeHour in
+			     Utils.NumberToString/README.md. -->
 			<SpecialHour hour="0"  value="minuit" wholeHour="true" />
 			<SpecialHour hour="12" value="midi"   wholeHour="true" />
 		</TimeUnits>

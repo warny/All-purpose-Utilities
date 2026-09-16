@@ -346,9 +346,10 @@ public record YearFormatOptions(
 /// <param name="Hour">The 24-hour clock hour (0-23) this rule applies to.</param>
 /// <param name="Value">The literal word or phrase replacing the hour fragment (e.g. "midnight").</param>
 /// <param name="WholeHour">
-/// When <see langword="false"/> (default), the rule applies only when minutes and seconds are
-/// both zero (i.e. exactly <c>Hour</c>:00:00). When <see langword="true"/>, the rule applies for
-/// the entire hour (e.g. 12:00:00 through 12:59:59...); non-zero minutes/seconds are still
-/// appended after <see cref="Value"/> as usual.
+/// When <see langword="false"/> (default), the rule applies only when the minute and second
+/// components are both zero — sub-second precision is ignored, matching time-of-day rendering
+/// elsewhere, so <c>Hour</c>:00:00.500 still counts. When <see langword="true"/>, the rule
+/// applies for the entire hour (e.g. 12:00:00 through 12:59:59...); non-zero minutes/seconds are
+/// still appended after <see cref="Value"/> as usual.
 /// </param>
 public sealed record SpecialHourRule(int Hour, string Value, bool WholeHour = false);

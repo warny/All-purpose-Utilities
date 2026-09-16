@@ -696,10 +696,11 @@ public class SpecialHourEntry
     public string Value { get; set; } = "";
 
     /// <summary>
-    /// When <see langword="false"/> (default), the rule applies only at the exact hour (minutes
-    /// and seconds both zero). When <see langword="true"/>, it applies for the entire hour (e.g.
-    /// 12:00:00 through 12:59:59...); non-zero minutes/seconds are still appended after
-    /// <see cref="Value"/> as usual.
+    /// When <see langword="false"/> (default), the rule applies only when minute and second are
+    /// both zero (sub-second precision is ignored, e.g. 12:00:00.500 still counts). When
+    /// <see langword="true"/>, it applies for the entire hour (e.g. 12:00:00 through
+    /// 12:59:59...); non-zero minutes/seconds are still appended after <see cref="Value"/> as
+    /// usual.
     /// </summary>
     [XmlAttribute("wholeHour")]
     public bool WholeHour { get; set; }

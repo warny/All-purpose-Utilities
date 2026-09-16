@@ -9,8 +9,9 @@ All notable changes to this project will be documented in this file.
   "midnight" for hour 0, "noon" for hour 12), configurable via `<SpecialHour hour="..." value="..."
   wholeHour="...">` inside `<TimeUnits>` or programmatically via
   `NumberToStringConverterOptions.SpecialHours`. Not hardcoded to noon/midnight — any hour and any
-  language-specific word can be declared. `wholeHour="false"` (default) replaces the hour only at
-  the exact instant; `wholeHour="true"` replaces it for the whole hour, with non-zero
+  language-specific word can be declared. `wholeHour="false"` (default) replaces the hour only
+  when minute and second are both zero (sub-second precision is ignored, matching the rest of
+  time-of-day rendering); `wholeHour="true"` replaces it for the whole hour, with non-zero
   minutes/seconds still appended. Applies only to `Convert(TimeOnly)` and the time portion of
   `Convert(DateTime)` — never to `Convert(TimeSpan)`, since a duration has no time-of-day meaning.
   New overloads `Convert(TimeOnly, bool replaceSpecialHours, params string[])` and
@@ -18,8 +19,8 @@ All notable changes to this project will be documented in this file.
   `params`-only overloads default to `true`. The interface's default implementations of the new
   overloads forward to the existing `params`-only overload (ignoring the flag), so a third-party
   `INumberToStringConverter` written before this feature keeps working unchanged. Wired into the
-  built-in EN (`midnight`/`noon`, exact instant only) and FR (`minuit`/`midi`, whole hour —
-  "midi quinze") configurations.
+  built-in EN (`midnight`/`noon`, minute/second-zero instant only) and FR (`minuit`/`midi`, whole
+  hour — "midi quinze") configurations.
 
 ## [2.0.0-rc.2] - Release candidate
 

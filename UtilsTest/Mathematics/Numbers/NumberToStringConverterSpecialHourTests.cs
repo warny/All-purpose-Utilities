@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using Utils.NumberToString;
 
 namespace UtilsTest.NumberToString;
@@ -106,7 +107,7 @@ public class NumberToStringConverterSpecialHourTests
         StringAssert.StartsWith(converter.Convert(new TimeOnly(12, 59, 0)), "NOON");
     }
 
-    // ─── wholeHour="false" (default) — replaces only the exact instant ────────
+    // ─── wholeHour="false" (default) — replaces only when minute/second are zero ──
 
     [TestMethod]
     public void Convert_TimeOnly_WholeHourFalse_ExactHour_UsesSpecialWord()
@@ -125,6 +126,17 @@ public class NumberToStringConverterSpecialHourTests
         // fragment entirely (rather than falling back to the numeral) would still fail this test.
         string expected = $"{converter.Convert(0)}{converter.Separator}HOURS{converter.Separator}{converter.Convert(1)}{converter.Separator}MINUTE";
         Assert.AreEqual(expected, converter.Convert(new TimeOnly(0, 1, 0)));
+    }
+
+    [TestMethod]
+    public void Convert_TimeOnly_WholeHourFalse_SubSecondComponent_StillCountsAsExactHour()
+    {
+        // Sub-second precision is silently discarded throughout time-of-day rendering (see
+        // BuildTimeFragment): 12:00:00.500 has Minute==0 && Second==0, so it is treated as the
+        // exact hour and still uses the special word, even though it is not, bit-for-bit, 12:00:00.
+        var converter = WithSpecialHours(new SpecialHourRule(12, "NOON"));
+
+        Assert.AreEqual("NOON", converter.Convert(new TimeOnly(12, 0, 0, 500)));
     }
 
     // ─── replaceSpecialHours=false — disables substitution entirely ──────────
@@ -214,5 +226,43 @@ public class NumberToStringConverterSpecialHourTests
         var fr = NumberToStringConverter.GetConverter("FR");
         Assert.AreEqual("midi", fr.Convert(new TimeOnly(12, 0, 0)));
         Assert.AreEqual("minuit", fr.Convert(new TimeOnly(0, 0, 0)));
+    }
+
+    // ─── Interface default-implementation compatibility — pre-SpecialHourRule implementers ───
+
+    [TestMethod]
+    public void Convert_TimeOnly_LegacyInterfaceImplementer_IgnoresReplaceSpecialHoursFlag()
+    {
+        // A converter written before SpecialHourRule existed only overrides the params-only
+        // overload; the new bool overload must still work by forwarding to it, unchanged.
+        INumberToStringConverter converter = new LegacyConverter();
+
+        Assert.AreEqual("legacy-time", converter.Convert(new TimeOnly(12, 0), replaceSpecialHours: false));
+        Assert.AreEqual("legacy-time", converter.Convert(new TimeOnly(12, 0), replaceSpecialHours: true));
+    }
+
+    [TestMethod]
+    public void Convert_DateTime_LegacyInterfaceImplementer_IgnoresReplaceSpecialHoursFlag()
+    {
+        INumberToStringConverter converter = new LegacyConverter();
+
+        Assert.AreEqual("legacy-datetime", converter.Convert(new DateTime(2026, 9, 16, 12, 0, 0), replaceSpecialHours: false));
+        Assert.AreEqual("legacy-datetime", converter.Convert(new DateTime(2026, 9, 16, 12, 0, 0), replaceSpecialHours: true));
+    }
+
+    /// <summary>
+    /// Minimal <see cref="INumberToStringConverter"/> implementer predating <see cref="SpecialHourRule"/>:
+    /// it overrides only the original params-only time/date overloads, exactly like third-party code
+    /// written before that feature existed.
+    /// </summary>
+    private sealed class LegacyConverter : INumberToStringConverter
+    {
+        public BigInteger? MaxNumber => null;
+        public string Convert(BigInteger number) => number.ToString();
+        public string Convert(int number) => number.ToString();
+        public string Convert(long number) => number.ToString();
+        public string Convert(decimal number) => number.ToString();
+        public string Convert(TimeOnly time, params string[] variants) => "legacy-time";
+        public string Convert(DateTime dateTime, params string[] variants) => "legacy-datetime";
     }
 }

@@ -774,11 +774,13 @@ properties — so any hour, and any word, can be configured for any language:
 </TimeUnits>
 ```
 
-- **`wholeHour="false"`** (default): the word replaces the hour only at the
-  exact instant — `12:00:00`. Any non-zero minute or second falls back to the
-  ordinary numeral hour: `12:15` → `"twelve hours fifteen minutes"`. This is
-  the right choice for English, where "noon fifteen minutes" would not read
-  naturally.
+- **`wholeHour="false"`** (default): the word replaces the hour only when the
+  minute and second components are both zero — `12:00:00`; sub-second
+  precision (like the rest of this method) is ignored, so `12:00:00.500` still
+  counts as zero minutes/seconds. Any non-zero minute or second falls back to
+  the ordinary numeral hour: `12:15` → `"twelve hours fifteen minutes"`. This
+  is the right choice for English, where "noon fifteen minutes" would not
+  read naturally.
 - **`wholeHour="true"`**: the word replaces the hour for the *entire* hour —
   `12:00:00` through `12:59:59…` — and a non-zero minute/second is still
   appended after it as usual. This reads naturally in French, so the built-in

@@ -545,7 +545,7 @@ namespace Utils.NumberToString
         /// hour 12), applied by Convert(TimeOnly)/Convert(DateTime) when their
         /// <c>replaceSpecialHours</c> argument is <see langword="true"/>.
         /// </summary>
-        public IReadOnlyList<SpecialHourRule> SpecialHours => [.. _specialHours.Values];
+        public IReadOnlyList<SpecialHourRule> SpecialHours => [.. _specialHours.Values.OrderBy(r => r.Hour)];
 
         /// <summary>
         /// Gets only the explicitly configured <see cref="LexicalFormSet"/> overrides per time
