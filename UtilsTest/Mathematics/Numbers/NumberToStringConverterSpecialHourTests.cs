@@ -301,11 +301,13 @@ public class NumberToStringConverterSpecialHourTests
     public void Convert_TimeOnly_LegacyInterfaceImplementer_IgnoresReplaceSpecialHoursFlag()
     {
         // A converter written before SpecialHourRule existed only overrides the params-only
-        // overload; the new bool overload must still work by forwarding to it, unchanged.
+        // overload; the new bool overload must still work by forwarding to it, unchanged —
+        // including the variants it was called with, not just the flag-independent constant part.
         INumberToStringConverter converter = new LegacyConverter();
 
-        Assert.AreEqual("legacy-time", converter.Convert(new TimeOnly(12, 0), replaceSpecialHours: false));
-        Assert.AreEqual("legacy-time", converter.Convert(new TimeOnly(12, 0), replaceSpecialHours: true));
+        Assert.AreEqual("legacy-time:gender=feminin", converter.Convert(new TimeOnly(12, 0), replaceSpecialHours: false, variants: "gender=feminin"));
+        Assert.AreEqual("legacy-time:gender=feminin", converter.Convert(new TimeOnly(12, 0), replaceSpecialHours: true, variants: "gender=feminin"));
+        Assert.AreEqual("legacy-time:", converter.Convert(new TimeOnly(12, 0), replaceSpecialHours: false));
     }
 
     [TestMethod]
@@ -313,14 +315,17 @@ public class NumberToStringConverterSpecialHourTests
     {
         INumberToStringConverter converter = new LegacyConverter();
 
-        Assert.AreEqual("legacy-datetime", converter.Convert(new DateTime(2026, 9, 16, 12, 0, 0), replaceSpecialHours: false));
-        Assert.AreEqual("legacy-datetime", converter.Convert(new DateTime(2026, 9, 16, 12, 0, 0), replaceSpecialHours: true));
+        Assert.AreEqual("legacy-datetime:gender=feminin", converter.Convert(new DateTime(2026, 9, 16, 12, 0, 0), replaceSpecialHours: false, variants: "gender=feminin"));
+        Assert.AreEqual("legacy-datetime:gender=feminin", converter.Convert(new DateTime(2026, 9, 16, 12, 0, 0), replaceSpecialHours: true, variants: "gender=feminin"));
+        Assert.AreEqual("legacy-datetime:", converter.Convert(new DateTime(2026, 9, 16, 12, 0, 0), replaceSpecialHours: false));
     }
 
     /// <summary>
     /// Minimal <see cref="INumberToStringConverter"/> implementer predating <see cref="SpecialHourRule"/>:
     /// it overrides only the original params-only time/date overloads, exactly like third-party code
-    /// written before that feature existed.
+    /// written before that feature existed. Echoes <c>variants</c> into the result so a future
+    /// regression that drops them while forwarding to this overload (e.g. calling
+    /// <c>Convert(time)</c> instead of <c>Convert(time, variants)</c>) fails these tests.
     /// </summary>
     private sealed class LegacyConverter : INumberToStringConverter
     {
@@ -329,7 +334,7 @@ public class NumberToStringConverterSpecialHourTests
         public string Convert(int number) => number.ToString();
         public string Convert(long number) => number.ToString();
         public string Convert(decimal number) => number.ToString();
-        public string Convert(TimeOnly time, params string[] variants) => "legacy-time";
-        public string Convert(DateTime dateTime, params string[] variants) => "legacy-datetime";
+        public string Convert(TimeOnly time, params string[] variants) => $"legacy-time:{string.Join(",", variants)}";
+        public string Convert(DateTime dateTime, params string[] variants) => $"legacy-datetime:{string.Join(",", variants)}";
     }
 }

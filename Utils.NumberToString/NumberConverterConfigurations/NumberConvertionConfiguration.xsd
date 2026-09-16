@@ -1515,10 +1515,11 @@
                                                     </xs:simpleType>
                                                 </xs:attribute>
                                                 <xs:attribute name="value" use="required">
-                                                    <xs:annotation><xs:documentation>The literal word or phrase replacing the hour fragment (e.g. "midnight").</xs:documentation></xs:annotation>
+                                                    <xs:annotation><xs:documentation>The literal word or phrase replacing the hour fragment (e.g. "midnight"). Must contain at least one non-whitespace character.</xs:documentation></xs:annotation>
                                                     <xs:simpleType>
                                                         <xs:restriction base="xs:string">
                                                             <xs:minLength value="1"/>
+                                                            <xs:pattern value=".*\S.*"/>
                                                         </xs:restriction>
                                                     </xs:simpleType>
                                                 </xs:attribute>

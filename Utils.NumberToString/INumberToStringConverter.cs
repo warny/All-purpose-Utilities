@@ -476,6 +476,17 @@ namespace Utils.NumberToString
         /// (e.g. "quatorze heures trente").
         /// Requires <c>&lt;TimeUnits&gt;</c> in the XML configuration.
         /// </summary>
+        /// <remarks>
+        /// <see cref="Convert(TimeOnly, bool, string[])"/> overloads this method with an untyped
+        /// <see langword="bool"/> parameter inserted before <paramref name="variants"/>. An
+        /// existing call site written as <c>Convert(time, default)</c> — an untyped
+        /// <see langword="default"/> literal standing in for an empty <c>variants</c> array —
+        /// becomes an ambiguous overload call (<c>CS0121</c>) once that second overload is in
+        /// scope, because <see langword="default"/> converts equally well to <see langword="bool"/>
+        /// or to <c>string[]</c>. This is the one source-compatibility gap in an otherwise additive
+        /// change; fix such a call site with <c>Convert(time, default(string[]))</c>,
+        /// <c>Convert(time, [])</c>, or by simply omitting <paramref name="variants"/> entirely.
+        /// </remarks>
         /// <exception cref="NotSupportedException">The converter has no <c>&lt;TimeUnits&gt;</c> configuration (<see cref="SupportsTimeConversion"/> is <see langword="false"/>).</exception>
         string Convert(TimeOnly time, params string[] variants)
             => throw new NotSupportedException("Time conversion requires <TimeUnits> in the XML configuration.");
@@ -515,6 +526,11 @@ namespace Utils.NumberToString
         /// Converts a <see cref="DateTime"/> to its spoken form by combining
         /// <see cref="Convert(DateOnly, string[])"/> and <see cref="Convert(TimeOnly, string[])"/>.
         /// </summary>
+        /// <remarks>
+        /// See <see cref="Convert(TimeOnly, string[])"/>'s remarks: an untyped
+        /// <c>Convert(dateTime, default)</c> call site becomes ambiguous (<c>CS0121</c>) now that
+        /// <see cref="Convert(DateTime, bool, string[])"/> also exists, for the same reason.
+        /// </remarks>
         /// <exception cref="NotSupportedException">The converter has no <c>&lt;DateFormat&gt;</c> or <c>&lt;TimeUnits&gt;</c> configuration.</exception>
         string Convert(DateTime dateTime, params string[] variants)
             => throw new NotSupportedException("Date/time conversion requires <DateFormat> and <TimeUnits> in the XML configuration.");
