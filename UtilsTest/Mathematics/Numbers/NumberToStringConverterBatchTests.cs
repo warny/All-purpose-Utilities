@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Utils.NumberToString;
 using Utils.Range;
 
-namespace UtilsTest.Mathematics.Numbers;
+namespace UtilsTest.NumberToString;
 
 /// <summary>
 /// Tests for the improvements-batch PR (points 4–8, 12–14, new languages).
@@ -12,6 +12,7 @@ namespace UtilsTest.Mathematics.Numbers;
 [TestClass]
 public class NumberToStringConverterBatchTests
 {
+    private static NumberToStringConverter EN => NumberToStringConverter.GetConverter("EN");
     // ─── G3 — ConvertOrdinal(BigInteger) ────────────────────────────────────
 
     [TestMethod]
@@ -70,7 +71,7 @@ public class NumberToStringConverterBatchTests
     [TestMethod]
     public void ConvertYear_BeforeChristSuffix_AppliedForNegativeYears()
     {
-        var enOptions = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        var enOptions = new NumberToStringConverterOptions(EN)
         {
             YearFormat = new YearFormatOptions(
                 HundredWord: "hundred",

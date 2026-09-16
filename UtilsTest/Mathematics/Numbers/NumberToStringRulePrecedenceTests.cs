@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using Utils.NumberToString;
 
-namespace UtilsTest.Mathematics.Numbers;
+namespace UtilsTest.NumberToString;
 
 /// <summary>Verifies deterministic precedence and construction-time ambiguity diagnostics.</summary>
 [TestClass]
 public sealed class NumberToStringRulePrecedenceTests
 {
+    private static NumberToStringConverter EN => NumberToStringConverter.GetConverter("EN");
+
     /// <summary>Verifies that ordinal priority, rather than source order, resolves equal specificity.</summary>
     [TestMethod]
     public void OrdinalPriorityWinsRegardlessOfDeclarationOrder()
@@ -114,7 +116,7 @@ public sealed class NumberToStringRulePrecedenceTests
                 ? "<Variant type=\"number\" variant=\"plural\" value=\"plural\" priority=\"-10\" /><Variant type=\"gender\" variant=\"female\" value=\"female\" priority=\"10\" />"
                 : "<Variant type=\"gender\" variant=\"female\" value=\"female\" priority=\"10\" /><Variant type=\"number\" variant=\"plural\" value=\"plural\" priority=\"-10\" />";
             NumberToStringConverter.RegisterConfigurations([CreateTriggerXml(culture, forms)], DuplicateCulturePolicy.Replace);
-            NumberToStringConverter converter = NumberToStringConverter.GetConverter(culture);
+            INumberToStringConverter converter = NumberToStringConverter.GetConverter(culture);
             Assert.AreEqual("one", converter.Convert(1, "gender=male", "number=singular"));
             Assert.AreEqual("female", converter.Convert(1, "gender=female", "number=singular"));
         }
@@ -266,7 +268,7 @@ public sealed class NumberToStringRulePrecedenceTests
         IReadOnlyList<NumberToStringConverter.VariantRule>? variantRules = null,
         IReadOnlyList<NumberToStringConverter.TriggerRule>? triggers = null)
     {
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(EN)
         {
             LanguageIdentifier = "precedence-test",
             VariantDimensions =

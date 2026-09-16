@@ -272,14 +272,14 @@ Scenario Outline: Very large long-scale cardinal numbers
     Then the result is "<expected>"
 
 Examples:
-    | number                                                                          | expected          |
-    | 1000000000000000000000000000000000000000000000000000000000000                 | un decillion      |
-    | 1000000000000000000000000000000000000000000000000000000000000000              | un decilliard     |
-    | 1000000000000000000000000000000000000000000000000000000000000000000           | un unidecillion   |
-    | 1000000000000000000000000000000000000000000000000000000000000000000000        | un unidecilliard  |
-    | 1000000000000000000000000000000000000000000000000000000000000000000000000     | un duodecillion   |
-    | 1000000000000000000000000000000000000000000000000000000000000000000000000000  | un duodecilliard  |
-    | 1000000000000000000000000000000000000000000000000000000000000000000000000000000 | un tredecillion |
+    | number                                                                          | expected         |
+    |                   1000000000000000000000000000000000000000000000000000000000000 | un decillion     |
+    |                1000000000000000000000000000000000000000000000000000000000000000 | un decilliard    |
+    |             1000000000000000000000000000000000000000000000000000000000000000000 | un unidecillion  |
+    |          1000000000000000000000000000000000000000000000000000000000000000000000 | un unidecilliard |
+    |       1000000000000000000000000000000000000000000000000000000000000000000000000 | un duodecillion  |
+    |    1000000000000000000000000000000000000000000000000000000000000000000000000000 | un duodecilliard |
+    | 1000000000000000000000000000000000000000000000000000000000000000000000000000000 | un tredecillion  |
 
 @HugeNumber
 Scenario: A composed very large long-scale cardinal number
@@ -343,3 +343,28 @@ Examples:
     | fraction | expected       |
     | 3/2      | trois sur deux |
     | 1/10     | un sur dix     |
+
+Scenario Outline: DateTests 6
+    Given I use the "FR-fr" culture info
+    When I convert the localized date "<date>"
+    Then the result is "<expected>"
+
+Examples:
+    | date       | expected                                   |
+    | 01/01/2026 | premier janvier deux mille vingt six       |
+    | 31/12/2026 | trente et un décembre deux mille vingt six |
+
+Scenario Outline: TimeTest 7
+    Given I use the "FR-fr" culture info
+    When I convert the localized time "<time>"
+    Then the result is "<expected>"
+
+Examples:
+    | time     | expected                            |
+    | 01:01:01 | une heure une minute une seconde    |
+    | 01:01:03 | une heure une minute trois secondes |
+    | 13:10:00 | treize heures dix minutes           |
+    | 21:00:00 | vingt et une heures                 |
+    | 12:00:00 | midi                                 |
+    | 00:00:00 | minuit                               |
+    | 00:15:00 | minuit quinze minutes                |

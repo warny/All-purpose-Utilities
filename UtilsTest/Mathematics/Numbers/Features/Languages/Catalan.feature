@@ -7,10 +7,12 @@ Scenario Outline: Catalan cardinal numbers
     Then the result is "<expected>"
 
 Examples:
-    | number | expected |
-    | 21 | vint-i-un |
-    | 105 | cent cinc |
-    | 321 | tres-cents vint-i-un |
+    | number | expected             |
+    |      1 | un                   |
+    |      2 | dos                  |
+    |     21 | vint-i-un            |
+    |    105 | cent cinc            |
+    |    321 | tres-cents vint-i-un |
 
 Scenario Outline: Catalan decimal numbers
     Given I use the "ca-ES" number converter
@@ -49,6 +51,17 @@ Examples:
     | 21:00:00 | vint-i-una hores |
     | 22:00:00 | vint-i-dues hores |
     | 00:02:00 | dos minuts |
+    | 02:02:00 | dues hores dos minuts |
+
+Scenario Outline: Time-of-day wording
+    Given I use the "CA" number converter
+    When I convert the time "<value>"
+    Then the result is "<expected>"
+
+Examples:
+    | value | expected |
+    | 01:00:00 | una hora |
+    | 21:00:00 | vint-i-una hores |
     | 02:02:00 | dues hores dos minuts |
 
 Scenario Outline: Masculine ordinal numbers

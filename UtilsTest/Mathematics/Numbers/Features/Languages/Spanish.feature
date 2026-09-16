@@ -9,12 +9,12 @@ Scenario Outline: Cardinal numbers
     Then the result is "<expected>"
 
 Examples:
-    | number | expected |
-    | 1 | uno |
-    | 21 | veintiuno |
-    | 31 | treinta y uno |
-    | 45 | cuarenta y cinco |
-    | 99 | noventa y nueve |
+    | number | expected         |
+    |      1 | uno              |
+    |     21 | veintiuno        |
+    |     31 | treinta y uno    |
+    |     45 | cuarenta y cinco |
+    |     99 | noventa y nueve  |
 
 Scenario Outline: Feminine cardinal numbers
     Given I use the variants "gender=femenino"
@@ -41,10 +41,10 @@ Scenario Outline: Compound ordinal numbers
     Then the result is "<expected>"
 
 Examples:
-    | number | expected |
-    | 31 | treinta y primero |
-    | 45 | cuarenta y quinto |
-    | 99 | noventa y noveno |
+    | number | expected          |
+    |     31 | treinta y primero |
+    |     45 | cuarenta y quinto |
+    |     99 | noventa y noveno  |
 
 Scenario Outline: Decimal numbers
     When I convert the decimal number <number>
@@ -70,6 +70,19 @@ Examples:
     | 00:00:01 | un segundo |
     | 00:00:21 | veintiún segundos |
     | 21:21:21 | veintiuna horas veintiún minutos veintiún segundos |
+
+Scenario Outline: Time-of-day wording
+    When I convert the time "<value>"
+    Then the result is "<expected>"
+
+Examples:
+    | value | expected |
+    | 01:00:00 | una hora |
+    | 21:00:00 | veintiuna horas |
+    | 21:21:21 | veintiuna horas veintiún minutos veintiún segundos |
+
+Scenario: Time conversion is supported
+    Then the converter supports time conversion
 
 Scenario Outline: Explicit masculine ordinal numbers
     Given I use the "ES" number converter

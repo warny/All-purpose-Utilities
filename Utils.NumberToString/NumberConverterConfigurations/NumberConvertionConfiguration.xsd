@@ -1496,6 +1496,44 @@
                                                 </xs:attribute>
                                             </xs:complexType>
                                         </xs:element>
+                                        <xs:element name="SpecialHour" minOccurs="0" maxOccurs="unbounded">
+                                            <xs:annotation><xs:documentation>
+                                                Replaces the numeral hour fragment for one specific hour of the
+                                                day (e.g. "midnight" for hour 0, "noon" for hour 12) when
+                                                rendering Convert(TimeOnly)/Convert(DateTime). Never applies to
+                                                Convert(TimeSpan): a duration's hour count is not a time of day.
+                                                At most one SpecialHour per distinct hour value.
+                                            </xs:documentation></xs:annotation>
+                                            <xs:complexType>
+                                                <xs:attribute name="hour" use="required">
+                                                    <xs:annotation><xs:documentation>The 24-hour clock hour (0-23) this rule applies to.</xs:documentation></xs:annotation>
+                                                    <xs:simpleType>
+                                                        <xs:restriction base="xs:int">
+                                                            <xs:minInclusive value="0"/>
+                                                            <xs:maxInclusive value="23"/>
+                                                        </xs:restriction>
+                                                    </xs:simpleType>
+                                                </xs:attribute>
+                                                <xs:attribute name="value" use="required">
+                                                    <xs:annotation><xs:documentation>The literal word or phrase replacing the hour fragment (e.g. "midnight"). Must contain at least one non-whitespace character.</xs:documentation></xs:annotation>
+                                                    <xs:simpleType>
+                                                        <xs:restriction base="xs:string">
+                                                            <xs:minLength value="1"/>
+                                                            <xs:pattern value=".*\S.*"/>
+                                                        </xs:restriction>
+                                                    </xs:simpleType>
+                                                </xs:attribute>
+                                                <xs:attribute name="wholeHour" type="xs:boolean" use="optional" default="false">
+                                                    <xs:annotation><xs:documentation>
+                                                        When false (default), the rule applies only when minute and
+                                                        second are both zero (sub-second precision is ignored). When
+                                                        true, it applies for the entire hour (e.g. 12:00:00 through
+                                                        12:59:59...); non-zero minutes/seconds are still appended
+                                                        after the value as usual.
+                                                    </xs:documentation></xs:annotation>
+                                                </xs:attribute>
+                                            </xs:complexType>
+                                        </xs:element>
                                     </xs:sequence>
                                 </xs:complexType>
                             </xs:element>

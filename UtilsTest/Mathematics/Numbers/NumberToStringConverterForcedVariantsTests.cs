@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Utils.NumberToString;
 
-namespace UtilsTest.Mathematics.Numbers;
+namespace UtilsTest.NumberToString;
 
 /// <summary>
 /// NTS-04 — regression tests for the general constituent-local "ForcedVariants" mechanism.

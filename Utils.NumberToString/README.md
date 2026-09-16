@@ -756,6 +756,79 @@ rendered.
 
 ---
 
+## Special hours — `SpecialHourRule`
+
+Many languages have a dedicated word for a specific hour of the day instead
+of a numeral — "midnight"/"noon" in English, "minuit"/"midi" in French. This
+is a generic, per-hour mechanism — not two hardcoded `Noon`/`Midnight`
+properties — so any hour, and any word, can be configured for any language:
+
+```xml
+<TimeUnits>
+    <Unit name="hour" singular="hour" plural="hours" />
+    <Unit name="minute" singular="minute" plural="minutes" />
+    <Unit name="second" singular="second" plural="seconds" />
+
+    <SpecialHour hour="0" value="midnight" />
+    <SpecialHour hour="12" value="noon" />
+</TimeUnits>
+```
+
+- **`wholeHour="false"`** (default): the word replaces the hour only when the
+  minute and second components are both zero — `12:00:00`; sub-second
+  precision (like the rest of this method) is ignored, so `12:00:00.500` still
+  counts as zero minutes/seconds. Any non-zero minute or second falls back to
+  the ordinary numeral hour: `12:15` → `"twelve hours fifteen minutes"`. This
+  is the right choice for English, where "noon fifteen minutes" would not
+  read naturally.
+- **`wholeHour="true"`**: the word replaces the hour for the *entire* hour —
+  `12:00:00` through `12:59:59…` — and a non-zero minute/second is still
+  appended after it as usual. This reads naturally in French, so the built-in
+  French configuration uses it:
+
+```xml
+<SpecialHour hour="0" value="minuit" wholeHour="true" />
+<SpecialHour hour="12" value="midi" wholeHour="true" />
+```
+
+```text
+12:00 → "midi"
+12:15 → "midi quinze minutes"
+00:00 → "minuit"
+00:30 → "minuit trente minutes"
+```
+
+Only `Convert(TimeOnly)` and the time portion of `Convert(DateTime)` apply
+`SpecialHours` — never `Convert(TimeSpan)`. A 12-hour *duration* is not
+"noon"; it has no time-of-day meaning.
+
+Both overloads default to applying configured special hours, and take an
+explicit `bool` — not an optional parameter — specifically so a bare
+`converter.Convert(time)` call stays unambiguous against the existing
+`params string[] variants` overload:
+
+```csharp
+converter.Convert(new TimeOnly(12, 0));                       // "noon"
+converter.Convert(new TimeOnly(12, 0), replaceSpecialHours: false); // "twelve hours"
+```
+
+This keeps binary compatibility, with one narrow source-level exception: a
+call site written with an untyped `default` literal standing in for
+`variants` — `converter.Convert(time, default)` — becomes an ambiguous
+overload call (`CS0121`), because the untyped `default` literal converts
+equally well to the new overload's `bool` and the original `string[]`. Use
+`[]` or omit `variants` entirely to keep such a call site compiling — **not**
+`default(string[])`, which compiles but passes a `null` array that crashes
+with `NullReferenceException` the moment any variant handling runs, since
+`variants` is iterated without a null check.
+
+**Programmatic**: `NumberToStringConverterOptions.SpecialHours`, a list of
+`SpecialHourRule(int Hour, string Value, bool WholeHour = false)`. At most one
+rule per `Hour` (0-23); a converter constructed with a duplicate, an
+out-of-range hour, or an empty `Value` throws at construction time.
+
+---
+
 ## Lexical form selection — `ILexicalFormSelector`
 
 `ForcedVariants` constrains the grammar of the NUMBER a constituent governs.

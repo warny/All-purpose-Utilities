@@ -208,6 +208,16 @@ public sealed class NumberToStringConverterOptions
     public IReadOnlyDictionary<string, ILexicalFormSelector>? TimeUnitFormSelectors { get; set; }
 
     /// <summary>
+    /// Optional per-hour word replacements for time-of-day rendering (e.g. "midnight" for hour 0,
+    /// "noon" for hour 12), applied by Convert(TimeOnly)/Convert(DateTime) — never by
+    /// Convert(TimeSpan), since a duration's hour count is not a time of day. See
+    /// <see cref="SpecialHourRule.WholeHour"/> for whether a rule applies only at the exact hour
+    /// (minutes/seconds zero) or for the whole hour. A converter constructed with two rules for
+    /// the same <see cref="SpecialHourRule.Hour"/> throws <see cref="ArgumentException"/>.
+    /// </summary>
+    public IReadOnlyList<SpecialHourRule> SpecialHours { get; set; } = [];
+
+    /// <summary>
     /// Pattern for rendering a date. Supported tokens: {month}, {ordinal-day}, {cardinal-day}, {year}.
     /// Required for Convert(DateOnly/DateTime).
     /// </summary>
@@ -284,6 +294,7 @@ public sealed class NumberToStringConverterOptions
         // caller narrows TimeUnits after cloning (see NumberToStringConverter.TimeUnitFormOverrides).
         TimeUnitForms = source.TimeUnitFormOverrides;
         TimeUnitFormSelectors = source.TimeUnitFormSelectorOverrides;
+        SpecialHours = source.SpecialHours;
         DatePattern = source.DatePattern;
         DateFirstDay = source.DateFirstDay;
         DateFirstCardinalDay = source.DateFirstCardinalDay;
@@ -323,3 +334,22 @@ public record YearFormatOptions(
     string? ZeroConnector,
     IntRange<int>? SplitRanges,
     string? BeforeChristSuffix = null);
+
+/// <summary>
+/// Declares a literal word or phrase that replaces the numeral hour fragment for one specific
+/// hour of the day (e.g. "midnight" for hour 0, "noon" for hour 12) when rendering a time-of-day
+/// value via <see cref="NumberToStringConverter.Convert(TimeOnly, string[])"/> or the time portion
+/// of <see cref="NumberToStringConverter.Convert(DateTime, string[])"/>. Never applies to
+/// <see cref="NumberToStringConverter.Convert(TimeSpan, string[])"/>: a duration's hour count is
+/// not a time of day.
+/// </summary>
+/// <param name="Hour">The 24-hour clock hour (0-23) this rule applies to.</param>
+/// <param name="Value">The literal word or phrase replacing the hour fragment (e.g. "midnight").</param>
+/// <param name="WholeHour">
+/// When <see langword="false"/> (default), the rule applies only when the minute and second
+/// components are both zero — sub-second precision is ignored, matching time-of-day rendering
+/// elsewhere, so <c>Hour</c>:00:00.500 still counts. When <see langword="true"/>, the rule
+/// applies for the entire hour (e.g. 12:00:00 through 12:59:59...); non-zero minutes/seconds are
+/// still appended after <see cref="Value"/> as usual.
+/// </param>
+public sealed record SpecialHourRule(int Hour, string Value, bool WholeHour = false);

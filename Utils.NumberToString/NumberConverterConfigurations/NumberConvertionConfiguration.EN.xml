@@ -96,6 +96,12 @@
 			<Unit name="hour"   singular="hour"   plural="hours"   />
 			<Unit name="minute" singular="minute" plural="minutes" />
 			<Unit name="second" singular="second" plural="seconds" />
+			<!-- "midnight"/"noon" replace the numeral hour only when minute and second are both
+			     zero (default wholeHour="false"; sub-second precision is ignored): "noon fifteen
+			     minutes" is not natural English, unlike French "midi quinze" — see
+			     SpecialHour.wholeHour in Utils.NumberToString/README.md. -->
+			<SpecialHour hour="0"  value="midnight" />
+			<SpecialHour hour="12" value="noon"      />
 		</TimeUnits>
 		<DateFormat pattern="{month} {ordinal-day}, {year}" />
 	</Language>

@@ -1716,6 +1716,9 @@ namespace Utils.NumberToString
                         !string.IsNullOrWhiteSpace(u.LexicalFormSelector?.Type) ? u.LexicalFormSelector!.Type : u.FormSelector,
                         languageIdentifier,
                         XmlElementToXElement(u.LexicalFormSelector?.Configuration))),
+                SpecialHours = language.TimeUnits?.SpecialHours?
+                    .Select(s => new SpecialHourRule(s.Hour, s.Value, s.WholeHour))
+                    .ToList() ?? [],
                 DatePattern = language.DateFormat?.Pattern,
                 DateFirstDay = language.DateFormat?.FirstDay,
                 DateFirstCardinalDay = language.DateFormat?.FirstCardinalDay,

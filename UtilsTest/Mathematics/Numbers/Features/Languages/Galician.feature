@@ -7,10 +7,12 @@ Scenario Outline: Galician cardinal numbers
     Then the result is "<expected>"
 
 Examples:
-    | number | expected |
-    | 21 | vinte e un |
-    | 105 | cento cinco |
-    | 100 | cen |
+    | number | expected    |
+    |      1 | un          |
+    |      2 | dous        |
+    |     21 | vinte e un  |
+    |    105 | cento cinco |
+    |    100 | cen         |
 
 Scenario Outline: Galician decimal numbers
     Given I use the "gl-ES" number converter
@@ -49,6 +51,17 @@ Examples:
     | 21:00:00 | vinte e unha horas |
     | 22:00:00 | vinte e dúas horas |
     | 00:02:00 | dous minutos |
+    | 02:02:00 | dúas horas dous minutos |
+
+Scenario Outline: Time-of-day wording
+    Given I use the "GL" number converter
+    When I convert the time "<value>"
+    Then the result is "<expected>"
+
+Examples:
+    | value | expected |
+    | 01:00:00 | unha hora |
+    | 21:00:00 | vinte e unha horas |
     | 02:02:00 | dúas horas dous minutos |
 
 Scenario Outline: Explicit masculine ordinal numbers

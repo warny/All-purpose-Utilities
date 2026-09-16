@@ -1,6 +1,7 @@
 using System;
 using System.Numerics;
 using Utils.Numerics;
+using static Utils.NumberToString.NumberToStringConverter;
 
 namespace Utils.NumberToString
 {
@@ -25,6 +26,13 @@ namespace Utils.NumberToString
         /// </summary>
         IReadOnlyList<NumberToStringConverter.VariantDimension> VariantDimensions
         {
+            get => [];
+        }
+
+        /// <summary>
+        /// Variant-specific ordinal rules applied when their dimension constraints match the active variant query.
+        /// </summary>
+        public IReadOnlyList<OrdinalVariantRule> OrdinalVariants {
             get => [];
         }
 
@@ -468,9 +476,44 @@ namespace Utils.NumberToString
         /// (e.g. "quatorze heures trente").
         /// Requires <c>&lt;TimeUnits&gt;</c> in the XML configuration.
         /// </summary>
+        /// <remarks>
+        /// <see cref="Convert(TimeOnly, bool, string[])"/> overloads this method with an
+        /// additional <see langword="bool"/> parameter inserted before <paramref name="variants"/>.
+        /// An existing call site written as <c>Convert(time, default)</c> — an untyped
+        /// <see langword="default"/> literal standing in for an empty <c>variants</c> array —
+        /// becomes an ambiguous overload call (<c>CS0121</c>) once that second overload is in
+        /// scope, because the untyped <see langword="default"/> literal converts equally well to
+        /// <see langword="bool"/> or to <c>string[]</c>. This is the one source-compatibility gap
+        /// in an otherwise additive change; fix such a call site with <c>Convert(time, [])</c> or
+        /// by simply omitting <paramref name="variants"/> entirely — <b>not</b>
+        /// <c>Convert(time, default(string[]))</c>, which compiles but passes a
+        /// <see langword="null"/> array that crashes with <see cref="NullReferenceException"/>
+        /// deep inside variant handling (<c>variants</c> is iterated without a null check).
+        /// </remarks>
         /// <exception cref="NotSupportedException">The converter has no <c>&lt;TimeUnits&gt;</c> configuration (<see cref="SupportsTimeConversion"/> is <see langword="false"/>).</exception>
         string Convert(TimeOnly time, params string[] variants)
             => throw new NotSupportedException("Time conversion requires <TimeUnits> in the XML configuration.");
+
+        /// <summary>
+        /// Converts a <see cref="TimeOnly"/> time-of-day to its spoken form, optionally replacing
+        /// the hour fragment for a configured special hour (e.g. "midnight" for 0, "noon" for 12).
+        /// Requires <c>&lt;TimeUnits&gt;</c> in the XML configuration.
+        /// </summary>
+        /// <param name="replaceSpecialHours">
+        /// When <see langword="true"/> — the behavior of <see cref="Convert(TimeOnly, string[])"/>
+        /// — a configured special-hour word replaces the numeral hour fragment for a matching
+        /// hour. When <see langword="false"/>, the hour is always rendered as a numeral.
+        /// </param>
+        /// <remarks>
+        /// The default implementation ignores <paramref name="replaceSpecialHours"/> and forwards
+        /// to <see cref="Convert(TimeOnly, string[])"/>: an implementer written before
+        /// <c>SpecialHourRule</c> existed already knows how to render a <see cref="TimeOnly"/> and
+        /// simply has no special-hour configuration to apply the flag to. Override this overload
+        /// directly to honor <paramref name="replaceSpecialHours"/>.
+        /// </remarks>
+        /// <exception cref="NotSupportedException">The converter has no <c>&lt;TimeUnits&gt;</c> configuration (<see cref="SupportsTimeConversion"/> is <see langword="false"/>).</exception>
+        string Convert(TimeOnly time, bool replaceSpecialHours, params string[] variants)
+            => Convert(time, variants);
 
         /// <summary>
         /// Converts a <see cref="DateOnly"/> date to its spoken form
@@ -486,8 +529,30 @@ namespace Utils.NumberToString
         /// Converts a <see cref="DateTime"/> to its spoken form by combining
         /// <see cref="Convert(DateOnly, string[])"/> and <see cref="Convert(TimeOnly, string[])"/>.
         /// </summary>
+        /// <remarks>
+        /// See <see cref="Convert(TimeOnly, string[])"/>'s remarks: an untyped
+        /// <c>Convert(dateTime, default)</c> call site becomes ambiguous (<c>CS0121</c>) now that
+        /// <see cref="Convert(DateTime, bool, string[])"/> also exists, for the same reason.
+        /// </remarks>
         /// <exception cref="NotSupportedException">The converter has no <c>&lt;DateFormat&gt;</c> or <c>&lt;TimeUnits&gt;</c> configuration.</exception>
         string Convert(DateTime dateTime, params string[] variants)
             => throw new NotSupportedException("Date/time conversion requires <DateFormat> and <TimeUnits> in the XML configuration.");
+
+        /// <summary>
+        /// Converts a <see cref="DateTime"/> to its spoken form, optionally replacing the hour
+        /// fragment of its time portion for a configured special hour (e.g. "midnight", "noon").
+        /// </summary>
+        /// <param name="replaceSpecialHours">
+        /// Forwarded to the time portion exactly as <see cref="Convert(TimeOnly, bool, string[])"/>
+        /// describes.
+        /// </param>
+        /// <remarks>
+        /// The default implementation ignores <paramref name="replaceSpecialHours"/> and forwards
+        /// to <see cref="Convert(DateTime, string[])"/>, for the same reason as
+        /// <see cref="Convert(TimeOnly, bool, string[])"/>'s default implementation.
+        /// </remarks>
+        /// <exception cref="NotSupportedException">The converter has no <c>&lt;DateFormat&gt;</c> or <c>&lt;TimeUnits&gt;</c> configuration.</exception>
+        string Convert(DateTime dateTime, bool replaceSpecialHours, params string[] variants)
+            => Convert(dateTime, variants);
     }
 }

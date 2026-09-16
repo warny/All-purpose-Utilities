@@ -4,17 +4,19 @@ using System.Xml;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.NumberToString;
 
-namespace UtilsTest.Mathematics.Numbers;
+namespace UtilsTest.NumberToString;
 
 /// <summary>Regression tests added during review of the resolved-configuration work.</summary>
 [TestClass]
 public class NumberToStringReviewTests
 {
+    private static NumberToStringConverter EN => NumberToStringConverter.GetConverter("EN");
+
     /// <summary>Verifies named and generated zero multiplicatives and signed extreme inputs.</summary>
     [TestMethod]
     public void ConvertMultiplicative_HandlesZeroAndSignedInputs()
     {
-        var generated = new NumberToStringConverter(new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        var generated = new NumberToStringConverter(new NumberToStringConverterOptions(EN)
         {
             Multiplicatives = new Dictionary<int, string>(),
             MultiplicativeSuffix = " MULTI",
@@ -36,7 +38,7 @@ public class NumberToStringReviewTests
     [TestMethod]
     public void DatePattern_DoesNotRescanInsertedValues()
     {
-        var converter = new NumberToStringConverter(new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        var converter = new NumberToStringConverter(new NumberToStringConverterOptions(EN)
         {
             DatePattern = "{ordinal-day}/{year}",
             DateFirstDay = "{year}",
@@ -52,7 +54,7 @@ public class NumberToStringReviewTests
     [DataRow("year}")]
     public void DatePattern_InvalidSyntaxThrows(string pattern)
     {
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN")) { DatePattern = pattern };
+        var options = new NumberToStringConverterOptions(EN) { DatePattern = pattern };
         Assert.ThrowsExactly<InvalidOperationException>(() => new NumberToStringConverter(options));
     }
 

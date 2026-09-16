@@ -280,3 +280,32 @@ Scenario: Fraction connector wording
     Given I use the "EN" number converter
     When I convert the fraction 3/2 through both public fraction APIs
     Then both fraction results are "three over two"
+
+Scenario Outline: DateTests 6
+    Given I use the "<culture>" culture info
+    When I convert the localized date "<date>"
+    Then the result is "<expected>"
+
+Examples:
+    | culture | date       | expected                                 |
+    | EN-GB   | 01/01/2026 | first January twenty twenty-six          |
+    | EN-GB   | 29/12/2026 | twenty-ninth December twenty twenty-six  |
+    | EN-GB   | 31/12/2026 | thirty-first December twenty twenty-six  |
+    | EN-us   | 01/01/2026 | January first, twenty twenty-six         |
+    | EN-us   | 12/29/2026 | December twenty-ninth, twenty twenty-six |
+    | EN-us   | 12/31/2026 | December thirty-first, twenty twenty-six |
+
+Scenario Outline: TimeTest 7
+    Given I use the "EN-uk" culture info
+    When I convert the localized time "<time>"
+    Then the result is "<expected>"
+
+Examples:
+    | time     | expected                          |
+    | 01:01:01 | one hour one minute one second    |
+    | 01:01:03 | one hour one minute three seconds |
+    | 13:10:00 | thirteen hours ten minutes        |
+    | 21:00:00 | twenty-one hours                  |
+    | 12:00:00 | noon                               |
+    | 00:00:00 | midnight                           |
+    | 00:15:00 | zero hours fifteen minutes         |

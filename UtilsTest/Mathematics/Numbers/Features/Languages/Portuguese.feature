@@ -7,9 +7,9 @@ Scenario Outline: Decimal numbers
     Then the result is "<expected>"
 
 Examples:
-    | number | expected |
-    | 1.5 | um vírgula cinco |
-    | 12.34 | doze vírgula três quatro |
+    | number | expected                 |
+    |    1.5 | um vírgula cinco         |
+    |  12.34 | doze vírgula três quatro |
 
 Scenario Outline: Basic cardinal numbers
     Given I use the "PT" number converter
@@ -17,15 +17,16 @@ Scenario Outline: Basic cardinal numbers
     Then the result is "<expected>"
 
 Examples:
-    | number | expected |
-    | 1 | um |
-    | 2 | dois |
-    | 11 | onze |
-    | 20 | vinte |
-    | 100 | cem |
-    | 101 | cento e um |
-    | 200 | duzentos |
-    | 1000 | mil |
+    | number | expected   |
+    |      1 | um         |
+    |      2 | dois       |
+    |     11 | onze       |
+    |     20 | vinte      |
+    |     21 | vinte e um |
+    |    100 | cem        |
+    |    101 | cento e um |
+    |    200 | duzentos   |
+    |   1000 | mil        |
 
 Scenario Outline: Feminine cardinal numbers
     Given I use the "PT" number converter
@@ -52,13 +53,13 @@ Scenario Outline: Masculine ordinal numbers
     Then the result is "<expected>"
 
 Examples:
-    | number | expected |
-    | 1 | primeiro |
-    | 2 | segundo |
-    | 10 | décimo |
-    | 20 | vigésimo |
-    | 100 | centésimo |
-    | 1000 | milésimo |
+    | number | expected  |
+    |      1 | primeiro  |
+    |      2 | segundo   |
+    |     10 | décimo    |
+    |     20 | vigésimo  |
+    |    100 | centésimo |
+    |   1000 | milésimo  |
 
 Scenario Outline: Feminine ordinal numbers
     Given I use the "PT" number converter
@@ -84,6 +85,17 @@ Examples:
     | 21:00:00 | vinte e uma horas |
     | 22:00:00 | vinte e duas horas |
     | 00:02:00 | dois minutos |
+    | 02:02:00 | duas horas dois minutos |
+
+Scenario Outline: Time-of-day wording
+    Given I use the "PT" number converter
+    When I convert the time "<value>"
+    Then the result is "<expected>"
+
+Examples:
+    | value | expected |
+    | 01:00:00 | uma hora |
+    | 21:00:00 | vinte e uma horas |
     | 02:02:00 | duas horas dois minutos |
 
 Scenario Outline: Explicit masculine ordinal numbers

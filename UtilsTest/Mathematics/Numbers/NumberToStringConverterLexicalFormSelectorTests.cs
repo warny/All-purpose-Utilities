@@ -6,7 +6,7 @@ using System.Numerics;
 using System.Xml.Linq;
 using Utils.NumberToString;
 
-namespace UtilsTest.Mathematics.Numbers;
+namespace UtilsTest.NumberToString;
 
 /// <summary>
 /// NTS-05 — regression tests for the general <see cref="ILexicalFormSelector"/> extensibility

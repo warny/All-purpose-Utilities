@@ -5,7 +5,7 @@ using Reqnroll;
 using Utils.NumberToString;
 using Utils.Numerics;
 
-namespace UtilsTest.Mathematics.Numbers.ReqnRoll;
+namespace UtilsTest.NumberToString.ReqnRoll;
 
 /// <summary>
 /// Provides reusable steps for executable NumberToString language specifications.
@@ -13,7 +13,8 @@ namespace UtilsTest.Mathematics.Numbers.ReqnRoll;
 [Binding]
 public sealed class NumberToStringLanguageSteps
 {
-    private INumberToStringConverter? converter;
+    private NumberToStringConverter? converter;
+    private CultureInfo cultureInfo;
     private string[] variants = [];
     private string? result;
     private string? secondaryResult;
@@ -23,6 +24,15 @@ public sealed class NumberToStringLanguageSteps
     /// <summary>Selects the converter used by the current scenario.</summary>
     [Given("I use the {string} number converter")]
     public void GivenIUseTheNumberConverter(string culture) => converter = NumberToStringConverter.GetConverter(culture);
+
+    /// <summary>Selects the culture info used by the current scenario. Also tries to define the corresponding number converter if not define yet</summary>
+    [Given("I use the {string} culture info")]
+    public void GivenIUseTheCultureInfo(string culture) {
+        cultureInfo = CultureInfo.GetCultureInfo(culture);
+        if (converter == null) {
+            NumberToStringConverter.TryGetConverter(cultureInfo, out converter);
+        }
+    }
 
     /// <summary>Configures opaque converter variants for the current scenario.</summary>
     [Given("I use the variants {string}")]
@@ -143,6 +153,18 @@ public sealed class NumberToStringLanguageSteps
     /// <summary>Converts an invariant year through the public API.</summary>
     [When("I convert the year {int}")]
     public void WhenIConvertTheYear(int value) => result = Converter.ConvertYear(value, variants);
+
+    /// <summary>Converts a calendar date parsed with the current culture's short date pattern.</summary>
+    [When(@"I convert the localized date {string}")]
+    public void WhenIConvertTheLocalizedDate(string date) => result = Converter.Convert(DateOnly.Parse(date, cultureInfo), variants);
+
+    /// <summary>Converts a time of day parsed with the current culture's short time pattern.</summary>
+    [When(@"I convert the localized time {string}")]
+    public void WhenIConvertTheLocalizedTime(string date) => result = Converter.Convert(TimeOnly.Parse(date, cultureInfo), variants);
+
+    /// <summary>Converts a date and time parsed with the current culture's patterns.</summary>
+    [When(@"I convert the date time {string}")]
+    public void WhenIConvertTheDateTime(string date) => result = Converter.Convert(DateTime.Parse(date, cultureInfo), variants);
 
     /// <summary>Verifies the exact localized result.</summary>
     [Then("the result is {string}")]

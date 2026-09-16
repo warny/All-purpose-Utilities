@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Utils.NumberToString;
 
-namespace UtilsTest.Mathematics.Numbers;
+namespace UtilsTest.NumberToString;
 
 /// <summary>Verifies language-neutral default-interface conversion contracts.</summary>
 [TestClass]

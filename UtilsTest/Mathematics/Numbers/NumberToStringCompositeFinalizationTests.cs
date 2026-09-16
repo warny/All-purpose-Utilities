@@ -3,7 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.NumberToString;
 using Utils.Numerics;
 
-namespace UtilsTest.Mathematics.Numbers;
+namespace UtilsTest.NumberToString;
 
 /// <summary>Verifies that every composite public conversion has one final phrase boundary.</summary>
 [TestClass]

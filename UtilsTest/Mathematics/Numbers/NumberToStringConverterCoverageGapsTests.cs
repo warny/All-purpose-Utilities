@@ -2,7 +2,7 @@ using System.Numerics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.NumberToString;
 
-namespace UtilsTest.Mathematics.Numbers;
+namespace UtilsTest.NumberToString;
 
 /// <summary>Tests numeric overload and formatting-option contracts without owning natural-language wording.</summary>
 [TestClass]

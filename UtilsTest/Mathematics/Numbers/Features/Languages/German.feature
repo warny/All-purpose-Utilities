@@ -128,6 +128,17 @@ Examples:
     | 01:00:00 | eine Stunde |
     | 02:30:05 | zwei Stunden dreißig Minuten fünf Sekunden |
 
+Scenario Outline: Time-of-day wording
+    Given I use the "DE" number converter
+    When I convert the time "<value>"
+    Then the result is "<expected>"
+
+Examples:
+    | value | expected |
+    | 01:00:00 | eine Stunde |
+    | 02:30:05 | zwei Stunden dreißig Minuten fünf Sekunden |
+    | 14:30:05 | vierzehn Stunden dreißig Minuten fünf Sekunden |
+
 Scenario Outline: Date wording
     Given I use the "DE" number converter
     When I convert the date "<value>"

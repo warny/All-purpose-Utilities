@@ -7,7 +7,7 @@ using Utils.Mathematics;
 using Utils.NumberToString;
 using Utils.Numerics;
 
-namespace UtilsTest.Mathematics.Numbers;
+namespace UtilsTest.NumberToString;
 
 /// <summary>
 /// Tests for bug fixes and new features added to NumberToStringConverter.

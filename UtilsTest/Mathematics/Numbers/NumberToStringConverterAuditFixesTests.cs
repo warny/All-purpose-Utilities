@@ -7,7 +7,7 @@ using System.Xml.Serialization;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.NumberToString;
 
-namespace UtilsTest.Mathematics.Numbers;
+namespace UtilsTest.NumberToString;
 
 /// <summary>
 /// Tests for audit findings 47–71, 68, 71, 75–78 from the Utils.NumberToString TODO files.
@@ -433,9 +433,9 @@ public class NumberToStringConverterAuditFixesTests
             Zero = "zero",
             Separator = "and",
             GroupSeparator = "",
-            Groups = NumberToStringConverter.GetConverter("EN").Groups
+            Groups = EN.Groups
                 .ToDictionary(kv => kv.Key, kv => new DigitListType { Digits = kv.Value.Values.ToList() }),
-            Scale = NumberToStringConverter.GetConverter("EN").Scale,
+            Scale = EN.Scale,
             Group = 3,
             Minus = "minus *"
         };
@@ -456,9 +456,9 @@ public class NumberToStringConverterAuditFixesTests
             Zero = "zero",
             Separator = "and",
             GroupSeparator = "",
-            Groups = NumberToStringConverter.GetConverter("EN").Groups
+            Groups = EN.Groups
                 .ToDictionary(kv => kv.Key, kv => new DigitListType { Digits = kv.Value.Values.ToList() }),
-            Scale = NumberToStringConverter.GetConverter("EN").Scale,
+            Scale = EN.Scale,
             Group = 3,
             Minus = "minus *"
         };
@@ -1504,7 +1504,7 @@ public class NumberToStringConverterAuditFixesTests
     public void GetConverter_CultureWithLeadingTrailingSpace_ResolvesSamAsWithout()
     {
         // "EN" and " EN " must resolve to the same converter.
-        var plain = NumberToStringConverter.GetConverter("EN");
+        var plain = EN;
         var spaced = NumberToStringConverter.GetConverter(" EN ");
         Assert.AreSame(plain, spaced,
             "GetConverter must trim whitespace from culture identifiers before lookup");
@@ -1817,7 +1817,7 @@ public class NumberToStringConverterAuditFixesTests
     public void SupportsLocalizableMonthNames_KnownCultureWithDatePattern_ReturnsTrue()
     {
         // EN has a DateFormat in its XML configuration; "EN" resolves to a known CultureInfo.
-        var conv = NumberToStringConverter.GetConverter("EN");
+        var conv = EN;
         Assert.IsTrue(conv.SupportsLocalizableMonthNames,
             "SupportsLocalizableMonthNames must be true when LanguageIdentifier maps to a system culture");
     }
@@ -3124,8 +3124,10 @@ public class NumberToStringConverterAuditFixesTests
     public void Constructor_FractionKeyWhitespaceName_ThrowsArgumentException()
     {
         // Item 95: whitespace-only names must be rejected just like empty/null names.
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"));
-        options.Fractions = new System.Collections.Generic.Dictionary<int, string> { { 2, "   " } };
+        var options = new NumberToStringConverterOptions(EN)
+        {
+            Fractions = new System.Collections.Generic.Dictionary<int, string> { { 2, "   " } }
+        };
         Assert.ThrowsExactly<ArgumentException>(
             () => new NumberToStringConverter(options),
             "A whitespace-only fraction name must be rejected");
@@ -3208,8 +3210,10 @@ public class NumberToStringConverterAuditFixesTests
     [TestMethod]
     public void Constructor_FractionKeyZero_ThrowsArgumentOutOfRange()
     {
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"));
-        options.Fractions = new Dictionary<int, string> { { 0, "zeroth" } };
+        var options = new NumberToStringConverterOptions(EN)
+        {
+            Fractions = new Dictionary<int, string> { { 0, "zeroth" } }
+        };
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => new NumberToStringConverter(options),
             "A fraction key of 0 must be rejected");
@@ -3218,8 +3222,10 @@ public class NumberToStringConverterAuditFixesTests
     [TestMethod]
     public void Constructor_FractionKeyNegative_ThrowsArgumentOutOfRange()
     {
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"));
-        options.Fractions = new Dictionary<int, string> { { -1, "negative-ths" } };
+        var options = new NumberToStringConverterOptions(EN)
+        {
+            Fractions = new Dictionary<int, string> { { -1, "negative-ths" } }
+        };
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => new NumberToStringConverter(options),
             "A negative fraction key must be rejected");
@@ -3241,8 +3247,10 @@ public class NumberToStringConverterAuditFixesTests
     [TestMethod]
     public void Constructor_FractionKeyEmptyName_ThrowsArgumentException()
     {
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"));
-        options.Fractions = new Dictionary<int, string> { { 2, "" } };
+        var options = new NumberToStringConverterOptions(EN)
+        {
+           Fractions = new Dictionary<int, string> { { 2, "" } }
+        };
         Assert.ThrowsExactly<ArgumentException>(
             () => new NumberToStringConverter(options),
             "An empty fraction name must be rejected");
