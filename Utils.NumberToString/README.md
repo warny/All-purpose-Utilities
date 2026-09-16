@@ -812,13 +812,15 @@ converter.Convert(new TimeOnly(12, 0));                       // "noon"
 converter.Convert(new TimeOnly(12, 0), replaceSpecialHours: false); // "twelve hours"
 ```
 
-This keeps binary compatibility and every existing call site source-compatible,
-with one narrow exception: a call site written with an untyped `default`
-literal standing in for `variants` — `converter.Convert(time, default)` —
-becomes an ambiguous overload call (`CS0121`), because `default` converts
+This keeps binary compatibility, with one narrow source-level exception: a
+call site written with an untyped `default` literal standing in for
+`variants` — `converter.Convert(time, default)` — becomes an ambiguous
+overload call (`CS0121`), because the untyped `default` literal converts
 equally well to the new overload's `bool` and the original `string[]`. Use
-`default(string[])`, `[]`, or omit `variants` entirely to keep such a call
-site compiling.
+`[]` or omit `variants` entirely to keep such a call site compiling — **not**
+`default(string[])`, which compiles but passes a `null` array that crashes
+with `NullReferenceException` the moment any variant handling runs, since
+`variants` is iterated without a null check.
 
 **Programmatic**: `NumberToStringConverterOptions.SpecialHours`, a list of
 `SpecialHourRule(int Hour, string Value, bool WholeHour = false)`. At most one

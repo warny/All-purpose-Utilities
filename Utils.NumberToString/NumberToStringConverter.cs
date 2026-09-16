@@ -274,6 +274,8 @@ namespace Utils.NumberToString
                 var builder = ImmutableDictionary.CreateBuilder<int, SpecialHourRule>();
                 foreach (var rule in specialHours)
                 {
+                    if (rule is null)
+                        throw new ArgumentException("SpecialHours entries must not be null.", nameof(options.SpecialHours));
                     if (rule.Hour is < 0 or > 23)
                         throw new ArgumentOutOfRangeException(nameof(options.SpecialHours),
                             $"SpecialHours[{rule.Hour}] must be between 0 and 23; got {rule.Hour}.");

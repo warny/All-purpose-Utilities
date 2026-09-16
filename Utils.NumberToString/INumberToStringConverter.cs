@@ -477,15 +477,18 @@ namespace Utils.NumberToString
         /// Requires <c>&lt;TimeUnits&gt;</c> in the XML configuration.
         /// </summary>
         /// <remarks>
-        /// <see cref="Convert(TimeOnly, bool, string[])"/> overloads this method with an untyped
-        /// <see langword="bool"/> parameter inserted before <paramref name="variants"/>. An
-        /// existing call site written as <c>Convert(time, default)</c> — an untyped
+        /// <see cref="Convert(TimeOnly, bool, string[])"/> overloads this method with an
+        /// additional <see langword="bool"/> parameter inserted before <paramref name="variants"/>.
+        /// An existing call site written as <c>Convert(time, default)</c> — an untyped
         /// <see langword="default"/> literal standing in for an empty <c>variants</c> array —
         /// becomes an ambiguous overload call (<c>CS0121</c>) once that second overload is in
-        /// scope, because <see langword="default"/> converts equally well to <see langword="bool"/>
-        /// or to <c>string[]</c>. This is the one source-compatibility gap in an otherwise additive
-        /// change; fix such a call site with <c>Convert(time, default(string[]))</c>,
-        /// <c>Convert(time, [])</c>, or by simply omitting <paramref name="variants"/> entirely.
+        /// scope, because the untyped <see langword="default"/> literal converts equally well to
+        /// <see langword="bool"/> or to <c>string[]</c>. This is the one source-compatibility gap
+        /// in an otherwise additive change; fix such a call site with <c>Convert(time, [])</c> or
+        /// by simply omitting <paramref name="variants"/> entirely — <b>not</b>
+        /// <c>Convert(time, default(string[]))</c>, which compiles but passes a
+        /// <see langword="null"/> array that crashes with <see cref="NullReferenceException"/>
+        /// deep inside variant handling (<c>variants</c> is iterated without a null check).
         /// </remarks>
         /// <exception cref="NotSupportedException">The converter has no <c>&lt;TimeUnits&gt;</c> configuration (<see cref="SupportsTimeConversion"/> is <see langword="false"/>).</exception>
         string Convert(TimeOnly time, params string[] variants)

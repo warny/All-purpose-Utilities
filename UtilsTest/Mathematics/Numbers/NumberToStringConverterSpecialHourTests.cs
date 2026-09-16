@@ -70,6 +70,16 @@ public class NumberToStringConverterSpecialHourTests
     }
 
     [TestMethod]
+    public void Constructor_NullEntry_ThrowsArgumentException()
+    {
+        // Only reachable through the programmatic API (XML deserialization can't produce a null
+        // <SpecialHour> entry), but SpecialHours is a public settable list, so a null element
+        // must fail cleanly instead of an unguarded null-reference deref on rule.Hour.
+        Assert.ThrowsExactly<ArgumentException>(
+            () => WithSpecialHours([null!]));
+    }
+
+    [TestMethod]
     public void Constructor_NoSpecialHours_DefaultsToEmpty()
     {
         // A synthetic converter with no SpecialHours configured — independent of any real
@@ -107,6 +117,16 @@ public class NumberToStringConverterSpecialHourTests
         StringAssert.StartsWith(converter.Convert(new TimeOnly(12, 59, 0)), "NOON");
     }
 
+    [TestMethod]
+    public void Convert_TimeOnly_WholeHourTrue_NonZeroSecondOnly_AppendsSecondAfterSpecialWord()
+    {
+        // Symmetric with the non-zero-minute case: a non-zero second alone (minute still zero)
+        // is appended after the special word too, not just when a non-zero minute is present.
+        var converter = WithSpecialHours(new SpecialHourRule(12, "NOON", WholeHour: true));
+
+        Assert.AreEqual($"NOON one{converter.Separator}SECOND", converter.Convert(new TimeOnly(12, 0, 1)));
+    }
+
     // ─── wholeHour="false" (default) — replaces only when minute/second are zero ──
 
     [TestMethod]
@@ -126,6 +146,19 @@ public class NumberToStringConverterSpecialHourTests
         // fragment entirely (rather than falling back to the numeral) would still fail this test.
         string expected = $"{converter.Convert(0)}{converter.Separator}HOURS{converter.Separator}{converter.Convert(1)}{converter.Separator}MINUTE";
         Assert.AreEqual(expected, converter.Convert(new TimeOnly(0, 1, 0)));
+    }
+
+    [TestMethod]
+    public void Convert_TimeOnly_WholeHourFalse_NonZeroSecondOnly_FallsBackToNumeralHour()
+    {
+        // Symmetric with the non-zero-minute case: the condition is Minute==0 && Second==0, so a
+        // non-zero second alone (minute still zero) must also fall back to the numeral hour. A
+        // regression that checked only Minute (forgetting Second) would pass the minute-only test
+        // but wrongly keep using the special word here.
+        var converter = WithSpecialHours(new SpecialHourRule(0, "MIDNIGHT"));
+
+        string expected = $"{converter.Convert(0)}{converter.Separator}HOURS{converter.Separator}{converter.Convert(1)}{converter.Separator}SECOND";
+        Assert.AreEqual(expected, converter.Convert(new TimeOnly(0, 0, 1)));
     }
 
     [TestMethod]

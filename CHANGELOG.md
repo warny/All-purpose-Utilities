@@ -23,9 +23,11 @@ All notable changes to this project will be documented in this file.
   hour — "midi quinze") configurations.
   **Known minor source-compat gap:** a call site written as `Convert(time, default)` — an untyped
   `default` literal in place of `variants` — becomes an ambiguous overload call (`CS0121`) now
-  that the `bool replaceSpecialHours` overload exists, since `default` converts equally well to
-  `bool` and `string[]`. Binary compatibility is unaffected; source call sites using this pattern
-  should switch to `default(string[])`, `[]`, or omitting `variants`.
+  that the `bool replaceSpecialHours` overload exists, since the untyped `default` literal
+  converts equally well to `bool` and `string[]`. Binary compatibility is unaffected; source call
+  sites using this pattern should switch to `[]` or omit `variants` — **not** `default(string[])`,
+  which compiles but passes a `null` array that crashes with `NullReferenceException` in variant
+  handling.
 
 ## [2.0.0-rc.2] - Release candidate
 
