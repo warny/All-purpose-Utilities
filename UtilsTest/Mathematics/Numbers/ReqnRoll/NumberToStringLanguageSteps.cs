@@ -13,7 +13,7 @@ namespace UtilsTest.NumberToString.ReqnRoll;
 [Binding]
 public sealed class NumberToStringLanguageSteps
 {
-    private INumberToStringConverter? converter;
+    private NumberToStringConverter? converter;
     private CultureInfo cultureInfo;
     private string[] variants = [];
     private string? result;

@@ -15,8 +15,8 @@ namespace UtilsTest.NumberToString;
 [TestClass]
 public class NumberToStringConverterAuditFixesTests
 {
-    private static NumberToStringConverter EN => (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
-    private static NumberToStringConverter FR => (NumberToStringConverter)NumberToStringConverter.GetConverter("FR");
+    private static NumberToStringConverter EN => NumberToStringConverter.GetConverter("EN");
+    private static NumberToStringConverter FR => NumberToStringConverter.GetConverter("FR");
 
     // ── Item 50 — Minimum signed values overflow ──────────────────────────────
 
@@ -1505,7 +1505,7 @@ public class NumberToStringConverterAuditFixesTests
     {
         // "EN" and " EN " must resolve to the same converter.
         var plain = EN;
-        var spaced = (NumberToStringConverter)NumberToStringConverter.GetConverter(" EN ");
+        var spaced = NumberToStringConverter.GetConverter(" EN ");
         Assert.AreSame(plain, spaced,
             "GetConverter must trim whitespace from culture identifiers before lookup");
     }
@@ -3188,7 +3188,7 @@ public class NumberToStringConverterAuditFixesTests
     public void Convert_TimeSpan_SubSecondOnly_RendersAsZero()
     {
         // A duration of 500 ms only has no second component → must produce Zero text.
-        var converter = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        var converter = NumberToStringConverter.GetConverter("EN");
         string result = converter.Convert(TimeSpan.FromMilliseconds(500));
         Assert.AreEqual(converter.Zero, result,
             "Convert(TimeSpan) for a sub-second-only duration must render as Zero");
@@ -3198,7 +3198,7 @@ public class NumberToStringConverterAuditFixesTests
     public void Convert_TimeSpan_WithMilliseconds_MillisecondsAreDiscarded()
     {
         // 1 hour, 30 minutes, 500 ms → must mention hours and minutes but not milliseconds.
-        var converter = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        var converter = NumberToStringConverter.GetConverter("EN");
         TimeSpan wholeSeconds = TimeSpan.FromHours(1).Add(TimeSpan.FromMinutes(30));
         TimeSpan withMilliseconds = wholeSeconds.Add(TimeSpan.FromMilliseconds(500));
 
@@ -3236,7 +3236,7 @@ public class NumberToStringConverterAuditFixesTests
     {
         // Keys > 28 are valid: ConvertFraction(BigInteger, BigInteger) can resolve denominators
         // beyond decimal precision (e.g. 10^29). The 28 cap applies only to Convert(decimal).
-        var options = new NumberToStringConverterOptions((NumberToStringConverter)NumberToStringConverter.GetConverter("EN"));
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"));
         options.Fractions = new Dictionary<int, string> { { 29, "FRACTION(s)" } };
         var conv = new NumberToStringConverter(options);
         string result = conv.ConvertFraction(System.Numerics.BigInteger.One, System.Numerics.BigInteger.Pow(10, 29));

@@ -123,7 +123,7 @@ namespace Utils.NumberToString
         internal static BuiltInInitializationResult BuiltInInitialization { get; }
 
         // Caches configurations for different cultures — ConcurrentDictionary for thread-safety
-        private static readonly ConcurrentDictionary<string, INumberToStringConverter> CachedConfigurations = new(StringComparer.InvariantCultureIgnoreCase);
+        private static readonly ConcurrentDictionary<string, NumberToStringConverter> CachedConfigurations = new(StringComparer.InvariantCultureIgnoreCase);
 
         // Explicitly registered language-specifics instances, consulted before reflection
         private static readonly ConcurrentDictionary<string, Func<INumberToStringLanguageSpecifics>> _registeredSpecifics = new(StringComparer.Ordinal);

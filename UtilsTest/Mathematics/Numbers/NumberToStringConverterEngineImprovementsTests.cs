@@ -15,7 +15,7 @@ public class NumberToStringConverterEngineImprovementsTests
     [TestMethod]
     public void Convert_Double_DelegatesToDecimal()
     {
-        INumberToStringConverter converter = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        INumberToStringConverter converter = NumberToStringConverter.GetConverter("EN");
         Assert.AreEqual(converter.Convert(3.14m), converter.Convert(3.14));
         Assert.AreEqual(converter.Convert(2.5m), converter.Convert(2.5));
     }
@@ -24,7 +24,7 @@ public class NumberToStringConverterEngineImprovementsTests
     [TestMethod]
     public void Convert_Float_DelegatesToDouble()
     {
-        INumberToStringConverter converter = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        INumberToStringConverter converter = NumberToStringConverter.GetConverter("EN");
         Assert.AreEqual(converter.Convert(2.5), converter.Convert((float)2.5));
     }
 
@@ -32,7 +32,7 @@ public class NumberToStringConverterEngineImprovementsTests
     [TestMethod]
     public void Convert_Float_WithVariants_DelegatesToDouble()
     {
-        NumberToStringConverter source = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        NumberToStringConverter source = NumberToStringConverter.GetConverter("EN");
         var options = new NumberToStringConverterOptions(source)
         {
             VariantDimensions = [new NumberToStringConverter.VariantDimension("form", ["base", "alternate"])],
@@ -73,7 +73,7 @@ public class NumberToStringConverterEngineImprovementsTests
     [TestMethod]
     public void GroupConnector_ObservesConfiguredThreshold()
     {
-        NumberToStringConverter source = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        NumberToStringConverter source = NumberToStringConverter.GetConverter("EN");
         var options = new NumberToStringConverterOptions(source)
         {
             GroupConnector = "LINK",
@@ -91,7 +91,7 @@ public class NumberToStringConverterEngineImprovementsTests
     [TestMethod]
     public void GroupConnector_NullDisablesInjectionAndRoundTrips()
     {
-        NumberToStringConverter source = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        NumberToStringConverter source = NumberToStringConverter.GetConverter("EN");
         var enabled = new NumberToStringConverter(new NumberToStringConverterOptions(source)
         {
             GroupConnector = "LINK",
@@ -111,7 +111,7 @@ public class NumberToStringConverterEngineImprovementsTests
     [TestMethod]
     public void ReplacementScope_StartsWith_AffectsOnlyBeginning()
     {
-        NumberToStringConverter source = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        NumberToStringConverter source = NumberToStringConverter.GetConverter("EN");
         string token = source.Convert(1) + " ";
         var converter = WithReplacement(source, new(token, "PREFIX ", ReplacementScope.StartsWith));
 
@@ -123,7 +123,7 @@ public class NumberToStringConverterEngineImprovementsTests
     [TestMethod]
     public void ReplacementScope_EndsWith_AffectsOnlyEnding()
     {
-        NumberToStringConverter source = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        NumberToStringConverter source = NumberToStringConverter.GetConverter("EN");
         string token = source.Convert(1);
         var converter = WithReplacement(source, new(token, "SUFFIX", ReplacementScope.EndsWith));
 
@@ -135,7 +135,7 @@ public class NumberToStringConverterEngineImprovementsTests
     [TestMethod]
     public void ReplacementScope_VariantRules_HonorStartAndEndScopes()
     {
-        NumberToStringConverter source = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        NumberToStringConverter source = NumberToStringConverter.GetConverter("EN");
         string one = source.Convert(1);
         var options = new NumberToStringConverterOptions(source)
         {

@@ -12,13 +12,13 @@ namespace UtilsTest.NumberToString;
 [TestClass]
 public class NumberToStringConverterBatchTests
 {
-    private static NumberToStringConverter EN => (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+    private static NumberToStringConverter EN => NumberToStringConverter.GetConverter("EN");
     // ─── G3 — ConvertOrdinal(BigInteger) ────────────────────────────────────
 
     [TestMethod]
     public void ConvertOrdinal_BigInteger_DelegatesToLong()
     {
-        var converter = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        var converter = NumberToStringConverter.GetConverter("EN");
 
         Assert.AreEqual(converter.ConvertOrdinal(1L), converter.ConvertOrdinal((BigInteger)1));
         Assert.AreEqual(converter.ConvertOrdinal(21L), converter.ConvertOrdinal((BigInteger)21));
@@ -27,7 +27,7 @@ public class NumberToStringConverterBatchTests
     [TestMethod]
     public void ConvertOrdinal_BigInteger_WithVariants()
     {
-        var options = new NumberToStringConverterOptions((NumberToStringConverter)NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
         {
             VariantDimensions = [new NumberToStringConverter.VariantDimension("form", ["base", "alternate"])],
             OrdinalVariants =
@@ -50,7 +50,7 @@ public class NumberToStringConverterBatchTests
     [TestMethod]
     public void ConvertYear_WithVariants_PassedToConvert()
     {
-        NumberToStringConverter source = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        NumberToStringConverter source = NumberToStringConverter.GetConverter("EN");
         var options = new NumberToStringConverterOptions(source)
         {
             YearFormat = new YearFormatOptions(null, null, null),
@@ -109,9 +109,9 @@ public class NumberToStringConverterBatchTests
     [TestMethod]
     public void GetConverter_LongBCP47_StripsSubtagsRecursively()
     {
-        var zh = (NumberToStringConverter)NumberToStringConverter.GetConverter("ZH");
-        var zhHans = (NumberToStringConverter)NumberToStringConverter.GetConverter("zh-Hans");
-        var zhHansCN = (NumberToStringConverter)NumberToStringConverter.GetConverter("zh-Hans-CN");
+        var zh = NumberToStringConverter.GetConverter("ZH");
+        var zhHans = NumberToStringConverter.GetConverter("zh-Hans");
+        var zhHansCN = NumberToStringConverter.GetConverter("zh-Hans-CN");
 
         Assert.AreEqual(zh.Convert(1), zhHans.Convert(1));
         Assert.AreEqual(zh.Convert(1), zhHansCN.Convert(1));
@@ -120,8 +120,8 @@ public class NumberToStringConverterBatchTests
     [TestMethod]
     public void GetConverter_UnknownCulture_FallsBackToEN()
     {
-        var unknown = (NumberToStringConverter)NumberToStringConverter.GetConverter("xx-Unknown-Region");
-        var en = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        var unknown = NumberToStringConverter.GetConverter("xx-Unknown-Region");
+        var en = NumberToStringConverter.GetConverter("EN");
         Assert.AreEqual(en.Convert(1), unknown.Convert(1));
     }
 

@@ -33,7 +33,7 @@ public class NumberToStringConverterForcedVariantsTests
     {
         // Two independent variant dimensions. The "hour" unit forces only "gender"; a caller-
         // supplied "case" value must remain visible to a rule that depends only on "case".
-        var sourceConverter = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        var sourceConverter = NumberToStringConverter.GetConverter("EN");
         string baseToken = sourceConverter.Convert(1);
         var options = new NumberToStringConverterOptions(sourceConverter)
         {
@@ -82,7 +82,7 @@ public class NumberToStringConverterForcedVariantsTests
     [TestMethod]
     public void Convert_Synthetic_ForcedVariantOverridesConflictingCallerVariant()
     {
-        var sourceConverter = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        var sourceConverter = NumberToStringConverter.GetConverter("EN");
         string baseToken = sourceConverter.Convert(1);
         var options = new NumberToStringConverterOptions(sourceConverter)
         {
@@ -119,7 +119,7 @@ public class NumberToStringConverterForcedVariantsTests
     [TestMethod]
     public void Convert_Synthetic_NoStateLeakAcrossDifferentlyConstrainedConstituents()
     {
-        var sourceConverter = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        var sourceConverter = NumberToStringConverter.GetConverter("EN");
         string baseToken = sourceConverter.Convert(1);
         var options = new NumberToStringConverterOptions(sourceConverter)
         {
@@ -155,7 +155,7 @@ public class NumberToStringConverterForcedVariantsTests
     [TestMethod]
     public void TimeUnitForcedVariants_MutatingSourceDictionaryAfterConstruction_DoesNotAffectConverter()
     {
-        NumberToStringConverter sourceConverter = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        NumberToStringConverter sourceConverter = NumberToStringConverter.GetConverter("EN");
         string baseToken = sourceConverter.Convert(1);
         var source = new Dictionary<string, ForcedVariantSet>
         {
@@ -225,7 +225,7 @@ public class NumberToStringConverterForcedVariantsTests
     [TestMethod]
     public void FromCulture_PreservesTimeUnitForcedVariants()
     {
-        NumberToStringConverter source = (NumberToStringConverter)NumberToStringConverter.GetConverter("FR");
+        NumberToStringConverter source = NumberToStringConverter.GetConverter("FR");
         NumberToStringConverterOptions options = NumberToStringConverterOptions.FromCulture("FR");
 
         Assert.AreEqual(source.TimeUnitForcedVariants.Count, options.TimeUnitForcedVariants.Count);
@@ -307,7 +307,7 @@ public class NumberToStringConverterForcedVariantsTests
     [TestMethod]
     public void ForcedVariantSet_Parse_UnknownValue_ThrowsAtConverterConstruction()
     {
-        var options = new NumberToStringConverterOptions((NumberToStringConverter)NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
         {
             VariantDimensions = [new NumberToStringConverter.VariantDimension("gender", ["masculine", "feminine"])],
             TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)> { ["hour"] = ("hour", "hours", null) },
@@ -320,7 +320,7 @@ public class NumberToStringConverterForcedVariantsTests
     [TestMethod]
     public void ForcedVariantSet_Parse_UnknownDimension_ThrowsAtConverterConstruction()
     {
-        var options = new NumberToStringConverterOptions((NumberToStringConverter)NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
         {
             VariantDimensions = [new NumberToStringConverter.VariantDimension("gender", ["masculine", "feminine"])],
             TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)> { ["hour"] = ("hour", "hours", null) },
@@ -355,7 +355,7 @@ public class NumberToStringConverterForcedVariantsTests
     [TestMethod]
     public void TimeUnitForcedVariants_KeyWithoutMatchingTimeUnitsEntry_ThrowsArgumentException()
     {
-        var options = new NumberToStringConverterOptions((NumberToStringConverter)NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
         {
             TimeUnitForcedVariants = new Dictionary<string, ForcedVariantSet>
             {
@@ -369,7 +369,7 @@ public class NumberToStringConverterForcedVariantsTests
     public void ConvertCurrency_InvalidUnitForcedVariant_ThrowsBeforeRenderingAnyFragment()
     {
         int finalizeCallCount = 0;
-        var options = new NumberToStringConverterOptions((NumberToStringConverter)NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
         {
             LanguageSpecifics = new CountingLanguageSpecifics(() => finalizeCallCount++),
             VariantDimensions = [new NumberToStringConverter.VariantDimension("form", ["base", "alternate"])],
@@ -400,7 +400,7 @@ public class NumberToStringConverterForcedVariantsTests
 
     /// <summary>Creates synthetic options with one canonical dimension, one local alias, and one time unit.</summary>
     private static NumberToStringConverterOptions CreateAliasedVariantOptions()
-        => new((NumberToStringConverter)NumberToStringConverter.GetConverter("EN"))
+        => new(NumberToStringConverter.GetConverter("EN"))
         {
             VariantDimensions =
             [

@@ -148,7 +148,7 @@ public class NumberToStringConverterLexicalFormSelectorTests
     {
         // Purely synthetic (bucket = value % 3): not Russian, not any real language — only proves
         // the mechanism supports more than two configured, selector-chosen forms.
-        var sourceConverter = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        var sourceConverter = NumberToStringConverter.GetConverter("EN");
         var options = new NumberToStringConverterOptions(sourceConverter)
         {
             TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)>
@@ -174,7 +174,7 @@ public class NumberToStringConverterLexicalFormSelectorTests
     [TestMethod]
     public void FormatTimeUnit_SelectorReturnsUnconfiguredKey_ThrowsUNTS007AtRuntime()
     {
-        var options = new NumberToStringConverterOptions((NumberToStringConverter)NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
         {
             TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)>
             {
@@ -232,7 +232,7 @@ public class NumberToStringConverterLexicalFormSelectorTests
     [TestMethod]
     public void TimeUnitForms_ExplicitOverrideOnOneUnit_MergesWithSynthesizedFormsAndSiblingsStaySynthesizedOnly()
     {
-        var options = new NumberToStringConverterOptions((NumberToStringConverter)NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
         {
             TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)>
             {
@@ -269,7 +269,7 @@ public class NumberToStringConverterLexicalFormSelectorTests
     [TestMethod]
     public void TimeUnitFormSelectors_OverrideOnOneUnit_SiblingsStillReportDefaultSelector()
     {
-        var options = new NumberToStringConverterOptions((NumberToStringConverter)NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
         {
             TimeUnitFormSelectors = new Dictionary<string, ILexicalFormSelector>
             {
@@ -286,7 +286,7 @@ public class NumberToStringConverterLexicalFormSelectorTests
     [TestMethod]
     public void Clone_NarrowingTimeUnits_DoesNotResurrectRemovedUnitFormsOrSelectors()
     {
-        var source = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        var source = NumberToStringConverter.GetConverter("EN");
         var options = new NumberToStringConverterOptions(source)
         {
             TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)>
@@ -466,7 +466,7 @@ public class NumberToStringConverterLexicalFormSelectorTests
         {
             ["hour"] = LexicalFormSet.Create(("singular", "hour"), ("plural", "hours")),
         };
-        var options = new NumberToStringConverterOptions((NumberToStringConverter)NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
         {
             TimeUnitForms = source,
         };

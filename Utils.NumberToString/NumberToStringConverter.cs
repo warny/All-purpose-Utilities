@@ -25,7 +25,7 @@ namespace Utils.NumberToString
         /// </summary>
         /// <param name="culture">The culture to retrieve the converter for.</param>
         /// <returns>The corresponding NumberToStringConverter instance.</returns>
-        public static INumberToStringConverter GetConverter(CultureInfo culture) => GetConverter(culture.Name);
+        public static NumberToStringConverter GetConverter(CultureInfo culture) => GetConverter(culture.Name);
 
         /// <summary>
         /// Retrieves a number-to-string converter for the specified culture name.
@@ -35,7 +35,7 @@ namespace Utils.NumberToString
         /// </summary>
         /// <param name="culture">The name of the culture to retrieve the converter for.</param>
         /// <returns>The corresponding NumberToStringConverter instance.</returns>
-        public static INumberToStringConverter GetConverter(string culture)
+        public static NumberToStringConverter GetConverter(string culture)
         {
             ArgumentException.ThrowIfNullOrEmpty(culture);
             culture = culture.Trim();
@@ -65,7 +65,7 @@ namespace Utils.NumberToString
         /// <see langword="true"/> when a converter was found for the culture or any of its
         /// BCP-47 parent tags; <see langword="false"/> otherwise.
         /// </returns>
-        public static bool TryGetConverter(CultureInfo? culture, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out INumberToStringConverter? converter)
+        public static bool TryGetConverter(CultureInfo? culture, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out NumberToStringConverter? converter)
         {
             if (culture is null) { converter = null; return false; }
             return TryGetConverter(culture.Name, out converter);
@@ -86,7 +86,7 @@ namespace Utils.NumberToString
         /// <returns>
         /// <see langword="true"/> when a converter was found; <see langword="false"/> otherwise.
         /// </returns>
-        public static bool TryGetConverter(string culture, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out INumberToStringConverter? converter)
+        public static bool TryGetConverter(string culture, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out NumberToStringConverter? converter)
         {
             if (string.IsNullOrWhiteSpace(culture) || culture.Trim().Length < 2)
             {

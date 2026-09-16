@@ -30,7 +30,7 @@ public class NumberToStringCompositeFinalizationTests
     [TestMethod]
     public void Convert_ComplexRational_ComposesBothCompleteCardinals()
     {
-        var converter = new NumberToStringConverter(new NumberToStringConverterOptions((NumberToStringConverter)NumberToStringConverter.GetConverter("EN"))
+        var converter = new NumberToStringConverter(new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
         {
             Separator = "|",
             FractionSeparator = "CONNECTOR",
@@ -108,7 +108,7 @@ public class NumberToStringCompositeFinalizationTests
     public void CompositeConversion_AdjustFunctionRunsBeforeVariantRules()
     {
         var finalizer = new RecordingFinalizer();
-        NumberToStringConverter source = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        NumberToStringConverter source = NumberToStringConverter.GetConverter("EN");
         string baseToken = source.Convert(2);
         var options = new NumberToStringConverterOptions(source)
         {
@@ -135,7 +135,7 @@ public class NumberToStringCompositeFinalizationTests
     public void CompositeConversion_EndTriggerStillAppliesToNumericFragment()
     {
         var finalizer = new RecordingFinalizer();
-        NumberToStringConverter source = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        NumberToStringConverter source = NumberToStringConverter.GetConverter("EN");
         string baseToken = source.Convert(2);
         var options = new NumberToStringConverterOptions(source)
         {
@@ -165,7 +165,7 @@ public class NumberToStringCompositeFinalizationTests
     public void ConvertCurrency_UnitAndSubunit_DifferentForcedVariants_FinalizeCompletePhraseOnce()
     {
         var finalizer = new RecordingFinalizer();
-        NumberToStringConverter source = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        NumberToStringConverter source = NumberToStringConverter.GetConverter("EN");
         string baseToken = source.Convert(2);
         var options = new NumberToStringConverterOptions(source)
         {
@@ -207,7 +207,7 @@ public class NumberToStringCompositeFinalizationTests
     public void Convert_TimeSpan_WithCustomLexicalFormSelector_FinalizesCompletePhraseOnce()
     {
         var finalizer = new RecordingFinalizer();
-        NumberToStringConverter source = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        NumberToStringConverter source = NumberToStringConverter.GetConverter("EN");
         string baseToken = source.Convert(2);
         var options = new NumberToStringConverterOptions(source)
         {
@@ -254,10 +254,10 @@ public class NumberToStringCompositeFinalizationTests
     private static void AssertSingleFinalization(
         Func<NumberToStringConverter, string> convert)
     {
-        NumberToStringConverter baseline = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        NumberToStringConverter baseline = NumberToStringConverter.GetConverter("EN");
         string expectedInput = convert(baseline);
         var finalizer = new RecordingFinalizer();
-        var options = new NumberToStringConverterOptions((NumberToStringConverter)NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
         {
             LanguageSpecifics = finalizer,
         };
@@ -277,7 +277,7 @@ public class NumberToStringCompositeFinalizationTests
         Func<NumberToStringConverter, string> convertNegative,
         Func<NumberToStringConverter, string> convertMagnitude)
     {
-        NumberToStringConverter baseline = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        NumberToStringConverter baseline = NumberToStringConverter.GetConverter("EN");
         string magnitude = convertMagnitude(baseline);
         var finalizer = new RecordingFinalizer();
         var converter = new NumberToStringConverter(new NumberToStringConverterOptions(baseline)
@@ -307,7 +307,7 @@ public class NumberToStringCompositeFinalizationTests
     /// <param name="maxNumber">The maximum whole cardinal value.</param>
     /// <returns>A converter configured with the limit.</returns>
     private static NumberToStringConverter CreateConverterWithMaxNumber(BigInteger maxNumber) =>
-        new(new NumberToStringConverterOptions((NumberToStringConverter)NumberToStringConverter.GetConverter("EN"))
+        new(new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
         {
             MaxNumber = maxNumber,
         });

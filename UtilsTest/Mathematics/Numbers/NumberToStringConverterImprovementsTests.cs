@@ -21,7 +21,7 @@ public class NumberToStringConverterImprovementsTests
     public void AdjustFunction_CalledOnceForPositive()
     {
         int callCount = 0;
-        var options = new NumberToStringConverterOptions((NumberToStringConverter)NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
         {
             AdjustFunction = s => { callCount++; return s.ToUpperInvariant(); }
         };
@@ -38,7 +38,7 @@ public class NumberToStringConverterImprovementsTests
         // For negative numbers the AdjustFunction is applied to the absolute value
         // before the minus template, not applied again afterwards.
         int callCount = 0;
-        var options = new NumberToStringConverterOptions((NumberToStringConverter)NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
         {
             Minus = "SIGN *",
             AdjustFunction = s => { callCount++; return s; }
@@ -56,7 +56,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void Interface_ConvertNumber_ReturnsExpectedText()
     {
-        INumberToStringConverter converter = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        INumberToStringConverter converter = NumberToStringConverter.GetConverter("EN");
         var half = new Number(1, 2);
 
         string result = converter.Convert(half);
@@ -70,7 +70,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void Convert_ThrowsWhenExceedingMaxNumber()
     {
-        var options = new NumberToStringConverterOptions((NumberToStringConverter)NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
         {
             MaxNumber = new BigInteger(999)
         };
@@ -82,7 +82,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void Convert_ThrowsWhenNegativeExceedsMaxNumber()
     {
-        var options = new NumberToStringConverterOptions((NumberToStringConverter)NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
         {
             MaxNumber = new BigInteger(999)
         };
@@ -94,7 +94,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void Convert_DoesNotThrowAtExactMaxNumber()
     {
-        var options = new NumberToStringConverterOptions((NumberToStringConverter)NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
         {
             MaxNumber = new BigInteger(999)
         };
@@ -140,7 +140,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void Interface_ConvertWithVariants_Exists()
     {
-        INumberToStringConverter converter = (NumberToStringConverter)NumberToStringConverter.GetConverter("FR");
+        INumberToStringConverter converter = NumberToStringConverter.GetConverter("FR");
 
         Assert.AreEqual(
             ((NumberToStringConverter)converter).Convert(new BigInteger(1), "gender=feminin"),
@@ -150,7 +150,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void Convert_UnknownVariantDimension_Throws()
     {
-        var converter = (NumberToStringConverter)NumberToStringConverter.GetConverter("FR");
+        var converter = NumberToStringConverter.GetConverter("FR");
         Assert.ThrowsExactly<ArgumentException>(() => converter.Convert(1, "cas=inconnu"));
     }
 
@@ -167,7 +167,7 @@ public class NumberToStringConverterImprovementsTests
         var stub = new StubLanguageSpecifics(() => callCount++);
         NumberToStringConverter.RegisterLanguageSpecifics(nameof(StubLanguageSpecifics), stub);
 
-        var options = new NumberToStringConverterOptions((NumberToStringConverter)NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
         {
             LanguageSpecifics = stub,
         };
@@ -187,7 +187,7 @@ public class NumberToStringConverterImprovementsTests
         // Regression: before the fix, AdjustFunction ran before ordinal rules,
         // so an uppercase AdjustFunction turned "twenty-one" into "TWENTY-ONE"
         // and the word rule "one"→"first" never matched, producing "TWENTY-ONEth".
-        var source = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        var source = NumberToStringConverter.GetConverter("EN");
         var options = new NumberToStringConverterOptions(source)
         {
             AdjustFunction = s => s.ToUpperInvariant()
@@ -285,7 +285,7 @@ public class NumberToStringConverterImprovementsTests
     public void ConvertOrdinal_Plugin_OverridesXmlPipeline()
     {
         // Build a converter with a plugin that returns "ORDINAL_<n>" for any number > 0
-        var source = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        var source = NumberToStringConverter.GetConverter("EN");
         var options = new NumberToStringConverterOptions(source)
         {
             LanguageSpecifics = new OrdinalPluginSpecifics()
@@ -303,7 +303,7 @@ public class NumberToStringConverterImprovementsTests
     {
         // OrdinalPluginSpecifics only implements TryConvertOrdinal(int); the default long
         // implementation delegates for values ≤ int.MaxValue and returns false above.
-        var options = new NumberToStringConverterOptions((NumberToStringConverter)NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
         {
             LanguageSpecifics = new OrdinalPluginSpecifics()
         };
@@ -322,7 +322,7 @@ public class NumberToStringConverterImprovementsTests
     public void ConvertOrdinal_Plugin_LongOverride_HandlesLargeValues()
     {
         // LargeOrdinalPluginSpecifics overrides TryConvertOrdinal(long) directly.
-        var options = new NumberToStringConverterOptions((NumberToStringConverter)NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
         {
             LanguageSpecifics = new LargeOrdinalPluginSpecifics()
         };
@@ -355,7 +355,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void ConvertOrdinal_Long_SmallNumber_SameAsInt()
     {
-        var converter = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        var converter = NumberToStringConverter.GetConverter("EN");
 
         Assert.AreEqual(converter.ConvertOrdinal(1),   converter.ConvertOrdinal(1L));
         Assert.AreEqual(converter.ConvertOrdinal(21),  converter.ConvertOrdinal(21L));
@@ -366,7 +366,7 @@ public class NumberToStringConverterImprovementsTests
     public void ConvertOrdinal_Long_AboveIntMax_UsesXmlPipeline()
     {
         // Values above int.MaxValue bypass the plugin and go through the XML pipeline
-        var converter = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        var converter = NumberToStringConverter.GetConverter("EN");
         long n = (long)int.MaxValue + 2;   // 2147483649 = "two billion, one hundred forty-seven million, four hundred eighty-three thousand, six hundred forty-nine"
 
         string result = converter.ConvertOrdinal(n);
@@ -379,7 +379,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void ConvertOrdinal_Long_Negative()
     {
-        var converter = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        var converter = NumberToStringConverter.GetConverter("EN");
 
         Assert.AreEqual(converter.ConvertOrdinal(-1), converter.ConvertOrdinal(-1L));
         Assert.AreEqual(converter.ConvertOrdinal(-21), converter.ConvertOrdinal(-21L));
@@ -388,7 +388,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void ConvertOrdinal_Long_WithVariants()
     {
-        var converter = (NumberToStringConverter)NumberToStringConverter.GetConverter("ES");
+        var converter = NumberToStringConverter.GetConverter("ES");
 
         Assert.AreEqual(
             converter.ConvertOrdinal(1, "gender=femenino"),
@@ -587,7 +587,7 @@ public class NumberToStringConverterImprovementsTests
     private static NumberToStringConverter MakeTriggerConverter(
         IEnumerable<NumberToStringConverter.TriggerRule> triggers)
     {
-        var options = new NumberToStringConverterOptions((NumberToStringConverter)NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
         {
             Triggers = triggers.ToList()
         };
@@ -630,7 +630,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void Trigger_End_VariantConditioned()
     {
-        var en = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        var en = NumberToStringConverter.GetConverter("EN");
         var options = new NumberToStringConverterOptions(en);
         options.VariantDimensions = [new NumberToStringConverter.VariantDimension("gender", ["masc", "fem"])];
         // Replace with variant forms: masc="one" (default, first form), fem="una"
@@ -653,7 +653,7 @@ public class NumberToStringConverterImprovementsTests
     {
         // When no DefaultTo and no variant matches, the replacement is skipped entirely
         // (the regex is never even evaluated — ApplyTriggerReplace short-circuits)
-        var en = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        var en = NumberToStringConverter.GetConverter("EN");
         var options = new NumberToStringConverterOptions(en);
         options.VariantDimensions = [new NumberToStringConverter.VariantDimension("gender", ["masc", "fem"])];
         var forms = new List<NumberToStringConverter.TriggerReplacementForm>
@@ -779,7 +779,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void Convert_WithPrecision_NoPrecisionLoss_WhenPrecisionLargeEnough()
     {
-        var en = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        var en = NumberToStringConverter.GetConverter("EN");
         string full = en.Convert(123456789);
         string withPrecision = en.Convert((BigInteger)123456789, 20);
         Assert.AreEqual(full, withPrecision);
@@ -790,7 +790,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void ConvertDecimal_MandatoryDigits_Negative_PreservesNaturalBehavior()
     {
-        var fr = (NumberToStringConverter)NumberToStringConverter.GetConverter("FR");
+        var fr = NumberToStringConverter.GetConverter("FR");
         // -1 is the internal sentinel for "show as-is"; both paths must produce the same result.
         Assert.AreEqual(fr.Convert(21.5m), fr.Convert(21.5m, -1, null, []));
         Assert.AreEqual(fr.Convert(21.5m), fr.Convert(21.5m, []));
@@ -829,7 +829,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void Convert_Int_SignificantDigits_MatchesBigInteger()
     {
-        var en = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        var en = NumberToStringConverter.GetConverter("EN");
 
         Assert.AreEqual(en.Convert((System.Numerics.BigInteger)12345, 3), en.Convert(12345,  3));
         Assert.AreEqual(en.Convert((System.Numerics.BigInteger)12345, 3), en.Convert(12345L, 3));
@@ -841,7 +841,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void Convert_Long_SignificantDigits_WithVariants_MatchesBigInteger()
     {
-        var fr = (NumberToStringConverter)NumberToStringConverter.GetConverter("FR");
+        var fr = NumberToStringConverter.GetConverter("FR");
 
         // 210 rounded to 1 significant digit → 200 ; 21 rounded to 2 → 21
         Assert.AreEqual(fr.Convert((System.Numerics.BigInteger)210, 1, "gender=feminin"),
@@ -853,7 +853,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void Convert_Interface_IntLong_SignificantDigits_DelegatesToBigInteger()
     {
-        INumberToStringConverter iface = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        INumberToStringConverter iface = NumberToStringConverter.GetConverter("EN");
 
         Assert.AreEqual(iface.Convert((System.Numerics.BigInteger)12345, 3),
                         iface.Convert(12345, 3));
@@ -876,7 +876,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void ConvertCurrency_Interface_Variants_DelegatesToConcrete()
     {
-        INumberToStringConverter iface = (NumberToStringConverter)NumberToStringConverter.GetConverter("FR");
+        INumberToStringConverter iface = NumberToStringConverter.GetConverter("FR");
         var livre = LiveCurrency();
 
         // Calling via the interface must reach the concrete implementation (not the default throw).

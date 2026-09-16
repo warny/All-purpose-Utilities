@@ -12,7 +12,7 @@ public class NumberToStringConverterCoverageGapsTests
     [TestMethod]
     public void Convert_Double_MatchesEquivalentDecimal()
     {
-        var converter = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        var converter = NumberToStringConverter.GetConverter("EN");
 
         Assert.AreEqual(converter.Convert(1.5m), converter.Convert(1.5));
     }
@@ -21,7 +21,7 @@ public class NumberToStringConverterCoverageGapsTests
     [TestMethod]
     public void DecimalFormatOptions_CustomMarkersAreApplied()
     {
-        var converter = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        var converter = NumberToStringConverter.GetConverter("EN");
         var options = new DecimalFormatOptions
         {
             DecimalSeparator = "UNIT(s)",
@@ -38,7 +38,7 @@ public class NumberToStringConverterCoverageGapsTests
     [TestMethod]
     public void Convert_BigInteger_SignificantDigitsMatchesRoundedValue()
     {
-        var converter = (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        var converter = NumberToStringConverter.GetConverter("EN");
 
         Assert.AreEqual(converter.Convert((BigInteger)100_000_000), converter.Convert((BigInteger)123_456_789, 1));
     }
@@ -47,7 +47,7 @@ public class NumberToStringConverterCoverageGapsTests
     [TestMethod]
     public void Convert_BigInteger_SignificantDigitsPreservesVariants()
     {
-        var converter = (NumberToStringConverter)NumberToStringConverter.GetConverter("ES");
+        var converter = NumberToStringConverter.GetConverter("ES");
 
         Assert.AreEqual(
             converter.Convert((BigInteger)200_000_000, "gender=femenino"),
@@ -58,7 +58,7 @@ public class NumberToStringConverterCoverageGapsTests
     [TestMethod]
     public void ConvertYear_Negative_WithVariant_AppendsConfiguredSuffix()
     {
-        var source = (NumberToStringConverter)NumberToStringConverter.GetConverter("FR");
+        var source = NumberToStringConverter.GetConverter("FR");
         var converter = new NumberToStringConverter(new NumberToStringConverterOptions(source)
         {
             YearFormat = new YearFormatOptions(null, null, null, BeforeChristSuffix: "ERA")
