@@ -199,6 +199,73 @@ public class NumberToStringConverterSpecialHourTests
         StringAssert.Contains(result, "HOUR");
     }
 
+    [TestMethod]
+    public void Convert_TimeSpan_TwelveHours_RendersExactPlainNumeralHour()
+    {
+        // Exact equality, not just "NOON is absent" — 12 hours of duration renders identically
+        // whether or not a wholeHour=true rule is configured for hour 12.
+        var converter = WithSpecialHours(new SpecialHourRule(12, "NOON", WholeHour: true));
+
+        string expected = $"{converter.Convert(12)}{converter.Separator}HOURS";
+        Assert.AreEqual(expected, converter.Convert(new TimeSpan(12, 0, 0)));
+    }
+
+    [TestMethod]
+    public void Convert_TimeSpan_ZeroHourComponent_OmitsHourFragmentEntirely()
+    {
+        // Unlike Convert(TimeOnly), which always renders the hour (even "zero hours"),
+        // Convert(TimeSpan) omits the hour fragment entirely when there are zero whole hours —
+        // so a duration matching the "midnight" hour value never even reaches the point where a
+        // special-hour word could apply.
+        var converter = WithSpecialHours(new SpecialHourRule(0, "MIDNIGHT", WholeHour: true));
+
+        string expected = $"{converter.Convert(30)}{converter.Separator}MINUTES";
+        Assert.AreEqual(expected, converter.Convert(new TimeSpan(0, 30, 0)));
+    }
+
+    [TestMethod]
+    public void Convert_TimeSpan_MultiDayDuration_UsesTotalHoursNotClockHour()
+    {
+        // 1 day + 12 hours = 36 total hours. The clock-style ".Hours" component alone (12) would
+        // coincide with the "noon" rule, but duration rendering sums Days*24+Hours before
+        // formatting, and never consults SpecialHours at all — 36 is rendered as a plain numeral.
+        var converter = WithSpecialHours(new SpecialHourRule(12, "NOON", WholeHour: true));
+
+        var duration = new TimeSpan(1, 12, 0, 0);
+        string expected = $"{converter.Convert(36)}{converter.Separator}HOURS";
+        Assert.AreEqual(expected, converter.Convert(duration));
+    }
+
+    [TestMethod]
+    public void Convert_TimeSpan_NegativeTwelveHours_UsesMinusTemplateNotSpecialWord()
+    {
+        var converter = WithSpecialHours(new SpecialHourRule(12, "NOON", WholeHour: true));
+
+        string positive = $"{converter.Convert(12)}{converter.Separator}HOURS";
+        string expected = converter.Minus.Replace("*", positive);
+        Assert.AreEqual(expected, converter.Convert(new TimeSpan(-12, 0, 0)));
+    }
+
+    [TestMethod]
+    public void Convert_TimeSpan_TwelveHoursFifteenMinutes_IsNotReplacedBySpecialHour()
+    {
+        var converter = WithSpecialHours(new SpecialHourRule(12, "NOON", WholeHour: true));
+
+        string expected = $"{converter.Convert(12)}{converter.Separator}HOURS{converter.Separator}{converter.Convert(15)}{converter.Separator}MINUTES";
+        Assert.AreEqual(expected, converter.Convert(new TimeSpan(12, 15, 0)));
+    }
+
+    [TestMethod]
+    public void Convert_TimeSpan_EN_TwelveAndZeroHours_UseNumeralWordingNotNoonOrMidnight()
+    {
+        // Confirms the real, built-in EN configuration (which does declare "noon"/"midnight" for
+        // TimeOnly) leaves Convert(TimeSpan) untouched.
+        var en = NumberToStringConverter.GetConverter("EN");
+
+        Assert.AreEqual("twelve hours", en.Convert(new TimeSpan(12, 0, 0)));
+        Assert.AreEqual("thirty minutes", en.Convert(new TimeSpan(0, 30, 0)));
+    }
+
     // ─── Cloning preserves SpecialHours ────────────────────────────────────────
 
     [TestMethod]
