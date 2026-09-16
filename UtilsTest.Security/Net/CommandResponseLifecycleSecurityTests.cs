@@ -323,7 +323,10 @@ public class CommandResponseLifecycleSecurityTests
         await callbackObserved.Task.WaitAsync(Timeout5);
 
         Task<IReadOnlyList<ServerResponse>> sendTask = client.SendCommandAsync("PING");
-        await WithTimeout(Task.Run(() => serverReader.ReadLine()), "Server did not see PING after subscriber fault.");
+        string? receivedCommand = await WithTimeout(
+            Task.Run(() => serverReader.ReadLine()),
+            "Server did not see PING after subscriber fault.");
+        Assert.AreEqual("PING", receivedCommand);
         await serverWriter.WriteLineAsync("250 OK");
         IReadOnlyList<ServerResponse> responses = await WithTimeout(sendTask, "Did not receive PING response after subscriber fault.");
 
