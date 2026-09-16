@@ -269,6 +269,21 @@ namespace Utils.NumberToString
                     .Where(kv => kv.Value != null)
                     .ToImmutableDictionary(kv => kv.Key, kv => kv.Value);
             }
+            {
+                var specialHours = options.SpecialHours ?? [];
+                var builder = ImmutableDictionary.CreateBuilder<int, SpecialHourRule>();
+                foreach (var rule in specialHours)
+                {
+                    if (rule.Hour is < 0 or > 23)
+                        throw new ArgumentOutOfRangeException(nameof(options.SpecialHours),
+                            $"SpecialHours[{rule.Hour}] must be between 0 and 23; got {rule.Hour}.");
+                    if (string.IsNullOrEmpty(rule.Value))
+                        throw new ArgumentException($"SpecialHours[{rule.Hour}].Value must not be empty.", nameof(options.SpecialHours));
+                    if (!builder.TryAdd(rule.Hour, rule))
+                        throw new ArgumentException($"SpecialHours has more than one rule for hour {rule.Hour}.", nameof(options.SpecialHours));
+                }
+                _specialHours = builder.ToImmutable();
+            }
             _datePattern = options.DatePattern;
             _datePatternSegments = _datePattern == null ? [] : ParseDatePattern(_datePattern, LanguageIdentifier);
             _dateFirstDay = options.DateFirstDay;
@@ -526,6 +541,13 @@ namespace Utils.NumberToString
         public IReadOnlyDictionary<string, ILexicalFormSelector> TimeUnitFormSelectors => _timeUnitFormSelectorsPublic;
 
         /// <summary>
+        /// Gets the configured per-hour word replacements (e.g. "midnight" for hour 0, "noon" for
+        /// hour 12), applied by Convert(TimeOnly)/Convert(DateTime) when their
+        /// <c>replaceSpecialHours</c> argument is <see langword="true"/>.
+        /// </summary>
+        public IReadOnlyList<SpecialHourRule> SpecialHours => [.. _specialHours.Values];
+
+        /// <summary>
         /// Gets only the explicitly configured <see cref="LexicalFormSet"/> overrides per time
         /// unit — i.e. the units for which an override was actually supplied, unlike the effective
         /// <see cref="TimeUnitForms"/>. Used by <c>NumberToStringConverterOptions(NumberToStringConverter)</c>
@@ -579,6 +601,7 @@ namespace Utils.NumberToString
         private readonly long _scaleConnectorThreshold;
         private readonly ImmutableDictionary<int, ForcedVariantSet> _fractionForcedVariants;
         private readonly ImmutableDictionary<string, TimeUnitDefinition> _timeUnits;
+        private readonly ImmutableDictionary<int, SpecialHourRule> _specialHours;
         private readonly ImmutableDictionary<string, (string Singular, string Plural, string? Count1Form)> _timeUnitsPublic;
         private readonly ImmutableDictionary<string, ForcedVariantSet> _timeUnitForcedVariantsPublic;
         private readonly ImmutableDictionary<string, LexicalFormSet> _timeUnitFormsPublic;
@@ -2244,25 +2267,51 @@ namespace Utils.NumberToString
 
         /// <inheritdoc cref="INumberToStringConverter.Convert(TimeOnly, string[])"/>
         public string Convert(TimeOnly time, params string[] variants)
+            => Convert(time, true, variants);
+
+        /// <inheritdoc cref="INumberToStringConverter.Convert(TimeOnly, bool, string[])"/>
+        public string Convert(TimeOnly time, bool replaceSpecialHours, params string[] variants)
         {
             if (!SupportsTimeConversion)
                 throw new NotSupportedException($"Language '{LanguageIdentifier}' has no <TimeUnits> configuration.");
 
-            return FinalizePhrase(BuildTimeFragment(time, variants));
+            return FinalizePhrase(BuildTimeFragment(time, replaceSpecialHours, variants));
         }
 
         /// <summary>Builds an unfinalized time-of-day phrase.</summary>
         /// <param name="time">The time to render.</param>
+        /// <param name="replaceSpecialHours">
+        /// When <see langword="true"/>, a <see cref="SpecialHourRule"/> configured for
+        /// <paramref name="time"/>'s hour (see <see cref="SpecialHours"/>) replaces the numeral
+        /// hour fragment; minutes/seconds, if non-zero, are still appended as usual.
+        /// </param>
         /// <param name="variants">The variants applied to numeric fragments.</param>
         /// <returns>The assembled time phrase.</returns>
-        private string BuildTimeFragment(TimeOnly time, string[] variants)
+        private string BuildTimeFragment(TimeOnly time, bool replaceSpecialHours, string[] variants)
         {
             var parts = new List<string>();
-            if (_timeUnits.TryGetValue("hour", out var h))
-                parts.Add(FormatTimeUnit(time.Hour, h, variants, "TimeUnits[hour]"));
-            else if (time.Hour > 0)
-                throw new InvalidOperationException(
-                    $"Language '{LanguageIdentifier}' has a non-zero hours component but no 'hour' unit configured in <TimeUnits>.");
+
+            // Sub-second precision is silently discarded everywhere in this method (matching
+            // Convert(TimeSpan)'s documented behavior), so "exact hour" below means Minute==0 &&
+            // Second==0 — not a full TimeOnly equality check, which would let an invisible
+            // millisecond component flip a special hour like "noon" back to a plain numeral.
+            bool specialHourApplied = false;
+            if (replaceSpecialHours
+                && _specialHours.TryGetValue(time.Hour, out var specialHour)
+                && (specialHour.WholeHour || (time.Minute == 0 && time.Second == 0)))
+            {
+                parts.Add(specialHour.Value);
+                specialHourApplied = true;
+            }
+
+            if (!specialHourApplied)
+            {
+                if (_timeUnits.TryGetValue("hour", out var h))
+                    parts.Add(FormatTimeUnit(time.Hour, h, variants, "TimeUnits[hour]"));
+                else if (time.Hour > 0)
+                    throw new InvalidOperationException(
+                        $"Language '{LanguageIdentifier}' has a non-zero hours component but no 'hour' unit configured in <TimeUnits>.");
+            }
 
             if (time.Minute > 0)
             {
@@ -2402,6 +2451,10 @@ namespace Utils.NumberToString
 
         /// <inheritdoc cref="INumberToStringConverter.Convert(DateTime, string[])"/>
         public string Convert(DateTime dateTime, params string[] variants)
+            => Convert(dateTime, true, variants);
+
+        /// <inheritdoc cref="INumberToStringConverter.Convert(DateTime, bool, string[])"/>
+        public string Convert(DateTime dateTime, bool replaceSpecialHours, params string[] variants)
         {
             if (!SupportsDateConversion && !SupportsTimeConversion)
                 throw new NotSupportedException($"Language '{LanguageIdentifier}' has no <DateFormat> or <TimeUnits> configuration.");
@@ -2410,11 +2463,11 @@ namespace Utils.NumberToString
 
             string phrase;
             if (SupportsDateConversion && SupportsTimeConversion)
-                phrase = BuildDateFragment(DateOnly.FromDateTime(dateTime), variants) + connector + BuildTimeFragment(TimeOnly.FromDateTime(dateTime), variants);
+                phrase = BuildDateFragment(DateOnly.FromDateTime(dateTime), variants) + connector + BuildTimeFragment(TimeOnly.FromDateTime(dateTime), replaceSpecialHours, variants);
             else if (SupportsDateConversion)
                 phrase = BuildDateFragment(DateOnly.FromDateTime(dateTime), variants);
             else
-                phrase = BuildTimeFragment(TimeOnly.FromDateTime(dateTime), variants);
+                phrase = BuildTimeFragment(TimeOnly.FromDateTime(dateTime), replaceSpecialHours, variants);
             return FinalizePhrase(phrase);
         }
 

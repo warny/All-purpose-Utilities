@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added — `omy.Utils.NumberToString`
+- **`SpecialHourRule`**: generic, per-hour word replacement for time-of-day rendering (e.g.
+  "midnight" for hour 0, "noon" for hour 12), configurable via `<SpecialHour hour="..." value="..."
+  wholeHour="...">` inside `<TimeUnits>` or programmatically via
+  `NumberToStringConverterOptions.SpecialHours`. Not hardcoded to noon/midnight — any hour and any
+  language-specific word can be declared. `wholeHour="false"` (default) replaces the hour only at
+  the exact instant; `wholeHour="true"` replaces it for the whole hour, with non-zero
+  minutes/seconds still appended. Applies only to `Convert(TimeOnly)` and the time portion of
+  `Convert(DateTime)` — never to `Convert(TimeSpan)`, since a duration has no time-of-day meaning.
+  New overloads `Convert(TimeOnly, bool replaceSpecialHours, params string[])` and
+  `Convert(DateTime, bool replaceSpecialHours, params string[])` opt out per call; the existing
+  `params`-only overloads default to `true`. Wired into the built-in EN (`midnight`/`noon`) and FR
+  (`minuit`/`midi`) configurations.
+
 ## [2.0.0-rc.2] - Release candidate
 
 Compatibility baseline for this candidate moves forward to the published `2.0.0-rc.1` (not the

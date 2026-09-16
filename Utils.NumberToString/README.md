@@ -756,6 +756,59 @@ rendered.
 
 ---
 
+## Special hours — `SpecialHourRule`
+
+Many languages have a dedicated word for a specific hour of the day instead
+of a numeral — "midnight"/"noon" in English, "minuit"/"midi" in French. This
+is a generic, per-hour mechanism — not two hardcoded `Noon`/`Midnight`
+properties — so any hour, and any word, can be configured for any language:
+
+```xml
+<TimeUnits>
+    <Unit name="hour" singular="hour" plural="hours" />
+    <Unit name="minute" singular="minute" plural="minutes" />
+    <Unit name="second" singular="second" plural="seconds" />
+
+    <SpecialHour hour="0" value="midnight" wholeHour="true" />
+    <SpecialHour hour="12" value="noon" wholeHour="true" />
+</TimeUnits>
+```
+
+- **`wholeHour="false"`** (default): the word replaces the hour only at the
+  exact instant — `12:00:00`. Any non-zero minute or second falls back to the
+  ordinary numeral hour.
+- **`wholeHour="true"`**: the word replaces the hour for the *entire* hour —
+  `12:00:00` through `12:59:59…` — and a non-zero minute/second is still
+  appended after it as usual:
+
+```text
+12:00 → "noon"
+12:15 → "noon fifteen minutes"
+00:00 → "midnight"
+00:30 → "midnight thirty minutes"
+```
+
+Only `Convert(TimeOnly)` and the time portion of `Convert(DateTime)` apply
+`SpecialHours` — never `Convert(TimeSpan)`. A 12-hour *duration* is not
+"noon"; it has no time-of-day meaning.
+
+Both overloads default to applying configured special hours, and take an
+explicit `bool` — not an optional parameter — specifically so a bare
+`converter.Convert(time)` call stays unambiguous against the existing
+`params string[] variants` overload:
+
+```csharp
+converter.Convert(new TimeOnly(12, 0));                       // "noon"
+converter.Convert(new TimeOnly(12, 0), replaceSpecialHours: false); // "twelve hours"
+```
+
+**Programmatic**: `NumberToStringConverterOptions.SpecialHours`, a list of
+`SpecialHourRule(int Hour, string Value, bool WholeHour = false)`. At most one
+rule per `Hour` (0-23); a converter constructed with a duplicate, an
+out-of-range hour, or an empty `Value` throws at construction time.
+
+---
+
 ## Lexical form selection — `ILexicalFormSelector`
 
 `ForcedVariants` constrains the grammar of the NUMBER a constituent governs.

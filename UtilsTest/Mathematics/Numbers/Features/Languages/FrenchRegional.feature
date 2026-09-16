@@ -365,4 +365,6 @@ Examples:
     | 01:01:03 | une heure une minute trois secondes |
     | 13:10:00 | treize heures dix minutes           |
     | 21:00:00 | vingt et une heures                 |
-    | 12:00:00 | douze heures                        |
+    | 12:00:00 | midi                                 |
+    | 00:00:00 | minuit                               |
+    | 00:15:00 | minuit quinze minutes                |

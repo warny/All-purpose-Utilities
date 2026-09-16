@@ -674,6 +674,35 @@ public class TimeUnitsType
     /// <summary>Gets or sets the list of time unit definitions.</summary>
     [XmlElement("Unit")]
     public List<TimeUnitEntry>? Units { get; set; }
+
+    /// <summary>Gets or sets the list of per-hour word replacements (e.g. "midnight", "noon").</summary>
+    [XmlElement("SpecialHour")]
+    public List<SpecialHourEntry>? SpecialHours { get; set; }
+}
+
+/// <summary>
+/// Declares a literal word or phrase replacing the numeral hour fragment for one specific hour
+/// of the day when rendering Convert(TimeOnly)/Convert(DateTime) (e.g. "midnight" for hour 0,
+/// "noon" for hour 12).
+/// </summary>
+public class SpecialHourEntry
+{
+    /// <summary>The 24-hour clock hour (0-23) this rule applies to.</summary>
+    [XmlAttribute("hour")]
+    public int Hour { get; set; }
+
+    /// <summary>The literal word or phrase replacing the hour fragment (e.g. "midnight").</summary>
+    [XmlAttribute("value")]
+    public string Value { get; set; } = "";
+
+    /// <summary>
+    /// When <see langword="false"/> (default), the rule applies only at the exact hour (minutes
+    /// and seconds both zero). When <see langword="true"/>, it applies for the entire hour (e.g.
+    /// 12:00:00 through 12:59:59...); non-zero minutes/seconds are still appended after
+    /// <see cref="Value"/> as usual.
+    /// </summary>
+    [XmlAttribute("wholeHour")]
+    public bool WholeHour { get; set; }
 }
 
 /// <summary>

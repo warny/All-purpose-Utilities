@@ -481,6 +481,20 @@ namespace Utils.NumberToString
             => throw new NotSupportedException("Time conversion requires <TimeUnits> in the XML configuration.");
 
         /// <summary>
+        /// Converts a <see cref="TimeOnly"/> time-of-day to its spoken form, optionally replacing
+        /// the hour fragment for a configured special hour (e.g. "midnight" for 0, "noon" for 12).
+        /// Requires <c>&lt;TimeUnits&gt;</c> in the XML configuration.
+        /// </summary>
+        /// <param name="replaceSpecialHours">
+        /// When <see langword="true"/> — the behavior of <see cref="Convert(TimeOnly, string[])"/>
+        /// — a configured special-hour word replaces the numeral hour fragment for a matching
+        /// hour. When <see langword="false"/>, the hour is always rendered as a numeral.
+        /// </param>
+        /// <exception cref="NotSupportedException">The converter has no <c>&lt;TimeUnits&gt;</c> configuration (<see cref="SupportsTimeConversion"/> is <see langword="false"/>).</exception>
+        string Convert(TimeOnly time, bool replaceSpecialHours, params string[] variants)
+            => throw new NotSupportedException("Time conversion requires <TimeUnits> in the XML configuration.");
+
+        /// <summary>
         /// Converts a <see cref="DateOnly"/> date to its spoken form
         /// (e.g. "le deux juillet deux mille vingt-six").
         /// Requires <c>&lt;DateFormat&gt;</c> in the XML configuration.
@@ -496,6 +510,18 @@ namespace Utils.NumberToString
         /// </summary>
         /// <exception cref="NotSupportedException">The converter has no <c>&lt;DateFormat&gt;</c> or <c>&lt;TimeUnits&gt;</c> configuration.</exception>
         string Convert(DateTime dateTime, params string[] variants)
+            => throw new NotSupportedException("Date/time conversion requires <DateFormat> and <TimeUnits> in the XML configuration.");
+
+        /// <summary>
+        /// Converts a <see cref="DateTime"/> to its spoken form, optionally replacing the hour
+        /// fragment of its time portion for a configured special hour (e.g. "midnight", "noon").
+        /// </summary>
+        /// <param name="replaceSpecialHours">
+        /// Forwarded to the time portion exactly as <see cref="Convert(TimeOnly, bool, string[])"/>
+        /// describes.
+        /// </param>
+        /// <exception cref="NotSupportedException">The converter has no <c>&lt;DateFormat&gt;</c> or <c>&lt;TimeUnits&gt;</c> configuration.</exception>
+        string Convert(DateTime dateTime, bool replaceSpecialHours, params string[] variants)
             => throw new NotSupportedException("Date/time conversion requires <DateFormat> and <TimeUnits> in the XML configuration.");
     }
 }

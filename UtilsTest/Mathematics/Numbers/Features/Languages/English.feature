@@ -306,4 +306,6 @@ Examples:
     | 01:01:03 | one hour one minute three seconds |
     | 13:10:00 | thirteen hours ten minutes        |
     | 21:00:00 | twenty-one hours                  |
-    | 12:00:00 | twelve hours                      |
+    | 12:00:00 | noon                               |
+    | 00:00:00 | midnight                           |
+    | 00:15:00 | midnight fifteen minutes           |
