@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Pipelines;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Net;
 
@@ -24,6 +27,86 @@ public class CommandResponseLifecycleSecurityTests
     // ──────────────────────────────────────────────────────────────
     // Infrastructure
     // ──────────────────────────────────────────────────────────────
+
+    /// <summary>Records a thread-safe, timestamped chronology for network callback test failures.</summary>
+    private sealed class TestTimeline
+    {
+        private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
+        private readonly ConcurrentQueue<string> _events = new();
+
+        /// <summary>Records an event with its elapsed time, thread, and task identifiers.</summary>
+        /// <param name="eventName">Safe technical event text.</param>
+        public void Record(string eventName)
+        {
+            _events.Enqueue(
+                $"{_stopwatch.Elapsed.TotalMilliseconds,9:F3} ms " +
+                $"Thread={Environment.CurrentManagedThreadId} Task={Task.CurrentId?.ToString() ?? "none"} {eventName}");
+        }
+
+        /// <summary>Determines whether the chronology contains an event fragment.</summary>
+        /// <param name="value">Event fragment to find.</param>
+        /// <returns><see langword="true"/> when an event contains the fragment.</returns>
+        public bool ContainsEvent(string value) => Contains(_events, value);
+
+        /// <summary>Builds a diagnostic snapshot suitable for GitHub Actions output.</summary>
+        /// <param name="expectedEvent">Event for which the test was waiting.</param>
+        /// <param name="client">Client whose last known connection state is reported.</param>
+        /// <returns>A multiline chronology and state summary.</returns>
+        public string BuildDiagnostic(string expectedEvent, CommandResponseClient client)
+        {
+            string[] events = _events.ToArray();
+            return $"Diagnostic snapshot. Expected event: {expectedEvent}.{Environment.NewLine}" +
+                $"Elapsed: {_stopwatch.Elapsed.TotalMilliseconds:F3} ms{Environment.NewLine}" +
+                $"ConnectionState: {(client.IsConnected ? "Connected" : "NotConnected")}{Environment.NewLine}" +
+                $"SessionFailure: {client.SessionFailure?.GetType().FullName ?? "none"}{Environment.NewLine}" +
+                $"CallbackReceived: {Contains(events, "Callback frame received")}{Environment.NewLine}" +
+                $"CallbackStarted: {Contains(events, "Callback dispatch started")}{Environment.NewLine}" +
+                $"CallbackCompleted: {Contains(events, "Callback dispatch completed")}{Environment.NewLine}" +
+                $"CallbackErrorPropagated: {Contains(events, "Callback error propagated")}{Environment.NewLine}" +
+                $"PingSent: {Contains(events, "Request sent")}{Environment.NewLine}" +
+                $"PingReceived: {Contains(events, "PING received by server")}{Environment.NewLine}" +
+                $"PingCompleted: {Contains(events, "Request completed")}{Environment.NewLine}" +
+                $"Observed events:{Environment.NewLine}{string.Join(Environment.NewLine, events.Select(value => "  " + value))}{Environment.NewLine}" +
+                $"Missing event: {expectedEvent}";
+        }
+
+        /// <summary>Determines whether the captured chronology contains the requested event fragment.</summary>
+        /// <param name="events">Captured event lines.</param>
+        /// <param name="value">Event fragment to find.</param>
+        /// <returns><see langword="true"/> when an event contains the fragment.</returns>
+        private static bool Contains(IEnumerable<string> events, string value) =>
+            events.Any(item => item.Contains(value, StringComparison.Ordinal));
+    }
+
+    /// <summary>Forwards structured client logs into a test chronology without external logging dependencies.</summary>
+    private sealed class TimelineLogger : ILogger
+    {
+        private readonly TestTimeline _timeline;
+
+        /// <summary>Initializes a logger that forwards safe structured diagnostics to a test chronology.</summary>
+        /// <param name="timeline">Chronology that receives each formatted log entry.</param>
+        public TimelineLogger(TestTimeline timeline) => _timeline = timeline;
+
+        /// <inheritdoc/>
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        /// <inheritdoc/>
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        /// <inheritdoc/>
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            string exceptionDetail = exception is null
+                ? string.Empty
+                : $" ExceptionType={exception.GetType().FullName} StackTrace={exception.StackTrace ?? "unavailable"}";
+            _timeline.Record($"Level={logLevel} {formatter(state, exception)}{exceptionDetail}");
+        }
+    }
 
     /// <summary>
     /// Wraps two separate read/write streams into one bidirectional stream.
@@ -123,6 +206,56 @@ public class CommandResponseLifecycleSecurityTests
             Assert.Fail(message);
         }
         return await task.ConfigureAwait(false);
+    }
+
+    /// <summary>Awaits a task and reports the complete network chronology if it does not complete.</summary>
+    /// <typeparam name="T">Task result type.</typeparam>
+    /// <param name="task">Operation being observed.</param>
+    /// <param name="expectedEvent">Event whose absence identifies the timeout stage.</param>
+    /// <param name="timeline">Chronology populated by the test and client logger.</param>
+    /// <param name="client">Client whose last known state is included in diagnostics.</param>
+    /// <param name="timeout">Maximum wait used only as a deadlock guard.</param>
+    /// <returns>The completed task result.</returns>
+    private static async Task<T> WithDiagnosticTimeoutAsync<T>(
+        Task<T> task,
+        string expectedEvent,
+        TestTimeline timeline,
+        CommandResponseClient client,
+        TimeSpan? timeout = null)
+    {
+        Task completed = await Task.WhenAny(task, Task.Delay(timeout ?? Timeout5)).ConfigureAwait(false);
+        if (completed != task)
+        {
+            Assert.Fail(
+                $"Timed out waiting for {expectedEvent}.{Environment.NewLine}" +
+                timeline.BuildDiagnostic(expectedEvent, client));
+        }
+
+        return await task.ConfigureAwait(false);
+    }
+
+    /// <summary>Awaits a task and reports the complete network chronology if it does not complete.</summary>
+    /// <param name="task">Operation being observed.</param>
+    /// <param name="expectedEvent">Event whose absence identifies the timeout stage.</param>
+    /// <param name="timeline">Chronology populated by the test and client logger.</param>
+    /// <param name="client">Client whose last known state is included in diagnostics.</param>
+    /// <param name="timeout">Maximum wait used only as a deadlock guard.</param>
+    private static async Task WithDiagnosticTimeoutAsync(
+        Task task,
+        string expectedEvent,
+        TestTimeline timeline,
+        CommandResponseClient client,
+        TimeSpan? timeout = null)
+    {
+        Task completed = await Task.WhenAny(task, Task.Delay(timeout ?? Timeout5)).ConfigureAwait(false);
+        if (completed != task)
+        {
+            Assert.Fail(
+                $"Timed out waiting for {expectedEvent}.{Environment.NewLine}" +
+                timeline.BuildDiagnostic(expectedEvent, client));
+        }
+
+        await task.ConfigureAwait(false);
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -280,25 +413,58 @@ public class CommandResponseLifecycleSecurityTests
     [TestMethod]
     public async Task UnsolicitedResponseReceived_SubscriberThrows_ListenerSurvives()
     {
+        TestTimeline timeline = new();
         (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
-        using CommandResponseClient client = new();
+        using CommandResponseClient client = new() { Logger = new TimelineLogger(timeline) };
         await client.ConnectAsync(clientStream, leaveOpen: true);
 
         TaskCompletionSource<Exception> callbackObserved = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        client.CallbackError += ex => callbackObserved.TrySetResult(ex);
-        client.UnsolicitedResponseReceived += _ => throw new InvalidOperationException("Subscriber fault");
+        client.CallbackError += ex =>
+        {
+            timeline.Record("CallbackError observed by test subscriber");
+            callbackObserved.TrySetResult(ex);
+        };
+        client.UnsolicitedResponseReceived += _ =>
+        {
+            timeline.Record("Unsolicited subscriber invoked");
+            throw new InvalidOperationException("Subscriber fault");
+        };
 
+        timeline.Record("Writing unsolicited response");
         await serverWriter.WriteLineAsync("220 Welcome");
-        Exception callbackError = await callbackObserved.Task.WaitAsync(Timeout5);
+        Exception callbackError = await WithDiagnosticTimeoutAsync(
+            callbackObserved.Task,
+            "CallbackError propagation",
+            timeline,
+            client);
 
-        Assert.IsInstanceOfType<InvalidOperationException>(callbackError);
-        Assert.IsTrue(client.IsConnected, "Client must remain connected after subscriber exception.");
+        Assert.IsInstanceOfType<InvalidOperationException>(
+            callbackError,
+            timeline.BuildDiagnostic("InvalidOperationException propagated", client));
+        Assert.IsTrue(
+            client.IsConnected,
+            "Client must remain connected after subscriber exception." + Environment.NewLine +
+            timeline.BuildDiagnostic("connected client", client));
 
+        timeline.Record("Starting PING request");
         Task<IReadOnlyList<ServerResponse>> sendTask = client.SendCommandAsync("PING");
-        string? received = await WithTimeout(Task.Run(() => serverReader.ReadLine()), "Server did not see PING after subscriber fault.");
+        string? received = await WithDiagnosticTimeoutAsync(
+            Task.Run(() => serverReader.ReadLine()),
+            "PING reception by server",
+            timeline,
+            client);
+        timeline.Record("PING received by server");
         await serverWriter.WriteLineAsync("250 OK");
-        IReadOnlyList<ServerResponse> responses = await WithTimeout(sendTask, "Did not receive PING response after subscriber fault.");
-        Assert.AreEqual("250", responses[0].Code);
+        IReadOnlyList<ServerResponse> responses = await WithDiagnosticTimeoutAsync(
+            sendTask,
+            "PING request completion",
+            timeline,
+            client);
+        timeline.Record("PING completed by client");
+        Assert.AreEqual(
+            "250",
+            responses[0].Code,
+            timeline.BuildDiagnostic("PING response code 250", client));
     }
 
     [TestMethod]
@@ -306,34 +472,78 @@ public class CommandResponseLifecycleSecurityTests
     {
         // P2-5: exceptions from unsolicited-response subscribers must be forwarded to
         // CallbackError so they are observable even when no logger is configured.
+        TestTimeline timeline = new();
         (DuplexStream clientStream, StreamWriter serverWriter, StreamReader serverReader) = CreateTestPair();
-        using CommandResponseClient client = new();
+        using CommandResponseClient client = new() { Logger = new TimelineLogger(timeline) };
         await client.ConnectAsync(clientStream, leaveOpen: true);
 
         var errors = new System.Collections.Concurrent.ConcurrentBag<Exception>();
         TaskCompletionSource callbackObserved = new(TaskCreationOptions.RunContinuationsAsynchronously);
         client.CallbackError += ex =>
         {
+            timeline.Record($"CallbackError observed by test subscriber; ExceptionType={ex.GetType().FullName}");
             errors.Add(ex);
             callbackObserved.TrySetResult();
         };
-        client.UnsolicitedResponseReceived += _ => throw new InvalidOperationException("Subscriber fault");
+        client.UnsolicitedResponseReceived += _ =>
+        {
+            timeline.Record("Unsolicited subscriber invoked");
+            throw new InvalidOperationException("Subscriber fault");
+        };
 
+        timeline.Record("Writing unsolicited response");
         await serverWriter.WriteLineAsync("220 Welcome");
-        await callbackObserved.Task.WaitAsync(Timeout5);
+        await WithDiagnosticTimeoutAsync(
+            callbackObserved.Task,
+            "CallbackError propagation",
+            timeline,
+            client);
 
+        timeline.Record("Starting PING request");
         Task<IReadOnlyList<ServerResponse>> sendTask = client.SendCommandAsync("PING");
-        string? receivedCommand = await WithTimeout(
+        string? receivedCommand = await WithDiagnosticTimeoutAsync(
             Task.Run(() => serverReader.ReadLine()),
-            "Server did not see PING after subscriber fault.");
-        Assert.AreEqual("PING", receivedCommand);
+            "PING reception by server",
+            timeline,
+            client);
+        timeline.Record("PING received by server");
+        Assert.AreEqual(
+            "PING",
+            receivedCommand,
+            timeline.BuildDiagnostic("PING received by server", client));
         await serverWriter.WriteLineAsync("250 OK");
-        IReadOnlyList<ServerResponse> responses = await WithTimeout(sendTask, "Did not receive PING response after subscriber fault.");
+        IReadOnlyList<ServerResponse> responses = await WithDiagnosticTimeoutAsync(
+            sendTask,
+            "PING request completion",
+            timeline,
+            client);
+        timeline.Record("PING completed by client");
 
-        Assert.AreEqual(1, errors.Count, "CallbackError must fire once for the subscriber exception.");
-        Assert.IsInstanceOfType<InvalidOperationException>(errors.Single());
-        Assert.IsTrue(client.IsConnected, "Client must remain connected after the subscriber exception.");
-        Assert.AreEqual("250", responses[0].Code);
+        Assert.AreEqual(
+            1,
+            errors.Count,
+            "CallbackError must fire once for the subscriber exception." + Environment.NewLine +
+            timeline.BuildDiagnostic("exactly one CallbackError", client));
+        Assert.IsInstanceOfType<InvalidOperationException>(
+            errors.Single(),
+            timeline.BuildDiagnostic("InvalidOperationException propagated", client));
+        Assert.IsTrue(
+            client.IsConnected,
+            "Client must remain connected after the subscriber exception." + Environment.NewLine +
+            timeline.BuildDiagnostic("connected client", client));
+        Assert.AreEqual(
+            "250",
+            responses[0].Code,
+            timeline.BuildDiagnostic("PING response code 250", client));
+        Assert.IsTrue(
+            timeline.ContainsEvent("Callback dispatch completed"),
+            timeline.BuildDiagnostic("Callback dispatch completed", client));
+        Assert.IsTrue(
+            timeline.ContainsEvent("ConnectionId=") && timeline.ContainsEvent("CallbackId=1"),
+            timeline.BuildDiagnostic("correlated connection and callback identifiers", client));
+        Assert.IsTrue(
+            timeline.ContainsEvent("Request completed") && timeline.ContainsEvent("RequestId=1"),
+            timeline.BuildDiagnostic("correlated PING request completion", client));
     }
 
     // ──────────────────────────────────────────────────────────────
