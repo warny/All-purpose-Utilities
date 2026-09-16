@@ -7,7 +7,7 @@ using System.Xml;
 using System.Xml.Schema;
 using Utils.NumberToString;
 
-namespace UtilsTest.Mathematics.Numbers;
+namespace UtilsTest.NumberToString;
 
 /// <summary>Verifies secure schema handling for number-to-string configuration documents.</summary>
 [TestClass]

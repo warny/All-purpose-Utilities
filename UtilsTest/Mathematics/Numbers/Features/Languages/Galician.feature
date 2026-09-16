@@ -7,10 +7,12 @@ Scenario Outline: GalicianCardinals 1
     Then the result is "<expected>"
 
 Examples:
-    | number | expected |
-    | 21 | vinte e un |
-    | 105 | cento cinco |
-    | 100 | cen |
+    | number | expected    |
+    |      1 | un          |
+    |      2 | dous        |
+    |     21 | vinte e un  |
+    |    105 | cento cinco |
+    |    100 | cen         |
 
 Scenario Outline: GalicianDecimal 2
     Given I use the "gl-ES" number converter

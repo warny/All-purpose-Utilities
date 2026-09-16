@@ -7,7 +7,7 @@ using System.Xml.Serialization;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.NumberToString;
 
-namespace UtilsTest.Mathematics.Numbers;
+namespace UtilsTest.NumberToString;
 
 /// <summary>
 /// Tests for audit findings 47–71, 68, 71, 75–78 from the Utils.NumberToString TODO files.
@@ -15,8 +15,8 @@ namespace UtilsTest.Mathematics.Numbers;
 [TestClass]
 public class NumberToStringConverterAuditFixesTests
 {
-    private static NumberToStringConverter EN => NumberToStringConverter.GetConverter("EN");
-    private static NumberToStringConverter FR => NumberToStringConverter.GetConverter("FR");
+    private static NumberToStringConverter EN => (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+    private static NumberToStringConverter FR => (NumberToStringConverter)NumberToStringConverter.GetConverter("FR");
 
     // ── Item 50 — Minimum signed values overflow ──────────────────────────────
 
@@ -426,9 +426,9 @@ public class NumberToStringConverterAuditFixesTests
             Zero = "zero",
             Separator = "and",
             GroupSeparator = "",
-            Groups = NumberToStringConverter.GetConverter("EN").Groups
+            Groups = EN.Groups
                 .ToDictionary(kv => kv.Key, kv => new DigitListType { Digits = kv.Value.Values.ToList() }),
-            Scale = NumberToStringConverter.GetConverter("EN").Scale,
+            Scale = EN.Scale,
             Group = 3,
             Minus = "minus *"
         };
@@ -449,9 +449,9 @@ public class NumberToStringConverterAuditFixesTests
             Zero = "zero",
             Separator = "and",
             GroupSeparator = "",
-            Groups = NumberToStringConverter.GetConverter("EN").Groups
+            Groups = EN.Groups
                 .ToDictionary(kv => kv.Key, kv => new DigitListType { Digits = kv.Value.Values.ToList() }),
-            Scale = NumberToStringConverter.GetConverter("EN").Scale,
+            Scale = EN.Scale,
             Group = 3,
             Minus = "minus *"
         };
@@ -1497,7 +1497,7 @@ public class NumberToStringConverterAuditFixesTests
     public void GetConverter_CultureWithLeadingTrailingSpace_ResolvesSamAsWithout()
     {
         // "EN" and " EN " must resolve to the same converter.
-        var plain = NumberToStringConverter.GetConverter("EN");
+        var plain = EN;
         var spaced = NumberToStringConverter.GetConverter(" EN ");
         Assert.AreSame(plain, spaced,
             "GetConverter must trim whitespace from culture identifiers before lookup");
@@ -1810,7 +1810,7 @@ public class NumberToStringConverterAuditFixesTests
     public void SupportsLocalizableMonthNames_KnownCultureWithDatePattern_ReturnsTrue()
     {
         // EN has a DateFormat in its XML configuration; "EN" resolves to a known CultureInfo.
-        var conv = NumberToStringConverter.GetConverter("EN");
+        var conv = EN;
         Assert.IsTrue(conv.SupportsLocalizableMonthNames,
             "SupportsLocalizableMonthNames must be true when LanguageIdentifier maps to a system culture");
     }
@@ -3148,8 +3148,10 @@ public class NumberToStringConverterAuditFixesTests
     public void Constructor_FractionKeyWhitespaceName_ThrowsArgumentException()
     {
         // Item 95: whitespace-only names must be rejected just like empty/null names.
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"));
-        options.Fractions = new System.Collections.Generic.Dictionary<int, string> { { 2, "   " } };
+        var options = new NumberToStringConverterOptions(EN)
+        {
+            Fractions = new System.Collections.Generic.Dictionary<int, string> { { 2, "   " } }
+        };
         Assert.ThrowsExactly<ArgumentException>(
             () => new NumberToStringConverter(options),
             "A whitespace-only fraction name must be rejected");
@@ -3210,9 +3212,8 @@ public class NumberToStringConverterAuditFixesTests
     public void Convert_TimeSpan_SubSecondOnly_RendersAsZero()
     {
         // A duration of 500 ms only has no second component → must produce Zero text.
-        var fr = NumberToStringConverter.GetConverter("FR");
-        string result = fr.Convert(TimeSpan.FromMilliseconds(500));
-        Assert.AreEqual(fr.Zero, result,
+        string result = FR.Convert(TimeSpan.FromMilliseconds(500));
+        Assert.AreEqual(FR.Zero, result,
             "Convert(TimeSpan) for a sub-second-only duration must render as Zero");
     }
 
@@ -3236,8 +3237,10 @@ public class NumberToStringConverterAuditFixesTests
     [TestMethod]
     public void Constructor_FractionKeyZero_ThrowsArgumentOutOfRange()
     {
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"));
-        options.Fractions = new Dictionary<int, string> { { 0, "zeroth" } };
+        var options = new NumberToStringConverterOptions(EN)
+        {
+            Fractions = new Dictionary<int, string> { { 0, "zeroth" } }
+        };
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => new NumberToStringConverter(options),
             "A fraction key of 0 must be rejected");
@@ -3246,8 +3249,10 @@ public class NumberToStringConverterAuditFixesTests
     [TestMethod]
     public void Constructor_FractionKeyNegative_ThrowsArgumentOutOfRange()
     {
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"));
-        options.Fractions = new Dictionary<int, string> { { -1, "negative-ths" } };
+        var options = new NumberToStringConverterOptions(EN)
+        {
+            Fractions = new Dictionary<int, string> { { -1, "negative-ths" } }
+        };
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(
             () => new NumberToStringConverter(options),
             "A negative fraction key must be rejected");
@@ -3258,8 +3263,10 @@ public class NumberToStringConverterAuditFixesTests
     {
         // Keys > 28 are valid: ConvertFraction(BigInteger, BigInteger) can resolve denominators
         // beyond decimal precision (e.g. 10^29). The 28 cap applies only to Convert(decimal).
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"));
-        options.Fractions = new Dictionary<int, string> { { 29, "nonillionths" } };
+        var options = new NumberToStringConverterOptions(EN)
+        {
+            Fractions = new Dictionary<int, string> { { 29, "nonillionths" } }
+        };
         var conv = new NumberToStringConverter(options);
         string result = conv.ConvertFraction(System.Numerics.BigInteger.One, System.Numerics.BigInteger.Pow(10, 29));
         Assert.AreEqual("one nonillionths", result,
@@ -3269,8 +3276,10 @@ public class NumberToStringConverterAuditFixesTests
     [TestMethod]
     public void Constructor_FractionKeyEmptyName_ThrowsArgumentException()
     {
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"));
-        options.Fractions = new Dictionary<int, string> { { 2, "" } };
+        var options = new NumberToStringConverterOptions(EN)
+        {
+           Fractions = new Dictionary<int, string> { { 2, "" } }
+        };
         Assert.ThrowsExactly<ArgumentException>(
             () => new NumberToStringConverter(options),
             "An empty fraction name must be rejected");

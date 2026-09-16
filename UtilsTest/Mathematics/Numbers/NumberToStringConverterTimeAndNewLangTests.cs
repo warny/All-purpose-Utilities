@@ -2,7 +2,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using Utils.NumberToString;
 
-namespace UtilsTest.Mathematics.Numbers;
+namespace UtilsTest.NumberToString;
 
 /// <summary>
 /// Tests for: item 21 (Convert TimeSpan/TimeOnly/DateOnly/DateTime),

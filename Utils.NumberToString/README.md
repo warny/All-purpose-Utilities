@@ -783,7 +783,7 @@ selector. Every unit that configures no selector uses
 unaffected.
 
 ```csharp
-var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+var options = new NumberToStringConverterOptions(EN)
 {
     TimeUnitForms = new Dictionary<string, LexicalFormSet>
     {
@@ -909,7 +909,7 @@ UNIT WORD; keep that distinction in mind before reaching for it.
 Clone and modify an existing converter:
 
 ```csharp
-var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+var options = new NumberToStringConverterOptions(EN)
 {
     AdjustFunction = text => text.ToUpperInvariant(),
     MaxNumber      = new BigInteger(999_999_999),

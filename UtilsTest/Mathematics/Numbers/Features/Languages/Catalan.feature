@@ -7,10 +7,12 @@ Scenario Outline: CatalanCardinals 1
     Then the result is "<expected>"
 
 Examples:
-    | number | expected |
-    | 21 | vint-i-un |
-    | 105 | cent cinc |
-    | 321 | tres-cents vint-i-un |
+    | number | expected             |
+    |      1 | un                   |
+    |      2 | dos                  |
+    |     21 | vint-i-un            |
+    |    105 | cent cinc            |
+    |    321 | tres-cents vint-i-un |
 
 Scenario Outline: CatalanDecimal 2
     Given I use the "ca-ES" number converter

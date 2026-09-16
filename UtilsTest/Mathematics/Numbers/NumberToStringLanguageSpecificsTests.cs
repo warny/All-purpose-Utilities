@@ -1,7 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.NumberToString;
 
-namespace UtilsTest.Mathematics.Numbers;
+namespace UtilsTest.NumberToString;
 
 /// <summary>
 /// Validates language-specific finalization implementations used by number-to-string conversion.

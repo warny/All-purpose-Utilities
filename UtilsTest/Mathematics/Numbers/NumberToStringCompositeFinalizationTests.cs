@@ -3,7 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.NumberToString;
 using Utils.Numerics;
 
-namespace UtilsTest.Mathematics.Numbers;
+namespace UtilsTest.NumberToString;
 
 /// <summary>Verifies that every composite public conversion has one final phrase boundary.</summary>
 [TestClass]
@@ -92,18 +92,16 @@ public class NumberToStringCompositeFinalizationTests
     public void CompositeConversion_AdjustFunctionRunsBeforeVariantRules()
     {
         var finalizer = new RecordingFinalizer();
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
-        {
-            AdjustFunction = text => text.Replace("two", "adjusted", StringComparison.Ordinal),
-            LanguageSpecifics = finalizer,
-            VariantDimensions = [new NumberToStringConverter.VariantDimension("style", ["proof"])],
-            VariantRules =
-            [
-                new NumberToStringConverter.VariantRule(
-                    new Dictionary<string, string> { ["style"] = "proof" },
-                    [new NumberToStringConverter.ReplacementRule("adjusted", "variant", ReplacementScope.Anywhere)])
-            ],
-        };
+        var options = NumberToStringConverterOptions.FromCulture("EN");
+        options.AdjustFunction = text => text.Replace("two", "adjusted", StringComparison.Ordinal);
+        options.LanguageSpecifics = finalizer;
+        options.VariantDimensions = [new NumberToStringConverter.VariantDimension("style", ["proof"])];
+        options.VariantRules =
+        [
+            new NumberToStringConverter.VariantRule(
+                new Dictionary<string, string> { ["style"] = "proof" },
+                [new NumberToStringConverter.ReplacementRule("adjusted", "variant", ReplacementScope.Anywhere)])
+        ];
         var converter = new NumberToStringConverter(options);
 
         string result = converter.ConvertCurrency(2m, CreateCurrency(), "style=proof");
@@ -117,17 +115,15 @@ public class NumberToStringCompositeFinalizationTests
     public void CompositeConversion_EndTriggerStillAppliesToNumericFragment()
     {
         var finalizer = new RecordingFinalizer();
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
-        {
-            LanguageSpecifics = finalizer,
-            Triggers =
-            [
-                new NumberToStringConverter.TriggerRule(
-                    NumberToStringConverter.TriggerAt.End,
-                    null,
-                    [new NumberToStringConverter.TriggerReplace("two", false, [], "triggered")])
-            ],
-        };
+        var options = NumberToStringConverterOptions.FromCulture("EN");
+        options.LanguageSpecifics = finalizer;
+        options.Triggers =
+        [
+            new NumberToStringConverter.TriggerRule(
+                NumberToStringConverter.TriggerAt.End,
+                null,
+                [new NumberToStringConverter.TriggerReplace("two", false, [], "triggered")])
+        ];
         var converter = new NumberToStringConverter(options);
 
         string result = converter.ConvertCurrency(2m, CreateCurrency());
@@ -145,17 +141,15 @@ public class NumberToStringCompositeFinalizationTests
     public void ConvertCurrency_UnitAndSubunit_DifferentForcedVariants_FinalizeCompletePhraseOnce()
     {
         var finalizer = new RecordingFinalizer();
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
-        {
-            LanguageSpecifics = finalizer,
-            VariantDimensions = [new NumberToStringConverter.VariantDimension("gender", ["masculine", "feminine"])],
-            VariantRules =
+        var options = NumberToStringConverterOptions.FromCulture("EN");
+        options.LanguageSpecifics = finalizer;
+        options.VariantDimensions = [new NumberToStringConverter.VariantDimension("gender", ["masculine", "feminine"])];
+        options.VariantRules =
             [
                 new NumberToStringConverter.VariantRule(
                     new Dictionary<string, string> { ["gender"] = "feminine" },
                     [new NumberToStringConverter.ReplacementRule("two", "two-F", ReplacementScope.Anywhere)])
-            ],
-        };
+            ];
         var converter = new NumberToStringConverter(options);
         var currency = new CurrencyDefinition
         {
@@ -185,21 +179,19 @@ public class NumberToStringCompositeFinalizationTests
     public void Convert_TimeSpan_WithCustomLexicalFormSelector_FinalizesCompletePhraseOnce()
     {
         var finalizer = new RecordingFinalizer();
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        var options = NumberToStringConverterOptions.FromCulture("EN");
+        options.LanguageSpecifics = finalizer;
+        options.TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)>
         {
-            LanguageSpecifics = finalizer,
-            TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)>
-            {
-                ["hour"] = ("hour", "hours", null),
-            },
-            TimeUnitForms = new Dictionary<string, LexicalFormSet>
-            {
-                ["hour"] = LexicalFormSet.Create(("custom", "custom-hour")),
-            },
-            TimeUnitFormSelectors = new Dictionary<string, ILexicalFormSelector>
-            {
-                ["hour"] = new AlwaysCustomFormSelector(),
-            },
+            ["hour"] = ("hour", "hours", null),
+        };
+        options.TimeUnitForms = new Dictionary<string, LexicalFormSet>
+        {
+            ["hour"] = LexicalFormSet.Create(("custom", "custom-hour")),
+        };
+        options.TimeUnitFormSelectors = new Dictionary<string, ILexicalFormSelector>
+        {
+            ["hour"] = new AlwaysCustomFormSelector(),
         };
         var converter = new NumberToStringConverter(options);
 
@@ -227,10 +219,8 @@ public class NumberToStringCompositeFinalizationTests
         string? expectedResult = null)
     {
         var finalizer = new RecordingFinalizer();
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
-        {
-            LanguageSpecifics = finalizer,
-        };
+        var options = NumberToStringConverterOptions.FromCulture("EN");
+        options.LanguageSpecifics = finalizer;
         var converter = new NumberToStringConverter(options);
 
         string result = convert(converter);
@@ -255,11 +245,11 @@ public class NumberToStringCompositeFinalizationTests
     /// <summary>Creates an English converter with the requested top-level cardinal limit.</summary>
     /// <param name="maxNumber">The maximum whole cardinal value.</param>
     /// <returns>A converter configured with the limit.</returns>
-    private static NumberToStringConverter CreateConverterWithMaxNumber(BigInteger maxNumber) =>
-        new(new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
-        {
-            MaxNumber = maxNumber,
-        });
+    private static NumberToStringConverter CreateConverterWithMaxNumber(BigInteger maxNumber) {
+        var options = NumberToStringConverterOptions.FromCulture("EN");
+        options.MaxNumber = maxNumber;
+        return new NumberToStringConverter(options);
+    }
 
     /// <summary>Always selects the "custom" form key, regardless of count/context.</summary>
     private sealed class AlwaysCustomFormSelector : ILexicalFormSelector

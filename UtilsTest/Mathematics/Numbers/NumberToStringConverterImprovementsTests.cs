@@ -7,7 +7,7 @@ using Utils.Mathematics;
 using Utils.NumberToString;
 using Utils.Numerics;
 
-namespace UtilsTest.Mathematics.Numbers;
+namespace UtilsTest.NumberToString;
 
 /// <summary>
 /// Tests for bug fixes and new features added to NumberToStringConverter.
@@ -15,13 +15,14 @@ namespace UtilsTest.Mathematics.Numbers;
 [TestClass]
 public class NumberToStringConverterImprovementsTests
 {
+    private static NumberToStringConverter EN => (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
     // ─── A1 — Bug fix: double AdjustFunction ───────────────────────────────
 
     [TestMethod]
     public void AdjustFunction_CalledOnceForPositive()
     {
         int callCount = 0;
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(EN)
         {
             AdjustFunction = s => { callCount++; return s.ToUpperInvariant(); }
         };
@@ -38,7 +39,7 @@ public class NumberToStringConverterImprovementsTests
         // For negative numbers the AdjustFunction is applied to the absolute value
         // before the minus template, not applied again afterwards.
         int callCount = 0;
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(EN)
         {
             AdjustFunction = s => { callCount++; return s; }
         };
@@ -69,7 +70,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void Convert_ThrowsWhenExceedingMaxNumber()
     {
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(EN)
         {
             MaxNumber = new BigInteger(999)
         };
@@ -81,7 +82,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void Convert_ThrowsWhenNegativeExceedsMaxNumber()
     {
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(EN)
         {
             MaxNumber = new BigInteger(999)
         };
@@ -93,7 +94,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void Convert_DoesNotThrowAtExactMaxNumber()
     {
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(EN)
         {
             MaxNumber = new BigInteger(999)
         };
@@ -667,7 +668,7 @@ public class NumberToStringConverterImprovementsTests
         var stub = new StubLanguageSpecifics(() => callCount++);
         NumberToStringConverter.RegisterLanguageSpecifics(nameof(StubLanguageSpecifics), stub);
 
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(EN)
         {
             LanguageSpecifics = stub,
         };
@@ -816,7 +817,7 @@ public class NumberToStringConverterImprovementsTests
         // Regression: before the fix, AdjustFunction ran before ordinal rules,
         // so an uppercase AdjustFunction turned "twenty-one" into "TWENTY-ONE"
         // and the word rule "one"→"first" never matched, producing "TWENTY-ONEth".
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(EN)
         {
             AdjustFunction = s => s.ToUpperInvariant()
         };
@@ -1424,7 +1425,7 @@ public class NumberToStringConverterImprovementsTests
     public void ConvertOrdinal_Plugin_OverridesXmlPipeline()
     {
         // Build a converter with a plugin that returns "ORDINAL_<n>" for any number > 0
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(EN)
         {
             LanguageSpecifics = new OrdinalPluginSpecifics()
         };
@@ -1441,7 +1442,7 @@ public class NumberToStringConverterImprovementsTests
     {
         // OrdinalPluginSpecifics only implements TryConvertOrdinal(int); the default long
         // implementation delegates for values ≤ int.MaxValue and returns false above.
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(EN)
         {
             LanguageSpecifics = new OrdinalPluginSpecifics()
         };
@@ -1460,7 +1461,7 @@ public class NumberToStringConverterImprovementsTests
     public void ConvertOrdinal_Plugin_LongOverride_HandlesLargeValues()
     {
         // LargeOrdinalPluginSpecifics overrides TryConvertOrdinal(long) directly.
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(EN)
         {
             LanguageSpecifics = new LargeOrdinalPluginSpecifics()
         };
@@ -1989,7 +1990,7 @@ public class NumberToStringConverterImprovementsTests
     private static NumberToStringConverter MakeTriggerConverter(
         IEnumerable<NumberToStringConverter.TriggerRule> triggers)
     {
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(EN)
         {
             Triggers = triggers.ToList()
         };
@@ -2033,7 +2034,7 @@ public class NumberToStringConverterImprovementsTests
     public void Trigger_End_VariantConditioned()
     {
         var en = NumberToStringConverter.GetConverter("EN");
-        var options = new NumberToStringConverterOptions(en);
+        var options = NumberToStringConverterOptions.FromCulture("EN");;
         options.VariantDimensions = [new NumberToStringConverter.VariantDimension("gender", ["masc", "fem"])];
         // Replace with variant forms: masc="one" (default, first form), fem="una"
         var forms = new List<NumberToStringConverter.TriggerReplacementForm>
@@ -2056,7 +2057,7 @@ public class NumberToStringConverterImprovementsTests
         // When no DefaultTo and no variant matches, the replacement is skipped entirely
         // (the regex is never even evaluated — ApplyTriggerReplace short-circuits)
         var en = NumberToStringConverter.GetConverter("EN");
-        var options = new NumberToStringConverterOptions(en);
+        var options = NumberToStringConverterOptions.FromCulture("EN");;
         options.VariantDimensions = [new NumberToStringConverter.VariantDimension("gender", ["masc", "fem"])];
         var forms = new List<NumberToStringConverter.TriggerReplacementForm>
         {

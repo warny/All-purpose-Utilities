@@ -6,7 +6,7 @@ using System.Numerics;
 using System.Xml.Linq;
 using Utils.NumberToString;
 
-namespace UtilsTest.Mathematics.Numbers;
+namespace UtilsTest.NumberToString;
 
 /// <summary>
 /// NTS-05 — regression tests for the general <see cref="ILexicalFormSelector"/> extensibility
@@ -17,6 +17,7 @@ namespace UtilsTest.Mathematics.Numbers;
 [TestClass]
 public class NumberToStringConverterLexicalFormSelectorTests
 {
+    private static NumberToStringConverter EN => (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
     // ─── DefaultLexicalFormSelector ─────────────────────────────────────────────────────────────
 
     [TestMethod]
@@ -148,7 +149,7 @@ public class NumberToStringConverterLexicalFormSelectorTests
     {
         // Purely synthetic (bucket = value % 3): not Russian, not any real language — only proves
         // the mechanism supports more than two configured, selector-chosen forms.
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(EN)
         {
             TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)>
             {
@@ -173,7 +174,7 @@ public class NumberToStringConverterLexicalFormSelectorTests
     [TestMethod]
     public void FormatTimeUnit_SelectorReturnsUnconfiguredKey_ThrowsUNTS007AtRuntime()
     {
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(EN)
         {
             TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)>
             {
@@ -231,13 +232,11 @@ public class NumberToStringConverterLexicalFormSelectorTests
     [TestMethod]
     public void TimeUnitForms_BuiltInEN_ReturnsEffectiveFormsForEveryUnit()
     {
-        var en = NumberToStringConverter.GetConverter("EN");
+        CollectionAssert.AreEquivalent(new[] { "hour", "minute", "second" }, EN.TimeUnitForms.Keys.ToArray());
 
-        CollectionAssert.AreEquivalent(new[] { "hour", "minute", "second" }, en.TimeUnitForms.Keys.ToArray());
-
-        AssertHasSingularPlural(en.TimeUnitForms["hour"], "hour", "hours");
-        AssertHasSingularPlural(en.TimeUnitForms["minute"], "minute", "minutes");
-        AssertHasSingularPlural(en.TimeUnitForms["second"], "second", "seconds");
+        AssertHasSingularPlural(EN.TimeUnitForms["hour"], "hour", "hours");
+        AssertHasSingularPlural(EN.TimeUnitForms["minute"], "minute", "minutes");
+        AssertHasSingularPlural(EN.TimeUnitForms["second"], "second", "seconds");
 
         static void AssertHasSingularPlural(LexicalFormSet forms, string singular, string plural)
         {
@@ -251,18 +250,16 @@ public class NumberToStringConverterLexicalFormSelectorTests
     [TestMethod]
     public void TimeUnitFormSelectors_BuiltInEN_ReturnsDefaultSelectorForEveryUnit()
     {
-        var en = NumberToStringConverter.GetConverter("EN");
-
-        CollectionAssert.AreEquivalent(new[] { "hour", "minute", "second" }, en.TimeUnitFormSelectors.Keys.ToArray());
-        Assert.IsInstanceOfType<DefaultLexicalFormSelector>(en.TimeUnitFormSelectors["hour"]);
-        Assert.IsInstanceOfType<DefaultLexicalFormSelector>(en.TimeUnitFormSelectors["minute"]);
-        Assert.IsInstanceOfType<DefaultLexicalFormSelector>(en.TimeUnitFormSelectors["second"]);
+        CollectionAssert.AreEquivalent(new[] { "hour", "minute", "second" }, EN.TimeUnitFormSelectors.Keys.ToArray());
+        Assert.IsInstanceOfType<DefaultLexicalFormSelector>(EN.TimeUnitFormSelectors["hour"]);
+        Assert.IsInstanceOfType<DefaultLexicalFormSelector>(EN.TimeUnitFormSelectors["minute"]);
+        Assert.IsInstanceOfType<DefaultLexicalFormSelector>(EN.TimeUnitFormSelectors["second"]);
     }
 
     [TestMethod]
     public void TimeUnitForms_ExplicitOverrideOnOneUnit_MergesWithSynthesizedFormsAndSiblingsStaySynthesizedOnly()
     {
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(EN)
         {
             TimeUnitForms = new Dictionary<string, LexicalFormSet>
             {
@@ -293,7 +290,7 @@ public class NumberToStringConverterLexicalFormSelectorTests
     [TestMethod]
     public void TimeUnitFormSelectors_OverrideOnOneUnit_SiblingsStillReportDefaultSelector()
     {
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(EN)
         {
             TimeUnitFormSelectors = new Dictionary<string, ILexicalFormSelector>
             {
@@ -310,12 +307,11 @@ public class NumberToStringConverterLexicalFormSelectorTests
     [TestMethod]
     public void Clone_NarrowingTimeUnits_DoesNotResurrectRemovedUnitFormsOrSelectors()
     {
-        var source = NumberToStringConverter.GetConverter("EN");
-        var options = new NumberToStringConverterOptions(source)
+        var options = new NumberToStringConverterOptions(EN)
         {
             TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)>
             {
-                ["hour"] = source.TimeUnits["hour"],
+                ["hour"] = EN.TimeUnits["hour"],
             },
         };
         var narrowed = new NumberToStringConverter(options);
@@ -490,7 +486,7 @@ public class NumberToStringConverterLexicalFormSelectorTests
         {
             ["hour"] = LexicalFormSet.Create(("singular", "hour"), ("plural", "hours")),
         };
-        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        var options = new NumberToStringConverterOptions(EN)
         {
             TimeUnitForms = source,
         };

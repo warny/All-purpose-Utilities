@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Utils.NumberToString;
 
-namespace UtilsTest.Mathematics.Numbers
+namespace UtilsTest.NumberToString
 {
     [TestClass]
     public class NumberToStringConverterDETests

@@ -120,3 +120,40 @@ Examples:
     | number | expected |
     | 1.5 | one point five tenths |
     | 12.34 | twelve point thirty-four hundredths |
+
+Scenario Outline: BigIntTest 6
+    Given I use the "EN-uk" number converter
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number                                                                          | expected                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+    | 1852673427797059126777135760139006525652319754650249024631321344126610074238975 | one quinquavingtillion, eight hundred and fifty-two quattuorvingtillion, six hundred and seventy-three tresvingtillion, four hundred and twenty-seven duovingtillion, seven hundred and ninety-seven univingtillion, fifty-nine vingtillion, one hundred and twenty-six novendecillion, seven hundred and seventy-seven octodecillion, one hundred and thirty-five septendecillion, seven hundred and sixty sedecillion, one hundred and thirty-nine quinquadecillion, six quattuordecillion, five hundred and twenty-five tredecillion, six hundred and fifty-two duodecillion, three hundred and nineteen unidecillion, seven hundred and fifty-four decillion, six hundred and fifty nonillion, two hundred and forty-nine octillion, twenty-four septillion, six hundred and thirty-one sextillion, three hundred and twenty-one quintillion, three hundred and forty-four quadrillion, one hundred and twenty-six trillion, six hundred and ten billion, seventy-four million, two hundred and thirty-eight thousand, nine hundred and seventy-five |
+
+
+Scenario Outline: DateTests 6
+    Given I use the "<culture>" culture info
+    When I convert the date "<date>"
+    Then the result is "<expected>"
+
+Examples: 
+    | culture | date       | expected                                 |
+    | EN-uk   | 01/01/2026 | first January twenty twenty-six          |
+    | EN-uk   | 12/29/2026 | twenty-ninth December twenty twenty-six  |
+    | EN-uk   | 12/31/2026 | thirty-first December twenty twenty-six  |
+    | EN-us   | 01/01/2026 | January first, twenty twenty-six         |
+    | EN-us   | 12/29/2026 | December twenty-ninth, twenty twenty-six |
+    | EN-us   | 12/31/2026 | December thirty-first, twenty twenty-six |
+
+Scenario Outline: TimeTest 7
+    Given I use the "EN-uk" culture info
+    When I convert the time "<time>"
+    Then the result is "<expected>"
+   
+Examples: 
+    | time     | expected                          |
+    | 01:01:01 | one hour one minute one second    |
+    | 01:01:03 | one hour one minute three seconds |
+    | 13:10:00 | thirteen hours ten minutes        |
+    | 21:00:00 | twenty-one hours                  |
+    | 12:00:00 | twelve hours                      |

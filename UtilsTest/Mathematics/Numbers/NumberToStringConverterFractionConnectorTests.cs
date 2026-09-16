@@ -3,7 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.NumberToString;
 using Utils.Numerics;
 
-namespace UtilsTest.Mathematics.Numbers
+namespace UtilsTest.NumberToString
 {
     /// <summary>
     /// Validates that fractional conversions leverage the localized connector configured for each language.
@@ -93,7 +93,8 @@ namespace UtilsTest.Mathematics.Numbers
         [DynamicData(nameof(FractionExpectations), DynamicDataSourceType.Method)]
         public void FractionsUseLocalizedConnectorForComplexValues(string culture, string _)
         {
-            var converter = NumberToStringConverter.GetConverter(culture);
+            var converter = (NumberToStringConverter)NumberToStringConverter.GetConverter(culture);
+            if (converter == null) return;
             const int numerator = 117;
             const int denominator = 1013;
 

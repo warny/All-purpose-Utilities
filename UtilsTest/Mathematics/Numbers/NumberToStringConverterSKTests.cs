@@ -1,7 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.NumberToString;
 
-namespace UtilsTest.Mathematics.Numbers
+namespace UtilsTest.NumberToString
 {
     [TestClass]
     public class NumberToStringConverterSKTests

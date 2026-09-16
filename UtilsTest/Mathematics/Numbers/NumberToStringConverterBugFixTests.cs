@@ -1,11 +1,13 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.NumberToString;
 
-namespace UtilsTest.Mathematics.Numbers
+namespace UtilsTest.NumberToString
 {
     [TestClass]
     public class NumberToStringConverterBugFixTests
     {
+        private static NumberToStringConverter EN => (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+
         // ── FinalizeWriting applied to negative decimals and rationals ────────
 
         [TestMethod]
@@ -85,9 +87,9 @@ namespace UtilsTest.Mathematics.Numbers
             GroupSeparator = "",
             Zero = "zero",
             Minus = "minus *",
-            Groups = NumberToStringConverter.GetConverter("EN").Groups
+            Groups = EN.Groups
                 .ToDictionary(kv => kv.Key, kv => new DigitListType { Digits = kv.Value.Values.ToList() }),
-            Scale = NumberToStringConverter.GetConverter("EN").Scale,
+            Scale = EN.Scale,
         };
 
         [TestMethod]

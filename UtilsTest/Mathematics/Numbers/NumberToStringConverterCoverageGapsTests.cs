@@ -2,7 +2,7 @@ using System.Numerics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.NumberToString;
 
-namespace UtilsTest.Mathematics.Numbers;
+namespace UtilsTest.NumberToString;
 
 /// <summary>
 /// Tests for items 35-38 of TODO.md: closing cross-language coverage gaps for features
@@ -12,6 +12,8 @@ namespace UtilsTest.Mathematics.Numbers;
 [TestClass]
 public class NumberToStringConverterCoverageGapsTests
 {
+    private static NumberToStringConverter FR => (NumberToStringConverter)NumberToStringConverter.GetConverter("FR");
+
     // ─── Item 35 — Convert(double/float) + DecimalFormatOptions on DE/ES/IT ─
 
     [TestMethod]
@@ -106,8 +108,7 @@ public class NumberToStringConverterCoverageGapsTests
     [TestMethod]
     public void ConvertYear_Negative_WithGenderVariant_BeforeChristSuffix()
     {
-        var fr = NumberToStringConverter.GetConverter("FR");
-        var options = new NumberToStringConverterOptions(fr)
+        var options = new NumberToStringConverterOptions(FR)
         {
             YearFormat = new YearFormatOptions(null, null, null, BeforeChristSuffix: "av. J.-C.")
         };

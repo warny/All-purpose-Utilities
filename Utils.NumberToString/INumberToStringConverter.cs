@@ -1,6 +1,7 @@
 using System;
 using System.Numerics;
 using Utils.Numerics;
+using static Utils.NumberToString.NumberToStringConverter;
 
 namespace Utils.NumberToString
 {
@@ -25,6 +26,13 @@ namespace Utils.NumberToString
         /// </summary>
         IReadOnlyList<NumberToStringConverter.VariantDimension> VariantDimensions
         {
+            get => [];
+        }
+
+        /// <summary>
+        /// Variant-specific ordinal rules applied when their dimension constraints match the active variant query.
+        /// </summary>
+        public IReadOnlyList<OrdinalVariantRule> OrdinalVariants {
             get => [];
         }
 

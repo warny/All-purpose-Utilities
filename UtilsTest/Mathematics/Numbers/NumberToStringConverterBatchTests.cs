@@ -3,7 +3,7 @@ using System.Numerics;
 using Utils.NumberToString;
 using Utils.Range;
 
-namespace UtilsTest.Mathematics.Numbers;
+namespace UtilsTest.NumberToString;
 
 /// <summary>
 /// Tests for the improvements-batch PR (points 4–8, 12–14, new languages).
@@ -11,26 +11,25 @@ namespace UtilsTest.Mathematics.Numbers;
 [TestClass]
 public class NumberToStringConverterBatchTests
 {
+    private static NumberToStringConverter EN => (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+    private static NumberToStringConverter FR => (NumberToStringConverter)NumberToStringConverter.GetConverter("FR");
+    private static NumberToStringConverter ES => (NumberToStringConverter)NumberToStringConverter.GetConverter("ES");
     // ─── G3 — ConvertOrdinal(BigInteger) ────────────────────────────────────
 
     [TestMethod]
     public void ConvertOrdinal_BigInteger_DelegatesToLong()
     {
-        var en = NumberToStringConverter.GetConverter("EN");
-        var fr = NumberToStringConverter.GetConverter("FR");
 
-        Assert.AreEqual("first", en.ConvertOrdinal((BigInteger)1));
-        Assert.AreEqual("twenty-first", en.ConvertOrdinal((BigInteger)21));
-        Assert.AreEqual("premier", fr.ConvertOrdinal((BigInteger)1));
+        Assert.AreEqual("first", EN.ConvertOrdinal((BigInteger)1));
+        Assert.AreEqual("twenty-first", EN.ConvertOrdinal((BigInteger)21));
+        Assert.AreEqual("premier", FR.ConvertOrdinal((BigInteger)1));
     }
 
     [TestMethod]
     public void ConvertOrdinal_BigInteger_WithVariants()
     {
-        var es = NumberToStringConverter.GetConverter("ES");
-
-        Assert.AreEqual("primera", es.ConvertOrdinal((BigInteger)1, "gender=femenino"));
-        Assert.AreEqual("décima", es.ConvertOrdinal((BigInteger)10, "gender=femenino"));
+        Assert.AreEqual("primera", ES.ConvertOrdinal((BigInteger)1, "gender=femenino"));
+        Assert.AreEqual("décima", ES.ConvertOrdinal((BigInteger)10, "gender=femenino"));
     }
 
     // ─── G4 — ConvertYear(int, params string[]) ──────────────────────────────
@@ -38,22 +37,21 @@ public class NumberToStringConverterBatchTests
     [TestMethod]
     public void ConvertYear_WithVariants_PassedToConvert()
     {
-        var fr = NumberToStringConverter.GetConverter("FR");
-        var options = new NumberToStringConverterOptions(fr)
+        var options = new NumberToStringConverterOptions(FR)
         {
             YearFormat = new YearFormatOptions(null, null, null)
         };
         var converter = new NumberToStringConverter(options);
 
         // No split range → delegates to Convert(abs, variants)
-        Assert.AreEqual(fr.Convert(2021, "gender=feminin"),
+        Assert.AreEqual(FR.Convert(2021, "gender=feminin"),
                         converter.ConvertYear(2021, "gender=feminin"));
     }
 
     [TestMethod]
     public void ConvertYear_BeforeChristSuffix_AppliedForNegativeYears()
     {
-        var enOptions = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        var enOptions = new NumberToStringConverterOptions(EN)
         {
             YearFormat = new YearFormatOptions(
                 HundredWord: "hundred",

@@ -3,7 +3,7 @@ using System.Numerics;
 using System.Xml.Linq;
 using Utils.NumberToString;
 
-namespace UtilsTest.Mathematics.Numbers;
+namespace UtilsTest.NumberToString;
 
 /// <summary>Completes legacy XML fixtures whose original tests target configuration concerns other than digit completeness.</summary>
 internal static class LegacyNumberToStringFixture

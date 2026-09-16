@@ -5,7 +5,7 @@ using System.Linq;
 using System.Numerics;
 using Utils.NumberToString;
 
-namespace UtilsTest.Mathematics.Numbers;
+namespace UtilsTest.NumberToString;
 
 /// <summary>
 /// Tests for the 6 engine improvements:
@@ -15,6 +15,8 @@ namespace UtilsTest.Mathematics.Numbers;
 [TestClass]
 public class NumberToStringConverterEngineImprovementsTests
 {
+    private static NumberToStringConverter EN => (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+
     // ─── A1 — Convert(double/float) ────────────────────────────────────────
     // These are DEFAULT INTERFACE METHODS on INumberToStringConverter.
     // They must be called via the interface type (not the concrete type)
@@ -203,8 +205,7 @@ public class NumberToStringConverterEngineImprovementsTests
     [TestMethod]
     public void GroupConnector_InjectedBelowThreshold()
     {
-        var enBase = NumberToStringConverter.GetConverter("EN");
-        var opts = new NumberToStringConverterOptions(enBase)
+        var opts = new NumberToStringConverterOptions(EN)
         {
             GroupConnector = "and",
             GroupConnectorThreshold = 100,
@@ -219,8 +220,7 @@ public class NumberToStringConverterEngineImprovementsTests
     [TestMethod]
     public void GroupConnector_NotInjectedAtOrAboveThreshold()
     {
-        var enBase = NumberToStringConverter.GetConverter("EN");
-        var opts = new NumberToStringConverterOptions(enBase)
+        var opts = new NumberToStringConverterOptions(EN)
         {
             GroupConnector = "and",
             GroupConnectorThreshold = 100,
@@ -245,8 +245,7 @@ public class NumberToStringConverterEngineImprovementsTests
     [TestMethod]
     public void GroupConnector_RoundTrip_ViaOptions()
     {
-        var en = NumberToStringConverter.GetConverter("EN");
-        var opts = new NumberToStringConverterOptions(en);
+        var opts = new NumberToStringConverterOptions(EN);
         // Default GroupConnector should be null (not configured for EN)
         Assert.IsNull(opts.GroupConnector);
         Assert.AreEqual(100, opts.GroupConnectorThreshold);  // default value
@@ -257,10 +256,9 @@ public class NumberToStringConverterEngineImprovementsTests
     [TestMethod]
     public void ReplacementScope_StartsWith_AppliedAtStart()
     {
-        var enBase = NumberToStringConverter.GetConverter("EN");
-        var opts = new NumberToStringConverterOptions(enBase)
+        var opts = new NumberToStringConverterOptions(EN)
         {
-            Replacements = enBase.Replacements.Append(
+            Replacements = EN.Replacements.Append(
                 new NumberToStringConverter.ReplacementRule("one ", "a ", ReplacementScope.StartsWith)
             ).ToList(),
         };
@@ -275,10 +273,9 @@ public class NumberToStringConverterEngineImprovementsTests
     [TestMethod]
     public void ReplacementScope_StartsWith_DoesNotAffectMiddle()
     {
-        var enBase = NumberToStringConverter.GetConverter("EN");
-        var opts = new NumberToStringConverterOptions(enBase)
+        var opts = new NumberToStringConverterOptions(EN)
         {
-            Replacements = enBase.Replacements.Append(
+            Replacements = EN.Replacements.Append(
                 new NumberToStringConverter.ReplacementRule("one ", "a ", ReplacementScope.StartsWith)
             ).ToList(),
         };
@@ -294,10 +291,9 @@ public class NumberToStringConverterEngineImprovementsTests
     [TestMethod]
     public void ReplacementScope_EndsWith_AppliedAtEnd()
     {
-        var enBase = NumberToStringConverter.GetConverter("EN");
-        var opts = new NumberToStringConverterOptions(enBase)
+        var opts = new NumberToStringConverterOptions(EN)
         {
-            Replacements = enBase.Replacements.Append(
+            Replacements = EN.Replacements.Append(
                 new NumberToStringConverter.ReplacementRule("one", "1", ReplacementScope.EndsWith)
             ).ToList(),
         };
@@ -313,8 +309,7 @@ public class NumberToStringConverterEngineImprovementsTests
     public void ReplacementScope_StartsWith_ViaVariantRules()
     {
         // StartsWith in ApplyVariantReplacement (variant rules path)
-        var enBase = NumberToStringConverter.GetConverter("EN");
-        var opts = new NumberToStringConverterOptions(enBase)
+        var opts = new NumberToStringConverterOptions(EN)
         {
             VariantRules = new List<NumberToStringConverter.VariantRule>
             {
@@ -344,8 +339,7 @@ public class NumberToStringConverterEngineImprovementsTests
     [TestMethod]
     public void ReplacementScope_EndsWith_ViaVariantRules()
     {
-        var enBase = NumberToStringConverter.GetConverter("EN");
-        var opts = new NumberToStringConverterOptions(enBase)
+        var opts = new NumberToStringConverterOptions(EN)
         {
             VariantRules = new List<NumberToStringConverter.VariantRule>
             {
