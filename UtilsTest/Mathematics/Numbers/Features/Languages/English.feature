@@ -288,9 +288,9 @@ Scenario Outline: DateTests 6
 
 Examples:
     | culture | date       | expected                                 |
-    | EN-uk   | 01/01/2026 | first January twenty twenty-six          |
-    | EN-uk   | 12/29/2026 | twenty-ninth December twenty twenty-six  |
-    | EN-uk   | 12/31/2026 | thirty-first December twenty twenty-six  |
+    | EN-GB   | 01/01/2026 | first January twenty twenty-six          |
+    | EN-GB   | 29/12/2026 | twenty-ninth December twenty twenty-six  |
+    | EN-GB   | 31/12/2026 | thirty-first December twenty twenty-six  |
     | EN-us   | 01/01/2026 | January first, twenty twenty-six         |
     | EN-us   | 12/29/2026 | December twenty-ninth, twenty twenty-six |
     | EN-us   | 12/31/2026 | December thirty-first, twenty twenty-six |

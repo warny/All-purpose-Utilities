@@ -10,7 +10,7 @@ namespace UtilsTest.NumberToString;
 [TestClass]
 public class NumberToStringReviewTests
 {
-    private static NumberToStringConverter EN => (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+    private static NumberToStringConverter EN => NumberToStringConverter.GetConverter("EN");
 
     /// <summary>Verifies named and generated zero multiplicatives and signed extreme inputs.</summary>
     [TestMethod]
@@ -103,9 +103,9 @@ public class NumberToStringReviewTests
             NumberToStringConverter.RegisterConfigurations([CreateConfiguration(culture, "rejected")], DuplicateCulturePolicy.Reject));
 
         NumberToStringConverter.RegisterConfigurations([CreateConfiguration(culture, "kept")], DuplicateCulturePolicy.KeepExisting);
-        Assert.AreEqual("first", ((NumberToStringConverter)NumberToStringConverter.GetConverter(culture)).Zero);
+        Assert.AreEqual("first", NumberToStringConverter.GetConverter(culture).Zero);
         NumberToStringConverter.RegisterConfigurations([CreateConfiguration(culture, "replacement")], DuplicateCulturePolicy.Replace);
-        Assert.AreEqual("replacement", ((NumberToStringConverter)NumberToStringConverter.GetConverter(culture)).Zero);
+        Assert.AreEqual("replacement", NumberToStringConverter.GetConverter(culture).Zero);
     }
 
     /// <summary>Verifies that reading a configuration returns but does not register its converter.</summary>
@@ -179,8 +179,8 @@ public class NumberToStringReviewTests
             [CreateConfiguration(baseCulture, "candidate"), CreateChildConfiguration(childCulture, baseCulture)],
             DuplicateCulturePolicy.KeepExisting);
 
-        Assert.AreEqual("existing", ((NumberToStringConverter)NumberToStringConverter.GetConverter(baseCulture)).Zero);
-        Assert.AreEqual("existing", ((NumberToStringConverter)NumberToStringConverter.GetConverter(childCulture)).Zero);
+        Assert.AreEqual("existing", NumberToStringConverter.GetConverter(baseCulture).Zero);
+        Assert.AreEqual("existing", NumberToStringConverter.GetConverter(childCulture).Zero);
     }
 
     /// <summary>Verifies that KeepExisting makes the first definition in a batch authoritative.</summary>
@@ -198,8 +198,8 @@ public class NumberToStringReviewTests
             [CreateConfiguration(baseCulture, "first"), secondDocument],
             DuplicateCulturePolicy.KeepExisting);
 
-        Assert.AreEqual("first", ((NumberToStringConverter)NumberToStringConverter.GetConverter(baseCulture)).Zero);
-        Assert.AreEqual("first", ((NumberToStringConverter)NumberToStringConverter.GetConverter(childCulture)).Zero);
+        Assert.AreEqual("first", NumberToStringConverter.GetConverter(baseCulture).Zero);
+        Assert.AreEqual("first", NumberToStringConverter.GetConverter(childCulture).Zero);
     }
 
     /// <summary>Verifies multi-base inheritance uses the effective global and batch definitions.</summary>
@@ -217,7 +217,7 @@ public class NumberToStringReviewTests
             [CreateConfiguration(cultureA, "candidate-a"), baseB, child],
             DuplicateCulturePolicy.KeepExisting);
 
-        NumberToStringConverter converter = (NumberToStringConverter)NumberToStringConverter.GetConverter(childCulture);
+        NumberToStringConverter converter = NumberToStringConverter.GetConverter(childCulture);
         Assert.AreEqual("existing-a", converter.Zero);
         Assert.AreEqual("minus-b *", converter.Minus);
     }
@@ -234,8 +234,8 @@ public class NumberToStringReviewTests
             [CreateConfiguration(baseCulture, "replacement"), CreateChildConfiguration(childCulture, baseCulture)],
             DuplicateCulturePolicy.Replace);
 
-        Assert.AreEqual("replacement", ((NumberToStringConverter)NumberToStringConverter.GetConverter(baseCulture)).Zero);
-        Assert.AreEqual("replacement", ((NumberToStringConverter)NumberToStringConverter.GetConverter(childCulture)).Zero);
+        Assert.AreEqual("replacement", NumberToStringConverter.GetConverter(baseCulture).Zero);
+        Assert.AreEqual("replacement", NumberToStringConverter.GetConverter(childCulture).Zero);
     }
 
     /// <summary>Verifies that Reject publishes neither converters nor hidden definitions after a collision.</summary>
@@ -284,8 +284,8 @@ public class NumberToStringReviewTests
             [oldDocument, replacementDocument],
             DuplicateCulturePolicy.Replace);
 
-        Assert.AreEqual("new", ((NumberToStringConverter)NumberToStringConverter.GetConverter(baseCulture)).Zero);
-        Assert.AreEqual("new", ((NumberToStringConverter)NumberToStringConverter.GetConverter(childCulture)).Zero);
+        Assert.AreEqual("new", NumberToStringConverter.GetConverter(baseCulture).Zero);
+        Assert.AreEqual("new", NumberToStringConverter.GetConverter(childCulture).Zero);
     }
 
     /// <summary>Verifies that undefined duplicate policies are rejected before any configuration is built.</summary>
@@ -316,7 +316,7 @@ public class NumberToStringReviewTests
         });
 
         Assert.AreEqual(0, errors.Count);
-        Assert.IsTrue(new[] { "alpha", "beta" }.Contains(((NumberToStringConverter)NumberToStringConverter.GetConverter(culture)).Zero));
+        Assert.IsTrue(new[] { "alpha", "beta" }.Contains(NumberToStringConverter.GetConverter(culture).Zero));
     }
 
     /// <summary>Verifies that concurrent base replacement and inheritance resolution observe one coherent registry state.</summary>
@@ -335,7 +335,7 @@ public class NumberToStringReviewTests
             () => Capture(() => NumberToStringConverter.RegisterConfigurations([child], DuplicateCulturePolicy.Replace), errors));
 
         Assert.AreEqual(0, errors.Count);
-        Assert.IsTrue(new[] { "initial", "replacement" }.Contains(((NumberToStringConverter)NumberToStringConverter.GetConverter(childCulture)).Zero));
+        Assert.IsTrue(new[] { "initial", "replacement" }.Contains(NumberToStringConverter.GetConverter(childCulture).Zero));
     }
 
     /// <summary>Captures an exception produced by a concurrent registration action.</summary>

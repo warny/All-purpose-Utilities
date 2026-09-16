@@ -6,7 +6,7 @@ namespace UtilsTest.NumberToString
     [TestClass]
     public class NumberToStringConverterBugFixTests
     {
-        private static NumberToStringConverter EN => (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+        private static NumberToStringConverter EN => NumberToStringConverter.GetConverter("EN");
 
         // ── FinalizeWriting applied to negative decimals and rationals ────────
 

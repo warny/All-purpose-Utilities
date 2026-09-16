@@ -9,7 +9,7 @@ namespace UtilsTest.NumberToString;
 [TestClass]
 public sealed class NumberToStringRulePrecedenceTests
 {
-    private static NumberToStringConverter EN => (NumberToStringConverter)NumberToStringConverter.GetConverter("EN");
+    private static NumberToStringConverter EN => NumberToStringConverter.GetConverter("EN");
 
     /// <summary>Verifies that ordinal priority, rather than source order, resolves equal specificity.</summary>
     [TestMethod]
@@ -201,7 +201,7 @@ public sealed class NumberToStringRulePrecedenceTests
             """;
         NumberToStringConverter.RegisterConfigurations(
             [CreatePriorityXml(culture, configuration)], DuplicateCulturePolicy.Replace);
-        NumberToStringConverter converter = (NumberToStringConverter)NumberToStringConverter.GetConverter(culture);
+        NumberToStringConverter converter = NumberToStringConverter.GetConverter(culture);
         Assert.AreEqual("final", converter.Convert(1, "gender=female", "number=plural"));
         CollectionAssert.AreEquivalent(new[] { 10, 20 }, converter.VariantRules.Select(rule => rule.Priority).ToArray());
     }
@@ -226,7 +226,7 @@ public sealed class NumberToStringRulePrecedenceTests
             """;
         NumberToStringConverter.RegisterConfigurations(
             [CreatePriorityXml(culture, configuration)], DuplicateCulturePolicy.Replace);
-        NumberToStringConverter converter = (NumberToStringConverter)NumberToStringConverter.GetConverter(culture);
+        NumberToStringConverter converter = NumberToStringConverter.GetConverter(culture);
         Assert.AreEqual("high", converter.ConvertOrdinal(2, "gender=female", "number=plural"));
         CollectionAssert.AreEquivalent(new[] { 10, 20 }, converter.OrdinalVariants.Select(rule => rule.Priority).ToArray());
     }

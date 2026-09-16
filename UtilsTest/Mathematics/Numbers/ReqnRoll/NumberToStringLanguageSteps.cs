@@ -156,15 +156,15 @@ public sealed class NumberToStringLanguageSteps
 
     /// <summary>Converts a calendar date parsed with the current culture's short date pattern.</summary>
     [When(@"I convert the localized date {string}")]
-    public void WhenIConvertTheLocalizedDate(string date) => result = Converter.Convert(DateOnly.Parse(date, cultureInfo));
+    public void WhenIConvertTheLocalizedDate(string date) => result = Converter.Convert(DateOnly.Parse(date, cultureInfo), variants);
 
     /// <summary>Converts a time of day parsed with the current culture's short time pattern.</summary>
     [When(@"I convert the localized time {string}")]
-    public void WhenIConvertTheLocalizedTime(string date) => result = Converter.Convert(TimeOnly.Parse(date, cultureInfo));
+    public void WhenIConvertTheLocalizedTime(string date) => result = Converter.Convert(TimeOnly.Parse(date, cultureInfo), variants);
 
     /// <summary>Converts a date and time parsed with the current culture's patterns.</summary>
     [When(@"I convert the date time {string}")]
-    public void WhenIConvertTheDateTime(string date) => result = Converter.Convert(DateTime.Parse(date, cultureInfo));
+    public void WhenIConvertTheDateTime(string date) => result = Converter.Convert(DateTime.Parse(date, cultureInfo), variants);
 
     /// <summary>Verifies the exact localized result.</summary>
     [Then("the result is {string}")]

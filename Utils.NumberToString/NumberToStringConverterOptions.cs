@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
-using System.Text.RegularExpressions;
 using Utils.Range;
 
 namespace Utils.NumberToString;
@@ -295,23 +294,14 @@ public sealed class NumberToStringConverterOptions
     /// Clones the settings of the converter registered for <paramref name="culture"/>.
     /// </summary>
     public static NumberToStringConverterOptions FromCulture(CultureInfo culture)
-    {
-        var converter = NumberToStringConverter.GetConverter(culture);
-        if (converter is NumberToStringConverter numberToStringConverter) return new NumberToStringConverterOptions(numberToStringConverter);
-        throw new InvalidCastException($"The {culture.Name} number converter can't be converted to NumberToStringConverterOptions");
-    }
-      
+        => new(NumberToStringConverter.GetConverter(culture));
 
     /// <summary>
     /// Clones the settings of the converter registered for <paramref name="cultureName"/>
     /// (e.g. <c>"FR"</c>, <c>"en-US"</c>).
     /// </summary>
     public static NumberToStringConverterOptions FromCulture(string cultureName)
-    {
-        var converter = NumberToStringConverter.GetConverter(cultureName);
-        if (converter is NumberToStringConverter numberToStringConverter) return new NumberToStringConverterOptions(numberToStringConverter);
-        throw new InvalidCastException($"The {cultureName} number converter can't be converted to NumberToStringConverterOptions");
-    }
+        => new(NumberToStringConverter.GetConverter(cultureName));
 }
 
 /// <summary>
