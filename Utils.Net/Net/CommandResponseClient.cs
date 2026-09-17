@@ -60,6 +60,9 @@ public class CommandResponseClient : IDisposable
     private const int StatePoisoned = 4;
     private int _state = StateNotConnected;
     private Exception? _poisonCause;
+    private readonly string _connectionId = Guid.NewGuid().ToString("N");
+    private long _nextCallbackId;
+    private long _nextRequestId;
 
     private int _maxLineLength = 8192;
 
@@ -330,6 +333,7 @@ public class CommandResponseClient : IDisposable
 
             // OnConnect succeeded. Promote the instance to Connected and start keep-alive.
             Interlocked.Exchange(ref _state, StateConnected);
+            LogLifecycleDiagnostic("Connection state changed", null, null, "Connected");
             RestartKeepAlive();
         }
         catch
@@ -567,6 +571,7 @@ public class CommandResponseClient : IDisposable
         if (_state != StateConnected)
             throw new InvalidOperationException("Client is not connected.");
 
+        long requestId = Interlocked.Increment(ref _nextRequestId);
         await _sendLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -575,7 +580,9 @@ public class CommandResponseClient : IDisposable
                 throw new IOException("Connection closed.");
             }
             DrainPendingResponses();
-            Logger?.LogDebug("Sending: {Command}", RedactCommandForLog(command));
+            string commandForLog = RedactCommandForLog(command);
+            Logger?.LogDebug("Sending: {Command}", commandForLog);
+            LogLifecycleDiagnostic("Request sent", null, requestId, commandForLog);
 
             // Item 44 / P1-2 race fix: register as the active response owner BEFORE writing
             // the command so that a response arriving immediately after (or during) the write
@@ -600,6 +607,7 @@ public class CommandResponseClient : IDisposable
                         continue;
                     }
                     responses.Add(response);
+                    LogLifecycleDiagnostic("Response received", null, requestId, commandForLog);
                     if (MaxResponseCount > 0 && responses.Count > MaxResponseCount)
                     {
                         InvalidDataException error = new($"Server sent more than {MaxResponseCount} response lines for a single command.");
@@ -612,6 +620,7 @@ public class CommandResponseClient : IDisposable
                     }
                 }
                 responseComplete = true;
+                LogLifecycleDiagnostic("Request completed", null, requestId, commandForLog);
                 ResetKeepAlive();
                 return responses;
             }
@@ -1099,6 +1108,11 @@ public class CommandResponseClient : IDisposable
 
                 ServerResponse response = ParseResponseLine(line);
                 Logger?.LogDebug("Received: {Code} {Message}", SanitizeForLog(response.Code, 10), SanitizeForLog(response.Message ?? string.Empty, 200));
+                LogLifecycleDiagnostic(
+                    "Response frame received",
+                    null,
+                    null,
+                    $"MessageType={nameof(ServerResponse)};ResponseCode={SanitizeForLog(response.Code, 10)}");
 
                 // P1-A: route each line to exactly one destination.
                 // Enqueue (and signal) only when a command or read waiter is active; otherwise
@@ -1121,7 +1135,10 @@ public class CommandResponseClient : IDisposable
                 }
                 else
                 {
-                    RaiseUnsolicitedResponseReceived(response);
+                    long callbackId = Interlocked.Increment(ref _nextCallbackId);
+                    LogLifecycleDiagnostic("Callback frame classified", callbackId, null, nameof(ServerResponse));
+                    LogLifecycleDiagnostic("Callback dispatch scheduled", callbackId, null, nameof(ServerResponse));
+                    RaiseUnsolicitedResponseReceived(response, callbackId);
                 }
             }
         }
@@ -1135,12 +1152,15 @@ public class CommandResponseClient : IDisposable
         }
         finally
         {
+            LogLifecycleDiagnostic("Connection closing", null, null, "Listener terminated");
             _disconnected = true;
             // P1-C: update state so IsConnected returns false as soon as the listener exits,
             // regardless of whether Dispose() has been called yet.
             Interlocked.CompareExchange(ref _state, StateDisposed, StateConnected);
             _responseSignal.Release();
+            LogLifecycleDiagnostic("Connection state changed", null, null, GetConnectionStateName());
             Logger?.LogWarning("Listener thread terminated");
+            LogLifecycleDiagnostic("Connection closed", null, null, "Listener terminated");
         }
     }
 
@@ -1148,22 +1168,41 @@ public class CommandResponseClient : IDisposable
     /// Raises <see cref="UnsolicitedResponseReceived"/>, catching and logging any subscriber
     /// exceptions so they cannot terminate the listener thread (item 45).
     /// </summary>
-    private void RaiseUnsolicitedResponseReceived(ServerResponse response)
+    /// <param name="response">Unsolicited response dispatched to subscribers.</param>
+    /// <param name="callbackId">Identifier correlating every stage of this callback dispatch.</param>
+    private void RaiseUnsolicitedResponseReceived(ServerResponse response, long callbackId)
     {
+        LogLifecycleDiagnostic("Callback dispatch started", callbackId, null, nameof(ServerResponse));
         Action<ServerResponse>? handler = UnsolicitedResponseReceived;
-        if (handler is null) return;
+        if (handler is null)
+        {
+            LogLifecycleDiagnostic("Callback dispatch completed", callbackId, null, "No subscribers");
+            return;
+        }
         foreach (Delegate d in handler.GetInvocationList())
         {
             try
             {
+                LogLifecycleDiagnostic("Callback subscriber invocation started", callbackId, null, d.Method.Name);
                 ((Action<ServerResponse>)d)(response);
+                LogLifecycleDiagnostic("Callback subscriber invocation completed", callbackId, null, d.Method.Name);
             }
             catch (Exception ex)
             {
-                Logger?.LogError(ex, "UnsolicitedResponseReceived subscriber threw an unhandled exception");
-                RaiseCallbackError(ex);
+                Logger?.LogError(
+                    ex,
+                    "Callback subscriber invocation failed. ConnectionId={ConnectionId}, CallbackId={CallbackId}, ExceptionType={ExceptionType}, ThreadId={ThreadId}, TaskId={TaskId}, State={State}, TimestampUtc={TimestampUtc:O}",
+                    _connectionId,
+                    callbackId,
+                    ex.GetType().FullName,
+                    Environment.CurrentManagedThreadId,
+                    Task.CurrentId,
+                    GetConnectionStateName(),
+                    DateTimeOffset.UtcNow);
+                RaiseCallbackError(ex, callbackId);
             }
         }
+        LogLifecycleDiagnostic("Callback dispatch completed", callbackId, null, nameof(ServerResponse));
     }
 
     /// <summary>
@@ -1171,16 +1210,74 @@ public class CommandResponseClient : IDisposable
     /// catching individual subscriber exceptions so a misbehaving subscriber cannot suppress
     /// the delivery to the remaining subscribers or propagate back into the transport (P2-E).
     /// </summary>
-    private void RaiseCallbackError(Exception ex)
+    /// <param name="ex">Exception being forwarded to callback-error subscribers.</param>
+    /// <param name="callbackId">Identifier of the originating callback, when available.</param>
+    private void RaiseCallbackError(Exception ex, long? callbackId = null)
     {
+        LogLifecycleDiagnostic("Callback error dispatch started", callbackId, null, ex.GetType().FullName ?? ex.GetType().Name);
         Action<Exception>? handler = CallbackError;
-        if (handler is null) return;
+        if (handler is null)
+        {
+            LogLifecycleDiagnostic("Callback error dispatch completed", callbackId, null, "No subscribers");
+            return;
+        }
         foreach (Delegate d in handler.GetInvocationList())
         {
-            try { ((Action<Exception>)d)(ex); }
-            catch (Exception inner) { Logger?.LogError(inner, "CallbackError subscriber threw an unhandled exception"); }
+            try
+            {
+                LogLifecycleDiagnostic("Callback error subscriber invocation started", callbackId, null, d.Method.Name);
+                ((Action<Exception>)d)(ex);
+                LogLifecycleDiagnostic("Callback error subscriber invocation completed", callbackId, null, d.Method.Name);
+            }
+            catch (Exception inner)
+            {
+                Logger?.LogError(
+                    inner,
+                    "CallbackError subscriber invocation failed. ConnectionId={ConnectionId}, CallbackId={CallbackId}, ExceptionType={ExceptionType}, OriginalExceptionType={OriginalExceptionType}, ThreadId={ThreadId}, TaskId={TaskId}, State={State}, TimestampUtc={TimestampUtc:O}",
+                    _connectionId,
+                    callbackId,
+                    inner.GetType().FullName,
+                    ex.GetType().FullName,
+                    Environment.CurrentManagedThreadId,
+                    Task.CurrentId,
+                    GetConnectionStateName(),
+                    DateTimeOffset.UtcNow);
+            }
         }
+        LogLifecycleDiagnostic("Callback error propagation completed", callbackId, null, ex.GetType().FullName ?? ex.GetType().Name);
     }
+
+    /// <summary>Writes a structured, payload-free lifecycle diagnostic for callback and request correlation.</summary>
+    /// <param name="step">Processing step being recorded.</param>
+    /// <param name="callbackId">Callback identifier when the event belongs to callback dispatch.</param>
+    /// <param name="requestId">Request identifier when the event belongs to a command exchange.</param>
+    /// <param name="detail">Sanitized technical metadata that does not contain payload content.</param>
+    private void LogLifecycleDiagnostic(string step, long? callbackId, long? requestId, string? detail)
+    {
+        Logger?.LogDebug(
+            "{Step}. ConnectionId={ConnectionId}, CallbackId={CallbackId}, RequestId={RequestId}, Detail={Detail}, ThreadId={ThreadId}, TaskId={TaskId}, State={State}, TimestampUtc={TimestampUtc:O}",
+            step,
+            _connectionId,
+            callbackId,
+            requestId,
+            detail,
+            Environment.CurrentManagedThreadId,
+            Task.CurrentId,
+            GetConnectionStateName(),
+            DateTimeOffset.UtcNow);
+    }
+
+    /// <summary>Returns a stable diagnostic name for the current connection lifecycle state.</summary>
+    /// <returns>The current connection state name.</returns>
+    private string GetConnectionStateName() => Volatile.Read(ref _state) switch
+    {
+        StateNotConnected => "NotConnected",
+        StateConnecting => "Connecting",
+        StateConnected => "Connected",
+        StateDisposed => "Disposed",
+        StatePoisoned => "Poisoned",
+        _ => "Unknown"
+    };
 
     /// <summary>
     /// Validates that <paramref name="value"/> does not contain CR, LF or NUL characters,
@@ -1379,6 +1476,7 @@ public class CommandResponseClient : IDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task DisconnectAsync(string? command = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
+        LogLifecycleDiagnostic("Connection closing", null, null, "Disconnect requested");
         Logger?.LogInformation("Disconnecting");
         if (_writer is not null && command is not null)
         {
@@ -1408,6 +1506,7 @@ public class CommandResponseClient : IDisposable
 
         Dispose();
         Logger?.LogInformation("Disconnected");
+        LogLifecycleDiagnostic("Connection closed", null, null, "Disconnect completed");
     }
 
     /// <summary>
