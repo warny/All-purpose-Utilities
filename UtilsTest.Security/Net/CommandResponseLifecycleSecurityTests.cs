@@ -48,6 +48,11 @@ public class CommandResponseLifecycleSecurityTests
         /// <returns><see langword="true"/> when an event contains the fragment.</returns>
         public bool ContainsEvent(string value) => Contains(_events, value);
 
+        /// <summary>Counts chronology entries containing an event fragment.</summary>
+        /// <param name="value">Event fragment to count.</param>
+        /// <returns>The number of matching chronology entries.</returns>
+        public int CountEvents(string value) => _events.Count(item => item.Contains(value, StringComparison.Ordinal));
+
         /// <summary>Builds a diagnostic snapshot suitable for GitHub Actions output.</summary>
         /// <param name="expectedEvent">Event for which the test was waiting.</param>
         /// <param name="client">Client whose last known connection state is reported.</param>
@@ -59,10 +64,11 @@ public class CommandResponseLifecycleSecurityTests
                 $"Elapsed: {_stopwatch.Elapsed.TotalMilliseconds:F3} ms{Environment.NewLine}" +
                 $"ConnectionState: {(client.IsConnected ? "Connected" : "NotConnected")}{Environment.NewLine}" +
                 $"SessionFailure: {client.SessionFailure?.GetType().FullName ?? "none"}{Environment.NewLine}" +
-                $"CallbackReceived: {Contains(events, "Callback frame received")}{Environment.NewLine}" +
+                $"CallbackReceived: {Contains(events, "Callback frame classified")}{Environment.NewLine}" +
                 $"CallbackStarted: {Contains(events, "Callback dispatch started")}{Environment.NewLine}" +
                 $"CallbackCompleted: {Contains(events, "Callback dispatch completed")}{Environment.NewLine}" +
-                $"CallbackErrorPropagated: {Contains(events, "Callback error propagated")}{Environment.NewLine}" +
+                $"CallbackErrorDispatchStarted: {Contains(events, "Callback error dispatch started")}{Environment.NewLine}" +
+                $"CallbackErrorPropagated: {Contains(events, "Callback error propagation completed")}{Environment.NewLine}" +
                 $"PingSent: {Contains(events, "Request sent")}{Environment.NewLine}" +
                 $"PingReceived: {Contains(events, "PING received by server")}{Environment.NewLine}" +
                 $"PingCompleted: {Contains(events, "Request completed")}{Environment.NewLine}" +
@@ -538,6 +544,13 @@ public class CommandResponseLifecycleSecurityTests
         Assert.IsTrue(
             timeline.ContainsEvent("Callback dispatch completed"),
             timeline.BuildDiagnostic("Callback dispatch completed", client));
+        Assert.IsTrue(
+            timeline.ContainsEvent("Callback error propagation completed"),
+            timeline.BuildDiagnostic("Callback error propagation completed", client));
+        Assert.AreEqual(
+            1,
+            timeline.CountEvents("Callback frame classified"),
+            timeline.BuildDiagnostic("exactly one unsolicited callback classification", client));
         Assert.IsTrue(
             timeline.ContainsEvent("ConnectionId=") && timeline.ContainsEvent("CallbackId=1"),
             timeline.BuildDiagnostic("correlated connection and callback identifiers", client));

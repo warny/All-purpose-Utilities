@@ -1109,7 +1109,7 @@ public class CommandResponseClient : IDisposable
                 ServerResponse response = ParseResponseLine(line);
                 Logger?.LogDebug("Received: {Code} {Message}", SanitizeForLog(response.Code, 10), SanitizeForLog(response.Message ?? string.Empty, 200));
                 LogLifecycleDiagnostic(
-                    "Callback frame received",
+                    "Response frame received",
                     null,
                     null,
                     $"MessageType={nameof(ServerResponse)};ResponseCode={SanitizeForLog(response.Code, 10)}");
@@ -1136,6 +1136,7 @@ public class CommandResponseClient : IDisposable
                 else
                 {
                     long callbackId = Interlocked.Increment(ref _nextCallbackId);
+                    LogLifecycleDiagnostic("Callback frame classified", callbackId, null, nameof(ServerResponse));
                     LogLifecycleDiagnostic("Callback dispatch scheduled", callbackId, null, nameof(ServerResponse));
                     RaiseUnsolicitedResponseReceived(response, callbackId);
                 }
@@ -1213,9 +1214,13 @@ public class CommandResponseClient : IDisposable
     /// <param name="callbackId">Identifier of the originating callback, when available.</param>
     private void RaiseCallbackError(Exception ex, long? callbackId = null)
     {
-        LogLifecycleDiagnostic("Callback error propagated", callbackId, null, ex.GetType().FullName ?? ex.GetType().Name);
+        LogLifecycleDiagnostic("Callback error dispatch started", callbackId, null, ex.GetType().FullName ?? ex.GetType().Name);
         Action<Exception>? handler = CallbackError;
-        if (handler is null) return;
+        if (handler is null)
+        {
+            LogLifecycleDiagnostic("Callback error dispatch completed", callbackId, null, "No subscribers");
+            return;
+        }
         foreach (Delegate d in handler.GetInvocationList())
         {
             try
@@ -1239,6 +1244,7 @@ public class CommandResponseClient : IDisposable
                     DateTimeOffset.UtcNow);
             }
         }
+        LogLifecycleDiagnostic("Callback error propagation completed", callbackId, null, ex.GetType().FullName ?? ex.GetType().Name);
     }
 
     /// <summary>Writes a structured, payload-free lifecycle diagnostic for callback and request correlation.</summary>
