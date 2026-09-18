@@ -803,4 +803,107 @@ public class ExpressionComparerTests
         Task.WaitAll(tasks);
         Assert.IsTrue(System.Array.TrueForAll(tasks, task => task.Result));
     }
+
+    // ------------------------------------------------------------------------------------------
+    // S4 compatibility - free-parameter commutative regression
+    // ------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// Regression: before roadmap stage S4, <see cref="ExpressionSimplifier"/>'s additive canonicalization
+    /// ordered free (not lambda-bound) parameters by <see cref="ParameterExpression.Name"/> text, so
+    /// <c>Simplify(Add(a, b))</c> and <c>Simplify(Add(b, a))</c> always converged to the same operand order
+    /// and this comparer's positional operand check trivially agreed. S4 correctly stops inventing a
+    /// name-based order for two distinct free parameters (see
+    /// <c>Utils/TODO-2026-09-12-expression-simplifier-roadmap.md</c>'s "Free parameters" policy), so each
+    /// side can now simplify to its own source operand order instead. Without a comparer-side fix this
+    /// would silently flip this comparer's own observable behavior for such expressions from <see langword="true"/>
+    /// to <see langword="false"/> — a regression the S4 roadmap entry explicitly requires to be corrected
+    /// narrowly in the comparer (via a commutative-operand fallback for ordinary <c>Add</c>/<c>Multiply</c>,
+    /// see <see cref="ExpressionComparer"/>'s <c>IsCommutative</c>), not by reintroducing parameter names as
+    /// identity. These expressions are deliberately NOT wrapped in an enclosing lambda: <paramref name="a"/>
+    /// and <paramref name="b"/> are free parameters from this comparer's point of view.
+    /// </summary>
+    [TestMethod]
+    public void FreeParameters_CommutativeAddition_NotWrappedInLambda_StillEqual()
+    {
+        ParameterExpression a = P("a");
+        ParameterExpression b = P("b");
+
+        Expression left = Expression.Add(a, b);
+        Expression right = Expression.Add(b, a);
+
+        Assert.IsTrue(ExpressionComparer.Default.Equals(left, right));
+        Assert.AreEqual(ExpressionComparer.Default.GetHashCode(left), ExpressionComparer.Default.GetHashCode(right));
+    }
+
+    /// <summary>Multiplicative counterpart of <see cref="FreeParameters_CommutativeAddition_NotWrappedInLambda_StillEqual"/>.</summary>
+    [TestMethod]
+    public void FreeParameters_CommutativeMultiplication_NotWrappedInLambda_StillEqual()
+    {
+        ParameterExpression a = P("a");
+        ParameterExpression b = P("b");
+
+        Expression left = Expression.Multiply(a, b);
+        Expression right = Expression.Multiply(b, a);
+
+        Assert.IsTrue(ExpressionComparer.Default.Equals(left, right));
+        Assert.AreEqual(ExpressionComparer.Default.GetHashCode(left), ExpressionComparer.Default.GetHashCode(right));
+    }
+
+    /// <summary>Negative control: two free parameters compared under a NON-commutative operator (<c>Subtract</c>) must not be equated merely because they would be under addition.</summary>
+    [TestMethod]
+    public void FreeParameters_NonCommutativeSubtraction_NotWrappedInLambda_RemainsDistinct()
+    {
+        ParameterExpression a = P("a");
+        ParameterExpression b = P("b");
+
+        Expression left = Expression.Subtract(a, b);
+        Expression right = Expression.Subtract(b, a);
+
+        Assert.IsFalse(ExpressionComparer.Default.Equals(left, right));
+    }
+
+    /// <summary>Negative control: the commutative fallback must not apply to a custom-method <c>Add</c> (S3 operator safety) even when swapping operands would otherwise match.</summary>
+    [TestMethod]
+    public void FreeParameters_CustomOperatorAddition_NotWrappedInLambda_RemainsDistinct()
+    {
+        ParameterExpression a = P("a");
+        ParameterExpression b = P("b");
+
+        Expression left = Expression.MakeBinary(ExpressionType.Add, a, b, false, CustomAddAMethod);
+        Expression right = Expression.MakeBinary(ExpressionType.Add, b, a, false, CustomAddAMethod);
+
+        Assert.IsFalse(ExpressionComparer.Default.Equals(left, right));
+    }
+
+    /// <summary>
+    /// Characterizes a deliberate, narrowly-scoped WIDENING of this comparer's public equivalence relation
+    /// introduced by the commutative fallback fix above, distinct from the "same free parameter instance
+    /// used twice" case those other tests cover: two DIFFERENT free <see cref="ParameterExpression"/>
+    /// instances that happen to share the SAME <see cref="ParameterExpression.Name"/> ("v" for both).
+    /// </summary>
+    /// <remarks>
+    /// Before the commutative fallback fix, <c>Equals(Add(p, q), Add(q, p))</c> for two such parameters
+    /// returned <see langword="false"/>: the pre-S4 textual canonical key tied on the identical name text
+    /// "v" for both operands, so the simplifier's stable sort preserved each side's own source operand
+    /// order unchanged, and this comparer's then-purely-positional <c>BinaryEqual</c> then compared <c>p</c>
+    /// against <c>q</c> positionally and found them reference-unequal. The commutative fallback now matches
+    /// them via the swapped comparison (<c>p</c> against <c>p</c>, <c>q</c> against <c>q</c>), so this now
+    /// returns <see langword="true"/>. This is intentional and mathematically justified (ordinary addition
+    /// really is commutative), not an oversight: this test exists to make the widening an explicit,
+    /// observable contract rather than an undocumented side effect of the free-parameter regression fix.
+    /// </remarks>
+    [TestMethod]
+    public void FreeParameters_SameNameDistinctInstances_CommutativeAddition_NowEqual()
+    {
+        ParameterExpression p = P("v");
+        ParameterExpression q = P("v");
+        Assert.AreNotSame(p, q);
+
+        Expression left = Expression.Add(p, q);
+        Expression right = Expression.Add(q, p);
+
+        Assert.IsTrue(ExpressionComparer.Default.Equals(left, right));
+        Assert.AreEqual(ExpressionComparer.Default.GetHashCode(left), ExpressionComparer.Default.GetHashCode(right));
+    }
 }

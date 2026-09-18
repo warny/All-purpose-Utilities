@@ -157,6 +157,100 @@ namespace Utils.Mathematics.Expressions
             return Expression.Lambda(expression.Type, body, expression.Name, expression.TailCall, parameters);
         }
 
+        #region Structural canonicalization (S4) — ambient lexical scope tracking
+
+        /// <summary>
+        /// Per-thread stack of currently-open lambda parameter scopes, outermost first, for the exact
+        /// built-in <see cref="ExpressionSimplifier"/> runtime type only. Populated exclusively by
+        /// <see cref="OnEnterLambdaScope"/>/<see cref="OnExitLambdaScope"/>, which
+        /// <see cref="ExpressionTransformer.PrepareLambda"/> calls (via its private caller) strictly
+        /// around the single synchronous recursive descent into a lambda's body — see those hooks' remarks
+        /// on <see cref="ExpressionTransformer"/> for why this exists at all.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Why a <see cref="ThreadStaticAttribute"/> field, not per-invocation explicit context.</b>
+        /// <see cref="ExpressionSimplifier.Simplify(Expression)"/>, <see cref="ExpressionExtensions.Simplify(Expression)"/>
+        /// and <see cref="ExpressionComparer"/> all recurse through the same generic, public/protected
+        /// virtual <see cref="ExpressionTransformer"/> engine (<c>TransformCore</c>,
+        /// <c>PrepareExpression</c>, <c>FinalizeExpression</c>, ...). Threading an explicit scope parameter
+        /// through that entire engine would require changing the signature of
+        /// <see cref="ExpressionTransformer.PrepareExpression(Expression)"/> and
+        /// <see cref="ExpressionTransformer.FinalizeExpression(Expression, Expression[])"/> — both
+        /// <see langword="protected virtual"/> extensibility points a third-party subclass in another
+        /// assembly can already override — which the S4 roadmap entry explicitly rules out ("do not
+        /// introduce a new public extensibility contract unnecessarily"). A per-thread stack, populated and
+        /// consumed only through the narrow <see langword="internal"/> hooks below, avoids that: it is
+        /// consulted only by <see cref="CaptureLexicalScopeSnapshot"/>, called once per canonicalization
+        /// (see <see cref="CanonicalizeAdditiveExpression"/>/<see cref="CanonicalizeMultiplicativeExpression"/>),
+        /// and never stored as shared mutable INSTANCE state on this type (which is shared: see
+        /// <see cref="ExpressionExtensions"/>' and <see cref="ExpressionComparer"/>'s own static
+        /// <see cref="ExpressionSimplifier"/> instances).
+        /// </para>
+        /// <para>
+        /// <b>Concurrency.</b> <see cref="ThreadStaticAttribute"/> gives every OS thread its own
+        /// independent list, so two threads calling <see cref="Simplify(Expression)"/> concurrently —
+        /// including through the very same shared <see cref="ExpressionSimplifier"/> instance — never
+        /// observe or mutate each other's scope stack.
+        /// </para>
+        /// <para>
+        /// <b>Re-entrancy.</b> A rule can call back into <c>TransformCore</c> (directly, or indirectly via
+        /// <see cref="ExpressionComparer.Default"/>, which simplifies its operands before comparing them).
+        /// Every such nested call still runs on the SAME thread, synchronously, fully nested within the
+        /// outer call's own call stack (it returns before the outer call resumes). Because
+        /// <see cref="OnEnterLambdaScope"/>/<see cref="OnExitLambdaScope"/> are always paired via a
+        /// <c>try</c>/<c>finally</c> in <see cref="ExpressionTransformer.PrepareLambda"/>, any such nested
+        /// traversal pushes and pops exactly the frames IT opens, leaving the stack exactly as the outer
+        /// traversal left it once the nested call returns — and while the nested call is executing, the
+        /// outer call's still-open frames remain visible and correctly resolve any parameter the nested
+        /// call encounters that is actually bound by one of those still-enclosing lambdas (expected: the
+        /// nested call operates on a sub-expression drawn from the very tree the outer call is
+        /// simplifying). This is exercised by
+        /// <c>ExpressionSimplifierStructuralCanonicalizationTests</c>' concurrency/re-entrancy coverage.
+        /// </para>
+        /// </remarks>
+        [ThreadStatic]
+        private static List<ParameterExpression[]>? _lexicalScopeStack;
+
+        private static List<ParameterExpression[]> LexicalScopeStack => _lexicalScopeStack ??= [];
+
+        /// <inheritdoc/>
+        internal override void OnEnterLambdaScope(LambdaExpression original, ParameterExpression[] parameters)
+        {
+            if (GetType() != typeof(ExpressionSimplifier))
+            {
+                base.OnEnterLambdaScope(original, parameters);
+                return;
+            }
+
+            LexicalScopeStack.Add(parameters);
+        }
+
+        /// <inheritdoc/>
+        internal override void OnExitLambdaScope(LambdaExpression original, ParameterExpression[] parameters)
+        {
+            if (GetType() != typeof(ExpressionSimplifier))
+            {
+                base.OnExitLambdaScope(original, parameters);
+                return;
+            }
+
+            List<ParameterExpression[]> stack = LexicalScopeStack;
+            stack.RemoveAt(stack.Count - 1);
+        }
+
+        /// <summary>
+        /// Captures an immutable snapshot of the currently-open lambda parameter scopes (outermost first)
+        /// for use by <see cref="ExpressionCanonicalOrder.BuildKey"/>/<see cref="ExpressionCanonicalOrder.Compare"/>.
+        /// Taken once per canonicalization call: every term/factor being ordered in that one call is a
+        /// sibling sub-expression of the same node, so they all share the same enclosing scope.
+        /// </summary>
+        /// <returns>The snapshot; empty when no lambda currently encloses the node being canonicalized.</returns>
+        private static IReadOnlyList<ParameterExpression[]> CaptureLexicalScopeSnapshot()
+            => LexicalScopeStack.Count == 0 ? [] : LexicalScopeStack.ToArray();
+
+        #endregion
+
         #region Operations with 0 and 1
 
         /// <summary>
@@ -962,16 +1056,31 @@ namespace Utils.Mathematics.Expressions
                 return Expression.Constant(Convert.ChangeType(0, left.Type), left.Type);
             }
 
-            var orderedTerms = terms
-                .OrderBy(static term => GetAdditiveGroupingKey(term.Term), StringComparer.Ordinal)
+            IReadOnlyList<ParameterExpression[]> scopes = CaptureLexicalScopeSnapshot();
+
+            var annotatedTerms = new List<AnnotatedAdditiveTerm>(terms.Count);
+            foreach ((Expression term, bool isNegative) in terms)
+            {
+                AdditiveGroupClass group = ClassifyForAdditiveGrouping(term);
+                annotatedTerms.Add(new AnnotatedAdditiveTerm(
+                    term,
+                    isNegative,
+                    group,
+                    ExpressionCanonicalOrder.BuildKey(term, scopes)));
+            }
+
+            var orderedTerms = annotatedTerms
+                .OrderBy(static term => term, Comparer<AnnotatedAdditiveTerm>.Create(
+                    (a, b) => CompareAdditiveGroupingOrder(a.Group, b.Group, scopes)))
                 .ThenBy(static term => term.IsNegative ? 0 : 1)
-                .ThenBy(static term => GetCanonicalExpressionKey(term.Term), StringComparer.Ordinal)
+                .ThenBy(static term => term.Key)
                 .ToList();
 
             var rebuiltTerms = new List<Expression>();
-            foreach (var termGroup in orderedTerms.GroupBy(static term => GetAdditiveGroupingKey(term.Term)))
+            foreach (var termGroup in orderedTerms.GroupBy(static term => term.Term, AdditiveGroupingEqualityComparer.Instance))
             {
-                rebuiltTerms.Add(BuildAdditiveExpression(termGroup.ToList(), left.Type));
+                var signedTerms = termGroup.Select(static term => (term.Term, term.IsNegative)).ToList();
+                rebuiltTerms.Add(BuildAdditiveExpression(signedTerms, left.Type));
             }
 
             return BuildRightAssociative(rebuiltTerms, Expression.Add);
@@ -989,8 +1098,10 @@ namespace Utils.Mathematics.Expressions
             CollectMultiplicativeFactors(factors, left);
             CollectMultiplicativeFactors(factors, right);
 
+            IReadOnlyList<ParameterExpression[]> scopes = CaptureLexicalScopeSnapshot();
+
             var orderedFactors = factors
-                .OrderBy(GetCanonicalExpressionKey, StringComparer.Ordinal)
+                .OrderBy(factor => ExpressionCanonicalOrder.BuildKey(factor, scopes))
                 .ToList();
 
             return BuildRightAssociative(orderedFactors, Expression.Multiply);
@@ -1089,48 +1200,193 @@ namespace Utils.Mathematics.Expressions
         }
 
         /// <summary>
-        /// Returns the additive grouping key used to cluster functions by argument list and function family.
+        /// One term/factor annotated with everything <see cref="CanonicalizeAdditiveExpression"/> needs to
+        /// order and group it, computed once per term rather than recomputed on every pairwise comparison
+        /// (mirroring how the pre-S4 <c>OrderBy(keySelector)</c> evaluated its key selector once per
+        /// element). Not a cross-call cache: a fresh list of these is built on every
+        /// <see cref="CanonicalizeAdditiveExpression"/> call, matching the roadmap's S4/S5 boundary (S4 is
+        /// a correctness/structure stage; a caching layer that survives beyond one canonicalization call is
+        /// left to S5).
         /// </summary>
-        /// <param name="expression">Expression for which to compute a grouping key.</param>
-        /// <returns>A deterministic key suitable for additive grouping.</returns>
-        /// <remarks>
-        /// The argument-list portion is produced with the generic <see cref="string.Join{T}(string, IEnumerable{T})"/>
-        /// overload directly over <c>Arguments</c>, calling each argument's <see cref="object.ToString"/> exactly
-        /// once, left to right, with no escaping of the "|" separator — the same observable behavior as the
-        /// previous <c>Arguments.Select(GetCanonicalExpressionKey)</c> adapter, minus the intermediate
-        /// <see cref="System.Linq.Enumerable.Select{TSource, TResult}(IEnumerable{TSource}, Func{TSource, TResult})"/>
-        /// iterator. <see cref="GetCanonicalExpressionKey"/> itself is unchanged and still used for every other
-        /// canonical-key computation in this class.
-        /// </remarks>
-        private static string GetAdditiveGroupingKey(Expression expression)
+        private readonly struct AnnotatedAdditiveTerm(Expression term, bool isNegative, AdditiveGroupClass group, ExpressionCanonicalOrder.KeyNode key)
+        {
+            public Expression Term { get; } = term;
+            public bool IsNegative { get; } = isNegative;
+            public AdditiveGroupClass Group { get; } = group;
+            public ExpressionCanonicalOrder.KeyNode Key { get; } = key;
+        }
+
+        /// <summary>
+        /// The coarse additive-grouping classification of one term: either "function-like" (a
+        /// <see cref="MethodCallExpression"/>, or a <see cref="ExpressionType.Power"/> node whose base is
+        /// one), clustering by function family and argument identity while deliberately ignoring the
+        /// exponent; or "opaque", ordered/grouped by full structural identity. See
+        /// <see cref="ClassifyForAdditiveGrouping"/> and this class's "Additive grouping" remarks.
+        /// </summary>
+        private readonly struct AdditiveGroupClass
+        {
+            public required bool IsFunctionLike { get; init; }
+            public int CategoryOrder { get; init; }
+            public IReadOnlyList<Expression>? Arguments { get; init; }
+            public Expression? Opaque { get; init; }
+        }
+
+        /// <summary>
+        /// Classifies <paramref name="expression"/> for additive grouping: <see cref="MethodCallExpression"/>
+        /// and <c>Power(MethodCall, exponent)</c> cluster by function family/argument identity (deliberately
+        /// coarser than full structural identity — see this class's "Additive grouping" remarks); every
+        /// other node is classified opaque and grouped/ordered by full structural identity.
+        /// </summary>
+        /// <param name="expression">Expression to classify.</param>
+        /// <returns>The resulting <see cref="AdditiveGroupClass"/>.</returns>
+        private static AdditiveGroupClass ClassifyForAdditiveGrouping(Expression expression)
         {
             if (expression is BinaryExpression powerExpression
                 && powerExpression.NodeType == ExpressionType.Power
                 && powerExpression.Left is MethodCallExpression powerMethodCallExpression)
             {
-                string argumentsKey = string.Join<Expression>("|", powerMethodCallExpression.Arguments);
-                int categoryOrder = GetFunctionCategoryOrder(powerMethodCallExpression.Method.Name);
-                return $"func:{argumentsKey}:{categoryOrder}";
+                return new AdditiveGroupClass
+                {
+                    IsFunctionLike = true,
+                    CategoryOrder = GetFunctionCategoryOrder(powerMethodCallExpression.Method.Name),
+                    Arguments = powerMethodCallExpression.Arguments,
+                };
             }
 
             if (expression is MethodCallExpression methodCallExpression)
             {
-                string argumentsKey = string.Join<Expression>("|", methodCallExpression.Arguments);
-                int categoryOrder = GetFunctionCategoryOrder(methodCallExpression.Method.Name);
-                return $"func:{argumentsKey}:{categoryOrder}";
+                return new AdditiveGroupClass
+                {
+                    IsFunctionLike = true,
+                    CategoryOrder = GetFunctionCategoryOrder(methodCallExpression.Method.Name),
+                    Arguments = methodCallExpression.Arguments,
+                };
             }
 
-            return $"expr:{GetCanonicalExpressionKey(expression)}";
+            return new AdditiveGroupClass { IsFunctionLike = false, Opaque = expression };
         }
 
         /// <summary>
-        /// Produces a deterministic textual key for ordering expressions.
+        /// Orders two additive terms by their coarse grouping classification: opaque terms sort before
+        /// function-like terms; within the same classification, function-like terms order by structural
+        /// argument-list identity then function category, and opaque terms order by full structural
+        /// identity. This is a RELATIVE ORDER only — ties are expected and resolved by the caller's stable
+        /// sort — never the grouping EQUALITY itself, which is decided separately by
+        /// <see cref="AdditiveGroupingEqualityComparer"/>.
         /// </summary>
-        /// <param name="expression">Expression to encode.</param>
-        /// <returns>A canonical textual key.</returns>
-        private static string GetCanonicalExpressionKey(Expression expression)
+        /// <param name="x">The first term's classification.</param>
+        /// <param name="y">The second term's classification.</param>
+        /// <param name="scopes">The lexical scope snapshot shared by every term in this canonicalization call.</param>
+        /// <returns>A negative value if <paramref name="x"/> sorts before <paramref name="y"/>, zero if tied, positive otherwise.</returns>
+        private static int CompareAdditiveGroupingOrder(AdditiveGroupClass x, AdditiveGroupClass y, IReadOnlyList<ParameterExpression[]> scopes)
         {
-            return expression.ToString();
+            if (x.IsFunctionLike != y.IsFunctionLike)
+            {
+                return x.IsFunctionLike ? 1 : -1;
+            }
+
+            if (!x.IsFunctionLike)
+            {
+                return ExpressionCanonicalOrder.Compare(x.Opaque, y.Opaque, scopes);
+            }
+
+            int argumentsCompare = CompareArgumentLists(x.Arguments!, y.Arguments!, scopes);
+            return argumentsCompare != 0 ? argumentsCompare : x.CategoryOrder.CompareTo(y.CategoryOrder);
+        }
+
+        /// <summary>Lexicographically compares two function argument lists using the complete structural order key.</summary>
+        /// <param name="x">The first argument list.</param>
+        /// <param name="y">The second argument list.</param>
+        /// <param name="scopes">The lexical scope snapshot shared by every term in this canonicalization call.</param>
+        /// <returns>A negative value if <paramref name="x"/> sorts before <paramref name="y"/>, zero if tied, positive otherwise.</returns>
+        private static int CompareArgumentLists(IReadOnlyList<Expression> x, IReadOnlyList<Expression> y, IReadOnlyList<ParameterExpression[]> scopes)
+        {
+            int minCount = Math.Min(x.Count, y.Count);
+            for (int i = 0; i < minCount; i++)
+            {
+                int c = ExpressionCanonicalOrder.Compare(x[i], y[i], scopes);
+                if (c != 0) return c;
+            }
+            return x.Count.CompareTo(y.Count);
+        }
+
+        /// <summary>Structural, scope-independent grouping equality for one additive-term operand: same instance, or structurally equal per <see cref="ExpressionComparer.StructuralEqualsRaw(Expression?, Expression?)"/>.</summary>
+        /// <param name="x">The first operand.</param>
+        /// <param name="y">The second operand.</param>
+        /// <returns><see langword="true"/> if the operands belong in the same additive group.</returns>
+        /// <remarks>
+        /// No enclosing-scope snapshot is needed here: <paramref name="x"/> and <paramref name="y"/> are
+        /// sibling sub-expressions of the same original tree, so any parameter free relative to both
+        /// resolves through <see cref="ExpressionComparer"/>'s own free-parameter reference-equality policy
+        /// to the exact same enclosing binding, without this method needing to observe that scope itself.
+        /// A same-instance shortcut is applied first so a literally-repeated unsupported-kind term still
+        /// groups with itself, while <see cref="ExpressionComparer.StructuralEqualsRaw(Expression?, Expression?)"/>'s
+        /// own conservative "never structurally equal" answer for an unsupported node kind still applies to
+        /// two genuinely distinct unsupported instances.
+        /// </remarks>
+        private static bool GroupEquals(Expression x, Expression y)
+            => ReferenceEquals(x, y) || ExpressionComparer.StructuralEqualsRaw(x, y);
+
+        /// <summary>Hash mirroring <see cref="GroupEquals"/>, via <see cref="ExpressionComparer.StructuralHashRaw(Expression?)"/>.</summary>
+        /// <param name="e">The operand to hash.</param>
+        /// <returns>A hash code consistent with <see cref="GroupEquals"/>.</returns>
+        private static int GroupHash(Expression e) => ExpressionComparer.StructuralHashRaw(e);
+
+        /// <summary>
+        /// Additive-grouping equality over whole terms, used by <c>GroupBy</c> to cluster the (already
+        /// ordered) term sequence: two terms belong to the same group only when their
+        /// <see cref="ClassifyForAdditiveGrouping"/> classification and, within it, their structural
+        /// content (per <see cref="GroupEquals"/>/<see cref="GroupHash"/>) match exactly. This is
+        /// deliberately a SEPARATE mechanism from <see cref="ExpressionCanonicalOrder.KeyNode"/>'s ordering
+        /// ties (which are stable-sort placeholders, not claims of equality) — see this class's "Additive
+        /// grouping" remarks.
+        /// </summary>
+        private sealed class AdditiveGroupingEqualityComparer : IEqualityComparer<Expression>
+        {
+            public static readonly AdditiveGroupingEqualityComparer Instance = new();
+            private AdditiveGroupingEqualityComparer() { }
+
+            public bool Equals(Expression? x, Expression? y)
+            {
+                if (x is null || y is null) return ReferenceEquals(x, y);
+
+                AdditiveGroupClass gx = ClassifyForAdditiveGrouping(x);
+                AdditiveGroupClass gy = ClassifyForAdditiveGrouping(y);
+                if (gx.IsFunctionLike != gy.IsFunctionLike) return false;
+
+                if (gx.IsFunctionLike)
+                {
+                    if (gx.CategoryOrder != gy.CategoryOrder) return false;
+                    if (gx.Arguments!.Count != gy.Arguments!.Count) return false;
+                    for (int i = 0; i < gx.Arguments.Count; i++)
+                    {
+                        if (!GroupEquals(gx.Arguments[i], gy.Arguments[i])) return false;
+                    }
+                    return true;
+                }
+
+                return GroupEquals(gx.Opaque!, gy.Opaque!);
+            }
+
+            public int GetHashCode(Expression obj)
+            {
+                AdditiveGroupClass g = ClassifyForAdditiveGrouping(obj);
+                var hc = new HashCode();
+                hc.Add(g.IsFunctionLike);
+                if (g.IsFunctionLike)
+                {
+                    hc.Add(g.CategoryOrder);
+                    foreach (Expression argument in g.Arguments!)
+                    {
+                        hc.Add(GroupHash(argument));
+                    }
+                }
+                else
+                {
+                    hc.Add(GroupHash(g.Opaque!));
+                }
+                return hc.ToHashCode();
+            }
         }
 
         /// <summary>
