@@ -580,6 +580,97 @@ canonicalization call (mirroring the pre-S4 `OrderBy(keySelector)` idiom, not a 
 additive-grouping order comparison still rebuilds argument-list keys per pairwise comparison — both
 deliberately left as-is for S5 to profile and address.
 
+#### S4 review fixes (2026-09-18) — PR #600 human review
+
+A human review of PR #600 at commit `dac47b9b` found six issues (four independently confirmed by earlier
+automated review threads, plus two new ones from a closer reading) before it should merge. All six are
+fixed on the same branch; none required reverting the S4 design itself.
+
+1. **`DynamicMethod.MetadataToken` could throw and fail `Simplify()`.** `CompareFinalMemberTiebreak`
+   (`ExpressionCanonicalOrder.cs`) assumed every `MemberInfo`/`Type` exposes a readable `MetadataToken`;
+   an unbaked `System.Reflection.Emit.DynamicMethod` throws `InvalidOperationException` there on some
+   runtimes. The tie-break (used for both `Type` and `MethodInfo`/`MemberInfo` comparison — `Type` derives
+   from `MemberInfo`, so the two duplicate tie-breaks were unified into one) now reads
+   `MetadataToken`/`Module.Name`/`Module.Assembly.FullName` through guarded `TryGet*` helpers and falls
+   back to a conservative tie (`0`) instead of throwing, consistent with the roadmap's "prefer preserving
+   source order over inventing one" policy. Regression:
+   `CompareMethod_TwoDynamicMethodsWithIdenticalSignature_DoesNotThrow` (calls
+   `ExpressionCanonicalOrder.CompareMethod` directly via reflection with two owner-less `DynamicMethod`s
+   sharing a name/signature).
+2. **Public `ExpressionComparer.Default` regression on free parameters.** Before S4, two distinct FREE
+   `ParameterExpression`s (not lambda-bound) reordered deterministically by `Name` text, so
+   `Equals(Add(a, b), Add(b, a))` was `true`; S4 correctly stops inventing that name-based order (per the
+   "Free parameters" policy), so each side can independently keep its own source operand order, and the
+   comparer's purely positional `BinaryEqual` then reported `false` — a real regression in the PUBLIC
+   comparer contract the roadmap explicitly says to fix narrowly rather than accept. Fixed by making
+   `BinaryEqual` (and `HashBinary`, to keep the `IEqualityComparer<T>` contract) try operands SWAPPED as a
+   fallback for an ordinary (`IsOrdinaryBinaryArithmetic`), non-lifted `Add`/`Multiply` node — mathematically
+   justified by commutativity, not a parameter-name-based fix, and inert for every case that already worked
+   (bound parameters, non-commutative operators, custom/lifted operators). Regression tests (deliberately
+   NOT wrapped in a lambda, so the parameters are free from the comparer's point of view):
+   `ExpressionComparerTests.FreeParameters_CommutativeAddition_NotWrappedInLambda_StillEqual`,
+   `..._CommutativeMultiplication_...`, plus negative controls for non-commutative `Subtract` and a
+   custom-operator `Add` (S3 safety unaffected).
+3. **Additive grouping still executed arbitrary user code via a constant's `Equals`/`GetHashCode`.**
+   `ExpressionComparer.StructuralEqualsRaw`/`StructuralHashRaw` (added earlier in S4 for grouping reuse)
+   delegated non-numeric constant comparison to `ConstantsEqual`/`HashConstant`, which call the boxed
+   value's own possibly user-defined `object.Equals`/`GetHashCode` — meaning an expression tree merely
+   containing a hostile constant (one whose `Equals`/`GetHashCode` throws or has side effects) could make an
+   ordinary `Simplify()` call fail or misbehave, without the tree ever being executed. `ParameterBindingContext`/
+   `ParameterScopeStack` gained a `SafeConstantsOnly` flag (`false` for the public, simplifying `Equals`/
+   `GetHashCode` — unchanged, documented behavior); `StructuralEqualsRaw`/`StructuralHashRaw` (S4's only
+   callers) now pass `true`, making `ConstantsEqual` use `ReferenceEquals` and `HashConstant` use
+   `RuntimeHelpers.GetHashCode` for a non-numeric constant instead of the value's own overrides. The
+   `RuntimeHelpers.GetHashCode` use is only ever a `GroupBy` bucketing accelerator, never the final order,
+   consistent with the roadmap's hash policy. Regression:
+   `ExpressionSimplifierStructuralCanonicalizationTests.HostileConstantArgument_InAdditiveGrouping_NeverCallsUserEqualsOrGetHashCode`
+   (a `HostileConstant` whose overrides record a call and throw; two additive terms embed the SAME instance,
+   forcing a hash collision and therefore an equality check, resolved via `ReferenceEquals` without
+   invoking either override). Constructed as `Add(Add(term1, x), term2)`, not `Add(term1, term2)` directly:
+   the latter also reaches the pre-existing, S4-unrelated `AdditionOfEqualsElements` factoring rule, which
+   calls the PUBLIC (non-safe) `ExpressionComparer.Default.Equals` before canonicalization ever runs — a
+   separate, out-of-scope hazard (every `*OfEqualsElements` factoring rule has the same characteristic, not
+   introduced by S4) noted here for a future audit but not fixed in this stage.
+4. **`ConstantKey`'s order-side tie-break called `IComparable.CompareTo()` on an arbitrary boxed value.**
+   Same class of hazard as item 3 but on the ORDERING side (`ExpressionCanonicalOrder.ConstantKey`, used by
+   the final tie-break and multiplicative ordering): calling a user `IComparable.CompareTo()` can execute
+   user code, and even a "safe" framework type's default comparer (e.g. `string`'s culture-aware
+   `CompareTo`) can depend on `Thread.CurrentCulture`, which is incompatible with a key that must be
+   deterministic. The generic `IComparable` path was removed; only `string` is special-cased (via
+   `string.CompareOrdinal`, culture-invariant), and every other non-numeric constant type ties (`0`),
+   relying on the caller's stable sort — consistent with the free-parameter and unsupported-node policies
+   already documented above.
+5. **`int[]` (SZ/vector array) and `int[*]` (general rank-1 array with explicit bounds) compared equal.**
+   `CompareType`'s array branch checked only `IsArray` and `GetArrayRank()`, which both report `true`/`1`
+   for either shape even though they are distinct, non-interchangeable CLR types. Fixed by comparing
+   `Type.IsSZArray` before rank, which also transitively fixes the same confusion when the array type is
+   nested inside a constructed generic argument (e.g. `List<int[]>` vs `List<int[*]>`), since that reaches
+   the same branch through the existing generic-argument recursion. Regression:
+   `CompareType_DistinguishesSzArrayFromBoundedRank1Array` and its
+   `..._NestedInGenericArgument` counterpart (both call `ExpressionCanonicalOrder.CompareType` directly via
+   reflection).
+6. **Incomplete XML documentation on the new production and test code**, per `AGENTS.md`'s "all
+   classes/methods/private members" requirement. Added throughout `ExpressionCanonicalOrder.cs` (every
+   `Build*` helper, every `KeyNode` subclass and its constructor, the new `TryGet*` tie-break helpers, the
+   rank constants) and to the test helpers/types added by this stage's own test file (`Contains`,
+   `CustomOpA`/`CustomOpB` and their reflected `MethodInfo` fields, `MathVariantA`/`MathVariantB.Compute`,
+   `HostileConstant`, `IdentityFromObject`). One helper that became unused after the item-7 test rewrite
+   below (`EnumerateConstantDoubles`) was deleted rather than documented.
+
+Two of the original 25 S4 tests were also hardened per the review's item-7 finding (`ExactMethodCallIdentity_...`
+and `PowerWrappedFunctionGrouping_DistinguishesExponentsInCompleteKey` concluded mainly via
+`ExpressionComparer.Default`, which re-simplifies both sides and could mask a first-pass canonicalization
+defect — the exact pitfall the original S4 audit itself flagged for the dedicated test file). Both now
+inspect the raw `Left`/`Right` shape of each FIRST `Simplify()` call's result directly, matching every other
+test in the file. The suite is now 33 tests (25 original + 3 new regressions for items 1/2/3–4/5 above,
+counting the DynamicMethod/array pairs, plus the 2 items-7 rewrites already counted in the 25).
+
+**Validation performed after the review fixes (2026-09-18):** `ExpressionSimplifierStructuralCanonicalizationTests`
+and `ExpressionComparerTests` together: 79/79 passed. Full `UtilsTest.Unit`: 7650/7650 passed, 0 skipped.
+Full `UtilsTest.Functional`: 383/383 passed. Full `UtilsTest.Security`: 225/228 passed, 3 skipped (the same
+three pre-existing, unrelated, platform-gated tests noted above). Release build of `Utils.sln`: succeeded,
+no errors (same pre-existing, unrelated `CS8618` warning).
+
 ### S5 — Construction-performance cleanup
 
 Only after the correctness/structure stages above, re-profile construction-time allocations and CPU cost in the simplifier.

@@ -74,14 +74,31 @@ namespace Utils.Mathematics.Expressions;
 /// </remarks>
 internal static class ExpressionCanonicalOrder
 {
+    /// <summary>Fixed rank for <see cref="NullKey"/>: an absent optional sub-expression sorts before every real node kind.</summary>
     private const int RankNull = -1;
+
+    /// <summary>Fixed rank for <see cref="ConstantKey"/>.</summary>
     private const int RankConstant = 0;
+
+    /// <summary>Fixed rank for <see cref="ParameterKey"/>.</summary>
     private const int RankParameter = 1;
+
+    /// <summary>Fixed rank for <see cref="UnaryKey"/>.</summary>
     private const int RankUnary = 2;
+
+    /// <summary>Fixed rank for <see cref="BinaryKey"/>.</summary>
     private const int RankBinary = 3;
+
+    /// <summary>Fixed rank for <see cref="MethodCallKey"/>.</summary>
     private const int RankMethodCall = 4;
+
+    /// <summary>Fixed rank for <see cref="MemberKey"/>.</summary>
     private const int RankMember = 5;
+
+    /// <summary>Fixed rank for <see cref="LambdaKey"/>.</summary>
     private const int RankLambda = 6;
+
+    /// <summary>Fixed rank for <see cref="UnsupportedKey"/>: sorts after every real supported node kind.</summary>
     private const int RankUnsupported = 7;
 
     /// <summary>
@@ -113,6 +130,10 @@ internal static class ExpressionCanonicalOrder
     internal static int Compare(Expression? x, Expression? y, IReadOnlyList<ParameterExpression[]> enclosingScopes)
         => BuildKey(x, enclosingScopes).CompareTo(BuildKey(y, enclosingScopes));
 
+    /// <summary>Dispatches to the node-family-specific <c>Build*</c> helper, or <see cref="UnsupportedKey"/> for any node kind not among the seven this class understands.</summary>
+    /// <param name="e">The (already simplified) sub-expression to key, or <see langword="null"/>.</param>
+    /// <param name="scopes">The local, per-<see cref="BuildKey(Expression, IReadOnlyList{ParameterExpression[]})"/>-call working scope list (ambient snapshot plus any lambda encountered so far during this walk).</param>
+    /// <returns>The resulting key.</returns>
     private static KeyNode Build(Expression? e, List<ParameterExpression[]> scopes) => e switch
     {
         null => NullKey.Instance,
@@ -126,6 +147,9 @@ internal static class ExpressionCanonicalOrder
         _ => UnsupportedKey.Instance,
     };
 
+    /// <summary>Builds the key for a <see cref="ConstantExpression"/>: an exact numeric value for a native numeric type, or the declared type plus boxed value otherwise.</summary>
+    /// <param name="ce">The constant to key.</param>
+    /// <returns>The resulting <see cref="ConstantKey"/>.</returns>
     private static KeyNode BuildConstant(ConstantExpression ce)
     {
         ExpressionComparer.ExactNumericValue? numeric = Types.Number.Contains(ce.Type) && ce.Value is not null
@@ -134,6 +158,10 @@ internal static class ExpressionCanonicalOrder
         return new ConstantKey(ce.Type, ce.Value, numeric);
     }
 
+    /// <summary>Builds the key for a <see cref="ParameterExpression"/>: a bound (depth, position, type) triple if found in <paramref name="scopes"/> (innermost scope searched first), or a free-parameter key otherwise.</summary>
+    /// <param name="pe">The parameter to key.</param>
+    /// <param name="scopes">The active scope list, outermost first.</param>
+    /// <returns>The resulting <see cref="ParameterKey"/>.</returns>
     private static KeyNode BuildParameter(ParameterExpression pe, List<ParameterExpression[]> scopes)
     {
         for (int i = scopes.Count - 1; i >= 0; i--)
@@ -149,9 +177,17 @@ internal static class ExpressionCanonicalOrder
         return ParameterKey.Free(pe.Type);
     }
 
+    /// <summary>Builds the key for a <see cref="UnaryExpression"/>: node type, result type, operator method, lifting flags, then the operand's key.</summary>
+    /// <param name="ue">The unary expression to key.</param>
+    /// <param name="scopes">The active scope list, outermost first.</param>
+    /// <returns>The resulting <see cref="UnaryKey"/>.</returns>
     private static KeyNode BuildUnary(UnaryExpression ue, List<ParameterExpression[]> scopes)
         => new UnaryKey(ue.NodeType, ue.Type, ue.Method, ue.IsLifted, ue.IsLiftedToNull, Build(ue.Operand, scopes));
 
+    /// <summary>Builds the key for a <see cref="BinaryExpression"/>: node type, result type, operator method, lifting flags, left/right/conversion keys.</summary>
+    /// <param name="be">The binary expression to key.</param>
+    /// <param name="scopes">The active scope list, outermost first.</param>
+    /// <returns>The resulting <see cref="BinaryKey"/>.</returns>
     private static KeyNode BuildBinary(BinaryExpression be, List<ParameterExpression[]> scopes)
         => new BinaryKey(
             be.NodeType,
@@ -163,6 +199,10 @@ internal static class ExpressionCanonicalOrder
             Build(be.Right, scopes),
             Build(be.Conversion, scopes));
 
+    /// <summary>Builds the key for a <see cref="MethodCallExpression"/>: exact method, receiver key, then each argument's key in order.</summary>
+    /// <param name="mce">The method call to key.</param>
+    /// <param name="scopes">The active scope list, outermost first.</param>
+    /// <returns>The resulting <see cref="MethodCallKey"/>.</returns>
     private static KeyNode BuildMethodCall(MethodCallExpression mce, List<ParameterExpression[]> scopes)
     {
         var arguments = new KeyNode[mce.Arguments.Count];
@@ -174,9 +214,17 @@ internal static class ExpressionCanonicalOrder
         return new MethodCallKey(mce.Method, Build(mce.Object, scopes), arguments);
     }
 
+    /// <summary>Builds the key for a <see cref="MemberExpression"/>: exact member, then the receiver's key.</summary>
+    /// <param name="me">The member access to key.</param>
+    /// <param name="scopes">The active scope list, outermost first.</param>
+    /// <returns>The resulting <see cref="MemberKey"/>.</returns>
     private static KeyNode BuildMember(MemberExpression me, List<ParameterExpression[]> scopes)
         => new MemberKey(me.Member, Build(me.Expression, scopes));
 
+    /// <summary>Builds the key for a <see cref="LambdaExpression"/>: delegate type, <see cref="LambdaExpression.TailCall"/>, parameter types, then the body's key under a pushed local scope frame for this lambda's own parameters.</summary>
+    /// <param name="le">The lambda to key.</param>
+    /// <param name="scopes">The active scope list (mutated locally: this lambda's parameters are pushed before, and popped after, keying the body).</param>
+    /// <returns>The resulting <see cref="LambdaKey"/>.</returns>
     private static KeyNode BuildLambda(LambdaExpression le, List<ParameterExpression[]> scopes)
     {
         ParameterExpression[] parameters = le.Parameters.ToArray();
@@ -218,6 +266,18 @@ internal static class ExpressionCanonicalOrder
         if (a.IsArray || b.IsArray)
         {
             if (a.IsArray != b.IsArray) return a.IsArray ? -1 : 1;
+
+            // A single-dimensional zero-based ("SZ"/vector) array (int[]) and a general
+            // single-dimensional array with explicit bounds (int[*]) both report GetArrayRank() == 1
+            // and the same element type, but are distinct CLR types (Type.MakeArrayType() vs
+            // Type.MakeArrayType(1)) that are not interchangeable at the IL/reflection level. Compare
+            // IsSZArray first so the two are never conflated, including when nested inside a
+            // constructed generic argument (e.g. List<int[]> vs List<int[*]>), since that case reaches
+            // this same branch through the generic-argument recursion below.
+            bool aIsSzArray = a.IsSZArray;
+            bool bIsSzArray = b.IsSZArray;
+            if (aIsSzArray != bIsSzArray) return aIsSzArray ? -1 : 1;
+
             int rankCompare = a.GetArrayRank().CompareTo(b.GetArrayRank());
             if (rankCompare != 0) return rankCompare;
             return CompareType(a.GetElementType(), b.GetElementType());
@@ -255,12 +315,9 @@ internal static class ExpressionCanonicalOrder
         // Every other dimension ties: this happens only for two genuinely distinct Type instances that
         // otherwise share namespace, name and generic shape (in practice unreachable for real CLR types,
         // since the CLR does not allow two distinct types with an identical fully-qualified name to
-        // coexist in the same load context) - a final, deterministic (not hash-based) tie-break.
-        int tokenCompare = a.MetadataToken.CompareTo(b.MetadataToken);
-        if (tokenCompare != 0) return tokenCompare;
-        int moduleCompare = string.CompareOrdinal(a.Module.Name, b.Module.Name);
-        if (moduleCompare != 0) return moduleCompare;
-        return string.CompareOrdinal(a.Assembly.FullName, b.Assembly.FullName);
+        // coexist in the same load context). System.Type derives from MemberInfo, so the shared,
+        // non-throwing tie-break below applies here too.
+        return CompareFinalMemberTiebreak(a, b);
     }
 
     /// <summary>Deterministically compares two <see cref="MethodInfo"/> values; see <see cref="CompareType(Type, Type)"/> for the underlying policy.</summary>
@@ -334,13 +391,98 @@ internal static class ExpressionCanonicalOrder
         return CompareFinalMemberTiebreak(a, b);
     }
 
+    /// <summary>
+    /// A final, deterministic (never hash-based) tie-break for two <see cref="MemberInfo"/> values
+    /// (including <see cref="Type"/>, which derives from <see cref="MemberInfo"/>) that already tied on
+    /// every earlier structural dimension. Every access is guarded and falls back to the next dimension,
+    /// and ultimately to a conservative tie, rather than throwing: <see cref="MemberInfo.MetadataToken"/>
+    /// throws <see cref="InvalidOperationException"/> for some dynamically-generated members (for example
+    /// an unbaked <see cref="System.Reflection.Emit.DynamicMethod"/>), and this key must never let
+    /// <c>Simplify()</c> fail merely because two otherwise-identical-looking members happen to be such a
+    /// member.
+    /// </summary>
+    /// <param name="a">The first member or type.</param>
+    /// <param name="b">The second member or type.</param>
+    /// <returns>A negative value if <paramref name="a"/> sorts before <paramref name="b"/>, zero if tied (including when no safe dimension distinguishes them), positive otherwise.</returns>
     private static int CompareFinalMemberTiebreak(MemberInfo a, MemberInfo b)
     {
-        int tokenCompare = a.MetadataToken.CompareTo(b.MetadataToken);
-        if (tokenCompare != 0) return tokenCompare;
-        int moduleCompare = string.CompareOrdinal(a.Module.Name, b.Module.Name);
-        if (moduleCompare != 0) return moduleCompare;
-        return string.CompareOrdinal(a.Module.Assembly.FullName, b.Module.Assembly.FullName);
+        if (TryGetMetadataToken(a, out int aToken) && TryGetMetadataToken(b, out int bToken) && aToken != bToken)
+        {
+            return aToken.CompareTo(bToken);
+        }
+
+        if (TryGetModuleName(a, out string? aModule) && TryGetModuleName(b, out string? bModule))
+        {
+            int moduleCompare = string.CompareOrdinal(aModule, bModule);
+            if (moduleCompare != 0) return moduleCompare;
+        }
+
+        if (TryGetAssemblyFullName(a, out string? aAssembly) && TryGetAssemblyFullName(b, out string? bAssembly))
+        {
+            int assemblyCompare = string.CompareOrdinal(aAssembly, bAssembly);
+            if (assemblyCompare != 0) return assemblyCompare;
+        }
+
+        // No further safe, non-throwing, deterministic dimension distinguishes two members that already
+        // tied on every earlier structural dimension (declaring type, name, generic shape,
+        // parameter/return types, ...) - conservatively tie, relying on the caller's stable sort to
+        // preserve source order, rather than fabricating an order from runtime identity (object
+        // reference/hash), which the roadmap explicitly forbids.
+        return 0;
+    }
+
+    /// <summary>Safely reads <see cref="MemberInfo.MetadataToken"/>, which throws for some dynamically-generated members.</summary>
+    /// <param name="member">The member or type to inspect.</param>
+    /// <param name="token">The metadata token, when available.</param>
+    /// <returns><see langword="true"/> if <paramref name="token"/> was read successfully.</returns>
+    private static bool TryGetMetadataToken(MemberInfo member, out int token)
+    {
+        try
+        {
+            token = member.MetadataToken;
+            return true;
+        }
+        catch (InvalidOperationException)
+        {
+            token = 0;
+            return false;
+        }
+    }
+
+    /// <summary>Safely reads <see cref="Module.Name"/> for <paramref name="member"/>'s declaring module, which can throw for some dynamically-generated members.</summary>
+    /// <param name="member">The member or type to inspect.</param>
+    /// <param name="name">The module name, when available.</param>
+    /// <returns><see langword="true"/> if <paramref name="name"/> was read successfully.</returns>
+    private static bool TryGetModuleName(MemberInfo member, out string? name)
+    {
+        try
+        {
+            name = member.Module.Name;
+            return true;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or NotSupportedException)
+        {
+            name = null;
+            return false;
+        }
+    }
+
+    /// <summary>Safely reads the declaring module's assembly <see cref="Assembly.FullName"/> for <paramref name="member"/>, which can throw for some dynamically-generated members.</summary>
+    /// <param name="member">The member or type to inspect.</param>
+    /// <param name="name">The assembly full name, when available.</param>
+    /// <returns><see langword="true"/> if <paramref name="name"/> was read successfully.</returns>
+    private static bool TryGetAssemblyFullName(MemberInfo member, out string? name)
+    {
+        try
+        {
+            name = member.Module.Assembly.FullName;
+            return true;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or NotSupportedException)
+        {
+            name = null;
+            return false;
+        }
     }
 
     /// <summary>
@@ -373,27 +515,46 @@ internal static class ExpressionCanonicalOrder
     /// <summary>Key for an absent optional sub-expression (a <see langword="null"/> receiver, coalesce conversion, etc.). Always sorts before every real node kind.</summary>
     private sealed class NullKey : KeyNode
     {
+        /// <summary>The single shared <see cref="NullKey"/> instance.</summary>
         public static readonly NullKey Instance = new();
+
+        /// <summary>Prevents external instantiation; use <see cref="Instance"/>.</summary>
         private NullKey() { }
+
+        /// <inheritdoc/>
         protected override int Rank => RankNull;
+
+        /// <inheritdoc/>
         protected override int CompareSameRank(KeyNode other) => 0;
     }
 
     /// <summary>Key for a node kind not among the seven this class understands structurally. See this type's remarks on unsupported node kinds.</summary>
     private sealed class UnsupportedKey : KeyNode
     {
+        /// <summary>The single shared <see cref="UnsupportedKey"/> instance.</summary>
         public static readonly UnsupportedKey Instance = new();
+
+        /// <summary>Prevents external instantiation; use <see cref="Instance"/>.</summary>
         private UnsupportedKey() { }
+
+        /// <inheritdoc/>
         protected override int Rank => RankUnsupported;
+
+        /// <inheritdoc/>
         protected override int CompareSameRank(KeyNode other) => 0;
     }
 
+    /// <summary>Key for a <see cref="ConstantExpression"/>: an exact numeric value when the declared type is native numeric, else declared type plus boxed value.</summary>
     private sealed class ConstantKey : KeyNode
     {
         private readonly Type _type;
         private readonly object? _value;
         private readonly ExpressionComparer.ExactNumericValue? _numeric;
 
+        /// <summary>Initializes a new <see cref="ConstantKey"/>.</summary>
+        /// <param name="type">The constant's declared <see cref="Type"/>.</param>
+        /// <param name="value">The constant's boxed value.</param>
+        /// <param name="numeric">The exact numeric value, when <paramref name="type"/> is a native numeric type; otherwise <see langword="null"/>.</param>
         public ConstantKey(Type type, object? value, ExpressionComparer.ExactNumericValue? numeric)
         {
             _type = type;
@@ -401,8 +562,10 @@ internal static class ExpressionCanonicalOrder
             _numeric = numeric;
         }
 
+        /// <inheritdoc/>
         protected override int Rank => RankConstant;
 
+        /// <inheritdoc/>
         protected override int CompareSameRank(KeyNode other)
         {
             var o = (ConstantKey)other;
@@ -425,25 +588,24 @@ internal static class ExpressionCanonicalOrder
                 return _value is null && o._value is null ? 0 : _value is null ? -1 : 1;
             }
 
-            if (_value.GetType() == o._value.GetType() && _value is IComparable comparable)
+            // Deliberately does NOT call an arbitrary boxed value's IComparable.CompareTo(): that can
+            // execute user-defined code (including code with side effects or that throws) merely because
+            // an expression tree happens to embed such a constant, and even a "safe" framework
+            // IComparable (e.g. string's default comparer) can depend on Thread.CurrentCulture, which
+            // would make this supposedly deterministic key vary with ambient culture state. Only a
+            // small, explicitly recognized set of framework types compares here, each via a
+            // culture-invariant/ordinal comparison; every other non-numeric constant type ties, relying
+            // on the caller's stable sort to preserve source order.
+            if (_value is string leftString && o._value is string rightString)
             {
-                try
-                {
-                    return Math.Sign(comparable.CompareTo(o._value));
-                }
-                catch (ArgumentException)
-                {
-                    // The runtime type implements IComparable but refuses to compare against this
-                    // particular other instance: no structural basis to order them, fall through to tie.
-                }
+                return Math.Sign(string.CompareOrdinal(leftString, rightString));
             }
 
-            // No structural, non-hash-based way to order two distinct non-numeric constant values of a
-            // type that either differs or does not support IComparable: tie, relying on stable sort.
             return 0;
         }
     }
 
+    /// <summary>Key for a <see cref="ParameterExpression"/>: a De-Bruijn-style (depth, position, type) triple when bound, or a type-only key when free. See this class's remarks on the bound/free policy.</summary>
     private sealed class ParameterKey : KeyNode
     {
         private readonly bool _isBound;
@@ -451,6 +613,11 @@ internal static class ExpressionCanonicalOrder
         private readonly int _position;
         private readonly Type _type;
 
+        /// <summary>Initializes a new <see cref="ParameterKey"/>. Use <see cref="Bound"/>/<see cref="Free"/> instead of calling this directly.</summary>
+        /// <param name="isBound">Whether the parameter was found in an active lexical scope.</param>
+        /// <param name="depth">The relative binding depth (0 = innermost); meaningful only when <paramref name="isBound"/> is <see langword="true"/>.</param>
+        /// <param name="position">The declaration position within the binding scope; meaningful only when <paramref name="isBound"/> is <see langword="true"/>.</param>
+        /// <param name="type">The parameter's declared type.</param>
         private ParameterKey(bool isBound, int depth, int position, Type type)
         {
             _isBound = isBound;
@@ -459,11 +626,22 @@ internal static class ExpressionCanonicalOrder
             _type = type;
         }
 
+        /// <summary>Creates the key for a parameter bound at the given relative depth and declaration position.</summary>
+        /// <param name="depth">The relative binding depth (0 = innermost).</param>
+        /// <param name="position">The declaration position within the binding scope.</param>
+        /// <param name="type">The parameter's declared type.</param>
+        /// <returns>The resulting bound <see cref="ParameterKey"/>.</returns>
         public static ParameterKey Bound(int depth, int position, Type type) => new(true, depth, position, type);
+
+        /// <summary>Creates the key for a parameter not found in any active lexical scope.</summary>
+        /// <param name="type">The parameter's declared type.</param>
+        /// <returns>The resulting free <see cref="ParameterKey"/>.</returns>
         public static ParameterKey Free(Type type) => new(false, 0, 0, type);
 
+        /// <inheritdoc/>
         protected override int Rank => RankParameter;
 
+        /// <inheritdoc/>
         protected override int CompareSameRank(KeyNode other)
         {
             var o = (ParameterKey)other;
@@ -484,6 +662,7 @@ internal static class ExpressionCanonicalOrder
         }
     }
 
+    /// <summary>Key for a <see cref="UnaryExpression"/>: node type, result type, operator method, lifting flags, then the operand's key.</summary>
     private sealed class UnaryKey : KeyNode
     {
         private readonly ExpressionType _nodeType;
@@ -493,6 +672,13 @@ internal static class ExpressionCanonicalOrder
         private readonly bool _isLiftedToNull;
         private readonly KeyNode _operand;
 
+        /// <summary>Initializes a new <see cref="UnaryKey"/>.</summary>
+        /// <param name="nodeType">The unary <see cref="ExpressionType"/>.</param>
+        /// <param name="type">The result <see cref="Type"/>.</param>
+        /// <param name="method">The operator method, or <see langword="null"/>.</param>
+        /// <param name="isLifted"><see cref="UnaryExpression.IsLifted"/>.</param>
+        /// <param name="isLiftedToNull"><see cref="UnaryExpression.IsLiftedToNull"/>.</param>
+        /// <param name="operand">The operand's key.</param>
         public UnaryKey(ExpressionType nodeType, Type type, MethodInfo? method, bool isLifted, bool isLiftedToNull, KeyNode operand)
         {
             _nodeType = nodeType;
@@ -503,8 +689,10 @@ internal static class ExpressionCanonicalOrder
             _operand = operand;
         }
 
+        /// <inheritdoc/>
         protected override int Rank => RankUnary;
 
+        /// <inheritdoc/>
         protected override int CompareSameRank(KeyNode other)
         {
             var o = (UnaryKey)other;
@@ -522,6 +710,7 @@ internal static class ExpressionCanonicalOrder
         }
     }
 
+    /// <summary>Key for a <see cref="BinaryExpression"/>: node type, result type, operator method, lifting flags, then the left/right/conversion keys.</summary>
     private sealed class BinaryKey : KeyNode
     {
         private readonly ExpressionType _nodeType;
@@ -533,6 +722,15 @@ internal static class ExpressionCanonicalOrder
         private readonly KeyNode _right;
         private readonly KeyNode _conversion;
 
+        /// <summary>Initializes a new <see cref="BinaryKey"/>.</summary>
+        /// <param name="nodeType">The binary <see cref="ExpressionType"/>.</param>
+        /// <param name="type">The result <see cref="Type"/>.</param>
+        /// <param name="method">The operator method, or <see langword="null"/>.</param>
+        /// <param name="isLifted"><see cref="BinaryExpression.IsLifted"/>.</param>
+        /// <param name="isLiftedToNull"><see cref="BinaryExpression.IsLiftedToNull"/>.</param>
+        /// <param name="left">The left operand's key.</param>
+        /// <param name="right">The right operand's key.</param>
+        /// <param name="conversion">The coalesce conversion lambda's key, or the shared <see cref="NullKey"/> when absent.</param>
         public BinaryKey(ExpressionType nodeType, Type type, MethodInfo? method, bool isLifted, bool isLiftedToNull, KeyNode left, KeyNode right, KeyNode conversion)
         {
             _nodeType = nodeType;
@@ -545,8 +743,10 @@ internal static class ExpressionCanonicalOrder
             _conversion = conversion;
         }
 
+        /// <inheritdoc/>
         protected override int Rank => RankBinary;
 
+        /// <inheritdoc/>
         protected override int CompareSameRank(KeyNode other)
         {
             var o = (BinaryKey)other;
@@ -568,12 +768,17 @@ internal static class ExpressionCanonicalOrder
         }
     }
 
+    /// <summary>Key for a <see cref="MethodCallExpression"/>: exact method, receiver key, then each argument's key in order.</summary>
     private sealed class MethodCallKey : KeyNode
     {
         private readonly MethodInfo _method;
         private readonly KeyNode _receiver;
         private readonly KeyNode[] _arguments;
 
+        /// <summary>Initializes a new <see cref="MethodCallKey"/>.</summary>
+        /// <param name="method">The exact called <see cref="MethodInfo"/>.</param>
+        /// <param name="receiver">The instance receiver's key, or the shared <see cref="NullKey"/> for a static call.</param>
+        /// <param name="arguments">Each argument's key, in declaration order.</param>
         public MethodCallKey(MethodInfo method, KeyNode receiver, KeyNode[] arguments)
         {
             _method = method;
@@ -581,8 +786,10 @@ internal static class ExpressionCanonicalOrder
             _arguments = arguments;
         }
 
+        /// <inheritdoc/>
         protected override int Rank => RankMethodCall;
 
+        /// <inheritdoc/>
         protected override int CompareSameRank(KeyNode other)
         {
             var o = (MethodCallKey)other;
@@ -601,19 +808,25 @@ internal static class ExpressionCanonicalOrder
         }
     }
 
+    /// <summary>Key for a <see cref="MemberExpression"/>: exact member, then the receiver's key.</summary>
     private sealed class MemberKey : KeyNode
     {
         private readonly MemberInfo _member;
         private readonly KeyNode _receiver;
 
+        /// <summary>Initializes a new <see cref="MemberKey"/>.</summary>
+        /// <param name="member">The exact accessed <see cref="MemberInfo"/> (a field or property).</param>
+        /// <param name="receiver">The receiver's key, or the shared <see cref="NullKey"/> for a static member.</param>
         public MemberKey(MemberInfo member, KeyNode receiver)
         {
             _member = member;
             _receiver = receiver;
         }
 
+        /// <inheritdoc/>
         protected override int Rank => RankMember;
 
+        /// <inheritdoc/>
         protected override int CompareSameRank(KeyNode other)
         {
             var o = (MemberKey)other;
@@ -622,6 +835,7 @@ internal static class ExpressionCanonicalOrder
         }
     }
 
+    /// <summary>Key for a <see cref="LambdaExpression"/>: delegate type, <see cref="LambdaExpression.TailCall"/>, parameter types, then the body's key. <see cref="LambdaExpression.Name"/> is deliberately ignored as non-semantic debug metadata.</summary>
     private sealed class LambdaKey : KeyNode
     {
         private readonly Type _type;
@@ -629,6 +843,11 @@ internal static class ExpressionCanonicalOrder
         private readonly Type[] _parameterTypes;
         private readonly KeyNode _body;
 
+        /// <summary>Initializes a new <see cref="LambdaKey"/>.</summary>
+        /// <param name="type">The lambda's delegate <see cref="Type"/>.</param>
+        /// <param name="tailCall"><see cref="LambdaExpression.TailCall"/>.</param>
+        /// <param name="parameterTypes">The declared parameters' types, in declaration order.</param>
+        /// <param name="body">The body's key, built under a scope frame for this lambda's own parameters.</param>
         public LambdaKey(Type type, bool tailCall, Type[] parameterTypes, KeyNode body)
         {
             _type = type;
@@ -637,8 +856,10 @@ internal static class ExpressionCanonicalOrder
             _body = body;
         }
 
+        /// <inheritdoc/>
         protected override int Rank => RankLambda;
 
+        /// <inheritdoc/>
         protected override int CompareSameRank(KeyNode other)
         {
             var o = (LambdaKey)other;

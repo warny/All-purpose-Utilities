@@ -83,10 +83,11 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
         }
     }
 
+    /// <summary>Whether <paramref name="target"/> is reachable from <paramref name="root"/> by reference identity (not structural equality).</summary>
+    /// <param name="root">The tree to search.</param>
+    /// <param name="target">The specific node instance to look for.</param>
+    /// <returns><see langword="true"/> if <paramref name="target"/> is one of <paramref name="root"/>'s sub-expressions, by reference.</returns>
     private static bool Contains(Expression root, Expression target) => EnumerateNodes(root).Any(n => ReferenceEquals(n, target));
-
-    private static IEnumerable<double> EnumerateConstantDoubles(Expression root) =>
-        EnumerateNodes(root).OfType<ConstantExpression>().Where(c => c.Type == typeof(double)).Select(c => (double)c.Value!);
 
     // ------------------------------------------------------------------------------------------
     // 1. Bound parameter names do not affect canonical order
@@ -297,16 +298,101 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
         Assert.IsTrue(Contains(result, throwing));
     }
 
+    /// <summary>Marker exception used by <see cref="HostileConstant"/> to prove its members are never invoked.</summary>
+    private sealed class HostileConstantException : Exception { }
+
+    /// <summary>
+    /// A reference-type constant value whose <see cref="object.Equals(object?)"/> and
+    /// <see cref="object.GetHashCode"/> overrides both record a call and throw. Used to prove that the S4
+    /// additive-grouping equality (<c>ExpressionSimplifier.AdditiveGroupingEqualityComparer</c>) never
+    /// executes a possibly user-defined <see cref="object.Equals(object?)"/>/<see cref="object.GetHashCode"/>
+    /// override on an opaque (non-numeric) constant's boxed value merely to decide whether two additive
+    /// terms belong in the same group — see <c>ExpressionComparer.StructuralEqualsRaw</c>/
+    /// <c>StructuralHashRaw</c>'s <c>safeConstantsOnly</c> policy.
+    /// </summary>
+    private sealed class HostileConstant
+    {
+        public int EqualsCallCount { get; private set; }
+        public int GetHashCodeCallCount { get; private set; }
+
+        /// <inheritdoc/>
+        public override bool Equals(object? obj)
+        {
+            EqualsCallCount++;
+            throw new HostileConstantException();
+        }
+
+        /// <inheritdoc/>
+        public override int GetHashCode()
+        {
+            GetHashCodeCallCount++;
+            throw new HostileConstantException();
+        }
+    }
+
+    /// <summary>Test-only static method accepting an opaque <see cref="object"/> argument, used to embed a <see cref="HostileConstant"/> as a method-call argument participating in additive grouping.</summary>
+    /// <param name="value">An arbitrary opaque value, ignored.</param>
+    /// <returns>A constant, arbitrary result.</returns>
+    private static double IdentityFromObject(object value) => 1.0;
+
+    /// <summary>
+    /// Two additive terms embedding the SAME <see cref="HostileConstant"/> instance as a method-call
+    /// argument force a hash collision in the grouping equality comparer's internal bucketing (since a safe
+    /// reference-identity hash is deterministically equal for the same instance), which in turn forces an
+    /// actual equality check between them. Neither <see cref="HostileConstant.Equals(object?)"/> nor
+    /// <see cref="HostileConstant.GetHashCode"/> must ever be called: grouping must resolve entirely via
+    /// reference identity.
+    /// </summary>
+    [TestMethod]
+    public void HostileConstantArgument_InAdditiveGrouping_NeverCallsUserEqualsOrGetHashCode()
+    {
+        var simplifier = new ExpressionSimplifier();
+        var hostile = new HostileConstant();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        MethodInfo identity = typeof(ExpressionSimplifierStructuralCanonicalizationTests).GetMethod(
+            nameof(IdentityFromObject), BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        MethodCallExpression term1 = Expression.Call(identity, Expression.Constant(hostile, typeof(object)));
+        MethodCallExpression term2 = Expression.Call(identity, Expression.Constant(hostile, typeof(object)));
+
+        // Deliberately NOT Add(term1, term2) directly: that shape also reaches the pre-existing,
+        // S4-unrelated AdditionOfEqualsElements factoring rule, which calls the PUBLIC (non-safe)
+        // ExpressionComparer.Default.Equals on the two adjacent addends before canonicalization/grouping
+        // ever runs - a separate, out-of-scope hazard this test is not about. Add(Add(term1, x), term2)
+        // keeps term1 and term2 non-adjacent at every rule-matching step (their immediate BinaryExpression
+        // siblings always differ in NodeType, so that rule's own equality short-circuits without reaching
+        // either constant), while CollectAdditiveTerms still flattens the inner Add so term1 and term2 end
+        // up compared against each other by the additive-grouping equality this test targets.
+        var source = Expression.Lambda<Func<double, double>>(Expression.Add(Expression.Add(term1, x), term2), x);
+
+        Expression result = simplifier.Simplify(source);
+
+        Assert.AreEqual(0, hostile.EqualsCallCount, "The grouping equality comparer must never call a constant value's own Equals override.");
+        Assert.AreEqual(0, hostile.GetHashCodeCallCount, "The grouping equality comparer must never call a constant value's own GetHashCode override.");
+        Assert.IsNotNull(result);
+    }
+
     // ------------------------------------------------------------------------------------------
     // 5. Same textual representation does not imply structural identity
     // ------------------------------------------------------------------------------------------
 
+    /// <summary>Custom addition operator whose behavior (subtraction) deliberately differs from ordinary <c>+</c>, used to prove <see cref="BinaryExpression.Method"/> survives simplification.</summary>
+    /// <param name="a">First operand.</param>
+    /// <param name="b">Second operand.</param>
+    /// <returns><paramref name="a"/> minus <paramref name="b"/>.</returns>
     private static double CustomOpA(double a, double b) => a - b;
+
+    /// <summary>Custom addition operator whose behavior (multiplication) deliberately differs from ordinary <c>+</c> and from <see cref="CustomOpA"/>, used to prove <see cref="BinaryExpression.Method"/> survives simplification.</summary>
+    /// <param name="a">First operand.</param>
+    /// <param name="b">Second operand.</param>
+    /// <returns><paramref name="a"/> times <paramref name="b"/>.</returns>
     private static double CustomOpB(double a, double b) => a * b;
 
+    /// <summary>Reflected <see cref="MethodInfo"/> for <see cref="CustomOpA"/>.</summary>
     private static readonly MethodInfo CustomOpAMethod =
         typeof(ExpressionSimplifierStructuralCanonicalizationTests).GetMethod(nameof(CustomOpA), BindingFlags.NonPublic | BindingFlags.Static)!;
 
+    /// <summary>Reflected <see cref="MethodInfo"/> for <see cref="CustomOpB"/>.</summary>
     private static readonly MethodInfo CustomOpBMethod =
         typeof(ExpressionSimplifierStructuralCanonicalizationTests).GetMethod(nameof(CustomOpB), BindingFlags.NonPublic | BindingFlags.Static)!;
 
@@ -345,20 +431,29 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
     // 6. Exact method-call identity
     // ------------------------------------------------------------------------------------------
 
+    /// <summary>Declares a "Compute(double)" method observably different from <see cref="MathVariantB.Compute(double)"/>, used to prove exact declaring-type identity participates in the canonical key.</summary>
     private static class MathVariantA
     {
+        /// <param name="x">The operand.</param>
+        /// <returns><paramref name="x"/> plus 1.</returns>
         public static double Compute(double x) => x + 1.0;
     }
 
+    /// <summary>Declares a "Compute(double)" method observably different from <see cref="MathVariantA.Compute(double)"/>, used to prove exact declaring-type identity participates in the canonical key.</summary>
     private static class MathVariantB
     {
+        /// <param name="x">The operand.</param>
+        /// <returns><paramref name="x"/> plus 2.</returns>
         public static double Compute(double x) => x + 2.0;
     }
 
     /// <summary>
     /// Two distinct methods sharing the same name and signature ("Compute(double)") but declared on
     /// different types must remain distinguished by the complete canonical key, not merged by name/text.
-    /// Reversing the two source terms must produce the same canonical result.
+    /// Reversing the two source terms must produce the same canonical result. Inspects the raw tree
+    /// produced by each FIRST <c>Simplify()</c> call directly (rather than relying only on
+    /// <see cref="ExpressionComparer.Default"/>, which re-simplifies both sides and could mask a
+    /// first-pass canonicalization defect — the exact pitfall identified during the S4 audit).
     /// </summary>
     [TestMethod]
     public void ExactMethodCallIdentity_SameNameDifferentDeclaringType_IsDistinguishedAndOrderIsSymmetric()
@@ -375,14 +470,20 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
         var sourceBackward = Expression.Lambda<Func<double, double, double>>(
             Expression.Add(Expression.Call(computeB, y), Expression.Call(computeA, x)), x, y);
 
-        var resultForward = simplifier.Simplify(sourceForward);
-        var resultBackward = simplifier.Simplify(sourceBackward);
+        var resultForward = (LambdaExpression)simplifier.Simplify(sourceForward);
+        var resultBackward = (LambdaExpression)simplifier.Simplify(sourceBackward);
 
-        Assert.AreEqual(resultForward, resultBackward, ExpressionComparer.Default);
+        var bodyForward = (BinaryExpression)resultForward.Body;
+        var bodyBackward = (BinaryExpression)resultBackward.Body;
 
-        var callsForward = EnumerateNodes(resultForward).OfType<MethodCallExpression>().Select(c => c.Method).ToList();
-        CollectionAssert.Contains(callsForward, computeA);
-        CollectionAssert.Contains(callsForward, computeB);
+        MethodInfo leftMethodForward = ((MethodCallExpression)bodyForward.Left).Method;
+        MethodInfo rightMethodForward = ((MethodCallExpression)bodyForward.Right).Method;
+        MethodInfo leftMethodBackward = ((MethodCallExpression)bodyBackward.Left).Method;
+        MethodInfo rightMethodBackward = ((MethodCallExpression)bodyBackward.Right).Method;
+
+        Assert.AreEqual(leftMethodForward, leftMethodBackward, "Regardless of source order, the same method must end up on the Left in both results.");
+        Assert.AreEqual(rightMethodForward, rightMethodBackward, "Regardless of source order, the same method must end up on the Right in both results.");
+        CollectionAssert.AreEquivalent(new[] { computeA, computeB }, new[] { leftMethodForward, rightMethodForward }, "Both exact methods must survive, never merged or dropped.");
     }
 
     // ------------------------------------------------------------------------------------------
@@ -393,7 +494,9 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
     /// Power-wrapped calls sharing the same source arguments/function are grouped adjacent (existing,
     /// intentionally coarser grouping behavior), but the COMPLETE key still distinguishes different
     /// exponents: both exponents must survive, and the result must be deterministic regardless of source
-    /// order.
+    /// order. Inspects the raw tree produced by each FIRST <c>Simplify()</c> call directly, not only via
+    /// <see cref="ExpressionComparer.Default"/> (see the S4-audit pitfall note on
+    /// <see cref="ExactMethodCallIdentity_SameNameDifferentDeclaringType_IsDistinguishedAndOrderIsSymmetric"/>).
     /// </summary>
     [TestMethod]
     public void PowerWrappedFunctionGrouping_DistinguishesExponentsInCompleteKey()
@@ -410,13 +513,22 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
         var sourceBackward = Expression.Lambda<Func<double, double>>(
             Expression.Add(Expression.Power(cosX2, Expression.Constant(3.0)), Expression.Power(cosX1, Expression.Constant(2.0))), x);
 
-        var resultForward = simplifier.Simplify(sourceForward);
-        var resultBackward = simplifier.Simplify(sourceBackward);
+        var resultForward = (LambdaExpression)simplifier.Simplify(sourceForward);
+        var resultBackward = (LambdaExpression)simplifier.Simplify(sourceBackward);
 
-        Assert.AreEqual(resultForward, resultBackward, ExpressionComparer.Default);
+        var bodyForward = (BinaryExpression)resultForward.Body;
+        var bodyBackward = (BinaryExpression)resultBackward.Body;
 
-        List<double> exponents = EnumerateConstantDoubles(resultForward).Where(v => v is 2.0 or 3.0).OrderBy(v => v).ToList();
-        CollectionAssert.AreEqual(new[] { 2.0, 3.0 }, exponents);
+        static double ExponentOf(Expression powerTerm) => (double)((ConstantExpression)((BinaryExpression)powerTerm).Right).Value!;
+
+        double leftExponentForward = ExponentOf(bodyForward.Left);
+        double rightExponentForward = ExponentOf(bodyForward.Right);
+        double leftExponentBackward = ExponentOf(bodyBackward.Left);
+        double rightExponentBackward = ExponentOf(bodyBackward.Right);
+
+        Assert.AreEqual(leftExponentForward, leftExponentBackward, "Regardless of source order, the same exponent must end up on the Left in both results.");
+        Assert.AreEqual(rightExponentForward, rightExponentBackward, "Regardless of source order, the same exponent must end up on the Right in both results.");
+        CollectionAssert.AreEquivalent(new[] { 2.0, 3.0 }, new[] { leftExponentForward, rightExponentForward }, "Both exponents must survive, never merged or dropped by the coarser grouping.");
     }
 
     /// <summary>Positive control: <c>sin²(x) + cos²(x)</c> still simplifies to <c>1</c> (existing power-wrapped-function grouping behavior stays intact).</summary>
@@ -430,6 +542,102 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
         var compiled = ((Expression<Func<double, double>>)simplified).Compile();
 
         Assert.AreEqual(1.0, compiled(0.7), 1e-9);
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // Post-review hardening: non-throwing reflection metadata access, and SZ-array/bounded-array
+    // identity. Neither is part of the original numbered matrix; both were found during code review
+    // of the initial S4 implementation.
+    // ------------------------------------------------------------------------------------------
+
+    /// <summary>Reflected <see cref="MethodInfo"/> for the internal <c>ExpressionCanonicalOrder.CompareType(Type, Type)</c> helper, resolved once for the array-identity regression tests below.</summary>
+    private static readonly MethodInfo CompareTypeMethod = typeof(ExpressionSimplifier).Assembly
+        .GetType("Utils.Mathematics.Expressions.ExpressionCanonicalOrder")!
+        .GetMethod("CompareType", BindingFlags.NonPublic | BindingFlags.Static)!;
+
+    /// <summary>Invokes the internal <c>ExpressionCanonicalOrder.CompareType(Type, Type)</c> helper via reflection, without changing its accessibility.</summary>
+    /// <param name="a">The first type.</param>
+    /// <param name="b">The second type.</param>
+    /// <returns>The comparison result.</returns>
+    private static int InvokeCompareType(Type? a, Type? b) => (int)CompareTypeMethod.Invoke(null, [a, b])!;
+
+    /// <summary>
+    /// A single-dimensional zero-based ("SZ"/vector) array type (<c>int[]</c>) and a general
+    /// single-dimensional array type with explicit bounds (<c>int[*]</c>) both report
+    /// <see cref="Type.GetArrayRank"/> <c>== 1</c> and the same element type, but are distinct, non-
+    /// interchangeable CLR types. The canonical type comparer must not conflate them.
+    /// </summary>
+    [TestMethod]
+    public void CompareType_DistinguishesSzArrayFromBoundedRank1Array()
+    {
+        Type szArrayType = typeof(int).MakeArrayType();
+        Type boundedArrayType = typeof(int).MakeArrayType(1);
+
+        Assert.AreNotEqual(typeof(int).MakeArrayType(), typeof(int).MakeArrayType(1), "Precondition: the CLR itself must treat these as distinct types.");
+
+        int forward = InvokeCompareType(szArrayType, boundedArrayType);
+        int backward = InvokeCompareType(boundedArrayType, szArrayType);
+
+        Assert.AreNotEqual(0, forward, "int[] and int[*] must not compare equal.");
+        Assert.AreEqual(Math.Sign(forward), -Math.Sign(backward), "Comparison must be antisymmetric.");
+        Assert.AreEqual(0, InvokeCompareType(szArrayType, typeof(int).MakeArrayType()));
+        Assert.AreEqual(0, InvokeCompareType(boundedArrayType, typeof(int).MakeArrayType(1)));
+    }
+
+    /// <summary>The SZ-array/bounded-array distinction must also hold when the array type is nested inside a constructed generic argument, since that reaches the same comparison through generic-argument recursion.</summary>
+    [TestMethod]
+    public void CompareType_DistinguishesSzArrayFromBoundedRank1Array_NestedInGenericArgument()
+    {
+        Type listOfSzArray = typeof(List<>).MakeGenericType(typeof(int).MakeArrayType());
+        Type listOfBoundedArray = typeof(List<>).MakeGenericType(typeof(int).MakeArrayType(1));
+
+        Assert.AreNotEqual(0, InvokeCompareType(listOfSzArray, listOfBoundedArray));
+    }
+
+    /// <summary>Reflected <see cref="MethodInfo"/> for the internal <c>ExpressionCanonicalOrder.CompareMethod(MethodInfo, MethodInfo)</c> helper.</summary>
+    private static readonly MethodInfo CompareMethodMethod = typeof(ExpressionSimplifier).Assembly
+        .GetType("Utils.Mathematics.Expressions.ExpressionCanonicalOrder")!
+        .GetMethod("CompareMethod", BindingFlags.NonPublic | BindingFlags.Static)!;
+
+    /// <summary>Invokes the internal <c>ExpressionCanonicalOrder.CompareMethod(MethodInfo, MethodInfo)</c> helper via reflection, without changing its accessibility.</summary>
+    /// <param name="a">The first method.</param>
+    /// <param name="b">The second method.</param>
+    /// <returns>The comparison result.</returns>
+    private static int InvokeCompareMethod(MethodInfo? a, MethodInfo? b) => (int)CompareMethodMethod.Invoke(null, [a, b])!;
+
+    /// <summary>
+    /// Two dynamically-generated methods (<see cref="System.Reflection.Emit.DynamicMethod"/>) sharing the
+    /// same name and signature (and, being owner-less, both a <see langword="null"/>
+    /// <see cref="MethodBase.DeclaringType"/>) can reach the canonical key's final member tie-break with an
+    /// unbaked <see cref="MemberInfo.MetadataToken"/>, which throws <see cref="InvalidOperationException"/>
+    /// for such a method on some runtimes. The comparison must not throw merely because two otherwise-
+    /// identical-looking methods happen to be such dynamic methods.
+    /// </summary>
+    /// <remarks>
+    /// Exercises <c>ExpressionCanonicalOrder.CompareMethod</c> directly via reflection rather than through
+    /// the full <c>Simplify()</c> pipeline: routing two owner-less <see cref="System.Reflection.Emit.DynamicMethod"/>
+    /// calls through <c>Simplify()</c> hits an unrelated, pre-existing gap in
+    /// <c>ExpressionCallSignatureAttribute.Match</c> (it dereferences a <see langword="null"/>
+    /// <see cref="MethodBase.DeclaringType"/> before this canonical-key code is ever reached) — a
+    /// legitimate finding, but a different, out-of-scope bug from the one this test targets.
+    /// </remarks>
+    [TestMethod]
+    public void CompareMethod_TwoDynamicMethodsWithIdenticalSignature_DoesNotThrow()
+    {
+        var dynamicMethod1 = new System.Reflection.Emit.DynamicMethod("Compute", typeof(double), [typeof(double)]);
+        System.Reflection.Emit.ILGenerator il1 = dynamicMethod1.GetILGenerator();
+        il1.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
+        il1.Emit(System.Reflection.Emit.OpCodes.Ret);
+
+        var dynamicMethod2 = new System.Reflection.Emit.DynamicMethod("Compute", typeof(double), [typeof(double)]);
+        System.Reflection.Emit.ILGenerator il2 = dynamicMethod2.GetILGenerator();
+        il2.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
+        il2.Emit(System.Reflection.Emit.OpCodes.Ret);
+
+        int forward = InvokeCompareMethod(dynamicMethod1, dynamicMethod2);
+        int backward = InvokeCompareMethod(dynamicMethod2, dynamicMethod1);
+
+        Assert.AreEqual(Math.Sign(forward), -Math.Sign(backward), "Comparison must be antisymmetric, even for a conservative tie (0 == -0).");
     }
 
     // ------------------------------------------------------------------------------------------

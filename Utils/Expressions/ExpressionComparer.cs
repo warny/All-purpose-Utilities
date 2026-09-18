@@ -133,7 +133,7 @@ public class ExpressionComparer : IEqualityComparer<Expression>
 
         if (x is ConstantExpression xc && y is ConstantExpression yc)
         {
-            return ConstantsEqual(xc, yc);
+            return ConstantsEqual(xc, yc, context.SafeConstantsOnly);
         }
 
         if (x.Type != y.Type) return false;
@@ -163,18 +163,56 @@ public class ExpressionComparer : IEqualityComparer<Expression>
             && x.IsLiftedToNull == y.IsLiftedToNull
             && EqualsCore(x.Operand, y.Operand, context);
 
-    /// <summary>Compares two <see cref="BinaryExpression"/> nodes: operator method, lifting flags, operands, then the coalesce conversion lambda.</summary>
+    /// <summary>
+    /// Compares two <see cref="BinaryExpression"/> nodes: operator method, lifting flags, then operands and
+    /// the coalesce conversion lambda.
+    /// </summary>
     /// <param name="x">The first binary expression.</param>
     /// <param name="y">The second binary expression.</param>
     /// <param name="context">The active parameter binding context.</param>
     /// <returns><see langword="true"/> if the binary expressions are structurally equivalent.</returns>
+    /// <remarks>
+    /// For an ordinary (non-lifted, predefined-operator) <see cref="ExpressionType.Add"/> or
+    /// <see cref="ExpressionType.Multiply"/> node — see <see cref="ExpressionSimplifier.IsOrdinaryBinaryArithmetic(BinaryExpression)"/> —
+    /// operands are also compared SWAPPED as a fallback when the positional comparison fails, since those
+    /// operators are mathematically commutative. This matters specifically for two distinct FREE
+    /// <see cref="ParameterExpression"/> operands (an expression not wrapped in an enclosing
+    /// <see cref="LambdaExpression"/>): <see cref="ExpressionSimplifier"/>'s stage-S4 canonicalization
+    /// deliberately does not invent a cross-tree order between two such parameters (see the roadmap's "Free
+    /// parameters" policy), so <c>Simplify(Add(a, b))</c> and <c>Simplify(Add(b, a))</c> can legitimately
+    /// keep their different source operand order — without this commutative fallback, this comparer would
+    /// then report <c>Equals(Add(a, b), Add(b, a))</c> as <see langword="false"/> for such free parameters,
+    /// a regression from this comparer's pre-S4 observable behavior (a real bug this narrowly-scoped
+    /// correction fixes, per the S4 roadmap entry's own carve-out for one). Every already-supported case
+    /// (bound parameters, which S4 keeps canonicalizing deterministically by position; non-commutative
+    /// operators; custom/lifted operators, excluded by <c>IsOrdinaryBinaryArithmetic</c>) is unaffected: the
+    /// positional comparison already succeeds for those, so the swapped fallback is never reached.
+    /// </remarks>
     private static bool BinaryEqual(BinaryExpression x, BinaryExpression y, ParameterBindingContext context)
-        => object.Equals(x.Method, y.Method)
-            && x.IsLifted == y.IsLifted
-            && x.IsLiftedToNull == y.IsLiftedToNull
-            && EqualsCore(x.Left, y.Left, context)
-            && EqualsCore(x.Right, y.Right, context)
+    {
+        if (!object.Equals(x.Method, y.Method) || x.IsLifted != y.IsLifted || x.IsLiftedToNull != y.IsLiftedToNull)
+        {
+            return false;
+        }
+
+        if (EqualsCore(x.Left, y.Left, context) && EqualsCore(x.Right, y.Right, context) && EqualsCore(x.Conversion, y.Conversion, context))
+        {
+            return true;
+        }
+
+        return IsCommutative(x)
+            && IsCommutative(y)
+            && EqualsCore(x.Left, y.Right, context)
+            && EqualsCore(x.Right, y.Left, context)
             && EqualsCore(x.Conversion, y.Conversion, context);
+    }
+
+    /// <summary>Whether <paramref name="binary"/> is an ordinary <see cref="ExpressionType.Add"/> or <see cref="ExpressionType.Multiply"/> node, and therefore mathematically commutative.</summary>
+    /// <param name="binary">The binary expression to classify.</param>
+    /// <returns><see langword="true"/> if <paramref name="binary"/>'s operands may be compared in either order.</returns>
+    private static bool IsCommutative(BinaryExpression binary)
+        => (binary.NodeType == ExpressionType.Add || binary.NodeType == ExpressionType.Multiply)
+            && ExpressionSimplifier.IsOrdinaryBinaryArithmetic(binary);
 
     /// <summary>Compares two <see cref="MemberExpression"/> nodes: member identity, then the receiver.</summary>
     /// <param name="x">The first member access.</param>
@@ -247,11 +285,19 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         return true;
     }
 
-    /// <summary>Compares two <see cref="ConstantExpression"/> nodes, using an exact cross-type numeric model when both are native numeric constants, and null-safe/type-safe value comparison otherwise.</summary>
+    /// <summary>
+    /// Compares two <see cref="ConstantExpression"/> nodes, using an exact cross-type numeric model when
+    /// both are native numeric constants, and null-safe/type-safe value comparison otherwise.
+    /// </summary>
     /// <param name="x">The first constant.</param>
     /// <param name="y">The second constant.</param>
+    /// <param name="safeConstantsOnly">
+    /// When <see langword="true"/>, a non-numeric constant is compared by reference identity of its boxed
+    /// <see cref="ConstantExpression.Value"/> instead of by calling the value's own possibly user-defined
+    /// <see cref="object.Equals(object?)"/> override — see <see cref="ParameterBindingContext.SafeConstantsOnly"/>.
+    /// </param>
     /// <returns><see langword="true"/> if the constants represent the same value.</returns>
-    private static bool ConstantsEqual(ConstantExpression x, ConstantExpression y)
+    private static bool ConstantsEqual(ConstantExpression x, ConstantExpression y, bool safeConstantsOnly)
     {
         if (TryGetExactNumericValue(x, out ExactNumericValue xn) && TryGetExactNumericValue(y, out ExactNumericValue yn))
         {
@@ -260,7 +306,8 @@ public class ExpressionComparer : IEqualityComparer<Expression>
 
         if (x.Type != y.Type) return false;
         if (x.Value is null || y.Value is null) return x.Value is null && y.Value is null;
-        return x.Value.Equals(y.Value);
+
+        return safeConstantsOnly ? ReferenceEquals(x.Value, y.Value) : x.Value.Equals(y.Value);
     }
 
     /// <summary>Attempts to build an exact rational/NaN/infinity key for a constant whose declared <see cref="Expression.Type"/> is one of the native numeric types in <see cref="Types.Number"/>.</summary>
@@ -300,11 +347,22 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// <paramref name="y"/> are expected to be sibling sub-expressions of the same original tree, so a
     /// parameter free relative to both sides that is actually bound by a still-enclosing lambda resolves
     /// correctly via that shared reference, without this method needing to know about that enclosing scope.
+    /// <para>
+    /// A non-numeric <see cref="ConstantExpression"/> is compared by REFERENCE identity of its boxed
+    /// <see cref="ConstantExpression.Value"/>, never by calling the value's own possibly user-defined
+    /// <see cref="object.Equals(object?)"/> — see <see cref="ParameterBindingContext.SafeConstantsOnly"/>.
+    /// This is a deliberate, narrower policy than the public <see cref="Equals(Expression?, Expression?)"/>
+    /// uses: this raw entry point's only caller, <see cref="ExpressionSimplifier"/>'s additive-grouping
+    /// equality, runs automatically as part of ordinary <c>Simplify()</c> calls, so it must never execute
+    /// arbitrary user code (which a constant's own <see cref="object.Equals(object?)"/>/
+    /// <see cref="object.GetHashCode"/> override could contain, with side effects or a thrown exception)
+    /// merely to decide whether two constant terms belong in the same additive group.
+    /// </para>
     /// </remarks>
     /// <param name="x">The first (already simplified, or otherwise final) expression to compare.</param>
     /// <param name="y">The second (already simplified, or otherwise final) expression to compare.</param>
     /// <returns><see langword="true"/> if the two sub-expressions are structurally equivalent.</returns>
-    internal static bool StructuralEqualsRaw(Expression? x, Expression? y) => EqualsCore(x, y, new ParameterBindingContext());
+    internal static bool StructuralEqualsRaw(Expression? x, Expression? y) => EqualsCore(x, y, new ParameterBindingContext(safeConstantsOnly: true));
 
     /// <summary>
     /// Structurally hashes an expression exactly like <see cref="GetHashCode(Expression)"/>, EXCEPT that
@@ -315,7 +373,7 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// </summary>
     /// <param name="e">The (already simplified, or otherwise final) expression to hash, or <see langword="null"/>.</param>
     /// <returns>A hash code consistent with <see cref="StructuralEqualsRaw(Expression?, Expression?)"/>.</returns>
-    internal static int StructuralHashRaw(Expression? e) => Hash(e, new ParameterScopeStack());
+    internal static int StructuralHashRaw(Expression? e) => Hash(e, new ParameterScopeStack(safeConstantsOnly: true));
 
     /// <summary>
     /// Returns a hash code for the specified <see cref="Expression"/> by simplifying it and computing a
@@ -342,7 +400,7 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         null => 0,
         LambdaExpression le => HashLambda(le, scopes),
         ParameterExpression pe => HashParameter(pe, scopes),
-        ConstantExpression ce => HashConstant(ce),
+        ConstantExpression ce => HashConstant(ce, scopes.SafeConstantsOnly),
         UnaryExpression ue => HashUnary(ue, scopes),
         BinaryExpression be => HashBinary(be, scopes),
         MethodCallExpression mce => HashMethodCall(mce, scopes),
@@ -392,10 +450,20 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         return hc.ToHashCode();
     }
 
-    /// <summary>Hashes a <see cref="ConstantExpression"/>, using the exact numeric key (without the original CLR type) for native numeric constants, and <see cref="Expression.Type"/> plus the boxed value's hash otherwise.</summary>
+    /// <summary>Hashes a <see cref="ConstantExpression"/>, using the exact numeric key (without the original CLR type) for native numeric constants, and <see cref="Expression.Type"/> plus a value-derived hash otherwise.</summary>
     /// <param name="ce">The constant to hash.</param>
+    /// <param name="safeConstantsOnly">
+    /// When <see langword="true"/>, a non-numeric constant's boxed value is hashed by
+    /// <see cref="RuntimeHelpers.GetHashCode(object?)"/> (reference identity) instead of the value's own
+    /// possibly user-defined <see cref="object.GetHashCode"/> override, mirroring
+    /// <see cref="ConstantsEqual"/>'s <c>safeConstantsOnly</c> policy so equal keys still hash equally. This
+    /// use of <see cref="RuntimeHelpers.GetHashCode(object?)"/> is only ever a <c>Dictionary</c>/<c>GroupBy</c>
+    /// lookup accelerator (see <see cref="StructuralHashRaw(Expression?)"/>'s caller,
+    /// <see cref="ExpressionSimplifier"/>'s additive grouping) — never the final canonical ORDER, which the
+    /// roadmap requires to never be hash-based.
+    /// </param>
     /// <returns>A hash code mirroring the value comparison <see cref="ConstantsEqual"/> performs.</returns>
-    private static int HashConstant(ConstantExpression ce)
+    private static int HashConstant(ConstantExpression ce, bool safeConstantsOnly)
     {
         var hc = new HashCode();
         hc.Add(ExpressionType.Constant);
@@ -408,7 +476,7 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         {
             hc.Add(false);
             hc.Add(ce.Type);
-            hc.Add(ce.Value?.GetHashCode() ?? 0);
+            hc.Add(ce.Value is null ? 0 : safeConstantsOnly ? RuntimeHelpers.GetHashCode(ce.Value) : ce.Value.GetHashCode());
         }
 
         return hc.ToHashCode();
@@ -434,7 +502,7 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// <summary>Hashes a <see cref="BinaryExpression"/>: node type, result type, operator method, lifting flags, operands, then the coalesce conversion lambda.</summary>
     /// <param name="be">The binary expression to hash.</param>
     /// <param name="scopes">The active parameter scope stack.</param>
-    /// <returns>A hash code mirroring the metadata <see cref="EqualsCore"/>'s binary case compares.</returns>
+    /// <returns>A hash code mirroring the metadata <see cref="EqualsCore"/>'s binary case (including its commutative fallback, see <see cref="IsCommutative(BinaryExpression)"/>) compares.</returns>
     private static int HashBinary(BinaryExpression be, ParameterScopeStack scopes)
     {
         var hc = new HashCode();
@@ -443,8 +511,23 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         hc.Add(be.Method);
         hc.Add(be.IsLifted);
         hc.Add(be.IsLiftedToNull);
-        hc.Add(Hash(be.Left, scopes));
-        hc.Add(Hash(be.Right, scopes));
+
+        int leftHash = Hash(be.Left, scopes);
+        int rightHash = Hash(be.Right, scopes);
+        if (IsCommutative(be))
+        {
+            // Order-independent combination: BinaryEqual accepts a swapped-operand match for an ordinary
+            // Add/Multiply node, so two such nodes it considers equal (e.g. Add(a, b) and Add(b, a) for two
+            // distinct free parameters) must also hash identically regardless of which operand is Left vs
+            // Right, per the IEqualityComparer<T> "equal objects have equal hash codes" contract.
+            hc.Add(unchecked(leftHash + rightHash));
+        }
+        else
+        {
+            hc.Add(leftHash);
+            hc.Add(rightHash);
+        }
+
         hc.Add(Hash(be.Conversion, scopes));
 
         return hc.ToHashCode();
@@ -496,6 +579,23 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     private sealed class ParameterBindingContext
     {
         private readonly List<(ParameterExpression Left, ParameterExpression Right)> _bindings = [];
+
+        /// <summary>
+        /// When <see langword="true"/>, a non-numeric <see cref="ConstantExpression"/> compared through
+        /// this context is compared by reference identity of its boxed value instead of the value's own
+        /// possibly user-defined <see cref="object.Equals(object?)"/> override. Used only by
+        /// <see cref="StructuralEqualsRaw(Expression?, Expression?)"/>: the public, simplifying
+        /// <see cref="Equals(Expression?, Expression?)"/> always uses <see langword="false"/>, preserving
+        /// its historical behavior unchanged.
+        /// </summary>
+        public bool SafeConstantsOnly { get; }
+
+        /// <summary>Initializes a new, empty <see cref="ParameterBindingContext"/>.</summary>
+        /// <param name="safeConstantsOnly">The value of <see cref="SafeConstantsOnly"/>.</param>
+        public ParameterBindingContext(bool safeConstantsOnly = false)
+        {
+            SafeConstantsOnly = safeConstantsOnly;
+        }
 
         /// <summary>Pushes one binding pair per positionally-corresponding parameter when entering a lambda's body.</summary>
         /// <param name="leftParameters">The left lambda's parameters, in declaration order.</param>
@@ -551,6 +651,16 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     private sealed class ParameterScopeStack
     {
         private readonly List<IReadOnlyList<ParameterExpression>> _scopes = [];
+
+        /// <summary>Mirrors <see cref="ParameterBindingContext.SafeConstantsOnly"/> for the hashing side; see its remarks.</summary>
+        public bool SafeConstantsOnly { get; }
+
+        /// <summary>Initializes a new, empty <see cref="ParameterScopeStack"/>.</summary>
+        /// <param name="safeConstantsOnly">The value of <see cref="SafeConstantsOnly"/>.</param>
+        public ParameterScopeStack(bool safeConstantsOnly = false)
+        {
+            SafeConstantsOnly = safeConstantsOnly;
+        }
 
         /// <summary>Pushes a lambda's parameter list when descending into its body.</summary>
         /// <param name="parameters">The lambda's parameters, in declaration order.</param>
