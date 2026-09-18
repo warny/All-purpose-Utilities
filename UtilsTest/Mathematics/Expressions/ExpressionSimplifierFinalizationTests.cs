@@ -254,42 +254,55 @@ public class ExpressionSimplifierFinalizationTests
     // I/J: canonicalization still takes priority over the (future) fast path.
     // ------------------------------------------------------------------------------------------
 
-    /// <summary>Additive canonicalization still applies to an <see cref="ExpressionType.Add"/> node that reaches the fallback.</summary>
+    /// <summary>
+    /// Additive canonicalization still applies to an <see cref="ExpressionType.Add"/> node that reaches
+    /// the fallback.
+    /// </summary>
+    /// <remarks>
+    /// Rewritten for S4 (see <c>Utils/TODO-2026-09-12-expression-simplifier-roadmap.md</c>): the original
+    /// version of this test used two bare/free <see cref="ParameterExpression"/> instances (not bound by an
+    /// enclosing lambda) and compared <see cref="Expression.ToString()"/> directly. Neither survives S4:
+    /// canonical ordering/grouping no longer depends on <see cref="Expression.ToString()"/> at all, and two
+    /// distinct FREE parameters have no name-independent structural total order (see the roadmap's "Free
+    /// parameters" policy on <c>ExpressionCanonicalOrder</c>) — the previous free-parameter version would no
+    /// longer reliably canonicalize <c>Add(a, b)</c> and <c>Add(b, a)</c> to the same tree. Using BOUND
+    /// lambda parameters instead exercises the actual intended invariant: canonical ordering by declaration
+    /// position. The structural/compiled-behavior assertions below replace the <c>ToString()</c> comparison.
+    /// </remarks>
     [TestMethod]
     public void Simplify_AddReachingFallback_StillCanonicalizes()
     {
         var simplifier = new ExpressionSimplifier();
-        ParameterExpression a = Expression.Parameter(typeof(double), "a");
-        ParameterExpression b = Expression.Parameter(typeof(double), "b");
+        Expression<Func<double, double, double>> source1 = (a, b) => a + b;
+        Expression<Func<double, double, double>> source2 = (a, b) => b + a;
 
-        Expression result1 = simplifier.Simplify(Expression.Add(a, b));
-        Expression result2 = simplifier.Simplify(Expression.Add(b, a));
+        Expression result1 = simplifier.Simplify(source1);
+        Expression result2 = simplifier.Simplify(source2);
 
-        // Compare the expression trees themselves. A compiled delegate's ToString() is always the
-        // same generic "System.Func`3[...]" string regardless of the underlying expression, so it
-        // would not actually prove canonicalization normalized the two orderings to the same tree.
-        Assert.AreEqual(result1.ToString(), result2.ToString());
+        Assert.AreEqual(result1, result2, ExpressionComparer.Default);
 
-        var compiled = Expression.Lambda<Func<double, double, double>>(result1, a, b).Compile();
+        var compiled = ((Expression<Func<double, double, double>>)result1).Compile();
         Assert.AreEqual(7.0, compiled(3.0, 4.0));
     }
 
-    /// <summary>Multiplicative canonicalization still applies to an <see cref="ExpressionType.Multiply"/> node that reaches the fallback.</summary>
+    /// <summary>
+    /// Multiplicative canonicalization still applies to an <see cref="ExpressionType.Multiply"/> node that
+    /// reaches the fallback.
+    /// </summary>
+    /// <remarks>See the S4 rewrite note on <see cref="Simplify_AddReachingFallback_StillCanonicalizes"/>; the same reasoning applies here.</remarks>
     [TestMethod]
     public void Simplify_MultiplyReachingFallback_StillCanonicalizes()
     {
         var simplifier = new ExpressionSimplifier();
-        ParameterExpression a = Expression.Parameter(typeof(double), "a");
-        ParameterExpression b = Expression.Parameter(typeof(double), "b");
+        Expression<Func<double, double, double>> source1 = (a, b) => a * b;
+        Expression<Func<double, double, double>> source2 = (a, b) => b * a;
 
-        Expression result1 = simplifier.Simplify(Expression.Multiply(a, b));
-        Expression result2 = simplifier.Simplify(Expression.Multiply(b, a));
+        Expression result1 = simplifier.Simplify(source1);
+        Expression result2 = simplifier.Simplify(source2);
 
-        // Compare the expression trees themselves (see the Add test above for why comparing a
-        // compiled delegate's ToString() would not actually exercise canonicalization).
-        Assert.AreEqual(result1.ToString(), result2.ToString());
+        Assert.AreEqual(result1, result2, ExpressionComparer.Default);
 
-        var compiled = Expression.Lambda<Func<double, double, double>>(result1, a, b).Compile();
+        var compiled = ((Expression<Func<double, double, double>>)result1).Compile();
         Assert.AreEqual(12.0, compiled(3.0, 4.0));
     }
 

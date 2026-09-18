@@ -280,6 +280,44 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     }
 
     /// <summary>
+    /// Structurally compares two expressions exactly like <see cref="Equals(Expression?, Expression?)"/>,
+    /// EXCEPT that neither operand is ever passed through <see cref="ExpressionSimplifier.Simplify(Expression)"/>
+    /// first, and no top-level <see cref="ReferenceEquals(object?, object?)"/> shortcut is applied.
+    /// </summary>
+    /// <remarks>
+    /// This is the "raw, already-simplified expression" helper the S4 structural canonicalization key
+    /// (<c>ExpressionSimplifier</c>'s additive grouping) shares with this comparer, per the roadmap's
+    /// explicit instruction not to call the public, simplifying <see cref="Equals(Expression?, Expression?)"/>
+    /// from inside canonical-key generation: <see cref="ExpressionSimplifier"/> already calls this method
+    /// from deep inside its own <c>Simplify</c> recursion (building an additive-grouping key while
+    /// finalizing an <c>Add</c>/<c>Subtract</c> node), and re-entering <see cref="ExpressionSimplifier.Simplify(Expression)"/>
+    /// there would recursively re-simplify an expression that is already mid-simplification. Both operands
+    /// passed here are therefore expected to already be simplified (or otherwise already in the exact
+    /// structural shape the caller wants compared) — this method performs no simplification of its own.
+    /// A free <see cref="ParameterExpression"/> (not bound by a <see cref="LambdaExpression"/> encountered
+    /// during this call's own recursive descent) is compared by reference, exactly like
+    /// <see cref="Equals(Expression?, Expression?)"/>'s own free-parameter policy: <paramref name="x"/> and
+    /// <paramref name="y"/> are expected to be sibling sub-expressions of the same original tree, so a
+    /// parameter free relative to both sides that is actually bound by a still-enclosing lambda resolves
+    /// correctly via that shared reference, without this method needing to know about that enclosing scope.
+    /// </remarks>
+    /// <param name="x">The first (already simplified, or otherwise final) expression to compare.</param>
+    /// <param name="y">The second (already simplified, or otherwise final) expression to compare.</param>
+    /// <returns><see langword="true"/> if the two sub-expressions are structurally equivalent.</returns>
+    internal static bool StructuralEqualsRaw(Expression? x, Expression? y) => EqualsCore(x, y, new ParameterBindingContext());
+
+    /// <summary>
+    /// Structurally hashes an expression exactly like <see cref="GetHashCode(Expression)"/>, EXCEPT that
+    /// <paramref name="e"/> is never passed through <see cref="ExpressionSimplifier.Simplify(Expression)"/>
+    /// first. See <see cref="StructuralEqualsRaw(Expression?, Expression?)"/>'s remarks for why this raw
+    /// entry point exists and is consistent with it (a hash mirroring an equality contract must agree with
+    /// that exact equality, not with the simplifying public <see cref="Equals(Expression?, Expression?)"/>).
+    /// </summary>
+    /// <param name="e">The (already simplified, or otherwise final) expression to hash, or <see langword="null"/>.</param>
+    /// <returns>A hash code consistent with <see cref="StructuralEqualsRaw(Expression?, Expression?)"/>.</returns>
+    internal static int StructuralHashRaw(Expression? e) => Hash(e, new ParameterScopeStack());
+
+    /// <summary>
     /// Returns a hash code for the specified <see cref="Expression"/> by simplifying it and computing a
     /// structural hash that mirrors <see cref="Equals(Expression?, Expression?)"/>: alpha-equivalent
     /// lambdas and exact cross-type numeric constants hash identically, satisfying the
@@ -557,7 +595,7 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// mantissa decomposition) - never via <see cref="object.ToString"/> or a lossy round trip through
     /// another numeric type.
     /// </summary>
-    private readonly struct ExactNumericValue : IEquatable<ExactNumericValue>
+    internal readonly struct ExactNumericValue : IEquatable<ExactNumericValue>, IComparable<ExactNumericValue>
     {
         /// <summary>The category of an <see cref="ExactNumericValue"/>: an exact finite rational, or one of the three non-finite IEEE categories.</summary>
         private enum NumericKind
@@ -735,5 +773,36 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         /// <inheritdoc/>
         public override int GetHashCode()
             => _kind == NumericKind.Finite ? HashCode.Combine(_kind, _numerator, _denominator) : HashCode.Combine(_kind);
+
+        /// <summary>
+        /// Deterministically orders exact numeric values: <see cref="NumericKind.NegativeInfinity"/> first,
+        /// then <see cref="NumericKind.Finite"/> values by their exact rational value, then
+        /// <see cref="NumericKind.PositiveInfinity"/>, then <see cref="NumericKind.NaN"/> last. Used by the
+        /// S4 structural canonical-order key (<see cref="Utils.Mathematics.Expressions.ExpressionCanonicalOrder"/>)
+        /// to order numeric <see cref="ConstantExpression"/> terms without ever formatting the value as text.
+        /// </summary>
+        /// <param name="other">The value to compare against.</param>
+        /// <returns>A negative value if this value sorts before <paramref name="other"/>, zero if equal, positive otherwise.</returns>
+        public int CompareTo(ExactNumericValue other)
+        {
+            int kindRank = KindRank(_kind);
+            int otherKindRank = KindRank(other._kind);
+            if (kindRank != otherKindRank) return kindRank.CompareTo(otherKindRank);
+            if (_kind != NumericKind.Finite) return 0;
+
+            // Denominators are always positive after Normalize, so cross-multiplication preserves order.
+            BigInteger left = _numerator * other._denominator;
+            BigInteger right = other._numerator * _denominator;
+            return left.CompareTo(right);
+        }
+
+        private static int KindRank(NumericKind kind) => kind switch
+        {
+            NumericKind.NegativeInfinity => 0,
+            NumericKind.Finite => 1,
+            NumericKind.PositiveInfinity => 2,
+            NumericKind.NaN => 3,
+            _ => 4,
+        };
     }
 }

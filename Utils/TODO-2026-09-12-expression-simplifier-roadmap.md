@@ -426,6 +426,160 @@ After S1 establishes reliable structural comparison semantics, design a structur
 
 Do not introduce a grouping-key cache until the observable `ToString()`/key-evaluation behavior and compatibility impact have been explicitly characterized.
 
+#### S4 progress (2026-09-18) — structural canonical keys implemented
+
+S4 is implemented. `Expression.ToString()` and arbitrary sub-expression/object `ToString()` overrides no
+longer participate in any canonical ordering or grouping decision made by `ExpressionSimplifier`.
+
+**Files changed:**
+
+- `Utils/Expressions/ExpressionTranformer.cs` — two narrowly-scoped `internal virtual` hooks,
+  `OnEnterLambdaScope`/`OnExitLambdaScope`, bracket `PrepareLambda`'s body traversal (`try`/`finally`).
+  Base implementation is a no-op, so every existing `ExpressionTransformer` subclass's behavior is
+  unchanged; only the exact built-in `ExpressionSimplifier` overrides them (same gating pattern as the S1
+  `RebuildUnaryExpression`/`RebuildLambdaExpression` hooks).
+- `Utils/Expressions/ExpressionComparer.cs` — `ExactNumericValue` (the exact rational/NaN/infinity numeric
+  model) is now `internal` (was `private`) and gained `IComparable<ExactNumericValue>`, so the new
+  structural-key code reuses the *same* exact numeric model instead of a second implementation. Two new
+  `internal static` entry points, `StructuralEqualsRaw`/`StructuralHashRaw`, expose the existing
+  `EqualsCore`/`Hash` recursion directly (fresh `ParameterBindingContext`/`ParameterScopeStack`, no
+  `Simplify()` call) for reuse by the S4 additive-grouping equality. Public `Equals`/`GetHashCode` behavior
+  is unchanged.
+- `Utils/Expressions/ExpressionCanonicalOrder.cs` (new) — the structural canonical-order key itself: an
+  internal `KeyNode` hierarchy (`ConstantKey`, `ParameterKey`, `UnaryKey`, `BinaryKey`, `MethodCallKey`,
+  `MemberKey`, `LambdaKey`, plus `NullKey`/`UnsupportedKey`) with a fixed per-kind rank and
+  deterministic, reflection-metadata-based `Type`/`MethodInfo`/`MemberInfo` comparison (namespace/name text,
+  declaring type, generic arity/arguments, static/instance, parameter/return types; a
+  `MetadataToken`/`Module`/`Assembly` tie-break only for the practically-unreachable case where every other
+  dimension ties). No `GetHashCode()`, `RuntimeHelpers.GetHashCode()`, `HashCode`, object reference order, or
+  `ToString()` participates in ordering.
+- `Utils/Expressions/ExpressionSimplifier.cs` — `GetCanonicalExpressionKey` (the `expression.ToString()`
+  method) is removed outright. `GetAdditiveGroupingKey` (the `"func:...:catOrder"`/`"expr:..."` string
+  builder) is replaced by `ClassifyForAdditiveGrouping` (same classification rule: `Power(MethodCall, exp)`
+  and bare `MethodCall` cluster by function family/category, ignoring the exponent; everything else is
+  "opaque") plus a dedicated `[ThreadStatic]` lexical-scope stack and the new comparers described below.
+  `CanonicalizeAdditiveExpression`/`CanonicalizeMultiplicativeExpression` now order/group via those, never
+  via string keys.
+
+**Structural-key architecture.** Two deliberately separate mechanisms, matching the roadmap's explicit
+"do not replace `GetAdditiveGroupingKey` with a full structural expression key" instruction:
+
+1. **Complete canonical order** (`ExpressionCanonicalOrder.BuildKey`/`Compare`) — the full identity used for
+   the final tie-break (`.ThenBy(term => term.Key)`) and for the entire multiplicative-factor ordering.
+   Distinguishes exact `Method`/`Type`/exponent/every structural detail for the seven node families
+   `ExpressionComparer` already understands (`LambdaExpression`, `ParameterExpression`,
+   `ConstantExpression`, `UnaryExpression`, `BinaryExpression`, `MethodCallExpression`,
+   `MemberExpression`).
+2. **Additive grouping** (`ClassifyForAdditiveGrouping` + `AdditiveGroupingEqualityComparer`, both in
+   `ExpressionSimplifier.cs`) — deliberately coarser: a `Power(MethodCall, exponent)` groups by the call's
+   function category and structural argument identity, ignoring the exponent, so `Sin`/`Cos`/`Tan` (same
+   category) with the same arguments still cluster together as before. Grouping *equality* uses
+   `ExpressionComparer.StructuralEqualsRaw`/`StructuralHashRaw` (wrapped with a same-instance shortcut), a
+   *separate* mechanism from `KeyNode`'s order ties — see "Unsupported node kinds" below for why conflating
+   them would be unsafe. Grouping *order* (which bucket of the coarse classification sorts before which,
+   the first-level `OrderBy`) reuses the complete key for the "opaque" bucket and a lexicographic
+   per-argument complete-key comparison for the "function-like" bucket, so the roadmap's example — a
+   `Power(MethodCall, exponent)` term groups by its call's arguments/category but the *complete* key still
+   distinguishes the exponent — holds by construction (proven by
+   `PowerWrappedFunctionGrouping_DistinguishesExponentsInCompleteKey`).
+
+**Parameter-scope / binding policy.** A `ParameterExpression` bound by a `LambdaExpression` is encoded as
+`(relative depth, declaration position, declared type)` — a De-Bruijn-style index — never by `Name`. Two
+alpha-equivalent lambdas (any parameter names, any `ParameterExpression` instances) produce identical keys;
+two distinct same-named parameters in one lambda remain distinguishable by position. The lexical scope
+enclosing the node currently being canonicalized (needed because `FinalizeExpression` sees only the
+Add/Multiply node's own subtree, not its enclosing lambdas) is captured once per canonicalization call from
+a `[ThreadStatic]` stack maintained by `ExpressionSimplifier`'s `OnEnterLambdaScope`/`OnExitLambdaScope`
+override, *not* stored as shared mutable instance state (`ExpressionExtensions`/`ExpressionComparer` each
+hold their own static `ExpressionSimplifier` instance, and simplification is both concurrent-callable and
+re-entrant through `ExpressionComparer.Default`). `[ThreadStatic]` — rather than fully explicit per-call
+context propagation — was chosen because propagating an explicit scope parameter through the entire
+recursive engine would require changing the signature of `ExpressionTransformer.PrepareExpression`/
+`FinalizeExpression`, both `protected virtual` extensibility points a third-party subclass in another
+assembly can already override; the roadmap explicitly rules out a new public extensibility contract for
+this. `[ThreadStatic]` gives each OS thread an independent stack (no cross-thread leakage), and every push
+is paired with a `finally`-guarded pop, so re-entrant calls (e.g. a rule invoking
+`ExpressionComparer.Default`, which itself calls `Simplify`) always leave the stack exactly as the outer
+call left it once they return — proven by `Concurrency_ManyThreadsSharedSimplifier_NoScopeStateLeakage` and
+`Reentrancy_ThroughExpressionComparerDefault_OuterCanonicalizationStillCorrect`. A nested `LambdaExpression`
+encountered *within* the term being keyed (not via the ambient stack) is handled by `BuildKey`'s own local,
+non-shared scope list — ordinary recursive-call-stack state, not ambient/ThreadStatic.
+
+**Free-parameter policy.** A `ParameterExpression` not found in any active scope (ambient or local-to-the-
+term) is "free". Two distinct free parameters have no name-independent structural total order (unlike a
+bound parameter's declaration position, nothing else about a free parameter is a canonical tree property),
+so `ParameterKey` compares two free parameters only by declared `Type` and otherwise reports a tie (`0`),
+relying on `Enumerable.OrderBy`'s documented stability to preserve original source order rather than
+inventing one — mirroring `ExpressionComparer`'s own free-parameter (reference-equality-only) policy.
+
+**Supported node families:** `LambdaExpression`, `ParameterExpression`, `ConstantExpression`,
+`UnaryExpression`, `BinaryExpression`, `MethodCallExpression`, `MemberExpression` — the same seven
+`ExpressionComparer` already understands structurally.
+
+**Deliberately unsupported node families:** every other node kind (`ConditionalExpression`, `Extension`,
+`New`, `Block`, ...). `Build` routes any such node to a single shared `UnsupportedKey` via a plain `is`
+pattern-match dispatch — it is never inspected further, and in particular `ToString()` is never called on
+it. `UnsupportedKey.CompareSameRank` always returns `0` (a stable-sort-preserving tie, exactly like the
+free-parameter tie above) but this is *only* used for the complete ORDER key; the separate additive-grouping
+EQUALITY (`AdditiveGroupingEqualityComparer`, via `ExpressionComparer.StructuralEqualsRaw`) never claims two
+distinct unsupported-kind instances are the same group — `ExpressionComparer`'s own `EqualsCore` already
+returns `false` unconditionally for a nested unsupported node kind, by design (see its S1 remarks). Proven
+by `TwoDistinctConditionalTerms_NeverConflated` (two different `ConditionalExpression` terms both survive as
+separate nodes) and the `ThrowingExtensionTerm_*`/`ThrowingExtensionArgument_*` tests (a `ToString()`-
+throwing `Extension` node survives conservatively and its `ToString()` is never called, including as a
+method-call argument reached through the additive-grouping classification — the exact code path that used
+to call `string.Join<Expression>`, invoking every argument's `ToString()`).
+
+**Regression tests added:** `UtilsTest/Mathematics/Expressions/ExpressionSimplifierStructuralCanonicalizationTests.cs`
+(25 tests, covering the full matrix: bound-parameter-name independence, duplicate-name convergence by
+position, nested-scope/capture/shadowing, `ToString()`-must-not-execute for both a bare atomic term and a
+method-call argument, same-text-different-`Method` custom operators, exact method-call identity across two
+same-name/signature methods on different declaring types, power-wrapped-function-grouping exponent
+distinction plus the sin²+cos² positive control, nine ordinary positive controls (bound addition/
+multiplication/three-term/subtraction-sign/Sin-Cos/Max-Min/decimal/custom-operator-atomicity/lifted-
+nullable), two unsupported-node-conservatism cases, and concurrency/re-entrancy). Every test in the
+"must fail on the pre-S4 baseline" category (parameter-name independence, duplicate-name convergence,
+`ToString()`-must-not-execute ×3, same-text-different-method distinguishability) was confirmed to fail
+against the pre-fix `GetCanonicalExpressionKey`/`GetAdditiveGroupingKey` implementation before the
+production change, and to pass after it.
+
+**Existing tests superseded:** `UtilsTest/Mathematics/Expressions/ExpressionSimplifierAdditiveGroupingKeyTests.cs`
+had nine characterization tests reflecting into the private `GetAdditiveGroupingKey(Expression)` method and
+asserting its exact `"func:...:catOrder"`/`"expr:..."` text, per-argument `ToString()` call count/order,
+unescaped `"|"` handling, `null`-`ToString()` joining, and `ToString()`-exception propagation. That method no
+longer exists, so those tests were removed (with an explanation left in the file's remarks, per `AGENTS.md`)
+rather than kept as dead reflection-based assertions; their useful end-to-end coverage (Sin/Cos/Max/Min/
+power-wrapped-function grouping, subtraction sign handling) was already duplicated by this file's own
+end-to-end tests, which are kept unchanged. `ExpressionSimplifierFinalizationTests.Simplify_AddReachingFallback_StillCanonicalizes`/
+`Simplify_MultiplyReachingFallback_StillCanonicalizes` used two bare/free `ParameterExpression` instances and
+compared `Expression.ToString()` directly; both are incompatible with S4 (free parameters have no
+name-independent order, and canonicalization no longer depends on `ToString()` at all), so they were
+rewritten around bound lambda parameters, asserting via `ExpressionComparer.Default` plus compiled behavior
+instead — preserving their actual protected invariant (fallback Add/Multiply canonicalization still
+happens) rather than weakening it.
+
+**Validation performed (2026-09-18, in order):**
+
+1. Focused new S4 tests: `ExpressionSimplifierStructuralCanonicalizationTests` — 25/25 passed.
+2. Complete `UtilsTest/Mathematics/Expressions` namespace (includes all S1/S2/S3 regression suites, the
+   Gherkin feature scenarios, and the comparer/finalization/reconstruction-fidelity suites): 566/566 passed.
+3. Full `UtilsTest.Unit`: 7642/7642 passed, 0 skipped.
+4. Full `UtilsTest.Functional`: 383/383 passed.
+5. Full `UtilsTest.Security`: 225/228 passed, 3 skipped — all three
+   (`TryCreate_ReturnsNull_OnNonWindowsPlatform`, `VerifyAuthenticodeSignature_OnNonWindows_ThrowsPlatformNotSupportedException`,
+   `HasValidAuthenticodeSignature_OnNonWindows_ThrowsPlatformNotSupportedException`) are pre-existing,
+   unrelated, platform-gated tests that only run on a non-Windows OS — expected to skip on this Windows
+   environment regardless of this change.
+6. Release build of `Utils.sln`: succeeded, no errors (one pre-existing, unrelated `CS8618` warning in
+   `Utils/Objects/ReturnValue.cs`).
+
+**Deferred to S5 (explicitly out of scope here):** a cross-call key cache; recomputing `KeyNode`s fewer
+times per comparison; `ExpressionComparer` temporary-array/search allocation cleanup; any other
+allocation/CPU-cost tuning. `AnnotatedAdditiveTerm` computes each term's key exactly once per
+canonicalization call (mirroring the pre-S4 `OrderBy(keySelector)` idiom, not a new cache), and the
+additive-grouping order comparison still rebuilds argument-list keys per pairwise comparison — both
+deliberately left as-is for S5 to profile and address.
+
 ### S5 — Construction-performance cleanup
 
 Only after the correctness/structure stages above, re-profile construction-time allocations and CPU cost in the simplifier.

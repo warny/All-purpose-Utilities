@@ -1052,11 +1052,61 @@ public abstract class ExpressionTransformer
             expressionParameters[i] = (ParameterExpression)PrepareExpression(le.Parameters[i]);
         }
 
-        Expression preparedBody = TransformCore(le.Body);
+        // OnEnterLambdaScope/OnExitLambdaScope bracket the body traversal so a same-assembly
+        // subclass can track the currently-open lexical parameter scope for the single, synchronous
+        // recursive descent through TransformCore(le.Body) below — see the hooks' remarks. The
+        // finally block guarantees the scope is always closed, even if a rule or PrepareExpression
+        // throws while preparing the body.
+        OnEnterLambdaScope(le, expressionParameters);
+        Expression preparedBody;
+        try
+        {
+            preparedBody = TransformCore(le.Body);
+        }
+        finally
+        {
+            OnExitLambdaScope(le, expressionParameters);
+        }
+
         LambdaExpression copied = RebuildLambdaExpression(le, preparedBody, expressionParameters);
 
         return new TransformContext(copied, expressionParameters);
     }
+
+    /// <summary>
+    /// Called immediately before <see cref="TransformCore(Expression)"/> visits <paramref name="original"/>'s
+    /// body, once its (already prepared) <paramref name="parameters"/> are known. Paired with
+    /// <see cref="OnExitLambdaScope"/>, always called even if preparing the body throws.
+    /// </summary>
+    /// <remarks>
+    /// <c>internal virtual</c>, not <c>protected</c>: like <see cref="RebuildUnaryExpression"/> and
+    /// <see cref="RebuildLambdaExpression"/>, this is deliberately not a new public/protected
+    /// extensibility point for third-party <see cref="ExpressionTransformer"/> subclasses. It exists so a
+    /// same-assembly subclass can track the currently-open lexical parameter-binding scope for the single
+    /// synchronous recursive descent currently running through this instance's <c>Transform</c>/
+    /// <see cref="TransformCore(Expression)"/> call chain — without storing that state as shared mutable
+    /// instance state (which would not be safe across concurrent or re-entrant calls on a shared
+    /// instance). See <see cref="Utils.Mathematics.Expressions.ExpressionSimplifier"/>'s override, which
+    /// pushes onto a <c>[ThreadStatic]</c> scope stack used only to seed the S4 structural canonical
+    /// ordering key with the enclosing lambda scope it cannot otherwise observe (a canonicalization
+    /// decision made several frames below this call, deep inside <c>FinalizeExpression</c>, has no other
+    /// way to learn which lambdas currently enclose the node it is ordering).
+    /// <para>
+    /// The base implementation is a no-op, so every other <see cref="ExpressionTransformer"/> subclass's
+    /// behavior is completely unchanged by this hook's existence.
+    /// </para>
+    /// </remarks>
+    /// <param name="original">The lambda expression whose body is about to be prepared.</param>
+    /// <param name="parameters">The lambda's (already prepared) parameters, in declaration order.</param>
+    internal virtual void OnEnterLambdaScope(LambdaExpression original, ParameterExpression[] parameters) { }
+
+    /// <summary>
+    /// Paired with <see cref="OnEnterLambdaScope"/>: called once <paramref name="original"/>'s body has
+    /// finished being prepared (successfully or not). The base implementation is a no-op.
+    /// </summary>
+    /// <param name="original">The lambda expression whose body was just prepared.</param>
+    /// <param name="parameters">The same parameters passed to the paired <see cref="OnEnterLambdaScope"/> call.</param>
+    internal virtual void OnExitLambdaScope(LambdaExpression original, ParameterExpression[] parameters) { }
 
     /// <summary>
     /// Rebuilds a <see cref="LambdaExpression"/> from its (already prepared) <paramref name="body"/> and
