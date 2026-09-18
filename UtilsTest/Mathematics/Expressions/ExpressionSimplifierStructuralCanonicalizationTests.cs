@@ -235,11 +235,21 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
     /// </summary>
     private sealed class ThrowingExpression : Expression
     {
+        /// <summary>The number of times <see cref="ToString"/> has been called.</summary>
         public int ToStringCallCount { get; private set; }
+
+        /// <inheritdoc/>
         public override Type Type => typeof(double);
+
+        /// <inheritdoc/>
         public override ExpressionType NodeType => ExpressionType.Extension;
+
+        /// <inheritdoc/>
         public override bool CanReduce => false;
 
+        /// <summary>Records a call in <see cref="ToStringCallCount"/>, then throws <see cref="ToStringProbeException"/>.</summary>
+        /// <returns>Never returns.</returns>
+        /// <exception cref="ToStringProbeException">Always thrown.</exception>
         public override string ToString()
         {
             ToStringCallCount++;
@@ -312,7 +322,10 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
     /// </summary>
     private sealed class HostileConstant
     {
+        /// <summary>The number of times <see cref="Equals(object?)"/> has been called.</summary>
         public int EqualsCallCount { get; private set; }
+
+        /// <summary>The number of times <see cref="GetHashCode"/> has been called.</summary>
         public int GetHashCodeCallCount { get; private set; }
 
         /// <inheritdoc/>
@@ -638,6 +651,116 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
         int backward = InvokeCompareMethod(dynamicMethod2, dynamicMethod1);
 
         Assert.AreEqual(Math.Sign(forward), -Math.Sign(backward), "Comparison must be antisymmetric, even for a conservative tie (0 == -0).");
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // Post-review hardening, round 2: bool/char/enum constants are known-safe (never call a
+    // user-defined Equals/GetHashCode/culture-dependent IComparable) and must therefore still
+    // participate in the deterministic complete ORDER key, not fall back to a tie.
+    // ------------------------------------------------------------------------------------------
+
+    /// <summary>Test-only method distinguishing its result by a <see cref="bool"/> constant argument, used to prove <see cref="bool"/> constants order deterministically.</summary>
+    /// <param name="value">The argument.</param>
+    /// <returns>1.0 for <see langword="true"/>, 0.0 for <see langword="false"/>.</returns>
+    private static double FromBool(bool value) => value ? 1.0 : 0.0;
+
+    /// <summary>Test-only method distinguishing its result by a <see cref="char"/> constant argument, used to prove <see cref="char"/> constants order deterministically.</summary>
+    /// <param name="value">The argument.</param>
+    /// <returns>The character's numeric code point.</returns>
+    private static double FromChar(char value) => value;
+
+    /// <summary>Test-only enum with two members, used to prove enum constants order deterministically.</summary>
+    private enum SampleColor
+    {
+        /// <summary>The first member.</summary>
+        Red,
+
+        /// <summary>The second member.</summary>
+        Blue,
+    }
+
+    /// <summary>Test-only method distinguishing its result by a <see cref="SampleColor"/> constant argument, used to prove enum constants order deterministically.</summary>
+    /// <param name="value">The argument.</param>
+    /// <returns>The member's underlying numeric value.</returns>
+    private static double FromColor(SampleColor value) => (int)value;
+
+    /// <summary>Extracts the single constant argument's boxed value from a method-call additive term.</summary>
+    /// <param name="callTerm">A <see cref="MethodCallExpression"/> with exactly one <see cref="ConstantExpression"/> argument.</param>
+    /// <returns>The argument's boxed value.</returns>
+    private static object ConstantArgumentOf(Expression callTerm) => ((ConstantExpression)((MethodCallExpression)callTerm).Arguments[0]).Value!;
+
+    /// <summary>
+    /// Two additive terms differing only by a <see cref="bool"/> constant argument must canonicalize to the
+    /// same relative order regardless of source order: <see cref="bool"/> is a known-safe constant type
+    /// (see <c>ExpressionComparer.IsKnownSafeConstantValue</c>), so the complete order key must distinguish
+    /// them deterministically rather than tying (which would let source order leak through).
+    /// </summary>
+    [TestMethod]
+    public void ConstantOrdering_BoolConstants_CanonicalizeDeterministicallyRegardlessOfSourceOrder()
+    {
+        var simplifier = new ExpressionSimplifier();
+        MethodInfo fromBool = typeof(ExpressionSimplifierStructuralCanonicalizationTests).GetMethod(nameof(FromBool), BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        var sourceForward = Expression.Lambda<Func<double>>(
+            Expression.Add(Expression.Call(fromBool, Expression.Constant(false)), Expression.Call(fromBool, Expression.Constant(true))));
+        var sourceBackward = Expression.Lambda<Func<double>>(
+            Expression.Add(Expression.Call(fromBool, Expression.Constant(true)), Expression.Call(fromBool, Expression.Constant(false))));
+
+        var resultForward = (LambdaExpression)simplifier.Simplify(sourceForward);
+        var resultBackward = (LambdaExpression)simplifier.Simplify(sourceBackward);
+
+        var bodyForward = (BinaryExpression)resultForward.Body;
+        var bodyBackward = (BinaryExpression)resultBackward.Body;
+
+        Assert.AreEqual(ConstantArgumentOf(bodyForward.Left), ConstantArgumentOf(bodyBackward.Left));
+        Assert.AreEqual(ConstantArgumentOf(bodyForward.Right), ConstantArgumentOf(bodyBackward.Right));
+        CollectionAssert.AreEquivalent(new object[] { false, true }, new[] { ConstantArgumentOf(bodyForward.Left), ConstantArgumentOf(bodyForward.Right) });
+    }
+
+    /// <summary>Character-constant equivalent of <see cref="ConstantOrdering_BoolConstants_CanonicalizeDeterministicallyRegardlessOfSourceOrder"/>.</summary>
+    [TestMethod]
+    public void ConstantOrdering_CharConstants_CanonicalizeDeterministicallyRegardlessOfSourceOrder()
+    {
+        var simplifier = new ExpressionSimplifier();
+        MethodInfo fromChar = typeof(ExpressionSimplifierStructuralCanonicalizationTests).GetMethod(nameof(FromChar), BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        var sourceForward = Expression.Lambda<Func<double>>(
+            Expression.Add(Expression.Call(fromChar, Expression.Constant('a')), Expression.Call(fromChar, Expression.Constant('b'))));
+        var sourceBackward = Expression.Lambda<Func<double>>(
+            Expression.Add(Expression.Call(fromChar, Expression.Constant('b')), Expression.Call(fromChar, Expression.Constant('a'))));
+
+        var resultForward = (LambdaExpression)simplifier.Simplify(sourceForward);
+        var resultBackward = (LambdaExpression)simplifier.Simplify(sourceBackward);
+
+        var bodyForward = (BinaryExpression)resultForward.Body;
+        var bodyBackward = (BinaryExpression)resultBackward.Body;
+
+        Assert.AreEqual(ConstantArgumentOf(bodyForward.Left), ConstantArgumentOf(bodyBackward.Left));
+        Assert.AreEqual(ConstantArgumentOf(bodyForward.Right), ConstantArgumentOf(bodyBackward.Right));
+        CollectionAssert.AreEquivalent(new object[] { 'a', 'b' }, new[] { ConstantArgumentOf(bodyForward.Left), ConstantArgumentOf(bodyForward.Right) });
+    }
+
+    /// <summary>Enum-constant equivalent of <see cref="ConstantOrdering_BoolConstants_CanonicalizeDeterministicallyRegardlessOfSourceOrder"/>.</summary>
+    [TestMethod]
+    public void ConstantOrdering_EnumConstants_CanonicalizeDeterministicallyRegardlessOfSourceOrder()
+    {
+        var simplifier = new ExpressionSimplifier();
+        MethodInfo fromColor = typeof(ExpressionSimplifierStructuralCanonicalizationTests).GetMethod(nameof(FromColor), BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        var sourceForward = Expression.Lambda<Func<double>>(
+            Expression.Add(Expression.Call(fromColor, Expression.Constant(SampleColor.Red)), Expression.Call(fromColor, Expression.Constant(SampleColor.Blue))));
+        var sourceBackward = Expression.Lambda<Func<double>>(
+            Expression.Add(Expression.Call(fromColor, Expression.Constant(SampleColor.Blue)), Expression.Call(fromColor, Expression.Constant(SampleColor.Red))));
+
+        var resultForward = (LambdaExpression)simplifier.Simplify(sourceForward);
+        var resultBackward = (LambdaExpression)simplifier.Simplify(sourceBackward);
+
+        var bodyForward = (BinaryExpression)resultForward.Body;
+        var bodyBackward = (BinaryExpression)resultBackward.Body;
+
+        Assert.AreEqual(ConstantArgumentOf(bodyForward.Left), ConstantArgumentOf(bodyBackward.Left));
+        Assert.AreEqual(ConstantArgumentOf(bodyForward.Right), ConstantArgumentOf(bodyBackward.Right));
+        CollectionAssert.AreEquivalent(new object[] { SampleColor.Red, SampleColor.Blue }, new[] { ConstantArgumentOf(bodyForward.Left), ConstantArgumentOf(bodyForward.Right) });
     }
 
     // ------------------------------------------------------------------------------------------

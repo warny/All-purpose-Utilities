@@ -875,4 +875,35 @@ public class ExpressionComparerTests
 
         Assert.IsFalse(ExpressionComparer.Default.Equals(left, right));
     }
+
+    /// <summary>
+    /// Characterizes a deliberate, narrowly-scoped WIDENING of this comparer's public equivalence relation
+    /// introduced by the commutative fallback fix above, distinct from the "same free parameter instance
+    /// used twice" case those other tests cover: two DIFFERENT free <see cref="ParameterExpression"/>
+    /// instances that happen to share the SAME <see cref="ParameterExpression.Name"/> ("v" for both).
+    /// </summary>
+    /// <remarks>
+    /// Before the commutative fallback fix, <c>Equals(Add(p, q), Add(q, p))</c> for two such parameters
+    /// returned <see langword="false"/>: the pre-S4 textual canonical key tied on the identical name text
+    /// "v" for both operands, so the simplifier's stable sort preserved each side's own source operand
+    /// order unchanged, and this comparer's then-purely-positional <c>BinaryEqual</c> then compared <c>p</c>
+    /// against <c>q</c> positionally and found them reference-unequal. The commutative fallback now matches
+    /// them via the swapped comparison (<c>p</c> against <c>p</c>, <c>q</c> against <c>q</c>), so this now
+    /// returns <see langword="true"/>. This is intentional and mathematically justified (ordinary addition
+    /// really is commutative), not an oversight: this test exists to make the widening an explicit,
+    /// observable contract rather than an undocumented side effect of the free-parameter regression fix.
+    /// </remarks>
+    [TestMethod]
+    public void FreeParameters_SameNameDistinctInstances_CommutativeAddition_NowEqual()
+    {
+        ParameterExpression p = P("v");
+        ParameterExpression q = P("v");
+        Assert.AreNotSame(p, q);
+
+        Expression left = Expression.Add(p, q);
+        Expression right = Expression.Add(q, p);
+
+        Assert.IsTrue(ExpressionComparer.Default.Equals(left, right));
+        Assert.AreEqual(ExpressionComparer.Default.GetHashCode(left), ExpressionComparer.Default.GetHashCode(right));
+    }
 }

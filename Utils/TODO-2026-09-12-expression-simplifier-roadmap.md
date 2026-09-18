@@ -444,7 +444,11 @@ longer participate in any canonical ordering or grouping decision made by `Expre
   `internal static` entry points, `StructuralEqualsRaw`/`StructuralHashRaw`, expose the existing
   `EqualsCore`/`Hash` recursion directly (fresh `ParameterBindingContext`/`ParameterScopeStack`, no
   `Simplify()` call) for reuse by the S4 additive-grouping equality. Public `Equals`/`GetHashCode` behavior
-  is unchanged.
+  was unchanged as of this initial commit — a later review-fix round (see "S4 review fixes" below) added one
+  narrowly-scoped, mathematically-justified WIDENING to public `Equals`/`GetHashCode` (a commutative operand
+  fallback for ordinary `Add`/`Multiply`), needed to fix a genuine free-parameter regression this stage
+  introduced; that is the one intentional, documented exception to "unchanged" and is characterized by its
+  own tests.
 - `Utils/Expressions/ExpressionCanonicalOrder.cs` (new) — the structural canonical-order key itself: an
   internal `KeyNode` hierarchy (`ConstantKey`, `ParameterKey`, `UnaryKey`, `BinaryKey`, `MethodCallKey`,
   `MemberKey`, `LambdaKey`, plus `NullKey`/`UnsupportedKey`) with a fixed per-kind rank and
@@ -662,14 +666,74 @@ and `PowerWrappedFunctionGrouping_DistinguishesExponentsInCompleteKey` concluded
 `ExpressionComparer.Default`, which re-simplifies both sides and could mask a first-pass canonicalization
 defect — the exact pitfall the original S4 audit itself flagged for the dedicated test file). Both now
 inspect the raw `Left`/`Right` shape of each FIRST `Simplify()` call's result directly, matching every other
-test in the file. The suite is now 33 tests (25 original + 3 new regressions for items 1/2/3–4/5 above,
-counting the DynamicMethod/array pairs, plus the 2 items-7 rewrites already counted in the 25).
+test in the file. The suite is now 29 tests (25 original, unchanged in count by the items-7 rewrites since
+those edited existing tests in place, plus 4 new regressions: the hostile-constant grouping test, the two
+`CompareType` SZ-array tests, and the `CompareMethod` `DynamicMethod` test).
 
 **Validation performed after the review fixes (2026-09-18):** `ExpressionSimplifierStructuralCanonicalizationTests`
 and `ExpressionComparerTests` together: 79/79 passed. Full `UtilsTest.Unit`: 7650/7650 passed, 0 skipped.
 Full `UtilsTest.Functional`: 383/383 passed. Full `UtilsTest.Security`: 225/228 passed, 3 skipped (the same
 three pre-existing, unrelated, platform-gated tests noted above). Release build of `Utils.sln`: succeeded,
 no errors (same pre-existing, unrelated `CS8618` warning).
+
+#### S4 review fixes, round 2 (2026-09-18) — PR #600 second human review pass
+
+A second human review pass at commit `b688dba0` confirmed all five round-1 fixes (DynamicMethod, the
+`IComparable`/culture hazard, `int[]`/`int[*]`, and both item-7 test rewrites) and found one real remaining
+S4 defect plus two contract/conformity points. Fixed on the same branch.
+
+1. **The complete order key still could not distinguish `bool`/`char`/`enum` constants.** Round 1 correctly
+   removed the generic `IComparable.CompareTo()` fallback from `ConstantKey`, special-casing only `string`
+   (ordinal). Every OTHER non-numeric constant type — including `bool`, `char` and any `enum` — fell through
+   to a tie (`0`). Concretely, `F(false) + F(true)` and `F(true) + F(false)` (for any method `F` taking a
+   single `bool`) no longer converged to the same canonical tree: their `ConstantKey`s tied, the stable sort
+   preserved each side's own source order, and `Simplify()` was no longer deterministic across source order
+   for this shape — a real regression against S4's own "deterministic" completion criterion, not merely a
+   missed nice-to-have. Fixed by recognizing that `bool`, `char` and `Enum` (like `string`'s `Equals`/
+   `GetHashCode`, though not its default `IComparable`) have fixed, non-user-overridable, non-culture-
+   dependent comparison behavior built into the CLR: `ConstantKey` now also compares these three via
+   `bool.CompareTo`/`char.CompareTo`/`Enum`'s own `IComparable` (the latter compares the underlying integral
+   value — safe because an enum type cannot declare methods, so it can never be a *user* override).
+   Regression: `ConstantOrdering_BoolConstants_CanonicalizeDeterministicallyRegardlessOfSourceOrder` and its
+   `Char`/`Enum` counterparts in `ExpressionSimplifierStructuralCanonicalizationTests`.
+2. **`SafeConstantsOnly` was more conservative than necessary for the additive-grouping side of the same
+   issue.** Item 3 of the round-1 fixes made `StructuralEqualsRaw`/`StructuralHashRaw` treat every
+   non-numeric constant as opaque (reference-identity-only), which is safe but also stopped grouping two
+   structurally-equal-but-reference-distinct safe values (two `string`s with the same content built
+   separately, two separately-boxed `bool`s, two equal `enum` values) — a behavior change from the pre-S4
+   `GetAdditiveGroupingKey`, which grouped by value representation. Both this and finding 1 are the same
+   underlying question — "which constant types are safe to compare directly?" — so they now share one
+   answer: `ExpressionComparer.IsKnownSafeConstantValue(object)` (`string`, `bool`, `char`, `Enum`) is the
+   single predicate both `ConstantsEqual`/`HashConstant` (grouping's `safeConstantsOnly` policy) and
+   `ConstantKey` (the order key) consult, so the two sides can never independently drift on what counts as
+   safe. `ConstantsEqual`/`HashConstant` now call the value's own `Equals`/`GetHashCode` for a known-safe
+   value even under `safeConstantsOnly`, restoring the pre-S4 grouping-by-value behavior for exactly the
+   types that are safe to do so for, while an opaque/arbitrary type still falls back to reference identity.
+   No new regression test beyond finding 1's: the fix is the same code path, and finding 1's tests already
+   force these terms through additive grouping (same category, different constant argument) as well as
+   ordering.
+3. **The free-parameter regression fix (round 1, item 2) also WIDENS public `Equals`/`GetHashCode`,
+   beyond only restoring the pre-S4 case.** Two distinct free parameters that happen to share the SAME
+   `Name` (e.g. both literally named `"v"`) previously compared unequal under `Add`/`Add`-swapped (the old
+   textual key tied on identical name text, stable sort preserved each side's own operand order, and the
+   then-positional-only `BinaryEqual` found the operands reference-unequal); the round-1 commutative
+   fallback now matches them. This is intentional and mathematically sound (ordinary addition is
+   commutative regardless of what its operands are named), not a bug, but it is a real, observable widening
+   of the public equivalence relation beyond the literal free-parameter regression the fix targeted, so it
+   is now called out explicitly (including in the "Files changed" note above) rather than left implicit.
+   Regression/characterization: `ExpressionComparerTests.FreeParameters_SameNameDistinctInstances_CommutativeAddition_NowEqual`.
+4. **Two production/test members were still undocumented**, per `AGENTS.md`. `ExpressionComparer.ExactNumericValue.KindRank(NumericKind)`
+   and `ExpressionSimplifierStructuralCanonicalizationTests.ThrowingExpression.ToString()` (plus a few
+   sibling members on the same test type and on `HostileConstant` found while auditing) now have XML docs.
+5. The PR description itself (not this roadmap file) was updated to match the current test counts (29 S4
+   tests, not 25; `UtilsTest.Unit` 7654/7654) — noted here only because the reviewer flagged it; no code or
+   roadmap content was stale.
+
+**Validation performed after round 2 (2026-09-18):** `ExpressionSimplifierStructuralCanonicalizationTests`
+and `ExpressionComparerTests` together: 83/83 passed. Full `UtilsTest.Unit`: 7654/7654 passed, 0 skipped.
+Full `UtilsTest.Functional`: 383/383 passed. Full `UtilsTest.Security`: 225/228 passed, 3 skipped (same three
+pre-existing, unrelated, platform-gated tests). Release build of `Utils.sln`: succeeded, no errors (same
+pre-existing, unrelated `CS8618` warning).
 
 ### S5 — Construction-performance cleanup
 

@@ -592,13 +592,39 @@ internal static class ExpressionCanonicalOrder
             // execute user-defined code (including code with side effects or that throws) merely because
             // an expression tree happens to embed such a constant, and even a "safe" framework
             // IComparable (e.g. string's default comparer) can depend on Thread.CurrentCulture, which
-            // would make this supposedly deterministic key vary with ambient culture state. Only a
-            // small, explicitly recognized set of framework types compares here, each via a
-            // culture-invariant/ordinal comparison; every other non-numeric constant type ties, relying
-            // on the caller's stable sort to preserve source order.
-            if (_value is string leftString && o._value is string rightString)
+            // would make this supposedly deterministic key vary with ambient culture state. The gate below
+            // reuses ExpressionComparer.IsKnownSafeConstantValue - the SAME predicate the S4
+            // additive-grouping equality/hash uses - so the order and grouping sides can never drift on
+            // which constant types are "known safe". Every branch also re-checks both operands' runtime
+            // types match (not just that both satisfy the safe-value predicate) before casting, since
+            // CompareType's own final tie-break can conservatively report two genuinely different Type
+            // instances as tied. Every other non-numeric constant type ties (0), relying on the caller's
+            // stable sort to preserve source order.
+            if (ExpressionComparer.IsKnownSafeConstantValue(_value) && ExpressionComparer.IsKnownSafeConstantValue(o._value))
             {
-                return Math.Sign(string.CompareOrdinal(leftString, rightString));
+                if (_value is string leftString && o._value is string rightString)
+                {
+                    return Math.Sign(string.CompareOrdinal(leftString, rightString));
+                }
+
+                if (_value is bool leftBool && o._value is bool rightBool)
+                {
+                    return leftBool.CompareTo(rightBool);
+                }
+
+                if (_value is char leftChar && o._value is char rightChar)
+                {
+                    return leftChar.CompareTo(rightChar);
+                }
+
+                if (_value is Enum leftEnum && o._value is Enum rightEnum && leftEnum.GetType() == rightEnum.GetType())
+                {
+                    // Enum's own IComparable implementation compares the underlying integral value: fixed
+                    // BCL behavior, never user-overridable (an enum type cannot declare methods) and never
+                    // culture-dependent - unlike a generic IComparable.CompareTo(), which this method
+                    // deliberately never calls on an arbitrary type.
+                    return Math.Sign(((IComparable)leftEnum).CompareTo(rightEnum));
+                }
             }
 
             return 0;

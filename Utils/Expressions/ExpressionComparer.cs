@@ -286,15 +286,38 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     }
 
     /// <summary>
+    /// Whether <paramref name="value"/>'s runtime type is one whose <see cref="object.Equals(object?)"/> and
+    /// <see cref="object.GetHashCode"/> — and, for <see cref="bool"/>/<see cref="char"/>/<see cref="Enum"/>
+    /// specifically, whose <see cref="IComparable"/> — implementations are fixed, non-user-overridable BCL
+    /// behavior, never culture-dependent. Shared between this comparer's <c>safeConstantsOnly</c> policy
+    /// (<see cref="ConstantsEqual"/>/<see cref="HashConstant"/>) and
+    /// <c>ExpressionCanonicalOrder.ConstantKey</c>'s structural ORDER comparison, so both agree on exactly
+    /// the same "known safe to compare directly" set instead of drifting independently. <see cref="string"/>
+    /// is included here (its default <see cref="object.Equals(object?)"/>/<see cref="object.GetHashCode"/>
+    /// are ordinal, not culture-aware — only its default <see cref="IComparable{T}"/> is culture-aware, which
+    /// is why the order side uses <see cref="string.CompareOrdinal(string?, string?)"/> explicitly rather
+    /// than calling this method for ordering). Every other reference/value type (including a struct that
+    /// implements <see cref="IComparable"/>) is treated as opaque: this method deliberately does not attempt
+    /// to enumerate every "probably safe" framework type, only the small set the S4 roadmap entry names.
+    /// </summary>
+    /// <param name="value">The boxed constant value to classify; never <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> if <paramref name="value"/>'s type is in the known-safe set.</returns>
+    internal static bool IsKnownSafeConstantValue(object value) => value is string or bool or char or Enum;
+
+    /// <summary>
     /// Compares two <see cref="ConstantExpression"/> nodes, using an exact cross-type numeric model when
     /// both are native numeric constants, and null-safe/type-safe value comparison otherwise.
     /// </summary>
     /// <param name="x">The first constant.</param>
     /// <param name="y">The second constant.</param>
     /// <param name="safeConstantsOnly">
-    /// When <see langword="true"/>, a non-numeric constant is compared by reference identity of its boxed
+    /// When <see langword="true"/>, a non-numeric constant whose value is NOT a known-safe type (see
+    /// <see cref="IsKnownSafeConstantValue(object)"/>) is compared by reference identity of its boxed
     /// <see cref="ConstantExpression.Value"/> instead of by calling the value's own possibly user-defined
     /// <see cref="object.Equals(object?)"/> override — see <see cref="ParameterBindingContext.SafeConstantsOnly"/>.
+    /// A known-safe value (<see cref="string"/>, <see cref="bool"/>, <see cref="char"/>, <see cref="Enum"/>)
+    /// still compares by value even when <paramref name="safeConstantsOnly"/> is <see langword="true"/>,
+    /// since its <see cref="object.Equals(object?)"/> is known-safe to call.
     /// </param>
     /// <returns><see langword="true"/> if the constants represent the same value.</returns>
     private static bool ConstantsEqual(ConstantExpression x, ConstantExpression y, bool safeConstantsOnly)
@@ -307,7 +330,12 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         if (x.Type != y.Type) return false;
         if (x.Value is null || y.Value is null) return x.Value is null && y.Value is null;
 
-        return safeConstantsOnly ? ReferenceEquals(x.Value, y.Value) : x.Value.Equals(y.Value);
+        if (safeConstantsOnly && !IsKnownSafeConstantValue(x.Value))
+        {
+            return ReferenceEquals(x.Value, y.Value);
+        }
+
+        return x.Value.Equals(y.Value);
     }
 
     /// <summary>Attempts to build an exact rational/NaN/infinity key for a constant whose declared <see cref="Expression.Type"/> is one of the native numeric types in <see cref="Types.Number"/>.</summary>
@@ -348,15 +376,19 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// parameter free relative to both sides that is actually bound by a still-enclosing lambda resolves
     /// correctly via that shared reference, without this method needing to know about that enclosing scope.
     /// <para>
-    /// A non-numeric <see cref="ConstantExpression"/> is compared by REFERENCE identity of its boxed
+    /// A non-numeric <see cref="ConstantExpression"/> whose value is NOT a known-safe type (see
+    /// <see cref="IsKnownSafeConstantValue(object)"/>: <see cref="string"/>, <see cref="bool"/>,
+    /// <see cref="char"/>, <see cref="Enum"/>) is compared by REFERENCE identity of its boxed
     /// <see cref="ConstantExpression.Value"/>, never by calling the value's own possibly user-defined
-    /// <see cref="object.Equals(object?)"/> — see <see cref="ParameterBindingContext.SafeConstantsOnly"/>.
-    /// This is a deliberate, narrower policy than the public <see cref="Equals(Expression?, Expression?)"/>
-    /// uses: this raw entry point's only caller, <see cref="ExpressionSimplifier"/>'s additive-grouping
-    /// equality, runs automatically as part of ordinary <c>Simplify()</c> calls, so it must never execute
-    /// arbitrary user code (which a constant's own <see cref="object.Equals(object?)"/>/
-    /// <see cref="object.GetHashCode"/> override could contain, with side effects or a thrown exception)
-    /// merely to decide whether two constant terms belong in the same additive group.
+    /// <see cref="object.Equals(object?)"/> — see <see cref="ParameterBindingContext.SafeConstantsOnly"/>. A
+    /// known-safe value still compares by value, since calling its <see cref="object.Equals(object?)"/> is
+    /// known not to execute user code. This is a deliberate, narrower policy than the public
+    /// <see cref="Equals(Expression?, Expression?)"/> uses only for the opaque case: this raw entry point's
+    /// only caller, <see cref="ExpressionSimplifier"/>'s additive-grouping equality, runs automatically as
+    /// part of ordinary <c>Simplify()</c> calls, so it must never execute arbitrary user code (which an
+    /// opaque constant's own <see cref="object.Equals(object?)"/>/<see cref="object.GetHashCode"/> override
+    /// could contain, with side effects or a thrown exception) merely to decide whether two constant terms
+    /// belong in the same additive group.
     /// </para>
     /// </remarks>
     /// <param name="x">The first (already simplified, or otherwise final) expression to compare.</param>
@@ -453,10 +485,13 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// <summary>Hashes a <see cref="ConstantExpression"/>, using the exact numeric key (without the original CLR type) for native numeric constants, and <see cref="Expression.Type"/> plus a value-derived hash otherwise.</summary>
     /// <param name="ce">The constant to hash.</param>
     /// <param name="safeConstantsOnly">
-    /// When <see langword="true"/>, a non-numeric constant's boxed value is hashed by
+    /// When <see langword="true"/>, a non-numeric constant whose value is NOT a known-safe type (see
+    /// <see cref="IsKnownSafeConstantValue(object)"/>) is hashed by
     /// <see cref="RuntimeHelpers.GetHashCode(object?)"/> (reference identity) instead of the value's own
     /// possibly user-defined <see cref="object.GetHashCode"/> override, mirroring
-    /// <see cref="ConstantsEqual"/>'s <c>safeConstantsOnly</c> policy so equal keys still hash equally. This
+    /// <see cref="ConstantsEqual"/>'s <c>safeConstantsOnly</c> policy so equal keys still hash equally. A
+    /// known-safe value (<see cref="string"/>, <see cref="bool"/>, <see cref="char"/>, <see cref="Enum"/>)
+    /// still hashes by value even when <paramref name="safeConstantsOnly"/> is <see langword="true"/>. This
     /// use of <see cref="RuntimeHelpers.GetHashCode(object?)"/> is only ever a <c>Dictionary</c>/<c>GroupBy</c>
     /// lookup accelerator (see <see cref="StructuralHashRaw(Expression?)"/>'s caller,
     /// <see cref="ExpressionSimplifier"/>'s additive grouping) — never the final canonical ORDER, which the
@@ -476,7 +511,12 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         {
             hc.Add(false);
             hc.Add(ce.Type);
-            hc.Add(ce.Value is null ? 0 : safeConstantsOnly ? RuntimeHelpers.GetHashCode(ce.Value) : ce.Value.GetHashCode());
+            hc.Add(ce.Value switch
+            {
+                null => 0,
+                var value when safeConstantsOnly && !IsKnownSafeConstantValue(value) => RuntimeHelpers.GetHashCode(value),
+                var value => value.GetHashCode(),
+            });
         }
 
         return hc.ToHashCode();
@@ -906,6 +946,9 @@ public class ExpressionComparer : IEqualityComparer<Expression>
             return left.CompareTo(right);
         }
 
+        /// <summary>Fixed ordering rank for each <see cref="NumericKind"/>, used by <see cref="CompareTo(ExactNumericValue)"/>: negative infinity first, then finite values (by exact rational value), then positive infinity, then NaN last.</summary>
+        /// <param name="kind">The category to rank.</param>
+        /// <returns>A fixed, deterministic integer rank.</returns>
         private static int KindRank(NumericKind kind) => kind switch
         {
             NumericKind.NegativeInfinity => 0,
