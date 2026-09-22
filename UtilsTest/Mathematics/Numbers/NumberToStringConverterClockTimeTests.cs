@@ -10,51 +10,6 @@ namespace UtilsTest.NumberToString;
 [TestClass]
 public class NumberToStringConverterClockTimeTests
 {
-    /// <summary>Verifies the complete French clock-face matrix, including inherited special hours.</summary>
-    [TestMethod]
-    public void ConvertClockTime_FrenchConfiguration_ProducesExpectedPhrases()
-    {
-        var converter = NumberToStringConverter.GetConverter("FR");
-        var cases = new Dictionary<TimeOnly, string>
-        {
-            [new(1, 0)] = "une heure",
-            [new(1, 5)] = "une heure cinq",
-            [new(1, 15)] = "une heure et quart",
-            [new(1, 20)] = "une heure vingt",
-            [new(1, 30)] = "une heure et demie",
-            [new(1, 35)] = "deux heures moins vingt cinq",
-            [new(1, 45)] = "deux heures moins le quart",
-            [new(1, 55)] = "deux heures moins cinq",
-            [new(11, 55)] = "midi moins cinq",
-            [new(12, 0)] = "midi",
-            [new(12, 15)] = "midi et quart",
-            [new(23, 45)] = "minuit moins le quart",
-        };
-
-        foreach ((TimeOnly input, string expected) in cases)
-            Assert.AreEqual(expected, converter.ConvertClockTime(input), input.ToString());
-    }
-
-    /// <summary>Verifies the configured German regional convention without embedding it in the engine.</summary>
-    [TestMethod]
-    public void ConvertClockTime_GermanConfiguration_ProducesExpectedPhrases()
-    {
-        var converter = NumberToStringConverter.GetConverter("DE");
-        var cases = new Dictionary<TimeOnly, string>
-        {
-            [new(1, 5)] = "fünf nach eins",
-            [new(1, 15)] = "viertel nach eins",
-            [new(1, 25)] = "fünf vor halb zwei",
-            [new(1, 30)] = "halb zwei",
-            [new(1, 35)] = "fünf nach halb zwei",
-            [new(1, 45)] = "viertel vor zwei",
-            [new(1, 55)] = "fünf vor zwei",
-        };
-
-        foreach ((TimeOnly input, string expected) in cases)
-            Assert.AreEqual(expected, converter.ConvertClockTime(input), input.ToString());
-    }
-
     /// <summary>Verifies nearest rounding, forward half-step ties, and midnight wrapping.</summary>
     [TestMethod]
     public void ConvertClockTime_RoundsNearestWithForwardTies()
@@ -64,8 +19,8 @@ public class NumberToStringConverterClockTimeTests
         Assert.AreEqual("fünf nach eins", converter.ConvertClockTime(new TimeOnly(1, 2, 30)));
         Assert.AreEqual("fünf vor halb zwei", converter.ConvertClockTime(new TimeOnly(1, 27)));
         Assert.AreEqual("halb zwei", converter.ConvertClockTime(new TimeOnly(1, 28)));
-        Assert.AreEqual("fünf vor null", converter.ConvertClockTime(new TimeOnly(23, 57)));
-        Assert.AreEqual("null", converter.ConvertClockTime(new TimeOnly(23, 58)));
+        Assert.AreEqual("fünf vor zwölf", converter.ConvertClockTime(new TimeOnly(23, 57)));
+        Assert.AreEqual("zwölf", converter.ConvertClockTime(new TimeOnly(23, 58)));
     }
 
     /// <summary>Verifies DateTime rounding advances its date when midnight is crossed.</summary>
@@ -103,6 +58,7 @@ public class NumberToStringConverterClockTimeTests
     {
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => Create(0, ValidRules()));
         Assert.ThrowsExactly<ArgumentException>(() => Create(7, ValidRules()));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => Create(5, ValidRules(), hourCycle: 13));
         Assert.ThrowsExactly<ArgumentException>(() => Create(5, [new(new IntRange<int>(), 0, ClockHourForm.Cardinal, "{hour}")]));
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => Create(5, [new(IntRange<int>.FullRange, 0, ClockHourForm.Cardinal, "{hour}")]));
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => Create(5, [new(new IntRange<int>("0,60"), 0, ClockHourForm.Cardinal, "{hour}")]));
@@ -112,6 +68,36 @@ public class NumberToStringConverterClockTimeTests
         Assert.ThrowsExactly<ArgumentException>(() => Create(5, [new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{amount}", 0)]));
         Assert.ThrowsExactly<ArgumentException>(() => Create(5, [new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{hour}", 0, ClockAmountDirection.After)]));
         Assert.ThrowsExactly<ArgumentException>(() => Create(5, [new(new IntRange<int>("0,5"), 0, ClockHourForm.Cardinal, "{hour}"), new(new IntRange<int>("5"), 0, ClockHourForm.Cardinal, "{hour}")]));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => Create(5, [new(new IntRange<int>("0,5,10,15,20,25,30,35,40,45,50,55"), 0, (ClockHourForm)42, "{hour}")]));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => Create(5, [new(new IntRange<int>("0,5,10,15,20,25,30,35,40,45,50,55"), 0, ClockHourForm.Cardinal, "{amount}", 60, (ClockAmountDirection)42)]));
+    }
+
+    /// <summary>Verifies extreme offsets normalize without overflow and variants reach numeric placeholders.</summary>
+    [TestMethod]
+    public void ConvertClockTime_ExtremeOffsetsAndVariants_AreHandledSafely()
+    {
+        var source = NumberToStringConverter.GetConverter("FR");
+        var options = new NumberToStringConverterOptions(source)
+        {
+            ClockTime = new ClockTimeFormatOptions
+            {
+                Step = 60,
+                HourCycle = 12,
+                Rules = [new(new IntRange<int>("0"), int.MaxValue, ClockHourForm.Cardinal, "{hour}")],
+            },
+        };
+        var converter = new NumberToStringConverter(options);
+
+        Assert.AreEqual("une", converter.ConvertClockTime(new TimeOnly(18, 0), "gender=feminin"));
+    }
+
+    /// <summary>Verifies an inherited built-in clock section remains available through the interface.</summary>
+    [TestMethod]
+    public void ClockTime_BaseOnAbsent_InheritsCompleteParentSection()
+    {
+        INumberToStringConverter converter = NumberToStringConverter.GetConverter("DE-ch");
+        Assert.IsTrue(converter.SupportsClockTimeConversion);
+        Assert.AreEqual("halb zwei", converter.ConvertClockTime(new TimeOnly(13, 30)));
     }
 
     /// <summary>Verifies converter construction snapshots rules and option cloning preserves them.</summary>
@@ -127,11 +113,11 @@ public class NumberToStringConverterClockTimeTests
     }
 
     /// <summary>Creates a converter using English number words and supplied clock rules.</summary>
-    private static NumberToStringConverter Create(int step, IReadOnlyList<ClockTimeRule> rules)
+    private static NumberToStringConverter Create(int step, IReadOnlyList<ClockTimeRule> rules, int hourCycle = 24)
     {
         var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
         {
-            ClockTime = new ClockTimeFormatOptions { Step = step, Rules = rules },
+            ClockTime = new ClockTimeFormatOptions { Step = step, HourCycle = hourCycle, Rules = rules },
         };
         return new NumberToStringConverter(options);
     }

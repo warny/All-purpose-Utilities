@@ -557,6 +557,7 @@ namespace Utils.NumberToString
         public ClockTimeFormatOptions? ClockTime => _clockTime == null ? null : new ClockTimeFormatOptions
         {
             Step = _clockTime.Step,
+            HourCycle = _clockTime.HourCycle,
             Rules = _clockTime.Rules.ToArray(),
         };
 
@@ -2241,6 +2242,8 @@ namespace Utils.NumberToString
                 throw new ArgumentOutOfRangeException(nameof(options), "ClockTime.Step must be between 1 and 60 minutes.");
             if (60 % options.Step != 0)
                 throw new ArgumentException("ClockTime.Step must divide 60 so rounded minute positions repeat consistently every hour.", nameof(options));
+            if (options.HourCycle is not (12 or 24))
+                throw new ArgumentOutOfRangeException(nameof(options), "ClockTime.HourCycle must be either 12 or 24.");
             if (options.Rules == null)
                 throw new ArgumentException("ClockTime.Rules must not be null.", nameof(options));
 
@@ -2252,6 +2255,10 @@ namespace Utils.NumberToString
                 var rule = options.Rules[index] ?? throw new ArgumentException($"ClockTime.Rules[{index}] must not be null.", nameof(options));
                 if (rule.Range == null)
                     throw new ArgumentException($"ClockTime.Rules[{index}].Range must not be null.", nameof(options));
+                if (!Enum.IsDefined(rule.HourForm))
+                    throw new ArgumentOutOfRangeException(nameof(options), $"ClockTime rule range '{rule.Range}' has unsupported hourForm value '{rule.HourForm}'.");
+                if (rule.AmountDirection.HasValue && !Enum.IsDefined(rule.AmountDirection.Value))
+                    throw new ArgumentOutOfRangeException(nameof(options), $"ClockTime rule range '{rule.Range}' has unsupported amountDirection value '{rule.AmountDirection}'.");
                 string? outside = (rule.Range - permitted).ToString();
                 if (rule.Range.Contains(-1) || rule.Range.Contains(60) || outside is { Length: > 0 })
                     throw new ArgumentOutOfRangeException(nameof(options), $"ClockTime rule range '{rule.Range}' contains minute positions outside 0..59{(string.IsNullOrEmpty(outside) ? "." : $": {outside}.")}");
@@ -2287,7 +2294,7 @@ namespace Utils.NumberToString
                 if (!lookup.ContainsKey(minute))
                     throw new ArgumentException($"ClockTime has no rule for reachable minute position {minute}.", nameof(options));
 
-            return (new ClockTimeFormatOptions { Step = options.Step, Rules = snapshots.ToArray() }, lookup.ToImmutable());
+            return (new ClockTimeFormatOptions { Step = options.Step, HourCycle = options.HourCycle, Rules = snapshots.ToArray() }, lookup.ToImmutable());
         }
 
         /// <summary>Validates that a clock pattern contains only supported, balanced placeholders.</summary>
@@ -2390,20 +2397,26 @@ namespace Utils.NumberToString
         private string BuildClockTimeFragment(TimeOnly rounded, bool replaceSpecialHours, string[] variants)
         {
             ClockTimeRule rule = _clockRules[rounded.Minute];
-            int hour = ((rounded.Hour + rule.HourOffset) % 24 + 24) % 24;
+            int offset = rule.HourOffset % 24;
+            int referenceHour24 = (rounded.Hour + offset + 24) % 24;
             string hourText;
-            if (replaceSpecialHours && _specialHours.TryGetValue(hour, out var special))
+            if (replaceSpecialHours && _specialHours.TryGetValue(referenceHour24, out var special))
                 hourText = special.Value;
             else
+            {
+                int displayHour = _clockTime!.HourCycle == 12
+                    ? (referenceHour24 == 0 ? 12 : ((referenceHour24 - 1) % 12) + 1)
+                    : referenceHour24;
                 hourText = rule.HourForm switch
                 {
-                    ClockHourForm.Cardinal => BuildCardinalFragment(hour, variants),
-                    ClockHourForm.Ordinal => OrdinalPrefix + BuildOrdinalFragment(hour, variants),
+                    ClockHourForm.Cardinal => BuildCardinalFragment(displayHour, variants),
+                    ClockHourForm.Ordinal => OrdinalPrefix + BuildOrdinalFragment(displayHour, variants),
                     ClockHourForm.TimeUnit when _timeUnits.TryGetValue("hour", out var unit)
-                        => FormatTimeUnit(hour, unit, variants, "TimeUnits[hour]"),
+                        => FormatTimeUnit(displayHour, unit, variants, "TimeUnits[hour]"),
                     ClockHourForm.TimeUnit => throw new InvalidOperationException($"Language '{LanguageIdentifier}' has no 'hour' unit configured in <TimeUnits>."),
                     _ => throw new InvalidOperationException($"Unsupported clock hour form '{rule.HourForm}'."),
                 };
+            }
             string result = rule.Pattern.Replace("{hour}", hourText, StringComparison.Ordinal);
             if (rule.AmountReference.HasValue)
             {

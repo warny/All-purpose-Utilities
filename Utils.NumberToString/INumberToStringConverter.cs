@@ -451,6 +451,11 @@ namespace Utils.NumberToString
         bool SupportsTimeConversion => false;
 
         /// <summary>
+        /// When <see langword="true"/>, the <c>ConvertClockTime</c> methods produce a result.
+        /// </summary>
+        bool SupportsClockTimeConversion => false;
+
+        /// <summary>
         /// When <see langword="true"/>, <see cref="Convert(DateOnly, string[])"/> and
         /// <see cref="Convert(DateTime, string[])"/> produce a result.
         /// </summary>

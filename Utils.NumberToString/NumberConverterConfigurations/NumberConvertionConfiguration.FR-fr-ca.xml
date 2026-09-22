@@ -128,7 +128,7 @@
 			<SpecialHour hour="0"  value="minuit" wholeHour="true" />
 			<SpecialHour hour="12" value="midi"   wholeHour="true" />
 		</TimeUnits>
-		<ClockTime step="5">
+		<ClockTime step="5" hourCycle="24">
 			<Rule range="0" hourOffset="0" hourForm="timeUnit" pattern="{hour}" />
 			<Rule range="5,10,20,25" hourOffset="0" hourForm="timeUnit" amountReference="0" amountDirection="after" pattern="{hour} {amount}" />
 			<Rule range="15" hourOffset="0" hourForm="timeUnit" pattern="{hour} et quart" />

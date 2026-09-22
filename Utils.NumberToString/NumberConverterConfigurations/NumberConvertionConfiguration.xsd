@@ -1568,6 +1568,10 @@
                                     <xs:attribute name="step" use="required">
                                         <xs:simpleType><xs:restriction base="xs:positiveInteger"><xs:maxInclusive value="60"/></xs:restriction></xs:simpleType>
                                     </xs:attribute>
+                                    <xs:attribute name="hourCycle" use="optional" default="24">
+                                        <xs:annotation><xs:documentation>Numeric projection for {hour}; special-hour matching always uses the unprojected 24-hour reference.</xs:documentation></xs:annotation>
+                                        <xs:simpleType><xs:restriction base="xs:int"><xs:enumeration value="12"/><xs:enumeration value="24"/></xs:restriction></xs:simpleType>
+                                    </xs:attribute>
                                 </xs:complexType>
                             </xs:element>
 

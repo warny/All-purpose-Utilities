@@ -375,6 +375,17 @@ public class NumberToStringConverterSpecialHourTests
         Assert.AreEqual("legacy-datetime:", converter.Convert(new DateTime(2026, 9, 16, 12, 0, 0), replaceSpecialHours: false));
     }
 
+    /// <summary>Verifies pre-clock-time interface implementers remain compatible through defaults.</summary>
+    [TestMethod]
+    public void ConvertClockTime_LegacyInterfaceImplementer_UsesDefaultMembers()
+    {
+        INumberToStringConverter converter = new LegacyConverter();
+
+        Assert.IsFalse(converter.SupportsClockTimeConversion);
+        Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertClockTime(new TimeOnly(12, 0)));
+        Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertClockTime(new DateTime(2026, 9, 16, 12, 0, 0)));
+    }
+
     /// <summary>
     /// Minimal <see cref="INumberToStringConverter"/> implementer predating <see cref="SpecialHourRule"/>:
     /// it overrides only the original params-only time/date overloads, exactly like third-party code

@@ -1725,6 +1725,7 @@ namespace Utils.NumberToString
                 ClockTime = language.ClockTime == null ? null : new ClockTimeFormatOptions
                 {
                     Step = language.ClockTime.Step,
+                    HourCycle = language.ClockTime.HourCycle,
                     Rules = language.ClockTime.Rules?.Select(r => new ClockTimeRule(
                         new IntRange<int>(r.Range),
                         r.HourOffset,

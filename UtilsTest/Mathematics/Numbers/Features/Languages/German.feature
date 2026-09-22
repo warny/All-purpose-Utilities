@@ -1,6 +1,23 @@
 @NumberToString @DE
 Feature: German number conversion
 
+Scenario Outline: Idiomatic clock-face times
+    Given I use the "de-DE" number converter
+    When I convert the clock time "<time>"
+    Then the result is "<expected>"
+
+Examples:
+    | time  | expected              |
+    | 01:05 | fünf nach eins        |
+    | 01:15 | viertel nach eins     |
+    | 01:25 | fünf vor halb zwei    |
+    | 01:30 | halb zwei             |
+    | 01:35 | fünf nach halb zwei   |
+    | 01:45 | viertel vor zwei      |
+    | 01:55 | fünf vor zwei         |
+    | 13:30 | halb zwei             |
+    | 23:55 | fünf vor zwölf        |
+
 Scenario Outline: Cardinal numbers below one thousand
     Given I use the "de-DE" number converter
     When I convert the cardinal number <number>

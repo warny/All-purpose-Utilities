@@ -1785,7 +1785,7 @@ a range must be in `0..59` and divisible by `step`, so use `range="5,10"`, not `
 a five-minute clock.
 
 ```xml
-<ClockTime step="5">
+<ClockTime step="5" hourCycle="24">
   <Rule range="0" hourOffset="0" hourForm="timeUnit" pattern="{hour}" />
   <Rule range="5,10" hourOffset="0" hourForm="timeUnit"
         amountReference="0" amountDirection="after" pattern="{hour} {amount}" />
@@ -1794,7 +1794,10 @@ a five-minute clock.
 </ClockTime>
 ```
 
-`hourOffset` selects the reference hour modulo 24. `hourForm` is `cardinal`, `ordinal`, or
+`hourOffset` selects the reference hour modulo 24. Special-hour rules match that 24-hour reference
+first, so midnight and noon remain distinguishable. If no special hour applies, `hourCycle="12"`
+projects `0` to `12`, `13` to `1`, and so on; `hourCycle="24"` (the default) keeps the reference
+unchanged. `hourForm` is `cardinal`, `ordinal`, or
 `timeUnit`; all reuse the converter's existing numeral, ordinal, unit-form, forced-variant, and
 language-finalization pipelines. `{amount}` is optional. When present, both `amountReference` and
 `amountDirection` are required: `before` computes `reference - minute`, while `after` computes

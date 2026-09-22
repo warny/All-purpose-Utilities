@@ -50,6 +50,12 @@ public sealed class ClockTimeFormatOptions
     /// <summary>Gets or sets the rounding step in minutes.</summary>
     public int Step { get; set; } = 5;
 
+    /// <summary>
+    /// Gets or sets the numeric hour cycle used to project <c>{hour}</c> after special-hour
+    /// replacement has been considered. Supported values are 12 and 24.
+    /// </summary>
+    public int HourCycle { get; set; } = 24;
+
     /// <summary>Gets or sets the rules. Rules replace the inherited XML section as a whole.</summary>
     public IReadOnlyList<ClockTimeRule> Rules { get; set; } = [];
 }

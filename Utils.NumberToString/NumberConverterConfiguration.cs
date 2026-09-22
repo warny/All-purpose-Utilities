@@ -714,6 +714,10 @@ public class ClockTimeType
     [XmlAttribute("step")]
     public int Step { get; set; }
 
+    /// <summary>Gets or sets the numeric hour cycle, either 12 or 24.</summary>
+    [XmlAttribute("hourCycle")]
+    public int HourCycle { get; set; } = 24;
+
     /// <summary>Gets or sets the configured clock-position rules.</summary>
     [XmlElement("Rule")]
     public List<ClockTimeRuleEntry>? Rules { get; set; }
