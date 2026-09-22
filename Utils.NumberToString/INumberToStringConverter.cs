@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using Utils.Numerics;
 using static Utils.NumberToString.NumberToStringConverter;
@@ -515,6 +516,14 @@ namespace Utils.NumberToString
         string Convert(TimeOnly time, bool replaceSpecialHours, params string[] variants)
             => Convert(time, variants);
 
+        /// <summary>Converts a time of day using configured idiomatic clock-position rules.</summary>
+        string ConvertClockTime(TimeOnly time, params string[] variants)
+            => throw new NotSupportedException("Clock-time conversion requires <ClockTime> configuration.");
+
+        /// <summary>Converts a time of day using explicit call options and variants.</summary>
+        string ConvertClockTime(TimeOnly time, ClockTimeConversionOptions options, IEnumerable<string> variants)
+            => ConvertClockTime(time, [.. variants]);
+
         /// <summary>
         /// Converts a <see cref="DateOnly"/> date to its spoken form
         /// (e.g. "le deux juillet deux mille vingt-six").
@@ -554,5 +563,13 @@ namespace Utils.NumberToString
         /// <exception cref="NotSupportedException">The converter has no <c>&lt;DateFormat&gt;</c> or <c>&lt;TimeUnits&gt;</c> configuration.</exception>
         string Convert(DateTime dateTime, bool replaceSpecialHours, params string[] variants)
             => Convert(dateTime, variants);
+
+        /// <summary>Converts a date and time using configured idiomatic clock-position rules.</summary>
+        string ConvertClockTime(DateTime dateTime, params string[] variants)
+            => throw new NotSupportedException("Clock-time conversion requires <ClockTime> configuration.");
+
+        /// <summary>Converts a date and time using explicit call options and variants.</summary>
+        string ConvertClockTime(DateTime dateTime, ClockTimeConversionOptions options, IEnumerable<string> variants)
+            => ConvertClockTime(dateTime, [.. variants]);
     }
 }

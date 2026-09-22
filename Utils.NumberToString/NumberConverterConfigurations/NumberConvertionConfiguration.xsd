@@ -1538,6 +1538,39 @@
                                 </xs:complexType>
                             </xs:element>
 
+                            <xs:element name="ClockTime" minOccurs="0">
+                                <xs:annotation><xs:documentation>
+                                    Idiomatic clock-face rendering for ConvertClockTime. The time is rounded
+                                    to the nearest step; exact half-step ties round forward. If absent in a
+                                    derived language the section is inherited; if present it replaces the
+                                    inherited section completely.
+                                </xs:documentation></xs:annotation>
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="Rule" minOccurs="1" maxOccurs="unbounded">
+                                            <xs:complexType>
+                                                <xs:attribute name="range" use="required">
+                                                    <xs:annotation><xs:documentation>Native IntRange minute syntax, for example 5,10,20,25.</xs:documentation></xs:annotation>
+                                                    <xs:simpleType><xs:restriction base="xs:string"><xs:minLength value="1"/><xs:pattern value="[0-9]+(-[0-9]+)?(,[0-9]+(-[0-9]+)?)*"/></xs:restriction></xs:simpleType>
+                                                </xs:attribute>
+                                                <xs:attribute name="hourOffset" type="xs:int" use="required"/>
+                                                <xs:attribute name="hourForm" use="required">
+                                                    <xs:simpleType><xs:restriction base="xs:string"><xs:enumeration value="cardinal"/><xs:enumeration value="ordinal"/><xs:enumeration value="timeUnit"/></xs:restriction></xs:simpleType>
+                                                </xs:attribute>
+                                                <xs:attribute name="pattern" use="required"><xs:simpleType><xs:restriction base="xs:string"><xs:minLength value="1"/></xs:restriction></xs:simpleType></xs:attribute>
+                                                <xs:attribute name="amountReference" use="optional"><xs:simpleType><xs:restriction base="xs:int"><xs:minInclusive value="0"/><xs:maxInclusive value="60"/></xs:restriction></xs:simpleType></xs:attribute>
+                                                <xs:attribute name="amountDirection" use="optional">
+                                                    <xs:simpleType><xs:restriction base="xs:string"><xs:enumeration value="before"/><xs:enumeration value="after"/></xs:restriction></xs:simpleType>
+                                                </xs:attribute>
+                                            </xs:complexType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                    <xs:attribute name="step" use="required">
+                                        <xs:simpleType><xs:restriction base="xs:positiveInteger"><xs:maxInclusive value="60"/></xs:restriction></xs:simpleType>
+                                    </xs:attribute>
+                                </xs:complexType>
+                            </xs:element>
+
                             <xs:element name="DateFormat" minOccurs="0">
                                 <xs:annotation>
                                     <xs:documentation>

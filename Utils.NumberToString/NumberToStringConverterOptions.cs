@@ -217,6 +217,9 @@ public sealed class NumberToStringConverterOptions
     /// </summary>
     public IReadOnlyList<SpecialHourRule> SpecialHours { get; set; } = [];
 
+    /// <summary>Optional idiomatic clock-time formatting configuration.</summary>
+    public ClockTimeFormatOptions? ClockTime { get; set; }
+
     /// <summary>
     /// Pattern for rendering a date. Supported tokens: {month}, {ordinal-day}, {cardinal-day}, {year}.
     /// Required for Convert(DateOnly/DateTime).
@@ -295,6 +298,7 @@ public sealed class NumberToStringConverterOptions
         TimeUnitForms = source.TimeUnitFormOverrides;
         TimeUnitFormSelectors = source.TimeUnitFormSelectorOverrides;
         SpecialHours = source.SpecialHours;
+        ClockTime = source.ClockTime;
         DatePattern = source.DatePattern;
         DateFirstDay = source.DateFirstDay;
         DateFirstCardinalDay = source.DateFirstCardinalDay;

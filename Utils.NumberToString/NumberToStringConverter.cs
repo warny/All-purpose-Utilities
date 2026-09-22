@@ -286,6 +286,7 @@ namespace Utils.NumberToString
                 }
                 _specialHours = builder.ToImmutable();
             }
+            (_clockTime, _clockRules) = CompileClockTime(options.ClockTime);
             _datePattern = options.DatePattern;
             _datePatternSegments = _datePattern == null ? [] : ParseDatePattern(_datePattern, LanguageIdentifier);
             _dateFirstDay = options.DateFirstDay;
@@ -507,6 +508,9 @@ namespace Utils.NumberToString
         /// <inheritdoc/>
         public bool SupportsTimeConversion => _timeUnits.Count > 0;
 
+        /// <summary>Gets whether idiomatic clock-time conversion is configured.</summary>
+        public bool SupportsClockTimeConversion => _clockTime != null;
+
         /// <inheritdoc/>
         public bool SupportsDateConversion => _datePattern != null;
 
@@ -548,6 +552,13 @@ namespace Utils.NumberToString
         /// <c>replaceSpecialHours</c> argument is <see langword="true"/>.
         /// </summary>
         public IReadOnlyList<SpecialHourRule> SpecialHours => [.. _specialHours.Values.OrderBy(r => r.Hour)];
+
+        /// <summary>Gets the immutable idiomatic clock-time configuration snapshot.</summary>
+        public ClockTimeFormatOptions? ClockTime => _clockTime == null ? null : new ClockTimeFormatOptions
+        {
+            Step = _clockTime.Step,
+            Rules = _clockTime.Rules.ToArray(),
+        };
 
         /// <summary>
         /// Gets only the explicitly configured <see cref="LexicalFormSet"/> overrides per time
@@ -604,6 +615,8 @@ namespace Utils.NumberToString
         private readonly ImmutableDictionary<int, ForcedVariantSet> _fractionForcedVariants;
         private readonly ImmutableDictionary<string, TimeUnitDefinition> _timeUnits;
         private readonly ImmutableDictionary<int, SpecialHourRule> _specialHours;
+        private readonly ClockTimeFormatOptions? _clockTime;
+        private readonly ImmutableDictionary<int, ClockTimeRule> _clockRules;
         private readonly ImmutableDictionary<string, (string Singular, string Plural, string? Count1Form)> _timeUnitsPublic;
         private readonly ImmutableDictionary<string, ForcedVariantSet> _timeUnitForcedVariantsPublic;
         private readonly ImmutableDictionary<string, LexicalFormSet> _timeUnitFormsPublic;
@@ -2219,6 +2232,76 @@ namespace Utils.NumberToString
             return BuildCardinalFragment(count, query) + Separator + word;
         }
 
+        /// <summary>Validates and snapshots idiomatic clock-time options into a minute lookup.</summary>
+        private static (ClockTimeFormatOptions? Options, ImmutableDictionary<int, ClockTimeRule> Rules) CompileClockTime(ClockTimeFormatOptions? options)
+        {
+            if (options == null)
+                return (null, ImmutableDictionary<int, ClockTimeRule>.Empty);
+            if (options.Step <= 0 || options.Step > 60)
+                throw new ArgumentOutOfRangeException(nameof(options), "ClockTime.Step must be between 1 and 60 minutes.");
+            if (60 % options.Step != 0)
+                throw new ArgumentException("ClockTime.Step must divide 60 so rounded minute positions repeat consistently every hour.", nameof(options));
+            if (options.Rules == null)
+                throw new ArgumentException("ClockTime.Rules must not be null.", nameof(options));
+
+            var lookup = ImmutableDictionary.CreateBuilder<int, ClockTimeRule>();
+            var snapshots = new List<ClockTimeRule>();
+            var permitted = new IntRange<int>("0-59");
+            for (int index = 0; index < options.Rules.Count; index++)
+            {
+                var rule = options.Rules[index] ?? throw new ArgumentException($"ClockTime.Rules[{index}] must not be null.", nameof(options));
+                if (rule.Range == null)
+                    throw new ArgumentException($"ClockTime.Rules[{index}].Range must not be null.", nameof(options));
+                string? outside = (rule.Range - permitted).ToString();
+                if (rule.Range.Contains(-1) || rule.Range.Contains(60) || outside is { Length: > 0 })
+                    throw new ArgumentOutOfRangeException(nameof(options), $"ClockTime rule range '{rule.Range}' contains minute positions outside 0..59{(string.IsNullOrEmpty(outside) ? "." : $": {outside}.")}");
+                var minutes = Enumerable.Range(0, 60).Where(rule.Range.Contains).ToArray();
+                if (minutes.Length == 0)
+                    throw new ArgumentException($"ClockTime rule range '{rule.Range}' is empty.", nameof(options));
+                if (minutes.Any(m => m % options.Step != 0))
+                    throw new ArgumentException($"ClockTime rule range '{rule.Range}' contains a minute position not aligned to step {options.Step}.", nameof(options));
+                if (string.IsNullOrWhiteSpace(rule.Pattern))
+                    throw new ArgumentException($"ClockTime rule range '{rule.Range}' has an empty pattern.", nameof(options));
+                ValidateClockPattern(rule.Pattern, rule.Range.ToString() ?? string.Empty);
+                bool usesAmount = rule.Pattern.Contains("{amount}", StringComparison.Ordinal);
+                if (rule.AmountReference is < 0 or > 60)
+                    throw new ArgumentOutOfRangeException(nameof(options), $"ClockTime rule range '{rule.Range}' amountReference must be between 0 and 60.");
+                if (usesAmount != (rule.AmountReference.HasValue && rule.AmountDirection.HasValue))
+                    throw new ArgumentException($"ClockTime rule range '{rule.Range}' must configure both amountReference and amountDirection exactly when its pattern uses {{amount}}.", nameof(options));
+                if (!usesAmount && (rule.AmountReference.HasValue || rule.AmountDirection.HasValue))
+                    throw new ArgumentException($"ClockTime rule range '{rule.Range}' configures an unused amount reference or direction.", nameof(options));
+                if (usesAmount && minutes.Any(m => CalculateClockAmount(m, rule.AmountReference!.Value, rule.AmountDirection!.Value) < 0))
+                    throw new ArgumentException($"ClockTime rule range '{rule.Range}' produces a negative amount.", nameof(options));
+
+                var rangeSnapshot = new IntRange<int>(string.Join(",", minutes));
+                var snapshot = rule with { Range = rangeSnapshot };
+                snapshots.Add(snapshot);
+                foreach (int minute in minutes)
+                {
+                    if (lookup.TryGetValue(minute, out var previous))
+                        throw new ArgumentException($"ClockTime rule ranges '{previous.Range}' and '{rule.Range}' overlap at minute {minute}.", nameof(options));
+                    lookup.Add(minute, snapshot);
+                }
+            }
+            foreach (int minute in Enumerable.Range(0, 60).Where(m => m % options.Step == 0))
+                if (!lookup.ContainsKey(minute))
+                    throw new ArgumentException($"ClockTime has no rule for reachable minute position {minute}.", nameof(options));
+
+            return (new ClockTimeFormatOptions { Step = options.Step, Rules = snapshots.ToArray() }, lookup.ToImmutable());
+        }
+
+        /// <summary>Validates that a clock pattern contains only supported, balanced placeholders.</summary>
+        private static void ValidateClockPattern(string pattern, string range)
+        {
+            string stripped = Regex.Replace(pattern, "\\{(?:hour|amount)\\}", string.Empty);
+            if (stripped.Contains('{') || stripped.Contains('}'))
+                throw new ArgumentException($"ClockTime rule range '{range}' contains an unknown or unbalanced placeholder. Allowed tokens: {{hour}}, {{amount}}.");
+        }
+
+        /// <summary>Calculates a non-finalized minute amount relative to its configured reference.</summary>
+        private static int CalculateClockAmount(int minute, int reference, ClockAmountDirection direction)
+            => direction == ClockAmountDirection.Before ? reference - minute : minute - reference;
+
         /// <inheritdoc cref="INumberToStringConverter.Convert(TimeSpan, string[])"/>
         public string Convert(TimeSpan duration, params string[] variants)
         {
@@ -2278,6 +2361,63 @@ namespace Utils.NumberToString
                 throw new NotSupportedException($"Language '{LanguageIdentifier}' has no <TimeUnits> configuration.");
 
             return FinalizePhrase(BuildTimeFragment(time, replaceSpecialHours, variants));
+        }
+
+        /// <inheritdoc cref="INumberToStringConverter.ConvertClockTime(TimeOnly, string[])"/>
+        public string ConvertClockTime(TimeOnly time, params string[] variants)
+            => ConvertClockTime(time, new ClockTimeConversionOptions(), variants);
+
+        /// <inheritdoc cref="INumberToStringConverter.ConvertClockTime(TimeOnly, ClockTimeConversionOptions, IEnumerable{string})"/>
+        public string ConvertClockTime(TimeOnly time, ClockTimeConversionOptions options, IEnumerable<string> variants)
+        {
+            ArgumentNullException.ThrowIfNull(options);
+            ArgumentNullException.ThrowIfNull(variants);
+            EnsureClockTimeSupported();
+            string[] variantArray = [.. variants];
+            long roundedTicks = RoundClockTicks(time.Ticks);
+            var rounded = new TimeOnly(roundedTicks % TimeSpan.TicksPerDay);
+            return FinalizePhrase(BuildClockTimeFragment(rounded, options.ReplaceSpecialHours, variantArray));
+        }
+
+        /// <summary>Rounds ticks since midnight to the configured minute step, with exact ties rounded forward.</summary>
+        private long RoundClockTicks(long ticks)
+        {
+            long quantum = _clockTime!.Step * TimeSpan.TicksPerMinute;
+            return ((ticks + quantum / 2) / quantum) * quantum;
+        }
+
+        /// <summary>Builds an idiomatic, unfinalized clock-time fragment from an already rounded value.</summary>
+        private string BuildClockTimeFragment(TimeOnly rounded, bool replaceSpecialHours, string[] variants)
+        {
+            ClockTimeRule rule = _clockRules[rounded.Minute];
+            int hour = ((rounded.Hour + rule.HourOffset) % 24 + 24) % 24;
+            string hourText;
+            if (replaceSpecialHours && _specialHours.TryGetValue(hour, out var special))
+                hourText = special.Value;
+            else
+                hourText = rule.HourForm switch
+                {
+                    ClockHourForm.Cardinal => BuildCardinalFragment(hour, variants),
+                    ClockHourForm.Ordinal => OrdinalPrefix + BuildOrdinalFragment(hour, variants),
+                    ClockHourForm.TimeUnit when _timeUnits.TryGetValue("hour", out var unit)
+                        => FormatTimeUnit(hour, unit, variants, "TimeUnits[hour]"),
+                    ClockHourForm.TimeUnit => throw new InvalidOperationException($"Language '{LanguageIdentifier}' has no 'hour' unit configured in <TimeUnits>."),
+                    _ => throw new InvalidOperationException($"Unsupported clock hour form '{rule.HourForm}'."),
+                };
+            string result = rule.Pattern.Replace("{hour}", hourText, StringComparison.Ordinal);
+            if (rule.AmountReference.HasValue)
+            {
+                int amount = CalculateClockAmount(rounded.Minute, rule.AmountReference.Value, rule.AmountDirection!.Value);
+                result = result.Replace("{amount}", BuildCardinalFragment(amount, variants), StringComparison.Ordinal);
+            }
+            return result;
+        }
+
+        /// <summary>Throws when this converter has no idiomatic clock-time configuration.</summary>
+        private void EnsureClockTimeSupported()
+        {
+            if (!SupportsClockTimeConversion)
+                throw new NotSupportedException($"Language '{LanguageIdentifier}' has no <ClockTime> configuration.");
         }
 
         /// <summary>Builds an unfinalized time-of-day phrase.</summary>
@@ -2470,6 +2610,26 @@ namespace Utils.NumberToString
                 phrase = BuildDateFragment(DateOnly.FromDateTime(dateTime), variants);
             else
                 phrase = BuildTimeFragment(TimeOnly.FromDateTime(dateTime), replaceSpecialHours, variants);
+            return FinalizePhrase(phrase);
+        }
+
+        /// <inheritdoc cref="INumberToStringConverter.ConvertClockTime(DateTime, string[])"/>
+        public string ConvertClockTime(DateTime dateTime, params string[] variants)
+            => ConvertClockTime(dateTime, new ClockTimeConversionOptions(), variants);
+
+        /// <inheritdoc cref="INumberToStringConverter.ConvertClockTime(DateTime, ClockTimeConversionOptions, IEnumerable{string})"/>
+        public string ConvertClockTime(DateTime dateTime, ClockTimeConversionOptions options, IEnumerable<string> variants)
+        {
+            ArgumentNullException.ThrowIfNull(options);
+            ArgumentNullException.ThrowIfNull(variants);
+            EnsureClockTimeSupported();
+            string[] variantArray = [.. variants];
+            long roundedTimeTicks = RoundClockTicks(dateTime.TimeOfDay.Ticks);
+            DateTime rounded = dateTime.Date.AddTicks(roundedTimeTicks);
+            string time = BuildClockTimeFragment(TimeOnly.FromDateTime(rounded), options.ReplaceSpecialHours, variantArray);
+            string phrase = SupportsDateConversion
+                ? BuildDateFragment(DateOnly.FromDateTime(rounded), variantArray) + (_dateTimeConnector ?? Separator) + time
+                : time;
             return FinalizePhrase(phrase);
         }
 

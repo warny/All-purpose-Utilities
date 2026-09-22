@@ -128,6 +128,14 @@
 			<SpecialHour hour="0"  value="minuit" wholeHour="true" />
 			<SpecialHour hour="12" value="midi"   wholeHour="true" />
 		</TimeUnits>
+		<ClockTime step="5">
+			<Rule range="0" hourOffset="0" hourForm="timeUnit" pattern="{hour}" />
+			<Rule range="5,10,20,25" hourOffset="0" hourForm="timeUnit" amountReference="0" amountDirection="after" pattern="{hour} {amount}" />
+			<Rule range="15" hourOffset="0" hourForm="timeUnit" pattern="{hour} et quart" />
+			<Rule range="30" hourOffset="0" hourForm="timeUnit" pattern="{hour} et demie" />
+			<Rule range="35,40,50,55" hourOffset="1" hourForm="timeUnit" amountReference="60" amountDirection="before" pattern="{hour} moins {amount}" />
+			<Rule range="45" hourOffset="1" hourForm="timeUnit" pattern="{hour} moins le quart" />
+		</ClockTime>
 		<DateFormat pattern="{cardinal-day} {month} {year}" firstCardinalDay="premier" />
 	</Language>
 </Numbers>

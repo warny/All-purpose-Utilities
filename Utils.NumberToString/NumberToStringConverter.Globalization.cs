@@ -500,7 +500,7 @@ namespace Utils.NumberToString
             HashSet<string> orderIndependentSections =
             [
                 "Replacements", "Exceptions", "LanguageSpecifics", "Fractions", "Ordinals",
-                "Variants", "YearFormat", "Multiplicatives", "TimeUnits", "DateFormat"
+                "Variants", "YearFormat", "Multiplicatives", "TimeUnits", "ClockTime", "DateFormat"
             ];
             HashSet<string>? seenSections = null;
             using StringReader textReader = new(configuration);
@@ -812,6 +812,7 @@ namespace Utils.NumberToString
             ScaleConnector = model.ScaleConnector,
             ScaleConnectorThresholdString = model.ScaleConnectorThresholdString,
             TimeUnits = model.TimeUnits,
+            ClockTime = model.ClockTime,
             DateFormat = model.DateFormat,
         };
 
@@ -904,6 +905,7 @@ namespace Utils.NumberToString
                 ScaleConnector = overriding.ScaleConnector ?? inherited.ScaleConnector,
                 ScaleConnectorThresholdString = overriding.ScaleConnectorThresholdString ?? inherited.ScaleConnectorThresholdString,
                 TimeUnits = overriding.TimeUnits ?? inherited.TimeUnits,
+                ClockTime = overriding.ClockTime ?? inherited.ClockTime,
                 DateFormat = overriding.DateFormat ?? inherited.DateFormat,
             };
 
@@ -1012,6 +1014,7 @@ namespace Utils.NumberToString
             ScaleConnector = definition.ScaleConnector,
             ScaleConnectorThresholdString = definition.ScaleConnectorThresholdString,
             TimeUnits = definition.TimeUnits,
+            ClockTime = definition.ClockTime,
             DateFormat = definition.DateFormat,
         };
 
@@ -1719,6 +1722,17 @@ namespace Utils.NumberToString
                 SpecialHours = language.TimeUnits?.SpecialHours?
                     .Select(s => new SpecialHourRule(s.Hour, s.Value, s.WholeHour))
                     .ToList() ?? [],
+                ClockTime = language.ClockTime == null ? null : new ClockTimeFormatOptions
+                {
+                    Step = language.ClockTime.Step,
+                    Rules = language.ClockTime.Rules?.Select(r => new ClockTimeRule(
+                        new IntRange<int>(r.Range),
+                        r.HourOffset,
+                        r.HourForm,
+                        r.Pattern,
+                        r.AmountReferenceSpecified ? r.AmountReference : null,
+                        r.AmountDirectionSpecified ? r.AmountDirection : null)).ToArray() ?? [],
+                },
                 DatePattern = language.DateFormat?.Pattern,
                 DateFirstDay = language.DateFormat?.FirstDay,
                 DateFirstCardinalDay = language.DateFormat?.FirstCardinalDay,

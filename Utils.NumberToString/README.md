@@ -1763,3 +1763,53 @@ Cumulative `VariantRule` transformations run by specificity ascending and then p
 ```
 
 The `priority` attribute is optional and accepts the full `xs:int` range. During `baseOn`, inherited rules retain their priorities and child rules remain distinct. The merged configuration is rejected if inheritance creates an unresolved equal-rank intersection. Declaration order is never a tie-breaker in 2.0.
+
+## Idiomatic clock-time conversion
+
+`Convert(TimeOnly)` remains the exact hours/minutes/seconds representation configured by
+`TimeUnits`. `ConvertClockTime(TimeOnly)` is a separate, intentionally idiomatic API: it rounds to
+the configured minute step and applies a clock-position rule. `ConvertClockTime(DateTime)` follows
+the existing `Convert(DateTime)` contract by including the date when `DateFormat` is available; a
+rounding carry past 23:59 therefore uses the following date.
+
+```csharp
+var french = NumberToStringConverter.GetConverter("fr-FR");
+string exact = french.Convert(new TimeOnly(1, 27));       // une heure vingt sept minutes
+string clock = french.ConvertClockTime(new TimeOnly(1, 28)); // une heure et demie
+```
+
+A `ClockTime` section contains a positive minute `step` that divides 60 and complete, non-overlapping rules for
+every reachable position. Nearest rounding is used and an exact half-step rounds forward. Each
+`range` uses the native `IntRange<int>` syntax. Validation is deliberately strict: every member of
+a range must be in `0..59` and divisible by `step`, so use `range="5,10"`, not `range="5-10"`, for
+a five-minute clock.
+
+```xml
+<ClockTime step="5">
+  <Rule range="0" hourOffset="0" hourForm="timeUnit" pattern="{hour}" />
+  <Rule range="5,10" hourOffset="0" hourForm="timeUnit"
+        amountReference="0" amountDirection="after" pattern="{hour} {amount}" />
+  <Rule range="55" hourOffset="1" hourForm="timeUnit"
+        amountReference="60" amountDirection="before" pattern="{hour} moins {amount}" />
+</ClockTime>
+```
+
+`hourOffset` selects the reference hour modulo 24. `hourForm` is `cardinal`, `ordinal`, or
+`timeUnit`; all reuse the converter's existing numeral, ordinal, unit-form, forced-variant, and
+language-finalization pipelines. `{amount}` is optional. When present, both `amountReference` and
+`amountDirection` are required: `before` computes `reference - minute`, while `after` computes
+`minute - reference`. Literal wording—including quarters, halves, or fractions such as “un tiers”—
+belongs in `pattern`; the engine only recognizes `{hour}` and `{amount}`.
+
+Configured `SpecialHourRule` values are applied to the rule's reference hour by default, including
+an offset reference such as 11:55 → noon. Pass a `ClockTimeConversionOptions` plus an
+`IEnumerable<string>` of variants to explicitly disable replacement. The three-argument overload
+avoids introducing a new ambiguous `ConvertClockTime(time, default)` call. Variants propagate to
+hour, amount, ordinal, and time-unit rendering. `TimeSpan` has no clock-time API because durations
+do not have clock-face semantics.
+
+With XML `baseOn`, an absent `ClockTime` inherits the complete parent section; a present section
+replaces it as a whole. Rules are never merged individually. Programmatic options are validated
+and snapshotted into a minute lookup during converter construction.
+
+Versioned API documentation: https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.2/
