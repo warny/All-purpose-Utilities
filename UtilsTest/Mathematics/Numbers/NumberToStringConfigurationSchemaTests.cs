@@ -195,6 +195,42 @@ public class NumberToStringConfigurationSchemaTests
             "</NumberScale><ClockTime step=\"5\"><Rule range=\"from:0,to:5\" hourOffset=\"0\" hourForm=\"cardinal\" pattern=\"{hour}\"/></ClockTime>",
             StringComparison.Ordinal));
 
+    /// <summary>Ensures both clock constituent forcing attributes and multiple constraints are accepted by the XSD.</summary>
+    [TestMethod]
+    public void ExternalConfiguration_ClockTimeForcedVariantAttributes_AreSchemaValid()
+    {
+        string clock = "<ClockTime step=\"60\"><Rule range=\"0\" hourOffset=\"0\" hourForm=\"cardinal\" pattern=\"{hour} {amount}\" amountReference=\"0\" amountDirection=\"after\" hourForceVariants=\"gender=feminine,case=genitive\" amountForceVariants=\"case=genitive\"/></ClockTime>";
+        string document = ValidConfiguration.Replace("</NumberScale>", $"</NumberScale>{clock}", StringComparison.Ordinal);
+
+        NumberToStringConverter.ValidateConfigurationSchemaForTesting(document);
+    }
+
+    /// <summary>Ensures XML clock forcings are parsed, canonicalized through an alias, and applied independently at runtime.</summary>
+    [TestMethod]
+    public void ExternalConfiguration_ClockTimeForcedVariants_AreAppliedAtRuntime()
+    {
+        const string variants = "<Variants><Dimension name=\"gender\" localName=\"genre\" values=\"masculine,feminine\"/><Variant type=\"gender\" variant=\"feminine\"><Replacement oldValue=\"one\" newValue=\"ona\" scope=\"LastWord\"/></Variant></Variants>";
+        const string clock = "<ClockTime step=\"1\"><Rule range=\"0-59\" hourOffset=\"0\" hourForm=\"cardinal\" pattern=\"{hour}/{amount}\" amountReference=\"0\" amountDirection=\"after\" hourForceVariants=\"genre=feminine\" amountForceVariants=\"gender=masculine\"/></ClockTime>";
+        string document = ValidConfiguration.Replace("</NumberScale>", $"</NumberScale>{variants}{clock}", StringComparison.Ordinal);
+
+        NumberToStringConverter converter = NumberToStringConverter.ReadConfiguration(document)["SCHEMA-TEST"];
+
+        Assert.AreEqual("ona/one", converter.ConvertClockTime(new TimeOnly(1, 1)));
+    }
+
+    /// <summary>Ensures an unknown XML clock forcing value is rejected during semantic construction.</summary>
+    [TestMethod]
+    public void ExternalConfiguration_ClockTimeUnknownForcedVariantValue_IsRejected()
+    {
+        const string variants = "<Variants><Dimension name=\"gender\" values=\"masculine,feminine\"/></Variants>";
+        const string clock = "<ClockTime step=\"60\"><Rule range=\"0\" hourOffset=\"0\" hourForm=\"cardinal\" pattern=\"{hour}\" hourForceVariants=\"gender=unknown\"/></ClockTime>";
+        string document = ValidConfiguration.Replace("</NumberScale>", $"</NumberScale>{variants}{clock}", StringComparison.Ordinal);
+
+        NumberToStringConfigurationException exception = Assert.ThrowsExactly<NumberToStringConfigurationException>(
+            () => NumberToStringConverter.ReadConfiguration(document));
+        Assert.AreEqual("UNTS006", exception.ErrorCode);
+    }
+
     /// <summary>Ensures XML clock ranges that overlap are rejected during runtime validation.</summary>
     [TestMethod]
     public void ExternalConfiguration_ClockTimeOverlap_IsRejectedSemantically()

@@ -1557,6 +1557,12 @@
                                                 <xs:attribute name="hourForm" use="required">
                                                     <xs:simpleType><xs:restriction base="xs:string"><xs:enumeration value="cardinal"/><xs:enumeration value="ordinal"/><xs:enumeration value="timeUnit"/></xs:restriction></xs:simpleType>
                                                 </xs:attribute>
+                                                <xs:attribute name="hourForceVariants" type="xs:string" use="optional">
+                                                    <xs:annotation><xs:documentation>Comma-separated dimension=value constraints forced for {hour}. Dimension aliases are accepted and canonicalized during converter construction.</xs:documentation></xs:annotation>
+                                                </xs:attribute>
+                                                <xs:attribute name="amountForceVariants" type="xs:string" use="optional">
+                                                    <xs:annotation><xs:documentation>Comma-separated dimension=value constraints forced for {amount}. Dimension aliases are accepted and canonicalized during converter construction.</xs:documentation></xs:annotation>
+                                                </xs:attribute>
                                                 <xs:attribute name="pattern" use="required"><xs:simpleType><xs:restriction base="xs:string"><xs:minLength value="1"/></xs:restriction></xs:simpleType></xs:attribute>
                                                 <xs:attribute name="amountReference" use="optional"><xs:simpleType><xs:restriction base="xs:int"><xs:minInclusive value="0"/><xs:maxInclusive value="60"/></xs:restriction></xs:simpleType></xs:attribute>
                                                 <xs:attribute name="amountDirection" use="optional">

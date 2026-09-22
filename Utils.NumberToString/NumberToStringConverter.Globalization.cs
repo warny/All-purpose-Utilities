@@ -1732,7 +1732,11 @@ namespace Utils.NumberToString
                         r.HourForm,
                         r.Pattern,
                         r.AmountReferenceSpecified ? r.AmountReference : null,
-                        r.AmountDirectionSpecified ? r.AmountDirection : null)).ToArray() ?? [],
+                        r.AmountDirectionSpecified ? r.AmountDirection : null)
+                    {
+                        HourForcedVariants = ForcedVariantSet.Parse(r.HourForceVariants, languageIdentifier, $"ClockTime[{r.Range}].HourForcedVariants"),
+                        AmountForcedVariants = ForcedVariantSet.Parse(r.AmountForceVariants, languageIdentifier, $"ClockTime[{r.Range}].AmountForcedVariants"),
+                    }).ToArray() ?? [],
                 },
                 DatePattern = language.DateFormat?.Pattern,
                 DateFirstDay = language.DateFormat?.FirstDay,

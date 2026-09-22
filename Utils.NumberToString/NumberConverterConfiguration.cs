@@ -738,6 +738,14 @@ public class ClockTimeRuleEntry
     [XmlAttribute("hourForm")]
     public ClockHourForm HourForm { get; set; }
 
+    /// <summary>Gets or sets variants forced while rendering the hour placeholder.</summary>
+    [XmlAttribute("hourForceVariants")]
+    public string? HourForceVariants { get; set; }
+
+    /// <summary>Gets or sets variants forced while rendering the amount placeholder.</summary>
+    [XmlAttribute("amountForceVariants")]
+    public string? AmountForceVariants { get; set; }
+
     /// <summary>Gets or sets the phrase pattern.</summary>
     [XmlAttribute("pattern")]
     public string Pattern { get; set; } = "";

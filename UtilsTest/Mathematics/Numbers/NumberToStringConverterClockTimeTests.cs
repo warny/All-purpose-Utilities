@@ -195,12 +195,143 @@ public class NumberToStringConverterClockTimeTests
         Assert.AreEqual("one", clone.ConvertClockTime(new TimeOnly(1, 0)));
     }
 
+    /// <summary>Verifies hour and amount forcings override independently and aliases are canonicalized.</summary>
+    [TestMethod]
+    public void ConvertClockTime_ForcedVariants_AreIndependentAndCanonicalized()
+    {
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("FR"))
+        {
+            ClockTime = new ClockTimeFormatOptions
+            {
+                Step = 1,
+                Rules =
+                [
+                    new ClockTimeRule(new IntRange<int>("0-59"), 0, ClockHourForm.Cardinal,
+                        "{hour}/{amount}", 0, ClockAmountDirection.After)
+                    {
+                        HourForcedVariants = ForcedVariantSet.Parse("genre=feminin"),
+                        AmountForcedVariants = ForcedVariantSet.Parse("gender=masculin"),
+                    },
+                ],
+            },
+        };
+
+        var converter = new NumberToStringConverter(options);
+        Assert.AreEqual("vingt et une/vingt et un", converter.ConvertClockTime(new TimeOnly(21, 21), "gender=masculin"));
+        ClockTimeRule snapshot = converter.ClockTime!.Rules[0];
+        Assert.AreNotSame(options.ClockTime.Rules[0], snapshot);
+        Assert.AreEqual("vingt et une/vingt et un", new NumberToStringConverter(new NumberToStringConverterOptions(converter))
+            .ConvertClockTime(new TimeOnly(21, 21), "gender=masculin"));
+    }
+
+    /// <summary>Verifies a clock-rule forcing has higher precedence than a time-unit forcing.</summary>
+    [TestMethod]
+    public void ConvertClockTime_TimeUnitThenRuleForcing_UsesRuleValueOnConflict()
+    {
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("FR"))
+        {
+            ClockTime = new ClockTimeFormatOptions
+            {
+                Step = 60,
+                Rules =
+                [
+                    new ClockTimeRule(new IntRange<int>("0"), 0, ClockHourForm.TimeUnit, "{hour}")
+                    {
+                        HourForcedVariants = ForcedVariantSet.Create(("gender", "masculin")),
+                    },
+                ],
+            },
+        };
+
+        Assert.AreEqual("un heure", new NumberToStringConverter(options).ConvertClockTime(new TimeOnly(1, 0)));
+    }
+
+    /// <summary>Verifies a contextual forcing overrides a legacy literal count-one time-unit form.</summary>
+    [TestMethod]
+    public void ConvertClockTime_TimeUnitContextualForcing_BypassesCount1Form()
+    {
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("DE"))
+        {
+            ClockTime = new ClockTimeFormatOptions
+            {
+                Step = 60,
+                Rules =
+                [
+                    new ClockTimeRule(new IntRange<int>("0"), 0, ClockHourForm.TimeUnit, "{hour}")
+                    {
+                        HourForcedVariants = ForcedVariantSet.Parse("genus=feminin,kasus=dativ"),
+                    },
+                ],
+            },
+        };
+
+        var converter = new NumberToStringConverter(options);
+        Assert.AreEqual("einer Stunde", converter.ConvertClockTime(new TimeOnly(1, 0)));
+        Assert.AreEqual("eine Stunde", converter.Convert(new TimeOnly(1, 0)));
+    }
+
+    /// <summary>Verifies a forced ordinal variant is intentional even when the caller supplies none.</summary>
+    [TestMethod]
+    public void ConvertClockTime_OrdinalHourForcing_SelectsVariantWithoutCallerVariants()
+    {
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("FR"))
+        {
+            ClockTime = new ClockTimeFormatOptions
+            {
+                Step = 60,
+                Rules =
+                [
+                    new ClockTimeRule(new IntRange<int>("0"), 0, ClockHourForm.Ordinal, "{hour}")
+                    {
+                        HourForcedVariants = ForcedVariantSet.Create(("gender", "feminin")),
+                    },
+                ],
+            },
+        };
+
+        Assert.AreEqual("première", new NumberToStringConverter(options).ConvertClockTime(new TimeOnly(1, 0)));
+    }
+
+    /// <summary>Verifies null and unused clock forcings are rejected during construction.</summary>
+    [TestMethod]
+    public void Constructor_ClockForcedVariants_RejectsNullAndUnusedValues()
+    {
+        ClockTimeRule nullForcing = new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{hour}")
+        {
+            HourForcedVariants = null!,
+        };
+        ClockTimeRule unusedHour = new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "literal")
+        {
+            HourForcedVariants = ForcedVariantSet.Create(("gender", "masculin")),
+        };
+        ClockTimeRule unusedAmount = new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{hour}")
+        {
+            AmountForcedVariants = ForcedVariantSet.Create(("gender", "masculin")),
+        };
+
+        Assert.ThrowsExactly<ArgumentException>(() => Create(60, [nullForcing]));
+        ArgumentException unusedHourException = Assert.ThrowsExactly<ArgumentException>(() => CreateFrench(60, [unusedHour]));
+        ArgumentException unusedAmountException = Assert.ThrowsExactly<ArgumentException>(() => CreateFrench(60, [unusedAmount]));
+        StringAssert.Contains(unusedHourException.Message, "does not use {hour}");
+        StringAssert.Contains(unusedAmountException.Message, "does not use {amount}");
+    }
+
     /// <summary>Creates a converter using English number words and supplied clock rules.</summary>
     private static NumberToStringConverter Create(int step, IReadOnlyList<ClockTimeRule> rules, int hourCycle = 24)
     {
         var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
         {
             ClockTime = new ClockTimeFormatOptions { Step = step, HourCycle = hourCycle, Rules = rules },
+        };
+        return new NumberToStringConverter(options);
+    }
+
+    /// <summary>Creates a converter with French grammatical dimensions and supplied clock rules.</summary>
+    private static NumberToStringConverter CreateFrench(int step, IReadOnlyList<ClockTimeRule> rules)
+    {
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("FR"))
+        {
+            ClockTime = new ClockTimeFormatOptions { Step = step, Rules = rules },
         };
         return new NumberToStringConverter(options);
     }
