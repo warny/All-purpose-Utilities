@@ -724,6 +724,90 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
             "The alphabetically-earlier-assembly method must sort first, even though its own metadata token is numerically higher - proving assembly is compared before token, not the reverse.");
     }
 
+    /// <summary>
+    /// Reproduces the S4 review round-8 P2 finding directly: <c>CompareFinalMemberTiebreak</c> must compare
+    /// module VERSION (<see cref="Module.ModuleVersionId"/>) before metadata token, since
+    /// <see cref="Module.Name"/> alone is not a reliable module identity - every dynamically-created module
+    /// on this runtime reports the identical literal text <c>"&lt;In Memory Module&gt;"</c>, regardless of
+    /// which assembly it belongs to (verified below). Two real, baked, owner-less "global" methods are
+    /// constructed in two SEPARATE dynamic assemblies deliberately sharing the IDENTICAL assembly-name text
+    /// (both dynamic assemblies are given the exact same simple name), the IDENTICAL module-name text, AND
+    /// the IDENTICAL metadata token (each is its own module's very first global method) - yet they are
+    /// genuinely different members, distinguishable only by their module's <see cref="Module.ModuleVersionId"/>.
+    /// Before this fix, such a pair tied (<c>0</c>) on every dimension the tie-break inspected, since it read
+    /// only <see cref="Module.Name"/>, never <see cref="Module.ModuleVersionId"/>.
+    /// </summary>
+    [TestMethod]
+    public void CompareMethod_MetadataTiebreak_ModuleVersionTakesPriorityOverSameNameSameToken()
+    {
+        MethodInfo methodOne = CreateBakedGlobalMethod("S4Round8_SharedAssemblyName");
+        MethodInfo methodTwo = CreateBakedGlobalMethod("S4Round8_SharedAssemblyName");
+
+        Assert.AreEqual(methodOne.Module.Assembly.FullName, methodTwo.Module.Assembly.FullName,
+            "Precondition: both methods' assembly identity strings must be textually identical.");
+        Assert.AreEqual(methodOne.Module.Name, methodTwo.Module.Name,
+            "Precondition: both methods' module-name strings must be textually identical.");
+        Assert.AreEqual(methodOne.MetadataToken, methodTwo.MetadataToken,
+            "Precondition: both methods must share the same metadata token (each is its own module's first global method).");
+        Assert.AreNotEqual(methodOne.Module.ModuleVersionId, methodTwo.Module.ModuleVersionId,
+            "Precondition: the two methods must still belong to genuinely different module instances.");
+
+        int forward = InvokeCompareMethod(methodOne, methodTwo);
+        int backward = InvokeCompareMethod(methodTwo, methodOne);
+
+        Assert.AreEqual(Math.Sign(forward), -Math.Sign(backward), "Comparison must be antisymmetric.");
+        Assert.AreNotEqual(0, forward,
+            "Two members sharing assembly/module-name/token text but belonging to different module instances must not tie - ModuleVersionId must distinguish them.");
+    }
+
+    /// <summary>Reflected <see cref="MethodInfo"/> for the internal <c>ExpressionCanonicalOrder.Compare(Expression, Expression, IReadOnlyList&lt;ParameterExpression[]&gt;)</c> helper.</summary>
+    private static readonly MethodInfo CompareExpressionMethod = typeof(ExpressionSimplifier).Assembly
+        .GetType("Utils.Mathematics.Expressions.ExpressionCanonicalOrder")!
+        .GetMethod("Compare", BindingFlags.NonPublic | BindingFlags.Static, [typeof(Expression), typeof(Expression), typeof(IReadOnlyList<ParameterExpression[]>)])!;
+
+    /// <summary>Invokes the internal <c>ExpressionCanonicalOrder.Compare(Expression, Expression, IReadOnlyList&lt;ParameterExpression[]&gt;)</c> helper via reflection, without changing its accessibility, with no enclosing lexical scope.</summary>
+    /// <param name="x">The first expression.</param>
+    /// <param name="y">The second expression.</param>
+    /// <returns>The comparison result.</returns>
+    private static int InvokeCompareExpression(Expression? x, Expression? y) =>
+        (int)CompareExpressionMethod.Invoke(null, [x, y, System.Array.Empty<ParameterExpression[]>()])!;
+
+    /// <summary>
+    /// End-to-end (structural-key-level) counterpart of
+    /// <see cref="CompareMethod_MetadataTiebreak_ModuleVersionTakesPriorityOverSameNameSameToken"/>:
+    /// <c>ExpressionCanonicalOrder.Compare</c> - the exact comparison <c>OrderBy</c> uses to canonicalize an
+    /// additive term list - must resolve <c>Call(methodOne, x)</c> versus <c>Call(methodTwo, x)</c>
+    /// deterministically and antisymmetrically, for two methods distinguishable only by
+    /// <see cref="Module.ModuleVersionId"/>. Both calls deliberately share the SAME argument (<c>x</c>) so
+    /// the argument-list dimension ties completely, forcing the decision down to <c>MethodCallKey</c>'s own
+    /// method comparison, which is where this fix actually lives. Compared directly via
+    /// <c>ExpressionCanonicalOrder.Compare</c> rather than through a full <c>Simplify()</c> call: routing an
+    /// owner-less method (<see cref="MethodBase.DeclaringType"/> <see langword="null"/>, exactly like these
+    /// two baked global methods) through the full pipeline hits the same unrelated, pre-existing
+    /// <c>ExpressionCallSignatureAttribute.Match</c> null-<see cref="MethodBase.DeclaringType"/> gap noted on
+    /// <see cref="CompareMethod_TwoDynamicMethodsWithIdenticalSignature_DoesNotThrow"/> - a different,
+    /// out-of-scope bug from the one this test targets.
+    /// </summary>
+    [TestMethod]
+    public void CompareExpression_CallsOfMethodsDistinguishedOnlyByModuleVersion_OrderDeterministically()
+    {
+        MethodInfo methodOne = CreateBakedGlobalMethod("S4Round8_EndToEnd_SharedAssemblyName");
+        MethodInfo methodTwo = CreateBakedGlobalMethod("S4Round8_EndToEnd_SharedAssemblyName");
+        Assert.AreNotEqual(methodOne.Module.ModuleVersionId, methodTwo.Module.ModuleVersionId,
+            "Precondition: the two methods must belong to genuinely different module instances.");
+
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        MethodCallExpression callOne = Expression.Call(methodOne, x);
+        MethodCallExpression callTwo = Expression.Call(methodTwo, x);
+
+        int forward = InvokeCompareExpression(callOne, callTwo);
+        int backward = InvokeCompareExpression(callTwo, callOne);
+
+        Assert.AreEqual(Math.Sign(forward), -Math.Sign(backward), "Comparison must be antisymmetric.");
+        Assert.AreNotEqual(0, forward,
+            "Two calls to methods sharing assembly/module-name/token text but belonging to different module instances, with identical arguments, must not tie - the same convergence OrderBy relies on to canonicalize Call(methodOne, x) + Call(methodTwo, x) regardless of source order.");
+    }
+
     // ------------------------------------------------------------------------------------------
     // Post-review hardening, round 2: bool/char/enum constants are known-safe (never call a
     // user-defined Equals/GetHashCode/culture-dependent IComparable) and must therefore still

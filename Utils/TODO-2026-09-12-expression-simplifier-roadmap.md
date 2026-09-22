@@ -453,10 +453,13 @@ longer participate in any canonical ordering or grouping decision made by `Expre
   internal `KeyNode` hierarchy (`ConstantKey`, `ParameterKey`, `UnaryKey`, `BinaryKey`, `MethodCallKey`,
   `MemberKey`, `LambdaKey`, plus `NullKey`/`UnsupportedKey`) with a fixed per-kind rank and
   deterministic, reflection-metadata-based `Type`/`MethodInfo`/`MemberInfo` comparison (namespace/name text,
-  declaring type, generic arity/arguments, static/instance, parameter/return types; a
-  `MetadataToken`/`Module`/`Assembly` tie-break only for the practically-unreachable case where every other
-  dimension ties). No `GetHashCode()`, `RuntimeHelpers.GetHashCode()`, `HashCode`, object reference order, or
-  `ToString()` participates in ordering.
+  declaring type, generic arity/arguments, static/instance, parameter/return types; a final tie-break for
+  the case where every other dimension ties, unchanged as of this initial commit — later review-fix rounds
+  changed both its dimensions and their order more than once (see "S4 review fixes" below, rounds 1, 7 and
+  8) after finding it could throw, then that it was not actually transitive, then that it under-distinguished
+  two same-name/same-token modules; the CURRENT dimension order is Assembly, then Module name, then
+  `Module.ModuleVersionId`, then `MetadataToken`). No `GetHashCode()`, `RuntimeHelpers.GetHashCode()`,
+  `HashCode`, object reference order, or `ToString()` participates in ordering.
 - `Utils/Expressions/ExpressionSimplifier.cs` — `GetCanonicalExpressionKey` (the `expression.ToString()`
   method) is removed outright. `GetAdditiveGroupingKey` (the `"func:...:catOrder"`/`"expr:..."` string
   builder) is replaced by `ClassifyForAdditiveGrouping` (same classification rule: `Power(MethodCall, exp)`
@@ -910,8 +913,10 @@ decision on a comparer scope question round 2's fix left open. Fixed/decided on 
    round 5): NOT a general n-ary restoration" paragraph). Characterization tests added (asserting the
    CURRENT, decided behavior, not a requirement):
    `ExpressionComparerTests.FreeParameters_ThreeTermAdditionPermutation_PreservesPreS4ComparerBehavior` and
-   its multiplicative counterpart. A full associative-commutative comparer/hasher for such chains, if ever
-   wanted, belongs in its own dedicated stage/PR, not folded into S4's closeout.
+   its multiplicative counterpart (renamed in round 8 to `..._CharacterizesPostS4ScopeBoundary`: the original
+   name was itself backwards - it asserted `false`, i.e. that the comparer does NOT preserve pre-S4 behavior
+   for this shape, the opposite of what the name said). A full associative-commutative comparer/hasher for
+   such chains, if ever wanted, belongs in its own dedicated stage/PR, not folded into S4's closeout.
 
 **Validation performed after round 5 (2026-09-22):** `ExpressionSimplifierStructuralCanonicalizationTests`:
 41/41 passed. `ExpressionComparerTests`: 53/53 passed. Full `UtilsTest/Mathematics/Expressions` namespace:
@@ -1081,6 +1086,67 @@ test to match - something `AGENTS.md` asks not to do). Both addressed on the sam
 7668/7668 passed, 0 skipped. Full `UtilsTest.Functional`: 383/383 passed. Full `UtilsTest.Security`: 225/228
 passed, 3 skipped (same three pre-existing, unrelated, platform-gated tests). Release build of `Utils.sln`:
 succeeded, no errors. All four suites run sequentially.
+
+#### S4 review fixes, round 8 (2026-09-22) — PR #600 seventh human review pass
+
+A seventh human review pass at commit `3c7404fc` found one real remaining S4 defect (round 7's own fix was
+incomplete) and several documentation inaccuracies left behind by earlier rounds. Fixed on the same branch.
+
+1. **`CompareFinalMemberTiebreak` compared modules by `Module.Name` text, which does not reliably identify
+   a module.** Round 7 fixed the tie-break's dimension ORDER (assembly, then module, then token) but the
+   "module" dimension itself was still just `Module.Name` - a display string, not the module's actual
+   identity. A `MemberInfo.MetadataToken` is meaningful only in combination with its actual `Module`, not
+   with that module's name text specifically; since `Module.Name` is not guaranteed unique (every
+   dynamically-created module on this runtime reports the identical literal `"<In Memory Module>"`,
+   regardless of which assembly it belongs to - confirmed empirically while building this round's test), two
+   different modules from two different builds could share an identical assembly-name string, an identical
+   module-name string, AND an identical token value while genuinely representing different metadata - the
+   tie-break would then conservatively tie (`0`) on a pair it could and should have distinguished. Fixed by
+   adding `Module.ModuleVersionId` (a GUID the runtime generates to uniquely identify one physical module
+   instance) as a dimension between module name and metadata token - `TryGetModuleVersionId`, guarded the
+   same defensive way as the other `TryGet*` helpers. `Guid.CompareTo` does not order lexicographically by
+   displayed hex text, but it is still a valid, deterministic total order over the GUID's raw bytes, which is
+   all determinism/transitivity requires here. A residual, now explicitly documented limit:
+   the SAME physical assembly file loaded twice (e.g. into two different `AssemblyLoadContext`s) produces two
+   `MemberInfo` instances sharing an identical assembly name, module name, `ModuleVersionId` AND token, since
+   the MVID is embedded in the file's own metadata and travels with every copy of the same build - this
+   tie-break's contract is "distinguish two members by their AVAILABLE STRUCTURAL METADATA", not "always
+   distinguish the exact runtime identity", and this is now stated explicitly in
+   `CompareFinalMemberTiebreak`'s remarks rather than left implicit. Regression:
+   `CompareMethod_MetadataTiebreak_ModuleVersionTakesPriorityOverSameNameSameToken` (two baked global methods
+   in two dynamic assemblies sharing identical assembly-name text, module-name text, AND metadata token,
+   distinguishable only by `ModuleVersionId`; verified to fail - tie to `0` - without the fix) plus an
+   end-to-end counterpart, `CompareExpression_CallsOfMethodsDistinguishedOnlyByModuleVersion_OrderDeterministically`,
+   exercising `ExpressionCanonicalOrder.Compare` directly on `Call(methodOne, x)`/`Call(methodTwo, x)` nodes
+   (not through a full `Simplify()` call: an owner-less method routed through the full pipeline hits the
+   same unrelated, pre-existing `ExpressionCallSignatureAttribute.Match` null-`DeclaringType` gap already
+   noted on `CompareMethod_TwoDynamicMethodsWithIdenticalSignature_DoesNotThrow` - a different, out-of-scope
+   bug the reviewer's suggested literal `Simplify()`-based end-to-end test would also have hit).
+2. **Documentation cleanup**, all in files this branch already touches, no behavior change:
+   `ExpressionSimplifier._lexicalScopeStack`'s doc comment still said "for the exact built-in
+   `ExpressionSimplifier` runtime type only", stale since round 7 made the hooks unconditional - corrected.
+   `ExpressionCanonicalOrder`'s class-level and `CompareType`'s own XML remarks still described the final
+   tie-break as `MetadataToken`/`Module`/`Assembly` (the PRE-round-7 order) and called reaching it "practically
+   unreachable... since the CLR does not allow two distinct types with an identical fully-qualified name to
+   coexist" - true only within a single load context, not across two different assemblies/builds loaded side
+   by side (e.g. via `Assembly.LoadFile`, which does not participate in the default identity-based binding
+   cache) - corrected to describe the actual, current dimension order and to stop overclaiming
+   unreachability. `CompareType`'s summary also implied object identity/reference order was used as a
+   "last-resort deterministic tie-break", when the actual implementation never uses it as one (a tie
+   conservatively returns `0`, never a reference-derived value) - reworded. The roadmap's own S4-progress
+   "Files changed" summary for `ExpressionCanonicalOrder.cs` carried the same stale claim - given a
+   forward-pointer to this round instead of being silently rewritten, preserving the historical record.
+   Finally, `ExpressionComparerTests.FreeParameters_ThreeTermAdditionPermutation_PreservesPreS4ComparerBehavior`
+   (and its multiplicative counterpart, round 5) asserted `Assert.IsFalse` while named "Preserves..." - backwards,
+   since its own doc comment explains the pre-S4 comparer returned `true` for this shape; renamed to
+   `..._CharacterizesPostS4ScopeBoundary`, with every cross-reference (`ExpressionComparer.BinaryEqual`'s XML
+   remarks, this roadmap file) updated to match.
+
+**Validation performed after round 8 (2026-09-22):** `ExpressionSimplifierStructuralCanonicalizationTests`:
+46/46 passed. `ExpressionComparerTests`: 53/53 passed. Full `UtilsTest/Mathematics/Expressions` namespace:
+458/458 passed. Full `UtilsTest.Unit`: 7670/7670 passed, 0 skipped. Full `UtilsTest.Functional`: 383/383
+passed. Full `UtilsTest.Security`: 225/228 passed, 3 skipped (same three pre-existing, unrelated,
+platform-gated tests). Release build of `Utils.sln`: succeeded, no errors. All four suites run sequentially.
 
 ### S5 — Construction-performance cleanup
 

@@ -64,10 +64,12 @@ namespace Utils.Mathematics.Expressions;
 /// <b>Deterministic reflection-based ordering, never hash-based.</b> <see cref="Type"/>,
 /// <see cref="MethodInfo"/> and <see cref="MemberInfo"/> comparisons in this file are built from actual
 /// reflection metadata (namespace/name text, declaring type, generic arity and argument identities,
-/// parameter/return types, static/instance) compared ordinally, with a final tie-break using
-/// <see cref="MemberInfo.MetadataToken"/>/<see cref="Module"/>/<see cref="System.Reflection.Assembly"/>
-/// identity for the (practically unreachable, since C# does not allow two members with an identical
-/// signature) case where every other dimension ties. None of <see cref="object.GetHashCode"/>,
+/// parameter/return types, static/instance) compared ordinally, with a final tie-break
+/// (<see cref="CompareFinalMemberTiebreak"/>) using assembly identity, then module name, then
+/// <see cref="Module.ModuleVersionId"/>, then <see cref="MemberInfo.MetadataToken"/> for the case where
+/// every other dimension ties - a real, reachable case (e.g. two different assembly builds/versions each
+/// defining a type or member with an identical namespace/name/signature loaded side by side; see that
+/// method's remarks), not merely a theoretical one. None of <see cref="object.GetHashCode"/>,
 /// <see cref="System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(object)"/>,
 /// <see cref="HashCode.ToHashCode"/>, object reference order, or any <see cref="object.ToString"/> override
 /// participates in ordering.
@@ -266,9 +268,14 @@ internal static class ExpressionCanonicalOrder
 
     /// <summary>
     /// Deterministically compares two <see cref="Type"/> values by reflection metadata: namespace/name
-    /// text, then (for a constructed generic type) its generic arguments recursively. Never uses
-    /// <see cref="object.GetHashCode"/>, <see cref="Type.ToString"/>, or object identity/reference order as
-    /// the decision itself, only as an initial short-circuit and a last-resort deterministic tie-break.
+    /// text, then (for a constructed generic type) its generic arguments recursively, then (only if every
+    /// other dimension ties) <see cref="CompareFinalMemberTiebreak"/>'s own assembly/module/token dimensions.
+    /// Never uses <see cref="object.GetHashCode"/>, <see cref="Type.ToString"/>, or object identity/reference
+    /// order as part of the ordering decision itself - reference equality is checked only as an initial
+    /// same-instance short-circuit (line 1 below), never as a tie-break: two distinct instances that tie on
+    /// every dimension this method and <see cref="CompareFinalMemberTiebreak"/> inspect conservatively
+    /// compare as equal (<c>0</c>), relying on the caller's stable sort to preserve source order, rather than
+    /// fabricating an order from reference/hash identity.
     /// </summary>
     /// <param name="a">The first type, or <see langword="null"/>.</param>
     /// <param name="b">The second type, or <see langword="null"/>.</param>
@@ -328,11 +335,14 @@ internal static class ExpressionCanonicalOrder
 
         if (a == b) return 0;
 
-        // Every other dimension ties: this happens only for two genuinely distinct Type instances that
-        // otherwise share namespace, name and generic shape (in practice unreachable for real CLR types,
-        // since the CLR does not allow two distinct types with an identical fully-qualified name to
-        // coexist in the same load context). System.Type derives from MemberInfo, so the shared,
-        // non-throwing tie-break below applies here too.
+        // Every other dimension ties: two genuinely distinct Type instances that otherwise share namespace,
+        // name and generic shape. This is NOT unreachable in practice (S4 review, round 8 correction of an
+        // earlier, overstated claim here): loading two builds/versions of "the same" assembly - each
+        // defining a type with an identical namespace/name - side by side is possible without even needing
+        // separate AssemblyLoadContexts (e.g. Assembly.LoadFile, unlike Load/LoadFrom, does not participate
+        // in the default identity-based binding cache). System.Type derives from MemberInfo, so the shared,
+        // non-throwing tie-break below applies here too - see its own remarks for how it distinguishes such
+        // types when possible (assembly identity, then module identity/version, then metadata token).
         return CompareFinalMemberTiebreak(a, b);
     }
 
@@ -421,22 +431,52 @@ internal static class ExpressionCanonicalOrder
     /// <param name="b">The second member or type.</param>
     /// <returns>A negative value if <paramref name="a"/> sorts before <paramref name="b"/>, zero if tied (including when no safe dimension distinguishes them), positive otherwise.</returns>
     /// <remarks>
-    /// <b>Fixed dimension order (S4 review, round 7).</b> The three dimensions below - assembly, then
-    /// module, then metadata token - are evaluated in this SAME fixed order for every pair, each one
-    /// comparing "is the dimension available" before "what is its value" and falling through to the next
-    /// dimension only on an exact tie (both available and equal, or both unavailable). The previous version
-    /// instead let each PAIR independently decide which dimension actually distinguished it (token first if
-    /// both had one and they differed, else module if both had one, else assembly), which is not a
-    /// consistent total preorder: three members A (token-bearing, module "Z"), B (token-less
-    /// <see cref="System.Reflection.Emit.DynamicMethod"/>, module "M"), C (token-bearing, module "A", a
-    /// higher token than A) could compare <c>A &lt; C</c> via tokens, <c>A &gt; B</c> via modules (A has no
-    /// token to compare against B), and <c>B &gt; C</c> via modules again - a cycle
-    /// (<c>A &lt; C</c> but <c>A &gt; B &gt; C</c>), which breaks the total order <see cref="Enumerable.OrderBy{TSource, TKey}(IEnumerable{TSource}, Func{TSource, TKey})"/>
-    /// assumes. Ordering assembly before module before token also matches metadata reality: a
+    /// <para>
+    /// <b>Fixed dimension order (S4 review, round 7; extended round 8).</b> The four dimensions below -
+    /// assembly, then module NAME, then module VERSION (<see cref="Module.ModuleVersionId"/>), then metadata
+    /// token - are evaluated in this SAME fixed order for every pair, each one comparing "is the dimension
+    /// available" before "what is its value" and falling through to the next dimension only on an exact tie
+    /// (both available and equal, or both unavailable). An earlier version let each PAIR independently
+    /// decide which dimension actually distinguished it (token first if both had one and they differed, else
+    /// module if both had one, else assembly), which is not a consistent total preorder: three members A
+    /// (token-bearing, module "Z"), B (token-less <see cref="System.Reflection.Emit.DynamicMethod"/>, module
+    /// "M"), C (token-bearing, module "A", a higher token than A) could compare <c>A &lt; C</c> via tokens,
+    /// <c>A &gt; B</c> via modules (A has no token to compare against B), and <c>B &gt; C</c> via modules
+    /// again - a cycle (<c>A &lt; C</c> but <c>A &gt; B &gt; C</c>), which breaks the total order
+    /// <see cref="Enumerable.OrderBy{TSource, TKey}(IEnumerable{TSource}, Func{TSource, TKey})"/> assumes.
+    /// Ordering assembly before module before token also matches metadata reality: a
     /// <see cref="MemberInfo.MetadataToken"/> is only meaningful WITHIN its own module, so it must never be
     /// compared across two members before their module identity is already known to match (or both lack
-    /// one) - comparing tokens first, as the previous version did, could otherwise compare token values
+    /// one) - comparing tokens first, as that earlier version did, could otherwise compare token values
     /// belonging to entirely different metadata spaces as if they shared one.
+    /// </para>
+    /// <para>
+    /// <b>Why module VERSION, not just module NAME (S4 review, round 8).</b> A <see cref="MemberInfo.MetadataToken"/>
+    /// identifies a member only in combination with its actual <see cref="Module"/> - not with that module's
+    /// display <see cref="Module.Name"/> text, which is not guaranteed unique (every dynamically-created
+    /// module reports the identical literal <c>"&lt;In Memory Module&gt;"</c>, for one - see
+    /// <c>ExpressionSimplifierStructuralCanonicalizationTests.CompareMethod_MetadataTiebreak_ModuleVersionTakesPriorityOverSameNameSameToken</c>).
+    /// Two different modules (from two different builds, say) could therefore share an identical
+    /// assembly-name string, an identical module-name string, AND an identical token value while genuinely
+    /// representing different metadata - module name text alone under-distinguishes them.
+    /// <see cref="Module.ModuleVersionId"/> is a GUID the runtime generates to uniquely identify one physical
+    /// module instance, so comparing it (after module name, before token) closes that gap. <see cref="Guid"/>
+    /// does not order lexicographically by its displayed hex text, but <see cref="Guid.CompareTo(Guid)"/> is
+    /// still a valid, deterministic total order over its raw bytes - sufficient here, since only
+    /// determinism/transitivity is required, not a "meaningful" ordering.
+    /// </para>
+    /// <para>
+    /// <b>A residual, documented limit: same-binary reloads are still indistinguishable by metadata alone.</b>
+    /// The SAME physical assembly file loaded twice - e.g. into two different
+    /// <see cref="System.Runtime.Loader.AssemblyLoadContext"/>s - produces two distinct <see cref="MemberInfo"/>
+    /// instances that share an identical assembly name, module name, <see cref="Module.ModuleVersionId"/>
+    /// AND metadata token, since the MVID is embedded in the file's own metadata and travels with every copy
+    /// of the same build. This tie-break's contract is therefore "distinguish two members by their AVAILABLE
+    /// STRUCTURAL METADATA", not "always distinguish the exact runtime <see cref="MemberInfo"/> identity" -
+    /// two such same-binary-reload members conservatively tie (<c>0</c>) here, exactly like any other pair
+    /// that ties on every dimension this method inspects, relying on the caller's stable sort to preserve
+    /// source order rather than inventing one from runtime identity.
+    /// </para>
     /// </remarks>
     private static int CompareFinalMemberTiebreak(MemberInfo a, MemberInfo b)
     {
@@ -458,6 +498,15 @@ internal static class ExpressionCanonicalOrder
             if (moduleCompare != 0) return moduleCompare;
         }
 
+        bool aHasModuleVersion = TryGetModuleVersionId(a, out Guid aModuleVersion);
+        bool bHasModuleVersion = TryGetModuleVersionId(b, out Guid bModuleVersion);
+        if (aHasModuleVersion != bHasModuleVersion) return aHasModuleVersion ? -1 : 1;
+        if (aHasModuleVersion)
+        {
+            int moduleVersionCompare = aModuleVersion.CompareTo(bModuleVersion);
+            if (moduleVersionCompare != 0) return moduleVersionCompare;
+        }
+
         bool aHasToken = TryGetMetadataToken(a, out int aToken);
         bool bHasToken = TryGetMetadataToken(b, out int bToken);
         if (aHasToken != bHasToken) return aHasToken ? -1 : 1;
@@ -469,9 +518,9 @@ internal static class ExpressionCanonicalOrder
 
         // No further safe, non-throwing, deterministic dimension distinguishes two members that already
         // tied on every earlier structural dimension (declaring type, name, generic shape,
-        // parameter/return types, assembly, module, metadata token) - conservatively tie, relying on the
-        // caller's stable sort to preserve source order, rather than fabricating an order from runtime
-        // identity (object reference/hash), which the roadmap explicitly forbids.
+        // parameter/return types, assembly, module name, module version, metadata token) - conservatively
+        // tie, relying on the caller's stable sort to preserve source order, rather than fabricating an
+        // order from runtime identity (object reference/hash), which the roadmap explicitly forbids.
         return 0;
     }
 
@@ -507,6 +556,31 @@ internal static class ExpressionCanonicalOrder
         catch (Exception ex) when (ex is InvalidOperationException or NotSupportedException)
         {
             name = null;
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Safely reads <see cref="Module.ModuleVersionId"/> for <paramref name="member"/>'s declaring module,
+    /// which can throw for some dynamically-generated members. Unlike <see cref="Module.Name"/> (a display
+    /// string, not guaranteed unique - every dynamically-created module reports the same literal text), this
+    /// GUID uniquely identifies one physical module instance, so it is the dimension that actually resolves
+    /// which module a <see cref="MemberInfo.MetadataToken"/> belongs to - see
+    /// <see cref="CompareFinalMemberTiebreak"/>'s remarks.
+    /// </summary>
+    /// <param name="member">The member or type to inspect.</param>
+    /// <param name="moduleVersionId">The module version ID, when available.</param>
+    /// <returns><see langword="true"/> if <paramref name="moduleVersionId"/> was read successfully.</returns>
+    private static bool TryGetModuleVersionId(MemberInfo member, out Guid moduleVersionId)
+    {
+        try
+        {
+            moduleVersionId = member.Module.ModuleVersionId;
+            return true;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or NotSupportedException)
+        {
+            moduleVersionId = default;
             return false;
         }
     }

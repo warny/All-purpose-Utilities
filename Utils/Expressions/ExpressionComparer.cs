@@ -222,7 +222,7 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// chains as associative-commutative collections of terms - a materially larger capability than this
     /// narrow regression fix, deliberately NOT attempted here; see the roadmap's round 5 decision.
     /// Characterized (not merely left unspecified) by
-    /// <c>ExpressionComparerTests.FreeParameters_ThreeTermAdditionPermutation_PreservesPreS4ComparerBehavior</c>
+    /// <c>ExpressionComparerTests.FreeParameters_ThreeTermAdditionPermutation_CharacterizesPostS4ScopeBoundary</c>
     /// and its multiplicative counterpart.
     /// </para>
     /// </remarks>

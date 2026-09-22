@@ -184,12 +184,14 @@ namespace Utils.Mathematics.Expressions
         #region Structural canonicalization (S4) — ambient lexical scope tracking
 
         /// <summary>
-        /// Per-thread stack of currently-open lambda parameter scopes, outermost first, for the exact
-        /// built-in <see cref="ExpressionSimplifier"/> runtime type only. Populated exclusively by
-        /// <see cref="OnEnterLambdaScope"/>/<see cref="OnExitLambdaScope"/>, which
+        /// Per-thread stack of currently-open lambda parameter scopes, outermost first. Populated
+        /// exclusively by <see cref="OnEnterLambdaScope"/>/<see cref="OnExitLambdaScope"/>, which
         /// <see cref="ExpressionTransformer.PrepareLambda"/> calls (via its private caller) strictly
         /// around the single synchronous recursive descent into a lambda's body — see those hooks' remarks
-        /// on <see cref="ExpressionTransformer"/> for why this exists at all.
+        /// on <see cref="ExpressionTransformer"/> for why this exists at all. As of S4 review round 7,
+        /// those two hooks (and this field they share) are unconditional — not gated to the exact built-in
+        /// <see cref="ExpressionSimplifier"/> runtime type — so a subclass populates and consults the same
+        /// tracking, not a separate or absent one.
         /// </summary>
         /// <remarks>
         /// <para>

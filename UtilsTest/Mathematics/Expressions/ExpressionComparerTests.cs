@@ -927,7 +927,7 @@ public class ExpressionComparerTests
     /// rather than an unspecified gap: it asserts the CURRENT, decided behavior, not a requirement.
     /// </summary>
     [TestMethod]
-    public void FreeParameters_ThreeTermAdditionPermutation_PreservesPreS4ComparerBehavior()
+    public void FreeParameters_ThreeTermAdditionPermutation_CharacterizesPostS4ScopeBoundary()
     {
         ParameterExpression a = P("a");
         ParameterExpression b = P("b");
@@ -939,9 +939,9 @@ public class ExpressionComparerTests
         Assert.IsFalse(ExpressionComparer.Default.Equals(left, right));
     }
 
-    /// <summary>Multiplicative counterpart of <see cref="FreeParameters_ThreeTermAdditionPermutation_PreservesPreS4ComparerBehavior"/>.</summary>
+    /// <summary>Multiplicative counterpart of <see cref="FreeParameters_ThreeTermAdditionPermutation_CharacterizesPostS4ScopeBoundary"/>.</summary>
     [TestMethod]
-    public void FreeParameters_ThreeTermMultiplicationPermutation_PreservesPreS4ComparerBehavior()
+    public void FreeParameters_ThreeTermMultiplicationPermutation_CharacterizesPostS4ScopeBoundary()
     {
         ParameterExpression a = P("a");
         ParameterExpression b = P("b");
