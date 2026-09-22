@@ -735,6 +735,53 @@ Full `UtilsTest.Functional`: 383/383 passed. Full `UtilsTest.Security`: 225/228 
 pre-existing, unrelated, platform-gated tests). Release build of `Utils.sln`: succeeded, no errors (same
 pre-existing, unrelated `CS8618` warning).
 
+#### S4 review fixes, round 3 (2026-09-22) — PR #600 third human review pass
+
+A third human review pass at commit `da49f7a0` confirmed all five round-2 fixes still hold and found one
+real remaining S4 defect plus two contract/conformity points. Fixed on the same branch.
+
+1. **`ConstantKey` still collided for constants whose DECLARED `Type` is wider than their boxed value's
+   runtime type** — e.g. `Expression.Constant(false, typeof(object))` or `Expression.Constant(1,
+   typeof(object))`, which occur for any argument typed `object` (or another wide interface/base class) at
+   the call site. Round 2 fixed `bool`/`char`/`enum` ordering and numeric detection, but both fixes keyed
+   off `ConstantExpression.Type` — the *declared* type — not the boxed value's own type. Two constants
+   declared `object` but holding, say, `false` and `"x"` therefore both had `_type == typeof(object)`,
+   `CompareType` tied, and neither the string/bool/char/enum special-casing nor `ExactNumericValue` (built
+   only when the *declared* type is in `Types.Number`) ever engaged — so `F((object)false) + F((object)"x")`
+   and its operand-swapped source form were not guaranteed to converge to the same canonical tree, a real
+   S4 determinism regression for this shape. Fixed by falling back to the boxed value's own runtime type
+   (`value.GetType()`, always safe to call — never user-overridable) whenever the *declared* type does not
+   itself identify the value as numeric or known-safe: `BuildConstant`/`TryGetNumericValue` now try the
+   declared type first and the runtime type second for `ExactNumericValue` construction, and
+   `ConstantKey.CompareSameRank` compares runtime types up front (via the same non-throwing `CompareType`
+   helper) before falling through to the string/bool/char/enum branches, so a declared-type tie can no
+   longer mask a real runtime-type difference. Regression:
+   `ConstantOrdering_DifferentSafeRuntimeTypesDeclaredAsObject_CanonicalizeDeterministically` and
+   `ConstantOrdering_BoxedNumericConstantsDeclaredAsObject_CanonicalizeDeterministically` in
+   `ExpressionSimplifierStructuralCanonicalizationTests`.
+2. **Round 2's `SafeConstantsOnly` grouping-by-value fix (finding 2) had no dedicated regression test.**
+   Round 2's own bool/char/enum tests use distinct values, which only exercises the order key's ability to
+   *distinguish* unequal safe constants, not `StructuralEqualsRaw`/`StructuralHashRaw`'s ability to *group*
+   equal-but-differently-referenced/boxed safe constants — the actual behavior the finding 2 fix restored.
+   The implementation itself needed no change (`ConstantsEqual`/`HashConstant` were already correct), but the
+   gap was real: a future regression here would have gone undetected. Added four targeted tests reflecting
+   into the internal `StructuralEqualsRaw`/`StructuralHashRaw` helpers directly: two equal-content `string`s
+   built from separate `char[]`s, two separately-boxed equal `bool`s, and two separately-boxed equal
+   `SampleColor` enum values are all grouped by value; a negative control with two distinct opaque
+   (non-known-safe) values confirms they are still *not* grouped and, critically, that neither side's
+   `Equals`/`GetHashCode` was ever invoked (arbitrary user code still unreachable).
+3. **The PR description's test counts were stale again**, same class of issue as round 2 finding 5: it still
+   said "29 tests" (actual count at `da49f7a0` was already 32 before this round's 6 additions, now 38) and
+   carried the original commit's `Mathematics/Expressions: 566/566` figure unchanged through both later
+   rounds even though the namespace's actual measured count is unrelated to the incremental "+8/+4" arithmetic
+   used to justify it — re-measured directly at `da49f7a0` it is 442/442, not 566 or 578. PR description
+   updated to the directly re-measured current counts rather than incremented arithmetic, to avoid the same
+   staleness recurring in a future round.
+
+**Validation performed after round 3 (2026-09-22):** `ExpressionSimplifierStructuralCanonicalizationTests`:
+38/38 passed. Full `UtilsTest/Mathematics/Expressions` namespace: 448/448 passed. Full `UtilsTest.Unit`:
+7660/7660 passed, 0 skipped.
+
 ### S5 — Construction-performance cleanup
 
 Only after the correctness/structure stages above, re-profile construction-time allocations and CPU cost in the simplifier.

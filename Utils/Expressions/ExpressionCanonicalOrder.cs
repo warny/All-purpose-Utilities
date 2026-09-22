@@ -151,11 +151,26 @@ internal static class ExpressionCanonicalOrder
     /// <param name="ce">The constant to key.</param>
     /// <returns>The resulting <see cref="ConstantKey"/>.</returns>
     private static KeyNode BuildConstant(ConstantExpression ce)
+        => new ConstantKey(ce.Type, ce.Value, TryGetNumericValue(ce.Type, ce.Value));
+
+    /// <summary>
+    /// Builds the exact numeric value for a constant, preferring <paramref name="declaredType"/> but
+    /// falling back to <paramref name="value"/>'s own RUNTIME type when the declared type does not
+    /// identify it as numeric — e.g. <c>Expression.Constant(1, typeof(object))</c>, where
+    /// <see cref="ConstantExpression.Type"/> is <see cref="object"/> but the boxed value is an
+    /// <see cref="int"/>. <see cref="object.GetType"/> is always safe to call (never user-overridable),
+    /// so this never executes constant-value-owned code.
+    /// </summary>
+    /// <param name="declaredType">The constant's declared <see cref="Expression.Type"/>.</param>
+    /// <param name="value">The constant's boxed value, or <see langword="null"/>.</param>
+    /// <returns>The exact numeric value, when either the declared or the runtime type is native numeric; otherwise <see langword="null"/>.</returns>
+    private static ExpressionComparer.ExactNumericValue? TryGetNumericValue(Type declaredType, object? value)
     {
-        ExpressionComparer.ExactNumericValue? numeric = Types.Number.Contains(ce.Type) && ce.Value is not null
-            ? ExpressionComparer.ExactNumericValue.FromBoxed(ce.Type, ce.Value)
-            : null;
-        return new ConstantKey(ce.Type, ce.Value, numeric);
+        if (value is null) return null;
+        if (Types.Number.Contains(declaredType)) return ExpressionComparer.ExactNumericValue.FromBoxed(declaredType, value);
+
+        Type runtimeType = value.GetType();
+        return Types.Number.Contains(runtimeType) ? ExpressionComparer.ExactNumericValue.FromBoxed(runtimeType, value) : null;
     }
 
     /// <summary>Builds the key for a <see cref="ParameterExpression"/>: a bound (depth, position, type) triple if found in <paramref name="scopes"/> (innermost scope searched first), or a free-parameter key otherwise.</summary>
@@ -602,6 +617,18 @@ internal static class ExpressionCanonicalOrder
             // stable sort to preserve source order.
             if (ExpressionComparer.IsKnownSafeConstantValue(_value) && ExpressionComparer.IsKnownSafeConstantValue(o._value))
             {
+                // Two individually-safe values (e.g. bool vs string) can still share a DECLARED type wide
+                // enough to mask their difference (both Expression.Constant(..., typeof(object))), which is
+                // exactly why CompareType(_type, o._type) above may already have tied. Order by RUNTIME
+                // type identity first, via the same non-throwing, non-hash-based CompareType helper -
+                // Type.GetType() is always safe to call, never user-overridable.
+                Type leftRuntimeType = _value.GetType();
+                Type rightRuntimeType = o._value.GetType();
+                if (leftRuntimeType != rightRuntimeType)
+                {
+                    return CompareType(leftRuntimeType, rightRuntimeType);
+                }
+
                 if (_value is string leftString && o._value is string rightString)
                 {
                     return Math.Sign(string.CompareOrdinal(leftString, rightString));

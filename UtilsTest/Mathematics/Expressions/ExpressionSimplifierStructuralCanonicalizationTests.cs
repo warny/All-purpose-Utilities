@@ -764,6 +764,172 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
     }
 
     // ------------------------------------------------------------------------------------------
+    // Post-review hardening, round 3: a ConstantExpression's DECLARED Type can be wider than its
+    // boxed value's runtime type (Expression.Constant(value, typeof(object))), which must not mask
+    // the runtime-type-based comparisons added in round 2. Also: the "known-safe constant" grouping
+    // policy (ExpressionComparer.SafeConstantsOnly) must still group two equal-but-differently-
+    // referenced/boxed safe values, not just distinguish unequal ones (round 2's tests only proved
+    // the latter).
+    // ------------------------------------------------------------------------------------------
+
+    /// <summary>Test-only method accepting an opaque <see cref="object"/> argument, used to embed differently-typed constants declared as <see cref="object"/>.</summary>
+    /// <param name="value">An arbitrary opaque value, ignored beyond ordering.</param>
+    /// <returns>A constant, arbitrary result.</returns>
+    private static double FromObjectConstant(object value) => 1.0;
+
+    /// <summary>
+    /// Two additive terms whose constant arguments are individually known-safe (<see cref="bool"/> and
+    /// <see cref="string"/>) but declared as <see cref="object"/> — so <see cref="ConstantExpression.Type"/>
+    /// is the SAME wide type for both — must still canonicalize deterministically regardless of source
+    /// order: the declared type alone must not be allowed to mask the runtime-type distinction.
+    /// </summary>
+    [TestMethod]
+    public void ConstantOrdering_DifferentSafeRuntimeTypesDeclaredAsObject_CanonicalizeDeterministically()
+    {
+        var simplifier = new ExpressionSimplifier();
+        MethodInfo fromObject = typeof(ExpressionSimplifierStructuralCanonicalizationTests).GetMethod(nameof(FromObjectConstant), BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        var sourceForward = Expression.Lambda<Func<double>>(
+            Expression.Add(
+                Expression.Call(fromObject, Expression.Constant(false, typeof(object))),
+                Expression.Call(fromObject, Expression.Constant("x", typeof(object)))));
+        var sourceBackward = Expression.Lambda<Func<double>>(
+            Expression.Add(
+                Expression.Call(fromObject, Expression.Constant("x", typeof(object))),
+                Expression.Call(fromObject, Expression.Constant(false, typeof(object)))));
+
+        var resultForward = (LambdaExpression)simplifier.Simplify(sourceForward);
+        var resultBackward = (LambdaExpression)simplifier.Simplify(sourceBackward);
+
+        var bodyForward = (BinaryExpression)resultForward.Body;
+        var bodyBackward = (BinaryExpression)resultBackward.Body;
+
+        Assert.AreEqual(ConstantArgumentOf(bodyForward.Left).GetType(), ConstantArgumentOf(bodyBackward.Left).GetType(),
+            "Regardless of source order, the same runtime-typed constant must end up on the Left in both results.");
+        Assert.AreEqual(ConstantArgumentOf(bodyForward.Right).GetType(), ConstantArgumentOf(bodyBackward.Right).GetType());
+    }
+
+    /// <summary>
+    /// A boxed numeric constant declared as <see cref="object"/> (<c>Expression.Constant(1, typeof(object))</c>)
+    /// must still be recognized as numeric via its runtime type and ordered by exact value, not tie merely
+    /// because <see cref="ConstantExpression.Type"/> does not itself indicate a native numeric type.
+    /// </summary>
+    [TestMethod]
+    public void ConstantOrdering_BoxedNumericConstantsDeclaredAsObject_CanonicalizeDeterministically()
+    {
+        var simplifier = new ExpressionSimplifier();
+        MethodInfo fromObject = typeof(ExpressionSimplifierStructuralCanonicalizationTests).GetMethod(nameof(FromObjectConstant), BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        var sourceForward = Expression.Lambda<Func<double>>(
+            Expression.Add(
+                Expression.Call(fromObject, Expression.Constant(1, typeof(object))),
+                Expression.Call(fromObject, Expression.Constant(2, typeof(object)))));
+        var sourceBackward = Expression.Lambda<Func<double>>(
+            Expression.Add(
+                Expression.Call(fromObject, Expression.Constant(2, typeof(object))),
+                Expression.Call(fromObject, Expression.Constant(1, typeof(object)))));
+
+        var resultForward = (LambdaExpression)simplifier.Simplify(sourceForward);
+        var resultBackward = (LambdaExpression)simplifier.Simplify(sourceBackward);
+
+        var bodyForward = (BinaryExpression)resultForward.Body;
+        var bodyBackward = (BinaryExpression)resultBackward.Body;
+
+        Assert.AreEqual(ConstantArgumentOf(bodyForward.Left), ConstantArgumentOf(bodyBackward.Left));
+        Assert.AreEqual(ConstantArgumentOf(bodyForward.Right), ConstantArgumentOf(bodyBackward.Right));
+        CollectionAssert.AreEquivalent(new object[] { 1, 2 }, new[] { ConstantArgumentOf(bodyForward.Left), ConstantArgumentOf(bodyForward.Right) });
+    }
+
+    /// <summary>Reflected <see cref="MethodInfo"/> for the internal <c>ExpressionComparer.StructuralEqualsRaw(Expression, Expression)</c> helper.</summary>
+    private static readonly MethodInfo StructuralEqualsRawMethod = typeof(ExpressionComparer)
+        .GetMethod("StructuralEqualsRaw", BindingFlags.NonPublic | BindingFlags.Static)!;
+
+    /// <summary>Reflected <see cref="MethodInfo"/> for the internal <c>ExpressionComparer.StructuralHashRaw(Expression)</c> helper.</summary>
+    private static readonly MethodInfo StructuralHashRawMethod = typeof(ExpressionComparer)
+        .GetMethod("StructuralHashRaw", BindingFlags.NonPublic | BindingFlags.Static)!;
+
+    /// <summary>Invokes the internal <c>ExpressionComparer.StructuralEqualsRaw(Expression, Expression)</c> helper via reflection, without changing its accessibility.</summary>
+    /// <param name="x">The first expression.</param>
+    /// <param name="y">The second expression.</param>
+    /// <returns>The equality result.</returns>
+    private static bool InvokeStructuralEqualsRaw(Expression? x, Expression? y) => (bool)StructuralEqualsRawMethod.Invoke(null, [x, y])!;
+
+    /// <summary>Invokes the internal <c>ExpressionComparer.StructuralHashRaw(Expression)</c> helper via reflection, without changing its accessibility.</summary>
+    /// <param name="e">The expression to hash.</param>
+    /// <returns>The hash code.</returns>
+    private static int InvokeStructuralHashRaw(Expression? e) => (int)StructuralHashRawMethod.Invoke(null, [e])!;
+
+    /// <summary>
+    /// Two equal-content <see cref="string"/> constants built from separate character arrays (guaranteed
+    /// distinct references) must be recognized as equal — and hash equally — by
+    /// <c>ExpressionComparer.StructuralEqualsRaw</c>/<c>StructuralHashRaw</c>, the mechanism S4's additive
+    /// grouping uses: <see cref="string"/> is a known-safe constant type, so the round-2 fix restores
+    /// grouping-by-value for it rather than leaving it on the conservative reference-identity fallback.
+    /// </summary>
+    [TestMethod]
+    public void StructuralEqualsRaw_EqualButDistinctlyReferencedStringConstants_AreGroupedByValue()
+    {
+        string left = new(['h', 'e', 'l', 'l', 'o']);
+        string right = new(['h', 'e', 'l', 'l', 'o']);
+        Assert.AreNotSame(left, right, "Precondition: the two strings must be distinct references sharing equal content.");
+
+        Expression leftConstant = Expression.Constant(left);
+        Expression rightConstant = Expression.Constant(right);
+
+        Assert.IsTrue(InvokeStructuralEqualsRaw(leftConstant, rightConstant));
+        Assert.AreEqual(InvokeStructuralHashRaw(leftConstant), InvokeStructuralHashRaw(rightConstant));
+    }
+
+    /// <summary>Boolean equivalent of <see cref="StructuralEqualsRaw_EqualButDistinctlyReferencedStringConstants_AreGroupedByValue"/>, using two separately-boxed equal <see cref="bool"/> values.</summary>
+    [TestMethod]
+    public void StructuralEqualsRaw_EqualButSeparatelyBoxedBoolConstants_AreGroupedByValue()
+    {
+        static object Box(bool value) => value;
+        object left = Box(true);
+        object right = Box(true);
+        Assert.AreNotSame(left, right, "Precondition: the two boxed values must be distinct references sharing an equal value.");
+
+        Expression leftConstant = Expression.Constant(left, typeof(bool));
+        Expression rightConstant = Expression.Constant(right, typeof(bool));
+
+        Assert.IsTrue(InvokeStructuralEqualsRaw(leftConstant, rightConstant));
+        Assert.AreEqual(InvokeStructuralHashRaw(leftConstant), InvokeStructuralHashRaw(rightConstant));
+    }
+
+    /// <summary>Enum equivalent of <see cref="StructuralEqualsRaw_EqualButDistinctlyReferencedStringConstants_AreGroupedByValue"/>, using two separately-boxed equal <see cref="SampleColor"/> values.</summary>
+    [TestMethod]
+    public void StructuralEqualsRaw_EqualButSeparatelyBoxedEnumConstants_AreGroupedByValue()
+    {
+        static object Box(SampleColor value) => value;
+        object left = Box(SampleColor.Red);
+        object right = Box(SampleColor.Red);
+        Assert.AreNotSame(left, right, "Precondition: the two boxed values must be distinct references sharing an equal value.");
+
+        Expression leftConstant = Expression.Constant(left, typeof(SampleColor));
+        Expression rightConstant = Expression.Constant(right, typeof(SampleColor));
+
+        Assert.IsTrue(InvokeStructuralEqualsRaw(leftConstant, rightConstant));
+        Assert.AreEqual(InvokeStructuralHashRaw(leftConstant), InvokeStructuralHashRaw(rightConstant));
+    }
+
+    /// <summary>Negative control: two DISTINCT (unequal) opaque, non-known-safe constant values must not be reported equal by the safe grouping policy.</summary>
+    [TestMethod]
+    public void StructuralEqualsRaw_DistinctOpaqueConstants_AreNotEqual()
+    {
+        var left = new HostileConstant();
+        var right = new HostileConstant();
+
+        Expression leftConstant = Expression.Constant(left, typeof(object));
+        Expression rightConstant = Expression.Constant(right, typeof(object));
+
+        Assert.IsFalse(InvokeStructuralEqualsRaw(leftConstant, rightConstant));
+        Assert.AreEqual(0, left.EqualsCallCount);
+        Assert.AreEqual(0, left.GetHashCodeCallCount);
+        Assert.AreEqual(0, right.EqualsCallCount);
+        Assert.AreEqual(0, right.GetHashCodeCallCount);
+    }
+
+    // ------------------------------------------------------------------------------------------
     // 8. Ordinary positive controls
     // ------------------------------------------------------------------------------------------
 
