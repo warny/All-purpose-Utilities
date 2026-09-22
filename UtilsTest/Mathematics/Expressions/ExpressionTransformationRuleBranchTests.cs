@@ -288,7 +288,22 @@ public sealed class ExpressionTransformationRuleBranchTests
         AssertPowerConversion((simplifier, source, left, right) => simplifier.ConvertDoublePower(source, left, right));
     }
 
-    /// <summary>Characterizes the prepared-away negate-with-subtraction rule body directly.</summary>
+    /// <summary>
+    /// Characterizes the prepared-away negate-with-subtraction rule body directly.
+    /// </summary>
+    /// <remarks>
+    /// <c>NegateWithSubstraction</c> rewrites <c>-(x - y)</c> to <c>Add(Negate(x), y)</c> and recurses via
+    /// <c>TransformCore</c>, which dispatches to <c>AdditionWithNegate</c>, producing <c>Subtract(y, x)</c>.
+    /// Before S4 review round 6, that <c>Subtract</c> node then reached <c>FinalizeExpression</c>'s
+    /// additive-canonicalization fallback UNCONDITIONALLY (even for <see cref="ExposedSimplifier"/>, a
+    /// subclass), which rebuilt it as <c>Add(y, Negate(x))</c> - so this test used to expect
+    /// <see cref="ExpressionType.Add"/>. Round 6 gated that canonicalization to the exact built-in
+    /// <see cref="ExpressionSimplifier"/> runtime type only (see the roadmap's round-6 fix), matching every
+    /// other S4 integration point in that class; <see cref="ExposedSimplifier"/> being a subclass now
+    /// correctly skips it, so the result stays the un-recanonicalized <see cref="ExpressionType.Subtract"/>
+    /// that <c>AdditionWithNegate</c> itself produced - a shape change, not a value change (see the compiled
+    /// assertion below).
+    /// </remarks>
     [TestMethod]
     public void Simplify_NegateWithSubstraction_DirectRuleBody_RewritesOperands()
     {
@@ -300,7 +315,7 @@ public sealed class ExpressionTransformationRuleBranchTests
 
         Expression result = simplifier.RewriteNegatedSubtraction(source, operand);
 
-        Assert.AreEqual(ExpressionType.Add, result.NodeType);
+        Assert.AreEqual(ExpressionType.Subtract, result.NodeType);
         Assert.AreEqual(5.0, Expression.Lambda<Func<double, double, double>>(result, x, y).Compile()(2.0, 7.0), 1e-9);
     }
 

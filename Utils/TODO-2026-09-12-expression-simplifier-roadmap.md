@@ -922,6 +922,89 @@ resource contention in this environment, unrelated to this change - did not repr
 re-run). Full `UtilsTest.Security`: 225/228 passed, 3 skipped (same three pre-existing, unrelated,
 platform-gated tests). Release build of `Utils.sln`: succeeded, no errors.
 
+#### S4 review fixes, round 6 (2026-09-22) — self-review (`/code-review high`) at commit `6194ed14`
+
+A self-review pass (`/code-review high`, 8 finder angles, 9 deduplicated candidates, all verified) found one
+real remaining S4 defect, confirmed one already-known/deliberately-deferred item is not actually observable,
+strengthened two tests that had silently stopped proving what their names claim, and made two small,
+low-risk documentation/reuse cleanups. Fixed on the same branch.
+
+1. **`FinalizeExpression` called `CanonicalizeAdditiveExpression`/`CanonicalizeMultiplicativeExpression`
+   unconditionally, unlike every other S4 integration point in this class** (`Transform`, `PrepareExpression`,
+   `RebuildUnaryExpression`, `RebuildLambdaExpression`, `OnEnterLambdaScope`, `OnExitLambdaScope`, all gated
+   to `GetType() == typeof(ExpressionSimplifier)`). Since `OnEnterLambdaScope`/`OnExitLambdaScope` no-op for
+   any other runtime type, the ambient lexical-scope stack these two canonicalization methods read via
+   `CaptureLexicalScopeSnapshot()` was NEVER populated for a subclass's own traversal - so every bound
+   `ParameterExpression` a subclass's canonicalization encountered was silently misclassified as free (ties
+   by declared `Type` only, stable-sort source order preserved instead of declaration-position reordering).
+   Verified directly: `new MinimalDerivedSimplifier().Simplify((p0, p1) => p1 + p0)` (a zero-override
+   subclass) kept `p1 + p0` unchanged instead of reordering to `p0 + p1` the way the exact built-in type does
+   for the identical source lambda. This is a real canonicalization-quality regression introduced by S4 with
+   no comparable pre-S4 counterpart (the removed `ToString()`-based ordering needed no ambient state, so it
+   worked identically for every subclass) and had no test coverage for any subclass processing a bound
+   lambda through these two rules. Fixed by gating the same way every other S4 integration point already is:
+   a subclass now falls through to the historical `CopyExpression(e, parameters)` path for `Add`/`Subtract`/
+   `Multiply` nodes reaching this fallback, exactly like every other node kind it does not specifically
+   canonicalize - operands simply keep their original source order rather than being reordered from an
+   incomplete (bound-as-free) view of the enclosing scope. A conservative "commutative reordering is
+   skipped", not a correctness bug, consistent with this class's established exact-type-only S4 policy.
+   Regression: `DerivedSimplifier_BoundAddition_DoesNotMisclassifyBoundParametersAsFree` in
+   `ExpressionSimplifierStructuralCanonicalizationTests` (verified to fail without the fix). This also
+   changed the observable result of an EXISTING test,
+   `ExpressionTransformationRuleBranchTests.Simplify_NegateWithSubstraction_DirectRuleBody_RewritesOperands`
+   (which uses `ExposedSimplifier`, a subclass, specifically to invoke a protected rule body directly): that
+   rule body's own `TransformCore` recursion used to incidentally reach the now-gated canonicalization too,
+   rebuilding its `Subtract(y, x)` result into `Add(y, Negate(x))`; post-fix it correctly stays
+   `Subtract(y, x)` (same compiled value, different but now-correct shape). Updated that test's assertion and
+   added a remark explaining why, rather than leaving a misleading expectation in place.
+2. **Confirmed non-issue, already known and deliberately deferred (round 4's own "Noted but deliberately NOT
+   fixed this round" item): `ConstantKey` still ties for two SEPARATELY-BOXED numeric constants sharing the
+   exact SAME value and the exact SAME declared type** (e.g. two independently-boxed `object`-declared
+   `1.0`s), since `ExpressionComparer.ConstantsEqual`'s safe (additive-grouping) path falls back to
+   `ReferenceEquals` for these, while the order key's declared/runtime-type tie-breaks find no difference on
+   either axis and tie. Verified directly this does NOT translate into an observable
+   `ExpressionComparer.Default` regression, unlike the round 3-5 findings: the PUBLIC (non-safe) comparer
+   path calls `1.0.Equals(1.0)`, which is `true` regardless of which boxed instance ends up on which side, so
+   positional comparison already succeeds without ever needing the commutative-swap fallback - both reversed
+   source orderings of such a pair are correctly reported equal by `ExpressionComparer.Default` even though
+   their canonical trees are not necessarily identical. No code change; added
+   `ConstantOrdering_SameDeclaredTypeDistinctlyBoxedEqualNumericConstants_PublicComparerStillAgrees` as
+   permanent evidence for this conclusion, closing the loop on round 4's deferred item with a verified answer
+   rather than an assumption.
+3. **Two tests named for what canonicalization does were only checking `ExpressionComparer.Default` equality,
+   which - because of round 2's own commutative-operand fallback for ordinary `Add`/`Multiply` - would keep
+   passing even if canonicalization were silently disabled entirely.**
+   `Simplify_AddReachingFallback_StillCanonicalizes`/`Simplify_MultiplyReachingFallback_StillCanonicalizes`
+   in `ExpressionSimplifierFinalizationTests` asserted only `Assert.AreEqual(result1, result2,
+   ExpressionComparer.Default)` plus a compiled-value check - both of which are satisfied by ordinary
+   commutativity regardless of whether real operand reordering happened. Strengthened with a direct
+   structural check (`FirstDeclaredParameterIsOnLeft`) proving the first-declared parameter actually ends up
+   on the Left in BOTH results (including the one requiring a real swap), so a future regression that
+   silently disables `CanonicalizeAdditiveExpression`/`CanonicalizeMultiplicativeExpression` would be caught
+   here specifically, not only by the (less targeted) `ExpressionComparer.Default` equality these tests
+   already had.
+4. **Minor documentation/reuse cleanups, no behavior change:** `AdditiveGroupingEqualityComparer.Equals`/
+   `GetHashCode` (both public members on an internal, IEqualityComparer-contract-bearing type) gained XML
+   docs per `AGENTS.md`, including an explicit note that the two must stay classification-consistent with
+   each other. `AnnotatedAdditiveTerm`'s doc comment overclaimed that everything it holds is "computed once
+   per term rather than recomputed on every pairwise comparison" - true for `.Key`'s own use in the final
+   `.ThenBy(term => term.Key)` tie-break, but NOT true for `CompareAdditiveGroupingOrder`'s primary-sort use
+   of `Group.Opaque`, which for an opaque term IS the same expression `.Key` was already built from, yet gets
+   rebuilt from scratch via `ExpressionCanonicalOrder.Compare` on every pairwise comparison anyway; corrected
+   the doc to say so precisely and left the actual (construction-time-only, not correctness-affecting)
+   inefficiency for S5, consistent with the roadmap's own S4/S5 boundary. `MethodCallKey.CompareSameRank`'s
+   hand-rolled element-wise-plus-length-tie-break loop over its argument-key array was replaced with
+   `Utils.Collections.EnumerableComparer<KeyNode>.Default` (an existing, already-tested, semantically
+   identical generic helper `KeyNode`'s own `IComparable<KeyNode>` makes directly usable here) rather than
+   keeping a duplicate of the same algorithm to maintain independently.
+
+**Validation performed after round 6 (2026-09-22):** `ExpressionSimplifierStructuralCanonicalizationTests`:
+43/43 passed. Full `UtilsTest/Mathematics/Expressions` namespace: 455/455 passed. Full `UtilsTest.Unit`:
+7667/7667 passed, 0 skipped. Full `UtilsTest.Functional`: 383/383 passed. Full `UtilsTest.Security`: 225/228
+passed, 3 skipped (same three pre-existing, unrelated, platform-gated tests). Release build of `Utils.sln`:
+succeeded, no errors. All four suites run sequentially this round (not in parallel), after round 5's transient
+parallel-contention flake, to keep the validation record clean.
+
 ### S5 — Construction-performance cleanup
 
 Only after the correctness/structure stages above, re-profile construction-time allocations and CPU cost in the simplifier.
@@ -929,7 +1012,11 @@ Only after the correctness/structure stages above, re-profile construction-time 
 Potential remaining areas include:
 
 - additive `OrderBy` / `ThenBy` / `ThenBy` / `ToList` / `GroupBy` pipeline;
-- repeated key computation;
+- repeated key computation - concretely, `CompareAdditiveGroupingOrder`'s primary-sort comparator rebuilds a
+  full `ExpressionCanonicalOrder` key from scratch (via `ExpressionCanonicalOrder.Compare`) for both operands
+  on every pairwise comparison, even for an "opaque" term whose key `AnnotatedAdditiveTerm.Key` already holds
+  precomputed (see S4 review round 6's finding 4) - turning an O(n) key-construction cost into an O(n log n)
+  one across the sort;
 - intermediate group/list materialization;
 - `ExpressionComparer` temporary arrays and searches;
 - other LINQ/reflection scaffolding still present on frequently used construction paths.

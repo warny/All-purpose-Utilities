@@ -254,6 +254,22 @@ public class ExpressionSimplifierFinalizationTests
     // I/J: canonicalization still takes priority over the (future) fast path.
     // ------------------------------------------------------------------------------------------
 
+    /// <summary>Returns <see langword="true"/> if <paramref name="lambda"/>'s body is a <see cref="BinaryExpression"/> whose <see cref="BinaryExpression.Left"/> is that same lambda's FIRST declared parameter.</summary>
+    /// <param name="lambda">The (already simplified) lambda to inspect.</param>
+    /// <returns><see langword="true"/> if the first-declared parameter is on the Left.</returns>
+    /// <remarks>
+    /// Used to prove ACTUAL operand reordering happened (S4 review, round 6), rather than relying solely on
+    /// <see cref="ExpressionComparer.Default"/>: that comparer's own commutative-operand fallback for
+    /// ordinary <c>Add</c>/<c>Multiply</c> (see its <c>BinaryEqual</c> remarks) would report
+    /// <c>Equals(a+b, b+a)</c> as <see langword="true"/> even if canonicalization never reordered anything at
+    /// all - the fallback exists precisely to tolerate either operand order. An equality-only assertion here
+    /// would therefore keep passing even if <c>CanonicalizeAdditiveExpression</c>/
+    /// <c>CanonicalizeMultiplicativeExpression</c> were silently disabled, which is exactly what this
+    /// method's use below is meant to catch.
+    /// </remarks>
+    private static bool FirstDeclaredParameterIsOnLeft(LambdaExpression lambda)
+        => ((BinaryExpression)lambda.Body).Left == lambda.Parameters[0];
+
     /// <summary>
     /// Additive canonicalization still applies to an <see cref="ExpressionType.Add"/> node that reaches
     /// the fallback.
@@ -267,7 +283,9 @@ public class ExpressionSimplifierFinalizationTests
     /// parameters" policy on <c>ExpressionCanonicalOrder</c>) — the previous free-parameter version would no
     /// longer reliably canonicalize <c>Add(a, b)</c> and <c>Add(b, a)</c> to the same tree. Using BOUND
     /// lambda parameters instead exercises the actual intended invariant: canonical ordering by declaration
-    /// position. The structural/compiled-behavior assertions below replace the <c>ToString()</c> comparison.
+    /// position. The structural/compiled-behavior assertions below replace the <c>ToString()</c> comparison,
+    /// and the round-6 <see cref="FirstDeclaredParameterIsOnLeft"/> check proves real reordering occurred
+    /// rather than relying only on the comparer's own commutative tolerance.
     /// </remarks>
     [TestMethod]
     public void Simplify_AddReachingFallback_StillCanonicalizes()
@@ -276,10 +294,12 @@ public class ExpressionSimplifierFinalizationTests
         Expression<Func<double, double, double>> source1 = (a, b) => a + b;
         Expression<Func<double, double, double>> source2 = (a, b) => b + a;
 
-        Expression result1 = simplifier.Simplify(source1);
-        Expression result2 = simplifier.Simplify(source2);
+        var result1 = (LambdaExpression)simplifier.Simplify(source1);
+        var result2 = (LambdaExpression)simplifier.Simplify(source2);
 
         Assert.AreEqual(result1, result2, ExpressionComparer.Default);
+        Assert.IsTrue(FirstDeclaredParameterIsOnLeft(result1), "source1 (already a+b) must keep the first-declared parameter on the Left.");
+        Assert.IsTrue(FirstDeclaredParameterIsOnLeft(result2), "source2 (b+a) must be REORDERED so the first-declared parameter ends up on the Left too - proving canonicalization actually ran, not merely that the comparer tolerates either order.");
 
         var compiled = ((Expression<Func<double, double, double>>)result1).Compile();
         Assert.AreEqual(7.0, compiled(3.0, 4.0));
@@ -297,10 +317,12 @@ public class ExpressionSimplifierFinalizationTests
         Expression<Func<double, double, double>> source1 = (a, b) => a * b;
         Expression<Func<double, double, double>> source2 = (a, b) => b * a;
 
-        Expression result1 = simplifier.Simplify(source1);
-        Expression result2 = simplifier.Simplify(source2);
+        var result1 = (LambdaExpression)simplifier.Simplify(source1);
+        var result2 = (LambdaExpression)simplifier.Simplify(source2);
 
         Assert.AreEqual(result1, result2, ExpressionComparer.Default);
+        Assert.IsTrue(FirstDeclaredParameterIsOnLeft(result1), "source1 (already a*b) must keep the first-declared parameter on the Left.");
+        Assert.IsTrue(FirstDeclaredParameterIsOnLeft(result2), "source2 (b*a) must be REORDERED so the first-declared parameter ends up on the Left too - proving canonicalization actually ran, not merely that the comparer tolerates either order.");
 
         var compiled = ((Expression<Func<double, double, double>>)result1).Compile();
         Assert.AreEqual(12.0, compiled(3.0, 4.0));

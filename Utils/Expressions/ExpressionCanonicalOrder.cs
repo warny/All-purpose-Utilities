@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using Utils.Collections;
 using Utils.Objects;
 
 namespace Utils.Mathematics.Expressions;
@@ -896,13 +897,10 @@ internal static class ExpressionCanonicalOrder
             c = _receiver.CompareTo(o._receiver);
             if (c != 0) return c;
 
-            int minCount = Math.Min(_arguments.Length, o._arguments.Length);
-            for (int i = 0; i < minCount; i++)
-            {
-                c = _arguments[i].CompareTo(o._arguments[i]);
-                if (c != 0) return c;
-            }
-            return _arguments.Length.CompareTo(o._arguments.Length);
+            // Lexicographic element comparison plus a length tie-break (S4 review, round 6): reuses the
+            // shared, already-tested EnumerableComparer<T> instead of a hand-rolled duplicate of the exact
+            // same algorithm - KeyNode's own IComparable<KeyNode> makes it directly usable here.
+            return EnumerableComparer<KeyNode>.Default.Compare(_arguments, o._arguments);
         }
     }
 

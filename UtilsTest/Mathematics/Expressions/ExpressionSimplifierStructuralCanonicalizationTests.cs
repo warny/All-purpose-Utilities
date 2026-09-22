@@ -1113,6 +1113,88 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
     }
 
     // ------------------------------------------------------------------------------------------
+    // Post-review hardening, round 6: FinalizeExpression called CanonicalizeAdditiveExpression/
+    // CanonicalizeMultiplicativeExpression unconditionally, unlike every other S4 integration point in this
+    // class (Transform, PrepareExpression, RebuildUnaryExpression, RebuildLambdaExpression,
+    // OnEnterLambdaScope, OnExitLambdaScope), all of which are gated to GetType() == typeof(ExpressionSimplifier).
+    // Since OnEnterLambdaScope/OnExitLambdaScope no-op for any other runtime type, a subclass reaching
+    // additive/multiplicative canonicalization saw an always-empty ambient lexical-scope stack, so its OWN
+    // bound ParameterExpressions were silently misclassified as free - a real canonicalization-quality
+    // regression (not present before S4, since the removed ToString()-based ordering needed no ambient
+    // state) with no prior test coverage for any ExpressionSimplifier subclass processing a bound lambda
+    // through these two rules.
+    // ------------------------------------------------------------------------------------------
+
+    /// <summary>A minimal <see cref="ExpressionSimplifier"/> subclass with no overrides, used to prove additive/multiplicative canonicalization behaves safely - rather than silently misclassifying bound parameters as free - for any non-exact runtime type.</summary>
+    private sealed class MinimalDerivedSimplifier : ExpressionSimplifier
+    {
+    }
+
+    /// <summary>
+    /// Reproduces the S4 review round-6 finding: before the fix, <c>new MinimalDerivedSimplifier().Simplify((p0, p1) =&gt; p1 + p0)</c>
+    /// canonicalized to <c>p1 + p0</c> UNCHANGED (source order preserved, as if <c>p0</c>/<c>p1</c> were free)
+    /// rather than to <c>p0 + p1</c> (declaration-position order, as <see cref="ExpressionSimplifier"/>'s own
+    /// exact type produces for the very same source lambda - see
+    /// <see cref="PositiveControl_BoundAddition_CanonicalizesRegardlessOfSourceOrder"/>). After the fix, a
+    /// subclass instead skips the additive-canonicalization rule entirely for this node (falling through to
+    /// the historical copy-as-is path), so the operands stay in their original source order rather than
+    /// being reordered based on an incomplete (bound-as-free) view of the enclosing scope - a conservative,
+    /// safe degradation, not a correctness bug. This test pins that specific behavior (unchanged source
+    /// order) so a future regression toward the wrong (bound-as-free reordering) behavior is caught.
+    /// </summary>
+    [TestMethod]
+    public void DerivedSimplifier_BoundAddition_DoesNotMisclassifyBoundParametersAsFree()
+    {
+        var simplifier = new MinimalDerivedSimplifier();
+        ParameterExpression p0 = Expression.Parameter(typeof(double), "p0");
+        ParameterExpression p1 = Expression.Parameter(typeof(double), "p1");
+        var source = Expression.Lambda<Func<double, double, double>>(Expression.Add(p1, p0), p0, p1);
+
+        var result = (LambdaExpression)simplifier.Simplify(source);
+        var body = (BinaryExpression)result.Body;
+
+        Assert.IsTrue(ReferenceEquals(p1, body.Left));
+        Assert.IsTrue(ReferenceEquals(p0, body.Right));
+    }
+
+    /// <summary>
+    /// Characterizes an already-known, deliberately-deferred order/equality inconsistency (see round 4's
+    /// "Noted but deliberately NOT fixed this round" item): two separately-boxed constants with the SAME
+    /// exact numeric value AND the SAME declared type (both <see cref="object"/>, both boxing <c>1.0</c>)
+    /// still tie in <c>ConstantKey.CompareSameRank</c> - the declared-type and runtime-type tie-breaks both
+    /// find no difference, since both are genuinely identical on every axis the order key inspects except
+    /// object identity, which it deliberately never uses (see this file's remarks on free
+    /// parameters/opaque constants). This does NOT translate into an observable
+    /// <see cref="ExpressionComparer.Default"/> regression, unlike the round 3-5 findings this test's
+    /// sibling tests cover: <see cref="ExpressionComparer.ConstantsEqual"/>'s PUBLIC (non-safe) path calls
+    /// <c>1.0.Equals(1.0)</c>, which is <see langword="true"/> regardless of which boxed instance ends up on
+    /// which side, so positional comparison already succeeds without ever needing the commutative-swap
+    /// fallback - the two reversed source orderings below are correctly reported equal by the public
+    /// comparer even though their canonical trees are not necessarily identical.
+    /// </summary>
+    [TestMethod]
+    public void ConstantOrdering_SameDeclaredTypeDistinctlyBoxedEqualNumericConstants_PublicComparerStillAgrees()
+    {
+        MethodInfo fromObject = typeof(ExpressionSimplifierStructuralCanonicalizationTests).GetMethod(nameof(FromObjectNumericConstant), BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        object boxA = 1.0;
+        object boxB = 1.0;
+        Assert.AreNotSame(boxA, boxB, "Precondition: the two boxed values must be distinct references sharing an equal value.");
+
+        var sourceForward = Expression.Lambda<Func<double>>(
+            Expression.Add(
+                Expression.Call(fromObject, Expression.Constant(boxA, typeof(object))),
+                Expression.Call(fromObject, Expression.Constant(boxB, typeof(object)))));
+        var sourceBackward = Expression.Lambda<Func<double>>(
+            Expression.Add(
+                Expression.Call(fromObject, Expression.Constant(boxB, typeof(object))),
+                Expression.Call(fromObject, Expression.Constant(boxA, typeof(object)))));
+
+        Assert.IsTrue(ExpressionComparer.Default.Equals(sourceForward, sourceBackward));
+        Assert.AreEqual(ExpressionComparer.Default.GetHashCode(sourceForward), ExpressionComparer.Default.GetHashCode(sourceBackward));
+    }
+
+    // ------------------------------------------------------------------------------------------
     // 8. Ordinary positive controls
     // ------------------------------------------------------------------------------------------
 

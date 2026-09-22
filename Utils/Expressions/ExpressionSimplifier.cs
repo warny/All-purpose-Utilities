@@ -1054,7 +1054,22 @@ namespace Utils.Mathematics.Expressions
             ArgumentNullException.ThrowIfNull(e);
             ArgumentNullException.ThrowIfNull(parameters);
 
-            if (e is BinaryExpression binaryExpression)
+            // Gated to the exact built-in runtime type (S4 review, round 6), matching every other S4
+            // integration point in this class (Transform, PrepareExpression, RebuildUnaryExpression,
+            // RebuildLambdaExpression, OnEnterLambdaScope, OnExitLambdaScope): CanonicalizeAdditiveExpression/
+            // CanonicalizeMultiplicativeExpression call CaptureLexicalScopeSnapshot(), which only ever
+            // observes bound-parameter scope frames pushed by OnEnterLambdaScope - itself a no-op for any
+            // non-exact runtime type. Before this fix, a subclass (even one with no overrides at all) still
+            // reached these two methods unconditionally, so every bound ParameterExpression appeared "free"
+            // to ExpressionCanonicalOrder.BuildParameter during ITS OWN canonicalization, silently degrading
+            // bound-parameter ordering to the free-parameter (source-order-preserving, non-canonical) policy
+            // - a real loss of canonicalization quality with no comparable pre-S4 counterpart (the removed
+            // ToString()-based ordering needed no ambient state at all, so it worked identically for every
+            // subclass). A subclass now falls through to the historical CopyExpression(e, parameters) path
+            // below for Add/Subtract/Multiply nodes, exactly like every other node kind it does not
+            // specifically canonicalize - a conservative "commutative reordering is skipped", not a
+            // correctness bug, consistent with this class's established exact-type-only S4 policy.
+            if (e is BinaryExpression binaryExpression && GetType() == typeof(ExpressionSimplifier))
             {
                 if ((binaryExpression.NodeType == ExpressionType.Add || binaryExpression.NodeType == ExpressionType.Subtract)
                     && CanCanonicalizeCommutativeBinary(binaryExpression))
@@ -1248,13 +1263,25 @@ namespace Utils.Mathematics.Expressions
 
         /// <summary>
         /// One term/factor annotated with everything <see cref="CanonicalizeAdditiveExpression"/> needs to
-        /// order and group it, computed once per term rather than recomputed on every pairwise comparison
-        /// (mirroring how the pre-S4 <c>OrderBy(keySelector)</c> evaluated its key selector once per
-        /// element). Not a cross-call cache: a fresh list of these is built on every
+        /// order and group it. Not a cross-call cache: a fresh list of these is built on every
         /// <see cref="CanonicalizeAdditiveExpression"/> call, matching the roadmap's S4/S5 boundary (S4 is
         /// a correctness/structure stage; a caching layer that survives beyond one canonicalization call is
         /// left to S5).
         /// </summary>
+        /// <remarks>
+        /// <see cref="Key"/> itself is computed exactly once per term here and then reused by the final
+        /// <c>.ThenBy(term =&gt; term.Key)</c> tie-break in <see cref="CanonicalizeAdditiveExpression"/>. The
+        /// PRIMARY sort step, however, does NOT reuse it: <see cref="CompareAdditiveGroupingOrder"/>
+        /// compares <see cref="Group"/>'s (coarser, grouping-relevant) content directly via
+        /// <see cref="ExpressionCanonicalOrder.Compare"/>, which rebuilds a full key from scratch for both
+        /// operands on every pairwise comparison - for an "opaque" (non-function-like) term specifically,
+        /// this rebuilds the exact same key <see cref="Key"/> already holds (<see cref="AdditiveGroupClass.Opaque"/>
+        /// is the whole original term in that case), redundantly, once per comparison the term participates
+        /// in during the O(n log n) sort. This is a known, S4-review-identified construction-time
+        /// inefficiency (not a correctness issue - the values compared are identical either way), explicitly
+        /// left for S5 to address alongside this class's other deferred allocation/CPU-cost items, per the
+        /// roadmap's S4/S5 boundary.
+        /// </remarks>
         private readonly struct AnnotatedAdditiveTerm(Expression term, bool isNegative, AdditiveGroupClass group, ExpressionCanonicalOrder.KeyNode key)
         {
             public Expression Term { get; } = term;
@@ -1393,6 +1420,15 @@ namespace Utils.Mathematics.Expressions
             public static readonly AdditiveGroupingEqualityComparer Instance = new();
             private AdditiveGroupingEqualityComparer() { }
 
+            /// <summary>Determines whether <paramref name="x"/> and <paramref name="y"/> belong to the same additive group, per this type's own remarks.</summary>
+            /// <param name="x">The first term to compare.</param>
+            /// <param name="y">The second term to compare.</param>
+            /// <returns><see langword="true"/> if both terms classify into the same additive group.</returns>
+            /// <remarks>
+            /// Must stay exactly consistent with <see cref="GetHashCode(Expression)"/>'s own classification
+            /// decision - two terms this method groups together must always hash identically, and vice versa,
+            /// or <c>GroupBy</c>'s bucketing (this comparer's sole caller) silently corrupts.
+            /// </remarks>
             public bool Equals(Expression? x, Expression? y)
             {
                 if (x is null || y is null) return ReferenceEquals(x, y);
@@ -1415,6 +1451,9 @@ namespace Utils.Mathematics.Expressions
                 return GroupEquals(gx.Opaque!, gy.Opaque!);
             }
 
+            /// <summary>Returns a hash code consistent with <see cref="Equals(Expression?, Expression?)"/>'s additive-group classification.</summary>
+            /// <param name="obj">The term to hash.</param>
+            /// <returns>A hash code such that two terms <see cref="Equals(Expression?, Expression?)"/> groups together always hash identically.</returns>
             public int GetHashCode(Expression obj)
             {
                 AdditiveGroupClass g = ClassifyForAdditiveGrouping(obj);
