@@ -65,6 +65,10 @@ public class NumberToStringConverterClockTimeTests
         Assert.ThrowsExactly<ArgumentException>(() => Create(5, [new(new IntRange<int>("0-5"), 0, ClockHourForm.Cardinal, "{hour}")]));
         Assert.ThrowsExactly<ArgumentException>(() => Create(5, [new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, " ")]));
         Assert.ThrowsExactly<ArgumentException>(() => Create(5, [new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{unknown}")]));
+        Assert.ThrowsExactly<ArgumentException>(() => Create(5, [new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{hour")]));
+        Assert.ThrowsExactly<ArgumentException>(() => Create(5, [new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "hour}")]));
+        Assert.ThrowsExactly<ArgumentException>(() => Create(5, [new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{hour.Length}")]));
+        Assert.ThrowsExactly<ArgumentException>(() => Create(5, [new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{amount + 1}")]));
         Assert.ThrowsExactly<ArgumentException>(() => Create(5, [new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{amount}", 0)]));
         Assert.ThrowsExactly<ArgumentException>(() => Create(5, [new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{hour}", 0, ClockAmountDirection.After)]));
         Assert.ThrowsExactly<ArgumentException>(() => Create(5, [new(new IntRange<int>("0,5"), 0, ClockHourForm.Cardinal, "{hour}"), new(new IntRange<int>("5"), 0, ClockHourForm.Cardinal, "{hour}")]));
@@ -100,6 +104,85 @@ public class NumberToStringConverterClockTimeTests
         Assert.AreEqual("halb zwei", converter.ConvertClockTime(new TimeOnly(13, 30)));
     }
 
+    /// <summary>Verifies precompiled patterns never rescan placeholder text injected by a special hour.</summary>
+    [TestMethod]
+    public void ConvertClockTime_InjectedPlaceholderText_RemainsLiteral()
+    {
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        {
+            SpecialHours = [new(12, "about {amount}", WholeHour: true)],
+            ClockTime = new ClockTimeFormatOptions
+            {
+                Step = 5,
+                Rules =
+                [
+                    new(new IntRange<int>("0,10,15,20,25,30,35,40,45,50,55"), 0, ClockHourForm.Cardinal, "{hour}"),
+                    new(new IntRange<int>("5"), 0, ClockHourForm.Cardinal, "{hour} past {amount}", 0, ClockAmountDirection.After),
+                ],
+            },
+        };
+
+        Assert.AreEqual("about {amount} past five", new NumberToStringConverter(options).ConvertClockTime(new TimeOnly(12, 5)));
+    }
+
+    /// <summary>Verifies clock conversion preserves exact-only and whole-hour special-hour semantics.</summary>
+    [TestMethod]
+    public void ConvertClockTime_SpecialHourWholeHourContract_IsPreserved()
+    {
+        NumberToStringConverter exactOnly = CreateSpecialHourConverter(wholeHour: false);
+        NumberToStringConverter wholeHour = CreateSpecialHourConverter(wholeHour: true);
+
+        Assert.AreEqual("twelve", exactOnly.ConvertClockTime(new TimeOnly(11, 55)));
+        Assert.AreEqual("noon", wholeHour.ConvertClockTime(new TimeOnly(11, 55)));
+        Assert.AreEqual("midnight", exactOnly.ConvertClockTime(new TimeOnly(23, 58)));
+    }
+
+    /// <summary>Verifies statically unavailable hour rendering capabilities fail at construction.</summary>
+    [TestMethod]
+    public void Constructor_UnavailableHourFormCapabilities_AreRejected()
+    {
+        var noUnits = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        {
+            TimeUnits = new Dictionary<string, (string, string, string?)>(),
+            TimeUnitForcedVariants = new Dictionary<string, ForcedVariantSet>(),
+            TimeUnitForms = new Dictionary<string, LexicalFormSet>(),
+            TimeUnitFormSelectors = new Dictionary<string, ILexicalFormSelector>(),
+            SpecialHours = [],
+            ClockTime = new ClockTimeFormatOptions
+            {
+                Step = 60,
+                Rules = [new(new IntRange<int>("0"), 0, ClockHourForm.TimeUnit, "{hour}")],
+            },
+        };
+        Assert.ThrowsExactly<ArgumentException>(() => new NumberToStringConverter(noUnits));
+
+        var noOrdinals = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        {
+            OrdinalSuffix = null,
+            OrdinalPrefix = null,
+            OrdinalExceptions = new Dictionary<long, string>(),
+            OrdinalWordRules = new Dictionary<string, string>(),
+            OrdinalVariants = [],
+            ClockTime = new ClockTimeFormatOptions
+            {
+                Step = 60,
+                Rules = [new(new IntRange<int>("0"), 0, ClockHourForm.Ordinal, "{hour}")],
+            },
+        };
+        Assert.ThrowsExactly<ArgumentException>(() => new NumberToStringConverter(noOrdinals));
+    }
+
+    /// <summary>Verifies every supported minimal pattern shape compiles and renders.</summary>
+    [TestMethod]
+    public void ConvertClockTime_SupportedPatternShapes_Render()
+    {
+        Assert.AreEqual("one", Create(60, [new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{hour}")]).ConvertClockTime(new TimeOnly(1, 0)));
+        Assert.AreEqual("zero", Create(60, [new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{amount}", 0, ClockAmountDirection.After)]).ConvertClockTime(new TimeOnly(1, 0)));
+        Assert.AreEqual("one minus zero", Create(60, [new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{hour} minus {amount}", 0, ClockAmountDirection.After)]).ConvertClockTime(new TimeOnly(1, 0)));
+        Assert.AreEqual("half one", Create(60, [new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "half {hour}")]).ConvertClockTime(new TimeOnly(1, 0)));
+        Assert.AreEqual("noon", Create(60, [new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "noon")]).ConvertClockTime(new TimeOnly(1, 0)));
+    }
+
     /// <summary>Verifies converter construction snapshots rules and option cloning preserves them.</summary>
     [TestMethod]
     public void Constructor_ClockRules_AreSnapshottedAndCloned()
@@ -125,4 +208,23 @@ public class NumberToStringConverterClockTimeTests
     /// <summary>Creates a complete five-minute rule list suitable for validation helpers.</summary>
     private static List<ClockTimeRule> ValidRules()
         => [new(new IntRange<int>("0,5,10,15,20,25,30,35,40,45,50,55"), 0, ClockHourForm.Cardinal, "{hour}")];
+
+    /// <summary>Creates a converter that exercises offset and rounded-exact special-hour behavior.</summary>
+    private static NumberToStringConverter CreateSpecialHourConverter(bool wholeHour)
+    {
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        {
+            SpecialHours = [new(12, "noon", wholeHour), new(0, "midnight")],
+            ClockTime = new ClockTimeFormatOptions
+            {
+                Step = 5,
+                Rules =
+                [
+                    new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{hour}"),
+                    new(new IntRange<int>("5,10,15,20,25,30,35,40,45,50,55"), 1, ClockHourForm.Cardinal, "{hour}"),
+                ],
+            },
+        };
+        return new NumberToStringConverter(options);
+    }
 }

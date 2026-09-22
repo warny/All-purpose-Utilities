@@ -1780,9 +1780,10 @@ string clock = french.ConvertClockTime(new TimeOnly(1, 28)); // une heure et dem
 
 A `ClockTime` section contains a positive minute `step` that divides 60 and complete, non-overlapping rules for
 every reachable position. Nearest rounding is used and an exact half-step rounds forward. Each
-`range` uses the native `IntRange<int>` syntax. Validation is deliberately strict: every member of
-a range must be in `0..59` and divisible by `step`, so use `range="5,10"`, not `range="5-10"`, for
-a five-minute clock.
+`range` uses an `IntRange<int>`-based syntax restricted in XML to comma-separated non-negative
+values and inclusive ranges. Programmatic `IntRange<int>` values retain their complete native
+syntax. Validation is deliberately strict: every member of a range must be in `0..59` and
+divisible by `step`, so use `range="5,10"`, not `range="5-10"`, for a five-minute clock.
 
 ```xml
 <ClockTime step="5" hourCycle="24">
@@ -1803,8 +1804,11 @@ language-finalization pipelines. `{amount}` is optional. When present, both `amo
 `amountDirection` are required: `before` computes `reference - minute`, while `after` computes
 `minute - reference`. Literal wording—including quarters, halves, or fractions such as “un tiers”—
 belongs in `pattern`; the engine only recognizes `{hour}` and `{amount}`.
+Patterns are validated against that strict whitelist and compiled once through
+`StringFormatBuilder`; inserted hour and amount text is never reparsed as template content.
 
-Configured `SpecialHourRule` values are applied to the rule's reference hour by default, including
+Configured `SpecialHourRule` values are matched against the rule's 24-hour reference. An
+exact-only rule applies only at rounded minute zero; a rule with `WholeHour=true` also applies to
 an offset reference such as 11:55 → noon. Pass a `ClockTimeConversionOptions` plus an
 `IEnumerable<string>` of variants to explicitly disable replacement. The three-argument overload
 avoids introducing a new ambiguous `ConvertClockTime(time, default)` call. Variants propagate to

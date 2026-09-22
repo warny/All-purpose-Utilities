@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Numerics;
 using System.Text;
 using System.Text.RegularExpressions;
+using Utils.Expressions;
+using Utils.Format;
 using Utils.Mathematics;
 using Utils.Numerics;
 using Utils.Objects;
@@ -617,7 +620,7 @@ namespace Utils.NumberToString
         private readonly ImmutableDictionary<string, TimeUnitDefinition> _timeUnits;
         private readonly ImmutableDictionary<int, SpecialHourRule> _specialHours;
         private readonly ClockTimeFormatOptions? _clockTime;
-        private readonly ImmutableDictionary<int, ClockTimeRule> _clockRules;
+        private readonly ImmutableDictionary<int, CompiledClockTimeRule> _clockRules;
         private readonly ImmutableDictionary<string, (string Singular, string Plural, string? Count1Form)> _timeUnitsPublic;
         private readonly ImmutableDictionary<string, ForcedVariantSet> _timeUnitForcedVariantsPublic;
         private readonly ImmutableDictionary<string, LexicalFormSet> _timeUnitFormsPublic;
@@ -2234,10 +2237,10 @@ namespace Utils.NumberToString
         }
 
         /// <summary>Validates and snapshots idiomatic clock-time options into a minute lookup.</summary>
-        private static (ClockTimeFormatOptions? Options, ImmutableDictionary<int, ClockTimeRule> Rules) CompileClockTime(ClockTimeFormatOptions? options)
+        private (ClockTimeFormatOptions? Options, ImmutableDictionary<int, CompiledClockTimeRule> Rules) CompileClockTime(ClockTimeFormatOptions? options)
         {
             if (options == null)
-                return (null, ImmutableDictionary<int, ClockTimeRule>.Empty);
+                return (null, ImmutableDictionary<int, CompiledClockTimeRule>.Empty);
             if (options.Step <= 0 || options.Step > 60)
                 throw new ArgumentOutOfRangeException(nameof(options), "ClockTime.Step must be between 1 and 60 minutes.");
             if (60 % options.Step != 0)
@@ -2247,7 +2250,7 @@ namespace Utils.NumberToString
             if (options.Rules == null)
                 throw new ArgumentException("ClockTime.Rules must not be null.", nameof(options));
 
-            var lookup = ImmutableDictionary.CreateBuilder<int, ClockTimeRule>();
+            var lookup = ImmutableDictionary.CreateBuilder<int, CompiledClockTimeRule>();
             var snapshots = new List<ClockTimeRule>();
             var permitted = new IntRange<int>("0-59");
             for (int index = 0; index < options.Rules.Count; index++)
@@ -2257,6 +2260,10 @@ namespace Utils.NumberToString
                     throw new ArgumentException($"ClockTime.Rules[{index}].Range must not be null.", nameof(options));
                 if (!Enum.IsDefined(rule.HourForm))
                     throw new ArgumentOutOfRangeException(nameof(options), $"ClockTime rule range '{rule.Range}' has unsupported hourForm value '{rule.HourForm}'.");
+                if (rule.HourForm == ClockHourForm.TimeUnit && !_timeUnits.ContainsKey("hour"))
+                    throw new ArgumentException($"ClockTime rule range '{rule.Range}' uses hourForm 'timeUnit', but no 'hour' entry exists in TimeUnits.", nameof(options));
+                if (rule.HourForm == ClockHourForm.Ordinal && !SupportsOrdinals)
+                    throw new ArgumentException($"ClockTime rule range '{rule.Range}' uses hourForm 'ordinal', but ordinal conversion is not configured.", nameof(options));
                 if (rule.AmountDirection.HasValue && !Enum.IsDefined(rule.AmountDirection.Value))
                     throw new ArgumentOutOfRangeException(nameof(options), $"ClockTime rule range '{rule.Range}' has unsupported amountDirection value '{rule.AmountDirection}'.");
                 string? outside = (rule.Range - permitted).ToString();
@@ -2283,11 +2290,14 @@ namespace Utils.NumberToString
                 var rangeSnapshot = new IntRange<int>(string.Join(",", minutes));
                 var snapshot = rule with { Range = rangeSnapshot };
                 snapshots.Add(snapshot);
+                var compiled = new CompiledClockTimeRule(
+                    snapshot,
+                    ClockPatternFormatBuilder.Create<Func<string, string, string>>(snapshot.Pattern, "hour", "amount"));
                 foreach (int minute in minutes)
                 {
                     if (lookup.TryGetValue(minute, out var previous))
-                        throw new ArgumentException($"ClockTime rule ranges '{previous.Range}' and '{rule.Range}' overlap at minute {minute}.", nameof(options));
-                    lookup.Add(minute, snapshot);
+                        throw new ArgumentException($"ClockTime rule ranges '{previous.Rule.Range}' and '{rule.Range}' overlap at minute {minute}.", nameof(options));
+                    lookup.Add(minute, compiled);
                 }
             }
             foreach (int minute in Enumerable.Range(0, 60).Where(m => m % options.Step == 0))
@@ -2396,11 +2406,14 @@ namespace Utils.NumberToString
         /// <summary>Builds an idiomatic, unfinalized clock-time fragment from an already rounded value.</summary>
         private string BuildClockTimeFragment(TimeOnly rounded, bool replaceSpecialHours, string[] variants)
         {
-            ClockTimeRule rule = _clockRules[rounded.Minute];
+            CompiledClockTimeRule compiledRule = _clockRules[rounded.Minute];
+            ClockTimeRule rule = compiledRule.Rule;
             int offset = rule.HourOffset % 24;
             int referenceHour24 = (rounded.Hour + offset + 24) % 24;
             string hourText;
-            if (replaceSpecialHours && _specialHours.TryGetValue(referenceHour24, out var special))
+            if (replaceSpecialHours
+                && _specialHours.TryGetValue(referenceHour24, out var special)
+                && (special.WholeHour || rounded.Minute == 0))
                 hourText = special.Value;
             else
             {
@@ -2417,14 +2430,50 @@ namespace Utils.NumberToString
                     _ => throw new InvalidOperationException($"Unsupported clock hour form '{rule.HourForm}'."),
                 };
             }
-            string result = rule.Pattern.Replace("{hour}", hourText, StringComparison.Ordinal);
+            string amountText = string.Empty;
             if (rule.AmountReference.HasValue)
             {
                 int amount = CalculateClockAmount(rounded.Minute, rule.AmountReference.Value, rule.AmountDirection!.Value);
-                result = result.Replace("{amount}", BuildCardinalFragment(amount, variants), StringComparison.Ordinal);
+                amountText = BuildCardinalFragment(amount, variants);
             }
-            return result;
+            return compiledRule.Formatter(hourText, amountText);
         }
+
+        /// <summary>Associates a validated public clock rule with its precompiled formatter.</summary>
+        private sealed record CompiledClockTimeRule(
+            ClockTimeRule Rule,
+            Func<string, string, string> Formatter);
+
+        /// <summary>Compiles validated clock placeholders through the shared formatting infrastructure.</summary>
+        private sealed class ClockPatternExpressionCompiler : IExpressionCompiler
+        {
+            /// <summary>Gets the stateless compiler instance.</summary>
+            public static ClockPatternExpressionCompiler Instance { get; } = new();
+
+            /// <summary>Resolves an already-whitelisted placeholder to its supplied parameter expression.</summary>
+            public Expression CompileExpression(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
+            {
+                if (symbols != null && symbols.TryGetValue(content, out Expression? expression))
+                    return expression;
+                throw new InvalidOperationException($"Unsupported clock-time placeholder expression '{content}'.");
+            }
+
+            /// <summary>Rejects standalone compilation, which clock pattern formatting never requires.</summary>
+            public Expression<TDelegate> CompileExpression<TDelegate>(string content) where TDelegate : Delegate
+                => throw new NotSupportedException("Clock pattern compilation requires named formatter parameters.");
+
+            /// <summary>Rejects standalone compilation, which clock pattern formatting never requires.</summary>
+            public Delegate Compile(string content)
+                => throw new NotSupportedException("Clock pattern compilation requires named formatter parameters.");
+
+            /// <summary>Rejects standalone compilation, which clock pattern formatting never requires.</summary>
+            public TDelegate Compile<TDelegate>(string content) where TDelegate : Delegate
+                => throw new NotSupportedException("Clock pattern compilation requires named formatter parameters.");
+        }
+
+        /// <summary>Shared compiler used once per clock rule during converter construction.</summary>
+        private static readonly IStringFormatBuilder ClockPatternFormatBuilder =
+            new StringFormatBuilder(ClockPatternExpressionCompiler.Instance);
 
         /// <summary>Throws when this converter has no idiomatic clock-time configuration.</summary>
         private void EnsureClockTimeSupported()
