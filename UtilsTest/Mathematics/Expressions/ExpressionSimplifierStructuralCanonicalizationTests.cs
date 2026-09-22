@@ -698,9 +698,10 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
     /// assembly with no padding (so its <c>"Compute"</c> keeps the module's very first token). Before this
     /// fix (token compared first, whenever both sides had one and they differed), this pair would compare by
     /// TOKEN - putting the higher-token method (the alphabetically-earlier assembly) AFTER the other,
-    /// contradicting assembly order. The fixed dimension order (assembly, then module, then token) now
-    /// compares by ASSEMBLY first, so the alphabetically-earlier-assembly method must sort first regardless
-    /// of its higher token - the opposite conclusion the old, pair-dependent dimension choice would reach.
+    /// contradicting assembly order. The fixed dimension order (assembly, then module name, then module
+    /// version, then token) now compares by ASSEMBLY first, so the alphabetically-earlier-assembly method
+    /// must sort first regardless of its higher token - the opposite conclusion the old, pair-dependent
+    /// dimension choice would reach.
     /// </summary>
     [TestMethod]
     public void CompareMethod_MetadataTiebreak_AssemblyOrderTakesPriorityOverContradictingTokenOrder()

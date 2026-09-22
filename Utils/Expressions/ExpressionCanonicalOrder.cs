@@ -269,7 +269,7 @@ internal static class ExpressionCanonicalOrder
     /// <summary>
     /// Deterministically compares two <see cref="Type"/> values by reflection metadata: namespace/name
     /// text, then (for a constructed generic type) its generic arguments recursively, then (only if every
-    /// other dimension ties) <see cref="CompareFinalMemberTiebreak"/>'s own assembly/module/token dimensions.
+    /// other dimension ties) <see cref="CompareFinalMemberTiebreak"/>'s own assembly/module-name/module-version/token dimensions.
     /// Never uses <see cref="object.GetHashCode"/>, <see cref="Type.ToString"/>, or object identity/reference
     /// order as part of the ordering decision itself - reference equality is checked only as an initial
     /// same-instance short-circuit (line 1 below), never as a tie-break: two distinct instances that tie on
@@ -444,7 +444,7 @@ internal static class ExpressionCanonicalOrder
     /// <c>A &gt; B</c> via modules (A has no token to compare against B), and <c>B &gt; C</c> via modules
     /// again - a cycle (<c>A &lt; C</c> but <c>A &gt; B &gt; C</c>), which breaks the total order
     /// <see cref="Enumerable.OrderBy{TSource, TKey}(IEnumerable{TSource}, Func{TSource, TKey})"/> assumes.
-    /// Ordering assembly before module before token also matches metadata reality: a
+    /// Ordering assembly before module before module version before token also matches metadata reality: a
     /// <see cref="MemberInfo.MetadataToken"/> is only meaningful WITHIN its own module, so it must never be
     /// compared across two members before their module identity is already known to match (or both lack
     /// one) - comparing tokens first, as that earlier version did, could otherwise compare token values
@@ -459,11 +459,13 @@ internal static class ExpressionCanonicalOrder
     /// Two different modules (from two different builds, say) could therefore share an identical
     /// assembly-name string, an identical module-name string, AND an identical token value while genuinely
     /// representing different metadata - module name text alone under-distinguishes them.
-    /// <see cref="Module.ModuleVersionId"/> is a GUID the runtime generates to uniquely identify one physical
-    /// module instance, so comparing it (after module name, before token) closes that gap. <see cref="Guid"/>
-    /// does not order lexicographically by its displayed hex text, but <see cref="Guid.CompareTo(Guid)"/> is
-    /// still a valid, deterministic total order over its raw bytes - sufficient here, since only
-    /// determinism/transitivity is required, not a "meaningful" ordering.
+    /// <see cref="Module.ModuleVersionId"/> is a GUID the runtime generates to uniquely identify a module's
+    /// VERSION/BUILD - stored in the module's own metadata, which is exactly why every runtime load of the
+    /// SAME build shares the SAME MVID (see the residual limit below) - so comparing it (after module name,
+    /// before token) closes the module-name-text gap. <see cref="Guid"/> does not order lexicographically by
+    /// its displayed hex text, but <see cref="Guid.CompareTo(Guid)"/> is still a valid, deterministic total
+    /// order over its raw bytes - sufficient here, since only determinism/transitivity is required, not a
+    /// "meaningful" ordering.
     /// </para>
     /// <para>
     /// <b>A residual, documented limit: same-binary reloads are still indistinguishable by metadata alone.</b>
@@ -564,9 +566,10 @@ internal static class ExpressionCanonicalOrder
     /// Safely reads <see cref="Module.ModuleVersionId"/> for <paramref name="member"/>'s declaring module,
     /// which can throw for some dynamically-generated members. Unlike <see cref="Module.Name"/> (a display
     /// string, not guaranteed unique - every dynamically-created module reports the same literal text), this
-    /// GUID uniquely identifies one physical module instance, so it is the dimension that actually resolves
-    /// which module a <see cref="MemberInfo.MetadataToken"/> belongs to - see
-    /// <see cref="CompareFinalMemberTiebreak"/>'s remarks.
+    /// GUID uniquely identifies a module's VERSION/BUILD (stored in the module's own metadata - see
+    /// <see cref="CompareFinalMemberTiebreak"/>'s remarks for why two loads of the SAME build therefore share
+    /// the SAME value), making it the dimension that actually resolves which module a
+    /// <see cref="MemberInfo.MetadataToken"/> belongs to.
     /// </summary>
     /// <param name="member">The member or type to inspect.</param>
     /// <param name="moduleVersionId">The module version ID, when available.</param>
