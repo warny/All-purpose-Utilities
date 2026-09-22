@@ -162,6 +162,12 @@ public sealed class NumberToStringLanguageSteps
     [When(@"I convert the localized time {string}")]
     public void WhenIConvertTheLocalizedTime(string date) => result = Converter.Convert(TimeOnly.Parse(date, cultureInfo), variants);
 
+    /// <summary>Converts an invariant clock time through the idiomatic clock-time API.</summary>
+    [When("I convert the clock time {string}")]
+    public void WhenIConvertTheClockTime(string value) => result = Converter.ConvertClockTime(
+        TimeOnly.Parse(value, CultureInfo.InvariantCulture),
+        variants);
+
     /// <summary>Converts a date and time parsed with the current culture's patterns.</summary>
     [When(@"I convert the date time {string}")]
     public void WhenIConvertTheDateTime(string date) => result = Converter.Convert(DateTime.Parse(date, cultureInfo), variants);

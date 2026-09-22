@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Xml;
 using System.Xml.Serialization;
+using Utils.Range;
 
 namespace Utils.NumberToString;
 
@@ -706,6 +707,58 @@ public class SpecialHourEntry
     public bool WholeHour { get; set; }
 }
 
+/// <summary>XML representation of idiomatic clock-time rules.</summary>
+public class ClockTimeType
+{
+    /// <summary>Gets or sets the rounding step in minutes.</summary>
+    [XmlAttribute("step")]
+    public int Step { get; set; }
+
+    /// <summary>Gets or sets the numeric hour cycle, either 12 or 24.</summary>
+    [XmlAttribute("hourCycle")]
+    public int HourCycle { get; set; } = 24;
+
+    /// <summary>Gets or sets the configured clock-position rules.</summary>
+    [XmlElement("Rule")]
+    public List<ClockTimeRuleEntry>? Rules { get; set; }
+}
+
+/// <summary>XML representation of one idiomatic clock-position rule.</summary>
+public class ClockTimeRuleEntry
+{
+    /// <summary>Gets or sets the native <see cref="IntRange{T}"/> minute range expression.</summary>
+    [XmlAttribute("range")]
+    public string Range { get; set; } = "";
+
+    /// <summary>Gets or sets the reference-hour offset.</summary>
+    [XmlAttribute("hourOffset")]
+    public int HourOffset { get; set; }
+
+    /// <summary>Gets or sets the configured hour rendering form.</summary>
+    [XmlAttribute("hourForm")]
+    public ClockHourForm HourForm { get; set; }
+
+    /// <summary>Gets or sets the phrase pattern.</summary>
+    [XmlAttribute("pattern")]
+    public string Pattern { get; set; } = "";
+
+    /// <summary>Gets or sets the optional minute amount reference.</summary>
+    [XmlAttribute("amountReference")]
+    public int AmountReference { get; set; }
+
+    /// <summary>Gets whether <see cref="AmountReference"/> was supplied.</summary>
+    [XmlIgnore]
+    public bool AmountReferenceSpecified { get; set; }
+
+    /// <summary>Gets or sets the optional amount direction.</summary>
+    [XmlAttribute("amountDirection")]
+    public ClockAmountDirection AmountDirection { get; set; }
+
+    /// <summary>Gets whether <see cref="AmountDirection"/> was supplied.</summary>
+    [XmlIgnore]
+    public bool AmountDirectionSpecified { get; set; }
+}
+
 /// <summary>
 /// Holds named lexical form entries for a configurable constituent (e.g. a time unit).
 /// </summary>
@@ -968,6 +1021,10 @@ public class LanguageType
     /// <summary>Gets or sets the time-unit configuration (hours, minutes, seconds).</summary>
     [XmlElement(ElementName = "TimeUnits")]
     public TimeUnitsType? TimeUnits { get; set; }
+
+    /// <summary>Gets or sets idiomatic clock-time formatting.</summary>
+    [XmlElement(ElementName = "ClockTime")]
+    public ClockTimeType? ClockTime { get; set; }
 
     /// <summary>Gets or sets the date-format configuration.</summary>
     [XmlElement(ElementName = "DateFormat")]

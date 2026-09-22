@@ -1,6 +1,26 @@
 @NumberToString @FR
 Feature: French number conversion
 
+Scenario Outline: Idiomatic clock-face times
+    Given I use the "fr-FR" number converter
+    When I convert the clock time "<time>"
+    Then the result is "<expected>"
+
+Examples:
+    | time  | expected                     |
+    | 01:00 | une heure                    |
+    | 01:05 | une heure cinq               |
+    | 01:15 | une heure et quart           |
+    | 01:20 | une heure vingt              |
+    | 01:30 | une heure et demie           |
+    | 01:35 | deux heures moins vingt cinq |
+    | 01:45 | deux heures moins le quart   |
+    | 01:55 | deux heures moins cinq       |
+    | 11:55 | midi moins cinq              |
+    | 12:00 | midi                         |
+    | 12:15 | midi et quart                |
+    | 23:45 | minuit moins le quart        |
+
 Scenario Outline: Cardinal numbers below one thousand
     Given I use the "FR-ch" number converter
     When I convert the cardinal number <number>

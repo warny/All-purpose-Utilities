@@ -174,6 +174,10 @@ namespace Utils.NumberToString
         [XmlElement(ElementName = "TimeUnits")]
         public TimeUnitsType? TimeUnits { get; set; }
 
+        /// <summary>Gets or sets idiomatic clock-time formatting.</summary>
+        [XmlElement(ElementName = "ClockTime")]
+        public ClockTimeType? ClockTime { get; set; }
+
         /// <summary>Gets or sets the date-format configuration.</summary>
         [XmlElement(ElementName = "DateFormat")]
         public DateFormatType? DateFormat { get; set; }
@@ -275,6 +279,7 @@ namespace Utils.NumberToString
         public string? ScaleConnector { get; init; }
         public string? ScaleConnectorThresholdString { get; init; }
         public TimeUnitsType? TimeUnits { get; init; }
+        public ClockTimeType? ClockTime { get; init; }
         public DateFormatType? DateFormat { get; init; }
     }
 

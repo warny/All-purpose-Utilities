@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added — `omy.Utils.NumberToString`
+- Added configurable idiomatic clock-face conversion through `ConvertClockTime(TimeOnly)` and
+  `ConvertClockTime(DateTime)`, backed by validated `IntRange<int>` minute positions, nearest
+  step rounding, configurable hour forms/offsets and reference-based amounts, reusable
+  `SpecialHourRule` handling, 12/24-hour numeric projection, variants, XML/XSD support, and
+  built-in French and German rules. Clock patterns are strictly validated and precompiled through
+  `StringFormatBuilder`, so inserted values are never rescanned as template text; exact-only versus
+  whole-hour special-hour semantics and hour-form capabilities are validated consistently.
 - **`SpecialHourRule`**: generic, per-hour word replacement for time-of-day rendering (e.g.
   "midnight" for hour 0, "noon" for hour 12), configurable via `<SpecialHour hour="..." value="..."
   wholeHour="...">` inside `<TimeUnits>` or programmatically via

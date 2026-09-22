@@ -179,6 +179,47 @@ public class NumberToStringConfigurationSchemaTests
             "</NumberScale><Replacements><Replacement oldValue=\"one\" newValue=\"uno\" scope=\"InvalidScope\"/></Replacements>",
             StringComparison.Ordinal));
 
+    /// <summary>Ensures ClockTime hour-cycle values are restricted by the XSD.</summary>
+    [TestMethod]
+    public void ExternalConfiguration_ClockTimeInvalidHourCycle_IsRejected()
+        => AssertSchemaFailure(ValidConfiguration.Replace(
+            "</NumberScale>",
+            "</NumberScale><ClockTime step=\"5\" hourCycle=\"13\"><Rule range=\"0\" hourOffset=\"0\" hourForm=\"cardinal\" pattern=\"{hour}\"/></ClockTime>",
+            StringComparison.Ordinal));
+
+    /// <summary>Ensures ClockTime range syntax is restricted by the XSD.</summary>
+    [TestMethod]
+    public void ExternalConfiguration_ClockTimeInvalidRangeSyntax_IsRejected()
+        => AssertSchemaFailure(ValidConfiguration.Replace(
+            "</NumberScale>",
+            "</NumberScale><ClockTime step=\"5\"><Rule range=\"from:0,to:5\" hourOffset=\"0\" hourForm=\"cardinal\" pattern=\"{hour}\"/></ClockTime>",
+            StringComparison.Ordinal));
+
+    /// <summary>Ensures XML clock ranges that overlap are rejected during runtime validation.</summary>
+    [TestMethod]
+    public void ExternalConfiguration_ClockTimeOverlap_IsRejectedSemantically()
+    {
+        string clock = "<ClockTime step=\"60\"><Rule range=\"0\" hourOffset=\"0\" hourForm=\"cardinal\" pattern=\"{hour}\"/><Rule range=\"0\" hourOffset=\"1\" hourForm=\"cardinal\" pattern=\"{hour}\"/></ClockTime>";
+        string document = ValidConfiguration.Replace("</NumberScale>", $"</NumberScale>{clock}", StringComparison.Ordinal);
+
+        ArgumentException exception = Assert.ThrowsExactly<ArgumentException>(() => NumberToStringConverter.ReadConfiguration(document));
+        StringAssert.Contains(exception.Message, "overlap");
+    }
+
+    /// <summary>Ensures a present child ClockTime section replaces rather than merges its parent's section.</summary>
+    [TestMethod]
+    public void BaseOn_ClockTimePresent_ReplacesCompleteParentSection()
+    {
+        string parentClock = "<ClockTime step=\"60\" hourCycle=\"24\"><Rule range=\"0\" hourOffset=\"0\" hourForm=\"cardinal\" pattern=\"parent {hour}\"/></ClockTime>";
+        string child = "<Language baseOn=\"SCHEMA-TEST\"><Culture>SCHEMA-CLOCK-CHILD</Culture><ClockTime step=\"60\" hourCycle=\"12\"><Rule range=\"0\" hourOffset=\"0\" hourForm=\"cardinal\" pattern=\"child {hour}\"/></ClockTime></Language>";
+        string document = ValidConfiguration
+            .Replace("</NumberScale>", $"</NumberScale>{parentClock}", StringComparison.Ordinal)
+            .Replace("</Numbers>", $"{child}</Numbers>", StringComparison.Ordinal);
+
+        NumberToStringConverter converter = NumberToStringConverter.ReadConfiguration(document)["SCHEMA-CLOCK-CHILD"];
+        Assert.AreEqual("child one", converter.ConvertClockTime(new TimeOnly(13, 0)));
+    }
+
     /// <summary>Ensures the SpecialHour "hour" attribute's 0-23 range is enforced by the XSD, independently of the runtime constructor check.</summary>
     [TestMethod]
     public void ExternalConfiguration_SpecialHourOutOfRange_IsRejected()

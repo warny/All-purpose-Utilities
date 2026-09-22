@@ -783,6 +783,16 @@
 			<Unit name="minute" singular="Minute"  plural="Minuten"  count1form="eine" />
 			<Unit name="second" singular="Sekunde" plural="Sekunden" count1form="eine" />
 		</TimeUnits>
+		<ClockTime step="5" hourCycle="12">
+			<Rule range="0" hourOffset="0" hourForm="cardinal" pattern="{hour}" />
+			<Rule range="5,10" hourOffset="0" hourForm="cardinal" amountReference="0" amountDirection="after" pattern="{amount} nach {hour}" />
+			<Rule range="15" hourOffset="0" hourForm="cardinal" pattern="viertel nach {hour}" />
+			<Rule range="20,25" hourOffset="1" hourForm="cardinal" amountReference="30" amountDirection="before" pattern="{amount} vor halb {hour}" />
+			<Rule range="30" hourOffset="1" hourForm="cardinal" pattern="halb {hour}" />
+			<Rule range="35,40" hourOffset="1" hourForm="cardinal" amountReference="30" amountDirection="after" pattern="{amount} nach halb {hour}" />
+			<Rule range="45" hourOffset="1" hourForm="cardinal" pattern="viertel vor {hour}" />
+			<Rule range="50,55" hourOffset="1" hourForm="cardinal" amountReference="60" amountDirection="before" pattern="{amount} vor {hour}" />
+		</ClockTime>
 		<DateFormat pattern="{cardinal-day}. {month} {year}" firstCardinalDay="ersten" />
 	</Language>
 </Numbers>
