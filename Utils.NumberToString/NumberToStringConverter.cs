@@ -2249,9 +2249,10 @@ namespace Utils.NumberToString
                     $"Language '{LanguageIdentifier}', {constituentDescription}: lexical form selector returned " +
                     $"unknown form key '{formKey}'. Available forms: {string.Join(", ", unit.Forms.Keys)}.");
 
-            // Count1Form is a literal override for count==1; ForcedVariants and lexical form
-            // selection never rewrite it.
-            if (count == 1 && unit.Count1Form != null)
+            // Count1Form is a legacy literal override for ordinary time-unit calls. A contextual
+            // forcing is more specific and must render the numeral through the grammatical query;
+            // otherwise a ClockTime rule could never override a count-one form.
+            if (count == 1 && unit.Count1Form != null && contextualForcedVariants.IsEmpty)
                 return unit.Count1Form + Separator + word;
 
             return BuildCardinalFragment(count, query) + Separator + word;

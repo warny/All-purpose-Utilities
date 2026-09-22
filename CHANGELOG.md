@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
   now canonicalize aliases at construction, reject dead forcings, preserve caller dimensions,
   correctly treat forced ordinal variants as intentional, and apply the documented precedence
   defaults < caller < time unit < clock rule without changing the positional record constructor.
+  A non-empty clock-hour forcing also supersedes a time unit's legacy literal count-one form.
 - Added configurable idiomatic clock-face conversion through `ConvertClockTime(TimeOnly)` and
   `ConvertClockTime(DateTime)`, backed by validated `IntRange<int>` minute positions, nearest
   step rounding, configurable hour forms/offsets and reference-based amounts, reusable
