@@ -1067,6 +1067,51 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
             new[] { ConstantArgumentOf(bodyForward.Left).GetType(), ConstantArgumentOf(bodyForward.Right).GetType() });
     }
 
+    /// <summary>Returns the <see cref="ConstantExpression.Type"/> (the DECLARED type, as opposed to <see cref="ConstantArgumentOf"/>'s boxed-value RUNTIME type) of a method-call term's sole constant argument.</summary>
+    /// <param name="callTerm">The <see cref="MethodCallExpression"/> whose single argument to inspect.</param>
+    /// <returns>The argument constant's declared <see cref="Type"/>.</returns>
+    private static Type ConstantDeclaredTypeOf(Expression callTerm) => ((ConstantExpression)((MethodCallExpression)callTerm).Arguments[0]).Type;
+
+    /// <summary>
+    /// Two constants with the EXACT SAME numeric value AND the SAME boxed RUNTIME type, but DIFFERENT
+    /// DECLARED types (<see cref="object"/> vs <see cref="IConvertible"/>), must still canonicalize
+    /// deterministically regardless of source order (S4 review, round 5): round 4's runtime-type tie-break
+    /// alone is not enough here, since the runtime types themselves also tie (both <see cref="double"/>) -
+    /// only the DECLARED types differ, and <c>ExpressionComparer.ConstantsEqual</c>'s fallback path (reached
+    /// whenever the fast numeric-value check does not apply to BOTH sides, exactly the scenario here since
+    /// neither <see cref="object"/> nor <see cref="IConvertible"/> is itself a native numeric type) requires
+    /// <c>x.Type == y.Type</c>, so these two constants are NOT structurally equal despite tying on both
+    /// value and runtime type; without a further tie-break, two reversed source orderings of these two
+    /// (unequal) terms would each just keep their own source order.
+    /// </summary>
+    [TestMethod]
+    public void ConstantOrdering_EqualNumericValueSameRuntimeTypeDifferentDeclaredTypes_CanonicalizesDeterministically()
+    {
+        var simplifier = new ExpressionSimplifier();
+        MethodInfo fromObject = typeof(ExpressionSimplifierStructuralCanonicalizationTests).GetMethod(nameof(FromObjectNumericConstant), BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        var sourceForward = Expression.Lambda<Func<double>>(
+            Expression.Add(
+                Expression.Call(fromObject, Expression.Constant(1.0, typeof(object))),
+                Expression.Call(fromObject, Expression.Constant(1.0, typeof(IConvertible)))));
+        var sourceBackward = Expression.Lambda<Func<double>>(
+            Expression.Add(
+                Expression.Call(fromObject, Expression.Constant(1.0, typeof(IConvertible))),
+                Expression.Call(fromObject, Expression.Constant(1.0, typeof(object)))));
+
+        var resultForward = (LambdaExpression)simplifier.Simplify(sourceForward);
+        var resultBackward = (LambdaExpression)simplifier.Simplify(sourceBackward);
+
+        var bodyForward = (BinaryExpression)resultForward.Body;
+        var bodyBackward = (BinaryExpression)resultBackward.Body;
+
+        Assert.AreEqual(ConstantDeclaredTypeOf(bodyForward.Left), ConstantDeclaredTypeOf(bodyBackward.Left),
+            "Regardless of source order, the same declared-type constant must end up on the Left in both results.");
+        Assert.AreEqual(ConstantDeclaredTypeOf(bodyForward.Right), ConstantDeclaredTypeOf(bodyBackward.Right));
+        CollectionAssert.AreEquivalent(new[] { typeof(object), typeof(IConvertible) },
+            new[] { ConstantDeclaredTypeOf(bodyForward.Left), ConstantDeclaredTypeOf(bodyForward.Right) });
+    }
+
     // ------------------------------------------------------------------------------------------
     // 8. Ordinary positive controls
     // ------------------------------------------------------------------------------------------

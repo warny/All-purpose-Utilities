@@ -205,6 +205,26 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// operands happened to be spelled) rather than a deliberately designed contract, and reintroducing it
     /// would reintroduce that same non-commutativity inconsistency rather than removing one.
     /// </para>
+    /// <para>
+    /// <b>Explicit scope boundary (S4 review, round 5): NOT a general n-ary restoration.</b> This fallback
+    /// swaps only the two operands of a SINGLE <see cref="BinaryExpression"/> node; it is not a general
+    /// associative-commutative MULTISET match over an entire chain of ordinary <c>Add</c>/<c>Multiply</c>
+    /// nodes. Before S4, three (or more) free parameters chained through ordinary addition/multiplication
+    /// converged to one canonical order via the old <see cref="ParameterExpression.Name"/>-based textual
+    /// sort regardless of source association - e.g. <c>Simplify((a+b)+c)</c> and <c>Simplify((c+b)+a)</c>
+    /// both produced the same tree, so this comparer trivially agreed on them too. Post-S4, each side keeps
+    /// its own source association/order instead (see the "Free parameters" policy referenced above), and
+    /// this two-operand fallback does not bridge a 3+-term permutation: at the root, comparing
+    /// <c>(a+b)+c</c> against <c>(c+b)+a</c> either positionally or swapped requires an <c>Add</c> subtree
+    /// to match a bare parameter, which fails structurally either way, so
+    /// <c>Equals((a+b)+c, (c+b)+a)</c> is <see langword="false"/> for three distinct free parameters even
+    /// though they are algebraically the same sum. Recognizing this would require comparing/hashing such
+    /// chains as associative-commutative collections of terms - a materially larger capability than this
+    /// narrow regression fix, deliberately NOT attempted here; see the roadmap's round 5 decision.
+    /// Characterized (not merely left unspecified) by
+    /// <c>ExpressionComparerTests.FreeParameters_ThreeTermAdditionPermutation_PreservesPreS4ComparerBehavior</c>
+    /// and its multiplicative counterpart.
+    /// </para>
     /// </remarks>
     private static bool BinaryEqual(BinaryExpression x, BinaryExpression y, ParameterBindingContext context)
     {

@@ -906,4 +906,50 @@ public class ExpressionComparerTests
         Assert.IsTrue(ExpressionComparer.Default.Equals(left, right));
         Assert.AreEqual(ExpressionComparer.Default.GetHashCode(left), ExpressionComparer.Default.GetHashCode(right));
     }
+
+    /// <summary>
+    /// Characterizes a DELIBERATE, DOCUMENTED scope boundary of the commutative-operand fallback above (S4
+    /// review, round 5): it is a narrowly-scoped fix for the DIRECT two-operand case only, not a general
+    /// restoration of every pre-S4 convergence behavior. Before S4, three (or more) free parameters chained
+    /// through ordinary addition converged to a single canonical order via the old <see cref="ParameterExpression.Name"/>-based
+    /// textual sort, regardless of source association/order - e.g. <c>Simplify((a+b)+c)</c> and
+    /// <c>Simplify((c+b)+a)</c> both produced the same tree. S4 deliberately does not invent a cross-tree
+    /// order for free parameters (see <c>Utils/TODO-2026-09-12-expression-simplifier-roadmap.md</c>'s "Free
+    /// parameters" policy), so each side now keeps its own source order instead:
+    /// <c>Simplify((a+b)+c)</c> stays (some association of) <c>a+(b+c)</c>,
+    /// <c>Simplify((c+b)+a)</c> stays (some association of) <c>c+(b+a)</c>. The round-2 commutative fallback
+    /// only swaps a SINGLE BinaryExpression node's two operands; it is not a general N-ary
+    /// associative-commutative multiset match, so it does not bridge this gap. Recognizing arbitrary-length
+    /// free-parameter chains as equal would require comparing/hashing ordinary <c>Add</c>/<c>Multiply</c>
+    /// chains as associative-commutative collections of terms - a materially larger capability change than
+    /// this narrow regression fix, deliberately deferred rather than attempted here (see the roadmap's round
+    /// 5 decision). This test exists to make that scope boundary an explicit, observable characterization
+    /// rather than an unspecified gap: it asserts the CURRENT, decided behavior, not a requirement.
+    /// </summary>
+    [TestMethod]
+    public void FreeParameters_ThreeTermAdditionPermutation_PreservesPreS4ComparerBehavior()
+    {
+        ParameterExpression a = P("a");
+        ParameterExpression b = P("b");
+        ParameterExpression c = P("c");
+
+        Expression left = Expression.Add(Expression.Add(a, b), c);
+        Expression right = Expression.Add(Expression.Add(c, b), a);
+
+        Assert.IsFalse(ExpressionComparer.Default.Equals(left, right));
+    }
+
+    /// <summary>Multiplicative counterpart of <see cref="FreeParameters_ThreeTermAdditionPermutation_PreservesPreS4ComparerBehavior"/>.</summary>
+    [TestMethod]
+    public void FreeParameters_ThreeTermMultiplicationPermutation_PreservesPreS4ComparerBehavior()
+    {
+        ParameterExpression a = P("a");
+        ParameterExpression b = P("b");
+        ParameterExpression c = P("c");
+
+        Expression left = Expression.Multiply(Expression.Multiply(a, b), c);
+        Expression right = Expression.Multiply(Expression.Multiply(c, b), a);
+
+        Assert.IsFalse(ExpressionComparer.Default.Equals(left, right));
+    }
 }

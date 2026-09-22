@@ -867,6 +867,61 @@ decided. Fixed/decided on the same branch.
 passed, 3 skipped (same three pre-existing, unrelated, platform-gated tests). Release build of `Utils.sln`:
 succeeded, no errors.
 
+#### S4 review fixes, round 5 (2026-09-22) — PR #600 fifth human review pass
+
+A fifth human review pass at commit `7a690723` found one real remaining S4 defect and asked for an explicit
+decision on a comparer scope question round 2's fix left open. Fixed/decided on the same branch.
+
+1. **`ConstantKey`'s round-4 runtime-type tie-break was itself incomplete: it did not cover two constants
+   with the SAME exact value AND the SAME runtime type but DIFFERENT DECLARED types.** Round 4 taught the
+   numeric branch to tie-break on the boxed value's runtime type when the exact-numeric comparison itself
+   tied, fixing e.g. `Constant(1, typeof(object))` [runtime `int`] vs `Constant(1.0, typeof(object))`
+   [runtime `double`]. But `Constant(1.0, typeof(object))` vs `Constant(1.0, typeof(IConvertible))` - same
+   exact value (`1`), same runtime type (`double`), only the DECLARED type differs - still tied all the way
+   through: the runtime-type tie-break itself found no difference (`double == double`) and fell straight to
+   `return 0`, without ever comparing the DECLARED types. `ExpressionComparer.ConstantsEqual`'s fallback path
+   (reached here, since neither `object` nor `IConvertible` is itself native numeric) requires
+   `x.Type == y.Type`, so these two constants are NOT structurally equal despite the order key's tie - the
+   same category of source-order-independence regression as rounds 3 and 4, just one level deeper. Fixed by
+   adding a further tie-break on the constants' own DECLARED `Type` (same non-throwing `CompareType` helper)
+   when the runtime types also tied, still gated to the same "at least one side's declared type is not
+   itself native numeric" condition rounds 3/4 established, so the ordinary declared-numeric cross-type case
+   (`int 1` vs `long 1`) is entirely unaffected. Regression:
+   `ConstantOrdering_EqualNumericValueSameRuntimeTypeDifferentDeclaredTypes_CanonicalizesDeterministically`
+   (verified to fail without the fix).
+2. **Comparer scope decision: the round-2 commutative-operand fallback in `ExpressionComparer.BinaryEqual`
+   is explicitly scoped to the DIRECT two-operand case, not a general n-ary restoration - and is NOT being
+   extended in this round.** Before S4, three or more free parameters chained through ordinary
+   addition/multiplication converged to one canonical order via the old `ParameterExpression.Name`-based
+   textual sort regardless of source association (e.g. `Simplify((a+b)+c)` and `Simplify((c+b)+a)` both
+   produced the same tree), so the pre-S4 comparer trivially agreed on such chains too. Verified directly:
+   post-S4, `Simplify((a+b)+c)` stays `a+(b+c)` and `Simplify((c+b)+a)` stays `c+(b+a)` (each side keeps its
+   own source association, per the deliberate "Free parameters" policy), and
+   `ExpressionComparer.Default.Equals((a+b)+c, (c+b)+a)` is `false` for three distinct free parameters -
+   confirming the reviewer's diagnosis exactly. The round-2 fallback only swaps a single `BinaryExpression`
+   node's two operands; recognizing this would require comparing/hashing ordinary `Add`/`Multiply` chains as
+   associative-commutative MULTISETS of terms - ambiguous term-to-term matching (not simple positional or
+   single-swap comparison), interaction with `ParameterBindingContext`'s bound-parameter tracking for
+   sub-terms that are themselves lambdas, and `GetHashCode` consistency - a materially larger capability
+   change than any of rounds 1-5's narrow, bounded fixes, and not one to take on as a "just also fix this"
+   addendum to an already-five-round review cycle. Decision: DEFER, and make the scope boundary explicit
+   rather than leave it an unspecified gap - matching the reviewer's second offered resolution path.
+   `ExpressionComparer.BinaryEqual`'s XML remarks now say so explicitly ("Explicit scope boundary (S4 review,
+   round 5): NOT a general n-ary restoration" paragraph). Characterization tests added (asserting the
+   CURRENT, decided behavior, not a requirement):
+   `ExpressionComparerTests.FreeParameters_ThreeTermAdditionPermutation_PreservesPreS4ComparerBehavior` and
+   its multiplicative counterpart. A full associative-commutative comparer/hasher for such chains, if ever
+   wanted, belongs in its own dedicated stage/PR, not folded into S4's closeout.
+
+**Validation performed after round 5 (2026-09-22):** `ExpressionSimplifierStructuralCanonicalizationTests`:
+41/41 passed. `ExpressionComparerTests`: 53/53 passed. Full `UtilsTest/Mathematics/Expressions` namespace:
+453/453 passed. Full `UtilsTest.Unit`: 7665/7665 passed, 0 skipped. Full `UtilsTest.Functional`: 383/383
+passed (one transient failure in `DllMapperTests.MapFromInterfaceInIsolatedWorkerTest` during a FIRST run
+that raced four validation suites/builds in parallel - a known isolated-worker/named-pipe flakiness under
+resource contention in this environment, unrelated to this change - did not reproduce on a clean sequential
+re-run). Full `UtilsTest.Security`: 225/228 passed, 3 skipped (same three pre-existing, unrelated,
+platform-gated tests). Release build of `Utils.sln`: succeeded, no errors.
+
 ### S5 — Construction-performance cleanup
 
 Only after the correctness/structure stages above, re-profile construction-time allocations and CPU cost in the simplifier.

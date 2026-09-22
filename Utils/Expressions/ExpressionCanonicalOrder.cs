@@ -616,6 +616,20 @@ internal static class ExpressionCanonicalOrder
                     {
                         return CompareType(leftRuntimeType, rightRuntimeType);
                     }
+
+                    // Runtime types also tie (S4 review, round 5): e.g. Expression.Constant(1.0,
+                    // typeof(object)) vs Expression.Constant(1.0, typeof(IConvertible)) - same exact value,
+                    // same boxed runtime type (double), but different DECLARED types. ConstantsEqual's
+                    // fallback path (used whenever the fast numeric-value check above does not apply to
+                    // BOTH sides, exactly the scenario reached here) requires x.Type == y.Type, so these two
+                    // are NOT structurally equal despite tying on both value and runtime type; without this
+                    // further tie-break, two reversed source orderings of these two (unequal) terms would
+                    // again both just keep their own source order. Tie-break by the DECLARED type itself
+                    // (same non-throwing CompareType helper).
+                    if (_type != o._type)
+                    {
+                        return CompareType(_type, o._type);
+                    }
                 }
 
                 return 0;
