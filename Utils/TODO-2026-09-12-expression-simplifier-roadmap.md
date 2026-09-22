@@ -782,6 +782,91 @@ real remaining S4 defect plus two contract/conformity points. Fixed on the same 
 38/38 passed. Full `UtilsTest/Mathematics/Expressions` namespace: 448/448 passed. Full `UtilsTest.Unit`:
 7660/7660 passed, 0 skipped.
 
+#### S4 review fixes, round 4 (2026-09-22) — PR #600 fourth human review pass
+
+A fourth human review pass at commit `32aac339` found two real remaining S4 defects and asked for an
+explicit decision on a public-compatibility question round 2 had already documented but not formally
+decided. Fixed/decided on the same branch.
+
+1. **The `[ThreadStatic]` ambient lexical-scope stack leaked between independent, reentrant `Simplify()`
+   calls.** `ExpressionSimplifier._lexicalScopeStack` was populated/consumed only through
+   `OnEnterLambdaScope`/`OnExitLambdaScope`, called from `TransformCore`'s traversal — but the PUBLIC entry
+   point, `Transform` (and therefore `Simplify`), established no boundary of its own: it simply called
+   `TransformCore` directly. Every call reaching `Transform` - the true top-level call from application code,
+   but ALSO `ExpressionComparer`'s own internal re-simplification of its operands
+   (`_expressionSimplifier.Simplify(x)`/`(y)` in `Equals`/`GetHashCode`) - therefore shared whatever ambient
+   stack happened to be open on the current thread. Concretely: `AdditionOfEqualsElements` (a pre-existing,
+   S4-unrelated factoring rule) calls the PUBLIC, non-safe `ExpressionComparer.Default.Equals` on two
+   addends, which for an opaque (non-known-safe) constant argument calls that constant's own, possibly
+   user-defined `object.Equals` override - a documented, accepted hazard of the PUBLIC comparer specifically
+   (see `ConstantsEqual`'s `safeConstantsOnly` policy). If that user code then starts a brand-new, unrelated
+   `new ExpressionSimplifier().Simplify(...)` call on the same thread while an OUTER simplification's lambda
+   scope is still open, and that inner call happens to reuse the outer lambda's own bound
+   `ParameterExpression` instances (same object references) in an expression with no lambda wrapper of its
+   own, `ExpressionCanonicalOrder.BuildParameter`'s reference-based scope search would incorrectly resolve
+   them as bound at the OUTER lambda's depth/position and reorder them accordingly, instead of correctly
+   treating them as free (their only correct classification from that independent inner call's own,
+   self-contained point of view) - a real, if narrow, S4 determinism hazard. Fixed by giving the exact
+   built-in `ExpressionSimplifier`'s `Transform` override its own boundary: it now saves the caller's current
+   `_lexicalScopeStack`, installs a fresh empty one, runs `TransformCore`, and restores the caller's stack in
+   a `finally` block. Every call to the public `Transform`/`Simplify` API is therefore self-contained and
+   never depends on, or leaks into, any concurrently-in-progress ambient state elsewhere on the same thread -
+   including `ExpressionComparer`'s own internal re-simplification calls, which is an intentional,
+   correctness-neutral side effect: `ExpressionComparer.Equals`'s subsequent structural comparison resolves
+   parameter binding independently via its own `ParameterBindingContext`, never via this ambient stack, so it
+   does not depend on the nested `Simplify` call seeing an outer scope. Regression:
+   `Reentrancy_IndependentNestedSimplifyTriggeredDuringPublicComparerEquals_DoesNotLeakAmbientScope` (verified
+   to fail without the fix, reproducing the reviewer's exact scenario, before being fixed).
+2. **`ConstantKey`'s numeric branch still tied two mathematically-equal-but-runtime-type-different boxed
+   numerics declared as `object`.** Round 3 taught `TryGetNumericValue` to fall back to a constant's boxed
+   value's own RUNTIME type when its DECLARED type is not itself numeric (e.g.
+   `Expression.Constant(1, typeof(object))`), but `ConstantKey.CompareSameRank`'s numeric branch returned the
+   bare `ExactNumericValue.CompareTo()` result the instant both sides were numeric - with no further
+   tie-break when that comparison was itself `0` (mathematically equal, e.g. runtime `int 1` vs runtime
+   `double 1.0`). Since `ExpressionComparer.ConstantsEqual`'s own numeric fast path (`TryGetExactNumericValue`
+   in `ExpressionComparer.cs`) only ever consults the DECLARED type - it was not updated in round 3 - these
+   two constants are NOT structurally equal despite tying in the order key: `F((object)1) + F((object)1.0)`
+   and its reversed source form both kept their own source order (a stable-sort tie in both directions),
+   failing to converge - a real S4 determinism regression for this shape, for the same underlying reason as
+   round 3's finding 1. Fixed by tie-breaking on the boxed value's own runtime type (`object.GetType()`,
+   always safe, never user-overridable) whenever the numeric comparison ties AND at least one side's DECLARED
+   type is not itself a native numeric type - i.e., only in the runtime-type-fallback scenario round 3
+   introduced. The ordinary, long-established cross-type-numeric-equality case (both sides DECLARED as
+   different native numeric types, e.g. `int 1` vs `long 1`, which `ConstantsEqual` already treats as equal
+   via the declared type) is deliberately left tying exactly as before, since adding a runtime-type
+   tie-break there would make the order key distinguish two constants `ConstantsEqual` still reports as
+   equal. Regression:
+   `ConstantOrdering_BoxedNumericConstantsDeclaredAsObjectWithDifferentRuntimeTypes_CanonicalizeDeterministically`
+   (verified to fail without the fix). Noted but deliberately NOT fixed this round, as a separate, non-blocking
+   follow-up the reviewer flagged as lower priority: `ExpressionComparer.ConstantsEqual`/`StructuralEqualsRaw`
+   still do not themselves recognize a declared-`object` boxed numeric via its runtime type the way the order
+   key now does, so two such constants with the SAME runtime-numeric value (e.g. two separately-boxed `object`
+   constants both holding `int 1`) are not (yet) grouped as equal by the additive-grouping/public-equality
+   side - a missed grouping opportunity, not a correctness bug (the conservative direction), left for a future
+   round to decide whether unifying it is worth the additional grouping/merge-behavior surface it would touch.
+3. **Public-compatibility decision: `ExpressionComparer.Default`'s free-parameter commutative widening
+   (round 2, finding 3) is explicitly ACCEPTED, not reverted.** The reviewer asked for an explicit decision
+   rather than letting this pass under the "S4" label alone, since `ExpressionComparer` is a public
+   `IEqualityComparer<Expression>` an external caller could use as a `Dictionary`/`HashSet` key comparer.
+   Decision: keep the widening as round 2 shipped it. Reasoning: (a) it is mathematically correct - ordinary
+   addition truly is commutative regardless of what its free operands are named; (b) the OLD behavior it
+   changes (two distinct free parameters that happen to share a `Name` comparing unequal under
+   `Add`/swapped-`Add`) was itself an accidental side effect of the pre-S4 textual-key implementation, never a
+   deliberately designed contract, so reverting to it would reintroduce a real non-commutativity inconsistency
+   rather than remove one; (c) the project's batched-2.0.0 versioning plan already treats this kind of
+   accumulating, individually-reasoned public-behavior change as expected between major releases rather than a
+   per-change compatibility blocker. `ExpressionComparer.BinaryEqual`'s XML remarks now say so explicitly
+   ("Public compatibility decision (S4 review, round 4)" paragraph), so this is a recorded decision rather
+   than a silent carry-over. No code or test change beyond that documentation - round 2's own
+   `FreeParameters_SameNameDistinctInstances_CommutativeAddition_NowEqual` already characterizes the accepted
+   behavior.
+
+**Validation performed after round 4 (2026-09-22):** `ExpressionSimplifierStructuralCanonicalizationTests`:
+40/40 passed. Full `UtilsTest/Mathematics/Expressions` namespace: 450/450 passed. Full `UtilsTest.Unit`:
+7662/7662 passed, 0 skipped. Full `UtilsTest.Functional`: 383/383 passed. Full `UtilsTest.Security`: 225/228
+passed, 3 skipped (same three pre-existing, unrelated, platform-gated tests). Release build of `Utils.sln`:
+succeeded, no errors.
+
 ### S5 — Construction-performance cleanup
 
 Only after the correctness/structure stages above, re-profile construction-time allocations and CPU cost in the simplifier.

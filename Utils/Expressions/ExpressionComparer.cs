@@ -187,6 +187,24 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// (bound parameters, which S4 keeps canonicalizing deterministically by position; non-commutative
     /// operators; custom/lifted operators, excluded by <c>IsOrdinaryBinaryArithmetic</c>) is unaffected: the
     /// positional comparison already succeeds for those, so the swapped fallback is never reached.
+    /// <para>
+    /// <b>Public compatibility decision (S4 review, round 4).</b> This IS a deliberate, accepted widening of
+    /// this type's public <see cref="Equals(Expression?, Expression?)"/>/<see cref="GetHashCode(Expression)"/>
+    /// contract, not only an internal S4 correctness fix: two distinct FREE parameters sharing the same
+    /// <see cref="ParameterExpression.Name"/> (e.g. both literally named <c>"v"</c>) previously compared
+    /// unequal under <c>Add</c>/swapped-<c>Add</c> (the pre-S4 textual key tied on identical name text, the
+    /// then-positional-only comparison found the operands reference-unequal); this fallback now matches
+    /// them, and any external caller using <see cref="Default"/> as a <see cref="Dictionary{TKey, TValue}"/>/
+    /// <see cref="HashSet{T}"/> key comparer for <see cref="Expression"/> trees containing such same-named
+    /// distinct free parameters observes that change. The project's batched-2.0.0 versioning plan (see
+    /// <c>Utils/TODO-2026-09-12-expression-simplifier-roadmap.md</c>) treats this kind of accumulating,
+    /// individually-reasoned public-behavior change as expected between major releases rather than a
+    /// per-change compatibility blocker; reverting to the old, narrower behavior is not adopted here because
+    /// it was itself an accidental side effect of the pre-S4 textual-key implementation (ordinary commutative
+    /// addition failing to compare two of its own re-orderings equal, purely because of how two UNRELATED
+    /// operands happened to be spelled) rather than a deliberately designed contract, and reintroducing it
+    /// would reintroduce that same non-commutativity inconsistency rather than removing one.
+    /// </para>
     /// </remarks>
     private static bool BinaryEqual(BinaryExpression x, BinaryExpression y, ParameterBindingContext context)
     {

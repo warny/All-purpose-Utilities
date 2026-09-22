@@ -587,7 +587,38 @@ internal static class ExpressionCanonicalOrder
 
             if (_numeric is not null && o._numeric is not null)
             {
-                return _numeric.Value.CompareTo(o._numeric.Value);
+                int numericCompare = _numeric.Value.CompareTo(o._numeric.Value);
+                if (numericCompare != 0) return numericCompare;
+
+                // Mathematically equal exact numeric values (S4 review, round 4). This can happen for two
+                // constants whose DECLARED Type does not itself identify them as numeric - e.g.
+                // Expression.Constant(1, typeof(object)) and Expression.Constant(1.0, typeof(object)):
+                // TryGetNumericValue falls back to each value's own RUNTIME type in that case (see its
+                // remarks), so _numeric can be non-null on both sides even though _type is typeof(object)
+                // for both. ExpressionComparer.ConstantsEqual does not (yet) apply that same runtime-type
+                // fallback - its own TryGetExactNumericValue only ever consults the DECLARED Type - so two
+                // such constants are NOT structurally equal even though they tied above; without a further
+                // tie-break here, two reversed source orderings of these two (unequal) terms would each just
+                // keep their own source order (a stable-sort tie in both directions), breaking S4's
+                // source-order-independent canonicalization guarantee for this shape. Tie-break by the boxed
+                // value's own runtime type (via the same non-throwing, non-hash-based CompareType helper -
+                // object.GetType() is always safe to call, never user-overridable) whenever the DECLARED
+                // type is not itself native numeric on EITHER side. When both sides ARE declared native
+                // numeric types (the ordinary, long-established cross-type-numeric-equality case - e.g.
+                // int 1 vs long 1, which ConstantsEqual DOES already treat as equal via the declared type),
+                // this branch is skipped and the two constants keep tying here exactly as before S4 review
+                // round 4, consistent with that existing equality.
+                if (!Types.Number.Contains(_type) || !Types.Number.Contains(o._type))
+                {
+                    Type leftRuntimeType = _value!.GetType();
+                    Type rightRuntimeType = o._value!.GetType();
+                    if (leftRuntimeType != rightRuntimeType)
+                    {
+                        return CompareType(leftRuntimeType, rightRuntimeType);
+                    }
+                }
+
+                return 0;
             }
 
             if (_numeric is not null != o._numeric is not null)

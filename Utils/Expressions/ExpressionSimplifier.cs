@@ -65,11 +65,32 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// The exact built-in <see cref="ExpressionSimplifier"/> requires no extra preparation beyond
         /// what <see cref="ExpressionTransformer.TransformCore(Expression)"/> already does, so this
-        /// simply delegates to it.
+        /// simply delegates to it - except that, for the exact built-in runtime type, it also establishes a
+        /// fresh, empty ambient lexical-scope boundary around the call. See
+        /// <see cref="_lexicalScopeStack"/>'s remarks ("Independent top-level calls") for why this boundary
+        /// exists here rather than nowhere, and why it does not affect the ordinary, same-tree recursive
+        /// descent that runs through <see cref="TransformCore"/> directly.
         /// </summary>
         /// <param name="expression">The expression to transform.</param>
         /// <returns>A possibly rewritten expression.</returns>
-        public override Expression Transform(Expression expression) => TransformCore(expression);
+        public override Expression Transform(Expression expression)
+        {
+            if (GetType() != typeof(ExpressionSimplifier))
+            {
+                return TransformCore(expression);
+            }
+
+            List<ParameterExpression[]>? callerScope = _lexicalScopeStack;
+            _lexicalScopeStack = null;
+            try
+            {
+                return TransformCore(expression);
+            }
+            finally
+            {
+                _lexicalScopeStack = callerScope;
+            }
+        }
 
         /// <summary>
         /// Simplifies the given <paramref name="e"/> by calling <see cref="Transform(Expression)"/>.
@@ -194,18 +215,44 @@ namespace Utils.Mathematics.Expressions
         /// observe or mutate each other's scope stack.
         /// </para>
         /// <para>
-        /// <b>Re-entrancy.</b> A rule can call back into <c>TransformCore</c> (directly, or indirectly via
-        /// <see cref="ExpressionComparer.Default"/>, which simplifies its operands before comparing them).
+        /// <b>Re-entrancy within the SAME traversal.</b> A rule can call back into <c>TransformCore</c>
+        /// directly (never through <see cref="Transform"/> - see "Independent top-level calls" below).
         /// Every such nested call still runs on the SAME thread, synchronously, fully nested within the
         /// outer call's own call stack (it returns before the outer call resumes). Because
         /// <see cref="OnEnterLambdaScope"/>/<see cref="OnExitLambdaScope"/> are always paired via a
         /// <c>try</c>/<c>finally</c> in <see cref="ExpressionTransformer.PrepareLambda"/>, any such nested
         /// traversal pushes and pops exactly the frames IT opens, leaving the stack exactly as the outer
-        /// traversal left it once the nested call returns — and while the nested call is executing, the
-        /// outer call's still-open frames remain visible and correctly resolve any parameter the nested
-        /// call encounters that is actually bound by one of those still-enclosing lambdas (expected: the
-        /// nested call operates on a sub-expression drawn from the very tree the outer call is
-        /// simplifying). This is exercised by
+        /// traversal left it once the nested call returns.
+        /// </para>
+        /// <para>
+        /// <b>Independent top-level calls (S4 review, round 4).</b> <see cref="Transform"/> - the only entry
+        /// point <see cref="Simplify(Expression)"/>, <see cref="ExpressionExtensions.Simplify(Expression)"/>
+        /// and <see cref="ExpressionComparer"/>'s own internal re-simplification of its operands
+        /// (<c>ExpressionComparer.Equals(Expression?, Expression?)</c>/<c>GetHashCode(Expression)</c>, which
+        /// simplify each operand before comparing/hashing it) ever reach this stack through - establishes a
+        /// fresh, empty scope boundary around its call to <c>TransformCore</c>, saving and restoring
+        /// whatever the CALLER's own ambient stack was. Without this boundary, a <see cref="Transform"/> call
+        /// re-entered from arbitrary code the simplifier does not control (a constant value's own
+        /// <see cref="object.Equals(object?)"/> override, reachable from <c>AdditionOfEqualsElements</c>'s
+        /// non-safe <see cref="ExpressionComparer.Default"/> comparison, calling back into a brand-new,
+        /// unrelated <c>new ExpressionSimplifier().Simplify(...)</c> on its own thread-shared stack) would
+        /// incorrectly inherit the OUTER call's still-open lambda frames merely because it happens to run on
+        /// the same OS thread while those frames are open — even though the inner call's expression has no
+        /// actual relationship to the outer lambda. Concretely: reusing the outer lambda's own bound
+        /// <see cref="ParameterExpression"/> instances (same object references) inside such an independent
+        /// inner call would make <see cref="ExpressionCanonicalOrder.BuildKey"/> see them as bound at the
+        /// outer lambda's depth/position (its scope search is by object reference - see
+        /// <c>ExpressionCanonicalOrder.BuildParameter</c>) and reorder them accordingly, instead of treating
+        /// them as free (their only correct classification from the independent inner call's own,
+        /// self-contained point of view). Each call to the public <see cref="Transform"/>/
+        /// <see cref="Simplify(Expression)"/> API is therefore self-contained: it never depends on, and
+        /// never affects, any concurrently-in-progress ambient state elsewhere on the same thread. This does
+        /// mean <see cref="ExpressionComparer"/>'s own internal re-simplification of its operands no longer
+        /// sees an outer, still-open lambda scope either (a change from the pre-round-4 behavior); this is
+        /// intentional, for the same self-containment reason, and does not affect the correctness of
+        /// <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/>'s subsequent structural
+        /// comparison, which resolves parameter binding independently via its own
+        /// <c>ParameterBindingContext</c>, not via this ambient stack. Exercised by
         /// <c>ExpressionSimplifierStructuralCanonicalizationTests</c>' concurrency/re-entrancy coverage.
         /// </para>
         /// </remarks>

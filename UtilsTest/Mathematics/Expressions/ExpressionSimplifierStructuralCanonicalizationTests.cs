@@ -930,6 +930,144 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
     }
 
     // ------------------------------------------------------------------------------------------
+    // Post-review hardening, round 4: two remaining S4 defects found by re-reading commit 32aac339 (the
+    // round-3 fix) against master. (1) The ambient [ThreadStatic] lexical-scope stack (ExpressionSimplifier.
+    // _lexicalScopeStack) was populated/consumed only via TransformCore, with no boundary at the PUBLIC
+    // Transform()/Simplify() entry point - so a completely independent, unrelated Simplify() call triggered
+    // reentrantly from arbitrary code the simplifier does not control (a constant's own Equals() override,
+    // reachable through the pre-existing, S4-unrelated AdditionOfEqualsElements rule's non-safe
+    // ExpressionComparer.Default comparison) could incorrectly inherit an OUTER, still-in-progress
+    // simplification's open lambda scope merely by running on the same thread. (2) ConstantKey's numeric
+    // branch returned the bare ExactNumericValue.CompareTo() result the moment both sides were numeric,
+    // even when that comparison tied (mathematically equal) but the two constants' underlying RUNTIME types
+    // differed (e.g. a declared-object constant boxing an int 1 vs one boxing a double 1.0) - round 3 made
+    // TryGetNumericValue recognize such runtime-typed numerics, but never gave CompareSameRank a
+    // corresponding tie-break, so two reversed source orderings of these two (structurally unequal, per
+    // ExpressionComparer.ConstantsEqual) terms both just kept their own source order instead of converging.
+    // ------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// A constant value whose <see cref="object.Equals(object?)"/> override starts a brand-new, independent
+    /// <see cref="ExpressionSimplifier"/> simplification, reusing the SAME <see cref="ParameterExpression"/>
+    /// instances an OUTER, still-in-progress simplification has bound in its own lambda scope - but combined
+    /// into a bare, unwrapped <see cref="BinaryExpression"/> with no enclosing <see cref="LambdaExpression"/>
+    /// of its own. Used to prove that the ambient lexical-scope stack a nested <c>Simplify()</c> call
+    /// observes is scoped to that call alone: it must never inherit a DIFFERENT, concurrently-open
+    /// simplification's scope merely because both happen to run on the same thread.
+    /// </summary>
+    private sealed class ReentrantScopeProbe
+    {
+        private readonly ParameterExpression _p0;
+        private readonly ParameterExpression _p1;
+
+        /// <summary>Initializes a new <see cref="ReentrantScopeProbe"/> that will reuse <paramref name="p0"/>/<paramref name="p1"/> in its own nested simplification.</summary>
+        /// <param name="p0">The outer lambda's first bound parameter, reused as the nested call's second (rightmost) operand.</param>
+        /// <param name="p1">The outer lambda's second bound parameter, reused as the nested call's first (leftmost) operand.</param>
+        public ReentrantScopeProbe(ParameterExpression p0, ParameterExpression p1)
+        {
+            _p0 = p0;
+            _p1 = p1;
+        }
+
+        /// <summary>The independent nested <c>Simplify()</c> call's result, captured the first time <see cref="Equals(object?)"/> runs; <see langword="null"/> until then.</summary>
+        public BinaryExpression NestedResult { get; private set; }
+
+        /// <inheritdoc/>
+        public override bool Equals(object obj)
+        {
+            if (NestedResult is null)
+            {
+                var nestedSimplifier = new ExpressionSimplifier();
+                NestedResult = (BinaryExpression)nestedSimplifier.Simplify(Expression.Add(_p1, _p0));
+            }
+
+            return ReferenceEquals(this, obj);
+        }
+
+        /// <inheritdoc/>
+        public override int GetHashCode() => 0;
+    }
+
+    /// <summary>
+    /// Reproduces the S4 review round-4 P2 finding: an independent, reentrantly-triggered
+    /// <c>new ExpressionSimplifier().Simplify(...)</c> call must not observe an unrelated OUTER
+    /// simplification's still-open ambient lambda scope.
+    /// </summary>
+    [TestMethod]
+    public void Reentrancy_IndependentNestedSimplifyTriggeredDuringPublicComparerEquals_DoesNotLeakAmbientScope()
+    {
+        var simplifier = new ExpressionSimplifier();
+        ParameterExpression p0 = Expression.Parameter(typeof(double), "p0");
+        ParameterExpression p1 = Expression.Parameter(typeof(double), "p1");
+        var probe = new ReentrantScopeProbe(p0, p1);
+
+        MethodInfo identity = typeof(ExpressionSimplifierStructuralCanonicalizationTests).GetMethod(
+            nameof(IdentityFromObject), BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        // Add(term1, term2), inside a lambda binding p0/p1 (so [p0, p1] is on the ambient stack while this
+        // Add node is processed), reaches the pre-existing AdditionOfEqualsElements factoring rule - see
+        // HostileConstantArgument_InAdditiveGrouping_NeverCallsUserEqualsOrGetHashCode's comment for why this
+        // exact shape reaches ExpressionComparer.Default.Equals(term1, term2) - which, being the PUBLIC
+        // (non-safe) comparer, calls probe.Equals(probe) while that outer scope frame is still open.
+        MethodCallExpression term1 = Expression.Call(identity, Expression.Constant(probe, typeof(object)));
+        MethodCallExpression term2 = Expression.Call(identity, Expression.Constant(probe, typeof(object)));
+        var outer = Expression.Lambda<Func<double, double, double>>(Expression.Add(term1, term2), p0, p1);
+
+        simplifier.Simplify(outer);
+
+        Assert.IsNotNull(probe.NestedResult, "Precondition: the reentrant Equals() call must have run.");
+        // p1, p0 are free relative to the INDEPENDENT nested Simplify() call: S4 preserves free-parameter
+        // source order (see ExpressionCanonicalOrder.ParameterKey.CompareSameRank's free-parameter remarks),
+        // so the result must still read (p1, p0) - NOT be reordered to (p0, p1) as if bound by the OUTER
+        // lambda's [p0, p1] scope leaking into this unrelated call.
+        Assert.IsTrue(ReferenceEquals(p1, probe.NestedResult.Left));
+        Assert.IsTrue(ReferenceEquals(p0, probe.NestedResult.Right));
+    }
+
+    /// <summary>Test-only method accepting an opaque <see cref="object"/> argument, used to embed differently-runtime-typed boxed numeric constants declared as <see cref="object"/>.</summary>
+    /// <param name="value">An arbitrary opaque value, ignored beyond ordering.</param>
+    /// <returns>A constant, arbitrary result.</returns>
+    private static double FromObjectNumericConstant(object value) => 1.0;
+
+    /// <summary>
+    /// Two boxed numeric constants declared as <see cref="object"/> whose exact mathematical values are EQUAL
+    /// but whose underlying RUNTIME types differ (<see cref="int"/> <c>1</c> vs <see cref="double"/>
+    /// <c>1.0</c>) must still canonicalize deterministically regardless of source order: tying on exact
+    /// numeric value alone (as round 3 left it) is not enough, because
+    /// <see cref="ExpressionComparer"/>'s own equality does not treat these two as equal (its numeric
+    /// fast path only ever consults the DECLARED <see cref="Type"/>, unlike the order key's <c>
+    /// TryGetNumericValue</c>), so an order-key tie here means two reversed source orderings of these two
+    /// (structurally unequal) terms would otherwise both just keep their own source order.
+    /// </summary>
+    [TestMethod]
+    public void ConstantOrdering_BoxedNumericConstantsDeclaredAsObjectWithDifferentRuntimeTypes_CanonicalizeDeterministically()
+    {
+        var simplifier = new ExpressionSimplifier();
+        MethodInfo fromObject = typeof(ExpressionSimplifierStructuralCanonicalizationTests).GetMethod(nameof(FromObjectNumericConstant), BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        var sourceForward = Expression.Lambda<Func<double>>(
+            Expression.Add(
+                Expression.Call(fromObject, Expression.Constant(1, typeof(object))),
+                Expression.Call(fromObject, Expression.Constant(1.0, typeof(object)))));
+        var sourceBackward = Expression.Lambda<Func<double>>(
+            Expression.Add(
+                Expression.Call(fromObject, Expression.Constant(1.0, typeof(object))),
+                Expression.Call(fromObject, Expression.Constant(1, typeof(object)))));
+
+        var resultForward = (LambdaExpression)simplifier.Simplify(sourceForward);
+        var resultBackward = (LambdaExpression)simplifier.Simplify(sourceBackward);
+
+        var bodyForward = (BinaryExpression)resultForward.Body;
+        var bodyBackward = (BinaryExpression)resultBackward.Body;
+
+        Assert.AreEqual(ConstantArgumentOf(bodyForward.Left).GetType(), ConstantArgumentOf(bodyBackward.Left).GetType(),
+            "Regardless of source order, the same runtime-typed constant must end up on the Left in both results.");
+        Assert.AreEqual(ConstantArgumentOf(bodyForward.Right).GetType(), ConstantArgumentOf(bodyBackward.Right).GetType());
+        CollectionAssert.AreEquivalent(new object[] { typeof(int), typeof(double) },
+            new[] { ConstantArgumentOf(bodyForward.Left).GetType(), ConstantArgumentOf(bodyForward.Right).GetType() });
+    }
+
+    // ------------------------------------------------------------------------------------------
     // 8. Ordinary positive controls
     // ------------------------------------------------------------------------------------------
 
