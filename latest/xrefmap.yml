@@ -60879,6 +60879,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.ClockTimeRule.AmountDirection
   nameWithType: ClockTimeRule.AmountDirection
+- uid: Utils.NumberToString.ClockTimeRule.AmountForcedVariants
+  name: AmountForcedVariants
+  href: api/Utils.NumberToString.ClockTimeRule.html#Utils_NumberToString_ClockTimeRule_AmountForcedVariants
+  commentId: P:Utils.NumberToString.ClockTimeRule.AmountForcedVariants
+  fullName: Utils.NumberToString.ClockTimeRule.AmountForcedVariants
+  nameWithType: ClockTimeRule.AmountForcedVariants
+- uid: Utils.NumberToString.ClockTimeRule.AmountForcedVariants*
+  name: AmountForcedVariants
+  href: api/Utils.NumberToString.ClockTimeRule.html#Utils_NumberToString_ClockTimeRule_AmountForcedVariants_
+  commentId: Overload:Utils.NumberToString.ClockTimeRule.AmountForcedVariants
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeRule.AmountForcedVariants
+  nameWithType: ClockTimeRule.AmountForcedVariants
 - uid: Utils.NumberToString.ClockTimeRule.AmountReference
   name: AmountReference
   href: api/Utils.NumberToString.ClockTimeRule.html#Utils_NumberToString_ClockTimeRule_AmountReference
@@ -60892,6 +60905,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.ClockTimeRule.AmountReference
   nameWithType: ClockTimeRule.AmountReference
+- uid: Utils.NumberToString.ClockTimeRule.HourForcedVariants
+  name: HourForcedVariants
+  href: api/Utils.NumberToString.ClockTimeRule.html#Utils_NumberToString_ClockTimeRule_HourForcedVariants
+  commentId: P:Utils.NumberToString.ClockTimeRule.HourForcedVariants
+  fullName: Utils.NumberToString.ClockTimeRule.HourForcedVariants
+  nameWithType: ClockTimeRule.HourForcedVariants
+- uid: Utils.NumberToString.ClockTimeRule.HourForcedVariants*
+  name: HourForcedVariants
+  href: api/Utils.NumberToString.ClockTimeRule.html#Utils_NumberToString_ClockTimeRule_HourForcedVariants_
+  commentId: Overload:Utils.NumberToString.ClockTimeRule.HourForcedVariants
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeRule.HourForcedVariants
+  nameWithType: ClockTimeRule.HourForcedVariants
 - uid: Utils.NumberToString.ClockTimeRule.HourForm
   name: HourForm
   href: api/Utils.NumberToString.ClockTimeRule.html#Utils_NumberToString_ClockTimeRule_HourForm
@@ -60976,6 +61002,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.ClockTimeRuleEntry.AmountDirectionSpecified
   nameWithType: ClockTimeRuleEntry.AmountDirectionSpecified
+- uid: Utils.NumberToString.ClockTimeRuleEntry.AmountForceVariants
+  name: AmountForceVariants
+  href: api/Utils.NumberToString.ClockTimeRuleEntry.html#Utils_NumberToString_ClockTimeRuleEntry_AmountForceVariants
+  commentId: P:Utils.NumberToString.ClockTimeRuleEntry.AmountForceVariants
+  fullName: Utils.NumberToString.ClockTimeRuleEntry.AmountForceVariants
+  nameWithType: ClockTimeRuleEntry.AmountForceVariants
+- uid: Utils.NumberToString.ClockTimeRuleEntry.AmountForceVariants*
+  name: AmountForceVariants
+  href: api/Utils.NumberToString.ClockTimeRuleEntry.html#Utils_NumberToString_ClockTimeRuleEntry_AmountForceVariants_
+  commentId: Overload:Utils.NumberToString.ClockTimeRuleEntry.AmountForceVariants
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeRuleEntry.AmountForceVariants
+  nameWithType: ClockTimeRuleEntry.AmountForceVariants
 - uid: Utils.NumberToString.ClockTimeRuleEntry.AmountReference
   name: AmountReference
   href: api/Utils.NumberToString.ClockTimeRuleEntry.html#Utils_NumberToString_ClockTimeRuleEntry_AmountReference
@@ -61002,6 +61041,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.ClockTimeRuleEntry.AmountReferenceSpecified
   nameWithType: ClockTimeRuleEntry.AmountReferenceSpecified
+- uid: Utils.NumberToString.ClockTimeRuleEntry.HourForceVariants
+  name: HourForceVariants
+  href: api/Utils.NumberToString.ClockTimeRuleEntry.html#Utils_NumberToString_ClockTimeRuleEntry_HourForceVariants
+  commentId: P:Utils.NumberToString.ClockTimeRuleEntry.HourForceVariants
+  fullName: Utils.NumberToString.ClockTimeRuleEntry.HourForceVariants
+  nameWithType: ClockTimeRuleEntry.HourForceVariants
+- uid: Utils.NumberToString.ClockTimeRuleEntry.HourForceVariants*
+  name: HourForceVariants
+  href: api/Utils.NumberToString.ClockTimeRuleEntry.html#Utils_NumberToString_ClockTimeRuleEntry_HourForceVariants_
+  commentId: Overload:Utils.NumberToString.ClockTimeRuleEntry.HourForceVariants
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeRuleEntry.HourForceVariants
+  nameWithType: ClockTimeRuleEntry.HourForceVariants
 - uid: Utils.NumberToString.ClockTimeRuleEntry.HourForm
   name: HourForm
   href: api/Utils.NumberToString.ClockTimeRuleEntry.html#Utils_NumberToString_ClockTimeRuleEntry_HourForm
