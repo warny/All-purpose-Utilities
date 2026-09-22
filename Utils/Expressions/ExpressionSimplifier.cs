@@ -65,21 +65,24 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// The exact built-in <see cref="ExpressionSimplifier"/> requires no extra preparation beyond
         /// what <see cref="ExpressionTransformer.TransformCore(Expression)"/> already does, so this
-        /// simply delegates to it - except that, for the exact built-in runtime type, it also establishes a
-        /// fresh, empty ambient lexical-scope boundary around the call. See
-        /// <see cref="_lexicalScopeStack"/>'s remarks ("Independent top-level calls") for why this boundary
-        /// exists here rather than nowhere, and why it does not affect the ordinary, same-tree recursive
-        /// descent that runs through <see cref="TransformCore"/> directly.
+        /// simply delegates to it - except that it also establishes a fresh, empty ambient lexical-scope
+        /// boundary around the call. See <see cref="_lexicalScopeStack"/>'s remarks ("Independent top-level
+        /// calls") for why this boundary exists here rather than nowhere, and why it does not affect the
+        /// ordinary, same-tree recursive descent that runs through <see cref="TransformCore"/> directly.
         /// </summary>
         /// <param name="expression">The expression to transform.</param>
         /// <returns>A possibly rewritten expression.</returns>
+        /// <remarks>
+        /// Unlike most other S4 integration points in this class, this boundary is NOT gated to the exact
+        /// built-in runtime type (S4 review, round 7): the ambient scope stack it manages is consulted only
+        /// by <see cref="OnEnterLambdaScope"/>/<see cref="OnExitLambdaScope"/>/<see cref="CaptureLexicalScopeSnapshot"/>,
+        /// which - as of round 7 - are themselves also unconditional, so any <see cref="ExpressionSimplifier"/>
+        /// subclass gets correct, isolated ambient-scope tracking too, rather than either leaking scope
+        /// across independent calls or (round 6's now-superseded approach) silently losing bound-parameter
+        /// canonicalization altogether. See those members' remarks for the round-6/round-7 history.
+        /// </remarks>
         public override Expression Transform(Expression expression)
         {
-            if (GetType() != typeof(ExpressionSimplifier))
-            {
-                return TransformCore(expression);
-            }
-
             List<ParameterExpression[]>? callerScope = _lexicalScopeStack;
             _lexicalScopeStack = null;
             try
@@ -262,26 +265,27 @@ namespace Utils.Mathematics.Expressions
         private static List<ParameterExpression[]> LexicalScopeStack => _lexicalScopeStack ??= [];
 
         /// <inheritdoc/>
+        /// <remarks>
+        /// Unconditional as of S4 review round 7: unlike most other S4 integration points in this class,
+        /// this hook is NOT gated to the exact built-in <see cref="ExpressionSimplifier"/> runtime type.
+        /// There is no pre-S4 historical behavior at stake here (this hook is new to S4, not a
+        /// reconstruction-fidelity concern like <see cref="RebuildLambdaExpression"/>/
+        /// <see cref="RebuildUnaryExpression"/>), and being <see langword="internal"/>, only a same-assembly
+        /// (or <c>InternalsVisibleTo</c>) subclass could ever reach this override at all - gating it further
+        /// to the exact type only meant such a subclass's OWN bound parameters were silently misclassified
+        /// as free during its own canonicalization (round 6 initially worked around this by skipping
+        /// canonicalization for a subclass entirely instead; round 7 fixes the actual cause here, so a
+        /// subclass regains full, correct canonicalization instead of losing it).
+        /// </remarks>
         internal override void OnEnterLambdaScope(LambdaExpression original, ParameterExpression[] parameters)
         {
-            if (GetType() != typeof(ExpressionSimplifier))
-            {
-                base.OnEnterLambdaScope(original, parameters);
-                return;
-            }
-
             LexicalScopeStack.Add(parameters);
         }
 
         /// <inheritdoc/>
+        /// <remarks>See <see cref="OnEnterLambdaScope"/>'s remarks: unconditional as of S4 review round 7, for the same reason.</remarks>
         internal override void OnExitLambdaScope(LambdaExpression original, ParameterExpression[] parameters)
         {
-            if (GetType() != typeof(ExpressionSimplifier))
-            {
-                base.OnExitLambdaScope(original, parameters);
-                return;
-            }
-
             List<ParameterExpression[]> stack = LexicalScopeStack;
             stack.RemoveAt(stack.Count - 1);
         }
@@ -1054,22 +1058,16 @@ namespace Utils.Mathematics.Expressions
             ArgumentNullException.ThrowIfNull(e);
             ArgumentNullException.ThrowIfNull(parameters);
 
-            // Gated to the exact built-in runtime type (S4 review, round 6), matching every other S4
-            // integration point in this class (Transform, PrepareExpression, RebuildUnaryExpression,
-            // RebuildLambdaExpression, OnEnterLambdaScope, OnExitLambdaScope): CanonicalizeAdditiveExpression/
-            // CanonicalizeMultiplicativeExpression call CaptureLexicalScopeSnapshot(), which only ever
-            // observes bound-parameter scope frames pushed by OnEnterLambdaScope - itself a no-op for any
-            // non-exact runtime type. Before this fix, a subclass (even one with no overrides at all) still
-            // reached these two methods unconditionally, so every bound ParameterExpression appeared "free"
-            // to ExpressionCanonicalOrder.BuildParameter during ITS OWN canonicalization, silently degrading
-            // bound-parameter ordering to the free-parameter (source-order-preserving, non-canonical) policy
-            // - a real loss of canonicalization quality with no comparable pre-S4 counterpart (the removed
-            // ToString()-based ordering needed no ambient state at all, so it worked identically for every
-            // subclass). A subclass now falls through to the historical CopyExpression(e, parameters) path
-            // below for Add/Subtract/Multiply nodes, exactly like every other node kind it does not
-            // specifically canonicalize - a conservative "commutative reordering is skipped", not a
-            // correctness bug, consistent with this class's established exact-type-only S4 policy.
-            if (e is BinaryExpression binaryExpression && GetType() == typeof(ExpressionSimplifier))
+            // NOT gated to the exact built-in runtime type (S4 review round 6 initially added such a gate
+            // here, reasoning that CanonicalizeAdditiveExpression/CanonicalizeMultiplicativeExpression's use
+            // of CaptureLexicalScopeSnapshot() only worked correctly for the exact type, since
+            // OnEnterLambdaScope/OnExitLambdaScope were themselves exact-type-only at the time - round 7
+            // instead made those two hooks (and Transform's ambient-scope boundary) unconditional, which
+            // fixes the actual root cause: any ExpressionSimplifier subclass now gets correct, isolated
+            // scope tracking too, so this dispatch is safe and correct to leave unconditional, exactly as it
+            // was before round 6 and, ultimately, before S4 (pre-S4 ToString()-based ordering needed no
+            // ambient state at all, so it also worked identically for every subclass).
+            if (e is BinaryExpression binaryExpression)
             {
                 if ((binaryExpression.NodeType == ExpressionType.Add || binaryExpression.NodeType == ExpressionType.Subtract)
                     && CanCanonicalizeCommutativeBinary(binaryExpression))

@@ -653,6 +653,77 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
         Assert.AreEqual(Math.Sign(forward), -Math.Sign(backward), "Comparison must be antisymmetric, even for a conservative tie (0 == -0).");
     }
 
+    /// <summary>
+    /// Creates a real, baked, owner-less "global" method (<see cref="MethodBase.DeclaringType"/> is
+    /// <see langword="null"/>, exactly like an owner-less <see cref="System.Reflection.Emit.DynamicMethod"/>)
+    /// with a genuine <see cref="MemberInfo.MetadataToken"/>, in its own freshly-created dynamic assembly, so
+    /// its assembly identity is distinct and controllable. <paramref name="paddingMethodCount"/> additional
+    /// no-op global methods are baked into the SAME module BEFORE <c>"Compute"</c>, so its metadata token can
+    /// be pushed arbitrarily higher (tokens are assigned in definition order within a module) - used to make
+    /// an assembly-name order DISAGREE with a metadata-token order between two such methods.
+    /// </summary>
+    /// <param name="assemblyName">The dynamic assembly's simple name.</param>
+    /// <param name="paddingMethodCount">The number of no-op global methods to bake before <c>"Compute"</c>, raising its token.</param>
+    /// <returns>The baked global method, named <c>"Compute"</c>, signature <c>double -&gt; double</c>, static.</returns>
+    private static MethodInfo CreateBakedGlobalMethod(string assemblyName, int paddingMethodCount = 0)
+    {
+        var asmBuilder = System.Reflection.Emit.AssemblyBuilder.DefineDynamicAssembly(
+            new System.Reflection.AssemblyName(assemblyName), System.Reflection.Emit.AssemblyBuilderAccess.Run);
+        System.Reflection.Emit.ModuleBuilder modBuilder = asmBuilder.DefineDynamicModule("MainModule");
+
+        for (int i = 0; i < paddingMethodCount; i++)
+        {
+            System.Reflection.Emit.MethodBuilder padding = modBuilder.DefineGlobalMethod(
+                $"Padding{i}", MethodAttributes.Public | MethodAttributes.Static, typeof(void), Type.EmptyTypes);
+            padding.GetILGenerator().Emit(System.Reflection.Emit.OpCodes.Ret);
+        }
+
+        System.Reflection.Emit.MethodBuilder methodBuilder = modBuilder.DefineGlobalMethod(
+            "Compute", MethodAttributes.Public | MethodAttributes.Static, typeof(double), [typeof(double)]);
+        System.Reflection.Emit.ILGenerator il = methodBuilder.GetILGenerator();
+        il.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
+        il.Emit(System.Reflection.Emit.OpCodes.Ret);
+        modBuilder.CreateGlobalFunctions();
+        return modBuilder.GetMethod("Compute")!;
+    }
+
+    /// <summary>
+    /// Reproduces the S4 review round-7 P2 finding directly: <c>CompareFinalMemberTiebreak</c> must compare
+    /// assembly identity BEFORE metadata token, not let each pair independently pick whichever dimension
+    /// happens to distinguish it. Two real, baked, owner-less "global" methods (see
+    /// <see cref="CreateBakedGlobalMethod"/>) are constructed so their ASSEMBLY-name order and their
+    /// METADATA-TOKEN order deliberately DISAGREE: <c>methodLowAssemblyHighToken</c> is in an
+    /// alphabetically-EARLIER-named assembly but, thanks to padding methods baked before it, has a
+    /// numerically-HIGHER token than <c>methodHighAssemblyLowToken</c>, which is in an alphabetically-LATER
+    /// assembly with no padding (so its <c>"Compute"</c> keeps the module's very first token). Before this
+    /// fix (token compared first, whenever both sides had one and they differed), this pair would compare by
+    /// TOKEN - putting the higher-token method (the alphabetically-earlier assembly) AFTER the other,
+    /// contradicting assembly order. The fixed dimension order (assembly, then module, then token) now
+    /// compares by ASSEMBLY first, so the alphabetically-earlier-assembly method must sort first regardless
+    /// of its higher token - the opposite conclusion the old, pair-dependent dimension choice would reach.
+    /// </summary>
+    [TestMethod]
+    public void CompareMethod_MetadataTiebreak_AssemblyOrderTakesPriorityOverContradictingTokenOrder()
+    {
+        MethodInfo methodLowAssemblyHighToken = CreateBakedGlobalMethod("S4Round7_AAA_LowAssembly", paddingMethodCount: 3);
+        MethodInfo methodHighAssemblyLowToken = CreateBakedGlobalMethod("S4Round7_ZZZ_HighAssembly", paddingMethodCount: 0);
+
+        Assert.IsNull(methodLowAssemblyHighToken.DeclaringType);
+        Assert.IsNull(methodHighAssemblyLowToken.DeclaringType);
+        Assert.IsTrue(methodLowAssemblyHighToken.MetadataToken > methodHighAssemblyLowToken.MetadataToken,
+            "Precondition: the padded method's token must be numerically higher.");
+        Assert.IsTrue(
+            string.CompareOrdinal(methodLowAssemblyHighToken.Module.Assembly.FullName, methodHighAssemblyLowToken.Module.Assembly.FullName) < 0,
+            "Precondition: the padded method's assembly name must sort alphabetically earlier.");
+
+        int forward = InvokeCompareMethod(methodLowAssemblyHighToken, methodHighAssemblyLowToken);
+        int backward = InvokeCompareMethod(methodHighAssemblyLowToken, methodLowAssemblyHighToken);
+
+        Assert.AreEqual(Math.Sign(forward), -Math.Sign(backward), "Comparison must be antisymmetric.");
+        Assert.IsTrue(forward < 0,
+            "The alphabetically-earlier-assembly method must sort first, even though its own metadata token is numerically higher - proving assembly is compared before token, not the reverse.");
+    }
+
     // ------------------------------------------------------------------------------------------
     // Post-review hardening, round 2: bool/char/enum constants are known-safe (never call a
     // user-defined Equals/GetHashCode/culture-dependent IComparable) and must therefore still
@@ -1113,37 +1184,52 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
     }
 
     // ------------------------------------------------------------------------------------------
-    // Post-review hardening, round 6: FinalizeExpression called CanonicalizeAdditiveExpression/
-    // CanonicalizeMultiplicativeExpression unconditionally, unlike every other S4 integration point in this
-    // class (Transform, PrepareExpression, RebuildUnaryExpression, RebuildLambdaExpression,
-    // OnEnterLambdaScope, OnExitLambdaScope), all of which are gated to GetType() == typeof(ExpressionSimplifier).
-    // Since OnEnterLambdaScope/OnExitLambdaScope no-op for any other runtime type, a subclass reaching
-    // additive/multiplicative canonicalization saw an always-empty ambient lexical-scope stack, so its OWN
-    // bound ParameterExpressions were silently misclassified as free - a real canonicalization-quality
+    // Post-review hardening, round 6/7: FinalizeExpression called CanonicalizeAdditiveExpression/
+    // CanonicalizeMultiplicativeExpression unconditionally, while OnEnterLambdaScope/OnExitLambdaScope (which
+    // populate the ambient lexical-scope stack these two methods depend on) were gated to
+    // GetType() == typeof(ExpressionSimplifier). Since those two hooks no-op for any other runtime type, a
+    // subclass reaching additive/multiplicative canonicalization saw an always-empty ambient scope, so its
+    // OWN bound ParameterExpressions were silently misclassified as free - a real canonicalization-quality
     // regression (not present before S4, since the removed ToString()-based ordering needed no ambient
     // state) with no prior test coverage for any ExpressionSimplifier subclass processing a bound lambda
     // through these two rules.
+    //
+    // Round 6 initially worked around this by gating FinalizeExpression's canonicalization dispatch to the
+    // exact type too, so a subclass skipped canonicalization for these nodes entirely instead of
+    // misclassifying anything - conservative, but itself a NEW, observable behavior change for any
+    // ExpressionSimplifier subclass (which had FULL canonicalization pre-S4, via the removed ToString()-based
+    // ordering), and it required editing an existing, correct characterization test
+    // (ExpressionTransformationRuleBranchTests.Simplify_NegateWithSubstraction_DirectRuleBody_RewritesOperands)
+    // to match the new, degraded behavior - exactly the kind of "modify an existing test to accommodate a
+    // production behavior change" AGENTS.md asks not to do casually.
+    //
+    // Round 7 instead fixes the actual root cause: OnEnterLambdaScope/OnExitLambdaScope (and Transform's
+    // ambient-scope reset boundary) are now unconditional - there is no pre-S4 historical behavior to
+    // preserve for these hooks (they are new to S4, unlike the reconstruction-fidelity guards on
+    // RebuildLambdaExpression/RebuildUnaryExpression), and being internal, only a same-assembly subclass
+    // could ever reach them anyway. FinalizeExpression's canonicalization dispatch is therefore back to
+    // unconditional too (matching its pre-round-6 shape), and
+    // Simplify_NegateWithSubstraction_DirectRuleBody_RewritesOperands is back to its original, unmodified
+    // assertion - it was correct all along; only the round-6 workaround made it seem otherwise.
     // ------------------------------------------------------------------------------------------
 
-    /// <summary>A minimal <see cref="ExpressionSimplifier"/> subclass with no overrides, used to prove additive/multiplicative canonicalization behaves safely - rather than silently misclassifying bound parameters as free - for any non-exact runtime type.</summary>
+    /// <summary>A minimal <see cref="ExpressionSimplifier"/> subclass with no overrides, used to prove additive/multiplicative canonicalization correctly resolves bound parameters - rather than silently misclassifying them as free - for any non-exact runtime type.</summary>
     private sealed class MinimalDerivedSimplifier : ExpressionSimplifier
     {
     }
 
     /// <summary>
-    /// Reproduces the S4 review round-6 finding: before the fix, <c>new MinimalDerivedSimplifier().Simplify((p0, p1) =&gt; p1 + p0)</c>
-    /// canonicalized to <c>p1 + p0</c> UNCHANGED (source order preserved, as if <c>p0</c>/<c>p1</c> were free)
-    /// rather than to <c>p0 + p1</c> (declaration-position order, as <see cref="ExpressionSimplifier"/>'s own
-    /// exact type produces for the very same source lambda - see
-    /// <see cref="PositiveControl_BoundAddition_CanonicalizesRegardlessOfSourceOrder"/>). After the fix, a
-    /// subclass instead skips the additive-canonicalization rule entirely for this node (falling through to
-    /// the historical copy-as-is path), so the operands stay in their original source order rather than
-    /// being reordered based on an incomplete (bound-as-free) view of the enclosing scope - a conservative,
-    /// safe degradation, not a correctness bug. This test pins that specific behavior (unchanged source
-    /// order) so a future regression toward the wrong (bound-as-free reordering) behavior is caught.
+    /// Reproduces the S4 review round-6/7 finding: <c>new MinimalDerivedSimplifier().Simplify((p0, p1) =&gt; p1 + p0)</c>
+    /// (a zero-override <see cref="ExpressionSimplifier"/> subclass) must canonicalize IDENTICALLY to
+    /// <see cref="ExpressionSimplifier"/>'s own exact type for the very same source lambda - reordering to
+    /// <c>p0 + p1</c> (declaration-position order), NOT staying <c>p1 + p0</c> unchanged as if <c>p0</c>/
+    /// <c>p1</c> were free (the round-6-and-earlier bug: an always-empty ambient scope for any subclass) and
+    /// NOT skipping canonicalization altogether (round 6's own interim workaround). See
+    /// <see cref="PositiveControl_BoundAddition_CanonicalizesRegardlessOfSourceOrder"/> for the exact-type
+    /// baseline this subclass must now match.
     /// </summary>
     [TestMethod]
-    public void DerivedSimplifier_BoundAddition_DoesNotMisclassifyBoundParametersAsFree()
+    public void DerivedSimplifier_BoundAddition_CanonicalizesIdenticallyToExactType()
     {
         var simplifier = new MinimalDerivedSimplifier();
         ParameterExpression p0 = Expression.Parameter(typeof(double), "p0");
@@ -1153,8 +1239,8 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
         var result = (LambdaExpression)simplifier.Simplify(source);
         var body = (BinaryExpression)result.Body;
 
-        Assert.IsTrue(ReferenceEquals(p1, body.Left));
-        Assert.IsTrue(ReferenceEquals(p0, body.Right));
+        Assert.IsTrue(ReferenceEquals(p0, body.Left), "The subclass must reorder to declaration-position order, matching the exact type - not keep source order (misclassified-as-free) nor skip canonicalization (round 6's interim workaround).");
+        Assert.IsTrue(ReferenceEquals(p1, body.Right));
     }
 
     /// <summary>

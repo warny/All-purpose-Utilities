@@ -1005,6 +1005,83 @@ passed, 3 skipped (same three pre-existing, unrelated, platform-gated tests). Re
 succeeded, no errors. All four suites run sequentially this round (not in parallel), after round 5's transient
 parallel-contention flake, to keep the validation record clean.
 
+#### S4 review fixes, round 7 (2026-09-22) — PR #600 sixth human review pass
+
+A sixth human review pass at commit `6ab0ab55` found one real remaining S4 defect (a non-transitive
+metadata tie-break, unrelated to round 6) and correctly identified that round 6's own subclass fix was both
+under-tested (its test could not actually distinguish the bug from the fix) and the wrong shape of fix
+entirely (it traded a correctness bug for a capability loss, and required editing a pre-existing, correct
+test to match - something `AGENTS.md` asks not to do). Both addressed on the same branch.
+
+1. **`CompareFinalMemberTiebreak` was not a consistent total preorder: which dimension (metadata token,
+   module name, or assembly name) decided a comparison depended on the SPECIFIC PAIR being compared, not on
+   a fixed priority.** For two members that both had a token and it differed, token decided; otherwise, for
+   two members that both had a module name, module decided; otherwise assembly decided. Three members with
+   different combinations of available dimensions can then form a genuine 3-cycle (A vs C decided by token,
+   A vs B and B vs C each decided by module, with token order and module order disagreeing) - breaking the
+   total order `OrderBy` requires, so `Simplify()`'s result could depend on incidental pairwise comparison
+   order for expressions embedding such members. There was also a conceptual problem independent of the
+   cycle: a `MetadataToken` is only meaningful WITHIN its own module, so comparing it before module identity
+   is established to match compares values that can belong to entirely different metadata spaces. Fixed by
+   making the tie-break a FIXED lexicographic tuple - assembly, then module, then token, each dimension
+   checking "is it available" before "what is its value" and falling through to the next dimension only on
+   an exact tie - evaluated in this same order for every pair, which is provably transitive (a lexicographic
+   comparison over dimensions that are each individually transitive is always transitive) and also resolves
+   the conceptual ordering problem (token, now the FINEST-grained dimension, is only ever compared once
+   module identity already matches). Regression:
+   `CompareMethod_MetadataTiebreak_AssemblyOrderTakesPriorityOverContradictingTokenOrder`, which bakes two
+   real, owner-less "global" methods (via `ModuleBuilder.DefineGlobalMethod`/`CreateGlobalFunctions`, so they
+   have genuine `MetadataToken`s while still having `DeclaringType == null` like a `DynamicMethod`) in two
+   dynamic assemblies engineered so assembly-name order and metadata-token order deliberately DISAGREE
+   (verified to fail without the fix - the old code compared by token first and got the opposite answer). A
+   genuine 3-member cyclic-order reproduction was attempted first but abandoned: on this runtime, every
+   dynamically-created module reports the identical literal name `"<In Memory Module>"` regardless of which
+   assembly it belongs to, so two baked global methods (in different assemblies) can never be distinguished
+   by module name alone, which turned out to remove enough degrees of freedom that a true 3-cycle could not
+   be constructed with real `Reflection.Emit` objects on this runtime - the two-member,
+   assembly-versus-token test above still directly and reliably exercises the actual dimension-priority
+   change, and the fix's transitivity is additionally guaranteed structurally (not merely by this one
+   example) by the fixed-tuple-comparison shape itself.
+2. **Round 6's subclass fix is reworked: the actual root cause is fixed instead of worked around.** Round 6
+   gated `FinalizeExpression`'s `CanonicalizeAdditiveExpression`/`CanonicalizeMultiplicativeExpression`
+   dispatch to the exact built-in `ExpressionSimplifier` runtime type, since `OnEnterLambdaScope`/
+   `OnExitLambdaScope` (which populate the ambient scope those two methods depend on) were themselves
+   exact-type-only - so a subclass would otherwise misclassify its own bound parameters as free. Two problems
+   with that fix, both raised by this review round: (a) its regression test,
+   `DerivedSimplifier_BoundAddition_DoesNotMisclassifyBoundParametersAsFree`, asserted operands stayed in
+   SOURCE order - but for two SAME-TYPE parameters, "misclassified as free" (ties, stable sort preserves
+   source order) and "canonicalization skipped entirely" (round 6's own fix) produce the IDENTICAL observable
+   result, so the test could not actually distinguish the bug from the fix (confirmed: reverting only the
+   `FinalizeExpression` gate while leaving everything else in place still passed the test). (b) The fix
+   itself traded one problem for another: pre-S4, a subclass got FULL, correct canonicalization (the removed
+   `ToString()`-based ordering needed no ambient state, so it worked identically for every subclass); round
+   6 made a subclass lose additive/multiplicative canonicalization ENTIRELY instead of just fixing the
+   bound/free misclassification - a new, observable capability loss for any `ExpressionSimplifier` subclass,
+   which also forced editing a pre-existing, correct test
+   (`ExpressionTransformationRuleBranchTests.Simplify_NegateWithSubstraction_DirectRuleBody_RewritesOperands`)
+   to match the new, degraded behavior, contrary to `AGENTS.md`'s "do not modify existing tests unless adding
+   new functionality" (this was a behavior-driven edit, not a new-functionality one). Fixed for real this
+   round: `OnEnterLambdaScope`/`OnExitLambdaScope` (and `Transform`'s ambient-scope reset boundary, round 4's
+   fix) are now unconditional - unlike the reconstruction-fidelity guards on `RebuildLambdaExpression`/
+   `RebuildUnaryExpression` (which preserve genuine pre-S4 historical behavior for a subclass), these two
+   scope-tracking hooks are NEW to S4 with no historical behavior to preserve, and being `internal`, only a
+   same-assembly (or `InternalsVisibleTo`) subclass could ever reach them regardless of gating - so removing
+   the gate exposes no new public surface. `FinalizeExpression`'s canonicalization dispatch is therefore back
+   to unconditional too (its pre-round-6 shape), and
+   `Simplify_NegateWithSubstraction_DirectRuleBody_RewritesOperands` is reverted to its ORIGINAL, unmodified
+   assertion (`ExpressionType.Add`) - it was correct all along. The round-6 test is renamed and rewritten to
+   assert what actually needs proving: `DerivedSimplifier_BoundAddition_CanonicalizesIdenticallyToExactType`
+   verifies a zero-override subclass reorders `(p0, p1) => p1 + p0` to `p0 + p1`, matching the exact type's
+   own behavior for the identical source lambda (verified to fail - `p0` was not on the Left - when only the
+   `OnEnterLambdaScope`/`OnExitLambdaScope`/`Transform` gates are reverted to round-6/earlier, confirming this
+   version DOES distinguish the bug from the fix, unlike its round-6 predecessor).
+
+**Validation performed after round 7 (2026-09-22):** `ExpressionSimplifierStructuralCanonicalizationTests`:
+44/44 passed. Full `UtilsTest/Mathematics/Expressions` namespace: 456/456 passed. Full `UtilsTest.Unit`:
+7668/7668 passed, 0 skipped. Full `UtilsTest.Functional`: 383/383 passed. Full `UtilsTest.Security`: 225/228
+passed, 3 skipped (same three pre-existing, unrelated, platform-gated tests). Release build of `Utils.sln`:
+succeeded, no errors. All four suites run sequentially.
+
 ### S5 — Construction-performance cleanup
 
 Only after the correctness/structure stages above, re-profile construction-time allocations and CPU cost in the simplifier.

@@ -420,30 +420,58 @@ internal static class ExpressionCanonicalOrder
     /// <param name="a">The first member or type.</param>
     /// <param name="b">The second member or type.</param>
     /// <returns>A negative value if <paramref name="a"/> sorts before <paramref name="b"/>, zero if tied (including when no safe dimension distinguishes them), positive otherwise.</returns>
+    /// <remarks>
+    /// <b>Fixed dimension order (S4 review, round 7).</b> The three dimensions below - assembly, then
+    /// module, then metadata token - are evaluated in this SAME fixed order for every pair, each one
+    /// comparing "is the dimension available" before "what is its value" and falling through to the next
+    /// dimension only on an exact tie (both available and equal, or both unavailable). The previous version
+    /// instead let each PAIR independently decide which dimension actually distinguished it (token first if
+    /// both had one and they differed, else module if both had one, else assembly), which is not a
+    /// consistent total preorder: three members A (token-bearing, module "Z"), B (token-less
+    /// <see cref="System.Reflection.Emit.DynamicMethod"/>, module "M"), C (token-bearing, module "A", a
+    /// higher token than A) could compare <c>A &lt; C</c> via tokens, <c>A &gt; B</c> via modules (A has no
+    /// token to compare against B), and <c>B &gt; C</c> via modules again - a cycle
+    /// (<c>A &lt; C</c> but <c>A &gt; B &gt; C</c>), which breaks the total order <see cref="Enumerable.OrderBy{TSource, TKey}(IEnumerable{TSource}, Func{TSource, TKey})"/>
+    /// assumes. Ordering assembly before module before token also matches metadata reality: a
+    /// <see cref="MemberInfo.MetadataToken"/> is only meaningful WITHIN its own module, so it must never be
+    /// compared across two members before their module identity is already known to match (or both lack
+    /// one) - comparing tokens first, as the previous version did, could otherwise compare token values
+    /// belonging to entirely different metadata spaces as if they shared one.
+    /// </remarks>
     private static int CompareFinalMemberTiebreak(MemberInfo a, MemberInfo b)
     {
-        if (TryGetMetadataToken(a, out int aToken) && TryGetMetadataToken(b, out int bToken) && aToken != bToken)
-        {
-            return aToken.CompareTo(bToken);
-        }
-
-        if (TryGetModuleName(a, out string? aModule) && TryGetModuleName(b, out string? bModule))
-        {
-            int moduleCompare = string.CompareOrdinal(aModule, bModule);
-            if (moduleCompare != 0) return moduleCompare;
-        }
-
-        if (TryGetAssemblyFullName(a, out string? aAssembly) && TryGetAssemblyFullName(b, out string? bAssembly))
+        bool aHasAssembly = TryGetAssemblyFullName(a, out string? aAssembly);
+        bool bHasAssembly = TryGetAssemblyFullName(b, out string? bAssembly);
+        if (aHasAssembly != bHasAssembly) return aHasAssembly ? -1 : 1;
+        if (aHasAssembly)
         {
             int assemblyCompare = string.CompareOrdinal(aAssembly, bAssembly);
             if (assemblyCompare != 0) return assemblyCompare;
         }
 
+        bool aHasModule = TryGetModuleName(a, out string? aModule);
+        bool bHasModule = TryGetModuleName(b, out string? bModule);
+        if (aHasModule != bHasModule) return aHasModule ? -1 : 1;
+        if (aHasModule)
+        {
+            int moduleCompare = string.CompareOrdinal(aModule, bModule);
+            if (moduleCompare != 0) return moduleCompare;
+        }
+
+        bool aHasToken = TryGetMetadataToken(a, out int aToken);
+        bool bHasToken = TryGetMetadataToken(b, out int bToken);
+        if (aHasToken != bHasToken) return aHasToken ? -1 : 1;
+        if (aHasToken)
+        {
+            int tokenCompare = aToken.CompareTo(bToken);
+            if (tokenCompare != 0) return tokenCompare;
+        }
+
         // No further safe, non-throwing, deterministic dimension distinguishes two members that already
         // tied on every earlier structural dimension (declaring type, name, generic shape,
-        // parameter/return types, ...) - conservatively tie, relying on the caller's stable sort to
-        // preserve source order, rather than fabricating an order from runtime identity (object
-        // reference/hash), which the roadmap explicitly forbids.
+        // parameter/return types, assembly, module, metadata token) - conservatively tie, relying on the
+        // caller's stable sort to preserve source order, rather than fabricating an order from runtime
+        // identity (object reference/hash), which the roadmap explicitly forbids.
         return 0;
     }
 
