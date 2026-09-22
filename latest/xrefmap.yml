@@ -60735,6 +60735,370 @@ references:
   commentId: N:Utils.NumberToString
   fullName: Utils.NumberToString
   nameWithType: Utils.NumberToString
+- uid: Utils.NumberToString.ClockAmountDirection
+  name: ClockAmountDirection
+  href: api/Utils.NumberToString.ClockAmountDirection.html
+  commentId: T:Utils.NumberToString.ClockAmountDirection
+  fullName: Utils.NumberToString.ClockAmountDirection
+  nameWithType: ClockAmountDirection
+- uid: Utils.NumberToString.ClockAmountDirection.After
+  name: After
+  href: api/Utils.NumberToString.ClockAmountDirection.html#Utils_NumberToString_ClockAmountDirection_After
+  commentId: F:Utils.NumberToString.ClockAmountDirection.After
+  fullName: Utils.NumberToString.ClockAmountDirection.After
+  nameWithType: ClockAmountDirection.After
+- uid: Utils.NumberToString.ClockAmountDirection.Before
+  name: Before
+  href: api/Utils.NumberToString.ClockAmountDirection.html#Utils_NumberToString_ClockAmountDirection_Before
+  commentId: F:Utils.NumberToString.ClockAmountDirection.Before
+  fullName: Utils.NumberToString.ClockAmountDirection.Before
+  nameWithType: ClockAmountDirection.Before
+- uid: Utils.NumberToString.ClockHourForm
+  name: ClockHourForm
+  href: api/Utils.NumberToString.ClockHourForm.html
+  commentId: T:Utils.NumberToString.ClockHourForm
+  fullName: Utils.NumberToString.ClockHourForm
+  nameWithType: ClockHourForm
+- uid: Utils.NumberToString.ClockHourForm.Cardinal
+  name: Cardinal
+  href: api/Utils.NumberToString.ClockHourForm.html#Utils_NumberToString_ClockHourForm_Cardinal
+  commentId: F:Utils.NumberToString.ClockHourForm.Cardinal
+  fullName: Utils.NumberToString.ClockHourForm.Cardinal
+  nameWithType: ClockHourForm.Cardinal
+- uid: Utils.NumberToString.ClockHourForm.Ordinal
+  name: Ordinal
+  href: api/Utils.NumberToString.ClockHourForm.html#Utils_NumberToString_ClockHourForm_Ordinal
+  commentId: F:Utils.NumberToString.ClockHourForm.Ordinal
+  fullName: Utils.NumberToString.ClockHourForm.Ordinal
+  nameWithType: ClockHourForm.Ordinal
+- uid: Utils.NumberToString.ClockHourForm.TimeUnit
+  name: TimeUnit
+  href: api/Utils.NumberToString.ClockHourForm.html#Utils_NumberToString_ClockHourForm_TimeUnit
+  commentId: F:Utils.NumberToString.ClockHourForm.TimeUnit
+  fullName: Utils.NumberToString.ClockHourForm.TimeUnit
+  nameWithType: ClockHourForm.TimeUnit
+- uid: Utils.NumberToString.ClockTimeConversionOptions
+  name: ClockTimeConversionOptions
+  href: api/Utils.NumberToString.ClockTimeConversionOptions.html
+  commentId: T:Utils.NumberToString.ClockTimeConversionOptions
+  fullName: Utils.NumberToString.ClockTimeConversionOptions
+  nameWithType: ClockTimeConversionOptions
+- uid: Utils.NumberToString.ClockTimeConversionOptions.ReplaceSpecialHours
+  name: ReplaceSpecialHours
+  href: api/Utils.NumberToString.ClockTimeConversionOptions.html#Utils_NumberToString_ClockTimeConversionOptions_ReplaceSpecialHours
+  commentId: P:Utils.NumberToString.ClockTimeConversionOptions.ReplaceSpecialHours
+  fullName: Utils.NumberToString.ClockTimeConversionOptions.ReplaceSpecialHours
+  nameWithType: ClockTimeConversionOptions.ReplaceSpecialHours
+- uid: Utils.NumberToString.ClockTimeConversionOptions.ReplaceSpecialHours*
+  name: ReplaceSpecialHours
+  href: api/Utils.NumberToString.ClockTimeConversionOptions.html#Utils_NumberToString_ClockTimeConversionOptions_ReplaceSpecialHours_
+  commentId: Overload:Utils.NumberToString.ClockTimeConversionOptions.ReplaceSpecialHours
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeConversionOptions.ReplaceSpecialHours
+  nameWithType: ClockTimeConversionOptions.ReplaceSpecialHours
+- uid: Utils.NumberToString.ClockTimeFormatOptions
+  name: ClockTimeFormatOptions
+  href: api/Utils.NumberToString.ClockTimeFormatOptions.html
+  commentId: T:Utils.NumberToString.ClockTimeFormatOptions
+  fullName: Utils.NumberToString.ClockTimeFormatOptions
+  nameWithType: ClockTimeFormatOptions
+- uid: Utils.NumberToString.ClockTimeFormatOptions.HourCycle
+  name: HourCycle
+  href: api/Utils.NumberToString.ClockTimeFormatOptions.html#Utils_NumberToString_ClockTimeFormatOptions_HourCycle
+  commentId: P:Utils.NumberToString.ClockTimeFormatOptions.HourCycle
+  fullName: Utils.NumberToString.ClockTimeFormatOptions.HourCycle
+  nameWithType: ClockTimeFormatOptions.HourCycle
+- uid: Utils.NumberToString.ClockTimeFormatOptions.HourCycle*
+  name: HourCycle
+  href: api/Utils.NumberToString.ClockTimeFormatOptions.html#Utils_NumberToString_ClockTimeFormatOptions_HourCycle_
+  commentId: Overload:Utils.NumberToString.ClockTimeFormatOptions.HourCycle
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeFormatOptions.HourCycle
+  nameWithType: ClockTimeFormatOptions.HourCycle
+- uid: Utils.NumberToString.ClockTimeFormatOptions.Rules
+  name: Rules
+  href: api/Utils.NumberToString.ClockTimeFormatOptions.html#Utils_NumberToString_ClockTimeFormatOptions_Rules
+  commentId: P:Utils.NumberToString.ClockTimeFormatOptions.Rules
+  fullName: Utils.NumberToString.ClockTimeFormatOptions.Rules
+  nameWithType: ClockTimeFormatOptions.Rules
+- uid: Utils.NumberToString.ClockTimeFormatOptions.Rules*
+  name: Rules
+  href: api/Utils.NumberToString.ClockTimeFormatOptions.html#Utils_NumberToString_ClockTimeFormatOptions_Rules_
+  commentId: Overload:Utils.NumberToString.ClockTimeFormatOptions.Rules
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeFormatOptions.Rules
+  nameWithType: ClockTimeFormatOptions.Rules
+- uid: Utils.NumberToString.ClockTimeFormatOptions.Step
+  name: Step
+  href: api/Utils.NumberToString.ClockTimeFormatOptions.html#Utils_NumberToString_ClockTimeFormatOptions_Step
+  commentId: P:Utils.NumberToString.ClockTimeFormatOptions.Step
+  fullName: Utils.NumberToString.ClockTimeFormatOptions.Step
+  nameWithType: ClockTimeFormatOptions.Step
+- uid: Utils.NumberToString.ClockTimeFormatOptions.Step*
+  name: Step
+  href: api/Utils.NumberToString.ClockTimeFormatOptions.html#Utils_NumberToString_ClockTimeFormatOptions_Step_
+  commentId: Overload:Utils.NumberToString.ClockTimeFormatOptions.Step
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeFormatOptions.Step
+  nameWithType: ClockTimeFormatOptions.Step
+- uid: Utils.NumberToString.ClockTimeRule
+  name: ClockTimeRule
+  href: api/Utils.NumberToString.ClockTimeRule.html
+  commentId: T:Utils.NumberToString.ClockTimeRule
+  fullName: Utils.NumberToString.ClockTimeRule
+  nameWithType: ClockTimeRule
+- uid: Utils.NumberToString.ClockTimeRule.#ctor(Utils.Range.IntRange{System.Int32},System.Int32,Utils.NumberToString.ClockHourForm,System.String,System.Nullable{System.Int32},System.Nullable{Utils.NumberToString.ClockAmountDirection})
+  name: ClockTimeRule(IntRange<int>, int, ClockHourForm, string, int?, ClockAmountDirection?)
+  href: api/Utils.NumberToString.ClockTimeRule.html#Utils_NumberToString_ClockTimeRule__ctor_Utils_Range_IntRange_System_Int32__System_Int32_Utils_NumberToString_ClockHourForm_System_String_System_Nullable_System_Int32__System_Nullable_Utils_NumberToString_ClockAmountDirection__
+  commentId: M:Utils.NumberToString.ClockTimeRule.#ctor(Utils.Range.IntRange{System.Int32},System.Int32,Utils.NumberToString.ClockHourForm,System.String,System.Nullable{System.Int32},System.Nullable{Utils.NumberToString.ClockAmountDirection})
+  name.vb: New(IntRange(Of Integer), Integer, ClockHourForm, String, Integer?, ClockAmountDirection?)
+  fullName: Utils.NumberToString.ClockTimeRule.ClockTimeRule(Utils.Range.IntRange<int>, int, Utils.NumberToString.ClockHourForm, string, int?, Utils.NumberToString.ClockAmountDirection?)
+  fullName.vb: Utils.NumberToString.ClockTimeRule.New(Utils.Range.IntRange(Of Integer), Integer, Utils.NumberToString.ClockHourForm, String, Integer?, Utils.NumberToString.ClockAmountDirection?)
+  nameWithType: ClockTimeRule.ClockTimeRule(IntRange<int>, int, ClockHourForm, string, int?, ClockAmountDirection?)
+  nameWithType.vb: ClockTimeRule.New(IntRange(Of Integer), Integer, ClockHourForm, String, Integer?, ClockAmountDirection?)
+- uid: Utils.NumberToString.ClockTimeRule.#ctor*
+  name: ClockTimeRule
+  href: api/Utils.NumberToString.ClockTimeRule.html#Utils_NumberToString_ClockTimeRule__ctor_
+  commentId: Overload:Utils.NumberToString.ClockTimeRule.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.NumberToString.ClockTimeRule.ClockTimeRule
+  fullName.vb: Utils.NumberToString.ClockTimeRule.New
+  nameWithType: ClockTimeRule.ClockTimeRule
+  nameWithType.vb: ClockTimeRule.New
+- uid: Utils.NumberToString.ClockTimeRule.AmountDirection
+  name: AmountDirection
+  href: api/Utils.NumberToString.ClockTimeRule.html#Utils_NumberToString_ClockTimeRule_AmountDirection
+  commentId: P:Utils.NumberToString.ClockTimeRule.AmountDirection
+  fullName: Utils.NumberToString.ClockTimeRule.AmountDirection
+  nameWithType: ClockTimeRule.AmountDirection
+- uid: Utils.NumberToString.ClockTimeRule.AmountDirection*
+  name: AmountDirection
+  href: api/Utils.NumberToString.ClockTimeRule.html#Utils_NumberToString_ClockTimeRule_AmountDirection_
+  commentId: Overload:Utils.NumberToString.ClockTimeRule.AmountDirection
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeRule.AmountDirection
+  nameWithType: ClockTimeRule.AmountDirection
+- uid: Utils.NumberToString.ClockTimeRule.AmountReference
+  name: AmountReference
+  href: api/Utils.NumberToString.ClockTimeRule.html#Utils_NumberToString_ClockTimeRule_AmountReference
+  commentId: P:Utils.NumberToString.ClockTimeRule.AmountReference
+  fullName: Utils.NumberToString.ClockTimeRule.AmountReference
+  nameWithType: ClockTimeRule.AmountReference
+- uid: Utils.NumberToString.ClockTimeRule.AmountReference*
+  name: AmountReference
+  href: api/Utils.NumberToString.ClockTimeRule.html#Utils_NumberToString_ClockTimeRule_AmountReference_
+  commentId: Overload:Utils.NumberToString.ClockTimeRule.AmountReference
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeRule.AmountReference
+  nameWithType: ClockTimeRule.AmountReference
+- uid: Utils.NumberToString.ClockTimeRule.HourForm
+  name: HourForm
+  href: api/Utils.NumberToString.ClockTimeRule.html#Utils_NumberToString_ClockTimeRule_HourForm
+  commentId: P:Utils.NumberToString.ClockTimeRule.HourForm
+  fullName: Utils.NumberToString.ClockTimeRule.HourForm
+  nameWithType: ClockTimeRule.HourForm
+- uid: Utils.NumberToString.ClockTimeRule.HourForm*
+  name: HourForm
+  href: api/Utils.NumberToString.ClockTimeRule.html#Utils_NumberToString_ClockTimeRule_HourForm_
+  commentId: Overload:Utils.NumberToString.ClockTimeRule.HourForm
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeRule.HourForm
+  nameWithType: ClockTimeRule.HourForm
+- uid: Utils.NumberToString.ClockTimeRule.HourOffset
+  name: HourOffset
+  href: api/Utils.NumberToString.ClockTimeRule.html#Utils_NumberToString_ClockTimeRule_HourOffset
+  commentId: P:Utils.NumberToString.ClockTimeRule.HourOffset
+  fullName: Utils.NumberToString.ClockTimeRule.HourOffset
+  nameWithType: ClockTimeRule.HourOffset
+- uid: Utils.NumberToString.ClockTimeRule.HourOffset*
+  name: HourOffset
+  href: api/Utils.NumberToString.ClockTimeRule.html#Utils_NumberToString_ClockTimeRule_HourOffset_
+  commentId: Overload:Utils.NumberToString.ClockTimeRule.HourOffset
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeRule.HourOffset
+  nameWithType: ClockTimeRule.HourOffset
+- uid: Utils.NumberToString.ClockTimeRule.Pattern
+  name: Pattern
+  href: api/Utils.NumberToString.ClockTimeRule.html#Utils_NumberToString_ClockTimeRule_Pattern
+  commentId: P:Utils.NumberToString.ClockTimeRule.Pattern
+  fullName: Utils.NumberToString.ClockTimeRule.Pattern
+  nameWithType: ClockTimeRule.Pattern
+- uid: Utils.NumberToString.ClockTimeRule.Pattern*
+  name: Pattern
+  href: api/Utils.NumberToString.ClockTimeRule.html#Utils_NumberToString_ClockTimeRule_Pattern_
+  commentId: Overload:Utils.NumberToString.ClockTimeRule.Pattern
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeRule.Pattern
+  nameWithType: ClockTimeRule.Pattern
+- uid: Utils.NumberToString.ClockTimeRule.Range
+  name: Range
+  href: api/Utils.NumberToString.ClockTimeRule.html#Utils_NumberToString_ClockTimeRule_Range
+  commentId: P:Utils.NumberToString.ClockTimeRule.Range
+  fullName: Utils.NumberToString.ClockTimeRule.Range
+  nameWithType: ClockTimeRule.Range
+- uid: Utils.NumberToString.ClockTimeRule.Range*
+  name: Range
+  href: api/Utils.NumberToString.ClockTimeRule.html#Utils_NumberToString_ClockTimeRule_Range_
+  commentId: Overload:Utils.NumberToString.ClockTimeRule.Range
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeRule.Range
+  nameWithType: ClockTimeRule.Range
+- uid: Utils.NumberToString.ClockTimeRuleEntry
+  name: ClockTimeRuleEntry
+  href: api/Utils.NumberToString.ClockTimeRuleEntry.html
+  commentId: T:Utils.NumberToString.ClockTimeRuleEntry
+  fullName: Utils.NumberToString.ClockTimeRuleEntry
+  nameWithType: ClockTimeRuleEntry
+- uid: Utils.NumberToString.ClockTimeRuleEntry.AmountDirection
+  name: AmountDirection
+  href: api/Utils.NumberToString.ClockTimeRuleEntry.html#Utils_NumberToString_ClockTimeRuleEntry_AmountDirection
+  commentId: P:Utils.NumberToString.ClockTimeRuleEntry.AmountDirection
+  fullName: Utils.NumberToString.ClockTimeRuleEntry.AmountDirection
+  nameWithType: ClockTimeRuleEntry.AmountDirection
+- uid: Utils.NumberToString.ClockTimeRuleEntry.AmountDirection*
+  name: AmountDirection
+  href: api/Utils.NumberToString.ClockTimeRuleEntry.html#Utils_NumberToString_ClockTimeRuleEntry_AmountDirection_
+  commentId: Overload:Utils.NumberToString.ClockTimeRuleEntry.AmountDirection
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeRuleEntry.AmountDirection
+  nameWithType: ClockTimeRuleEntry.AmountDirection
+- uid: Utils.NumberToString.ClockTimeRuleEntry.AmountDirectionSpecified
+  name: AmountDirectionSpecified
+  href: api/Utils.NumberToString.ClockTimeRuleEntry.html#Utils_NumberToString_ClockTimeRuleEntry_AmountDirectionSpecified
+  commentId: P:Utils.NumberToString.ClockTimeRuleEntry.AmountDirectionSpecified
+  fullName: Utils.NumberToString.ClockTimeRuleEntry.AmountDirectionSpecified
+  nameWithType: ClockTimeRuleEntry.AmountDirectionSpecified
+- uid: Utils.NumberToString.ClockTimeRuleEntry.AmountDirectionSpecified*
+  name: AmountDirectionSpecified
+  href: api/Utils.NumberToString.ClockTimeRuleEntry.html#Utils_NumberToString_ClockTimeRuleEntry_AmountDirectionSpecified_
+  commentId: Overload:Utils.NumberToString.ClockTimeRuleEntry.AmountDirectionSpecified
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeRuleEntry.AmountDirectionSpecified
+  nameWithType: ClockTimeRuleEntry.AmountDirectionSpecified
+- uid: Utils.NumberToString.ClockTimeRuleEntry.AmountReference
+  name: AmountReference
+  href: api/Utils.NumberToString.ClockTimeRuleEntry.html#Utils_NumberToString_ClockTimeRuleEntry_AmountReference
+  commentId: P:Utils.NumberToString.ClockTimeRuleEntry.AmountReference
+  fullName: Utils.NumberToString.ClockTimeRuleEntry.AmountReference
+  nameWithType: ClockTimeRuleEntry.AmountReference
+- uid: Utils.NumberToString.ClockTimeRuleEntry.AmountReference*
+  name: AmountReference
+  href: api/Utils.NumberToString.ClockTimeRuleEntry.html#Utils_NumberToString_ClockTimeRuleEntry_AmountReference_
+  commentId: Overload:Utils.NumberToString.ClockTimeRuleEntry.AmountReference
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeRuleEntry.AmountReference
+  nameWithType: ClockTimeRuleEntry.AmountReference
+- uid: Utils.NumberToString.ClockTimeRuleEntry.AmountReferenceSpecified
+  name: AmountReferenceSpecified
+  href: api/Utils.NumberToString.ClockTimeRuleEntry.html#Utils_NumberToString_ClockTimeRuleEntry_AmountReferenceSpecified
+  commentId: P:Utils.NumberToString.ClockTimeRuleEntry.AmountReferenceSpecified
+  fullName: Utils.NumberToString.ClockTimeRuleEntry.AmountReferenceSpecified
+  nameWithType: ClockTimeRuleEntry.AmountReferenceSpecified
+- uid: Utils.NumberToString.ClockTimeRuleEntry.AmountReferenceSpecified*
+  name: AmountReferenceSpecified
+  href: api/Utils.NumberToString.ClockTimeRuleEntry.html#Utils_NumberToString_ClockTimeRuleEntry_AmountReferenceSpecified_
+  commentId: Overload:Utils.NumberToString.ClockTimeRuleEntry.AmountReferenceSpecified
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeRuleEntry.AmountReferenceSpecified
+  nameWithType: ClockTimeRuleEntry.AmountReferenceSpecified
+- uid: Utils.NumberToString.ClockTimeRuleEntry.HourForm
+  name: HourForm
+  href: api/Utils.NumberToString.ClockTimeRuleEntry.html#Utils_NumberToString_ClockTimeRuleEntry_HourForm
+  commentId: P:Utils.NumberToString.ClockTimeRuleEntry.HourForm
+  fullName: Utils.NumberToString.ClockTimeRuleEntry.HourForm
+  nameWithType: ClockTimeRuleEntry.HourForm
+- uid: Utils.NumberToString.ClockTimeRuleEntry.HourForm*
+  name: HourForm
+  href: api/Utils.NumberToString.ClockTimeRuleEntry.html#Utils_NumberToString_ClockTimeRuleEntry_HourForm_
+  commentId: Overload:Utils.NumberToString.ClockTimeRuleEntry.HourForm
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeRuleEntry.HourForm
+  nameWithType: ClockTimeRuleEntry.HourForm
+- uid: Utils.NumberToString.ClockTimeRuleEntry.HourOffset
+  name: HourOffset
+  href: api/Utils.NumberToString.ClockTimeRuleEntry.html#Utils_NumberToString_ClockTimeRuleEntry_HourOffset
+  commentId: P:Utils.NumberToString.ClockTimeRuleEntry.HourOffset
+  fullName: Utils.NumberToString.ClockTimeRuleEntry.HourOffset
+  nameWithType: ClockTimeRuleEntry.HourOffset
+- uid: Utils.NumberToString.ClockTimeRuleEntry.HourOffset*
+  name: HourOffset
+  href: api/Utils.NumberToString.ClockTimeRuleEntry.html#Utils_NumberToString_ClockTimeRuleEntry_HourOffset_
+  commentId: Overload:Utils.NumberToString.ClockTimeRuleEntry.HourOffset
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeRuleEntry.HourOffset
+  nameWithType: ClockTimeRuleEntry.HourOffset
+- uid: Utils.NumberToString.ClockTimeRuleEntry.Pattern
+  name: Pattern
+  href: api/Utils.NumberToString.ClockTimeRuleEntry.html#Utils_NumberToString_ClockTimeRuleEntry_Pattern
+  commentId: P:Utils.NumberToString.ClockTimeRuleEntry.Pattern
+  fullName: Utils.NumberToString.ClockTimeRuleEntry.Pattern
+  nameWithType: ClockTimeRuleEntry.Pattern
+- uid: Utils.NumberToString.ClockTimeRuleEntry.Pattern*
+  name: Pattern
+  href: api/Utils.NumberToString.ClockTimeRuleEntry.html#Utils_NumberToString_ClockTimeRuleEntry_Pattern_
+  commentId: Overload:Utils.NumberToString.ClockTimeRuleEntry.Pattern
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeRuleEntry.Pattern
+  nameWithType: ClockTimeRuleEntry.Pattern
+- uid: Utils.NumberToString.ClockTimeRuleEntry.Range
+  name: Range
+  href: api/Utils.NumberToString.ClockTimeRuleEntry.html#Utils_NumberToString_ClockTimeRuleEntry_Range
+  commentId: P:Utils.NumberToString.ClockTimeRuleEntry.Range
+  fullName: Utils.NumberToString.ClockTimeRuleEntry.Range
+  nameWithType: ClockTimeRuleEntry.Range
+- uid: Utils.NumberToString.ClockTimeRuleEntry.Range*
+  name: Range
+  href: api/Utils.NumberToString.ClockTimeRuleEntry.html#Utils_NumberToString_ClockTimeRuleEntry_Range_
+  commentId: Overload:Utils.NumberToString.ClockTimeRuleEntry.Range
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeRuleEntry.Range
+  nameWithType: ClockTimeRuleEntry.Range
+- uid: Utils.NumberToString.ClockTimeType
+  name: ClockTimeType
+  href: api/Utils.NumberToString.ClockTimeType.html
+  commentId: T:Utils.NumberToString.ClockTimeType
+  fullName: Utils.NumberToString.ClockTimeType
+  nameWithType: ClockTimeType
+- uid: Utils.NumberToString.ClockTimeType.HourCycle
+  name: HourCycle
+  href: api/Utils.NumberToString.ClockTimeType.html#Utils_NumberToString_ClockTimeType_HourCycle
+  commentId: P:Utils.NumberToString.ClockTimeType.HourCycle
+  fullName: Utils.NumberToString.ClockTimeType.HourCycle
+  nameWithType: ClockTimeType.HourCycle
+- uid: Utils.NumberToString.ClockTimeType.HourCycle*
+  name: HourCycle
+  href: api/Utils.NumberToString.ClockTimeType.html#Utils_NumberToString_ClockTimeType_HourCycle_
+  commentId: Overload:Utils.NumberToString.ClockTimeType.HourCycle
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeType.HourCycle
+  nameWithType: ClockTimeType.HourCycle
+- uid: Utils.NumberToString.ClockTimeType.Rules
+  name: Rules
+  href: api/Utils.NumberToString.ClockTimeType.html#Utils_NumberToString_ClockTimeType_Rules
+  commentId: P:Utils.NumberToString.ClockTimeType.Rules
+  fullName: Utils.NumberToString.ClockTimeType.Rules
+  nameWithType: ClockTimeType.Rules
+- uid: Utils.NumberToString.ClockTimeType.Rules*
+  name: Rules
+  href: api/Utils.NumberToString.ClockTimeType.html#Utils_NumberToString_ClockTimeType_Rules_
+  commentId: Overload:Utils.NumberToString.ClockTimeType.Rules
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeType.Rules
+  nameWithType: ClockTimeType.Rules
+- uid: Utils.NumberToString.ClockTimeType.Step
+  name: Step
+  href: api/Utils.NumberToString.ClockTimeType.html#Utils_NumberToString_ClockTimeType_Step
+  commentId: P:Utils.NumberToString.ClockTimeType.Step
+  fullName: Utils.NumberToString.ClockTimeType.Step
+  nameWithType: ClockTimeType.Step
+- uid: Utils.NumberToString.ClockTimeType.Step*
+  name: Step
+  href: api/Utils.NumberToString.ClockTimeType.html#Utils_NumberToString_ClockTimeType_Step_
+  commentId: Overload:Utils.NumberToString.ClockTimeType.Step
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeType.Step
+  nameWithType: ClockTimeType.Step
 - uid: Utils.NumberToString.CurrencyDefinition
   name: CurrencyDefinition
   href: api/Utils.NumberToString.CurrencyDefinition.html
@@ -61660,6 +62024,49 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.INumberToStringConverter.Convert
   nameWithType: INumberToStringConverter.Convert
+- uid: Utils.NumberToString.INumberToStringConverter.ConvertClockTime(System.DateTime,System.String[])
+  name: ConvertClockTime(DateTime, params string[])
+  href: api/Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_ConvertClockTime_System_DateTime_System_String___
+  commentId: M:Utils.NumberToString.INumberToStringConverter.ConvertClockTime(System.DateTime,System.String[])
+  name.vb: ConvertClockTime(Date, ParamArray String())
+  fullName: Utils.NumberToString.INumberToStringConverter.ConvertClockTime(System.DateTime, params string[])
+  fullName.vb: Utils.NumberToString.INumberToStringConverter.ConvertClockTime(Date, ParamArray String())
+  nameWithType: INumberToStringConverter.ConvertClockTime(DateTime, params string[])
+  nameWithType.vb: INumberToStringConverter.ConvertClockTime(Date, ParamArray String())
+- uid: Utils.NumberToString.INumberToStringConverter.ConvertClockTime(System.DateTime,Utils.NumberToString.ClockTimeConversionOptions,System.Collections.Generic.IEnumerable{System.String})
+  name: ConvertClockTime(DateTime, ClockTimeConversionOptions, IEnumerable<string>)
+  href: api/Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_ConvertClockTime_System_DateTime_Utils_NumberToString_ClockTimeConversionOptions_System_Collections_Generic_IEnumerable_System_String__
+  commentId: M:Utils.NumberToString.INumberToStringConverter.ConvertClockTime(System.DateTime,Utils.NumberToString.ClockTimeConversionOptions,System.Collections.Generic.IEnumerable{System.String})
+  name.vb: ConvertClockTime(Date, ClockTimeConversionOptions, IEnumerable(Of String))
+  fullName: Utils.NumberToString.INumberToStringConverter.ConvertClockTime(System.DateTime, Utils.NumberToString.ClockTimeConversionOptions, System.Collections.Generic.IEnumerable<string>)
+  fullName.vb: Utils.NumberToString.INumberToStringConverter.ConvertClockTime(Date, Utils.NumberToString.ClockTimeConversionOptions, System.Collections.Generic.IEnumerable(Of String))
+  nameWithType: INumberToStringConverter.ConvertClockTime(DateTime, ClockTimeConversionOptions, IEnumerable<string>)
+  nameWithType.vb: INumberToStringConverter.ConvertClockTime(Date, ClockTimeConversionOptions, IEnumerable(Of String))
+- uid: Utils.NumberToString.INumberToStringConverter.ConvertClockTime(System.TimeOnly,System.String[])
+  name: ConvertClockTime(TimeOnly, params string[])
+  href: api/Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_ConvertClockTime_System_TimeOnly_System_String___
+  commentId: M:Utils.NumberToString.INumberToStringConverter.ConvertClockTime(System.TimeOnly,System.String[])
+  name.vb: ConvertClockTime(TimeOnly, ParamArray String())
+  fullName: Utils.NumberToString.INumberToStringConverter.ConvertClockTime(System.TimeOnly, params string[])
+  fullName.vb: Utils.NumberToString.INumberToStringConverter.ConvertClockTime(System.TimeOnly, ParamArray String())
+  nameWithType: INumberToStringConverter.ConvertClockTime(TimeOnly, params string[])
+  nameWithType.vb: INumberToStringConverter.ConvertClockTime(TimeOnly, ParamArray String())
+- uid: Utils.NumberToString.INumberToStringConverter.ConvertClockTime(System.TimeOnly,Utils.NumberToString.ClockTimeConversionOptions,System.Collections.Generic.IEnumerable{System.String})
+  name: ConvertClockTime(TimeOnly, ClockTimeConversionOptions, IEnumerable<string>)
+  href: api/Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_ConvertClockTime_System_TimeOnly_Utils_NumberToString_ClockTimeConversionOptions_System_Collections_Generic_IEnumerable_System_String__
+  commentId: M:Utils.NumberToString.INumberToStringConverter.ConvertClockTime(System.TimeOnly,Utils.NumberToString.ClockTimeConversionOptions,System.Collections.Generic.IEnumerable{System.String})
+  name.vb: ConvertClockTime(TimeOnly, ClockTimeConversionOptions, IEnumerable(Of String))
+  fullName: Utils.NumberToString.INumberToStringConverter.ConvertClockTime(System.TimeOnly, Utils.NumberToString.ClockTimeConversionOptions, System.Collections.Generic.IEnumerable<string>)
+  fullName.vb: Utils.NumberToString.INumberToStringConverter.ConvertClockTime(System.TimeOnly, Utils.NumberToString.ClockTimeConversionOptions, System.Collections.Generic.IEnumerable(Of String))
+  nameWithType: INumberToStringConverter.ConvertClockTime(TimeOnly, ClockTimeConversionOptions, IEnumerable<string>)
+  nameWithType.vb: INumberToStringConverter.ConvertClockTime(TimeOnly, ClockTimeConversionOptions, IEnumerable(Of String))
+- uid: Utils.NumberToString.INumberToStringConverter.ConvertClockTime*
+  name: ConvertClockTime
+  href: api/Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_ConvertClockTime_
+  commentId: Overload:Utils.NumberToString.INumberToStringConverter.ConvertClockTime
+  isSpec: "True"
+  fullName: Utils.NumberToString.INumberToStringConverter.ConvertClockTime
+  nameWithType: INumberToStringConverter.ConvertClockTime
 - uid: Utils.NumberToString.INumberToStringConverter.ConvertCurrency(System.Decimal,Utils.NumberToString.CurrencyDefinition)
   name: ConvertCurrency(decimal, CurrencyDefinition)
   href: api/Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_ConvertCurrency_System_Decimal_Utils_NumberToString_CurrencyDefinition_
@@ -61844,6 +62251,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.INumberToStringConverter.OrdinalVariants
   nameWithType: INumberToStringConverter.OrdinalVariants
+- uid: Utils.NumberToString.INumberToStringConverter.SupportsClockTimeConversion
+  name: SupportsClockTimeConversion
+  href: api/Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_SupportsClockTimeConversion
+  commentId: P:Utils.NumberToString.INumberToStringConverter.SupportsClockTimeConversion
+  fullName: Utils.NumberToString.INumberToStringConverter.SupportsClockTimeConversion
+  nameWithType: INumberToStringConverter.SupportsClockTimeConversion
+- uid: Utils.NumberToString.INumberToStringConverter.SupportsClockTimeConversion*
+  name: SupportsClockTimeConversion
+  href: api/Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_SupportsClockTimeConversion_
+  commentId: Overload:Utils.NumberToString.INumberToStringConverter.SupportsClockTimeConversion
+  isSpec: "True"
+  fullName: Utils.NumberToString.INumberToStringConverter.SupportsClockTimeConversion
+  nameWithType: INumberToStringConverter.SupportsClockTimeConversion
 - uid: Utils.NumberToString.INumberToStringConverter.SupportsDateConversion
   name: SupportsDateConversion
   href: api/Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_SupportsDateConversion
@@ -61981,6 +62401,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.LanguageType.BaseOn
   nameWithType: LanguageType.BaseOn
+- uid: Utils.NumberToString.LanguageType.ClockTime
+  name: ClockTime
+  href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_ClockTime
+  commentId: P:Utils.NumberToString.LanguageType.ClockTime
+  fullName: Utils.NumberToString.LanguageType.ClockTime
+  nameWithType: LanguageType.ClockTime
+- uid: Utils.NumberToString.LanguageType.ClockTime*
+  name: ClockTime
+  href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_ClockTime_
+  commentId: Overload:Utils.NumberToString.LanguageType.ClockTime
+  isSpec: "True"
+  fullName: Utils.NumberToString.LanguageType.ClockTime
+  nameWithType: LanguageType.ClockTime
 - uid: Utils.NumberToString.LanguageType.Cultures
   name: Cultures
   href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_Cultures
@@ -62403,6 +62836,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.LanguageXmlModel.BaseOn
   nameWithType: LanguageXmlModel.BaseOn
+- uid: Utils.NumberToString.LanguageXmlModel.ClockTime
+  name: ClockTime
+  href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_ClockTime
+  commentId: P:Utils.NumberToString.LanguageXmlModel.ClockTime
+  fullName: Utils.NumberToString.LanguageXmlModel.ClockTime
+  nameWithType: LanguageXmlModel.ClockTime
+- uid: Utils.NumberToString.LanguageXmlModel.ClockTime*
+  name: ClockTime
+  href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_ClockTime_
+  commentId: Overload:Utils.NumberToString.LanguageXmlModel.ClockTime
+  isSpec: "True"
+  fullName: Utils.NumberToString.LanguageXmlModel.ClockTime
+  nameWithType: LanguageXmlModel.ClockTime
 - uid: Utils.NumberToString.LanguageXmlModel.Cultures
   name: Cultures
   href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_Cultures
@@ -63696,6 +64142,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.AdjustFunction
   nameWithType: NumberToStringConverter.AdjustFunction
+- uid: Utils.NumberToString.NumberToStringConverter.ClockTime
+  name: ClockTime
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ClockTime
+  commentId: P:Utils.NumberToString.NumberToStringConverter.ClockTime
+  fullName: Utils.NumberToString.NumberToStringConverter.ClockTime
+  nameWithType: NumberToStringConverter.ClockTime
+- uid: Utils.NumberToString.NumberToStringConverter.ClockTime*
+  name: ClockTime
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ClockTime_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.ClockTime
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.ClockTime
+  nameWithType: NumberToStringConverter.ClockTime
 - uid: Utils.NumberToString.NumberToStringConverter.Convert(System.DateOnly,System.String[])
   name: Convert(DateOnly, params string[])
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_Convert_System_DateOnly_System_String___
@@ -63913,6 +64372,49 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.Convert
   nameWithType: NumberToStringConverter.Convert
+- uid: Utils.NumberToString.NumberToStringConverter.ConvertClockTime(System.DateTime,System.String[])
+  name: ConvertClockTime(DateTime, params string[])
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ConvertClockTime_System_DateTime_System_String___
+  commentId: M:Utils.NumberToString.NumberToStringConverter.ConvertClockTime(System.DateTime,System.String[])
+  name.vb: ConvertClockTime(Date, ParamArray String())
+  fullName: Utils.NumberToString.NumberToStringConverter.ConvertClockTime(System.DateTime, params string[])
+  fullName.vb: Utils.NumberToString.NumberToStringConverter.ConvertClockTime(Date, ParamArray String())
+  nameWithType: NumberToStringConverter.ConvertClockTime(DateTime, params string[])
+  nameWithType.vb: NumberToStringConverter.ConvertClockTime(Date, ParamArray String())
+- uid: Utils.NumberToString.NumberToStringConverter.ConvertClockTime(System.DateTime,Utils.NumberToString.ClockTimeConversionOptions,System.Collections.Generic.IEnumerable{System.String})
+  name: ConvertClockTime(DateTime, ClockTimeConversionOptions, IEnumerable<string>)
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ConvertClockTime_System_DateTime_Utils_NumberToString_ClockTimeConversionOptions_System_Collections_Generic_IEnumerable_System_String__
+  commentId: M:Utils.NumberToString.NumberToStringConverter.ConvertClockTime(System.DateTime,Utils.NumberToString.ClockTimeConversionOptions,System.Collections.Generic.IEnumerable{System.String})
+  name.vb: ConvertClockTime(Date, ClockTimeConversionOptions, IEnumerable(Of String))
+  fullName: Utils.NumberToString.NumberToStringConverter.ConvertClockTime(System.DateTime, Utils.NumberToString.ClockTimeConversionOptions, System.Collections.Generic.IEnumerable<string>)
+  fullName.vb: Utils.NumberToString.NumberToStringConverter.ConvertClockTime(Date, Utils.NumberToString.ClockTimeConversionOptions, System.Collections.Generic.IEnumerable(Of String))
+  nameWithType: NumberToStringConverter.ConvertClockTime(DateTime, ClockTimeConversionOptions, IEnumerable<string>)
+  nameWithType.vb: NumberToStringConverter.ConvertClockTime(Date, ClockTimeConversionOptions, IEnumerable(Of String))
+- uid: Utils.NumberToString.NumberToStringConverter.ConvertClockTime(System.TimeOnly,System.String[])
+  name: ConvertClockTime(TimeOnly, params string[])
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ConvertClockTime_System_TimeOnly_System_String___
+  commentId: M:Utils.NumberToString.NumberToStringConverter.ConvertClockTime(System.TimeOnly,System.String[])
+  name.vb: ConvertClockTime(TimeOnly, ParamArray String())
+  fullName: Utils.NumberToString.NumberToStringConverter.ConvertClockTime(System.TimeOnly, params string[])
+  fullName.vb: Utils.NumberToString.NumberToStringConverter.ConvertClockTime(System.TimeOnly, ParamArray String())
+  nameWithType: NumberToStringConverter.ConvertClockTime(TimeOnly, params string[])
+  nameWithType.vb: NumberToStringConverter.ConvertClockTime(TimeOnly, ParamArray String())
+- uid: Utils.NumberToString.NumberToStringConverter.ConvertClockTime(System.TimeOnly,Utils.NumberToString.ClockTimeConversionOptions,System.Collections.Generic.IEnumerable{System.String})
+  name: ConvertClockTime(TimeOnly, ClockTimeConversionOptions, IEnumerable<string>)
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ConvertClockTime_System_TimeOnly_Utils_NumberToString_ClockTimeConversionOptions_System_Collections_Generic_IEnumerable_System_String__
+  commentId: M:Utils.NumberToString.NumberToStringConverter.ConvertClockTime(System.TimeOnly,Utils.NumberToString.ClockTimeConversionOptions,System.Collections.Generic.IEnumerable{System.String})
+  name.vb: ConvertClockTime(TimeOnly, ClockTimeConversionOptions, IEnumerable(Of String))
+  fullName: Utils.NumberToString.NumberToStringConverter.ConvertClockTime(System.TimeOnly, Utils.NumberToString.ClockTimeConversionOptions, System.Collections.Generic.IEnumerable<string>)
+  fullName.vb: Utils.NumberToString.NumberToStringConverter.ConvertClockTime(System.TimeOnly, Utils.NumberToString.ClockTimeConversionOptions, System.Collections.Generic.IEnumerable(Of String))
+  nameWithType: NumberToStringConverter.ConvertClockTime(TimeOnly, ClockTimeConversionOptions, IEnumerable<string>)
+  nameWithType.vb: NumberToStringConverter.ConvertClockTime(TimeOnly, ClockTimeConversionOptions, IEnumerable(Of String))
+- uid: Utils.NumberToString.NumberToStringConverter.ConvertClockTime*
+  name: ConvertClockTime
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ConvertClockTime_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.ConvertClockTime
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.ConvertClockTime
+  nameWithType: NumberToStringConverter.ConvertClockTime
 - uid: Utils.NumberToString.NumberToStringConverter.ConvertCurrency(System.Decimal,Utils.NumberToString.CurrencyDefinition)
   name: ConvertCurrency(decimal, CurrencyDefinition)
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ConvertCurrency_System_Decimal_Utils_NumberToString_CurrencyDefinition_
@@ -64911,6 +65413,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.SpecialHours
   nameWithType: NumberToStringConverter.SpecialHours
+- uid: Utils.NumberToString.NumberToStringConverter.SupportsClockTimeConversion
+  name: SupportsClockTimeConversion
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_SupportsClockTimeConversion
+  commentId: P:Utils.NumberToString.NumberToStringConverter.SupportsClockTimeConversion
+  fullName: Utils.NumberToString.NumberToStringConverter.SupportsClockTimeConversion
+  nameWithType: NumberToStringConverter.SupportsClockTimeConversion
+- uid: Utils.NumberToString.NumberToStringConverter.SupportsClockTimeConversion*
+  name: SupportsClockTimeConversion
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_SupportsClockTimeConversion_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.SupportsClockTimeConversion
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.SupportsClockTimeConversion
+  nameWithType: NumberToStringConverter.SupportsClockTimeConversion
 - uid: Utils.NumberToString.NumberToStringConverter.SupportsDateConversion
   name: SupportsDateConversion
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_SupportsDateConversion
@@ -65548,6 +66063,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverterOptions.AdjustFunction
   nameWithType: NumberToStringConverterOptions.AdjustFunction
+- uid: Utils.NumberToString.NumberToStringConverterOptions.ClockTime
+  name: ClockTime
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_ClockTime
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.ClockTime
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.ClockTime
+  nameWithType: NumberToStringConverterOptions.ClockTime
+- uid: Utils.NumberToString.NumberToStringConverterOptions.ClockTime*
+  name: ClockTime
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_ClockTime_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.ClockTime
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.ClockTime
+  nameWithType: NumberToStringConverterOptions.ClockTime
 - uid: Utils.NumberToString.NumberToStringConverterOptions.DateFirstCardinalDay
   name: DateFirstCardinalDay
   href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_DateFirstCardinalDay

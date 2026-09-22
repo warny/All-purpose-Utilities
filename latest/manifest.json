@@ -8510,6 +8510,104 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.ClockAmountDirection.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.ClockAmountDirection.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.ClockAmountDirection",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.ClockAmountDirection.yml\" sourcestartlinenumber=\"1\">Specifies how a minute amount is measured from its reference.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.ClockHourForm.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.ClockHourForm.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.ClockHourForm",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.ClockHourForm.yml\" sourcestartlinenumber=\"1\">Specifies how a clock hour placeholder is rendered.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.ClockTimeConversionOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.ClockTimeConversionOptions.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.ClockTimeConversionOptions",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.ClockTimeConversionOptions.yml\" sourcestartlinenumber=\"1\">Controls one idiomatic clock-time conversion call.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.ClockTimeFormatOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.ClockTimeFormatOptions.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.ClockTimeFormatOptions",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.ClockTimeFormatOptions.yml\" sourcestartlinenumber=\"1\">Defines idiomatic clock-time rounding and position rules.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.ClockTimeRule.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.ClockTimeRule.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.ClockTimeRule",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.ClockTimeRule.yml\" sourcestartlinenumber=\"1\">Defines one configurable clock-position rule.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.ClockTimeRuleEntry.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.ClockTimeRuleEntry.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.ClockTimeRuleEntry",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.ClockTimeRuleEntry.yml\" sourcestartlinenumber=\"1\">XML representation of one idiomatic clock-position rule.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.ClockTimeType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.ClockTimeType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.ClockTimeType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.ClockTimeType.yml\" sourcestartlinenumber=\"1\">XML representation of idiomatic clock-time rules.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.CurrencyDefinition.yml",
       "output": {
         ".html": {
