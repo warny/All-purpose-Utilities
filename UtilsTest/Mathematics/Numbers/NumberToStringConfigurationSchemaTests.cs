@@ -195,6 +195,16 @@ public class NumberToStringConfigurationSchemaTests
             "</NumberScale><ClockTime step=\"5\"><Rule range=\"from:0,to:5\" hourOffset=\"0\" hourForm=\"cardinal\" pattern=\"{hour}\"/></ClockTime>",
             StringComparison.Ordinal));
 
+    /// <summary>Ensures both clock constituent forcing attributes and multiple constraints are accepted by the XSD.</summary>
+    [TestMethod]
+    public void ExternalConfiguration_ClockTimeForcedVariantAttributes_AreSchemaValid()
+    {
+        string clock = "<ClockTime step=\"60\"><Rule range=\"0\" hourOffset=\"0\" hourForm=\"cardinal\" pattern=\"{hour} {amount}\" amountReference=\"0\" amountDirection=\"after\" hourForceVariants=\"gender=feminine,case=genitive\" amountForceVariants=\"case=genitive\"/></ClockTime>";
+        string document = ValidConfiguration.Replace("</NumberScale>", $"</NumberScale>{clock}", StringComparison.Ordinal);
+
+        NumberToStringConverter.ValidateConfigurationSchemaForTesting(document);
+    }
+
     /// <summary>Ensures XML clock ranges that overlap are rejected during runtime validation.</summary>
     [TestMethod]
     public void ExternalConfiguration_ClockTimeOverlap_IsRejectedSemantically()

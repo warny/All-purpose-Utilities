@@ -211,6 +211,12 @@ namespace Utils.NumberToString
             OrdinalVariants = (options.OrdinalVariants ?? []).ToImmutableArray();
 
             VariantDimensions = (options.VariantDimensions ?? []).ToImmutableArray();
+            // Clock-time rules canonicalize forced variants during compilation.
+            _dimensionIndex = VariantDimensions
+                .SelectMany(d => string.IsNullOrEmpty(d.LocalName)
+                    ? (IEnumerable<(string, VariantDimension)>)[(d.Name, d)]
+                    : [(d.Name, d), (d.LocalName, d)])
+                .ToImmutableDictionary(t => t.Item1, t => t.Item2, StringComparer.OrdinalIgnoreCase);
             VariantRules = (options.VariantRules ?? []).ToImmutableArray();
             _sortedVariantRules = [.. VariantRules.OrderBy(r => r.Specificity).ThenBy(r => r.Priority)];
             _hasScaleSpecificVariantRules = VariantRules.Any(r => r.Replacements.Any(rr => rr.OnScale is not null));
@@ -296,12 +302,6 @@ namespace Utils.NumberToString
             _dateFirstCardinalDay = options.DateFirstCardinalDay;
             _dateTimeConnector = options.DateTimeConnector;
             _dateCulture = _datePattern != null ? TryGetDateCultureInfo(LanguageIdentifier) : null;
-            // Index both canonical name and localName so both are accepted in API calls and XML constraints.
-            _dimensionIndex = VariantDimensions
-                .SelectMany(d => string.IsNullOrEmpty(d.LocalName)
-                    ? (IEnumerable<(string, VariantDimension)>)[(d.Name, d)]
-                    : [(d.Name, d), (d.LocalName, d)])
-                .ToImmutableDictionary(t => t.Item1, t => t.Item2, StringComparer.OrdinalIgnoreCase);
             ValidateVariantReferences(this, LanguageIdentifier.Length > 0 ? LanguageIdentifier : "programmatic");
 
             // Canonicalize every constituent's ForcedVariants now that _dimensionIndex exists: any
@@ -1936,10 +1936,16 @@ namespace Utils.NumberToString
         /// <param name="number">The non-negative ordinal value.</param>
         /// <param name="variants">The caller-supplied variants.</param>
         /// <param name="activeVariants">The resolved variant query.</param>
+        /// <param name="hasExplicitVariantIntent">Whether caller or constituent constraints intentionally select a variant.</param>
         /// <returns>The unfinalized ordinal fragment.</returns>
-        private string BuildOrdinalFragment(long number, string[] variants, IReadOnlyDictionary<string, string>? activeVariants = null)
+        private string BuildOrdinalFragment(
+            long number,
+            string[] variants,
+            IReadOnlyDictionary<string, string>? activeVariants = null,
+            bool? hasExplicitVariantIntent = null)
         {
             activeVariants ??= BuildVariantQuery(variants);
+            bool explicitVariantIntent = hasExplicitVariantIntent ?? variants.Length > 0;
             string ordinal;
             if (LanguageSpecifics is IOrdinalLanguageSpecifics ordinalPlugin
                 && ordinalPlugin.TryConvertOrdinal(number, activeVariants, out var pluginResult))
@@ -1954,7 +1960,7 @@ namespace Utils.NumberToString
             // defaults (e.g. {gender=masculine}), which would incorrectly select a variant
             // exception over the explicit string= base form. Check OrdinalExceptions first
             // so that string="form" is treated as the true no-variant fallback.
-            if (variants.Length == 0 && OrdinalExceptions.TryGetValue(number, out var baseException))
+            if (!explicitVariantIntent && OrdinalExceptions.TryGetValue(number, out var baseException))
                 ordinal = baseException;
 
             // Exceptions: variant first, then base
@@ -1966,7 +1972,7 @@ namespace Utils.NumberToString
             {
                 string raw = number == 0 ? Zero : ConvertRaw((BigInteger)number, activeVariants);
                 raw = ApplyVariantRules(raw, activeVariants, number);
-                ordinal = ApplyOrdinalTransform(raw, activeVariant, noExplicitVariants: variants.Length == 0);
+                ordinal = ApplyOrdinalTransform(raw, activeVariant, noExplicitVariants: !explicitVariantIntent);
             }
             }
             ordinal = ApplyRawAdjustment(ordinal);
@@ -2220,8 +2226,23 @@ namespace Utils.NumberToString
         /// <param name="variants">The caller-supplied variants for the numeral.</param>
         /// <param name="constituentDescription">Identifies the unit in diagnostics, e.g. <c>"TimeUnits[hour]"</c>.</param>
         private string FormatTimeUnit(int count, TimeUnitDefinition unit, string[] variants, string constituentDescription)
+            => FormatTimeUnit(count, unit, BuildVariantQuery(variants), ForcedVariantSet.Empty, constituentDescription);
+
+        /// <summary>Renders a time unit from a resolved caller query and an optional contextual forcing.</summary>
+        /// <param name="count">The unit count.</param>
+        /// <param name="unit">The resolved time-unit definition.</param>
+        /// <param name="baseQuery">The caller query, including language defaults.</param>
+        /// <param name="contextualForcedVariants">More-specific constraints applied after the unit constraints.</param>
+        /// <param name="constituentDescription">The diagnostic constituent name.</param>
+        /// <returns>The unfinalized time-unit fragment.</returns>
+        private string FormatTimeUnit(
+            int count,
+            TimeUnitDefinition unit,
+            IReadOnlyDictionary<string, string> baseQuery,
+            ForcedVariantSet contextualForcedVariants,
+            string constituentDescription)
         {
-            var query = unit.ForcedVariants.Overlay(BuildVariantQuery(variants));
+            var query = contextualForcedVariants.Overlay(unit.ForcedVariants.Overlay(baseQuery));
             string formKey = unit.Selector.SelectForm(new LexicalFormContext(count, query));
             if (!unit.Forms.TryGetForm(formKey, out string? word))
                 throw new NumberToStringConfigurationException("UNTS007", LanguageIdentifier, constituentDescription,
@@ -2278,6 +2299,17 @@ namespace Utils.NumberToString
                     throw new ArgumentException($"ClockTime rule range '{rule.Range}' has an empty pattern.", nameof(options));
                 ValidateClockPattern(rule.Pattern, rule.Range.ToString() ?? string.Empty);
                 bool usesAmount = rule.Pattern.Contains("{amount}", StringComparison.Ordinal);
+                bool usesHour = rule.Pattern.Contains("{hour}", StringComparison.Ordinal);
+                ForcedVariantSet hourForced = rule.HourForcedVariants
+                    ?? throw new ArgumentException($"ClockTime rule range '{rule.Range}' HourForcedVariants must not be null.", nameof(options));
+                ForcedVariantSet amountForced = rule.AmountForcedVariants
+                    ?? throw new ArgumentException($"ClockTime rule range '{rule.Range}' AmountForcedVariants must not be null.", nameof(options));
+                hourForced = CanonicalizeForcedVariants(hourForced, $"ClockTime[{rule.Range}].HourForcedVariants");
+                amountForced = CanonicalizeForcedVariants(amountForced, $"ClockTime[{rule.Range}].AmountForcedVariants");
+                if (!usesHour && !hourForced.IsEmpty)
+                    throw new ArgumentException($"ClockTime rule range '{rule.Range}' forces hour variants but does not use {{hour}}.", nameof(options));
+                if (!usesAmount && !amountForced.IsEmpty)
+                    throw new ArgumentException($"ClockTime rule range '{rule.Range}' forces amount variants but does not use {{amount}}.", nameof(options));
                 if (rule.AmountReference is < 0 or > 60)
                     throw new ArgumentOutOfRangeException(nameof(options), $"ClockTime rule range '{rule.Range}' amountReference must be between 0 and 60.");
                 if (usesAmount != (rule.AmountReference.HasValue && rule.AmountDirection.HasValue))
@@ -2288,7 +2320,12 @@ namespace Utils.NumberToString
                     throw new ArgumentException($"ClockTime rule range '{rule.Range}' produces a negative amount.", nameof(options));
 
                 var rangeSnapshot = new IntRange<int>(string.Join(",", minutes));
-                var snapshot = rule with { Range = rangeSnapshot };
+                var snapshot = rule with
+                {
+                    Range = rangeSnapshot,
+                    HourForcedVariants = hourForced,
+                    AmountForcedVariants = amountForced,
+                };
                 snapshots.Add(snapshot);
                 var compiled = new CompiledClockTimeRule(
                     snapshot,
@@ -2408,6 +2445,9 @@ namespace Utils.NumberToString
         {
             CompiledClockTimeRule compiledRule = _clockRules[rounded.Minute];
             ClockTimeRule rule = compiledRule.Rule;
+            var baseQuery = BuildVariantQuery(variants);
+            var hourQuery = rule.HourForcedVariants.Overlay(baseQuery);
+            var amountQuery = rule.AmountForcedVariants.Overlay(baseQuery);
             int offset = rule.HourOffset % 24;
             int referenceHour24 = (rounded.Hour + offset + 24) % 24;
             string hourText;
@@ -2422,10 +2462,11 @@ namespace Utils.NumberToString
                     : referenceHour24;
                 hourText = rule.HourForm switch
                 {
-                    ClockHourForm.Cardinal => BuildCardinalFragment(displayHour, variants),
-                    ClockHourForm.Ordinal => OrdinalPrefix + BuildOrdinalFragment(displayHour, variants),
+                    ClockHourForm.Cardinal => BuildCardinalFragment(displayHour, hourQuery),
+                    ClockHourForm.Ordinal => OrdinalPrefix + BuildOrdinalFragment(
+                        displayHour, variants, hourQuery, variants.Length > 0 || !rule.HourForcedVariants.IsEmpty),
                     ClockHourForm.TimeUnit when _timeUnits.TryGetValue("hour", out var unit)
-                        => FormatTimeUnit(displayHour, unit, variants, "TimeUnits[hour]"),
+                        => FormatTimeUnit(displayHour, unit, baseQuery, rule.HourForcedVariants, "TimeUnits[hour]"),
                     ClockHourForm.TimeUnit => throw new InvalidOperationException($"Language '{LanguageIdentifier}' has no 'hour' unit configured in <TimeUnits>."),
                     _ => throw new InvalidOperationException($"Unsupported clock hour form '{rule.HourForm}'."),
                 };
@@ -2434,7 +2475,7 @@ namespace Utils.NumberToString
             if (rule.AmountReference.HasValue)
             {
                 int amount = CalculateClockAmount(rounded.Minute, rule.AmountReference.Value, rule.AmountDirection!.Value);
-                amountText = BuildCardinalFragment(amount, variants);
+                amountText = BuildCardinalFragment(amount, amountQuery);
             }
             return compiledRule.Formatter(hourText, amountText);
         }

@@ -42,7 +42,14 @@ public sealed record ClockTimeRule(
     ClockHourForm HourForm,
     string Pattern,
     int? AmountReference = null,
-    ClockAmountDirection? AmountDirection = null);
+    ClockAmountDirection? AmountDirection = null)
+{
+    /// <summary>Gets grammatical variants forced only while rendering <c>{hour}</c>.</summary>
+    public ForcedVariantSet HourForcedVariants { get; init; } = ForcedVariantSet.Empty;
+
+    /// <summary>Gets grammatical variants forced only while rendering <c>{amount}</c>.</summary>
+    public ForcedVariantSet AmountForcedVariants { get; init; } = ForcedVariantSet.Empty;
+}
 
 /// <summary>Defines idiomatic clock-time rounding and position rules.</summary>
 public sealed class ClockTimeFormatOptions

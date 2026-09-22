@@ -1789,6 +1789,7 @@ divisible by `step`, so use `range="5,10"`, not `range="5-10"`, for a five-minut
 <ClockTime step="5" hourCycle="24">
   <Rule range="0" hourOffset="0" hourForm="timeUnit" pattern="{hour}" />
   <Rule range="5,10" hourOffset="0" hourForm="timeUnit"
+        hourForceVariants="gender=feminin,case=genitive"
         amountReference="0" amountDirection="after" pattern="{hour} {amount}" />
   <Rule range="55" hourOffset="1" hourForm="timeUnit"
         amountReference="60" amountDirection="before" pattern="{hour} moins {amount}" />
@@ -1806,6 +1807,19 @@ language-finalization pipelines. `{amount}` is optional. When present, both `amo
 belongs in `pattern`; the engine only recognizes `{hour}` and `{amount}`.
 Patterns are validated against that strict whitelist and compiled once through
 `StringFormatBuilder`; inserted hour and amount text is never reparsed as template content.
+
+Each rule may independently constrain the two numeric constituents with
+`hourForceVariants` and `amountForceVariants`. They use the same comma-separated
+`dimension=value` syntax as other forced variants, including declared dimension aliases. Values
+are parsed and canonicalized once when the converter is built. For cardinal and ordinal forms the
+precedence is language defaults, caller variants, then the rule's forcing. For `timeUnit`, the
+unit's own forcing is inserted before the rule forcing: defaults < caller < `TimeUnit` <
+`ClockTimeRule`. Overlaying is dimension-by-dimension, so an unforced caller dimension survives.
+For example, a rule can render an ordinal hour as feminine genitive while independently rendering
+its minute amount as a genitive cardinal. A forced ordinal counts as explicit variant intent even
+when the caller supplies no variants. Forcing is applied only when a numeric `{hour}` is rendered;
+a matching `SpecialHourRule` remains a literal lexical replacement. Configuration is rejected if
+a forcing or amount calculation is declared without its corresponding placeholder.
 
 Configured `SpecialHourRule` values are matched against the rule's 24-hour reference. An
 exact-only rule applies only at rounded minute zero; a rule with `WholeHour=true` also applies to
