@@ -1859,6 +1859,9 @@ and snapshotted into the hour/minute lookup during converter construction.
 `SupportsOrdinals` includes ordinal implementations supplied solely by
 `IOrdinalLanguageSpecifics`. If neither XML ordinal rules nor such a plugin is available, every
 concrete `ConvertOrdinal` overload fails closed with `NotSupportedException` rather than returning
-an unchanged cardinal.
+an unchanged cardinal. A plugin may return `false` to use configured XML ordinal rules; when no
+declarative ordinal fallback exists, declining a value also throws `NotSupportedException` instead
+of silently returning its cardinal representation. This includes long values outside the default
+int-only plugin bridge.
 
 Versioned API documentation: https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.2/

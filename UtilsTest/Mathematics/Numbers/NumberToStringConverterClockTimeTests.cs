@@ -14,7 +14,7 @@ public class NumberToStringConverterClockTimeTests
     [TestMethod]
     public void ConvertOrdinal_UnsupportedConverter_ThrowsForIntAndLong()
     {
-        NumberToStringConverter converter = NumberToStringConverter.GetConverter("ZU");
+        NumberToStringConverter converter = CreateWithoutOrdinalSupport();
 
         Assert.IsFalse(converter.SupportsOrdinals);
         Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertOrdinal(1));
@@ -443,6 +443,32 @@ public class NumberToStringConverterClockTimeTests
         Assert.AreEqual("hour ordinal-2", converter.ConvertClockTime(new TimeOnly(2, 0)));
     }
 
+    /// <summary>Verifies a plugin-only converter fails closed when its plugin declines a value.</summary>
+    [TestMethod]
+    public void ConvertOrdinal_PluginOnlyDeclinesValue_ThrowsWithoutCardinalFallback()
+    {
+        NumberToStringConverter converter = CreatePluginOnlyOrdinalConverter(new PartialClockOrdinalPlugin());
+
+        Assert.IsTrue(converter.SupportsOrdinals);
+        Assert.AreEqual("plugin-first", converter.ConvertOrdinal(1));
+        Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertOrdinal(2));
+        Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertOrdinal((long)int.MaxValue + 1));
+    }
+
+    /// <summary>Verifies a declining plugin delegates to a genuine declarative ordinal pipeline when configured.</summary>
+    [TestMethod]
+    public void ConvertOrdinal_PluginDeclinesValue_UsesDeclarativeFallback()
+    {
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        {
+            LanguageSpecifics = new PartialClockOrdinalPlugin(),
+        };
+        var converter = new NumberToStringConverter(options);
+
+        Assert.AreEqual("plugin-first", converter.ConvertOrdinal(1));
+        Assert.AreEqual("second", converter.ConvertOrdinal(2));
+    }
+
     /// <summary>Verifies null and unused clock forcings are rejected during construction.</summary>
     [TestMethod]
     public void Constructor_ClockForcedVariants_RejectsNullAndUnusedValues()
@@ -487,6 +513,34 @@ public class NumberToStringConverterClockTimeTests
         return new NumberToStringConverter(options);
     }
 
+    /// <summary>Creates a synthetic converter with neither declarative nor plugin ordinal support.</summary>
+    private static NumberToStringConverter CreateWithoutOrdinalSupport()
+    {
+        var options = CreateOptionsWithoutDeclarativeOrdinalSupport();
+        options.LanguageSpecifics = new DefaultNumberToStringLanguageSpecifics();
+        return new NumberToStringConverter(options);
+    }
+
+    /// <summary>Creates a synthetic plugin-only ordinal converter.</summary>
+    private static NumberToStringConverter CreatePluginOnlyOrdinalConverter(PartialClockOrdinalPlugin plugin)
+    {
+        var options = CreateOptionsWithoutDeclarativeOrdinalSupport();
+        options.LanguageSpecifics = plugin;
+        return new NumberToStringConverter(options);
+    }
+
+    /// <summary>Creates options with all declarative ordinal mechanisms removed.</summary>
+    private static NumberToStringConverterOptions CreateOptionsWithoutDeclarativeOrdinalSupport()
+        => new(NumberToStringConverter.GetConverter("EN"))
+        {
+            OrdinalSuffix = null,
+            OrdinalPrefix = null,
+            OrdinalExceptions = new Dictionary<long, string>(),
+            OrdinalWordRules = new Dictionary<string, string>(),
+            OrdinalVariants = [],
+            ClockTime = null,
+        };
+
     /// <summary>Creates a complete five-minute rule list suitable for validation helpers.</summary>
     private static List<ClockTimeRule> ValidRules()
         => [new(new IntRange<int>("0,5,10,15,20,25,30,35,40,45,50,55"), 0, ClockHourForm.Cardinal, "{hour}")];
@@ -521,6 +575,20 @@ public class NumberToStringConverterClockTimeTests
         {
             result = $"ordinal-{number}";
             return true;
+        }
+    }
+
+    /// <summary>Provides an int-only ordinal plugin that deliberately handles only the value one.</summary>
+    private sealed class PartialClockOrdinalPlugin : INumberToStringLanguageSpecifics, IOrdinalLanguageSpecifics
+    {
+        /// <summary>Returns the supplied text unchanged.</summary>
+        public string FinalizeWriting(string language, string text) => text;
+
+        /// <summary>Handles one and declines every other value.</summary>
+        public bool TryConvertOrdinal(int number, IReadOnlyDictionary<string, string> activeVariants, out string? result)
+        {
+            result = number == 1 ? "plugin-first" : null;
+            return number == 1;
         }
     }
 }

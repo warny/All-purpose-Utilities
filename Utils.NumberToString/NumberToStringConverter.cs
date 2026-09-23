@@ -595,13 +595,16 @@ namespace Utils.NumberToString
         /// <summary>Gets the connector inserted between date and time in DateTime conversion.</summary>
         public string? DateTimeConnector => _dateTimeConnector;
 
-        /// <inheritdoc/>
-        public bool SupportsOrdinals =>
+        /// <summary>Gets whether declarative XML or programmatic ordinal rules provide a fallback pipeline.</summary>
+        private bool HasDeclarativeOrdinalSupport =>
             OrdinalSuffix != null || OrdinalPrefix != null
             || OrdinalExceptions.Count > 0
             || OrdinalWordRules.Count > 0
-            || OrdinalVariants.Count > 0
-            || LanguageSpecifics is IOrdinalLanguageSpecifics;
+            || OrdinalVariants.Count > 0;
+
+        /// <inheritdoc/>
+        public bool SupportsOrdinals =>
+            HasDeclarativeOrdinalSupport || LanguageSpecifics is IOrdinalLanguageSpecifics;
 
         private readonly ImmutableDictionary<string, string> _replacementLookup;
         private readonly ImmutableArray<ReplacementRule> _substringReplacements;
@@ -1949,12 +1952,32 @@ namespace Utils.NumberToString
             activeVariants ??= BuildVariantQuery(variants);
             bool explicitVariantIntent = hasExplicitVariantIntent ?? variants.Length > 0;
             string ordinal;
-            if (LanguageSpecifics is IOrdinalLanguageSpecifics ordinalPlugin
-                && ordinalPlugin.TryConvertOrdinal(number, activeVariants, out var pluginResult))
-                ordinal = pluginResult!;
-            else
+            if (LanguageSpecifics is IOrdinalLanguageSpecifics ordinalPlugin)
             {
+                if (ordinalPlugin.TryConvertOrdinal(number, activeVariants, out var pluginResult))
+                    ordinal = pluginResult!;
+                else if (!HasDeclarativeOrdinalSupport)
+                    throw new NotSupportedException(
+                        $"Language '{LanguageIdentifier}' has no ordinal fallback for value {number}.");
+                else
+                    ordinal = BuildDeclarativeOrdinalFragment(number, activeVariants, explicitVariantIntent);
+            }
+            else
+                ordinal = BuildDeclarativeOrdinalFragment(number, activeVariants, explicitVariantIntent);
+            ordinal = ApplyRawAdjustment(ordinal);
+            return ApplyTriggers(ordinal, TriggerAt.End, null, activeVariants);
+        }
 
+        /// <summary>Builds an ordinal fragment using configured exceptions, variants, word rules, and affixes.</summary>
+        /// <param name="number">The non-negative ordinal value.</param>
+        /// <param name="activeVariants">The resolved variant query.</param>
+        /// <param name="explicitVariantIntent">Whether a caller or constituent explicitly selected a variant.</param>
+        /// <returns>The unadjusted declarative ordinal fragment.</returns>
+        private string BuildDeclarativeOrdinalFragment(
+            long number,
+            IReadOnlyDictionary<string, string> activeVariants,
+            bool explicitVariantIntent)
+        {
             // Find the most specific matching ordinal variant
             OrdinalVariantRule? activeVariant = FindBestOrdinalVariant(activeVariants);
 
@@ -1963,22 +1986,19 @@ namespace Utils.NumberToString
             // exception over the explicit string= base form. Check OrdinalExceptions first
             // so that string="form" is treated as the true no-variant fallback.
             if (!explicitVariantIntent && OrdinalExceptions.TryGetValue(number, out var baseException))
-                ordinal = baseException;
+                return baseException;
 
             // Exceptions: variant first, then base
             else if (activeVariant?.Exceptions.TryGetValue(number, out var varException) == true)
-                ordinal = varException;
+                return varException;
             else if (OrdinalExceptions.TryGetValue(number, out var exception))
-                ordinal = exception;
+                return exception;
             else
             {
                 string raw = number == 0 ? Zero : ConvertRaw((BigInteger)number, activeVariants);
                 raw = ApplyVariantRules(raw, activeVariants, number);
-                ordinal = ApplyOrdinalTransform(raw, activeVariant, noExplicitVariants: !explicitVariantIntent);
+                return ApplyOrdinalTransform(raw, activeVariant, noExplicitVariants: !explicitVariantIntent);
             }
-            }
-            ordinal = ApplyRawAdjustment(ordinal);
-            return ApplyTriggers(ordinal, TriggerAt.End, null, activeVariants);
         }
 
         private OrdinalVariantRule? FindBestOrdinalVariant(IReadOnlyDictionary<string, string> query)

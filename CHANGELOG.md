@@ -26,7 +26,9 @@ All notable changes to this project will be documented in this file.
 ### Fixed — `omy.Utils.NumberToString`
 - Concrete ordinal conversion now throws `NotSupportedException` when `SupportsOrdinals` is
   false, matching the documented interface contract. An `IOrdinalLanguageSpecifics` plugin now
-  contributes to `SupportsOrdinals`, including for ordinal clock-hour validation.
+  contributes to `SupportsOrdinals`, including for ordinal clock-hour validation. Plugin-only
+  converters also fail closed when the plugin declines a value; plugin-to-XML fallback remains
+  available only when a declarative ordinal pipeline is actually configured.
 - **`SpecialHourRule`**: generic, per-hour word replacement for time-of-day rendering (e.g.
   "midnight" for hour 0, "noon" for hour 12), configurable via `<SpecialHour hour="..." value="..."
   wholeHour="...">` inside `<TimeUnits>` or programmatically via

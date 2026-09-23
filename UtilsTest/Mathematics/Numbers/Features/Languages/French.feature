@@ -1,6 +1,10 @@
 @NumberToString @FR
 Feature: French number conversion
 
+Scenario: Idiomatic clock-time conversion is supported
+    Given I use the "FR" number converter
+    Then the converter supports clock-time conversion
+
 Scenario Outline: Idiomatic clock-face times
     Given I use the "fr-FR" number converter
     When I convert the clock time "<time>"
