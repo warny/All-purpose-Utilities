@@ -1124,16 +1124,29 @@ namespace Utils.Mathematics.Expressions
             foreach ((Expression term, bool isNegative) in terms)
             {
                 AdditiveGroupClass group = ClassifyForAdditiveGrouping(term);
+
+                // Precompute every structural key CompareAdditiveGroupingOrder will need for this term
+                // exactly once here (roadmap S5, P1), instead of letting the O(n log n) sort below rebuild
+                // them from scratch on every pairwise comparison. An opaque term's own complete key (built
+                // right below) IS ExpressionCanonicalOrder.BuildKey(group.Opaque, scopes) - group.Opaque is
+                // this same term - so CompareAdditiveGroupingOrder reuses it directly instead of a second
+                // ArgumentKeys array. A function-like term additionally needs each ARGUMENT's own key (the
+                // primary sort's function-like branch orders by argument-list identity, not by the whole
+                // term/exponent), computed once via BuildKeys so every argument shares one working scope list.
+                IReadOnlyList<ExpressionCanonicalOrder.KeyNode>? argumentKeys = group.IsFunctionLike
+                    ? ExpressionCanonicalOrder.BuildKeys(group.Arguments!, scopes)
+                    : null;
+
                 annotatedTerms.Add(new AnnotatedAdditiveTerm(
                     term,
                     isNegative,
                     group,
-                    ExpressionCanonicalOrder.BuildKey(term, scopes)));
+                    ExpressionCanonicalOrder.BuildKey(term, scopes),
+                    argumentKeys));
             }
 
             var orderedTerms = annotatedTerms
-                .OrderBy(static term => term, Comparer<AnnotatedAdditiveTerm>.Create(
-                    (a, b) => CompareAdditiveGroupingOrder(a.Group, b.Group, scopes)))
+                .OrderBy(static term => term, Comparer<AnnotatedAdditiveTerm>.Create(CompareAdditiveGroupingOrder))
                 .ThenBy(static term => term.IsNegative ? 0 : 1)
                 .ThenBy(static term => term.Key)
                 .ToList();
@@ -1269,25 +1282,31 @@ namespace Utils.Mathematics.Expressions
         /// left to S5).
         /// </summary>
         /// <remarks>
-        /// <see cref="Key"/> itself is computed exactly once per term here and then reused by the final
-        /// <c>.ThenBy(term =&gt; term.Key)</c> tie-break in <see cref="CanonicalizeAdditiveExpression"/>. The
-        /// PRIMARY sort step, however, does NOT reuse it: <see cref="CompareAdditiveGroupingOrder"/>
-        /// compares <see cref="Group"/>'s (coarser, grouping-relevant) content directly via
-        /// <see cref="ExpressionCanonicalOrder.Compare"/>, which rebuilds a full key from scratch for both
-        /// operands on every pairwise comparison - for an "opaque" (non-function-like) term specifically,
-        /// this rebuilds the exact same key <see cref="Key"/> already holds (<see cref="AdditiveGroupClass.Opaque"/>
-        /// is the whole original term in that case), redundantly, once per comparison the term participates
-        /// in during the O(n log n) sort. This is a known, S4-review-identified construction-time
-        /// inefficiency (not a correctness issue - the values compared are identical either way), explicitly
-        /// left for S5 to address alongside this class's other deferred allocation/CPU-cost items, per the
-        /// roadmap's S4/S5 boundary.
+        /// <b>S5 (roadmap P1):</b> every structural key <see cref="CompareAdditiveGroupingOrder"/> needs is
+        /// now computed exactly once per term, here, rather than being rebuilt from scratch on every pairwise
+        /// comparison during the O(n log n) sort in <see cref="CanonicalizeAdditiveExpression"/>. For an
+        /// "opaque" (non-function-like) term, <see cref="Key"/> already IS
+        /// <c>ExpressionCanonicalOrder.BuildKey(Group.Opaque, scopes)</c> - <see cref="AdditiveGroupClass.Opaque"/>
+        /// is the same term this whole annotation describes - so the primary sort's opaque branch reuses
+        /// <see cref="Key"/> directly instead of a second, redundant build. For a function-like term, the
+        /// primary sort orders by argument-list identity (not by the whole term, which would also fold in the
+        /// ignored exponent for a power-wrapped call), so <see cref="ArgumentKeys"/> holds each argument's own
+        /// key, built once via <see cref="ExpressionCanonicalOrder.BuildKeys"/>.
         /// </remarks>
-        private readonly struct AnnotatedAdditiveTerm(Expression term, bool isNegative, AdditiveGroupClass group, ExpressionCanonicalOrder.KeyNode key)
+        private readonly struct AnnotatedAdditiveTerm(
+            Expression term,
+            bool isNegative,
+            AdditiveGroupClass group,
+            ExpressionCanonicalOrder.KeyNode key,
+            IReadOnlyList<ExpressionCanonicalOrder.KeyNode>? argumentKeys)
         {
             public Expression Term { get; } = term;
             public bool IsNegative { get; } = isNegative;
             public AdditiveGroupClass Group { get; } = group;
             public ExpressionCanonicalOrder.KeyNode Key { get; } = key;
+
+            /// <summary>Each function-like term's argument keys, precomputed once (see this type's remarks); <see langword="null"/> for an opaque term.</summary>
+            public IReadOnlyList<ExpressionCanonicalOrder.KeyNode>? ArgumentKeys { get; } = argumentKeys;
         }
 
         /// <summary>
@@ -1341,44 +1360,53 @@ namespace Utils.Mathematics.Expressions
         }
 
         /// <summary>
-        /// Orders two additive terms by their coarse grouping classification: opaque terms sort before
-        /// function-like terms; within the same classification, function-like terms order by structural
-        /// argument-list identity then function category, and opaque terms order by full structural
-        /// identity. This is a RELATIVE ORDER only — ties are expected and resolved by the caller's stable
-        /// sort — never the grouping EQUALITY itself, which is decided separately by
+        /// Orders two annotated additive terms by their coarse grouping classification: opaque terms sort
+        /// before function-like terms; within the same classification, function-like terms order by
+        /// structural argument-list identity then function category, and opaque terms order by full
+        /// structural identity. This is a RELATIVE ORDER only — ties are expected and resolved by the
+        /// caller's stable sort — never the grouping EQUALITY itself, which is decided separately by
         /// <see cref="AdditiveGroupingEqualityComparer"/>.
         /// </summary>
-        /// <param name="x">The first term's classification.</param>
-        /// <param name="y">The second term's classification.</param>
-        /// <param name="scopes">The lexical scope snapshot shared by every term in this canonicalization call.</param>
+        /// <param name="x">The first term.</param>
+        /// <param name="y">The second term.</param>
         /// <returns>A negative value if <paramref name="x"/> sorts before <paramref name="y"/>, zero if tied, positive otherwise.</returns>
-        private static int CompareAdditiveGroupingOrder(AdditiveGroupClass x, AdditiveGroupClass y, IReadOnlyList<ParameterExpression[]> scopes)
+        /// <remarks>
+        /// <b>S5 (roadmap P1):</b> consumes only the structural keys <see cref="AnnotatedAdditiveTerm"/>
+        /// already precomputed once per term (<see cref="AnnotatedAdditiveTerm.Key"/> for the opaque branch,
+        /// <see cref="AnnotatedAdditiveTerm.ArgumentKeys"/> for the function-like branch) instead of taking a
+        /// lexical scope snapshot and rebuilding a <see cref="ExpressionCanonicalOrder.KeyNode"/> tree from
+        /// scratch for both operands on every pairwise comparison the sort performs, which is what this
+        /// method did before S5. The comparison RESULT is unchanged: for an opaque term,
+        /// <c>AnnotatedAdditiveTerm.Key</c> already equals what rebuilding
+        /// <c>ExpressionCanonicalOrder.BuildKey(Group.Opaque, scopes)</c> here would produce, since
+        /// <see cref="AdditiveGroupClass.Opaque"/> is the same term <c>Key</c> was built from.
+        /// </remarks>
+        private static int CompareAdditiveGroupingOrder(AnnotatedAdditiveTerm x, AnnotatedAdditiveTerm y)
         {
-            if (x.IsFunctionLike != y.IsFunctionLike)
+            if (x.Group.IsFunctionLike != y.Group.IsFunctionLike)
             {
-                return x.IsFunctionLike ? 1 : -1;
+                return x.Group.IsFunctionLike ? 1 : -1;
             }
 
-            if (!x.IsFunctionLike)
+            if (!x.Group.IsFunctionLike)
             {
-                return ExpressionCanonicalOrder.Compare(x.Opaque, y.Opaque, scopes);
+                return x.Key.CompareTo(y.Key);
             }
 
-            int argumentsCompare = CompareArgumentLists(x.Arguments!, y.Arguments!, scopes);
-            return argumentsCompare != 0 ? argumentsCompare : x.CategoryOrder.CompareTo(y.CategoryOrder);
+            int argumentsCompare = CompareArgumentKeyLists(x.ArgumentKeys!, y.ArgumentKeys!);
+            return argumentsCompare != 0 ? argumentsCompare : x.Group.CategoryOrder.CompareTo(y.Group.CategoryOrder);
         }
 
-        /// <summary>Lexicographically compares two function argument lists using the complete structural order key.</summary>
-        /// <param name="x">The first argument list.</param>
-        /// <param name="y">The second argument list.</param>
-        /// <param name="scopes">The lexical scope snapshot shared by every term in this canonicalization call.</param>
+        /// <summary>Lexicographically compares two function argument lists' precomputed complete structural order keys.</summary>
+        /// <param name="x">The first argument list's keys.</param>
+        /// <param name="y">The second argument list's keys.</param>
         /// <returns>A negative value if <paramref name="x"/> sorts before <paramref name="y"/>, zero if tied, positive otherwise.</returns>
-        private static int CompareArgumentLists(IReadOnlyList<Expression> x, IReadOnlyList<Expression> y, IReadOnlyList<ParameterExpression[]> scopes)
+        private static int CompareArgumentKeyLists(IReadOnlyList<ExpressionCanonicalOrder.KeyNode> x, IReadOnlyList<ExpressionCanonicalOrder.KeyNode> y)
         {
             int minCount = Math.Min(x.Count, y.Count);
             for (int i = 0; i < minCount; i++)
             {
-                int c = ExpressionCanonicalOrder.Compare(x[i], y[i], scopes);
+                int c = x[i].CompareTo(y[i]);
                 if (c != 0) return c;
             }
             return x.Count.CompareTo(y.Count);
@@ -1415,6 +1443,17 @@ namespace Utils.Mathematics.Expressions
         /// ties (which are stable-sort placeholders, not claims of equality) — see this class's "Additive
         /// grouping" remarks.
         /// </summary>
+        /// <remarks>
+        /// <b>S5 (roadmap P2) - measured and rejected.</b> An `IEqualityComparer&lt;AnnotatedAdditiveTerm&gt;`
+        /// variant that reused <see cref="AnnotatedAdditiveTerm.Group"/> directly (avoiding this method's
+        /// re-classification, which itself is only a cheap re-run of the same NodeType pattern match) was
+        /// benchmarked and measurably REGRESSED both time and allocations at n=32/128 versus the version kept
+        /// here - copying the larger <see cref="AnnotatedAdditiveTerm"/> struct (five fields, including the
+        /// nested <see cref="AdditiveGroupClass"/>) through <c>GroupBy</c>'s internal lookup/grouping storage
+        /// costs more than the cheap re-classification it avoided, since <c>GroupBy</c>'s key/element storage
+        /// already handles a plain <see cref="Expression"/> reference (8 bytes) far more cheaply. See the S5
+        /// roadmap progress notes for the exact benchmark numbers.
+        /// </remarks>
         private sealed class AdditiveGroupingEqualityComparer : IEqualityComparer<Expression>
         {
             public static readonly AdditiveGroupingEqualityComparer Instance = new();
