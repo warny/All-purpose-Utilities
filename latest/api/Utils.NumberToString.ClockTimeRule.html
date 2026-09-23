@@ -335,7 +335,7 @@ Class ClockTimeRule  <a class="header-action link-secondary" title="View source"
 
   <h3 id="Utils_NumberToString_ClockTimeRule_AmountForcedVariants" data-uid="Utils.NumberToString.ClockTimeRule.AmountForcedVariants">
   AmountForcedVariants
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ClockTimeFormatOptions.cs/#L51"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ClockTimeFormatOptions.cs/#L57"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets grammatical variants forced only while rendering <code>{amount}</code>.</p>
@@ -395,11 +395,44 @@ Class ClockTimeRule  <a class="header-action link-secondary" title="View source"
 
 
 
+  <a id="Utils_NumberToString_ClockTimeRule_DisplayHourRange_" data-uid="Utils.NumberToString.ClockTimeRule.DisplayHourRange*"></a>
+
+  <h3 id="Utils_NumberToString_ClockTimeRule_DisplayHourRange" data-uid="Utils.NumberToString.ClockTimeRule.DisplayHourRange">
+  DisplayHourRange
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ClockTimeFormatOptions.cs/#L51"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the optional range of projected display hours for which this rule applies.
+The range is evaluated after <a class="xref" href="Utils.NumberToString.ClockTimeRule.html#Utils_NumberToString_ClockTimeRule_HourOffset">HourOffset</a> and <a class="xref" href="Utils.NumberToString.ClockTimeFormatOptions.html#Utils_NumberToString_ClockTimeFormatOptions_HourCycle">HourCycle</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IntRange&lt;int&gt;? DisplayHourRange { get; init; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Range.IntRange-1.html">IntRange</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_NumberToString_ClockTimeRule_HourForcedVariants_" data-uid="Utils.NumberToString.ClockTimeRule.HourForcedVariants*"></a>
 
   <h3 id="Utils_NumberToString_ClockTimeRule_HourForcedVariants" data-uid="Utils.NumberToString.ClockTimeRule.HourForcedVariants">
   HourForcedVariants
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ClockTimeFormatOptions.cs/#L48"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ClockTimeFormatOptions.cs/#L54"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets grammatical variants forced only while rendering <code>{hour}</code>.</p>

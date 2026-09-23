@@ -60905,6 +60905,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.ClockTimeRule.AmountReference
   nameWithType: ClockTimeRule.AmountReference
+- uid: Utils.NumberToString.ClockTimeRule.DisplayHourRange
+  name: DisplayHourRange
+  href: api/Utils.NumberToString.ClockTimeRule.html#Utils_NumberToString_ClockTimeRule_DisplayHourRange
+  commentId: P:Utils.NumberToString.ClockTimeRule.DisplayHourRange
+  fullName: Utils.NumberToString.ClockTimeRule.DisplayHourRange
+  nameWithType: ClockTimeRule.DisplayHourRange
+- uid: Utils.NumberToString.ClockTimeRule.DisplayHourRange*
+  name: DisplayHourRange
+  href: api/Utils.NumberToString.ClockTimeRule.html#Utils_NumberToString_ClockTimeRule_DisplayHourRange_
+  commentId: Overload:Utils.NumberToString.ClockTimeRule.DisplayHourRange
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeRule.DisplayHourRange
+  nameWithType: ClockTimeRule.DisplayHourRange
 - uid: Utils.NumberToString.ClockTimeRule.HourForcedVariants
   name: HourForcedVariants
   href: api/Utils.NumberToString.ClockTimeRule.html#Utils_NumberToString_ClockTimeRule_HourForcedVariants
@@ -61041,6 +61054,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.ClockTimeRuleEntry.AmountReferenceSpecified
   nameWithType: ClockTimeRuleEntry.AmountReferenceSpecified
+- uid: Utils.NumberToString.ClockTimeRuleEntry.DisplayHourRange
+  name: DisplayHourRange
+  href: api/Utils.NumberToString.ClockTimeRuleEntry.html#Utils_NumberToString_ClockTimeRuleEntry_DisplayHourRange
+  commentId: P:Utils.NumberToString.ClockTimeRuleEntry.DisplayHourRange
+  fullName: Utils.NumberToString.ClockTimeRuleEntry.DisplayHourRange
+  nameWithType: ClockTimeRuleEntry.DisplayHourRange
+- uid: Utils.NumberToString.ClockTimeRuleEntry.DisplayHourRange*
+  name: DisplayHourRange
+  href: api/Utils.NumberToString.ClockTimeRuleEntry.html#Utils_NumberToString_ClockTimeRuleEntry_DisplayHourRange_
+  commentId: Overload:Utils.NumberToString.ClockTimeRuleEntry.DisplayHourRange
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeRuleEntry.DisplayHourRange
+  nameWithType: ClockTimeRuleEntry.DisplayHourRange
 - uid: Utils.NumberToString.ClockTimeRuleEntry.HourForceVariants
   name: HourForceVariants
   href: api/Utils.NumberToString.ClockTimeRuleEntry.html#Utils_NumberToString_ClockTimeRuleEntry_HourForceVariants
