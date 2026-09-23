@@ -1344,18 +1344,22 @@ inaccuracies, and suggested one more (non-blocking) micro-optimization. Addresse
    (`IsFunctionLike`, `CategoryOrder`); `AdditiveGroupClass.Arguments`/`.Opaque` (two reference-type fields)
    were needed only transiently, while building `ArgumentKeys`/`Key` in the annotation loop, never afterward.
    Carrying the whole `AdditiveGroupClass` anyway meant every term paid for copying those two now-dead
-   references through `List<AnnotatedAdditiveTerm>`/`OrderBy`/`GroupBy` for no benefit — exactly the
-   architectural root cause behind round 2's arity-0 "residual gap", and (per the round-2 numbers, which
-   showed the SAME roughly-constant per-term overhead at every arity) a small tax on every other family too.
-   Fixed: `AnnotatedAdditiveTerm` now stores `IsFunctionLike`/`CategoryOrder` directly as two scalar fields
-   instead of a nested `AdditiveGroupClass`; the annotation loop still calls `ClassifyForAdditiveGrouping`
-   once per term as before (needed for `Arguments`/`Opaque` during annotation), but copies out only the two
-   fields that survive it. Measured directly (same standalone harness): at n=128, EVERY additive family
-   improved by the same ~15 400 B/call (matching 128 terms × the two reference fields removed from the
-   struct, ~120 B/term) relative to the round-2 candidate - see the updated table below. For arity 0
-   specifically, this closes round 2's residual gap entirely and then some: 86 418 B/call (round 2) →
-   67 962 B/call (round 3), now BELOW the true pre-S5 baseline's 80 362 B/call - the fast path plus this
-   shrink together make even the one previously-regressed shape a net improvement.
+   references through `List<AnnotatedAdditiveTerm>`/`OrderBy`/`GroupBy` for no benefit — the main/likely
+   architectural cause behind round 2's arity-0 "residual gap", consistent with the measurements below (per
+   the round-2 numbers, which showed the SAME roughly-constant per-term overhead at every arity, a small tax
+   on every other family too). Fixed: `AnnotatedAdditiveTerm` now stores `IsFunctionLike`/`CategoryOrder`
+   directly as two scalar fields instead of a nested `AdditiveGroupClass`; the annotation loop still calls
+   `ClassifyForAdditiveGrouping` once per term as before (needed for `Arguments`/`Opaque` during annotation),
+   but copies out only the two fields that survive it. Measured directly (same standalone harness): at n=128,
+   EVERY additive family improved by the same ~15 400 B/call relative to the round-2 candidate - see the
+   updated table below. This round also cached the comparer (finding 3 below) in the same commit, so the
+   struct shrink was not isolated from that change in this measurement; the shrink is the far larger and more
+   plausible contributor (a `Comparer<T>.Create` delegate/adapter allocation is on the order of tens of bytes
+   once per `CanonicalizeAdditiveExpression` call, not per term, so it cannot explain a per-term, linearly
+   n-scaling effect), but the two were not benchmarked separately. For arity 0 specifically, this closes
+   round 2's residual gap entirely and then some: 86 418 B/call (round 2) → 67 962 B/call (round 3), now
+   BELOW the true pre-S5 baseline's 80 362 B/call - the fast path plus this shrink together make even the one
+   previously-regressed shape a net improvement.
 2. **Round 2's "an S4-established per-term annotation design point" attribution was wrong.** `AnnotatedAdditiveTerm`
    itself (and its `Key` field) are S4-established; the `ArgumentKeys` field - and therefore the struct-growth
    cost round 2's finding 1 measured - was introduced by S5/this PR, not inherited from S4. Corrected in place
@@ -1402,7 +1406,55 @@ arity-0 wall-clock time (the one figure still not a clear win) is noise-level (8
 baseline, on a call that allocates a mere ~68 KB and takes well under 100 us either way - see "On timing
 noise" above for why sub-100us medians in this environment are not fully trustworthy in isolation).
 
-**Validation performed after review round 3 (2026-09-23):** see the "Validation" list below.
+**Validation performed after review round 3 (2026-09-23):** superseded by round 4 below; see the
+"Validation" list further down for the final numbers.
+
+#### S5 review, round 4 (2026-09-23) — P2 re-tested against the shrunk `AnnotatedAdditiveTerm`; still rejected
+
+A fourth review pass raised one substantive question - since round 3 shrank `AnnotatedAdditiveTerm`, the
+exact struct round 1's P2 experiment measured as "too expensive to carry through `GroupBy`" no longer exists,
+so round 1's rejection needed re-verifying against the current, smaller struct rather than being assumed
+still valid - plus two documentation nits. Addressed on the same branch.
+
+1. **P2 re-tested against the round-3 struct.** Reconstructed the same `IEqualityComparer<AnnotatedAdditiveTerm>`
+   `GroupBy` variant round 1 tried (`GroupBy(static term => term, ...)` instead of
+   `GroupBy(static term => term.Term, AdditiveGroupingEqualityComparer.Instance)`), adapted to read
+   `IsFunctionLike`/`CategoryOrder` from the now-shrunk annotation directly and re-derive `Arguments`/`Opaque`
+   from `Term` only where still needed for the actual structural equality/hash check (`GroupEquals`/`GroupHash`,
+   unchanged). Benchmarked as a temporary, uncommitted local change (same standalone harness) against the
+   round-3 shipped code, across families 1-3 and every size:
+
+   | Family | n=2 | n=8 | n=32 | n=128 |
+   | --- | --- | --- | --- | --- |
+   | 1 Additive-Opaque (shipped → P2-retest) | 2 848 → 2 896 B | 8 560 → 8 752 B | 31 920 → 32 688 B | 124 978 → 128 050 B |
+   | 2 Additive-FunctionLike (shipped → P2-retest) | 3 120 → 3 168 B | 9 648 → 9 840 B | 36 272 → 37 040 B | 142 386 → 145 458 B |
+   | 3 Additive-PowerWrapped (shipped → P2-retest) | 3 808 → 3 856 B | 12 400 → 12 592 B | 47 280 → 48 048 B | 186 418 → 189 490 B |
+
+   Every single cell regresses by EXACTLY 24 B per term (48 B at n=2, 192 B at n=8, 768 B at n=32, 3 072 B at
+   n=128 - a perfectly linear, deterministic, family-independent per-term cost), confirming this is a real,
+   reproducible effect of `GroupBy`'s internal `Lookup<TKey,TElement>` key storage - not noise. Wall-clock time
+   was statistically indistinguishable from the shipped code at every size (differences within the same
+   run-to-run noise band documented above). **Conclusion: the rejection still holds.** The shrunk struct did
+   roughly HALVE the absolute per-term regression (round 1 measured ~48 B/term against the pre-round-3 struct;
+   round 4 measures ~24 B/term against the post-round-3 struct - consistent with a per-term key-storage cost
+   that scales with struct size, exactly as the reviewer's hypothesis predicted), but it did not reverse the
+   direction: `GroupBy`'s existing `Expression`-keyed (8-byte key) path remains strictly cheaper than any
+   `AnnotatedAdditiveTerm`-keyed alternative, at every size and family measured, both before and after the
+   round-3 shrink. The temporary comparer/call-site change used for this measurement was reverted immediately
+   after; the shipped `GroupBy(static term => term.Term, AdditiveGroupingEqualityComparer.Instance)` is
+   unchanged from round 3.
+2. **Doc fix: stale test count.** The "Tests" summary near the end of this file's S5 section still said
+   "new, 5 tests"; corrected to 6 and now names the round-2-added `BuildKeys_...` test explicitly.
+3. **Doc fix: overstated causal claim, and one XML typo.** Round 3's "exactly the architectural root cause"
+   claim for the struct-shrink's ~15 400 B/call improvement was softened to "the main/likely architectural
+   cause ... consistent with the measurements", with an explicit note that round 3 ALSO cached the comparer
+   in the same commit and the two changes were not benchmarked in isolation from each other (the comparer
+   cache is a per-call, not per-term, allocation and so cannot itself explain a linearly n-scaling effect,
+   making the struct shrink the far more plausible primary contributor - but this was reasoning, not a
+   controlled isolation). A stray unescaped `"` in an XML doc comment (`<c>Opaque"</c>`) was also fixed to
+   `<c>Opaque</c>`, and a following sentence reworded for clarity.
+
+**Validation performed after review round 4 (2026-09-23):** see the "Validation" list below.
 
 **Benchmark results (micro scenarios — the direct P1 target; median of 15-21 rounds, byte-identical
 allocations across repeated runs). Historical: these are round 1's original numbers, kept for the audit
@@ -1445,26 +1497,30 @@ change altered construction cost without altering behavior. The large, unambiguo
 consistent across two independent full benchmark runs) corroborate the allocation trend once n is large enough
 for the O(n log n) reconstruction this stage targets to dominate over environmental noise.
 
-**Tests.** `UtilsTest/Mathematics/Expressions/ExpressionSimplifierAdditiveSortScaleTests.cs` (new, 5 tests):
+**Tests.** `UtilsTest/Mathematics/Expressions/ExpressionSimplifierAdditiveSortScaleTests.cs` (new, 6 tests):
 large-N (16-term, and 8-pair/16-term power-wrapped) characterizations of the additive sort at a scale that
 actually exercises the O(n log n) path this stage optimizes — bound function-like terms ordered by argument
 declaration position, bound opaque terms ordered by declaration position (the `Key`-reuse path), power-wrapped
 terms clustering by argument while the complete-key tie-break still distinguishes the exponent, free-parameter
 stable-sort-order preservation when every canonical-order dimension ties (the invariant most at risk from a
-naive `OrderBy`/comparator refactor), and an adversarial (hostile-constant plus unsupported-node) large-term-set
-regression proving no additive-grouping/ordering step executes user `Equals`/`GetHashCode`/`ToString`. The
-three purely-structural tests reflect directly into the private `CanonicalizeAdditiveExpression` (bypassing
-the unrelated end-to-end re-simplification cost described above, matching this project's own precedent of
-reflecting into internal canonicalization methods in `ExpressionSimplifierStructuralCanonicalizationTests`);
-the free-parameter and adversarial tests use the public `Simplify(Expression)` path directly at a term count
-confirmed to run in well under a second. Existing S3/S4 suites
+naive `OrderBy`/comparator refactor), an adversarial (hostile-constant plus unsupported-node) large-term-set
+regression proving no additive-grouping/ordering step executes user `Equals`/`GetHashCode`/`ToString`, and
+(added in review round 2) `BuildKeys_MultipleArgumentsWithNestedLambdas_RestoresSharedScopeBetweenSiblings`,
+reflecting directly into `ExpressionCanonicalOrder.BuildKeys` to prove its shared working-scope list is
+correctly restored between successive sibling arguments. The three purely-structural sort tests reflect
+directly into the private `CanonicalizeAdditiveExpression` (bypassing the unrelated end-to-end
+re-simplification cost described above, matching this project's own precedent of reflecting into internal
+canonicalization methods in `ExpressionSimplifierStructuralCanonicalizationTests`); the free-parameter and
+adversarial tests use the public `Simplify(Expression)` path directly at a term count confirmed to run in
+well under a second. Existing S3/S4 suites
 (`ExpressionSimplifierStructuralCanonicalizationTests`, `ExpressionSimplifierAdditiveGroupingKeyTests`,
 `ExpressionSimplifierFinalizationTests`, `ExpressionComparerTests`) were not modified and remain the primary
 correctness oracle that this stage's change must keep green — see "Validation" below for exact counts.
 
-**Validation performed (2026-09-23, after review round 3, in order; branch rebased onto `master` at
+**Validation performed (2026-09-23, after review round 4, in order; branch rebased onto `master` at
 `1f874f9e0caa28e097060316a992cd5a4ce4fdbd` — PR #603, `Utils.NumberToString`-only, no file overlap with this
-change — before review round 2's run; round 3 made no further rebase):**
+change — before review round 2's run; rounds 3 and 4 made no further rebase; round 4's own P2 re-test was a
+temporary, uncommitted local change, reverted before this validation run):**
 
 1. `ExpressionSimplifierAdditiveSortScaleTests` (6 tests: the original 5 plus
    `BuildKeys_MultipleArgumentsWithNestedLambdas_RestoresSharedScopeBetweenSiblings`, added in round 2 and

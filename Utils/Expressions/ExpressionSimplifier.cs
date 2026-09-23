@@ -1304,11 +1304,11 @@ namespace Utils.Mathematics.Expressions
         /// <b>S5 review round 3:</b> only carries the two <see cref="AdditiveGroupClass"/> fields
         /// <see cref="CompareAdditiveGroupingOrder"/> still reads after annotation
         /// (<see cref="IsFunctionLike"/>, <see cref="CategoryOrder"/>) rather than the whole
-        /// <see cref="AdditiveGroupClass"/> value (which also carries <c>Arguments</c>/<c>Opaque"</c> - needed
+        /// <see cref="AdditiveGroupClass"/> value (which also carries <c>Arguments</c>/<c>Opaque</c> - needed
         /// only transiently, while building <see cref="ArgumentKeys"/>/<see cref="Key"/> in the annotation
-        /// loop, never afterward). Keeping this struct's per-element footprint - copied repeatedly through
-        /// <c>List&lt;T&gt;</c>/<c>OrderBy</c>/<c>GroupBy</c> - as small as the fields actually still needed
-        /// require is itself part of this stage's construction-cost goal.
+        /// loop, never afterward). Keeping this struct's per-element footprint small - it is copied repeatedly
+        /// through <c>List&lt;T&gt;</c>/<c>OrderBy</c>/<c>GroupBy</c> - is itself part of this stage's
+        /// construction-cost goal.
         /// </remarks>
         private readonly struct AnnotatedAdditiveTerm(
             Expression term,
@@ -1492,8 +1492,10 @@ namespace Utils.Mathematics.Expressions
         /// two scalar fields still needed, see that type's own remarks) through <c>GroupBy</c>'s internal
         /// lookup/grouping storage cost more than the cheap re-classification it avoided, since
         /// <c>GroupBy</c>'s key/element storage already handles a plain <see cref="Expression"/> reference
-        /// (8 bytes) far more cheaply. See the S5
-        /// roadmap progress notes for the exact benchmark numbers.
+        /// (8 bytes) far more cheaply. Re-tested (S5 review round 4) against the round-3-shrunk struct, since
+        /// the struct round 1 measured no longer exists: the regression roughly HALVED (~24 bytes/term instead
+        /// of ~48) but did not reverse - still rejected. See the S5 roadmap progress notes for the exact
+        /// benchmark numbers from both rounds.
         /// </remarks>
         private sealed class AdditiveGroupingEqualityComparer : IEqualityComparer<Expression>
         {
