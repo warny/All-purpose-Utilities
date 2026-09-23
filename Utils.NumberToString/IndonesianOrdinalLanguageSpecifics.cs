@@ -35,6 +35,8 @@ public class IndonesianOrdinalLanguageSpecifics : INumberToStringLanguageSpecifi
     /// <returns>The Indonesian or Malay cardinal wording.</returns>
     protected string BuildCardinal(int number)
     {
+        // Keep these stems and scale words synchronized with the ID/MS XML cardinal configurations.
+        // IOrdinalLanguageSpecifics currently has no converter context from which to request a cardinal form.
         string[] units = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", Eight, "sembilan"];
         if (number < 10) return units[number];
         if (number == 10) return "sepuluh";
