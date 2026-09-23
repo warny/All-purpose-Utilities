@@ -144,7 +144,7 @@ internal static class ExpressionCanonicalOrder
     /// <param name="enclosingScopes">See <see cref="BuildKey(Expression, IReadOnlyList{ParameterExpression[]})"/>.</param>
     /// <returns>One comparable, deterministic structural key per element of <paramref name="expressions"/>, in the same order.</returns>
     /// <remarks>
-    /// Fast-paths an empty <paramref name="expressions"/> (a niladic method call, e.g. <c>DateTime.Now</c>)
+    /// Fast-paths an empty <paramref name="expressions"/> (a niladic method call, e.g. <c>Guid.NewGuid()</c>)
     /// to <see cref="Array.Empty{T}"/> without allocating the working scope list at all: the pre-S5 baseline
     /// (<c>CompareArgumentLists</c> over an empty argument list) built zero argument keys for this shape too,
     /// so this call must not become new, unamortized work for it.

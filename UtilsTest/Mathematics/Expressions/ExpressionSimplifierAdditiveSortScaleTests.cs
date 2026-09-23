@@ -32,7 +32,10 @@ namespace UtilsTest.Mathematics.Expressions;
 /// <see cref="ExpressionSimplifierStructuralCanonicalizationTests"/>'s own reflection-based
 /// <c>ExpressionCanonicalOrder.Compare</c>/<c>CompareType</c>/<c>CompareMethod</c> coverage). Tests 4-5 use
 /// the public <c>Simplify(Expression)</c> path directly, at a term count empirically confirmed to run in
-/// well under a second.
+/// well under a second. Test 6 (added in review round 2) reflects directly into
+/// <c>ExpressionCanonicalOrder.BuildKeys</c> itself - the specific new S5 entry point, one level below
+/// <c>CanonicalizeAdditiveExpression</c> - to characterize its own shared-working-scope-list behavior in
+/// isolation.
 /// </remarks>
 [TestClass]
 public class ExpressionSimplifierAdditiveSortScaleTests
@@ -445,7 +448,7 @@ public class ExpressionSimplifierAdditiveSortScaleTests
     /// lambda's captured outer parameter resolve at the wrong binding depth, breaking this equality.
     /// </summary>
     [TestMethod]
-    public void NestedLambdaArgument_AcrossMultipleFunctionLikeTerms_BuildsCorrectArgumentKeysUnderSharedScope()
+    public void BuildKeys_MultipleArgumentsWithNestedLambdas_RestoresSharedScopeBetweenSiblings()
     {
         ParameterExpression p = Expression.Parameter(typeof(double), "p");
         var enclosingScopes = new List<ParameterExpression[]> { new[] { p } };

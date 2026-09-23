@@ -1283,11 +1283,12 @@ an additional test. All addressed on the same branch.
    fast-paths an empty `expressions` to `[]` (`Array.Empty<KeyNode>()`), before allocating anything. Measured
    directly (same standalone harness, n=128, a niladic static method call as the additive term): the
    unconditional-allocation version cost 98 706 B/call; the fast-pathed version costs 86 418 B/call — the
-   ~96 B/term the wasted `List<ParameterExpression[]>` cost is gone. A small residual gap remains against the
-   true pre-S5 baseline (80 362 B/call) — attributable to the `AnnotatedAdditiveTerm` struct itself now
-   carrying an `ArgumentKeys` field (an S4-established per-term annotation design point, not something this
-   fast path targets or something this PR introduces the struct-growth cost of) — disclosed here rather than
-   left implicit.
+   ~96 B/term the wasted `List<ParameterExpression[]>` cost is gone. A small residual gap remained at this
+   point against the true pre-S5 baseline (80 362 B/call) — attributable to the `AnnotatedAdditiveTerm`
+   struct's per-element footprint growing to carry the new `ArgumentKeys` field THIS PR introduces (not an
+   S4-established cost, and not yet the whole `AdditiveGroupClass` shrink round 3 below performs) — disclosed
+   here rather than left implicit at the time. **Superseded by round 3 below**, which closes this gap
+   entirely (and then some) by shrinking `AnnotatedAdditiveTerm` itself.
 2. **Benchmark coverage was unary-only.** The original benchmark matrix only exercised `Sin`/`Cos`/`Tan`
    (one-argument calls). Re-run with three additional static test methods of arity 0/2/3 confirms the
    optimization's effect scales with argument count, in the direction expected from the architecture (more
@@ -1315,22 +1316,97 @@ an additional test. All addressed on the same branch.
    softened to "likely explanation (consistent with the measured allocation increase, not independently
    isolated/profiled beyond this benchmark)" — the benchmark numbers themselves are what justify the
    rejection; the struct-copy explanation is a plausible, unverified mechanism, not a proven one.
-5. **Test suggestion, added:** `NestedLambdaArgument_AcrossMultipleFunctionLikeTerms_BuildsCorrectArgumentKeysUnderSharedScope`
-   in `ExpressionSimplifierAdditiveSortScaleTests` — several function-like terms, each with a nested
-   `LambdaExpression` argument capturing the OUTER bound parameter, canonicalized in one
-   `CanonicalizeAdditiveExpression` call. This is the shape that specifically exercises `BuildKeys`' shared
-   mutable working-scope list across successive sibling arguments (each nested lambda's `BuildLambda` call
-   pushes/pops its own frame onto the SAME list `BuildKeys` passes to every argument in sequence): a bug that
-   let one argument's nested-lambda scope leak into a later sibling argument's key would misclassify that
-   sibling's captured outer parameter as bound at the wrong depth. Verified this test fails (parameters
-   compare unequal/misordered) if `BuildKeys`' scope-sharing is replaced with a naively-broken variant that
-   does not restore the list between arguments, confirming it exercises the property described.
+5. **Test suggestion, added:** `BuildKeys_MultipleArgumentsWithNestedLambdas_RestoresSharedScopeBetweenSiblings`
+   in `ExpressionSimplifierAdditiveSortScaleTests` — reflects directly into `ExpressionCanonicalOrder.BuildKeys`
+   itself (not `CanonicalizeAdditiveExpression`, and not multiple additive terms) with a three-element argument
+   array `[lambda1, p, lambda2]`, where `lambda1`/`lambda2` are structurally alpha-equivalent nested
+   `LambdaExpression`s each capturing the same OUTER bound parameter `p`, separated by a plain reference to
+   `p` itself. This is the shape that specifically exercises `BuildKeys`' shared mutable working-scope list
+   across successive sibling arguments (each nested lambda's `BuildLambda` call pushes/pops its own frame onto
+   the SAME list `BuildKeys` passes to every argument in sequence): a bug that let one argument's nested-lambda
+   scope leak into a later sibling argument's key would misclassify that sibling's captured outer parameter as
+   bound at the wrong depth, making `lambda1`'s and `lambda2`'s otherwise-identical keys compare unequal.
+   Verified this test fails (`CompareTo` returns `-1` instead of `0`) when `ExpressionCanonicalOrder.BuildLambda`'s
+   scope-pop is deliberately, locally removed (reverted immediately after verification, never committed),
+   confirming it exercises the property described.
 
-**Validation performed after review round 2 (2026-09-23):** see the "Validation" list below, which already
-reflects the post-round-2 code and test count.
+**Validation performed after review round 2 (2026-09-23):** superseded by round 3 below; see the "Validation"
+list further down, which reflects the final, post-round-3 code and test count.
+
+#### S5 review, round 3 (2026-09-23) — shrink `AnnotatedAdditiveTerm`, cache the comparer, doc fixes
+
+A third review pass confirmed round 2's fixes but flagged that round 2's own "residual gap" for arity 0
+(finding 1 above) was real and avoidable, not an inherent cost, identified two more documentation
+inaccuracies, and suggested one more (non-blocking) micro-optimization. Addressed on the same branch.
+
+1. **`AnnotatedAdditiveTerm` carried a whole, now-mostly-unused `AdditiveGroupClass` per term.** After
+   annotation, `CompareAdditiveGroupingOrder` only ever read two scalar fields off the stored classification
+   (`IsFunctionLike`, `CategoryOrder`); `AdditiveGroupClass.Arguments`/`.Opaque` (two reference-type fields)
+   were needed only transiently, while building `ArgumentKeys`/`Key` in the annotation loop, never afterward.
+   Carrying the whole `AdditiveGroupClass` anyway meant every term paid for copying those two now-dead
+   references through `List<AnnotatedAdditiveTerm>`/`OrderBy`/`GroupBy` for no benefit — exactly the
+   architectural root cause behind round 2's arity-0 "residual gap", and (per the round-2 numbers, which
+   showed the SAME roughly-constant per-term overhead at every arity) a small tax on every other family too.
+   Fixed: `AnnotatedAdditiveTerm` now stores `IsFunctionLike`/`CategoryOrder` directly as two scalar fields
+   instead of a nested `AdditiveGroupClass`; the annotation loop still calls `ClassifyForAdditiveGrouping`
+   once per term as before (needed for `Arguments`/`Opaque` during annotation), but copies out only the two
+   fields that survive it. Measured directly (same standalone harness): at n=128, EVERY additive family
+   improved by the same ~15 400 B/call (matching 128 terms × the two reference fields removed from the
+   struct, ~120 B/term) relative to the round-2 candidate - see the updated table below. For arity 0
+   specifically, this closes round 2's residual gap entirely and then some: 86 418 B/call (round 2) →
+   67 962 B/call (round 3), now BELOW the true pre-S5 baseline's 80 362 B/call - the fast path plus this
+   shrink together make even the one previously-regressed shape a net improvement.
+2. **Round 2's "an S4-established per-term annotation design point" attribution was wrong.** `AnnotatedAdditiveTerm`
+   itself (and its `Key` field) are S4-established; the `ArgumentKeys` field - and therefore the struct-growth
+   cost round 2's finding 1 measured - was introduced by S5/this PR, not inherited from S4. Corrected in place
+   above (see the "Superseded by round 3" note on that finding).
+3. **`Comparer<AnnotatedAdditiveTerm>.Create(CompareAdditiveGroupingOrder)` was rebuilt on every
+   `CanonicalizeAdditiveExpression` call**, even though `CompareAdditiveGroupingOrder` is `static` and captures
+   nothing per-call (confirmed once `CompareAdditiveGroupingOrder` stopped taking a `scopes` parameter earlier
+   in this stage). Cached as a `static readonly AdditiveGroupingOrderComparer` field instead, built once per
+   process. A constant, easily-avoidable per-call allocation (the `Comparer<T>` wrapper plus its delegate) with
+   no correctness implication either way; folded into this round since it was found alongside finding 1's
+   investigation, not benchmarked in isolation as its own line item.
+4. **Test name/description did not match what the round-2 test actually does.** The test suggested and added
+   in round 2 was named `NestedLambdaArgument_AcrossMultipleFunctionLikeTerms_BuildsCorrectArgumentKeysUnderSharedScope`
+   and described as covering "several function-like terms ... canonicalized in one
+   `CanonicalizeAdditiveExpression` call" - it actually reflects directly into `ExpressionCanonicalOrder.BuildKeys`
+   with a single three-element argument array, never calling `CanonicalizeAdditiveExpression` and never
+   constructing more than one additive term. Renamed to
+   `BuildKeys_MultipleArgumentsWithNestedLambdas_RestoresSharedScopeBetweenSiblings` and its description (both
+   in the test file and in round 2's own write-up above) corrected to describe the actual shape exercised.
+5. **Stale count/example fixes:** the class-level remark on `ExpressionSimplifierAdditiveSortScaleTests`
+   still described only "Tests 1-3 .../Tests 4-5 ..." with no mention of the round-2-added sixth test - added
+   a note describing test 6. The GitHub PR description was still entirely round-1 content (5 tests, stale
+   counts, no arity/rebase information) - refreshed to match the current branch state. `BuildKeys`' own XML
+   doc used `DateTime.Now` as its "niladic method call" example - `DateTime.Now` is a property, not a method
+   call; replaced with `Guid.NewGuid()`.
+
+**Updated benchmark results (micro scenarios, n=128; supersedes the round-1 table above for the `Utils`
+production-code numbers — median of 15 rounds, byte-identical allocations across repeated runs).**
+
+| Family (n=128) | True pre-S5 baseline | Round 3 candidate | Speedup | Baseline alloc | Candidate alloc | Alloc reduction |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 Additive-Opaque | 387.03 us | 82.97 us | 4.7x | 543 794 B | 124 978 B | 4.4x |
+| 2 Additive-FunctionLike (arity 1) | 135.85 us | 87.37 us | 1.6x | 334 130 B | 142 386 B | 2.3x |
+| 3 Additive-PowerWrapped | 215.12 us | 182.14 us | 1.2x | 382 866 B | 186 418 B | 2.1x |
+| 4 Additive-MixedSign | 130.84 us | 89.76 us | 1.5x | 349 962 B | 154 186 B | 2.3x |
+| 5 Multiplicative-Opaque (control, untouched code) | 25.28 us | 22.58 us | ~1.0x (noise) | 42 554 B | 42 554 B | 1.0x (byte-identical) |
+| 6 FunctionLike arity 0 (niladic) | 78.15 us | 89.47 us | ~0.9x (time noise; see finding 1) | 80 362 B | 67 962 B | 1.18x (now BELOW baseline) |
+| 7 FunctionLike arity 2 | 766.73 us | 360.93 us | 2.1x | 551 138 B | 217 330 B | 2.5x |
+| 8 FunctionLike arity 3 | 911.07 us | 553.20 us | 1.6x | 602 466 B | 292 274 B | 2.1x |
+
+Every family this PR's code touches now shows a consistent, unambiguous allocation reduction at n=128 (1.18x
+to 4.4x) with no remaining regressed shape; the multiplicative control remains exactly byte-identical, and
+arity-0 wall-clock time (the one figure still not a clear win) is noise-level (89.47 us candidate vs. 78.15 us
+baseline, on a call that allocates a mere ~68 KB and takes well under 100 us either way - see "On timing
+noise" above for why sub-100us medians in this environment are not fully trustworthy in isolation).
+
+**Validation performed after review round 3 (2026-09-23):** see the "Validation" list below.
 
 **Benchmark results (micro scenarios — the direct P1 target; median of 15-21 rounds, byte-identical
-allocations across repeated runs).**
+allocations across repeated runs). Historical: these are round 1's original numbers, kept for the audit
+trail; see the round-3 table above for the current, final numbers.**
 
 | Family (n=128) | Baseline time | Candidate time | Speedup | Baseline alloc | Candidate alloc | Alloc reduction |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1386,13 +1462,13 @@ confirmed to run in well under a second. Existing S3/S4 suites
 `ExpressionSimplifierFinalizationTests`, `ExpressionComparerTests`) were not modified and remain the primary
 correctness oracle that this stage's change must keep green — see "Validation" below for exact counts.
 
-**Validation performed (2026-09-23, after review round 2, in order; branch rebased onto `master` at
+**Validation performed (2026-09-23, after review round 3, in order; branch rebased onto `master` at
 `1f874f9e0caa28e097060316a992cd5a4ce4fdbd` — PR #603, `Utils.NumberToString`-only, no file overlap with this
-change — before this run):**
+change — before review round 2's run; round 3 made no further rebase):**
 
-1. `ExpressionSimplifierAdditiveSortScaleTests` (6 tests: the original 5 plus round 2's
-   `NestedLambdaArgument_AcrossMultipleFunctionLikeTerms_BuildsCorrectArgumentKeysUnderSharedScope`): 6/6
-   passed.
+1. `ExpressionSimplifierAdditiveSortScaleTests` (6 tests: the original 5 plus
+   `BuildKeys_MultipleArgumentsWithNestedLambdas_RestoresSharedScopeBetweenSiblings`, added in round 2 and
+   renamed in round 3): 6/6 passed.
 2. Full `UtilsTest/Mathematics/Expressions` namespace: 464/464 passed (458 pre-existing + 6 new).
 3. Full `UtilsTest.Unit`: 7736/7736 passed, 0 skipped.
 4. Full `UtilsTest.Functional`: 383/383 passed.

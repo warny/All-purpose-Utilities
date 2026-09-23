@@ -1133,6 +1133,12 @@ namespace Utils.Mathematics.Expressions
                 // ArgumentKeys array. A function-like term additionally needs each ARGUMENT's own key (the
                 // primary sort's function-like branch orders by argument-list identity, not by the whole
                 // term/exponent), computed once via BuildKeys so every argument shares one working scope list.
+                //
+                // group.Arguments/group.Opaque themselves are NOT retained on the annotation below (S5
+                // review round 3): only the two scalar fields CompareAdditiveGroupingOrder actually still
+                // needs post-annotation (IsFunctionLike, CategoryOrder) are copied out here, keeping
+                // AnnotatedAdditiveTerm - copied repeatedly through OrderBy/GroupBy - smaller than carrying
+                // the whole AdditiveGroupClass (with its two now-unused reference-type fields) would.
                 IReadOnlyList<ExpressionCanonicalOrder.KeyNode>? argumentKeys = group.IsFunctionLike
                     ? ExpressionCanonicalOrder.BuildKeys(group.Arguments!, scopes)
                     : null;
@@ -1140,13 +1146,14 @@ namespace Utils.Mathematics.Expressions
                 annotatedTerms.Add(new AnnotatedAdditiveTerm(
                     term,
                     isNegative,
-                    group,
+                    group.IsFunctionLike,
+                    group.CategoryOrder,
                     ExpressionCanonicalOrder.BuildKey(term, scopes),
                     argumentKeys));
             }
 
             var orderedTerms = annotatedTerms
-                .OrderBy(static term => term, Comparer<AnnotatedAdditiveTerm>.Create(CompareAdditiveGroupingOrder))
+                .OrderBy(static term => term, AdditiveGroupingOrderComparer)
                 .ThenBy(static term => term.IsNegative ? 0 : 1)
                 .ThenBy(static term => term.Key)
                 .ToList();
@@ -1286,23 +1293,40 @@ namespace Utils.Mathematics.Expressions
         /// now computed exactly once per term, here, rather than being rebuilt from scratch on every pairwise
         /// comparison during the O(n log n) sort in <see cref="CanonicalizeAdditiveExpression"/>. For an
         /// "opaque" (non-function-like) term, <see cref="Key"/> already IS
-        /// <c>ExpressionCanonicalOrder.BuildKey(Group.Opaque, scopes)</c> - <see cref="AdditiveGroupClass.Opaque"/>
-        /// is the same term this whole annotation describes - so the primary sort's opaque branch reuses
-        /// <see cref="Key"/> directly instead of a second, redundant build. For a function-like term, the
-        /// primary sort orders by argument-list identity (not by the whole term, which would also fold in the
-        /// ignored exponent for a power-wrapped call), so <see cref="ArgumentKeys"/> holds each argument's own
-        /// key, built once via <see cref="ExpressionCanonicalOrder.BuildKeys"/>.
+        /// <c>ExpressionCanonicalOrder.BuildKey(term, scopes)</c> for this same term - so the primary sort's
+        /// opaque branch reuses <see cref="Key"/> directly instead of a second, redundant build. For a
+        /// function-like term, the primary sort orders by argument-list identity (not by the whole term,
+        /// which would also fold in the ignored exponent for a power-wrapped call), so
+        /// <see cref="ArgumentKeys"/> holds each argument's own key, built once via
+        /// <see cref="ExpressionCanonicalOrder.BuildKeys"/>.
+        /// </remarks>
+        /// <remarks>
+        /// <b>S5 review round 3:</b> only carries the two <see cref="AdditiveGroupClass"/> fields
+        /// <see cref="CompareAdditiveGroupingOrder"/> still reads after annotation
+        /// (<see cref="IsFunctionLike"/>, <see cref="CategoryOrder"/>) rather than the whole
+        /// <see cref="AdditiveGroupClass"/> value (which also carries <c>Arguments</c>/<c>Opaque"</c> - needed
+        /// only transiently, while building <see cref="ArgumentKeys"/>/<see cref="Key"/> in the annotation
+        /// loop, never afterward). Keeping this struct's per-element footprint - copied repeatedly through
+        /// <c>List&lt;T&gt;</c>/<c>OrderBy</c>/<c>GroupBy</c> - as small as the fields actually still needed
+        /// require is itself part of this stage's construction-cost goal.
         /// </remarks>
         private readonly struct AnnotatedAdditiveTerm(
             Expression term,
             bool isNegative,
-            AdditiveGroupClass group,
+            bool isFunctionLike,
+            int categoryOrder,
             ExpressionCanonicalOrder.KeyNode key,
             IReadOnlyList<ExpressionCanonicalOrder.KeyNode>? argumentKeys)
         {
             public Expression Term { get; } = term;
             public bool IsNegative { get; } = isNegative;
-            public AdditiveGroupClass Group { get; } = group;
+
+            /// <summary>Whether this term classified as function-like (see <see cref="AdditiveGroupClass.IsFunctionLike"/>).</summary>
+            public bool IsFunctionLike { get; } = isFunctionLike;
+
+            /// <summary>This term's function-category order (see <see cref="AdditiveGroupClass.CategoryOrder"/>); meaningful only when <see cref="IsFunctionLike"/> is <see langword="true"/>.</summary>
+            public int CategoryOrder { get; } = categoryOrder;
+
             public ExpressionCanonicalOrder.KeyNode Key { get; } = key;
 
             /// <summary>Each function-like term's argument keys, precomputed once (see this type's remarks); <see langword="null"/> for an opaque term.</summary>
@@ -1378,24 +1402,38 @@ namespace Utils.Mathematics.Expressions
         /// scratch for both operands on every pairwise comparison the sort performs, which is what this
         /// method did before S5. The comparison RESULT is unchanged: for an opaque term,
         /// <c>AnnotatedAdditiveTerm.Key</c> already equals what rebuilding
-        /// <c>ExpressionCanonicalOrder.BuildKey(Group.Opaque, scopes)</c> here would produce, since
-        /// <see cref="AdditiveGroupClass.Opaque"/> is the same term <c>Key</c> was built from.
+        /// <c>ExpressionCanonicalOrder.BuildKey(term, scopes)</c> here would produce, since <c>Key</c> was
+        /// built from that same term.
+        /// </remarks>
+        /// <remarks>
+        /// <b>S5 review round 3:</b> does not capture any lexical scope or other outer state, so
+        /// the delegate wrapping it (<see cref="AdditiveGroupingOrderComparer"/>) is a <c>static readonly</c>
+        /// field built once per process rather than a fresh <c>Comparer&lt;AnnotatedAdditiveTerm&gt;.Create(...)</c>
+        /// call (and its backing delegate/adapter allocation) on every <see cref="CanonicalizeAdditiveExpression"/> call.
         /// </remarks>
         private static int CompareAdditiveGroupingOrder(AnnotatedAdditiveTerm x, AnnotatedAdditiveTerm y)
         {
-            if (x.Group.IsFunctionLike != y.Group.IsFunctionLike)
+            if (x.IsFunctionLike != y.IsFunctionLike)
             {
-                return x.Group.IsFunctionLike ? 1 : -1;
+                return x.IsFunctionLike ? 1 : -1;
             }
 
-            if (!x.Group.IsFunctionLike)
+            if (!x.IsFunctionLike)
             {
                 return x.Key.CompareTo(y.Key);
             }
 
             int argumentsCompare = CompareArgumentKeyLists(x.ArgumentKeys!, y.ArgumentKeys!);
-            return argumentsCompare != 0 ? argumentsCompare : x.Group.CategoryOrder.CompareTo(y.Group.CategoryOrder);
+            return argumentsCompare != 0 ? argumentsCompare : x.CategoryOrder.CompareTo(y.CategoryOrder);
         }
+
+        /// <summary>
+        /// Cached <see cref="IComparer{T}"/> wrapping <see cref="CompareAdditiveGroupingOrder"/>, reused across
+        /// every <see cref="CanonicalizeAdditiveExpression"/> call (S5 review round 3) since the method it
+        /// wraps is stateless (<see langword="static"/>, no captured scope or other per-call state).
+        /// </summary>
+        private static readonly IComparer<AnnotatedAdditiveTerm> AdditiveGroupingOrderComparer =
+            Comparer<AnnotatedAdditiveTerm>.Create(CompareAdditiveGroupingOrder);
 
         /// <summary>Lexicographically compares two function argument lists' precomputed complete structural order keys.</summary>
         /// <param name="x">The first argument list's keys.</param>
@@ -1445,13 +1483,16 @@ namespace Utils.Mathematics.Expressions
         /// </summary>
         /// <remarks>
         /// <b>S5 (roadmap P2) - measured and rejected.</b> An `IEqualityComparer&lt;AnnotatedAdditiveTerm&gt;`
-        /// variant that reused <see cref="AnnotatedAdditiveTerm.Group"/> directly (avoiding this method's
-        /// re-classification, which itself is only a cheap re-run of the same NodeType pattern match) was
-        /// benchmarked and measurably REGRESSED both time and allocations at n=32/128 versus the version kept
-        /// here - copying the larger <see cref="AnnotatedAdditiveTerm"/> struct (five fields, including the
-        /// nested <see cref="AdditiveGroupClass"/>) through <c>GroupBy</c>'s internal lookup/grouping storage
-        /// costs more than the cheap re-classification it avoided, since <c>GroupBy</c>'s key/element storage
-        /// already handles a plain <see cref="Expression"/> reference (8 bytes) far more cheaply. See the S5
+        /// variant that reused the classification <see cref="AnnotatedAdditiveTerm"/> already carried at the
+        /// time of this experiment (avoiding this method's re-classification, which itself is only a cheap
+        /// re-run of the same NodeType pattern match) was benchmarked and measurably REGRESSED both time and
+        /// allocations at n=32/128 versus the version kept here - copying the larger
+        /// <see cref="AnnotatedAdditiveTerm"/> struct (as it existed at the time: five fields, including a
+        /// whole nested <see cref="AdditiveGroupClass"/> - since narrowed by S5 review round 3 to just the
+        /// two scalar fields still needed, see that type's own remarks) through <c>GroupBy</c>'s internal
+        /// lookup/grouping storage cost more than the cheap re-classification it avoided, since
+        /// <c>GroupBy</c>'s key/element storage already handles a plain <see cref="Expression"/> reference
+        /// (8 bytes) far more cheaply. See the S5
         /// roadmap progress notes for the exact benchmark numbers.
         /// </remarks>
         private sealed class AdditiveGroupingEqualityComparer : IEqualityComparer<Expression>
