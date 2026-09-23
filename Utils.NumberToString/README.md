@@ -1826,6 +1826,10 @@ language-finalization pipelines. `{amount}` is optional. When present, both `amo
 belongs in `pattern`; the engine only recognizes `{hour}` and `{amount}`.
 Patterns are validated against that strict whitelist and compiled once through
 `StringFormatBuilder`; inserted hour and amount text is never reparsed as template content.
+The optional `specialHourPattern` uses the same placeholders and is selected only when a
+configured `SpecialHourRule` actually replaces `{hour}`. This lets English use
+`pattern="{hour} o'clock" specialHourPattern="{hour}"` for `one o'clock` versus `noon`;
+disabling special-hour replacement continues to use the ordinary `pattern`.
 
 Each rule may independently constrain the two numeric constituents with
 `hourForceVariants` and `amountForceVariants`. They use the same comma-separated
