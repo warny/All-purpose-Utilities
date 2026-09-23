@@ -18,6 +18,8 @@ Examples:
     | 28 | dua puluh lapan |
     | 80 | lapan puluh |
     | 800 | lapan ratus |
+    | 1000000000 | satu bilion |
+    | 1000000000000 | satu trilion |
 
 Scenario Outline: Productive Malay ordinals
     When I convert the ordinal number <number>
@@ -33,6 +35,7 @@ Examples:
     | 21 | kedua puluh satu |
     | 100 | keseratus |
     | 1000 | keseribu |
+    | 1000000000 | kesatu bilion |
 
 Scenario: Malay ClockTime uses its own pukul convention
     Then the converter supports clock-time conversion

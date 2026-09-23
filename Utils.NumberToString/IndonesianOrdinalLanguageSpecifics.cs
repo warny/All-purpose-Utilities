@@ -11,6 +11,9 @@ public class IndonesianOrdinalLanguageSpecifics : INumberToStringLanguageSpecifi
     /// <summary>Gets the language-specific word for eight.</summary>
     protected virtual string Eight => "delapan";
 
+    /// <summary>Gets the language-specific word for 10^9.</summary>
+    protected virtual string Billion => "miliar";
+
     /// <inheritdoc />
     public string FinalizeWriting(string languageIdentifier, string text) => text;
 
@@ -43,7 +46,7 @@ public class IndonesianOrdinalLanguageSpecifics : INumberToStringLanguageSpecifi
         if (number < 2000) return Join("seribu", BuildCardinal(number - 1000));
         if (number < 1_000_000) return Join($"{BuildCardinal(number / 1000)} ribu", BuildCardinal(number % 1000));
         if (number < 1_000_000_000) return Join($"{BuildCardinal(number / 1_000_000)} juta", BuildCardinal(number % 1_000_000));
-        return Join($"{BuildCardinal(number / 1_000_000_000)} miliar", BuildCardinal(number % 1_000_000_000));
+        return Join($"{BuildCardinal(number / 1_000_000_000)} {Billion}", BuildCardinal(number % 1_000_000_000));
     }
 
     /// <summary>Joins a non-empty cardinal head to an optional remainder.</summary>
@@ -59,4 +62,7 @@ public sealed class MalayOrdinalLanguageSpecifics : IndonesianOrdinalLanguageSpe
 {
     /// <inheritdoc />
     protected override string Eight => "lapan";
+
+    /// <inheritdoc />
+    protected override string Billion => "bilion";
 }

@@ -14,6 +14,18 @@
                 <Digit digit="0" string="" buildString="*" /><Digit digit="1" string="seratus" buildString="seratus *" /><Digit digit="2" string="dua ratus" buildString="dua ratus *" /><Digit digit="3" string="tiga ratus" buildString="tiga ratus *" /><Digit digit="4" string="empat ratus" buildString="empat ratus *" /><Digit digit="5" string="lima ratus" buildString="lima ratus *" /><Digit digit="6" string="enam ratus" buildString="enam ratus *" /><Digit digit="7" string="tujuh ratus" buildString="tujuh ratus *" /><Digit digit="8" string="lapan ratus" buildString="lapan ratus *" /><Digit digit="9" string="sembilan ratus" buildString="sembilan ratus *" />
             </Group>
         </Groups>
+        <NumberScale>
+            <StaticNames>
+                <Scale value="0" string="" />
+                <Scale value="1" string="ribu" />
+                <Scale value="2" string="juta" />
+                <Scale value="3" string="bilion" />
+                <Scale value="4" string="trilion" />
+            </StaticNames>
+            <Suffixes>
+                <Suffix>lion</Suffix>
+            </Suffixes>
+        </NumberScale>
         <Exceptions>
             <Number value="11" string="sebelas" /><Number value="12" string="dua belas" /><Number value="13" string="tiga belas" /><Number value="14" string="empat belas" /><Number value="15" string="lima belas" /><Number value="16" string="enam belas" /><Number value="17" string="tujuh belas" /><Number value="18" string="lapan belas" /><Number value="19" string="sembilan belas" />
         </Exceptions>

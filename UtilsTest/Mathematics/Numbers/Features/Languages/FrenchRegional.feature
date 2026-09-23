@@ -368,3 +368,46 @@ Examples:
     | 12:00:00 | midi                                 |
     | 00:00:00 | minuit                               |
     | 00:15:00 | minuit quinze minutes                |
+
+Scenario Outline: Regional French ClockTime is inherited from the general configuration
+    Given I use the "<culture>" number converter
+    Then the converter supports clock-time conversion
+
+Examples:
+    | culture |
+    | FR-be |
+    | FR-ch |
+
+Scenario Outline: Belgian French cardinal decades do not reuse metropolitan exceptions
+    Given I use the "FR-be" number converter
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 72 | septante deux |
+    | 92 | nonante deux |
+
+Scenario Outline: Swiss French cardinal decades
+    Given I use the "FR-ch" number converter
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 70 | septante |
+    | 71 | septante et un |
+    | 80 | huitante |
+    | 81 | huitante et un |
+    | 90 | nonante |
+    | 91 | nonante et un |
+
+Scenario Outline: Swiss French ordinals
+    Given I use the "FR-ch" number converter
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 80 | huitantième |
+    | 81 | huitante et unième |

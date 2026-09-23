@@ -157,7 +157,17 @@ namespace Utils {
                 return ResourceManager.GetString("NumberConvertionConfiguration.CA", resourceCulture);
             }
         }
-        
+
+        /// <summary>
+        /// Gets the Valencian number-to-string configuration.
+        /// </summary>
+        internal static string NumberConvertionConfiguration_CA_valencia {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.CA-valencia", resourceCulture);
+            }
+        }
+
+
         /// <summary>
         ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
         ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
@@ -368,16 +378,26 @@ namespace Utils {
         ///        decimalSeparator=&quot;pilkku&quot;
         ///        fractionSeparator=&quot;yli&quot;
         ///        maxNumber=&quot;999999999&quot;
-        ///    &gt;
-        ///        &lt;Culture&gt;FI&lt;/Culture&gt;
-        ///        &lt;Groups&gt;
-        ///            &lt;Group level=&quot;1&quot;&gt;
-        ///                &lt;Digit digit=&quot;0&quot; string=&quot;&quot; /&gt;
-        ///                &lt;Digit digit=&quot;1&quot; string=&quot;yk [le reste de la chaîne a été tronqué]&quot;;.
+        ///		&lt;Culture&gt;FR-ch&lt;/Culture&gt;
+        ///		&lt;Groups&gt;
+        ///			&lt;Group leve [le reste de la chaîne a été tronqué]&quot;;.
         /// </summary>
-        internal static string NumberConvertionConfiguration_FI {
+        internal static string NumberConvertionConfiguration_FR_be {
             get {
-                return ResourceManager.GetString("NumberConvertionConfiguration.FI", resourceCulture);
+                return ResourceManager.GetString("NumberConvertionConfiguration.FR-be", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        /// Gets the Swiss French number-to-string configuration.
+        /// </summary>
+        internal static string NumberConvertionConfiguration_FR_ch {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.FR-ch", resourceCulture);
+            }
+        }
+
+
             }
         }
         
@@ -482,19 +502,29 @@ namespace Utils {
             }
         }
 
-        /// <summary>Hungarian number-to-string configuration.</summary>
-        internal static string NumberConvertionConfiguration_HU {
+        /// </summary>
+        internal static string NumberConvertionConfiguration_HI {
             get {
-                return ResourceManager.GetString("NumberConvertionConfiguration.HU", resourceCulture);
+                return ResourceManager.GetString("NumberConvertionConfiguration.HI", resourceCulture);
+            }
+        }
+
+        /// <summary>Indonesian/Malay number-to-string configuration.</summary>
+        internal static string NumberConvertionConfiguration_ID {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.ID", resourceCulture);
             }
         }
 
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
-        ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
-        ///    &lt;Language
-        ///        groupSize=&quot;3&quot;
-        ///        separator=&quot; &quot;
+        /// Gets the Malay number-to-string configuration.
+        /// </summary>
+        internal static string NumberConvertionConfiguration_MS {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.MS", resourceCulture);
+            }
+        }
+
         ///        groupSeparator=&quot;&quot;
         ///        zero=&quot;शून्य&quot;
         ///        minus=&quot;माइनस *&quot;

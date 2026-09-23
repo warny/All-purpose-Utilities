@@ -36,8 +36,8 @@ namespace Utils.NumberToString
         [
             new("SCALE", () => NumberConverterResources.NumberConvertionConfiguration_SCALE),
             new("FR-fr-ca", () => NumberConverterResources.NumberConvertionConfiguration_FR_fr_ca),
-            new("FR-be", () => GetConfigurationResource("FR-be")),
-            new("FR-ch", () => GetConfigurationResource("FR-ch")),
+            new("FR-be", () => NumberConverterResources.NumberConvertionConfiguration_FR_be),
+            new("FR-ch", () => NumberConverterResources.NumberConvertionConfiguration_FR_ch),
             new("DE", () => NumberConverterResources.NumberConvertionConfiguration_DE),
             new("DE-ch", () => NumberConverterResources.NumberConvertionConfiguration_DE_ch),
             new("DA", () => NumberConverterResources.NumberConvertionConfiguration_DA),
@@ -46,7 +46,7 @@ namespace Utils.NumberToString
             new("ES", () => NumberConverterResources.NumberConvertionConfiguration_ES),
             new("BG", () => NumberConverterResources.NumberConvertionConfiguration_BG),
             new("CA", () => NumberConverterResources.NumberConvertionConfiguration_CA),
-            new("CA-valencia", () => GetConfigurationResource("CA-valencia")),
+            new("CA-valencia", () => NumberConverterResources.NumberConvertionConfiguration_CA_valencia),
             new("EU", () => NumberConverterResources.NumberConvertionConfiguration_EU),
             new("FA", () => NumberConverterResources.NumberConvertionConfiguration_FA),
             new("GL", () => NumberConverterResources.NumberConvertionConfiguration_GL),
@@ -65,7 +65,7 @@ namespace Utils.NumberToString
             new("PL", () => NumberConverterResources.NumberConvertionConfiguration_PL),
             new("HI", () => NumberConverterResources.NumberConvertionConfiguration_HI),
             new("ID", () => NumberConverterResources.NumberConvertionConfiguration_ID),
-            new("MS", () => GetConfigurationResource("MS")),
+            new("MS", () => NumberConverterResources.NumberConvertionConfiguration_MS),
             new("EL", () => NumberConverterResources.NumberConvertionConfiguration_EL),
             new("NL", () => NumberConverterResources.NumberConvertionConfiguration_NL),
             new("NO", () => NumberConverterResources.NumberConvertionConfiguration_NO),
@@ -2004,25 +2004,6 @@ namespace Utils.NumberToString
             {
                 return ex.Types.Where(t => t != null);
             }
-        }
-
-        /// <summary>
-        /// Retrieves a configuration resource by suffix from the embedded resource manager.
-        /// </summary>
-        /// <param name="suffix">The culture suffix that identifies the resource.</param>
-        /// <returns>The XML configuration content for the requested culture.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when the configuration resource cannot be found.</exception>
-        private static string GetConfigurationResource(string suffix)
-        {
-            string resourceName = $"NumberConvertionConfiguration.{suffix}";
-            string? configuration = NumberConverterResources.ResourceManager.GetString(resourceName, NumberConverterResources.Culture);
-
-            if (configuration == null)
-            {
-                throw new InvalidOperationException($"Number conversion configuration resource '{resourceName}' was not found.");
-            }
-
-            return configuration;
         }
     }
 }

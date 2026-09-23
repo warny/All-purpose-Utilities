@@ -12,7 +12,7 @@ This record documents the configurations enabled in the 2026-09-23 NTS-08 slice.
 | CA | CA, ca-ES | none | Existing | Declarative | Yes | 15 / 12 | `gender=femení` | Institut d'Estudis Catalans, *Gramàtica essencial de la llengua catalana*, §31.2; Generalitat de Catalunya, Optimot, “expressió de les hores” | Traditional quarter system only |
 | CA-valencia | ca-ES-valencia | CA | Inherited | Declarative | Yes, replaces parent | 5 / 12 | `gender=femení`; display-hour ranges | Acadèmia Valenciana de la Llengua, *Gramàtica normativa valenciana*, §32.2; AVL, *Diccionari normatiu valencià*, entries `quart` and `hora` | No day-part wording |
 | ID | ID, ID-ID | SCALE-SHORT | Yes | productive ordinal plugin (`pertama`, otherwise `ke-` + cardinal) | Yes | 5 / 12 | none | Badan Pengembangan dan Pembinaan Bahasa, KBBI entries `pertama`, `lewat`, `setengah`, `kurang`; *Tata Bahasa Baku Bahasa Indonesia* | No day-part wording |
-| MS | MS, MS-MY | ID | Yes | Malay ordinal plugin over `lapan` cardinals | Yes, replaces parent | 5 / 12 | none | Dewan Bahasa dan Pustaka, PRPM entries `lapan`, `pukul`, `suku`, `setengah`; DBP, *Tatabahasa Dewan* | Uses the neutral `pukul` convention; no day-part wording |
+| MS | MS, MS-MY | ID | Yes | Malay ordinal plugin over `lapan` cardinals | Yes, replaces parent | 5 / 12 | none | Dewan Bahasa dan Pustaka, PRPM entries `lapan`, `pukul`, `suku`, `setengah`; DBP, *Tatabahasa Dewan* | Uses Malaysian `bilion`/`trilion` scales and the neutral `pukul` convention; no day-part wording |
 
 ## Source links
 
