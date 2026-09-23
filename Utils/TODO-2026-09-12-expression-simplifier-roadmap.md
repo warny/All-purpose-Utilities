@@ -1431,16 +1431,17 @@ still valid - plus two documentation nits. Addressed on the same branch.
    | 3 Additive-PowerWrapped (shipped → P2-retest) | 3 808 → 3 856 B | 12 400 → 12 592 B | 47 280 → 48 048 B | 186 418 → 189 490 B |
 
    Every single cell regresses by EXACTLY 24 B per term (48 B at n=2, 192 B at n=8, 768 B at n=32, 3 072 B at
-   n=128 - a perfectly linear, deterministic, family-independent per-term cost), confirming this is a real,
-   reproducible effect of `GroupBy`'s internal `Lookup<TKey,TElement>` key storage - not noise. Wall-clock time
+   n=128 - a perfectly linear, deterministic, family-independent per-term cost), confirming a real,
+   reproducible allocation regression in the tested `AnnotatedAdditiveTerm`-keyed `GroupBy` variant,
+   consistent with additional per-element storage cost rather than benchmark noise. Wall-clock time
    was statistically indistinguishable from the shipped code at every size (differences within the same
    run-to-run noise band documented above). **Conclusion: the rejection still holds.** The shrunk struct did
    roughly HALVE the absolute per-term regression (round 1 measured ~48 B/term against the pre-round-3 struct;
    round 4 measures ~24 B/term against the post-round-3 struct - consistent with a per-term key-storage cost
    that scales with struct size, exactly as the reviewer's hypothesis predicted), but it did not reverse the
-   direction: `GroupBy`'s existing `Expression`-keyed (8-byte key) path remains strictly cheaper than any
-   `AnnotatedAdditiveTerm`-keyed alternative, at every size and family measured, both before and after the
-   round-3 shrink. The temporary comparer/call-site change used for this measurement was reverted immediately
+   direction: `GroupBy`'s existing `Expression`-keyed (8-byte key) path remains strictly cheaper than the
+   tested `AnnotatedAdditiveTerm`-keyed `GroupBy` variant, at every size and family measured, both before and
+   after the round-3 shrink. The temporary comparer/call-site change used for this measurement was reverted immediately
    after; the shipped `GroupBy(static term => term.Term, AdditiveGroupingEqualityComparer.Instance)` is
    unchanged from round 3.
 2. **Doc fix: stale test count.** The "Tests" summary near the end of this file's S5 section still said
