@@ -1737,6 +1737,7 @@ namespace Utils.NumberToString
                         r.AmountReferenceSpecified ? r.AmountReference : null,
                         r.AmountDirectionSpecified ? r.AmountDirection : null)
                     {
+                        SpecialHourPattern = r.SpecialHourPattern,
                         DisplayHourRange = string.IsNullOrWhiteSpace(r.DisplayHourRange)
                             ? null
                             : new IntRange<int>(r.DisplayHourRange),

@@ -57,6 +57,17 @@ public class NumberToStringConverterClockTimeTests
         Assert.AreEqual("douze heures et quart", result);
     }
 
+    /// <summary>Verifies disabling English special-hour words restores the complete numeric-hour pattern.</summary>
+    [TestMethod]
+    public void ConvertClockTime_EnglishDisabledSpecialHours_UsesOClockPattern()
+    {
+        var converter = NumberToStringConverter.GetConverter("EN");
+        var options = new ClockTimeConversionOptions { ReplaceSpecialHours = false };
+
+        Assert.AreEqual("twelve o'clock", converter.ConvertClockTime(new TimeOnly(0, 0), options, []));
+        Assert.AreEqual("twelve o'clock", converter.ConvertClockTime(new TimeOnly(12, 0), options, []));
+    }
+
     /// <summary>Verifies the legacy exact TimeOnly API retains seconds and does not use clock rules.</summary>
     [TestMethod]
     public void Convert_TimeOnly_RemainsExact()

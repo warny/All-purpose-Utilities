@@ -20,7 +20,6 @@
                 <Scale value="1" string="ribu" />
                 <Scale value="2" string="juta" />
                 <Scale value="3" string="bilion" />
-                <Scale value="4" string="trilion" />
             </StaticNames>
             <Suffixes>
                 <Suffix>lion</Suffix>

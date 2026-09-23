@@ -8,315 +8,308 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Utils
-{
+namespace Utils {
     using System;
 
 
-    /// <summary>
-    /// Provides strongly typed access to number-converter configuration resources.
-    /// </summary>
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-    [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class NumberConverterResources
-    {
-        private static global::System.Resources.ResourceManager resourceMan;
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [System.Diagnostics.DebuggerNonUserCodeAttribute()]
+    [System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
+    internal class NumberConverterResources {
 
-        private static global::System.Globalization.CultureInfo resourceCulture;
+        private static System.Resources.ResourceManager resourceMan;
 
-        /// <summary>Initializes a new resource accessor.</summary>
-        internal NumberConverterResources()
-        {
+        private static System.Globalization.CultureInfo resourceCulture;
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
+        internal NumberConverterResources() {
         }
 
-        /// <summary>Gets the cached resource manager used by this class.</summary>
-        [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static global::System.Resources.ResourceManager ResourceManager
-        {
-            get
-            {
-                if (object.ReferenceEquals(resourceMan, null))
-                {
-                    var temp = new global::System.Resources.ResourceManager("Utils.NumberConverterResources", typeof(NumberConverterResources).Assembly);
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        internal static System.Resources.ResourceManager ResourceManager {
+            get {
+                if (object.Equals(null, resourceMan)) {
+                    System.Resources.ResourceManager temp = new System.Resources.ResourceManager("Utils.NumberConverterResources", typeof(NumberConverterResources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
             }
         }
 
-        /// <summary>Gets or sets the culture used for resource lookup.</summary>
-        [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static global::System.Globalization.CultureInfo Culture
-        {
-            get => resourceCulture;
-            set => resourceCulture = value;
-        }
-        /// <summary>Gets the <c>NumberConvertionConfiguration</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration", resourceCulture);
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        internal static System.Globalization.CultureInfo Culture {
+            get {
+                return resourceCulture;
+            }
+            set {
+                resourceCulture = value;
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.SCALE</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_SCALE
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.SCALE", resourceCulture);
-        /// <summary>Gets the <c>NumberConvertionConfiguration.AR</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_AR
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.AR", resourceCulture);
-        /// <summary>Gets the <c>NumberConvertionConfiguration.CS</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_CS
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.CS", resourceCulture);
+        internal static string NumberConvertionConfiguration {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration", resourceCulture);
+            }
+        internal static string NumberConvertionConfiguration_SCALE {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.SCALE", resourceCulture);
+            }
+        internal static string NumberConvertionConfiguration_AR {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.AR", resourceCulture);
+            }
         }
-        /// <summary>Gets the <c>NumberConvertionConfiguration.SK</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_SK
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.SK", resourceCulture);
-        /// <summary>Gets the <c>NumberConvertionConfiguration.DE</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_DE
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.DE", resourceCulture);
-        /// <summary>Gets the <c>NumberConvertionConfiguration.DE-ch</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_DE_ch
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.DE-ch", resourceCulture);
-        }
-
-        /// <summary>Gets the <c>NumberConvertionConfiguration.DA</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_DA
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.DA", resourceCulture);
+        internal static string NumberConvertionConfiguration_CS {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.CS", resourceCulture);
+            }
+        internal static string NumberConvertionConfiguration_SK {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.SK", resourceCulture);
+            }
+        internal static string NumberConvertionConfiguration_DE {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.DE", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.EE</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_EE
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.EE", resourceCulture);
+        internal static string NumberConvertionConfiguration_DE_ch {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.DE-ch", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.EL</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_EL
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.EL", resourceCulture);
+        internal static string NumberConvertionConfiguration_DA {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.DA", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.EN</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_EN
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.EN", resourceCulture);
+        internal static string NumberConvertionConfiguration_EE {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.EE", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.EN-GB</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_EN_GB
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.EN-GB", resourceCulture);
+        internal static string NumberConvertionConfiguration_EL {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.EL", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.ES</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_ES
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.ES", resourceCulture);
+        internal static string NumberConvertionConfiguration_EN {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.EN", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.BG</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_BG
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.BG", resourceCulture);
+        internal static string NumberConvertionConfiguration_EN_GB {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.EN-GB", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.CA</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_CA
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.CA", resourceCulture);
+        internal static string NumberConvertionConfiguration_ES {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.ES", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.CA-valencia</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_CA_valencia
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.CA-valencia", resourceCulture);
+        internal static string NumberConvertionConfiguration_BG {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.BG", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.EU</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_EU
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.EU", resourceCulture);
+        internal static string NumberConvertionConfiguration_CA {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.CA", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.FA</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_FA
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.FA", resourceCulture);
+        internal static string NumberConvertionConfiguration_CA_valencia {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.CA-valencia", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.GL</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_GL
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.GL", resourceCulture);
+        internal static string NumberConvertionConfiguration_EU {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.EU", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.FI</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_FI
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.FI", resourceCulture);
+        internal static string NumberConvertionConfiguration_FA {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.FA", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.FR-be</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_FR_be
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.FR-be", resourceCulture);
+        internal static string NumberConvertionConfiguration_GL {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.GL", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.FR-ch</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_FR_ch
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.FR-ch", resourceCulture);
+        internal static string NumberConvertionConfiguration_FI {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.FI", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.FR-fr-ca</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_FR_fr_ca
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.FR-fr-ca", resourceCulture);
+        internal static string NumberConvertionConfiguration_FR_be {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.FR-be", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.HE</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_HE
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.HE", resourceCulture);
+        internal static string NumberConvertionConfiguration_FR_ch {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.FR-ch", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.HR</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_HR
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.HR", resourceCulture);
+        internal static string NumberConvertionConfiguration_FR_fr_ca {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.FR-fr-ca", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.HU</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_HU
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.HU", resourceCulture);
+        internal static string NumberConvertionConfiguration_HE {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.HE", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.HI</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_HI
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.HI", resourceCulture);
+        internal static string NumberConvertionConfiguration_HR {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.HR", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.ID</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_ID
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.ID", resourceCulture);
+        internal static string NumberConvertionConfiguration_HU {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.HU", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.MS</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_MS
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.MS", resourceCulture);
+        internal static string NumberConvertionConfiguration_HI {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.HI", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.IT</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_IT
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.IT", resourceCulture);
+        internal static string NumberConvertionConfiguration_ID {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.ID", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.JA</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_JA
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.JA", resourceCulture);
+        internal static string NumberConvertionConfiguration_MS {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.MS", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.KO</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_KO
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.KO", resourceCulture);
+        internal static string NumberConvertionConfiguration_IT {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.IT", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.NL</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_NL
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.NL", resourceCulture);
+        internal static string NumberConvertionConfiguration_JA {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.JA", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.NO</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_NO
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.NO", resourceCulture);
+        internal static string NumberConvertionConfiguration_KO {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.KO", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.PL</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_PL
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.PL", resourceCulture);
+        internal static string NumberConvertionConfiguration_NL {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.NL", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.PT</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_PT
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.PT", resourceCulture);
+        internal static string NumberConvertionConfiguration_NO {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.NO", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.RO</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_RO
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.RO", resourceCulture);
+        internal static string NumberConvertionConfiguration_PL {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.PL", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.RU</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_RU
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.RU", resourceCulture);
+        internal static string NumberConvertionConfiguration_PT {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.PT", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.SV</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_SV
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.SV", resourceCulture);
+        internal static string NumberConvertionConfiguration_RO {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.RO", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.SW</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_SW
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.SW", resourceCulture);
+        internal static string NumberConvertionConfiguration_RU {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.RU", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.TR</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_TR
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.TR", resourceCulture);
+        internal static string NumberConvertionConfiguration_SV {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.SV", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.UK</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_UK
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.UK", resourceCulture);
+        internal static string NumberConvertionConfiguration_SW {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.SW", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.VN</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_VN
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.VN", resourceCulture);
+        internal static string NumberConvertionConfiguration_TR {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.TR", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.WO</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_WO
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.WO", resourceCulture);
+        internal static string NumberConvertionConfiguration_UK {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.UK", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.ZH</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_ZH
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.ZH", resourceCulture);
+        internal static string NumberConvertionConfiguration_VN {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.VN", resourceCulture);
+            }
         }
 
-        /// <summary>Gets the <c>NumberConvertionConfiguration.ZU</c> resource value.</summary>
-        internal static string NumberConvertionConfiguration_ZU
-        {
-            get => ResourceManager.GetString("NumberConvertionConfiguration.ZU", resourceCulture);
+        internal static string NumberConvertionConfiguration_WO {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.WO", resourceCulture);
+            }
+        }
+
+        internal static string NumberConvertionConfiguration_ZH {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.ZH", resourceCulture);
+            }
+        internal static string NumberConvertionConfiguration_ZU {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.ZU", resourceCulture);
+            }
+        }
     }
 }
         ///            &lt;Group level=&quot;1&quot;&gt;

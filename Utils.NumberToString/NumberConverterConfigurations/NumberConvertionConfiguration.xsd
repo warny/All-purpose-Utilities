@@ -1568,6 +1568,10 @@
                                                     <xs:annotation><xs:documentation>Comma-separated dimension=value constraints forced for {amount}. Dimension aliases are accepted and canonicalized during converter construction.</xs:documentation></xs:annotation>
                                                 </xs:attribute>
                                                 <xs:attribute name="pattern" use="required"><xs:simpleType><xs:restriction base="xs:string"><xs:minLength value="1"/></xs:restriction></xs:simpleType></xs:attribute>
+                                                <xs:attribute name="specialHourPattern" use="optional">
+                                                    <xs:annotation><xs:documentation>Optional pattern used when a SpecialHour replaces {hour}; otherwise pattern is used.</xs:documentation></xs:annotation>
+                                                    <xs:simpleType><xs:restriction base="xs:string"><xs:minLength value="1"/></xs:restriction></xs:simpleType>
+                                                </xs:attribute>
                                                 <xs:attribute name="amountReference" use="optional"><xs:simpleType><xs:restriction base="xs:int"><xs:minInclusive value="0"/><xs:maxInclusive value="60"/></xs:restriction></xs:simpleType></xs:attribute>
                                                 <xs:attribute name="amountDirection" use="optional">
                                                     <xs:simpleType><xs:restriction base="xs:string"><xs:enumeration value="before"/><xs:enumeration value="after"/></xs:restriction></xs:simpleType>
