@@ -444,4 +444,77 @@ public class ExpressionSimplifierComparerBatchingTests
         Assert.IsTrue(ReferenceEquals(z, sumOfVariables.Right));
         Assert.IsTrue(ReferenceEquals(unfoldedCoefficient, multiply.Right));
     }
+
+    // ------------------------------------------------------------------------------------------
+    // Review round 6: caching must never reduce how many times a NESTED Simplify() call's own user
+    // code runs - not just the final structural comparison's user code (see this class's remarks on
+    // HostileConstant_NonSafePolicyInvokesUserEqualsOnceAndPropagatesException, which only exercised the
+    // final comparison, not a nested one reached while simplifying a cached candidate).
+    // ------------------------------------------------------------------------------------------
+
+    /// <summary>A reference-type constant value whose <see cref="object.Equals(object?)"/> records a call count and returns <see langword="false"/>, without throwing - used to observe an INVOCATION COUNT rather than an exception.</summary>
+    private sealed class CountingConstant
+    {
+        /// <summary>The number of times <see cref="Equals(object?)"/> has been called.</summary>
+        public int EqualsCallCount { get; private set; }
+
+        /// <inheritdoc/>
+        public override bool Equals(object? obj)
+        {
+            EqualsCallCount++;
+            return false;
+        }
+
+        /// <inheritdoc/>
+        public override int GetHashCode() => 0;
+    }
+
+    /// <summary>
+    /// Reproduces review round 6's finding directly: <c>AdditionOfEqualsElements(Add((2*Call(c1) + 3*Call(c2)) * x, 7*y))</c>,
+    /// where <c>c1</c>/<c>c2</c> are <see cref="CountingConstant"/> instances embedded as method-call
+    /// arguments INSIDE the first candidate's own subtree (<c>leftleft</c>, i.e. the not-yet-simplified inner
+    /// <c>Add</c>). <c>leftleft</c> itself participates in two separate comparisons in this shape
+    /// (<c>Equals(leftleft, rightleft)</c> then <c>Equals(leftleft, rightright)</c>, since neither of the
+    /// earlier branches match). Simplifying <c>leftleft</c> reaches its OWN nested
+    /// <c>AdditionOfEqualsElements</c> call, whose own equality probe compares the two method-call arguments
+    /// and therefore invokes <c>c1.Equals(c2)</c> - once per INDEPENDENT simplification of <c>leftleft</c>.
+    /// Before caching <c>leftleft</c>'s simplified form was made conditional on
+    /// <c>FactorEqualityProbe.MightInvokeUserCodeWhenSimplified</c> (this review round), the second
+    /// comparison reused the FIRST comparison's cached simplification instead of re-simplifying
+    /// <c>leftleft</c>, so <c>c1.Equals(c2)</c> ran only ONCE - one fewer than the uncached, pre-P3 baseline,
+    /// confirmed by hand-checking the shipped pre-fix build (reverted before commit, per this file's own
+    /// established manual-verification pattern) and the TRUE pre-P3 baseline both invoke it exactly TWICE.
+    /// This test pins the count at 2, matching both baselines, not 1.
+    /// </summary>
+    [TestMethod]
+    public void NestedSimplifyReachingUserCode_InvokedOncePerComparison_NotOncePerCandidate()
+    {
+        var simplifier = new ExpressionSimplifier();
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        ParameterExpression y = Expression.Parameter(typeof(double), "y");
+        MethodInfo identity = typeof(ExpressionSimplifierComparerBatchingTests).GetMethod(
+            nameof(IdentityFromObject), BindingFlags.NonPublic | BindingFlags.Static)!;
+        var c1 = new CountingConstant();
+        var c2 = new CountingConstant();
+
+        // Not-yet-simplified: leftleft below is exactly this raw shape, mirroring how a nested rule's own
+        // unfixed-point return value would look (see this class's "second-pass" remarks) - here hand-built
+        // directly, since the point under test is what happens when THIS shape is simplified more than once,
+        // not how it was produced.
+        Expression inner = Expression.Add(
+            Expression.Multiply(Expression.Constant(2.0), Expression.Call(identity, Expression.Constant(c1, typeof(object)))),
+            Expression.Multiply(Expression.Constant(3.0), Expression.Call(identity, Expression.Constant(c2, typeof(object)))));
+
+        Expression left = Expression.Multiply(inner, x);
+        Expression right = Expression.Multiply(Expression.Constant(7.0), y);
+
+        Expression? result = InvokeAdditionOfEqualsElements(simplifier, left, right);
+
+        Assert.IsNull(result, "None of the four candidate comparisons should structurally match for this shape.");
+        Assert.AreEqual(2, c1.EqualsCallCount,
+            "c1.Equals must run once per comparison leftleft participates in (matching the pre-P3, uncached " +
+            "baseline exactly), not once per DISTINCT candidate reference - a cache must never reduce how " +
+            "many times a nested Simplify() call's own user code runs.");
+        Assert.AreEqual(0, c2.EqualsCallCount, "c2.Equals is never the receiver of the nested comparison (c1.Equals(c2) is called, not c2.Equals(c1)), so it must never be invoked in this shape.");
+    }
 }

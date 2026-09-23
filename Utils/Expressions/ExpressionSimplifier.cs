@@ -593,11 +593,38 @@ namespace Utils.Mathematics.Expressions
         /// VARIABLE refers to which of those four already-captured objects, never mutate an
         /// <see cref="Expression"/> instance itself (expression trees are immutable) or introduce a new
         /// object needing simplification. <see cref="ExpressionSimplifier.Simplify(Expression)"/> is a pure
-        /// function of its input for any single top-level call (see the roadmap's "Purity assumption" and
-        /// S4's "Independent top-level calls" remarks: every call establishes and restores its own ambient
-        /// lexical-scope boundary, so it never depends on when, or how many times, it was previously called),
-        /// so returning a cached simplified form for a reference already seen earlier in the SAME rule
-        /// invocation is indistinguishable from re-simplifying it.
+        /// function of its input's RESULT SHAPE for any single top-level call (see the roadmap's "Purity
+        /// assumption" and S4's "Independent top-level calls" remarks: every call establishes and restores
+        /// its own ambient lexical-scope boundary, so the shape it returns never depends on when, or how many
+        /// times, it was previously called) - but it is not necessarily side-effect-free DURING that call:
+        /// see "Side-effect safety" below for why caching is therefore restricted to operands proven not to
+        /// trigger user code while being simplified, not merely to operands whose simplified shape is stable.
+        /// </para>
+        /// <para>
+        /// <b>Side-effect safety (S5 P3 review round 6).</b> Simplifying a candidate operand can itself
+        /// dispatch a NESTED rule invocation - including a nested <c>AdditionOfEqualsElements</c>/
+        /// <c>SubstractionOfEqualsElements</c> call, with its own <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/>
+        /// probes - reachable purely because that operand happens to contain its own <c>Add</c>/<c>Subtract</c>/
+        /// <c>Multiply</c> structure. If such a nested probe reaches a non-safe (opaque, non-numeric,
+        /// non-known-safe) <see cref="ConstantExpression"/>, it invokes that constant's own possibly
+        /// user-defined <see cref="object.Equals(object?)"/>/<see cref="object.GetHashCode"/> - exactly the
+        /// PUBLIC comparer's documented, deliberately-preserved non-safe policy (see
+        /// <see cref="ExpressionComparer.StructuralEqualsAfterSimplification"/>'s remarks). Before this
+        /// review round, caching a candidate's simplified form unconditionally meant such user code ran ONCE
+        /// per DISTINCT candidate reference instead of once per COMPARISON that candidate participated in -
+        /// an observable reduction in invocation count for arbitrary user code, confirmed experimentally
+        /// (see the roadmap's S5 P3 round-6 entry: a stateful/counting constant nested two levels inside one
+        /// candidate's own subtree was invoked twice by the pre-P3 baseline but only once by the
+        /// then-shipped, unconditionally-caching implementation). <see cref="MightInvokeUserCodeWhenSimplified"/>
+        /// conservatively predicts this risk from a candidate's STATIC SHAPE alone - it never itself
+        /// simplifies or compares anything, so it never runs the very user code it is trying to avoid running
+        /// an extra time - and <see cref="GetSimplifiedIfCacheable"/> only caches (and therefore only
+        /// deduplicates re-simplification of) a candidate this predicate clears. A candidate it cannot clear
+        /// falls back, on EVERY comparison it participates in, to calling
+        /// <see cref="ExpressionComparer.Default"/>'s public <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/>
+        /// directly - the exact call, and therefore the exact user-code invocation count, this type replaces
+        /// for a cacheable candidate - so this type never reduces how many times user code observably runs
+        /// relative to the pre-existing per-comparison behavior, for any candidate.
         /// </para>
         /// <para>
         /// <b>Lifetime.</b> A fresh instance is created at the top of each
@@ -614,13 +641,19 @@ namespace Utils.Mathematics.Expressions
             /// (<c>leftleft</c>/<c>leftright</c>/<c>rightleft</c>/<c>rightright</c>), so a small
             /// fixed-capacity list - linearly scanned by reference equality - avoids a
             /// <see cref="Dictionary{TKey, TValue}"/>'s hashing/bucket overhead for so few entries.
+            /// <c>CanCache</c> records, once computed, whether <c>Simplified</c> holds a reusable cached form
+            /// (<see langword="true"/>) or is meaningless/<see langword="null"/> because
+            /// <see cref="MightInvokeUserCodeWhenSimplified"/> ruled the operand out (<see langword="false"/>).
             /// </summary>
-            private readonly List<(Expression Original, Expression Simplified)> _simplifiedCache = new(4);
+            private readonly List<(Expression Original, bool CanCache, Expression? Simplified)> _cache = new(4);
 
             /// <summary>
             /// Compares <paramref name="x"/> and <paramref name="y"/> exactly like the public
             /// <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/>, reusing a previously
-            /// simplified form for either operand when this instance has already computed one.
+            /// simplified form for either operand when this instance has already computed one AND that
+            /// operand was proven safe to cache (see "Side-effect safety" above) - otherwise falling back,
+            /// for this one comparison, to calling <see cref="ExpressionComparer.Default"/> directly, exactly
+            /// as every comparison did before this type existed.
             /// </summary>
             /// <param name="x">The first candidate operand.</param>
             /// <param name="y">The second candidate operand.</param>
@@ -629,23 +662,97 @@ namespace Utils.Mathematics.Expressions
             {
                 if (ExpressionComparer.TryFastPathEquals(x, y, out bool fastResult)) return fastResult;
 
-                return ExpressionComparer.StructuralEqualsAfterSimplification(GetSimplified(x), GetSimplified(y));
-            }
+                Expression? simplifiedX = GetSimplifiedIfCacheable(x, out bool canCacheX);
+                Expression? simplifiedY = GetSimplifiedIfCacheable(y, out bool canCacheY);
 
-            /// <summary>Returns <paramref name="original"/>'s simplified form, computing and caching it on the first request.</summary>
-            /// <param name="original">The candidate operand to simplify.</param>
-            /// <returns><paramref name="original"/>, simplified via <see cref="ExpressionComparer.SimplifyForComparison(Expression)"/>.</returns>
-            private Expression GetSimplified(Expression original)
-            {
-                foreach ((Expression cachedOriginal, Expression cachedSimplified) in _simplifiedCache)
+                if (!canCacheX || !canCacheY)
                 {
-                    if (ReferenceEquals(cachedOriginal, original)) return cachedSimplified;
+                    return ExpressionComparer.Default.Equals(x, y);
                 }
 
-                Expression simplified = ExpressionComparer.SimplifyForComparison(original);
-                _simplifiedCache.Add((original, simplified));
+                return ExpressionComparer.StructuralEqualsAfterSimplification(simplifiedX, simplifiedY);
+            }
+
+            /// <summary>
+            /// Returns <paramref name="original"/>'s simplified form and caches it, but ONLY when
+            /// <see cref="MightInvokeUserCodeWhenSimplified"/> has proven <paramref name="original"/> cannot
+            /// trigger user code while being simplified; otherwise simplification is skipped here entirely
+            /// (never cached, never even computed by this method) and <paramref name="canCache"/> reports
+            /// <see langword="false"/> so <see cref="Equals"/> falls back to the uncached public comparer for
+            /// this operand.
+            /// </summary>
+            /// <param name="original">The candidate operand to simplify.</param>
+            /// <param name="canCache">
+            /// <see langword="true"/> when the returned value is a valid, reusable simplified form;
+            /// <see langword="false"/> when <paramref name="original"/> was not proven safe to cache, in
+            /// which case the returned value is always <see langword="null"/> and must not be used.
+            /// </param>
+            /// <returns><paramref name="original"/>'s simplified form when <paramref name="canCache"/> is <see langword="true"/>; otherwise <see langword="null"/>.</returns>
+            private Expression? GetSimplifiedIfCacheable(Expression original, out bool canCache)
+            {
+                foreach ((Expression cachedOriginal, bool cachedCanCache, Expression? cachedSimplified) in _cache)
+                {
+                    if (ReferenceEquals(cachedOriginal, original))
+                    {
+                        canCache = cachedCanCache;
+                        return cachedSimplified;
+                    }
+                }
+
+                canCache = !MightInvokeUserCodeWhenSimplified(original);
+                Expression? simplified = canCache ? ExpressionComparer.SimplifyForComparison(original) : null;
+                _cache.Add((original, canCache, simplified));
                 return simplified;
             }
+
+            /// <summary>
+            /// Conservatively determines whether simplifying <paramref name="expression"/> could invoke
+            /// arbitrary user-defined code (a non-safe constant's own <see cref="object.Equals(object?)"/>/
+            /// <see cref="object.GetHashCode"/>, reached through some nested rule's own equality probe) -
+            /// see this type's "Side-effect safety" remarks for why this must be checked before caching.
+            /// </summary>
+            /// <remarks>
+            /// This walks <paramref name="expression"/>'s ENTIRE subtree by construction - not merely the
+            /// seven node kinds <see cref="ExpressionComparer"/> understands structurally - since a nested
+            /// rule invocation reachable during simplification is not limited to those seven kinds either
+            /// (for example, a <see cref="ConditionalExpression"/>'s branches are still simplified even
+            /// though <see cref="ExpressionComparer"/> treats the whole node as structurally opaque). Two
+            /// deliberate conservatism choices keep this safe rather than merely optimistic:
+            /// <list type="bullet">
+            /// <item>a <see cref="ConstantExpression"/> is "risky" unless its value is either a native
+            /// numeric type in <see cref="Types.Number"/> (compared via the exact rational/NaN/infinity
+            /// model, which never calls user code - see <c>ExpressionComparer.ExactNumericValue</c>) or a
+            /// known-safe type (see <see cref="ExpressionComparer.IsKnownSafeConstantValue(object)"/>);</item>
+            /// <item>any node kind this method does not explicitly recognize is treated as "risky" - this is
+            /// NOT <see cref="ExpressionVisitor"/>-based traversal, deliberately: <see cref="ExpressionVisitor"/>'s
+            /// default <c>VisitExtension</c>/<c>Expression.VisitChildren</c> throws
+            /// <see cref="ArgumentException"/> on a non-reducible <see cref="ExpressionType.Extension"/> node
+            /// (<see cref="Expression.CanReduce"/> <see langword="false"/>), which this safety CHECK must
+            /// never do even for adversarial/test-double node kinds (see
+            /// <c>ExpressionSimplifierAdditiveSortScaleTests</c>'s own such adversarial coverage) - a
+            /// conservative "true" for an unrecognized node kind achieves the same safe outcome without ever
+            /// touching that node's internals.</item>
+            /// </list>
+            /// </remarks>
+            /// <param name="expression">The candidate operand's subtree to scan, or <see langword="null"/> for an absent optional sub-expression.</param>
+            /// <returns><see langword="true"/> if simplifying <paramref name="expression"/> might invoke user-defined code; <see langword="false"/> only when this is proven impossible.</returns>
+            private static bool MightInvokeUserCodeWhenSimplified(Expression? expression) => expression switch
+            {
+                null => false,
+                ParameterExpression => false,
+                ConstantExpression ce => ce.Value is not null
+                    && !Types.Number.Contains(ce.Type)
+                    && !ExpressionComparer.IsKnownSafeConstantValue(ce.Value),
+                LambdaExpression le => MightInvokeUserCodeWhenSimplified(le.Body),
+                UnaryExpression ue => MightInvokeUserCodeWhenSimplified(ue.Operand),
+                BinaryExpression be => MightInvokeUserCodeWhenSimplified(be.Left)
+                    || MightInvokeUserCodeWhenSimplified(be.Right)
+                    || MightInvokeUserCodeWhenSimplified(be.Conversion),
+                MethodCallExpression mce => MightInvokeUserCodeWhenSimplified(mce.Object)
+                    || mce.Arguments.Any(MightInvokeUserCodeWhenSimplified),
+                MemberExpression me => MightInvokeUserCodeWhenSimplified(me.Expression),
+                _ => true,
+            };
         }
 
         /// <summary>
