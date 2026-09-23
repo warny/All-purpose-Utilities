@@ -10,6 +10,19 @@ namespace UtilsTest.NumberToString;
 [TestClass]
 public class NumberToStringConverterClockTimeTests
 {
+    /// <summary>Verifies concrete ordinal overloads fail closed when no ordinal implementation exists.</summary>
+    [TestMethod]
+    public void ConvertOrdinal_UnsupportedConverter_ThrowsForIntAndLong()
+    {
+        NumberToStringConverter converter = CreateWithoutOrdinalSupport();
+
+        Assert.IsFalse(converter.SupportsOrdinals);
+        Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertOrdinal(1));
+        Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertOrdinal(21));
+        Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertOrdinal(1L));
+        Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertOrdinal(21L));
+    }
+
     /// <summary>Verifies nearest rounding, forward half-step ties, and midnight wrapping.</summary>
     [TestMethod]
     public void ConvertClockTime_RoundsNearestWithForwardTies()
@@ -292,6 +305,170 @@ public class NumberToStringConverterClockTimeTests
         Assert.AreEqual("première", new NumberToStringConverter(options).ConvertClockTime(new TimeOnly(1, 0)));
     }
 
+    /// <summary>Verifies display-hour conditions select different rules at the same minute in a 12-hour cycle.</summary>
+    [TestMethod]
+    public void ConvertClockTime_DisplayHourRange_SelectsByProjectedHour()
+    {
+        ClockTimeRule[] rules =
+        [
+            new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{hour}"),
+            new(new IntRange<int>("30"), 0, ClockHourForm.Cardinal, "one:{hour}") { DisplayHourRange = new IntRange<int>("1") },
+            new(new IntRange<int>("30"), 0, ClockHourForm.Cardinal, "two:{hour}") { DisplayHourRange = new IntRange<int>("2") },
+            new(new IntRange<int>("30"), 0, ClockHourForm.Cardinal, "other:{hour}") { DisplayHourRange = new IntRange<int>("3-12") },
+        ];
+        NumberToStringConverter converter = Create(30, rules, hourCycle: 12);
+
+        Assert.AreEqual("other:twelve", converter.ConvertClockTime(new TimeOnly(0, 30)));
+        Assert.AreEqual("one:one", converter.ConvertClockTime(new TimeOnly(1, 30)));
+        Assert.AreEqual("two:two", converter.ConvertClockTime(new TimeOnly(2, 30)));
+        Assert.AreEqual("one:one", converter.ConvertClockTime(new TimeOnly(13, 30)));
+        Assert.AreEqual("other:eleven", converter.ConvertClockTime(new TimeOnly(23, 30)));
+    }
+
+    /// <summary>Verifies each candidate's own offset is used while evaluating its display-hour condition.</summary>
+    [TestMethod]
+    public void ConvertClockTime_DisplayHourRange_UsesCandidateOffset()
+    {
+        ClockTimeRule[] rules =
+        [
+            new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{hour}"),
+            new(new IntRange<int>("30"), 0, ClockHourForm.Cardinal, "current {hour}") { DisplayHourRange = new IntRange<int>("1") },
+            new(new IntRange<int>("30"), 1, ClockHourForm.Cardinal, "shifted {hour}") { DisplayHourRange = new IntRange<int>("1") },
+            new(new IntRange<int>("30"), 0, ClockHourForm.Cardinal, "remaining {hour}") { DisplayHourRange = new IntRange<int>("2-11") },
+        ];
+        NumberToStringConverter converter = Create(30, rules, hourCycle: 12);
+
+        Assert.AreEqual("shifted one", converter.ConvertClockTime(new TimeOnly(0, 30)));
+        Assert.AreEqual("current one", converter.ConvertClockTime(new TimeOnly(1, 30)));
+        Assert.AreEqual("remaining two", converter.ConvertClockTime(new TimeOnly(2, 30)));
+    }
+
+    /// <summary>Verifies display-hour conditions retain the full 0-through-23 projection in a 24-hour cycle.</summary>
+    [TestMethod]
+    public void ConvertClockTime_DisplayHourRange_UsesTwentyFourHourProjection()
+    {
+        ClockTimeRule[] rules =
+        [
+            new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "edge {hour}")
+            {
+                DisplayHourRange = new IntRange<int>("0,1,12,13,23"),
+            },
+            new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "middle {hour}")
+            {
+                DisplayHourRange = new IntRange<int>("2-11,14-22"),
+            },
+        ];
+        NumberToStringConverter converter = Create(60, rules, hourCycle: 24);
+
+        Assert.AreEqual("edge midnight", converter.ConvertClockTime(new TimeOnly(0, 0)));
+        Assert.AreEqual("edge one", converter.ConvertClockTime(new TimeOnly(1, 0)));
+        Assert.AreEqual("edge noon", converter.ConvertClockTime(new TimeOnly(12, 0)));
+        Assert.AreEqual("edge thirteen", converter.ConvertClockTime(new TimeOnly(13, 0)));
+        Assert.AreEqual("edge twenty-three", converter.ConvertClockTime(new TimeOnly(23, 0)));
+    }
+
+    /// <summary>Verifies hour-conditioned gaps, overlaps, and out-of-cycle values fail during construction.</summary>
+    [TestMethod]
+    public void Constructor_DisplayHourRange_RejectsInvalidCoverage()
+    {
+        ClockTimeRule[] gap =
+        [
+            new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{hour}") { DisplayHourRange = new IntRange<int>("1-11") },
+        ];
+        ClockTimeRule[] overlap =
+        [
+            new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{hour}") { DisplayHourRange = new IntRange<int>("1-6") },
+            new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{hour}") { DisplayHourRange = new IntRange<int>("6-12") },
+        ];
+        ArgumentException gapException = Assert.ThrowsExactly<ArgumentException>(() => Create(60, gap, hourCycle: 12));
+        ArgumentException overlapException = Assert.ThrowsExactly<ArgumentException>(() => Create(60, overlap, hourCycle: 12));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => Create(60,
+            [new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{hour}") { DisplayHourRange = new IntRange<int>("0-12") }], hourCycle: 12));
+        StringAssert.Contains(gapException.Message, "source hour");
+        StringAssert.Contains(gapException.Message, "minute 0");
+        StringAssert.Contains(overlapException.Message, "source hour");
+        StringAssert.Contains(overlapException.Message, "minute 0");
+    }
+
+    /// <summary>Verifies rule selection occurs before special-hour lexical replacement.</summary>
+    [TestMethod]
+    public void ConvertClockTime_DisplayHourRange_PrecedesSpecialHourReplacement()
+    {
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        {
+            SpecialHours = [new(0, "midnight", WholeHour: true)],
+            ClockTime = new ClockTimeFormatOptions
+            {
+                Step = 60,
+                HourCycle = 12,
+                Rules =
+                [
+                    new ClockTimeRule(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "special {hour}")
+                    {
+                        DisplayHourRange = new IntRange<int>("12"),
+                    },
+                    new ClockTimeRule(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "ordinary {hour}")
+                    {
+                        DisplayHourRange = new IntRange<int>("1-11"),
+                    },
+                ],
+            },
+        };
+
+        Assert.AreEqual("special midnight", new NumberToStringConverter(options).ConvertClockTime(new TimeOnly(0, 0)));
+    }
+
+    /// <summary>Verifies a plugin-only ordinal implementation advertises support and renders ordinal clock hours.</summary>
+    [TestMethod]
+    public void ConvertClockTime_PluginOnlyOrdinal_IsSupported()
+    {
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        {
+            OrdinalSuffix = null,
+            OrdinalPrefix = null,
+            OrdinalExceptions = new Dictionary<long, string>(),
+            OrdinalWordRules = new Dictionary<string, string>(),
+            OrdinalVariants = [],
+            LanguageSpecifics = new ClockOrdinalPlugin(),
+            ClockTime = new ClockTimeFormatOptions
+            {
+                Step = 60,
+                Rules = [new(new IntRange<int>("0"), 0, ClockHourForm.Ordinal, "hour {hour}")],
+            },
+        };
+        var converter = new NumberToStringConverter(options);
+
+        Assert.IsTrue(converter.SupportsOrdinals);
+        Assert.AreEqual("ordinal-2", converter.ConvertOrdinal(2));
+        Assert.AreEqual("hour ordinal-2", converter.ConvertClockTime(new TimeOnly(2, 0)));
+    }
+
+    /// <summary>Verifies a plugin-only converter fails closed when its plugin declines a value.</summary>
+    [TestMethod]
+    public void ConvertOrdinal_PluginOnlyDeclinesValue_ThrowsWithoutCardinalFallback()
+    {
+        NumberToStringConverter converter = CreatePluginOnlyOrdinalConverter(new PartialClockOrdinalPlugin());
+
+        Assert.IsTrue(converter.SupportsOrdinals);
+        Assert.AreEqual("plugin-first", converter.ConvertOrdinal(1));
+        Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertOrdinal(2));
+        Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertOrdinal((long)int.MaxValue + 1));
+    }
+
+    /// <summary>Verifies a declining plugin delegates to a genuine declarative ordinal pipeline when configured.</summary>
+    [TestMethod]
+    public void ConvertOrdinal_PluginDeclinesValue_UsesDeclarativeFallback()
+    {
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        {
+            LanguageSpecifics = new PartialClockOrdinalPlugin(),
+        };
+        var converter = new NumberToStringConverter(options);
+
+        Assert.AreEqual("plugin-first", converter.ConvertOrdinal(1));
+        Assert.AreEqual("second", converter.ConvertOrdinal(2));
+    }
+
     /// <summary>Verifies null and unused clock forcings are rejected during construction.</summary>
     [TestMethod]
     public void Constructor_ClockForcedVariants_RejectsNullAndUnusedValues()
@@ -336,6 +513,34 @@ public class NumberToStringConverterClockTimeTests
         return new NumberToStringConverter(options);
     }
 
+    /// <summary>Creates a synthetic converter with neither declarative nor plugin ordinal support.</summary>
+    private static NumberToStringConverter CreateWithoutOrdinalSupport()
+    {
+        var options = CreateOptionsWithoutDeclarativeOrdinalSupport();
+        options.LanguageSpecifics = new DefaultNumberToStringLanguageSpecifics();
+        return new NumberToStringConverter(options);
+    }
+
+    /// <summary>Creates a synthetic plugin-only ordinal converter.</summary>
+    private static NumberToStringConverter CreatePluginOnlyOrdinalConverter(PartialClockOrdinalPlugin plugin)
+    {
+        var options = CreateOptionsWithoutDeclarativeOrdinalSupport();
+        options.LanguageSpecifics = plugin;
+        return new NumberToStringConverter(options);
+    }
+
+    /// <summary>Creates options with all declarative ordinal mechanisms removed.</summary>
+    private static NumberToStringConverterOptions CreateOptionsWithoutDeclarativeOrdinalSupport()
+        => new(NumberToStringConverter.GetConverter("EN"))
+        {
+            OrdinalSuffix = null,
+            OrdinalPrefix = null,
+            OrdinalExceptions = new Dictionary<long, string>(),
+            OrdinalWordRules = new Dictionary<string, string>(),
+            OrdinalVariants = [],
+            ClockTime = null,
+        };
+
     /// <summary>Creates a complete five-minute rule list suitable for validation helpers.</summary>
     private static List<ClockTimeRule> ValidRules()
         => [new(new IntRange<int>("0,5,10,15,20,25,30,35,40,45,50,55"), 0, ClockHourForm.Cardinal, "{hour}")];
@@ -357,5 +562,33 @@ public class NumberToStringConverterClockTimeTests
             },
         };
         return new NumberToStringConverter(options);
+    }
+
+    /// <summary>Provides a synthetic plugin-only ordinal implementation for capability tests.</summary>
+    private sealed class ClockOrdinalPlugin : INumberToStringLanguageSpecifics, IOrdinalLanguageSpecifics
+    {
+        /// <summary>Returns the supplied text unchanged.</summary>
+        public string FinalizeWriting(string language, string text) => text;
+
+        /// <summary>Returns a deterministic synthetic ordinal for every integer.</summary>
+        public bool TryConvertOrdinal(int number, IReadOnlyDictionary<string, string> activeVariants, out string? result)
+        {
+            result = $"ordinal-{number}";
+            return true;
+        }
+    }
+
+    /// <summary>Provides an int-only ordinal plugin that deliberately handles only the value one.</summary>
+    private sealed class PartialClockOrdinalPlugin : INumberToStringLanguageSpecifics, IOrdinalLanguageSpecifics
+    {
+        /// <summary>Returns the supplied text unchanged.</summary>
+        public string FinalizeWriting(string language, string text) => text;
+
+        /// <summary>Handles one and declines every other value.</summary>
+        public bool TryConvertOrdinal(int number, IReadOnlyDictionary<string, string> activeVariants, out string? result)
+        {
+            result = number == 1 ? "plugin-first" : null;
+            return number == 1;
+        }
     }
 }

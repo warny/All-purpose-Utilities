@@ -1734,6 +1734,9 @@ namespace Utils.NumberToString
                         r.AmountReferenceSpecified ? r.AmountReference : null,
                         r.AmountDirectionSpecified ? r.AmountDirection : null)
                     {
+                        DisplayHourRange = string.IsNullOrWhiteSpace(r.DisplayHourRange)
+                            ? null
+                            : new IntRange<int>(r.DisplayHourRange),
                         HourForcedVariants = ForcedVariantSet.Parse(r.HourForceVariants, languageIdentifier, $"ClockTime[{r.Range}].HourForcedVariants"),
                         AmountForcedVariants = ForcedVariantSet.Parse(r.AmountForceVariants, languageIdentifier, $"ClockTime[{r.Range}].AmountForcedVariants"),
                     }).ToArray() ?? [],

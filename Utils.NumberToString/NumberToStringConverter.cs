@@ -595,12 +595,16 @@ namespace Utils.NumberToString
         /// <summary>Gets the connector inserted between date and time in DateTime conversion.</summary>
         public string? DateTimeConnector => _dateTimeConnector;
 
-        /// <inheritdoc/>
-        public bool SupportsOrdinals =>
+        /// <summary>Gets whether declarative XML or programmatic ordinal rules provide a fallback pipeline.</summary>
+        private bool HasDeclarativeOrdinalSupport =>
             OrdinalSuffix != null || OrdinalPrefix != null
             || OrdinalExceptions.Count > 0
             || OrdinalWordRules.Count > 0
             || OrdinalVariants.Count > 0;
+
+        /// <inheritdoc/>
+        public bool SupportsOrdinals =>
+            HasDeclarativeOrdinalSupport || LanguageSpecifics is IOrdinalLanguageSpecifics;
 
         private readonly ImmutableDictionary<string, string> _replacementLookup;
         private readonly ImmutableArray<ReplacementRule> _substringReplacements;
@@ -620,7 +624,7 @@ namespace Utils.NumberToString
         private readonly ImmutableDictionary<string, TimeUnitDefinition> _timeUnits;
         private readonly ImmutableDictionary<int, SpecialHourRule> _specialHours;
         private readonly ClockTimeFormatOptions? _clockTime;
-        private readonly ImmutableDictionary<int, CompiledClockTimeRule> _clockRules;
+        private readonly ImmutableArray<CompiledClockTimeRule?> _clockRules;
         private readonly ImmutableDictionary<string, (string Singular, string Plural, string? Count1Form)> _timeUnitsPublic;
         private readonly ImmutableDictionary<string, ForcedVariantSet> _timeUnitForcedVariantsPublic;
         private readonly ImmutableDictionary<string, LexicalFormSet> _timeUnitFormsPublic;
@@ -1919,6 +1923,7 @@ namespace Utils.NumberToString
         /// <inheritdoc cref="INumberToStringConverter.ConvertOrdinal(long, string[])"/>
         public string ConvertOrdinal(long number, params string[] variants)
         {
+            EnsureOrdinalSupported();
             if (number == long.MinValue)
                 throw new ArgumentOutOfRangeException(nameof(number),
                     "long.MinValue cannot be converted to ordinal because its absolute value exceeds long.MaxValue.");
@@ -1947,12 +1952,32 @@ namespace Utils.NumberToString
             activeVariants ??= BuildVariantQuery(variants);
             bool explicitVariantIntent = hasExplicitVariantIntent ?? variants.Length > 0;
             string ordinal;
-            if (LanguageSpecifics is IOrdinalLanguageSpecifics ordinalPlugin
-                && ordinalPlugin.TryConvertOrdinal(number, activeVariants, out var pluginResult))
-                ordinal = pluginResult!;
-            else
+            if (LanguageSpecifics is IOrdinalLanguageSpecifics ordinalPlugin)
             {
+                if (ordinalPlugin.TryConvertOrdinal(number, activeVariants, out var pluginResult))
+                    ordinal = pluginResult!;
+                else if (!HasDeclarativeOrdinalSupport)
+                    throw new NotSupportedException(
+                        $"Language '{LanguageIdentifier}' has no ordinal fallback for value {number}.");
+                else
+                    ordinal = BuildDeclarativeOrdinalFragment(number, activeVariants, explicitVariantIntent);
+            }
+            else
+                ordinal = BuildDeclarativeOrdinalFragment(number, activeVariants, explicitVariantIntent);
+            ordinal = ApplyRawAdjustment(ordinal);
+            return ApplyTriggers(ordinal, TriggerAt.End, null, activeVariants);
+        }
 
+        /// <summary>Builds an ordinal fragment using configured exceptions, variants, word rules, and affixes.</summary>
+        /// <param name="number">The non-negative ordinal value.</param>
+        /// <param name="activeVariants">The resolved variant query.</param>
+        /// <param name="explicitVariantIntent">Whether a caller or constituent explicitly selected a variant.</param>
+        /// <returns>The unadjusted declarative ordinal fragment.</returns>
+        private string BuildDeclarativeOrdinalFragment(
+            long number,
+            IReadOnlyDictionary<string, string> activeVariants,
+            bool explicitVariantIntent)
+        {
             // Find the most specific matching ordinal variant
             OrdinalVariantRule? activeVariant = FindBestOrdinalVariant(activeVariants);
 
@@ -1961,22 +1986,19 @@ namespace Utils.NumberToString
             // exception over the explicit string= base form. Check OrdinalExceptions first
             // so that string="form" is treated as the true no-variant fallback.
             if (!explicitVariantIntent && OrdinalExceptions.TryGetValue(number, out var baseException))
-                ordinal = baseException;
+                return baseException;
 
             // Exceptions: variant first, then base
             else if (activeVariant?.Exceptions.TryGetValue(number, out var varException) == true)
-                ordinal = varException;
+                return varException;
             else if (OrdinalExceptions.TryGetValue(number, out var exception))
-                ordinal = exception;
+                return exception;
             else
             {
                 string raw = number == 0 ? Zero : ConvertRaw((BigInteger)number, activeVariants);
                 raw = ApplyVariantRules(raw, activeVariants, number);
-                ordinal = ApplyOrdinalTransform(raw, activeVariant, noExplicitVariants: !explicitVariantIntent);
+                return ApplyOrdinalTransform(raw, activeVariant, noExplicitVariants: !explicitVariantIntent);
             }
-            }
-            ordinal = ApplyRawAdjustment(ordinal);
-            return ApplyTriggers(ordinal, TriggerAt.End, null, activeVariants);
         }
 
         private OrdinalVariantRule? FindBestOrdinalVariant(IReadOnlyDictionary<string, string> query)
@@ -1990,6 +2012,7 @@ namespace Utils.NumberToString
         /// <inheritdoc cref="INumberToStringConverter.ConvertOrdinal(BigInteger)"/>
         public string ConvertOrdinal(BigInteger number)
         {
+            EnsureOrdinalSupported();
             if (number < long.MinValue || number > long.MaxValue)
                 throw new ArgumentOutOfRangeException(nameof(number),
                     $"Ordinal conversion is limited to the range [{long.MinValue}, {long.MaxValue}]. " +
@@ -2000,6 +2023,7 @@ namespace Utils.NumberToString
         /// <inheritdoc cref="INumberToStringConverter.ConvertOrdinal(BigInteger, string[])"/>
         public string ConvertOrdinal(BigInteger number, params string[] variants)
         {
+            EnsureOrdinalSupported();
             if (number < long.MinValue || number > long.MaxValue)
                 throw new ArgumentOutOfRangeException(nameof(number),
                     $"Ordinal conversion is limited to the range [{long.MinValue}, {long.MaxValue}]. " +
@@ -2258,11 +2282,18 @@ namespace Utils.NumberToString
             return BuildCardinalFragment(count, query) + Separator + word;
         }
 
-        /// <summary>Validates and snapshots idiomatic clock-time options into a minute lookup.</summary>
-        private (ClockTimeFormatOptions? Options, ImmutableDictionary<int, CompiledClockTimeRule> Rules) CompileClockTime(ClockTimeFormatOptions? options)
+        /// <summary>Throws when this converter has no effective ordinal implementation.</summary>
+        private void EnsureOrdinalSupported()
+        {
+            if (!SupportsOrdinals)
+                throw new NotSupportedException($"Language '{LanguageIdentifier}' does not support ordinal conversion.");
+        }
+
+        /// <summary>Validates and snapshots idiomatic clock-time options into a source-hour/minute lookup.</summary>
+        private (ClockTimeFormatOptions? Options, ImmutableArray<CompiledClockTimeRule?> Rules) CompileClockTime(ClockTimeFormatOptions? options)
         {
             if (options == null)
-                return (null, ImmutableDictionary<int, CompiledClockTimeRule>.Empty);
+                return (null, ImmutableArray<CompiledClockTimeRule?>.Empty);
             if (options.Step <= 0 || options.Step > 60)
                 throw new ArgumentOutOfRangeException(nameof(options), "ClockTime.Step must be between 1 and 60 minutes.");
             if (60 % options.Step != 0)
@@ -2272,8 +2303,9 @@ namespace Utils.NumberToString
             if (options.Rules == null)
                 throw new ArgumentException("ClockTime.Rules must not be null.", nameof(options));
 
-            var lookup = ImmutableDictionary.CreateBuilder<int, CompiledClockTimeRule>();
+            var lookup = new CompiledClockTimeRule?[24 * 60];
             var snapshots = new List<ClockTimeRule>();
+            var compiledRules = new List<(int Index, CompiledClockTimeRule Rule, int[] Minutes)>();
             var permitted = new IntRange<int>("0-59");
             for (int index = 0; index < options.Rules.Count; index++)
             {
@@ -2296,6 +2328,23 @@ namespace Utils.NumberToString
                     throw new ArgumentException($"ClockTime rule range '{rule.Range}' is empty.", nameof(options));
                 if (minutes.Any(m => m % options.Step != 0))
                     throw new ArgumentException($"ClockTime rule range '{rule.Range}' contains a minute position not aligned to step {options.Step}.", nameof(options));
+                int minimumDisplayHour = options.HourCycle == 12 ? 1 : 0;
+                int maximumDisplayHour = options.HourCycle == 12 ? 12 : 23;
+                int[]? displayHours = rule.DisplayHourRange == null
+                    ? null
+                    : Enumerable.Range(minimumDisplayHour, maximumDisplayHour - minimumDisplayHour + 1)
+                        .Where(rule.DisplayHourRange.Contains).ToArray();
+                if (rule.DisplayHourRange != null)
+                {
+                    var permittedHours = new IntRange<int>($"{minimumDisplayHour}-{maximumDisplayHour}");
+                    string? outsideHours = (rule.DisplayHourRange - permittedHours).ToString();
+                    if (rule.DisplayHourRange.Contains(minimumDisplayHour - 1)
+                        || rule.DisplayHourRange.Contains(maximumDisplayHour + 1)
+                        || outsideHours is { Length: > 0 })
+                        throw new ArgumentOutOfRangeException(nameof(options), $"ClockTime rule range '{rule.Range}' has displayHourRange '{rule.DisplayHourRange}' outside {minimumDisplayHour}..{maximumDisplayHour}.");
+                    if (displayHours!.Length == 0)
+                        throw new ArgumentException($"ClockTime rule range '{rule.Range}' has an empty displayHourRange.", nameof(options));
+                }
                 if (string.IsNullOrWhiteSpace(rule.Pattern))
                     throw new ArgumentException($"ClockTime rule range '{rule.Range}' has an empty pattern.", nameof(options));
                 ValidateClockPattern(rule.Pattern, rule.Range.ToString() ?? string.Empty);
@@ -2321,9 +2370,13 @@ namespace Utils.NumberToString
                     throw new ArgumentException($"ClockTime rule range '{rule.Range}' produces a negative amount.", nameof(options));
 
                 var rangeSnapshot = new IntRange<int>(string.Join(",", minutes));
+                var displayHourRangeSnapshot = displayHours == null
+                    ? null
+                    : new IntRange<int>(string.Join(",", displayHours));
                 var snapshot = rule with
                 {
                     Range = rangeSnapshot,
+                    DisplayHourRange = displayHourRangeSnapshot,
                     HourForcedVariants = hourForced,
                     AmountForcedVariants = amountForced,
                 };
@@ -2331,18 +2384,45 @@ namespace Utils.NumberToString
                 var compiled = new CompiledClockTimeRule(
                     snapshot,
                     ClockPatternFormatBuilder.Create<Func<string, string, string>>(snapshot.Pattern, "hour", "amount"));
-                foreach (int minute in minutes)
+                compiledRules.Add((index, compiled, minutes));
+            }
+            var matchedRules = new bool[compiledRules.Count];
+            foreach (var candidate in compiledRules)
+            {
+                foreach (int sourceHour in Enumerable.Range(0, 24))
                 {
-                    if (lookup.TryGetValue(minute, out var previous))
-                        throw new ArgumentException($"ClockTime rule ranges '{previous.Rule.Range}' and '{rule.Range}' overlap at minute {minute}.", nameof(options));
-                    lookup.Add(minute, compiled);
+                    int displayHour = ProjectClockDisplayHour(sourceHour, candidate.Rule.Rule.HourOffset, options.HourCycle);
+                    if (candidate.Rule.Rule.DisplayHourRange?.Contains(displayHour) == false)
+                        continue;
+                    foreach (int minute in candidate.Minutes)
+                    {
+                        int position = sourceHour * 60 + minute;
+                        if (lookup[position] is { } previous)
+                            throw new ArgumentException($"ClockTime rules '{previous.Rule.Range}' and '{candidate.Rule.Rule.Range}' overlap/conflict at source hour {sourceHour}, minute {minute}.", nameof(options));
+                        lookup[position] = candidate.Rule;
+                        matchedRules[candidate.Index] = true;
+                    }
                 }
             }
-            foreach (int minute in Enumerable.Range(0, 60).Where(m => m % options.Step == 0))
-                if (!lookup.ContainsKey(minute))
-                    throw new ArgumentException($"ClockTime has no rule for reachable minute position {minute}.", nameof(options));
+            for (int index = 0; index < matchedRules.Length; index++)
+                if (!matchedRules[index])
+                    throw new ArgumentException($"ClockTime.Rules[{index}] cannot match any source hour and reachable minute.", nameof(options));
+            foreach (int sourceHour in Enumerable.Range(0, 24))
+                foreach (int minute in Enumerable.Range(0, 60).Where(m => m % options.Step == 0))
+                    if (lookup[sourceHour * 60 + minute] == null)
+                        throw new ArgumentException($"ClockTime has no rule for source hour {sourceHour}, minute {minute}.", nameof(options));
 
-            return (new ClockTimeFormatOptions { Step = options.Step, HourCycle = options.HourCycle, Rules = snapshots.ToArray() }, lookup.ToImmutable());
+            return (new ClockTimeFormatOptions { Step = options.Step, HourCycle = options.HourCycle, Rules = snapshots.ToArray() }, [.. lookup]);
+        }
+
+        /// <summary>Applies a candidate rule's offset and projects its reference hour into the configured cycle.</summary>
+        private static int ProjectClockDisplayHour(int sourceHour, int hourOffset, int hourCycle)
+        {
+            int normalizedOffset = hourOffset % 24;
+            int referenceHour24 = (sourceHour + normalizedOffset + 24) % 24;
+            return hourCycle == 12
+                ? (referenceHour24 == 0 ? 12 : ((referenceHour24 - 1) % 12) + 1)
+                : referenceHour24;
         }
 
         /// <summary>Validates that a clock pattern contains only supported, balanced placeholders.</summary>
@@ -2444,7 +2524,8 @@ namespace Utils.NumberToString
         /// <summary>Builds an idiomatic, unfinalized clock-time fragment from an already rounded value.</summary>
         private string BuildClockTimeFragment(TimeOnly rounded, bool replaceSpecialHours, string[] variants)
         {
-            CompiledClockTimeRule compiledRule = _clockRules[rounded.Minute];
+            CompiledClockTimeRule compiledRule = _clockRules[rounded.Hour * 60 + rounded.Minute]
+                ?? throw new InvalidOperationException("The validated clock-time lookup is incomplete.");
             ClockTimeRule rule = compiledRule.Rule;
             var baseQuery = BuildVariantQuery(variants);
             var hourQuery = rule.HourForcedVariants.Overlay(baseQuery);
@@ -2458,9 +2539,7 @@ namespace Utils.NumberToString
                 hourText = special.Value;
             else
             {
-                int displayHour = _clockTime!.HourCycle == 12
-                    ? (referenceHour24 == 0 ? 12 : ((referenceHour24 - 1) % 12) + 1)
-                    : referenceHour24;
+                int displayHour = ProjectClockDisplayHour(rounded.Hour, rule.HourOffset, _clockTime!.HourCycle);
                 hourText = rule.HourForm switch
                 {
                     ClockHourForm.Cardinal => BuildCardinalFragment(displayHour, hourQuery),

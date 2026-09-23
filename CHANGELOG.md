@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added — `omy.Utils.NumberToString`
+- Added the additive `ClockTimeRule.DisplayHourRange` property and matching
+  `displayHourRange` XML/XSD attribute. Clock rules can now vary by the projected hour after each
+  candidate rule's offset and the configured hour cycle; construction validates complete,
+  non-overlapping coverage and precompiles a 24-by-60 O(1) lookup.
 - Added independent `ClockTimeRule.HourForcedVariants` and `AmountForcedVariants` init-only
   properties plus the XML attributes `hourForceVariants` and `amountForceVariants`. Clock rules
   now canonicalize aliases at construction, reject dead forcings, preserve caller dimensions,
@@ -18,6 +22,13 @@ All notable changes to this project will be documented in this file.
   built-in French and German rules. Clock patterns are strictly validated and precompiled through
   `StringFormatBuilder`, so inserted values are never rescanned as template text; exact-only versus
   whole-hour special-hour semantics and hour-form capabilities are validated consistently.
+
+### Fixed — `omy.Utils.NumberToString`
+- Concrete ordinal conversion now throws `NotSupportedException` when `SupportsOrdinals` is
+  false, matching the documented interface contract. An `IOrdinalLanguageSpecifics` plugin now
+  contributes to `SupportsOrdinals`, including for ordinal clock-hour validation. Plugin-only
+  converters also fail closed when the plugin declines a value; plugin-to-XML fallback remains
+  available only when a declarative ordinal pipeline is actually configured.
 - **`SpecialHourRule`**: generic, per-hour word replacement for time-of-day rendering (e.g.
   "midnight" for hour 0, "noon" for hour 12), configurable via `<SpecialHour hour="..." value="..."
   wholeHour="...">` inside `<TimeUnits>` or programmatically via

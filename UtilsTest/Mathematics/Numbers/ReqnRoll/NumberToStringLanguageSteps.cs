@@ -215,6 +215,14 @@ public sealed class NumberToStringLanguageSteps
     [Then("the converter does not support time conversion")]
     public void ThenTheConverterDoesNotSupportTimeConversion() => Assert.IsFalse(Converter.SupportsTimeConversion);
 
+    /// <summary>Verifies that the selected converter advertises idiomatic clock-time conversion.</summary>
+    [Then("the converter supports clock-time conversion")]
+    public void ThenTheConverterSupportsClockTimeConversion() => Assert.IsTrue(Converter.SupportsClockTimeConversion);
+
+    /// <summary>Verifies that the selected converter does not advertise idiomatic clock-time conversion.</summary>
+    [Then("the converter does not support clock-time conversion")]
+    public void ThenTheConverterDoesNotSupportClockTimeConversion() => Assert.IsFalse(Converter.SupportsClockTimeConversion);
+
     /// <summary>Verifies that the selected converter advertises date conversion.</summary>
     [Then("the converter supports date conversion")]
     public void ThenTheConverterSupportsDateConversion() => Assert.IsTrue(Converter.SupportsDateConversion);

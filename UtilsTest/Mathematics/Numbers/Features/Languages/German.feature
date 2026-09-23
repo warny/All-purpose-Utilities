@@ -1,6 +1,15 @@
 @NumberToString @DE
 Feature: German number conversion
 
+Scenario Outline: Idiomatic clock-time conversion is supported locally and by inheritance
+    Given I use the "<converter>" number converter
+    Then the converter supports clock-time conversion
+
+Examples:
+    | converter |
+    | DE        |
+    | de-CH     |
+
 Scenario Outline: Idiomatic clock-face times
     Given I use the "de-DE" number converter
     When I convert the clock time "<time>"

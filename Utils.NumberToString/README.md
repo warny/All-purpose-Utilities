@@ -1779,7 +1779,7 @@ string clock = french.ConvertClockTime(new TimeOnly(1, 28)); // une heure et dem
 ```
 
 A `ClockTime` section contains a positive minute `step` that divides 60 and complete, non-overlapping rules for
-every reachable position. Nearest rounding is used and an exact half-step rounds forward. Each
+every reachable source-hour/minute position. Nearest rounding is used and an exact half-step rounds forward. Each
 `range` uses an `IntRange<int>`-based syntax restricted in XML to comma-separated non-negative
 values and inclusive ranges. Programmatic `IntRange<int>` values retain their complete native
 syntax. Validation is deliberately strict: every member of a range must be in `0..59` and
@@ -1794,6 +1794,23 @@ divisible by `step`, so use `range="5,10"`, not `range="5-10"`, for a five-minut
   <Rule range="55" hourOffset="1" hourForm="timeUnit"
         amountReference="60" amountDirection="before" pattern="{hour} moins {amount}" />
 </ClockTime>
+```
+
+`displayHourRange` optionally conditions a rule on the numeric hour that `{hour}` would render.
+It is evaluated independently for each candidate after that rule's `hourOffset` and after
+`hourCycle` projection (`1..12` for a 12-hour cycle, `0..23` for a 24-hour cycle), but before any
+`SpecialHourRule` replaces the hour text. Consequently, multiple rules may share the same minute
+`range` when their display-hour conditions are disjoint. The converter validates every reachable
+source-hour/minute pair and snapshots both ranges while constructing a precompiled 1,440-entry
+lookup; `ConvertClockTime` performs a direct O(1) lookup rather than searching rules.
+
+```xml
+<Rule range="30" displayHourRange="1" hourOffset="0"
+      hourForm="cardinal" pattern="special one-thirty" />
+<Rule range="30" displayHourRange="2" hourOffset="0"
+      hourForm="cardinal" pattern="special two-thirty" />
+<Rule range="30" displayHourRange="3-12" hourOffset="0"
+      hourForm="cardinal" pattern="half {hour}" />
 ```
 
 `hourOffset` selects the reference hour modulo 24. Special-hour rules match that 24-hour reference
@@ -1837,6 +1854,14 @@ do not have clock-face semantics.
 
 With XML `baseOn`, an absent `ClockTime` inherits the complete parent section; a present section
 replaces it as a whole. Rules are never merged individually. Programmatic options are validated
-and snapshotted into a minute lookup during converter construction.
+and snapshotted into the hour/minute lookup during converter construction.
+
+`SupportsOrdinals` includes ordinal implementations supplied solely by
+`IOrdinalLanguageSpecifics`. If neither XML ordinal rules nor such a plugin is available, every
+concrete `ConvertOrdinal` overload fails closed with `NotSupportedException` rather than returning
+an unchanged cardinal. A plugin may return `false` to use configured XML ordinal rules; when no
+declarative ordinal fallback exists, declining a value also throws `NotSupportedException` instead
+of silently returning its cardinal representation. This includes long values outside the default
+int-only plugin bridge.
 
 Versioned API documentation: https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.2/

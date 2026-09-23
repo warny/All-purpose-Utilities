@@ -6,10 +6,19 @@ the archived audit files; this file is the active source of truth.
 See `docs/releasing/TodoAudit-2026-08-16.md` for the repository-wide
 classification.
 
-## No open items
+## Open items
 
-There are no active P0–P3 findings for `Utils.NumberToString` as of
-2026-08-25. NTS-01 through NTS-05 are all closed:
+- **NTS-08 — linguistic ordinal and ClockTime coverage audit.** The engine work needed for
+  hour-conditioned clock rules is complete, but production language coverage must not be enabled
+  without grammatical sources and compound/scale tests. Ordinals remain deferred for BG, CS, DA,
+  FA, ID, NO, RO, SK, SV, SW, TR, UK, and ZU; HR and HU require productive replacements for their
+  partial configurations. Idiomatic ClockTime remains limited to local DE and FR-fr-ca rules
+  (with DE-ch inheritance). Every other natural-language configuration remains explicitly
+  unsupported until its regional convention, grammatical variants, compounds, and scale behavior
+  are verified. SW/ZU additionally require a documented noun-class policy. AR and HE require a
+  sourced decision for compounds above their existing explicitly configured ranges.
+
+NTS-01 through NTS-05 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
