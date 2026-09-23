@@ -1201,10 +1201,11 @@ re-invokes `Simplify()` on its operands — a real, S4-review-documented (round 
 re-simplification hazard already noted for every `*OfEqualsElements` rule) construction-cost multiplier
 entirely unrelated to this stage's P1/P2 hotspots. Measured directly on the pre-S5 baseline: end-to-end
 `Simplify()` at n=8 already costs several to tens of milliseconds and multiple megabytes per call (see the
-table below); n=32/128 end-to-end was not "reasonable" to run repeatedly for a benchmark, exactly the
-allowance the roadmap's own section 1 anticipates ("éventuellement 128 termes si le benchmark reste
-raisonnable"). This is a separate, pre-existing hazard, out of scope for this PR; it is left as a documented
-S5 follow-up candidate (see "S5 follow-ups" below) rather than folded into this change.
+table below); n=32/128 end-to-end was therefore dropped from the benchmark matrix as unreasonably slow to run
+repeatedly, consistent with this stage's own "prefer small, benchmarked and causally isolated changes"
+guidance — a benchmark whose per-call cost is dominated by an unrelated hazard would not isolate this PR's
+change. This is a separate, pre-existing hazard, out of scope for this PR; it is left as a documented S5
+follow-up candidate (see "S5 follow-ups" below) rather than folded into this change.
 
 **P1 — additive-sort key reconstruction (confirmed hotspot, fixed).** Exactly the hotspot described by the
 roadmap: `CompareAdditiveGroupingOrder`'s primary-sort comparator rebuilt a complete
@@ -1241,27 +1242,92 @@ log n) cheap `KeyNode.CompareTo` calls over already-built trees.
 variant (`GroupBy(static term => term, ...)` instead of `GroupBy(static term => term.Term, ...)`) and
 benchmarked against the P1-only candidate. Result: measurably WORSE at n=32/128 across every family (e.g.
 family 1, n=128: 84.36us/140386B P1-only vs. 95.27us/146530B with P2 added; family 3, n=32: 61.86us/51168B
-vs. 81.14us/52704B), including a real allocation regression, not just noise. Root cause: `AnnotatedAdditiveTerm`
-is a five-field struct (including the nested `AdditiveGroupClass`); copying it repeatedly through `GroupBy`'s
-internal `Lookup<TKey,TElement>` storage costs more than the cheap `ClassifyForAdditiveGrouping` re-run
-(a NodeType pattern match plus field reads, no allocation) it was meant to avoid — `GroupBy`'s existing
-key/element storage already handles a plain `Expression` reference (8 bytes) far more cheaply. **Rejected**:
+vs. 81.14us/52704B), including a real allocation regression, not just noise. Likely explanation (consistent
+with the measured allocation increase, not independently isolated/profiled beyond this benchmark):
+`AnnotatedAdditiveTerm` is a five-field struct (including the nested `AdditiveGroupClass`), and copying it
+repeatedly through `GroupBy`'s internal `Lookup<TKey,TElement>` storage plausibly costs more than the cheap
+`ClassifyForAdditiveGrouping` re-run (a NodeType pattern match plus field reads, no allocation) it was meant
+to avoid — `GroupBy`'s existing key/element storage already handles a plain `Expression` reference (8 bytes)
+far more cheaply. **Rejected** regardless of the exact mechanism, on the measured numbers alone:
 the shipped code keeps the original `Expression`-keyed `GroupBy`/`IEqualityComparer<Expression>` unchanged,
 with an XML remark on `AdditiveGroupingEqualityComparer` recording this experiment and its numbers so it is
 not silently retried.
 
-**Other roadmap candidates (section 4): not pursued, per the roadmap's own re-profile-first instruction.**
-After P1, the remaining measured hotspot at scale is dominated by (a) the pre-existing end-to-end
-re-simplification hazard already described above (out of scope), and (b) `ExpressionCanonicalOrder.BuildKey`'s
-per-call scope-list allocation (4.1) — partially already addressed for the multi-argument case by `BuildKeys`
-sharing one scope list; the single-expression `BuildKey` entry point itself was left unchanged since altering
-its signature would touch the many other call sites (multiplicative ordering, `ExpressionComparer`-adjacent
-code) outside this PR's minimal scope. `CompareType`/`CompareMethod` reflection caching (4.3) and
-`ExpressionComparer` lazy context allocation (4.4) were not touched: both require the kind of static-cache or
-public-contract judgment calls the roadmap explicitly asks not to make casually ("N'introduis pas de cache
-statique global... sans analyser... Assembly. LoadContext"), and neither showed up as a P1-comparable hotspot
-in this stage's own benchmark (the multiplicative control family, which exercises `CompareType`/`CompareMethod`
-identically to the additive families, stayed flat between baseline and candidate at every size).
+**Other candidates from this stage's own "Potential remaining areas" list: not pursued.** After P1, the
+remaining measured hotspot at scale is dominated by (a) the pre-existing end-to-end re-simplification hazard
+already described above (out of scope), and (b) `ExpressionCanonicalOrder.BuildKey`'s per-call scope-list
+allocation for the single-expression entry point — partially already addressed for the multi-argument case by
+`BuildKeys` sharing one scope list (and, after review round 2 below, for the zero-argument case too); the
+single-key `BuildKey` entry point itself was left unchanged since altering its signature would touch the many
+other call sites (multiplicative ordering, the final `.ThenBy(term.Key)` tie-break) outside this PR's minimal
+scope. `ExpressionComparer` temporary arrays/searches and reflection-metadata scaffolding (`CompareType`/
+`CompareMethod`) were not touched: both would need the kind of static-cache/determinism/
+`AssemblyLoadContext`-safety analysis this stage's own guidance calls for before introducing any new cache,
+and neither showed up as a P1-comparable hotspot in this stage's own benchmark (the multiplicative control
+family, which exercises the same `ExpressionCanonicalOrder` reflection-based comparisons as the additive
+families, stayed flat/byte-identical between baseline and candidate at every size).
+
+#### S5 review, round 2 (2026-09-23) — zero-argument fast path, wider-arity benchmark coverage
+
+A review pass found one real construction-cost regression this stage's own benchmark had not covered (a
+`MethodCallExpression` with zero arguments), asked for wider-arity benchmark coverage beyond the unary
+`Sin`/`Cos`/`Tan` family already measured, corrected two inaccuracies in this file's own prose, and suggested
+an additional test. All addressed on the same branch.
+
+1. **`BuildKeys` allocated an unused working scope list for a zero-argument function-like term.** For a
+   `MethodCallExpression` with no arguments (a niladic call), the pre-S5 baseline never built any argument
+   key at all (`CompareArgumentLists`'s loop runs zero times over an empty list). Before this fix, S5's
+   `BuildKeys(group.Arguments!, scopes)` still allocated its `List<ParameterExpression[]>` working scope copy
+   unconditionally, before checking whether there was anything to iterate — genuinely new, entirely
+   unamortized construction cost for this shape, the opposite of this stage's goal. Fixed: `BuildKeys` now
+   fast-paths an empty `expressions` to `[]` (`Array.Empty<KeyNode>()`), before allocating anything. Measured
+   directly (same standalone harness, n=128, a niladic static method call as the additive term): the
+   unconditional-allocation version cost 98 706 B/call; the fast-pathed version costs 86 418 B/call — the
+   ~96 B/term the wasted `List<ParameterExpression[]>` cost is gone. A small residual gap remains against the
+   true pre-S5 baseline (80 362 B/call) — attributable to the `AnnotatedAdditiveTerm` struct itself now
+   carrying an `ArgumentKeys` field (an S4-established per-term annotation design point, not something this
+   fast path targets or something this PR introduces the struct-growth cost of) — disclosed here rather than
+   left implicit.
+2. **Benchmark coverage was unary-only.** The original benchmark matrix only exercised `Sin`/`Cos`/`Tan`
+   (one-argument calls). Re-run with three additional static test methods of arity 0/2/3 confirms the
+   optimization's effect scales with argument count, in the direction expected from the architecture (more
+   arguments per comparison means more redundant per-comparison key rebuilding eliminated):
+
+   | Family (n=128), true pre-S5 baseline vs. post-round-2 candidate | Baseline time | Candidate time | Speedup | Baseline alloc | Candidate alloc | Alloc reduction |
+   | --- | --- | --- | --- | --- | --- | --- |
+   | Arity 0 (niladic) | 78.15 us | 90.94 us | ~0.9x (see finding 1) | 80 362 B | 86 418 B | ~0.93x (see finding 1) |
+   | Arity 1 (`Sin`/`Cos`/`Tan`, already reported above) | 135.85 us | 86.37 us | 1.6x | 334 130 B | 157 794 B | 2.1x |
+   | Arity 2 | 766.73 us | 312.56 us | 2.5x | 551 138 B | 232 738 B | 2.4x |
+   | Arity 3 | 911.07 us | 531.74 us | 1.7x | 602 466 B | 307 682 B | 2.0x |
+
+   Arity 0 is the one shape where this stage's change is not a clear win even after the round-2 fast path — a
+   small, disclosed, structural overhead remains (finding 1) — but every other arity, including higher arities
+   than originally benchmarked, shows the same large improvement pattern as the originally-measured unary
+   family, confirming the optimization is not merely unary-specific.
+3. **This file's own prose cited a "roadmap section 1"/"roadmap 4.1"/"section 10" and a French quote that do
+   not exist in this roadmap document.** Those references were carried over from the external work-item
+   prompt that requested this stage's work (which used that numbering/wording in its own instructions), not
+   from this file's actual content — this file's own "S5 — Construction-performance cleanup" section has never
+   used numbered subsections. Corrected throughout the S5-progress notes above to describe the actual
+   "Potential remaining areas" bullets directly, in self-contained English, so this file no longer depends on
+   an external, non-committed document to be understood.
+4. **The P2-rejection note overstated confidence in the exact causal mechanism.** "Root cause: ..." was
+   softened to "likely explanation (consistent with the measured allocation increase, not independently
+   isolated/profiled beyond this benchmark)" — the benchmark numbers themselves are what justify the
+   rejection; the struct-copy explanation is a plausible, unverified mechanism, not a proven one.
+5. **Test suggestion, added:** `NestedLambdaArgument_AcrossMultipleFunctionLikeTerms_BuildsCorrectArgumentKeysUnderSharedScope`
+   in `ExpressionSimplifierAdditiveSortScaleTests` — several function-like terms, each with a nested
+   `LambdaExpression` argument capturing the OUTER bound parameter, canonicalized in one
+   `CanonicalizeAdditiveExpression` call. This is the shape that specifically exercises `BuildKeys`' shared
+   mutable working-scope list across successive sibling arguments (each nested lambda's `BuildLambda` call
+   pushes/pops its own frame onto the SAME list `BuildKeys` passes to every argument in sequence): a bug that
+   let one argument's nested-lambda scope leak into a later sibling argument's key would misclassify that
+   sibling's captured outer parameter as bound at the wrong depth. Verified this test fails (parameters
+   compare unequal/misordered) if `BuildKeys`' scope-sharing is replaced with a naively-broken variant that
+   does not restore the list between arguments, confirming it exercises the property described.
+
+**Validation performed after review round 2 (2026-09-23):** see the "Validation" list below, which already
+reflects the post-round-2 code and test count.
 
 **Benchmark results (micro scenarios — the direct P1 target; median of 15-21 rounds, byte-identical
 allocations across repeated runs).**
@@ -1320,11 +1386,15 @@ confirmed to run in well under a second. Existing S3/S4 suites
 `ExpressionSimplifierFinalizationTests`, `ExpressionComparerTests`) were not modified and remain the primary
 correctness oracle that this stage's change must keep green — see "Validation" below for exact counts.
 
-**Validation performed (2026-09-23, in order):**
+**Validation performed (2026-09-23, after review round 2, in order; branch rebased onto `master` at
+`1f874f9e0caa28e097060316a992cd5a4ce4fdbd` — PR #603, `Utils.NumberToString`-only, no file overlap with this
+change — before this run):**
 
-1. `ExpressionSimplifierAdditiveSortScaleTests` (new): 5/5 passed.
-2. Full `UtilsTest/Mathematics/Expressions` namespace: 463/463 passed (458 pre-existing + 5 new).
-3. Full `UtilsTest.Unit`: 7721/7721 passed, 0 skipped.
+1. `ExpressionSimplifierAdditiveSortScaleTests` (6 tests: the original 5 plus round 2's
+   `NestedLambdaArgument_AcrossMultipleFunctionLikeTerms_BuildsCorrectArgumentKeysUnderSharedScope`): 6/6
+   passed.
+2. Full `UtilsTest/Mathematics/Expressions` namespace: 464/464 passed (458 pre-existing + 6 new).
+3. Full `UtilsTest.Unit`: 7736/7736 passed, 0 skipped.
 4. Full `UtilsTest.Functional`: 383/383 passed.
 5. Full `UtilsTest.Security`: 225/228 passed, 3 skipped — the same three pre-existing, unrelated,
    platform-gated tests noted throughout S4 (`TryCreate_ReturnsNull_OnNonWindowsPlatform`,
@@ -1335,15 +1405,23 @@ correctness oracle that this stage's change must keep green — see "Validation"
    and pre-existing nullable/cref warnings in `DrawTest`/`Fractals`, neither touched by this PR).
 7. `Utils/Utils.csproj` remains on `<TargetFramework>net8.0</TargetFramework>`, unchanged.
 
-**S5 follow-ups (deliberately left open, per the roadmap's minimal-scope guidance in section 10):**
+**S5 follow-ups (deliberately left open — a small, benchmarked, causally-isolated change, not an attempt to
+close every item in this stage's "Potential remaining areas" list in one PR):**
 
 - The end-to-end nested-canonicalization/re-simplification construction-cost hazard described above
   (pre-existing, S4-review-documented, not introduced or fixed by this PR).
 - `ExpressionCanonicalOrder.BuildKey`'s per-call scope-list allocation for the single-expression entry point
-  (roadmap 4.1) — `BuildKeys` addresses the multi-argument case; the single-key path was left as-is.
-- `CompareType`/`CompareMethod` reflection caching (4.2/4.3) and `ExpressionComparer` lazy context allocation
-  (4.4) — not shown to be a comparably significant hotspot by this stage's own benchmark; would need dedicated
-  measurement plus the `AssemblyLoadContext`/thread-safety analysis the roadmap requires before any caching.
+  — `BuildKeys` addresses the multi-argument case (and, after review round 2, the zero-argument case too); the
+  single-key `BuildKey` entry point itself was left unchanged, since altering its signature would touch the
+  many other call sites (multiplicative ordering, the final `.ThenBy(term.Key)` tie-break) outside this PR's
+  minimal scope.
+- The "intermediate group/list materialization" and "`ExpressionComparer` temporary arrays and searches" areas
+  this stage's own list above already names — not shown to be a comparably significant hotspot by this PR's
+  own benchmark (the multiplicative control family, which exercises the same `ExpressionCanonicalOrder`
+  reflection-based comparisons, stayed flat/byte-identical between baseline and candidate at every size); any
+  reflection-metadata or `ExpressionComparer`-context caching would additionally need the kind of
+  `AssemblyLoadContext`/thread-safety/determinism analysis this stage's own guidance calls for before
+  introducing any new cache, which is a separate, dedicated piece of work.
 
 ## Execution-optimizer stages
 

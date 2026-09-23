@@ -413,4 +413,66 @@ public class ExpressionSimplifierAdditiveSortScaleTests
         Assert.AreEqual(0, throwing.ToStringCallCount, "No additive-grouping/ordering step may call Expression.ToString().");
         Assert.IsNotNull(result);
     }
+
+    // ------------------------------------------------------------------------------------------
+    // 6. Review round 2: BuildKeys' shared mutable working-scope list across successive arguments
+    // ------------------------------------------------------------------------------------------
+
+    /// <summary>Reflected internal <c>Utils.Mathematics.Expressions.ExpressionCanonicalOrder</c> type, resolved once for the review-round-2 regression below.</summary>
+    private static readonly Type ExpressionCanonicalOrderType = typeof(ExpressionSimplifier).Assembly
+        .GetType("Utils.Mathematics.Expressions.ExpressionCanonicalOrder")!;
+
+    /// <summary>Reflected internal <c>ExpressionCanonicalOrder.KeyNode</c> nested type.</summary>
+    private static readonly Type KeyNodeType = ExpressionCanonicalOrderType.GetNestedType("KeyNode", BindingFlags.NonPublic)!;
+
+    /// <summary>Reflected <c>ExpressionCanonicalOrder.BuildKeys(IReadOnlyList&lt;Expression&gt;, IReadOnlyList&lt;ParameterExpression[]&gt;)</c> helper under test.</summary>
+    private static readonly MethodInfo BuildKeysMethod = ExpressionCanonicalOrderType.GetMethod(
+        "BuildKeys", BindingFlags.NonPublic | BindingFlags.Static)!;
+
+    /// <summary>Reflected <c>ExpressionCanonicalOrder.KeyNode.CompareTo(KeyNode?)</c>, used to compare the keys <see cref="BuildKeysMethod"/> returns.</summary>
+    private static readonly MethodInfo KeyNodeCompareToMethod = KeyNodeType.GetMethod("CompareTo", BindingFlags.Public | BindingFlags.Instance)!;
+
+    /// <summary>
+    /// <c>BuildKeys</c> builds every element of an argument list under ONE shared, mutable working scope
+    /// list, reused (not recreated) across successive elements - the same sharing pattern
+    /// <c>BuildMethodCall</c> already relied on for a single call's own arguments, now also used by S5's new
+    /// caller. When one argument is itself a <see cref="LambdaExpression"/>, <c>BuildLambda</c> pushes and
+    /// pops its own scope frame via <c>try</c>/<c>finally</c> around that ONE element's build; this test
+    /// proves that push/pop leaves the shared list correctly restored before the NEXT sibling argument is
+    /// built, by giving two structurally alpha-equivalent nested-lambda arguments (each capturing the same
+    /// outer bound parameter) with an intervening plain argument, and asserting their keys compare EQUAL. A
+    /// scope-restoration bug (an extra frame left behind, or a frame removed early) would make the second
+    /// lambda's captured outer parameter resolve at the wrong binding depth, breaking this equality.
+    /// </summary>
+    [TestMethod]
+    public void NestedLambdaArgument_AcrossMultipleFunctionLikeTerms_BuildsCorrectArgumentKeysUnderSharedScope()
+    {
+        ParameterExpression p = Expression.Parameter(typeof(double), "p");
+        var enclosingScopes = new List<ParameterExpression[]> { new[] { p } };
+
+        ParameterExpression q1 = Expression.Parameter(typeof(double), "q1");
+        ParameterExpression q2 = Expression.Parameter(typeof(double), "q2");
+        Expression lambda1 = Expression.Lambda(Expression.Add(p, q1), q1);
+        Expression lambda2 = Expression.Lambda(Expression.Add(p, q2), q2);
+
+        // Three "arguments" as BuildKeys would see them for one function-like term: a nested lambda, then a
+        // plain reference to the same outer parameter, then a second, structurally alpha-equivalent nested
+        // lambda - built in that order, sharing one working scope list.
+        var arguments = new Expression[] { lambda1, p, lambda2 };
+
+        object keysObj = BuildKeysMethod.Invoke(null, [arguments, enclosingScopes])!;
+        var keys = (global::System.Array)keysObj;
+        Assert.AreEqual(3, keys.Length);
+
+        object? key0 = keys.GetValue(0);
+        object? key2 = keys.GetValue(2);
+
+        int forward = (int)KeyNodeCompareToMethod.Invoke(key0, [key2])!;
+        int backward = (int)KeyNodeCompareToMethod.Invoke(key2, [key0])!;
+
+        Assert.AreEqual(0, forward,
+            "Two structurally alpha-equivalent nested-lambda arguments built in sequence by one BuildKeys " +
+            "call, under the same shared outer scope, must produce EQUAL keys.");
+        Assert.AreEqual(0, backward, "KeyNode.CompareTo must be symmetric for two structurally equal keys.");
+    }
 }
