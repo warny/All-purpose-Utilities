@@ -195,6 +195,27 @@ public class NumberToStringConfigurationSchemaTests
             "</NumberScale><ClockTime step=\"5\"><Rule range=\"from:0,to:5\" hourOffset=\"0\" hourForm=\"cardinal\" pattern=\"{hour}\"/></ClockTime>",
             StringComparison.Ordinal));
 
+    /// <summary>Ensures supported display-hour range forms are accepted and applied from XML.</summary>
+    [TestMethod]
+    public void ExternalConfiguration_ClockTimeDisplayHourRange_IsParsed()
+    {
+        const string clock = "<ClockTime step=\"60\" hourCycle=\"12\"><Rule range=\"0\" displayHourRange=\"1,2,5-12\" hourOffset=\"0\" hourForm=\"cardinal\" pattern=\"selected {hour}\"/><Rule range=\"0\" displayHourRange=\"3-4\" hourOffset=\"0\" hourForm=\"cardinal\" pattern=\"other {hour}\"/></ClockTime>";
+        string document = ValidConfiguration.Replace("</NumberScale>", $"</NumberScale>{clock}", StringComparison.Ordinal);
+
+        NumberToStringConverter converter = NumberToStringConverter.ReadConfiguration(document)["SCHEMA-TEST"];
+
+        Assert.AreEqual("selected one", converter.ConvertClockTime(new TimeOnly(1, 0)));
+        Assert.AreEqual("other three", converter.ConvertClockTime(new TimeOnly(3, 0)));
+    }
+
+    /// <summary>Ensures invalid display-hour range syntax is rejected by the XSD.</summary>
+    [TestMethod]
+    public void ExternalConfiguration_ClockTimeInvalidDisplayHourRangeSyntax_IsRejected()
+        => AssertSchemaFailure(ValidConfiguration.Replace(
+            "</NumberScale>",
+            "</NumberScale><ClockTime step=\"60\"><Rule range=\"0\" displayHourRange=\"1..3\" hourOffset=\"0\" hourForm=\"cardinal\" pattern=\"{hour}\"/></ClockTime>",
+            StringComparison.Ordinal));
+
     /// <summary>Ensures both clock constituent forcing attributes and multiple constraints are accepted by the XSD.</summary>
     [TestMethod]
     public void ExternalConfiguration_ClockTimeForcedVariantAttributes_AreSchemaValid()

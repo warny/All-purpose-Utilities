@@ -730,6 +730,10 @@ public class ClockTimeRuleEntry
     [XmlAttribute("range")]
     public string Range { get; set; } = "";
 
+    /// <summary>Gets or sets the optional projected display-hour range expression.</summary>
+    [XmlAttribute("displayHourRange")]
+    public string? DisplayHourRange { get; set; }
+
     /// <summary>Gets or sets the reference-hour offset.</summary>
     [XmlAttribute("hourOffset")]
     public int HourOffset { get; set; }

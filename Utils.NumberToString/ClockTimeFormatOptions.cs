@@ -44,6 +44,12 @@ public sealed record ClockTimeRule(
     int? AmountReference = null,
     ClockAmountDirection? AmountDirection = null)
 {
+    /// <summary>
+    /// Gets the optional range of projected display hours for which this rule applies.
+    /// The range is evaluated after <see cref="HourOffset"/> and <see cref="ClockTimeFormatOptions.HourCycle"/>.
+    /// </summary>
+    public IntRange<int>? DisplayHourRange { get; init; }
+
     /// <summary>Gets grammatical variants forced only while rendering <c>{hour}</c>.</summary>
     public ForcedVariantSet HourForcedVariants { get; init; } = ForcedVariantSet.Empty;
 
