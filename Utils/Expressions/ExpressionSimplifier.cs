@@ -545,6 +545,110 @@ namespace Utils.Mathematics.Expressions
         }
 
         /// <summary>
+        /// A per-invocation cache reused by the high-fan-out factoring rules
+        /// (<see cref="AdditionOfEqualsElements"/>, <see cref="SubstractionOfEqualsElements"/>) to avoid
+        /// calling <see cref="ExpressionSimplifier.Simplify(Expression)"/> more than once for the same
+        /// candidate operand while it is probed against the (up to three) other candidates considered for
+        /// the SAME factoring decision.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Why this exists (S5).</b> Each of the two rules above compares up to four candidate
+        /// sub-expressions (<c>leftleft</c>/<c>leftright</c>/<c>rightleft</c>/<c>rightright</c>) pairwise,
+        /// up to five or six times per rule invocation, all via the PUBLIC <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/>
+        /// - which itself calls <see cref="ExpressionSimplifier.Simplify(Expression)"/> on BOTH operands
+        /// every time it runs, per its own documented contract. Before this type existed, the same candidate
+        /// operand was therefore re-simplified from scratch on every comparison it participated in within one
+        /// rule call - a real, measured end-to-end construction-cost multiplier for left-associated additive
+        /// chains (see <c>Utils/TODO-2026-09-12-expression-simplifier-roadmap.md</c>, stage S5, "P3"). This
+        /// type makes that caching explicit and scoped to exactly one rule invocation, instead of either
+        /// leaving the redundant work in place or reaching for a broader, longer-lived cache the roadmap's S5
+        /// entry explicitly rules out ("introduce no global/static mutable memoization cache... no cache may
+        /// survive the comparison/rule operation whose semantics justified it").
+        /// </para>
+        /// <para>
+        /// <b>Why this preserves the public <see cref="ExpressionComparer"/> contract exactly.</b>
+        /// <see cref="Equals"/> below performs, in order: <see cref="ExpressionComparer.TryFastPathEquals"/>
+        /// (the same top-level <see cref="object.ReferenceEquals(object?, object?)"/>/null/root-lambda-metadata
+        /// checks the public <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/> itself performs
+        /// before ever simplifying), then - only when that does not already decide the comparison -
+        /// <see cref="ExpressionComparer.SimplifyForComparison"/> (the SAME exact built-in simplifier instance,
+        /// establishing the same independent, self-contained top-level lexical-scope boundary every call to
+        /// <see cref="ExpressionSimplifier.Simplify(Expression)"/> establishes) for each operand, cached by
+        /// object reference so a given operand is simplified at most once per instance of this type, then
+        /// <see cref="ExpressionComparer.StructuralEqualsAfterSimplification"/> (the same non-safe-constant,
+        /// post-simplification structural comparison the public comparer itself performs). This is
+        /// deliberately NOT <see cref="ExpressionComparer.StructuralEqualsRaw(Expression?, Expression?)"/>:
+        /// that entry point never simplifies its operands and uses the safe-constant policy, which would
+        /// silently change both which factoring decisions fire (see the roadmap's second-pass-dependency
+        /// characterization, <c>ExpressionSimplifierComparerBatchingTests</c>) and which constants' own
+        /// <see cref="object.Equals(object?)"/>/<see cref="object.GetHashCode"/> may run.
+        /// </para>
+        /// <para>
+        /// <b>Why caching by object reference is safe here.</b> The operands
+        /// passed to <see cref="Equals"/> are always one of exactly four candidate <see cref="Expression"/>
+        /// instances captured once at the top of a single <c>AdditionOfEqualsElements</c>/
+        /// <c>SubstractionOfEqualsElements</c> invocation (<c>leftleft</c>/<c>leftright</c>/<c>rightleft</c>/
+        /// <c>rightright</c>); the caller's subsequent <c>ObjectUtils.Swap</c> calls only reassign which LOCAL
+        /// VARIABLE refers to which of those four already-captured objects, never mutate an
+        /// <see cref="Expression"/> instance itself (expression trees are immutable) or introduce a new
+        /// object needing simplification. <see cref="ExpressionSimplifier.Simplify(Expression)"/> is a pure
+        /// function of its input for any single top-level call (see the roadmap's "Purity assumption" and
+        /// S4's "Independent top-level calls" remarks: every call establishes and restores its own ambient
+        /// lexical-scope boundary, so it never depends on when, or how many times, it was previously called),
+        /// so returning a cached simplified form for a reference already seen earlier in the SAME rule
+        /// invocation is indistinguishable from re-simplifying it.
+        /// </para>
+        /// <para>
+        /// <b>Lifetime.</b> A fresh instance is created at the top of each
+        /// <c>AdditionOfEqualsElements</c>/<c>SubstractionOfEqualsElements</c> call and discarded when that
+        /// call returns; nothing here is stored on <see langword="this"/> <see cref="ExpressionSimplifier"/>
+        /// instance, a <see langword="static"/> field, or a thread-local slot, so there is no cross-call,
+        /// cross-thread, or cross-rule sharing of any kind.
+        /// </para>
+        /// </remarks>
+        private sealed class FactorEqualityProbe
+        {
+            /// <summary>
+            /// At most four distinct operands ever participate in one factoring decision
+            /// (<c>leftleft</c>/<c>leftright</c>/<c>rightleft</c>/<c>rightright</c>), so a small
+            /// fixed-capacity list - linearly scanned by reference equality - avoids a
+            /// <see cref="Dictionary{TKey, TValue}"/>'s hashing/bucket overhead for so few entries.
+            /// </summary>
+            private readonly List<(Expression Original, Expression Simplified)> _simplifiedCache = new(4);
+
+            /// <summary>
+            /// Compares <paramref name="x"/> and <paramref name="y"/> exactly like the public
+            /// <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/>, reusing a previously
+            /// simplified form for either operand when this instance has already computed one.
+            /// </summary>
+            /// <param name="x">The first candidate operand.</param>
+            /// <param name="y">The second candidate operand.</param>
+            /// <returns><see langword="true"/> if the two candidates are equal under the public <see cref="ExpressionComparer"/> contract.</returns>
+            public bool Equals(Expression x, Expression y)
+            {
+                if (ExpressionComparer.TryFastPathEquals(x, y, out bool fastResult)) return fastResult;
+
+                return ExpressionComparer.StructuralEqualsAfterSimplification(GetSimplified(x), GetSimplified(y));
+            }
+
+            /// <summary>Returns <paramref name="original"/>'s simplified form, computing and caching it on the first request.</summary>
+            /// <param name="original">The candidate operand to simplify.</param>
+            /// <returns><paramref name="original"/>, simplified via <see cref="ExpressionComparer.SimplifyForComparison(Expression)"/>.</returns>
+            private Expression GetSimplified(Expression original)
+            {
+                foreach ((Expression cachedOriginal, Expression cachedSimplified) in _simplifiedCache)
+                {
+                    if (ReferenceEquals(cachedOriginal, original)) return cachedSimplified;
+                }
+
+                Expression simplified = ExpressionComparer.SimplifyForComparison(original);
+                _simplifiedCache.Add((original, simplified));
+                return simplified;
+            }
+        }
+
+        /// <summary>
         /// Attempts to factor out common elements in <c>left + right</c> if possible.
         /// E.g., rewriting <c>a*x + b*x</c> as <c>(a+b)*x</c>.
         /// </summary>
@@ -593,24 +697,28 @@ namespace Utils.Mathematics.Expressions
             if (rightAugmented && rightright is ConstantExpression rightRightConst && NumberUtils.CompareNumeric(rightRightConst.Value, 1) == 0)
                 return null;
 
-            // Attempt to unify or swap factors for factoring out
+            // Attempt to unify or swap factors for factoring out. A single FactorEqualityProbe is reused
+            // for every comparison below (S5): each of the up to four candidate operands is simplified via
+            // the public ExpressionComparer contract at most once per call, rather than once per comparison
+            // it participates in - see FactorEqualityProbe's remarks for why this is semantics-preserving.
+            var equalityProbe = new FactorEqualityProbe();
             if (!leftAugmented
                 && !rightAugmented
-                && ExpressionComparer.Default.Equals(leftleft, rightleft)
-                && !ExpressionComparer.Default.Equals(leftright, rightright))
+                && equalityProbe.Equals(leftleft, rightleft)
+                && !equalityProbe.Equals(leftright, rightright))
             {
                 ObjectUtils.Swap(ref leftleft, ref leftright);
                 ObjectUtils.Swap(ref rightleft, ref rightright);
             }
-            else if (ExpressionComparer.Default.Equals(leftleft, rightright))
+            else if (equalityProbe.Equals(leftleft, rightright))
             {
                 ObjectUtils.Swap(ref leftleft, ref leftright);
             }
-            else if (ExpressionComparer.Default.Equals(leftright, rightleft))
+            else if (equalityProbe.Equals(leftright, rightleft))
             {
                 ObjectUtils.Swap(ref rightleft, ref rightright);
             }
-            else if (ExpressionComparer.Default.Equals(leftright, rightright))
+            else if (equalityProbe.Equals(leftright, rightright))
             {
                 // do nothing
             }
@@ -669,23 +777,26 @@ namespace Utils.Mathematics.Expressions
                 rightright = right;
             }
 
-            // Attempt to unify or swap factors
+            // Attempt to unify or swap factors. A single FactorEqualityProbe is reused for every comparison
+            // below, including the final cancellation check (S5) - see FactorEqualityProbe's remarks for
+            // why this is semantics-preserving.
+            var equalityProbe = new FactorEqualityProbe();
             if ((!leftAugmented && !rightAugmented)
-                && ExpressionComparer.Default.Equals(leftleft, rightleft)
-                && !ExpressionComparer.Default.Equals(leftright, rightright))
+                && equalityProbe.Equals(leftleft, rightleft)
+                && !equalityProbe.Equals(leftright, rightright))
             {
                 ObjectUtils.Swap(ref leftleft, ref leftright);
                 ObjectUtils.Swap(ref rightleft, ref rightright);
             }
-            else if (ExpressionComparer.Default.Equals(leftleft, rightright))
+            else if (equalityProbe.Equals(leftleft, rightright))
             {
                 ObjectUtils.Swap(ref leftleft, ref leftright);
             }
-            else if (ExpressionComparer.Default.Equals(leftright, rightleft))
+            else if (equalityProbe.Equals(leftright, rightleft))
             {
                 ObjectUtils.Swap(ref rightleft, ref rightright);
             }
-            else if (ExpressionComparer.Default.Equals(leftright, rightright))
+            else if (equalityProbe.Equals(leftright, rightright))
             {
                 // do nothing
             }
@@ -694,7 +805,7 @@ namespace Utils.Mathematics.Expressions
                 return null;
             }
 
-            if (ExpressionComparer.Default.Equals(leftleft, rightleft))
+            if (equalityProbe.Equals(leftleft, rightleft))
             {
                 return Expression.Constant(Convert.ChangeType(0, e.Type), e.Type);
             }
