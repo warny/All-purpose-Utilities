@@ -166,7 +166,7 @@ Examples:
     | 1 | une |
     | 21 | vingt et une |
     | 71 | septante et une |
-    | 81 | huitante et une |
+    | 81 | quatre-vingt une |
     | 91 | nonante et une |
     | 1000000 | un million |
 
@@ -184,8 +184,8 @@ Examples:
     | 21 | vingt et unième |
     | 70 | septantième |
     | 71 | septante et unième |
-    | 80 | huitantième |
-    | 81 | huitante et unième |
+    | 80 | quatre-vingtième |
+    | 81 | quatre-vingt unième |
     | 90 | nonantième |
     | 91 | nonante et unième |
 

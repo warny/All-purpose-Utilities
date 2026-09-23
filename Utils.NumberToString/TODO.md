@@ -11,10 +11,8 @@ classification.
 - **NTS-08 — linguistic ordinal and ClockTime coverage audit.** The engine work needed for
   hour-conditioned clock rules is complete, but production language coverage must not be enabled
   without grammatical sources and compound/scale tests. Ordinals remain deferred for BG, CS, DA,
-  FA, ID, NO, RO, SK, SV, SW, TR, UK, and ZU; HR and HU require productive replacements for their
-  partial configurations. Idiomatic ClockTime remains limited to local DE and FR-fr-ca rules
-  (with DE-ch inheritance). Every other natural-language configuration remains explicitly
-  unsupported until its regional convention, grammatical variants, compounds, and scale behavior
+  FA, NO, RO, SK, SV, SW, TR, UK, and ZU; HR and HU require productive replacements for their
+  partial configurations. Idiomatic ClockTime is now configured for DE (with de-CH inheritance), FR (with separate FR-be and FR-ch children), EN (with EN-GB inheritance), Catalan, Valencian, Indonesian, and Malay. Every other natural-language configuration remains explicitly unsupported until its regional convention, grammatical variants, compounds, and scale behavior
   are verified. SW/ZU additionally require a documented noun-class policy. AR and HE require a
   sourced decision for compounds above their existing explicitly configured ranges.
 
@@ -44,3 +42,12 @@ open backlog item.
 New findings should be appended here as they are identified, and archived to
 a dated `DONE-*.md` file once resolved, per the repository's `AGENTS.md`
 TODO/DONE convention.
+
+
+### NTS-08 completed slice (2026-09-23)
+
+- Split Belgian and Swiss French into `baseOn="FR"` children; Belgian keeps `quatre-vingts` while Swiss keeps `huitante`.
+- Split Valencian into a `baseOn="CA"` child with its own clock convention.
+- Split Malay into a `baseOn="ID"` child, preserving the Malay `lapan` stem and a distinct `pukul` clock convention.
+- Added productive Indonesian/Malay `ke-` ordinals with a small plugin only for suppletive `pertama`.
+- Added English and Catalan ClockTime rules. Remaining languages listed above are still open and must not be marked supported without the documented grammatical audit.

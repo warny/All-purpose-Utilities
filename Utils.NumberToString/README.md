@@ -17,48 +17,50 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 
 ## Supported cultures
 
-| Code | Language | Ordinals | Variants |
-|------|----------|----------|---------|
-| EN, EN-uk, EN-us | English | ✓ | — (numbers are invariable) |
-| FR, FR-fr, FR-ca | French | ✓ | gender (masculin/feminin) |
-| FR-be, FR-ch | Belgian/Swiss French | ✓ | gender (masculin/feminin) |
-| DE, de-DE, de-AT | German (standard) | ✓ | genus (maskulin/feminin/neutrum) × kasus (nominativ/akkusativ/dativ/genitiv) |
-| de-CH, de-LI | Swiss/Liechtenstein German | ✓ | (same as DE; "ein tausend" not contracted to "tausend") |
-| ES | Spanish | ✓ | gender (masculino/femenino) |
-| IT | Italian | ✓ | gender (maschile/femminile) |
-| PT | Portuguese | ✓ | gender (masculino/feminino) |
-| PL | Polish | ✓ | rodzaj (maskulin/feminin/nijaki/plural_mos/plural) × przypadek (mianownik/dopełniacz/…) |
-| NL | Dutch | ✓ | — (numbers are invariable) |
-| RO | Romanian | — | gen (masculin/feminin) |
-| RU | Russian | ✓ | — |
-| AR | Arabic | ✓ (1–19) | gender (muzakkar/muʾannath) |
-| HE | Hebrew | ✓ | gender (standalone/zachar/nekeva) |
-| ZH | Chinese | ✓ (prefix 第) | — (no inflection) |
-| JA | Japanese | ✓ (prefix 第) | — (no inflection) |
-| KO | Korean | ✓ (prefix 제) | — (no inflection) |
-| HI | Hindi | ✓ | gender (strī) ordinals only |
-| EL | Greek | ✓ | gender (αρσενικό/θηλυκό/ουδέτερο) |
-| FI | Finnish | ✓ | sijamuoto (nominatiivi/partitiivi/genetiivi) |
-| CA | Catalan | ✓ | gender (masculí/femení) |
-| EU | Basque | ✓ | — (no grammatical gender) |
-| GL | Galician | ✓ | gender (masculino/feminino) |
-| ZU | Zulu | — | — (not yet implemented) |
-| EE | Ewe | ✓ (prefix etsõ) | — |
-| WO | Wolof | ✓ | — |
-| HR | Croatian | ✓ | — (numbers are invariable) |
-| HU | Hungarian | ✓ | — (numbers are invariable) |
-| VN, VI, VI-VN | Vietnamese | ✓ | — (numbers are invariable) |
-| TR, TR-TR | Turkish | — | — (numbers are invariable) |
-| SV, SV-SE | Swedish | — | — (numbers are invariable) |
-| NO, NB, NB-NO | Norwegian (Bokmål) | — | — (numbers are invariable) |
-| UK, UK-UA | Ukrainian | — | — (numbers are invariable) |
-| DA, DA-DK | Danish | — | — (numbers are invariable) |
-| CS, CS-CZ | Czech | — | — (numbers are invariable) |
-| SK, SK-SK | Slovak | — | — (numbers are invariable) |
-| BG, BG-BG | Bulgarian | — | — (numbers are invariable) |
-| ID, MS | Indonesian / Malay | — | — (numbers are invariable) |
-| FA, FA-IR | Persian (Farsi) | — | — (numbers are invariable) |
-| SW | Swahili | — | — (numbers are invariable) |
+| Code | Language | Ordinals | ClockTime | Variants |
+|------|----------|----------|-----------|----------|
+| EN, EN-uk, EN-us | English | ✓ | ✓ | — (numbers are invariable) |
+| FR, FR-fr, FR-ca | French | ✓ | ✓ | gender (masculin/feminin) |
+| FR-be, FR-ch | Belgian/Swiss French (regional children of FR) | ✓ | ✓ | gender (masculin/feminin) |
+| DE, de-DE, de-AT | German (standard) | ✓ | ✓ | genus (maskulin/feminin/neutrum) × kasus (nominativ/akkusativ/dativ/genitiv) |
+| de-CH, de-LI | Swiss/Liechtenstein German | ✓ | ✓ (inherited) | (same as DE; "ein tausend" not contracted to "tausend") |
+| ES | Spanish | ✓ | — | gender (masculino/femenino) |
+| IT | Italian | ✓ | — | gender (maschile/femminile) |
+| PT | Portuguese | ✓ | — | gender (masculino/feminino) |
+| PL | Polish | ✓ | — | rodzaj (maskulin/feminin/nijaki/plural_mos/plural) × przypadek (mianownik/dopełniacz/…) |
+| NL | Dutch | ✓ | — | — (numbers are invariable) |
+| RO | Romanian | — | — | gen (masculin/feminin) |
+| RU | Russian | ✓ | — | — |
+| AR | Arabic | ✓ (1–19) | — | gender (muzakkar/muʾannath) |
+| HE | Hebrew | ✓ | — | gender (standalone/zachar/nekeva) |
+| ZH | Chinese | ✓ (prefix 第) | — | — (no inflection) |
+| JA | Japanese | ✓ (prefix 第) | — | — (no inflection) |
+| KO | Korean | ✓ (prefix 제) | — | — (no inflection) |
+| HI | Hindi | ✓ | — | gender (strī) ordinals only |
+| EL | Greek | ✓ | — | gender (αρσενικό/θηλυκό/ουδέτερο) |
+| FI | Finnish | ✓ | — | sijamuoto (nominatiivi/partitiivi/genetiivi) |
+| CA, ca-ES | Catalan | ✓ | ✓ (15 min, 12 h) | gender (masculí/femení) |
+| ca-ES-valencia | Valencian | ✓ (inherited) | ✓ (5 min, 12 h) | gender (masculí/femení) |
+| EU | Basque | ✓ | — | — (no grammatical gender) |
+| GL | Galician | ✓ | — | gender (masculino/feminino) |
+| ZU | Zulu | — | — | — (not yet implemented) |
+| EE | Ewe | ✓ (prefix etsõ) | — | — |
+| WO | Wolof | ✓ | — | — |
+| HR | Croatian | ✓ | — | — (numbers are invariable) |
+| HU | Hungarian | ✓ | — | — (numbers are invariable) |
+| VN, VI, VI-VN | Vietnamese | ✓ | — | — (numbers are invariable) |
+| TR, TR-TR | Turkish | — | — | — (numbers are invariable) |
+| SV, SV-SE | Swedish | — | — | — (numbers are invariable) |
+| NO, NB, NB-NO | Norwegian (Bokmål) | — | — | — (numbers are invariable) |
+| UK, UK-UA | Ukrainian | — | — | — (numbers are invariable) |
+| DA, DA-DK | Danish | — | — | — (numbers are invariable) |
+| CS, CS-CZ | Czech | — | — | — (numbers are invariable) |
+| SK, SK-SK | Slovak | — | — | — (numbers are invariable) |
+| BG, BG-BG | Bulgarian | — | — | — (numbers are invariable) |
+| ID, ID-ID | Indonesian | ✓ | ✓ (5 min, 12 h) | — (numbers are invariable) |
+| MS, MS-MY | Malay | ✓ | ✓ (5 min, 12 h) | — (numbers are invariable) |
+| FA, FA-IR | Persian (Farsi) | — | — | — (numbers are invariable) |
+| SW | Swahili | — | — | — (numbers are invariable) |
 
 ---
 

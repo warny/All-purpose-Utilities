@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <Language baseOn="CA">
+        <Culture>ca-ES-valencia</Culture>
+        <ClockTime step="5" hourCycle="12">
+            <Rule range="0" displayHourRange="1" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femení" pattern="la {hour} en punt" />
+            <Rule range="0" displayHourRange="2-12" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femení" pattern="les {hour} en punt" />
+            <Rule range="5,10,20,25" displayHourRange="1" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femení" amountReference="0" amountDirection="after" pattern="la {hour} i {amount}" />
+            <Rule range="5,10,20,25" displayHourRange="2-12" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femení" amountReference="0" amountDirection="after" pattern="les {hour} i {amount}" />
+            <Rule range="15" displayHourRange="1" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femení" pattern="la {hour} i quart" />
+            <Rule range="15" displayHourRange="2-12" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femení" pattern="les {hour} i quart" />
+            <Rule range="30" displayHourRange="1" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femení" pattern="la {hour} i mitja" />
+            <Rule range="30" displayHourRange="2-12" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femení" pattern="les {hour} i mitja" />
+            <Rule range="35,40,50,55" displayHourRange="1" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=femení" amountReference="60" amountDirection="before" pattern="la {hour} menys {amount}" />
+            <Rule range="35,40,50,55" displayHourRange="2-12" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=femení" amountReference="60" amountDirection="before" pattern="les {hour} menys {amount}" />
+            <Rule range="45" displayHourRange="1" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=femení" pattern="la {hour} menys quart" />
+            <Rule range="45" displayHourRange="2-12" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=femení" pattern="les {hour} menys quart" />
+        </ClockTime>
+    </Language>
+</Numbers>

@@ -42,3 +42,35 @@ Examples:
 
 Scenario: The regional alias uses Indonesian wording
     Then the "ID" and "ID-ID" converters produce the same cardinal wording for 2
+
+Scenario: Indonesian ordinal and clock-time conversion are supported
+    Then the converter supports ordinal conversion
+    And the converter supports clock-time conversion
+
+Scenario Outline: Productive Indonesian ordinals
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1 | pertama |
+    | 2 | kedua |
+    | 3 | ketiga |
+    | 4 | keempat |
+    | 10 | kesepuluh |
+    | 21 | kedua puluh satu |
+    | 100 | keseratus |
+    | 1000 | keseribu |
+
+Scenario Outline: Idiomatic Indonesian clock times
+    When I convert the clock time "<time>"
+    Then the result is "<expected>"
+
+Examples:
+    | time | expected |
+    | 01:00 | jam satu |
+    | 01:05 | jam satu lewat lima |
+    | 01:15 | jam satu lewat seperempat |
+    | 01:30 | jam setengah dua |
+    | 01:45 | jam dua kurang seperempat |
+    | 01:55 | jam dua kurang lima |

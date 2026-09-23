@@ -37,6 +37,22 @@ public class NumberToStringConfigurationSchemaTests
     public void BuiltInConfigurations_InitializeWithoutFailures()
         => Assert.AreEqual(0, NumberToStringConverter.BuiltInInitialization.Failures.Count);
 
+    /// <summary>Ensures every culture affected by regional inheritance remains publicly resolvable.</summary>
+    [TestMethod]
+    public void RegionalCultures_AreResolvableAfterConfigurationSplits()
+    {
+        string[] cultures =
+        [
+            "FR", "FR-fr", "FR-ca", "FR-be", "FR-ch",
+            "CA", "ca-ES", "ca-ES-valencia",
+            "ID", "ID-ID", "MS", "MS-MY",
+            "EN", "EN-GB", "DE", "de-CH"
+        ];
+
+        foreach (string culture in cultures)
+            Assert.IsTrue(NumberToStringConverter.TryGetConverter(culture, out _), culture);
+    }
+
     /// <summary>Ensures a bad built-in document does not prevent a later independent document.</summary>
     [TestMethod]
     public void BuiltInInitialization_BadDocument_DoesNotStopLaterDocuments()

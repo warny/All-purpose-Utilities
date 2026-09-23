@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
         <Language
                         baseOn="SCALE-SHORT"
@@ -103,6 +103,14 @@
 			<SpecialHour hour="0"  value="midnight" />
 			<SpecialHour hour="12" value="noon"      />
 		</TimeUnits>
+		<ClockTime step="5" hourCycle="12">
+			<Rule range="0" hourOffset="0" hourForm="cardinal" pattern="{hour} o&apos;clock" />
+			<Rule range="5,10,20,25" hourOffset="0" hourForm="cardinal" amountReference="0" amountDirection="after" pattern="{amount} past {hour}" />
+			<Rule range="15" hourOffset="0" hourForm="cardinal" pattern="quarter past {hour}" />
+			<Rule range="30" hourOffset="0" hourForm="cardinal" pattern="half past {hour}" />
+			<Rule range="35,40,50,55" hourOffset="1" hourForm="cardinal" amountReference="60" amountDirection="before" pattern="{amount} to {hour}" />
+			<Rule range="45" hourOffset="1" hourForm="cardinal" pattern="quarter to {hour}" />
+		</ClockTime>
 		<DateFormat pattern="{month} {ordinal-day}, {year}" />
 	</Language>
 </Numbers>
