@@ -2202,6 +2202,207 @@ reproducible allocation improvement, not a wash. **Verdict: no measurable CPU re
 classify-then-simplify split; the fix is CPU-neutral within measurement noise and allocation-neutral-to-positive.**
 S5 P3 is considered closed pending no further review findings.
 
+#### S5 progress (2026-09-24) — P4: `ExpressionCanonicalOrder.BuildKey`'s scope-workspace allocation eliminated
+
+**Baseline.** `master` at `77d571deb3065ab76267ad2de278814061dcc540` (PR #605, `Utils.NumberToString`-only,
+no overlap with this change) - confirmed to be current `master` (re-fetched: `origin/master` unchanged at
+the same commit) both before branching and again immediately before the final validation run below, so no
+rebase was needed. This commit is itself a descendant of `019a4551...` (PR #604, the P1 commit the task
+brief named as its baseline), so P4 is implemented directly on top of the already-merged P1/P2/P3 work.
+
+**Audit finding (as described in the task brief, confirmed by reading the pre-existing code).**
+`ExpressionCanonicalOrder.BuildKey` and `BuildKeys` each built a fresh, eagerly-copied
+`List<ParameterExpression[]>` working scope list on every call:
+
+```csharp
+var scopes = new List<ParameterExpression[]>(enclosingScopes.Count + 2);
+scopes.AddRange(enclosingScopes);
+return Build(expression, scopes);
+```
+
+purely so `BuildLambda` could temporarily push/pop one frame for a nested `LambdaExpression` encountered
+while walking the term - work paid on every call, including the common case (constants, parameters, unary/
+binary nodes, method calls, member access, most additive terms, most multiplicative factors) where no nested
+lambda is ever encountered and the list is only ever read from, never mutated.
+
+**Change.** `Utils/Expressions/ExpressionCanonicalOrder.cs`: introduced a private `ref struct ScopeState`
+holding the immutable, caller-supplied `EnclosingScopes` snapshot (never copied) plus a lazily-allocated
+`List<ParameterExpression[]>? NestedScopes` (stays `null` until `BuildLambda` pushes its first frame).
+`BuildKey`/`BuildKeys` now construct a `ScopeState` (a stack-only value, not a heap allocation) instead of the
+`List`, and every private `Build*` helper (`Build`, `BuildParameter`, `BuildUnary`, `BuildBinary`,
+`BuildMethodCall`, `BuildMember`, `BuildLambda`) now takes `ref ScopeState scopes` instead of
+`List<ParameterExpression[]> scopes`, so the SAME `ScopeState` (and, once allocated, the SAME `NestedScopes`
+list) is threaded through the whole recursive walk and, for `BuildKeys`, across every sibling argument - the
+`ref` is what lets a nested-scope allocation that happens deep in the recursion (or in an earlier sibling
+argument) remain visible to the rest of the walk, exactly as the task brief's suggested design required.
+`BuildParameter` now searches `NestedScopes` innermost-to-outermost first (when non-`null`), then
+`EnclosingScopes` innermost-to-outermost, instead of one combined list scanned once. The empty-argument-list
+fast path in `BuildKeys` (`expressions.Count == 0` returning `[]` before touching `ScopeState` at all) was
+already allocation-free after P1's review round 2 and is unchanged.
+
+**Why bound-parameter depth is identical.** With `nestedCount` frames pushed and `enclosing.Count` supplied
+enclosing frames, a nested frame at index `i` (found before any enclosing search runs) gets
+`depth = nestedCount - 1 - i`, and an enclosing frame at index `i` (found only after every nested frame
+misses) gets `depth = nestedCount + (enclosing.Count - 1 - i)` - i.e. every enclosing depth is uniformly
+shifted up by however many nested frames are currently open, and nested depths are always strictly lower
+(0..nestedCount-1) than every enclosing depth (nestedCount..nestedCount+enclosing.Count-1). This is
+arithmetically identical to the old single concatenated list's `depth = scopes.Count - 1 - i` for every `i`,
+since that list was always exactly `enclosingScopes` followed by whatever nested frames were currently pushed
+(in the same push order) - the two-part search only avoids materializing that concatenation, it does not
+change which index anything resolves to. Verified both by direct reasoning (worked through with the task
+brief's own `outer0, outer1, inner0, inner1` example - depths 3,2,1,0 as specified) and by the new tests below,
+including a doubly-nested-lambda-inside-one-enclosing-scope case that isolates exactly this depth arithmetic
+by holding every other structural dimension (type, position, lambda/parameter shape) constant across three
+otherwise-identical terms.
+
+**Design confirmed, no rejected experiment.** The task brief's own suggested shape (an enclosing snapshot
+plus a lazily-allocated nested stack, threaded by `ref`) was implemented as described and met every
+performance-acceptance criterion on the first attempt (see benchmarks below); no alternative representation
+was built or benchmarked.
+
+**Benchmark methodology.** Standalone temporary harness (not part of this repository; built under this
+session's scratch directory), Windows 11, .NET 8.0, Release, `ProjectReference` to `Utils.csproj` (no
+`InternalsVisibleTo`; internal members reached via reflection, exactly like this project's own test suite).
+Every `ExpressionCanonicalOrder`/`ExpressionSimplifier` internal member invoked through a `Delegate.CreateDelegate`-bound
+open-instance/static delegate (not raw `MethodInfo.Invoke`), so the measured allocation is the callee's own
+work, not a per-call reflection-argument-array tax. Each scenario: expression trees, scope lists and delegates
+built OUTSIDE the measured region; a warmup phase (JIT tiering) before measurement; `GC.Collect()` x2 before
+starting the clock; `Stopwatch` for elapsed time and `GC.GetAllocatedBytesForCurrentThread()` (thread-local,
+collection-count-independent) for allocation, both around the same iteration loop. The harness was run once
+against the unmodified baseline commit, then again after the production change, from the same machine/session
+without other load.
+
+**Direct `BuildKey` results (300 000 iterations unless noted; B/op = bytes allocated per call):**
+
+| Scenario | Baseline B/op | Candidate B/op | Δ | Baseline ns/op | Candidate ns/op |
+| --- | --- | --- | --- | --- | --- |
+| Constant, no enclosing scope | 248.00 | 176.00 | **−72** | 638.7 | 632.2 |
+| Free parameter, no enclosing scope | 112.00 | 40.00 | **−72** | 51.3 | 43.1 |
+| Binary (a+b), no enclosing scope | 216.00 | 144.00 | **−72** | 139.0 | 135.8 |
+| Method call Sin(a), no enclosing scope | 184.00 | 112.00 | **−72** | 113.5 | 102.7 |
+| Expr under ONE enclosing scope | 360.00 | 280.00 | **−80** | 385.0 | 349.1 |
+| Expr under 8 enclosing scopes (outermost ref) | 176.00 | 40.00 | **−136** | 140.3 | 185.7 |
+| ONE nested lambda capturing enclosing param | 336.00 | 344.00 | +8 (noise) | 333.1 | 344.4 |
+| TWO nested lambda levels capturing enclosing param | 552.00 | 560.00 | +8 (noise) | 613.3 | 590.4 |
+
+Every no-nested-lambda scenario's allocation dropped, including the 8-enclosing-scope case (proving the
+elimination is independent of how many enclosing scopes are supplied, since the old code copied
+`enclosingScopes` into a new `List` regardless of its size). The two nested-lambda control scenarios are flat
+within noise (+8B out of 336-552B, ~1.4-2.4%), exactly the "must not materially regress" acceptance bar - the
+tiny increase is consistent with `ScopeState` itself carrying one extra reference-sized field versus a bare
+`List<T>` reference, not with any new per-call work.
+
+**`BuildKeys` results (300 000 iterations, or 500 000 for the zero-argument case):**
+
+| Scenario | Baseline B/op | Candidate B/op | Δ |
+| --- | --- | --- | --- |
+| 0 arguments | 0.00 | 0.00 | unchanged (already allocation-free since P1 review round 2) |
+| 1 argument | 248.00 | 176.00 | **−72** |
+| 4 arguments (bound params, no lambdas) | 296.00 | 216.00 | **−80** |
+| 4 arguments incl. 2 nested lambdas | 728.00 | 736.00 | +8 (noise) |
+
+**Additive/multiplicative canonicalization integration (direct calls to the private
+`CanonicalizeAdditiveExpression`/`CanonicalizeMultiplicativeExpression`, matching P1's own established
+methodology for isolating this code from the unrelated end-to-end re-simplification hazard described below):**
+
+| Scenario | Baseline B/op | Candidate B/op | Δ | Baseline ns/op | Candidate ns/op |
+| --- | --- | --- | --- | --- | --- |
+| Additive, n=8, opaque bound terms | 6 480.08 | 5 840.07 | **−640 (−9.9%)** | 7 806.6 | 7 233.8 |
+| Additive, n=8, function-like Sin(p) terms | 8 656.11 | 7 376.10 | **−1 280 (−14.8%)** | 10 634.4 | 10 005.2 |
+| Multiplicative, n=8, bound-parameter factors | 2 120.03 | 1 480.03 | **−640 (−30.2%)** | 1 485.8 | 1 631.2 |
+| Additive, n=32, opaque bound terms | 23 504.30 | 20 944.30 | **−2 560 (−10.9%)** | 10 831.0 | 11 065.7 |
+| Additive, n=32, function-like Sin(p) terms | 32 208.42 | 27 088.36 | **−5 120 (−15.9%)** | 17 291.9 | 16 322.6 |
+| Multiplicative, n=32, bound-parameter factors | 7 256.10 | 4 696.07 | **−2 560 (−35.3%)** | 5 736.7 | 5 254.4 |
+| Additive, n=128, opaque bound terms | 91 217.16 | 80 977.16 | **−10 240 (−11.2%)** | 53 319.8 | 46 425.6 |
+| Additive, n=128, function-like Sin(p) terms | 126 033.64 | 105 553.48 | **−20 480 (−16.3%)** | 90 629.4 | 80 469.7 |
+| Multiplicative, n=128, bound-parameter factors | 27 656.52 | 17 416.36 | **−10 240 (−37.0%)** | 28 715.4 | 28 153.0 |
+
+Every allocation delta is consistent with removing exactly one workspace allocation per `BuildKey` call in the
+per-term annotation loop (roughly `n x ~72-80` bytes; e.g. `8 x 80 = 640`, `32 x 80 = 2560`, `128 x 80 = 10240`
+match the additive-opaque row's deltas almost exactly) - stated as "consistent with", per this stage's own
+methodology, since the exact per-object byte accounting was not independently isolated beyond the direct
+`BuildKey` table above. The multiplicative family shows the largest proportional win (30-37%), matching the
+roadmap's own prediction that `.OrderBy(factor => BuildKey(factor, scopes))` pays this cost once per factor
+with nothing else to amortize it against. CPU is neutral-to-better at every size (no regression at any row;
+several rows 5-13% faster, plausibly less GC pressure from less allocation, though this was not isolated
+further since the allocation reduction alone already clears the acceptance bar).
+
+**Public `Simplify()` control - dominated by unrelated work, disclosed rather than treated as a signal.**
+A 16-term reversed-bound-parameter additive lambda (P1's own established "empirically well under a second at
+this term count" control shape) took ~104 ms/call on the pre-P4 baseline and ~86 ms/call on the candidate
+(20 iterations; reduced from an initial 3 000-iteration baseline run that took over 5 minutes once this cost
+per call became apparent). Both figures are 3-4 orders of magnitude larger than the direct-canonicalization
+figures above for the same shape, confirming - exactly as P3's own round-7 write-up already had to disclose
+for a similar shape - that the full `Simplify()` pipeline's end-to-end repeated-re-simplification hazard
+(tracked as a still-open S5 follow-up, not part of this PR) dominates this measurement completely; the ~17%
+apparent improvement is not attributed to this PR's change and is reported only for completeness, per this
+stage's "disclose rather than claim an inferred cause" rule.
+
+**Performance acceptance: met.** No-nested-lambda `BuildKey`/`BuildKeys` allocations clearly decreased
+(including when enclosing scopes are supplied); nested-lambda cases did not materially regress (+8B noise);
+additive/multiplicative canonicalization showed the expected reduction at every tested size; CPU was neutral
+or better everywhere measured; no symbolic/canonical output changed (see tests below).
+
+**Compatibility.** `BuildKey`'s and `BuildKeys`' own `internal` signatures are unchanged - only the private
+`Build*` helper signatures (never called outside this file) changed shape (`List<ParameterExpression[]>` to
+`ref ScopeState`). No new `internal`/public API surface was introduced (`ScopeState` is `private`). No call
+site outside `ExpressionCanonicalOrder.cs` was touched.
+
+**Tests added** (`UtilsTest/Mathematics/Expressions/ExpressionCanonicalOrderScopeStateTests.cs`, reflecting
+directly into `ExpressionCanonicalOrder.Compare`, exactly like `ExpressionSimplifierStructuralCanonicalizationTests`'s
+own `Compare`/`CompareType`/`CompareMethod` reflection precedent):
+
+1. `Compare_MultipleEnclosingScopesWithoutNestedLambda_OrdersByDepthThenPosition` - three enclosing scopes,
+   two same-type parameters each (six pairwise-distinct `(depth, position)` bound parameters, no nested
+   lambda at all), sorted from a shuffled order via `Compare`, must recover exactly the depth-then-position
+   ascending order - the "enclosing scopes without a nested lambda" minimum from the task brief.
+2. `Compare_NestedLambdaCapturingEnclosingParameter_AlphaEquivalentInstancesTie` - a lambda nested inside one
+   enclosing scope, body referencing both its own (nested, depth 0) and the enclosing (depth 1) parameter,
+   ties for two alpha-equivalent instances using entirely different nested-parameter instances/names; a
+   negative control (a lambda that does NOT capture the enclosing parameter) proves the equality is not
+   vacuous - the "nested lambda plus enclosing capture" minimum.
+3. `Compare_TwoNestedLambdaLevelsPlusEnclosingScope_DistinguishesAllThreeDepths` - `enclosing -> nested A ->
+   nested B`, with three otherwise-structurally-identical terms differing only in which of `outer`/`a`/`b` the
+   inner body references (same position, same type), proving depths 0/1/2 sort strictly `b < a < outer` (and
+   antisymmetrically the other way), plus an alpha-equivalence check at this same two-level depth (fresh `a`/`b`
+   instances each build) - the "multiple nested lambda depths" minimum.
+4. `BuildKeys_MultipleArgumentsWithNestedLambdas_RestoresSharedScopeBetweenSiblings` (P1's own test,
+   `UtilsTest/Mathematics/Expressions/ExpressionSimplifierAdditiveSortScaleTests.cs`) - kept completely
+   unchanged and still passes, since `ScopeState`'s lazy `NestedScopes` list is pushed/popped through the same
+   `try`/`finally` discipline `BuildLambda` already used - the "sibling scope restoration" requirement.
+
+**Validation performed (2026-09-24, in order, on `Utils.csproj` still targeting `net8.0`):**
+
+1. New scope-state tests plus P1's existing scale-test file (`ExpressionCanonicalOrderScopeStateTests` +
+   `ExpressionSimplifierAdditiveSortScaleTests`): 9/9 passed (3 new + 6 pre-existing, unmodified).
+2. `ExpressionSimplifierStructuralCanonicalizationTests` (the full S4 regression suite): 46/46 passed.
+3. Full `UtilsTest/Mathematics/Expressions` namespace: 480/480 passed (477 pre-existing, including every test
+   P1/P2/P3 already added to this namespace, + 3 new from this PR's `ExpressionCanonicalOrderScopeStateTests`).
+4. Full `UtilsTest.Unit`: 7 841/7 841 passed, 0 skipped.
+5. Full `UtilsTest.Functional`: 383/383 passed.
+6. Full `UtilsTest.Security`: 225/228 passed, 3 skipped - the same three pre-existing, unrelated,
+   platform-gated tests noted throughout this roadmap (`TryCreate_ReturnsNull_OnNonWindowsPlatform`,
+   `VerifyAuthenticodeSignature_OnNonWindows_ThrowsPlatformNotSupportedException`,
+   `HasValidAuthenticodeSignature_OnNonWindows_ThrowsPlatformNotSupportedException`).
+7. Release build of `Utils.sln` (the full multi-project solution): succeeded, 0 errors, 51 warnings - all
+   pre-existing and unrelated (the same `NU1603` package-resolution notices and `DrawTest`/`Fractals`
+   nullable/cref warnings noted throughout this roadmap).
+8. `master` re-checked immediately before this validation run (`git fetch origin` + `git rev-parse`):
+   unchanged at `77d571de...`, so no rebase was needed before opening the PR.
+
+**S5 follow-ups still open (unchanged by this PR, listed here again for continuity):**
+
+- The end-to-end nested-canonicalization/re-simplification construction-cost hazard the public `Simplify()`
+  control above ran into again (pre-existing, first documented at P1, re-disclosed at P3 round 7 and again
+  here) - not introduced or fixed by this PR.
+- "Intermediate group/list materialization" and "`ExpressionComparer` temporary arrays and searches" - as
+  P1 already found, not shown to be a comparably significant hotspot by any benchmark run so far; would need
+  its own dedicated `AssemblyLoadContext`/thread-safety/determinism analysis before introducing any cache.
+- Reflection-metadata caching for `CompareType`/`CompareMethod`/`CompareMember` remains unexplored, as noted
+  throughout S4/S5.
+
+This PR is opened for review only and is **not** merged, per the task brief.
+
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.
