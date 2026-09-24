@@ -60983,6 +60983,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.ClockTimeRule.Range
   nameWithType: ClockTimeRule.Range
+- uid: Utils.NumberToString.ClockTimeRule.SpecialHourPattern
+  name: SpecialHourPattern
+  href: api/Utils.NumberToString.ClockTimeRule.html#Utils_NumberToString_ClockTimeRule_SpecialHourPattern
+  commentId: P:Utils.NumberToString.ClockTimeRule.SpecialHourPattern
+  fullName: Utils.NumberToString.ClockTimeRule.SpecialHourPattern
+  nameWithType: ClockTimeRule.SpecialHourPattern
+- uid: Utils.NumberToString.ClockTimeRule.SpecialHourPattern*
+  name: SpecialHourPattern
+  href: api/Utils.NumberToString.ClockTimeRule.html#Utils_NumberToString_ClockTimeRule_SpecialHourPattern_
+  commentId: Overload:Utils.NumberToString.ClockTimeRule.SpecialHourPattern
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeRule.SpecialHourPattern
+  nameWithType: ClockTimeRule.SpecialHourPattern
 - uid: Utils.NumberToString.ClockTimeRuleEntry
   name: ClockTimeRuleEntry
   href: api/Utils.NumberToString.ClockTimeRuleEntry.html
@@ -61132,6 +61145,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.ClockTimeRuleEntry.Range
   nameWithType: ClockTimeRuleEntry.Range
+- uid: Utils.NumberToString.ClockTimeRuleEntry.SpecialHourPattern
+  name: SpecialHourPattern
+  href: api/Utils.NumberToString.ClockTimeRuleEntry.html#Utils_NumberToString_ClockTimeRuleEntry_SpecialHourPattern
+  commentId: P:Utils.NumberToString.ClockTimeRuleEntry.SpecialHourPattern
+  fullName: Utils.NumberToString.ClockTimeRuleEntry.SpecialHourPattern
+  nameWithType: ClockTimeRuleEntry.SpecialHourPattern
+- uid: Utils.NumberToString.ClockTimeRuleEntry.SpecialHourPattern*
+  name: SpecialHourPattern
+  href: api/Utils.NumberToString.ClockTimeRuleEntry.html#Utils_NumberToString_ClockTimeRuleEntry_SpecialHourPattern_
+  commentId: Overload:Utils.NumberToString.ClockTimeRuleEntry.SpecialHourPattern
+  isSpec: "True"
+  fullName: Utils.NumberToString.ClockTimeRuleEntry.SpecialHourPattern
+  nameWithType: ClockTimeRuleEntry.SpecialHourPattern
 - uid: Utils.NumberToString.ClockTimeType
   name: ClockTimeType
   href: api/Utils.NumberToString.ClockTimeType.html
@@ -62460,6 +62486,134 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.IOrdinalLanguageSpecifics.TryConvertOrdinal
   nameWithType: IOrdinalLanguageSpecifics.TryConvertOrdinal
+- uid: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics
+  name: IndonesianOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.IndonesianOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics
+  nameWithType: IndonesianOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Billion
+  name: Billion
+  href: api/Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.html#Utils_NumberToString_IndonesianOrdinalLanguageSpecifics_Billion
+  commentId: P:Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Billion
+  fullName: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Billion
+  nameWithType: IndonesianOrdinalLanguageSpecifics.Billion
+- uid: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Billion*
+  name: Billion
+  href: api/Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.html#Utils_NumberToString_IndonesianOrdinalLanguageSpecifics_Billion_
+  commentId: Overload:Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Billion
+  isSpec: "True"
+  fullName: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Billion
+  nameWithType: IndonesianOrdinalLanguageSpecifics.Billion
+- uid: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.BuildCardinal(System.Int64)
+  name: BuildCardinal(long)
+  href: api/Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.html#Utils_NumberToString_IndonesianOrdinalLanguageSpecifics_BuildCardinal_System_Int64_
+  commentId: M:Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.BuildCardinal(System.Int64)
+  name.vb: BuildCardinal(Long)
+  fullName: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.BuildCardinal(long)
+  fullName.vb: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.BuildCardinal(Long)
+  nameWithType: IndonesianOrdinalLanguageSpecifics.BuildCardinal(long)
+  nameWithType.vb: IndonesianOrdinalLanguageSpecifics.BuildCardinal(Long)
+- uid: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.BuildCardinal*
+  name: BuildCardinal
+  href: api/Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.html#Utils_NumberToString_IndonesianOrdinalLanguageSpecifics_BuildCardinal_
+  commentId: Overload:Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.BuildCardinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.BuildCardinal
+  nameWithType: IndonesianOrdinalLanguageSpecifics.BuildCardinal
+- uid: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Eight
+  name: Eight
+  href: api/Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.html#Utils_NumberToString_IndonesianOrdinalLanguageSpecifics_Eight
+  commentId: P:Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Eight
+  fullName: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Eight
+  nameWithType: IndonesianOrdinalLanguageSpecifics.Eight
+- uid: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Eight*
+  name: Eight
+  href: api/Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.html#Utils_NumberToString_IndonesianOrdinalLanguageSpecifics_Eight_
+  commentId: Overload:Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Eight
+  isSpec: "True"
+  fullName: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Eight
+  nameWithType: IndonesianOrdinalLanguageSpecifics.Eight
+- uid: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.FinalizeWriting(System.String,System.String)
+  name: FinalizeWriting(string, string)
+  href: api/Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.html#Utils_NumberToString_IndonesianOrdinalLanguageSpecifics_FinalizeWriting_System_String_System_String_
+  commentId: M:Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.FinalizeWriting(System.String,System.String)
+  name.vb: FinalizeWriting(String, String)
+  fullName: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.FinalizeWriting(string, string)
+  fullName.vb: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.FinalizeWriting(String, String)
+  nameWithType: IndonesianOrdinalLanguageSpecifics.FinalizeWriting(string, string)
+  nameWithType.vb: IndonesianOrdinalLanguageSpecifics.FinalizeWriting(String, String)
+- uid: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.FinalizeWriting*
+  name: FinalizeWriting
+  href: api/Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.html#Utils_NumberToString_IndonesianOrdinalLanguageSpecifics_FinalizeWriting_
+  commentId: Overload:Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.FinalizeWriting
+  isSpec: "True"
+  fullName: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.FinalizeWriting
+  nameWithType: IndonesianOrdinalLanguageSpecifics.FinalizeWriting
+- uid: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Quadrillion
+  name: Quadrillion
+  href: api/Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.html#Utils_NumberToString_IndonesianOrdinalLanguageSpecifics_Quadrillion
+  commentId: P:Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Quadrillion
+  fullName: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Quadrillion
+  nameWithType: IndonesianOrdinalLanguageSpecifics.Quadrillion
+- uid: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Quadrillion*
+  name: Quadrillion
+  href: api/Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.html#Utils_NumberToString_IndonesianOrdinalLanguageSpecifics_Quadrillion_
+  commentId: Overload:Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Quadrillion
+  isSpec: "True"
+  fullName: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Quadrillion
+  nameWithType: IndonesianOrdinalLanguageSpecifics.Quadrillion
+- uid: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Quintillion
+  name: Quintillion
+  href: api/Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.html#Utils_NumberToString_IndonesianOrdinalLanguageSpecifics_Quintillion
+  commentId: P:Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Quintillion
+  fullName: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Quintillion
+  nameWithType: IndonesianOrdinalLanguageSpecifics.Quintillion
+- uid: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Quintillion*
+  name: Quintillion
+  href: api/Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.html#Utils_NumberToString_IndonesianOrdinalLanguageSpecifics_Quintillion_
+  commentId: Overload:Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Quintillion
+  isSpec: "True"
+  fullName: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Quintillion
+  nameWithType: IndonesianOrdinalLanguageSpecifics.Quintillion
+- uid: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Trillion
+  name: Trillion
+  href: api/Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.html#Utils_NumberToString_IndonesianOrdinalLanguageSpecifics_Trillion
+  commentId: P:Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Trillion
+  fullName: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Trillion
+  nameWithType: IndonesianOrdinalLanguageSpecifics.Trillion
+- uid: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Trillion*
+  name: Trillion
+  href: api/Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.html#Utils_NumberToString_IndonesianOrdinalLanguageSpecifics_Trillion_
+  commentId: Overload:Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Trillion
+  isSpec: "True"
+  fullName: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.Trillion
+  nameWithType: IndonesianOrdinalLanguageSpecifics.Trillion
+- uid: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name: TryConvertOrdinal(int, IReadOnlyDictionary<string, string>, out string?)
+  href: api/Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.html#Utils_NumberToString_IndonesianOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int32_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__
+  commentId: M:Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name.vb: TryConvertOrdinal(Integer, IReadOnlyDictionary(Of String, String), String)
+  fullName: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.TryConvertOrdinal(int, System.Collections.Generic.IReadOnlyDictionary<string, string>, out string?)
+  fullName.vb: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.TryConvertOrdinal(Integer, System.Collections.Generic.IReadOnlyDictionary(Of String, String), String)
+  nameWithType: IndonesianOrdinalLanguageSpecifics.TryConvertOrdinal(int, IReadOnlyDictionary<string, string>, out string?)
+  nameWithType.vb: IndonesianOrdinalLanguageSpecifics.TryConvertOrdinal(Integer, IReadOnlyDictionary(Of String, String), String)
+- uid: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name: TryConvertOrdinal(long, IReadOnlyDictionary<string, string>, out string?)
+  href: api/Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.html#Utils_NumberToString_IndonesianOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__
+  commentId: M:Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name.vb: TryConvertOrdinal(Long, IReadOnlyDictionary(Of String, String), String)
+  fullName: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.TryConvertOrdinal(long, System.Collections.Generic.IReadOnlyDictionary<string, string>, out string?)
+  fullName.vb: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.TryConvertOrdinal(Long, System.Collections.Generic.IReadOnlyDictionary(Of String, String), String)
+  nameWithType: IndonesianOrdinalLanguageSpecifics.TryConvertOrdinal(long, IReadOnlyDictionary<string, string>, out string?)
+  nameWithType.vb: IndonesianOrdinalLanguageSpecifics.TryConvertOrdinal(Long, IReadOnlyDictionary(Of String, String), String)
+- uid: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.TryConvertOrdinal*
+  name: TryConvertOrdinal
+  href: api/Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.html#Utils_NumberToString_IndonesianOrdinalLanguageSpecifics_TryConvertOrdinal_
+  commentId: Overload:Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.TryConvertOrdinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.TryConvertOrdinal
+  nameWithType: IndonesianOrdinalLanguageSpecifics.TryConvertOrdinal
 - uid: Utils.NumberToString.LanguageType
   name: LanguageType
   href: api/Utils.NumberToString.LanguageType.html
@@ -63563,6 +63717,77 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.LexicalFormsType.Entries
   nameWithType: LexicalFormsType.Entries
+- uid: Utils.NumberToString.MalayOrdinalLanguageSpecifics
+  name: MalayOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.MalayOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.MalayOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.MalayOrdinalLanguageSpecifics
+  nameWithType: MalayOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.MalayOrdinalLanguageSpecifics.Billion
+  name: Billion
+  href: api/Utils.NumberToString.MalayOrdinalLanguageSpecifics.html#Utils_NumberToString_MalayOrdinalLanguageSpecifics_Billion
+  commentId: P:Utils.NumberToString.MalayOrdinalLanguageSpecifics.Billion
+  fullName: Utils.NumberToString.MalayOrdinalLanguageSpecifics.Billion
+  nameWithType: MalayOrdinalLanguageSpecifics.Billion
+- uid: Utils.NumberToString.MalayOrdinalLanguageSpecifics.Billion*
+  name: Billion
+  href: api/Utils.NumberToString.MalayOrdinalLanguageSpecifics.html#Utils_NumberToString_MalayOrdinalLanguageSpecifics_Billion_
+  commentId: Overload:Utils.NumberToString.MalayOrdinalLanguageSpecifics.Billion
+  isSpec: "True"
+  fullName: Utils.NumberToString.MalayOrdinalLanguageSpecifics.Billion
+  nameWithType: MalayOrdinalLanguageSpecifics.Billion
+- uid: Utils.NumberToString.MalayOrdinalLanguageSpecifics.Eight
+  name: Eight
+  href: api/Utils.NumberToString.MalayOrdinalLanguageSpecifics.html#Utils_NumberToString_MalayOrdinalLanguageSpecifics_Eight
+  commentId: P:Utils.NumberToString.MalayOrdinalLanguageSpecifics.Eight
+  fullName: Utils.NumberToString.MalayOrdinalLanguageSpecifics.Eight
+  nameWithType: MalayOrdinalLanguageSpecifics.Eight
+- uid: Utils.NumberToString.MalayOrdinalLanguageSpecifics.Eight*
+  name: Eight
+  href: api/Utils.NumberToString.MalayOrdinalLanguageSpecifics.html#Utils_NumberToString_MalayOrdinalLanguageSpecifics_Eight_
+  commentId: Overload:Utils.NumberToString.MalayOrdinalLanguageSpecifics.Eight
+  isSpec: "True"
+  fullName: Utils.NumberToString.MalayOrdinalLanguageSpecifics.Eight
+  nameWithType: MalayOrdinalLanguageSpecifics.Eight
+- uid: Utils.NumberToString.MalayOrdinalLanguageSpecifics.Quadrillion
+  name: Quadrillion
+  href: api/Utils.NumberToString.MalayOrdinalLanguageSpecifics.html#Utils_NumberToString_MalayOrdinalLanguageSpecifics_Quadrillion
+  commentId: P:Utils.NumberToString.MalayOrdinalLanguageSpecifics.Quadrillion
+  fullName: Utils.NumberToString.MalayOrdinalLanguageSpecifics.Quadrillion
+  nameWithType: MalayOrdinalLanguageSpecifics.Quadrillion
+- uid: Utils.NumberToString.MalayOrdinalLanguageSpecifics.Quadrillion*
+  name: Quadrillion
+  href: api/Utils.NumberToString.MalayOrdinalLanguageSpecifics.html#Utils_NumberToString_MalayOrdinalLanguageSpecifics_Quadrillion_
+  commentId: Overload:Utils.NumberToString.MalayOrdinalLanguageSpecifics.Quadrillion
+  isSpec: "True"
+  fullName: Utils.NumberToString.MalayOrdinalLanguageSpecifics.Quadrillion
+  nameWithType: MalayOrdinalLanguageSpecifics.Quadrillion
+- uid: Utils.NumberToString.MalayOrdinalLanguageSpecifics.Quintillion
+  name: Quintillion
+  href: api/Utils.NumberToString.MalayOrdinalLanguageSpecifics.html#Utils_NumberToString_MalayOrdinalLanguageSpecifics_Quintillion
+  commentId: P:Utils.NumberToString.MalayOrdinalLanguageSpecifics.Quintillion
+  fullName: Utils.NumberToString.MalayOrdinalLanguageSpecifics.Quintillion
+  nameWithType: MalayOrdinalLanguageSpecifics.Quintillion
+- uid: Utils.NumberToString.MalayOrdinalLanguageSpecifics.Quintillion*
+  name: Quintillion
+  href: api/Utils.NumberToString.MalayOrdinalLanguageSpecifics.html#Utils_NumberToString_MalayOrdinalLanguageSpecifics_Quintillion_
+  commentId: Overload:Utils.NumberToString.MalayOrdinalLanguageSpecifics.Quintillion
+  isSpec: "True"
+  fullName: Utils.NumberToString.MalayOrdinalLanguageSpecifics.Quintillion
+  nameWithType: MalayOrdinalLanguageSpecifics.Quintillion
+- uid: Utils.NumberToString.MalayOrdinalLanguageSpecifics.Trillion
+  name: Trillion
+  href: api/Utils.NumberToString.MalayOrdinalLanguageSpecifics.html#Utils_NumberToString_MalayOrdinalLanguageSpecifics_Trillion
+  commentId: P:Utils.NumberToString.MalayOrdinalLanguageSpecifics.Trillion
+  fullName: Utils.NumberToString.MalayOrdinalLanguageSpecifics.Trillion
+  nameWithType: MalayOrdinalLanguageSpecifics.Trillion
+- uid: Utils.NumberToString.MalayOrdinalLanguageSpecifics.Trillion*
+  name: Trillion
+  href: api/Utils.NumberToString.MalayOrdinalLanguageSpecifics.html#Utils_NumberToString_MalayOrdinalLanguageSpecifics_Trillion_
+  commentId: Overload:Utils.NumberToString.MalayOrdinalLanguageSpecifics.Trillion
+  isSpec: "True"
+  fullName: Utils.NumberToString.MalayOrdinalLanguageSpecifics.Trillion
+  nameWithType: MalayOrdinalLanguageSpecifics.Trillion
 - uid: Utils.NumberToString.MultiplicativeEntryType
   name: MultiplicativeEntryType
   href: api/Utils.NumberToString.MultiplicativeEntryType.html

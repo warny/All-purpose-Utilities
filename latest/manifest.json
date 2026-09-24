@@ -8874,6 +8874,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.IndonesianOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Produces Indonesian ordinals, including suppletive <code>pertama</code> and productive\n<code>ke-</code> forms over the Indonesian cardinal system.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.LanguageType.yml",
       "output": {
         ".html": {
@@ -8983,6 +8997,20 @@
       "IsMRef": true,
       "Title": "Utils.NumberToString.LexicalFormsType",
       "Summary": "<p sourcefile=\"api/Utils.NumberToString.LexicalFormsType.yml\" sourcestartlinenumber=\"1\">Holds named lexical form entries for a configurable constituent (e.g. a time unit).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.MalayOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.MalayOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.MalayOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.MalayOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Produces Malay ordinals using the Malay <code>lapan</code> cardinal stem.</p>\n"
     },
     {
       "type": "ManagedReference",

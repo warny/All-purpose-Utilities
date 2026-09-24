@@ -2,11 +2,11 @@
 <html>
   <head>
     <meta charset="utf-8">
-      <title>Class ClockTimeConversionOptions | omy.Utils Documentation </title>
+      <title>Class MalayOrdinalLanguageSpecifics | omy.Utils Documentation </title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="title" content="Class ClockTimeConversionOptions | omy.Utils Documentation ">
+      <meta name="title" content="Class MalayOrdinalLanguageSpecifics | omy.Utils Documentation ">
       
-      <meta name="description" content="Controls one idiomatic clock-time conversion call.">
+      <meta name="description" content="Produces Malay ordinals using the Malay lapan cardinal stem.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -16,7 +16,7 @@
       <meta name="docfx:rel" content="../">
       
       
-      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_ClockTimeConversionOptions.md&amp;value=---%0Auid%3A%20Utils.NumberToString.ClockTimeConversionOptions%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_MalayOrdinalLanguageSpecifics.md&amp;value=---%0Auid%3A%20Utils.NumberToString.MalayOrdinalLanguageSpecifics%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
       <meta name="loc:inThisArticle" content="In this article">
       <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
       <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
@@ -84,12 +84,12 @@
           <nav id="breadcrumb"></nav>
         </div>
 
-        <article data-uid="Utils.NumberToString.ClockTimeConversionOptions">
+        <article data-uid="Utils.NumberToString.MalayOrdinalLanguageSpecifics">
 
 
 
-  <h1 id="Utils_NumberToString_ClockTimeConversionOptions" data-uid="Utils.NumberToString.ClockTimeConversionOptions" class="text-break">
-Class ClockTimeConversionOptions  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ClockTimeFormatOptions.cs/#L83"><i class="bi bi-code-slash"></i></a>
+  <h1 id="Utils_NumberToString_MalayOrdinalLanguageSpecifics" data-uid="Utils.NumberToString.MalayOrdinalLanguageSpecifics" class="text-break">
+Class MalayOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/IndonesianOrdinalLanguageSpecifics.cs/#L79"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,12 +97,12 @@ Class ClockTimeConversionOptions  <a class="header-action link-secondary" title=
   <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Controls one idiomatic clock-time conversion call.</p>
+  <div class="markdown summary"><p>Produces Malay ordinals using the Malay <code>lapan</code> cardinal stem.</p>
 </div>
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public sealed class ClockTimeConversionOptions</code></pre>
+    <pre><code class="lang-csharp hljs">public sealed class MalayOrdinalLanguageSpecifics : IndonesianOrdinalLanguageSpecifics, INumberToStringLanguageSpecifics, IOrdinalLanguageSpecifics</code></pre>
   </div>
 
 
@@ -112,15 +112,32 @@ Class ClockTimeConversionOptions  <a class="header-action link-secondary" title=
     <dt>Inheritance</dt>
     <dd>
       <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
-      <div><span class="xref">ClockTimeConversionOptions</span></div>
+      <div><a class="xref" href="Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.html">IndonesianOrdinalLanguageSpecifics</a></div>
+      <div><span class="xref">MalayOrdinalLanguageSpecifics</span></div>
     </dd>
   </dl>
 
+  <dl class="typelist implements">
+    <dt>Implements</dt>
+    <dd>
+      <div><a class="xref" href="Utils.NumberToString.INumberToStringLanguageSpecifics.html">INumberToStringLanguageSpecifics</a></div>
+      <div><a class="xref" href="Utils.NumberToString.IOrdinalLanguageSpecifics.html">IOrdinalLanguageSpecifics</a></div>
+    </dd>
+  </dl>
 
 
   <dl class="typelist inheritedMembers">
     <dt>Inherited Members</dt>
     <dd>
+    <div>
+      <a class="xref" href="Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.html#Utils_NumberToString_IndonesianOrdinalLanguageSpecifics_FinalizeWriting_System_String_System_String_">IndonesianOrdinalLanguageSpecifics.FinalizeWriting(string, string)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.html#Utils_NumberToString_IndonesianOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int32_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__">IndonesianOrdinalLanguageSpecifics.TryConvertOrdinal(int, IReadOnlyDictionary&lt;string, string&gt;, out string)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.html#Utils_NumberToString_IndonesianOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__">IndonesianOrdinalLanguageSpecifics.TryConvertOrdinal(long, IReadOnlyDictionary&lt;string, string&gt;, out string)</a>
+    </div>
     <div>
       <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
     </div>
@@ -241,19 +258,19 @@ Class ClockTimeConversionOptions  <a class="header-action link-secondary" title=
 </h2>
 
 
-  <a id="Utils_NumberToString_ClockTimeConversionOptions_ReplaceSpecialHours_" data-uid="Utils.NumberToString.ClockTimeConversionOptions.ReplaceSpecialHours*"></a>
+  <a id="Utils_NumberToString_MalayOrdinalLanguageSpecifics_Billion_" data-uid="Utils.NumberToString.MalayOrdinalLanguageSpecifics.Billion*"></a>
 
-  <h3 id="Utils_NumberToString_ClockTimeConversionOptions_ReplaceSpecialHours" data-uid="Utils.NumberToString.ClockTimeConversionOptions.ReplaceSpecialHours">
-  ReplaceSpecialHours
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ClockTimeFormatOptions.cs/#L86"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_NumberToString_MalayOrdinalLanguageSpecifics_Billion" data-uid="Utils.NumberToString.MalayOrdinalLanguageSpecifics.Billion">
+  Billion
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/IndonesianOrdinalLanguageSpecifics.cs/#L85"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets or initializes whether configured special-hour words replace numeric hours.</p>
+  <div class="markdown level1 summary"><p>Gets the language-specific word for 10^9.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public bool ReplaceSpecialHours { get; init; }</code></pre>
+    <pre><code class="lang-csharp hljs">protected override string Billion { get; }</code></pre>
   </div>
 
 
@@ -262,7 +279,135 @@ Class ClockTimeConversionOptions  <a class="header-action link-secondary" title=
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_NumberToString_MalayOrdinalLanguageSpecifics_Eight_" data-uid="Utils.NumberToString.MalayOrdinalLanguageSpecifics.Eight*"></a>
+
+  <h3 id="Utils_NumberToString_MalayOrdinalLanguageSpecifics_Eight" data-uid="Utils.NumberToString.MalayOrdinalLanguageSpecifics.Eight">
+  Eight
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/IndonesianOrdinalLanguageSpecifics.cs/#L82"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the language-specific word for eight.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected override string Eight { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_NumberToString_MalayOrdinalLanguageSpecifics_Quadrillion_" data-uid="Utils.NumberToString.MalayOrdinalLanguageSpecifics.Quadrillion*"></a>
+
+  <h3 id="Utils_NumberToString_MalayOrdinalLanguageSpecifics_Quadrillion" data-uid="Utils.NumberToString.MalayOrdinalLanguageSpecifics.Quadrillion">
+  Quadrillion
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/IndonesianOrdinalLanguageSpecifics.cs/#L91"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the language-specific word for 10^15.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected override string Quadrillion { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_NumberToString_MalayOrdinalLanguageSpecifics_Quintillion_" data-uid="Utils.NumberToString.MalayOrdinalLanguageSpecifics.Quintillion*"></a>
+
+  <h3 id="Utils_NumberToString_MalayOrdinalLanguageSpecifics_Quintillion" data-uid="Utils.NumberToString.MalayOrdinalLanguageSpecifics.Quintillion">
+  Quintillion
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/IndonesianOrdinalLanguageSpecifics.cs/#L94"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the language-specific word for 10^18.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected override string Quintillion { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_NumberToString_MalayOrdinalLanguageSpecifics_Trillion_" data-uid="Utils.NumberToString.MalayOrdinalLanguageSpecifics.Trillion*"></a>
+
+  <h3 id="Utils_NumberToString_MalayOrdinalLanguageSpecifics_Trillion" data-uid="Utils.NumberToString.MalayOrdinalLanguageSpecifics.Trillion">
+  Trillion
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/IndonesianOrdinalLanguageSpecifics.cs/#L88"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the language-specific word for 10^12.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected override string Trillion { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd></dd>
   </dl>
 
@@ -277,7 +422,7 @@ Class ClockTimeConversionOptions  <a class="header-action link-secondary" title=
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ClockTimeFormatOptions.cs/#L83" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/IndonesianOrdinalLanguageSpecifics.cs/#L79" class="edit-link">Edit this page</a>
         </div>
 
 

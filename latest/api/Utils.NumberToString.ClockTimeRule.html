@@ -335,7 +335,7 @@ Class ClockTimeRule  <a class="header-action link-secondary" title="View source"
 
   <h3 id="Utils_NumberToString_ClockTimeRule_AmountForcedVariants" data-uid="Utils.NumberToString.ClockTimeRule.AmountForcedVariants">
   AmountForcedVariants
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ClockTimeFormatOptions.cs/#L57"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ClockTimeFormatOptions.cs/#L63"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets grammatical variants forced only while rendering <code>{amount}</code>.</p>
@@ -399,7 +399,7 @@ Class ClockTimeRule  <a class="header-action link-secondary" title="View source"
 
   <h3 id="Utils_NumberToString_ClockTimeRule_DisplayHourRange" data-uid="Utils.NumberToString.ClockTimeRule.DisplayHourRange">
   DisplayHourRange
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ClockTimeFormatOptions.cs/#L51"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ClockTimeFormatOptions.cs/#L57"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the optional range of projected display hours for which this rule applies.
@@ -432,7 +432,7 @@ The range is evaluated after <a class="xref" href="Utils.NumberToString.ClockTim
 
   <h3 id="Utils_NumberToString_ClockTimeRule_HourForcedVariants" data-uid="Utils.NumberToString.ClockTimeRule.HourForcedVariants">
   HourForcedVariants
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ClockTimeFormatOptions.cs/#L54"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ClockTimeFormatOptions.cs/#L60"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets grammatical variants forced only while rendering <code>{hour}</code>.</p>
@@ -578,6 +578,39 @@ The range is evaluated after <a class="xref" href="Utils.NumberToString.ClockTim
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
     <dt><a class="xref" href="Utils.Range.IntRange-1.html">IntRange</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_NumberToString_ClockTimeRule_SpecialHourPattern_" data-uid="Utils.NumberToString.ClockTimeRule.SpecialHourPattern*"></a>
+
+  <h3 id="Utils_NumberToString_ClockTimeRule_SpecialHourPattern" data-uid="Utils.NumberToString.ClockTimeRule.SpecialHourPattern">
+  SpecialHourPattern
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ClockTimeFormatOptions.cs/#L51"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the optional pattern used when a configured special-hour word replaces <code>{hour}</code>.
+When absent, <a class="xref" href="Utils.NumberToString.ClockTimeRule.html#Utils_NumberToString_ClockTimeRule_Pattern">Pattern</a> is used for both numeric and special hours.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string? SpecialHourPattern { get; init; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd></dd>
   </dl>
 
