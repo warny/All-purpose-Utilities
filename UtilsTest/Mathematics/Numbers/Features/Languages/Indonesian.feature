@@ -61,6 +61,8 @@ Examples:
     | 21 | kedua puluh satu |
     | 100 | keseratus |
     | 1000 | keseribu |
+    | 1000000000 | kesatu miliar |
+    | 1000000000000 | kesatu triliun |
 
 Scenario Outline: Idiomatic Indonesian clock times
     When I convert the clock time "<time>"
