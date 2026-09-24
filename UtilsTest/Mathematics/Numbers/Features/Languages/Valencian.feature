@@ -15,5 +15,5 @@ Examples:
     | 01:00 | la una en punt |
     | 01:15 | la una i quart |
     | 01:30 | la una i mitja |
-    | 01:45 | les dues menys quart |
-    | 01:55 | les dues menys cinc |
+    | 01:45 | les dos menys quart |
+    | 01:55 | les dos menys cinc |
