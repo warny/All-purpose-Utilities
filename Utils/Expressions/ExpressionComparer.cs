@@ -72,32 +72,84 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// </remarks>
     public bool Equals(Expression? x, Expression? y)
     {
-        if (ReferenceEquals(x, y)) return true;
-        if (x is null || y is null) return false;
+        if (TryFastPathEquals(x, y, out bool fastResult)) return fastResult;
 
-        // The base ExpressionTransformer.PrepareLambda rebuilds every lambda it visits via the
-        // type-inferring Expression.Lambda(Transform(le.Body), expressionParameters) overload, which
-        // preserves neither the original TailCall flag (it always comes back false) nor a custom delegate
-        // type (it always infers a Func<...>/Action<...>). The exact built-in ExpressionSimplifier no
-        // longer has this gap: its RebuildLambdaExpression override (see the S1 reconstruction-fidelity
-        // fix) preserves TailCall, Type and Name at every nesting depth, not only at the root. A derived
-        // ExpressionSimplifier subclass that does not override RebuildLambdaExpression itself still keeps
-        // the historical erasing behavior, and _expressionSimplifier above is always the exact built-in
-        // type, so simplification inside this comparer never erases either value. Comparing both here, on
-        // the two ORIGINAL, not-yet-simplified root expressions, remains useful anyway: it protects
-        // root-level metadata even for an expression tree this comparer's structural walk does not
-        // otherwise understand (see this method's XML remarks on the earlier ReferenceEquals check).
+        Expression simplifiedX = SimplifyForComparison(x!);
+        Expression simplifiedY = SimplifyForComparison(y!);
+
+        return StructuralEqualsAfterSimplification(simplifiedX, simplifiedY);
+    }
+
+    /// <summary>
+    /// Performs the top-level, pre-simplification checks <see cref="Equals(Expression?, Expression?)"/>
+    /// itself applies before ever calling <see cref="ExpressionSimplifier.Simplify(Expression)"/>: the
+    /// <see cref="ReferenceEquals(object?, object?)"/>/null shortcut and the root-<see cref="LambdaExpression"/>
+    /// metadata check.
+    /// </summary>
+    /// <param name="x">The first expression to compare, as originally supplied (not yet simplified).</param>
+    /// <param name="y">The second expression to compare, as originally supplied (not yet simplified).</param>
+    /// <param name="result">
+    /// The final equality result, meaningful only when this method returns <see langword="true"/>.
+    /// </param>
+    /// <returns>
+    /// <see langword="true"/> when one of the fast-path checks already decides the comparison (so
+    /// <paramref name="result"/> is the final answer and no simplification is needed); <see langword="false"/>
+    /// when a full simplify-then-compare is required.
+    /// </returns>
+    /// <remarks>
+    /// Factored out of <see cref="Equals(Expression?, Expression?)"/>, with no behavior change, so the S5
+    /// per-rule <c>ExpressionSimplifier.FactorEqualityProbe</c> batching helper (see
+    /// <c>Utils/TODO-2026-09-12-expression-simplifier-roadmap.md</c>, stage S5) can apply the exact same
+    /// top-level semantics to a candidate pair before consulting its own simplified-form cache, instead of
+    /// duplicating this logic. The three checks, and their order, are unchanged from before this refactor:
+    /// see <see cref="Equals(Expression?, Expression?)"/>'s own remarks (still accurate, just distributed
+    /// across this method and the two others introduced alongside it) for why each one exists.
+    /// </remarks>
+    internal static bool TryFastPathEquals(Expression? x, Expression? y, out bool result)
+    {
+        if (ReferenceEquals(x, y)) { result = true; return true; }
+        if (x is null || y is null) { result = false; return true; }
+
         if (x is LambdaExpression xRoot && y is LambdaExpression yRoot
             && (xRoot.TailCall != yRoot.TailCall || xRoot.Type != yRoot.Type))
         {
-            return false;
+            result = false;
+            return true;
         }
 
-        Expression simplifiedX = _expressionSimplifier.Simplify(x);
-        Expression simplifiedY = _expressionSimplifier.Simplify(y);
-
-        return EqualsCore(simplifiedX, simplifiedY, new ParameterBindingContext());
+        result = false;
+        return false;
     }
+
+    /// <summary>
+    /// Simplifies <paramref name="expression"/> using the exact same shared, exact-built-in
+    /// <see cref="ExpressionSimplifier"/> instance <see cref="Equals(Expression?, Expression?)"/> and
+    /// <see cref="GetHashCode(Expression)"/> use, so a caller that pre-computes a simplified form (such as
+    /// the S5 <c>FactorEqualityProbe</c> batching helper) observes exactly the same result - including the
+    /// same independent, self-contained top-level lexical-scope boundary <see cref="ExpressionSimplifier.Simplify(Expression)"/>
+    /// establishes for every call - as calling the public <see cref="Equals(Expression?, Expression?)"/> would.
+    /// </summary>
+    /// <param name="expression">The expression to simplify; never <see langword="null"/>.</param>
+    /// <returns>The simplified expression.</returns>
+    internal static Expression SimplifyForComparison(Expression expression) => _expressionSimplifier.Simplify(expression);
+
+    /// <summary>
+    /// Structurally compares two ALREADY-simplified expressions using the exact same policy the public
+    /// <see cref="Equals(Expression?, Expression?)"/> uses for its own post-simplification comparison: the
+    /// non-safe constant policy (a non-numeric, non-known-safe constant's own <see cref="object.Equals(object?)"/>
+    /// may run), not <see cref="StructuralEqualsRaw(Expression?, Expression?)"/>'s narrower safe-constant
+    /// policy. This is the method <see cref="Equals(Expression?, Expression?)"/> itself calls after
+    /// simplifying both operands; it is exposed here so a caller that has already produced (and, e.g.,
+    /// cached) each operand's simplified form - see the S5 <c>FactorEqualityProbe</c> helper - does not need
+    /// to duplicate this exact policy or re-derive it from <see cref="StructuralEqualsRaw(Expression?, Expression?)"/>,
+    /// which would be a silent, unsafe policy change (see that method's remarks and the S5 roadmap entry's
+    /// "Critical warning").
+    /// </summary>
+    /// <param name="simplifiedX">The first expression, already simplified via <see cref="SimplifyForComparison(Expression)"/> (or equivalent).</param>
+    /// <param name="simplifiedY">The second expression, already simplified via <see cref="SimplifyForComparison(Expression)"/> (or equivalent).</param>
+    /// <returns><see langword="true"/> if the two already-simplified expressions are structurally equivalent under the public, non-safe-constant policy.</returns>
+    internal static bool StructuralEqualsAfterSimplification(Expression? simplifiedX, Expression? simplifiedY)
+        => EqualsCore(simplifiedX, simplifiedY, new ParameterBindingContext());
 
     /// <summary>
     /// Recursively compares two already-simplified expressions for structural equivalence, resolving

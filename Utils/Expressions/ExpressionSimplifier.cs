@@ -545,6 +545,285 @@ namespace Utils.Mathematics.Expressions
         }
 
         /// <summary>
+        /// A per-invocation cache reused by the high-fan-out factoring rules
+        /// (<see cref="AdditionOfEqualsElements"/>, <see cref="SubstractionOfEqualsElements"/>) to avoid
+        /// calling <see cref="ExpressionSimplifier.Simplify(Expression)"/> more than once for the same
+        /// candidate operand while it is probed against the (up to three) other candidates considered for
+        /// the SAME factoring decision.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Why this exists (S5).</b> Each of the two rules above compares up to four candidate
+        /// sub-expressions (<c>leftleft</c>/<c>leftright</c>/<c>rightleft</c>/<c>rightright</c>) pairwise,
+        /// up to five or six times per rule invocation, all via the PUBLIC <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/>
+        /// - which itself calls <see cref="ExpressionSimplifier.Simplify(Expression)"/> on BOTH operands
+        /// every time it runs, per its own documented contract. Before this type existed, the same candidate
+        /// operand was therefore re-simplified from scratch on every comparison it participated in within one
+        /// rule call - a real, measured end-to-end construction-cost multiplier for left-associated additive
+        /// chains (see <c>Utils/TODO-2026-09-12-expression-simplifier-roadmap.md</c>, stage S5, "P3"). This
+        /// type makes that caching explicit and scoped to exactly one rule invocation, instead of either
+        /// leaving the redundant work in place or reaching for a broader, longer-lived cache the roadmap's S5
+        /// entry explicitly rules out ("introduce no global/static mutable memoization cache... no cache may
+        /// survive the comparison/rule operation whose semantics justified it").
+        /// </para>
+        /// <para>
+        /// <b>Why this preserves the public <see cref="ExpressionComparer"/> contract exactly.</b>
+        /// <see cref="Equals"/> below performs, in order: <see cref="ExpressionComparer.TryFastPathEquals"/>
+        /// (the same top-level <see cref="object.ReferenceEquals(object?, object?)"/>/null/root-lambda-metadata
+        /// checks the public <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/> itself performs
+        /// before ever simplifying), then - only when that does not already decide the comparison -
+        /// <see cref="ExpressionComparer.SimplifyForComparison"/> (the SAME exact built-in simplifier instance,
+        /// establishing the same independent, self-contained top-level lexical-scope boundary every call to
+        /// <see cref="ExpressionSimplifier.Simplify(Expression)"/> establishes) for each operand, cached by
+        /// object reference so a given operand is simplified at most once per instance of this type, then
+        /// <see cref="ExpressionComparer.StructuralEqualsAfterSimplification"/> (the same non-safe-constant,
+        /// post-simplification structural comparison the public comparer itself performs). This is
+        /// deliberately NOT <see cref="ExpressionComparer.StructuralEqualsRaw(Expression?, Expression?)"/>:
+        /// that entry point never simplifies its operands and uses the safe-constant policy, which would
+        /// silently change both which factoring decisions fire (see the roadmap's second-pass-dependency
+        /// characterization, <c>ExpressionSimplifierComparerBatchingTests</c>) and which constants' own
+        /// <see cref="object.Equals(object?)"/>/<see cref="object.GetHashCode"/> may run.
+        /// </para>
+        /// <para>
+        /// <b>Why caching by object reference is safe here.</b> The operands
+        /// passed to <see cref="Equals"/> are always one of exactly four candidate <see cref="Expression"/>
+        /// instances captured once at the top of a single <c>AdditionOfEqualsElements</c>/
+        /// <c>SubstractionOfEqualsElements</c> invocation (<c>leftleft</c>/<c>leftright</c>/<c>rightleft</c>/
+        /// <c>rightright</c>); the caller's subsequent <c>ObjectUtils.Swap</c> calls only reassign which LOCAL
+        /// VARIABLE refers to which of those four already-captured objects, never mutate an
+        /// <see cref="Expression"/> instance itself (expression trees are immutable) or introduce a new
+        /// object needing simplification. <see cref="ExpressionSimplifier.Simplify(Expression)"/> is a pure
+        /// function of its input's RESULT SHAPE for any single top-level call (see the roadmap's "Purity
+        /// assumption" and S4's "Independent top-level calls" remarks: every call establishes and restores
+        /// its own ambient lexical-scope boundary, so the shape it returns never depends on when, or how many
+        /// times, it was previously called) - but it is not necessarily side-effect-free DURING that call:
+        /// see "Side-effect safety" below for why caching is therefore restricted to operands proven not to
+        /// trigger user code while being simplified, not merely to operands whose simplified shape is stable.
+        /// </para>
+        /// <para>
+        /// <b>Side-effect safety (S5 P3 review round 6).</b> Simplifying a candidate operand can itself
+        /// dispatch a NESTED rule invocation - including a nested <c>AdditionOfEqualsElements</c>/
+        /// <c>SubstractionOfEqualsElements</c> call, with its own <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/>
+        /// probes - reachable purely because that operand happens to contain its own <c>Add</c>/<c>Subtract</c>/
+        /// <c>Multiply</c> structure. If such a nested probe reaches a non-safe (opaque, non-numeric,
+        /// non-known-safe) <see cref="ConstantExpression"/>, it invokes that constant's own possibly
+        /// user-defined <see cref="object.Equals(object?)"/>/<see cref="object.GetHashCode"/> - exactly the
+        /// PUBLIC comparer's documented, deliberately-preserved non-safe policy (see
+        /// <see cref="ExpressionComparer.StructuralEqualsAfterSimplification"/>'s remarks). Before this
+        /// review round, caching a candidate's simplified form unconditionally meant such user code ran ONCE
+        /// per DISTINCT candidate reference instead of once per COMPARISON that candidate participated in -
+        /// an observable reduction in invocation count for arbitrary user code, confirmed experimentally
+        /// (see the roadmap's S5 P3 round-6 entry: a stateful/counting constant nested two levels inside one
+        /// candidate's own subtree was invoked twice by the pre-P3 baseline but only once by the
+        /// then-shipped, unconditionally-caching implementation). <see cref="MightInvokeUserCodeWhenSimplified"/>
+        /// conservatively predicts this risk from a candidate's STATIC SHAPE alone - it never itself
+        /// simplifies or compares anything, so it never runs the very user code it is trying to avoid running
+        /// an extra time - and <see cref="GetOrSimplify"/> only caches (and therefore only
+        /// deduplicates re-simplification of) a candidate <see cref="IsCacheable"/> has cleared. A candidate
+        /// that is not cacheable falls back, on EVERY comparison it participates in, to calling
+        /// <see cref="ExpressionComparer.Default"/>'s public <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/>
+        /// directly - the exact call, and therefore the exact user-code invocation count, this type replaces
+        /// for a cacheable candidate - so this type never reduces how many times user code observably runs
+        /// relative to the pre-existing per-comparison behavior, for any candidate.
+        /// </para>
+        /// <para>
+        /// <b>Ordering (S5 P3 review round 7).</b> <see cref="Equals"/> classifies BOTH operands, via
+        /// <see cref="IsCacheable"/>, before simplifying EITHER one. Round 6 shipped a version that simplified
+        /// each operand as it was classified (interleaved), which is observably different from the public
+        /// <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/> contract whenever exactly one
+        /// operand is not cacheable: given non-cacheable <c>x</c> and cacheable <c>y</c>, the round-6 code
+        /// simplified <c>y</c> (a side-effecting operation - see above) while classifying it, BEFORE the
+        /// not-cacheable-so-fall-back decision was even reached, so if simplifying <c>y</c> itself throws,
+        /// that exception surfaces before <c>x</c> is ever touched - whereas the public contract, and this
+        /// type's own fallback call, always simplify <c>x</c> first and never reach <c>y</c> if that throws.
+        /// Classifying both operands first (<see cref="MightInvokeUserCodeWhenSimplified"/>, called from
+        /// <see cref="IsCacheable"/>) is safe to do unconditionally because classification never simplifies
+        /// anything; simplification (<see cref="GetOrSimplify"/>) then only ever runs, in `x`-then-`y` order,
+        /// once both operands are already known cacheable - exactly reproducing
+        /// <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/>'s own <c>Simplify(x)</c>-then-
+        /// <c>Simplify(y)</c> sequence for that case, and never simplifying anything at all (deferring fully to
+        /// the fallback) for every other case.
+        /// </para>
+        /// <para>
+        /// <b>Lifetime.</b> A fresh instance is created at the top of each
+        /// <c>AdditionOfEqualsElements</c>/<c>SubstractionOfEqualsElements</c> call and discarded when that
+        /// call returns; nothing here is stored on <see langword="this"/> <see cref="ExpressionSimplifier"/>
+        /// instance, a <see langword="static"/> field, or a thread-local slot, so there is no cross-call,
+        /// cross-thread, or cross-rule sharing of any kind.
+        /// </para>
+        /// </remarks>
+        private sealed class FactorEqualityProbe
+        {
+            /// <summary>
+            /// At most four distinct operands ever participate in one factoring decision
+            /// (<c>leftleft</c>/<c>leftright</c>/<c>rightleft</c>/<c>rightright</c>), so a small
+            /// fixed-capacity list - linearly scanned by reference equality - avoids a
+            /// <see cref="Dictionary{TKey, TValue}"/>'s hashing/bucket overhead for so few entries.
+            /// <c>CanCache</c> records, once computed, whether <c>Simplified</c> holds a reusable cached form
+            /// (<see langword="true"/>) or is meaningless/<see langword="null"/> because
+            /// <see cref="MightInvokeUserCodeWhenSimplified"/> ruled the operand out (<see langword="false"/>).
+            /// </summary>
+            private readonly List<(Expression Original, bool CanCache, Expression? Simplified)> _cache = new(4);
+
+            /// <summary>
+            /// Compares <paramref name="x"/> and <paramref name="y"/> exactly like the public
+            /// <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/>, reusing a previously
+            /// simplified form for either operand when this instance has already computed one AND that
+            /// operand was proven safe to cache (see "Side-effect safety" above) - otherwise falling back,
+            /// for this one comparison, to calling <see cref="ExpressionComparer.Default"/> directly, exactly
+            /// as every comparison did before this type existed.
+            /// </summary>
+            /// <param name="x">The first candidate operand.</param>
+            /// <param name="y">The second candidate operand.</param>
+            /// <returns><see langword="true"/> if the two candidates are equal under the public <see cref="ExpressionComparer"/> contract.</returns>
+            public bool Equals(Expression x, Expression y)
+            {
+                if (ExpressionComparer.TryFastPathEquals(x, y, out bool fastResult)) return fastResult;
+
+                // Classify BOTH operands before simplifying EITHER one (S5 P3 review round 7): classification
+                // alone (MightInvokeUserCodeWhenSimplified) never simplifies anything and is therefore
+                // side-effect-free, but ExpressionComparer.SimplifyForComparison is not. Simplifying a
+                // cacheable operand here, before knowing whether the OTHER operand will force a fallback,
+                // would run that operand's simplification (and any user code it can reach) before the
+                // fallback's own Simplify(x)-then-Simplify(y) sequence does - an observable reordering (e.g. of
+                // which operand's simplification throws first) relative to ExpressionComparer.Equals, which
+                // this type must reproduce exactly, not merely approximate.
+                bool canCacheX = IsCacheable(x);
+                bool canCacheY = IsCacheable(y);
+
+                if (!canCacheX || !canCacheY)
+                {
+                    return ExpressionComparer.Default.Equals(x, y);
+                }
+
+                Expression simplifiedX = GetOrSimplify(x);
+                Expression simplifiedY = GetOrSimplify(y);
+
+                return ExpressionComparer.StructuralEqualsAfterSimplification(simplifiedX, simplifiedY);
+            }
+
+            /// <summary>
+            /// Determines, and caches, whether <paramref name="original"/> is safe to simplify-and-cache (see
+            /// <see cref="MightInvokeUserCodeWhenSimplified"/>) - WITHOUT simplifying it. Kept separate from
+            /// <see cref="GetOrSimplify"/> so <see cref="Equals"/> can classify both operands of one comparison
+            /// before simplifying either (see <see cref="Equals"/>'s remarks on ordering).
+            /// </summary>
+            /// <param name="original">The candidate operand to classify.</param>
+            /// <returns><see langword="true"/> if <paramref name="original"/> is safe to simplify and cache.</returns>
+            private bool IsCacheable(Expression original)
+            {
+                for (int i = 0; i < _cache.Count; i++)
+                {
+                    if (ReferenceEquals(_cache[i].Original, original))
+                    {
+                        return _cache[i].CanCache;
+                    }
+                }
+
+                bool canCache = !MightInvokeUserCodeWhenSimplified(original);
+                _cache.Add((original, canCache, null));
+                return canCache;
+            }
+
+            /// <summary>
+            /// Returns <paramref name="original"/>'s simplified form, computing and caching it on first use.
+            /// The caller MUST have already established, via <see cref="IsCacheable"/>, that
+            /// <paramref name="original"/> is safe to simplify; this method never itself decides that.
+            /// </summary>
+            /// <param name="original">A candidate operand <see cref="IsCacheable"/> has already proven safe to simplify.</param>
+            /// <returns><paramref name="original"/>'s simplified form.</returns>
+            private Expression GetOrSimplify(Expression original)
+            {
+                for (int i = 0; i < _cache.Count; i++)
+                {
+                    if (ReferenceEquals(_cache[i].Original, original))
+                    {
+                        Expression? simplified = _cache[i].Simplified;
+                        if (simplified is not null) return simplified;
+
+                        simplified = ExpressionComparer.SimplifyForComparison(original);
+                        _cache[i] = (original, true, simplified);
+                        return simplified;
+                    }
+                }
+
+                throw new InvalidOperationException(
+                    $"{nameof(GetOrSimplify)} was called for an operand that {nameof(IsCacheable)} had not already classified as cacheable.");
+            }
+
+            /// <summary>
+            /// Conservatively determines whether simplifying <paramref name="expression"/> could invoke
+            /// arbitrary user-defined code (a non-safe constant's own <see cref="object.Equals(object?)"/>/
+            /// <see cref="object.GetHashCode"/>, reached through some nested rule's own equality probe) -
+            /// see this type's "Side-effect safety" remarks for why this must be checked before caching.
+            /// </summary>
+            /// <remarks>
+            /// This walks <paramref name="expression"/>'s ENTIRE subtree by construction - not merely the
+            /// seven node kinds <see cref="ExpressionComparer"/> understands structurally - since a nested
+            /// rule invocation reachable during simplification is not limited to those seven kinds either
+            /// (for example, a <see cref="ConditionalExpression"/>'s branches are still simplified even
+            /// though <see cref="ExpressionComparer"/> treats the whole node as structurally opaque). Two
+            /// deliberate conservatism choices keep this safe rather than merely optimistic:
+            /// <list type="bullet">
+            /// <item>a <see cref="ConstantExpression"/> is "risky" unless its value is either a native
+            /// numeric type in <see cref="Types.Number"/> (compared via the exact rational/NaN/infinity
+            /// model, which never calls user code - see <c>ExpressionComparer.ExactNumericValue</c>) or a
+            /// known-safe type (see <see cref="ExpressionComparer.IsKnownSafeConstantValue(object)"/>);</item>
+            /// <item>any node kind this method does not explicitly recognize is treated as "risky" - this is
+            /// NOT <see cref="ExpressionVisitor"/>-based traversal, deliberately: <see cref="ExpressionVisitor"/>'s
+            /// default <c>VisitExtension</c>/<c>Expression.VisitChildren</c> throws
+            /// <see cref="ArgumentException"/> on a non-reducible <see cref="ExpressionType.Extension"/> node
+            /// (<see cref="Expression.CanReduce"/> <see langword="false"/>), which this safety CHECK must
+            /// never do even for adversarial/test-double node kinds (see
+            /// <c>ExpressionSimplifierAdditiveSortScaleTests</c>'s own such adversarial coverage) - a
+            /// conservative "true" for an unrecognized node kind achieves the same safe outcome without ever
+            /// touching that node's internals.</item>
+            /// </list>
+            /// </remarks>
+            /// <param name="expression">The candidate operand's subtree to scan, or <see langword="null"/> for an absent optional sub-expression.</param>
+            /// <returns><see langword="true"/> if simplifying <paramref name="expression"/> might invoke user-defined code; <see langword="false"/> only when this is proven impossible.</returns>
+            private static bool MightInvokeUserCodeWhenSimplified(Expression? expression) => expression switch
+            {
+                null => false,
+                ParameterExpression => false,
+                ConstantExpression ce => ce.Value is not null
+                    && !Types.Number.Contains(ce.Type)
+                    && !ExpressionComparer.IsKnownSafeConstantValue(ce.Value),
+                LambdaExpression le => MightInvokeUserCodeWhenSimplified(le.Body),
+                UnaryExpression ue => MightInvokeUserCodeWhenSimplified(ue.Operand),
+                BinaryExpression be => MightInvokeUserCodeWhenSimplified(be.Left)
+                    || MightInvokeUserCodeWhenSimplified(be.Right)
+                    || MightInvokeUserCodeWhenSimplified(be.Conversion),
+                MethodCallExpression mce => MightInvokeUserCodeWhenSimplified(mce.Object)
+                    || AnyArgumentMightInvokeUserCodeWhenSimplified(mce.Arguments),
+                MemberExpression me => MightInvokeUserCodeWhenSimplified(me.Expression),
+                _ => true,
+            };
+
+            /// <summary>
+            /// Indexed-loop equivalent of <c>arguments.Any(MightInvokeUserCodeWhenSimplified)</c> (S5 P3 review
+            /// round 7), used instead of the
+            /// <see cref="Enumerable.Any{TSource}(IEnumerable{TSource}, Func{TSource, bool})"/> LINQ extension
+            /// so this classification path - meant to be a cheap, allocation-light static-shape scan run once
+            /// per candidate per rule invocation - does not risk the delegate/enumerator scaffolding <c>Any</c>
+            /// can introduce for a non-array <see cref="IReadOnlyList{T}"/> source such as
+            /// <see cref="MethodCallExpression.Arguments"/>, consistent with this project's existing avoidance
+            /// of LINQ on other frequently used construction paths (see the roadmap's S5 stage).
+            /// </summary>
+            /// <param name="arguments">The call's argument list to scan.</param>
+            /// <returns><see langword="true"/> if any argument might invoke user code when simplified.</returns>
+            private static bool AnyArgumentMightInvokeUserCodeWhenSimplified(IReadOnlyList<Expression> arguments)
+            {
+                for (int i = 0; i < arguments.Count; i++)
+                {
+                    if (MightInvokeUserCodeWhenSimplified(arguments[i])) return true;
+                }
+
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Attempts to factor out common elements in <c>left + right</c> if possible.
         /// E.g., rewriting <c>a*x + b*x</c> as <c>(a+b)*x</c>.
         /// </summary>
@@ -593,24 +872,28 @@ namespace Utils.Mathematics.Expressions
             if (rightAugmented && rightright is ConstantExpression rightRightConst && NumberUtils.CompareNumeric(rightRightConst.Value, 1) == 0)
                 return null;
 
-            // Attempt to unify or swap factors for factoring out
+            // Attempt to unify or swap factors for factoring out. A single FactorEqualityProbe is reused
+            // for every comparison below (S5): each of the up to four candidate operands is simplified via
+            // the public ExpressionComparer contract at most once per call, rather than once per comparison
+            // it participates in - see FactorEqualityProbe's remarks for why this is semantics-preserving.
+            var equalityProbe = new FactorEqualityProbe();
             if (!leftAugmented
                 && !rightAugmented
-                && ExpressionComparer.Default.Equals(leftleft, rightleft)
-                && !ExpressionComparer.Default.Equals(leftright, rightright))
+                && equalityProbe.Equals(leftleft, rightleft)
+                && !equalityProbe.Equals(leftright, rightright))
             {
                 ObjectUtils.Swap(ref leftleft, ref leftright);
                 ObjectUtils.Swap(ref rightleft, ref rightright);
             }
-            else if (ExpressionComparer.Default.Equals(leftleft, rightright))
+            else if (equalityProbe.Equals(leftleft, rightright))
             {
                 ObjectUtils.Swap(ref leftleft, ref leftright);
             }
-            else if (ExpressionComparer.Default.Equals(leftright, rightleft))
+            else if (equalityProbe.Equals(leftright, rightleft))
             {
                 ObjectUtils.Swap(ref rightleft, ref rightright);
             }
-            else if (ExpressionComparer.Default.Equals(leftright, rightright))
+            else if (equalityProbe.Equals(leftright, rightright))
             {
                 // do nothing
             }
@@ -669,23 +952,26 @@ namespace Utils.Mathematics.Expressions
                 rightright = right;
             }
 
-            // Attempt to unify or swap factors
+            // Attempt to unify or swap factors. A single FactorEqualityProbe is reused for every comparison
+            // below, including the final cancellation check (S5) - see FactorEqualityProbe's remarks for
+            // why this is semantics-preserving.
+            var equalityProbe = new FactorEqualityProbe();
             if ((!leftAugmented && !rightAugmented)
-                && ExpressionComparer.Default.Equals(leftleft, rightleft)
-                && !ExpressionComparer.Default.Equals(leftright, rightright))
+                && equalityProbe.Equals(leftleft, rightleft)
+                && !equalityProbe.Equals(leftright, rightright))
             {
                 ObjectUtils.Swap(ref leftleft, ref leftright);
                 ObjectUtils.Swap(ref rightleft, ref rightright);
             }
-            else if (ExpressionComparer.Default.Equals(leftleft, rightright))
+            else if (equalityProbe.Equals(leftleft, rightright))
             {
                 ObjectUtils.Swap(ref leftleft, ref leftright);
             }
-            else if (ExpressionComparer.Default.Equals(leftright, rightleft))
+            else if (equalityProbe.Equals(leftright, rightleft))
             {
                 ObjectUtils.Swap(ref rightleft, ref rightright);
             }
-            else if (ExpressionComparer.Default.Equals(leftright, rightright))
+            else if (equalityProbe.Equals(leftright, rightright))
             {
                 // do nothing
             }
@@ -694,7 +980,7 @@ namespace Utils.Mathematics.Expressions
                 return null;
             }
 
-            if (ExpressionComparer.Default.Equals(leftleft, rightleft))
+            if (equalityProbe.Equals(leftleft, rightleft))
             {
                 return Expression.Constant(Convert.ChangeType(0, e.Type), e.Type);
             }
@@ -1124,16 +1410,36 @@ namespace Utils.Mathematics.Expressions
             foreach ((Expression term, bool isNegative) in terms)
             {
                 AdditiveGroupClass group = ClassifyForAdditiveGrouping(term);
+
+                // Precompute every structural key CompareAdditiveGroupingOrder will need for this term
+                // exactly once here (roadmap S5, P1), instead of letting the O(n log n) sort below rebuild
+                // them from scratch on every pairwise comparison. An opaque term's own complete key (built
+                // right below) IS ExpressionCanonicalOrder.BuildKey(group.Opaque, scopes) - group.Opaque is
+                // this same term - so CompareAdditiveGroupingOrder reuses it directly instead of a second
+                // ArgumentKeys array. A function-like term additionally needs each ARGUMENT's own key (the
+                // primary sort's function-like branch orders by argument-list identity, not by the whole
+                // term/exponent), computed once via BuildKeys so every argument shares one working scope list.
+                //
+                // group.Arguments/group.Opaque themselves are NOT retained on the annotation below (S5
+                // review round 3): only the two scalar fields CompareAdditiveGroupingOrder actually still
+                // needs post-annotation (IsFunctionLike, CategoryOrder) are copied out here, keeping
+                // AnnotatedAdditiveTerm - copied repeatedly through OrderBy/GroupBy - smaller than carrying
+                // the whole AdditiveGroupClass (with its two now-unused reference-type fields) would.
+                IReadOnlyList<ExpressionCanonicalOrder.KeyNode>? argumentKeys = group.IsFunctionLike
+                    ? ExpressionCanonicalOrder.BuildKeys(group.Arguments!, scopes)
+                    : null;
+
                 annotatedTerms.Add(new AnnotatedAdditiveTerm(
                     term,
                     isNegative,
-                    group,
-                    ExpressionCanonicalOrder.BuildKey(term, scopes)));
+                    group.IsFunctionLike,
+                    group.CategoryOrder,
+                    ExpressionCanonicalOrder.BuildKey(term, scopes),
+                    argumentKeys));
             }
 
             var orderedTerms = annotatedTerms
-                .OrderBy(static term => term, Comparer<AnnotatedAdditiveTerm>.Create(
-                    (a, b) => CompareAdditiveGroupingOrder(a.Group, b.Group, scopes)))
+                .OrderBy(static term => term, AdditiveGroupingOrderComparer)
                 .ThenBy(static term => term.IsNegative ? 0 : 1)
                 .ThenBy(static term => term.Key)
                 .ToList();
@@ -1269,25 +1575,48 @@ namespace Utils.Mathematics.Expressions
         /// left to S5).
         /// </summary>
         /// <remarks>
-        /// <see cref="Key"/> itself is computed exactly once per term here and then reused by the final
-        /// <c>.ThenBy(term =&gt; term.Key)</c> tie-break in <see cref="CanonicalizeAdditiveExpression"/>. The
-        /// PRIMARY sort step, however, does NOT reuse it: <see cref="CompareAdditiveGroupingOrder"/>
-        /// compares <see cref="Group"/>'s (coarser, grouping-relevant) content directly via
-        /// <see cref="ExpressionCanonicalOrder.Compare"/>, which rebuilds a full key from scratch for both
-        /// operands on every pairwise comparison - for an "opaque" (non-function-like) term specifically,
-        /// this rebuilds the exact same key <see cref="Key"/> already holds (<see cref="AdditiveGroupClass.Opaque"/>
-        /// is the whole original term in that case), redundantly, once per comparison the term participates
-        /// in during the O(n log n) sort. This is a known, S4-review-identified construction-time
-        /// inefficiency (not a correctness issue - the values compared are identical either way), explicitly
-        /// left for S5 to address alongside this class's other deferred allocation/CPU-cost items, per the
-        /// roadmap's S4/S5 boundary.
+        /// <b>S5 (roadmap P1):</b> every structural key <see cref="CompareAdditiveGroupingOrder"/> needs is
+        /// now computed exactly once per term, here, rather than being rebuilt from scratch on every pairwise
+        /// comparison during the O(n log n) sort in <see cref="CanonicalizeAdditiveExpression"/>. For an
+        /// "opaque" (non-function-like) term, <see cref="Key"/> already IS
+        /// <c>ExpressionCanonicalOrder.BuildKey(term, scopes)</c> for this same term - so the primary sort's
+        /// opaque branch reuses <see cref="Key"/> directly instead of a second, redundant build. For a
+        /// function-like term, the primary sort orders by argument-list identity (not by the whole term,
+        /// which would also fold in the ignored exponent for a power-wrapped call), so
+        /// <see cref="ArgumentKeys"/> holds each argument's own key, built once via
+        /// <see cref="ExpressionCanonicalOrder.BuildKeys"/>.
         /// </remarks>
-        private readonly struct AnnotatedAdditiveTerm(Expression term, bool isNegative, AdditiveGroupClass group, ExpressionCanonicalOrder.KeyNode key)
+        /// <remarks>
+        /// <b>S5 review round 3:</b> only carries the two <see cref="AdditiveGroupClass"/> fields
+        /// <see cref="CompareAdditiveGroupingOrder"/> still reads after annotation
+        /// (<see cref="IsFunctionLike"/>, <see cref="CategoryOrder"/>) rather than the whole
+        /// <see cref="AdditiveGroupClass"/> value (which also carries <c>Arguments</c>/<c>Opaque</c> - needed
+        /// only transiently, while building <see cref="ArgumentKeys"/>/<see cref="Key"/> in the annotation
+        /// loop, never afterward). Keeping this struct's per-element footprint small - it is copied repeatedly
+        /// through <c>List&lt;T&gt;</c>/<c>OrderBy</c>/<c>GroupBy</c> - is itself part of this stage's
+        /// construction-cost goal.
+        /// </remarks>
+        private readonly struct AnnotatedAdditiveTerm(
+            Expression term,
+            bool isNegative,
+            bool isFunctionLike,
+            int categoryOrder,
+            ExpressionCanonicalOrder.KeyNode key,
+            IReadOnlyList<ExpressionCanonicalOrder.KeyNode>? argumentKeys)
         {
             public Expression Term { get; } = term;
             public bool IsNegative { get; } = isNegative;
-            public AdditiveGroupClass Group { get; } = group;
+
+            /// <summary>Whether this term classified as function-like (see <see cref="AdditiveGroupClass.IsFunctionLike"/>).</summary>
+            public bool IsFunctionLike { get; } = isFunctionLike;
+
+            /// <summary>This term's function-category order (see <see cref="AdditiveGroupClass.CategoryOrder"/>); meaningful only when <see cref="IsFunctionLike"/> is <see langword="true"/>.</summary>
+            public int CategoryOrder { get; } = categoryOrder;
+
             public ExpressionCanonicalOrder.KeyNode Key { get; } = key;
+
+            /// <summary>Each function-like term's argument keys, precomputed once (see this type's remarks); <see langword="null"/> for an opaque term.</summary>
+            public IReadOnlyList<ExpressionCanonicalOrder.KeyNode>? ArgumentKeys { get; } = argumentKeys;
         }
 
         /// <summary>
@@ -1341,18 +1670,34 @@ namespace Utils.Mathematics.Expressions
         }
 
         /// <summary>
-        /// Orders two additive terms by their coarse grouping classification: opaque terms sort before
-        /// function-like terms; within the same classification, function-like terms order by structural
-        /// argument-list identity then function category, and opaque terms order by full structural
-        /// identity. This is a RELATIVE ORDER only — ties are expected and resolved by the caller's stable
-        /// sort — never the grouping EQUALITY itself, which is decided separately by
+        /// Orders two annotated additive terms by their coarse grouping classification: opaque terms sort
+        /// before function-like terms; within the same classification, function-like terms order by
+        /// structural argument-list identity then function category, and opaque terms order by full
+        /// structural identity. This is a RELATIVE ORDER only — ties are expected and resolved by the
+        /// caller's stable sort — never the grouping EQUALITY itself, which is decided separately by
         /// <see cref="AdditiveGroupingEqualityComparer"/>.
         /// </summary>
-        /// <param name="x">The first term's classification.</param>
-        /// <param name="y">The second term's classification.</param>
-        /// <param name="scopes">The lexical scope snapshot shared by every term in this canonicalization call.</param>
+        /// <param name="x">The first term.</param>
+        /// <param name="y">The second term.</param>
         /// <returns>A negative value if <paramref name="x"/> sorts before <paramref name="y"/>, zero if tied, positive otherwise.</returns>
-        private static int CompareAdditiveGroupingOrder(AdditiveGroupClass x, AdditiveGroupClass y, IReadOnlyList<ParameterExpression[]> scopes)
+        /// <remarks>
+        /// <b>S5 (roadmap P1):</b> consumes only the structural keys <see cref="AnnotatedAdditiveTerm"/>
+        /// already precomputed once per term (<see cref="AnnotatedAdditiveTerm.Key"/> for the opaque branch,
+        /// <see cref="AnnotatedAdditiveTerm.ArgumentKeys"/> for the function-like branch) instead of taking a
+        /// lexical scope snapshot and rebuilding a <see cref="ExpressionCanonicalOrder.KeyNode"/> tree from
+        /// scratch for both operands on every pairwise comparison the sort performs, which is what this
+        /// method did before S5. The comparison RESULT is unchanged: for an opaque term,
+        /// <c>AnnotatedAdditiveTerm.Key</c> already equals what rebuilding
+        /// <c>ExpressionCanonicalOrder.BuildKey(term, scopes)</c> here would produce, since <c>Key</c> was
+        /// built from that same term.
+        /// </remarks>
+        /// <remarks>
+        /// <b>S5 review round 3:</b> does not capture any lexical scope or other outer state, so
+        /// the delegate wrapping it (<see cref="AdditiveGroupingOrderComparer"/>) is a <c>static readonly</c>
+        /// field built once per process rather than a fresh <c>Comparer&lt;AnnotatedAdditiveTerm&gt;.Create(...)</c>
+        /// call (and its backing delegate/adapter allocation) on every <see cref="CanonicalizeAdditiveExpression"/> call.
+        /// </remarks>
+        private static int CompareAdditiveGroupingOrder(AnnotatedAdditiveTerm x, AnnotatedAdditiveTerm y)
         {
             if (x.IsFunctionLike != y.IsFunctionLike)
             {
@@ -1361,24 +1706,31 @@ namespace Utils.Mathematics.Expressions
 
             if (!x.IsFunctionLike)
             {
-                return ExpressionCanonicalOrder.Compare(x.Opaque, y.Opaque, scopes);
+                return x.Key.CompareTo(y.Key);
             }
 
-            int argumentsCompare = CompareArgumentLists(x.Arguments!, y.Arguments!, scopes);
+            int argumentsCompare = CompareArgumentKeyLists(x.ArgumentKeys!, y.ArgumentKeys!);
             return argumentsCompare != 0 ? argumentsCompare : x.CategoryOrder.CompareTo(y.CategoryOrder);
         }
 
-        /// <summary>Lexicographically compares two function argument lists using the complete structural order key.</summary>
-        /// <param name="x">The first argument list.</param>
-        /// <param name="y">The second argument list.</param>
-        /// <param name="scopes">The lexical scope snapshot shared by every term in this canonicalization call.</param>
+        /// <summary>
+        /// Cached <see cref="IComparer{T}"/> wrapping <see cref="CompareAdditiveGroupingOrder"/>, reused across
+        /// every <see cref="CanonicalizeAdditiveExpression"/> call (S5 review round 3) since the method it
+        /// wraps is stateless (<see langword="static"/>, no captured scope or other per-call state).
+        /// </summary>
+        private static readonly IComparer<AnnotatedAdditiveTerm> AdditiveGroupingOrderComparer =
+            Comparer<AnnotatedAdditiveTerm>.Create(CompareAdditiveGroupingOrder);
+
+        /// <summary>Lexicographically compares two function argument lists' precomputed complete structural order keys.</summary>
+        /// <param name="x">The first argument list's keys.</param>
+        /// <param name="y">The second argument list's keys.</param>
         /// <returns>A negative value if <paramref name="x"/> sorts before <paramref name="y"/>, zero if tied, positive otherwise.</returns>
-        private static int CompareArgumentLists(IReadOnlyList<Expression> x, IReadOnlyList<Expression> y, IReadOnlyList<ParameterExpression[]> scopes)
+        private static int CompareArgumentKeyLists(IReadOnlyList<ExpressionCanonicalOrder.KeyNode> x, IReadOnlyList<ExpressionCanonicalOrder.KeyNode> y)
         {
             int minCount = Math.Min(x.Count, y.Count);
             for (int i = 0; i < minCount; i++)
             {
-                int c = ExpressionCanonicalOrder.Compare(x[i], y[i], scopes);
+                int c = x[i].CompareTo(y[i]);
                 if (c != 0) return c;
             }
             return x.Count.CompareTo(y.Count);
@@ -1415,6 +1767,22 @@ namespace Utils.Mathematics.Expressions
         /// ties (which are stable-sort placeholders, not claims of equality) — see this class's "Additive
         /// grouping" remarks.
         /// </summary>
+        /// <remarks>
+        /// <b>S5 (roadmap P2) - measured and rejected.</b> An `IEqualityComparer&lt;AnnotatedAdditiveTerm&gt;`
+        /// variant that reused the classification <see cref="AnnotatedAdditiveTerm"/> already carried at the
+        /// time of this experiment (avoiding this method's re-classification, which itself is only a cheap
+        /// re-run of the same NodeType pattern match) was benchmarked and measurably REGRESSED both time and
+        /// allocations at n=32/128 versus the version kept here - copying the larger
+        /// <see cref="AnnotatedAdditiveTerm"/> struct (as it existed at the time: five fields, including a
+        /// whole nested <see cref="AdditiveGroupClass"/> - since narrowed by S5 review round 3 to just the
+        /// two scalar fields still needed, see that type's own remarks) through <c>GroupBy</c>'s internal
+        /// lookup/grouping storage cost more than the cheap re-classification it avoided, since
+        /// <c>GroupBy</c>'s key/element storage already handles a plain <see cref="Expression"/> reference
+        /// (8 bytes) far more cheaply. Re-tested (S5 review round 4) against the round-3-shrunk struct, since
+        /// the struct round 1 measured no longer exists: the regression roughly HALVED (~24 bytes/term instead
+        /// of ~48) but did not reverse - still rejected. See the S5 roadmap progress notes for the exact
+        /// benchmark numbers from both rounds.
+        /// </remarks>
         private sealed class AdditiveGroupingEqualityComparer : IEqualityComparer<Expression>
         {
             public static readonly AdditiveGroupingEqualityComparer Instance = new();

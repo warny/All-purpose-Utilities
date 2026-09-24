@@ -1166,6 +1166,1042 @@ Potential remaining areas include:
 
 Construction optimizations should be accepted only when they do not weaken the symbolic contract or complicate the later execution optimizer. Prefer small, benchmarked and causally isolated changes like PRs #577-#589.
 
+#### S5 progress (2026-09-23) — P1 implemented; P2 benchmarked and rejected
+
+Baseline for this stage: `master` at `4550b3614b7ce05a23b1da99d379bfdf42d2c6ad` (S4 review round 8 / PR #600
+merge), matching `origin/master` at the start of this work — no rebase was needed.
+
+**Benchmark methodology.** No permanent BenchmarkDotNet project exists for this code, consistent with prior
+performance PRs #577-#589. A standalone temporary console harness (not part of this repository; built and
+run from outside the working tree, referencing `Utils.csproj` via `ProjectReference`) measured, for term
+counts n=2/8/32/128:
+
+1. a **micro** scenario reflecting directly into the private
+   `ExpressionSimplifier.CanonicalizeAdditiveExpression`/`CanonicalizeMultiplicativeExpression` methods with a
+   pre-built n-term chain, isolating the sort/group mechanism this stage targets from the rest of the
+   `Transform` pipeline;
+2. a **public end-to-end** scenario calling `new ExpressionSimplifier().Simplify(...)` on the same term
+   families, capped at n=2/8 (see "End-to-end scaling was not usable beyond n=8" below).
+
+Five term families were covered: (1) opaque parameters/compound terms, (2) `double.Sin`/`Cos`/`Tan`
+`MethodCallExpression` terms, (3) `Power(MethodCall, exponent)` terms, (4) a mix of positive and
+`Negate`-wrapped terms, (5) multiplicative factors (an explicit "should be unaffected" control, since this
+stage's P1 change does not touch `CanonicalizeMultiplicativeExpression`), plus (6) a bound-lambda-parameter
+end-to-end scenario exercising S4 scopes. Each scenario ran a warm-up phase then 15-21 measured rounds, each
+round batched (to amortize `Stopwatch`/timer resolution noise) and measuring both `Stopwatch` elapsed time and
+`GC.GetAllocatedBytesForCurrentThread()` deltas; the table below reports the median time and the (fully
+deterministic, byte-identical run-to-run) median allocation. Machine: Windows 11, .NET 8.0.31 (`Utils.csproj`
+target), 20 logical CPUs, workstation GC, single-threaded, sequential (never parallel/concurrent) baseline vs.
+candidate runs from the same machine state.
+
+**End-to-end scaling was not usable beyond n=8.** A raw, left-associated n-term source expression makes
+`Transform`'s bottom-up traversal canonicalize EVERY nesting level, and pre-existing (not S5-introduced)
+factoring rules such as `AdditionOfEqualsElements` call the PUBLIC `ExpressionComparer`, which itself
+re-invokes `Simplify()` on its operands — a real, S4-review-documented (round 6, "S4-unrelated" `Comparer`
+re-simplification hazard already noted for every `*OfEqualsElements` rule) construction-cost multiplier
+entirely unrelated to this stage's P1/P2 hotspots. Measured directly on the pre-S5 baseline: end-to-end
+`Simplify()` at n=8 already costs several to tens of milliseconds and multiple megabytes per call (see the
+table below); n=32/128 end-to-end was therefore dropped from the benchmark matrix as unreasonably slow to run
+repeatedly, consistent with this stage's own "prefer small, benchmarked and causally isolated changes"
+guidance — a benchmark whose per-call cost is dominated by an unrelated hazard would not isolate this PR's
+change. This is a separate, pre-existing hazard, out of scope for this PR; it is left as a documented S5
+follow-up candidate (see "S5 follow-ups" below) rather than folded into this change.
+
+**P1 — additive-sort key reconstruction (confirmed hotspot, fixed).** Exactly the hotspot described by the
+roadmap: `CompareAdditiveGroupingOrder`'s primary-sort comparator rebuilt a complete
+`ExpressionCanonicalOrder.KeyNode` tree from scratch, via `ExpressionCanonicalOrder.Compare`/`.BuildKey`, for
+BOTH operands on EVERY pairwise comparison the O(n log n) sort performs — for an opaque term this reconstructs
+the exact same key `AnnotatedAdditiveTerm.Key` already holds; for a function-like term, `CompareArgumentLists`
+similarly rebuilt every argument's key from scratch per comparison.
+
+*Fix* (`Utils/Expressions/ExpressionCanonicalOrder.cs`, `Utils/Expressions/ExpressionSimplifier.cs`):
+
+- `ExpressionCanonicalOrder.BuildKeys(IReadOnlyList<Expression>, IReadOnlyList<ParameterExpression[]>)` (new,
+  `internal static`) builds one `KeyNode` per element under one shared working scope list, instead of the N
+  separate scope-list allocations `BuildKey` called N times would cost.
+- `AnnotatedAdditiveTerm` (the per-term annotation already built once per `CanonicalizeAdditiveExpression`
+  call) gained a precomputed `ArgumentKeys` field: for a function-like term, each argument's complete key,
+  built once via `BuildKeys`; `null` for an opaque term (which already reuses its own precomputed `Key`).
+- `CompareAdditiveGroupingOrder` now takes two `AnnotatedAdditiveTerm` values directly and consumes only
+  their precomputed `Key`/`ArgumentKeys` — for an opaque term, `x.Key.CompareTo(y.Key)` (provably the same
+  value `ExpressionCanonicalOrder.Compare(x.Group.Opaque, y.Group.Opaque, scopes)` would have produced, since
+  `Group.Opaque` IS the term `Key` was built from); for a function-like term,
+  `CompareArgumentKeyLists(x.ArgumentKeys!, y.ArgumentKeys!)` compares precomputed `KeyNode`s directly
+  (`KeyNode.CompareTo`) instead of rebuilding them.
+- `OrderBy`/`.ThenBy`/`.ThenBy`/`.ToList()`, `GroupBy`, `AdditiveGroupingEqualityComparer`, `GroupEquals`/
+  `GroupHash`, `ClassifyForAdditiveGrouping`, and `CanonicalizeMultiplicativeExpression` are all **unchanged**
+  — this PR's production diff is confined to the primary-sort comparator and its inputs.
+
+*Complexity.* Before: O(n log n) `KeyNode`-tree reconstructions across the sort (each comparison rebuilding
+both operands' keys from scratch). After: O(n) key construction (once per term at annotation time) plus O(n
+log n) cheap `KeyNode.CompareTo` calls over already-built trees.
+
+**P2 — GroupBy re-classification (benchmarked and REJECTED).** The roadmap's second candidate: reuse
+`AnnotatedAdditiveTerm.Group` in the `GroupBy` step so `AdditiveGroupingEqualityComparer` would not call
+`ClassifyForAdditiveGrouping` a second time per term. Implemented as an `IEqualityComparer<AnnotatedAdditiveTerm>`
+variant (`GroupBy(static term => term, ...)` instead of `GroupBy(static term => term.Term, ...)`) and
+benchmarked against the P1-only candidate. Result: measurably WORSE at n=32/128 across every family (e.g.
+family 1, n=128: 84.36us/140386B P1-only vs. 95.27us/146530B with P2 added; family 3, n=32: 61.86us/51168B
+vs. 81.14us/52704B), including a real allocation regression, not just noise. Likely explanation (consistent
+with the measured allocation increase, not independently isolated/profiled beyond this benchmark):
+`AnnotatedAdditiveTerm` is a five-field struct (including the nested `AdditiveGroupClass`), and copying it
+repeatedly through `GroupBy`'s internal `Lookup<TKey,TElement>` storage plausibly costs more than the cheap
+`ClassifyForAdditiveGrouping` re-run (a NodeType pattern match plus field reads, no allocation) it was meant
+to avoid — `GroupBy`'s existing key/element storage already handles a plain `Expression` reference (8 bytes)
+far more cheaply. **Rejected** regardless of the exact mechanism, on the measured numbers alone:
+the shipped code keeps the original `Expression`-keyed `GroupBy`/`IEqualityComparer<Expression>` unchanged,
+with an XML remark on `AdditiveGroupingEqualityComparer` recording this experiment and its numbers so it is
+not silently retried.
+
+**Other candidates from this stage's own "Potential remaining areas" list: not pursued.** After P1, the
+remaining measured hotspot at scale is dominated by (a) the pre-existing end-to-end re-simplification hazard
+already described above (out of scope), and (b) `ExpressionCanonicalOrder.BuildKey`'s per-call scope-list
+allocation for the single-expression entry point — partially already addressed for the multi-argument case by
+`BuildKeys` sharing one scope list (and, after review round 2 below, for the zero-argument case too); the
+single-key `BuildKey` entry point itself was left unchanged since altering its signature would touch the many
+other call sites (multiplicative ordering, the final `.ThenBy(term.Key)` tie-break) outside this PR's minimal
+scope. `ExpressionComparer` temporary arrays/searches and reflection-metadata scaffolding (`CompareType`/
+`CompareMethod`) were not touched: both would need the kind of static-cache/determinism/
+`AssemblyLoadContext`-safety analysis this stage's own guidance calls for before introducing any new cache,
+and neither showed up as a P1-comparable hotspot in this stage's own benchmark (the multiplicative control
+family, which exercises the same `ExpressionCanonicalOrder` reflection-based comparisons as the additive
+families, stayed flat/byte-identical between baseline and candidate at every size).
+
+#### S5 review, round 2 (2026-09-23) — zero-argument fast path, wider-arity benchmark coverage
+
+A review pass found one real construction-cost regression this stage's own benchmark had not covered (a
+`MethodCallExpression` with zero arguments), asked for wider-arity benchmark coverage beyond the unary
+`Sin`/`Cos`/`Tan` family already measured, corrected two inaccuracies in this file's own prose, and suggested
+an additional test. All addressed on the same branch.
+
+1. **`BuildKeys` allocated an unused working scope list for a zero-argument function-like term.** For a
+   `MethodCallExpression` with no arguments (a niladic call), the pre-S5 baseline never built any argument
+   key at all (`CompareArgumentLists`'s loop runs zero times over an empty list). Before this fix, S5's
+   `BuildKeys(group.Arguments!, scopes)` still allocated its `List<ParameterExpression[]>` working scope copy
+   unconditionally, before checking whether there was anything to iterate — genuinely new, entirely
+   unamortized construction cost for this shape, the opposite of this stage's goal. Fixed: `BuildKeys` now
+   fast-paths an empty `expressions` to `[]` (`Array.Empty<KeyNode>()`), before allocating anything. Measured
+   directly (same standalone harness, n=128, a niladic static method call as the additive term): the
+   unconditional-allocation version cost 98 706 B/call; the fast-pathed version costs 86 418 B/call — the
+   ~96 B/term the wasted `List<ParameterExpression[]>` cost is gone. A small residual gap remained at this
+   point against the true pre-S5 baseline (80 362 B/call) — attributable to the `AnnotatedAdditiveTerm`
+   struct's per-element footprint growing to carry the new `ArgumentKeys` field THIS PR introduces (not an
+   S4-established cost, and not yet the whole `AdditiveGroupClass` shrink round 3 below performs) — disclosed
+   here rather than left implicit at the time. **Superseded by round 3 below**, which closes this gap
+   entirely (and then some) by shrinking `AnnotatedAdditiveTerm` itself.
+2. **Benchmark coverage was unary-only.** The original benchmark matrix only exercised `Sin`/`Cos`/`Tan`
+   (one-argument calls). Re-run with three additional static test methods of arity 0/2/3 confirms the
+   optimization's effect scales with argument count, in the direction expected from the architecture (more
+   arguments per comparison means more redundant per-comparison key rebuilding eliminated):
+
+   | Family (n=128), true pre-S5 baseline vs. post-round-2 candidate | Baseline time | Candidate time | Speedup | Baseline alloc | Candidate alloc | Alloc reduction |
+   | --- | --- | --- | --- | --- | --- | --- |
+   | Arity 0 (niladic) | 78.15 us | 90.94 us | ~0.9x (see finding 1) | 80 362 B | 86 418 B | ~0.93x (see finding 1) |
+   | Arity 1 (`Sin`/`Cos`/`Tan`, already reported above) | 135.85 us | 86.37 us | 1.6x | 334 130 B | 157 794 B | 2.1x |
+   | Arity 2 | 766.73 us | 312.56 us | 2.5x | 551 138 B | 232 738 B | 2.4x |
+   | Arity 3 | 911.07 us | 531.74 us | 1.7x | 602 466 B | 307 682 B | 2.0x |
+
+   Arity 0 is the one shape where this stage's change is not a clear win even after the round-2 fast path — a
+   small, disclosed, structural overhead remains (finding 1) — but every other arity, including higher arities
+   than originally benchmarked, shows the same large improvement pattern as the originally-measured unary
+   family, confirming the optimization is not merely unary-specific.
+3. **This file's own prose cited a "roadmap section 1"/"roadmap 4.1"/"section 10" and a French quote that do
+   not exist in this roadmap document.** Those references were carried over from the external work-item
+   prompt that requested this stage's work (which used that numbering/wording in its own instructions), not
+   from this file's actual content — this file's own "S5 — Construction-performance cleanup" section has never
+   used numbered subsections. Corrected throughout the S5-progress notes above to describe the actual
+   "Potential remaining areas" bullets directly, in self-contained English, so this file no longer depends on
+   an external, non-committed document to be understood.
+4. **The P2-rejection note overstated confidence in the exact causal mechanism.** "Root cause: ..." was
+   softened to "likely explanation (consistent with the measured allocation increase, not independently
+   isolated/profiled beyond this benchmark)" — the benchmark numbers themselves are what justify the
+   rejection; the struct-copy explanation is a plausible, unverified mechanism, not a proven one.
+5. **Test suggestion, added:** `BuildKeys_MultipleArgumentsWithNestedLambdas_RestoresSharedScopeBetweenSiblings`
+   in `ExpressionSimplifierAdditiveSortScaleTests` — reflects directly into `ExpressionCanonicalOrder.BuildKeys`
+   itself (not `CanonicalizeAdditiveExpression`, and not multiple additive terms) with a three-element argument
+   array `[lambda1, p, lambda2]`, where `lambda1`/`lambda2` are structurally alpha-equivalent nested
+   `LambdaExpression`s each capturing the same OUTER bound parameter `p`, separated by a plain reference to
+   `p` itself. This is the shape that specifically exercises `BuildKeys`' shared mutable working-scope list
+   across successive sibling arguments (each nested lambda's `BuildLambda` call pushes/pops its own frame onto
+   the SAME list `BuildKeys` passes to every argument in sequence): a bug that let one argument's nested-lambda
+   scope leak into a later sibling argument's key would misclassify that sibling's captured outer parameter as
+   bound at the wrong depth, making `lambda1`'s and `lambda2`'s otherwise-identical keys compare unequal.
+   Verified this test fails (`CompareTo` returns `-1` instead of `0`) when `ExpressionCanonicalOrder.BuildLambda`'s
+   scope-pop is deliberately, locally removed (reverted immediately after verification, never committed),
+   confirming it exercises the property described.
+
+**Validation performed after review round 2 (2026-09-23):** superseded by round 3 below; see the "Validation"
+list further down, which reflects the final, post-round-3 code and test count.
+
+#### S5 review, round 3 (2026-09-23) — shrink `AnnotatedAdditiveTerm`, cache the comparer, doc fixes
+
+A third review pass confirmed round 2's fixes but flagged that round 2's own "residual gap" for arity 0
+(finding 1 above) was real and avoidable, not an inherent cost, identified two more documentation
+inaccuracies, and suggested one more (non-blocking) micro-optimization. Addressed on the same branch.
+
+1. **`AnnotatedAdditiveTerm` carried a whole, now-mostly-unused `AdditiveGroupClass` per term.** After
+   annotation, `CompareAdditiveGroupingOrder` only ever read two scalar fields off the stored classification
+   (`IsFunctionLike`, `CategoryOrder`); `AdditiveGroupClass.Arguments`/`.Opaque` (two reference-type fields)
+   were needed only transiently, while building `ArgumentKeys`/`Key` in the annotation loop, never afterward.
+   Carrying the whole `AdditiveGroupClass` anyway meant every term paid for copying those two now-dead
+   references through `List<AnnotatedAdditiveTerm>`/`OrderBy`/`GroupBy` for no benefit — the main/likely
+   architectural cause behind round 2's arity-0 "residual gap", consistent with the measurements below (per
+   the round-2 numbers, which showed the SAME roughly-constant per-term overhead at every arity, a small tax
+   on every other family too). Fixed: `AnnotatedAdditiveTerm` now stores `IsFunctionLike`/`CategoryOrder`
+   directly as two scalar fields instead of a nested `AdditiveGroupClass`; the annotation loop still calls
+   `ClassifyForAdditiveGrouping` once per term as before (needed for `Arguments`/`Opaque` during annotation),
+   but copies out only the two fields that survive it. Measured directly (same standalone harness): at n=128,
+   EVERY additive family improved by the same ~15 400 B/call relative to the round-2 candidate - see the
+   updated table below. This round also cached the comparer (finding 3 below) in the same commit, so the
+   struct shrink was not isolated from that change in this measurement; the shrink is the far larger and more
+   plausible contributor (a `Comparer<T>.Create` delegate/adapter allocation is on the order of tens of bytes
+   once per `CanonicalizeAdditiveExpression` call, not per term, so it cannot explain a per-term, linearly
+   n-scaling effect), but the two were not benchmarked separately. For arity 0 specifically, this closes
+   round 2's residual gap entirely and then some: 86 418 B/call (round 2) → 67 962 B/call (round 3), now
+   BELOW the true pre-S5 baseline's 80 362 B/call - the fast path plus this shrink together make even the one
+   previously-regressed shape a net improvement.
+2. **Round 2's "an S4-established per-term annotation design point" attribution was wrong.** `AnnotatedAdditiveTerm`
+   itself (and its `Key` field) are S4-established; the `ArgumentKeys` field - and therefore the struct-growth
+   cost round 2's finding 1 measured - was introduced by S5/this PR, not inherited from S4. Corrected in place
+   above (see the "Superseded by round 3" note on that finding).
+3. **`Comparer<AnnotatedAdditiveTerm>.Create(CompareAdditiveGroupingOrder)` was rebuilt on every
+   `CanonicalizeAdditiveExpression` call**, even though `CompareAdditiveGroupingOrder` is `static` and captures
+   nothing per-call (confirmed once `CompareAdditiveGroupingOrder` stopped taking a `scopes` parameter earlier
+   in this stage). Cached as a `static readonly AdditiveGroupingOrderComparer` field instead, built once per
+   process. A constant, easily-avoidable per-call allocation (the `Comparer<T>` wrapper plus its delegate) with
+   no correctness implication either way; folded into this round since it was found alongside finding 1's
+   investigation, not benchmarked in isolation as its own line item.
+4. **Test name/description did not match what the round-2 test actually does.** The test suggested and added
+   in round 2 was named `NestedLambdaArgument_AcrossMultipleFunctionLikeTerms_BuildsCorrectArgumentKeysUnderSharedScope`
+   and described as covering "several function-like terms ... canonicalized in one
+   `CanonicalizeAdditiveExpression` call" - it actually reflects directly into `ExpressionCanonicalOrder.BuildKeys`
+   with a single three-element argument array, never calling `CanonicalizeAdditiveExpression` and never
+   constructing more than one additive term. Renamed to
+   `BuildKeys_MultipleArgumentsWithNestedLambdas_RestoresSharedScopeBetweenSiblings` and its description (both
+   in the test file and in round 2's own write-up above) corrected to describe the actual shape exercised.
+5. **Stale count/example fixes:** the class-level remark on `ExpressionSimplifierAdditiveSortScaleTests`
+   still described only "Tests 1-3 .../Tests 4-5 ..." with no mention of the round-2-added sixth test - added
+   a note describing test 6. The GitHub PR description was still entirely round-1 content (5 tests, stale
+   counts, no arity/rebase information) - refreshed to match the current branch state. `BuildKeys`' own XML
+   doc used `DateTime.Now` as its "niladic method call" example - `DateTime.Now` is a property, not a method
+   call; replaced with `Guid.NewGuid()`.
+
+**Updated benchmark results (micro scenarios, n=128; supersedes the round-1 table above for the `Utils`
+production-code numbers — median of 15 rounds, byte-identical allocations across repeated runs).**
+
+| Family (n=128) | True pre-S5 baseline | Round 3 candidate | Speedup | Baseline alloc | Candidate alloc | Alloc reduction |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 Additive-Opaque | 387.03 us | 82.97 us | 4.7x | 543 794 B | 124 978 B | 4.4x |
+| 2 Additive-FunctionLike (arity 1) | 135.85 us | 87.37 us | 1.6x | 334 130 B | 142 386 B | 2.3x |
+| 3 Additive-PowerWrapped | 215.12 us | 182.14 us | 1.2x | 382 866 B | 186 418 B | 2.1x |
+| 4 Additive-MixedSign | 130.84 us | 89.76 us | 1.5x | 349 962 B | 154 186 B | 2.3x |
+| 5 Multiplicative-Opaque (control, untouched code) | 25.28 us | 22.58 us | ~1.0x (noise) | 42 554 B | 42 554 B | 1.0x (byte-identical) |
+| 6 FunctionLike arity 0 (niladic) | 78.15 us | 89.47 us | ~0.9x (time noise; see finding 1) | 80 362 B | 67 962 B | 1.18x (now BELOW baseline) |
+| 7 FunctionLike arity 2 | 766.73 us | 360.93 us | 2.1x | 551 138 B | 217 330 B | 2.5x |
+| 8 FunctionLike arity 3 | 911.07 us | 553.20 us | 1.6x | 602 466 B | 292 274 B | 2.1x |
+
+Every family this PR's code touches now shows a consistent, unambiguous allocation reduction at n=128 (1.18x
+to 4.4x) with no remaining regressed shape; the multiplicative control remains exactly byte-identical, and
+arity-0 wall-clock time (the one figure still not a clear win) is noise-level (89.47 us candidate vs. 78.15 us
+baseline, on a call that allocates a mere ~68 KB and takes well under 100 us either way - see "On timing
+noise" above for why sub-100us medians in this environment are not fully trustworthy in isolation).
+
+**Validation performed after review round 3 (2026-09-23):** superseded by round 4 below; see the
+"Validation" list further down for the final numbers.
+
+#### S5 review, round 4 (2026-09-23) — P2 re-tested against the shrunk `AnnotatedAdditiveTerm`; still rejected
+
+A fourth review pass raised one substantive question - since round 3 shrank `AnnotatedAdditiveTerm`, the
+exact struct round 1's P2 experiment measured as "too expensive to carry through `GroupBy`" no longer exists,
+so round 1's rejection needed re-verifying against the current, smaller struct rather than being assumed
+still valid - plus two documentation nits. Addressed on the same branch.
+
+1. **P2 re-tested against the round-3 struct.** Reconstructed the same `IEqualityComparer<AnnotatedAdditiveTerm>`
+   `GroupBy` variant round 1 tried (`GroupBy(static term => term, ...)` instead of
+   `GroupBy(static term => term.Term, AdditiveGroupingEqualityComparer.Instance)`), adapted to read
+   `IsFunctionLike`/`CategoryOrder` from the now-shrunk annotation directly and re-derive `Arguments`/`Opaque`
+   from `Term` only where still needed for the actual structural equality/hash check (`GroupEquals`/`GroupHash`,
+   unchanged). Benchmarked as a temporary, uncommitted local change (same standalone harness) against the
+   round-3 shipped code, across families 1-3 and every size:
+
+   | Family | n=2 | n=8 | n=32 | n=128 |
+   | --- | --- | --- | --- | --- |
+   | 1 Additive-Opaque (shipped → P2-retest) | 2 848 → 2 896 B | 8 560 → 8 752 B | 31 920 → 32 688 B | 124 978 → 128 050 B |
+   | 2 Additive-FunctionLike (shipped → P2-retest) | 3 120 → 3 168 B | 9 648 → 9 840 B | 36 272 → 37 040 B | 142 386 → 145 458 B |
+   | 3 Additive-PowerWrapped (shipped → P2-retest) | 3 808 → 3 856 B | 12 400 → 12 592 B | 47 280 → 48 048 B | 186 418 → 189 490 B |
+
+   Every single cell regresses by EXACTLY 24 B per term (48 B at n=2, 192 B at n=8, 768 B at n=32, 3 072 B at
+   n=128 - a perfectly linear, deterministic, family-independent per-term cost), confirming a real,
+   reproducible allocation regression in the tested `AnnotatedAdditiveTerm`-keyed `GroupBy` variant,
+   consistent with additional per-element storage cost rather than benchmark noise. Wall-clock time
+   was statistically indistinguishable from the shipped code at every size (differences within the same
+   run-to-run noise band documented above). **Conclusion: the rejection still holds.** The shrunk struct did
+   roughly HALVE the absolute per-term regression (round 1 measured ~48 B/term against the pre-round-3 struct;
+   round 4 measures ~24 B/term against the post-round-3 struct - consistent with a per-term key-storage cost
+   that scales with struct size, exactly as the reviewer's hypothesis predicted), but it did not reverse the
+   direction: `GroupBy`'s existing `Expression`-keyed (8-byte key) path remains strictly cheaper than the
+   tested `AnnotatedAdditiveTerm`-keyed `GroupBy` variant, at every size and family measured, both before and
+   after the round-3 shrink. The temporary comparer/call-site change used for this measurement was reverted immediately
+   after; the shipped `GroupBy(static term => term.Term, AdditiveGroupingEqualityComparer.Instance)` is
+   unchanged from round 3.
+2. **Doc fix: stale test count.** The "Tests" summary near the end of this file's S5 section still said
+   "new, 5 tests"; corrected to 6 and now names the round-2-added `BuildKeys_...` test explicitly.
+3. **Doc fix: overstated causal claim, and one XML typo.** Round 3's "exactly the architectural root cause"
+   claim for the struct-shrink's ~15 400 B/call improvement was softened to "the main/likely architectural
+   cause ... consistent with the measurements", with an explicit note that round 3 ALSO cached the comparer
+   in the same commit and the two changes were not benchmarked in isolation from each other (the comparer
+   cache is a per-call, not per-term, allocation and so cannot itself explain a linearly n-scaling effect,
+   making the struct shrink the far more plausible primary contributor - but this was reasoning, not a
+   controlled isolation). A stray unescaped `"` in an XML doc comment (`<c>Opaque"</c>`) was also fixed to
+   `<c>Opaque</c>`, and a following sentence reworded for clarity.
+
+**Validation performed after review round 4 (2026-09-23):** see the "Validation" list below.
+
+**Benchmark results (micro scenarios — the direct P1 target; median of 15-21 rounds, byte-identical
+allocations across repeated runs). Historical: these are round 1's original numbers, kept for the audit
+trail; see the round-3 table above for the current, final numbers.**
+
+| Family (n=128) | Baseline time | Candidate time | Speedup | Baseline alloc | Candidate alloc | Alloc reduction |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 Additive-Opaque | 387.03 us | 85.16 us | 4.5x | 543 794 B | 140 386 B | 3.9x |
+| 2 Additive-FunctionLike | 135.85 us | 86.37 us | 1.6x | 334 130 B | 157 794 B | 2.1x |
+| 3 Additive-PowerWrapped | 215.12 us | 182.62 us | 1.2x | 382 866 B | 201 826 B | 1.9x |
+| 4 Additive-MixedSign | 130.84 us | 92.13 us | 1.4x | 349 962 B | 169 594 B | 2.1x |
+| 5 Multiplicative-Opaque (control, untouched code) | 25.28 us | 24.49 us | ~1.0x (noise) | 42 554 B | 42 554 B | 1.0x (byte-identical) |
+
+| Family (n=32) | Baseline alloc | Candidate alloc | Alloc reduction |
+| --- | --- | --- | --- |
+| 1 Additive-Opaque | 102 496 B | 35 808 B | 2.9x |
+| 2 Additive-FunctionLike | 72 880 B | 40 160 B | 1.8x |
+| 3 Additive-PowerWrapped | 80 304 B | 51 168 B | 1.6x |
+| 4 Additive-MixedSign | 71 368 B | 43 128 B | 1.7x |
+| 5 Multiplicative-Opaque (control) | 11 064 B | 11 064 B | 1.0x (byte-identical) |
+
+| Family (n=8) | Baseline time | Candidate time | Baseline alloc | Candidate alloc |
+| --- | --- | --- | --- | --- |
+| 1 Additive-Opaque | 32.97 us | 19.54 us | 15 360 B | 9 568 B |
+| 2 Additive-FunctionLike | 23.43 us | 19.17 us | 13 296 B | 10 656 B |
+| 3 Additive-PowerWrapped | 14.55 us | 34.20 us (noise; min 8.03/31.36 us) | 16 496 B | 13 408 B |
+| 4 Additive-MixedSign | 6.19 us | 23.11 us (noise; both single-digit-to-low-20s us range across repeats) | 14 728 B | 11 416 B |
+| 5 Multiplicative-Opaque (control) | 2.31 us | 5.12 us (noise, see below) | 3 192 B | 3 192 B (byte-identical) |
+
+**On timing noise.** Wall-clock medians at n=8/32 show real run-to-run variance in this environment (observed
+directly: a repeat run of the SAME P1-only build at n=32 measured 57.82us and, later, 73.06us for family 1 —
+a ~25% spread from GC/scheduler noise alone), including for the untouched multiplicative control family
+(2.31us baseline vs. 5.12-5.72us candidate at n=8, despite `CanonicalizeMultiplicativeExpression` not being
+touched by this PR) — an artifact of shared-process GC state carried over from the immediately preceding
+(differently-allocating) scenario runs, not a real regression. **Allocations are the trustworthy signal here**:
+deterministic and byte-identical across repeated runs of the same build, they show a consistent, monotonic
+reduction at every measured size for every family this PR's code touches, and an exact, byte-identical zero
+change for the untouched multiplicative control at every size — the cleanest possible confirmation that this
+change altered construction cost without altering behavior. The large, unambiguous n=128 time wins (1.2x-4.5x,
+consistent across two independent full benchmark runs) corroborate the allocation trend once n is large enough
+for the O(n log n) reconstruction this stage targets to dominate over environmental noise.
+
+**Tests.** `UtilsTest/Mathematics/Expressions/ExpressionSimplifierAdditiveSortScaleTests.cs` (new, 6 tests):
+large-N (16-term, and 8-pair/16-term power-wrapped) characterizations of the additive sort at a scale that
+actually exercises the O(n log n) path this stage optimizes — bound function-like terms ordered by argument
+declaration position, bound opaque terms ordered by declaration position (the `Key`-reuse path), power-wrapped
+terms clustering by argument while the complete-key tie-break still distinguishes the exponent, free-parameter
+stable-sort-order preservation when every canonical-order dimension ties (the invariant most at risk from a
+naive `OrderBy`/comparator refactor), an adversarial (hostile-constant plus unsupported-node) large-term-set
+regression proving no additive-grouping/ordering step executes user `Equals`/`GetHashCode`/`ToString`, and
+(added in review round 2) `BuildKeys_MultipleArgumentsWithNestedLambdas_RestoresSharedScopeBetweenSiblings`,
+reflecting directly into `ExpressionCanonicalOrder.BuildKeys` to prove its shared working-scope list is
+correctly restored between successive sibling arguments. The three purely-structural sort tests reflect
+directly into the private `CanonicalizeAdditiveExpression` (bypassing the unrelated end-to-end
+re-simplification cost described above, matching this project's own precedent of reflecting into internal
+canonicalization methods in `ExpressionSimplifierStructuralCanonicalizationTests`); the free-parameter and
+adversarial tests use the public `Simplify(Expression)` path directly at a term count confirmed to run in
+well under a second. Existing S3/S4 suites
+(`ExpressionSimplifierStructuralCanonicalizationTests`, `ExpressionSimplifierAdditiveGroupingKeyTests`,
+`ExpressionSimplifierFinalizationTests`, `ExpressionComparerTests`) were not modified and remain the primary
+correctness oracle that this stage's change must keep green — see "Validation" below for exact counts.
+
+**Validation performed (2026-09-23, after review round 4, in order; branch rebased onto `master` at
+`1f874f9e0caa28e097060316a992cd5a4ce4fdbd` — PR #603, `Utils.NumberToString`-only, no file overlap with this
+change — before review round 2's run; rounds 3 and 4 made no further rebase; round 4's own P2 re-test was a
+temporary, uncommitted local change, reverted before this validation run):**
+
+1. `ExpressionSimplifierAdditiveSortScaleTests` (6 tests: the original 5 plus
+   `BuildKeys_MultipleArgumentsWithNestedLambdas_RestoresSharedScopeBetweenSiblings`, added in round 2 and
+   renamed in round 3): 6/6 passed.
+2. Full `UtilsTest/Mathematics/Expressions` namespace: 464/464 passed (458 pre-existing + 6 new).
+3. Full `UtilsTest.Unit`: 7736/7736 passed, 0 skipped.
+4. Full `UtilsTest.Functional`: 383/383 passed.
+5. Full `UtilsTest.Security`: 225/228 passed, 3 skipped — the same three pre-existing, unrelated,
+   platform-gated tests noted throughout S4 (`TryCreate_ReturnsNull_OnNonWindowsPlatform`,
+   `VerifyAuthenticodeSignature_OnNonWindows_ThrowsPlatformNotSupportedException`,
+   `HasValidAuthenticodeSignature_OnNonWindows_ThrowsPlatformNotSupportedException`).
+6. Release build of `Utils.sln` (the full multi-project solution, not just `Utils.csproj`): succeeded, 0
+   errors, 51 warnings — all pre-existing (`NU1603` package-version-resolution notices unrelated to `Utils`,
+   and pre-existing nullable/cref warnings in `DrawTest`/`Fractals`, neither touched by this PR).
+7. `Utils/Utils.csproj` remains on `<TargetFramework>net8.0</TargetFramework>`, unchanged.
+
+**S5 follow-ups (deliberately left open — a small, benchmarked, causally-isolated change, not an attempt to
+close every item in this stage's "Potential remaining areas" list in one PR):**
+
+- The end-to-end nested-canonicalization/re-simplification construction-cost hazard described above
+  (pre-existing, S4-review-documented, not introduced or fixed by this PR).
+- `ExpressionCanonicalOrder.BuildKey`'s per-call scope-list allocation for the single-expression entry point
+  — `BuildKeys` addresses the multi-argument case (and, after review round 2, the zero-argument case too); the
+  single-key `BuildKey` entry point itself was left unchanged, since altering its signature would touch the
+  many other call sites (multiplicative ordering, the final `.ThenBy(term.Key)` tie-break) outside this PR's
+  minimal scope.
+- The "intermediate group/list materialization" and "`ExpressionComparer` temporary arrays and searches" areas
+  this stage's own list above already names — not shown to be a comparably significant hotspot by this PR's
+  own benchmark (the multiplicative control family, which exercises the same `ExpressionCanonicalOrder`
+  reflection-based comparisons, stayed flat/byte-identical between baseline and candidate at every size); any
+  reflection-metadata or `ExpressionComparer`-context caching would additionally need the kind of
+  `AssemblyLoadContext`/thread-safety/determinism analysis this stage's own guidance calls for before
+  introducing any new cache, which is a separate, dedicated piece of work.
+
+#### S5 progress (2026-09-23) — P3: batch the comparer re-simplification hazard in the high-fan-out factoring rules
+
+**Baseline for this stage.** `origin/claude/s5-construction-performance-cleanup` at `e878c1a98502dadbac7d5fc67a92a34f13d05b35`
+(the round-4 commit above; PR #604, base `master` at `1f874f9e0caa28e097060316a992cd5a4ce4fdbd`) — confirmed to be
+an ancestor of the branch this work started from, and `master` had not advanced past `1f874f9e` by the time this
+round's validation ran, so no further rebase was needed.
+
+**Audit.** `ExpressionComparer.Equals(x, y)` (`Utils/Expressions/ExpressionComparer.cs`) performs, in order: (1) a
+top-level `ReferenceEquals`/null check; (2) a root-`LambdaExpression` metadata check (`TailCall`/`Type`); (3)
+`_expressionSimplifier.Simplify(x)`; (4) `_expressionSimplifier.Simplify(y)`; (5) structural `EqualsCore(...)`.
+Both simplify calls run on every invocation that reaches step 3 — there is no early exit between them.
+`ExpressionSimplifier` contained exactly 14 call sites for `ExpressionComparer.Default.Equals` before this round,
+confirmed by direct enumeration: two single-comparison sites in `AdditionWithNegate` (one per overload), one
+single-comparison site in `MultiplicationOfEqualsElements`, five in `AdditionOfEqualsElements`, and six in
+`SubstractionOfEqualsElements` (matching the roadmap's original audit numbers exactly). `SubstractionWithNegate`,
+`NegateWithSubstraction`, `SubstractionWithAddition`, `SubstractionWithSubstraction` use no comparer calls at all.
+Per the roadmap's own instruction, only the two high-fan-out sites (`AdditionOfEqualsElements`,
+`SubstractionOfEqualsElements`) were changed; the three single-comparison sites were left untouched, since a
+per-call batching cache has no possible win when there is only one comparison to batch.
+
+**Second-pass semantic dependency — characterized before any production change.** `PrepareBinary` transforms
+each operand once, bottom-up, before a rule's own dispatch runs, but a rule that fires can return a newly-built
+expression that `TransformCore` hands back immediately — it is not re-transformed to a `Simplify()` fixed point.
+Two characterizations were built and run against the true pre-P3 baseline before any production code changed:
+
+1. `(2*x + 3*x) + -(5*x)` (double `x`), through the already-existing, UNTOUCHED `AdditionWithNegate` site: the
+   inner `2*x + 3*x` factors first, via `AdditionOfEqualsElements`, to the literal, not-yet-folded expression
+   `(2 + 3) * x` (an `Add(Constant(2), Constant(3))` node as the coefficient, not a folded `Constant(5)`) — this
+   is the exact value `TransformCore` hands back immediately, per the paragraph above. That unfolded `left`
+   then reaches `AdditionWithNegate(BinaryExpression e, Expression left, UnaryExpression right)`, which calls
+   `ExpressionComparer.Default.Equals(left, right.Operand)` — i.e. `Equals((2+3)*x, 5*x)` — and it is THIS call's
+   own internal `Simplify()` of `(2+3)*x` (folding it to `5*x`) that lets the comparison recognize the two sides
+   as equal. Confirmed empirically (standalone harness, not committed): the baseline's exact final result is the
+   single numeric constant `0`.
+2. An analogous shape reaching the ACTUAL rule this round modifies: `(2*x + 3*x) + 5*z` (distinct free
+   parameters `x`, `z`). The inner `2*x + 3*x` again factors to the unfolded `(2+3)*x`, which becomes the OUTER
+   `AdditionOfEqualsElements` call's own `left` operand — so `leftleft` is the literal `Add(Constant(2),
+   Constant(3))`, not `Constant(5)`, when the outer call's OWN four-candidate comparisons run. Confirmed
+   empirically that the baseline's exact final result is `(x + z) * (2 + 3)`: the coefficient is recognized as
+   equal to the outer term's `Constant(5)` (via the comparer's own internal simplify-and-compare), the two
+   variable terms are swapped out into a new `Add(x, z)`, and the still-literally-unfolded `(2 + 3)` survives,
+   unmodified, as the factored-out second operand of the result.
+
+**Critical warning verified experimentally (both directions).** A deliberately naive substitution of every
+`ExpressionComparer.Default.Equals` call inside `AdditionOfEqualsElements` with
+`ExpressionComparer.StructuralEqualsRaw` was applied directly to the production method (temporarily, as an
+uncommitted local edit, reverted immediately after the observation below) and rebuilt: characterization #2 above
+then produces `(5 * z) + ((2 + 3) * x)` instead — the rule no longer fires at all, because `StructuralEqualsRaw`
+never simplifies its operands, so `Add(2, 3)` never gets the chance to be recognized as `5`. This proves the
+second-pass dependency is real and that `StructuralEqualsRaw` is not a safe substitute, exactly as this stage's
+"Critical warning" states. The same substitution was independently re-verified inside the FINAL implementation
+(`FactorEqualityProbe.Equals` temporarily replaced with a bare `ExpressionComparer.StructuralEqualsRaw(x, y)`
+call, no fast path, no simplification): 8 of the 11 new regression tests below failed under it (all of the
+second-pass, unsupported-node-reflexivity, and hostile-constant tests — the three ordinary-shape tests were
+unaffected, as expected), and all 11 pass again once reverted to the shipped implementation. Both experiments
+were reverted before any commit; neither `StructuralEqualsRaw` call site inside `ExpressionSimplifier`'s
+production code was changed by this round.
+
+**Benchmark methodology.** A second standalone, out-of-repository console harness (same methodology as P1/P2:
+`ProjectReference` to `Utils.csproj`, Release config, .NET 8.0.31, `Stopwatch` +
+`GC.GetAllocatedBytesForCurrentThread()`, 15 measured rounds per size after warm-up, batched per round, median
+reported). Families, all left-associated chains built to maximize the number of pairwise probes the two
+high-fan-out rules perform per level:
+
+- **A** — near-miss additive chain: `a_i * x` and `x * a_i` alternate by parity, so factor unification must try
+  several swap branches per level (the "left-associated additive near-miss terms" family this stage's own plan
+  calls for);
+- **B** — the same shape through subtraction (`SubstractionOfEqualsElements`);
+- **C** — an equal-term cancellation chain (`(k*x - k*x) + (k*x - k*x) + ...`), included as a family this
+  change should NOT meaningfully affect (its dominant cost is the untouched `AdditionWithNegate`/cancellation
+  path, not the two rules this round batches);
+- **D** — the exact `(2*x + 3*x) + -(5*x)` second-pass characterization, as a single-call (not batch) timing;
+- **E** — function-like/compound near-miss terms (`k * Sin(x)`), representative of the #604 end-to-end benchmark
+  families;
+- **F** — the same near-miss additive shape (family A) wrapped in a bound `Expression.Lambda`, exercising the S4
+  lexical-scope boundary through the new probe's own `ExpressionComparer.SimplifyForComparison` calls.
+
+Sizes n = 2, 8, 16, 32 for every family, plus a best-effort n = 64 for family A (the others were not attempted at
+n = 64, consistent with this stage's "do not require n=128 if impractical" allowance — n = 32 already shows the
+asymptotic trend clearly and n = 64 for every family would have cost more harness time than the result was worth).
+Allocations were confirmed BYTE-IDENTICAL across repeated runs of the same build, for both the baseline and the
+candidate (each measured twice); wall-clock medians show the same run-to-run GC/scheduler noise band documented
+in the P1 round-4 entry above, most visible at n ≤ 8 — allocations, not time, are the trustworthy signal, exactly
+as that entry argues.
+
+**Diagnostic: nested `Simplify()` calls initiated by comparer equality checks.** A temporary counter (removed
+before commit) was added once to `ExpressionComparer.Equals`'s two `Simplify()` calls (baseline) and once to the
+new `SimplifyForComparison` (candidate), and run once against families A/B at every size:
+
+| n | A (baseline → candidate) | B (baseline → candidate) |
+| --- | --- | --- |
+| 2 | 8 → 5 (−37.5%) | 10 → 5 (−50.0%) |
+| 8 | 50 → 29 (−42.0%) | 64 → 29 (−54.7%) |
+| 16 | 106 → 61 (−42.5%) | 136 → 61 (−55.1%) |
+| 32 | 218 → 125 (−42.7%) | 280 → 125 (−55.4%) |
+
+This directly attributes the allocation reduction below to fewer redundant `Simplify()` calls, not to an
+unrelated side effect — the reduction is roughly constant (~40–55%) at every size, growing slightly with n
+because near-miss chains at larger n contain proportionally more full-fan-out (five/six-comparison) rule
+invocations.
+
+**Benchmark results (median of 15 rounds; allocations byte-identical across repeated runs of the same build).
+Historical — every table and figure from here through the end of the Family D paragraph below is round 5's
+original measurement, taken against the round-5 (BEFORE round-6's fix) candidate. The "Cancellation" row's "1.0x
+(noise)" label was itself a round-5 reporting mistake, corrected in round 6 (those bytes are byte-identical
+across repeated runs, not noise). Round 6 re-measured n=8/n=32/n=64/`Cancellation` against its own fixed
+candidate (see round 6's own table); round 6 ALSO re-measured n=2 and Family D specifically because round 6's
+safety-scan overhead is a small, roughly-constant per-candidate cost that a tiny n=2 batch amortizes least well
+of any size measured - see round 6's own "n=2 and Family D, re-measured" note for the corrected numbers. Kept
+here unedited for the audit trail; do not re-cite the "noise" label or treat the n=2/Family D figures below as
+the current numbers.**
+
+| Family, n=8 | Baseline time | Candidate time | Baseline alloc | Candidate alloc | Alloc reduction |
+| --- | --- | --- | --- | --- | --- |
+| A NearMissAdditive | 121.28 us | 92.75 us | 79 753 B | 49 005 B | 1.63x |
+| B NearMissSubtraction | 109.47 us | 70.56 us | 113 297 B | 50 797 B | 2.23x |
+| C Cancellation (control) | 36.34 us | 37.14 us | 54 278 B | 54 710 B | see correction, round 6 |
+| E FunctionLike | 92.34 us | 43.50 us | 98 361 B | 64 477 B | 1.53x |
+| F BoundLambda | 30.73 us | 23.44 us | 80 353 B | 49 605 B | 1.62x |
+
+| Family, n=32 | Baseline time | Candidate time | Baseline alloc | Candidate alloc | Alloc reduction |
+| --- | --- | --- | --- | --- | --- |
+| A NearMissAdditive | 407.02 us | 228.16 us | 1 460 834 B | 768 106 B | 1.90x |
+| B NearMissSubtraction | 744.91 us | 285.43 us | 2 165 962 B | 776 042 B | 2.79x |
+| C Cancellation (control) | 142.30 us | 134.97 us | 221 599 B | 223 183 B | see correction, round 6 |
+| E FunctionLike | 983.73 us | 296.35 us | 1 538 482 B | 831 866 B | 1.85x |
+| F BoundLambda | 783.17 us | 236.97 us | 1 462 010 B | 769 282 B | 1.90x |
+
+| Family, n=2 | Baseline alloc | Candidate alloc | Note |
+| --- | --- | --- | --- |
+| A | 3 799 B | 3 895 B | +2.5% — see "Small-n regression" below |
+| B | 4 103 B | 4 151 B | +1.2% |
+| E | 7 637 B | 7 285 B | −4.6% |
+| F | 4 245 B | 4 341 B | +2.3% |
+
+| Family A, best-effort n=64 | Baseline time | Candidate time | Baseline alloc | Candidate alloc |
+| --- | --- | --- | --- | --- |
+| NearMissAdditive | 2893.64 us | 947.36 us (3.05x) | 5 983 400 B | 3 067 568 B (1.95x) |
+
+Family D (single call, not a batch): 17.47 us / 14 274 B baseline → 8.67 us / 14 370 B candidate (time is
+noise-level for a single sub-100us call; the small +0.7% allocation delta is the fixed cost of one unused
+`FactorEqualityProbe`/backing `List` allocated by the INNER `AdditionOfEqualsElements(2x, 3x)` call, which never
+grows past its initial capacity for this shape — negligible in absolute terms). The exact simplified shape is
+byte-for-byte identical before and after this round's change: the single constant `0`.
+
+**Small-n regression, disclosed rather than hidden.** At n=2, families A/B/F show a small (1–2.5%, tens of
+bytes) allocation INCREASE, not a win: `FactorEqualityProbe`'s own `List<(Expression, Expression)>` (capacity 4)
+is allocated once per rule invocation regardless of how many candidates end up cached, and at n=2 there are too
+few rule invocations, each doing too little redundant work, for the avoided re-simplification to pay for that
+allocation. This mirrors the exact shape of the P1 round-2 "arity-0" finding (a fixed per-call structural cost
+that does not pay for itself on the smallest possible input) and is disclosed the same way rather than glossed
+over. Every larger size (n ≥ 8) — where this stage's own "left-associated near-miss terms" target scenario
+actually accumulates redundant work — is an unambiguous, growing win in both time and allocations.
+
+**Implementation.**
+
+- `Utils/Expressions/ExpressionComparer.cs` — `Equals(Expression?, Expression?)` is refactored, with NO
+  observable behavior change, into three `internal static` entry points reused by the change below:
+  `TryFastPathEquals` (the top-level `ReferenceEquals`/null/root-lambda-metadata checks — returns `true` with
+  the decided `result` when one of those checks already answers the comparison, `false` when a full
+  simplify-then-compare is still needed), `SimplifyForComparison` (simplifies through the exact same shared,
+  exact-built-in `_expressionSimplifier` instance `Equals`/`GetHashCode` already use), and
+  `StructuralEqualsAfterSimplification` (the same non-safe-constant `EqualsCore` call `Equals` already performs
+  on the two simplified operands — deliberately NOT `StructuralEqualsRaw`, which uses the safe-constant policy
+  and is documented as unsafe for this purpose by this stage's "Critical warning"). `Equals` itself is now a
+  three-line composition of these three methods, calling them in the exact same order with the exact same
+  inputs as before; every existing `ExpressionComparerTests`/`ExpressionSimplifierComparerRegressionTests`/
+  `ExpressionSimplifierSymbolicContractTests` test passes unmodified, confirming the refactor changed nothing
+  observable.
+- `Utils/Expressions/ExpressionSimplifier.cs` — a new `private sealed class FactorEqualityProbe`, instantiated
+  once at the top of `AdditionOfEqualsElements` and once at the top of `SubstractionOfEqualsElements` (a fresh
+  instance per rule invocation, never stored anywhere longer-lived), replaces every
+  `ExpressionComparer.Default.Equals(...)` call in those two rules with `equalityProbe.Equals(...)`.
+  `FactorEqualityProbe.Equals(x, y)` calls `ExpressionComparer.TryFastPathEquals` first, then — only if that did
+  not already decide the comparison — looks up each operand's simplified form in a small
+  `List<(Expression Original, Expression Simplified)>` (initial capacity 4, linearly scanned by
+  `ReferenceEquals`; a plain `List`, not a `Dictionary`, since at most four distinct operands
+  (`leftleft`/`leftright`/`rightleft`/`rightright`) ever participate in one factoring decision — a linear scan
+  of ≤4 entries was judged cheaper than a `Dictionary`'s hashing/bucket overhead by reasoning, consistent with
+  the P1 round-1/round-4 finding that per-element storage overhead can dominate at this scale, but this specific
+  micro-decision (`List` vs `Dictionary`) was NOT separately benchmarked in isolation — see "Rejected /
+  not-separately-benchmarked variants" below), computing and caching via `SimplifyForComparison` on a cache
+  miss, then calls `StructuralEqualsAfterSimplification` on the two (possibly newly cached) simplified forms.
+- No other call site was changed: the two `AdditionWithNegate` overloads and `MultiplicationOfEqualsElements`
+  still call `ExpressionComparer.Default.Equals` directly (one comparison each — no batching opportunity, per
+  this stage's own scope guidance), and `AnnotatedAdditiveTerm`/`ExpressionCanonicalOrder`/the P1/P2
+  additive-sort machinery are entirely untouched.
+
+**Why behavior is preserved.**
+
+1. Public `ExpressionComparer.Equals`/`GetHashCode` API and observable behavior are unchanged — a pure
+   decomposition of existing logic, proven by the full pre-existing comparer test suites passing unmodified.
+2. `FactorEqualityProbe.Equals` performs the IDENTICAL sequence of checks the direct
+   `ExpressionComparer.Default.Equals(x, y)` call it replaces would have performed: same fast-path shortcuts,
+   same shared exact-built-in simplifier instance (so the same independent, self-contained top-level
+   lexical-scope boundary is established on every simplify — see `ExpressionSimplifier`'s own "Independent
+   top-level calls" remarks, unaffected by this change), same non-safe post-simplification structural
+   comparison policy.
+3. Caching by `ReferenceEquals` is safe because (a) the four candidate operands are captured once, before any
+   comparison runs, and `ObjectUtils.Swap` only reassigns which LOCAL VARIABLE points at which already-captured
+   object — it never mutates an `Expression` (expression trees are immutable) or introduces a new object that
+   would need its own cache entry; (b) `ExpressionSimplifier.Simplify` is a pure function of its input for any
+   single top-level call, so returning a cached result for a reference already simplified earlier in the SAME
+   rule invocation is indistinguishable from re-simplifying it.
+4. `FactorEqualityProbe` never outlives the single rule invocation that creates it — no static, thread-local, or
+   instance-level state is introduced, satisfying this stage's "no cache may survive the comparison/rule
+   operation whose semantics justified it" constraint.
+5. The second-pass dependency and the non-safe/hostile-constant policy were both verified experimentally (not
+   merely reasoned about) to still hold, in both directions (present in the baseline AND in the shipped
+   implementation; absent under the naive `StructuralEqualsRaw` substitution in both places it was tried) — see
+   "Critical warning verified experimentally" above.
+
+**Rejected / not-separately-benchmarked variants.**
+
+- No alternative caching SHAPE (e.g. a `Dictionary<Expression, Expression>` keyed by reference, or a fixed
+  4-slot inline struct instead of a `List`) was implemented and benchmarked side-by-side with the shipped `List`
+  design in this round — unlike P1 round 1's P2 experiment, which WAS implemented and measured before being
+  rejected. The `List`-based design was chosen by reasoning from the P1 rounds' own established lesson (a
+  `Dictionary`'s per-entry storage/hashing overhead can exceed the cost of the work it avoids when the element
+  count is very small — P1 round 1 measured exactly this for `GroupBy`'s `Lookup<TKey,TElement>` storage), not
+  from an isolated experiment on this exact decision. This is disclosed rather than asserted as proven, per this
+  stage's own "do not state an inferred root cause as proven unless it was isolated experimentally" instruction.
+  If a future round wants a stronger basis for this specific micro-decision, it would need its own isolated
+  benchmark; the measured end-to-end numbers above already meet this stage's acceptance bar regardless of which
+  of the two container shapes turns out to be marginally cheaper.
+- Broadening the same `FactorEqualityProbe` pattern to the three single-comparison sites (`AdditionWithNegate`
+  ×2, `MultiplicationOfEqualsElements`) was considered and explicitly NOT attempted, per this stage's own
+  instruction that "a batching mechanism has no inherent win when there is only one comparison" — no
+  measurement was taken for these sites in this round, so this is a scope decision, not a rejected experiment.
+
+**Required correctness tests.** `UtilsTest/Mathematics/Expressions/ExpressionSimplifierComparerBatchingTests.cs`
+(new, 11 tests), reflecting directly into the protected `AdditionOfEqualsElements`/`SubstractionOfEqualsElements`
+methods (matching this project's established precedent — see `ExpressionSimplifierAdditiveSortScaleTests`'s own
+reflection into `CanonicalizeAdditiveExpression`) to isolate the exact rules this round changed from the
+surrounding pipeline's unrelated sibling-rule interactions:
+
+- the second-pass-needed cancellation/factoring cases through both `AdditionOfEqualsElements` and
+  `SubstractionOfEqualsElements` (including the FINAL cancellation check inside `SubstractionOfEqualsElements`,
+  reached after an earlier swap), asserting exact resulting AST shape, not merely compiled numeric equivalence;
+- an end-to-end (public `Simplify(Expression)`) confirmation that the same second-pass shape is reachable
+  through ordinary nested source expressions, not only via direct reflection;
+- ordinary factor-match and near-miss (no-match, returns `null`) branches as positive/negative controls;
+- same-reference-instance handling for an unsupported node kind (`ConditionalExpression`), proving the
+  `TryFastPathEquals` reference shortcut still applies, and a companion test proving two DISTINCT
+  structurally-identical unsupported-node instances are still conservatively NOT conflated;
+- a hostile constant (throws from `Equals`/records a call count) embedded inside a method-call argument,
+  proving the non-safe public comparer policy is still in effect (the hostile `Equals` IS invoked — not silently
+  bypassed by an accidental safe-policy substitution), invoked exactly once (not more than the single, unbatched
+  comparison would have invoked it), and that the resulting exception propagates out of the rule unmodified;
+- a bound-lambda end-to-end scenario (S4 scope boundary) producing the identical shape to the free-parameter
+  version, plus compiled-delegate execution parity between source and simplified lambdas;
+- a minimal `ExpressionSimplifier` subclass with no overrides (neither modified method is `virtual`, so a
+  subclass cannot override their behavior; this test pins that the INHERITED behavior is unchanged, matching
+  this project's established "derived simplifier" test pattern).
+
+Every one of the six tests exercising the second-pass mechanism, the unsupported-node fast path, or the hostile
+constant's non-safe policy was confirmed to FAIL under the two naive-substitution experiments described above
+(8 of 11 failed under the `FactorEqualityProbe`-internal substitution); the three ordinary-shape tests (factor
+match, near-miss null, distinct-unsupported-instances) were unaffected by either substitution, as expected.
+
+**Validation performed (2026-09-23, in order; branch was already at `master`-`1f874f9e0caa28e097060316a992cd5a4ce4fdbd`
+from the round-4 rebase, and `master` had not advanced further by the time this validation ran, so no further
+rebase was needed):**
+
+1. `ExpressionSimplifierComparerBatchingTests` (new, 11 tests): 11/11 passed.
+2. Full `UtilsTest/Mathematics/Expressions` namespace: 475/475 passed (464 pre-existing + 11 new).
+3. Full `UtilsTest.Unit`: 7747/7747 passed, 0 skipped (7736 pre-existing + 11 new).
+4. Full `UtilsTest.Functional`: 383/383 passed.
+5. Full `UtilsTest.Security`: 225/228 passed, 3 skipped — the same three pre-existing, unrelated, platform-gated
+   tests noted throughout S4/S5.
+6. Release build of `Utils.sln` (the full multi-project solution): succeeded, 0 errors, 51 warnings — the same
+   pre-existing count/shape as the round-4 baseline; the two production files this round touched introduce no
+   new warning category (confirmed by a targeted diff of every warning on those two files' line ranges before
+   and after).
+7. `Utils/Utils.csproj` remains on `<TargetFramework>net8.0</TargetFramework>`, unchanged.
+
+**S5 follow-ups (this round's own, in addition to the round-4 list above, which mostly still stands):**
+
+- The round-4 "end-to-end nested-canonicalization/re-simplification construction-cost hazard" is now measurably
+  smaller for the two rules that were its worst offenders (this round's own benchmark), but the underlying
+  architecture — a factoring rule's equality decision can trigger the comparer's own internal `Simplify()`,
+  which can itself invoke another factoring rule — is unchanged; it is reduced here, not eliminated.
+- The `List`-vs-`Dictionary` micro-decision for `FactorEqualityProbe`'s own cache noted above was not isolated
+  and benchmarked on its own; a future round could do so if the difference turns out to matter at a realistic
+  n.
+- Broadening batching to the three single-comparison call sites remains unexplored (deliberately out of this
+  round's scope, not shown to be beneficial or harmful).
+- The round-4 follow-ups (`ExpressionCanonicalOrder.BuildKey`'s single-key entry point, `ExpressionComparer`
+  temporary array/search allocation cleanup) remain open and were not touched by this round either.
+
+#### S5 P3 review, round 6 (2026-09-23) — caching must not reduce nested user-code invocation count
+
+A human review of `c39470341e09732ea5c0c942a7b82249744252be` found one real semantic hazard the P3 round above
+missed and one reporting inaccuracy. Both fixed on the same branch; P3's overall design (batch the comparer
+re-simplification hazard) is unchanged.
+
+**P1 (semantic hazard, confirmed and fixed).** The round-5 write-up's claim that `FactorEqualityProbe.Equals`
+behaves "exactly like the public `ExpressionComparer` contract" was **false** for one case the round-5 test
+suite did not cover: `ExpressionSimplifier.Simplify(Expression)` is a pure function of its **returned shape**
+for a given input, but it is not necessarily side-effect-free **during construction** - simplifying a candidate
+operand can dispatch a NESTED rule invocation (including a nested `AdditionOfEqualsElements`/
+`SubstractionOfEqualsElements` call, with its own comparer probes) purely because that operand happens to
+contain its own `Add`/`Subtract`/`Multiply` structure, and if that nested probe reaches a non-safe constant, it
+invokes that constant's own user-defined `Equals`/`GetHashCode` - the same non-safe policy the public comparer
+has always used, just reached one level deeper than the round-5 `HostileConstant` test exercised (which only
+covered the FINAL structural comparison of the outer term, never a nested `Simplify()` call reached while
+producing a cached candidate's own simplified form).
+
+Reviewer-supplied repro, verified empirically (both directions) before any further code change:
+
+```csharp
+Expression inner = Expression.Add(
+    Expression.Multiply(Expression.Constant(2.0), Expression.Call(identity, Expression.Constant(c1, typeof(object)))),
+    Expression.Multiply(Expression.Constant(3.0), Expression.Call(identity, Expression.Constant(c2, typeof(object)))));
+Expression left = Expression.Multiply(inner, x);
+Expression right = Expression.Multiply(Expression.Constant(7.0), y);
+// AdditionOfEqualsElements(Add(left, right), left, right)
+```
+
+`inner` becomes `leftleft` and participates in two of the outer rule's comparisons (`Equals(leftleft, rightleft)`
+then `Equals(leftleft, rightright)`, since neither swap branch matches). Simplifying `inner` reaches its own
+nested `AdditionOfEqualsElements`, whose own probe compares the two method-call arguments and invokes
+`c1.Equals(c2)`. Measured directly (standalone harness, non-throwing `CountingConstant` recording a call count
+instead of the round-5 `HostileConstant`'s throwing one):
+
+| Build | `c1.EqualsCallCount` |
+| --- | --- |
+| True pre-P3 baseline (`e878c1a98502dadbac7d5fc67a92a34f13d05b35`) | 2 |
+| Round-5 shipped candidate (`c39470341e09732ea5c0c942a7b82249744252be`) | **1** |
+| Round-6 fixed candidate (below) | 2 |
+
+The round-5 candidate's cache made `c1.Equals(c2)` run ONE time instead of TWO: the second comparison reused the
+first comparison's cached simplified form of `inner` instead of re-simplifying it, silently halving how many
+times this nested user code ran relative to the pre-existing, uncached per-comparison behavior - exactly the
+class of difference this stage's own "Side effects and hostile constants" guidance forbids introducing silently
+("If a proposed caching approach changes observable user-code invocation behavior, ... reject that approach ...
+unless you can prove the existing contract explicitly permits the difference"). No such proof exists; the
+approach was not rejected outright (per the reviewer's own recommendation) but narrowed instead - see the fix
+below.
+
+*Fix* (`Utils/Expressions/ExpressionSimplifier.cs`, `FactorEqualityProbe`): caching is now conditional on a new
+conservative predicate, `MightInvokeUserCodeWhenSimplified(Expression?)`, evaluated once per distinct candidate
+reference (and itself cached alongside the simplified form, so it is also computed at most once per candidate
+per rule invocation). This predicate walks a candidate's ENTIRE subtree - not merely the seven node kinds
+`ExpressionComparer` understands structurally, since a nested rule invocation is not limited to those either
+(e.g. a `ConditionalExpression`'s branches are still simplified even though `ExpressionComparer` treats the
+whole node as opaque) - and reports "might invoke user code" (conservatively `true`, meaning "do not cache") for:
+any `ConstantExpression` whose value is neither a native numeric type in `Types.Number` (compared via the exact
+rational/NaN/infinity model, which never calls user code) nor a known-safe type (see
+`ExpressionComparer.IsKnownSafeConstantValue`); and any node kind this predicate does not explicitly recognize.
+The second point is a deliberate design choice, not an oversight: an `ExpressionVisitor`-based walk was
+considered and rejected, because `ExpressionVisitor`'s default `VisitExtension`/`Expression.VisitChildren`
+**throws** `ArgumentException` on a non-reducible `ExpressionType.Extension` node (`CanReduce == false`) - exactly
+the shape `ExpressionSimplifierAdditiveSortScaleTests`'s own existing adversarial coverage (`ThrowingExpression`)
+uses, and exactly the kind of node this SAFETY check itself must never crash on. A hand-written recursive
+pattern match, falling back to a conservative `true` for any node kind it does not explicitly enumerate,
+achieves the same safety without ever touching such a node's internals.
+
+`FactorEqualityProbe.Equals` now looks up each operand's cached `(CanCache, Simplified)` pair; if either operand
+is not cacheable, the comparison falls back to calling `ExpressionComparer.Default.Equals(x, y)` directly for
+THAT ONE comparison (never populating or consulting the cache for that operand at all) - exactly the call, and
+therefore exactly the invocation count, every comparison made before `FactorEqualityProbe` existed. A cacheable
+operand (no reachable non-safe constant anywhere in its subtree) is simplified and cached at most once, exactly
+as round 5 already did - this is the case every one of P3's benchmark families actually exercises (none of them
+use opaque/non-numeric constants), so the fix targets exactly the gap the reviewer found without touching the
+mechanism the benchmark numbers below still credit.
+
+**Re-benchmarked after the fix** (same standalone harness, same methodology; allocations re-confirmed
+byte-identical across two repeated runs of the new build):
+
+| Family, n=8 | True baseline | Round-5 (buggy) | Round-6 (fixed) |
+| --- | --- | --- | --- |
+| NearMissAdditive time | 121.28 us | 92.75 us | 99.90 us |
+| NearMissAdditive alloc | 79 753 B | 49 005 B | 49 229 B |
+| NearMissSubtraction time | 109.47 us | 70.56 us | 97.28 us |
+| NearMissSubtraction alloc | 113 297 B | 50 797 B | 51 021 B |
+| FunctionLike time | 92.34 us | 43.50 us | 43.72 us |
+| FunctionLike alloc | 98 361 B | 64 477 B | 65 377 B |
+| BoundLambda time | 30.73 us | 23.44 us | 24.36 us |
+| BoundLambda alloc | 80 353 B | 49 605 B | 49 829 B |
+
+| Family, n=32 | True baseline | Round-5 (buggy) | Round-6 (fixed) |
+| --- | --- | --- | --- |
+| NearMissAdditive time | 407.02 us | 228.16 us | 259.12 us |
+| NearMissAdditive alloc | 1 460 834 B | 768 106 B | 769 098 B |
+| NearMissSubtraction time | 744.91 us | 285.43 us | 319.17 us |
+| NearMissSubtraction alloc | 2 165 962 B | 776 042 B | 777 034 B |
+| FunctionLike time | 983.73 us | 296.35 us | 335.70 us |
+| FunctionLike alloc | 1 538 482 B | 831 866 B | 835 834 B |
+| BoundLambda time | 783.17 us | 236.97 us | 256.89 us |
+| BoundLambda alloc | 1 462 010 B | 769 282 B | 770 274 B |
+
+Best-effort n=64, NearMissAdditive: true baseline 2893.64 us / 5 983 400 B → round-6 fixed 1013.62 us / 3 069 584 B
+(2.9x time, 1.95x alloc - essentially unchanged from round 5's 3.05x/1.95x, since the allocation profile is
+dominated by the same avoided re-simplifications either way).
+
+The fix costs a small, constant per-candidate safety-scan overhead (the `MightInvokeUserCodeWhenSimplified` walk
+- itself allocation-free, since it only reads existing tree structure and returns a `bool`): every family's
+ALLOCATION reduction versus the true baseline is preserved almost exactly (within ~0.2-1% of round 5's numbers -
+the tiny residual difference is the `(bool, Expression?)` tuple's slightly larger footprint in the cache list,
+not a new allocation source), while wall-clock TIME shows a modest, expected reduction in the improvement margin
+(e.g. NearMissAdditive n=32: 43.9% faster than baseline at round 5, 36.3% faster at round 6) - the scan itself is
+CPU-only work with no corresponding baseline cost to offset against. This is judged an acceptable, disclosed
+trade for closing a real correctness gap, and every family remains an unambiguous, substantial win over the true
+baseline at every n ≥ 8.
+
+**n=2 and Family D, re-measured.** Round 5's n=2/Family D table (above, in the historical section) is superseded
+by these round-6 numbers (true baseline → round-6 fixed candidate; allocations re-confirmed byte-identical
+across two repeated runs):
+
+| Family, n=2 | Baseline alloc | Round-6 fixed alloc | Delta |
+| --- | --- | --- | --- |
+| A NearMissAdditive | 3 799 B | 3 927 B | +128 B, +3.4% (was +2.5% at round 5) |
+| B NearMissSubtraction | 4 103 B | 4 183 B | +80 B, +1.9% (was +1.2%) |
+| E FunctionLike | 7 637 B | 7 413 B | −224 B, −2.9% (still an improvement; was −4.6%) |
+| F BoundLambda | 4 245 B | 4 373 B | +128 B, +3.0% (was +2.3%) |
+| D SecondPass (single call) | 14 274 B | 14 402 B | +128 B, +0.9% (was +0.7%) |
+
+Every n=2/D delta grew slightly relative to round 5's numbers, consistent with the added per-candidate safety
+scan being a small, roughly-constant fixed cost that a very small batch amortizes least well of any size
+measured - the same "Small-n regression" shape round 5 already disclosed (not a new phenomenon), just slightly
+larger in absolute terms. `E FunctionLike` remains a net improvement even at n=2. No exact-shape result changed:
+Family D still simplifies to the single constant `0`, and every reflection-based shape check in this round's own
+new test plus the eleven round-5 tests still passes unchanged (see "Validation" below).
+
+**Confirmed the fix reverses the P1 finding.** Re-ran the exact repro above against the round-6 fixed build:
+`c1.EqualsCallCount` is now 2, matching the true baseline exactly.
+
+**Test added and verified to fail pre-fix.** `NestedSimplifyReachingUserCode_InvokedOncePerComparison_NotOncePerCandidate`
+in `ExpressionSimplifierComparerBatchingTests.cs` reproduces the reviewer's exact repro with a non-throwing
+`CountingConstant` (records a call count instead of throwing, unlike the round-5 `HostileConstant`, so the test
+can inspect the count directly rather than only prove an exception propagates) and asserts `c1.EqualsCallCount == 2`.
+Confirmed to FAIL against the round-5 shipped build (`c39470341e09732ea5c0c942a7b82249744252be`'s
+`ExpressionSimplifier.cs`, temporarily swapped in with the round-6 test file kept as-is, then reverted) with
+exactly the predicted `1 != 2` mismatch, and to pass against the round-6 fixed build. A second, "stateful/
+alternating `Equals`" test (returning a different result on each call) was considered, as the reviewer suggested
+as an even-stronger check, but not added: the round-6 fix's guarantee is unconditional per-candidate ("any
+operand whose subtree contains a reachable non-safe constant is NEVER cached, full stop"), so a stateful-`Equals`
+scenario would exercise the exact same code path (the uncached fallback) as the deterministic counting test
+above, rather than a materially different one - judged not to add distinguishing coverage proportionate to its
+own construction complexity and fragility (predicting an intentionally-nondeterministic `Equals`'s exact
+resulting AST shape across two independent re-simplifications).
+
+**P2 (reporting inaccuracy, fixed).** The round-5 write-up labeled the `Cancellation` control family's small
+allocation increase "1.0x (noise)" at every size. This directly contradicted this stage's own established
+methodology (allocations are byte-identical across repeated runs of the same build and are the trustworthy
+signal, specifically BECAUSE they are not noise - see the P1 round-4 "On timing noise" entry). Re-measured and
+confirmed deterministic (byte-identical across two repeated runs, both before and after the round-6 fix): the
+`Cancellation` family's allocation numbers, true baseline → round-6 fixed candidate, are **12 576 B → 12 784 B
+(+208 B, +1.65%)** at n=2, **54 278 B → 54 966 B (+688 B, +1.27%)** at n=8, **110 009 B → 111 337 B (+1 328 B,
++1.21%)** at n=16, and **221 599 B → 224 207 B (+2 608 B, +1.18%)** at n=32 - a real, small, reproducible
+regression, not noise, on the same order of magnitude as the already-disclosed n=2 regression for the OTHER
+families. Corrected
+in place in this file and in the PR description: this family's allocation numbers are now reported as a
+disclosed regression alongside the n=2 findings, not as "noise" or "byte-identical."
+
+Root cause (not separately isolated/profiled beyond this observation, consistent with this stage's own
+"do not state an inferred root cause as proven unless it was isolated experimentally" instruction): the
+`Cancellation` family's dominant cost is the untouched `AdditionWithNegate`/cancellation path (a single
+comparison per node, not routed through `FactorEqualityProbe` at all), but every node in this family's chain is
+still built from `Multiply`/`Subtract` pairs that DO reach `SubstractionOfEqualsElements` at some point in the
+chain, each invocation now allocating one `FactorEqualityProbe` (and, after this round's fix, its cache tuples
+carry an extra `bool`) regardless of whether that invocation's own comparisons end up being useful - the same
+fixed per-call cost the P1 round-2/round-3 entries already characterized for `AnnotatedAdditiveTerm`, applying
+here to a family whose useful work this rule call performs is comparatively small.
+
+**Validation performed (2026-09-23, after review round 6, in order; no rebase needed, `master` still at
+`1f874f9e0caa28e097060316a992cd5a4ce4fdbd`):**
+
+1. `ExpressionSimplifierComparerBatchingTests` (12 tests: the original 11 plus
+   `NestedSimplifyReachingUserCode_InvokedOncePerComparison_NotOncePerCandidate`): 12/12 passed.
+2. Full `UtilsTest/Mathematics/Expressions` namespace: 476/476 passed (464 pre-existing + 12 new).
+3. Full `UtilsTest.Unit`: 7748/7748 passed, 0 skipped.
+4. Full `UtilsTest.Functional`: 383/383 passed.
+5. Full `UtilsTest.Security`: 225/228 passed, 3 skipped — the same three pre-existing, unrelated,
+   platform-gated tests noted throughout S4/S5.
+6. Release build of `Utils.sln`: succeeded, 0 errors, 51 warnings — same pre-existing count/shape; a targeted
+   diff of every warning inside `FactorEqualityProbe`'s new line range confirmed zero new warnings there.
+7. `Utils/Utils.csproj` remains on `<TargetFramework>net8.0</TargetFramework>`, unchanged.
+
+#### S5 P3 review, round 7 (2026-09-24) — classify both operands before simplifying either one
+
+A second human review of round 6's head (`c412f5cb`) confirmed round 6's own fix works (the P1 hazard it
+targeted is gone, CI is fully green including `source-gates-ubuntu`/`required`) but found one further semantic
+hazard in the same type, plus one allocation-hygiene nit. Both fixed on the same branch; the overall P3 design
+(batch the comparer re-simplification hazard via a per-invocation cache) is unchanged.
+
+**P1 (semantic hazard, confirmed and fixed) — interleaved classify-then-simplify reorders operand
+simplification relative to the public contract.** Round 6's `FactorEqualityProbe.Equals` called
+`GetSimplifiedIfCacheable(x, ...)` then `GetSimplifiedIfCacheable(y, ...)` in sequence, and each of those calls
+BOTH classified its operand (via `MightInvokeUserCodeWhenSimplified`) AND, if cacheable, immediately simplified
+it — before the pair's overall `!canCacheX || !canCacheY` fallback decision was made. This is fine when both
+operands end up cacheable (both get simplified, in `x`-then-`y` order, matching the public contract) or when
+`x` is non-cacheable and `y` also turns out non-cacheable (neither is simplified by the probe). It is NOT fine
+when `x` is non-cacheable and `y` IS cacheable: `y` gets simplified during the SECOND call, before the pair is
+known to require a fallback at all - so if simplifying `y` has an observable effect (throws, or runs user code
+reachable during simplification), that effect is observed BEFORE `x` is ever touched, and before the fallback
+that would otherwise simplify `x` first is even reached. The public
+`ExpressionComparer.Equals(Expression?, Expression?)` contract this type must reproduce exactly always
+simplifies `x` first, then `y` - never the reverse, and it never simplifies `y` at all if simplifying `x`
+throws first.
+
+Reviewer-supplied repro, verified empirically (built as a permanent regression test, not just an ad hoc probe -
+see "Test" below): `x` a non-cacheable operand built from the same "inner" shape as round 6's own
+`NestedSimplifyReachingUserCode...` test (an `Add` of two `Multiply`/`Call` terms, each embedding a distinct
+`HostileConstant`, so simplifying `x` on its own reaches a nested `AdditionOfEqualsElements` call whose
+structural argument comparison invokes `hostileLeft.Equals(hostileRight)` and throws
+`HostileConstantException`); `y` a cacheable operand (`Divide(Constant(1.0), Constant(0.0))` - only native
+numeric constants, so `MightInvokeUserCodeWhenSimplified` clears it) whose OWN simplification unconditionally
+throws `DivideByZeroException` (`ExpressionSimplifier.DivideWithZeroOrOne`) regardless of numeric type -
+deliberately a DIFFERENT exception type from `x`'s, so the type that propagates identifies which operand was
+actually attempted first:
+
+| Build | Exception observed for `Equals(x, y)` |
+| --- | --- |
+| True pre-P3 baseline (`ExpressionComparer.Default.Equals(x, y)` directly) | `HostileConstantException` (from simplifying `x`, always attempted first) |
+| Round-6 shipped candidate (`c412f5cb`) | `DivideByZeroException` (from simplifying `y`, reached first via the interleaved classify-and-simplify call) |
+| Round-7 fixed candidate (below) | `HostileConstantException` (matches the true baseline) |
+
+**Fix** (`Utils/Expressions/ExpressionSimplifier.cs`, `FactorEqualityProbe`): `GetSimplifiedIfCacheable` is split
+into two methods with a hard ordering contract in `Equals`: `IsCacheable(Expression)` classifies (and caches
+the classification for) an operand WITHOUT ever simplifying it, and `GetOrSimplify(Expression)` simplifies (and
+caches) an operand a caller has already proven cacheable via `IsCacheable`. `Equals` now calls `IsCacheable` for
+BOTH `x` and `y` first; only if both return `true` does it call `GetOrSimplify` for `x` then `y`, in that order.
+When either is not cacheable, `Equals` falls back to `ExpressionComparer.Default.Equals(x, y)` directly, having
+simplified NEITHER operand itself - so the fallback's own `Simplify(x)`-then-`Simplify(y)` sequence is the only
+place either operand gets simplified, exactly reproducing the public contract's order (and its "never reach `y`
+if `x` throws first" behavior) for every combination of cacheability, not merely the both-cacheable case round 6
+already got right.
+
+**Test.** `NonCacheableThenCacheableOperand_FallsBackWithoutSimplifyingEitherFirst_PreservesXBeforeYOrder` in
+`ExpressionSimplifierComparerBatchingTests.cs` reproduces the exact repro above, using a shared `Constant(5.0)`
+instance as both `Multiply`'s left factor (`leftleft`/`rightleft`) so `TryFastPathEquals`'s
+`ReferenceEquals` shortcut satisfies that first comparison without touching the probe's cache at all, making
+`Equals(leftright=x, rightright=y)` - reached inside the same short-circuited `&&` chain - the very first
+substantive comparison the probe performs. Asserts the propagated exception (unwrapped through however many
+`TargetInvocationException` layers reflection introduces) is `HostileConstantException`, not
+`DivideByZeroException`. Confirmed to FAIL against the round-6 shipped build (`c412f5cb`'s
+`ExpressionSimplifier.cs`, temporarily swapped in via `git stash`/`git stash pop` with the round-7 test file kept
+as-is) with exactly the predicted `DivideByZeroException` instead of `HostileConstantException`, and to pass
+against the round-7 fixed build.
+
+**P2 (allocation-hygiene nit, fixed).** `MightInvokeUserCodeWhenSimplified`'s `MethodCallExpression` arm used
+`mce.Arguments.Any(MightInvokeUserCodeWhenSimplified)` - a LINQ `Enumerable.Any` call on a
+`ReadOnlyCollection<Expression>` inside a classification path meant to be a cheap, allocation-light static-shape
+scan run once per candidate per rule invocation, inconsistent with this project's existing avoidance of LINQ on
+other frequently used construction paths (see this stage's own P1/P3 history). Replaced with a new
+`private static bool AnyArgumentMightInvokeUserCodeWhenSimplified(IReadOnlyList<Expression> arguments)` indexed
+loop, called from the same switch-expression arm. This is a hygiene/consistency fix, not a correctness one - no
+regression test was added specifically for it (the existing `MightInvokeUserCodeWhenSimplified` coverage already
+exercises the `MethodCallExpression` arm via every `HostileConstant`/`CountingConstant` test in this file); round
+6's own small-`n` allocation deltas were already attributed to the `(bool, Expression?)` tuple's footprint, a
+claim this fix does not retroactively re-verify (not re-benchmarked separately - the change is judged safe by
+inspection, consistent with this stage's own "reasoned, not separately benchmarked" precedent for
+sub-benchmark-noise micro-decisions).
+
+**Validation performed (2026-09-24, after review round 7, in order; no rebase needed, `master` still at
+`1f874f9e0caa28e097060316a992cd5a4ce4fdbd`):**
+
+1. `ExpressionSimplifierComparerBatchingTests` (13 tests: the round-6 12 plus
+   `NonCacheableThenCacheableOperand_FallsBackWithoutSimplifyingEitherFirst_PreservesXBeforeYOrder`): 13/13
+   passed; confirmed to fail pre-fix as described above.
+2. `ExpressionSimplifierComparerBatchingTests` + `ExpressionSimplifierAdditiveSortScaleTests` together: 19/19
+   passed.
+3. Full `UtilsTest.Unit`: 7749/7749 passed, 0 skipped.
+4. Full `UtilsTest.Functional`: 383/383 passed.
+5. Full `UtilsTest.Security`: 225/228 passed, 3 skipped — the same three pre-existing, unrelated,
+   platform-gated tests noted throughout S4/S5.
+6. Release build of `Utils.sln`: succeeded, 0 errors, 51 warnings — same pre-existing count/shape.
+7. `Utils/Utils.csproj` remains on `<TargetFramework>net8.0</TargetFramework>`, unchanged.
+
+#### S5 P3 round-7 CPU rebenchmark (2026-09-24) — confirms no measurable regression
+
+Round 7's split of round 6's single combined cache lookup (`GetSimplifiedIfCacheable`) into two separate scans
+of the same ≤4-entry `_cache` list (`IsCacheable` then `GetOrSimplify`) is, in the worst case, one extra linear
+scan of at most 4 reference-equality checks per operand per `FactorEqualityProbe.Equals` call on the
+both-cacheable hot path - bounded, `O(1)` work, but a review specifically asked for it to be measured rather
+than assumed negligible, since it changed the hot path the P3 benchmarks themselves target.
+
+**Methodology change from the original P1/P3 harnesses, disclosed.** An initial attempt to reproduce
+"`NearMissAdditive`/`NearMissSubtraction`/`FunctionLike`/`BoundLambda` at n=8/32" as chains of n terms run
+through the full public `Simplify()` pipeline (matching the earlier harnesses' own approach, which were never
+committed to this repository and could not be recovered byte-for-byte) hit a real but UNRELATED cost: a
+left-deep n-term chain forces repeated re-simplification of growing prefixes at every level of the chain,
+dominating the measurement by 1-2 orders of magnitude and making even n=8 take low-single-digit milliseconds
+per round (versus the ~100us this family name previously reported) - swamping the small, bounded signal this
+rebenchmark was actually trying to isolate, and making n=32 impractically slow to complete even one round.
+Since round 7's change is a bounded, per-call, `O(1)` cost independent of surrounding chain length, this
+rebenchmark instead isolates it directly: each family is now ONE minimal `AdditionOfEqualsElements`/
+`SubstractionOfEqualsElements` invocation (reflected into directly, exactly like
+`ExpressionSimplifierComparerBatchingTests`' own `InvokeAdditionOfEqualsElements` helper), built so none of its
+comparisons match structurally (maximizing `FactorEqualityProbe` probe-call count per invocation - matching the
+original "near-miss" family intent) with every candidate cacheable (no reachable non-safe constant), landing
+squarely in the hot path round 7 changed. "n=8"/"n=32" are reinterpreted as the repetition count used to compute
+a per-call median (the established "15 rounds, median reported" idea, parameterized) rather than chain length;
+since this is a bounded, `O(1)`-per-call operation, per-call cost should be statistically indistinguishable at
+n=8 vs. n=32 if - and only if - there is no hidden n-dependent cost, so that convergence is itself part of the
+answer, not just a formality. Standalone temporary harness (not part of this repository, built in a scratch
+directory), Windows 11, .NET 8.0.31, workstation/non-concurrent GC, Release, `ProjectReference` to
+`Utils.csproj`. Each reported number is the median of 15 batches (`n` calls per batch, fresh
+`ExpressionSimplifier`/expression tree per call), run twice per build (two independent process invocations) to
+check run-to-run stability; the round-6 comparison build was produced by temporarily overwriting the working
+tree's `ExpressionSimplifier.cs` with `git show c412f5cb:...` and rebuilding, then restored via
+`git checkout HEAD --` before committing anything (the same revert-before-commit discipline this stage already
+uses for correctness verification) - the repository was confirmed clean (`git status --short`) both before and
+after.
+
+| Family, n=8 | Round-6 (avg of 2 runs) | Round-7 (avg of 2 runs) | Δ time |
+| --- | --- | --- | --- |
+| NearMissAdditive time | 3.763 us | 3.825 us | +1.7% |
+| NearMissSubtraction time | 3.700 us | 3.725 us | +0.7% |
+| FunctionLike time | 11.362 us | 11.763 us | +3.5% |
+| BoundLambda time | 25.919 us | 26.806 us | +3.4% |
+
+| Family, n=32 | Round-6 (avg of 2 runs) | Round-7 (avg of 2 runs) | Δ time |
+| --- | --- | --- | --- |
+| NearMissAdditive time | 3.964 us | 4.136 us | +4.3% |
+| NearMissSubtraction time | 4.067 us | 4.183 us | +2.9% |
+| FunctionLike time | 10.819 us | 10.921 us | +0.9% |
+| BoundLambda time | 26.522 us | 24.919 us | **−6.0%** |
+
+**Allocations (byte-identical across both runs of the same build, at both n - the trustworthy signal, per this
+stage's own established methodology):**
+
+| Family | Round-6 alloc/call | Round-7 alloc/call | Δ |
+| --- | --- | --- | --- |
+| NearMissAdditive | 1 413.0 B (n=8) / 1 409.2 B (n=32) | identical | 0 (byte-identical) |
+| NearMissSubtraction | 1 413.0 B (n=8) / 1 409.2 B (n=32) | identical | 0 (byte-identical) |
+| BoundLambda | 9 997.0 B (n=8) / 9 993.2 B (n=32) | identical | 0 (byte-identical) |
+| FunctionLike | 1 925.0 B (n=8) / 1 921.2 B (n=32) | 1 829.0 B (n=8) / 1 825.2 B (n=32) | **−96 B (−5.0%)** |
+
+**Reading these numbers.** Timing deltas range from −6.0% to +4.3% and do not point in a consistent direction
+across families or between n=8 and n=32 for the same family (`BoundLambda` is 3.4% SLOWER at n=8 but 6.0%
+FASTER at n=32) - the signature of measurement noise at this scale (3-27us per call, where OS scheduling, JIT
+tiering and frequency scaling introduce several-percent jitter) rather than a systematic regression; a real,
+reproducible `O(1)` cost from one extra ≤4-entry reference-equality scan would be expected to show up as a
+small but CONSISTENTLY signed delta at every n, which these numbers do not show. Allocations - unaffected by
+timing jitter and confirmed byte-identical across repeated runs, exactly as this stage's methodology already
+treats them as the trustworthy signal - are unchanged for every family whose candidates are not
+`MethodCallExpression`s, and are 96 bytes LOWER per call for `FunctionLike` (the one family that exercises the
+`MethodCallExpression` classification arm), confirming empirically - not merely by inspection, as round 7's own
+write-up initially had to leave it - that round 7's P2 fix (`Arguments.Any(...)` → an indexed loop) is a real,
+reproducible allocation improvement, not a wash. **Verdict: no measurable CPU regression from round 7's
+classify-then-simplify split; the fix is CPU-neutral within measurement noise and allocation-neutral-to-positive.**
+S5 P3 is considered closed pending no further review findings.
+
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.

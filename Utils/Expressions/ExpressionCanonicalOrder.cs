@@ -133,6 +133,41 @@ internal static class ExpressionCanonicalOrder
     internal static int Compare(Expression? x, Expression? y, IReadOnlyList<ParameterExpression[]> enclosingScopes)
         => BuildKey(x, enclosingScopes).CompareTo(BuildKey(y, enclosingScopes));
 
+    /// <summary>
+    /// Builds the complete structural canonical-order key for each of <paramref name="expressions"/> under
+    /// one shared enclosing-scope snapshot, sharing a single working scope list across every element instead
+    /// of allocating and copying a fresh one per call (roadmap stage S5) — the caller is expected to build
+    /// each key exactly once (for example, once per additive/multiplicative term at annotation time) and
+    /// reuse the result across any later pairwise comparisons, rather than rebuilding it on every comparison.
+    /// </summary>
+    /// <param name="expressions">The (already simplified) sub-expressions to key, in order.</param>
+    /// <param name="enclosingScopes">See <see cref="BuildKey(Expression, IReadOnlyList{ParameterExpression[]})"/>.</param>
+    /// <returns>One comparable, deterministic structural key per element of <paramref name="expressions"/>, in the same order.</returns>
+    /// <remarks>
+    /// Fast-paths an empty <paramref name="expressions"/> (a niladic method call, e.g. <c>Guid.NewGuid()</c>)
+    /// to <see cref="Array.Empty{T}"/> without allocating the working scope list at all: the pre-S5 baseline
+    /// (<c>CompareArgumentLists</c> over an empty argument list) built zero argument keys for this shape too,
+    /// so this call must not become new, unamortized work for it.
+    /// </remarks>
+    internal static KeyNode[] BuildKeys(IReadOnlyList<Expression> expressions, IReadOnlyList<ParameterExpression[]> enclosingScopes)
+    {
+        if (expressions.Count == 0)
+        {
+            return [];
+        }
+
+        var scopes = new List<ParameterExpression[]>(enclosingScopes.Count + 2);
+        scopes.AddRange(enclosingScopes);
+
+        var keys = new KeyNode[expressions.Count];
+        for (int i = 0; i < expressions.Count; i++)
+        {
+            keys[i] = Build(expressions[i], scopes);
+        }
+
+        return keys;
+    }
+
     /// <summary>Dispatches to the node-family-specific <c>Build*</c> helper, or <see cref="UnsupportedKey"/> for any node kind not among the seven this class understands.</summary>
     /// <param name="e">The (already simplified) sub-expression to key, or <see langword="null"/>.</param>
     /// <param name="scopes">The local, per-<see cref="BuildKey(Expression, IReadOnlyList{ParameterExpression[]})"/>-call working scope list (ambient snapshot plus any lambda encountered so far during this walk).</param>
