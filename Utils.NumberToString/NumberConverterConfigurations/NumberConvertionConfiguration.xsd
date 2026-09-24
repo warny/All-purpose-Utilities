@@ -1653,11 +1653,17 @@
                                     Merge rules:
                                       - Scalar attributes (groupSize, separator, zero, etc.): child
                                         value wins; omitted child attributes inherit from the base.
-                                      - Collections (Groups, NumberScale, Replacements, Exceptions,
-                                        Fractions, Ordinals, Variants): if the child declares the
-                                        element it replaces the base completely; omitted elements are
-                                        inherited. An empty element (e.g. &lt;Replacements /&gt;) explicitly
-                                        overrides the base with an empty list.
+                                      - Collections (Groups, Replacements, Exceptions, Fractions,
+                                        Variants): if the child declares the element it replaces the
+                                        base completely; omitted elements are inherited. An empty
+                                        element (e.g. &lt;Replacements /&gt;) explicitly overrides the
+                                        base with an empty list.
+                                      - NumberScale: merged field by field, NOT replaced wholesale. A
+                                        child may declare only the sub-elements it needs to override
+                                        (e.g. StaticNames, Suffixes); startIndex, firstLetterUpperCase,
+                                        groupSeparator, voidGroup, and the Scale0Prefixes/UnitsPrefixes/
+                                        TensPrefixes/HundredsPrefixes prefix tables independently fall
+                                        back to the base when absent in the child.
                                       - Ordinals: OrdinalExceptions and OrdinalRules are merged
                                         element-by-element (child wins on key conflicts); suffix,
                                         prefix, and OrdinalVariants fall back to the base when absent

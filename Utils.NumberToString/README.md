@@ -1216,7 +1216,8 @@ they are not globally registered converters and are not visible to `RegisterConf
 
 **Merge rules**:
 - Scalar attributes (`groupSize`, `separator`, `zero`, …): child wins; absent child attributes inherit from the base.
-- Collection elements (`Groups`, `NumberScale`, `Replacements`, `Exceptions`, `Fractions`, `Variants`): if declared in the child the entire collection replaces the base. Omitted collections are inherited. An empty element (e.g. `<Replacements />`) explicitly overrides with an empty list.
+- Collection elements (`Groups`, `Replacements`, `Exceptions`, `Fractions`, `Variants`): if declared in the child the entire collection replaces the base. Omitted collections are inherited. An empty element (e.g. `<Replacements />`) explicitly overrides with an empty list.
+- `NumberScale`: merged field by field, not replaced wholesale. A child may declare only the sub-elements it needs to override (e.g. `StaticNames`, `Suffixes`) while `startIndex`, `firstLetterUpperCase`, `groupSeparator`, `voidGroup`, and the `Scale0Prefixes`/`UnitsPrefixes`/`TensPrefixes`/`HundredsPrefixes` prefix tables independently fall back to the base when absent in the child. For example, `MS` (Malay) declares only `StaticNames`/`Suffixes` and still inherits `ID`'s `startIndex` and prefix tables unchanged.
 - `Ordinals`: `OrdinalExceptions` and `OrdinalRules` are merged element-by-element (child wins on key conflicts). `suffix`, `prefix`, and `OrdinalVariants` fall back to the base when absent in the child.
 
 ---
