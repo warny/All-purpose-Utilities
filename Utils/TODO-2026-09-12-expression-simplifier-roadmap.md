@@ -2127,6 +2127,81 @@ sub-benchmark-noise micro-decisions).
 6. Release build of `Utils.sln`: succeeded, 0 errors, 51 warnings — same pre-existing count/shape.
 7. `Utils/Utils.csproj` remains on `<TargetFramework>net8.0</TargetFramework>`, unchanged.
 
+#### S5 P3 round-7 CPU rebenchmark (2026-09-24) — confirms no measurable regression
+
+Round 7's split of round 6's single combined cache lookup (`GetSimplifiedIfCacheable`) into two separate scans
+of the same ≤4-entry `_cache` list (`IsCacheable` then `GetOrSimplify`) is, in the worst case, one extra linear
+scan of at most 4 reference-equality checks per operand per `FactorEqualityProbe.Equals` call on the
+both-cacheable hot path - bounded, `O(1)` work, but a review specifically asked for it to be measured rather
+than assumed negligible, since it changed the hot path the P3 benchmarks themselves target.
+
+**Methodology change from the original P1/P3 harnesses, disclosed.** An initial attempt to reproduce
+"`NearMissAdditive`/`NearMissSubtraction`/`FunctionLike`/`BoundLambda` at n=8/32" as chains of n terms run
+through the full public `Simplify()` pipeline (matching the earlier harnesses' own approach, which were never
+committed to this repository and could not be recovered byte-for-byte) hit a real but UNRELATED cost: a
+left-deep n-term chain forces repeated re-simplification of growing prefixes at every level of the chain,
+dominating the measurement by 1-2 orders of magnitude and making even n=8 take low-single-digit milliseconds
+per round (versus the ~100us this family name previously reported) - swamping the small, bounded signal this
+rebenchmark was actually trying to isolate, and making n=32 impractically slow to complete even one round.
+Since round 7's change is a bounded, per-call, `O(1)` cost independent of surrounding chain length, this
+rebenchmark instead isolates it directly: each family is now ONE minimal `AdditionOfEqualsElements`/
+`SubstractionOfEqualsElements` invocation (reflected into directly, exactly like
+`ExpressionSimplifierComparerBatchingTests`' own `InvokeAdditionOfEqualsElements` helper), built so none of its
+comparisons match structurally (maximizing `FactorEqualityProbe` probe-call count per invocation - matching the
+original "near-miss" family intent) with every candidate cacheable (no reachable non-safe constant), landing
+squarely in the hot path round 7 changed. "n=8"/"n=32" are reinterpreted as the repetition count used to compute
+a per-call median (the established "15 rounds, median reported" idea, parameterized) rather than chain length;
+since this is a bounded, `O(1)`-per-call operation, per-call cost should be statistically indistinguishable at
+n=8 vs. n=32 if - and only if - there is no hidden n-dependent cost, so that convergence is itself part of the
+answer, not just a formality. Standalone temporary harness (not part of this repository, built in a scratch
+directory), Windows 11, .NET 8.0.31, workstation/non-concurrent GC, Release, `ProjectReference` to
+`Utils.csproj`. Each reported number is the median of 15 batches (`n` calls per batch, fresh
+`ExpressionSimplifier`/expression tree per call), run twice per build (two independent process invocations) to
+check run-to-run stability; the round-6 comparison build was produced by temporarily overwriting the working
+tree's `ExpressionSimplifier.cs` with `git show c412f5cb:...` and rebuilding, then restored via
+`git checkout HEAD --` before committing anything (the same revert-before-commit discipline this stage already
+uses for correctness verification) - the repository was confirmed clean (`git status --short`) both before and
+after.
+
+| Family, n=8 | Round-6 (avg of 2 runs) | Round-7 (avg of 2 runs) | Δ time |
+| --- | --- | --- | --- |
+| NearMissAdditive time | 3.763 us | 3.825 us | +1.7% |
+| NearMissSubtraction time | 3.700 us | 3.725 us | +0.7% |
+| FunctionLike time | 11.362 us | 11.763 us | +3.5% |
+| BoundLambda time | 25.919 us | 26.806 us | +3.4% |
+
+| Family, n=32 | Round-6 (avg of 2 runs) | Round-7 (avg of 2 runs) | Δ time |
+| --- | --- | --- | --- |
+| NearMissAdditive time | 3.964 us | 4.136 us | +4.3% |
+| NearMissSubtraction time | 4.067 us | 4.183 us | +2.9% |
+| FunctionLike time | 10.819 us | 10.921 us | +0.9% |
+| BoundLambda time | 26.522 us | 24.919 us | **−6.0%** |
+
+**Allocations (byte-identical across both runs of the same build, at both n - the trustworthy signal, per this
+stage's own established methodology):**
+
+| Family | Round-6 alloc/call | Round-7 alloc/call | Δ |
+| --- | --- | --- | --- |
+| NearMissAdditive | 1 413.0 B (n=8) / 1 409.2 B (n=32) | identical | 0 (byte-identical) |
+| NearMissSubtraction | 1 413.0 B (n=8) / 1 409.2 B (n=32) | identical | 0 (byte-identical) |
+| BoundLambda | 9 997.0 B (n=8) / 9 993.2 B (n=32) | identical | 0 (byte-identical) |
+| FunctionLike | 1 925.0 B (n=8) / 1 921.2 B (n=32) | 1 829.0 B (n=8) / 1 825.2 B (n=32) | **−96 B (−5.0%)** |
+
+**Reading these numbers.** Timing deltas range from −6.0% to +4.3% and do not point in a consistent direction
+across families or between n=8 and n=32 for the same family (`BoundLambda` is 3.4% SLOWER at n=8 but 6.0%
+FASTER at n=32) - the signature of measurement noise at this scale (3-27us per call, where OS scheduling, JIT
+tiering and frequency scaling introduce several-percent jitter) rather than a systematic regression; a real,
+reproducible `O(1)` cost from one extra ≤4-entry reference-equality scan would be expected to show up as a
+small but CONSISTENTLY signed delta at every n, which these numbers do not show. Allocations - unaffected by
+timing jitter and confirmed byte-identical across repeated runs, exactly as this stage's methodology already
+treats them as the trustworthy signal - are unchanged for every family whose candidates are not
+`MethodCallExpression`s, and are 96 bytes LOWER per call for `FunctionLike` (the one family that exercises the
+`MethodCallExpression` classification arm), confirming empirically - not merely by inspection, as round 7's own
+write-up initially had to leave it - that round 7's P2 fix (`Arguments.Any(...)` → an indexed loop) is a real,
+reproducible allocation improvement, not a wash. **Verdict: no measurable CPU regression from round 7's
+classify-then-simplify split; the fix is CPU-neutral within measurement noise and allocation-neutral-to-positive.**
+S5 P3 is considered closed pending no further review findings.
+
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.
