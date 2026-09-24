@@ -9,6 +9,11 @@ All notable changes to this project will be documented in this file.
   `displayHourRange` XML/XSD attribute. Clock rules can now vary by the projected hour after each
   candidate rule's offset and the configured hour cycle; construction validates complete,
   non-overlapping coverage and precompiles a 24-by-60 O(1) lookup.
+- Added the optional `ClockTimeRule.SpecialHourPattern` property and matching
+  `specialHourPattern` XML/XSD attribute. When set, a configured special-hour word (e.g. "midnight",
+  "noon") is rendered through this pattern instead of `Pattern`, so special-hour phrasing can differ
+  from the numeric-hour phrasing (e.g. dropping an idiomatic "o'clock"); the pattern is validated and
+  precompiled the same way as `Pattern`.
 - Added independent `ClockTimeRule.HourForcedVariants` and `AmountForcedVariants` init-only
   properties plus the XML attributes `hourForceVariants` and `amountForceVariants`. Clock rules
   now canonicalize aliases at construction, reject dead forcings, preserve caller dimensions,

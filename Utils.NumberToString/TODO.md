@@ -49,5 +49,5 @@ TODO/DONE convention.
 - Split Belgian and Swiss French into `baseOn="FR"` children; Belgian keeps `quatre-vingts` while Swiss keeps `huitante`.
 - Split Valencian into a `baseOn="CA"` child with its own clock convention.
 - Split Malay into a `baseOn="ID"` child, preserving the Malay `lapan` stem and a distinct `pukul` clock convention.
-- Added productive Indonesian/Malay `ke-` ordinals with a small plugin only for suppletive `pertama`.
+- Added productive Indonesian/Malay ordinal plugins handling suppletive `pertama` and `ke-` formation over language-specific cardinal stems.
 - Added English and Catalan ClockTime rules. Remaining languages listed above are still open and must not be marked supported without the documented grammatical audit.
