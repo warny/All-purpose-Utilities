@@ -194,14 +194,31 @@ internal static class ExpressionCanonicalOrder
     /// <remarks>
     /// <para>
     /// Combines two logically distinct scope sources without ever materializing them into one concatenated
-    /// list: <see cref="EnclosingScopes"/>, the caller-supplied, already-immutable ambient snapshot
-    /// (outermost first), never copied or mutated by this type; and <see cref="NestedScopes"/>, a
-    /// lazily-allocated stack of scope frames pushed by <c>BuildLambda</c> for a <see cref="LambdaExpression"/>
-    /// encountered while walking the term itself (innermost/most-recently-pushed last). <see cref="NestedScopes"/>
-    /// stays <see langword="null"/>, allocating nothing, unless the term being keyed actually contains a
-    /// nested lambda - which is why an ordinary no-nested-lambda <see cref="BuildKey(Expression?, IReadOnlyList{ParameterExpression[]})"/>
+    /// list: <see cref="EnclosingScopes"/>, an immutable snapshot (outermost first), never mutated by this
+    /// type; and <see cref="NestedScopes"/>, a lazily-allocated stack of scope frames pushed by
+    /// <c>BuildLambda</c> for a <see cref="LambdaExpression"/> encountered while walking the term itself
+    /// (innermost/most-recently-pushed last). <see cref="NestedScopes"/> stays <see langword="null"/>,
+    /// allocating nothing, unless the term being keyed actually contains a nested lambda - which is why an
+    /// ordinary no-nested-lambda <see cref="BuildKey(Expression?, IReadOnlyList{ParameterExpression[]})"/>
     /// call now performs no scope-management heap allocation at all, regardless of how many enclosing scopes
     /// were supplied.
+    /// </para>
+    /// <para>
+    /// <b>Snapshot contract preserved (PR #606 review round 1).</b> Every production caller reaches this
+    /// constructor with the exact array <see cref="ExpressionSimplifier"/>'s own
+    /// <c>CaptureLexicalScopeSnapshot</c> already returns (either <see cref="Array.Empty{T}"/> or a fresh
+    /// <c>List{ParameterExpression[]}.ToArray()</c>) - a concrete, already-immutable
+    /// <c>ParameterExpression[][]</c> nothing else can reach and mutate underneath this call, so that exact
+    /// runtime type is stored directly with zero extra allocation. But <c>BuildKey</c>/<c>BuildKeys</c>'
+    /// <c>internal</c> parameter type is the wider <see cref="IReadOnlyList{T}"/>, and the pre-P4 baseline
+    /// unconditionally defensive-copied whatever was passed (via <c>List{T}.AddRange</c>) before returning
+    /// control to the caller - a real behavioral guarantee for any OTHER caller (including this PR's own
+    /// tests, which pass a plain mutable <see cref="List{T}"/> literal) that P4's first pass silently dropped
+    /// by storing the caller's reference directly. Restored here: any <paramref name="enclosingScopes"/> that
+    /// is not already the exact <c>ParameterExpression[][]</c> runtime type is copied ONCE into a fresh array
+    /// before being stored, so a caller mutating its own list concurrently with (or re-entrantly during) this
+    /// key's construction can no longer observe or corrupt it - restoring the pre-P4 guarantee - while the
+    /// hot, exact-array production path stays allocation-free.
     /// </para>
     /// <para>
     /// <b>Bound-parameter depth is unchanged.</b> A bound-parameter lookup (see <c>BuildParameter</c>)
@@ -216,23 +233,45 @@ internal static class ExpressionCanonicalOrder
     /// </remarks>
     private ref struct ScopeState
     {
-        /// <summary>The immutable, caller-supplied ambient lexical scopes enclosing the term being keyed, outermost first. Never mutated by this type.</summary>
-        public readonly IReadOnlyList<ParameterExpression[]> EnclosingScopes;
+        /// <summary>
+        /// The ambient lexical scopes enclosing the term being keyed, outermost first - either the exact
+        /// array the caller supplied (production's zero-allocation path) or a defensive one-time copy of it
+        /// (see this type's remarks). Never mutated or re-copied by this type after construction.
+        /// </summary>
+        public readonly ParameterExpression[][] EnclosingScopes;
 
         /// <summary>
         /// Lazily-allocated stack of scope frames for a <see cref="LambdaExpression"/> encountered while
         /// walking the term itself, innermost (most-recently-pushed) last. <see langword="null"/> until the
         /// first nested lambda is pushed by <c>BuildLambda</c>, so a term with no nested lambda never
-        /// allocates this list.
+        /// allocates this list. Pre-sized to 2 on first allocation (rather than <see cref="List{T}"/>'s
+        /// default capacity of 4): the vast majority of nested-lambda terms this class ever sees are at most
+        /// one or two levels deep (see this file's own benchmarked scenarios), and the smaller initial
+        /// backing array measurably closed a small (+8 byte/call) regression PR #606 review round 1 found
+        /// against the pre-P4 baseline for these cases.
         /// </summary>
         public List<ParameterExpression[]>? NestedScopes;
 
         /// <summary>Initializes a new <see cref="ScopeState"/> with no nested scopes pushed yet.</summary>
-        /// <param name="enclosingScopes">The immutable ambient lexical scopes enclosing the term being keyed.</param>
+        /// <param name="enclosingScopes">The ambient lexical scopes enclosing the term being keyed; defensively copied unless already the exact <c>ParameterExpression[][]</c> runtime type.</param>
         public ScopeState(IReadOnlyList<ParameterExpression[]> enclosingScopes)
         {
-            EnclosingScopes = enclosingScopes;
+            EnclosingScopes = enclosingScopes as ParameterExpression[][] ?? CopySnapshot(enclosingScopes);
             NestedScopes = null;
+        }
+
+        /// <summary>Defensively copies an arbitrary <see cref="IReadOnlyList{T}"/> of scopes into a fresh array, restoring the pre-P4 snapshot guarantee for a caller that did not supply the exact production array type.</summary>
+        /// <param name="enclosingScopes">The scopes to copy.</param>
+        /// <returns>A fresh array holding the same scope-frame references, in the same order.</returns>
+        private static ParameterExpression[][] CopySnapshot(IReadOnlyList<ParameterExpression[]> enclosingScopes)
+        {
+            var copy = new ParameterExpression[enclosingScopes.Count][];
+            for (int i = 0; i < copy.Length; i++)
+            {
+                copy[i] = enclosingScopes[i];
+            }
+
+            return copy;
         }
     }
 
@@ -288,13 +327,13 @@ internal static class ExpressionCanonicalOrder
             }
         }
 
-        IReadOnlyList<ParameterExpression[]> enclosing = scopes.EnclosingScopes;
-        for (int i = enclosing.Count - 1; i >= 0; i--)
+        ParameterExpression[][] enclosing = scopes.EnclosingScopes;
+        for (int i = enclosing.Length - 1; i >= 0; i--)
         {
             int index = Array.IndexOf(enclosing[i], pe);
             if (index >= 0)
             {
-                return ParameterKey.Bound(nestedCount + (enclosing.Count - 1 - i), index, pe.Type);
+                return ParameterKey.Bound(nestedCount + (enclosing.Length - 1 - i), index, pe.Type);
             }
         }
 
@@ -358,7 +397,7 @@ internal static class ExpressionCanonicalOrder
             parameterTypes[i] = parameters[i].Type;
         }
 
-        List<ParameterExpression[]> nested = scopes.NestedScopes ??= new List<ParameterExpression[]>();
+        List<ParameterExpression[]> nested = scopes.NestedScopes ??= new List<ParameterExpression[]>(2);
         nested.Add(parameters);
         KeyNode body;
         try

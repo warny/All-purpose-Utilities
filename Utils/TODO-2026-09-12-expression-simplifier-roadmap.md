@@ -2403,6 +2403,136 @@ own `Compare`/`CompareType`/`CompareMethod` reflection precedent):
 
 This PR is opened for review only and is **not** merged, per the task brief.
 
+#### S5 P4 review round 1 (2026-09-24, PR #606 human review at commit `65cf559b`) — snapshot semantics restored, CPU-regression concern resolved
+
+A human review of PR #606 found two substantive issues and one reporting concern before it should merge.
+All three are addressed on the same branch.
+
+**Finding 1 - `BuildKey`/`BuildKeys` no longer defensively snapshotted `enclosingScopes`.** Pre-P4,
+`BuildKey` unconditionally copied `enclosingScopes` into a fresh `List<ParameterExpression[]>`
+(`scopes.AddRange(enclosingScopes)`) before ever using it, so the caller's own list container could not be
+observed or corrupted during construction. The initial P4 commit stored the caller-supplied
+`IReadOnlyList<ParameterExpression[]>` reference directly in `ScopeState.EnclosingScopes`, dropping that
+guarantee for any caller other than `ExpressionSimplifier.CaptureLexicalScopeSnapshot()` (which always
+supplies a fresh, already-immutable array). Every production call site is that one method, and nothing inside
+`Build*` invokes arbitrary user code that could mutate the caller's list mid-construction - so this was not a
+reachable production correctness bug - but the `internal` signature is unchanged and is exercised directly by
+this PR's own tests (and any future caller) with arbitrary `IReadOnlyList<ParameterExpression[]>` values,
+including a plain mutable `List<T>`, so silently narrowing the contract was still a real regression worth
+fixing rather than justifying away.
+
+Fixed by changing `ScopeState.EnclosingScopes`'s type from `IReadOnlyList<ParameterExpression[]>` to the
+concrete `ParameterExpression[][]` - the EXACT runtime type `CaptureLexicalScopeSnapshot()` already returns
+(`Array.Empty<ParameterExpression[]>()` or `List<ParameterExpression[]>.ToArray()`) - and detecting it via a
+type check in `ScopeState`'s constructor: `enclosingScopes as ParameterExpression[][] ?? CopySnapshot(enclosingScopes)`.
+The production path (already the exact array type) stores the reference directly, zero extra allocation,
+exactly as before this fix; any OTHER `IReadOnlyList<ParameterExpression[]>` (a `List<T>`, for instance) is
+copied once into a fresh array, restoring the pre-P4 snapshot guarantee for that caller. Two new regression
+tests in `ExpressionCanonicalOrderScopeStateTests.cs` prove this concretely: `BuildKey_ArrayAndListEnclosingScopes_ProduceEqualKeys_ForTheSameBoundParameter`
+(the array fast path and the list defensive-copy path must resolve the identical bound-parameter key) and
+`BuildKey_MutatingCallerListAfterConstruction_DoesNotAffectAlreadyBuiltKey` (a key built from a caller-owned
+mutable list must remain structurally correct after the caller later clears that same list instance).
+
+**Finding 2 - the CPU-neutrality claim was not yet earned; the "+8B lambda" delta needed re-checking.** The
+review correctly flagged several single-run timing deltas in the original write-up that did not fit "neutral
+or better" (notably +32.4% for the 8-enclosing-scopes `BuildKey` scenario and +9.8% for the n=8 multiplicative
+integration scenario), plausibly caused by `BuildParameter`'s hot loop indexing `scopes.EnclosingScopes`
+through the `IReadOnlyList<ParameterExpression[]>` interface (Finding 1's type) instead of a concrete array -
+an extra virtual-dispatch layer in a very short, very hot loop. It also asked whether the steady +8 byte/call
+increase for the two nested-lambda `BuildKey` scenarios was genuinely a small regression (not noise, since
+allocation figures are exactly reproducible run to run) rather than something to wave away.
+
+Both were investigated with a round-2 harness, and both are now resolved:
+
+- Switching `ScopeState.EnclosingScopes` to the concrete `ParameterExpression[][]` array type (Finding 1's fix)
+  changes `BuildParameter`'s hot loop from an interface-typed indexer call to a plain array element access.
+  Re-benchmarking the flagged scenarios, each repeated 5 independent times within the same process (warmup
+  extended to 20,000-30,000 iterations plus a 100ms sleep before each measurement, to let the background
+  tier-1 JIT compiler finish promoting the hot delegates - see the methodology note below) now shows every
+  previously-flagged scenario as a clear IMPROVEMENT, not a regression or even a wash:
+
+  | Scenario | Baseline (steady-state) | Candidate (steady-state) | Δ |
+  | --- | --- | --- | --- |
+  | `BuildKey`, 1 enclosing scope | 294.8 ns | 253.8 ns | **-13.9%** |
+  | `BuildKey`, 8 enclosing scopes | 84.6 ns | 59.1 ns | **-30.1%** (was reported +32.4% from a single, likely under-warmed run) |
+  | `CanonicalizeAdditiveExpression`, n=8 opaque | 2188.1 ns | 1980.2 ns | **-9.5%** |
+  | `CanonicalizeMultiplicativeExpression`, n=8 | 926.95 ns | 771.1 ns | **-16.8%** (was reported +9.8%) |
+  | `CanonicalizeAdditiveExpression`, n=32 opaque | 8293.9 ns | 7661.2 ns | **-7.6%** |
+  | `CanonicalizeMultiplicativeExpression`, n=32 | 3745.7 ns | 3200.0 ns | **-14.6%** |
+
+  ("Steady-state" = average of runs 2-5 of 5 within-process repeats, discarding run 1 as a warm-up outlier -
+  see the methodology note.) Allocation figures were re-confirmed byte-identical to the original round-0
+  report at every one of these rows (e.g. 176.00 B/op for the 8-scope case, 1480.03 B/op for n=8
+  multiplicative), confirming the round-2 harness is measuring the same code paths, not a different scenario.
+
+- The nested-lambda "+8 byte" delta was real, not noise, exactly as flagged, and had an identified, fixable
+  cause: `scopes.NestedScopes ??= new List<ParameterExpression[]>()` used `List<T>`'s default first-growth
+  capacity (4), while the pre-P4 combined list was sized for `enclosingScopes.Count + 2`. Changed to
+  `new List<ParameterExpression[]>(2)` - 2 being a reasonable default for how deep this class's own nested
+  cases realistically go (its own benchmarked scenarios never exceed two levels), not a magic number tied to
+  the old sizing formula. Re-measured: `ONE nested lambda` dropped from 336 B/op (pre-P4 baseline) to 328 B/op
+  (candidate with the capacity fix) - a **-8 byte** IMPROVEMENT over baseline, not the +8 byte regression
+  round-0's default-capacity `List<T>()` produced; `TWO nested lambda levels` dropped from 552 B/op (baseline)
+  to 544 B/op (candidate) - likewise a small improvement. Neither nested-lambda scenario is a regression
+  anymore at all.
+
+**Methodology correction discovered while investigating Finding 2 (disclosed, since it revises the original
+report's CPU numbers).** Re-running the flagged scenarios revealed that a single Bench call's warmup loop
+(2,000-2,005 iterations in the original round-0 harness) was NOT always sufficient for .NET 8's tiered/dynamic-PGO
+JIT to finish promoting the measured delegate to fully-optimized code before the timed region started: the
+FIRST of 5 repeated within-process runs of the identical scenario consistently timed 2-4x slower than runs
+2-5, which then stabilized tightly - a classic under-warmed-JIT signature, not measurement noise from GC or OS
+scheduling (which would not produce a monotonic one-time step-down). This means the original round-0 report's
+absolute ns/op figures for EVERY scenario (not just the ones under review) likely included some amount of
+this warm-up cost, though the RELATIVE baseline-vs-candidate comparison for allocation (unaffected by JIT
+tiering) remains fully valid and unchanged. The round-2 harness fixes this with a longer warmup floor
+(20,000-30,000 iterations, or 2x the measured iteration count for the canonicalization scenarios, whichever is
+larger) plus a 100ms sleep before each measurement window to give the background tiering compiler time to
+complete; both the pre-P4 baseline and the P4 candidate were re-measured under this corrected methodology for
+every scenario in Finding 2's table above, so that comparison is apples-to-apples. This report does not claim
+the original round-0 absolute numbers were fabricated or the candidate-vs-baseline DIRECTION was wrong
+anywhere except the two scenarios Finding 2 specifically flagged (which is exactly why the review caught
+real, fixable issues) - it discloses the methodology gap rather than silently replacing every number in the
+original report.
+
+**Finding 3 (reviewer's reporting concern) - "bound parameters" in the integration benchmark needed
+confirming, not just asserting.** The review asked whether the harness's direct reflected calls to
+`CanonicalizeAdditiveExpression`/`CanonicalizeMultiplicativeExpression` actually saw their parameters as
+BOUND (going through `CaptureLexicalScopeSnapshot()`'s ambient stack) or FREE (if the harness's `onEnter`
+call did not reach the same stack). Traced directly: `ExpressionSimplifier.OnEnterLambdaScope` (the method
+the harness invokes via reflection before each canonicalization call) does exactly one thing -
+`LexicalScopeStack.Add(parameters)` - where `LexicalScopeStack` is the very `[ThreadStatic]` backing field
+`CaptureLexicalScopeSnapshot()` reads inside `CanonicalizeAdditiveExpression`/`CanonicalizeMultiplicativeExpression`
+themselves; there is no exact-type gating on this hook (unconditional since S4 review round 7 - see that
+section), so a plain `new ExpressionSimplifier()` (what the harness uses) reaches it directly. This is the
+identical mechanism `ExpressionSimplifierAdditiveSortScaleTests`' own `EnterScope`/`ExitScope` helpers already
+rely on (P1's own precedent), not a new or different assumption. The harness's parameters are therefore
+genuinely bound, not free, for the entire integration benchmark table - confirmed by tracing the exact call
+chain, not merely asserted.
+
+**Compatibility unchanged from the round-0 report:** `BuildKey`'s/`BuildKeys`' own `internal` signatures are
+still unchanged; only `ScopeState`'s internal field type and the private `Build*` helper signatures changed.
+
+**Validation after round-1 fixes (2026-09-24, in order):**
+
+1. `ExpressionCanonicalOrderScopeStateTests` (now 5 tests: the original 3 plus the two new Finding-1
+   regression tests) + `ExpressionSimplifierAdditiveSortScaleTests` (6) + `ExpressionSimplifierStructuralCanonicalizationTests`
+   (46): 57/57 passed.
+2. Full `UtilsTest/Mathematics/Expressions` namespace: 482/482 passed (477 pre-round-1-fix tests, unchanged,
+   plus the 5 tests now in `ExpressionCanonicalOrderScopeStateTests` - the original 3 plus the 2 new
+   Finding-1 regression tests).
+3. Full `UtilsTest.Unit`: 7843/7843 passed, 0 skipped.
+4. Full `UtilsTest.Functional`: 383/383 passed (built and run separately from `UtilsTest.Security` after an
+   unrelated transient VSIX-packaging race between the two parallel builds' shared `Utils.Parser.VisualStudio`
+   dependency; re-running `UtilsTest.Functional` alone succeeded cleanly, confirming the first failure was a
+   build-concurrency artifact, not a code issue).
+5. Full `UtilsTest.Security`: 225/228 passed, 3 skipped - the same three pre-existing, unrelated,
+   platform-gated tests noted throughout this roadmap.
+6. Release build of `Utils.sln`: succeeded, 0 errors.
+7. `master` re-checked (`git fetch origin` + `git rev-parse`): still unchanged at `77d571de...`.
+
+This PR remains opened for review only and is **not** merged.
+
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.

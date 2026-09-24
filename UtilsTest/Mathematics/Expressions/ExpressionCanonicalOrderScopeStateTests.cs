@@ -33,6 +33,23 @@ public class ExpressionCanonicalOrderScopeStateTests
         "Compare", BindingFlags.NonPublic | BindingFlags.Static,
         [typeof(Expression), typeof(Expression), typeof(IReadOnlyList<ParameterExpression[]>)])!;
 
+    /// <summary>Reflected <c>ExpressionCanonicalOrder.BuildKey(Expression, IReadOnlyList&lt;ParameterExpression[]&gt;)</c> helper.</summary>
+    private static readonly MethodInfo BuildKeyMethod = ExpressionCanonicalOrderType.GetMethod(
+        "BuildKey", BindingFlags.NonPublic | BindingFlags.Static)!;
+
+    /// <summary>Reflected internal <c>ExpressionCanonicalOrder.KeyNode</c> nested type.</summary>
+    private static readonly Type KeyNodeType = ExpressionCanonicalOrderType.GetNestedType("KeyNode", BindingFlags.NonPublic)!;
+
+    /// <summary>Reflected <c>ExpressionCanonicalOrder.KeyNode.CompareTo(KeyNode?)</c>.</summary>
+    private static readonly MethodInfo KeyNodeCompareToMethod = KeyNodeType.GetMethod("CompareTo", BindingFlags.Public | BindingFlags.Instance)!;
+
+    /// <summary>Invokes the internal <c>ExpressionCanonicalOrder.BuildKey</c> helper via reflection, without changing its accessibility.</summary>
+    /// <param name="expression">The expression to key.</param>
+    /// <param name="enclosingScopes">The lexical scopes enclosing the expression, outermost first - any <see cref="IReadOnlyList{T}"/> implementation, not necessarily the production <c>ParameterExpression[][]</c> array type.</param>
+    /// <returns>The resulting key, boxed as <see cref="object"/> since the concrete <c>KeyNode</c> type is internal.</returns>
+    private static object InvokeBuildKey(Expression expression, IReadOnlyList<ParameterExpression[]> enclosingScopes) =>
+        BuildKeyMethod.Invoke(null, [expression, enclosingScopes])!;
+
     /// <summary>Invokes the internal <c>ExpressionCanonicalOrder.Compare</c> helper via reflection, without changing its accessibility.</summary>
     /// <param name="x">The first expression.</param>
     /// <param name="y">The second expression.</param>
@@ -173,5 +190,66 @@ public class ExpressionCanonicalOrderScopeStateTests
         Expression referencesOuterAgain = BuildDoublyNested((a, b) => outer);
         Assert.AreEqual(0, InvokeCompare(referencesOuter, referencesOuterAgain, enclosingScopes),
             "Two structurally alpha-equivalent doubly-nested lambdas (fresh a/b instances each time), both capturing the same enclosing parameter instance, must tie.");
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // PR #606 review round 1: ScopeState.EnclosingScopes must behave the same whether the caller
+    // supplies the exact production ParameterExpression[][] array type (the zero-copy fast path) or
+    // an arbitrary IReadOnlyList<ParameterExpression[]> such as a plain List<T> (the defensive-copy
+    // fallback path, restoring the pre-P4 snapshot contract for any non-production caller).
+    // ------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// <c>BuildKey</c> must resolve the SAME bound-parameter (depth, position, type) key whether
+    /// <c>enclosingScopes</c> is supplied as the exact production <c>ParameterExpression[][]</c> array type
+    /// (stored directly, no copy) or as an arbitrary <see cref="IReadOnlyList{T}"/> such as a plain
+    /// <see cref="List{T}"/> (defensively copied into a fresh array first). Both code paths must be
+    /// structurally equivalent, not merely both "not crash".
+    /// </summary>
+    [TestMethod]
+    public void BuildKey_ArrayAndListEnclosingScopes_ProduceEqualKeys_ForTheSameBoundParameter()
+    {
+        ParameterExpression p = Expression.Parameter(typeof(double), "p");
+        ParameterExpression[][] arrayScopes = [[p]];
+        var listScopes = new List<ParameterExpression[]> { new[] { p } };
+
+        object keyViaArray = InvokeBuildKey(p, arrayScopes);
+        object keyViaList = InvokeBuildKey(p, listScopes);
+
+        int forward = (int)KeyNodeCompareToMethod.Invoke(keyViaArray, [keyViaList])!;
+        int backward = (int)KeyNodeCompareToMethod.Invoke(keyViaList, [keyViaArray])!;
+
+        Assert.AreEqual(0, forward,
+            "BuildKey must produce the same bound-parameter key whether enclosingScopes is the concrete " +
+            "production ParameterExpression[][] array (zero-copy fast path) or an arbitrary List<T> " +
+            "(defensive-copy fallback path).");
+        Assert.AreEqual(0, backward, "The comparison must be symmetric for a tie.");
+    }
+
+    /// <summary>
+    /// Restores the pre-P4 snapshot guarantee <c>BuildKey</c>/<c>BuildKeys</c> historically provided for any
+    /// caller-supplied <see cref="IReadOnlyList{T}"/> that is not itself the exact, already-immutable
+    /// production array type: a key already built from a caller-owned, mutable <see cref="List{T}"/> must
+    /// remain structurally correct even after the caller later clears or replaces that same list instance -
+    /// exactly as if <c>BuildKey</c> had defensively copied it (which, for this non-array input shape, it
+    /// now again does - see <c>ScopeState</c>'s remarks).
+    /// </summary>
+    [TestMethod]
+    public void BuildKey_MutatingCallerListAfterConstruction_DoesNotAffectAlreadyBuiltKey()
+    {
+        ParameterExpression p = Expression.Parameter(typeof(double), "p");
+        var mutableScopes = new List<ParameterExpression[]> { new[] { p } };
+
+        object keyBuiltBeforeMutation = InvokeBuildKey(p, mutableScopes);
+
+        // Mutate the caller's own list AFTER BuildKey has already returned.
+        mutableScopes.Clear();
+
+        object referenceKey = InvokeBuildKey(p, new List<ParameterExpression[]> { new[] { p } });
+
+        int comparison = (int)KeyNodeCompareToMethod.Invoke(keyBuiltBeforeMutation, [referenceKey])!;
+        Assert.AreEqual(0, comparison,
+            "A key already built from a caller-supplied List must remain structurally correct (still a bound " +
+            "parameter at depth 0, position 0) even after the caller later clears that same list instance.");
     }
 }
