@@ -2348,8 +2348,12 @@ namespace Utils.NumberToString
                 if (string.IsNullOrWhiteSpace(rule.Pattern))
                     throw new ArgumentException($"ClockTime rule range '{rule.Range}' has an empty pattern.", nameof(options));
                 ValidateClockPattern(rule.Pattern, rule.Range.ToString() ?? string.Empty);
-                if (rule.SpecialHourPattern != null)
-                    ValidateClockPattern(rule.SpecialHourPattern, rule.Range.ToString() ?? string.Empty);
+                if (rule.SpecialHourPattern is { } specialHourPattern)
+                {
+                    if (string.IsNullOrWhiteSpace(specialHourPattern))
+                        throw new ArgumentException($"ClockTime rule range '{rule.Range}' has an empty specialHourPattern.", nameof(options));
+                    ValidateClockPattern(specialHourPattern, rule.Range.ToString() ?? string.Empty);
+                }
                 bool usesAmount = rule.Pattern.Contains("{amount}", StringComparison.Ordinal);
                 bool usesHour = rule.Pattern.Contains("{hour}", StringComparison.Ordinal);
                 if (rule.SpecialHourPattern != null

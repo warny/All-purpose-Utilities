@@ -114,6 +114,20 @@ public class NumberToStringConverterClockTimeTests
                 SpecialHourPattern = "{hour",
             },
         ]));
+        Assert.ThrowsExactly<ArgumentException>(() => Create(60,
+        [
+            new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "fixed")
+            {
+                SpecialHourPattern = "",
+            },
+        ]));
+        Assert.ThrowsExactly<ArgumentException>(() => Create(60,
+        [
+            new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "fixed")
+            {
+                SpecialHourPattern = "   ",
+            },
+        ]));
         Assert.ThrowsExactly<ArgumentException>(() => Create(5, [new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{amount}", 0)]));
         Assert.ThrowsExactly<ArgumentException>(() => Create(5, [new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{hour}", 0, ClockAmountDirection.After)]));
         Assert.ThrowsExactly<ArgumentException>(() => Create(5, [new(new IntRange<int>("0,5"), 0, ClockHourForm.Cardinal, "{hour}"), new(new IntRange<int>("5"), 0, ClockHourForm.Cardinal, "{hour}")]));
