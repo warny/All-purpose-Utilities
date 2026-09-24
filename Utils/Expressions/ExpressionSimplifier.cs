@@ -618,13 +618,31 @@ namespace Utils.Mathematics.Expressions
         /// then-shipped, unconditionally-caching implementation). <see cref="MightInvokeUserCodeWhenSimplified"/>
         /// conservatively predicts this risk from a candidate's STATIC SHAPE alone - it never itself
         /// simplifies or compares anything, so it never runs the very user code it is trying to avoid running
-        /// an extra time - and <see cref="GetSimplifiedIfCacheable"/> only caches (and therefore only
-        /// deduplicates re-simplification of) a candidate this predicate clears. A candidate it cannot clear
-        /// falls back, on EVERY comparison it participates in, to calling
+        /// an extra time - and <see cref="GetOrSimplify"/> only caches (and therefore only
+        /// deduplicates re-simplification of) a candidate <see cref="IsCacheable"/> has cleared. A candidate
+        /// that is not cacheable falls back, on EVERY comparison it participates in, to calling
         /// <see cref="ExpressionComparer.Default"/>'s public <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/>
         /// directly - the exact call, and therefore the exact user-code invocation count, this type replaces
         /// for a cacheable candidate - so this type never reduces how many times user code observably runs
         /// relative to the pre-existing per-comparison behavior, for any candidate.
+        /// </para>
+        /// <para>
+        /// <b>Ordering (S5 P3 review round 7).</b> <see cref="Equals"/> classifies BOTH operands, via
+        /// <see cref="IsCacheable"/>, before simplifying EITHER one. Round 6 shipped a version that simplified
+        /// each operand as it was classified (interleaved), which is observably different from the public
+        /// <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/> contract whenever exactly one
+        /// operand is not cacheable: given non-cacheable <c>x</c> and cacheable <c>y</c>, the round-6 code
+        /// simplified <c>y</c> (a side-effecting operation - see above) while classifying it, BEFORE the
+        /// not-cacheable-so-fall-back decision was even reached, so if simplifying <c>y</c> itself throws,
+        /// that exception surfaces before <c>x</c> is ever touched - whereas the public contract, and this
+        /// type's own fallback call, always simplify <c>x</c> first and never reach <c>y</c> if that throws.
+        /// Classifying both operands first (<see cref="MightInvokeUserCodeWhenSimplified"/>, called from
+        /// <see cref="IsCacheable"/>) is safe to do unconditionally because classification never simplifies
+        /// anything; simplification (<see cref="GetOrSimplify"/>) then only ever runs, in `x`-then-`y` order,
+        /// once both operands are already known cacheable - exactly reproducing
+        /// <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/>'s own <c>Simplify(x)</c>-then-
+        /// <c>Simplify(y)</c> sequence for that case, and never simplifying anything at all (deferring fully to
+        /// the fallback) for every other case.
         /// </para>
         /// <para>
         /// <b>Lifetime.</b> A fresh instance is created at the top of each
@@ -662,47 +680,75 @@ namespace Utils.Mathematics.Expressions
             {
                 if (ExpressionComparer.TryFastPathEquals(x, y, out bool fastResult)) return fastResult;
 
-                Expression? simplifiedX = GetSimplifiedIfCacheable(x, out bool canCacheX);
-                Expression? simplifiedY = GetSimplifiedIfCacheable(y, out bool canCacheY);
+                // Classify BOTH operands before simplifying EITHER one (S5 P3 review round 7): classification
+                // alone (MightInvokeUserCodeWhenSimplified) never simplifies anything and is therefore
+                // side-effect-free, but ExpressionComparer.SimplifyForComparison is not. Simplifying a
+                // cacheable operand here, before knowing whether the OTHER operand will force a fallback,
+                // would run that operand's simplification (and any user code it can reach) before the
+                // fallback's own Simplify(x)-then-Simplify(y) sequence does - an observable reordering (e.g. of
+                // which operand's simplification throws first) relative to ExpressionComparer.Equals, which
+                // this type must reproduce exactly, not merely approximate.
+                bool canCacheX = IsCacheable(x);
+                bool canCacheY = IsCacheable(y);
 
                 if (!canCacheX || !canCacheY)
                 {
                     return ExpressionComparer.Default.Equals(x, y);
                 }
 
+                Expression simplifiedX = GetOrSimplify(x);
+                Expression simplifiedY = GetOrSimplify(y);
+
                 return ExpressionComparer.StructuralEqualsAfterSimplification(simplifiedX, simplifiedY);
             }
 
             /// <summary>
-            /// Returns <paramref name="original"/>'s simplified form and caches it, but ONLY when
-            /// <see cref="MightInvokeUserCodeWhenSimplified"/> has proven <paramref name="original"/> cannot
-            /// trigger user code while being simplified; otherwise simplification is skipped here entirely
-            /// (never cached, never even computed by this method) and <paramref name="canCache"/> reports
-            /// <see langword="false"/> so <see cref="Equals"/> falls back to the uncached public comparer for
-            /// this operand.
+            /// Determines, and caches, whether <paramref name="original"/> is safe to simplify-and-cache (see
+            /// <see cref="MightInvokeUserCodeWhenSimplified"/>) - WITHOUT simplifying it. Kept separate from
+            /// <see cref="GetOrSimplify"/> so <see cref="Equals"/> can classify both operands of one comparison
+            /// before simplifying either (see <see cref="Equals"/>'s remarks on ordering).
             /// </summary>
-            /// <param name="original">The candidate operand to simplify.</param>
-            /// <param name="canCache">
-            /// <see langword="true"/> when the returned value is a valid, reusable simplified form;
-            /// <see langword="false"/> when <paramref name="original"/> was not proven safe to cache, in
-            /// which case the returned value is always <see langword="null"/> and must not be used.
-            /// </param>
-            /// <returns><paramref name="original"/>'s simplified form when <paramref name="canCache"/> is <see langword="true"/>; otherwise <see langword="null"/>.</returns>
-            private Expression? GetSimplifiedIfCacheable(Expression original, out bool canCache)
+            /// <param name="original">The candidate operand to classify.</param>
+            /// <returns><see langword="true"/> if <paramref name="original"/> is safe to simplify and cache.</returns>
+            private bool IsCacheable(Expression original)
             {
-                foreach ((Expression cachedOriginal, bool cachedCanCache, Expression? cachedSimplified) in _cache)
+                for (int i = 0; i < _cache.Count; i++)
                 {
-                    if (ReferenceEquals(cachedOriginal, original))
+                    if (ReferenceEquals(_cache[i].Original, original))
                     {
-                        canCache = cachedCanCache;
-                        return cachedSimplified;
+                        return _cache[i].CanCache;
                     }
                 }
 
-                canCache = !MightInvokeUserCodeWhenSimplified(original);
-                Expression? simplified = canCache ? ExpressionComparer.SimplifyForComparison(original) : null;
-                _cache.Add((original, canCache, simplified));
-                return simplified;
+                bool canCache = !MightInvokeUserCodeWhenSimplified(original);
+                _cache.Add((original, canCache, null));
+                return canCache;
+            }
+
+            /// <summary>
+            /// Returns <paramref name="original"/>'s simplified form, computing and caching it on first use.
+            /// The caller MUST have already established, via <see cref="IsCacheable"/>, that
+            /// <paramref name="original"/> is safe to simplify; this method never itself decides that.
+            /// </summary>
+            /// <param name="original">A candidate operand <see cref="IsCacheable"/> has already proven safe to simplify.</param>
+            /// <returns><paramref name="original"/>'s simplified form.</returns>
+            private Expression GetOrSimplify(Expression original)
+            {
+                for (int i = 0; i < _cache.Count; i++)
+                {
+                    if (ReferenceEquals(_cache[i].Original, original))
+                    {
+                        Expression? simplified = _cache[i].Simplified;
+                        if (simplified is not null) return simplified;
+
+                        simplified = ExpressionComparer.SimplifyForComparison(original);
+                        _cache[i] = (original, true, simplified);
+                        return simplified;
+                    }
+                }
+
+                throw new InvalidOperationException(
+                    $"{nameof(GetOrSimplify)} was called for an operand that {nameof(IsCacheable)} had not already classified as cacheable.");
             }
 
             /// <summary>
@@ -749,10 +795,32 @@ namespace Utils.Mathematics.Expressions
                     || MightInvokeUserCodeWhenSimplified(be.Right)
                     || MightInvokeUserCodeWhenSimplified(be.Conversion),
                 MethodCallExpression mce => MightInvokeUserCodeWhenSimplified(mce.Object)
-                    || mce.Arguments.Any(MightInvokeUserCodeWhenSimplified),
+                    || AnyArgumentMightInvokeUserCodeWhenSimplified(mce.Arguments),
                 MemberExpression me => MightInvokeUserCodeWhenSimplified(me.Expression),
                 _ => true,
             };
+
+            /// <summary>
+            /// Indexed-loop equivalent of <c>arguments.Any(MightInvokeUserCodeWhenSimplified)</c> (S5 P3 review
+            /// round 7), used instead of the
+            /// <see cref="Enumerable.Any{TSource}(IEnumerable{TSource}, Func{TSource, bool})"/> LINQ extension
+            /// so this classification path - meant to be a cheap, allocation-light static-shape scan run once
+            /// per candidate per rule invocation - does not risk the delegate/enumerator scaffolding <c>Any</c>
+            /// can introduce for a non-array <see cref="IReadOnlyList{T}"/> source such as
+            /// <see cref="MethodCallExpression.Arguments"/>, consistent with this project's existing avoidance
+            /// of LINQ on other frequently used construction paths (see the roadmap's S5 stage).
+            /// </summary>
+            /// <param name="arguments">The call's argument list to scan.</param>
+            /// <returns><see langword="true"/> if any argument might invoke user code when simplified.</returns>
+            private static bool AnyArgumentMightInvokeUserCodeWhenSimplified(IReadOnlyList<Expression> arguments)
+            {
+                for (int i = 0; i < arguments.Count; i++)
+                {
+                    if (MightInvokeUserCodeWhenSimplified(arguments[i])) return true;
+                }
+
+                return false;
+            }
         }
 
         /// <summary>

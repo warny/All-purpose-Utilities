@@ -2036,6 +2036,97 @@ here to a family whose useful work this rule call performs is comparatively smal
    diff of every warning inside `FactorEqualityProbe`'s new line range confirmed zero new warnings there.
 7. `Utils/Utils.csproj` remains on `<TargetFramework>net8.0</TargetFramework>`, unchanged.
 
+#### S5 P3 review, round 7 (2026-09-24) — classify both operands before simplifying either one
+
+A second human review of round 6's head (`c412f5cb`) confirmed round 6's own fix works (the P1 hazard it
+targeted is gone, CI is fully green including `source-gates-ubuntu`/`required`) but found one further semantic
+hazard in the same type, plus one allocation-hygiene nit. Both fixed on the same branch; the overall P3 design
+(batch the comparer re-simplification hazard via a per-invocation cache) is unchanged.
+
+**P1 (semantic hazard, confirmed and fixed) — interleaved classify-then-simplify reorders operand
+simplification relative to the public contract.** Round 6's `FactorEqualityProbe.Equals` called
+`GetSimplifiedIfCacheable(x, ...)` then `GetSimplifiedIfCacheable(y, ...)` in sequence, and each of those calls
+BOTH classified its operand (via `MightInvokeUserCodeWhenSimplified`) AND, if cacheable, immediately simplified
+it — before the pair's overall `!canCacheX || !canCacheY` fallback decision was made. This is fine when both
+operands end up cacheable (both get simplified, in `x`-then-`y` order, matching the public contract) or when
+`x` is non-cacheable and `y` also turns out non-cacheable (neither is simplified by the probe). It is NOT fine
+when `x` is non-cacheable and `y` IS cacheable: `y` gets simplified during the SECOND call, before the pair is
+known to require a fallback at all - so if simplifying `y` has an observable effect (throws, or runs user code
+reachable during simplification), that effect is observed BEFORE `x` is ever touched, and before the fallback
+that would otherwise simplify `x` first is even reached. The public
+`ExpressionComparer.Equals(Expression?, Expression?)` contract this type must reproduce exactly always
+simplifies `x` first, then `y` - never the reverse, and it never simplifies `y` at all if simplifying `x`
+throws first.
+
+Reviewer-supplied repro, verified empirically (built as a permanent regression test, not just an ad hoc probe -
+see "Test" below): `x` a non-cacheable operand built from the same "inner" shape as round 6's own
+`NestedSimplifyReachingUserCode...` test (an `Add` of two `Multiply`/`Call` terms, each embedding a distinct
+`HostileConstant`, so simplifying `x` on its own reaches a nested `AdditionOfEqualsElements` call whose
+structural argument comparison invokes `hostileLeft.Equals(hostileRight)` and throws
+`HostileConstantException`); `y` a cacheable operand (`Divide(Constant(1.0), Constant(0.0))` - only native
+numeric constants, so `MightInvokeUserCodeWhenSimplified` clears it) whose OWN simplification unconditionally
+throws `DivideByZeroException` (`ExpressionSimplifier.DivideWithZeroOrOne`) regardless of numeric type -
+deliberately a DIFFERENT exception type from `x`'s, so the type that propagates identifies which operand was
+actually attempted first:
+
+| Build | Exception observed for `Equals(x, y)` |
+| --- | --- |
+| True pre-P3 baseline (`ExpressionComparer.Default.Equals(x, y)` directly) | `HostileConstantException` (from simplifying `x`, always attempted first) |
+| Round-6 shipped candidate (`c412f5cb`) | `DivideByZeroException` (from simplifying `y`, reached first via the interleaved classify-and-simplify call) |
+| Round-7 fixed candidate (below) | `HostileConstantException` (matches the true baseline) |
+
+**Fix** (`Utils/Expressions/ExpressionSimplifier.cs`, `FactorEqualityProbe`): `GetSimplifiedIfCacheable` is split
+into two methods with a hard ordering contract in `Equals`: `IsCacheable(Expression)` classifies (and caches
+the classification for) an operand WITHOUT ever simplifying it, and `GetOrSimplify(Expression)` simplifies (and
+caches) an operand a caller has already proven cacheable via `IsCacheable`. `Equals` now calls `IsCacheable` for
+BOTH `x` and `y` first; only if both return `true` does it call `GetOrSimplify` for `x` then `y`, in that order.
+When either is not cacheable, `Equals` falls back to `ExpressionComparer.Default.Equals(x, y)` directly, having
+simplified NEITHER operand itself - so the fallback's own `Simplify(x)`-then-`Simplify(y)` sequence is the only
+place either operand gets simplified, exactly reproducing the public contract's order (and its "never reach `y`
+if `x` throws first" behavior) for every combination of cacheability, not merely the both-cacheable case round 6
+already got right.
+
+**Test.** `NonCacheableThenCacheableOperand_FallsBackWithoutSimplifyingEitherFirst_PreservesXBeforeYOrder` in
+`ExpressionSimplifierComparerBatchingTests.cs` reproduces the exact repro above, using a shared `Constant(5.0)`
+instance as both `Multiply`'s left factor (`leftleft`/`rightleft`) so `TryFastPathEquals`'s
+`ReferenceEquals` shortcut satisfies that first comparison without touching the probe's cache at all, making
+`Equals(leftright=x, rightright=y)` - reached inside the same short-circuited `&&` chain - the very first
+substantive comparison the probe performs. Asserts the propagated exception (unwrapped through however many
+`TargetInvocationException` layers reflection introduces) is `HostileConstantException`, not
+`DivideByZeroException`. Confirmed to FAIL against the round-6 shipped build (`c412f5cb`'s
+`ExpressionSimplifier.cs`, temporarily swapped in via `git stash`/`git stash pop` with the round-7 test file kept
+as-is) with exactly the predicted `DivideByZeroException` instead of `HostileConstantException`, and to pass
+against the round-7 fixed build.
+
+**P2 (allocation-hygiene nit, fixed).** `MightInvokeUserCodeWhenSimplified`'s `MethodCallExpression` arm used
+`mce.Arguments.Any(MightInvokeUserCodeWhenSimplified)` - a LINQ `Enumerable.Any` call on a
+`ReadOnlyCollection<Expression>` inside a classification path meant to be a cheap, allocation-light static-shape
+scan run once per candidate per rule invocation, inconsistent with this project's existing avoidance of LINQ on
+other frequently used construction paths (see this stage's own P1/P3 history). Replaced with a new
+`private static bool AnyArgumentMightInvokeUserCodeWhenSimplified(IReadOnlyList<Expression> arguments)` indexed
+loop, called from the same switch-expression arm. This is a hygiene/consistency fix, not a correctness one - no
+regression test was added specifically for it (the existing `MightInvokeUserCodeWhenSimplified` coverage already
+exercises the `MethodCallExpression` arm via every `HostileConstant`/`CountingConstant` test in this file); round
+6's own small-`n` allocation deltas were already attributed to the `(bool, Expression?)` tuple's footprint, a
+claim this fix does not retroactively re-verify (not re-benchmarked separately - the change is judged safe by
+inspection, consistent with this stage's own "reasoned, not separately benchmarked" precedent for
+sub-benchmark-noise micro-decisions).
+
+**Validation performed (2026-09-24, after review round 7, in order; no rebase needed, `master` still at
+`1f874f9e0caa28e097060316a992cd5a4ce4fdbd`):**
+
+1. `ExpressionSimplifierComparerBatchingTests` (13 tests: the round-6 12 plus
+   `NonCacheableThenCacheableOperand_FallsBackWithoutSimplifyingEitherFirst_PreservesXBeforeYOrder`): 13/13
+   passed; confirmed to fail pre-fix as described above.
+2. `ExpressionSimplifierComparerBatchingTests` + `ExpressionSimplifierAdditiveSortScaleTests` together: 19/19
+   passed.
+3. Full `UtilsTest.Unit`: 7749/7749 passed, 0 skipped.
+4. Full `UtilsTest.Functional`: 383/383 passed.
+5. Full `UtilsTest.Security`: 225/228 passed, 3 skipped — the same three pre-existing, unrelated,
+   platform-gated tests noted throughout S4/S5.
+6. Release build of `Utils.sln`: succeeded, 0 errors, 51 warnings — same pre-existing count/shape.
+7. `Utils/Utils.csproj` remains on `<TargetFramework>net8.0</TargetFramework>`, unchanged.
+
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.

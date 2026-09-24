@@ -517,4 +517,78 @@ public class ExpressionSimplifierComparerBatchingTests
             "many times a nested Simplify() call's own user code runs.");
         Assert.AreEqual(0, c2.EqualsCallCount, "c2.Equals is never the receiver of the nested comparison (c1.Equals(c2) is called, not c2.Equals(c1)), so it must never be invoked in this shape.");
     }
+
+    // ------------------------------------------------------------------------------------------
+    // Review round 7: classifying (not-cacheable-vs-cacheable) must happen for BOTH operands before
+    // simplifying EITHER one, so a comparison that ultimately falls back to the public comparer
+    // reproduces its exact x-then-y simplification ORDER - not merely its final exception TYPE. Round
+    // 6 classified and simplified interleaved (x, then y), so a cacheable y whose OWN simplification
+    // throws was simplified - and its exception observed - before a non-cacheable x was ever touched,
+    // even though the public contract (and this type's own fallback call) always attempt x first.
+    // ------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// Reproduces round 7's finding directly. <c>x</c> is non-cacheable (an <c>Add</c> of two
+    /// <c>Multiply</c>/<c>Call</c> terms, each embedding its own <see cref="HostileConstant"/> - the exact
+    /// "inner" shape from <see cref="NestedSimplifyReachingUserCode_InvokedOncePerComparison_NotOncePerCandidate"/>,
+    /// which simplifies by reaching its own nested <c>AdditionOfEqualsElements</c> call whose structural
+    /// argument comparison invokes <c>hostileLeft.Equals(hostileRight)</c> and throws
+    /// <see cref="HostileConstantException"/>). <c>y</c> is cacheable (a plain <c>Divide(Constant(1.0),
+    /// Constant(0.0))</c> of only native numeric constants) but its OWN simplification unconditionally throws
+    /// <see cref="DivideByZeroException"/> (<c>ExpressionSimplifier.DivideWithZeroOrOne</c>) - a DIFFERENT
+    /// exception type from <c>x</c>'s, chosen specifically so the propagated exception's TYPE identifies which
+    /// operand was actually attempted first.
+    /// </summary>
+    /// <remarks>
+    /// <c>left</c>/<c>right</c> share the exact same <c>Constant(5.0)</c> instance as their <c>Multiply</c>
+    /// left factor, so <c>equalityProbe.Equals(leftleft, rightleft)</c> - the first check
+    /// <c>AdditionOfEqualsElements</c> performs - is satisfied by <see cref="ExpressionComparer.TryFastPathEquals"/>'s
+    /// <see cref="object.ReferenceEquals(object?, object?)"/> shortcut alone, WITHOUT touching the probe's cache,
+    /// making <c>equalityProbe.Equals(leftright=x, rightright=y)</c> (inside that same <c>if</c> condition's
+    /// short-circuited <c>&amp;&amp;</c> chain) the very first substantive comparison the probe performs - so the
+    /// exception this test observes can only have come from that one call.
+    /// </remarks>
+    [TestMethod]
+    public void NonCacheableThenCacheableOperand_FallsBackWithoutSimplifyingEitherFirst_PreservesXBeforeYOrder()
+    {
+        var simplifier = new ExpressionSimplifier();
+        MethodInfo identity = typeof(ExpressionSimplifierComparerBatchingTests).GetMethod(
+            nameof(IdentityFromObject), BindingFlags.NonPublic | BindingFlags.Static)!;
+        var hostileLeft = new HostileConstant();
+        var hostileRight = new HostileConstant();
+
+        // Non-cacheable: reachable HostileConstant instances make MightInvokeUserCodeWhenSimplified true, and
+        // simplifying this shape reaches its own nested AdditionOfEqualsElements call whose structural
+        // argument comparison invokes hostileLeft.Equals(hostileRight) - see this class's remarks on
+        // NestedSimplifyReachingUserCode_InvokedOncePerComparison_NotOncePerCandidate for why.
+        Expression x = Expression.Add(
+            Expression.Multiply(Expression.Constant(2.0), Expression.Call(identity, Expression.Constant(hostileLeft, typeof(object)))),
+            Expression.Multiply(Expression.Constant(3.0), Expression.Call(identity, Expression.Constant(hostileRight, typeof(object)))));
+
+        // Cacheable (only native numeric constants reachable) but its OWN simplification unconditionally
+        // throws DivideByZeroException - a different exception type from x's, so the type that propagates
+        // proves which operand was attempted first.
+        Expression y = Expression.Divide(Expression.Constant(1.0), Expression.Constant(0.0));
+
+        Expression sharedFactor = Expression.Constant(5.0);
+        Expression left = Expression.Multiply(sharedFactor, x);
+        Expression right = Expression.Multiply(sharedFactor, y);
+
+        TargetInvocationException thrown = Assert.ThrowsExactly<TargetInvocationException>(
+            () => InvokeAdditionOfEqualsElements(simplifier, left, right));
+
+        Exception innermost = thrown.InnerException!;
+        while (innermost is TargetInvocationException { InnerException: { } nestedInner })
+        {
+            innermost = nestedInner;
+        }
+
+        Assert.IsInstanceOfType<HostileConstantException>(
+            innermost,
+            "The propagated exception must be x's HostileConstantException, matching the true pre-P3 baseline " +
+            "(and ExpressionComparer.Equals's own Simplify(x)-then-Simplify(y) order) where non-cacheable x is " +
+            "always attempted before cacheable y. Observing y's DivideByZeroException instead would mean y was " +
+            "simplified - a side-effecting operation - during classification, before the fallback decision was " +
+            "even reached, which is exactly round 6's ordering bug.");
+    }
 }
