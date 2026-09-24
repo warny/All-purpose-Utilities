@@ -754,6 +754,10 @@ public class ClockTimeRuleEntry
     [XmlAttribute("pattern")]
     public string Pattern { get; set; } = "";
 
+    /// <summary>Gets or sets the optional phrase pattern used after special-hour replacement.</summary>
+    [XmlAttribute("specialHourPattern")]
+    public string? SpecialHourPattern { get; set; }
+
     /// <summary>Gets or sets the optional minute amount reference.</summary>
     [XmlAttribute("amountReference")]
     public int AmountReference { get; set; }

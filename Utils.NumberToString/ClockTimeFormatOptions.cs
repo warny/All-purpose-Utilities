@@ -45,6 +45,12 @@ public sealed record ClockTimeRule(
     ClockAmountDirection? AmountDirection = null)
 {
     /// <summary>
+    /// Gets the optional pattern used when a configured special-hour word replaces <c>{hour}</c>.
+    /// When absent, <see cref="Pattern"/> is used for both numeric and special hours.
+    /// </summary>
+    public string? SpecialHourPattern { get; init; }
+
+    /// <summary>
     /// Gets the optional range of projected display hours for which this rule applies.
     /// The range is evaluated after <see cref="HourOffset"/> and <see cref="ClockTimeFormatOptions.HourCycle"/>.
     /// </summary>

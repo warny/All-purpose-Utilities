@@ -309,3 +309,32 @@ Examples:
     | 12:00:00 | noon                               |
     | 00:00:00 | midnight                           |
     | 00:15:00 | zero hours fifteen minutes         |
+
+Scenario Outline: English clock-time capability is inherited by British English
+    Given I use the "<converter>" number converter
+    Then the converter supports clock-time conversion
+
+Examples:
+    | converter |
+    | EN |
+    | EN-GB |
+
+Scenario Outline: Idiomatic English clock times
+    Given I use the "EN" number converter
+    When I convert the clock time "<time>"
+    Then the result is "<expected>"
+
+Examples:
+    | time | expected |
+    | 00:00 | midnight |
+    | 01:00 | one o'clock |
+    | 02:00 | two o'clock |
+    | 01:05 | five past one |
+    | 01:15 | quarter past one |
+    | 01:30 | half past one |
+    | 01:45 | quarter to two |
+    | 01:55 | five to two |
+    | 11:58 | noon |
+    | 12:00 | noon |
+    | 13:30 | half past one |
+    | 23:45 | quarter to twelve |

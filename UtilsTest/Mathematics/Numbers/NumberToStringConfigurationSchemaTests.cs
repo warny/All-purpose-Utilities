@@ -2,6 +2,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Resources;
 using System.Xml;
 using System.Xml.Schema;
@@ -36,6 +37,46 @@ public class NumberToStringConfigurationSchemaTests
     [TestMethod]
     public void BuiltInConfigurations_InitializeWithoutFailures()
         => Assert.AreEqual(0, NumberToStringConverter.BuiltInInitialization.Failures.Count);
+
+    /// <summary>Ensures every embedded configuration key has exactly one generated strongly typed accessor.</summary>
+    [TestMethod]
+    public void ConfigurationResources_HaveGeneratedStronglyTypedAccessors()
+    {
+        Type resourceType = typeof(NumberToStringConverter).Assembly.GetType("Utils.NumberConverterResources", throwOnError: true)!;
+        var manager = (ResourceManager)resourceType.GetProperty("ResourceManager", BindingFlags.NonPublic | BindingFlags.Static)!.GetValue(null)!;
+        ResourceSet resources = manager.GetResourceSet(System.Globalization.CultureInfo.InvariantCulture, true, true)!;
+        string[] keys = resources.Cast<System.Collections.DictionaryEntry>()
+            .Select(entry => (string)entry.Key)
+            .Where(key => key.StartsWith("NumberConvertionConfiguration", StringComparison.Ordinal))
+            .ToArray();
+
+        foreach (string key in keys)
+        {
+            string propertyName = key.Replace('.', '_').Replace('-', '_');
+            PropertyInfo[] accessors = resourceType.GetProperties(BindingFlags.NonPublic | BindingFlags.Static)
+                .Where(property => property.Name == propertyName)
+                .ToArray();
+            Assert.AreEqual(1, accessors.Length, key);
+        }
+
+        Assert.IsNull(resourceType.GetProperty("NumberConvertionConfiguration_FR_be_ch", BindingFlags.NonPublic | BindingFlags.Static));
+    }
+
+    /// <summary>Ensures every culture affected by regional inheritance remains publicly resolvable.</summary>
+    [TestMethod]
+    public void RegionalCultures_AreResolvableAfterConfigurationSplits()
+    {
+        string[] cultures =
+        [
+            "FR", "FR-fr", "FR-ca", "FR-be", "FR-ch",
+            "CA", "ca-ES", "ca-ES-valencia",
+            "ID", "ID-ID", "MS", "MS-MY",
+            "EN", "EN-GB", "DE", "de-CH"
+        ];
+
+        foreach (string culture in cultures)
+            Assert.IsTrue(NumberToStringConverter.TryGetConverter(culture, out _), culture);
+    }
 
     /// <summary>Ensures a bad built-in document does not prevent a later independent document.</summary>
     [TestMethod]

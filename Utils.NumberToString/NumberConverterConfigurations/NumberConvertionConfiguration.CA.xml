@@ -13,7 +13,6 @@
         >
                 <Culture>CA</Culture>
                 <Culture>ca-ES</Culture>
-                <Culture>ca-ES-valencia</Culture>
                 <Groups>
                         <Group level="1">
                                 <Digit digit="0" string="" />
@@ -154,6 +153,16 @@
 				<Replacement oldValue="dos-cents" newValue="dues-centes" scope="Anywhere" />
 			</Variant>
 		</Variants>
+		<ClockTime step="15" hourCycle="12">
+			<Rule range="0" displayHourRange="1" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femení" pattern="la {hour} en punt" />
+			<Rule range="0" displayHourRange="2-12" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femení" pattern="les {hour} en punt" />
+			<Rule range="15" displayHourRange="1" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=femení" pattern="un quart d&apos;{hour}" />
+			<Rule range="15" displayHourRange="2-12" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=femení" pattern="un quart de {hour}" />
+			<Rule range="30" displayHourRange="1" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=femení" pattern="dos quarts d&apos;{hour}" />
+			<Rule range="30" displayHourRange="2-12" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=femení" pattern="dos quarts de {hour}" />
+			<Rule range="45" displayHourRange="1" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=femení" pattern="tres quarts d&apos;{hour}" />
+			<Rule range="45" displayHourRange="2-12" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=femení" pattern="tres quarts de {hour}" />
+		</ClockTime>
 		<TimeUnits>
 			<!-- "hora" is feminine; forceVariants applies the existing gender=femení
 			     cardinal rules ("un"->"una", "dos"->"dues") to the hour numeral without

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <Language baseOn="CA">
+        <Culture>ca-ES-valencia</Culture>
+        <!--
+          The AVL (Acadèmia Valenciana de la Llengua) gives priority to the invariable "dos" over the
+          gender-agreed "dues" (glossary entry "dos": "dona prioritat a la forma invariable dos",
+          with "les dos hores" given as its own example) - see docs/NTS-08-linguistic-sources.md.
+          This is applied ONLY to the idiomatic ClockTime rules below (displayHourRange="2-12" omits
+          hourForceVariants="gender=femení", unlike the inherited CA ClockTime block). TimeUnits and
+          Variants/Ordinals are intentionally NOT overridden and remain inherited from CA, so
+          Convert(TimeOnly)/Convert(TimeSpan)/ConvertOrdinal keep producing the standard Catalan
+          "dues hores"/"vint-i-dosena" - see Valencian.feature's "exact-time wording" scenario, which
+          pins this as deliberate. Widening "dos" to the shared Variants/Ordinals pipeline would also
+          require correcting every compound (21/22, ...) there, in both cardinal and ordinal forms,
+          across every consumer of those inherited rules - a larger, separately reviewable change.
+        -->
+        <ClockTime step="5" hourCycle="12">
+            <Rule range="0" displayHourRange="1" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femení" pattern="la {hour} en punt" />
+            <Rule range="0" displayHourRange="2-12" hourOffset="0" hourForm="cardinal" pattern="les {hour} en punt" />
+            <Rule range="5,10,20,25" displayHourRange="1" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femení" amountReference="0" amountDirection="after" pattern="la {hour} i {amount}" />
+            <Rule range="5,10,20,25" displayHourRange="2-12" hourOffset="0" hourForm="cardinal" amountReference="0" amountDirection="after" pattern="les {hour} i {amount}" />
+            <Rule range="15" displayHourRange="1" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femení" pattern="la {hour} i quart" />
+            <Rule range="15" displayHourRange="2-12" hourOffset="0" hourForm="cardinal" pattern="les {hour} i quart" />
+            <Rule range="30" displayHourRange="1" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femení" pattern="la {hour} i mitja" />
+            <Rule range="30" displayHourRange="2-12" hourOffset="0" hourForm="cardinal" pattern="les {hour} i mitja" />
+            <Rule range="35,40,50,55" displayHourRange="1" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=femení" amountReference="60" amountDirection="before" pattern="la {hour} menys {amount}" />
+            <Rule range="35,40,50,55" displayHourRange="2-12" hourOffset="1" hourForm="cardinal" amountReference="60" amountDirection="before" pattern="les {hour} menys {amount}" />
+            <Rule range="45" displayHourRange="1" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=femení" pattern="la {hour} menys quart" />
+            <Rule range="45" displayHourRange="2-12" hourOffset="1" hourForm="cardinal" pattern="les {hour} menys quart" />
+        </ClockTime>
+    </Language>
+</Numbers>

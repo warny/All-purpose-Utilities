@@ -117,3 +117,21 @@ Scenario: Time conversion is supported
 Scenario: Ordinal conversion is supported
     Given I use the "CA" number converter
     Then the converter supports ordinal conversion
+
+Scenario: Catalan clock-time conversion is supported
+    Given I use the "CA" number converter
+    Then the converter supports clock-time conversion
+
+Scenario Outline: Traditional Catalan clock times refer quarters to the following hour
+    Given I use the "CA" number converter
+    When I convert the clock time "<time>"
+    Then the result is "<expected>"
+
+Examples:
+    | time | expected |
+    | 01:00 | la una en punt |
+    | 01:15 | un quart de dues |
+    | 01:30 | dos quarts de dues |
+    | 01:45 | tres quarts de dues |
+    | 11:45 | tres quarts de dotze |
+    | 12:15 | un quart d'una |

@@ -2348,8 +2348,18 @@ namespace Utils.NumberToString
                 if (string.IsNullOrWhiteSpace(rule.Pattern))
                     throw new ArgumentException($"ClockTime rule range '{rule.Range}' has an empty pattern.", nameof(options));
                 ValidateClockPattern(rule.Pattern, rule.Range.ToString() ?? string.Empty);
+                if (rule.SpecialHourPattern is { } specialHourPattern)
+                {
+                    if (string.IsNullOrWhiteSpace(specialHourPattern))
+                        throw new ArgumentException($"ClockTime rule range '{rule.Range}' has an empty specialHourPattern.", nameof(options));
+                    ValidateClockPattern(specialHourPattern, rule.Range.ToString() ?? string.Empty);
+                }
                 bool usesAmount = rule.Pattern.Contains("{amount}", StringComparison.Ordinal);
                 bool usesHour = rule.Pattern.Contains("{hour}", StringComparison.Ordinal);
+                if (rule.SpecialHourPattern != null
+                    && (usesAmount != rule.SpecialHourPattern.Contains("{amount}", StringComparison.Ordinal)
+                        || usesHour != rule.SpecialHourPattern.Contains("{hour}", StringComparison.Ordinal)))
+                    throw new ArgumentException($"ClockTime rule range '{rule.Range}' pattern and specialHourPattern must use the same placeholders.", nameof(options));
                 ForcedVariantSet hourForced = rule.HourForcedVariants
                     ?? throw new ArgumentException($"ClockTime rule range '{rule.Range}' HourForcedVariants must not be null.", nameof(options));
                 ForcedVariantSet amountForced = rule.AmountForcedVariants
@@ -2383,7 +2393,10 @@ namespace Utils.NumberToString
                 snapshots.Add(snapshot);
                 var compiled = new CompiledClockTimeRule(
                     snapshot,
-                    ClockPatternFormatBuilder.Create<Func<string, string, string>>(snapshot.Pattern, "hour", "amount"));
+                    ClockPatternFormatBuilder.Create<Func<string, string, string>>(snapshot.Pattern, "hour", "amount"),
+                    snapshot.SpecialHourPattern == null
+                        ? null
+                        : ClockPatternFormatBuilder.Create<Func<string, string, string>>(snapshot.SpecialHourPattern, "hour", "amount"));
                 compiledRules.Add((index, compiled, minutes));
             }
             var matchedRules = new bool[compiledRules.Count];
@@ -2533,10 +2546,12 @@ namespace Utils.NumberToString
             int offset = rule.HourOffset % 24;
             int referenceHour24 = (rounded.Hour + offset + 24) % 24;
             string hourText;
-            if (replaceSpecialHours
-                && _specialHours.TryGetValue(referenceHour24, out var special)
-                && (special.WholeHour || rounded.Minute == 0))
-                hourText = special.Value;
+            SpecialHourRule? special = null;
+            bool specialHourApplied = replaceSpecialHours
+                && _specialHours.TryGetValue(referenceHour24, out special)
+                && (special.WholeHour || rounded.Minute == 0);
+            if (specialHourApplied)
+                hourText = special!.Value;
             else
             {
                 int displayHour = ProjectClockDisplayHour(rounded.Hour, rule.HourOffset, _clockTime!.HourCycle);
@@ -2557,13 +2572,17 @@ namespace Utils.NumberToString
                 int amount = CalculateClockAmount(rounded.Minute, rule.AmountReference.Value, rule.AmountDirection!.Value);
                 amountText = BuildCardinalFragment(amount, amountQuery);
             }
-            return compiledRule.Formatter(hourText, amountText);
+            Func<string, string, string> formatter = specialHourApplied && compiledRule.SpecialHourFormatter != null
+                ? compiledRule.SpecialHourFormatter
+                : compiledRule.Formatter;
+            return formatter(hourText, amountText);
         }
 
         /// <summary>Associates a validated public clock rule with its precompiled formatter.</summary>
         private sealed record CompiledClockTimeRule(
             ClockTimeRule Rule,
-            Func<string, string, string> Formatter);
+            Func<string, string, string> Formatter,
+            Func<string, string, string>? SpecialHourFormatter);
 
         /// <summary>Compiles validated clock placeholders through the shared formatting infrastructure.</summary>
         private sealed class ClockPatternExpressionCompiler : IExpressionCompiler

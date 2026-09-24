@@ -57,6 +57,17 @@ public class NumberToStringConverterClockTimeTests
         Assert.AreEqual("douze heures et quart", result);
     }
 
+    /// <summary>Verifies disabling English special-hour words restores the complete numeric-hour pattern.</summary>
+    [TestMethod]
+    public void ConvertClockTime_EnglishDisabledSpecialHours_UsesOClockPattern()
+    {
+        var converter = NumberToStringConverter.GetConverter("EN");
+        var options = new ClockTimeConversionOptions { ReplaceSpecialHours = false };
+
+        Assert.AreEqual("twelve o'clock", converter.ConvertClockTime(new TimeOnly(0, 0), options, []));
+        Assert.AreEqual("twelve o'clock", converter.ConvertClockTime(new TimeOnly(12, 0), options, []));
+    }
+
     /// <summary>Verifies the legacy exact TimeOnly API retains seconds and does not use clock rules.</summary>
     [TestMethod]
     public void Convert_TimeOnly_RemainsExact()
@@ -82,6 +93,41 @@ public class NumberToStringConverterClockTimeTests
         Assert.ThrowsExactly<ArgumentException>(() => Create(5, [new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "hour}")]));
         Assert.ThrowsExactly<ArgumentException>(() => Create(5, [new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{hour.Length}")]));
         Assert.ThrowsExactly<ArgumentException>(() => Create(5, [new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{amount + 1}")]));
+        Assert.ThrowsExactly<ArgumentException>(() => Create(60,
+        [
+            new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{hour}")
+            {
+                SpecialHourPattern = "{unknown}",
+            },
+        ]));
+        Assert.ThrowsExactly<ArgumentException>(() => Create(60,
+        [
+            new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{hour}")
+            {
+                SpecialHourPattern = "literal",
+            },
+        ]));
+        Assert.ThrowsExactly<ArgumentException>(() => Create(60,
+        [
+            new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{hour}")
+            {
+                SpecialHourPattern = "{hour",
+            },
+        ]));
+        Assert.ThrowsExactly<ArgumentException>(() => Create(60,
+        [
+            new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "fixed")
+            {
+                SpecialHourPattern = "",
+            },
+        ]));
+        Assert.ThrowsExactly<ArgumentException>(() => Create(60,
+        [
+            new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "fixed")
+            {
+                SpecialHourPattern = "   ",
+            },
+        ]));
         Assert.ThrowsExactly<ArgumentException>(() => Create(5, [new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{amount}", 0)]));
         Assert.ThrowsExactly<ArgumentException>(() => Create(5, [new(new IntRange<int>("0"), 0, ClockHourForm.Cardinal, "{hour}", 0, ClockAmountDirection.After)]));
         Assert.ThrowsExactly<ArgumentException>(() => Create(5, [new(new IntRange<int>("0,5"), 0, ClockHourForm.Cardinal, "{hour}"), new(new IntRange<int>("5"), 0, ClockHourForm.Cardinal, "{hour}")]));

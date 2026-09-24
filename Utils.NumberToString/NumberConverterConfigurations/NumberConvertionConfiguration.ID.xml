@@ -12,8 +12,6 @@
     >
         <Culture>ID</Culture>
         <Culture>ID-ID</Culture>
-        <Culture>MS</Culture>
-        <Culture>MS-MY</Culture>
         <Groups>
             <Group level="1">
                 <Digit digit="0" string="" />
@@ -97,5 +95,14 @@
             <Number value="18" string="delapan belas" />
             <Number value="19" string="sembilan belas" />
         </Exceptions>
+        <LanguageSpecifics>IndonesianOrdinalLanguageSpecifics</LanguageSpecifics>
+        <ClockTime step="5" hourCycle="12">
+            <Rule range="0" hourOffset="0" hourForm="cardinal" pattern="jam {hour}" />
+            <Rule range="5,10,20,25" hourOffset="0" hourForm="cardinal" amountReference="0" amountDirection="after" pattern="jam {hour} lewat {amount}" />
+            <Rule range="15" hourOffset="0" hourForm="cardinal" pattern="jam {hour} lewat seperempat" />
+            <Rule range="30" hourOffset="1" hourForm="cardinal" pattern="jam setengah {hour}" />
+            <Rule range="35,40,50,55" hourOffset="1" hourForm="cardinal" amountReference="60" amountDirection="before" pattern="jam {hour} kurang {amount}" />
+            <Rule range="45" hourOffset="1" hourForm="cardinal" pattern="jam {hour} kurang seperempat" />
+        </ClockTime>
     </Language>
 </Numbers>
