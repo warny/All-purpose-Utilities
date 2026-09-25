@@ -105,7 +105,11 @@ internal static class ExpressionCanonicalOrder
     private const int RankUnsupported = 7;
 
     /// <summary>
-    /// Builds the complete structural canonical-order key for <paramref name="expression"/>.
+    /// Builds the complete structural canonical-order key for <paramref name="expression"/>. The generic,
+    /// not-necessarily-trusted entry point: <paramref name="enclosingScopes"/> is ALWAYS defensively copied
+    /// into a fresh array before use, regardless of its runtime type, so this call allocates on every
+    /// invocation. For a caller that already holds a trusted, exclusively-owned snapshot array and wants to
+    /// avoid that copy, see <see cref="BuildKeyFromSnapshot(Expression?, ParameterExpression[][])"/> instead.
     /// </summary>
     /// <param name="expression">The (already simplified) expression to key, or <see langword="null"/>.</param>
     /// <param name="enclosingScopes">
@@ -113,14 +117,34 @@ internal static class ExpressionCanonicalOrder
     /// typically a snapshot of <see cref="ExpressionSimplifier"/>'s ambient lexical scope stack at the
     /// moment canonicalization runs. A <see cref="ParameterExpression"/> found in none of these scopes,
     /// nor in any <see cref="LambdaExpression"/> nested within <paramref name="expression"/> itself, is
-    /// treated as free — see this type's remarks.
+    /// treated as free — see this type's remarks. Copied once into a fresh array before use; the caller's
+    /// own list/array is never retained or mutated.
     /// </param>
     /// <returns>A comparable, deterministic structural key.</returns>
     internal static KeyNode BuildKey(Expression? expression, IReadOnlyList<ParameterExpression[]> enclosingScopes)
     {
-        var scopes = new List<ParameterExpression[]>(enclosingScopes.Count + 2);
-        scopes.AddRange(enclosingScopes);
-        return Build(expression, scopes);
+        var scopes = new ScopeState(enclosingScopes);
+        return Build(expression, ref scopes);
+    }
+
+    /// <summary>
+    /// Zero-copy counterpart of <see cref="BuildKey(Expression?, IReadOnlyList{ParameterExpression[]})"/> for a
+    /// caller that already holds a trusted, exclusively-owned snapshot array - in practice, only
+    /// <see cref="ExpressionSimplifier"/>'s own <c>CaptureLexicalScopeSnapshot</c> result. Overload resolution,
+    /// not a runtime type check, is what selects this path: a caller must declare its variable as the concrete
+    /// <see cref="ParameterExpression"/><c>[][]</c> array type to reach it, so an ordinary
+    /// <see cref="IReadOnlyList{T}"/>-typed caller (including one that happens to hold an array at runtime)
+    /// always goes through the defensive-copying overload above instead - see this class's <see cref="ScopeState"/>
+    /// remarks for why a runtime-type check alone was not a safe way to make this distinction (PR #606 review
+    /// round 2).
+    /// </summary>
+    /// <param name="expression">The (already simplified) expression to key, or <see langword="null"/>.</param>
+    /// <param name="enclosingScopes">A snapshot array the caller guarantees nothing else can reach and mutate.</param>
+    /// <returns>A comparable, deterministic structural key.</returns>
+    internal static KeyNode BuildKeyFromSnapshot(Expression? expression, ParameterExpression[][] enclosingScopes)
+    {
+        var scopes = new ScopeState(enclosingScopes);
+        return Build(expression, ref scopes);
     }
 
     /// <summary>
@@ -156,13 +180,40 @@ internal static class ExpressionCanonicalOrder
             return [];
         }
 
-        var scopes = new List<ParameterExpression[]>(enclosingScopes.Count + 2);
-        scopes.AddRange(enclosingScopes);
+        var scopes = new ScopeState(enclosingScopes);
+        return BuildKeysCore(expressions, ref scopes);
+    }
 
+    /// <summary>
+    /// Zero-copy counterpart of <see cref="BuildKeys(IReadOnlyList{Expression}, IReadOnlyList{ParameterExpression[]})"/>
+    /// for a caller that already holds a trusted, exclusively-owned snapshot array - see
+    /// <see cref="BuildKeyFromSnapshot(Expression?, ParameterExpression[][])"/> for why overload resolution on the
+    /// concrete array type, not a runtime check, is what gates this path.
+    /// </summary>
+    /// <param name="expressions">The (already simplified) sub-expressions to key, in order.</param>
+    /// <param name="enclosingScopes">A snapshot array the caller guarantees nothing else can reach and mutate.</param>
+    /// <returns>One comparable, deterministic structural key per element of <paramref name="expressions"/>, in the same order.</returns>
+    internal static KeyNode[] BuildKeysFromSnapshot(IReadOnlyList<Expression> expressions, ParameterExpression[][] enclosingScopes)
+    {
+        if (expressions.Count == 0)
+        {
+            return [];
+        }
+
+        var scopes = new ScopeState(enclosingScopes);
+        return BuildKeysCore(expressions, ref scopes);
+    }
+
+    /// <summary>Shared per-element loop backing both <see cref="BuildKeys"/> and <see cref="BuildKeysFromSnapshot"/> once their <see cref="ScopeState"/> has been constructed. Named distinctly from both (rather than overloaded) so reflection-based test lookups of <c>BuildKeys</c> by name alone stay unambiguous.</summary>
+    /// <param name="expressions">The (already simplified), non-empty sub-expressions to key, in order.</param>
+    /// <param name="scopes">The working scope state, shared across every element.</param>
+    /// <returns>One comparable, deterministic structural key per element of <paramref name="expressions"/>, in the same order.</returns>
+    private static KeyNode[] BuildKeysCore(IReadOnlyList<Expression> expressions, ref ScopeState scopes)
+    {
         var keys = new KeyNode[expressions.Count];
         for (int i = 0; i < expressions.Count; i++)
         {
-            keys[i] = Build(expressions[i], scopes);
+            keys[i] = Build(expressions[i], ref scopes);
         }
 
         return keys;
@@ -170,20 +221,137 @@ internal static class ExpressionCanonicalOrder
 
     /// <summary>Dispatches to the node-family-specific <c>Build*</c> helper, or <see cref="UnsupportedKey"/> for any node kind not among the seven this class understands.</summary>
     /// <param name="e">The (already simplified) sub-expression to key, or <see langword="null"/>.</param>
-    /// <param name="scopes">The local, per-<see cref="BuildKey(Expression, IReadOnlyList{ParameterExpression[]})"/>-call working scope list (ambient snapshot plus any lambda encountered so far during this walk).</param>
+    /// <param name="scopes">The local, per-<see cref="BuildKey(Expression, IReadOnlyList{ParameterExpression[]})"/>-call (or per-<see cref="BuildKeys"/>-call) scope-lookup state (ambient enclosing snapshot plus any lambda encountered so far during this walk). Threaded by <see langword="ref"/> so a lazily-allocated nested-scope frame pushed deeper in the recursion remains visible to the rest of the walk and to later sibling calls.</param>
     /// <returns>The resulting key.</returns>
-    private static KeyNode Build(Expression? e, List<ParameterExpression[]> scopes) => e switch
+    private static KeyNode Build(Expression? e, ref ScopeState scopes) => e switch
     {
         null => NullKey.Instance,
         ConstantExpression ce => BuildConstant(ce),
-        ParameterExpression pe => BuildParameter(pe, scopes),
-        UnaryExpression ue => BuildUnary(ue, scopes),
-        BinaryExpression be => BuildBinary(be, scopes),
-        MethodCallExpression mce => BuildMethodCall(mce, scopes),
-        MemberExpression me => BuildMember(me, scopes),
-        LambdaExpression le => BuildLambda(le, scopes),
+        ParameterExpression pe => BuildParameter(pe, ref scopes),
+        UnaryExpression ue => BuildUnary(ue, ref scopes),
+        BinaryExpression be => BuildBinary(be, ref scopes),
+        MethodCallExpression mce => BuildMethodCall(mce, ref scopes),
+        MemberExpression me => BuildMember(me, ref scopes),
+        LambdaExpression le => BuildLambda(le, ref scopes),
         _ => UnsupportedKey.Instance,
     };
+
+    /// <summary>
+    /// Local, per-<see cref="BuildKey(Expression?, IReadOnlyList{ParameterExpression[]})"/>-call (or per-
+    /// <see cref="BuildKeys"/>-call) mutable scope-lookup state, threaded by <see langword="ref"/> through
+    /// every <c>Build*</c> helper (roadmap stage S5, P4). Deliberately a <see langword="ref struct"/>: it
+    /// must never escape the stack of the walk that builds one key (or one shared batch of sibling keys),
+    /// preserving the pre-existing contract that the scope workspace is entirely local to key construction,
+    /// never shared/global mutable state.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Combines two logically distinct scope sources without ever materializing them into one concatenated
+    /// list: <see cref="EnclosingScopes"/>, an immutable snapshot (outermost first), never mutated by this
+    /// type; and <see cref="NestedScopes"/>, a lazily-allocated stack of scope frames pushed by
+    /// <c>BuildLambda</c> for a <see cref="LambdaExpression"/> encountered while walking the term itself
+    /// (innermost/most-recently-pushed last). <see cref="NestedScopes"/> stays <see langword="null"/>,
+    /// allocating nothing, unless the term being keyed actually contains a nested lambda - true for either
+    /// <see cref="ScopeState"/> constructor below. Combined with the zero-copy constructor's
+    /// <see cref="EnclosingScopes"/> handling (this type's next remarks paragraph), an ordinary
+    /// no-nested-lambda call through <see cref="BuildKeyFromSnapshot(Expression?, ParameterExpression[][])"/>/
+    /// <c>BuildKeysFromSnapshot</c> performs NO scope-management heap allocation at all, regardless of how many
+    /// enclosing scopes were supplied. The generic <see cref="BuildKey(Expression?, IReadOnlyList{ParameterExpression[]})"/>/
+    /// <c>BuildKeys</c> entry points do NOT share that property: their constructor always copies
+    /// <c>enclosingScopes</c> into a fresh array (see the next paragraph), so they allocate on every call
+    /// regardless of nested lambdas.
+    /// </para>
+    /// <para>
+    /// <b>Snapshot contract preserved via overload resolution, not a runtime check (PR #606 review round 2).</b>
+    /// The pre-P4 baseline unconditionally defensive-copied whatever <c>BuildKey</c>/<c>BuildKeys</c> received
+    /// (via <c>List{T}.AddRange</c>) before returning control to the caller - a real behavioral guarantee for
+    /// ANY caller, including this PR's own tests (which pass a plain mutable <see cref="List{T}"/> literal).
+    /// Review round 1 restored that guarantee for non-array inputs, but did so with an <c>as ParameterExpression[][]</c>
+    /// runtime-type check: any caller happening to hold an actual (mutable, not-necessarily-owned)
+    /// <c>ParameterExpression[][]</c> array - not just <see cref="ExpressionSimplifier"/>'s own trusted
+    /// snapshot - would silently skip the defensive copy too, since the check cannot distinguish "this exact
+    /// runtime type" from "this exact runtime type AND I exclusively own it". Round 2 replaces the runtime
+    /// check with two constructor overloads instead: this <see cref="IReadOnlyList{T}"/>-typed constructor
+    /// ALWAYS defensive-copies (used by <c>BuildKey</c>/<c>BuildKeys</c>, the generic entry points), while a
+    /// second, <c>ParameterExpression[][]</c>-typed constructor below skips the copy and is reachable only
+    /// through <c>BuildKeyFromSnapshot</c>/<c>BuildKeysFromSnapshot</c> in this file. Both are <c>internal</c>,
+    /// not narrower - nothing in the type system stops another caller inside this assembly from invoking them
+    /// with an array that is NOT actually an exclusively-owned snapshot, which would silently reintroduce the
+    /// aliasing hazard this round fixes. The only caller today is <see cref="ExpressionSimplifier"/>, which
+    /// always supplies its own <c>CaptureLexicalScopeSnapshot</c> array (either <see cref="Array.Empty{T}"/> or
+    /// a fresh <c>List{ParameterExpression[]}.ToArray()</c>, so never aliased by any other live reference at
+    /// the moment it is passed in) - but that is a call-site convention this file's callers must honor, not a
+    /// guarantee the compiler enforces. Trust is expressed at the call site by which method a caller CHOSE to
+    /// call, not inferred from what the runtime happens to hand back, and not verified automatically.
+    /// </para>
+    /// <para>
+    /// <b>Bound-parameter depth is unchanged.</b> A bound-parameter lookup (see <c>BuildParameter</c>)
+    /// searches <see cref="NestedScopes"/> innermost-to-outermost first, then <see cref="EnclosingScopes"/>
+    /// innermost-to-outermost, with the nested frames counted as strictly deeper than every enclosing frame -
+    /// exactly reproducing the depth/position result the pre-S5-P4 single concatenated list produced (see
+    /// this class's remarks on the bound-parameter depth invariant, and the worked example there: with
+    /// enclosing scopes <c>outer0, outer1</c> and nested scopes <c>inner0, inner1</c>, the effective stack is
+    /// <c>outer0, outer1, inner0, inner1</c>, so <c>inner1</c> is depth 0, <c>inner0</c> depth 1, <c>outer1</c>
+    /// depth 2, <c>outer0</c> depth 3).
+    /// </para>
+    /// </remarks>
+    private ref struct ScopeState
+    {
+        /// <summary>
+        /// The ambient lexical scopes enclosing the term being keyed, outermost first - either the exact
+        /// trusted-snapshot array the caller supplied (the zero-allocation constructor below) or a defensive
+        /// one-time copy of an arbitrary <see cref="IReadOnlyList{T}"/> (see this type's remarks). Never
+        /// mutated or re-copied by this type after construction.
+        /// </summary>
+        public readonly ParameterExpression[][] EnclosingScopes;
+
+        /// <summary>
+        /// Lazily-allocated stack of scope frames for a <see cref="LambdaExpression"/> encountered while
+        /// walking the term itself, innermost (most-recently-pushed) last. <see langword="null"/> until the
+        /// first nested lambda is pushed by <c>BuildLambda</c>, so a term with no nested lambda never
+        /// allocates this list. Pre-sized to 2 on first allocation (rather than <see cref="List{T}"/>'s
+        /// default capacity of 4): the vast majority of nested-lambda terms this class ever sees are at most
+        /// one or two levels deep (see this file's own benchmarked scenarios), and the smaller initial
+        /// backing array measurably closed a small (+8 byte/call) regression PR #606 review round 1 found
+        /// against the pre-P4 baseline for these cases.
+        /// </summary>
+        public List<ParameterExpression[]>? NestedScopes;
+
+        /// <summary>Initializes a new <see cref="ScopeState"/> with no nested scopes pushed yet, always defensively copying <paramref name="enclosingScopes"/> - the generic, not-necessarily-trusted entry point (see this type's remarks).</summary>
+        /// <param name="enclosingScopes">The ambient lexical scopes enclosing the term being keyed; always copied once into a fresh array.</param>
+        public ScopeState(IReadOnlyList<ParameterExpression[]> enclosingScopes)
+        {
+            EnclosingScopes = CopySnapshot(enclosingScopes);
+            NestedScopes = null;
+        }
+
+        /// <summary>
+        /// Initializes a new <see cref="ScopeState"/> from an array the caller guarantees is a trusted,
+        /// exclusively-owned snapshot - the zero-allocation entry point, reachable only through
+        /// <c>BuildKeyFromSnapshot</c>/<c>BuildKeysFromSnapshot</c> (see this type's remarks). Stores
+        /// <paramref name="enclosingScopes"/> directly with no copy.
+        /// </summary>
+        /// <param name="enclosingScopes">A snapshot array nothing else can reach and mutate.</param>
+        public ScopeState(ParameterExpression[][] enclosingScopes)
+        {
+            EnclosingScopes = enclosingScopes;
+            NestedScopes = null;
+        }
+
+        /// <summary>Defensively copies an arbitrary <see cref="IReadOnlyList{T}"/> of scopes into a fresh array, restoring the pre-P4 snapshot guarantee for a caller that did not supply the exact production array type.</summary>
+        /// <param name="enclosingScopes">The scopes to copy.</param>
+        /// <returns>A fresh array holding the same scope-frame references, in the same order.</returns>
+        private static ParameterExpression[][] CopySnapshot(IReadOnlyList<ParameterExpression[]> enclosingScopes)
+        {
+            var copy = new ParameterExpression[enclosingScopes.Count][];
+            for (int i = 0; i < copy.Length; i++)
+            {
+                copy[i] = enclosingScopes[i];
+            }
+
+            return copy;
+        }
+    }
 
     /// <summary>Builds the key for a <see cref="ConstantExpression"/>: an exact numeric value for a native numeric type, or the declared type plus boxed value otherwise.</summary>
     /// <param name="ce">The constant to key.</param>
@@ -211,19 +379,39 @@ internal static class ExpressionCanonicalOrder
         return Types.Number.Contains(runtimeType) ? ExpressionComparer.ExactNumericValue.FromBoxed(runtimeType, value) : null;
     }
 
-    /// <summary>Builds the key for a <see cref="ParameterExpression"/>: a bound (depth, position, type) triple if found in <paramref name="scopes"/> (innermost scope searched first), or a free-parameter key otherwise.</summary>
+    /// <summary>
+    /// Builds the key for a <see cref="ParameterExpression"/>: a bound (depth, position, type) triple if
+    /// found in <paramref name="scopes"/> (its <c>NestedScopes</c> searched innermost first, then its
+    /// <c>EnclosingScopes</c> innermost first - see <see cref="ScopeState"/>'s remarks for why this two-part
+    /// search reproduces the exact same depth a single concatenated list would), or a free-parameter key
+    /// otherwise.
+    /// </summary>
     /// <param name="pe">The parameter to key.</param>
-    /// <param name="scopes">The active scope list, outermost first.</param>
+    /// <param name="scopes">The active scope-lookup state.</param>
     /// <returns>The resulting <see cref="ParameterKey"/>.</returns>
-    private static KeyNode BuildParameter(ParameterExpression pe, List<ParameterExpression[]> scopes)
+    private static KeyNode BuildParameter(ParameterExpression pe, ref ScopeState scopes)
     {
-        for (int i = scopes.Count - 1; i >= 0; i--)
+        List<ParameterExpression[]>? nested = scopes.NestedScopes;
+        int nestedCount = nested?.Count ?? 0;
+        if (nested is not null)
         {
-            int index = Array.IndexOf(scopes[i], pe);
+            for (int i = nestedCount - 1; i >= 0; i--)
+            {
+                int index = Array.IndexOf(nested[i], pe);
+                if (index >= 0)
+                {
+                    return ParameterKey.Bound(nestedCount - 1 - i, index, pe.Type);
+                }
+            }
+        }
+
+        ParameterExpression[][] enclosing = scopes.EnclosingScopes;
+        for (int i = enclosing.Length - 1; i >= 0; i--)
+        {
+            int index = Array.IndexOf(enclosing[i], pe);
             if (index >= 0)
             {
-                int depth = scopes.Count - 1 - i;
-                return ParameterKey.Bound(depth, index, pe.Type);
+                return ParameterKey.Bound(nestedCount + (enclosing.Length - 1 - i), index, pe.Type);
             }
         }
 
@@ -232,53 +420,53 @@ internal static class ExpressionCanonicalOrder
 
     /// <summary>Builds the key for a <see cref="UnaryExpression"/>: node type, result type, operator method, lifting flags, then the operand's key.</summary>
     /// <param name="ue">The unary expression to key.</param>
-    /// <param name="scopes">The active scope list, outermost first.</param>
+    /// <param name="scopes">The active scope-lookup state.</param>
     /// <returns>The resulting <see cref="UnaryKey"/>.</returns>
-    private static KeyNode BuildUnary(UnaryExpression ue, List<ParameterExpression[]> scopes)
-        => new UnaryKey(ue.NodeType, ue.Type, ue.Method, ue.IsLifted, ue.IsLiftedToNull, Build(ue.Operand, scopes));
+    private static KeyNode BuildUnary(UnaryExpression ue, ref ScopeState scopes)
+        => new UnaryKey(ue.NodeType, ue.Type, ue.Method, ue.IsLifted, ue.IsLiftedToNull, Build(ue.Operand, ref scopes));
 
     /// <summary>Builds the key for a <see cref="BinaryExpression"/>: node type, result type, operator method, lifting flags, left/right/conversion keys.</summary>
     /// <param name="be">The binary expression to key.</param>
-    /// <param name="scopes">The active scope list, outermost first.</param>
+    /// <param name="scopes">The active scope-lookup state.</param>
     /// <returns>The resulting <see cref="BinaryKey"/>.</returns>
-    private static KeyNode BuildBinary(BinaryExpression be, List<ParameterExpression[]> scopes)
+    private static KeyNode BuildBinary(BinaryExpression be, ref ScopeState scopes)
         => new BinaryKey(
             be.NodeType,
             be.Type,
             be.Method,
             be.IsLifted,
             be.IsLiftedToNull,
-            Build(be.Left, scopes),
-            Build(be.Right, scopes),
-            Build(be.Conversion, scopes));
+            Build(be.Left, ref scopes),
+            Build(be.Right, ref scopes),
+            Build(be.Conversion, ref scopes));
 
     /// <summary>Builds the key for a <see cref="MethodCallExpression"/>: exact method, receiver key, then each argument's key in order.</summary>
     /// <param name="mce">The method call to key.</param>
-    /// <param name="scopes">The active scope list, outermost first.</param>
+    /// <param name="scopes">The active scope-lookup state.</param>
     /// <returns>The resulting <see cref="MethodCallKey"/>.</returns>
-    private static KeyNode BuildMethodCall(MethodCallExpression mce, List<ParameterExpression[]> scopes)
+    private static KeyNode BuildMethodCall(MethodCallExpression mce, ref ScopeState scopes)
     {
         var arguments = new KeyNode[mce.Arguments.Count];
         for (int i = 0; i < arguments.Length; i++)
         {
-            arguments[i] = Build(mce.Arguments[i], scopes);
+            arguments[i] = Build(mce.Arguments[i], ref scopes);
         }
 
-        return new MethodCallKey(mce.Method, Build(mce.Object, scopes), arguments);
+        return new MethodCallKey(mce.Method, Build(mce.Object, ref scopes), arguments);
     }
 
     /// <summary>Builds the key for a <see cref="MemberExpression"/>: exact member, then the receiver's key.</summary>
     /// <param name="me">The member access to key.</param>
-    /// <param name="scopes">The active scope list, outermost first.</param>
+    /// <param name="scopes">The active scope-lookup state.</param>
     /// <returns>The resulting <see cref="MemberKey"/>.</returns>
-    private static KeyNode BuildMember(MemberExpression me, List<ParameterExpression[]> scopes)
-        => new MemberKey(me.Member, Build(me.Expression, scopes));
+    private static KeyNode BuildMember(MemberExpression me, ref ScopeState scopes)
+        => new MemberKey(me.Member, Build(me.Expression, ref scopes));
 
     /// <summary>Builds the key for a <see cref="LambdaExpression"/>: delegate type, <see cref="LambdaExpression.TailCall"/>, parameter types, then the body's key under a pushed local scope frame for this lambda's own parameters.</summary>
     /// <param name="le">The lambda to key.</param>
-    /// <param name="scopes">The active scope list (mutated locally: this lambda's parameters are pushed before, and popped after, keying the body).</param>
+    /// <param name="scopes">The active scope-lookup state; its <c>NestedScopes</c> stack is lazily allocated here on the first nested lambda, then this lambda's parameters are pushed before, and popped after, keying the body.</param>
     /// <returns>The resulting <see cref="LambdaKey"/>.</returns>
-    private static KeyNode BuildLambda(LambdaExpression le, List<ParameterExpression[]> scopes)
+    private static KeyNode BuildLambda(LambdaExpression le, ref ScopeState scopes)
     {
         ParameterExpression[] parameters = le.Parameters.ToArray();
         Type[] parameterTypes = new Type[parameters.Length];
@@ -287,15 +475,16 @@ internal static class ExpressionCanonicalOrder
             parameterTypes[i] = parameters[i].Type;
         }
 
-        scopes.Add(parameters);
+        List<ParameterExpression[]> nested = scopes.NestedScopes ??= new List<ParameterExpression[]>(2);
+        nested.Add(parameters);
         KeyNode body;
         try
         {
-            body = Build(le.Body, scopes);
+            body = Build(le.Body, ref scopes);
         }
         finally
         {
-            scopes.RemoveAt(scopes.Count - 1);
+            nested.RemoveAt(nested.Count - 1);
         }
 
         return new LambdaKey(le.Type, le.TailCall, parameterTypes, body);
