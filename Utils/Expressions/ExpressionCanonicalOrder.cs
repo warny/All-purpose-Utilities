@@ -214,7 +214,7 @@ internal static class ExpressionCanonicalOrder
     /// unconditionally defensive-copied whatever was passed (via <c>List{T}.AddRange</c>) before returning
     /// control to the caller - a real behavioral guarantee for any OTHER caller (including this PR's own
     /// tests, which pass a plain mutable <see cref="List{T}"/> literal) that P4's first pass silently dropped
-    /// by storing the caller's reference directly. Restored here: any <paramref name="enclosingScopes"/> that
+    /// by storing the caller's reference directly. Restored here: any <c>enclosingScopes</c> that
     /// is not already the exact <c>ParameterExpression[][]</c> runtime type is copied ONCE into a fresh array
     /// before being stored, so a caller mutating its own list concurrently with (or re-entrantly during) this
     /// key's construction can no longer observe or corrupt it - restoring the pre-P4 guarantee - while the
