@@ -105,7 +105,11 @@ internal static class ExpressionCanonicalOrder
     private const int RankUnsupported = 7;
 
     /// <summary>
-    /// Builds the complete structural canonical-order key for <paramref name="expression"/>.
+    /// Builds the complete structural canonical-order key for <paramref name="expression"/>. The generic,
+    /// not-necessarily-trusted entry point: <paramref name="enclosingScopes"/> is ALWAYS defensively copied
+    /// into a fresh array before use, regardless of its runtime type, so this call allocates on every
+    /// invocation. For a caller that already holds a trusted, exclusively-owned snapshot array and wants to
+    /// avoid that copy, see <see cref="BuildKeyFromSnapshot(Expression?, ParameterExpression[][])"/> instead.
     /// </summary>
     /// <param name="expression">The (already simplified) expression to key, or <see langword="null"/>.</param>
     /// <param name="enclosingScopes">
@@ -113,7 +117,8 @@ internal static class ExpressionCanonicalOrder
     /// typically a snapshot of <see cref="ExpressionSimplifier"/>'s ambient lexical scope stack at the
     /// moment canonicalization runs. A <see cref="ParameterExpression"/> found in none of these scopes,
     /// nor in any <see cref="LambdaExpression"/> nested within <paramref name="expression"/> itself, is
-    /// treated as free — see this type's remarks.
+    /// treated as free — see this type's remarks. Copied once into a fresh array before use; the caller's
+    /// own list/array is never retained or mutated.
     /// </param>
     /// <returns>A comparable, deterministic structural key.</returns>
     internal static KeyNode BuildKey(Expression? expression, IReadOnlyList<ParameterExpression[]> enclosingScopes)
@@ -246,10 +251,15 @@ internal static class ExpressionCanonicalOrder
     /// type; and <see cref="NestedScopes"/>, a lazily-allocated stack of scope frames pushed by
     /// <c>BuildLambda</c> for a <see cref="LambdaExpression"/> encountered while walking the term itself
     /// (innermost/most-recently-pushed last). <see cref="NestedScopes"/> stays <see langword="null"/>,
-    /// allocating nothing, unless the term being keyed actually contains a nested lambda - which is why an
-    /// ordinary no-nested-lambda <see cref="BuildKey(Expression?, IReadOnlyList{ParameterExpression[]})"/>
-    /// call now performs no scope-management heap allocation at all, regardless of how many enclosing scopes
-    /// were supplied.
+    /// allocating nothing, unless the term being keyed actually contains a nested lambda - true for either
+    /// <see cref="ScopeState"/> constructor below. Combined with the zero-copy constructor's
+    /// <see cref="EnclosingScopes"/> handling (this type's next remarks paragraph), an ordinary
+    /// no-nested-lambda call through <see cref="BuildKeyFromSnapshot(Expression?, ParameterExpression[][])"/>/
+    /// <c>BuildKeysFromSnapshot</c> performs NO scope-management heap allocation at all, regardless of how many
+    /// enclosing scopes were supplied. The generic <see cref="BuildKey(Expression?, IReadOnlyList{ParameterExpression[]})"/>/
+    /// <c>BuildKeys</c> entry points do NOT share that property: their constructor always copies
+    /// <c>enclosingScopes</c> into a fresh array (see the next paragraph), so they allocate on every call
+    /// regardless of nested lambdas.
     /// </para>
     /// <para>
     /// <b>Snapshot contract preserved via overload resolution, not a runtime check (PR #606 review round 2).</b>
@@ -263,12 +273,16 @@ internal static class ExpressionCanonicalOrder
     /// runtime type" from "this exact runtime type AND I exclusively own it". Round 2 replaces the runtime
     /// check with two constructor overloads instead: this <see cref="IReadOnlyList{T}"/>-typed constructor
     /// ALWAYS defensive-copies (used by <c>BuildKey</c>/<c>BuildKeys</c>, the generic entry points), while a
-    /// second, <c>ParameterExpression[][]</c>-typed constructor below skips the copy and is reachable only via
-    /// <c>BuildKeyFromSnapshot</c>/<c>BuildKeysFromSnapshot</c> - internal entry points <see cref="ExpressionSimplifier"/>
-    /// alone calls, with its own <c>CaptureLexicalScopeSnapshot</c> array (either <see cref="Array.Empty{T}"/>
-    /// or a fresh <c>List{ParameterExpression[]}.ToArray()</c>, so never aliased by any other live reference).
-    /// Trust is now expressed at the call site by which method the caller chose to declare/call, not inferred
-    /// from what the runtime happens to hand back.
+    /// second, <c>ParameterExpression[][]</c>-typed constructor below skips the copy and is reachable only
+    /// through <c>BuildKeyFromSnapshot</c>/<c>BuildKeysFromSnapshot</c> in this file. Both are <c>internal</c>,
+    /// not narrower - nothing in the type system stops another caller inside this assembly from invoking them
+    /// with an array that is NOT actually an exclusively-owned snapshot, which would silently reintroduce the
+    /// aliasing hazard this round fixes. The only caller today is <see cref="ExpressionSimplifier"/>, which
+    /// always supplies its own <c>CaptureLexicalScopeSnapshot</c> array (either <see cref="Array.Empty{T}"/> or
+    /// a fresh <c>List{ParameterExpression[]}.ToArray()</c>, so never aliased by any other live reference at
+    /// the moment it is passed in) - but that is a call-site convention this file's callers must honor, not a
+    /// guarantee the compiler enforces. Trust is expressed at the call site by which method a caller CHOSE to
+    /// call, not inferred from what the runtime happens to hand back, and not verified automatically.
     /// </para>
     /// <para>
     /// <b>Bound-parameter depth is unchanged.</b> A bound-parameter lookup (see <c>BuildParameter</c>)

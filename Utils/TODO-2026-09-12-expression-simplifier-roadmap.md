@@ -2272,6 +2272,17 @@ collection-count-independent) for allocation, both around the same iteration loo
 against the unmodified baseline commit, then again after the production change, from the same machine/session
 without other load.
 
+**Historical-attribution note (added after review round 2, 2026-09-25):** every table below was measured
+against the single `BuildKey`/`BuildKeys` entry point that existed at this stage of the branch (round 0
+through round 1) - there was no split yet between a defensive-copying and a zero-copy path. Review round 2
+(see that section further below) later split this into two entry points: `BuildKey`/`BuildKeys` (the names
+these tables use) went BACK to unconditionally defensive-copying `enclosingScopes`, matching the pre-P4
+baseline, while the zero-copy behavior these tables actually measure now belongs to the new
+`BuildKeyFromSnapshot`/`BuildKeysFromSnapshot` entry points, which is what `ExpressionSimplifier`'s production
+call sites call today. Read every "`BuildKey`" row below as characterizing what is now `BuildKeyFromSnapshot`'s
+allocation profile, not current `BuildKey`'s - the numbers themselves are unchanged and still accurate for that
+zero-copy path; only the name attribution shifted.
+
 **Direct `BuildKey` results (300 000 iterations unless noted; B/op = bytes allocated per call):**
 
 | Scenario | Baseline B/op | Candidate B/op | Δ | Baseline ns/op | Candidate ns/op |
@@ -2572,12 +2583,16 @@ argument's runtime type:
 `CanonicalizeAdditiveExpression`'s per-argument `BuildKeys` call, and `CanonicalizeMultiplicativeExpression`'s
 per-factor key) now call `BuildKeyFromSnapshot`/`BuildKeysFromSnapshot` instead of the generic entry points,
 with `CaptureLexicalScopeSnapshot()`'s return type narrowed from `IReadOnlyList<ParameterExpression[]>` to the
-concrete `ParameterExpression[][]` so the compiler enforces which overload production reaches - a caller
-cannot reach the zero-copy path by accident, only by explicitly calling the `FromSnapshot` method with a
-statically-typed array. This keeps every production benchmark from round 0/round 1 fully intact (production
-still takes the zero-copy path unconditionally) while making the generic entry points behave identically to
-the pre-P4 baseline for ANY caller, array or not - both are trusted-input-agnostic once again, exactly as they
-were before P4 started.
+concrete `ParameterExpression[][]`. This is a call-site convention, not a compiler-enforced restriction:
+`BuildKeyFromSnapshot`/`BuildKeysFromSnapshot` are `internal`, so any other code inside `Utils` could still
+call them with an arbitrary, non-snapshot array and silently violate the trust contract - nothing in the type
+system prevents that. What the narrowed return type DOES achieve is local, at these three call sites only:
+`scopes` being statically typed as `ParameterExpression[][]` there means these particular calls necessarily
+resolve to the zero-copy overload, so production's own call sites cannot regress to the defensive-copying path
+by accident. This keeps every production benchmark from round 0/round 1 fully intact (production still takes
+the zero-copy path unconditionally at these three sites) while making the generic entry points behave
+identically to the pre-P4 baseline for ANY caller, array or not - both are trusted-input-agnostic once again,
+exactly as they were before P4 started.
 
 Two new regression tests in `ExpressionCanonicalOrderScopeStateTests.cs` close the gap concretely:
 `BuildKey_MutatingCallerArrayAfterConstruction_DoesNotAffectAlreadyBuiltKey` (mirrors round 1's

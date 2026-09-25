@@ -238,12 +238,18 @@ public class ExpressionCanonicalOrderScopeStateTests
     }
 
     /// <summary>
-    /// Restores the pre-P4 snapshot guarantee <c>BuildKey</c>/<c>BuildKeys</c> historically provided for any
-    /// caller-supplied <see cref="IReadOnlyList{T}"/> that is not itself the exact, already-immutable
-    /// production array type: a key already built from a caller-owned, mutable <see cref="List{T}"/> must
-    /// remain structurally correct even after the caller later clears or replaces that same list instance -
-    /// exactly as if <c>BuildKey</c> had defensively copied it (which, for this non-array input shape, it
-    /// now again does - see <c>ScopeState</c>'s remarks).
+    /// Regression check for the narrower, POST-return half of the pre-P4 snapshot guarantee: a key already
+    /// built from a caller-owned, mutable <see cref="List{T}"/> must remain structurally correct even after
+    /// the caller later clears or replaces that same list instance. This does not, and cannot from a single
+    /// synchronous test, directly exercise mutation DURING construction (a concurrent or reentrant write while
+    /// <c>BuildKey</c> is still walking the term) - <c>Build</c> is a purely synchronous traversal that never
+    /// calls back into caller code, so no such reentrant window exists to test against in-process. The actual
+    /// guarantee against a during-construction mutation is structural, not something this test proves: the
+    /// defensive copy in <c>ScopeState</c>'s <see cref="IReadOnlyList{T}"/>-typed constructor runs to
+    /// completion before <c>Build</c> is ever invoked (see <c>ScopeState</c>'s remarks), so by construction
+    /// order there is nothing left for a caller to race against once that constructor returns. This test
+    /// verifies the one half of the guarantee that IS independently observable: no lingering aliasing after
+    /// the call returns.
     /// </summary>
     [TestMethod]
     public void BuildKey_MutatingCallerListAfterConstruction_DoesNotAffectAlreadyBuiltKey()
@@ -278,13 +284,14 @@ public class ExpressionCanonicalOrderScopeStateTests
     // ------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// Mirrors <see cref="BuildKey_MutatingCallerListAfterConstruction_DoesNotAffectAlreadyBuiltKey"/> but with
-    /// a caller-owned <c>ParameterExpression[][]</c> ARRAY rather than a <see cref="List{T}"/> - the exact
-    /// runtime type production's own trusted snapshot also has. Before this round, <c>BuildKey</c>'s generic
-    /// entry point stored such an array directly (matching its runtime type via <c>as</c>), so a caller
-    /// mutating its own array after the call returned could still corrupt an already-built key. The generic
-    /// entry point must now defensively copy this input exactly like any other <see cref="IReadOnlyList{T}"/>
-    /// shape, regardless of its runtime type.
+    /// Mirrors <see cref="BuildKey_MutatingCallerListAfterConstruction_DoesNotAffectAlreadyBuiltKey"/> - same
+    /// POST-return-only scope, same reasoning for why during-construction mutation is not (and cannot be)
+    /// separately exercised here - but with a caller-owned <c>ParameterExpression[][]</c> ARRAY rather than a
+    /// <see cref="List{T}"/>: the exact runtime type production's own trusted snapshot also has. Before this
+    /// round, <c>BuildKey</c>'s generic entry point stored such an array directly (matching its runtime type
+    /// via <c>as</c>), so a caller mutating its own array after the call returned could still corrupt an
+    /// already-built key. The generic entry point must now defensively copy this input exactly like any other
+    /// <see cref="IReadOnlyList{T}"/> shape, regardless of its runtime type.
     /// </summary>
     [TestMethod]
     public void BuildKey_MutatingCallerArrayAfterConstruction_DoesNotAffectAlreadyBuiltKey()
