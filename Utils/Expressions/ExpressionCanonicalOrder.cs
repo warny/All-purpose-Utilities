@@ -123,6 +123,26 @@ internal static class ExpressionCanonicalOrder
     }
 
     /// <summary>
+    /// Zero-copy counterpart of <see cref="BuildKey(Expression?, IReadOnlyList{ParameterExpression[]})"/> for a
+    /// caller that already holds a trusted, exclusively-owned snapshot array - in practice, only
+    /// <see cref="ExpressionSimplifier"/>'s own <c>CaptureLexicalScopeSnapshot</c> result. Overload resolution,
+    /// not a runtime type check, is what selects this path: a caller must declare its variable as the concrete
+    /// <see cref="ParameterExpression"/><c>[][]</c> array type to reach it, so an ordinary
+    /// <see cref="IReadOnlyList{T}"/>-typed caller (including one that happens to hold an array at runtime)
+    /// always goes through the defensive-copying overload above instead - see this class's <see cref="ScopeState"/>
+    /// remarks for why a runtime-type check alone was not a safe way to make this distinction (PR #606 review
+    /// round 2).
+    /// </summary>
+    /// <param name="expression">The (already simplified) expression to key, or <see langword="null"/>.</param>
+    /// <param name="enclosingScopes">A snapshot array the caller guarantees nothing else can reach and mutate.</param>
+    /// <returns>A comparable, deterministic structural key.</returns>
+    internal static KeyNode BuildKeyFromSnapshot(Expression? expression, ParameterExpression[][] enclosingScopes)
+    {
+        var scopes = new ScopeState(enclosingScopes);
+        return Build(expression, ref scopes);
+    }
+
+    /// <summary>
     /// Compares two expressions' complete structural canonical-order keys under the same enclosing scope.
     /// </summary>
     /// <param name="x">The first (already simplified) expression, or <see langword="null"/>.</param>
@@ -156,7 +176,35 @@ internal static class ExpressionCanonicalOrder
         }
 
         var scopes = new ScopeState(enclosingScopes);
+        return BuildKeysCore(expressions, ref scopes);
+    }
 
+    /// <summary>
+    /// Zero-copy counterpart of <see cref="BuildKeys(IReadOnlyList{Expression}, IReadOnlyList{ParameterExpression[]})"/>
+    /// for a caller that already holds a trusted, exclusively-owned snapshot array - see
+    /// <see cref="BuildKeyFromSnapshot(Expression?, ParameterExpression[][])"/> for why overload resolution on the
+    /// concrete array type, not a runtime check, is what gates this path.
+    /// </summary>
+    /// <param name="expressions">The (already simplified) sub-expressions to key, in order.</param>
+    /// <param name="enclosingScopes">A snapshot array the caller guarantees nothing else can reach and mutate.</param>
+    /// <returns>One comparable, deterministic structural key per element of <paramref name="expressions"/>, in the same order.</returns>
+    internal static KeyNode[] BuildKeysFromSnapshot(IReadOnlyList<Expression> expressions, ParameterExpression[][] enclosingScopes)
+    {
+        if (expressions.Count == 0)
+        {
+            return [];
+        }
+
+        var scopes = new ScopeState(enclosingScopes);
+        return BuildKeysCore(expressions, ref scopes);
+    }
+
+    /// <summary>Shared per-element loop backing both <see cref="BuildKeys"/> and <see cref="BuildKeysFromSnapshot"/> once their <see cref="ScopeState"/> has been constructed. Named distinctly from both (rather than overloaded) so reflection-based test lookups of <c>BuildKeys</c> by name alone stay unambiguous.</summary>
+    /// <param name="expressions">The (already simplified), non-empty sub-expressions to key, in order.</param>
+    /// <param name="scopes">The working scope state, shared across every element.</param>
+    /// <returns>One comparable, deterministic structural key per element of <paramref name="expressions"/>, in the same order.</returns>
+    private static KeyNode[] BuildKeysCore(IReadOnlyList<Expression> expressions, ref ScopeState scopes)
+    {
         var keys = new KeyNode[expressions.Count];
         for (int i = 0; i < expressions.Count; i++)
         {
@@ -204,21 +252,23 @@ internal static class ExpressionCanonicalOrder
     /// were supplied.
     /// </para>
     /// <para>
-    /// <b>Snapshot contract preserved (PR #606 review round 1).</b> Every production caller reaches this
-    /// constructor with the exact array <see cref="ExpressionSimplifier"/>'s own
-    /// <c>CaptureLexicalScopeSnapshot</c> already returns (either <see cref="Array.Empty{T}"/> or a fresh
-    /// <c>List{ParameterExpression[]}.ToArray()</c>) - a concrete, already-immutable
-    /// <c>ParameterExpression[][]</c> nothing else can reach and mutate underneath this call, so that exact
-    /// runtime type is stored directly with zero extra allocation. But <c>BuildKey</c>/<c>BuildKeys</c>'
-    /// <c>internal</c> parameter type is the wider <see cref="IReadOnlyList{T}"/>, and the pre-P4 baseline
-    /// unconditionally defensive-copied whatever was passed (via <c>List{T}.AddRange</c>) before returning
-    /// control to the caller - a real behavioral guarantee for any OTHER caller (including this PR's own
-    /// tests, which pass a plain mutable <see cref="List{T}"/> literal) that P4's first pass silently dropped
-    /// by storing the caller's reference directly. Restored here: any <c>enclosingScopes</c> that
-    /// is not already the exact <c>ParameterExpression[][]</c> runtime type is copied ONCE into a fresh array
-    /// before being stored, so a caller mutating its own list concurrently with (or re-entrantly during) this
-    /// key's construction can no longer observe or corrupt it - restoring the pre-P4 guarantee - while the
-    /// hot, exact-array production path stays allocation-free.
+    /// <b>Snapshot contract preserved via overload resolution, not a runtime check (PR #606 review round 2).</b>
+    /// The pre-P4 baseline unconditionally defensive-copied whatever <c>BuildKey</c>/<c>BuildKeys</c> received
+    /// (via <c>List{T}.AddRange</c>) before returning control to the caller - a real behavioral guarantee for
+    /// ANY caller, including this PR's own tests (which pass a plain mutable <see cref="List{T}"/> literal).
+    /// Review round 1 restored that guarantee for non-array inputs, but did so with an <c>as ParameterExpression[][]</c>
+    /// runtime-type check: any caller happening to hold an actual (mutable, not-necessarily-owned)
+    /// <c>ParameterExpression[][]</c> array - not just <see cref="ExpressionSimplifier"/>'s own trusted
+    /// snapshot - would silently skip the defensive copy too, since the check cannot distinguish "this exact
+    /// runtime type" from "this exact runtime type AND I exclusively own it". Round 2 replaces the runtime
+    /// check with two constructor overloads instead: this <see cref="IReadOnlyList{T}"/>-typed constructor
+    /// ALWAYS defensive-copies (used by <c>BuildKey</c>/<c>BuildKeys</c>, the generic entry points), while a
+    /// second, <c>ParameterExpression[][]</c>-typed constructor below skips the copy and is reachable only via
+    /// <c>BuildKeyFromSnapshot</c>/<c>BuildKeysFromSnapshot</c> - internal entry points <see cref="ExpressionSimplifier"/>
+    /// alone calls, with its own <c>CaptureLexicalScopeSnapshot</c> array (either <see cref="Array.Empty{T}"/>
+    /// or a fresh <c>List{ParameterExpression[]}.ToArray()</c>, so never aliased by any other live reference).
+    /// Trust is now expressed at the call site by which method the caller chose to declare/call, not inferred
+    /// from what the runtime happens to hand back.
     /// </para>
     /// <para>
     /// <b>Bound-parameter depth is unchanged.</b> A bound-parameter lookup (see <c>BuildParameter</c>)
@@ -235,8 +285,9 @@ internal static class ExpressionCanonicalOrder
     {
         /// <summary>
         /// The ambient lexical scopes enclosing the term being keyed, outermost first - either the exact
-        /// array the caller supplied (production's zero-allocation path) or a defensive one-time copy of it
-        /// (see this type's remarks). Never mutated or re-copied by this type after construction.
+        /// trusted-snapshot array the caller supplied (the zero-allocation constructor below) or a defensive
+        /// one-time copy of an arbitrary <see cref="IReadOnlyList{T}"/> (see this type's remarks). Never
+        /// mutated or re-copied by this type after construction.
         /// </summary>
         public readonly ParameterExpression[][] EnclosingScopes;
 
@@ -252,11 +303,24 @@ internal static class ExpressionCanonicalOrder
         /// </summary>
         public List<ParameterExpression[]>? NestedScopes;
 
-        /// <summary>Initializes a new <see cref="ScopeState"/> with no nested scopes pushed yet.</summary>
-        /// <param name="enclosingScopes">The ambient lexical scopes enclosing the term being keyed; defensively copied unless already the exact <c>ParameterExpression[][]</c> runtime type.</param>
+        /// <summary>Initializes a new <see cref="ScopeState"/> with no nested scopes pushed yet, always defensively copying <paramref name="enclosingScopes"/> - the generic, not-necessarily-trusted entry point (see this type's remarks).</summary>
+        /// <param name="enclosingScopes">The ambient lexical scopes enclosing the term being keyed; always copied once into a fresh array.</param>
         public ScopeState(IReadOnlyList<ParameterExpression[]> enclosingScopes)
         {
-            EnclosingScopes = enclosingScopes as ParameterExpression[][] ?? CopySnapshot(enclosingScopes);
+            EnclosingScopes = CopySnapshot(enclosingScopes);
+            NestedScopes = null;
+        }
+
+        /// <summary>
+        /// Initializes a new <see cref="ScopeState"/> from an array the caller guarantees is a trusted,
+        /// exclusively-owned snapshot - the zero-allocation entry point, reachable only through
+        /// <c>BuildKeyFromSnapshot</c>/<c>BuildKeysFromSnapshot</c> (see this type's remarks). Stores
+        /// <paramref name="enclosingScopes"/> directly with no copy.
+        /// </summary>
+        /// <param name="enclosingScopes">A snapshot array nothing else can reach and mutate.</param>
+        public ScopeState(ParameterExpression[][] enclosingScopes)
+        {
+            EnclosingScopes = enclosingScopes;
             NestedScopes = null;
         }
 

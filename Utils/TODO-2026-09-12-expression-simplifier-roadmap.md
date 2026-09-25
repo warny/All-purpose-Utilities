@@ -2533,6 +2533,75 @@ still unchanged; only `ScopeState`'s internal field type and the private `Build*
 
 This PR remains opened for review only and is **not** merged.
 
+#### S5 P4 review round 2 (2026-09-25, PR #606 human review at commit `a79fffd4`) — CS1734 fix confirmed; snapshot contract gap on the generic entry point closed
+
+A second human review pass confirmed the round-1 CS1734 fix (a `<paramref name="enclosingScopes"/>` inside
+`ScopeState`'s TYPE-level `<remarks>`, referencing a parameter that does not exist at the type level - only
+the constructor legitimately has one by that name; corrected to a plain `<c>` reference) was correct and
+behavior-preserving. It also confirmed CI's `security-tests` failure at that commit
+(`SmtpClient_SendMailAsync_CancelDuringRcptResponse_PoisonsWithoutRset` expecting an exact `OperationCanceledException`
+type but observing `TaskCanceledException`) was unrelated to this PR - #606 touches only
+`ExpressionCanonicalOrder`, its tests, and this roadmap file - and did not block the finding below.
+
+**Finding - the round-1 fix only restored the snapshot guarantee for NON-array inputs; a caller-owned array
+reaching the generic entry point was still aliased, not copied.** Round 1's `ScopeState` constructor was
+`EnclosingScopes = enclosingScopes as ParameterExpression[][] ?? CopySnapshot(enclosingScopes)` - a RUNTIME
+type check. This correctly restores the pre-P4 snapshot guarantee for a `List<T>` or any other non-array
+shape (round 1's own regression test covers exactly that), but a caller that happens to pass an actual
+`ParameterExpression[][]` array to the GENERIC `BuildKey`/`BuildKeys` entry points (not
+`ExpressionSimplifier`'s own trusted, exclusively-owned snapshot - any other array, including one the caller
+still holds and mutates) also matches `as ParameterExpression[][]` and skips the defensive copy, exactly
+reproducing the aliasing hazard Finding 1 (round 1) had fixed for every OTHER input shape. Before P4, even an
+array input was copied into the working `List<T>`; a runtime-type check alone cannot distinguish "this is the
+exact array type" from "this is the exact array type AND I am the only thing that will ever touch it" - only
+the call site (which method the caller chose) can express that distinction.
+
+Fixed by replacing the single runtime-checked constructor with two separate `ScopeState` constructor
+overloads, selected by the STATIC type of the argument at the call site rather than by inspecting the
+argument's runtime type:
+
+- `ScopeState(IReadOnlyList<ParameterExpression[]> enclosingScopes)` - reached by the generic `BuildKey`/
+  `BuildKeys` entry points - now ALWAYS defensively copies via `CopySnapshot`, unconditionally, regardless of
+  the argument's runtime type.
+- `ScopeState(ParameterExpression[][] enclosingScopes)` - a new zero-copy constructor, reachable only through
+  two new internal entry points, `BuildKeyFromSnapshot(Expression?, ParameterExpression[][])` and
+  `BuildKeysFromSnapshot(IReadOnlyList<Expression>, ParameterExpression[][])`, which store the array directly
+  with no copy.
+
+`ExpressionSimplifier`'s three production call sites (`CanonicalizeAdditiveExpression`'s per-term key,
+`CanonicalizeAdditiveExpression`'s per-argument `BuildKeys` call, and `CanonicalizeMultiplicativeExpression`'s
+per-factor key) now call `BuildKeyFromSnapshot`/`BuildKeysFromSnapshot` instead of the generic entry points,
+with `CaptureLexicalScopeSnapshot()`'s return type narrowed from `IReadOnlyList<ParameterExpression[]>` to the
+concrete `ParameterExpression[][]` so the compiler enforces which overload production reaches - a caller
+cannot reach the zero-copy path by accident, only by explicitly calling the `FromSnapshot` method with a
+statically-typed array. This keeps every production benchmark from round 0/round 1 fully intact (production
+still takes the zero-copy path unconditionally) while making the generic entry points behave identically to
+the pre-P4 baseline for ANY caller, array or not - both are trusted-input-agnostic once again, exactly as they
+were before P4 started.
+
+Two new regression tests in `ExpressionCanonicalOrderScopeStateTests.cs` close the gap concretely:
+`BuildKey_MutatingCallerArrayAfterConstruction_DoesNotAffectAlreadyBuiltKey` (mirrors round 1's
+List-mutation test, but with a caller-owned `ParameterExpression[][]` array instead of a `List<T>` - a key
+already built via the generic `BuildKey` entry point must remain structurally correct after the caller
+mutates that same array's only frame) and `BuildKeyFromSnapshot_ProducesSameKeyAsGenericBuildKey_ForTheSameBoundParameter`
+(the two entry points must remain behaviorally interchangeable for a correctly-behaving caller, differing only
+in whether they copy).
+
+**Compatibility:** `BuildKey`'s/`BuildKeys`' own `internal` signatures are unchanged. `BuildKeyFromSnapshot`/
+`BuildKeysFromSnapshot` are new `internal` surface; `CaptureLexicalScopeSnapshot`'s return type change
+(`IReadOnlyList<ParameterExpression[]>` → `ParameterExpression[][]`) is private to `ExpressionSimplifier`.
+
+**Validation after round-2 fixes (2026-09-25, in order):**
+
+1. `ExpressionCanonicalOrderScopeStateTests` (now 7 tests: round 1's 5 plus this round's 2 new tests) +
+   `ExpressionSimplifierAdditiveSortScaleTests` (6) + `ExpressionSimplifierStructuralCanonicalizationTests`
+   (46): 59/59 passed.
+2. Full `UtilsTest/Mathematics/Expressions` namespace: 620/620 passed.
+3. Full `UtilsTest.Unit`: 7845/7845 passed, 0 skipped.
+4. Release build of `Utils.sln`: succeeded, 0 errors (confirms the round-1 CS1734 fix independently).
+
+This PR remains opened for review only and is **not** merged.
+
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.

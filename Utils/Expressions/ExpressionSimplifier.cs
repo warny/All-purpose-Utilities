@@ -293,13 +293,17 @@ namespace Utils.Mathematics.Expressions
         }
 
         /// <summary>
-        /// Captures an immutable snapshot of the currently-open lambda parameter scopes (outermost first)
-        /// for use by <see cref="ExpressionCanonicalOrder.BuildKey"/>/<see cref="ExpressionCanonicalOrder.Compare"/>.
+        /// Captures an immutable snapshot of the currently-open lambda parameter scopes (outermost first) for
+        /// use by <see cref="ExpressionCanonicalOrder.BuildKeyFromSnapshot"/>/<see cref="ExpressionCanonicalOrder.BuildKeysFromSnapshot"/>.
         /// Taken once per canonicalization call: every term/factor being ordered in that one call is a
-        /// sibling sub-expression of the same node, so they all share the same enclosing scope.
+        /// sibling sub-expression of the same node, so they all share the same enclosing scope. Declared to
+        /// return the concrete array type (not <see cref="IReadOnlyList{T}"/>) so callers can reach
+        /// <c>ExpressionCanonicalOrder</c>'s zero-copy snapshot overloads - this array is fresh (or the shared
+        /// <see cref="Array.Empty{T}"/> instance) and nothing else retains a reference to it, which is exactly
+        /// what those overloads require (PR #606 review round 2).
         /// </summary>
         /// <returns>The snapshot; empty when no lambda currently encloses the node being canonicalized.</returns>
-        private static IReadOnlyList<ParameterExpression[]> CaptureLexicalScopeSnapshot()
+        private static ParameterExpression[][] CaptureLexicalScopeSnapshot()
             => LexicalScopeStack.Count == 0 ? [] : LexicalScopeStack.ToArray();
 
         #endregion
@@ -1404,7 +1408,7 @@ namespace Utils.Mathematics.Expressions
                 return Expression.Constant(Convert.ChangeType(0, left.Type), left.Type);
             }
 
-            IReadOnlyList<ParameterExpression[]> scopes = CaptureLexicalScopeSnapshot();
+            ParameterExpression[][] scopes = CaptureLexicalScopeSnapshot();
 
             var annotatedTerms = new List<AnnotatedAdditiveTerm>(terms.Count);
             foreach ((Expression term, bool isNegative) in terms)
@@ -1414,11 +1418,12 @@ namespace Utils.Mathematics.Expressions
                 // Precompute every structural key CompareAdditiveGroupingOrder will need for this term
                 // exactly once here (roadmap S5, P1), instead of letting the O(n log n) sort below rebuild
                 // them from scratch on every pairwise comparison. An opaque term's own complete key (built
-                // right below) IS ExpressionCanonicalOrder.BuildKey(group.Opaque, scopes) - group.Opaque is
-                // this same term - so CompareAdditiveGroupingOrder reuses it directly instead of a second
-                // ArgumentKeys array. A function-like term additionally needs each ARGUMENT's own key (the
-                // primary sort's function-like branch orders by argument-list identity, not by the whole
-                // term/exponent), computed once via BuildKeys so every argument shares one working scope list.
+                // right below) IS ExpressionCanonicalOrder.BuildKeyFromSnapshot(group.Opaque, scopes) -
+                // group.Opaque is this same term - so CompareAdditiveGroupingOrder reuses it directly instead
+                // of a second ArgumentKeys array. A function-like term additionally needs each ARGUMENT's own
+                // key (the primary sort's function-like branch orders by argument-list identity, not by the
+                // whole term/exponent), computed once via BuildKeysFromSnapshot so every argument shares one
+                // working scope list.
                 //
                 // group.Arguments/group.Opaque themselves are NOT retained on the annotation below (S5
                 // review round 3): only the two scalar fields CompareAdditiveGroupingOrder actually still
@@ -1426,7 +1431,7 @@ namespace Utils.Mathematics.Expressions
                 // AnnotatedAdditiveTerm - copied repeatedly through OrderBy/GroupBy - smaller than carrying
                 // the whole AdditiveGroupClass (with its two now-unused reference-type fields) would.
                 IReadOnlyList<ExpressionCanonicalOrder.KeyNode>? argumentKeys = group.IsFunctionLike
-                    ? ExpressionCanonicalOrder.BuildKeys(group.Arguments!, scopes)
+                    ? ExpressionCanonicalOrder.BuildKeysFromSnapshot(group.Arguments!, scopes)
                     : null;
 
                 annotatedTerms.Add(new AnnotatedAdditiveTerm(
@@ -1434,7 +1439,7 @@ namespace Utils.Mathematics.Expressions
                     isNegative,
                     group.IsFunctionLike,
                     group.CategoryOrder,
-                    ExpressionCanonicalOrder.BuildKey(term, scopes),
+                    ExpressionCanonicalOrder.BuildKeyFromSnapshot(term, scopes),
                     argumentKeys));
             }
 
@@ -1466,10 +1471,10 @@ namespace Utils.Mathematics.Expressions
             CollectMultiplicativeFactors(factors, left);
             CollectMultiplicativeFactors(factors, right);
 
-            IReadOnlyList<ParameterExpression[]> scopes = CaptureLexicalScopeSnapshot();
+            ParameterExpression[][] scopes = CaptureLexicalScopeSnapshot();
 
             var orderedFactors = factors
-                .OrderBy(factor => ExpressionCanonicalOrder.BuildKey(factor, scopes))
+                .OrderBy(factor => ExpressionCanonicalOrder.BuildKeyFromSnapshot(factor, scopes))
                 .ToList();
 
             return BuildRightAssociative(orderedFactors, Expression.Multiply);

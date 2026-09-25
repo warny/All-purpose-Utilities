@@ -37,6 +37,10 @@ public class ExpressionCanonicalOrderScopeStateTests
     private static readonly MethodInfo BuildKeyMethod = ExpressionCanonicalOrderType.GetMethod(
         "BuildKey", BindingFlags.NonPublic | BindingFlags.Static)!;
 
+    /// <summary>Reflected <c>ExpressionCanonicalOrder.BuildKeyFromSnapshot(Expression, ParameterExpression[][])</c> helper (PR #606 review round 2).</summary>
+    private static readonly MethodInfo BuildKeyFromSnapshotMethod = ExpressionCanonicalOrderType.GetMethod(
+        "BuildKeyFromSnapshot", BindingFlags.NonPublic | BindingFlags.Static)!;
+
     /// <summary>Reflected internal <c>ExpressionCanonicalOrder.KeyNode</c> nested type.</summary>
     private static readonly Type KeyNodeType = ExpressionCanonicalOrderType.GetNestedType("KeyNode", BindingFlags.NonPublic)!;
 
@@ -49,6 +53,13 @@ public class ExpressionCanonicalOrderScopeStateTests
     /// <returns>The resulting key, boxed as <see cref="object"/> since the concrete <c>KeyNode</c> type is internal.</returns>
     private static object InvokeBuildKey(Expression expression, IReadOnlyList<ParameterExpression[]> enclosingScopes) =>
         BuildKeyMethod.Invoke(null, [expression, enclosingScopes])!;
+
+    /// <summary>Invokes the internal, zero-copy <c>ExpressionCanonicalOrder.BuildKeyFromSnapshot</c> helper via reflection, without changing its accessibility.</summary>
+    /// <param name="expression">The expression to key.</param>
+    /// <param name="enclosingScopes">A trusted snapshot array, stored directly with no defensive copy.</param>
+    /// <returns>The resulting key, boxed as <see cref="object"/> since the concrete <c>KeyNode</c> type is internal.</returns>
+    private static object InvokeBuildKeyFromSnapshot(Expression expression, ParameterExpression[][] enclosingScopes) =>
+        BuildKeyFromSnapshotMethod.Invoke(null, [expression, enclosingScopes])!;
 
     /// <summary>Invokes the internal <c>ExpressionCanonicalOrder.Compare</c> helper via reflection, without changing its accessibility.</summary>
     /// <param name="x">The first expression.</param>
@@ -251,5 +262,72 @@ public class ExpressionCanonicalOrderScopeStateTests
         Assert.AreEqual(0, comparison,
             "A key already built from a caller-supplied List must remain structurally correct (still a bound " +
             "parameter at depth 0, position 0) even after the caller later clears that same list instance.");
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // PR #606 review round 2: the generic BuildKey/BuildKeys entry points must defensively copy
+    // EVERY IReadOnlyList<ParameterExpression[]> input, including one whose runtime type happens to
+    // be the exact production ParameterExpression[][] array - not just non-array shapes like List<T>.
+    // Round 1 restored the snapshot guarantee only for non-array inputs (an `as ParameterExpression[][]`
+    // runtime-type check let an arbitrary caller-owned array through the zero-copy path too). Round 2
+    // replaces that runtime check with two ScopeState constructor overloads selected by the STATIC
+    // type of the argument at the call site: the generic, IReadOnlyList<T>-typed constructor (reached
+    // by BuildKey/BuildKeys below) always copies; only the internal BuildKeyFromSnapshot/
+    // BuildKeysFromSnapshot entry points (production's own, exclusively-owned CaptureLexicalScopeSnapshot
+    // result) reach the zero-copy ParameterExpression[][]-typed constructor.
+    // ------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// Mirrors <see cref="BuildKey_MutatingCallerListAfterConstruction_DoesNotAffectAlreadyBuiltKey"/> but with
+    /// a caller-owned <c>ParameterExpression[][]</c> ARRAY rather than a <see cref="List{T}"/> - the exact
+    /// runtime type production's own trusted snapshot also has. Before this round, <c>BuildKey</c>'s generic
+    /// entry point stored such an array directly (matching its runtime type via <c>as</c>), so a caller
+    /// mutating its own array after the call returned could still corrupt an already-built key. The generic
+    /// entry point must now defensively copy this input exactly like any other <see cref="IReadOnlyList{T}"/>
+    /// shape, regardless of its runtime type.
+    /// </summary>
+    [TestMethod]
+    public void BuildKey_MutatingCallerArrayAfterConstruction_DoesNotAffectAlreadyBuiltKey()
+    {
+        ParameterExpression p = Expression.Parameter(typeof(double), "p");
+        ParameterExpression[][] mutableArrayScopes = [[p]];
+
+        object keyBuiltBeforeMutation = InvokeBuildKey(p, mutableArrayScopes);
+
+        // Mutate the caller's own array AFTER BuildKey has already returned: replace its only frame with one
+        // that does not bind p at all, so a corrupted (aliased) snapshot would resolve p as free instead of
+        // as a depth-0/position-0 bound parameter.
+        mutableArrayScopes[0] = [Expression.Parameter(typeof(double), "unrelated")];
+
+        object referenceKey = InvokeBuildKey(p, new ParameterExpression[][] { new[] { p } });
+
+        int comparison = (int)KeyNodeCompareToMethod.Invoke(keyBuiltBeforeMutation, [referenceKey])!;
+        Assert.AreEqual(0, comparison,
+            "A key already built from a caller-supplied ParameterExpression[][] array via the generic BuildKey " +
+            "entry point must remain structurally correct (still a bound parameter at depth 0, position 0) " +
+            "even after the caller later replaces that same array's only frame.");
+    }
+
+    /// <summary>
+    /// <c>BuildKeyFromSnapshot</c> (the zero-copy, trusted-snapshot entry point production actually calls) must
+    /// resolve the SAME bound-parameter key as the generic, defensive-copying <c>BuildKey</c> entry point for
+    /// the same logical input - the two constructors <c>ScopeState</c> now exposes must remain
+    /// behaviorally interchangeable for correctly-behaving callers, differing only in whether they copy.
+    /// </summary>
+    [TestMethod]
+    public void BuildKeyFromSnapshot_ProducesSameKeyAsGenericBuildKey_ForTheSameBoundParameter()
+    {
+        ParameterExpression p = Expression.Parameter(typeof(double), "p");
+        ParameterExpression[][] snapshotScopes = [[p]];
+
+        object keyViaSnapshot = InvokeBuildKeyFromSnapshot(p, snapshotScopes);
+        object keyViaGeneric = InvokeBuildKey(p, new ParameterExpression[][] { new[] { p } });
+
+        int forward = (int)KeyNodeCompareToMethod.Invoke(keyViaSnapshot, [keyViaGeneric])!;
+        int backward = (int)KeyNodeCompareToMethod.Invoke(keyViaGeneric, [keyViaSnapshot])!;
+
+        Assert.AreEqual(0, forward,
+            "BuildKeyFromSnapshot must produce the same bound-parameter key as the generic BuildKey entry point.");
+        Assert.AreEqual(0, backward, "The comparison must be symmetric for a tie.");
     }
 }
