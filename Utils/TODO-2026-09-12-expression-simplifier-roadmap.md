@@ -2617,6 +2617,210 @@ in whether they copy).
 
 This PR remains opened for review only and is **not** merged.
 
+#### S5 progress (2026-09-26) — P5: comparer-driven re-simplification reuse, benchmarked and REJECTED
+
+**Baseline.** `master` at `103fdbbf5244a1e6c1449169b207d6577dadc943` (PR #606, the P4 commit) - confirmed to
+be current `master` (`git fetch origin` + `git rev-parse origin/master`) before branching; `origin/master` did
+not advance during this work, so no rebase was needed before the validation below.
+
+**Audited finding, as given (not re-derived here).** `TransformCore` is deliberately one-pass at a matched
+root, so `ExpressionComparer` legitimately performs a second public simplification pass; P3 (S5, already
+merged) deduplicates a candidate's re-simplification only WITHIN one `AdditionOfEqualsElements`/
+`SubstractionOfEqualsElements` rule invocation, via a per-invocation `FactorEqualityProbe`. A deeply nested,
+left-associated additive/subtractive chain creates a NEW `FactorEqualityProbe` at every level, discarded once
+that level's rule invocation returns, so nothing is carried over between levels. The task brief characterized
+this as the reason public `Simplify()` end-to-end cost so far exceeds directly benchmarked canonicalization
+cost, and prescribed a second, narrower, `[ThreadStatic]`, top-level-`Transform`-scoped cache - keyed by
+operand object reference, restricted to a lambda-free ordinary-arithmetic eligibility subset - as a secondary
+source behind `FactorEqualityProbe`'s own local cache.
+
+**Implementation (exactly as prescribed).** `Utils/Expressions/ExpressionSimplifier.cs`:
+
+- `[ThreadStatic] Dictionary<Expression, Expression>? _factorComparisonSimplificationCache` and
+  `[ThreadStatic] bool _factorComparisonSimplificationCacheActive`, keyed with
+  `ReferenceEqualityComparer.Instance`, dictionary allocated lazily only when an eligible result is first
+  ready to store.
+- `Transform(Expression)` (the existing top-level boundary that already saves/restores `_lexicalScopeStack`)
+  extended to also save `_factorComparisonSimplificationCache`/`_factorComparisonSimplificationCacheActive`,
+  reset the cache to `null` and the active flag to `true` before calling `TransformCore`, and restore both in
+  `finally` - giving every top-level `Transform`/`Simplify` call, including `ExpressionComparer.SimplifyForComparison`'s
+  own re-entrant call through the exact same method, its own independent, empty P5 boundary, exactly like the
+  pre-existing lexical-scope boundary.
+- `CanReuseFactorComparisonAcrossRuleInvocations(Expression?)` (private `static`): `true` only for `null`
+  (an absent `Conversion`), a numeric `ParameterExpression`, a native-numeric non-null `ConstantExpression`,
+  an `IsOrdinaryUnaryNegate` unary over an eligible operand, or an `IsOrdinaryBinaryArithmetic` binary whose
+  `Left`/`Right`/`Conversion` are all recursively eligible - `false` for every other node kind (method calls,
+  member access, lambdas, custom/lifted operators, opaque constants, conditionals, extension nodes), strictly
+  narrower than `FactorEqualityProbe.MightInvokeUserCodeWhenSimplified`'s own per-rule-invocation predicate.
+- `TryGetFactorComparisonSimplification`/`CacheFactorComparisonSimplification` (private `static`): read/write
+  the shared cache, both no-ops (the former a miss, the latter nothing stored) when
+  `_factorComparisonSimplificationCacheActive` is `false`.
+- `FactorEqualityProbe.GetOrSimplify` modified exactly as prescribed: on a local-cache miss, classify the
+  operand via `CanReuseFactorComparisonAcrossRuleInvocations`; if eligible, consult the shared cache before
+  calling `ExpressionComparer.SimplifyForComparison`; after a successful simplification, store it in both the
+  local (P3) cache and, if eligible, the shared (P5) cache. `IsCacheable`'s classification, its ordering
+  relative to `GetOrSimplify` (round-7 fix), `Equals`'s three-step contract
+  (`TryFastPathEquals`/`SimplifyForComparison`/`StructuralEqualsAfterSimplification`), and every other P3
+  behavior were left unmodified.
+
+No change was made to `ExpressionComparer.cs`, `ExpressionTransformer`, rule ordering, `TransformCore`'s
+one-pass contract, or bottom-up canonicalization, per the task brief's explicit boundaries. A temporary public
+`static long ExpressionComparer.DiagnosticSimplifyForComparisonCallCount` counter, incremented at the single
+`SimplifyForComparison` entry point, was added for the diagnostic benchmark below and fully reverted before
+this commit (confirmed by `git diff`/`git status` showing no changes to `ExpressionComparer.cs` in the final
+state of this branch).
+
+**Why nested/re-entrant `Simplify()` calls stay correctly isolated (and why that is exactly what defeats this
+cache - see the rejection below).** Every call to `ExpressionComparer.SimplifyForComparison` - including one
+triggered from deep inside `FactorEqualityProbe.GetOrSimplify` itself, synchronously nested within an
+already-in-progress outer `Transform` call on the same thread - re-enters through the same `Transform` method,
+which unconditionally resets `_factorComparisonSimplificationCache` to `null` and restores the caller's cache
+only in its `finally` block once that nested call returns. This is required for correctness (per the task
+brief's own section 6.2/6.3: a nested call must never consume or leak into the outer traversal's cache), and
+was implemented exactly as specified. The consequence, discovered only once end-to-end call-count/allocation
+data was in hand (see below), is that the shared cache can only ever be *populated* by, and *read back from*,
+comparisons made directly within `FactorEqualityProbe.GetOrSimplify` at the SAME tree level as each other -
+never by the (expensive, exponential) recursive re-walk that happens *inside* a nested `SimplifyForComparison`
+call, since that recursion reaches numeric-constant folding (`AdditionOfConstants`, etc.) directly through
+ordinary bottom-up `TransformCore` descent, never through `FactorEqualityProbe`/the P5 cache at all.
+
+**Benchmark methodology.** Standalone temporary console harness (not part of this repository; built and run
+from this session's scratch directory), Windows 11, .NET 8.0.31, Release, `ProjectReference` to `Utils.csproj`.
+Primary metric: PUBLIC end-to-end `new ExpressionSimplifier().Simplify(source)`, per the task brief's own
+requirement (not a direct reflected-rule micro-benchmark). Each scenario built its source expression once
+outside the measured region, ran a budget-based warmup (up to 500 ms or a size-dependent iteration cap,
+whichever came first - not a fixed 2 000-iteration token warmup), then measured with `GC.Collect()` x2 before
+starting the clock, `Stopwatch` for elapsed time, and `GC.GetAllocatedBytesForCurrentThread()` for allocation,
+both around a budget-based measurement loop (up to 2-5 seconds or a size-dependent iteration cap). Baseline and
+candidate were run as two separate process invocations of the same harness, rebuilt against the corresponding
+commit. A single untimed `SimplifyForComparison`-call counter (the temporary diagnostic field above) was read
+before/after the measurement loop and divided by the iteration count to report calls/op.
+
+**Combinatorial cost growth forced n=32 (and, for one control family, n=16) out of scope as infeasible.** The
+task brief's own families A/B/C use a left-associated chain of `n` terms with NO shared factor (family A/B) or
+one shared bound lambda (family C). Measured directly: family A's allocation per call grew from 52 204 B (n=4)
+to 972 158 B (n=8, ×18.6) to 252 295 040 B (n=16, ×259.5) - consistent with roughly doubling cost per
+*additional term*, i.e. `O(2^n)`, not the polynomial growth the already-merged P1-P4 canonicalization fixes
+exhibit. Extrapolating this ratio, n=32 was estimated at multiple hours per call and was never attempted for
+any family (the harness aborts a size sweep once the previous size's measured cost exceeds 10 ms/op, rather
+than probing the next size directly and risking an unbounded single call - the very first, naive attempt at
+this benchmark had to be killed mid-run at n=16 for exactly this reason before this safeguard was added).
+Family G (multiplicative-only control) unexpectedly showed the SAME combinatorial growth pattern (7 406 B at
+n=4 to 38 067 111 B at n=16, ×5 143) despite performing no `Add`/`Subtract` factoring at all - confirming, as
+disclosed rather than investigated further (out of scope for this PR), that at least one OTHER, unrelated
+resimplification hazard exists in the multiplicative rule family (`Multiplication`'s constant-folding rules
+call `ExpressionComparer`-adjacent machinery independently of `AdditionOfEqualsElements`/
+`SubstractionOfEqualsElements` - see `ExpressionSimplifier.cs`'s multiplication region); G was therefore also
+capped at n=16 for the same infeasibility reason, unrelated to this PR's own change.
+
+**Results (n=4/8/16; B/op deterministic and reproduced byte-for-byte across repeated runs of the SAME commit;
+ns/op noisier run-to-run and reported for completeness only, per this stage's own "disclose, do not
+overinterpret timing noise" rule):**
+
+| Scenario | Baseline B/op | Candidate B/op | Δ B/op | Baseline SimplifyForComparisonCalls/op | Candidate SimplifyForComparisonCalls/op |
+| --- | --- | --- | --- | --- | --- |
+| A (additive near-miss) n=4 | 52 204.0 | 55 116.7 | **+2 912.7 (+5.6%)** | 50.00 | 50.00 |
+| A n=8 | 972 158.4 | 1 023 113.7 | **+50 955.3 (+5.2%)** | 890.00 | 890.00 |
+| A n=16 | 252 295 040.0 | 265 421 088.0 | **+13 126 048 (+5.2%)** | 229 370.00 | 229 370.00 |
+| B (subtractive near-miss) n=4 | 101 170.8 | 103 556.7 | **+2 385.9 (+2.4%)** | 90.00 | 88.00 |
+| B n=8 | 2 691 172.0 | 2 803 726.3 | **+112 554.3 (+4.2%)** | 2 418.00 | 2 338.00 |
+| B n=16 | 755 953 896.0 | 795 117 036.0 | **+39 163 140 (+5.2%)** | 687 090.00 | 686 102.00 |
+| C (bound-lambda additive) n=4 | 53 020.5 | 55 933.1 | **+2 912.6 (+5.5%)** | 50.00 | 50.00 |
+| C n=8 | 973 686.0 | 1 024 641.5 | **+50 955.5 (+5.2%)** | 890.00 | 890.00 |
+| C n=16 | 252 297 063.2 | 265 423 222.1 | **+13 126 158.9 (+5.2%)** | 229 370.00 | 229 370.00 |
+| F (function-like control) n=4 | 58 333.7 | 59 693.7 | **+1 360.0 (+2.3%)** | 50.00 | 50.00 |
+| F n=8 | 1 085 351.6 | 1 111 341.6 | **+25 990.0 (+2.4%)** | 890.00 | 890.00 |
+| F n=16 | 281 659 261.7 | 288 382 498.3 | **+6 723 236.6 (+2.4%)** | 229 370.00 | 229 370.00 |
+| G (multiplicative, no-factoring) n=4 | 7 320.1 | 7 320.1 | 0 (unchanged) | 14.00 | 14.00 |
+| G n=8 | 139 377.7 | 139 377.7 | 0 (unchanged) | 254.00 | 254.00 |
+| G n=16 | 36 223 093.0 | 36 223 094.3 | +1.3 (noise-level) | 65 534.00 | 65 534.00 |
+| D (second-pass shape) | AST check | PASS both | - | - | - |
+| E (hostile-constant invocation count) | `Equals` called 1x/call, both | unchanged | - | - | - |
+
+CPU (`ns/op`) moved in the same direction as allocation for A/B/C/F (roughly +2-7% candidate-slower, noisier
+run-to-run than the allocation figures) and was flat for G, consistent with the allocation story rather than
+contradicting it.
+
+**Causal analysis: WHY the cache never gets a hit for these families, and why it still costs allocation.**
+Traced by hand against the actual `AdditionOfEqualsElements`/`SubstractionOfEqualsElements` control flow for
+family A's near-miss shape: at each nesting level, the accumulated left subtree is augmented (`leftleft =
+Constant(1)`, `leftright = <the whole accumulated subtree>`), so `GetOrSimplify` is called on that whole
+subtree - which IS eligible (built only from `Add`/`Multiply`/numeric parameters/constants) - but that
+subtree object is used at MOST twice within that ONE level's `FactorEqualityProbe` (already deduplicated by
+P3 alone) and is NEVER passed to a DIFFERENT `FactorEqualityProbe` instance again: the next level up receives
+a NEW, larger accumulated object (the previous one plus one more term), never the SAME reference. The
+expensive part - `ExpressionComparer.SimplifyForComparison` re-walking that whole accumulated subtree from
+scratch - happens through the SimplifyForComparison call's OWN, freshly-isolated `Transform` boundary (as it
+must, by design - see above), which cannot see, populate, or benefit from the OUTER cache at all; the
+recursive explosion this causes is entirely internal to that nested, independent traversal, which itself hits
+the identical pattern one level down, giving the observed `O(2^n)` growth. The SAME reasoning applies to a
+"successful factoring" shape (e.g. `2*x + 3*x + 4*x + ...`, all sharing one variable, traced by hand but not
+separately benchmarked): each successful factor wraps the previous coefficient sub-expression into a BRAND
+NEW, never-before-seen composite node before the next level's comparison, so the previously-cached inner
+coefficient is never looked up again as a direct candidate either - it becomes an inert child of a new object,
+and the new object's OWN later resimplification reaches it (if at all) by ordinary constant-folding through
+`TransformCore`, never through `FactorEqualityProbe`. In short: successfully caching an operand at level K
+does not help level K+1, because level K+1 never re-presents that SAME object to `FactorEqualityProbe` - it
+always presents a newly constructed super-tree instead. Meanwhile, the added `CanReuseFactorComparisonAcrossRuleInvocations`
+recursive tree walk runs on every `GetOrSimplify` miss (i.e. on every distinct accumulated subtree, at every
+level, for these families) and, when eligible, records an entry in the shared dictionary that is never
+subsequently read back - consistent with, and sufficient to fully explain, the measured allocation increase
+(dictionary growth/resizing for entries that are written once and never hit), without needing to invoke any
+other mechanism.
+
+**Family G's neutrality is the one prediction this experiment confirmed exactly.** Since G never calls
+`AdditionOfEqualsElements`/`SubstractionOfEqualsElements` at all, `FactorEqualityProbe`/the P5 cache is never
+constructed or consulted, and the measured allocation is either byte-identical (n=4/n=8) or different by 1.3
+bytes at n=16 (measurement-level noise, not a real per-call cost) - confirming the new top-level cache
+boundary genuinely costs nothing when unused, exactly as the task brief's own acceptance bar for this control
+requires.
+
+**Performance acceptance: NOT met - REJECTED.** Per the task brief's own required bar ("For at least A and B
+at n>=8: nested `SimplifyForComparison` calls clearly decrease; allocations clearly decrease... Treat >5%
+repeatable CPU regression or a repeatable allocation regression at n>=8 as a failure"): nested call counts were
+UNCHANGED (A, C, F: byte-for-byte identical; B: a statistically insignificant ~0.14% decrease, most likely
+sampling noise at only 4 measured iterations) rather than decreased, and allocation at n=8/n=16 INCREASED by a
+reproducible ~2-6% across every family that exercises the modified rules (A, B, C, F), clearing the stated >5%
+regression threshold for A, C, and B (n=16). G alone met its own neutrality bar. Per the task brief's own
+explicit instruction for this outcome, **the production change is reverted in full** (`Utils/Expressions/ExpressionSimplifier.cs`
+is unchanged from the `103fdbbf...` baseline on this branch) rather than substituted with a different,
+un-reviewed optimization. No new tests were added, since there is no shipped behavior change to cover; the
+full pre-existing `ExpressionSimplifierComparerBatchingTests` suite (P3's own regression coverage, listed in
+the task brief as mandatory-unchanged) was re-run against the reverted tree to confirm it is exactly the
+already-merged P3/P4 baseline.
+
+**Validation (2026-09-26, on the reverted tree, in order):**
+
+1. `ExpressionSimplifierComparerBatchingTests` (13 tests, P3's own regression suite): 13/13 passed, unchanged.
+2. `ExpressionSimplifierStructuralCanonicalizationTests`: 46/46 passed, unchanged.
+3. `UtilsTest.Mathematics.Expressions` namespace (`--filter "FullyQualifiedName~UtilsTest.Mathematics.Expressions"`):
+   484/484 passed.
+4. Release build of `Utils.sln`: succeeded, 0 errors, warnings unchanged from the `103fdbbf...` baseline.
+5. `git diff`/`git status` against `103fdbbf...` for `Utils/Expressions/ExpressionSimplifier.cs` and
+   `Utils/Expressions/ExpressionComparer.cs`: empty - confirms both the rejected P5 change and the temporary
+   diagnostic counter were fully reverted.
+6. `master` re-checked immediately before this validation (`git fetch origin` + `git rev-parse`): unchanged at
+   `103fdbbf...`, so no rebase was needed before opening the PR.
+
+**S5 follow-ups still open (unchanged by this PR, listed here again for continuity, plus one new item this
+investigation surfaced):**
+
+- The end-to-end nested-canonicalization/re-simplification construction-cost hazard remains open. This PR's
+  own investigation narrows *why* P3-style per-invocation caching cannot close it further: the redundant work
+  lives inside independently-isolated nested `Simplify()` traversals (required for correctness), not in
+  cross-rule reuse opportunities within a single traversal - so any future attempt at this hazard needs a
+  fundamentally different mechanism (for example, proving when a nested `SimplifyForComparison` call's input
+  is ALREADY a fixed point and can be skipped entirely, which is a correctness-sensitive change well beyond
+  this stage's "reuse only" boundary) rather than a wider cache.
+- **New:** family G's own combinatorial cost growth (unrelated to `AdditionOfEqualsElements`/
+  `SubstractionOfEqualsElements`, confirmed by this PR's benchmark) indicates a SEPARATE resimplification
+  hazard somewhere in the multiplicative rule family, not yet characterized or audited.
+- Reflection-metadata caching for `CompareType`/`CompareMethod`/`CompareMember` remains unexplored, as noted
+  throughout S4/S5.
+
+This PR is opened for review only and is **not** merged, per the task brief. It ships a documentation-only
+change (this roadmap entry); no production or test code differs from the `103fdbbf...` baseline.
+
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.
