@@ -2672,3 +2672,59 @@ Consider additional benchmark-driven rewrites such as factorization, reassociati
 - Every production change receives focused tests.
 - If `Utils` changes, run Unit, Functional and Security test projects plus a Release build.
 - Keep `Utils/Utils.csproj` on `net8.0` until its dependent projects are upgraded together.
+
+## S5 P5 — cross-rule comparer re-simplification cache (rejected experiment, 2026-10-01)
+
+### Audited finding
+
+- `TransformCore` is deliberately one-pass at a matched root.
+- `ExpressionComparer` therefore legitimately performs a second public simplification pass.
+- P3 deduplicates candidates only within one Add/Sub factoring-rule invocation.
+- Deeply nested left-associated expressions create many independent probes.
+- The same growing arithmetic subtree can consequently be comparer-simplified again at parent levels.
+- Sharing arbitrary `TransformCore` results is unsafe because of lexical scopes, public-comparer top-level
+  isolation, and observable user code.
+- P5 therefore evaluated sharing only successfully comparer-simplified, ordinary lambda-free numeric
+  arithmetic subtrees, and only inside one public `Transform` call.
+
+The experiment used base `11ab6df13848b8b494790a44c588b13ed713a282` (the locally available current
+`master` descendant of audited SHA `103fdbbf5244a1e6c1449169b207d6577dadc943`; this checkout has no configured
+Git remote, so an origin fetch could not be performed). It added a lazy, reference-identity dictionary plus
+an active flag as `[ThreadStatic]` state, saved/reset/restored both in `Transform` alongside the lexical scope,
+and consulted that cache only after P3 had classified both operands. Nested public/comparer `Simplify()` calls
+therefore established fresh sessions and restored their caller's session. Eligibility was restricted exactly
+to non-null native numeric constants, numeric parameters, ordinary numeric negation, and ordinary non-lifted
+Add/Subtract/Multiply/Divide/Power trees (including every non-null conversion child). Custom/lifted operators,
+lambdas, calls, members, opaque constants, and every other node kind were rejected.
+
+A standalone Release harness outside the repository preconstructed every expression, warmed each scenario for
+at least 700 ms, calibrated measurement work for at least 250 ms, measured elapsed time and
+`GC.GetAllocatedBytesForCurrentThread()`, and used a temporary counter at the single
+`ExpressionComparer.SimplifyForComparison` entry point. The counter was removed after measurement. Results are
+per public `new ExpressionSimplifier().Simplify(source)` call:
+
+| Family | n | Baseline ms | Candidate ms | Baseline bytes | Candidate bytes | Baseline calls | Candidate calls |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| A additive near miss | 4 | 0.6564 | 0.7752 | 53,616 | 56,534 | 50 | 50 |
+| A additive near miss | 8 | 1.8179 | 1.7815 | 997,482 | 1,048,442 | 890 | 890 |
+| B subtraction near miss | 4 | 0.2261 | 0.8730 | 103,105 | 105,497 | 90 | 88 |
+| B subtraction near miss | 8 | 5.4776 | 5.5713 | 2,755,211 | 2,867,711 | 2,418 | 2,338 |
+
+A second candidate timing run showed the same qualitative result (A/B n=8: 2.1777/6.0951 ms; allocations
+1,048,433/2,867,682 bytes; counts 890/2,338). Bound-additive candidate controls measured 0.1087 ms,
+57,344 bytes and 50 calls at n=4, and 1.9621 ms, 1,049,970 bytes and 890 calls at n=8. The function-like
+n=16 control measured 978.78 ms and 318,474,981 bytes; the multiplication-only n=16 control measured
+0.0188 ms and 12,929 bytes. Larger baseline cases were stopped after n=16 became excessively expensive
+(A: 676.60 ms/258,821,589 bytes/229,370 calls; B: 1,715.58 ms/775,477,165 bytes/687,090 calls), so n=32
+was not used and no unsupported large-size conclusion is claimed.
+
+The diagnostic establishes that the prescribed reference-keyed cache produced no reduction for additive
+A and only a small reduction for subtraction B at n=8, while allocations increased by about 5.1% and 4.1%
+respectively. It therefore failed the required causal-call and allocation acceptance criteria. The production
+implementation and its proposed focused tests were reverted; no runtime or public API change is shipped.
+Bottom-up repeated canonicalization remains intentionally untouched and is still a separate follow-up.
+
+Validation of the final state is documentation-only: `git diff --check` passed, and the temporary diagnostic
+changes were confirmed absent. No test suite was required or run against the reverted production experiment's
+final state. The prescribed implementation is the only rejected experiment recorded here; no alternative
+optimization was substituted.
