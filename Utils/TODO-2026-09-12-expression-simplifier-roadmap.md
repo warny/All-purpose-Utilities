@@ -2673,6 +2673,65 @@ changes were confirmed absent. No test suite was required or run against the rev
 final state. The prescribed implementation is the only rejected experiment recorded here; no alternative
 optimization was substituted.
 
+
+#### S5 P6 — strict structural memoization inside recursive factoring comparisons
+
+**Rejected experiment (2026-10-01).** The experiment used audited/current base
+`34f21f1f81246bb1b5edfa3d8c9b9e0ba4a2e061`; the two target expression files were unchanged from that
+base. P5's reference identity missed rebuilt equivalent expressions. Although bottom-up canonicalization is
+also present, it cannot safely be skipped generically because parent rules observe prepared child shapes.
+The dominant audited symptom was recursive comparer simplification, so P6 left transformation,
+canonicalization, rule ordering, and the public comparer contract untouched and deduplicated only completed,
+safe comparer simplifications.
+
+The candidate added a thread-static session owned by each disposable `FactorEqualityProbe`. Nested probes
+incremented the depth and shared the same cache; the outermost exit cleared the first source/result slot and
+lazy dictionary. The existing P3 reference cache and its classify-both-before-simplifying-either ordering were
+preserved. Only numeric parameters, non-null native numeric constants, ordinary predefined numeric negation,
+and ordinary non-lifted Add/Subtract/Multiply/Divide/Power trees were eligible. Results were inserted only
+after successful simplification, so exceptions remained uncached and x-before-y behavior remained intact.
+
+Memo identity was a new strict oriented structural comparer: parameter leaves required reference identity;
+constants required identical declared types and exact native numeric values; unary/binary operator metadata,
+lifting flags, ordered children, and conversion were included. `StructuralEqualsRaw` was deliberately not
+used because its direct Add/Multiply commutative fallback can equate `a+b` with `b+a`, while those sources can
+retain different simplified operand order. Focused tests covered orientation, association, rebuilt identical
+trees, distinct same-named parameters, eligibility/exclusions, reuse, nested lifetime, teardown, exceptions,
+and thread isolation. The unchanged P3 and structural-canonicalization suites also passed in the candidate.
+
+A standalone Release harness outside the repository preconstructed sources, warmed the simplifier, invoked
+public `ExpressionSimplifier.Simplify`, and measured elapsed time and
+`GC.GetAllocatedBytesForCurrentThread`. Temporary counters distinguished helper requests, actual underlying
+simplifier executions, and memo hits; they were removed before the candidate commit. Median timings from
+three measured runs after three warmups were:
+
+| Family | n | Baseline ms | P6 ms | Baseline bytes | P6 bytes | Baseline requests/executions/hits | P6 requests/executions/hits |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| A additive near miss | 4 | 0.825 | 0.783 | 56,624 | 63,128 | 50 / 50 / 0 | 50 / 45 / 5 |
+| A additive near miss | 8 | 7.177 | 4.391 | 1,000,368 | 572,464 | 890 / 890 / 0 | 422 / 267 / 155 |
+| A additive near miss | 16 | 453.233 | 124.375 | 258,823,600 | 6,355,312 | 229,370 / 229,370 / 0 | 3,662 / 1,751 / 1,911 |
+| B subtraction near miss | 4 | 0.272 | 1.583 | 112,744 | 120,216 | 90 / 90 / 0 | 90 / 82 / 8 |
+| B subtraction near miss | 8 | 4.726 | 30.147 | 2,763,728 | 1,575,760 | 2,418 / 2,418 / 0 | 1,154 / 704 / 450 |
+| B subtraction near miss | 16 | 1,302.092 | 89.191 | 775,477,192 | 21,380,968 | 687,090 / 687,090 / 0 | 12,306 / 5,676 / 6,630 |
+| C bound additive | 4 | 0.152 | 0.216 | 57,440 | 63,944 | 50 / 50 / 0 | 50 / 45 / 5 |
+| C bound additive | 8 | 1.657 | 1.353 | 1,001,896 | 573,992 | 890 / 890 / 0 | 422 / 267 / 155 |
+| C bound additive | 16 | 432.839 | 15.664 | 258,825,768 | 6,357,480 | 229,370 / 229,370 / 0 | 3,662 / 1,751 / 1,911 |
+
+An isolated B/n=8 confirmation with 30 warmups and ten measurements still regressed from a 10.515 ms
+baseline median to 13.106 ms for P6 (about 24.6%), despite allocations falling from 2,763,728 to 1,575,760
+bytes and actual executions falling from 2,418 to 704. The execution counter therefore demonstrates that
+strict memoization removes repeated simplification work, but the repeatable B/n=8 CPU regression exceeds the
+mandatory 5% ceiling. P6 is rejected; no alternative optimization was substituted. The decisive failure was
+established before the remaining control and memo-infrastructure microbenchmarks, so those diagnostics were
+not used to override the acceptance gate.
+
+The exact counter-free candidate is local commit
+`1da9d29189ebf08d8b69d6589512c1c1af5e0087`. It is intentionally **not described as remotely preserved**:
+the environment had no GitHub credentials and rejected the required push. In accordance with the rule not
+to revert until remote retrievability is verified, the candidate remains present on this review branch and
+must not be merged. A maintainer must push that exact commit to `audit/s5-p6-structural-comparer-memo`, verify
+it on GitHub, and then revert the production/test candidate, leaving this rejected-experiment record.
+
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.

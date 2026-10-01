@@ -656,7 +656,7 @@ namespace Utils.Mathematics.Expressions
         /// cross-thread, or cross-rule sharing of any kind.
         /// </para>
         /// </remarks>
-        private sealed class FactorEqualityProbe
+        private sealed class FactorEqualityProbe : IDisposable
         {
             /// <summary>
             /// At most four distinct operands ever participate in one factoring decision
@@ -668,6 +668,18 @@ namespace Utils.Mathematics.Expressions
             /// <see cref="MightInvokeUserCodeWhenSimplified"/> ruled the operand out (<see langword="false"/>).
             /// </summary>
             private readonly List<(Expression Original, bool CanCache, Expression? Simplified)> _cache = new(4);
+
+            /// <summary>Creates a probe and enters the recursive factoring-comparison memo session.</summary>
+            public FactorEqualityProbe()
+            {
+                ExpressionComparer.EnterSimplificationMemoSession();
+            }
+
+            /// <summary>Leaves the recursive factoring-comparison memo session.</summary>
+            public void Dispose()
+            {
+                ExpressionComparer.ExitSimplificationMemoSession();
+            }
 
             /// <summary>
             /// Compares <paramref name="x"/> and <paramref name="y"/> exactly like the public
@@ -745,7 +757,7 @@ namespace Utils.Mathematics.Expressions
                         Expression? simplified = _cache[i].Simplified;
                         if (simplified is not null) return simplified;
 
-                        simplified = ExpressionComparer.SimplifyForComparison(original);
+                        simplified = ExpressionComparer.SimplifyForComparison(original, allowStructuralMemoization: true);
                         _cache[i] = (original, true, simplified);
                         return simplified;
                     }
@@ -880,7 +892,7 @@ namespace Utils.Mathematics.Expressions
             // for every comparison below (S5): each of the up to four candidate operands is simplified via
             // the public ExpressionComparer contract at most once per call, rather than once per comparison
             // it participates in - see FactorEqualityProbe's remarks for why this is semantics-preserving.
-            var equalityProbe = new FactorEqualityProbe();
+            using var equalityProbe = new FactorEqualityProbe();
             if (!leftAugmented
                 && !rightAugmented
                 && equalityProbe.Equals(leftleft, rightleft)
@@ -959,7 +971,7 @@ namespace Utils.Mathematics.Expressions
             // Attempt to unify or swap factors. A single FactorEqualityProbe is reused for every comparison
             // below, including the final cancellation check (S5) - see FactorEqualityProbe's remarks for
             // why this is semantics-preserving.
-            var equalityProbe = new FactorEqualityProbe();
+            using var equalityProbe = new FactorEqualityProbe();
             if ((!leftAugmented && !rightAugmented)
                 && equalityProbe.Equals(leftleft, rightleft)
                 && !equalityProbe.Equals(leftright, rightright))
