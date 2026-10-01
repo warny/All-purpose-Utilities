@@ -40,10 +40,13 @@ Scenario Outline: Long-scale cardinal numbers
 
 Examples:
     | number | expected |
-    | 1000000 | jedan milijun |
-    | 2000000 | dva milijun |
-    | 1000000000 | jedan milijarda |
-    | 1000000000000 | jedan bilijun |
+    | 1000000 | milijun |
+    | 2000000 | dva milijuna |
+    | 5000000 | pet milijuna |
+    | 1000000000 | milijarda |
+    | 2000000000 | dvije milijarde |
+    | 5000000000 | pet milijardi |
+    | 1000000000000 | bilijun |
 
 Scenario Outline: Irregular ordinal numbers
     Given I use the "HR" number converter
@@ -70,8 +73,8 @@ Examples:
     | 100 | stoti |
     | 101 | sto prvi |
     | 600 | šestoti |
-    | 1000 | tisući |
-    | 1001 | tisuća prvi |
+    | 1000 | tisućiti |
+    | 1001 | tisuću prvi |
     | 1000000 | milijunti |
 
 Scenario: Ordinal conversion is supported
