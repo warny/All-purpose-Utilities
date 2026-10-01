@@ -106,3 +106,30 @@ Scenario: Fraction connector wording
     Given I use the "RU" number converter
     When I convert the fraction 3/2 through both public fraction APIs
     Then both fraction results are "три на два"
+
+Scenario: Idiomatic clock-time conversion is supported
+    Given I use the "RU" number converter
+    Then the converter supports clock-time conversion
+
+# Quarter and half refer to the following hour as a masculine genitive ordinal ("четверть
+# второго", "половина второго"); ":45" is "без четверти" + the cardinal of the following hour,
+# "час" for one. Whole hours agree the noun with the count (час / два часа / пять часов).
+Scenario Outline: Idiomatic Russian clock times
+    Given I use the "RU" number converter
+    When I convert the clock time "<time>"
+    Then the result is "<expected>"
+
+Examples:
+    | time | expected |
+    | 01:00 | час |
+    | 02:00 | два часа |
+    | 04:00 | четыре часа |
+    | 05:00 | пять часов |
+    | 12:00 | двенадцать часов |
+    | 01:15 | четверть второго |
+    | 01:30 | половина второго |
+    | 01:45 | без четверти два |
+    | 12:15 | четверть первого |
+    | 12:45 | без четверти час |
+    | 13:30 | половина второго |
+    | 23:45 | без четверти двенадцать |
