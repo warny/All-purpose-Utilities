@@ -60735,6 +60735,91 @@ references:
   commentId: N:Utils.NumberToString
   fullName: Utils.NumberToString
   nameWithType: Utils.NumberToString
+- uid: Utils.NumberToString.ArabicOrdinalLanguageSpecifics
+  name: ArabicOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.ArabicOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.ArabicOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.ArabicOrdinalLanguageSpecifics
+  nameWithType: ArabicOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.ArabicOrdinalLanguageSpecifics.FinalizeWriting(System.String,System.String)
+  name: FinalizeWriting(string, string)
+  href: api/Utils.NumberToString.ArabicOrdinalLanguageSpecifics.html#Utils_NumberToString_ArabicOrdinalLanguageSpecifics_FinalizeWriting_System_String_System_String_
+  commentId: M:Utils.NumberToString.ArabicOrdinalLanguageSpecifics.FinalizeWriting(System.String,System.String)
+  name.vb: FinalizeWriting(String, String)
+  fullName: Utils.NumberToString.ArabicOrdinalLanguageSpecifics.FinalizeWriting(string, string)
+  fullName.vb: Utils.NumberToString.ArabicOrdinalLanguageSpecifics.FinalizeWriting(String, String)
+  nameWithType: ArabicOrdinalLanguageSpecifics.FinalizeWriting(string, string)
+  nameWithType.vb: ArabicOrdinalLanguageSpecifics.FinalizeWriting(String, String)
+- uid: Utils.NumberToString.ArabicOrdinalLanguageSpecifics.FinalizeWriting*
+  name: FinalizeWriting
+  href: api/Utils.NumberToString.ArabicOrdinalLanguageSpecifics.html#Utils_NumberToString_ArabicOrdinalLanguageSpecifics_FinalizeWriting_
+  commentId: Overload:Utils.NumberToString.ArabicOrdinalLanguageSpecifics.FinalizeWriting
+  isSpec: "True"
+  fullName: Utils.NumberToString.ArabicOrdinalLanguageSpecifics.FinalizeWriting
+  nameWithType: ArabicOrdinalLanguageSpecifics.FinalizeWriting
+- uid: Utils.NumberToString.ArabicOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name: TryConvertOrdinal(int, IReadOnlyDictionary<string, string>, out string?)
+  href: api/Utils.NumberToString.ArabicOrdinalLanguageSpecifics.html#Utils_NumberToString_ArabicOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int32_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__
+  commentId: M:Utils.NumberToString.ArabicOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name.vb: TryConvertOrdinal(Integer, IReadOnlyDictionary(Of String, String), String)
+  fullName: Utils.NumberToString.ArabicOrdinalLanguageSpecifics.TryConvertOrdinal(int, System.Collections.Generic.IReadOnlyDictionary<string, string>, out string?)
+  fullName.vb: Utils.NumberToString.ArabicOrdinalLanguageSpecifics.TryConvertOrdinal(Integer, System.Collections.Generic.IReadOnlyDictionary(Of String, String), String)
+  nameWithType: ArabicOrdinalLanguageSpecifics.TryConvertOrdinal(int, IReadOnlyDictionary<string, string>, out string?)
+  nameWithType.vb: ArabicOrdinalLanguageSpecifics.TryConvertOrdinal(Integer, IReadOnlyDictionary(Of String, String), String)
+- uid: Utils.NumberToString.ArabicOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name: TryConvertOrdinal(long, IReadOnlyDictionary<string, string>, out string?)
+  href: api/Utils.NumberToString.ArabicOrdinalLanguageSpecifics.html#Utils_NumberToString_ArabicOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__
+  commentId: M:Utils.NumberToString.ArabicOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name.vb: TryConvertOrdinal(Long, IReadOnlyDictionary(Of String, String), String)
+  fullName: Utils.NumberToString.ArabicOrdinalLanguageSpecifics.TryConvertOrdinal(long, System.Collections.Generic.IReadOnlyDictionary<string, string>, out string?)
+  fullName.vb: Utils.NumberToString.ArabicOrdinalLanguageSpecifics.TryConvertOrdinal(Long, System.Collections.Generic.IReadOnlyDictionary(Of String, String), String)
+  nameWithType: ArabicOrdinalLanguageSpecifics.TryConvertOrdinal(long, IReadOnlyDictionary<string, string>, out string?)
+  nameWithType.vb: ArabicOrdinalLanguageSpecifics.TryConvertOrdinal(Long, IReadOnlyDictionary(Of String, String), String)
+- uid: Utils.NumberToString.ArabicOrdinalLanguageSpecifics.TryConvertOrdinal*
+  name: TryConvertOrdinal
+  href: api/Utils.NumberToString.ArabicOrdinalLanguageSpecifics.html#Utils_NumberToString_ArabicOrdinalLanguageSpecifics_TryConvertOrdinal_
+  commentId: Overload:Utils.NumberToString.ArabicOrdinalLanguageSpecifics.TryConvertOrdinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.ArabicOrdinalLanguageSpecifics.TryConvertOrdinal
+  nameWithType: ArabicOrdinalLanguageSpecifics.TryConvertOrdinal
+- uid: Utils.NumberToString.BulgarianOrdinalLanguageSpecifics
+  name: BulgarianOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.BulgarianOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.BulgarianOrdinalLanguageSpecifics
+  nameWithType: BulgarianOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.FinalizeWriting(System.String,System.String)
+  name: FinalizeWriting(string, string)
+  href: api/Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.html#Utils_NumberToString_BulgarianOrdinalLanguageSpecifics_FinalizeWriting_System_String_System_String_
+  commentId: M:Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.FinalizeWriting(System.String,System.String)
+  name.vb: FinalizeWriting(String, String)
+  fullName: Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.FinalizeWriting(string, string)
+  fullName.vb: Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.FinalizeWriting(String, String)
+  nameWithType: BulgarianOrdinalLanguageSpecifics.FinalizeWriting(string, string)
+  nameWithType.vb: BulgarianOrdinalLanguageSpecifics.FinalizeWriting(String, String)
+- uid: Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.FinalizeWriting*
+  name: FinalizeWriting
+  href: api/Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.html#Utils_NumberToString_BulgarianOrdinalLanguageSpecifics_FinalizeWriting_
+  commentId: Overload:Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.FinalizeWriting
+  isSpec: "True"
+  fullName: Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.FinalizeWriting
+  nameWithType: BulgarianOrdinalLanguageSpecifics.FinalizeWriting
+- uid: Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name: TryConvertOrdinal(int, IReadOnlyDictionary<string, string>, out string?)
+  href: api/Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.html#Utils_NumberToString_BulgarianOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int32_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__
+  commentId: M:Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name.vb: TryConvertOrdinal(Integer, IReadOnlyDictionary(Of String, String), String)
+  fullName: Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.TryConvertOrdinal(int, System.Collections.Generic.IReadOnlyDictionary<string, string>, out string?)
+  fullName.vb: Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.TryConvertOrdinal(Integer, System.Collections.Generic.IReadOnlyDictionary(Of String, String), String)
+  nameWithType: BulgarianOrdinalLanguageSpecifics.TryConvertOrdinal(int, IReadOnlyDictionary<string, string>, out string?)
+  nameWithType.vb: BulgarianOrdinalLanguageSpecifics.TryConvertOrdinal(Integer, IReadOnlyDictionary(Of String, String), String)
+- uid: Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.TryConvertOrdinal*
+  name: TryConvertOrdinal
+  href: api/Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.html#Utils_NumberToString_BulgarianOrdinalLanguageSpecifics_TryConvertOrdinal_
+  commentId: Overload:Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.TryConvertOrdinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.TryConvertOrdinal
+  nameWithType: BulgarianOrdinalLanguageSpecifics.TryConvertOrdinal
 - uid: Utils.NumberToString.ClockAmountDirection
   name: ClockAmountDirection
   href: api/Utils.NumberToString.ClockAmountDirection.html
@@ -61203,6 +61288,53 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.ClockTimeType.Step
   nameWithType: ClockTimeType.Step
+- uid: Utils.NumberToString.CroatianOrdinalLanguageSpecifics
+  name: CroatianOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.CroatianOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.CroatianOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.CroatianOrdinalLanguageSpecifics
+  nameWithType: CroatianOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.CroatianOrdinalLanguageSpecifics.FinalizeWriting(System.String,System.String)
+  name: FinalizeWriting(string, string)
+  href: api/Utils.NumberToString.CroatianOrdinalLanguageSpecifics.html#Utils_NumberToString_CroatianOrdinalLanguageSpecifics_FinalizeWriting_System_String_System_String_
+  commentId: M:Utils.NumberToString.CroatianOrdinalLanguageSpecifics.FinalizeWriting(System.String,System.String)
+  name.vb: FinalizeWriting(String, String)
+  fullName: Utils.NumberToString.CroatianOrdinalLanguageSpecifics.FinalizeWriting(string, string)
+  fullName.vb: Utils.NumberToString.CroatianOrdinalLanguageSpecifics.FinalizeWriting(String, String)
+  nameWithType: CroatianOrdinalLanguageSpecifics.FinalizeWriting(string, string)
+  nameWithType.vb: CroatianOrdinalLanguageSpecifics.FinalizeWriting(String, String)
+- uid: Utils.NumberToString.CroatianOrdinalLanguageSpecifics.FinalizeWriting*
+  name: FinalizeWriting
+  href: api/Utils.NumberToString.CroatianOrdinalLanguageSpecifics.html#Utils_NumberToString_CroatianOrdinalLanguageSpecifics_FinalizeWriting_
+  commentId: Overload:Utils.NumberToString.CroatianOrdinalLanguageSpecifics.FinalizeWriting
+  isSpec: "True"
+  fullName: Utils.NumberToString.CroatianOrdinalLanguageSpecifics.FinalizeWriting
+  nameWithType: CroatianOrdinalLanguageSpecifics.FinalizeWriting
+- uid: Utils.NumberToString.CroatianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name: TryConvertOrdinal(int, IReadOnlyDictionary<string, string>, out string?)
+  href: api/Utils.NumberToString.CroatianOrdinalLanguageSpecifics.html#Utils_NumberToString_CroatianOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int32_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__
+  commentId: M:Utils.NumberToString.CroatianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name.vb: TryConvertOrdinal(Integer, IReadOnlyDictionary(Of String, String), String)
+  fullName: Utils.NumberToString.CroatianOrdinalLanguageSpecifics.TryConvertOrdinal(int, System.Collections.Generic.IReadOnlyDictionary<string, string>, out string?)
+  fullName.vb: Utils.NumberToString.CroatianOrdinalLanguageSpecifics.TryConvertOrdinal(Integer, System.Collections.Generic.IReadOnlyDictionary(Of String, String), String)
+  nameWithType: CroatianOrdinalLanguageSpecifics.TryConvertOrdinal(int, IReadOnlyDictionary<string, string>, out string?)
+  nameWithType.vb: CroatianOrdinalLanguageSpecifics.TryConvertOrdinal(Integer, IReadOnlyDictionary(Of String, String), String)
+- uid: Utils.NumberToString.CroatianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name: TryConvertOrdinal(long, IReadOnlyDictionary<string, string>, out string?)
+  href: api/Utils.NumberToString.CroatianOrdinalLanguageSpecifics.html#Utils_NumberToString_CroatianOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__
+  commentId: M:Utils.NumberToString.CroatianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name.vb: TryConvertOrdinal(Long, IReadOnlyDictionary(Of String, String), String)
+  fullName: Utils.NumberToString.CroatianOrdinalLanguageSpecifics.TryConvertOrdinal(long, System.Collections.Generic.IReadOnlyDictionary<string, string>, out string?)
+  fullName.vb: Utils.NumberToString.CroatianOrdinalLanguageSpecifics.TryConvertOrdinal(Long, System.Collections.Generic.IReadOnlyDictionary(Of String, String), String)
+  nameWithType: CroatianOrdinalLanguageSpecifics.TryConvertOrdinal(long, IReadOnlyDictionary<string, string>, out string?)
+  nameWithType.vb: CroatianOrdinalLanguageSpecifics.TryConvertOrdinal(Long, IReadOnlyDictionary(Of String, String), String)
+- uid: Utils.NumberToString.CroatianOrdinalLanguageSpecifics.TryConvertOrdinal*
+  name: TryConvertOrdinal
+  href: api/Utils.NumberToString.CroatianOrdinalLanguageSpecifics.html#Utils_NumberToString_CroatianOrdinalLanguageSpecifics_TryConvertOrdinal_
+  commentId: Overload:Utils.NumberToString.CroatianOrdinalLanguageSpecifics.TryConvertOrdinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.CroatianOrdinalLanguageSpecifics.TryConvertOrdinal
+  nameWithType: CroatianOrdinalLanguageSpecifics.TryConvertOrdinal
 - uid: Utils.NumberToString.CurrencyDefinition
   name: CurrencyDefinition
   href: api/Utils.NumberToString.CurrencyDefinition.html
@@ -61313,6 +61445,254 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.CurrencyDefinition.UnitSingular
   nameWithType: CurrencyDefinition.UnitSingular
+- uid: Utils.NumberToString.CzechOrdinalLanguageSpecifics
+  name: CzechOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.CzechOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.CzechOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.CzechOrdinalLanguageSpecifics
+  nameWithType: CzechOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.CzechOrdinalLanguageSpecifics.CaseValues
+  name: CaseValues
+  href: api/Utils.NumberToString.CzechOrdinalLanguageSpecifics.html#Utils_NumberToString_CzechOrdinalLanguageSpecifics_CaseValues
+  commentId: P:Utils.NumberToString.CzechOrdinalLanguageSpecifics.CaseValues
+  fullName: Utils.NumberToString.CzechOrdinalLanguageSpecifics.CaseValues
+  nameWithType: CzechOrdinalLanguageSpecifics.CaseValues
+- uid: Utils.NumberToString.CzechOrdinalLanguageSpecifics.CaseValues*
+  name: CaseValues
+  href: api/Utils.NumberToString.CzechOrdinalLanguageSpecifics.html#Utils_NumberToString_CzechOrdinalLanguageSpecifics_CaseValues_
+  commentId: Overload:Utils.NumberToString.CzechOrdinalLanguageSpecifics.CaseValues
+  isSpec: "True"
+  fullName: Utils.NumberToString.CzechOrdinalLanguageSpecifics.CaseValues
+  nameWithType: CzechOrdinalLanguageSpecifics.CaseValues
+- uid: Utils.NumberToString.CzechOrdinalLanguageSpecifics.Decline(System.String,Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender,System.Int32)
+  name: Decline(string, Gender, int)
+  href: api/Utils.NumberToString.CzechOrdinalLanguageSpecifics.html#Utils_NumberToString_CzechOrdinalLanguageSpecifics_Decline_System_String_Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_Gender_System_Int32_
+  commentId: M:Utils.NumberToString.CzechOrdinalLanguageSpecifics.Decline(System.String,Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender,System.Int32)
+  name.vb: Decline(String, Gender, Integer)
+  fullName: Utils.NumberToString.CzechOrdinalLanguageSpecifics.Decline(string, Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender, int)
+  fullName.vb: Utils.NumberToString.CzechOrdinalLanguageSpecifics.Decline(String, Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender, Integer)
+  nameWithType: CzechOrdinalLanguageSpecifics.Decline(string, SlavicAdjectivalOrdinalLanguageSpecifics.Gender, int)
+  nameWithType.vb: CzechOrdinalLanguageSpecifics.Decline(String, SlavicAdjectivalOrdinalLanguageSpecifics.Gender, Integer)
+- uid: Utils.NumberToString.CzechOrdinalLanguageSpecifics.Decline*
+  name: Decline
+  href: api/Utils.NumberToString.CzechOrdinalLanguageSpecifics.html#Utils_NumberToString_CzechOrdinalLanguageSpecifics_Decline_
+  commentId: Overload:Utils.NumberToString.CzechOrdinalLanguageSpecifics.Decline
+  isSpec: "True"
+  fullName: Utils.NumberToString.CzechOrdinalLanguageSpecifics.Decline
+  nameWithType: CzechOrdinalLanguageSpecifics.Decline
+- uid: Utils.NumberToString.CzechOrdinalLanguageSpecifics.FeminineValue
+  name: FeminineValue
+  href: api/Utils.NumberToString.CzechOrdinalLanguageSpecifics.html#Utils_NumberToString_CzechOrdinalLanguageSpecifics_FeminineValue
+  commentId: P:Utils.NumberToString.CzechOrdinalLanguageSpecifics.FeminineValue
+  fullName: Utils.NumberToString.CzechOrdinalLanguageSpecifics.FeminineValue
+  nameWithType: CzechOrdinalLanguageSpecifics.FeminineValue
+- uid: Utils.NumberToString.CzechOrdinalLanguageSpecifics.FeminineValue*
+  name: FeminineValue
+  href: api/Utils.NumberToString.CzechOrdinalLanguageSpecifics.html#Utils_NumberToString_CzechOrdinalLanguageSpecifics_FeminineValue_
+  commentId: Overload:Utils.NumberToString.CzechOrdinalLanguageSpecifics.FeminineValue
+  isSpec: "True"
+  fullName: Utils.NumberToString.CzechOrdinalLanguageSpecifics.FeminineValue
+  nameWithType: CzechOrdinalLanguageSpecifics.FeminineValue
+- uid: Utils.NumberToString.CzechOrdinalLanguageSpecifics.NeuterValue
+  name: NeuterValue
+  href: api/Utils.NumberToString.CzechOrdinalLanguageSpecifics.html#Utils_NumberToString_CzechOrdinalLanguageSpecifics_NeuterValue
+  commentId: P:Utils.NumberToString.CzechOrdinalLanguageSpecifics.NeuterValue
+  fullName: Utils.NumberToString.CzechOrdinalLanguageSpecifics.NeuterValue
+  nameWithType: CzechOrdinalLanguageSpecifics.NeuterValue
+- uid: Utils.NumberToString.CzechOrdinalLanguageSpecifics.NeuterValue*
+  name: NeuterValue
+  href: api/Utils.NumberToString.CzechOrdinalLanguageSpecifics.html#Utils_NumberToString_CzechOrdinalLanguageSpecifics_NeuterValue_
+  commentId: Overload:Utils.NumberToString.CzechOrdinalLanguageSpecifics.NeuterValue
+  isSpec: "True"
+  fullName: Utils.NumberToString.CzechOrdinalLanguageSpecifics.NeuterValue
+  nameWithType: CzechOrdinalLanguageSpecifics.NeuterValue
+- uid: Utils.NumberToString.CzechOrdinalLanguageSpecifics.TryDecompose(System.Int32,System.String@,System.Collections.Generic.IReadOnlyList{System.String}@)
+  name: TryDecompose(int, out string, out IReadOnlyList<string>)
+  href: api/Utils.NumberToString.CzechOrdinalLanguageSpecifics.html#Utils_NumberToString_CzechOrdinalLanguageSpecifics_TryDecompose_System_Int32_System_String__System_Collections_Generic_IReadOnlyList_System_String___
+  commentId: M:Utils.NumberToString.CzechOrdinalLanguageSpecifics.TryDecompose(System.Int32,System.String@,System.Collections.Generic.IReadOnlyList{System.String}@)
+  name.vb: TryDecompose(Integer, String, IReadOnlyList(Of String))
+  fullName: Utils.NumberToString.CzechOrdinalLanguageSpecifics.TryDecompose(int, out string, out System.Collections.Generic.IReadOnlyList<string>)
+  fullName.vb: Utils.NumberToString.CzechOrdinalLanguageSpecifics.TryDecompose(Integer, String, System.Collections.Generic.IReadOnlyList(Of String))
+  nameWithType: CzechOrdinalLanguageSpecifics.TryDecompose(int, out string, out IReadOnlyList<string>)
+  nameWithType.vb: CzechOrdinalLanguageSpecifics.TryDecompose(Integer, String, IReadOnlyList(Of String))
+- uid: Utils.NumberToString.CzechOrdinalLanguageSpecifics.TryDecompose*
+  name: TryDecompose
+  href: api/Utils.NumberToString.CzechOrdinalLanguageSpecifics.html#Utils_NumberToString_CzechOrdinalLanguageSpecifics_TryDecompose_
+  commentId: Overload:Utils.NumberToString.CzechOrdinalLanguageSpecifics.TryDecompose
+  isSpec: "True"
+  fullName: Utils.NumberToString.CzechOrdinalLanguageSpecifics.TryDecompose
+  nameWithType: CzechOrdinalLanguageSpecifics.TryDecompose
+- uid: Utils.NumberToString.DanishOrdinalLanguageSpecifics
+  name: DanishOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.DanishOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.DanishOrdinalLanguageSpecifics
+  nameWithType: DanishOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.DanishOrdinalLanguageSpecifics.CardinalBelowTwenty
+  name: CardinalBelowTwenty
+  href: api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html#Utils_NumberToString_DanishOrdinalLanguageSpecifics_CardinalBelowTwenty
+  commentId: P:Utils.NumberToString.DanishOrdinalLanguageSpecifics.CardinalBelowTwenty
+  fullName: Utils.NumberToString.DanishOrdinalLanguageSpecifics.CardinalBelowTwenty
+  nameWithType: DanishOrdinalLanguageSpecifics.CardinalBelowTwenty
+- uid: Utils.NumberToString.DanishOrdinalLanguageSpecifics.CardinalBelowTwenty*
+  name: CardinalBelowTwenty
+  href: api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html#Utils_NumberToString_DanishOrdinalLanguageSpecifics_CardinalBelowTwenty_
+  commentId: Overload:Utils.NumberToString.DanishOrdinalLanguageSpecifics.CardinalBelowTwenty
+  isSpec: "True"
+  fullName: Utils.NumberToString.DanishOrdinalLanguageSpecifics.CardinalBelowTwenty
+  nameWithType: DanishOrdinalLanguageSpecifics.CardinalBelowTwenty
+- uid: Utils.NumberToString.DanishOrdinalLanguageSpecifics.CardinalTens
+  name: CardinalTens
+  href: api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html#Utils_NumberToString_DanishOrdinalLanguageSpecifics_CardinalTens
+  commentId: P:Utils.NumberToString.DanishOrdinalLanguageSpecifics.CardinalTens
+  fullName: Utils.NumberToString.DanishOrdinalLanguageSpecifics.CardinalTens
+  nameWithType: DanishOrdinalLanguageSpecifics.CardinalTens
+- uid: Utils.NumberToString.DanishOrdinalLanguageSpecifics.CardinalTens*
+  name: CardinalTens
+  href: api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html#Utils_NumberToString_DanishOrdinalLanguageSpecifics_CardinalTens_
+  commentId: Overload:Utils.NumberToString.DanishOrdinalLanguageSpecifics.CardinalTens
+  isSpec: "True"
+  fullName: Utils.NumberToString.DanishOrdinalLanguageSpecifics.CardinalTens
+  nameWithType: DanishOrdinalLanguageSpecifics.CardinalTens
+- uid: Utils.NumberToString.DanishOrdinalLanguageSpecifics.ComposeCardinal(System.Int32,System.Int32)
+  name: ComposeCardinal(int, int)
+  href: api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html#Utils_NumberToString_DanishOrdinalLanguageSpecifics_ComposeCardinal_System_Int32_System_Int32_
+  commentId: M:Utils.NumberToString.DanishOrdinalLanguageSpecifics.ComposeCardinal(System.Int32,System.Int32)
+  name.vb: ComposeCardinal(Integer, Integer)
+  fullName: Utils.NumberToString.DanishOrdinalLanguageSpecifics.ComposeCardinal(int, int)
+  fullName.vb: Utils.NumberToString.DanishOrdinalLanguageSpecifics.ComposeCardinal(Integer, Integer)
+  nameWithType: DanishOrdinalLanguageSpecifics.ComposeCardinal(int, int)
+  nameWithType.vb: DanishOrdinalLanguageSpecifics.ComposeCardinal(Integer, Integer)
+- uid: Utils.NumberToString.DanishOrdinalLanguageSpecifics.ComposeCardinal*
+  name: ComposeCardinal
+  href: api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html#Utils_NumberToString_DanishOrdinalLanguageSpecifics_ComposeCardinal_
+  commentId: Overload:Utils.NumberToString.DanishOrdinalLanguageSpecifics.ComposeCardinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.DanishOrdinalLanguageSpecifics.ComposeCardinal
+  nameWithType: DanishOrdinalLanguageSpecifics.ComposeCardinal
+- uid: Utils.NumberToString.DanishOrdinalLanguageSpecifics.ComposeOrdinal(System.Int32,System.Int32)
+  name: ComposeOrdinal(int, int)
+  href: api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html#Utils_NumberToString_DanishOrdinalLanguageSpecifics_ComposeOrdinal_System_Int32_System_Int32_
+  commentId: M:Utils.NumberToString.DanishOrdinalLanguageSpecifics.ComposeOrdinal(System.Int32,System.Int32)
+  name.vb: ComposeOrdinal(Integer, Integer)
+  fullName: Utils.NumberToString.DanishOrdinalLanguageSpecifics.ComposeOrdinal(int, int)
+  fullName.vb: Utils.NumberToString.DanishOrdinalLanguageSpecifics.ComposeOrdinal(Integer, Integer)
+  nameWithType: DanishOrdinalLanguageSpecifics.ComposeOrdinal(int, int)
+  nameWithType.vb: DanishOrdinalLanguageSpecifics.ComposeOrdinal(Integer, Integer)
+- uid: Utils.NumberToString.DanishOrdinalLanguageSpecifics.ComposeOrdinal*
+  name: ComposeOrdinal
+  href: api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html#Utils_NumberToString_DanishOrdinalLanguageSpecifics_ComposeOrdinal_
+  commentId: Overload:Utils.NumberToString.DanishOrdinalLanguageSpecifics.ComposeOrdinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.DanishOrdinalLanguageSpecifics.ComposeOrdinal
+  nameWithType: DanishOrdinalLanguageSpecifics.ComposeOrdinal
+- uid: Utils.NumberToString.DanishOrdinalLanguageSpecifics.Hundred
+  name: Hundred
+  href: api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html#Utils_NumberToString_DanishOrdinalLanguageSpecifics_Hundred
+  commentId: P:Utils.NumberToString.DanishOrdinalLanguageSpecifics.Hundred
+  fullName: Utils.NumberToString.DanishOrdinalLanguageSpecifics.Hundred
+  nameWithType: DanishOrdinalLanguageSpecifics.Hundred
+- uid: Utils.NumberToString.DanishOrdinalLanguageSpecifics.Hundred*
+  name: Hundred
+  href: api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html#Utils_NumberToString_DanishOrdinalLanguageSpecifics_Hundred_
+  commentId: Overload:Utils.NumberToString.DanishOrdinalLanguageSpecifics.Hundred
+  isSpec: "True"
+  fullName: Utils.NumberToString.DanishOrdinalLanguageSpecifics.Hundred
+  nameWithType: DanishOrdinalLanguageSpecifics.Hundred
+- uid: Utils.NumberToString.DanishOrdinalLanguageSpecifics.HundredOrdinal
+  name: HundredOrdinal
+  href: api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html#Utils_NumberToString_DanishOrdinalLanguageSpecifics_HundredOrdinal
+  commentId: P:Utils.NumberToString.DanishOrdinalLanguageSpecifics.HundredOrdinal
+  fullName: Utils.NumberToString.DanishOrdinalLanguageSpecifics.HundredOrdinal
+  nameWithType: DanishOrdinalLanguageSpecifics.HundredOrdinal
+- uid: Utils.NumberToString.DanishOrdinalLanguageSpecifics.HundredOrdinal*
+  name: HundredOrdinal
+  href: api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html#Utils_NumberToString_DanishOrdinalLanguageSpecifics_HundredOrdinal_
+  commentId: Overload:Utils.NumberToString.DanishOrdinalLanguageSpecifics.HundredOrdinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.DanishOrdinalLanguageSpecifics.HundredOrdinal
+  nameWithType: DanishOrdinalLanguageSpecifics.HundredOrdinal
+- uid: Utils.NumberToString.DanishOrdinalLanguageSpecifics.Hundreds
+  name: Hundreds
+  href: api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html#Utils_NumberToString_DanishOrdinalLanguageSpecifics_Hundreds
+  commentId: P:Utils.NumberToString.DanishOrdinalLanguageSpecifics.Hundreds
+  fullName: Utils.NumberToString.DanishOrdinalLanguageSpecifics.Hundreds
+  nameWithType: DanishOrdinalLanguageSpecifics.Hundreds
+- uid: Utils.NumberToString.DanishOrdinalLanguageSpecifics.Hundreds*
+  name: Hundreds
+  href: api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html#Utils_NumberToString_DanishOrdinalLanguageSpecifics_Hundreds_
+  commentId: Overload:Utils.NumberToString.DanishOrdinalLanguageSpecifics.Hundreds
+  isSpec: "True"
+  fullName: Utils.NumberToString.DanishOrdinalLanguageSpecifics.Hundreds
+  nameWithType: DanishOrdinalLanguageSpecifics.Hundreds
+- uid: Utils.NumberToString.DanishOrdinalLanguageSpecifics.HundredsFused
+  name: HundredsFused
+  href: api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html#Utils_NumberToString_DanishOrdinalLanguageSpecifics_HundredsFused
+  commentId: P:Utils.NumberToString.DanishOrdinalLanguageSpecifics.HundredsFused
+  fullName: Utils.NumberToString.DanishOrdinalLanguageSpecifics.HundredsFused
+  nameWithType: DanishOrdinalLanguageSpecifics.HundredsFused
+- uid: Utils.NumberToString.DanishOrdinalLanguageSpecifics.HundredsFused*
+  name: HundredsFused
+  href: api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html#Utils_NumberToString_DanishOrdinalLanguageSpecifics_HundredsFused_
+  commentId: Overload:Utils.NumberToString.DanishOrdinalLanguageSpecifics.HundredsFused
+  isSpec: "True"
+  fullName: Utils.NumberToString.DanishOrdinalLanguageSpecifics.HundredsFused
+  nameWithType: DanishOrdinalLanguageSpecifics.HundredsFused
+- uid: Utils.NumberToString.DanishOrdinalLanguageSpecifics.Join(System.String,System.Boolean,System.String,System.Boolean)
+  name: Join(string, bool, string, bool)
+  href: api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html#Utils_NumberToString_DanishOrdinalLanguageSpecifics_Join_System_String_System_Boolean_System_String_System_Boolean_
+  commentId: M:Utils.NumberToString.DanishOrdinalLanguageSpecifics.Join(System.String,System.Boolean,System.String,System.Boolean)
+  name.vb: Join(String, Boolean, String, Boolean)
+  fullName: Utils.NumberToString.DanishOrdinalLanguageSpecifics.Join(string, bool, string, bool)
+  fullName.vb: Utils.NumberToString.DanishOrdinalLanguageSpecifics.Join(String, Boolean, String, Boolean)
+  nameWithType: DanishOrdinalLanguageSpecifics.Join(string, bool, string, bool)
+  nameWithType.vb: DanishOrdinalLanguageSpecifics.Join(String, Boolean, String, Boolean)
+- uid: Utils.NumberToString.DanishOrdinalLanguageSpecifics.Join*
+  name: Join
+  href: api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html#Utils_NumberToString_DanishOrdinalLanguageSpecifics_Join_
+  commentId: Overload:Utils.NumberToString.DanishOrdinalLanguageSpecifics.Join
+  isSpec: "True"
+  fullName: Utils.NumberToString.DanishOrdinalLanguageSpecifics.Join
+  nameWithType: DanishOrdinalLanguageSpecifics.Join
+- uid: Utils.NumberToString.DanishOrdinalLanguageSpecifics.OrdinalBelowTwenty
+  name: OrdinalBelowTwenty
+  href: api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html#Utils_NumberToString_DanishOrdinalLanguageSpecifics_OrdinalBelowTwenty
+  commentId: P:Utils.NumberToString.DanishOrdinalLanguageSpecifics.OrdinalBelowTwenty
+  fullName: Utils.NumberToString.DanishOrdinalLanguageSpecifics.OrdinalBelowTwenty
+  nameWithType: DanishOrdinalLanguageSpecifics.OrdinalBelowTwenty
+- uid: Utils.NumberToString.DanishOrdinalLanguageSpecifics.OrdinalBelowTwenty*
+  name: OrdinalBelowTwenty
+  href: api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html#Utils_NumberToString_DanishOrdinalLanguageSpecifics_OrdinalBelowTwenty_
+  commentId: Overload:Utils.NumberToString.DanishOrdinalLanguageSpecifics.OrdinalBelowTwenty
+  isSpec: "True"
+  fullName: Utils.NumberToString.DanishOrdinalLanguageSpecifics.OrdinalBelowTwenty
+  nameWithType: DanishOrdinalLanguageSpecifics.OrdinalBelowTwenty
+- uid: Utils.NumberToString.DanishOrdinalLanguageSpecifics.OrdinalTens
+  name: OrdinalTens
+  href: api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html#Utils_NumberToString_DanishOrdinalLanguageSpecifics_OrdinalTens
+  commentId: P:Utils.NumberToString.DanishOrdinalLanguageSpecifics.OrdinalTens
+  fullName: Utils.NumberToString.DanishOrdinalLanguageSpecifics.OrdinalTens
+  nameWithType: DanishOrdinalLanguageSpecifics.OrdinalTens
+- uid: Utils.NumberToString.DanishOrdinalLanguageSpecifics.OrdinalTens*
+  name: OrdinalTens
+  href: api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html#Utils_NumberToString_DanishOrdinalLanguageSpecifics_OrdinalTens_
+  commentId: Overload:Utils.NumberToString.DanishOrdinalLanguageSpecifics.OrdinalTens
+  isSpec: "True"
+  fullName: Utils.NumberToString.DanishOrdinalLanguageSpecifics.OrdinalTens
+  nameWithType: DanishOrdinalLanguageSpecifics.OrdinalTens
+- uid: Utils.NumberToString.DanishOrdinalLanguageSpecifics.Scales
+  name: Scales
+  href: api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html#Utils_NumberToString_DanishOrdinalLanguageSpecifics_Scales
+  commentId: P:Utils.NumberToString.DanishOrdinalLanguageSpecifics.Scales
+  fullName: Utils.NumberToString.DanishOrdinalLanguageSpecifics.Scales
+  nameWithType: DanishOrdinalLanguageSpecifics.Scales
+- uid: Utils.NumberToString.DanishOrdinalLanguageSpecifics.Scales*
+  name: Scales
+  href: api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html#Utils_NumberToString_DanishOrdinalLanguageSpecifics_Scales_
+  commentId: Overload:Utils.NumberToString.DanishOrdinalLanguageSpecifics.Scales
+  isSpec: "True"
+  fullName: Utils.NumberToString.DanishOrdinalLanguageSpecifics.Scales
+  nameWithType: DanishOrdinalLanguageSpecifics.Scales
 - uid: Utils.NumberToString.DateFormatType
   name: DateFormatType
   href: api/Utils.NumberToString.DateFormatType.html
@@ -61877,6 +62257,44 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.GroupsListType.Groups
   nameWithType: GroupsListType.Groups
+- uid: Utils.NumberToString.HungarianOrdinalLanguageSpecifics
+  name: HungarianOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.HungarianOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.HungarianOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.HungarianOrdinalLanguageSpecifics
+  nameWithType: HungarianOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.HungarianOrdinalLanguageSpecifics.FinalizeWriting(System.String,System.String)
+  name: FinalizeWriting(string, string)
+  href: api/Utils.NumberToString.HungarianOrdinalLanguageSpecifics.html#Utils_NumberToString_HungarianOrdinalLanguageSpecifics_FinalizeWriting_System_String_System_String_
+  commentId: M:Utils.NumberToString.HungarianOrdinalLanguageSpecifics.FinalizeWriting(System.String,System.String)
+  name.vb: FinalizeWriting(String, String)
+  fullName: Utils.NumberToString.HungarianOrdinalLanguageSpecifics.FinalizeWriting(string, string)
+  fullName.vb: Utils.NumberToString.HungarianOrdinalLanguageSpecifics.FinalizeWriting(String, String)
+  nameWithType: HungarianOrdinalLanguageSpecifics.FinalizeWriting(string, string)
+  nameWithType.vb: HungarianOrdinalLanguageSpecifics.FinalizeWriting(String, String)
+- uid: Utils.NumberToString.HungarianOrdinalLanguageSpecifics.FinalizeWriting*
+  name: FinalizeWriting
+  href: api/Utils.NumberToString.HungarianOrdinalLanguageSpecifics.html#Utils_NumberToString_HungarianOrdinalLanguageSpecifics_FinalizeWriting_
+  commentId: Overload:Utils.NumberToString.HungarianOrdinalLanguageSpecifics.FinalizeWriting
+  isSpec: "True"
+  fullName: Utils.NumberToString.HungarianOrdinalLanguageSpecifics.FinalizeWriting
+  nameWithType: HungarianOrdinalLanguageSpecifics.FinalizeWriting
+- uid: Utils.NumberToString.HungarianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name: TryConvertOrdinal(int, IReadOnlyDictionary<string, string>, out string?)
+  href: api/Utils.NumberToString.HungarianOrdinalLanguageSpecifics.html#Utils_NumberToString_HungarianOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int32_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__
+  commentId: M:Utils.NumberToString.HungarianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name.vb: TryConvertOrdinal(Integer, IReadOnlyDictionary(Of String, String), String)
+  fullName: Utils.NumberToString.HungarianOrdinalLanguageSpecifics.TryConvertOrdinal(int, System.Collections.Generic.IReadOnlyDictionary<string, string>, out string?)
+  fullName.vb: Utils.NumberToString.HungarianOrdinalLanguageSpecifics.TryConvertOrdinal(Integer, System.Collections.Generic.IReadOnlyDictionary(Of String, String), String)
+  nameWithType: HungarianOrdinalLanguageSpecifics.TryConvertOrdinal(int, IReadOnlyDictionary<string, string>, out string?)
+  nameWithType.vb: HungarianOrdinalLanguageSpecifics.TryConvertOrdinal(Integer, IReadOnlyDictionary(Of String, String), String)
+- uid: Utils.NumberToString.HungarianOrdinalLanguageSpecifics.TryConvertOrdinal*
+  name: TryConvertOrdinal
+  href: api/Utils.NumberToString.HungarianOrdinalLanguageSpecifics.html#Utils_NumberToString_HungarianOrdinalLanguageSpecifics_TryConvertOrdinal_
+  commentId: Overload:Utils.NumberToString.HungarianOrdinalLanguageSpecifics.TryConvertOrdinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.HungarianOrdinalLanguageSpecifics.TryConvertOrdinal
+  nameWithType: HungarianOrdinalLanguageSpecifics.TryConvertOrdinal
 - uid: Utils.NumberToString.ILexicalFormSelector
   name: ILexicalFormSelector
   href: api/Utils.NumberToString.ILexicalFormSelector.html
@@ -63852,6 +64270,177 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.MultiplicativesType.Suffix
   nameWithType: MultiplicativesType.Suffix
+- uid: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics
+  name: NorwegianOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.NorwegianOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics
+  nameWithType: NorwegianOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.CardinalBelowTwenty
+  name: CardinalBelowTwenty
+  href: api/Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.html#Utils_NumberToString_NorwegianOrdinalLanguageSpecifics_CardinalBelowTwenty
+  commentId: P:Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.CardinalBelowTwenty
+  fullName: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.CardinalBelowTwenty
+  nameWithType: NorwegianOrdinalLanguageSpecifics.CardinalBelowTwenty
+- uid: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.CardinalBelowTwenty*
+  name: CardinalBelowTwenty
+  href: api/Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.html#Utils_NumberToString_NorwegianOrdinalLanguageSpecifics_CardinalBelowTwenty_
+  commentId: Overload:Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.CardinalBelowTwenty
+  isSpec: "True"
+  fullName: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.CardinalBelowTwenty
+  nameWithType: NorwegianOrdinalLanguageSpecifics.CardinalBelowTwenty
+- uid: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.CardinalTens
+  name: CardinalTens
+  href: api/Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.html#Utils_NumberToString_NorwegianOrdinalLanguageSpecifics_CardinalTens
+  commentId: P:Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.CardinalTens
+  fullName: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.CardinalTens
+  nameWithType: NorwegianOrdinalLanguageSpecifics.CardinalTens
+- uid: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.CardinalTens*
+  name: CardinalTens
+  href: api/Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.html#Utils_NumberToString_NorwegianOrdinalLanguageSpecifics_CardinalTens_
+  commentId: Overload:Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.CardinalTens
+  isSpec: "True"
+  fullName: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.CardinalTens
+  nameWithType: NorwegianOrdinalLanguageSpecifics.CardinalTens
+- uid: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.ComposeCardinal(System.Int32,System.Int32)
+  name: ComposeCardinal(int, int)
+  href: api/Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.html#Utils_NumberToString_NorwegianOrdinalLanguageSpecifics_ComposeCardinal_System_Int32_System_Int32_
+  commentId: M:Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.ComposeCardinal(System.Int32,System.Int32)
+  name.vb: ComposeCardinal(Integer, Integer)
+  fullName: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.ComposeCardinal(int, int)
+  fullName.vb: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.ComposeCardinal(Integer, Integer)
+  nameWithType: NorwegianOrdinalLanguageSpecifics.ComposeCardinal(int, int)
+  nameWithType.vb: NorwegianOrdinalLanguageSpecifics.ComposeCardinal(Integer, Integer)
+- uid: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.ComposeCardinal*
+  name: ComposeCardinal
+  href: api/Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.html#Utils_NumberToString_NorwegianOrdinalLanguageSpecifics_ComposeCardinal_
+  commentId: Overload:Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.ComposeCardinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.ComposeCardinal
+  nameWithType: NorwegianOrdinalLanguageSpecifics.ComposeCardinal
+- uid: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.ComposeOrdinal(System.Int32,System.Int32)
+  name: ComposeOrdinal(int, int)
+  href: api/Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.html#Utils_NumberToString_NorwegianOrdinalLanguageSpecifics_ComposeOrdinal_System_Int32_System_Int32_
+  commentId: M:Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.ComposeOrdinal(System.Int32,System.Int32)
+  name.vb: ComposeOrdinal(Integer, Integer)
+  fullName: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.ComposeOrdinal(int, int)
+  fullName.vb: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.ComposeOrdinal(Integer, Integer)
+  nameWithType: NorwegianOrdinalLanguageSpecifics.ComposeOrdinal(int, int)
+  nameWithType.vb: NorwegianOrdinalLanguageSpecifics.ComposeOrdinal(Integer, Integer)
+- uid: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.ComposeOrdinal*
+  name: ComposeOrdinal
+  href: api/Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.html#Utils_NumberToString_NorwegianOrdinalLanguageSpecifics_ComposeOrdinal_
+  commentId: Overload:Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.ComposeOrdinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.ComposeOrdinal
+  nameWithType: NorwegianOrdinalLanguageSpecifics.ComposeOrdinal
+- uid: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.Hundred
+  name: Hundred
+  href: api/Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.html#Utils_NumberToString_NorwegianOrdinalLanguageSpecifics_Hundred
+  commentId: P:Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.Hundred
+  fullName: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.Hundred
+  nameWithType: NorwegianOrdinalLanguageSpecifics.Hundred
+- uid: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.Hundred*
+  name: Hundred
+  href: api/Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.html#Utils_NumberToString_NorwegianOrdinalLanguageSpecifics_Hundred_
+  commentId: Overload:Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.Hundred
+  isSpec: "True"
+  fullName: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.Hundred
+  nameWithType: NorwegianOrdinalLanguageSpecifics.Hundred
+- uid: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.HundredOrdinal
+  name: HundredOrdinal
+  href: api/Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.html#Utils_NumberToString_NorwegianOrdinalLanguageSpecifics_HundredOrdinal
+  commentId: P:Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.HundredOrdinal
+  fullName: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.HundredOrdinal
+  nameWithType: NorwegianOrdinalLanguageSpecifics.HundredOrdinal
+- uid: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.HundredOrdinal*
+  name: HundredOrdinal
+  href: api/Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.html#Utils_NumberToString_NorwegianOrdinalLanguageSpecifics_HundredOrdinal_
+  commentId: Overload:Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.HundredOrdinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.HundredOrdinal
+  nameWithType: NorwegianOrdinalLanguageSpecifics.HundredOrdinal
+- uid: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.Hundreds
+  name: Hundreds
+  href: api/Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.html#Utils_NumberToString_NorwegianOrdinalLanguageSpecifics_Hundreds
+  commentId: P:Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.Hundreds
+  fullName: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.Hundreds
+  nameWithType: NorwegianOrdinalLanguageSpecifics.Hundreds
+- uid: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.Hundreds*
+  name: Hundreds
+  href: api/Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.html#Utils_NumberToString_NorwegianOrdinalLanguageSpecifics_Hundreds_
+  commentId: Overload:Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.Hundreds
+  isSpec: "True"
+  fullName: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.Hundreds
+  nameWithType: NorwegianOrdinalLanguageSpecifics.Hundreds
+- uid: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.HundredsFused
+  name: HundredsFused
+  href: api/Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.html#Utils_NumberToString_NorwegianOrdinalLanguageSpecifics_HundredsFused
+  commentId: P:Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.HundredsFused
+  fullName: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.HundredsFused
+  nameWithType: NorwegianOrdinalLanguageSpecifics.HundredsFused
+- uid: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.HundredsFused*
+  name: HundredsFused
+  href: api/Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.html#Utils_NumberToString_NorwegianOrdinalLanguageSpecifics_HundredsFused_
+  commentId: Overload:Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.HundredsFused
+  isSpec: "True"
+  fullName: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.HundredsFused
+  nameWithType: NorwegianOrdinalLanguageSpecifics.HundredsFused
+- uid: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.Join(System.String,System.Boolean,System.String,System.Boolean)
+  name: Join(string, bool, string, bool)
+  href: api/Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.html#Utils_NumberToString_NorwegianOrdinalLanguageSpecifics_Join_System_String_System_Boolean_System_String_System_Boolean_
+  commentId: M:Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.Join(System.String,System.Boolean,System.String,System.Boolean)
+  name.vb: Join(String, Boolean, String, Boolean)
+  fullName: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.Join(string, bool, string, bool)
+  fullName.vb: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.Join(String, Boolean, String, Boolean)
+  nameWithType: NorwegianOrdinalLanguageSpecifics.Join(string, bool, string, bool)
+  nameWithType.vb: NorwegianOrdinalLanguageSpecifics.Join(String, Boolean, String, Boolean)
+- uid: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.Join*
+  name: Join
+  href: api/Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.html#Utils_NumberToString_NorwegianOrdinalLanguageSpecifics_Join_
+  commentId: Overload:Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.Join
+  isSpec: "True"
+  fullName: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.Join
+  nameWithType: NorwegianOrdinalLanguageSpecifics.Join
+- uid: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.OrdinalBelowTwenty
+  name: OrdinalBelowTwenty
+  href: api/Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.html#Utils_NumberToString_NorwegianOrdinalLanguageSpecifics_OrdinalBelowTwenty
+  commentId: P:Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.OrdinalBelowTwenty
+  fullName: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.OrdinalBelowTwenty
+  nameWithType: NorwegianOrdinalLanguageSpecifics.OrdinalBelowTwenty
+- uid: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.OrdinalBelowTwenty*
+  name: OrdinalBelowTwenty
+  href: api/Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.html#Utils_NumberToString_NorwegianOrdinalLanguageSpecifics_OrdinalBelowTwenty_
+  commentId: Overload:Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.OrdinalBelowTwenty
+  isSpec: "True"
+  fullName: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.OrdinalBelowTwenty
+  nameWithType: NorwegianOrdinalLanguageSpecifics.OrdinalBelowTwenty
+- uid: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.OrdinalTens
+  name: OrdinalTens
+  href: api/Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.html#Utils_NumberToString_NorwegianOrdinalLanguageSpecifics_OrdinalTens
+  commentId: P:Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.OrdinalTens
+  fullName: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.OrdinalTens
+  nameWithType: NorwegianOrdinalLanguageSpecifics.OrdinalTens
+- uid: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.OrdinalTens*
+  name: OrdinalTens
+  href: api/Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.html#Utils_NumberToString_NorwegianOrdinalLanguageSpecifics_OrdinalTens_
+  commentId: Overload:Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.OrdinalTens
+  isSpec: "True"
+  fullName: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.OrdinalTens
+  nameWithType: NorwegianOrdinalLanguageSpecifics.OrdinalTens
+- uid: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.Scales
+  name: Scales
+  href: api/Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.html#Utils_NumberToString_NorwegianOrdinalLanguageSpecifics_Scales
+  commentId: P:Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.Scales
+  fullName: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.Scales
+  nameWithType: NorwegianOrdinalLanguageSpecifics.Scales
+- uid: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.Scales*
+  name: Scales
+  href: api/Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.html#Utils_NumberToString_NorwegianOrdinalLanguageSpecifics_Scales_
+  commentId: Overload:Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.Scales
+  isSpec: "True"
+  fullName: Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.Scales
+  nameWithType: NorwegianOrdinalLanguageSpecifics.Scales
 - uid: Utils.NumberToString.NumberListType
   name: NumberListType
   href: api/Utils.NumberToString.NumberListType.html
@@ -67575,6 +68164,592 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.ReplacementsListType.Replacements
   nameWithType: ReplacementsListType.Replacements
+- uid: Utils.NumberToString.RomanianOrdinalLanguageSpecifics
+  name: RomanianOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.RomanianOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.RomanianOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.RomanianOrdinalLanguageSpecifics
+  nameWithType: RomanianOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.RomanianOrdinalLanguageSpecifics.FinalizeWriting(System.String,System.String)
+  name: FinalizeWriting(string, string)
+  href: api/Utils.NumberToString.RomanianOrdinalLanguageSpecifics.html#Utils_NumberToString_RomanianOrdinalLanguageSpecifics_FinalizeWriting_System_String_System_String_
+  commentId: M:Utils.NumberToString.RomanianOrdinalLanguageSpecifics.FinalizeWriting(System.String,System.String)
+  name.vb: FinalizeWriting(String, String)
+  fullName: Utils.NumberToString.RomanianOrdinalLanguageSpecifics.FinalizeWriting(string, string)
+  fullName.vb: Utils.NumberToString.RomanianOrdinalLanguageSpecifics.FinalizeWriting(String, String)
+  nameWithType: RomanianOrdinalLanguageSpecifics.FinalizeWriting(string, string)
+  nameWithType.vb: RomanianOrdinalLanguageSpecifics.FinalizeWriting(String, String)
+- uid: Utils.NumberToString.RomanianOrdinalLanguageSpecifics.FinalizeWriting*
+  name: FinalizeWriting
+  href: api/Utils.NumberToString.RomanianOrdinalLanguageSpecifics.html#Utils_NumberToString_RomanianOrdinalLanguageSpecifics_FinalizeWriting_
+  commentId: Overload:Utils.NumberToString.RomanianOrdinalLanguageSpecifics.FinalizeWriting
+  isSpec: "True"
+  fullName: Utils.NumberToString.RomanianOrdinalLanguageSpecifics.FinalizeWriting
+  nameWithType: RomanianOrdinalLanguageSpecifics.FinalizeWriting
+- uid: Utils.NumberToString.RomanianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name: TryConvertOrdinal(int, IReadOnlyDictionary<string, string>, out string?)
+  href: api/Utils.NumberToString.RomanianOrdinalLanguageSpecifics.html#Utils_NumberToString_RomanianOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int32_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__
+  commentId: M:Utils.NumberToString.RomanianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name.vb: TryConvertOrdinal(Integer, IReadOnlyDictionary(Of String, String), String)
+  fullName: Utils.NumberToString.RomanianOrdinalLanguageSpecifics.TryConvertOrdinal(int, System.Collections.Generic.IReadOnlyDictionary<string, string>, out string?)
+  fullName.vb: Utils.NumberToString.RomanianOrdinalLanguageSpecifics.TryConvertOrdinal(Integer, System.Collections.Generic.IReadOnlyDictionary(Of String, String), String)
+  nameWithType: RomanianOrdinalLanguageSpecifics.TryConvertOrdinal(int, IReadOnlyDictionary<string, string>, out string?)
+  nameWithType.vb: RomanianOrdinalLanguageSpecifics.TryConvertOrdinal(Integer, IReadOnlyDictionary(Of String, String), String)
+- uid: Utils.NumberToString.RomanianOrdinalLanguageSpecifics.TryConvertOrdinal*
+  name: TryConvertOrdinal
+  href: api/Utils.NumberToString.RomanianOrdinalLanguageSpecifics.html#Utils_NumberToString_RomanianOrdinalLanguageSpecifics_TryConvertOrdinal_
+  commentId: Overload:Utils.NumberToString.RomanianOrdinalLanguageSpecifics.TryConvertOrdinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.RomanianOrdinalLanguageSpecifics.TryConvertOrdinal
+  nameWithType: RomanianOrdinalLanguageSpecifics.TryConvertOrdinal
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics
+  name: ScandinavianOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics
+  nameWithType: ScandinavianOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.CardinalBelowTwenty
+  name: CardinalBelowTwenty
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_CardinalBelowTwenty
+  commentId: P:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.CardinalBelowTwenty
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.CardinalBelowTwenty
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.CardinalBelowTwenty
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.CardinalBelowTwenty*
+  name: CardinalBelowTwenty
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_CardinalBelowTwenty_
+  commentId: Overload:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.CardinalBelowTwenty
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.CardinalBelowTwenty
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.CardinalBelowTwenty
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.CardinalTens
+  name: CardinalTens
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_CardinalTens
+  commentId: P:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.CardinalTens
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.CardinalTens
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.CardinalTens
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.CardinalTens*
+  name: CardinalTens
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_CardinalTens_
+  commentId: Overload:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.CardinalTens
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.CardinalTens
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.CardinalTens
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ComposeCardinal(System.Int32,System.Int32)
+  name: ComposeCardinal(int, int)
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_ComposeCardinal_System_Int32_System_Int32_
+  commentId: M:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ComposeCardinal(System.Int32,System.Int32)
+  name.vb: ComposeCardinal(Integer, Integer)
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ComposeCardinal(int, int)
+  fullName.vb: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ComposeCardinal(Integer, Integer)
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.ComposeCardinal(int, int)
+  nameWithType.vb: ScandinavianOrdinalLanguageSpecifics.ComposeCardinal(Integer, Integer)
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ComposeCardinal*
+  name: ComposeCardinal
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_ComposeCardinal_
+  commentId: Overload:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ComposeCardinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ComposeCardinal
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.ComposeCardinal
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ComposeOrdinal(System.Int32,System.Int32)
+  name: ComposeOrdinal(int, int)
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_ComposeOrdinal_System_Int32_System_Int32_
+  commentId: M:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ComposeOrdinal(System.Int32,System.Int32)
+  name.vb: ComposeOrdinal(Integer, Integer)
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ComposeOrdinal(int, int)
+  fullName.vb: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ComposeOrdinal(Integer, Integer)
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.ComposeOrdinal(int, int)
+  nameWithType.vb: ScandinavianOrdinalLanguageSpecifics.ComposeOrdinal(Integer, Integer)
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ComposeOrdinal*
+  name: ComposeOrdinal
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_ComposeOrdinal_
+  commentId: Overload:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ComposeOrdinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ComposeOrdinal
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.ComposeOrdinal
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.FinalizeWriting(System.String,System.String)
+  name: FinalizeWriting(string, string)
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_FinalizeWriting_System_String_System_String_
+  commentId: M:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.FinalizeWriting(System.String,System.String)
+  name.vb: FinalizeWriting(String, String)
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.FinalizeWriting(string, string)
+  fullName.vb: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.FinalizeWriting(String, String)
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.FinalizeWriting(string, string)
+  nameWithType.vb: ScandinavianOrdinalLanguageSpecifics.FinalizeWriting(String, String)
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.FinalizeWriting*
+  name: FinalizeWriting
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_FinalizeWriting_
+  commentId: Overload:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.FinalizeWriting
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.FinalizeWriting
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.FinalizeWriting
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Hundred
+  name: Hundred
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_Hundred
+  commentId: P:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Hundred
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Hundred
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.Hundred
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Hundred*
+  name: Hundred
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_Hundred_
+  commentId: Overload:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Hundred
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Hundred
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.Hundred
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.HundredOrdinal
+  name: HundredOrdinal
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_HundredOrdinal
+  commentId: P:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.HundredOrdinal
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.HundredOrdinal
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.HundredOrdinal
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.HundredOrdinal*
+  name: HundredOrdinal
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_HundredOrdinal_
+  commentId: Overload:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.HundredOrdinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.HundredOrdinal
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.HundredOrdinal
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Hundreds
+  name: Hundreds
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_Hundreds
+  commentId: P:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Hundreds
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Hundreds
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.Hundreds
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Hundreds*
+  name: Hundreds
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_Hundreds_
+  commentId: Overload:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Hundreds
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Hundreds
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.Hundreds
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.HundredsFused
+  name: HundredsFused
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_HundredsFused
+  commentId: P:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.HundredsFused
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.HundredsFused
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.HundredsFused
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.HundredsFused*
+  name: HundredsFused
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_HundredsFused_
+  commentId: Overload:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.HundredsFused
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.HundredsFused
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.HundredsFused
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Join(System.String,System.Boolean,System.String,System.Boolean)
+  name: Join(string, bool, string, bool)
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_Join_System_String_System_Boolean_System_String_System_Boolean_
+  commentId: M:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Join(System.String,System.Boolean,System.String,System.Boolean)
+  name.vb: Join(String, Boolean, String, Boolean)
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Join(string, bool, string, bool)
+  fullName.vb: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Join(String, Boolean, String, Boolean)
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.Join(string, bool, string, bool)
+  nameWithType.vb: ScandinavianOrdinalLanguageSpecifics.Join(String, Boolean, String, Boolean)
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Join*
+  name: Join
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_Join_
+  commentId: Overload:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Join
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Join
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.Join
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.OrdinalBelowTwenty
+  name: OrdinalBelowTwenty
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_OrdinalBelowTwenty
+  commentId: P:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.OrdinalBelowTwenty
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.OrdinalBelowTwenty
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.OrdinalBelowTwenty
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.OrdinalBelowTwenty*
+  name: OrdinalBelowTwenty
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_OrdinalBelowTwenty_
+  commentId: Overload:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.OrdinalBelowTwenty
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.OrdinalBelowTwenty
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.OrdinalBelowTwenty
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.OrdinalTens
+  name: OrdinalTens
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_OrdinalTens
+  commentId: P:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.OrdinalTens
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.OrdinalTens
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.OrdinalTens
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.OrdinalTens*
+  name: OrdinalTens
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_OrdinalTens_
+  commentId: Overload:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.OrdinalTens
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.OrdinalTens
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.OrdinalTens
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords
+  name: ScandinavianOrdinalLanguageSpecifics.ScaleWords
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.html
+  commentId: T:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.ScaleWords
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.#ctor(System.String,System.String,System.String,System.Boolean)
+  name: ScaleWords(string, string, string, bool)
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_ScaleWords__ctor_System_String_System_String_System_String_System_Boolean_
+  commentId: M:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.#ctor(System.String,System.String,System.String,System.Boolean)
+  name.vb: New(String, String, String, Boolean)
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.ScaleWords(string, string, string, bool)
+  fullName.vb: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.New(String, String, String, Boolean)
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.ScaleWords.ScaleWords(string, string, string, bool)
+  nameWithType.vb: ScandinavianOrdinalLanguageSpecifics.ScaleWords.New(String, String, String, Boolean)
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.#ctor*
+  name: ScaleWords
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_ScaleWords__ctor_
+  commentId: Overload:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.ScaleWords
+  fullName.vb: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.New
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.ScaleWords.ScaleWords
+  nameWithType.vb: ScandinavianOrdinalLanguageSpecifics.ScaleWords.New
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.Fused
+  name: Fused
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_ScaleWords_Fused
+  commentId: P:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.Fused
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.Fused
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.ScaleWords.Fused
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.Fused*
+  name: Fused
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_ScaleWords_Fused_
+  commentId: Overload:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.Fused
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.Fused
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.ScaleWords.Fused
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.Ordinal
+  name: Ordinal
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_ScaleWords_Ordinal
+  commentId: P:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.Ordinal
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.Ordinal
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.ScaleWords.Ordinal
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.Ordinal*
+  name: Ordinal
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_ScaleWords_Ordinal_
+  commentId: Overload:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.Ordinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.Ordinal
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.ScaleWords.Ordinal
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.Plural
+  name: Plural
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_ScaleWords_Plural
+  commentId: P:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.Plural
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.Plural
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.ScaleWords.Plural
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.Plural*
+  name: Plural
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_ScaleWords_Plural_
+  commentId: Overload:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.Plural
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.Plural
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.ScaleWords.Plural
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.Single
+  name: Single
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_ScaleWords_Single
+  commentId: P:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.Single
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.Single
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.ScaleWords.Single
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.Single*
+  name: Single
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_ScaleWords_Single_
+  commentId: Overload:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.Single
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.Single
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.ScaleWords.Single
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Scales
+  name: Scales
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_Scales
+  commentId: P:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Scales
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Scales
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.Scales
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Scales*
+  name: Scales
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_Scales_
+  commentId: Overload:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Scales
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Scales
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.Scales
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name: TryConvertOrdinal(int, IReadOnlyDictionary<string, string>, out string?)
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int32_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__
+  commentId: M:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name.vb: TryConvertOrdinal(Integer, IReadOnlyDictionary(Of String, String), String)
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.TryConvertOrdinal(int, System.Collections.Generic.IReadOnlyDictionary<string, string>, out string?)
+  fullName.vb: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.TryConvertOrdinal(Integer, System.Collections.Generic.IReadOnlyDictionary(Of String, String), String)
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.TryConvertOrdinal(int, IReadOnlyDictionary<string, string>, out string?)
+  nameWithType.vb: ScandinavianOrdinalLanguageSpecifics.TryConvertOrdinal(Integer, IReadOnlyDictionary(Of String, String), String)
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.TryConvertOrdinal*
+  name: TryConvertOrdinal
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_TryConvertOrdinal_
+  commentId: Overload:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.TryConvertOrdinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.TryConvertOrdinal
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.TryConvertOrdinal
+- uid: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics
+  name: SlavicAdjectivalOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics
+  nameWithType: SlavicAdjectivalOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.CaseDimension
+  name: CaseDimension
+  href: api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.html#Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_CaseDimension
+  commentId: P:Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.CaseDimension
+  fullName: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.CaseDimension
+  nameWithType: SlavicAdjectivalOrdinalLanguageSpecifics.CaseDimension
+- uid: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.CaseDimension*
+  name: CaseDimension
+  href: api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.html#Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_CaseDimension_
+  commentId: Overload:Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.CaseDimension
+  isSpec: "True"
+  fullName: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.CaseDimension
+  nameWithType: SlavicAdjectivalOrdinalLanguageSpecifics.CaseDimension
+- uid: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.CaseValues
+  name: CaseValues
+  href: api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.html#Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_CaseValues
+  commentId: P:Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.CaseValues
+  fullName: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.CaseValues
+  nameWithType: SlavicAdjectivalOrdinalLanguageSpecifics.CaseValues
+- uid: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.CaseValues*
+  name: CaseValues
+  href: api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.html#Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_CaseValues_
+  commentId: Overload:Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.CaseValues
+  isSpec: "True"
+  fullName: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.CaseValues
+  nameWithType: SlavicAdjectivalOrdinalLanguageSpecifics.CaseValues
+- uid: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Decline(System.String,Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender,System.Int32)
+  name: Decline(string, Gender, int)
+  href: api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.html#Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_Decline_System_String_Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_Gender_System_Int32_
+  commentId: M:Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Decline(System.String,Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender,System.Int32)
+  name.vb: Decline(String, Gender, Integer)
+  fullName: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Decline(string, Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender, int)
+  fullName.vb: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Decline(String, Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender, Integer)
+  nameWithType: SlavicAdjectivalOrdinalLanguageSpecifics.Decline(string, SlavicAdjectivalOrdinalLanguageSpecifics.Gender, int)
+  nameWithType.vb: SlavicAdjectivalOrdinalLanguageSpecifics.Decline(String, SlavicAdjectivalOrdinalLanguageSpecifics.Gender, Integer)
+- uid: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Decline*
+  name: Decline
+  href: api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.html#Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_Decline_
+  commentId: Overload:Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Decline
+  isSpec: "True"
+  fullName: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Decline
+  nameWithType: SlavicAdjectivalOrdinalLanguageSpecifics.Decline
+- uid: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.FeminineValue
+  name: FeminineValue
+  href: api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.html#Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_FeminineValue
+  commentId: P:Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.FeminineValue
+  fullName: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.FeminineValue
+  nameWithType: SlavicAdjectivalOrdinalLanguageSpecifics.FeminineValue
+- uid: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.FeminineValue*
+  name: FeminineValue
+  href: api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.html#Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_FeminineValue_
+  commentId: Overload:Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.FeminineValue
+  isSpec: "True"
+  fullName: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.FeminineValue
+  nameWithType: SlavicAdjectivalOrdinalLanguageSpecifics.FeminineValue
+- uid: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.FinalizeWriting(System.String,System.String)
+  name: FinalizeWriting(string, string)
+  href: api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.html#Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_FinalizeWriting_System_String_System_String_
+  commentId: M:Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.FinalizeWriting(System.String,System.String)
+  name.vb: FinalizeWriting(String, String)
+  fullName: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.FinalizeWriting(string, string)
+  fullName.vb: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.FinalizeWriting(String, String)
+  nameWithType: SlavicAdjectivalOrdinalLanguageSpecifics.FinalizeWriting(string, string)
+  nameWithType.vb: SlavicAdjectivalOrdinalLanguageSpecifics.FinalizeWriting(String, String)
+- uid: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.FinalizeWriting*
+  name: FinalizeWriting
+  href: api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.html#Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_FinalizeWriting_
+  commentId: Overload:Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.FinalizeWriting
+  isSpec: "True"
+  fullName: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.FinalizeWriting
+  nameWithType: SlavicAdjectivalOrdinalLanguageSpecifics.FinalizeWriting
+- uid: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender
+  name: SlavicAdjectivalOrdinalLanguageSpecifics.Gender
+  href: api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender.html
+  commentId: T:Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender
+  fullName: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender
+  nameWithType: SlavicAdjectivalOrdinalLanguageSpecifics.Gender
+- uid: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender.Feminine
+  name: Feminine
+  href: api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender.html#Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_Gender_Feminine
+  commentId: F:Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender.Feminine
+  fullName: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender.Feminine
+  nameWithType: SlavicAdjectivalOrdinalLanguageSpecifics.Gender.Feminine
+- uid: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender.Masculine
+  name: Masculine
+  href: api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender.html#Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_Gender_Masculine
+  commentId: F:Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender.Masculine
+  fullName: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender.Masculine
+  nameWithType: SlavicAdjectivalOrdinalLanguageSpecifics.Gender.Masculine
+- uid: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender.Neuter
+  name: Neuter
+  href: api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender.html#Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_Gender_Neuter
+  commentId: F:Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender.Neuter
+  fullName: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender.Neuter
+  nameWithType: SlavicAdjectivalOrdinalLanguageSpecifics.Gender.Neuter
+- uid: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.GenderDimension
+  name: GenderDimension
+  href: api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.html#Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_GenderDimension
+  commentId: P:Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.GenderDimension
+  fullName: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.GenderDimension
+  nameWithType: SlavicAdjectivalOrdinalLanguageSpecifics.GenderDimension
+- uid: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.GenderDimension*
+  name: GenderDimension
+  href: api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.html#Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_GenderDimension_
+  commentId: Overload:Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.GenderDimension
+  isSpec: "True"
+  fullName: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.GenderDimension
+  nameWithType: SlavicAdjectivalOrdinalLanguageSpecifics.GenderDimension
+- uid: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Groups(System.Int32)
+  name: Groups(int)
+  href: api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.html#Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_Groups_System_Int32_
+  commentId: M:Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Groups(System.Int32)
+  name.vb: Groups(Integer)
+  fullName: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Groups(int)
+  fullName.vb: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Groups(Integer)
+  nameWithType: SlavicAdjectivalOrdinalLanguageSpecifics.Groups(int)
+  nameWithType.vb: SlavicAdjectivalOrdinalLanguageSpecifics.Groups(Integer)
+- uid: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Groups*
+  name: Groups
+  href: api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.html#Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_Groups_
+  commentId: Overload:Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Groups
+  isSpec: "True"
+  fullName: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Groups
+  nameWithType: SlavicAdjectivalOrdinalLanguageSpecifics.Groups
+- uid: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.NeuterValue
+  name: NeuterValue
+  href: api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.html#Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_NeuterValue
+  commentId: P:Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.NeuterValue
+  fullName: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.NeuterValue
+  nameWithType: SlavicAdjectivalOrdinalLanguageSpecifics.NeuterValue
+- uid: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.NeuterValue*
+  name: NeuterValue
+  href: api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.html#Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_NeuterValue_
+  commentId: Overload:Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.NeuterValue
+  isSpec: "True"
+  fullName: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.NeuterValue
+  nameWithType: SlavicAdjectivalOrdinalLanguageSpecifics.NeuterValue
+- uid: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.ReplaceEnding(System.String,System.String,System.String[][],Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender,System.Int32)
+  name: ReplaceEnding(string, string, string[][], Gender, int)
+  href: api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.html#Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_ReplaceEnding_System_String_System_String_System_String_____Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_Gender_System_Int32_
+  commentId: M:Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.ReplaceEnding(System.String,System.String,System.String[][],Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender,System.Int32)
+  name.vb: ReplaceEnding(String, String, String()(), Gender, Integer)
+  fullName: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.ReplaceEnding(string, string, string[][], Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender, int)
+  fullName.vb: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.ReplaceEnding(String, String, String()(), Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender, Integer)
+  nameWithType: SlavicAdjectivalOrdinalLanguageSpecifics.ReplaceEnding(string, string, string[][], SlavicAdjectivalOrdinalLanguageSpecifics.Gender, int)
+  nameWithType.vb: SlavicAdjectivalOrdinalLanguageSpecifics.ReplaceEnding(String, String, String()(), SlavicAdjectivalOrdinalLanguageSpecifics.Gender, Integer)
+- uid: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.ReplaceEnding*
+  name: ReplaceEnding
+  href: api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.html#Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_ReplaceEnding_
+  commentId: Overload:Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.ReplaceEnding
+  isSpec: "True"
+  fullName: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.ReplaceEnding
+  nameWithType: SlavicAdjectivalOrdinalLanguageSpecifics.ReplaceEnding
+- uid: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name: TryConvertOrdinal(int, IReadOnlyDictionary<string, string>, out string?)
+  href: api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.html#Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int32_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__
+  commentId: M:Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name.vb: TryConvertOrdinal(Integer, IReadOnlyDictionary(Of String, String), String)
+  fullName: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.TryConvertOrdinal(int, System.Collections.Generic.IReadOnlyDictionary<string, string>, out string?)
+  fullName.vb: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.TryConvertOrdinal(Integer, System.Collections.Generic.IReadOnlyDictionary(Of String, String), String)
+  nameWithType: SlavicAdjectivalOrdinalLanguageSpecifics.TryConvertOrdinal(int, IReadOnlyDictionary<string, string>, out string?)
+  nameWithType.vb: SlavicAdjectivalOrdinalLanguageSpecifics.TryConvertOrdinal(Integer, IReadOnlyDictionary(Of String, String), String)
+- uid: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.TryConvertOrdinal*
+  name: TryConvertOrdinal
+  href: api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.html#Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_TryConvertOrdinal_
+  commentId: Overload:Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.TryConvertOrdinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.TryConvertOrdinal
+  nameWithType: SlavicAdjectivalOrdinalLanguageSpecifics.TryConvertOrdinal
+- uid: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.TryDecompose(System.Int32,System.String@,System.Collections.Generic.IReadOnlyList{System.String}@)
+  name: TryDecompose(int, out string, out IReadOnlyList<string>)
+  href: api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.html#Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_TryDecompose_System_Int32_System_String__System_Collections_Generic_IReadOnlyList_System_String___
+  commentId: M:Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.TryDecompose(System.Int32,System.String@,System.Collections.Generic.IReadOnlyList{System.String}@)
+  name.vb: TryDecompose(Integer, String, IReadOnlyList(Of String))
+  fullName: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.TryDecompose(int, out string, out System.Collections.Generic.IReadOnlyList<string>)
+  fullName.vb: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.TryDecompose(Integer, String, System.Collections.Generic.IReadOnlyList(Of String))
+  nameWithType: SlavicAdjectivalOrdinalLanguageSpecifics.TryDecompose(int, out string, out IReadOnlyList<string>)
+  nameWithType.vb: SlavicAdjectivalOrdinalLanguageSpecifics.TryDecompose(Integer, String, IReadOnlyList(Of String))
+- uid: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.TryDecompose*
+  name: TryDecompose
+  href: api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.html#Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_TryDecompose_
+  commentId: Overload:Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.TryDecompose
+  isSpec: "True"
+  fullName: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.TryDecompose
+  nameWithType: SlavicAdjectivalOrdinalLanguageSpecifics.TryDecompose
+- uid: Utils.NumberToString.SlovakOrdinalLanguageSpecifics
+  name: SlovakOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.SlovakOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.SlovakOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.SlovakOrdinalLanguageSpecifics
+  nameWithType: SlovakOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.CaseValues
+  name: CaseValues
+  href: api/Utils.NumberToString.SlovakOrdinalLanguageSpecifics.html#Utils_NumberToString_SlovakOrdinalLanguageSpecifics_CaseValues
+  commentId: P:Utils.NumberToString.SlovakOrdinalLanguageSpecifics.CaseValues
+  fullName: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.CaseValues
+  nameWithType: SlovakOrdinalLanguageSpecifics.CaseValues
+- uid: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.CaseValues*
+  name: CaseValues
+  href: api/Utils.NumberToString.SlovakOrdinalLanguageSpecifics.html#Utils_NumberToString_SlovakOrdinalLanguageSpecifics_CaseValues_
+  commentId: Overload:Utils.NumberToString.SlovakOrdinalLanguageSpecifics.CaseValues
+  isSpec: "True"
+  fullName: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.CaseValues
+  nameWithType: SlovakOrdinalLanguageSpecifics.CaseValues
+- uid: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.Decline(System.String,Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender,System.Int32)
+  name: Decline(string, Gender, int)
+  href: api/Utils.NumberToString.SlovakOrdinalLanguageSpecifics.html#Utils_NumberToString_SlovakOrdinalLanguageSpecifics_Decline_System_String_Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_Gender_System_Int32_
+  commentId: M:Utils.NumberToString.SlovakOrdinalLanguageSpecifics.Decline(System.String,Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender,System.Int32)
+  name.vb: Decline(String, Gender, Integer)
+  fullName: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.Decline(string, Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender, int)
+  fullName.vb: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.Decline(String, Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender, Integer)
+  nameWithType: SlovakOrdinalLanguageSpecifics.Decline(string, SlavicAdjectivalOrdinalLanguageSpecifics.Gender, int)
+  nameWithType.vb: SlovakOrdinalLanguageSpecifics.Decline(String, SlavicAdjectivalOrdinalLanguageSpecifics.Gender, Integer)
+- uid: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.Decline*
+  name: Decline
+  href: api/Utils.NumberToString.SlovakOrdinalLanguageSpecifics.html#Utils_NumberToString_SlovakOrdinalLanguageSpecifics_Decline_
+  commentId: Overload:Utils.NumberToString.SlovakOrdinalLanguageSpecifics.Decline
+  isSpec: "True"
+  fullName: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.Decline
+  nameWithType: SlovakOrdinalLanguageSpecifics.Decline
+- uid: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.FeminineValue
+  name: FeminineValue
+  href: api/Utils.NumberToString.SlovakOrdinalLanguageSpecifics.html#Utils_NumberToString_SlovakOrdinalLanguageSpecifics_FeminineValue
+  commentId: P:Utils.NumberToString.SlovakOrdinalLanguageSpecifics.FeminineValue
+  fullName: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.FeminineValue
+  nameWithType: SlovakOrdinalLanguageSpecifics.FeminineValue
+- uid: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.FeminineValue*
+  name: FeminineValue
+  href: api/Utils.NumberToString.SlovakOrdinalLanguageSpecifics.html#Utils_NumberToString_SlovakOrdinalLanguageSpecifics_FeminineValue_
+  commentId: Overload:Utils.NumberToString.SlovakOrdinalLanguageSpecifics.FeminineValue
+  isSpec: "True"
+  fullName: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.FeminineValue
+  nameWithType: SlovakOrdinalLanguageSpecifics.FeminineValue
+- uid: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.NeuterValue
+  name: NeuterValue
+  href: api/Utils.NumberToString.SlovakOrdinalLanguageSpecifics.html#Utils_NumberToString_SlovakOrdinalLanguageSpecifics_NeuterValue
+  commentId: P:Utils.NumberToString.SlovakOrdinalLanguageSpecifics.NeuterValue
+  fullName: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.NeuterValue
+  nameWithType: SlovakOrdinalLanguageSpecifics.NeuterValue
+- uid: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.NeuterValue*
+  name: NeuterValue
+  href: api/Utils.NumberToString.SlovakOrdinalLanguageSpecifics.html#Utils_NumberToString_SlovakOrdinalLanguageSpecifics_NeuterValue_
+  commentId: Overload:Utils.NumberToString.SlovakOrdinalLanguageSpecifics.NeuterValue
+  isSpec: "True"
+  fullName: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.NeuterValue
+  nameWithType: SlovakOrdinalLanguageSpecifics.NeuterValue
+- uid: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.TryDecompose(System.Int32,System.String@,System.Collections.Generic.IReadOnlyList{System.String}@)
+  name: TryDecompose(int, out string, out IReadOnlyList<string>)
+  href: api/Utils.NumberToString.SlovakOrdinalLanguageSpecifics.html#Utils_NumberToString_SlovakOrdinalLanguageSpecifics_TryDecompose_System_Int32_System_String__System_Collections_Generic_IReadOnlyList_System_String___
+  commentId: M:Utils.NumberToString.SlovakOrdinalLanguageSpecifics.TryDecompose(System.Int32,System.String@,System.Collections.Generic.IReadOnlyList{System.String}@)
+  name.vb: TryDecompose(Integer, String, IReadOnlyList(Of String))
+  fullName: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.TryDecompose(int, out string, out System.Collections.Generic.IReadOnlyList<string>)
+  fullName.vb: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.TryDecompose(Integer, String, System.Collections.Generic.IReadOnlyList(Of String))
+  nameWithType: SlovakOrdinalLanguageSpecifics.TryDecompose(int, out string, out IReadOnlyList<string>)
+  nameWithType.vb: SlovakOrdinalLanguageSpecifics.TryDecompose(Integer, String, IReadOnlyList(Of String))
+- uid: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.TryDecompose*
+  name: TryDecompose
+  href: api/Utils.NumberToString.SlovakOrdinalLanguageSpecifics.html#Utils_NumberToString_SlovakOrdinalLanguageSpecifics_TryDecompose_
+  commentId: Overload:Utils.NumberToString.SlovakOrdinalLanguageSpecifics.TryDecompose
+  isSpec: "True"
+  fullName: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.TryDecompose
+  nameWithType: SlovakOrdinalLanguageSpecifics.TryDecompose
 - uid: Utils.NumberToString.SpecialHourEntry
   name: SpecialHourEntry
   href: api/Utils.NumberToString.SpecialHourEntry.html
@@ -67722,6 +68897,177 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.SuffixesType.Values
   nameWithType: SuffixesType.Values
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics
+  name: SwedishOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.SwedishOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics
+  nameWithType: SwedishOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.CardinalBelowTwenty
+  name: CardinalBelowTwenty
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_CardinalBelowTwenty
+  commentId: P:Utils.NumberToString.SwedishOrdinalLanguageSpecifics.CardinalBelowTwenty
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.CardinalBelowTwenty
+  nameWithType: SwedishOrdinalLanguageSpecifics.CardinalBelowTwenty
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.CardinalBelowTwenty*
+  name: CardinalBelowTwenty
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_CardinalBelowTwenty_
+  commentId: Overload:Utils.NumberToString.SwedishOrdinalLanguageSpecifics.CardinalBelowTwenty
+  isSpec: "True"
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.CardinalBelowTwenty
+  nameWithType: SwedishOrdinalLanguageSpecifics.CardinalBelowTwenty
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.CardinalTens
+  name: CardinalTens
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_CardinalTens
+  commentId: P:Utils.NumberToString.SwedishOrdinalLanguageSpecifics.CardinalTens
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.CardinalTens
+  nameWithType: SwedishOrdinalLanguageSpecifics.CardinalTens
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.CardinalTens*
+  name: CardinalTens
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_CardinalTens_
+  commentId: Overload:Utils.NumberToString.SwedishOrdinalLanguageSpecifics.CardinalTens
+  isSpec: "True"
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.CardinalTens
+  nameWithType: SwedishOrdinalLanguageSpecifics.CardinalTens
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.ComposeCardinal(System.Int32,System.Int32)
+  name: ComposeCardinal(int, int)
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_ComposeCardinal_System_Int32_System_Int32_
+  commentId: M:Utils.NumberToString.SwedishOrdinalLanguageSpecifics.ComposeCardinal(System.Int32,System.Int32)
+  name.vb: ComposeCardinal(Integer, Integer)
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.ComposeCardinal(int, int)
+  fullName.vb: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.ComposeCardinal(Integer, Integer)
+  nameWithType: SwedishOrdinalLanguageSpecifics.ComposeCardinal(int, int)
+  nameWithType.vb: SwedishOrdinalLanguageSpecifics.ComposeCardinal(Integer, Integer)
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.ComposeCardinal*
+  name: ComposeCardinal
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_ComposeCardinal_
+  commentId: Overload:Utils.NumberToString.SwedishOrdinalLanguageSpecifics.ComposeCardinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.ComposeCardinal
+  nameWithType: SwedishOrdinalLanguageSpecifics.ComposeCardinal
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.ComposeOrdinal(System.Int32,System.Int32)
+  name: ComposeOrdinal(int, int)
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_ComposeOrdinal_System_Int32_System_Int32_
+  commentId: M:Utils.NumberToString.SwedishOrdinalLanguageSpecifics.ComposeOrdinal(System.Int32,System.Int32)
+  name.vb: ComposeOrdinal(Integer, Integer)
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.ComposeOrdinal(int, int)
+  fullName.vb: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.ComposeOrdinal(Integer, Integer)
+  nameWithType: SwedishOrdinalLanguageSpecifics.ComposeOrdinal(int, int)
+  nameWithType.vb: SwedishOrdinalLanguageSpecifics.ComposeOrdinal(Integer, Integer)
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.ComposeOrdinal*
+  name: ComposeOrdinal
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_ComposeOrdinal_
+  commentId: Overload:Utils.NumberToString.SwedishOrdinalLanguageSpecifics.ComposeOrdinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.ComposeOrdinal
+  nameWithType: SwedishOrdinalLanguageSpecifics.ComposeOrdinal
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Hundred
+  name: Hundred
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_Hundred
+  commentId: P:Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Hundred
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Hundred
+  nameWithType: SwedishOrdinalLanguageSpecifics.Hundred
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Hundred*
+  name: Hundred
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_Hundred_
+  commentId: Overload:Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Hundred
+  isSpec: "True"
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Hundred
+  nameWithType: SwedishOrdinalLanguageSpecifics.Hundred
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.HundredOrdinal
+  name: HundredOrdinal
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_HundredOrdinal
+  commentId: P:Utils.NumberToString.SwedishOrdinalLanguageSpecifics.HundredOrdinal
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.HundredOrdinal
+  nameWithType: SwedishOrdinalLanguageSpecifics.HundredOrdinal
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.HundredOrdinal*
+  name: HundredOrdinal
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_HundredOrdinal_
+  commentId: Overload:Utils.NumberToString.SwedishOrdinalLanguageSpecifics.HundredOrdinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.HundredOrdinal
+  nameWithType: SwedishOrdinalLanguageSpecifics.HundredOrdinal
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Hundreds
+  name: Hundreds
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_Hundreds
+  commentId: P:Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Hundreds
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Hundreds
+  nameWithType: SwedishOrdinalLanguageSpecifics.Hundreds
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Hundreds*
+  name: Hundreds
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_Hundreds_
+  commentId: Overload:Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Hundreds
+  isSpec: "True"
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Hundreds
+  nameWithType: SwedishOrdinalLanguageSpecifics.Hundreds
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.HundredsFused
+  name: HundredsFused
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_HundredsFused
+  commentId: P:Utils.NumberToString.SwedishOrdinalLanguageSpecifics.HundredsFused
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.HundredsFused
+  nameWithType: SwedishOrdinalLanguageSpecifics.HundredsFused
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.HundredsFused*
+  name: HundredsFused
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_HundredsFused_
+  commentId: Overload:Utils.NumberToString.SwedishOrdinalLanguageSpecifics.HundredsFused
+  isSpec: "True"
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.HundredsFused
+  nameWithType: SwedishOrdinalLanguageSpecifics.HundredsFused
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Join(System.String,System.Boolean,System.String,System.Boolean)
+  name: Join(string, bool, string, bool)
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_Join_System_String_System_Boolean_System_String_System_Boolean_
+  commentId: M:Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Join(System.String,System.Boolean,System.String,System.Boolean)
+  name.vb: Join(String, Boolean, String, Boolean)
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Join(string, bool, string, bool)
+  fullName.vb: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Join(String, Boolean, String, Boolean)
+  nameWithType: SwedishOrdinalLanguageSpecifics.Join(string, bool, string, bool)
+  nameWithType.vb: SwedishOrdinalLanguageSpecifics.Join(String, Boolean, String, Boolean)
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Join*
+  name: Join
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_Join_
+  commentId: Overload:Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Join
+  isSpec: "True"
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Join
+  nameWithType: SwedishOrdinalLanguageSpecifics.Join
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.OrdinalBelowTwenty
+  name: OrdinalBelowTwenty
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_OrdinalBelowTwenty
+  commentId: P:Utils.NumberToString.SwedishOrdinalLanguageSpecifics.OrdinalBelowTwenty
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.OrdinalBelowTwenty
+  nameWithType: SwedishOrdinalLanguageSpecifics.OrdinalBelowTwenty
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.OrdinalBelowTwenty*
+  name: OrdinalBelowTwenty
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_OrdinalBelowTwenty_
+  commentId: Overload:Utils.NumberToString.SwedishOrdinalLanguageSpecifics.OrdinalBelowTwenty
+  isSpec: "True"
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.OrdinalBelowTwenty
+  nameWithType: SwedishOrdinalLanguageSpecifics.OrdinalBelowTwenty
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.OrdinalTens
+  name: OrdinalTens
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_OrdinalTens
+  commentId: P:Utils.NumberToString.SwedishOrdinalLanguageSpecifics.OrdinalTens
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.OrdinalTens
+  nameWithType: SwedishOrdinalLanguageSpecifics.OrdinalTens
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.OrdinalTens*
+  name: OrdinalTens
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_OrdinalTens_
+  commentId: Overload:Utils.NumberToString.SwedishOrdinalLanguageSpecifics.OrdinalTens
+  isSpec: "True"
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.OrdinalTens
+  nameWithType: SwedishOrdinalLanguageSpecifics.OrdinalTens
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Scales
+  name: Scales
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_Scales
+  commentId: P:Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Scales
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Scales
+  nameWithType: SwedishOrdinalLanguageSpecifics.Scales
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Scales*
+  name: Scales
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_Scales_
+  commentId: Overload:Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Scales
+  isSpec: "True"
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Scales
+  nameWithType: SwedishOrdinalLanguageSpecifics.Scales
 - uid: Utils.NumberToString.TimeUnitEntry
   name: TimeUnitEntry
   href: api/Utils.NumberToString.TimeUnitEntry.html
@@ -67954,6 +69300,83 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.TriggerType.Replaces
   nameWithType: TriggerType.Replaces
+- uid: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics
+  name: UkrainianOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.UkrainianOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics
+  nameWithType: UkrainianOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.CaseValues
+  name: CaseValues
+  href: api/Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.html#Utils_NumberToString_UkrainianOrdinalLanguageSpecifics_CaseValues
+  commentId: P:Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.CaseValues
+  fullName: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.CaseValues
+  nameWithType: UkrainianOrdinalLanguageSpecifics.CaseValues
+- uid: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.CaseValues*
+  name: CaseValues
+  href: api/Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.html#Utils_NumberToString_UkrainianOrdinalLanguageSpecifics_CaseValues_
+  commentId: Overload:Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.CaseValues
+  isSpec: "True"
+  fullName: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.CaseValues
+  nameWithType: UkrainianOrdinalLanguageSpecifics.CaseValues
+- uid: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.Decline(System.String,Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender,System.Int32)
+  name: Decline(string, Gender, int)
+  href: api/Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.html#Utils_NumberToString_UkrainianOrdinalLanguageSpecifics_Decline_System_String_Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_Gender_System_Int32_
+  commentId: M:Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.Decline(System.String,Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender,System.Int32)
+  name.vb: Decline(String, Gender, Integer)
+  fullName: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.Decline(string, Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender, int)
+  fullName.vb: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.Decline(String, Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender, Integer)
+  nameWithType: UkrainianOrdinalLanguageSpecifics.Decline(string, SlavicAdjectivalOrdinalLanguageSpecifics.Gender, int)
+  nameWithType.vb: UkrainianOrdinalLanguageSpecifics.Decline(String, SlavicAdjectivalOrdinalLanguageSpecifics.Gender, Integer)
+- uid: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.Decline*
+  name: Decline
+  href: api/Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.html#Utils_NumberToString_UkrainianOrdinalLanguageSpecifics_Decline_
+  commentId: Overload:Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.Decline
+  isSpec: "True"
+  fullName: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.Decline
+  nameWithType: UkrainianOrdinalLanguageSpecifics.Decline
+- uid: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.FeminineValue
+  name: FeminineValue
+  href: api/Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.html#Utils_NumberToString_UkrainianOrdinalLanguageSpecifics_FeminineValue
+  commentId: P:Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.FeminineValue
+  fullName: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.FeminineValue
+  nameWithType: UkrainianOrdinalLanguageSpecifics.FeminineValue
+- uid: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.FeminineValue*
+  name: FeminineValue
+  href: api/Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.html#Utils_NumberToString_UkrainianOrdinalLanguageSpecifics_FeminineValue_
+  commentId: Overload:Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.FeminineValue
+  isSpec: "True"
+  fullName: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.FeminineValue
+  nameWithType: UkrainianOrdinalLanguageSpecifics.FeminineValue
+- uid: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.NeuterValue
+  name: NeuterValue
+  href: api/Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.html#Utils_NumberToString_UkrainianOrdinalLanguageSpecifics_NeuterValue
+  commentId: P:Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.NeuterValue
+  fullName: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.NeuterValue
+  nameWithType: UkrainianOrdinalLanguageSpecifics.NeuterValue
+- uid: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.NeuterValue*
+  name: NeuterValue
+  href: api/Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.html#Utils_NumberToString_UkrainianOrdinalLanguageSpecifics_NeuterValue_
+  commentId: Overload:Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.NeuterValue
+  isSpec: "True"
+  fullName: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.NeuterValue
+  nameWithType: UkrainianOrdinalLanguageSpecifics.NeuterValue
+- uid: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.TryDecompose(System.Int32,System.String@,System.Collections.Generic.IReadOnlyList{System.String}@)
+  name: TryDecompose(int, out string, out IReadOnlyList<string>)
+  href: api/Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.html#Utils_NumberToString_UkrainianOrdinalLanguageSpecifics_TryDecompose_System_Int32_System_String__System_Collections_Generic_IReadOnlyList_System_String___
+  commentId: M:Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.TryDecompose(System.Int32,System.String@,System.Collections.Generic.IReadOnlyList{System.String}@)
+  name.vb: TryDecompose(Integer, String, IReadOnlyList(Of String))
+  fullName: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.TryDecompose(int, out string, out System.Collections.Generic.IReadOnlyList<string>)
+  fullName.vb: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.TryDecompose(Integer, String, System.Collections.Generic.IReadOnlyList(Of String))
+  nameWithType: UkrainianOrdinalLanguageSpecifics.TryDecompose(int, out string, out IReadOnlyList<string>)
+  nameWithType.vb: UkrainianOrdinalLanguageSpecifics.TryDecompose(Integer, String, IReadOnlyList(Of String))
+- uid: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.TryDecompose*
+  name: TryDecompose
+  href: api/Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.html#Utils_NumberToString_UkrainianOrdinalLanguageSpecifics_TryDecompose_
+  commentId: Overload:Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.TryDecompose
+  isSpec: "True"
+  fullName: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.TryDecompose
+  nameWithType: UkrainianOrdinalLanguageSpecifics.TryDecompose
 - uid: Utils.NumberToString.VariantDimensionType
   name: VariantDimensionType
   href: api/Utils.NumberToString.VariantDimensionType.html

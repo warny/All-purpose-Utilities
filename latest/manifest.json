@@ -8511,6 +8511,34 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.ArabicOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.ArabicOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.ArabicOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.ArabicOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Produces Arabic ordinals above nineteen, in the same indefinite short nominative form without\nthe article as the configured ordinals 1–19. From 21 the unit is an ordinal agreeing in gender\nand the tens stay cardinal, joined by <code>و</code> (<code>حادٍ وعشرون</code>, feminine\n<code>حادية وعشرون</code>); round tens, one hundred, and one thousand use the cardinal word, which is\nthe ordinal form in Modern Standard Arabic (<code>العشرون</code>, <code>المائة</code>, <code>الألف</code> with the\narticle).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.BulgarianOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Produces Bulgarian ordinals. Only the last element of a compound is ordinal and, as in the\ncardinal, the conjunction <code>и</code> precedes that last element (<code>двадесет и първи</code>,\n<code>сто и първи</code>, <code>хиляда сто и втори</code>). Ordinals agree in gender: the masculine\ncitation form (<code>първи</code>, <code>стотен</code>) is used for the default <code>standalone</code> value and\nfor <code>masculine</code>; <code>feminine</code> and <code>neuter</code> derive <code>-а</code>/<code>-о</code>\n(<code>първа</code>, <code>първо</code>) and <code>-на</code>/<code>-но</code> (<code>стотна</code>, <code>стотно</code>).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.ClockAmountDirection.yml",
       "output": {
         ".html": {
@@ -8609,6 +8637,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.CroatianOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.CroatianOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.CroatianOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.CroatianOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Restricts Croatian ordinals to verified forms. Croatian ordinals are produced by the declarative\nXML rules (only the last component is ordinal: <code>tisuću prvi</code>, <code>tri tisuće sedamsto\ntrideset treći</code>), and the single scale units have lexical ordinals (<code>tisućiti</code>,\n<code>milijunti</code>, <code>milijarditi</code>). Every other round scale value, i.e. any multiple of 1000\nother than the verified lexical units 1 000, 1 000 000 and 1 000 000 000 (2000., 21 000.,\n2 000 000., 10^12., ...), would end with an inflected scale noun whose ordinal form was not\nverified, so this plugin rejects it instead of letting a cardinal or invented form through.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.CurrencyDefinition.yml",
       "output": {
         ".html": {
@@ -8620,6 +8662,34 @@
       "IsMRef": true,
       "Title": "Utils.NumberToString.CurrencyDefinition",
       "Summary": "<p sourcefile=\"api/Utils.NumberToString.CurrencyDefinition.yml\" sourcestartlinenumber=\"1\">Defines the unit and subunit names used to convert a currency amount to words.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.CzechOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.CzechOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.CzechOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.CzechOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Produces Czech ordinals. Every component of a compound is ordinal\n(<code>dvacátý první</code>, <code>stý dvacátý první</code>, <code>tisící první</code>), declined for gender\n(<code>standalone</code>/<code>mužský</code>, <code>ženský</code>, <code>střední</code>) and case (hard <code>-ý</code> and soft\n<code>-í</code> adjective paradigms). Round thousands accept single-digit multipliers\n(<code>dvoutisící</code>); larger round multipliers and round millions or milliards other than one\nare declined.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.DanishOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Produces Danish ordinals (<code>første</code>, <code>enogtyvende</code>, <code>hundrede og første</code>, <code>tusinde</code>).</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -8816,6 +8886,20 @@
       "IsMRef": true,
       "Title": "Utils.NumberToString.GroupsListType",
       "Summary": "<p sourcefile=\"api/Utils.NumberToString.GroupsListType.yml\" sourcestartlinenumber=\"1\">Collection wrapper for <xref href=\"Utils.NumberToString.GroupType\" data-throw-if-not-resolved=\"false\"></xref> entries.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.HungarianOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.HungarianOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.HungarianOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.HungarianOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Produces Hungarian ordinals. The ordinal suffix attaches to the last morpheme of the numeral\nwith vowel harmony and stem changes (<code>tizenegyedik</code>, <code>huszadik</code>, <code>századik</code>,\n<code>ezredik</code>, <code>milliomodik</code>); only the numbers 1 and 2 standing alone are suppletive\n(<code>első</code>, <code>második</code>), whereas they are regular at the end of a compound\n(<code>huszonegyedik</code>, <code>tizenkettedik</code>). Numbers up to 2000 are written as one word and\nlarger ones separate their thousand groups with hyphens (<code>kétezer-egyedik</code>).</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -9040,6 +9124,20 @@
       "IsMRef": true,
       "Title": "Utils.NumberToString.MultiplicativesType",
       "Summary": "<p sourcefile=\"api/Utils.NumberToString.MultiplicativesType.yml\" sourcestartlinenumber=\"1\">Holds multiplicative configuration for a language (e.g. 1 → &quot;once&quot;, 2 → &quot;twice&quot;).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.NorwegianOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.NorwegianOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Produces Norwegian Bokmål ordinals (<code>første</code>, <code>tjueførste</code>, <code>hundre og første</code>, <code>tusende</code>).</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -9421,6 +9519,90 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.RomanianOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.RomanianOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.RomanianOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.RomanianOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Produces Romanian ordinals following DOOM (dexonline): the masculine is the article <code>al</code>,\nthe cardinal, and <code>-lea</code> on its last word (<code>al doilea</code>, <code>al douăzeci și unulea</code>,\n<code>al o sutălea</code>, <code>al două sutelea</code>, <code>al o miilea</code>); the feminine is <code>a</code>, the\ncardinal, and <code>-a</code> on its last word (<code>a doua</code>, <code>a douăzeci și una</code>,\n<code>a o suta</code>, <code>a o mia</code>). One alone is suppletive (<code>primul</code>, <code>prima</code>).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.yml\" sourcestartlinenumber=\"1\">Describes the words of one thousand-power scale.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Shared productive ordinal formation for the Scandinavian languages (Danish, Norwegian Bokmål,\nSwedish). Below one hundred the whole number is a single ordinal word (Danish\n<code>enogtyvende</code>, Norwegian <code>tjueførste</code>, Swedish <code>tjugoförsta</code>); above one hundred\nonly the part below one hundred becomes ordinal and follows the cardinal of the round part\n(<code>hundrede og første</code>), while an exact round number ordinalizes its last scale word\n(<code>tusinde</code>, <code>tusende</code>, <code>miljonte</code>).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender.yml\" sourcestartlinenumber=\"1\">Grammatical gender index used by the ending tables.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Shared ordinal formation for Slavic languages whose ordinals are adjectives agreeing in gender\nand case. A language decomposes a number into an optional cardinal prefix and one or more\nordinal components given in their masculine nominative citation form; every ordinal component\nis then declined for the requested gender and case.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.SlovakOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.SlovakOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.SlovakOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.SlovakOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Produces Slovak ordinals. Tens and units are ordinal (<code>dvadsiaty prvý</code>); hundreds and\nthousands of a compound stay cardinal, fused with a following unit (<code>stoprvý</code>,\n<code>dvetisícdruhý</code>) and separate before tens (<code>päťsto dvadsiaty ôsmy</code>). Declined for gender\n(<code>mužský</code>, <code>ženský</code>, <code>stredný</code>) and case with the long hard (<code>-ý</code>), the\nshort hard (<code>-y</code>, rhythmic law after a long syllable: <code>piaty</code>) and the soft (<code>-í</code>)\nadjective paradigms. Values from one million upwards (except one million itself) and round or\ncompound thousands above 9999 are declined because their written forms were not verified.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.SpecialHourEntry.yml",
       "output": {
         ".html": {
@@ -9477,6 +9659,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.SwedishOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Produces Swedish ordinals (<code>första</code>, <code>tjugoförsta</code>, <code>hundraförsta</code>, <code>tusende</code>).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.TimeUnitEntry.yml",
       "output": {
         ".html": {
@@ -9530,6 +9726,20 @@
       "IsMRef": true,
       "Title": "Utils.NumberToString.TriggerType",
       "Summary": "<p sourcefile=\"api/Utils.NumberToString.TriggerType.yml\" sourcestartlinenumber=\"1\">A trigger that fires at a specific point in the conversion pipeline and applies\ntext replacements, each optionally selecting a form based on active variant values.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.UkrainianOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Produces Ukrainian ordinals. Only the last component of a compound is ordinal and follows the\ncardinal of the preceding part (<code>двадцять перший</code>, <code>сто перший</code>,\n<code>тисяча перший</code>); it is declined for gender (<code>чоловічий</code>, <code>жіночий</code>,\n<code>середній</code>) and case with the hard (<code>-ий</code>) and soft (<code>-ій</code>) adjective\nparadigms. Round thousands accept multipliers up to ten (<code>двохтисячний</code>); larger round\nmultipliers and round millions or milliards other than one are declined.</p>\n"
     },
     {
       "type": "ManagedReference",
