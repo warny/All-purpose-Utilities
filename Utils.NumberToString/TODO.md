@@ -9,13 +9,54 @@ classification.
 
 ## Open items
 
-- **NTS-08 — linguistic ordinal and ClockTime coverage audit.** The engine work needed for
-  hour-conditioned clock rules is complete, but production language coverage must not be enabled
-  without grammatical sources and compound/scale tests. Ordinals remain deferred for BG, CS, DA,
-  FA, NO, RO, SK, SV, SW, TR, UK, and ZU; HR and HU require productive replacements for their
-  partial configurations. Idiomatic ClockTime is now configured for DE (with de-CH inheritance), FR (with separate FR-be and FR-ch children), EN (with EN-GB inheritance), Catalan, Valencian, Indonesian, and Malay. Every other natural-language configuration remains explicitly unsupported until its regional convention, grammatical variants, compounds, and scale behavior
-  are verified. SW/ZU additionally require a documented noun-class policy. AR and HE require a
-  sourced decision for compounds above their existing explicitly configured ranges.
+- **NTS-08 — linguistic ordinal and ClockTime coverage audit (implementation done, validation open).**
+  Every natural-language configuration now has tested ordinal and ClockTime behaviour or an explicit
+  deferral (`docs/NTS-08-linguistic-sources.md`, `DONE-2026-10-01(1).md`). NTS-08 is not closed:
+  - **Linguistic validation remaining, tracked per capability.** A scenario only proves that a
+    configuration produces the string chosen by the PR; a capability counts as validated once its
+    tested wording rests on sufficient consulted evidence (see `docs/NTS-08-linguistic-sources.md`):
+    an authoritative normative or academic reference read during the audit, or at least two
+    independent sources. A capability backed by a single weak or isolated source (a learner blog,
+    a search summary, or a sole introductory course that could not be cross-checked) stays open.
+    Still unvalidated:
+    - *Ordinals added or changed by NTS-08*: SV; DA vigesimal tens (`halvtredsindstyvende` ...);
+      HU; UK; FA; TR; AR 20-99, 100 and 1000; HE above ten (agreeing-cardinal policy) and the AR/HE
+      compound cardinals 11-99 they rely on; VN `thứ tư`; CS compound spelling (search summary of
+      Naše řeč only); CS and SK gender/case declension tables.
+    - *ClockTime*: DA, NO, SV, BG, HR, HU, CS, SK, UK, PL, RU, ES, IT, PT (the deliberate direct
+      reading; the consulted source covers `para`/`menos` only), GL, RO, EL, FI, HE, FA, JA, VN; and,
+      backed by a single isolated source only, HI and ZH (one learner site each), TR (search summary
+      of TDK usage, page not read) and ZU (sole introductory course).
+    - *Pre-existing ordinals not re-verified by the audit*: NL, PL, RU, ES, IT, PT, GL, EL, FI, HI,
+      JA, KO, ZH, EU, EE, WO.
+    Validated so far: NL (Taaladvies), EU (EHU grammar), KO (National Institute of Korean
+    Language), SW (two sources) and AR (university textbook) ClockTime; NO, BG, HR, RO and DA 100
+    (`hundrede`) ordinals; SK compound ordinal spelling; HR cardinals.
+    NTS-08 closes when every capability above is validated or explicitly deferred; a corrected
+    string must be fixed in the `.feature` first, then in the configuration.
+  - The remaining gaps below are explicit decisions, each pinned by a "does not support"
+    scenario:
+    - SW and ZU ordinals: an obligatory noun-class concord, no standalone form; needs a public
+      `nounClass` dimension and a documented class inventory.
+    - EE ClockTime: no sourced minute convention.
+    - WO ClockTime: competing native and French-derived conventions, no single sourced system.
+
+- **NTS-10 — cardinal defects found during NTS-08.** Not caused by NTS-08 and left unchanged so
+  the clock/ordinal work stays reviewable:
+  - IT compound cardinals are not written as one word (`venti cinque` instead of `venticinque`);
+    the Italian clock therefore uses a quarter-hour step.
+  - HI cardinals 21–99 are not lexicalized (`बीस एक` instead of `इक्कीस`).
+  - AR cardinals from 1001 lack the `و` connector between groups.
+
+- **NTS-12 — the declarative ordinal pipeline returns the cardinal for zero.** When no ordinal
+  exception or word rule matches and no suffix is configured, `ConvertOrdinal(0)` returns the
+  unchanged cardinal: PL `zero`, ES/GL `cero`, PT `zero`, EL `μηδέν`, FI `nolla`, HE `אפס`
+  (pre-existing; AR and TR were fixed in the NTS-08 PR). A fail-closed engine rule for an
+  unmatched declarative ordinal, with per-language zero forms where they exist, is needed.
+
+- **NTS-11 — Hebrew cardinals from 1000.** `אחד אלף` instead of `אלף`, missing `אלפיים` and the
+  construct forms (`שלושת אלפים`) and the `ו` connector between groups. The existing scenario
+  pinning `1000 → אחד אלף` must be corrected together with the fix.
 
 - **NTS-09 — `Trigger` elements are not inherited through `baseOn`.** `XmlSerializer` materializes
   an absent `<Trigger>` list as an empty list, so `MergeLanguageDefinition`'s
@@ -50,6 +91,10 @@ New findings should be appended here as they are identified, and archived to
 a dated `DONE-*.md` file once resolved, per the repository's `AGENTS.md`
 TODO/DONE convention.
 
+
+### NTS-08 completion pass (2026-10-01)
+
+See `DONE-2026-10-01(1).md`.
 
 ### NTS-08 completed slice (2026-09-23)
 

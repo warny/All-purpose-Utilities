@@ -153,5 +153,21 @@
 				</Variant>
 			</OrdinalVariants>
 		</Ordinals>
+		<!-- Accademia della Crusca: "l'una e mezzo" (also "e mezza"), "le due meno un quarto".
+			 Neutral 12-hour clock without day-part wording (no mezzogiorno/mezzanotte: the Italian
+			 configuration has no TimeUnits section). The article is elided for one (l'una) and
+			 plural otherwise (le due); {hour} is forced to the feminine numeral. Quarter-hour step:
+			 the compound cardinals are not yet orthographic ("venti cinque", TODO NTS-10), so minute
+			 amounts are not rendered until they are fixed. -->
+		<ClockTime step="15" hourCycle="12">
+			<Rule range="0" displayHourRange="1" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femminile" pattern="l'{hour}" />
+			<Rule range="0" displayHourRange="2-12" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femminile" pattern="le {hour}" />
+			<Rule range="15" displayHourRange="1" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femminile" pattern="l'{hour} e un quarto" />
+			<Rule range="15" displayHourRange="2-12" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femminile" pattern="le {hour} e un quarto" />
+			<Rule range="30" displayHourRange="1" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femminile" pattern="l'{hour} e mezzo" />
+			<Rule range="30" displayHourRange="2-12" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femminile" pattern="le {hour} e mezzo" />
+			<Rule range="45" displayHourRange="1" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=femminile" pattern="l'{hour} meno un quarto" />
+			<Rule range="45" displayHourRange="2-12" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=femminile" pattern="le {hour} meno un quarto" />
+		</ClockTime>
 	</Language>
 </Numbers>

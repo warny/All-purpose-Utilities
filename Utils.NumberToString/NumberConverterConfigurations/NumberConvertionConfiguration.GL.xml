@@ -161,5 +161,22 @@
 			<Unit name="minute" singular="minuto"  plural="minutos" />
 			<Unit name="second" singular="segundo" plural="segundos" />
 		</TimeUnits>
+		<!-- Real Academia Galega usage: "a unha e cuarto", "a unha e media", "as dúas menos cuarto".
+			 Neutral 12-hour clock without day-part wording. The article is singular for one
+			 (a unha) and plural otherwise (as dúas); {hour} is forced to the feminine numeral. -->
+		<ClockTime step="5" hourCycle="12">
+			<Rule range="0" displayHourRange="1" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=feminino" pattern="a {hour}" />
+			<Rule range="0" displayHourRange="2-12" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=feminino" pattern="as {hour}" />
+			<Rule range="5,10,20,25" displayHourRange="1" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=feminino" amountReference="0" amountDirection="after" pattern="a {hour} e {amount}" />
+			<Rule range="5,10,20,25" displayHourRange="2-12" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=feminino" amountReference="0" amountDirection="after" pattern="as {hour} e {amount}" />
+			<Rule range="15" displayHourRange="1" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=feminino" pattern="a {hour} e cuarto" />
+			<Rule range="15" displayHourRange="2-12" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=feminino" pattern="as {hour} e cuarto" />
+			<Rule range="30" displayHourRange="1" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=feminino" pattern="a {hour} e media" />
+			<Rule range="30" displayHourRange="2-12" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=feminino" pattern="as {hour} e media" />
+			<Rule range="35,40,50,55" displayHourRange="1" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=feminino" amountReference="60" amountDirection="before" pattern="a {hour} menos {amount}" />
+			<Rule range="35,40,50,55" displayHourRange="2-12" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=feminino" amountReference="60" amountDirection="before" pattern="as {hour} menos {amount}" />
+			<Rule range="45" displayHourRange="1" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=feminino" pattern="a {hour} menos cuarto" />
+			<Rule range="45" displayHourRange="2-12" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=feminino" pattern="as {hour} menos cuarto" />
+		</ClockTime>
 	</Language>
 </Numbers>

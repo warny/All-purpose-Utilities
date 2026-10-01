@@ -125,5 +125,60 @@
                 <Ordinals suffix="garren">
                         <OrdinalException value="1" string="lehenengo" />
                 </Ordinals>
+                <!-- Sareko Euskal Gramatika (EHU), "Orduak nola eman euskaraz": definite whole hours (ordu bata,
+                     ordu biak, hirurak), bare numeral before "eta erdiak" (ordu bat eta erdiak), "eta laurden",
+                     and "<next hour> laurden gutxi". "ordu" is used with one and two only. The clock-case forms
+                     are literal per displayed hour, so the cardinals (bat, bi) are unchanged. Quarter-hour
+                     12-hour clock without day-part wording. -->
+                <ClockTime step="15" hourCycle="12">
+                        <Rule range="0" displayHourRange="1" hourOffset="0" hourForm="cardinal" pattern="ordu bata" />
+                        <Rule range="15" displayHourRange="1" hourOffset="0" hourForm="cardinal" pattern="ordu bata eta laurden" />
+                        <Rule range="30" displayHourRange="1" hourOffset="0" hourForm="cardinal" pattern="ordu bat eta erdiak" />
+                        <Rule range="45" displayHourRange="1" hourOffset="1" hourForm="cardinal" pattern="ordu bata laurden gutxi" />
+                        <Rule range="0" displayHourRange="2" hourOffset="0" hourForm="cardinal" pattern="ordu biak" />
+                        <Rule range="15" displayHourRange="2" hourOffset="0" hourForm="cardinal" pattern="ordu biak eta laurden" />
+                        <Rule range="30" displayHourRange="2" hourOffset="0" hourForm="cardinal" pattern="ordu bi eta erdiak" />
+                        <Rule range="45" displayHourRange="2" hourOffset="1" hourForm="cardinal" pattern="ordu biak laurden gutxi" />
+                        <Rule range="0" displayHourRange="3" hourOffset="0" hourForm="cardinal" pattern="hirurak" />
+                        <Rule range="15" displayHourRange="3" hourOffset="0" hourForm="cardinal" pattern="hirurak eta laurden" />
+                        <Rule range="30" displayHourRange="3" hourOffset="0" hourForm="cardinal" pattern="hiru eta erdiak" />
+                        <Rule range="45" displayHourRange="3" hourOffset="1" hourForm="cardinal" pattern="hirurak laurden gutxi" />
+                        <Rule range="0" displayHourRange="4" hourOffset="0" hourForm="cardinal" pattern="laurak" />
+                        <Rule range="15" displayHourRange="4" hourOffset="0" hourForm="cardinal" pattern="laurak eta laurden" />
+                        <Rule range="30" displayHourRange="4" hourOffset="0" hourForm="cardinal" pattern="lau eta erdiak" />
+                        <Rule range="45" displayHourRange="4" hourOffset="1" hourForm="cardinal" pattern="laurak laurden gutxi" />
+                        <Rule range="0" displayHourRange="5" hourOffset="0" hourForm="cardinal" pattern="bostak" />
+                        <Rule range="15" displayHourRange="5" hourOffset="0" hourForm="cardinal" pattern="bostak eta laurden" />
+                        <Rule range="30" displayHourRange="5" hourOffset="0" hourForm="cardinal" pattern="bost eta erdiak" />
+                        <Rule range="45" displayHourRange="5" hourOffset="1" hourForm="cardinal" pattern="bostak laurden gutxi" />
+                        <Rule range="0" displayHourRange="6" hourOffset="0" hourForm="cardinal" pattern="seiak" />
+                        <Rule range="15" displayHourRange="6" hourOffset="0" hourForm="cardinal" pattern="seiak eta laurden" />
+                        <Rule range="30" displayHourRange="6" hourOffset="0" hourForm="cardinal" pattern="sei eta erdiak" />
+                        <Rule range="45" displayHourRange="6" hourOffset="1" hourForm="cardinal" pattern="seiak laurden gutxi" />
+                        <Rule range="0" displayHourRange="7" hourOffset="0" hourForm="cardinal" pattern="zazpiak" />
+                        <Rule range="15" displayHourRange="7" hourOffset="0" hourForm="cardinal" pattern="zazpiak eta laurden" />
+                        <Rule range="30" displayHourRange="7" hourOffset="0" hourForm="cardinal" pattern="zazpi eta erdiak" />
+                        <Rule range="45" displayHourRange="7" hourOffset="1" hourForm="cardinal" pattern="zazpiak laurden gutxi" />
+                        <Rule range="0" displayHourRange="8" hourOffset="0" hourForm="cardinal" pattern="zortziak" />
+                        <Rule range="15" displayHourRange="8" hourOffset="0" hourForm="cardinal" pattern="zortziak eta laurden" />
+                        <Rule range="30" displayHourRange="8" hourOffset="0" hourForm="cardinal" pattern="zortzi eta erdiak" />
+                        <Rule range="45" displayHourRange="8" hourOffset="1" hourForm="cardinal" pattern="zortziak laurden gutxi" />
+                        <Rule range="0" displayHourRange="9" hourOffset="0" hourForm="cardinal" pattern="bederatziak" />
+                        <Rule range="15" displayHourRange="9" hourOffset="0" hourForm="cardinal" pattern="bederatziak eta laurden" />
+                        <Rule range="30" displayHourRange="9" hourOffset="0" hourForm="cardinal" pattern="bederatzi eta erdiak" />
+                        <Rule range="45" displayHourRange="9" hourOffset="1" hourForm="cardinal" pattern="bederatziak laurden gutxi" />
+                        <Rule range="0" displayHourRange="10" hourOffset="0" hourForm="cardinal" pattern="hamarrak" />
+                        <Rule range="15" displayHourRange="10" hourOffset="0" hourForm="cardinal" pattern="hamarrak eta laurden" />
+                        <Rule range="30" displayHourRange="10" hourOffset="0" hourForm="cardinal" pattern="hamar eta erdiak" />
+                        <Rule range="45" displayHourRange="10" hourOffset="1" hourForm="cardinal" pattern="hamarrak laurden gutxi" />
+                        <Rule range="0" displayHourRange="11" hourOffset="0" hourForm="cardinal" pattern="hamaikak" />
+                        <Rule range="15" displayHourRange="11" hourOffset="0" hourForm="cardinal" pattern="hamaikak eta laurden" />
+                        <Rule range="30" displayHourRange="11" hourOffset="0" hourForm="cardinal" pattern="hamaika eta erdiak" />
+                        <Rule range="45" displayHourRange="11" hourOffset="1" hourForm="cardinal" pattern="hamaikak laurden gutxi" />
+                        <Rule range="0" displayHourRange="12" hourOffset="0" hourForm="cardinal" pattern="hamabiak" />
+                        <Rule range="15" displayHourRange="12" hourOffset="0" hourForm="cardinal" pattern="hamabiak eta laurden" />
+                        <Rule range="30" displayHourRange="12" hourOffset="0" hourForm="cardinal" pattern="hamabi eta erdiak" />
+                        <Rule range="45" displayHourRange="12" hourOffset="1" hourForm="cardinal" pattern="hamabiak laurden gutxi" />
+                </ClockTime>
         </Language>
 </Numbers>

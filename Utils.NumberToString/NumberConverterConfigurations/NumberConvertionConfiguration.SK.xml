@@ -82,5 +82,36 @@
             <Number value="18" string="osemnásť" />
             <Number value="19" string="devätnásť" />
         </Exceptions>
+        <!-- Gender and case. Cardinals are declined for gender in the nominative only; the case
+             dimension applies to ordinals (SlovakOrdinalLanguageSpecifics). -->
+        <Variants>
+            <Dimension name="gender" localName="rod" values="mužský,ženský,stredný" />
+            <Dimension name="case" localName="pád" values="nominatív,genitív,datív,akuzatív,lokál,inštrumentál" />
+            <Variant type="gender" variant="ženský">
+                <Replacement oldValue="jeden" newValue="jedna" scope="LastWord" />
+                <Replacement oldValue="dva" newValue="dve" scope="LastWord" />
+            </Variant>
+            <Variant type="gender" variant="stredný">
+                <Replacement oldValue="jeden" newValue="jedno" scope="LastWord" />
+                <Replacement oldValue="dva" newValue="dve" scope="LastWord" />
+            </Variant>
+        </Variants>
+        <LanguageSpecifics>SlovakOrdinalLanguageSpecifics</LanguageSpecifics>
+        <!-- Quarter-hour 12-hour clock without day-part wording. "hodina" is feminine: the whole
+             hour agrees the noun with the count (jedna hodina, dve hodiny, päť hodín); quarters take
+             the feminine accusative of the following hour (štvrť na dve); the half hour takes its
+             feminine genitive ORDINAL (pol druhej). Hour one is spelled out where the
+             accusative/genitive cardinal differs from the nominative ("na jednu", "pol jednej"). -->
+        <ClockTime step="15" hourCycle="12">
+            <Rule range="0" displayHourRange="1" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=ženský" pattern="{hour} hodina" />
+            <Rule range="0" displayHourRange="2-4" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=ženský" pattern="{hour} hodiny" />
+            <Rule range="0" displayHourRange="5-12" hourOffset="0" hourForm="cardinal" pattern="{hour} hodín" />
+            <Rule range="15" displayHourRange="1" hourOffset="1" hourForm="cardinal" pattern="štvrť na jednu" />
+            <Rule range="15" displayHourRange="2-12" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=ženský" pattern="štvrť na {hour}" />
+            <Rule range="30" displayHourRange="1" hourOffset="1" hourForm="cardinal" pattern="pol jednej" />
+            <Rule range="30" displayHourRange="2-12" hourOffset="1" hourForm="ordinal" hourForceVariants="gender=ženský,case=genitív" pattern="pol {hour}" />
+            <Rule range="45" displayHourRange="1" hourOffset="1" hourForm="cardinal" pattern="tri štvrte na jednu" />
+            <Rule range="45" displayHourRange="2-12" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=ženský" pattern="tri štvrte na {hour}" />
+        </ClockTime>
     </Language>
 </Numbers>

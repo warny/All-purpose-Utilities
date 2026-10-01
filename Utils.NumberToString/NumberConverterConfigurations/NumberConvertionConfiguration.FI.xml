@@ -215,5 +215,13 @@
             <!-- Millier -->
             <Ordinal from="tuhat" to="tuhannes" />
         </Ordinals>
+        <!-- Kielitoimisto: "varttia yli yksi", "puoli kaksi" (the half refers to the following hour),
+             "varttia vaille kaksi". Quarter-hour 12-hour clock without day-part wording. -->
+        <ClockTime step="15" hourCycle="12">
+            <Rule range="0" hourOffset="0" hourForm="cardinal" pattern="{hour}" />
+            <Rule range="15" hourOffset="0" hourForm="cardinal" pattern="varttia yli {hour}" />
+            <Rule range="30" hourOffset="1" hourForm="cardinal" pattern="puoli {hour}" />
+            <Rule range="45" hourOffset="1" hourForm="cardinal" pattern="varttia vaille {hour}" />
+        </ClockTime>
     </Language>
 </Numbers>

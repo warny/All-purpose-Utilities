@@ -166,3 +166,47 @@ Scenario: Fraction connector wording
     Given I use the "ES" number converter
     When I convert the fraction 3/2 through both public fraction APIs
     Then both fraction results are "tres sobre dos"
+
+Scenario: Idiomatic clock-time conversion is supported
+    Given I use the "ES" number converter
+    Then the converter supports clock-time conversion
+
+# RAE, Diccionario panhispánico de dudas, "hora": "la una y media", "las dos y cuarto", "las seis
+# menos cuarto". The feminine article is singular for one ("la una") and plural otherwise
+# ("las dos"), selected through displayHourRange; {hour} is forced to the feminine numeral.
+Scenario Outline: Idiomatic Spanish clock times
+    Given I use the "ES" number converter
+    When I convert the clock time "<time>"
+    Then the result is "<expected>"
+
+Examples:
+    | time | expected |
+    | 01:00 | la una |
+    | 01:05 | la una y cinco |
+    | 01:15 | la una y cuarto |
+    | 01:25 | la una y veinticinco |
+    | 01:30 | la una y media |
+    | 01:35 | las dos menos veinticinco |
+    | 01:45 | las dos menos cuarto |
+    | 01:55 | las dos menos cinco |
+    | 02:00 | las dos |
+    | 02:15 | las dos y cuarto |
+    | 12:45 | la una menos cuarto |
+    | 13:30 | la una y media |
+    | 00:00 | las doce |
+
+Scenario Outline: Spanish clock times round to the nearest five minutes
+    Given I use the "ES" number converter
+    When I convert the clock time "<time>"
+    Then the result is "<expected>"
+
+Examples:
+    | time | expected |
+    | 01:27 | la una y veinticinco |
+    | 01:28 | la una y media |
+    | 23:58 | las doce |
+
+Scenario: The exact Spanish time API is unchanged by the clock wording
+    Given I use the "ES" number converter
+    When I convert the time "01:00:00"
+    Then the result is "una hora"

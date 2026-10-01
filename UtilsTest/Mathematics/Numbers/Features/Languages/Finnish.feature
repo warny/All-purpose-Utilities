@@ -214,3 +214,26 @@ Scenario: Finnish variant metadata
     Then the converter exposes exactly these variant dimensions
         | name | local name | values                               |
         | case | sijamuoto  | nominatiivi,partitiivi,genetiivi     |
+
+Scenario: Idiomatic clock-time conversion is supported
+    Given I use the "FI" number converter
+    Then the converter supports clock-time conversion
+
+# Kielitoimisto: "varttia yli yksi", "puoli kaksi" (half refers to the following hour),
+# "varttia vaille kaksi". Quarter-hour 12-hour clock without day-part wording.
+Scenario Outline: Idiomatic Finnish clock times
+    Given I use the "FI" number converter
+    When I convert the clock time "<time>"
+    Then the result is "<expected>"
+
+Examples:
+    | time | expected |
+    | 01:00 | yksi |
+    | 01:15 | varttia yli yksi |
+    | 01:30 | puoli kaksi |
+    | 01:45 | varttia vaille kaksi |
+    | 02:00 | kaksi |
+    | 12:30 | puoli yksi |
+    | 13:30 | puoli kaksi |
+    | 01:07 | yksi |
+    | 01:08 | varttia yli yksi |

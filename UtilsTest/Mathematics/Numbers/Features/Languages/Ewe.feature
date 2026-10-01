@@ -57,3 +57,9 @@ Scenario: Fraction connector wording
     Given I use the "EE" number converter
     When I convert the fraction 3/2 through both public fraction APIs
     Then both fraction results are "eto kple eve"
+
+# No reliable Ewe source for minutes was found (only "ga eto" / "ga eto kple afa"); a clock that
+# only knows :00 and :30 would round aggressively, so clock-time stays deliberately unsupported.
+Scenario: Idiomatic clock-time conversion is unsupported
+    Given I use the "EE" number converter
+    Then the converter does not support clock-time conversion

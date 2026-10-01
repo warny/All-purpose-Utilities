@@ -83,5 +83,105 @@
             <!-- Safety net: drop "bir" before "bin" if the engine generates "bir bin" -->
             <Replacement oldValue="bir bin" newValue="bin" onScale="1" onValue="1" />
         </Replacements>
+        <!-- Case of the numeral: only the last word inflects ("on ikiye"). Used by the clock
+             ("saat yediyi çeyrek geçiyor", "saat sekize çeyrek var"). -->
+        <Variants>
+            <Dimension name="case" localName="hal" values="nominative,accusative,dative" />
+            <Variant type="case" variant="accusative">
+                <Replacement oldValue="bir" newValue="biri" scope="LastWord" />
+                <Replacement oldValue="iki" newValue="ikiyi" scope="LastWord" />
+                <Replacement oldValue="üç" newValue="üçü" scope="LastWord" />
+                <Replacement oldValue="dört" newValue="dördü" scope="LastWord" />
+                <Replacement oldValue="beş" newValue="beşi" scope="LastWord" />
+                <Replacement oldValue="altı" newValue="altıyı" scope="LastWord" />
+                <Replacement oldValue="yedi" newValue="yediyi" scope="LastWord" />
+                <Replacement oldValue="sekiz" newValue="sekizi" scope="LastWord" />
+                <Replacement oldValue="dokuz" newValue="dokuzu" scope="LastWord" />
+                <Replacement oldValue="on" newValue="onu" scope="LastWord" />
+                <Replacement oldValue="yirmi" newValue="yirmiyi" scope="LastWord" />
+                <Replacement oldValue="otuz" newValue="otuzu" scope="LastWord" />
+                <Replacement oldValue="kırk" newValue="kırkı" scope="LastWord" />
+                <Replacement oldValue="elli" newValue="elliyi" scope="LastWord" />
+                <Replacement oldValue="altmış" newValue="altmışı" scope="LastWord" />
+                <Replacement oldValue="yetmiş" newValue="yetmişi" scope="LastWord" />
+                <Replacement oldValue="seksen" newValue="sekseni" scope="LastWord" />
+                <Replacement oldValue="doksan" newValue="doksanı" scope="LastWord" />
+                <Replacement oldValue="yüz" newValue="yüzü" scope="LastWord" />
+                <Replacement oldValue="bin" newValue="bini" scope="LastWord" />
+                <Replacement oldValue="milyon" newValue="milyonu" scope="LastWord" />
+                <Replacement oldValue="milyar" newValue="milyarı" scope="LastWord" />
+                <Replacement oldValue="trilyon" newValue="trilyonu" scope="LastWord" />
+                <Replacement oldValue="katrilyon" newValue="katrilyonu" scope="LastWord" />
+                <Replacement oldValue="kentilyon" newValue="kentilyonu" scope="LastWord" />
+            </Variant>
+            <Variant type="case" variant="dative">
+                <Replacement oldValue="bir" newValue="bire" scope="LastWord" />
+                <Replacement oldValue="iki" newValue="ikiye" scope="LastWord" />
+                <Replacement oldValue="üç" newValue="üçe" scope="LastWord" />
+                <Replacement oldValue="dört" newValue="dörde" scope="LastWord" />
+                <Replacement oldValue="beş" newValue="beşe" scope="LastWord" />
+                <Replacement oldValue="altı" newValue="altıya" scope="LastWord" />
+                <Replacement oldValue="yedi" newValue="yediye" scope="LastWord" />
+                <Replacement oldValue="sekiz" newValue="sekize" scope="LastWord" />
+                <Replacement oldValue="dokuz" newValue="dokuza" scope="LastWord" />
+                <Replacement oldValue="on" newValue="ona" scope="LastWord" />
+                <Replacement oldValue="yirmi" newValue="yirmiye" scope="LastWord" />
+                <Replacement oldValue="otuz" newValue="otuza" scope="LastWord" />
+                <Replacement oldValue="kırk" newValue="kırka" scope="LastWord" />
+                <Replacement oldValue="elli" newValue="elliye" scope="LastWord" />
+                <Replacement oldValue="altmış" newValue="altmışa" scope="LastWord" />
+                <Replacement oldValue="yetmiş" newValue="yetmişe" scope="LastWord" />
+                <Replacement oldValue="seksen" newValue="seksene" scope="LastWord" />
+                <Replacement oldValue="doksan" newValue="doksana" scope="LastWord" />
+                <Replacement oldValue="yüz" newValue="yüze" scope="LastWord" />
+                <Replacement oldValue="bin" newValue="bine" scope="LastWord" />
+                <Replacement oldValue="milyon" newValue="milyona" scope="LastWord" />
+                <Replacement oldValue="milyar" newValue="milyara" scope="LastWord" />
+                <Replacement oldValue="trilyon" newValue="trilyona" scope="LastWord" />
+                <Replacement oldValue="katrilyon" newValue="katrilyona" scope="LastWord" />
+                <Replacement oldValue="kentilyon" newValue="kentilyona" scope="LastWord" />
+            </Variant>
+        </Variants>
+        <!-- The ordinal suffix -(I)ncI follows vowel harmony and attaches to the last word only
+             ("yirmi birinci"); every word that can end a cardinal is listed ("dört" voices to
+             "dördüncü"). -->
+        <Ordinals>
+            <!-- Zero is ordinalized too ("sıfırıncı"), so no value falls back to its cardinal. -->
+            <Ordinal from="sıfır" to="sıfırıncı" />
+            <Ordinal from="bir" to="birinci" />
+            <Ordinal from="iki" to="ikinci" />
+            <Ordinal from="üç" to="üçüncü" />
+            <Ordinal from="dört" to="dördüncü" />
+            <Ordinal from="beş" to="beşinci" />
+            <Ordinal from="altı" to="altıncı" />
+            <Ordinal from="yedi" to="yedinci" />
+            <Ordinal from="sekiz" to="sekizinci" />
+            <Ordinal from="dokuz" to="dokuzuncu" />
+            <Ordinal from="on" to="onuncu" />
+            <Ordinal from="yirmi" to="yirminci" />
+            <Ordinal from="otuz" to="otuzuncu" />
+            <Ordinal from="kırk" to="kırkıncı" />
+            <Ordinal from="elli" to="ellinci" />
+            <Ordinal from="altmış" to="altmışıncı" />
+            <Ordinal from="yetmiş" to="yetmişinci" />
+            <Ordinal from="seksen" to="sekseninci" />
+            <Ordinal from="doksan" to="doksanıncı" />
+            <Ordinal from="yüz" to="yüzüncü" />
+            <Ordinal from="bin" to="bininci" />
+            <Ordinal from="milyon" to="milyonuncu" />
+            <Ordinal from="milyar" to="milyarıncı" />
+            <Ordinal from="trilyon" to="trilyonuncu" />
+            <Ordinal from="katrilyon" to="katrilyonuncu" />
+            <Ordinal from="kentilyon" to="kentilyonuncu" />
+        </Ordinals>
+        <!-- TDK usage. Quarter-hour 12-hour clock without day-part wording: accusative before
+             "çeyrek geçiyor", nominative before "buçuk", dative of the following hour before
+             "çeyrek var". -->
+        <ClockTime step="15" hourCycle="12">
+            <Rule range="0" hourOffset="0" hourForm="cardinal" pattern="saat {hour}" />
+            <Rule range="15" hourOffset="0" hourForm="cardinal" hourForceVariants="case=accusative" pattern="saat {hour} çeyrek geçiyor" />
+            <Rule range="30" hourOffset="0" hourForm="cardinal" pattern="saat {hour} buçuk" />
+            <Rule range="45" hourOffset="1" hourForm="cardinal" hourForceVariants="case=dative" pattern="saat {hour} çeyrek var" />
+        </ClockTime>
     </Language>
 </Numbers>

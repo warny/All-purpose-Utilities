@@ -27,26 +27,26 @@
             <Group level="2">
                 <Digit digit="0" string="" buildString="*" />
                 <Digit digit="1" string="عشرة" buildString="عشرة *" />
-                <Digit digit="2" string="عشرون" buildString="عشرون *" />
-                <Digit digit="3" string="ثلاثون" buildString="ثلاثون *" />
-                <Digit digit="4" string="أربعون" buildString="أربعون *" />
-                <Digit digit="5" string="خمسون" buildString="خمسون *" />
-                <Digit digit="6" string="ستون" buildString="ستون *" />
-                <Digit digit="7" string="سبعون" buildString="سبعون *" />
-                <Digit digit="8" string="ثمانون" buildString="ثمانون *" />
-                <Digit digit="9" string="تسعون" buildString="تسعون *" />
+                <Digit digit="2" string="عشرون" buildString="* وعشرون" />
+                <Digit digit="3" string="ثلاثون" buildString="* وثلاثون" />
+                <Digit digit="4" string="أربعون" buildString="* وأربعون" />
+                <Digit digit="5" string="خمسون" buildString="* وخمسون" />
+                <Digit digit="6" string="ستون" buildString="* وستون" />
+                <Digit digit="7" string="سبعون" buildString="* وسبعون" />
+                <Digit digit="8" string="ثمانون" buildString="* وثمانون" />
+                <Digit digit="9" string="تسعون" buildString="* وتسعون" />
             </Group>
             <Group level="3">
                 <Digit digit="0" string="" buildString="*" />
-                <Digit digit="1" string="مائة" buildString="مائة *" />
-                <Digit digit="2" string="مائتان" buildString="مائتان *" />
-                <Digit digit="3" string="ثلاثمائة" buildString="ثلاثمائة *" />
-                <Digit digit="4" string="أربعمائة" buildString="أربعمائة *" />
-                <Digit digit="5" string="خمسمائة" buildString="خمسمائة *" />
-                <Digit digit="6" string="ستمائة" buildString="ستمائة *" />
-                <Digit digit="7" string="سبعمائة" buildString="سبعمائة *" />
-                <Digit digit="8" string="ثمانمائة" buildString="ثمانمائة *" />
-                <Digit digit="9" string="تسعمائة" buildString="تسعمائة *" />
+                <Digit digit="1" string="مائة" buildString="مائة و*" />
+                <Digit digit="2" string="مائتان" buildString="مائتان و*" />
+                <Digit digit="3" string="ثلاثمائة" buildString="ثلاثمائة و*" />
+                <Digit digit="4" string="أربعمائة" buildString="أربعمائة و*" />
+                <Digit digit="5" string="خمسمائة" buildString="خمسمائة و*" />
+                <Digit digit="6" string="ستمائة" buildString="ستمائة و*" />
+                <Digit digit="7" string="سبعمائة" buildString="سبعمائة و*" />
+                <Digit digit="8" string="ثمانمائة" buildString="ثمانمائة و*" />
+                <Digit digit="9" string="تسعمائة" buildString="تسعمائة و*" />
             </Group>
         </Groups>
         <NumberScale firstLetterUpperCase="false">
@@ -61,7 +61,20 @@
         <Replacements>
             <Replacement oldValue="واحد ألف" newValue="ألف" />
         </Replacements>
-        <Exceptions />
+        <!-- 11-19: unit first, then "عشر" (masculine; the feminine variant below agrees them). -->
+        <Exceptions>
+            <Number value="11" string="أحد عشر" />
+            <Number value="12" string="اثنا عشر" />
+            <Number value="13" string="ثلاثة عشر" />
+            <Number value="14" string="أربعة عشر" />
+            <Number value="15" string="خمسة عشر" />
+            <Number value="16" string="ستة عشر" />
+            <Number value="17" string="سبعة عشر" />
+            <Number value="18" string="ثمانية عشر" />
+            <Number value="19" string="تسعة عشر" />
+        </Exceptions>
+        <!-- Ordinals above nineteen (حادٍ وعشرون, حادية وعشرون): see ArabicOrdinalLanguageSpecifics. -->
+        <LanguageSpecifics>ArabicOrdinalLanguageSpecifics</LanguageSpecifics>
         <Ordinals>
             <!-- Masculin indéfini, forme courte (sans article) — les ordinaux arabes
                  sont indépendants des cardinaux et varient en genre avec le nom -->
@@ -125,7 +138,39 @@
                 <Replacement oldValue="ثمانية" newValue="ثمان"   scope="LastWord" />
                 <Replacement oldValue="تسعة"   newValue="تسع"    scope="LastWord" />
                 <Replacement oldValue="عشرة"   newValue="عشر"    scope="LastWord" />
+                <!-- Compounds: the unit before "و" + tens, and the 11-19 forms (applied after the
+                     single-word rules above, so the final "عشرة" is not shortened). -->
+                <Replacement oldValue="واحد و" newValue="واحدة و" scope="Anywhere" />
+                <Replacement oldValue="اثنان و" newValue="اثنتان و" scope="Anywhere" />
+                <Replacement oldValue="ثلاثة و" newValue="ثلاث و" scope="Anywhere" />
+                <Replacement oldValue="أربعة و" newValue="أربع و" scope="Anywhere" />
+                <Replacement oldValue="خمسة و" newValue="خمس و" scope="Anywhere" />
+                <Replacement oldValue="ستة و" newValue="ست و" scope="Anywhere" />
+                <Replacement oldValue="سبعة و" newValue="سبع و" scope="Anywhere" />
+                <Replacement oldValue="ثمانية و" newValue="ثمان و" scope="Anywhere" />
+                <Replacement oldValue="تسعة و" newValue="تسع و" scope="Anywhere" />
+                <Replacement oldValue="أحد عشر" newValue="إحدى عشرة" scope="EndsWith" />
+                <Replacement oldValue="اثنا عشر" newValue="اثنتا عشرة" scope="EndsWith" />
+                <Replacement oldValue="ثلاثة عشر" newValue="ثلاث عشرة" scope="EndsWith" />
+                <Replacement oldValue="أربعة عشر" newValue="أربع عشرة" scope="EndsWith" />
+                <Replacement oldValue="خمسة عشر" newValue="خمس عشرة" scope="EndsWith" />
+                <Replacement oldValue="ستة عشر" newValue="ست عشرة" scope="EndsWith" />
+                <Replacement oldValue="سبعة عشر" newValue="سبع عشرة" scope="EndsWith" />
+                <Replacement oldValue="ثمانية عشر" newValue="ثماني عشرة" scope="EndsWith" />
+                <Replacement oldValue="تسعة عشر" newValue="تسع عشرة" scope="EndsWith" />
             </Variant>
         </Variants>
+        <!-- "الساعة" is feminine: the hour is the definite feminine ordinal (الثانية، الحادية عشرة),
+             except one, which is "الواحدة". Quarter-hour 12-hour clock without day-part wording. -->
+        <ClockTime step="15" hourCycle="12">
+            <Rule range="0" displayHourRange="1" hourOffset="0" hourForm="cardinal" pattern="الواحدة" />
+            <Rule range="0" displayHourRange="2-12" hourOffset="0" hourForm="ordinal" hourForceVariants="gender=muʾannath" pattern="ال{hour}" />
+            <Rule range="15" displayHourRange="1" hourOffset="0" hourForm="cardinal" pattern="الواحدة والربع" />
+            <Rule range="15" displayHourRange="2-12" hourOffset="0" hourForm="ordinal" hourForceVariants="gender=muʾannath" pattern="ال{hour} والربع" />
+            <Rule range="30" displayHourRange="1" hourOffset="0" hourForm="cardinal" pattern="الواحدة والنصف" />
+            <Rule range="30" displayHourRange="2-12" hourOffset="0" hourForm="ordinal" hourForceVariants="gender=muʾannath" pattern="ال{hour} والنصف" />
+            <Rule range="45" displayHourRange="1" hourOffset="1" hourForm="cardinal" pattern="الواحدة إلا ربعًا" />
+            <Rule range="45" displayHourRange="2-12" hourOffset="1" hourForm="ordinal" hourForceVariants="gender=muʾannath" pattern="ال{hour} إلا ربعًا" />
+        </ClockTime>
     </Language>
 </Numbers>

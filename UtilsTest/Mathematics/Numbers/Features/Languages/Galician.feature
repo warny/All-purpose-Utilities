@@ -114,3 +114,27 @@ Scenario: Time conversion is supported
 Scenario: Ordinal conversion is supported
     Given I use the "GL" number converter
     Then the converter supports ordinal conversion
+
+Scenario: Idiomatic clock-time conversion is supported
+    Given I use the "GL" number converter
+    Then the converter supports clock-time conversion
+
+# Real Academia Galega usage: "a unha e cuarto", "a unha e media", "as dúas menos cuarto". The
+# article is singular for one ("a unha") and plural otherwise ("as dúas"); {hour} is forced to
+# the feminine numeral.
+Scenario Outline: Idiomatic Galician clock times
+    Given I use the "GL" number converter
+    When I convert the clock time "<time>"
+    Then the result is "<expected>"
+
+Examples:
+    | time | expected |
+    | 01:00 | a unha |
+    | 01:05 | a unha e cinco |
+    | 01:15 | a unha e cuarto |
+    | 01:30 | a unha e media |
+    | 01:35 | as dúas menos vinte e cinco |
+    | 01:45 | as dúas menos cuarto |
+    | 02:00 | as dúas |
+    | 12:45 | a unha menos cuarto |
+    | 13:30 | a unha e media |

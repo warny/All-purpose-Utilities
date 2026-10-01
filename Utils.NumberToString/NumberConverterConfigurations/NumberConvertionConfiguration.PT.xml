@@ -170,5 +170,15 @@
 			<Unit name="minute" singular="minuto"  plural="minutos" />
 			<Unit name="second" singular="segundo" plural="segundos" />
 		</TimeUnits>
+		<!-- Deliberate direct numeric reading: the feminine "hora" time unit followed by the minutes,
+			 "e meia" for the half hour. Portuguese also uses "um quarto para as dez", "dez para as
+			 três" and "três menos dez" after the half hour (Ciberdúvidas); this configuration does not
+			 produce them. Neutral 12-hour clock without day-part wording. If PT-PT and PT-BR regional
+			 children are ever split, each must own its ClockTime section (baseOn parent/child rule). -->
+		<ClockTime step="5" hourCycle="12">
+			<Rule range="0" hourOffset="0" hourForm="timeUnit" pattern="{hour}" />
+			<Rule range="5,10,15,20,25,35,40,45,50,55" hourOffset="0" hourForm="timeUnit" amountReference="0" amountDirection="after" pattern="{hour} e {amount}" />
+			<Rule range="30" hourOffset="0" hourForm="timeUnit" pattern="{hour} e meia" />
+		</ClockTime>
 	</Language>
 </Numbers>

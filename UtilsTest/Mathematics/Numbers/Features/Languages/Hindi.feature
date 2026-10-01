@@ -62,3 +62,40 @@ Scenario: Fraction connector wording
     Given I use the "HI" number converter
     When I convert the fraction 3/2 through both public fraction APIs
     Then both fraction results are "तीन बटे दो"
+
+Scenario: Idiomatic clock-time conversion is supported
+    Given I use the "HI" number converter
+    Then the converter supports clock-time conversion
+
+# Hindi fractional clock words: "सवा" (+1/4), "साढ़े" (+1/2), "पौने" (-1/4 of the following hour),
+# with the suppletive halves "डेढ़" (1:30) and "ढाई" (2:30). The nukta letter is written in its
+# canonical (NFC) decomposed sequence ढ + ़. Three different paths serve 01:30, 02:30 and 03:30.
+Scenario Outline: Idiomatic Hindi clock times
+    Given I use the "HI" number converter
+    When I convert the clock time "<time>"
+    Then the result is "<expected>"
+
+Examples:
+    | time | expected |
+    | 01:00 | एक |
+    | 01:15 | सवा एक |
+    | 01:30 | डेढ़ |
+    | 01:45 | पौने दो |
+    | 02:00 | दो |
+    | 02:15 | सवा दो |
+    | 02:30 | ढाई |
+    | 02:45 | पौने तीन |
+    | 03:00 | तीन |
+    | 03:15 | सवा तीन |
+    | 03:30 | साढ़े तीन |
+    | 03:45 | पौने चार |
+    | 12:30 | साढ़े बारह |
+    | 12:45 | पौने एक |
+    | 13:30 | डेढ़ |
+    | 14:30 | ढाई |
+    | 00:00 | बारह |
+    | 00:15 | सवा बारह |
+    | 11:45 | पौने बारह |
+    | 12:00 | बारह |
+    | 12:15 | सवा बारह |
+    | 23:45 | पौने बारह |

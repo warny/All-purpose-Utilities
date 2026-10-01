@@ -9,7 +9,7 @@ Scenario Outline: Decimal numbers
 Examples:
     | number | expected |
     | 1.5 | واحد فاصل خمسة |
-    | 12.34 | عشرة اثنان فاصل ثلاثة أربعة |
+    | 12.34 | اثنا عشر فاصل ثلاثة أربعة |
 
 Scenario Outline: Basic cardinal numbers
     Given I use the "AR" number converter
@@ -122,3 +122,84 @@ Scenario: Fraction connector wording
     Given I use the "AR" number converter
     When I convert the fraction 3/2 through both public fraction APIs
     Then both fraction results are "ثلاثة على اثنان"
+
+# Compound cardinals: 11-19 put the unit first and keep "عشر" ("أحد عشر", "اثنا عشر"; feminine
+# "إحدى عشرة", "اثنتا عشرة"); 21-99 put the unit first joined by "و" ("واحد وعشرون"); hundreds
+# join their remainder with "و" ("مائة وواحد").
+Scenario Outline: Arabic compound cardinal numbers
+    Given I use the "AR" number converter
+    And I use the variants "<variants>"
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 11 |  | أحد عشر |
+    | 12 |  | اثنا عشر |
+    | 13 |  | ثلاثة عشر |
+    | 19 |  | تسعة عشر |
+    | 21 |  | واحد وعشرون |
+    | 22 |  | اثنان وعشرون |
+    | 35 |  | خمسة وثلاثون |
+    | 101 |  | مائة وواحد |
+    | 121 |  | مائة وواحد وعشرون |
+    | 11 | gender=muʾannath | إحدى عشرة |
+    | 12 | gender=muʾannath | اثنتا عشرة |
+    | 13 | gender=muʾannath | ثلاث عشرة |
+    | 21 | gender=muʾannath | واحدة وعشرون |
+    | 23 | gender=muʾannath | ثلاث وعشرون |
+
+# Contract: like 1-19, ordinals are the indefinite short nominative form without the article.
+# From 21 the unit is an ordinal and the tens stay cardinal ("حادٍ وعشرون", feminine "حادية
+# وعشرون"); round tens, one hundred and one thousand use the cardinal word, which is the
+# ordinal form in Modern Standard Arabic ("العشرون", "المائة", "الألف" with the article).
+Scenario Outline: Arabic ordinals above nineteen
+    Given I use the "AR" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 20 |  | عشرون |
+    | 21 |  | حادٍ وعشرون |
+    | 22 |  | ثانٍ وعشرون |
+    | 23 |  | ثالث وعشرون |
+    | 30 |  | ثلاثون |
+    | 99 |  | تاسع وتسعون |
+    | 100 |  | مائة |
+    | 1000 |  | ألف |
+    | 20 | gender=muʾannath | عشرون |
+    | 21 | gender=muʾannath | حادية وعشرون |
+    | 22 | gender=muʾannath | ثانية وعشرون |
+    | 23 | gender=muʾannath | ثالثة وعشرون |
+
+Scenario: Idiomatic clock-time conversion is supported
+    Given I use the "AR" number converter
+    Then the converter supports clock-time conversion
+
+# "الساعة" is feminine: the hour is the definite feminine ordinal ("الثانية", "الحادية عشرة"),
+# except one, which is "الواحدة". Quarter-hour 12-hour clock without day-part wording; the
+# only vowel marks are the tanwin already used by the configuration ("ثانٍ", "ربعًا").
+Scenario Outline: Idiomatic Arabic clock times
+    Given I use the "AR" number converter
+    When I convert the clock time "<time>"
+    Then the result is "<expected>"
+
+Examples:
+    | time | expected |
+    | 01:00 | الواحدة |
+    | 01:15 | الواحدة والربع |
+    | 01:30 | الواحدة والنصف |
+    | 01:45 | الثانية إلا ربعًا |
+    | 02:00 | الثانية |
+    | 03:00 | الثالثة |
+    | 11:00 | الحادية عشرة |
+    | 12:00 | الثانية عشرة |
+    | 12:45 | الواحدة إلا ربعًا |
+    | 13:30 | الواحدة والنصف |
+    | 00:00 | الثانية عشرة |
+    | 00:15 | الثانية عشرة والربع |
+    | 11:45 | الثانية عشرة إلا ربعًا |
+    | 12:15 | الثانية عشرة والربع |
+    | 23:45 | الثانية عشرة إلا ربعًا |

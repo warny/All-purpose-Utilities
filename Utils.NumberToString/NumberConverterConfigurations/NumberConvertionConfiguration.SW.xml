@@ -71,5 +71,15 @@
             <!-- Drop "moja" before "elfu": 1000 = "elfu" not "moja elfu" -->
             <Replacement oldValue="moja elfu" newValue="elfu" onScale="1" onValue="1" />
         </Replacements>
+        <!-- The Swahili clock counts hours from 06:00 (saa moja = 07:00, saa sita = noon/midnight):
+             hourOffset -6 maps the source hour onto the Swahili hour. "na robo", "na nusu" and
+             "kasorobo" (a quarter less than the following hour). No day-part words (asubuhi, mchana,
+             jioni, usiku): the engine cannot condition a rule on the source hour range. -->
+        <ClockTime step="15" hourCycle="12">
+            <Rule range="0" hourOffset="-6" hourForm="cardinal" pattern="saa {hour}" />
+            <Rule range="15" hourOffset="-6" hourForm="cardinal" pattern="saa {hour} na robo" />
+            <Rule range="30" hourOffset="-6" hourForm="cardinal" pattern="saa {hour} na nusu" />
+            <Rule range="45" hourOffset="-5" hourForm="cardinal" pattern="saa {hour} kasorobo" />
+        </ClockTime>
     </Language>
 </Numbers>

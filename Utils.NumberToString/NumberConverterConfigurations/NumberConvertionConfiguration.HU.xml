@@ -89,24 +89,25 @@
             <!-- Standalone 2 = "kettő" (compound uses "két" from Groups) -->
             <Number value="2" string="kettő" />
         </Exceptions>
-        <Ordinals suffix=".">
-            <!-- Hungarian ordinals are formed by appending "." (e.g. 1. = "első")
-                 but the full word forms require specific lexical forms.
-                 This minimal configuration appends "." to the cardinal. -->
-            <OrdinalException value="1"  string="első" />
-            <OrdinalException value="2"  string="második" />
-            <OrdinalException value="3"  string="harmadik" />
-            <OrdinalException value="4"  string="negyedik" />
-            <OrdinalException value="5"  string="ötödik" />
-            <OrdinalException value="6"  string="hatodik" />
-            <OrdinalException value="7"  string="hetedik" />
-            <OrdinalException value="8"  string="nyolcadik" />
-            <OrdinalException value="9"  string="kilencedik" />
-            <OrdinalException value="10" string="tizedik" />
-            <OrdinalException value="20" string="huszadik" />
-            <OrdinalException value="30" string="harmincadik" />
-            <OrdinalException value="100" string="századik" />
-            <OrdinalException value="1000" string="ezredik" />
-        </Ordinals>
+        <!-- Productive written ordinals (első, tizenegyedik, huszonkettedik, kétezer-egyedik):
+             see HungarianOrdinalLanguageSpecifics. The former suffix="." fallback produced
+             digit-style abbreviations ("tizenegy.") rather than ordinal words. -->
+        <LanguageSpecifics>HungarianOrdinalLanguageSpecifics</LanguageSpecifics>
+        <!-- Quarter-hour 12-hour clock without day-part wording. Quarters refer to the following
+             hour ("negyed kettő", "fél kettő", "háromnegyed kettő"); the whole hour uses the
+             attributive numeral before "óra" ("két óra", "tizenkét óra"). The hour twelve is
+             spelled out literally because the configured cardinal of 12 is the attributive
+             "tizenkét", whereas the quarters need the standalone "tizenkettő". -->
+        <ClockTime step="15" hourCycle="12">
+            <Rule range="0" displayHourRange="1,3-11" hourOffset="0" hourForm="cardinal" pattern="{hour} óra" />
+            <Rule range="0" displayHourRange="2" hourOffset="0" hourForm="cardinal" pattern="két óra" />
+            <Rule range="0" displayHourRange="12" hourOffset="0" hourForm="cardinal" pattern="tizenkét óra" />
+            <Rule range="15" displayHourRange="1-11" hourOffset="1" hourForm="cardinal" pattern="negyed {hour}" />
+            <Rule range="15" displayHourRange="12" hourOffset="1" hourForm="cardinal" pattern="negyed tizenkettő" />
+            <Rule range="30" displayHourRange="1-11" hourOffset="1" hourForm="cardinal" pattern="fél {hour}" />
+            <Rule range="30" displayHourRange="12" hourOffset="1" hourForm="cardinal" pattern="fél tizenkettő" />
+            <Rule range="45" displayHourRange="1-11" hourOffset="1" hourForm="cardinal" pattern="háromnegyed {hour}" />
+            <Rule range="45" displayHourRange="12" hourOffset="1" hourForm="cardinal" pattern="háromnegyed tizenkettő" />
+        </ClockTime>
     </Language>
 </Numbers>

@@ -80,5 +80,31 @@
             <Number value="18" string="atten" />
             <Number value="19" string="nitten" />
         </Exceptions>
+        <!-- Bokmål "en" (masculine), "ei" (feminine), "ett" (neuter). The neuter is the clock hour
+             ("klokka er ett"). Only the final "en" changes. -->
+        <Variants>
+            <Dimension name="gender" localName="kjønn" values="hankjønn,hunkjønn,intetkjønn" />
+            <Variant type="gender" variant="hunkjønn">
+                <Replacement oldValue="en" newValue="ei" scope="LastWord" />
+            </Variant>
+            <Variant type="gender" variant="intetkjønn">
+                <Replacement oldValue="en" newValue="ett" scope="LastWord" />
+            </Variant>
+        </Variants>
+        <!-- Productive ordinals (første, tjueførste, hundre og første, tusende): see
+             NorwegianOrdinalLanguageSpecifics. -->
+        <LanguageSpecifics>NorwegianOrdinalLanguageSpecifics</LanguageSpecifics>
+        <!-- Neutral 12-hour clock without day-part wording: "ti på halv to" (:20), "fem over halv
+             to" (:35), "kvart på to" (:45). -->
+        <ClockTime step="5" hourCycle="12">
+            <Rule range="0" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=intetkjønn" pattern="{hour}" />
+            <Rule range="5,10" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=intetkjønn" amountReference="0" amountDirection="after" pattern="{amount} over {hour}" />
+            <Rule range="15" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=intetkjønn" pattern="kvart over {hour}" />
+            <Rule range="20,25" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=intetkjønn" amountReference="30" amountDirection="before" pattern="{amount} på halv {hour}" />
+            <Rule range="30" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=intetkjønn" pattern="halv {hour}" />
+            <Rule range="35,40" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=intetkjønn" amountReference="30" amountDirection="after" pattern="{amount} over halv {hour}" />
+            <Rule range="45" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=intetkjønn" pattern="kvart på {hour}" />
+            <Rule range="50,55" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=intetkjønn" amountReference="60" amountDirection="before" pattern="{amount} på {hour}" />
+        </ClockTime>
     </Language>
 </Numbers>

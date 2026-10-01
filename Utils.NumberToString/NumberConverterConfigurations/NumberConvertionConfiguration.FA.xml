@@ -4,6 +4,8 @@
         groupSize="3"
         separator=" "
         groupSeparator=""
+        groupConnector="و"
+        groupConnectorThreshold="1000"
         zero="صفر"
         minus="منفی *"
         decimalSeparator="ممیز"
@@ -79,5 +81,21 @@
             <Number value="18" string="هجده" />
             <Number value="19" string="نوزده" />
         </Exceptions>
+        <!-- Persian ordinals add "م" to the last word ("دوم", "بیست و یکم"); "سه" gives "سوم" and a
+             final vowel takes "ام" after a zero-width non-joiner ("سی‌ام"). The standalone first
+             is "اول" (the Academy also accepts "یکم"); compounds keep the productive "یکم". -->
+        <Ordinals suffix="م">
+            <OrdinalException value="1" string="اول" />
+            <Ordinal from="سه" to="سوم" />
+            <Ordinal from="سی" to="سی‌ام" />
+        </Ordinals>
+        <!-- Quarter-hour 12-hour clock without day-part wording: "ساعت یک", "یک و ربع", "یک و نیم",
+             "یک ربع به" + the following hour. -->
+        <ClockTime step="15" hourCycle="12">
+            <Rule range="0" hourOffset="0" hourForm="cardinal" pattern="ساعت {hour}" />
+            <Rule range="15" hourOffset="0" hourForm="cardinal" pattern="{hour} و ربع" />
+            <Rule range="30" hourOffset="0" hourForm="cardinal" pattern="{hour} و نیم" />
+            <Rule range="45" hourOffset="1" hourForm="cardinal" pattern="یک ربع به {hour}" />
+        </ClockTime>
     </Language>
 </Numbers>

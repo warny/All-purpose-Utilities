@@ -96,5 +96,28 @@
             <Number value="18" string="вісімнадцять" />
             <Number value="19" string="дев'ятнадцять" />
         </Exceptions>
+        <!-- Gender and case. Cardinals are declined for gender in the nominative only; the case
+             dimension applies to ordinals (UkrainianOrdinalLanguageSpecifics). -->
+        <Variants>
+            <Dimension name="gender" localName="рід" values="чоловічий,жіночий,середній" />
+            <Dimension name="case" localName="відмінок" values="називний,родовий,давальний,знахідний,орудний,місцевий" />
+            <Variant type="gender" variant="жіночий">
+                <Replacement oldValue="один" newValue="одна" scope="LastWord" />
+                <Replacement oldValue="два" newValue="дві" scope="LastWord" />
+            </Variant>
+            <Variant type="gender" variant="середній">
+                <Replacement oldValue="один" newValue="одне" scope="LastWord" />
+            </Variant>
+        </Variants>
+        <LanguageSpecifics>UkrainianOrdinalLanguageSpecifics</LanguageSpecifics>
+        <!-- Quarter-hour 12-hour clock without day-part wording. "година" is feminine: the hour is
+             a feminine ordinal whose case follows the construction (перша; чверть по + locative;
+             пів на + accusative; чверть до + genitive of the following hour). -->
+        <ClockTime step="15" hourCycle="12">
+            <Rule range="0" hourOffset="0" hourForm="ordinal" hourForceVariants="gender=жіночий,case=називний" pattern="{hour}" />
+            <Rule range="15" hourOffset="0" hourForm="ordinal" hourForceVariants="gender=жіночий,case=місцевий" pattern="чверть по {hour}" />
+            <Rule range="30" hourOffset="1" hourForm="ordinal" hourForceVariants="gender=жіночий,case=знахідний" pattern="пів на {hour}" />
+            <Rule range="45" hourOffset="1" hourForm="ordinal" hourForceVariants="gender=жіночий,case=родовий" pattern="чверть до {hour}" />
+        </ClockTime>
     </Language>
 </Numbers>

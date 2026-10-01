@@ -106,5 +106,20 @@
         <YearFormat hundredWord="honderd">
             <SplitRange from="1100" to="1999" />
         </YearFormat>
+        <!-- Taaladvies.net, "Kloktijden": "<n> over <h>", "<n> voor half <h+1>", "half <h+1>",
+             "<n> over half <h+1>", "kwart voor <h+1>", "<n> voor <h+1>". The whole hour one keeps
+             the distinctive accent ("één uur", Taaladvies "Klemtoonteken"); elsewhere "een" cannot
+             be read as the article and stays unaccented. Neutral 12-hour clock without day part. -->
+        <ClockTime step="5" hourCycle="12">
+            <Rule range="0" displayHourRange="1" hourOffset="0" hourForm="cardinal" pattern="één uur" />
+            <Rule range="0" displayHourRange="2-12" hourOffset="0" hourForm="cardinal" pattern="{hour} uur" />
+            <Rule range="5,10" hourOffset="0" hourForm="cardinal" amountReference="0" amountDirection="after" pattern="{amount} over {hour}" />
+            <Rule range="15" hourOffset="0" hourForm="cardinal" pattern="kwart over {hour}" />
+            <Rule range="20,25" hourOffset="1" hourForm="cardinal" amountReference="30" amountDirection="before" pattern="{amount} voor half {hour}" />
+            <Rule range="30" hourOffset="1" hourForm="cardinal" pattern="half {hour}" />
+            <Rule range="35,40" hourOffset="1" hourForm="cardinal" amountReference="30" amountDirection="after" pattern="{amount} over half {hour}" />
+            <Rule range="45" hourOffset="1" hourForm="cardinal" pattern="kwart voor {hour}" />
+            <Rule range="50,55" hourOffset="1" hourForm="cardinal" amountReference="60" amountDirection="before" pattern="{amount} voor {hour}" />
+        </ClockTime>
     </Language>
 </Numbers>

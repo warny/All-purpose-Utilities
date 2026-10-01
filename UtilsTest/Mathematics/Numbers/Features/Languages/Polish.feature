@@ -92,3 +92,31 @@ Scenario: Fraction connector wording
     Given I use the "PL" number converter
     When I convert the fraction 3/2 through both public fraction APIs
     Then both fraction results are "trzy przez dwa"
+
+Scenario: Idiomatic clock-time conversion is supported
+    Given I use the "PL" number converter
+    Then the converter supports clock-time conversion
+
+# Poradnia PWN: whole hours are feminine ordinals ("pierwsza", "druga"); up to :25 "<n> po" +
+# locative ("pięć po pierwszej"), :30 "wpół do" + genitive ("wpół do drugiej"), from :35
+# "za <n>" + nominative of the following hour ("za piętnaście druga"). The ordinal plugin and
+# word rules receive the rule's forced rodzaj/przypadek.
+Scenario Outline: Idiomatic Polish clock times
+    Given I use the "PL" number converter
+    When I convert the clock time "<time>"
+    Then the result is "<expected>"
+
+Examples:
+    | time | expected |
+    | 01:00 | pierwsza |
+    | 01:05 | pięć po pierwszej |
+    | 01:15 | piętnaście po pierwszej |
+    | 01:25 | dwadzieścia pięć po pierwszej |
+    | 01:30 | wpół do drugiej |
+    | 01:35 | za dwadzieścia pięć druga |
+    | 01:45 | za piętnaście druga |
+    | 01:55 | za pięć druga |
+    | 02:00 | druga |
+    | 12:00 | dwunasta |
+    | 12:30 | wpół do pierwszej |
+    | 13:30 | wpół do drugiej |

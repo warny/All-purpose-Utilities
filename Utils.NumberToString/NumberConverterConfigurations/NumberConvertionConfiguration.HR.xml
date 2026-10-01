@@ -62,9 +62,47 @@
                 <Suffix>jarda</Suffix>
             </Suffixes>
         </NumberScale>
-        <Replacements>
-            <!-- 1000 = "tisuća", not "jedan tisuća" -->
-            <Replacement oldValue="jedan tisuća" newValue="tisuća" onScale="1" onValue="1" />
+        <Replacements>
+            <!-- Agreement of the scale nouns with the LAST WORD of their multiplier, applied per scale
+                 group (Hrvatski pravopis, rule 31: "tri tisuće", "dvije milijarde trideset tri
+                 milijuna"). Feminine tisuća/milijarda/bilijarda: jedna, dvije, paucal tisuće/milijarde
+                 after dva/tri/četiri (not after dvanaest/trinaest/četrnaest, which do not end with
+                 those words), genitive plural otherwise. Masculine milijun/bilijun/trilijun: milijun
+                 after jedan, milijuna after any other multiplier. An exact single unit has no "jedan".
+                 Rules within a group are applied in declaration order. -->
+            <Replacement oldValue="jedan tisuća" newValue="tisuću" onScale="1" onValue="1" />
+            <Replacement oldValue="jedan tisuća" newValue="jedna tisuća" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="dva tisuća" newValue="dvije tisuće" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="tri tisuća" newValue="tri tisuće" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="četiri tisuća" newValue="četiri tisuće" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="milijun" newValue="milijuna" scope="EndsWith" onScale="2" />
+            <Replacement oldValue="jedan milijuna" newValue="jedan milijun" scope="EndsWith" onScale="2" />
+            <Replacement oldValue="jedan milijun" newValue="milijun" onScale="2" onValue="1" />
+            <Replacement oldValue="bilijun" newValue="bilijuna" scope="EndsWith" onScale="4" />
+            <Replacement oldValue="jedan bilijuna" newValue="jedan bilijun" scope="EndsWith" onScale="4" />
+            <Replacement oldValue="jedan bilijun" newValue="bilijun" onScale="4" onValue="1" />
+            <Replacement oldValue="trilijun" newValue="trilijuna" scope="EndsWith" onScale="6" />
+            <Replacement oldValue="jedan trilijuna" newValue="jedan trilijun" scope="EndsWith" onScale="6" />
+            <Replacement oldValue="jedan trilijun" newValue="trilijun" onScale="6" onValue="1" />
+            <Replacement oldValue="milijarda" newValue="milijardi" scope="EndsWith" onScale="3" />
+            <Replacement oldValue="jedan milijardi" newValue="jedna milijarda" scope="EndsWith" onScale="3" />
+            <Replacement oldValue="dva milijardi" newValue="dvije milijarde" scope="EndsWith" onScale="3" />
+            <Replacement oldValue="tri milijardi" newValue="tri milijarde" scope="EndsWith" onScale="3" />
+            <Replacement oldValue="četiri milijardi" newValue="četiri milijarde" scope="EndsWith" onScale="3" />
+            <Replacement oldValue="jedna milijarda" newValue="milijarda" onScale="3" onValue="1" />
+            <Replacement oldValue="bilijarda" newValue="bilijardi" scope="EndsWith" onScale="5" />
+            <Replacement oldValue="jedan bilijardi" newValue="jedna bilijarda" scope="EndsWith" onScale="5" />
+            <Replacement oldValue="dva bilijardi" newValue="dvije bilijarde" scope="EndsWith" onScale="5" />
+            <Replacement oldValue="tri bilijardi" newValue="tri bilijarde" scope="EndsWith" onScale="5" />
+            <Replacement oldValue="četiri bilijardi" newValue="četiri bilijarde" scope="EndsWith" onScale="5" />
+            <Replacement oldValue="jedna bilijarda" newValue="bilijarda" onScale="5" onValue="1" />
+            <!-- Hrvatski pravopis: "tisuću jedan", "tisuću tristo jedanaest". A single thousand followed by
+                 a remainder takes the accusative "tisuću" wherever it stands ("milijun tisuću jedan"):
+                 the thousands group above always produces "tisuću", and this rule restores the nominative
+                 "tisuća" only when nothing follows (1000, 1 001 000). onValue="1.." restricts it to the
+                 final pass over the whole number: a global rule without onValue would also run on the
+                 thousands group alone, where "tisuću" is always last. -->
+            <Replacement oldValue="tisuću" newValue="tisuća" scope="EndsWith" onValue="1.." />
         </Replacements>
         <Exceptions>
             <Number value="11" string="jedanaest" />
@@ -77,10 +115,69 @@
             <Number value="18" string="osamnaest" />
             <Number value="19" string="devetnaest" />
         </Exceptions>
-        <Ordinals suffix="i">
-            <OrdinalException value="1" string="prvi" />
-            <OrdinalException value="2" string="drugi" />
-            <OrdinalException value="3" string="treći" />
+        <!-- Croatian compound ordinals make only their last word ordinal ("dvadeset prvi",
+             "sto prvi"). Every word that can end a cardinal is mapped explicitly, so the ordinal
+             is productive for every value and never falls back to an unchanged cardinal (the
+             former suffix="i" produced "četirii", "jedani"). "šeststo" is the configured cardinal
+             spelling of 600; its ordinal uses the standard stem "šestoti". -->
+        <LanguageSpecifics>CroatianOrdinalLanguageSpecifics</LanguageSpecifics>
+        <Ordinals>
+            <!-- Lexical ordinals of the single scale units (Hrvatski jezični portal: tisućiti, milijunti,
+                 milijarditi). Every other round scale value (any other multiple of 1000, including
+                 10^12 and above) is declined by CroatianOrdinalLanguageSpecifics because its form was
+                 not verified. -->
+            <OrdinalException value="0" string="nulti" />
+            <OrdinalException value="1000" string="tisućiti" />
+            <OrdinalException value="1000000" string="milijunti" />
+            <OrdinalException value="1000000000" string="milijarditi" />
+            <Ordinal from="jedan" to="prvi" />
+            <Ordinal from="dva" to="drugi" />
+            <Ordinal from="tri" to="treći" />
+            <Ordinal from="četiri" to="četvrti" />
+            <Ordinal from="pet" to="peti" />
+            <Ordinal from="šest" to="šesti" />
+            <Ordinal from="sedam" to="sedmi" />
+            <Ordinal from="osam" to="osmi" />
+            <Ordinal from="devet" to="deveti" />
+            <Ordinal from="deset" to="deseti" />
+            <Ordinal from="jedanaest" to="jedanaesti" />
+            <Ordinal from="dvanaest" to="dvanaesti" />
+            <Ordinal from="trinaest" to="trinaesti" />
+            <Ordinal from="četrnaest" to="četrnaesti" />
+            <Ordinal from="petnaest" to="petnaesti" />
+            <Ordinal from="šesnaest" to="šesnaesti" />
+            <Ordinal from="sedamnaest" to="sedamnaesti" />
+            <Ordinal from="osamnaest" to="osamnaesti" />
+            <Ordinal from="devetnaest" to="devetnaesti" />
+            <Ordinal from="dvadeset" to="dvadeseti" />
+            <Ordinal from="trideset" to="trideseti" />
+            <Ordinal from="četrdeset" to="četrdeseti" />
+            <Ordinal from="pedeset" to="pedeseti" />
+            <Ordinal from="šezdeset" to="šezdeseti" />
+            <Ordinal from="sedamdeset" to="sedamdeseti" />
+            <Ordinal from="osamdeset" to="osamdeseti" />
+            <Ordinal from="devedeset" to="devedeseti" />
+            <Ordinal from="sto" to="stoti" />
+            <Ordinal from="dvjesto" to="dvjestoti" />
+            <Ordinal from="tristo" to="tristoti" />
+            <Ordinal from="četiristo" to="četiristoti" />
+            <Ordinal from="petsto" to="petstoti" />
+            <Ordinal from="šeststo" to="šestoti" />
+            <Ordinal from="šesto" to="šestoti" />
+            <Ordinal from="sedamsto" to="sedamstoti" />
+            <Ordinal from="osamsto" to="osamstoti" />
+            <Ordinal from="devetsto" to="devetstoti" />
         </Ordinals>
+        <!-- "Jedan je sat, dva su sata, pet je sati": the hour noun follows the count (1 sat,
+             2-4 sata, 5-12 sati). Quarter-hour 12-hour clock without day-part wording; the
+             half hour refers to the following hour ("pola dva"). -->
+        <ClockTime step="15" hourCycle="12">
+            <Rule range="0" displayHourRange="1" hourOffset="0" hourForm="cardinal" pattern="{hour} sat" />
+            <Rule range="0" displayHourRange="2-4" hourOffset="0" hourForm="cardinal" pattern="{hour} sata" />
+            <Rule range="0" displayHourRange="5-12" hourOffset="0" hourForm="cardinal" pattern="{hour} sati" />
+            <Rule range="15" hourOffset="0" hourForm="cardinal" pattern="{hour} i petnaest" />
+            <Rule range="30" hourOffset="1" hourForm="cardinal" pattern="pola {hour}" />
+            <Rule range="45" hourOffset="1" hourForm="cardinal" pattern="petnaest do {hour}" />
+        </ClockTime>
     </Language>
 </Numbers>

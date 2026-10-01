@@ -72,3 +72,35 @@ Scenario: Supported aliases use Vietnamese wording
 Scenario: Values above the supported maximum are rejected
     When I attempt to convert the cardinal number 1000000000000
     Then conversion is rejected because the value is out of range
+
+# The ordinal of four is the Sino-Vietnamese "thứ tư", not "thứ bốn"; like "thứ nhất" it is an
+# exception to the "thứ" + cardinal rule. Compounds keep the cardinal ("thứ mười bốn").
+Scenario Outline: Vietnamese irregular ordinals
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1 | thứ nhất |
+    | 4 | thứ tư |
+    | 14 | thứ mười bốn |
+    | 21 | thứ hai mươi mốt |
+
+Scenario: Idiomatic clock-time conversion is supported
+    Then the converter supports clock-time conversion
+
+# Neutral 12-hour clock without day-part wording (no sáng/chiều/tối): "<hour> giờ", "<hour> giờ
+# <minutes>", "<hour> giờ rưỡi", "<next hour> giờ kém mười lăm".
+Scenario Outline: Idiomatic Vietnamese clock times
+    When I convert the clock time "<time>"
+    Then the result is "<expected>"
+
+Examples:
+    | time | expected |
+    | 01:00 | một giờ |
+    | 01:15 | một giờ mười lăm |
+    | 01:30 | một giờ rưỡi |
+    | 01:45 | hai giờ kém mười lăm |
+    | 02:00 | hai giờ |
+    | 12:45 | một giờ kém mười lăm |
+    | 13:30 | một giờ rưỡi |

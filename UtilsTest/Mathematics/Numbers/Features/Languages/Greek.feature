@@ -90,3 +90,43 @@ Scenario: Fraction connector wording
     Given I use the "EL" number converter
     When I convert the fraction 3/2 through both public fraction APIs
     Then both fraction results are "τρία διά δύο"
+
+Scenario Outline: Greek feminine cardinal numbers
+    Given I use the "EL" number converter
+    And I use the variants "gender=θηλυκό"
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1 | μία |
+    | 3 | τρεις |
+    | 4 | τέσσερις |
+    | 13 | δεκατρείς |
+    | 14 | δεκατέσσερις |
+    | 200 | διακόσιες |
+    | 1000 | χίλιες |
+
+Scenario: Idiomatic clock-time conversion is supported
+    Given I use the "EL" number converter
+    Then the converter supports clock-time conversion
+
+# "η ώρα είναι μία / τρεις / τέσσερις": "ώρα" is feminine, so {hour} is forced to the feminine
+# numeral. Quarter-hour 12-hour clock without day-part wording: "και τέταρτο", "και μισή",
+# "<next> παρά τέταρτο".
+Scenario Outline: Idiomatic Greek clock times
+    Given I use the "EL" number converter
+    When I convert the clock time "<time>"
+    Then the result is "<expected>"
+
+Examples:
+    | time | expected |
+    | 01:00 | μία |
+    | 01:15 | μία και τέταρτο |
+    | 01:30 | μία και μισή |
+    | 01:45 | δύο παρά τέταρτο |
+    | 02:00 | δύο |
+    | 03:00 | τρεις |
+    | 04:00 | τέσσερις |
+    | 12:45 | μία παρά τέταρτο |
+    | 13:30 | μία και μισή |

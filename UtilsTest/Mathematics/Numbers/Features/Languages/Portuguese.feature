@@ -157,3 +157,36 @@ Scenario: Fraction connector wording
     Given I use the "PT" number converter
     When I convert the fraction 3/2 through both public fraction APIs
     Then both fraction results are "três sobre dois"
+
+Scenario: Idiomatic clock-time conversion is supported
+    Given I use the "PT" number converter
+    Then the converter supports clock-time conversion
+
+# The PT configuration deliberately reads the clock numerically: the feminine "hora" time unit
+# followed by the minutes, "e meia" for the half hour (01:45 -> "uma hora e quarenta e cinco").
+# Portuguese also has idiomatic constructions after the half hour, which this configuration does
+# not produce: "um quarto para as dez", "dez para as três", "três menos dez", "três menos um
+# quarto" (Ciberdúvidas, "Minutos para a hora"). PT-PT and PT-BR are not distinguished. The
+# 11 -> 12 -> 1 and 23 -> 12 transitions keep the 12-hour reading and the feminine agreement.
+Scenario Outline: Idiomatic Portuguese clock times
+    Given I use the "PT" number converter
+    When I convert the clock time "<time>"
+    Then the result is "<expected>"
+
+Examples:
+    | time | expected |
+    | 01:00 | uma hora |
+    | 01:05 | uma hora e cinco |
+    | 01:15 | uma hora e quinze |
+    | 01:30 | uma hora e meia |
+    | 01:45 | uma hora e quarenta e cinco |
+    | 02:00 | duas horas |
+    | 02:15 | duas horas e quinze |
+    | 12:00 | doze horas |
+    | 13:30 | uma hora e meia |
+    | 00:00 | doze horas |
+    | 00:15 | doze horas e quinze |
+    | 11:45 | onze horas e quarenta e cinco |
+    | 12:15 | doze horas e quinze |
+    | 12:45 | doze horas e quarenta e cinco |
+    | 23:45 | onze horas e quarenta e cinco |

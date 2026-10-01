@@ -60,5 +60,17 @@
         </NumberScale>
         <Exceptions />
         <Ordinals prefix="第" />
+        <!-- "两点" is the clock form of two; the counting cardinal stays "二". Quarter-hour 12-hour
+             clock without day-part wording. -->
+        <ClockTime step="15" hourCycle="12">
+            <Rule range="0" displayHourRange="2" hourOffset="0" hourForm="cardinal" pattern="两点" />
+            <Rule range="0" displayHourRange="1,3-12" hourOffset="0" hourForm="cardinal" pattern="{hour}点" />
+            <Rule range="15" displayHourRange="2" hourOffset="0" hourForm="cardinal" pattern="两点十五分" />
+            <Rule range="15" displayHourRange="1,3-12" hourOffset="0" hourForm="cardinal" pattern="{hour}点十五分" />
+            <Rule range="30" displayHourRange="2" hourOffset="0" hourForm="cardinal" pattern="两点半" />
+            <Rule range="30" displayHourRange="1,3-12" hourOffset="0" hourForm="cardinal" pattern="{hour}点半" />
+            <Rule range="45" displayHourRange="2" hourOffset="0" hourForm="cardinal" pattern="两点四十五分" />
+            <Rule range="45" displayHourRange="1,3-12" hourOffset="0" hourForm="cardinal" pattern="{hour}点四十五分" />
+        </ClockTime>
     </Language>
 </Numbers>
