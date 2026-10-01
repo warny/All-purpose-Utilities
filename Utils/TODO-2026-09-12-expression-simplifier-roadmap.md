@@ -2691,6 +2691,14 @@ preserved. Only numeric parameters, non-null native numeric constants, ordinary 
 and ordinary non-lifted Add/Subtract/Multiply/Divide/Power trees were eligible. Results were inserted only
 after successful simplification, so exceptions remained uncached and x-before-y behavior remained intact.
 
+The first-slot insertion logic was not re-entrancy-safe, however. An outer cache miss could call the
+simplifier while both the first slot and dictionary were empty; a recursively reached factoring probe in the
+same session could then populate only the shared first slot. When the outer simplification returned, it saw a
+non-empty first slot and attempted to insert its result through the still-null dictionary, causing a
+`NullReferenceException`. This is a separate correctness failure in exactly the nested-probe scenario P6 was
+intended to support. A future attempt must re-check both cache tiers after re-entrant simplification and must
+not assume that their state is unchanged across the call.
+
 The intended memo identity was a strict oriented structural comparer: parameter leaves required reference
 identity, and unary/binary operator metadata, lifting flags, ordered children, and conversion were included.
 `StructuralEqualsRaw` was deliberately not used because its direct Add/Multiply commutative fallback can
@@ -2730,21 +2738,24 @@ bytes and actual executions falling from 2,418 to 704. The execution counter the
 strict memoization removes repeated simplification work. The P6 hypothesis was therefore correct: structural
 identity reached reconstructed repeated work that P5's reference identity missed, and at n=16 reduced actual
 executions from 229,370 to 1,751 for addition and from 687,090 to 5,676 for subtraction. This implementation
-is nevertheless rejected for **two independent reasons**: the repeatable B/n=8 CPU regression exceeds the
-mandatory 5% ceiling, and its numeric identity is semantically incorrect for IEEE signed zero. No alternative
-optimization was substituted. The decisive performance failure was established before the remaining control
-and memo-infrastructure microbenchmarks, so those diagnostics were not used to override the acceptance gate.
+is nevertheless rejected for **three independent reasons**: the repeatable B/n=8 CPU regression exceeds the
+mandatory 5% ceiling; its numeric identity is semantically incorrect for IEEE signed zero; and re-entrant
+population of the first slot can leave the insertion path with a null dictionary and cause a
+`NullReferenceException`. No alternative optimization was substituted. The decisive performance failure was
+established before the remaining control and memo-infrastructure microbenchmarks, so those diagnostics were
+not used to override the acceptance gate.
 
 The candidate also failed the Release source-quality gate because adding the overload made the pre-existing
 `ExpressionComparer.SimplifyForComparison` XML `cref` ambiguous (`CS0419`). The reverted final state removes
 the overload and therefore removes that ambiguity. Unit, Functional, Security, the build, and package jobs
 were otherwise green on the reviewed candidate.
 
-The complete benchmarked candidate is durably reviewable at remote head
-`64e17c2c6cf2e0de9a312e540ecccb7b72e6fd21` on
-`origin/codex/ajouter-la-memoisation-stricte-pour-le-comparateur`. An attempted additional push to the
+The complete benchmarked candidate remains durably reviewable as remote commit
+`64e17c2c6cf2e0de9a312e540ecccb7b72e6fd21`, reachable in the history of
+`codex/ajouter-la-memoisation-stricte-pour-le-comparateur`; that branch now points to the later documentation-
+only revert commit `1808c69ea55c700010c01fa28d005fd24f29263d`. An attempted additional push to the
 preferred `audit/s5-p6-structural-comparer-memo` name was blocked by the execution environment's missing
-GitHub credentials, but the existing remote branch already preserves the same complete candidate. The PR
+GitHub credentials, but the existing remote history already preserves the complete candidate. The PR
 branch now reverts `ExpressionComparer.cs`, `ExpressionSimplifier.cs`, and the P6-specific tests completely;
 only this rejected-experiment record remains.
 
