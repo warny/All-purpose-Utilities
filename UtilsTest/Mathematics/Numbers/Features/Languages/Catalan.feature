@@ -130,6 +130,7 @@ Scenario Outline: Traditional Catalan clock times refer quarters to the followin
 Examples:
     | time | expected |
     | 01:00 | la una en punt |
+    | 02:00 | les dues en punt |
     | 01:15 | un quart de dues |
     | 01:30 | dos quarts de dues |
     | 01:45 | tres quarts de dues |

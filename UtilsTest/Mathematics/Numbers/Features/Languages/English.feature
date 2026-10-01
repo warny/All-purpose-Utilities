@@ -313,6 +313,7 @@ Examples:
 Scenario Outline: English clock-time capability is inherited by British English
     Given I use the "<converter>" number converter
     Then the converter supports clock-time conversion
+    And the converter supports ordinal conversion
 
 Examples:
     | converter |
@@ -338,3 +339,18 @@ Examples:
     | 12:00 | noon |
     | 13:30 | half past one |
     | 23:45 | quarter to twelve |
+    | 23:58 | midnight |
+
+# Special hours use specialHourPattern="{hour}" alone: never "noon o'clock" / "midnight o'clock".
+Scenario Outline: British English inherits the English clock times and special hours
+    Given I use the "EN-GB" number converter
+    When I convert the clock time "<time>"
+    Then the result is "<expected>"
+
+Examples:
+    | time | expected |
+    | 00:00 | midnight |
+    | 01:00 | one o'clock |
+    | 11:58 | noon |
+    | 12:00 | noon |
+    | 23:58 | midnight |

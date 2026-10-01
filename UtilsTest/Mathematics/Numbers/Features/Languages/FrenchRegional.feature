@@ -372,11 +372,27 @@ Examples:
 Scenario Outline: Regional French ClockTime is inherited from the general configuration
     Given I use the "<culture>" number converter
     Then the converter supports clock-time conversion
+    And the converter supports ordinal conversion
 
 Examples:
     | culture |
     | FR-be |
     | FR-ch |
+
+# FR-be and FR-ch declare no <ClockTime> of their own: these results come from the inherited FR section.
+Scenario Outline: Regional French children use the inherited French clock times
+    Given I use the "<culture>" number converter
+    When I convert the clock time "<time>"
+    Then the result is "<expected>"
+
+Examples:
+    | culture | time | expected |
+    | FR-be | 01:15 | une heure et quart |
+    | FR-be | 01:45 | deux heures moins le quart |
+    | FR-be | 11:55 | midi moins cinq |
+    | FR-ch | 01:15 | une heure et quart |
+    | FR-ch | 01:45 | deux heures moins le quart |
+    | FR-ch | 11:55 | midi moins cinq |
 
 Scenario Outline: Belgian French cardinal decades do not reuse metropolitan exceptions
     Given I use the "FR-be" number converter
@@ -385,7 +401,14 @@ Scenario Outline: Belgian French cardinal decades do not reuse metropolitan exce
 
 Examples:
     | number | expected |
+    | 70 | septante |
+    | 71 | septante et un |
     | 72 | septante deux |
+    | 80 | quatre-vingts |
+    | 81 | quatre-vingt un |
+    | 82 | quatre-vingt deux |
+    | 90 | nonante |
+    | 91 | nonante et un |
     | 92 | nonante deux |
 
 Scenario Outline: Swiss French cardinal decades
@@ -397,10 +420,13 @@ Examples:
     | number | expected |
     | 70 | septante |
     | 71 | septante et un |
+    | 72 | septante deux |
     | 80 | huitante |
     | 81 | huitante et un |
+    | 82 | huitante deux |
     | 90 | nonante |
     | 91 | nonante et un |
+    | 92 | nonante deux |
 
 Scenario Outline: Swiss French ordinals
     Given I use the "FR-ch" number converter
@@ -409,5 +435,9 @@ Scenario Outline: Swiss French ordinals
 
 Examples:
     | number | expected |
+    | 70 | septantième |
+    | 71 | septante et unième |
     | 80 | huitantième |
     | 81 | huitante et unième |
+    | 90 | nonantième |
+    | 91 | nonante et unième |

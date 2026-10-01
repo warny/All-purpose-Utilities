@@ -14,16 +14,20 @@ Examples:
     | 1 | satu |
     | 2 | dua |
     | 3 | tiga |
+    | 8 | delapan |
     | 9 | sembilan |
     | 10 | sepuluh |
     | 11 | sebelas |
     | 12 | dua belas |
+    | 18 | delapan belas |
     | 19 | sembilan belas |
     | 20 | dua puluh |
     | 21 | dua puluh satu |
+    | 80 | delapan puluh |
     | 100 | seratus |
     | 101 | seratus satu |
     | 200 | dua ratus |
+    | 800 | delapan ratus |
     | 1000 | seribu |
     | 2000 | dua ribu |
     | 10000 | sepuluh ribu |
@@ -31,8 +35,9 @@ Examples:
     | 1000000000 | satu miliar |
     | 1000000000000 | satu triliun |
     | 1000000000000000 | satu kuadriliun |
+    | 1000000000000000000 | satu kuintiliun |
     | -1 | negatif satu |
-Scenario Outline: Malay alias wording
+Scenario Outline: Malay inherits the Indonesian wording where the stems agree
     Then the "ID" and "MS" converters produce the same cardinal wording for <number>
 
 Examples:
@@ -57,12 +62,16 @@ Examples:
     | 2 | kedua |
     | 3 | ketiga |
     | 4 | keempat |
+    | 8 | kedelapan |
     | 10 | kesepuluh |
+    | 18 | kedelapan belas |
+    | 20 | kedua puluh |
     | 21 | kedua puluh satu |
     | 100 | keseratus |
     | 1000 | keseribu |
     | 1000000000 | kesatu miliar |
     | 1000000000000 | kesatu triliun |
+    | 8000000000 | kedelapan miliar |
 
 Scenario Outline: Idiomatic Indonesian clock times
     When I convert the clock time "<time>"
@@ -74,5 +83,6 @@ Examples:
     | 01:05 | jam satu lewat lima |
     | 01:15 | jam satu lewat seperempat |
     | 01:30 | jam setengah dua |
+    | 01:35 | jam dua kurang dua puluh lima |
     | 01:45 | jam dua kurang seperempat |
     | 01:55 | jam dua kurang lima |

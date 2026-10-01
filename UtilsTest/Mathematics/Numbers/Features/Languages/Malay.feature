@@ -34,10 +34,14 @@ Examples:
     | 3 | ketiga |
     | 8 | kelapan |
     | 10 | kesepuluh |
+    | 18 | kelapan belas |
+    | 20 | kedua puluh |
+    | 80 | kelapan puluh |
     | 21 | kedua puluh satu |
     | 100 | keseratus |
     | 1000 | keseribu |
     | 1000000000 | kesatu bilion |
+    | 8000000000 | kelapan bilion |
     | 1000000000000 | kesatu trilion |
     | 1000000000000000 | kesatu kuadrilion |
     | 1000000000000000000 | kesatu kuintilion |
@@ -52,7 +56,9 @@ Scenario Outline: Malay clock times
 Examples:
     | time | expected |
     | 01:00 | pukul satu |
+    | 01:05 | pukul satu lima minit |
     | 01:15 | pukul satu suku |
     | 01:30 | pukul satu setengah |
+    | 01:35 | pukul dua kurang dua puluh lima minit |
     | 01:45 | pukul dua kurang suku |
     | 01:55 | pukul dua kurang lima minit |
