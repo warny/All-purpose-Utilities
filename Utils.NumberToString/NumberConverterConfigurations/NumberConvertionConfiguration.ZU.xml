@@ -70,5 +70,61 @@
             <Number value="18" string="ishumi nesishiyagalombili" />
             <Number value="19" string="ishumi nesishiyagalolunye" />
         </Exceptions>
+        <!-- Unisa "Learn online Zulu", Theme 4: "Yihora lesihlanu", "Imizuzu eyishumi lishayile
+             elesihlanu", "Ligamenxe elesihlanu", "... ngaphambi kwelesihlanu". The hour is a class-5
+             ordinal agreeing with "ihora" (ihora lesibili; relative elesibili when the noun is elided;
+             kwelesibili after "ngaphambi kwa-"). These forms are literal clock-only patterns per
+             displayed hour: they do not enable general ordinal conversion, which needs a noun-class
+             policy. Quarter-hour 12-hour clock without day-part wording. -->
+        <ClockTime step="15" hourCycle="12">
+            <Rule range="0" displayHourRange="1" hourOffset="0" hourForm="cardinal" pattern="ihora lokuqala" />
+            <Rule range="15" displayHourRange="1" hourOffset="0" hourForm="cardinal" pattern="imizuzu eyishumi nanhlanu lishayile elokuqala" />
+            <Rule range="30" displayHourRange="1" hourOffset="0" hourForm="cardinal" pattern="ligamenxe elokuqala" />
+            <Rule range="45" displayHourRange="1" hourOffset="1" hourForm="cardinal" pattern="imizuzu eyishumi nanhlanu ngaphambi kwelokuqala" />
+            <Rule range="0" displayHourRange="2" hourOffset="0" hourForm="cardinal" pattern="ihora lesibili" />
+            <Rule range="15" displayHourRange="2" hourOffset="0" hourForm="cardinal" pattern="imizuzu eyishumi nanhlanu lishayile elesibili" />
+            <Rule range="30" displayHourRange="2" hourOffset="0" hourForm="cardinal" pattern="ligamenxe elesibili" />
+            <Rule range="45" displayHourRange="2" hourOffset="1" hourForm="cardinal" pattern="imizuzu eyishumi nanhlanu ngaphambi kwelesibili" />
+            <Rule range="0" displayHourRange="3" hourOffset="0" hourForm="cardinal" pattern="ihora lesithathu" />
+            <Rule range="15" displayHourRange="3" hourOffset="0" hourForm="cardinal" pattern="imizuzu eyishumi nanhlanu lishayile elesithathu" />
+            <Rule range="30" displayHourRange="3" hourOffset="0" hourForm="cardinal" pattern="ligamenxe elesithathu" />
+            <Rule range="45" displayHourRange="3" hourOffset="1" hourForm="cardinal" pattern="imizuzu eyishumi nanhlanu ngaphambi kwelesithathu" />
+            <Rule range="0" displayHourRange="4" hourOffset="0" hourForm="cardinal" pattern="ihora lesine" />
+            <Rule range="15" displayHourRange="4" hourOffset="0" hourForm="cardinal" pattern="imizuzu eyishumi nanhlanu lishayile elesine" />
+            <Rule range="30" displayHourRange="4" hourOffset="0" hourForm="cardinal" pattern="ligamenxe elesine" />
+            <Rule range="45" displayHourRange="4" hourOffset="1" hourForm="cardinal" pattern="imizuzu eyishumi nanhlanu ngaphambi kwelesine" />
+            <Rule range="0" displayHourRange="5" hourOffset="0" hourForm="cardinal" pattern="ihora lesihlanu" />
+            <Rule range="15" displayHourRange="5" hourOffset="0" hourForm="cardinal" pattern="imizuzu eyishumi nanhlanu lishayile elesihlanu" />
+            <Rule range="30" displayHourRange="5" hourOffset="0" hourForm="cardinal" pattern="ligamenxe elesihlanu" />
+            <Rule range="45" displayHourRange="5" hourOffset="1" hourForm="cardinal" pattern="imizuzu eyishumi nanhlanu ngaphambi kwelesihlanu" />
+            <Rule range="0" displayHourRange="6" hourOffset="0" hourForm="cardinal" pattern="ihora lesithupha" />
+            <Rule range="15" displayHourRange="6" hourOffset="0" hourForm="cardinal" pattern="imizuzu eyishumi nanhlanu lishayile elesithupha" />
+            <Rule range="30" displayHourRange="6" hourOffset="0" hourForm="cardinal" pattern="ligamenxe elesithupha" />
+            <Rule range="45" displayHourRange="6" hourOffset="1" hourForm="cardinal" pattern="imizuzu eyishumi nanhlanu ngaphambi kwelesithupha" />
+            <Rule range="0" displayHourRange="7" hourOffset="0" hourForm="cardinal" pattern="ihora lesikhombisa" />
+            <Rule range="15" displayHourRange="7" hourOffset="0" hourForm="cardinal" pattern="imizuzu eyishumi nanhlanu lishayile elesikhombisa" />
+            <Rule range="30" displayHourRange="7" hourOffset="0" hourForm="cardinal" pattern="ligamenxe elesikhombisa" />
+            <Rule range="45" displayHourRange="7" hourOffset="1" hourForm="cardinal" pattern="imizuzu eyishumi nanhlanu ngaphambi kwelesikhombisa" />
+            <Rule range="0" displayHourRange="8" hourOffset="0" hourForm="cardinal" pattern="ihora lesishiyagalombili" />
+            <Rule range="15" displayHourRange="8" hourOffset="0" hourForm="cardinal" pattern="imizuzu eyishumi nanhlanu lishayile elesishiyagalombili" />
+            <Rule range="30" displayHourRange="8" hourOffset="0" hourForm="cardinal" pattern="ligamenxe elesishiyagalombili" />
+            <Rule range="45" displayHourRange="8" hourOffset="1" hourForm="cardinal" pattern="imizuzu eyishumi nanhlanu ngaphambi kwelesishiyagalombili" />
+            <Rule range="0" displayHourRange="9" hourOffset="0" hourForm="cardinal" pattern="ihora lesishiyagalolunye" />
+            <Rule range="15" displayHourRange="9" hourOffset="0" hourForm="cardinal" pattern="imizuzu eyishumi nanhlanu lishayile elesishiyagalolunye" />
+            <Rule range="30" displayHourRange="9" hourOffset="0" hourForm="cardinal" pattern="ligamenxe elesishiyagalolunye" />
+            <Rule range="45" displayHourRange="9" hourOffset="1" hourForm="cardinal" pattern="imizuzu eyishumi nanhlanu ngaphambi kwelesishiyagalolunye" />
+            <Rule range="0" displayHourRange="10" hourOffset="0" hourForm="cardinal" pattern="ihora leshumi" />
+            <Rule range="15" displayHourRange="10" hourOffset="0" hourForm="cardinal" pattern="imizuzu eyishumi nanhlanu lishayile eleshumi" />
+            <Rule range="30" displayHourRange="10" hourOffset="0" hourForm="cardinal" pattern="ligamenxe eleshumi" />
+            <Rule range="45" displayHourRange="10" hourOffset="1" hourForm="cardinal" pattern="imizuzu eyishumi nanhlanu ngaphambi kweleshumi" />
+            <Rule range="0" displayHourRange="11" hourOffset="0" hourForm="cardinal" pattern="ihora leshumi nanye" />
+            <Rule range="15" displayHourRange="11" hourOffset="0" hourForm="cardinal" pattern="imizuzu eyishumi nanhlanu lishayile eleshumi nanye" />
+            <Rule range="30" displayHourRange="11" hourOffset="0" hourForm="cardinal" pattern="ligamenxe eleshumi nanye" />
+            <Rule range="45" displayHourRange="11" hourOffset="1" hourForm="cardinal" pattern="imizuzu eyishumi nanhlanu ngaphambi kweleshumi nanye" />
+            <Rule range="0" displayHourRange="12" hourOffset="0" hourForm="cardinal" pattern="ihora leshumi nambili" />
+            <Rule range="15" displayHourRange="12" hourOffset="0" hourForm="cardinal" pattern="imizuzu eyishumi nanhlanu lishayile eleshumi nambili" />
+            <Rule range="30" displayHourRange="12" hourOffset="0" hourForm="cardinal" pattern="ligamenxe eleshumi nambili" />
+            <Rule range="45" displayHourRange="12" hourOffset="1" hourForm="cardinal" pattern="imizuzu eyishumi nanhlanu ngaphambi kweleshumi nambili" />
+        </ClockTime>
     </Language>
 </Numbers>
