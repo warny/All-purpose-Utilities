@@ -32,10 +32,10 @@ public class NumberToStringClockTimeLanguageTests
         string culture, int hour, int minute, string literal, int ordinal, string forced)
     {
         NumberToStringConverter converter = NumberToStringConverter.GetConverter(culture);
-        string expectedHour = converter.ConvertOrdinal(ordinal, forced.Split(','));
+        string forcedHour = converter.ConvertOrdinal(ordinal, forced.Split(','));
 
-        Assert.AreEqual(literal + expectedHour, converter.ConvertClockTime(new TimeOnly(hour, minute)));
-        Assert.AreNotEqual(converter.ConvertOrdinal(ordinal), expectedHour, "The forcing must select a non-default form.");
+        Assert.AreEqual(literal + forcedHour, converter.ConvertClockTime(new TimeOnly(hour, minute)));
+        Assert.AreNotEqual(converter.ConvertOrdinal(ordinal), forcedHour, "The forcing must select a non-default form.");
     }
 
     /// <summary>Ensures cardinal clock hours use the rule's forced gender rather than the default cardinal.</summary>
@@ -79,10 +79,10 @@ public class NumberToStringClockTimeLanguageTests
     public void ConvertClockTime_TurkishHour_UsesForcedCase(int hour, int minute, string pattern, int displayed, string forced)
     {
         NumberToStringConverter converter = NumberToStringConverter.GetConverter("TR");
-        string expectedHour = converter.Convert(displayed, forced);
+        string forcedHour = converter.Convert(displayed, forced);
 
-        Assert.AreEqual(string.Format(pattern, expectedHour), converter.ConvertClockTime(new TimeOnly(hour, minute)));
-        Assert.AreNotEqual(converter.Convert(displayed), expectedHour);
+        Assert.AreEqual(string.Format(pattern, forcedHour), converter.ConvertClockTime(new TimeOnly(hour, minute)));
+        Assert.AreNotEqual(converter.Convert(displayed), forcedHour);
     }
 
     /// <summary>
