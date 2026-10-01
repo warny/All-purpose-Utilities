@@ -77,10 +77,72 @@
             <Number value="18" string="osamnaest" />
             <Number value="19" string="devetnaest" />
         </Exceptions>
-        <Ordinals suffix="i">
-            <OrdinalException value="1" string="prvi" />
-            <OrdinalException value="2" string="drugi" />
-            <OrdinalException value="3" string="treći" />
+        <!-- Croatian compound ordinals make only their last word ordinal ("dvadeset prvi",
+             "sto prvi"). Every word that can end a cardinal is mapped explicitly, so the ordinal
+             is productive for every value and never falls back to an unchanged cardinal (the
+             former suffix="i" produced "četirii", "jedani"). "šeststo" is the configured cardinal
+             spelling of 600; its ordinal uses the standard stem "šestoti". -->
+        <Ordinals>
+            <!-- "jedan milijun" -> "milijunti", not "jedan milijunti". -->
+            <OrdinalException value="0" string="nulti" />
+            <OrdinalException value="1000000" string="milijunti" />
+            <OrdinalException value="1000000000" string="milijarditi" />
+            <Ordinal from="jedan" to="prvi" />
+            <Ordinal from="dva" to="drugi" />
+            <Ordinal from="tri" to="treći" />
+            <Ordinal from="četiri" to="četvrti" />
+            <Ordinal from="pet" to="peti" />
+            <Ordinal from="šest" to="šesti" />
+            <Ordinal from="sedam" to="sedmi" />
+            <Ordinal from="osam" to="osmi" />
+            <Ordinal from="devet" to="deveti" />
+            <Ordinal from="deset" to="deseti" />
+            <Ordinal from="jedanaest" to="jedanaesti" />
+            <Ordinal from="dvanaest" to="dvanaesti" />
+            <Ordinal from="trinaest" to="trinaesti" />
+            <Ordinal from="četrnaest" to="četrnaesti" />
+            <Ordinal from="petnaest" to="petnaesti" />
+            <Ordinal from="šesnaest" to="šesnaesti" />
+            <Ordinal from="sedamnaest" to="sedamnaesti" />
+            <Ordinal from="osamnaest" to="osamnaesti" />
+            <Ordinal from="devetnaest" to="devetnaesti" />
+            <Ordinal from="dvadeset" to="dvadeseti" />
+            <Ordinal from="trideset" to="trideseti" />
+            <Ordinal from="četrdeset" to="četrdeseti" />
+            <Ordinal from="pedeset" to="pedeseti" />
+            <Ordinal from="šezdeset" to="šezdeseti" />
+            <Ordinal from="sedamdeset" to="sedamdeseti" />
+            <Ordinal from="osamdeset" to="osamdeseti" />
+            <Ordinal from="devedeset" to="devedeseti" />
+            <Ordinal from="sto" to="stoti" />
+            <Ordinal from="dvjesto" to="dvjestoti" />
+            <Ordinal from="tristo" to="tristoti" />
+            <Ordinal from="četiristo" to="četiristoti" />
+            <Ordinal from="petsto" to="petstoti" />
+            <Ordinal from="šeststo" to="šestoti" />
+            <Ordinal from="šesto" to="šestoti" />
+            <Ordinal from="sedamsto" to="sedamstoti" />
+            <Ordinal from="osamsto" to="osamstoti" />
+            <Ordinal from="devetsto" to="devetstoti" />
+            <Ordinal from="tisuća" to="tisući" />
+            <Ordinal from="tisuće" to="tisući" />
+            <Ordinal from="tisuću" to="tisući" />
+            <Ordinal from="milijun" to="milijunti" />
+            <Ordinal from="milijuna" to="milijunti" />
+            <Ordinal from="milijarda" to="milijarditi" />
+            <Ordinal from="milijarde" to="milijarditi" />
+            <Ordinal from="milijardi" to="milijarditi" />
         </Ordinals>
+        <!-- "Jedan je sat, dva su sata, pet je sati": the hour noun follows the count (1 sat,
+             2-4 sata, 5-12 sati). Quarter-hour 12-hour clock without day-part wording; the
+             half hour refers to the following hour ("pola dva"). -->
+        <ClockTime step="15" hourCycle="12">
+            <Rule range="0" displayHourRange="1" hourOffset="0" hourForm="cardinal" pattern="{hour} sat" />
+            <Rule range="0" displayHourRange="2-4" hourOffset="0" hourForm="cardinal" pattern="{hour} sata" />
+            <Rule range="0" displayHourRange="5-12" hourOffset="0" hourForm="cardinal" pattern="{hour} sati" />
+            <Rule range="15" hourOffset="0" hourForm="cardinal" pattern="{hour} i petnaest" />
+            <Rule range="30" hourOffset="1" hourForm="cardinal" pattern="pola {hour}" />
+            <Rule range="45" hourOffset="1" hourForm="cardinal" pattern="petnaest do {hour}" />
+        </ClockTime>
     </Language>
 </Numbers>

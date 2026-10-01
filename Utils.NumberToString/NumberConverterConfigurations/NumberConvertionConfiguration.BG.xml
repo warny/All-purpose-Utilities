@@ -94,5 +94,29 @@
             <Number value="18" string="осемнадесет" />
             <Number value="19" string="деветнадесет" />
         </Exceptions>
+        <!-- Gender of един/една/едно and два/две. The default "standalone" value keeps the counting
+             forms (едно, две); explicit genders select the agreeing forms. Ordinals are produced by
+             BulgarianOrdinalLanguageSpecifics, whose "standalone" form is the masculine citation
+             form (първи). -->
+        <Variants>
+            <Dimension name="gender" localName="род" values="standalone,masculine,feminine,neuter" />
+            <Variant type="gender" variant="masculine">
+                <Replacement oldValue="едно" newValue="един" scope="LastWord" />
+                <Replacement oldValue="две" newValue="два" scope="LastWord" />
+            </Variant>
+            <Variant type="gender" variant="feminine">
+                <Replacement oldValue="едно" newValue="една" scope="LastWord" />
+            </Variant>
+        </Variants>
+        <LanguageSpecifics>BulgarianOrdinalLanguageSpecifics</LanguageSpecifics>
+        <!-- "Часът е един": "час" is masculine, so {hour} is forced to the masculine numeral.
+             Quarter-hour 12-hour clock without day-part wording; "петнайсет" is the colloquial
+             variant of "петнадесет" listed by the orthographic dictionary. -->
+        <ClockTime step="15" hourCycle="12">
+            <Rule range="0" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=masculine" pattern="{hour}" />
+            <Rule range="15" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=masculine" pattern="{hour} и петнайсет" />
+            <Rule range="30" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=masculine" pattern="{hour} и половина" />
+            <Rule range="45" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=masculine" pattern="{hour} без петнайсет" />
+        </ClockTime>
     </Language>
 </Numbers>
