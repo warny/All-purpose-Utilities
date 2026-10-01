@@ -2691,13 +2691,20 @@ preserved. Only numeric parameters, non-null native numeric constants, ordinary 
 and ordinary non-lifted Add/Subtract/Multiply/Divide/Power trees were eligible. Results were inserted only
 after successful simplification, so exceptions remained uncached and x-before-y behavior remained intact.
 
-Memo identity was a new strict oriented structural comparer: parameter leaves required reference identity;
-constants required identical declared types and exact native numeric values; unary/binary operator metadata,
-lifting flags, ordered children, and conversion were included. `StructuralEqualsRaw` was deliberately not
-used because its direct Add/Multiply commutative fallback can equate `a+b` with `b+a`, while those sources can
-retain different simplified operand order. Focused tests covered orientation, association, rebuilt identical
-trees, distinct same-named parameters, eligibility/exclusions, reuse, nested lifetime, teardown, exceptions,
-and thread isolation. The unchanged P3 and structural-canonicalization suites also passed in the candidate.
+The intended memo identity was a strict oriented structural comparer: parameter leaves required reference
+identity, and unary/binary operator metadata, lifting flags, ordered children, and conversion were included.
+`StructuralEqualsRaw` was deliberately not used because its direct Add/Multiply commutative fallback can
+equate `a+b` with `b+a`, while those sources can retain different simplified operand order. The constant
+implementation was nevertheless not strict enough: it reused `ExactNumericValue`, whose zero normalization
+collapses IEEE `+0.0` and `-0.0`. Consequently, `Divide(1.0, +0.0)` and `Divide(1.0, -0.0)` could share a memo
+key even though their simplifications are respectively positive and negative infinity. Any future structural
+memo must preserve at least the IEEE bit representations of `float` and `double` constants.
+
+Focused tests covered orientation, association, rebuilt identical trees, distinct same-named parameters,
+eligibility/exclusions, reuse, nested lifetime, teardown, exceptions, and nominal thread isolation. Review
+found that the concurrency test's `Parallel.Invoke` did not force two sessions to overlap on distinct threads;
+a future attempt should use explicit `Thread` instances and a `Barrier` or `ManualResetEventSlim`. The
+unchanged P3 and structural-canonicalization suites passed in the candidate.
 
 A standalone Release harness outside the repository preconstructed sources, warmed the simplifier, invoked
 public `ExpressionSimplifier.Simplify`, and measured elapsed time and
@@ -2720,17 +2727,26 @@ three measured runs after three warmups were:
 An isolated B/n=8 confirmation with 30 warmups and ten measurements still regressed from a 10.515 ms
 baseline median to 13.106 ms for P6 (about 24.6%), despite allocations falling from 2,763,728 to 1,575,760
 bytes and actual executions falling from 2,418 to 704. The execution counter therefore demonstrates that
-strict memoization removes repeated simplification work, but the repeatable B/n=8 CPU regression exceeds the
-mandatory 5% ceiling. P6 is rejected; no alternative optimization was substituted. The decisive failure was
-established before the remaining control and memo-infrastructure microbenchmarks, so those diagnostics were
-not used to override the acceptance gate.
+strict memoization removes repeated simplification work. The P6 hypothesis was therefore correct: structural
+identity reached reconstructed repeated work that P5's reference identity missed, and at n=16 reduced actual
+executions from 229,370 to 1,751 for addition and from 687,090 to 5,676 for subtraction. This implementation
+is nevertheless rejected for **two independent reasons**: the repeatable B/n=8 CPU regression exceeds the
+mandatory 5% ceiling, and its numeric identity is semantically incorrect for IEEE signed zero. No alternative
+optimization was substituted. The decisive performance failure was established before the remaining control
+and memo-infrastructure microbenchmarks, so those diagnostics were not used to override the acceptance gate.
 
-The exact counter-free candidate is local commit
-`1da9d29189ebf08d8b69d6589512c1c1af5e0087`. It is intentionally **not described as remotely preserved**:
-the environment had no GitHub credentials and rejected the required push. In accordance with the rule not
-to revert until remote retrievability is verified, the candidate remains present on this review branch and
-must not be merged. A maintainer must push that exact commit to `audit/s5-p6-structural-comparer-memo`, verify
-it on GitHub, and then revert the production/test candidate, leaving this rejected-experiment record.
+The candidate also failed the Release source-quality gate because adding the overload made the pre-existing
+`ExpressionComparer.SimplifyForComparison` XML `cref` ambiguous (`CS0419`). The reverted final state removes
+the overload and therefore removes that ambiguity. Unit, Functional, Security, the build, and package jobs
+were otherwise green on the reviewed candidate.
+
+The complete benchmarked candidate is durably reviewable at remote head
+`64e17c2c6cf2e0de9a312e540ecccb7b72e6fd21` on
+`origin/codex/ajouter-la-memoisation-stricte-pour-le-comparateur`. An attempted additional push to the
+preferred `audit/s5-p6-structural-comparer-memo` name was blocked by the execution environment's missing
+GitHub credentials, but the existing remote branch already preserves the same complete candidate. The PR
+branch now reverts `ExpressionComparer.cs`, `ExpressionSimplifier.cs`, and the P6-specific tests completely;
+only this rejected-experiment record remains.
 
 ## Execution-optimizer stages
 
