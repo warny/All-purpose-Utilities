@@ -146,6 +146,8 @@
              ("yirmi birinci"); every word that can end a cardinal is listed ("dört" voices to
              "dördüncü"). -->
         <Ordinals>
+            <!-- Zero is ordinalized too ("sıfırıncı"), so no value falls back to its cardinal. -->
+            <Ordinal from="sıfır" to="sıfırıncı" />
             <Ordinal from="bir" to="birinci" />
             <Ordinal from="iki" to="ikinci" />
             <Ordinal from="üç" to="üçüncü" />

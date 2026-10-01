@@ -12,7 +12,9 @@ namespace Utils.NumberToString;
 /// article).
 /// </summary>
 /// <remarks>
-/// Values below twenty are declined so the XML exceptions (<c>أول</c>, <c>حادي عشر</c>) apply.
+/// Values from 1 to 19 are declined so the XML exceptions (<c>أول</c>, <c>حادي عشر</c>) apply; zero
+/// and negative values throw, because the XML fallback would otherwise return the cardinal
+/// <c>صفر</c>.
 /// Other values above 99 have no verified indefinite form in this contract and throw
 /// <see cref="NotSupportedException"/>, rather than falling back to an unchanged cardinal.
 /// </remarks>
@@ -29,6 +31,8 @@ public sealed class ArabicOrdinalLanguageSpecifics : INumberToStringLanguageSpec
     public bool TryConvertOrdinal(int number, IReadOnlyDictionary<string, string> activeVariants, out string? result)
     {
         result = null;
+        if (number <= 0)
+            throw new NotSupportedException($"Arabic ordinal {number} has no verified form in the supported contract (1-99, 100, 1000).");
         if (number < 20)
             return false;
         if (number == 100)

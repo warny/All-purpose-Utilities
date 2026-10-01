@@ -50,6 +50,7 @@ Scenario Outline: Turkish ordinal numbers
 
 Examples:
     | number | expected |
+    | 0 | sıfırıncı |
     | 1 | birinci |
     | 2 | ikinci |
     | 3 | üçüncü |

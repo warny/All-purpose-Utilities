@@ -221,9 +221,11 @@ public class NumberToStringOrdinalPluginTests
 
     /// <summary>
     /// Ensures Arabic ordinals outside the documented contract (1-99, 100, 1000) fail closed instead
-    /// of returning an unchanged cardinal.
+    /// of returning an unchanged cardinal, including zero, which the partial XML (1-19) would
+    /// otherwise render as the cardinal "صفر".
     /// </summary>
     [TestMethod]
+    [DataRow(0L)]
     [DataRow(101L)]
     [DataRow(150L)]
     [DataRow(2_000L)]
@@ -259,7 +261,7 @@ public class NumberToStringOrdinalPluginTests
     {
         NumberToStringConverter converter = NumberToStringConverter.GetConverter(culture);
 
-        for (long value = 1; value <= 2_100; value++)
+        for (long value = 0; value <= 2_100; value++)
             Assert.AreNotEqual(converter.Convert(value), converter.ConvertOrdinal(value), $"{culture} {value}");
         foreach (long value in new[] { 21_000L, 1_000_000L, 1_000_000_000L, largest })
             Assert.AreNotEqual(converter.Convert(value), converter.ConvertOrdinal(value), $"{culture} {value}");
