@@ -64,5 +64,48 @@
         </Replacements>
         <Exceptions />
         <Ordinals prefix="제" />
+        <!-- Hours use native Korean attributive numerals (한, 두 ... 열두) while minutes use the
+             Sino-Korean cardinals. The native forms are literal, clock-only patterns selected per
+             displayed hour, so Convert and ConvertOrdinal keep the Sino-Korean numerals. Spacing
+             follows Hangeul Matchumbeop art. 43 ("한 시 십오 분"). Neutral 12-hour clock without
+             오전/오후. -->
+        <ClockTime step="5" hourCycle="12">
+            <Rule range="0" displayHourRange="1" hourOffset="0" hourForm="cardinal" pattern="한 시" />
+            <Rule range="5,10,15,20,25,35,40,45,50,55" displayHourRange="1" hourOffset="0" hourForm="cardinal" amountReference="0" amountDirection="after" pattern="한 시 {amount} 분" />
+            <Rule range="30" displayHourRange="1" hourOffset="0" hourForm="cardinal" pattern="한 시 반" />
+            <Rule range="0" displayHourRange="2" hourOffset="0" hourForm="cardinal" pattern="두 시" />
+            <Rule range="5,10,15,20,25,35,40,45,50,55" displayHourRange="2" hourOffset="0" hourForm="cardinal" amountReference="0" amountDirection="after" pattern="두 시 {amount} 분" />
+            <Rule range="30" displayHourRange="2" hourOffset="0" hourForm="cardinal" pattern="두 시 반" />
+            <Rule range="0" displayHourRange="3" hourOffset="0" hourForm="cardinal" pattern="세 시" />
+            <Rule range="5,10,15,20,25,35,40,45,50,55" displayHourRange="3" hourOffset="0" hourForm="cardinal" amountReference="0" amountDirection="after" pattern="세 시 {amount} 분" />
+            <Rule range="30" displayHourRange="3" hourOffset="0" hourForm="cardinal" pattern="세 시 반" />
+            <Rule range="0" displayHourRange="4" hourOffset="0" hourForm="cardinal" pattern="네 시" />
+            <Rule range="5,10,15,20,25,35,40,45,50,55" displayHourRange="4" hourOffset="0" hourForm="cardinal" amountReference="0" amountDirection="after" pattern="네 시 {amount} 분" />
+            <Rule range="30" displayHourRange="4" hourOffset="0" hourForm="cardinal" pattern="네 시 반" />
+            <Rule range="0" displayHourRange="5" hourOffset="0" hourForm="cardinal" pattern="다섯 시" />
+            <Rule range="5,10,15,20,25,35,40,45,50,55" displayHourRange="5" hourOffset="0" hourForm="cardinal" amountReference="0" amountDirection="after" pattern="다섯 시 {amount} 분" />
+            <Rule range="30" displayHourRange="5" hourOffset="0" hourForm="cardinal" pattern="다섯 시 반" />
+            <Rule range="0" displayHourRange="6" hourOffset="0" hourForm="cardinal" pattern="여섯 시" />
+            <Rule range="5,10,15,20,25,35,40,45,50,55" displayHourRange="6" hourOffset="0" hourForm="cardinal" amountReference="0" amountDirection="after" pattern="여섯 시 {amount} 분" />
+            <Rule range="30" displayHourRange="6" hourOffset="0" hourForm="cardinal" pattern="여섯 시 반" />
+            <Rule range="0" displayHourRange="7" hourOffset="0" hourForm="cardinal" pattern="일곱 시" />
+            <Rule range="5,10,15,20,25,35,40,45,50,55" displayHourRange="7" hourOffset="0" hourForm="cardinal" amountReference="0" amountDirection="after" pattern="일곱 시 {amount} 분" />
+            <Rule range="30" displayHourRange="7" hourOffset="0" hourForm="cardinal" pattern="일곱 시 반" />
+            <Rule range="0" displayHourRange="8" hourOffset="0" hourForm="cardinal" pattern="여덟 시" />
+            <Rule range="5,10,15,20,25,35,40,45,50,55" displayHourRange="8" hourOffset="0" hourForm="cardinal" amountReference="0" amountDirection="after" pattern="여덟 시 {amount} 분" />
+            <Rule range="30" displayHourRange="8" hourOffset="0" hourForm="cardinal" pattern="여덟 시 반" />
+            <Rule range="0" displayHourRange="9" hourOffset="0" hourForm="cardinal" pattern="아홉 시" />
+            <Rule range="5,10,15,20,25,35,40,45,50,55" displayHourRange="9" hourOffset="0" hourForm="cardinal" amountReference="0" amountDirection="after" pattern="아홉 시 {amount} 분" />
+            <Rule range="30" displayHourRange="9" hourOffset="0" hourForm="cardinal" pattern="아홉 시 반" />
+            <Rule range="0" displayHourRange="10" hourOffset="0" hourForm="cardinal" pattern="열 시" />
+            <Rule range="5,10,15,20,25,35,40,45,50,55" displayHourRange="10" hourOffset="0" hourForm="cardinal" amountReference="0" amountDirection="after" pattern="열 시 {amount} 분" />
+            <Rule range="30" displayHourRange="10" hourOffset="0" hourForm="cardinal" pattern="열 시 반" />
+            <Rule range="0" displayHourRange="11" hourOffset="0" hourForm="cardinal" pattern="열한 시" />
+            <Rule range="5,10,15,20,25,35,40,45,50,55" displayHourRange="11" hourOffset="0" hourForm="cardinal" amountReference="0" amountDirection="after" pattern="열한 시 {amount} 분" />
+            <Rule range="30" displayHourRange="11" hourOffset="0" hourForm="cardinal" pattern="열한 시 반" />
+            <Rule range="0" displayHourRange="12" hourOffset="0" hourForm="cardinal" pattern="열두 시" />
+            <Rule range="5,10,15,20,25,35,40,45,50,55" displayHourRange="12" hourOffset="0" hourForm="cardinal" amountReference="0" amountDirection="after" pattern="열두 시 {amount} 분" />
+            <Rule range="30" displayHourRange="12" hourOffset="0" hourForm="cardinal" pattern="열두 시 반" />
+        </ClockTime>
     </Language>
 </Numbers>

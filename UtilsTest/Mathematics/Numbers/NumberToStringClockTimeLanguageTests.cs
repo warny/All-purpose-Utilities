@@ -84,4 +84,21 @@ public class NumberToStringClockTimeLanguageTests
         Assert.AreEqual(string.Format(pattern, expectedHour), converter.ConvertClockTime(new TimeOnly(hour, minute)));
         Assert.AreNotEqual(converter.Convert(displayed), expectedHour);
     }
+
+    /// <summary>
+    /// Ensures clock-only lexical forms (Korean native hours, Chinese 两) never leak into the
+    /// cardinal and ordinal APIs.
+    /// </summary>
+    [TestMethod]
+    [DataRow("KO", 1, "한 시", "일", "제일")]
+    [DataRow("KO", 12, "열두 시", "십이", "제십이")]
+    [DataRow("ZH", 2, "两点", "二", "第二")]
+    public void ClockOnlyHourForms_DoNotChangeCardinalOrOrdinal(string culture, int hour, string clock, string cardinal, string ordinal)
+    {
+        NumberToStringConverter converter = NumberToStringConverter.GetConverter(culture);
+
+        Assert.AreEqual(clock, converter.ConvertClockTime(new TimeOnly(hour, 0)));
+        Assert.AreEqual(cardinal, converter.Convert(hour));
+        Assert.AreEqual(ordinal, converter.ConvertOrdinal(hour));
+    }
 }

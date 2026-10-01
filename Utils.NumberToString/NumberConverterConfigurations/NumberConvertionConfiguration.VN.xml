@@ -79,6 +79,16 @@
         <Ordinals prefix="thứ ">
             <!-- 1st is "thứ nhất", not "thứ một" -->
             <OrdinalException value="1" string="nhất" />
+            <!-- The ordinal of four alone is the Sino-Vietnamese "tư" ("thứ tư"). -->
+            <OrdinalException value="4" string="tư" />
         </Ordinals>
+        <!-- Neutral 12-hour clock without day-part wording (no sáng/chiều/tối): "<hour> giờ",
+             "<hour> giờ mười lăm", "<hour> giờ rưỡi", "<next hour> giờ kém mười lăm". -->
+        <ClockTime step="15" hourCycle="12">
+            <Rule range="0" hourOffset="0" hourForm="cardinal" pattern="{hour} giờ" />
+            <Rule range="15" hourOffset="0" hourForm="cardinal" pattern="{hour} giờ mười lăm" />
+            <Rule range="30" hourOffset="0" hourForm="cardinal" pattern="{hour} giờ rưỡi" />
+            <Rule range="45" hourOffset="1" hourForm="cardinal" pattern="{hour} giờ kém mười lăm" />
+        </ClockTime>
     </Language>
 </Numbers>

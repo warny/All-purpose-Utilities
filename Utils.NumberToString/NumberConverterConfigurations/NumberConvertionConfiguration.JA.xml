@@ -64,5 +64,11 @@
 		</Replacements>
 		<Exceptions />
 		<Ordinals prefix="第" />
+		<!-- Neutral 12-hour clock without 午前/午後: "<hour>時", "<hour>時<minutes>分", "<hour>時半". -->
+		<ClockTime step="5" hourCycle="12">
+			<Rule range="0" hourOffset="0" hourForm="cardinal" pattern="{hour}時" />
+			<Rule range="5,10,15,20,25,35,40,45,50,55" hourOffset="0" hourForm="cardinal" amountReference="0" amountDirection="after" pattern="{hour}時{amount}分" />
+			<Rule range="30" hourOffset="0" hourForm="cardinal" pattern="{hour}時半" />
+		</ClockTime>
 	</Language>
 </Numbers>
