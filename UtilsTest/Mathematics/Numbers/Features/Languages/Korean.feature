@@ -92,6 +92,18 @@ Examples:
     | 01:30 | 한 시 반 |
     | 01:45 | 한 시 사십오 분 |
     | 13:00 | 한 시 |
+    | 05:00 | 다섯 시 |
+    | 06:00 | 여섯 시 |
+    | 07:00 | 일곱 시 |
+    | 08:00 | 여덟 시 |
+    | 09:00 | 아홉 시 |
+    | 10:00 | 열 시 |
+    | 00:00 | 열두 시 |
+    | 00:15 | 열두 시 십오 분 |
+    | 11:45 | 열한 시 사십오 분 |
+    | 12:15 | 열두 시 십오 분 |
+    | 12:45 | 열두 시 사십오 분 |
+    | 23:45 | 열한 시 사십오 분 |
 
 Scenario Outline: Korean clock hours do not change the Sino-Korean cardinals and ordinals
     Given I use the "KO" number converter

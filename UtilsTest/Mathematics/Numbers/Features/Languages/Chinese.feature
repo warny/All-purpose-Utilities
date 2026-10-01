@@ -66,6 +66,15 @@ Examples:
     | 02:30 | 两点半 |
     | 12:00 | 十二点 |
     | 14:00 | 两点 |
+    | 00:00 | 十二点 |
+    | 00:15 | 十二点十五分 |
+    | 02:15 | 两点十五分 |
+    | 11:45 | 十一点四十五分 |
+    | 12:15 | 十二点十五分 |
+    | 12:30 | 十二点半 |
+    | 12:45 | 十二点四十五分 |
+    | 23:00 | 十一点 |
+    | 23:45 | 十一点四十五分 |
 
 Scenario: The clock form of two does not change the cardinal
     Given I use the "ZH" number converter

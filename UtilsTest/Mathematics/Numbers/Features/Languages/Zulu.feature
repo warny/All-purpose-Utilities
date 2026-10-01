@@ -48,6 +48,18 @@ Examples:
     | 08:30 | ligamenxe elesishiyagalombili |
     | 12:00 | ihora leshumi nambili |
     | 13:00 | ihora lokuqala |
+    | 03:00 | ihora lesithathu |
+    | 04:00 | ihora lesine |
+    | 06:00 | ihora lesithupha |
+    | 07:00 | ihora lesikhombisa |
+    | 09:00 | ihora lesishiyagalolunye |
+    | 10:00 | ihora leshumi |
+    | 11:00 | ihora leshumi nanye |
+    | 00:00 | ihora leshumi nambili |
+    | 11:45 | imizuzu eyishumi nanhlanu ngaphambi kweleshumi nambili |
+    | 12:15 | imizuzu eyishumi nanhlanu lishayile eleshumi nambili |
+    | 12:45 | imizuzu eyishumi nanhlanu ngaphambi kwelokuqala |
+    | 23:45 | imizuzu eyishumi nanhlanu ngaphambi kweleshumi nambili |
 
 Scenario: Zulu clock forms do not change the cardinal
     Given I use the "ZU" number converter

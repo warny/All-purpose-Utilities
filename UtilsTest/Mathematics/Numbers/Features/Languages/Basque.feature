@@ -102,6 +102,19 @@ Examples:
     | 12:00 | hamabiak |
     | 12:45 | ordu bata laurden gutxi |
     | 13:30 | ordu bat eta erdiak |
+    | 04:00 | laurak |
+    | 05:00 | bostak |
+    | 06:00 | seiak |
+    | 07:00 | zazpiak |
+    | 08:00 | zortziak |
+    | 09:00 | bederatziak |
+    | 10:00 | hamarrak |
+    | 11:00 | hamaikak |
+    | 00:00 | hamabiak |
+    | 00:15 | hamabiak eta laurden |
+    | 11:45 | hamabiak laurden gutxi |
+    | 12:15 | hamabiak eta laurden |
+    | 23:45 | hamabiak laurden gutxi |
 
 Scenario Outline: Basque clock forms do not change the cardinals
     Given I use the "EU" number converter
