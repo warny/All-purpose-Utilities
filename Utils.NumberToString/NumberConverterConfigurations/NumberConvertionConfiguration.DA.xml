@@ -81,5 +81,28 @@
             <Number value="18" string="atten" />
             <Number value="19" string="nitten" />
         </Exceptions>
+        <!-- Danish "en" is the common-gender numeral; the neuter "et" is used before neuter nouns and
+             as the clock hour ("klokken er et"). Only the final "en" changes ("hundrede og et"). -->
+        <Variants>
+            <Dimension name="gender" localName="køn" values="fælleskøn,intetkøn" />
+            <Variant type="gender" variant="intetkøn">
+                <Replacement oldValue="en" newValue="et" scope="LastWord" />
+            </Variant>
+        </Variants>
+        <!-- Productive ordinals (første, enogtyvende, hundrede og første, tusinde): see
+             DanishOrdinalLanguageSpecifics. -->
+        <LanguageSpecifics>DanishOrdinalLanguageSpecifics</LanguageSpecifics>
+        <!-- Neutral 12-hour clock without day-part wording. Quarters refer to "halv <next hour>"
+             between :20 and :40 ("fem i halv to", "fem over halv to"). -->
+        <ClockTime step="5" hourCycle="12">
+            <Rule range="0" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=intetkøn" pattern="{hour}" />
+            <Rule range="5,10,20" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=intetkøn" amountReference="0" amountDirection="after" pattern="{amount} over {hour}" />
+            <Rule range="15" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=intetkøn" pattern="kvart over {hour}" />
+            <Rule range="25" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=intetkøn" amountReference="30" amountDirection="before" pattern="{amount} i halv {hour}" />
+            <Rule range="30" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=intetkøn" pattern="halv {hour}" />
+            <Rule range="35" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=intetkøn" amountReference="30" amountDirection="after" pattern="{amount} over halv {hour}" />
+            <Rule range="40,50,55" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=intetkøn" amountReference="60" amountDirection="before" pattern="{amount} i {hour}" />
+            <Rule range="45" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=intetkøn" pattern="kvart i {hour}" />
+        </ClockTime>
     </Language>
 </Numbers>
