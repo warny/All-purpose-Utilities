@@ -448,5 +448,15 @@
             <!-- ===== Millier ===== -->
             <Ordinal from="tysiąc" to="tysięczny" />
         </Ordinals>
+        <!-- Poradnia PWN: whole hours are feminine ordinals (pierwsza); up to :25 "<n> po" +
+             locative (pięć po pierwszej); :30 "wpół do" + genitive of the following hour; from :35
+             "za <n>" + nominative of the following hour (za pięć druga). Neutral 12-hour clock
+             without day-part wording. -->
+        <ClockTime step="5" hourCycle="12">
+            <Rule range="0" hourOffset="0" hourForm="ordinal" hourForceVariants="rodzaj=feminin,przypadek=mianownik" pattern="{hour}" />
+            <Rule range="5,10,15,20,25" hourOffset="0" hourForm="ordinal" hourForceVariants="rodzaj=feminin,przypadek=miejscownik" amountReference="0" amountDirection="after" pattern="{amount} po {hour}" />
+            <Rule range="30" hourOffset="1" hourForm="ordinal" hourForceVariants="rodzaj=feminin,przypadek=dopełniacz" pattern="wpół do {hour}" />
+            <Rule range="35,40,45,50,55" hourOffset="1" hourForm="ordinal" hourForceVariants="rodzaj=feminin,przypadek=mianownik" amountReference="60" amountDirection="before" pattern="za {amount} {hour}" />
+        </ClockTime>
     </Language>
 </Numbers>

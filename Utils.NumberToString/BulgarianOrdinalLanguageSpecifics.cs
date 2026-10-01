@@ -20,6 +20,7 @@ namespace Utils.NumberToString;
 /// </remarks>
 public sealed class BulgarianOrdinalLanguageSpecifics : INumberToStringLanguageSpecifics, IOrdinalLanguageSpecifics
 {
+    /// <summary>Grammatical gender of the requested ordinal.</summary>
     private enum Gender { Masculine, Feminine, Neuter }
 
     private static readonly string[] s_unitsMasculine = ["", "един", "два", "три", "четири", "пет", "шест", "седем", "осем", "девет"];

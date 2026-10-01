@@ -136,4 +136,41 @@ public class NumberToStringOrdinalPluginTests
         foreach (int value in new[] { 1, 2, 3, 7, 11, 19, 20, 21, 45, 99, 101, 999, 1000, 1001, 21000, 1_000_000 })
             Assert.AreNotEqual(converter.Convert(value), converter.ConvertOrdinal(value), $"{culture} {value}");
     }
+
+    /// <summary>Ensures the Slavic adjectival plugins decline every component and cover their largest verified values.</summary>
+    [TestMethod]
+    [DataRow("CS", 9_999L, "", "devítitisící devítistý devadesátý devátý")]
+    [DataRow("CS", 1_100L, "", "tisící stý")]
+    [DataRow("CS", 121L, "gender=ženský,case=instrumentál", "stou dvacátou první")]
+    [DataRow("CS", 3L, "gender=ženský,case=instrumentál", "třetí")]
+    [DataRow("SK", 9_999L, "", "deväťtisícdeväťsto deväťdesiaty deviaty")]
+    [DataRow("SK", 1_100L, "", "tisícstý")]
+    [DataRow("SK", 101L, "gender=ženský", "stoprvá")]
+    [DataRow("SK", 1_000_000L, "", "miliónty")]
+    [DataRow("UK", int.MaxValue, "", "два мільярди сто сорок сім мільйонів чотириста вісімдесят три тисячі шістсот сорок сьомий")]
+    [DataRow("UK", 10_000L, "", "десятитисячний")]
+    [DataRow("UK", 1_000_000_000L, "", "мільярдний")]
+    [DataRow("UK", 21L, "gender=жіночий,case=орудний", "двадцять першою")]
+    public void SlavicAdjectivalOrdinals_AreProductive(string culture, long number, string variants, string expected)
+        => Assert.AreEqual(
+            expected,
+            NumberToStringConverter.GetConverter(culture).ConvertOrdinal(number, variants.Length == 0 ? [] : variants.Split(',')));
+
+    /// <summary>
+    /// Ensures Slavic values whose compound forms were not verified, values above the <see cref="int"/>
+    /// range, and zero fail closed instead of returning a cardinal.
+    /// </summary>
+    [TestMethod]
+    [DataRow("CS", 21_000L)]
+    [DataRow("CS", 2_000_000L)]
+    [DataRow("CS", 2_147_483_647L)]
+    [DataRow("CS", 0L)]
+    [DataRow("SK", 10_000L)]
+    [DataRow("SK", 2_000L)]
+    [DataRow("SK", 2_000_000L)]
+    [DataRow("UK", 11_000L)]
+    [DataRow("UK", 2_000_000L)]
+    [DataRow("UK", 2_147_483_648L)]
+    public void SlavicAdjectivalOrdinals_UnverifiedOrOutOfRange_FailClosed(string culture, long number)
+        => Assert.ThrowsExactly<NotSupportedException>(() => NumberToStringConverter.GetConverter(culture).ConvertOrdinal(number));
 }

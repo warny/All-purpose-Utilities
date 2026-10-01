@@ -37,8 +37,10 @@ Scenario: Ordinal conversion is supported
     Given I use the "SK" number converter
     Then the converter supports ordinal conversion
 
-# Every component of a Slovak compound ordinal is ordinal ("dvadsiaty prvý"). After a long
-# syllable the ending is short (rhythmic law): "piaty", "piata".
+# Tens and units are ordinal ("dvadsiaty prvý"); hundreds and thousands stay cardinal, written as
+# one word with a following unit ("stoprvý", "dvetisícdruhý") and apart before tens ("päťsto
+# dvadsiaty ôsmy"), per the JÚĽŠ SAV spelling rules summarized by teraz.sk. After a long syllable
+# the ending is short (rhythmic law): "piaty", "piata", "tisíci".
 Scenario Outline: Slovak ordinal numbers
     Given I use the "SK" number converter
     When I convert the ordinal number <number>
@@ -56,9 +58,13 @@ Examples:
     | 20 | dvadsiaty |
     | 21 | dvadsiaty prvý |
     | 100 | stý |
-    | 101 | stý prvý |
+    | 101 | stoprvý |
+    | 121 | sto dvadsiaty prvý |
+    | 200 | dvojstý |
+    | 528 | päťsto dvadsiaty ôsmy |
     | 1000 | tisíci |
-    | 1001 | tisíci prvý |
+    | 1001 | tisícprvý |
+    | 2002 | dvetisícdruhý |
 
 Scenario Outline: Slovak ordinals agree in gender and case
     Given I use the "SK" number converter

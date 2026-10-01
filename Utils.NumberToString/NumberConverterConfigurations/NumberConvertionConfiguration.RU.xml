@@ -483,5 +483,18 @@
                 </Variant>
             </OrdinalVariants>
         </Ordinals>
+        <!-- Quarter-hour 12-hour clock without day-part wording. Whole hours agree the noun with the
+             count (час, два часа, пять часов). Quarter and half refer to the following hour as a
+             masculine genitive ordinal (четверть второго, половина второго); ":45" is "без
+             четверти" + the cardinal of the following hour, "час" for one. -->
+        <ClockTime step="15" hourCycle="12">
+            <Rule range="0" displayHourRange="1" hourOffset="0" hourForm="cardinal" pattern="час" />
+            <Rule range="0" displayHourRange="2-4" hourOffset="0" hourForm="cardinal" pattern="{hour} часа" />
+            <Rule range="0" displayHourRange="5-12" hourOffset="0" hourForm="cardinal" pattern="{hour} часов" />
+            <Rule range="15" hourOffset="1" hourForm="ordinal" hourForceVariants="gender=maskulin,case=родительный" pattern="четверть {hour}" />
+            <Rule range="30" hourOffset="1" hourForm="ordinal" hourForceVariants="gender=maskulin,case=родительный" pattern="половина {hour}" />
+            <Rule range="45" displayHourRange="1" hourOffset="1" hourForm="cardinal" pattern="без четверти час" />
+            <Rule range="45" displayHourRange="2-12" hourOffset="1" hourForm="cardinal" pattern="без четверти {hour}" />
+        </ClockTime>
     </Language>
 </Numbers>
