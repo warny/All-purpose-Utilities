@@ -9,16 +9,21 @@ classification.
 
 ## Open items
 
-- **NTS-08 — linguistic ordinal and ClockTime coverage audit (only deliberate deferrals left).**
-  Every natural-language configuration has been audited (`docs/NTS-08-linguistic-sources.md`,
-  `DONE-2026-10-01(1).md`). The remaining gaps are explicit decisions, each pinned by a
-  "does not support" scenario:
-  - SW and ZU ordinals: an obligatory noun-class concord, no standalone form; needs a public
-    `nounClass` dimension and a documented class inventory.
-  - EE ClockTime: no sourced minute convention.
-  - WO ClockTime: competing native and French-derived conventions, no single sourced system.
-  Reference-usage rows of the source record (not re-fetched during the audit) should get a
-  native-speaker review.
+- **NTS-08 — linguistic ordinal and ClockTime coverage audit (implementation done, validation open).**
+  Every natural-language configuration now has tested ordinal and ClockTime behaviour or an explicit
+  deferral (`docs/NTS-08-linguistic-sources.md`, `DONE-2026-10-01(1).md`). NTS-08 is not closed:
+  - **Linguistic validation remaining.** The expected strings of 20 configurations rest on
+    reference grammar usage that was not re-read against a source during the audit, so their
+    scenarios prove only that the configuration produces the strings chosen by the PR: SV, HR, HU,
+    PL, RU, UK, ES, IT, PT, GL, EL, FI, AR, HE, FA, HI, JA, KO, ZH, VN. Each needs a sourced (or
+    native-speaker) review of its ordinal and clock scenarios before NTS-08 can close; a corrected
+    string must be fixed in the `.feature` first, then in the configuration.
+  - The remaining gaps below are explicit decisions, each pinned by a "does not support"
+    scenario:
+    - SW and ZU ordinals: an obligatory noun-class concord, no standalone form; needs a public
+      `nounClass` dimension and a documented class inventory.
+    - EE ClockTime: no sourced minute convention.
+    - WO ClockTime: competing native and French-derived conventions, no single sourced system.
 
 - **NTS-10 — cardinal defects found during NTS-08.** Not caused by NTS-08 and left unchanged so
   the clock/ordinal work stays reviewable:
@@ -26,6 +31,12 @@ classification.
     the Italian clock therefore uses a quarter-hour step.
   - HI cardinals 21–99 are not lexicalized (`बीस एक` instead of `इक्कीस`).
   - AR cardinals from 1001 lack the `و` connector between groups.
+
+- **NTS-12 — the declarative ordinal pipeline returns the cardinal for zero.** When no ordinal
+  exception or word rule matches and no suffix is configured, `ConvertOrdinal(0)` returns the
+  unchanged cardinal: PL `zero`, ES/GL `cero`, PT `zero`, EL `μηδέν`, FI `nolla`, HE `אפס`
+  (pre-existing; AR and TR were fixed in the NTS-08 PR). A fail-closed engine rule for an
+  unmatched declarative ordinal, with per-language zero forms where they exist, is needed.
 
 - **NTS-11 — Hebrew cardinals from 1000.** `אחד אלף` instead of `אלף`, missing `אלפיים` and the
   construct forms (`שלושת אלפים`) and the `ו` connector between groups. The existing scenario

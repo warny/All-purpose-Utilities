@@ -253,9 +253,11 @@ if (conv.SupportsOrdinals)
 > converter with an uppercase `AdjustFunction` correctly produces `"TWENTY-FIRST"`, not
 > `"TWENTY-ONEth"`.
 
-> **Languages without ordinals**: ZU (Zulu), RO (Romanian).
-> Zulu ordinals require noun-class agreement and are not yet implemented.
-> Romanian ordinals are not yet implemented.
+> **Languages without ordinals**: SW (Swahili), ZU (Zulu).
+> Their ordinals require an obligatory noun-class concord and have no standalone form; they are
+> deliberately deferred (see `docs/NTS-08-linguistic-sources.md`).
+> Romanian ordinals are supported through `RomanianOrdinalLanguageSpecifics` (DOOM forms) for
+> 1–999 999 and one million (masculine); other values fail closed.
 > For languages that have ordinals, `converter.SupportsOrdinals` returns `true`.
 
 ---
