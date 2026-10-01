@@ -30,8 +30,8 @@ Scenario Outline: Thousands
 Examples:
     | number | expected |
     | 1000 | tisuća |
-    | 2000 | dva tisuća |
-    | 10000 | deset tisuća |
+    | 2000 | dvije tisuće |
+    | 5000 | pet tisuća |\n    | 10000 | deset tisuća |
 
 Scenario Outline: Long-scale cardinal numbers
     Given I use the "HR" number converter
