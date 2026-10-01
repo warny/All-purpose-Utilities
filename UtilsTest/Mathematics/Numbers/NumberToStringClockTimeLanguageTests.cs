@@ -71,4 +71,17 @@ public class NumberToStringClockTimeLanguageTests
     [DataRow("GL", 2, 15, "dúas horas quince minutos")]
     public void Convert_TimeOnly_IsUnchangedByClockConfiguration(string culture, int hour, int minute, string expected)
         => Assert.AreEqual(expected, NumberToStringConverter.GetConverter(culture).Convert(new TimeOnly(hour, minute)));
+
+    /// <summary>Ensures the Turkish clock hour takes the rule's forced case rather than a literal form.</summary>
+    [TestMethod]
+    [DataRow(6, 15, "saat {0} çeyrek geçiyor", 6, "case=accusative")]
+    [DataRow(3, 45, "saat {0} çeyrek var", 4, "case=dative")]
+    public void ConvertClockTime_TurkishHour_UsesForcedCase(int hour, int minute, string pattern, int displayed, string forced)
+    {
+        NumberToStringConverter converter = NumberToStringConverter.GetConverter("TR");
+        string expectedHour = converter.Convert(displayed, forced);
+
+        Assert.AreEqual(string.Format(pattern, expectedHour), converter.ConvertClockTime(new TimeOnly(hour, minute)));
+        Assert.AreNotEqual(converter.Convert(displayed), expectedHour);
+    }
 }

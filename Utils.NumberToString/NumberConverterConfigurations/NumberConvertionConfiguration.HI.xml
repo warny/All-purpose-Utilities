@@ -98,5 +98,16 @@
                 </Variant>
             </OrdinalVariants>
         </Ordinals>
+        <!-- Hindi fractional clock words: "सवा" (+1/4), "साढ़े" (+1/2), "पौने" (-1/4 of the following
+             hour), with the suppletive halves "डेढ़" (1:30) and "ढाई" (2:30) selected through
+             displayHourRange. Quarter-hour 12-hour clock without day-part wording. -->
+        <ClockTime step="15" hourCycle="12">
+            <Rule range="0" hourOffset="0" hourForm="cardinal" pattern="{hour}" />
+            <Rule range="15" hourOffset="0" hourForm="cardinal" pattern="सवा {hour}" />
+            <Rule range="30" displayHourRange="1" hourOffset="0" hourForm="cardinal" pattern="डेढ़" />
+            <Rule range="30" displayHourRange="2" hourOffset="0" hourForm="cardinal" pattern="ढाई" />
+            <Rule range="30" displayHourRange="3-12" hourOffset="0" hourForm="cardinal" pattern="साढ़े {hour}" />
+            <Rule range="45" hourOffset="1" hourForm="cardinal" pattern="पौने {hour}" />
+        </ClockTime>
     </Language>
 </Numbers>

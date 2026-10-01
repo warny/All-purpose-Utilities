@@ -247,4 +247,21 @@ public class NumberToStringOrdinalPluginTests
             Assert.AreNotEqual(masculine, feminine, value.ToString());
         }
     }
+
+    /// <summary>
+    /// Ensures the declarative Turkish and Persian ordinal rules cover every word that can end a
+    /// cardinal: the ordinal differs from the cardinal for the whole sweep and the largest values.
+    /// </summary>
+    [TestMethod]
+    [DataRow("TR", long.MaxValue)]
+    [DataRow("FA", 999_999_999_999_999L)]
+    public void DeclarativeOrdinals_CoverEveryFinalWord(string culture, long largest)
+    {
+        NumberToStringConverter converter = NumberToStringConverter.GetConverter(culture);
+
+        for (long value = 1; value <= 2_100; value++)
+            Assert.AreNotEqual(converter.Convert(value), converter.ConvertOrdinal(value), $"{culture} {value}");
+        foreach (long value in new[] { 21_000L, 1_000_000L, 1_000_000_000L, largest })
+            Assert.AreNotEqual(converter.Convert(value), converter.ConvertOrdinal(value), $"{culture} {value}");
+    }
 }
