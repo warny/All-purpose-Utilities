@@ -35,6 +35,13 @@ public class NumberToStringLanguageCoverageTests
         "EL", "FI", "AR", "HE", "FA", "TR", "HI", "JA", "KO", "ZH", "VN", "SW", "ZU", "EU",
     ];
 
+    /// <summary>
+    /// Languages whose clock configuration contains a distinct literal whole-hour form for every
+    /// display hour. Their language feature must exercise all twelve entries so a typo in an
+    /// otherwise unreachable XML branch cannot be hidden by structural lookup coverage alone.
+    /// </summary>
+    private static readonly string[] LiteralClockHourLanguages = ["EU", "KO", "ZU"];
+
     /// <summary>Languages that deliberately keep a capability unsupported, with the capability concerned.</summary>
     private static readonly (string Language, string Capability, bool Supported)[] DeclaredCapabilities =
     [
@@ -90,6 +97,30 @@ public class NumberToStringLanguageCoverageTests
             Assert.IsTrue(times.Any(t => t.Minute == 0), $"{language}: no whole-hour clock example.");
             Assert.IsTrue(times.Any(t => t.Minute != 0), $"{language}: no minute clock example.");
             Assert.IsTrue(times.Any(t => t.Hour > 12), $"{language}: no clock example after 12:00.");
+        }
+    }
+
+    /// <summary>
+    /// Ensures languages implemented as twelve literal clock-hour branches exercise every branch
+    /// in their ReqnRoll feature. The expected linguistic strings remain in the feature files;
+    /// this meta-test only enforces branch coverage.
+    /// </summary>
+    [TestMethod]
+    public void LiteralClockHourLanguages_CoverEveryWholeHour()
+    {
+        int[] expectedHours = [.. Enumerable.Range(1, 12)];
+        foreach (string language in LiteralClockHourLanguages)
+        {
+            int[] actualHours = [.. ExampleValues(ScenarioMethods(language), "clock")
+                .Select(value => TimeOnly.TryParseExact(value, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out TimeOnly time)
+                    ? (TimeOnly?)time
+                    : null)
+                .Where(time => time.HasValue && time.Value.Minute == 0 && time.Value.Hour is >= 1 and <= 12)
+                .Select(time => time!.Value.Hour)
+                .Distinct()
+                .OrderBy(hour => hour)];
+
+            CollectionAssert.AreEqual(expectedHours, actualHours, $"{language}: literal whole-hour clock table is not fully covered.");
         }
     }
 
