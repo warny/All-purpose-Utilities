@@ -49,6 +49,8 @@ public class NumberToStringClockTimeLanguageTests
     [DataRow("GL", 2, "as dúas", "dous")]
     [DataRow("RO", 2, "ora două", "doi")]
     [DataRow("RO", 12, "ora douăsprezece", "doisprezece")]
+    [DataRow("EL", 3, "τρεις", "τρία")]
+    [DataRow("EL", 4, "τέσσερις", "τέσσερα")]
     public void ConvertClockTime_CardinalHour_UsesForcedGender(string culture, int hour, string expectedClock, string defaultCardinal)
     {
         NumberToStringConverter converter = NumberToStringConverter.GetConverter(culture);

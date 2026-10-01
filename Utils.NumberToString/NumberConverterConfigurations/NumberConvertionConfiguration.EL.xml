@@ -123,10 +123,53 @@
 			<Ordinal from="εννιακόσια"> <Variant type="gender" forms="εννιακοσιοστός,εννιακοσιοστή,εννιακοσιοστό"/></Ordinal>
 			<!-- Millier -->
 			<Ordinal from="χίλια"> <Variant type="gender" forms="χιλιοστός,χιλιοστή,χιλιοστό" /></Ordinal>
+			<!-- The feminine cardinal variant (μία, τρεις, χίλιες...) is applied before the ordinal word
+			     rules, so each feminine cardinal word maps to the same ordinal forms as its default. -->
+			<Ordinal from="μία"> <Variant type="gender" forms="πρώτος,πρώτη,πρώτο" /></Ordinal>
+			<Ordinal from="τρεις"> <Variant type="gender" forms="τρίτος,τρίτη,τρίτο" /></Ordinal>
+			<Ordinal from="τέσσερις"> <Variant type="gender" forms="τέταρτος,τέταρτη,τέταρτο" /></Ordinal>
+			<Ordinal from="χίλιες"> <Variant type="gender" forms="χιλιοστός,χιλιοστή,χιλιοστό" /></Ordinal>
+			<Ordinal from="διακόσιες"> <Variant type="gender" forms="διακοσιοστός,διακοσιοστή,διακοσιοστό" /></Ordinal>
+			<Ordinal from="τριακόσιες"> <Variant type="gender" forms="τριακοσιοστός,τριακοσιοστή,τριακοσιοστό" /></Ordinal>
+			<Ordinal from="τετρακόσιες"> <Variant type="gender" forms="τετρακοσιοστός,τετρακοσιοστή,τετρακοσιοστό" /></Ordinal>
+			<Ordinal from="πεντακόσιες"> <Variant type="gender" forms="πεντακοσιοστός,πεντακοσιοστή,πεντακοσιοστό" /></Ordinal>
+			<Ordinal from="εξακόσιες"> <Variant type="gender" forms="εξακοσιοστός,εξακοσιοστή,εξακοσιοστό" /></Ordinal>
+			<Ordinal from="επτακόσιες"> <Variant type="gender" forms="επτακοσιοστός,επτακοσιοστή,επτακοσιοστό" /></Ordinal>
+			<Ordinal from="οκτακόσιες"> <Variant type="gender" forms="οκτακοσιοστός,οκτακοσιοστή,οκτακοσιοστό" /></Ordinal>
+			<Ordinal from="εννιακόσιες"> <Variant type="gender" forms="εννιακοσιοστός,εννιακοσιοστή,εννιακοσιοστό" /></Ordinal>
 		</Ordinals>
 		<Variants>
-			<!-- Dimension declared for ordinal forms= expansion; Greek cardinals are invariable in this config -->
+			<!-- Dimension declared for ordinal forms= expansion. Cardinals keep their default (neuter) forms;
+			     the feminine forms are modelled because "ώρα" is feminine (η ώρα είναι μία / τρεις /
+			     τέσσερις). Masculine cardinal forms (ένας) are not modelled yet. -->
 			<Dimension name="gender" localName="γένος" values="αρσενικό,θηλυκό,ουδέτερο" />
+			<Variant type="gender" variant="θηλυκό">
+				<Replacement oldValue="ένα" newValue="μία" scope="LastWord" />
+				<Replacement oldValue="τρία" newValue="τρεις" scope="LastWord" />
+				<Replacement oldValue="δεκατρία" newValue="δεκατρείς" scope="LastWord" />
+				<Replacement oldValue="τέσσερα" newValue="τέσσερις" scope="LastWord" />
+				<Replacement oldValue="δεκατέσσερα" newValue="δεκατέσσερις" scope="LastWord" />
+				<!-- Only a final hundred/thousand agrees: a non-final one keeps the existing compound
+				     ordinal behaviour ("διακόσια πρώτη") unchanged. -->
+				<Replacement oldValue="διακόσια" newValue="διακόσιες" scope="LastWord" />
+				<Replacement oldValue="τριακόσια" newValue="τριακόσιες" scope="LastWord" />
+				<Replacement oldValue="τετρακόσια" newValue="τετρακόσιες" scope="LastWord" />
+				<Replacement oldValue="πεντακόσια" newValue="πεντακόσιες" scope="LastWord" />
+				<Replacement oldValue="εξακόσια" newValue="εξακόσιες" scope="LastWord" />
+				<Replacement oldValue="επτακόσια" newValue="επτακόσιες" scope="LastWord" />
+				<Replacement oldValue="οκτακόσια" newValue="οκτακόσιες" scope="LastWord" />
+				<Replacement oldValue="εννιακόσια" newValue="εννιακόσιες" scope="LastWord" />
+				<Replacement oldValue="χίλια" newValue="χίλιες" scope="LastWord" />
+			</Variant>
 		</Variants>
+		<!-- "ώρα" is feminine: {hour} is forced to the feminine numeral (μία, τρεις, τέσσερις).
+			 Quarter-hour 12-hour clock without day-part wording: "και τέταρτο", "και μισή",
+			 "<next> παρά τέταρτο". -->
+		<ClockTime step="15" hourCycle="12">
+			<Rule range="0" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=θηλυκό" pattern="{hour}" />
+			<Rule range="15" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=θηλυκό" pattern="{hour} και τέταρτο" />
+			<Rule range="30" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=θηλυκό" pattern="{hour} και μισή" />
+			<Rule range="45" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=θηλυκό" pattern="{hour} παρά τέταρτο" />
+		</ClockTime>
 	</Language>
 </Numbers>

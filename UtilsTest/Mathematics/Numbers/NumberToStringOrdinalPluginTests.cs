@@ -174,6 +174,26 @@ public class NumberToStringOrdinalPluginTests
     public void SlavicAdjectivalOrdinals_UnverifiedOrOutOfRange_FailClosed(string culture, long number)
         => Assert.ThrowsExactly<NotSupportedException>(() => NumberToStringConverter.GetConverter(culture).ConvertOrdinal(number));
 
+    /// <summary>
+    /// Ensures the Greek feminine cardinal variant (added for clock hours) never leaks a feminine
+    /// cardinal word into a feminine ordinal: every cardinal word must be ordinalized.
+    /// </summary>
+    [TestMethod]
+    public void GreekFeminineOrdinals_DoNotLeakFeminineCardinalWords()
+    {
+        NumberToStringConverter converter = NumberToStringConverter.GetConverter("EL");
+        string[] cardinalWords = ["μία", "τρεις", "τέσσερις", "χίλιες", "διακόσιες", "εννιακόσιες"];
+
+        for (int value = 1; value <= 1_100; value++)
+        {
+            string ordinal = converter.ConvertOrdinal(value, "gender=θηλυκό");
+            foreach (string word in ordinal.Split(' '))
+                CollectionAssert.DoesNotContain(cardinalWords, word, $"{value}: {ordinal}");
+        }
+        Assert.AreEqual("πρώτη", converter.ConvertOrdinal(1, "gender=θηλυκό"));
+        Assert.AreEqual("διακόσια πρώτη", converter.ConvertOrdinal(201, "gender=θηλυκό"));
+    }
+
     /// <summary>Ensures the Romanian plugin changes only the last word, in both genders, up to its range limit.</summary>
     [TestMethod]
     [DataRow(999_999, "", "al nouă sute nouăzeci și nouă de mii nouă sute nouăzeci și nouălea")]
