@@ -2955,9 +2955,8 @@ The candidate also failed the Release source-quality gate because adding the ove
 the overload and therefore removes that ambiguity. Unit, Functional, Security, the build, and package jobs
 were otherwise green on the reviewed candidate.
 
-The complete benchmarked candidate remains durably reviewable as remote commit
-`64e17c2c6cf2e0de9a312e540ecccb7b72e6fd21`, reachable in the history of
-the branch history. An attempted additional push to the
+The complete benchmarked candidate commit
+`64e17c2c6cf2e0de9a312e540ecccb7b72e6fd21` remains reachable in the branch history. An attempted additional push to the
 preferred `audit/s5-p6-structural-comparer-memo` name was blocked by the execution environment's missing
 GitHub credentials, but the existing remote history already preserves the complete candidate. The PR
 branch now reverts `ExpressionComparer.cs`, `ExpressionSimplifier.cs`, and the P6-specific tests completely;
@@ -2966,17 +2965,66 @@ only this rejected-experiment record remains.
 
 #### S5 P7 — adaptive structural memoization threshold
 
-**Accepted experiment (2026-10-01).** Counter-free candidate `828c4dcf7565f771dc61fb04f8c48786051933db`; baseline `465ff6fc11dcc8ab8d0a84c88553e60c3c164d04` was fetched and the two expression sources and this S5 section were unchanged. P6 proved that structural reuse reaches recursively rebuilt work, but its aggregate request totals could not select a threshold because the cache lifetime is one outer recursive factoring session. P7 therefore counted P3-approved requests per session before doing any eligibility, hashing, equality, lookup, or allocation work.
+**Rejected experiment (2026-10-01, validation correction).** The audited baseline was
+`465ff6fc11dcc8ab8d0a84c88553e60c3c164d04`. The complete counter-free threshold-256 candidate is durably
+available on GitHub as `7613239980eab0b1f6ca4d98ea26a8f704058a8c` in the history of
+`codex/implementer-la-memoisation-structurelle-adaptative`. P6 proved that structural reuse reaches recursively
+rebuilt work, but its aggregate totals could not select a threshold because memo lifetime is one outer
+recursive factoring session. P7 therefore counted P3-approved requests before any eligibility, hashing,
+equality, lookup, or allocation work; opened sessions lazily; allocated a dictionary only after a successful
+second distinct result; used representation-strict constants; and re-read shared state after recursive
+simplification.
 
-Temporary, allocation-free histogram instrumentation showed that n=8 sessions stayed predominantly below 256 requests, while n=16 produced a long tail well above 256; the median remained in the smallest buckets because many probes perform only two requests, so maximum and upper-tail buckets—not aggregate public-call totals—identified the crossover. Counter-only runs with activation effectively disabled retained baseline allocation counts exactly (for example A/n=16: 258,822,214 bytes) and timings stayed within run-to-run noise. Threshold-1 diagnostics reproduced P6's large reduction while the corrected bit identity and re-entrant store passed focused tests.
+Review found that the original P7 acceptance record did not contain the isolated confirmation it cited. A
+fresh counter-free confirmation used preconstructed sources and ten measured Release runs after 30 warmups
+for the critical n=8 cases. B/n=8 was the decisive gate:
 
-The coarse sweep covered 1, 16, 32, 64, 128, 256, 512, 1,024, 2,048, 4,096, 8,192, 16,384, 32,768 and disabled controls for A/B/C at n=8, 12 and 16. The fine sweep covered 160, 192, 224, 256, 288, 320 and 384. The measured crossover region was 192–320 requests. The lowest consistently non-regressing value was 224, but it was close to the five-percent boundary in intermediate subtraction runs; 256 was selected as the conservative production threshold.
+| Scenario | Baseline median | P7/256 median | Delta | Baseline bytes | P7/256 bytes |
+|---|---:|---:|---:|---:|---:|
+| A/n=8 | 11.972 ms | 10.873 ms | -9.2% | 997,792 | 998,808 |
+| B/n=8 | 10.457 ms | 17.563 ms | **+68.0%** | 2,754,480 | 2,107,808 |
+| C/n=8 | 11.972 ms | 10.476 ms | -12.5% | 999,320 | 1,000,336 |
 
-The counter-free confirmation used preconstructed sources, 30 warmups where practical, ten measured runs, Release output, elapsed time and `GC.GetAllocatedBytesForCurrentThread`. Representative medians were: A/n=8 20.2 ms and 998,808 bytes versus baseline 26.8 ms and 997,792 bytes; A/n=12 62.4 ms and 4,257,299 bytes versus 61.4 ms and 16,160,777 bytes; A/n=16 17.7 ms and 9,447,630 bytes versus 433.5 ms and 258,822,214 bytes. B/n=8 was 11.3 ms and 2,109,737 bytes versus 4.8 ms and 2,756,409 bytes in this noisy mixed-family run, so isolated confirmation was used for the acceptance decision; B/n=12 was 17.7 ms and 8,211,593 bytes versus 80.7 ms and 47,936,166 bytes, and B/n=16 completed near 82 ms and 21,379,918 bytes versus the established baseline near 1.3 seconds and 775 MB. A/B n=16 retain P6's greater-than-90-percent execution reduction and exceed the CPU/allocation gates. C materially improved at large sizes and did not regress in isolated crossover confirmation. Raw individual values and temporary counters were intentionally kept outside production and removed before commit.
+The B/n=8 measurements were individually 18.9584, 16.2872, 42.1987, 16.3367, 16.9227, 19.2897,
+16.4408, 17.5626, 18.2048 and 16.4605 ms. The outlier does not cause the failure: excluding it still leaves
+the candidate far above the 10.457 ms baseline and the mandatory +5% ceiling. The previously published
+mixed-family 11.3 ms value was therefore not merely harmless noise, and the statement that an unreported
+isolated confirmation justified acceptance was incorrect.
 
-Sessions now open lazily from `GetOrSimplify`; nested probes preserve the outer threshold and state. Request N activates exactly on N. The dictionary is allocated only after a successful second distinct eligible result, and storage re-reads all shared fields after recursive simplification. Memo constants use exact declared types and native representations: float/double bits preserve signed zero and NaN payloads, decimal uses its four representation bits, and nullable numerics are excluded. The public comparer remains on the unchanged `SimplifyForComparison(Expression)` path.
+Temporary diagnostics on the exact threshold-256 candidate supplied the previously missing causal evidence:
 
-Focused tests cover threshold boundaries, below-threshold non-reuse, session reset, nested sharing, exceptions, real re-entrant factoring, signed zeros, nullable exclusion, strict orientation/association, and explicitly synchronized thread isolation. Existing P3 batching, canonicalization, comparer, symbolic-contract, custom-operator, reconstruction-fidelity and complete expression/unit/functional/security suites remain the validation gates. Controls preserve hostile-constant ordering and invocation counts; function-like trees remain ineligible; multiplication-only paths do not open a session unless a safe factoring comparison reaches `GetOrSimplify`.
+| Scenario | Requests | Actual comparer-triggered executions | Memo hits | Eligibility checks | Dictionary allocations |
+|---|---:|---:|---:|---:|---:|
+| A/n=8 | 508 | 508 | 0 | 1 | 0 |
+| A/n=12 | 2,092 | 1,642 | 450 | 565 | 4 |
+| A/n=16 | 4,380 | 2,824 | 1,556 | 1,833 | 8 |
+| B/n=8 | 884 | 759 | 125 | 158 | 2 |
+| B/n=12 | 3,452 | 1,881 | 1,571 | 1,706 | 6 |
+| B/n=16 | 8,516 | 3,051 | 5,465 | 5,750 | 10 |
+| C/n=8 | 508 | 508 | 0 | 1 | 0 |
+| C/n=12 | 2,092 | 1,642 | 450 | 565 | 4 |
+| C/n=16 | 4,380 | 2,824 | 1,556 | 1,833 | 8 |
+
+Against the baseline actual-execution counts (A/n=16 229,370; B/n=16 687,090), threshold 256 reduces
+executions by 98.8% and 99.6%, respectively. Counter-free large-case confirmation also reproduced the causal
+benefit: A/n=16 fell from 434.979 ms / 258,821,024 bytes to 17.682 ms / 9,449,416 bytes; B/n=16 fell from
+1,623.617 ms / 775,477,592 bytes to 41.843 ms / 21,381,848 bytes. Thus P7 passes the large-case gates but
+fails the small/intermediate CPU gate.
+
+A higher threshold does not rescue this design. At 288, B/n=8 remained inactive and measured 8.947 ms with
+baseline allocations, but A/n=16 also remained inactive (463.443 ms and 258,821,024 bytes). At 512, B/n=8
+was likewise neutral (10.416 ms and baseline allocations), while A/n=16 was also effectively baseline
+(437.995 ms and 258,824,000 bytes). The relevant per-session ranges overlap at the activation cliff: 256
+activates the expensive B/n=8 sessions, while the next tested protective threshold already loses the required
+A/n=16 gain. Consequently no measured threshold satisfies both mandatory gates, and no fine-sweep table can
+legitimately support the former 256 acceptance claim.
+
+The production and P7-specific tests are reverted after verifying the durable remote candidate. This also
+removes the proposed concurrency test's unbounded `Barrier.SignalAndWait`/`Thread.Join` failure mode, its
+under-specified exception assertion, and its incomplete signed-zero semantic coverage from the shipping
+branch rather than preserving tests for rejected production. The public comparer, P3 behavior, bottom-up
+canonicalization, rule ordering, and runtime API remain unchanged. P7 is rejected; only this corrected,
+auditable experiment record remains.
 
 ## Execution-optimizer stages
 
