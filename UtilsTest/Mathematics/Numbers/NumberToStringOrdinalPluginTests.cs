@@ -173,4 +173,29 @@ public class NumberToStringOrdinalPluginTests
     [DataRow("UK", 2_147_483_648L)]
     public void SlavicAdjectivalOrdinals_UnverifiedOrOutOfRange_FailClosed(string culture, long number)
         => Assert.ThrowsExactly<NotSupportedException>(() => NumberToStringConverter.GetConverter(culture).ConvertOrdinal(number));
+
+    /// <summary>Ensures the Romanian plugin changes only the last word, in both genders, up to its range limit.</summary>
+    [TestMethod]
+    [DataRow(999_999, "", "al nouă sute nouăzeci și nouă de mii nouă sute nouăzeci și nouălea")]
+    [DataRow(999_999, "gen=feminin", "a nouă sute nouăzeci și nouă de mii nouă sute nouăzeci și noua")]
+    [DataRow(11_000, "", "al unsprezece miilea")]
+    [DataRow(1_000_000, "", "al un milionulea")]
+    public void RomanianOrdinals_AreProductive(int number, string variants, string expected)
+        => Assert.AreEqual(
+            expected,
+            NumberToStringConverter.GetConverter("RO").ConvertOrdinal(number, variants.Length == 0 ? [] : [variants]));
+
+    /// <summary>
+    /// Ensures Romanian values outside the verified range (round "de mii" thousands, values above one
+    /// million, the feminine of one million, zero) fail closed instead of returning a cardinal.
+    /// </summary>
+    [TestMethod]
+    [DataRow(20_000L, "")]
+    [DataRow(21_000L, "")]
+    [DataRow(1_000_001L, "")]
+    [DataRow(1_000_000L, "gen=feminin")]
+    [DataRow(0L, "")]
+    public void RomanianOrdinals_UnverifiedOrOutOfRange_FailClosed(long number, string variants)
+        => Assert.ThrowsExactly<NotSupportedException>(
+            () => NumberToStringConverter.GetConverter("RO").ConvertOrdinal(number, variants.Length == 0 ? [] : [variants]));
 }

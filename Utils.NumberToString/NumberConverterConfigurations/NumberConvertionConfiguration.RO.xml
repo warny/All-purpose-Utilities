@@ -104,7 +104,25 @@
                 <!-- 1f: una; 2f: două -->
                 <Replacement oldValue="unu" newValue="una"  scope="LastWord" />
                 <Replacement oldValue="doi" newValue="două" scope="LastWord" />
+                <!-- 12f: douăsprezece ("ora douăsprezece", "a douăsprezecea") -->
+                <Replacement oldValue="doisprezece" newValue="douăsprezece" scope="LastWord" />
             </Variant>
         </Variants>
+        <!-- DOOM ordinals (al doilea, al douăzeci și unulea, al o sutălea / a doua, a o suta):
+             see RomanianOrdinalLanguageSpecifics. -->
+        <LanguageSpecifics>RomanianOrdinalLanguageSpecifics</LanguageSpecifics>
+        <!-- Quarter-hour 12-hour clock without day-part wording: "ora două", "unu și un sfert",
+             "unu și jumătate", "două fără un sfert". The hour takes the feminine numeral (două,
+             douăsprezece) except one, which keeps "unu" ("ora unu"). -->
+        <ClockTime step="15" hourCycle="12">
+            <Rule range="0" displayHourRange="1" hourOffset="0" hourForm="cardinal" pattern="ora {hour}" />
+            <Rule range="0" displayHourRange="2-12" hourOffset="0" hourForm="cardinal" hourForceVariants="gen=feminin" pattern="ora {hour}" />
+            <Rule range="15" displayHourRange="1" hourOffset="0" hourForm="cardinal" pattern="{hour} și un sfert" />
+            <Rule range="15" displayHourRange="2-12" hourOffset="0" hourForm="cardinal" hourForceVariants="gen=feminin" pattern="{hour} și un sfert" />
+            <Rule range="30" displayHourRange="1" hourOffset="0" hourForm="cardinal" pattern="{hour} și jumătate" />
+            <Rule range="30" displayHourRange="2-12" hourOffset="0" hourForm="cardinal" hourForceVariants="gen=feminin" pattern="{hour} și jumătate" />
+            <Rule range="45" displayHourRange="1" hourOffset="1" hourForm="cardinal" pattern="{hour} fără un sfert" />
+            <Rule range="45" displayHourRange="2-12" hourOffset="1" hourForm="cardinal" hourForceVariants="gen=feminin" pattern="{hour} fără un sfert" />
+        </ClockTime>
     </Language>
 </Numbers>

@@ -44,6 +44,11 @@ public class NumberToStringClockTimeLanguageTests
     [DataRow("BG", 1, "един", "едно")]
     [DataRow("DA", 1, "et", "en")]
     [DataRow("NO", 1, "ett", "en")]
+    [DataRow("ES", 1, "la una", "uno")]
+    [DataRow("IT", 1, "l'una", "uno")]
+    [DataRow("GL", 2, "as dúas", "dous")]
+    [DataRow("RO", 2, "ora două", "doi")]
+    [DataRow("RO", 12, "ora douăsprezece", "doisprezece")]
     public void ConvertClockTime_CardinalHour_UsesForcedGender(string culture, int hour, string expectedClock, string defaultCardinal)
     {
         NumberToStringConverter converter = NumberToStringConverter.GetConverter(culture);
@@ -51,4 +56,15 @@ public class NumberToStringClockTimeLanguageTests
         Assert.AreEqual(expectedClock, converter.ConvertClockTime(new TimeOnly(hour, 0)));
         Assert.AreEqual(defaultCardinal, converter.Convert(hour));
     }
+
+    /// <summary>
+    /// Ensures adding an idiomatic clock does not change the exact time API of languages that already
+    /// had <c>TimeUnits</c>: <c>Convert(TimeOnly)</c> keeps the exact hours/minutes wording.
+    /// </summary>
+    [TestMethod]
+    [DataRow("ES", 1, 45, "una hora cuarenta y cinco minutos")]
+    [DataRow("PT", 1, 30, "uma hora trinta minutos")]
+    [DataRow("GL", 2, 15, "dúas horas quince minutos")]
+    public void Convert_TimeOnly_IsUnchangedByClockConfiguration(string culture, int hour, int minute, string expected)
+        => Assert.AreEqual(expected, NumberToStringConverter.GetConverter(culture).Convert(new TimeOnly(hour, minute)));
 }
