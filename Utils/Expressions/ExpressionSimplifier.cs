@@ -651,12 +651,12 @@ namespace Utils.Mathematics.Expressions
         /// <para>
         /// <b>Lifetime.</b> A fresh instance is created at the top of each
         /// <c>AdditionOfEqualsElements</c>/<c>SubstractionOfEqualsElements</c> call and discarded when that
-        /// call returns; nothing here is stored on <see langword="this"/> <see cref="ExpressionSimplifier"/>
-        /// instance, a <see langword="static"/> field, or a thread-local slot, so there is no cross-call,
-        /// cross-thread, or cross-rule sharing of any kind.
+        /// call returns. Its P3 reference cache remains probe-local. When safe simplification is requested,
+        /// the probe lazily joins the current thread's recursive factoring memo session; nested rules share
+        /// that session, and the outermost owner clears it on disposal.
         /// </para>
         /// </remarks>
-        private sealed class FactorEqualityProbe
+        private sealed class FactorEqualityProbe : IDisposable
         {
             /// <summary>
             /// At most four distinct operands ever participate in one factoring decision
@@ -668,6 +668,23 @@ namespace Utils.Mathematics.Expressions
             /// <see cref="MightInvokeUserCodeWhenSimplified"/> ruled the operand out (<see langword="false"/>).
             /// </summary>
             private readonly List<(Expression Original, bool CanCache, Expression? Simplified)> _cache = new(4);
+
+            /// <summary>Tracks whether this probe lazily entered the recursive memo session.</summary>
+            private bool _memoSessionEntered;
+
+            /// <summary>Leaves the recursive factoring-comparison memo session when this probe entered it.</summary>
+            public void Dispose()
+            {
+                if (_memoSessionEntered) ExpressionComparer.ExitSimplificationMemoSession();
+            }
+
+            /// <summary>Enters the shared recursive session only when safe simplification is first requested.</summary>
+            private void EnsureMemoSession()
+            {
+                if (_memoSessionEntered) return;
+                ExpressionComparer.EnterSimplificationMemoSession(ExpressionComparer.FactoringMemoActivationThreshold);
+                _memoSessionEntered = true;
+            }
 
             /// <summary>
             /// Compares <paramref name="x"/> and <paramref name="y"/> exactly like the public
@@ -745,7 +762,8 @@ namespace Utils.Mathematics.Expressions
                         Expression? simplified = _cache[i].Simplified;
                         if (simplified is not null) return simplified;
 
-                        simplified = ExpressionComparer.SimplifyForComparison(original);
+                        EnsureMemoSession();
+                        simplified = ExpressionComparer.SimplifyForFactoringComparison(original);
                         _cache[i] = (original, true, simplified);
                         return simplified;
                     }
@@ -880,7 +898,7 @@ namespace Utils.Mathematics.Expressions
             // for every comparison below (S5): each of the up to four candidate operands is simplified via
             // the public ExpressionComparer contract at most once per call, rather than once per comparison
             // it participates in - see FactorEqualityProbe's remarks for why this is semantics-preserving.
-            var equalityProbe = new FactorEqualityProbe();
+            using var equalityProbe = new FactorEqualityProbe();
             if (!leftAugmented
                 && !rightAugmented
                 && equalityProbe.Equals(leftleft, rightleft)
@@ -959,7 +977,7 @@ namespace Utils.Mathematics.Expressions
             // Attempt to unify or swap factors. A single FactorEqualityProbe is reused for every comparison
             // below, including the final cancellation check (S5) - see FactorEqualityProbe's remarks for
             // why this is semantics-preserving.
-            var equalityProbe = new FactorEqualityProbe();
+            using var equalityProbe = new FactorEqualityProbe();
             if ((!leftAugmented && !rightAugmented)
                 && equalityProbe.Equals(leftleft, rightleft)
                 && !equalityProbe.Equals(leftright, rightright))

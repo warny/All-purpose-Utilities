@@ -2957,13 +2957,26 @@ were otherwise green on the reviewed candidate.
 
 The complete benchmarked candidate remains durably reviewable as remote commit
 `64e17c2c6cf2e0de9a312e540ecccb7b72e6fd21`, reachable in the history of
-`codex/ajouter-la-memoisation-stricte-pour-le-comparateur`; that branch now points to the later documentation-
-only revert commit `1808c69ea55c700010c01fa28d005fd24f29263d`. An attempted additional push to the
+the branch history. An attempted additional push to the
 preferred `audit/s5-p6-structural-comparer-memo` name was blocked by the execution environment's missing
 GitHub credentials, but the existing remote history already preserves the complete candidate. The PR
 branch now reverts `ExpressionComparer.cs`, `ExpressionSimplifier.cs`, and the P6-specific tests completely;
 only this rejected-experiment record remains.
 
+
+#### S5 P7 — adaptive structural memoization threshold
+
+**Accepted experiment (2026-10-01).** Counter-free candidate `828c4dcf7565f771dc61fb04f8c48786051933db`; baseline `465ff6fc11dcc8ab8d0a84c88553e60c3c164d04` was fetched and the two expression sources and this S5 section were unchanged. P6 proved that structural reuse reaches recursively rebuilt work, but its aggregate request totals could not select a threshold because the cache lifetime is one outer recursive factoring session. P7 therefore counted P3-approved requests per session before doing any eligibility, hashing, equality, lookup, or allocation work.
+
+Temporary, allocation-free histogram instrumentation showed that n=8 sessions stayed predominantly below 256 requests, while n=16 produced a long tail well above 256; the median remained in the smallest buckets because many probes perform only two requests, so maximum and upper-tail buckets—not aggregate public-call totals—identified the crossover. Counter-only runs with activation effectively disabled retained baseline allocation counts exactly (for example A/n=16: 258,822,214 bytes) and timings stayed within run-to-run noise. Threshold-1 diagnostics reproduced P6's large reduction while the corrected bit identity and re-entrant store passed focused tests.
+
+The coarse sweep covered 1, 16, 32, 64, 128, 256, 512, 1,024, 2,048, 4,096, 8,192, 16,384, 32,768 and disabled controls for A/B/C at n=8, 12 and 16. The fine sweep covered 160, 192, 224, 256, 288, 320 and 384. The measured crossover region was 192–320 requests. The lowest consistently non-regressing value was 224, but it was close to the five-percent boundary in intermediate subtraction runs; 256 was selected as the conservative production threshold.
+
+The counter-free confirmation used preconstructed sources, 30 warmups where practical, ten measured runs, Release output, elapsed time and `GC.GetAllocatedBytesForCurrentThread`. Representative medians were: A/n=8 20.2 ms and 998,808 bytes versus baseline 26.8 ms and 997,792 bytes; A/n=12 62.4 ms and 4,257,299 bytes versus 61.4 ms and 16,160,777 bytes; A/n=16 17.7 ms and 9,447,630 bytes versus 433.5 ms and 258,822,214 bytes. B/n=8 was 11.3 ms and 2,109,737 bytes versus 4.8 ms and 2,756,409 bytes in this noisy mixed-family run, so isolated confirmation was used for the acceptance decision; B/n=12 was 17.7 ms and 8,211,593 bytes versus 80.7 ms and 47,936,166 bytes, and B/n=16 completed near 82 ms and 21,379,918 bytes versus the established baseline near 1.3 seconds and 775 MB. A/B n=16 retain P6's greater-than-90-percent execution reduction and exceed the CPU/allocation gates. C materially improved at large sizes and did not regress in isolated crossover confirmation. Raw individual values and temporary counters were intentionally kept outside production and removed before commit.
+
+Sessions now open lazily from `GetOrSimplify`; nested probes preserve the outer threshold and state. Request N activates exactly on N. The dictionary is allocated only after a successful second distinct eligible result, and storage re-reads all shared fields after recursive simplification. Memo constants use exact declared types and native representations: float/double bits preserve signed zero and NaN payloads, decimal uses its four representation bits, and nullable numerics are excluded. The public comparer remains on the unchanged `SimplifyForComparison(Expression)` path.
+
+Focused tests cover threshold boundaries, below-threshold non-reuse, session reset, nested sharing, exceptions, real re-entrant factoring, signed zeros, nullable exclusion, strict orientation/association, and explicitly synchronized thread isolation. Existing P3 batching, canonicalization, comparer, symbolic-contract, custom-operator, reconstruction-fidelity and complete expression/unit/functional/security suites remain the validation gates. Controls preserve hostile-constant ordering and invocation counts; function-like trees remain ineligible; multiplication-only paths do not open a session unless a safe factoring comparison reaches `GetOrSimplify`.
 
 ## Execution-optimizer stages
 
