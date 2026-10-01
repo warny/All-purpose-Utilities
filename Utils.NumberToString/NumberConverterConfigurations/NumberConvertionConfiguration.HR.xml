@@ -62,9 +62,43 @@
                 <Suffix>jarda</Suffix>
             </Suffixes>
         </NumberScale>
-        <Replacements>
-            <!-- 1000 = "tisuća", not "jedan tisuća" -->
-            <Replacement oldValue="jedan tisuća" newValue="tisuća" onScale="1" onValue="1" />
+        <Replacements>
+            <!-- Agreement of the scale nouns with the LAST WORD of their multiplier, applied per scale
+                 group (Hrvatski pravopis, rule 31: "tri tisuće", "dvije milijarde trideset tri
+                 milijuna"). Feminine tisuća/milijarda/bilijarda: jedna, dvije, paucal tisuće/milijarde
+                 after dva/tri/četiri (not after dvanaest/trinaest/četrnaest, which do not end with
+                 those words), genitive plural otherwise. Masculine milijun/bilijun/trilijun: milijun
+                 after jedan, milijuna after any other multiplier. An exact single unit has no "jedan".
+                 Rules within a group are applied in declaration order. -->
+            <Replacement oldValue="jedan tisuća" newValue="tisuća" onScale="1" onValue="1" />
+            <Replacement oldValue="jedan tisuća" newValue="jedna tisuća" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="dva tisuća" newValue="dvije tisuće" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="tri tisuća" newValue="tri tisuće" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="četiri tisuća" newValue="četiri tisuće" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="milijun" newValue="milijuna" scope="EndsWith" onScale="2" />
+            <Replacement oldValue="jedan milijuna" newValue="jedan milijun" scope="EndsWith" onScale="2" />
+            <Replacement oldValue="jedan milijun" newValue="milijun" onScale="2" onValue="1" />
+            <Replacement oldValue="bilijun" newValue="bilijuna" scope="EndsWith" onScale="4" />
+            <Replacement oldValue="jedan bilijuna" newValue="jedan bilijun" scope="EndsWith" onScale="4" />
+            <Replacement oldValue="jedan bilijun" newValue="bilijun" onScale="4" onValue="1" />
+            <Replacement oldValue="trilijun" newValue="trilijuna" scope="EndsWith" onScale="6" />
+            <Replacement oldValue="jedan trilijuna" newValue="jedan trilijun" scope="EndsWith" onScale="6" />
+            <Replacement oldValue="jedan trilijun" newValue="trilijun" onScale="6" onValue="1" />
+            <Replacement oldValue="milijarda" newValue="milijardi" scope="EndsWith" onScale="3" />
+            <Replacement oldValue="jedan milijardi" newValue="jedna milijarda" scope="EndsWith" onScale="3" />
+            <Replacement oldValue="dva milijardi" newValue="dvije milijarde" scope="EndsWith" onScale="3" />
+            <Replacement oldValue="tri milijardi" newValue="tri milijarde" scope="EndsWith" onScale="3" />
+            <Replacement oldValue="četiri milijardi" newValue="četiri milijarde" scope="EndsWith" onScale="3" />
+            <Replacement oldValue="jedna milijarda" newValue="milijarda" onScale="3" onValue="1" />
+            <Replacement oldValue="bilijarda" newValue="bilijardi" scope="EndsWith" onScale="5" />
+            <Replacement oldValue="jedan bilijardi" newValue="jedna bilijarda" scope="EndsWith" onScale="5" />
+            <Replacement oldValue="dva bilijardi" newValue="dvije bilijarde" scope="EndsWith" onScale="5" />
+            <Replacement oldValue="tri bilijardi" newValue="tri bilijarde" scope="EndsWith" onScale="5" />
+            <Replacement oldValue="četiri bilijardi" newValue="četiri bilijarde" scope="EndsWith" onScale="5" />
+            <Replacement oldValue="jedna bilijarda" newValue="bilijarda" onScale="5" onValue="1" />
+            <!-- Hrvatski pravopis: "tisuću jedan", "tisuću tristo jedanaest": a leading single thousand
+                 followed by a remainder takes the accusative "tisuću"; 1000 alone stays "tisuća". -->
+            <Replacement oldValue="tisuća " newValue="tisuću " scope="StartsWith" />
         </Replacements>
         <Exceptions>
             <Number value="11" string="jedanaest" />
@@ -82,9 +116,13 @@
              is productive for every value and never falls back to an unchanged cardinal (the
              former suffix="i" produced "četirii", "jedani"). "šeststo" is the configured cardinal
              spelling of 600; its ordinal uses the standard stem "šestoti". -->
+        <LanguageSpecifics>CroatianOrdinalLanguageSpecifics</LanguageSpecifics>
         <Ordinals>
-            <!-- "jedan milijun" -> "milijunti", not "jedan milijunti". -->
+            <!-- Lexical ordinals of the single scale units (Hrvatski jezični portal: tisućiti, milijunti,
+                 milijarditi). Other round thousands, millions and milliards are declined by
+                 CroatianOrdinalLanguageSpecifics because their forms were not verified. -->
             <OrdinalException value="0" string="nulti" />
+            <OrdinalException value="1000" string="tisućiti" />
             <OrdinalException value="1000000" string="milijunti" />
             <OrdinalException value="1000000000" string="milijarditi" />
             <Ordinal from="jedan" to="prvi" />
@@ -124,14 +162,6 @@
             <Ordinal from="sedamsto" to="sedamstoti" />
             <Ordinal from="osamsto" to="osamstoti" />
             <Ordinal from="devetsto" to="devetstoti" />
-            <Ordinal from="tisuća" to="tisući" />
-            <Ordinal from="tisuće" to="tisući" />
-            <Ordinal from="tisuću" to="tisući" />
-            <Ordinal from="milijun" to="milijunti" />
-            <Ordinal from="milijuna" to="milijunti" />
-            <Ordinal from="milijarda" to="milijarditi" />
-            <Ordinal from="milijarde" to="milijarditi" />
-            <Ordinal from="milijardi" to="milijarditi" />
         </Ordinals>
         <!-- "Jedan je sat, dva su sata, pet je sati": the hour noun follows the count (1 sat,
              2-4 sata, 5-12 sati). Quarter-hour 12-hour clock without day-part wording; the

@@ -1,5 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Linq;
 using Utils.NumberToString;
 
 namespace UtilsTest.NumberToString;
@@ -107,19 +108,45 @@ public class NumberToStringOrdinalPluginTests
         => Assert.ThrowsExactly<NotSupportedException>(() => NumberToStringConverter.GetConverter("HU").ConvertOrdinal(number));
 
     /// <summary>
-    /// Ensures the declarative Croatian word rules cover every word that can end a cardinal: the
-    /// ordinal must differ from the cardinal for every value of the sweep, including zero.
+    /// Ensures the declarative Croatian word rules cover every word that can end a cardinal: outside
+    /// the round scale values that fail closed, the ordinal differs from the cardinal for the whole
+    /// sweep, including zero and the lexical scale ordinals.
     /// </summary>
     [TestMethod]
     public void CroatianOrdinals_DeclarativeRulesCoverEveryFinalWord()
     {
         NumberToStringConverter converter = NumberToStringConverter.GetConverter("HR");
 
-        for (long value = 0; value <= 2_100; value++)
+        foreach (long value in Enumerable.Range(0, 2_101).Select(v => (long)v)
+            .Concat([1_000_000L, 1_000_000_000L, 2_000_001L, 21_000_021L, long.MaxValue]))
+        {
+            if (value != 0 && value % 1000 == 0 && value is not (1_000 or 1_000_000 or 1_000_000_000))
+                continue;
             Assert.AreNotEqual(converter.Convert(value), converter.ConvertOrdinal(value), value.ToString());
-        foreach (long value in new[] { 21_000L, 1_000_000L, 2_000_000L, 1_000_000_000L, 2_000_000_000L, long.MaxValue })
-            Assert.AreNotEqual(converter.Convert(value), converter.ConvertOrdinal(value), value.ToString());
+        }
     }
+
+    /// <summary>
+    /// Ensures Croatian ordinals of round thousands, millions, milliards and larger scales other than
+    /// the single lexical units (tisućiti, milijunti, milijarditi) fail closed: their forms were not
+    /// verified, and the declarative rules would otherwise end with an inflected scale noun.
+    /// </summary>
+    [TestMethod]
+    [DataRow(2_000L)]
+    [DataRow(21_000L)]
+    [DataRow(2_000_000L)]
+    [DataRow(2_000_000_000L)]
+    [DataRow(1_000_000_000_000L)]
+    public void CroatianOrdinals_UnverifiedRoundScales_FailClosed(long number)
+        => Assert.ThrowsExactly<NotSupportedException>(() => NumberToStringConverter.GetConverter("HR").ConvertOrdinal(number));
+
+    /// <summary>Ensures the single scale units use their lexical Croatian ordinals.</summary>
+    [TestMethod]
+    [DataRow(1_000L, "tisućiti")]
+    [DataRow(1_000_000L, "milijunti")]
+    [DataRow(1_000_000_000L, "milijarditi")]
+    public void CroatianOrdinals_SingleScaleUnits_AreLexical(long number, string expected)
+        => Assert.AreEqual(expected, NumberToStringConverter.GetConverter("HR").ConvertOrdinal(number));
 
     /// <summary>
     /// Ensures an ordinal is never the unchanged cardinal for a broad sample. 100 is excluded: its
