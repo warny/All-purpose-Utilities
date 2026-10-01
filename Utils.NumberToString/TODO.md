@@ -12,13 +12,23 @@ classification.
 - **NTS-08 — linguistic ordinal and ClockTime coverage audit (implementation done, validation open).**
   Every natural-language configuration now has tested ordinal and ClockTime behaviour or an explicit
   deferral (`docs/NTS-08-linguistic-sources.md`, `DONE-2026-10-01(1).md`). NTS-08 is not closed:
-  - **Linguistic validation remaining.** The expected strings of 15 configurations rest on
-    reference grammar usage that was not re-read against a source during the audit, so their
-    scenarios prove only that the configuration produces the strings chosen by the PR: SV, HU, PL, RU, UK, ES, IT, PT, GL, EL, FI, HE, FA, JA, VN
-    (for PT, the consulted source covers the "para"/"menos" constructions, not the direct reading
-    the configuration deliberately uses). Each needs a sourced (or
-    native-speaker) review of its ordinal and clock scenarios before NTS-08 can close; a corrected
-    string must be fixed in the `.feature` first, then in the configuration.
+  - **Linguistic validation remaining, tracked per capability.** A scenario only proves that a
+    configuration produces the string chosen by the PR; a capability counts as validated once its
+    tested wording rests on a consulted source (see `docs/NTS-08-linguistic-sources.md`). Still
+    unvalidated:
+    - *Ordinals added or changed by NTS-08*: SV; DA vigesimal tens (`halvtredsindstyvende` ...);
+      HU; UK; FA; TR; AR 20-99, 100 and 1000; HE above ten (agreeing-cardinal policy) and the AR/HE
+      compound cardinals 11-99 they rely on; VN `thứ tư`; CS and SK gender/case declension tables
+      (only the compound spelling was consulted).
+    - *ClockTime*: DA, NO, SV, BG, HR, HU, CS, SK, UK, PL, RU, ES, IT, PT (the deliberate direct
+      reading; the consulted source covers `para`/`menos` only), GL, RO, EL, FI, HE, FA, JA, VN; ZU
+      rests on a single source.
+    - *Pre-existing ordinals not re-verified by the audit*: NL, PL, RU, ES, IT, PT, GL, EL, FI, HI,
+      JA, KO, ZH, EU, EE, WO.
+    Validated so far: NL, SW, EU, KO, ZH, HI and AR ClockTime; TR ClockTime (search summary of
+    TDK usage); NO, BG, HR, RO and DA 100 (`hundrede`) ordinals; CS/SK compound ordinal spelling;
+    HR cardinals. NTS-08 closes when every capability above is validated or explicitly deferred; a
+    corrected string must be fixed in the `.feature` first, then in the configuration.
   - The remaining gaps below are explicit decisions, each pinned by a "does not support"
     scenario:
     - SW and ZU ordinals: an obligatory noun-class concord, no standalone form; needs a public

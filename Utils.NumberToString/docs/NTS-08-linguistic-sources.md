@@ -7,7 +7,8 @@ row states what the configuration supports, how, and on which sources the tested
 **Source status.** "Consulted" sources were read during the audit and are quoted in the `.feature`
 comments. "Reference usage" means the wording follows standard school-grammar usage that was not
 re-fetched during the audit; those rows are flagged so that a native-speaker review can target them.
-Rows still resting on reference usage for their tested wording: SV, HU, PL, RU, UK, ES, IT, PT, GL, EL, FI, HE, FA, JA, VN.
+A row marked "Consulted" may still be only partly sourced (e.g. HR clock, AR ordinals above 19, HI/KO/ZH
+ordinals); the remaining validation is tracked per capability in `TODO.md` (NTS-08).
 
 ## Configurations
 

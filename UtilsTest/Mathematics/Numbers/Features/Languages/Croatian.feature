@@ -86,8 +86,9 @@ Examples:
 
 # Hrvatski pravopis (IHJJ), rule 31: only the last component of a compound ordinal is ordinal
 # ("tisuću prvi", "tisuću tristo jedanaesti", "tri tisuće sedamsto trideset treći"). The ordinal of
-# 1000 is "tisućiti" (Hrvatski jezični portal). Ordinals of other round thousands, millions and
-# milliards ("2000.") have no verified form and fail closed (see NumberToStringOrdinalPluginTests).
+# 1000 is "tisućiti" (Hrvatski jezični portal). Ordinals of other round scale values (2000, 21000,
+# 2 000 000, 2 000 000 000, 10^12, ...) have no verified form and fail closed (see
+# NumberToStringOrdinalPluginTests).
 Scenario Outline: Irregular ordinal numbers
     Given I use the "HR" number converter
     When I convert the ordinal number <number>
