@@ -70,7 +70,7 @@
                  those words), genitive plural otherwise. Masculine milijun/bilijun/trilijun: milijun
                  after jedan, milijuna after any other multiplier. An exact single unit has no "jedan".
                  Rules within a group are applied in declaration order. -->
-            <Replacement oldValue="jedan tisuća" newValue="tisuća" onScale="1" onValue="1" />
+            <Replacement oldValue="jedan tisuća" newValue="tisuću" onScale="1" onValue="1" />
             <Replacement oldValue="jedan tisuća" newValue="jedna tisuća" scope="EndsWith" onScale="1" />
             <Replacement oldValue="dva tisuća" newValue="dvije tisuće" scope="EndsWith" onScale="1" />
             <Replacement oldValue="tri tisuća" newValue="tri tisuće" scope="EndsWith" onScale="1" />
@@ -96,9 +96,13 @@
             <Replacement oldValue="tri bilijardi" newValue="tri bilijarde" scope="EndsWith" onScale="5" />
             <Replacement oldValue="četiri bilijardi" newValue="četiri bilijarde" scope="EndsWith" onScale="5" />
             <Replacement oldValue="jedna bilijarda" newValue="bilijarda" onScale="5" onValue="1" />
-            <!-- Hrvatski pravopis: "tisuću jedan", "tisuću tristo jedanaest": a leading single thousand
-                 followed by a remainder takes the accusative "tisuću"; 1000 alone stays "tisuća". -->
-            <Replacement oldValue="tisuća " newValue="tisuću " scope="StartsWith" />
+            <!-- Hrvatski pravopis: "tisuću jedan", "tisuću tristo jedanaest". A single thousand followed by
+                 a remainder takes the accusative "tisuću" wherever it stands ("milijun tisuću jedan"):
+                 the thousands group above always produces "tisuću", and this rule restores the nominative
+                 "tisuća" only when nothing follows (1000, 1 001 000). onValue="1.." restricts it to the
+                 final pass over the whole number: a global rule without onValue would also run on the
+                 thousands group alone, where "tisuću" is always last. -->
+            <Replacement oldValue="tisuću" newValue="tisuća" scope="EndsWith" onValue="1.." />
         </Replacements>
         <Exceptions>
             <Number value="11" string="jedanaest" />
@@ -119,8 +123,9 @@
         <LanguageSpecifics>CroatianOrdinalLanguageSpecifics</LanguageSpecifics>
         <Ordinals>
             <!-- Lexical ordinals of the single scale units (Hrvatski jezični portal: tisućiti, milijunti,
-                 milijarditi). Other round thousands, millions and milliards are declined by
-                 CroatianOrdinalLanguageSpecifics because their forms were not verified. -->
+                 milijarditi). Every other round scale value (any other multiple of 1000, including
+                 10^12 and above) is declined by CroatianOrdinalLanguageSpecifics because its form was
+                 not verified. -->
             <OrdinalException value="0" string="nulti" />
             <OrdinalException value="1000" string="tisućiti" />
             <OrdinalException value="1000000" string="milijunti" />
