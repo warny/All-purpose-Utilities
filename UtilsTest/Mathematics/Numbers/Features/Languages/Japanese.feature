@@ -49,3 +49,25 @@ Scenario: Fraction connector wording
     Given I use the "JA" number converter
     When I convert the fraction 3/2 through both public fraction APIs
     Then both fraction results are "三 割る 二"
+
+Scenario: Idiomatic clock-time conversion is supported
+    Given I use the "JA" number converter
+    Then the converter supports clock-time conversion
+
+# Neutral 12-hour clock without 午前/午後: "<hour>時", "<hour>時<minutes>分", "<hour>時半".
+Scenario Outline: Idiomatic Japanese clock times
+    Given I use the "JA" number converter
+    When I convert the clock time "<time>"
+    Then the result is "<expected>"
+
+Examples:
+    | time | expected |
+    | 01:00 | 一時 |
+    | 01:05 | 一時五分 |
+    | 01:15 | 一時十五分 |
+    | 01:30 | 一時半 |
+    | 01:45 | 一時四十五分 |
+    | 02:00 | 二時 |
+    | 04:00 | 四時 |
+    | 13:00 | 一時 |
+    | 01:28 | 一時半 |

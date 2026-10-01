@@ -66,3 +66,40 @@ Scenario: Fraction connector wording
     Given I use the "KO" number converter
     When I convert the fraction 3/2 through both public fraction APIs
     Then both fraction results are "삼 나누기 이"
+
+Scenario: Idiomatic clock-time conversion is supported
+    Given I use the "KO" number converter
+    Then the converter supports clock-time conversion
+
+# Hours use native Korean attributive numerals (한, 두, 세, 네 ... 열두) while minutes use the
+# Sino-Korean cardinals. Spacing follows Hangeul Matchumbeop art. 43 (unit nouns are separated:
+# "한 시 십오 분"); the first draft "한 시 십오분" attached the unit and was corrected.
+Scenario Outline: Idiomatic Korean clock times
+    Given I use the "KO" number converter
+    When I convert the clock time "<time>"
+    Then the result is "<expected>"
+
+Examples:
+    | time | expected |
+    | 01:00 | 한 시 |
+    | 02:00 | 두 시 |
+    | 03:00 | 세 시 |
+    | 04:00 | 네 시 |
+    | 11:00 | 열한 시 |
+    | 12:00 | 열두 시 |
+    | 01:05 | 한 시 오 분 |
+    | 01:15 | 한 시 십오 분 |
+    | 01:30 | 한 시 반 |
+    | 01:45 | 한 시 사십오 분 |
+    | 13:00 | 한 시 |
+
+Scenario Outline: Korean clock hours do not change the Sino-Korean cardinals and ordinals
+    Given I use the "KO" number converter
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1 | 일 |
+    | 2 | 이 |
+    | 12 | 십이 |
