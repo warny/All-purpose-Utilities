@@ -31,7 +31,7 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | NO, NB, NB-NO | Norwegian Bokmål | ✓ plugin (int range) | ✓ 5 min, 12 h | gender (hankjønn/hunkjønn/intetkjønn) | local | Ordinals above `int.MaxValue` fail closed |
 | SV, SV-SE | Swedish | ✓ plugin (int range) | ✓ 5 min, 12 h | — | local | Ordinals above `int.MaxValue` fail closed |
 | BG, BG-BG | Bulgarian | ✓ plugin, gendered | ✓ 15 min, 12 h | gender (standalone/masculine/feminine/neuter) | local | Unverified compound round thousands/millions fail closed |
-| HR, HR-HR | Croatian | ✓ declarative (last word) | ✓ 15 min, 12 h | — | local | Masculine nominative ordinals only |
+| HR, HR-HR | Croatian | ✓ declarative (last word) + range plugin | ✓ 15 min, 12 h | — | local | Masculine nominative ordinals only; round scale ordinals other than tisućiti/milijunti/milijarditi fail closed |
 | HU, HU-HU | Hungarian | ✓ plugin (int range) | ✓ 15 min, 12 h | — | local | — |
 | CS, CS-CZ | Czech | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 (round millions/milliards: one only) |
 | SK, SK-SK | Slovak | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 and one million |
@@ -40,7 +40,7 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | UK, UK-UA | Ukrainian | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Round thousands verified up to 10 000 |
 | ES | Spanish | ✓ declarative | ✓ 5 min, 12 h | gender × form | local | — |
 | IT | Italian | ✓ declarative | ✓ 15 min, 12 h | gender | local | Compound cardinals not orthographic yet ("venti cinque"), hence no 5-minute step |
-| PT | Portuguese | ✓ declarative | ✓ 5 min, 12 h (direct "e …") | gender | local | Single PT norm; PT-PT/PT-BR not split |
+| PT | Portuguese | ✓ declarative | ✓ 5 min, 12 h (direct "e …") | gender | local | Deliberate direct numeric reading (no "para"/"menos" constructions); PT-PT/PT-BR not split |
 | GL, gl-ES | Galician | ✓ declarative | ✓ 5 min, 12 h | gender | local | — |
 | RO, RO-RO | Romanian | ✓ plugin (DOOM) | ✓ 15 min, 12 h | gen | local | Ordinals up to 999 999 and one million (masculine) |
 | CA, ca-ES | Catalan | ✓ declarative | ✓ 15 min, 12 h | gender | local | Traditional quarters only |

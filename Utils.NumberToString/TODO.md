@@ -12,10 +12,11 @@ classification.
 - **NTS-08 — linguistic ordinal and ClockTime coverage audit (implementation done, validation open).**
   Every natural-language configuration now has tested ordinal and ClockTime behaviour or an explicit
   deferral (`docs/NTS-08-linguistic-sources.md`, `DONE-2026-10-01(1).md`). NTS-08 is not closed:
-  - **Linguistic validation remaining.** The expected strings of 20 configurations rest on
+  - **Linguistic validation remaining.** The expected strings of 15 configurations rest on
     reference grammar usage that was not re-read against a source during the audit, so their
-    scenarios prove only that the configuration produces the strings chosen by the PR: SV, HR, HU,
-    PL, RU, UK, ES, IT, PT, GL, EL, FI, AR, HE, FA, HI, JA, KO, ZH, VN. Each needs a sourced (or
+    scenarios prove only that the configuration produces the strings chosen by the PR: SV, HU, PL, RU, UK, ES, IT, PT, GL, EL, FI, HE, FA, JA, VN
+    (for PT, the consulted source covers the "para"/"menos" constructions, not the direct reading
+    the configuration deliberately uses). Each needs a sourced (or
     native-speaker) review of its ordinal and clock scenarios before NTS-08 can close; a corrected
     string must be fixed in the `.feature` first, then in the configuration.
   - The remaining gaps below are explicit decisions, each pinned by a "does not support"
