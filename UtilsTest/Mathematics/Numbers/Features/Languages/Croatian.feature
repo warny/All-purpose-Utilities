@@ -68,6 +68,10 @@ Examples:
     | 21000000 | dvadeset jedan milijun |
     | 22000000 | dvadeset dva milijuna |
     | 1530000 | milijun petsto trideset tisuća |
+    | 1001000 | milijun tisuća |
+    | 1001001 | milijun tisuću jedan |
+    | 1001311 | milijun tisuću tristo jedanaest |
+    | 2001001 | dva milijuna tisuću jedan |
     | 1000000000 | milijarda |
     | 2000000000 | dvije milijarde |
     | 3000000000 | tri milijarde |
@@ -119,6 +123,9 @@ Examples:
     | 3733 | tri tisuće sedamsto trideset treći |
     | 1000000 | milijunti |
     | 2000001 | dva milijuna prvi |
+    | 1001001 | milijun tisuću prvi |
+    | 1001311 | milijun tisuću tristo jedanaesti |
+    | 2001001 | dva milijuna tisuću prvi |
     | 5000001 | pet milijuna prvi |
 
 Scenario: Ordinal conversion is supported
