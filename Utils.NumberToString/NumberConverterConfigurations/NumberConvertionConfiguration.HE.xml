@@ -27,26 +27,26 @@
             <Group level="2">
                 <Digit digit="0" string="" buildString="*" />
                 <Digit digit="1" string="עשר" buildString="עשר *" />
-                <Digit digit="2" string="עשרים" buildString="עשרים *" />
-                <Digit digit="3" string="שלושים" buildString="שלושים *" />
-                <Digit digit="4" string="ארבעים" buildString="ארבעים *" />
-                <Digit digit="5" string="חמישים" buildString="חמישים *" />
-                <Digit digit="6" string="שישים" buildString="שישים *" />
-                <Digit digit="7" string="שבעים" buildString="שבעים *" />
-                <Digit digit="8" string="שמונים" buildString="שמונים *" />
-                <Digit digit="9" string="תשעים" buildString="תשעים *" />
+                <Digit digit="2" string="עשרים" buildString="עשרים ו*" />
+                <Digit digit="3" string="שלושים" buildString="שלושים ו*" />
+                <Digit digit="4" string="ארבעים" buildString="ארבעים ו*" />
+                <Digit digit="5" string="חמישים" buildString="חמישים ו*" />
+                <Digit digit="6" string="שישים" buildString="שישים ו*" />
+                <Digit digit="7" string="שבעים" buildString="שבעים ו*" />
+                <Digit digit="8" string="שמונים" buildString="שמונים ו*" />
+                <Digit digit="9" string="תשעים" buildString="תשעים ו*" />
             </Group>
             <Group level="3">
                 <Digit digit="0" string="" buildString="*" />
-                <Digit digit="1" string="מאה" buildString="מאה *" />
-                <Digit digit="2" string="מאתיים" buildString="מאתיים *" />
-                <Digit digit="3" string="שלוש מאות" buildString="שלוש מאות *" />
-                <Digit digit="4" string="ארבע מאות" buildString="ארבע מאות *" />
-                <Digit digit="5" string="חמש מאות" buildString="חמש מאות *" />
-                <Digit digit="6" string="שש מאות" buildString="שש מאות *" />
-                <Digit digit="7" string="שבע מאות" buildString="שבע מאות *" />
-                <Digit digit="8" string="שמונה מאות" buildString="שמונה מאות *" />
-                <Digit digit="9" string="תשע מאות" buildString="תשע מאות *" />
+                <Digit digit="1" string="מאה" buildString="מאה ו*" />
+                <Digit digit="2" string="מאתיים" buildString="מאתיים ו*" />
+                <Digit digit="3" string="שלוש מאות" buildString="שלוש מאות ו*" />
+                <Digit digit="4" string="ארבע מאות" buildString="ארבע מאות ו*" />
+                <Digit digit="5" string="חמש מאות" buildString="חמש מאות ו*" />
+                <Digit digit="6" string="שש מאות" buildString="שש מאות ו*" />
+                <Digit digit="7" string="שבע מאות" buildString="שבע מאות ו*" />
+                <Digit digit="8" string="שמונה מאות" buildString="שמונה מאות ו*" />
+                <Digit digit="9" string="תשע מאות" buildString="תשע מאות ו*" />
             </Group>
         </Groups>
         <NumberScale firstLetterUpperCase="false">
@@ -58,7 +58,30 @@
                 <Suffix>מיליון</Suffix>
             </Suffixes>
         </NumberScale>
-        <Exceptions />
+        <!-- 11-19 in the counting (feminine) form; the zachar variant agrees them. -->
+        <Exceptions>
+            <Number value="11" string="אחת עשרה" />
+            <Number value="12" string="שתים עשרה" />
+            <Number value="13" string="שלוש עשרה" />
+            <Number value="14" string="ארבע עשרה" />
+            <Number value="15" string="חמש עשרה" />
+            <Number value="16" string="שש עשרה" />
+            <Number value="17" string="שבע עשרה" />
+            <Number value="18" string="שמונה עשרה" />
+            <Number value="19" string="תשע עשרה" />
+        </Exceptions>
+        <!-- "ו" joins only the last element: the hundreds add it before their remainder, so it is
+             removed again when tens precede a final unit ("מאה עשרים ואחד"). -->
+        <Replacements>
+            <Replacement oldValue="ועשרים ו" newValue="עשרים ו" scope="Anywhere" />
+            <Replacement oldValue="ושלושים ו" newValue="שלושים ו" scope="Anywhere" />
+            <Replacement oldValue="וארבעים ו" newValue="ארבעים ו" scope="Anywhere" />
+            <Replacement oldValue="וחמישים ו" newValue="חמישים ו" scope="Anywhere" />
+            <Replacement oldValue="ושישים ו" newValue="שישים ו" scope="Anywhere" />
+            <Replacement oldValue="ושבעים ו" newValue="שבעים ו" scope="Anywhere" />
+            <Replacement oldValue="ושמונים ו" newValue="שמונים ו" scope="Anywhere" />
+            <Replacement oldValue="ותשעים ו" newValue="תשעים ו" scope="Anywhere" />
+        </Replacements>
         <!--
           Hebrew ordinals exist only for 1-10; higher ordinals are expressed
           as cardinals in practice. The default (zachar / standalone) forms are
@@ -81,6 +104,29 @@
             <OrdinalException value="8">  <Variant type="gender" forms="שמיני,שמיני,שמינית"   /></OrdinalException>
             <OrdinalException value="9">  <Variant type="gender" forms="תשיעי,תשיעי,תשיעית"   /></OrdinalException>
             <OrdinalException value="10"> <Variant type="gender" forms="עשירי,עשירי,עשירית"   /></OrdinalException>
+            <!-- Above ten the ordinal is the agreeing cardinal (intentional, see the NTS-08 record).
+                 Without a gender it is masculine like 1-10: 11-19 are exceptions and the standalone
+                 (counting) final unit of 21-99 is made masculine. -->
+            <OrdinalException value="11"> <Variant type="gender" forms="אחד עשר,אחד עשר,אחת עשרה" /></OrdinalException>
+            <OrdinalException value="12"> <Variant type="gender" forms="שנים עשר,שנים עשר,שתים עשרה" /></OrdinalException>
+            <OrdinalException value="13"> <Variant type="gender" forms="שלושה עשר,שלושה עשר,שלוש עשרה" /></OrdinalException>
+            <OrdinalException value="14"> <Variant type="gender" forms="ארבעה עשר,ארבעה עשר,ארבע עשרה" /></OrdinalException>
+            <OrdinalException value="15"> <Variant type="gender" forms="חמישה עשר,חמישה עשר,חמש עשרה" /></OrdinalException>
+            <OrdinalException value="16"> <Variant type="gender" forms="שישה עשר,שישה עשר,שש עשרה" /></OrdinalException>
+            <OrdinalException value="17"> <Variant type="gender" forms="שבעה עשר,שבעה עשר,שבע עשרה" /></OrdinalException>
+            <OrdinalException value="18"> <Variant type="gender" forms="שמונה עשר,שמונה עשר,שמונה עשרה" /></OrdinalException>
+            <OrdinalException value="19"> <Variant type="gender" forms="תשעה עשר,תשעה עשר,תשע עשרה" /></OrdinalException>
+            <OrdinalVariants>
+                <Variant type="gender" variant="standalone">
+                    <Ordinal from="ושתיים" to="ושניים" />
+                    <Ordinal from="ושלוש" to="ושלושה" />
+                    <Ordinal from="וארבע" to="וארבעה" />
+                    <Ordinal from="וחמש" to="וחמישה" />
+                    <Ordinal from="ושש" to="ושישה" />
+                    <Ordinal from="ושבע" to="ושבעה" />
+                    <Ordinal from="ותשע" to="ותשעה" />
+                </Variant>
+            </OrdinalVariants>
         </Ordinals>
         <Variants>
             <!--
@@ -115,13 +161,41 @@
                 <Replacement oldValue="תשע"   newValue="תשעה"  scope="LastWord" />
                 <!-- standalone 10 -->
                 <Replacement oldValue="עשר"   newValue="עשרה"  scope="LastWord" />
+                <!-- Final unit after "ו", then the 11-19 forms (after the single-word rules, so the
+                     final "עשר" of the masculine teens is not lengthened again). -->
+                <Replacement oldValue="ושתיים" newValue="ושניים" scope="LastWord" />
+                <Replacement oldValue="ושלוש" newValue="ושלושה" scope="LastWord" />
+                <Replacement oldValue="וארבע" newValue="וארבעה" scope="LastWord" />
+                <Replacement oldValue="וחמש" newValue="וחמישה" scope="LastWord" />
+                <Replacement oldValue="ושש" newValue="ושישה" scope="LastWord" />
+                <Replacement oldValue="ושבע" newValue="ושבעה" scope="LastWord" />
+                <Replacement oldValue="ותשע" newValue="ותשעה" scope="LastWord" />
+                <Replacement oldValue="ועשר" newValue="ועשרה" scope="LastWord" />
+                <Replacement oldValue="אחת עשרה" newValue="אחד עשר" scope="EndsWith" />
+                <Replacement oldValue="שתים עשרה" newValue="שנים עשר" scope="EndsWith" />
+                <Replacement oldValue="שלוש עשרה" newValue="שלושה עשר" scope="EndsWith" />
+                <Replacement oldValue="ארבע עשרה" newValue="ארבעה עשר" scope="EndsWith" />
+                <Replacement oldValue="חמש עשרה" newValue="חמישה עשר" scope="EndsWith" />
+                <Replacement oldValue="שש עשרה" newValue="שישה עשר" scope="EndsWith" />
+                <Replacement oldValue="שבע עשרה" newValue="שבעה עשר" scope="EndsWith" />
+                <Replacement oldValue="שמונה עשרה" newValue="שמונה עשר" scope="EndsWith" />
+                <Replacement oldValue="תשע עשרה" newValue="תשעה עשר" scope="EndsWith" />
             </Variant>
 
             <!-- ── Nekeva (feminine nouns) ───────────────────────────────── -->
             <Variant type="gender" variant="nekeva">
                 <!-- Only 1 changes; forms 2-9 are already correct for feminine nouns -->
                 <Replacement oldValue="אחד" newValue="אחת" scope="LastWord" />
+                <Replacement oldValue="ואחד" newValue="ואחת" scope="LastWord" />
             </Variant>
         </Variants>
+        <!-- "שעה" is feminine: the feminine cardinal is forced on {hour}. Quarter-hour 12-hour clock
+             without day-part wording: "ורבע", "וחצי", "רבע ל" + the following hour. -->
+        <ClockTime step="15" hourCycle="12">
+            <Rule range="0" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=nekeva" pattern="{hour}" />
+            <Rule range="15" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=nekeva" pattern="{hour} ורבע" />
+            <Rule range="30" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=nekeva" pattern="{hour} וחצי" />
+            <Rule range="45" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=nekeva" pattern="רבע ל{hour}" />
+        </ClockTime>
     </Language>
 </Numbers>

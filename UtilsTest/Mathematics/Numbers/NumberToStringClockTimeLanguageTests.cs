@@ -27,6 +27,7 @@ public class NumberToStringClockTimeLanguageTests
     [DataRow("PL", 1, 5, "pięć po ", 1, "rodzaj=feminin,przypadek=miejscownik")]
     [DataRow("PL", 1, 30, "wpół do ", 2, "rodzaj=feminin,przypadek=dopełniacz")]
     [DataRow("RU", 1, 15, "четверть ", 2, "gender=maskulin,case=родительный")]
+    [DataRow("AR", 2, 0, "ال", 2, "gender=muʾannath")]
     public void ConvertClockTime_CaseGovernedHour_UsesForcedOrdinalVariants(
         string culture, int hour, int minute, string literal, int ordinal, string forced)
     {
@@ -51,6 +52,7 @@ public class NumberToStringClockTimeLanguageTests
     [DataRow("RO", 12, "ora douăsprezece", "doisprezece")]
     [DataRow("EL", 3, "τρεις", "τρία")]
     [DataRow("EL", 4, "τέσσερις", "τέσσερα")]
+    [DataRow("HE", 1, "אחת", "אחד")]
     public void ConvertClockTime_CardinalHour_UsesForcedGender(string culture, int hour, string expectedClock, string defaultCardinal)
     {
         NumberToStringConverter converter = NumberToStringConverter.GetConverter(culture);

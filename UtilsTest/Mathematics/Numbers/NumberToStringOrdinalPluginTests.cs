@@ -218,4 +218,33 @@ public class NumberToStringOrdinalPluginTests
     public void RomanianOrdinals_UnverifiedOrOutOfRange_FailClosed(long number, string variants)
         => Assert.ThrowsExactly<NotSupportedException>(
             () => NumberToStringConverter.GetConverter("RO").ConvertOrdinal(number, variants.Length == 0 ? [] : [variants]));
+
+    /// <summary>
+    /// Ensures Arabic ordinals outside the documented contract (1-99, 100, 1000) fail closed instead
+    /// of returning an unchanged cardinal.
+    /// </summary>
+    [TestMethod]
+    [DataRow(101L)]
+    [DataRow(150L)]
+    [DataRow(2_000L)]
+    [DataRow(3_000_000_000L)]
+    public void ArabicOrdinals_OutsideContract_FailClosed(long number)
+        => Assert.ThrowsExactly<NotSupportedException>(() => NumberToStringConverter.GetConverter("AR").ConvertOrdinal(number));
+
+    /// <summary>Ensures every Arabic ordinal from 20 to 99 is the unit ordinal joined to the tens cardinal, in both genders.</summary>
+    [TestMethod]
+    public void ArabicOrdinals_TwentyToNinetyNine_AreProductive()
+    {
+        NumberToStringConverter converter = NumberToStringConverter.GetConverter("AR");
+        for (int value = 21; value <= 99; value++)
+        {
+            if (value % 10 == 0)
+                continue;
+            string masculine = converter.ConvertOrdinal(value);
+            string feminine = converter.ConvertOrdinal(value, "gender=muʾannath");
+            StringAssert.Contains(masculine, " و", value.ToString());
+            Assert.AreNotEqual(converter.Convert(value), masculine, value.ToString());
+            Assert.AreNotEqual(masculine, feminine, value.ToString());
+        }
+    }
 }
