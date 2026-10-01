@@ -9,13 +9,27 @@ classification.
 
 ## Open items
 
-- **NTS-08 — linguistic ordinal and ClockTime coverage audit.** The engine work needed for
-  hour-conditioned clock rules is complete, but production language coverage must not be enabled
-  without grammatical sources and compound/scale tests. Ordinals remain deferred for BG, CS, DA,
-  FA, NO, RO, SK, SV, SW, TR, UK, and ZU; HR and HU require productive replacements for their
-  partial configurations. Idiomatic ClockTime is now configured for DE (with de-CH inheritance), FR (with separate FR-be and FR-ch children), EN (with EN-GB inheritance), Catalan, Valencian, Indonesian, and Malay. Every other natural-language configuration remains explicitly unsupported until its regional convention, grammatical variants, compounds, and scale behavior
-  are verified. SW/ZU additionally require a documented noun-class policy. AR and HE require a
-  sourced decision for compounds above their existing explicitly configured ranges.
+- **NTS-08 — linguistic ordinal and ClockTime coverage audit (only deliberate deferrals left).**
+  Every natural-language configuration has been audited (`docs/NTS-08-linguistic-sources.md`,
+  `DONE-2026-10-01(1).md`). The remaining gaps are explicit decisions, each pinned by a
+  "does not support" scenario:
+  - SW and ZU ordinals: an obligatory noun-class concord, no standalone form; needs a public
+    `nounClass` dimension and a documented class inventory.
+  - EE ClockTime: no sourced minute convention.
+  - WO ClockTime: competing native and French-derived conventions, no single sourced system.
+  Reference-usage rows of the source record (not re-fetched during the audit) should get a
+  native-speaker review.
+
+- **NTS-10 — cardinal defects found during NTS-08.** Not caused by NTS-08 and left unchanged so
+  the clock/ordinal work stays reviewable:
+  - IT compound cardinals are not written as one word (`venti cinque` instead of `venticinque`);
+    the Italian clock therefore uses a quarter-hour step.
+  - HI cardinals 21–99 are not lexicalized (`बीस एक` instead of `इक्कीस`).
+  - AR cardinals from 1001 lack the `و` connector between groups.
+
+- **NTS-11 — Hebrew cardinals from 1000.** `אחד אלף` instead of `אלף`, missing `אלפיים` and the
+  construct forms (`שלושת אלפים`) and the `ו` connector between groups. The existing scenario
+  pinning `1000 → אחד אלף` must be corrected together with the fix.
 
 - **NTS-09 — `Trigger` elements are not inherited through `baseOn`.** `XmlSerializer` materializes
   an absent `<Trigger>` list as an empty list, so `MergeLanguageDefinition`'s
@@ -50,6 +64,10 @@ New findings should be appended here as they are identified, and archived to
 a dated `DONE-*.md` file once resolved, per the repository's `AGENTS.md`
 TODO/DONE convention.
 
+
+### NTS-08 completion pass (2026-10-01)
+
+See `DONE-2026-10-01(1).md`.
 
 ### NTS-08 completed slice (2026-09-23)
 

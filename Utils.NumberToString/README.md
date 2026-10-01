@@ -17,52 +17,56 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 
 ## Supported cultures
 
-| Code | Language | Ordinals | ClockTime | Variants |
-|------|----------|----------|-----------|----------|
-| EN, EN-us | English | ✓ | ✓ (5 min, 12 h) | — (numbers are invariable) |
-| EN-GB, EN-uk | British English (regional child of EN) | ✓ (inherited) | ✓ (inherited) | — (numbers are invariable) |
-| FR, FR-fr, FR-ca | French | ✓ | ✓ (5 min, 24 h) | gender (masculin/feminin) |
-| FR-be | Belgian French (regional child of FR: septante / quatre-vingts / nonante) | ✓ | ✓ (inherited) | gender (masculin/feminin) |
-| FR-ch | Swiss French (regional child of FR: septante / huitante / nonante) | ✓ | ✓ (inherited) | gender (masculin/feminin) |
-| DE, de-DE, de-AT | German (standard) | ✓ | ✓ | genus (maskulin/feminin/neutrum) × kasus (nominativ/akkusativ/dativ/genitiv) |
-| de-CH, de-LI | Swiss/Liechtenstein German | ✓ | ✓ (inherited) | (same as DE; "ein tausend" not contracted to "tausend") |
-| ES | Spanish | ✓ | — | gender (masculino/femenino) |
-| IT | Italian | ✓ | — | gender (maschile/femminile) |
-| PT | Portuguese | ✓ | — | gender (masculino/feminino) |
-| PL | Polish | ✓ | — | rodzaj (maskulin/feminin/nijaki/plural_mos/plural) × przypadek (mianownik/dopełniacz/…) |
-| NL | Dutch | ✓ | — | — (numbers are invariable) |
-| RO | Romanian | — | — | gen (masculin/feminin) |
-| RU | Russian | ✓ | — | — |
-| AR | Arabic | ✓ (1–19) | — | gender (muzakkar/muʾannath) |
-| HE | Hebrew | ✓ | — | gender (standalone/zachar/nekeva) |
-| ZH | Chinese | ✓ (prefix 第) | — | — (no inflection) |
-| JA | Japanese | ✓ (prefix 第) | — | — (no inflection) |
-| KO | Korean | ✓ (prefix 제) | — | — (no inflection) |
-| HI | Hindi | ✓ | — | gender (strī) ordinals only |
-| EL | Greek | ✓ | — | gender (αρσενικό/θηλυκό/ουδέτερο) |
-| FI | Finnish | ✓ | — | sijamuoto (nominatiivi/partitiivi/genetiivi) |
-| CA, ca-ES | Catalan | ✓ | ✓ (15 min, 12 h) | gender (masculí/femení) |
-| ca-ES-valencia | Valencian (regional child of CA) | ✓ (inherited) | ✓ (5 min, 12 h, own section) | gender (masculí/femení) |
-| EU | Basque | ✓ | — | — (no grammatical gender) |
-| GL | Galician | ✓ | — | gender (masculino/feminino) |
-| ZU | Zulu | — | — | — (not yet implemented) |
-| EE | Ewe | ✓ (prefix etsõ) | — | — |
-| WO | Wolof | ✓ | — | — |
-| HR | Croatian | ✓ | — | — (numbers are invariable) |
-| HU | Hungarian | ✓ | — | — (numbers are invariable) |
-| VN, VI, VI-VN | Vietnamese | ✓ | — | — (numbers are invariable) |
-| TR, TR-TR | Turkish | — | — | — (numbers are invariable) |
-| SV, SV-SE | Swedish | — | — | — (numbers are invariable) |
-| NO, NB, NB-NO | Norwegian (Bokmål) | — | — | — (numbers are invariable) |
-| UK, UK-UA | Ukrainian | — | — | — (numbers are invariable) |
-| DA, DA-DK | Danish | — | — | — (numbers are invariable) |
-| CS, CS-CZ | Czech | — | — | — (numbers are invariable) |
-| SK, SK-SK | Slovak | — | — | — (numbers are invariable) |
-| BG, BG-BG | Bulgarian | — | — | — (numbers are invariable) |
-| ID, ID-ID | Indonesian | ✓ | ✓ (5 min, 12 h) | — (numbers are invariable) |
-| MS, MS-MY | Malay (regional child of ID: lapan, bilion, trilion) | ✓ | ✓ (5 min, 12 h, own section) | — (numbers are invariable) |
-| FA, FA-IR | Persian (Farsi) | — | — | — (numbers are invariable) |
-| SW | Swahili | — | — | — (numbers are invariable) |
+| Code | Language | Ordinals | ClockTime (step, cycle) | Variants | Inherited / local | Known limitations |
+|------|----------|----------|-------------------------|----------|-------------------|-------------------|
+| EN, EN-us | English | ✓ declarative | ✓ 5 min, 12 h | — | local | No day-part wording; only midnight/noon are special |
+| EN-GB, EN-uk | British English | ✓ inherited | ✓ inherited | — | child of EN | Same as EN |
+| FR, FR-fr, FR-ca | French | ✓ declarative | ✓ 5 min, 24 h | gender | local | — |
+| FR-be | Belgian French (septante / quatre-vingts / nonante) | ✓ merged | ✓ inherited | gender | child of FR | — |
+| FR-ch | Swiss French (septante / huitante / nonante) | ✓ inherited | ✓ inherited | gender | child of FR | No cantonal `octante` |
+| DE, de-DE, de-AT | German | ✓ declarative | ✓ 5 min, 12 h | genus × kasus | local | — |
+| de-CH, de-LI | Swiss German | ✓ merged | ✓ inherited | genus × kasus | child of DE | — |
+| NL | Dutch | ✓ declarative | ✓ 5 min, 12 h | — | local | No day-part wording |
+| DA, DA-DK | Danish | ✓ plugin (int range) | ✓ 5 min, 12 h | gender (fælleskøn/intetkøn) | local | Ordinals above `int.MaxValue` fail closed |
+| NO, NB, NB-NO | Norwegian Bokmål | ✓ plugin (int range) | ✓ 5 min, 12 h | gender (hankjønn/hunkjønn/intetkjønn) | local | Ordinals above `int.MaxValue` fail closed |
+| SV, SV-SE | Swedish | ✓ plugin (int range) | ✓ 5 min, 12 h | — | local | Ordinals above `int.MaxValue` fail closed |
+| BG, BG-BG | Bulgarian | ✓ plugin, gendered | ✓ 15 min, 12 h | gender (standalone/masculine/feminine/neuter) | local | Unverified compound round thousands/millions fail closed |
+| HR, HR-HR | Croatian | ✓ declarative (last word) | ✓ 15 min, 12 h | — | local | Masculine nominative ordinals only |
+| HU, HU-HU | Hungarian | ✓ plugin (int range) | ✓ 15 min, 12 h | — | local | — |
+| CS, CS-CZ | Czech | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 (round millions/milliards: one only) |
+| SK, SK-SK | Slovak | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 and one million |
+| PL | Polish | ✓ plugin + declarative | ✓ 5 min, 12 h | rodzaj × przypadek | local | — |
+| RU | Russian | ✓ declarative | ✓ 15 min, 12 h | gender × case | local | — |
+| UK, UK-UA | Ukrainian | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Round thousands verified up to 10 000 |
+| ES | Spanish | ✓ declarative | ✓ 5 min, 12 h | gender × form | local | — |
+| IT | Italian | ✓ declarative | ✓ 15 min, 12 h | gender | local | Compound cardinals not orthographic yet ("venti cinque"), hence no 5-minute step |
+| PT | Portuguese | ✓ declarative | ✓ 5 min, 12 h (direct "e …") | gender | local | Single PT norm; PT-PT/PT-BR not split |
+| GL, gl-ES | Galician | ✓ declarative | ✓ 5 min, 12 h | gender | local | — |
+| RO, RO-RO | Romanian | ✓ plugin (DOOM) | ✓ 15 min, 12 h | gen | local | Ordinals up to 999 999 and one million (masculine) |
+| CA, ca-ES | Catalan | ✓ declarative | ✓ 15 min, 12 h | gender | local | Traditional quarters only |
+| ca-ES-valencia | Valencian | ✓ inherited | ✓ 5 min, 12 h, own section | gender | child of CA | Invariable `dos` in ClockTime only |
+| EL | Greek | ✓ declarative | ✓ 15 min, 12 h | gender | local | Masculine cardinal forms (ένας) not modelled |
+| FI | Finnish | ✓ declarative | ✓ 15 min, 12 h | case | local | — |
+| AR | Arabic | ✓ 1–99, 100, 1000 | ✓ 15 min, 12 h | gender | local | Other ordinals above 99 fail closed; cardinals from 1001 lack the "و" group connector |
+| HE | Hebrew | ✓ 1–10 adjectives, above ten the agreeing cardinal | ✓ 15 min, 12 h | gender (standalone/zachar/nekeva) | local | Cardinals from 1000 not orthographic yet |
+| FA, FA-IR | Persian | ✓ declarative | ✓ 15 min, 12 h | — | local | — |
+| TR, TR-TR | Turkish | ✓ declarative (vowel harmony) | ✓ 15 min, 12 h | case (nominative/accusative/dative) | local | — |
+| HI | Hindi | ✓ declarative | ✓ 15 min, 12 h | gender | local | Cardinals 21–99 not lexicalized yet ("बीस एक") |
+| JA | Japanese | ✓ prefix 第 | ✓ 5 min, 12 h | — | local | No 午前/午後 |
+| KO | Korean | ✓ prefix 제 | ✓ 5 min, 12 h | — | local | Native hour words only in ClockTime; no 오전/오후 |
+| ZH | Chinese | ✓ prefix 第 | ✓ 15 min, 12 h | — | local | `两` only in ClockTime; no 上午/下午 |
+| VN, VI, VI-VN | Vietnamese | ✓ prefix thứ | ✓ 15 min, 12 h | — | local | No sáng/chiều/tối |
+| ID, ID-ID | Indonesian | ✓ plugin | ✓ 5 min, 12 h | — | local | No day-part wording |
+| MS, MS-MY | Malay (lapan, bilion, trilion) | ✓ plugin | ✓ 5 min, 12 h, own section | — | child of ID | No day-part wording |
+| EU, eu-ES | Basque | ✓ declarative | ✓ 15 min, 12 h | — | local | Clock-case forms only in ClockTime |
+| SW, SW-KE, SW-TZ | Swahili | — deferred (noun-class concord) | ✓ 15 min, 12 h, six-hour offset | — | local | No asubuhi/mchana/jioni/usiku |
+| ZU | Zulu | — deferred (noun-class policy) | ✓ 15 min, 12 h | — | local | Hour forms only in ClockTime |
+| EE | Ewe | ✓ prefix etsõ | — deferred (no sourced minute convention) | — | local | — |
+| WO | Wolof | ✓ declarative | — deferred (competing conventions) | — | local | — |
+
+"plugin" means an `IOrdinalLanguageSpecifics` implementation; values it does not implement fail
+closed with `NotSupportedException` rather than returning a cardinal. Sources and decisions per
+configuration: `docs/NTS-08-linguistic-sources.md`.
 
 ---
 
@@ -576,7 +580,7 @@ The XML configuration declares each dimension, then replacement rules from least
 
 **`LastWord` scope**: the replacement only applies if `oldValue` matches exactly the last word of the result (separated by a space or hyphen). This prevents modifying `ein` inside `einundzwanzig` or in `ein million` when the last word is `million`.
 
-**Unknown dimensions**: if the caller passes a dimension not declared for a language, it is silently ignored — the result is the same as calling without any variant.
+**Unknown dimensions**: if the caller passes a dimension or a value not declared for a language, the call is rejected with `ArgumentException` naming the allowed dimensions or values.
 
 ### Languages with no morphological variants
 
@@ -587,16 +591,23 @@ is invariable in common contexts, or because the morphological distinction is no
 |------|----------|--------|
 | EN | English | Numbers are invariable (no gender or case) |
 | NL | Dutch | Numbers are invariable |
-| KO | Korean | Numbers are invariable |
-| ZH | Chinese | No inflection |
+| SV | Swedish | The clock hour "ett" is already the cardinal |
+| HR | Croatian | Gendered cardinals and ordinals not modelled yet |
+| HU | Hungarian | Numbers are invariable |
+| FA | Persian | Numbers are invariable |
+| KO | Korean | Numbers are invariable; native clock hours are ClockTime-only forms |
+| ZH | Chinese | No inflection; the clock form 两 is ClockTime-only |
 | JA | Japanese | No inflection |
-| EU | Basque | No grammatical gender (language isolate) |
-| HI | Hindi | Numbers are invariable in common usage |
-| ZU | Zulu | Not yet implemented |
+| VN | Vietnamese | No inflection |
+| ID, MS | Indonesian, Malay | No inflection |
+| EU | Basque | No grammatical gender (language isolate); clock-case forms are ClockTime-only |
+| SW | Swahili | Noun-class concords not modelled (ordinals deferred) |
+| ZU | Zulu | Noun-class concords not modelled (ordinals deferred) |
 | EE | Ewe | Not yet implemented |
+| WO | Wolof | Not yet implemented |
 
-For all these languages, `VariantDimensions` returns an empty list and any parameter
-passed to `Convert()` is silently ignored.
+For all these languages, `VariantDimensions` returns an empty list; passing a variant to
+`Convert()` is rejected with `ArgumentException` (unknown variant dimension).
 
 ---
 
@@ -1061,6 +1072,24 @@ public class MyOrdinalSpecifics : INumberToStringLanguageSpecifics, IOrdinalLang
     }
 }
 ```
+
+Built-in implementations:
+
+| Plugin | Languages | Range |
+|--------|-----------|-------|
+| `PolishOrdinalLanguageSpecifics` | PL (20 and above; XML below) | 20–999 |
+| `IndonesianOrdinalLanguageSpecifics`, `MalayOrdinalLanguageSpecifics` | ID, MS | `long` |
+| `DanishOrdinalLanguageSpecifics`, `NorwegianOrdinalLanguageSpecifics`, `SwedishOrdinalLanguageSpecifics` | DA, NO, SV | `int` |
+| `BulgarianOrdinalLanguageSpecifics` | BG | `int`, verified round compounds only |
+| `HungarianOrdinalLanguageSpecifics` | HU | `int` |
+| `CzechOrdinalLanguageSpecifics`, `SlovakOrdinalLanguageSpecifics`, `UkrainianOrdinalLanguageSpecifics` | CS, SK, UK | see the language matrix |
+| `RomanianOrdinalLanguageSpecifics` | RO | 1–999 999, one million |
+| `ArabicOrdinalLanguageSpecifics` | AR (20 and above; XML below) | 20–99, 100, 1000 |
+
+A value a plugin does not implement either falls back to configured XML ordinal rules or, when
+none exist, fails closed with `NotSupportedException`. `ArabicOrdinalLanguageSpecifics` throws
+`NotSupportedException` itself above 99 so the XML rules for 1–19 never produce a cardinal
+fallback for larger values.
 
 ### `GermanNumberToStringLanguageSpecifics`
 
@@ -1585,7 +1614,7 @@ Activated by calls to `Convert(number, "dimension=value", …)`.
 
 **Cascade rules**: variants are applied in ascending order of constraint count. A 2-constraint
 variant can therefore override the result of a 1-constraint variant. Unrecognised dimension
-names and unknown values are silently ignored.
+names and unknown values passed by a caller are rejected with `ArgumentException`.
 
 `<Dimension>` attributes:
 
