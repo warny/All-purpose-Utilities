@@ -1,6 +1,7 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-08-25 after NTS-05 was closed. Historical details remain in
+Re-audited on 2026-10-01 after the NTS-08 regional consolidation (#608), which also opened
+NTS-09. Historical details remain in
 the archived audit files; this file is the active source of truth.
 
 See `docs/releasing/TodoAudit-2026-08-16.md` for the repository-wide
@@ -15,6 +16,12 @@ classification.
   partial configurations. Idiomatic ClockTime is now configured for DE (with de-CH inheritance), FR (with separate FR-be and FR-ch children), EN (with EN-GB inheritance), Catalan, Valencian, Indonesian, and Malay. Every other natural-language configuration remains explicitly unsupported until its regional convention, grammatical variants, compounds, and scale behavior
   are verified. SW/ZU additionally require a documented noun-class policy. AR and HE require a
   sourced decision for compounds above their existing explicitly configured ranges.
+
+- **NTS-09 — `Trigger` elements are not inherited through `baseOn`.** `XmlSerializer` materializes
+  an absent `<Trigger>` list as an empty list, so `MergeLanguageDefinition`'s
+  `overriding.Triggers ?? inherited.Triggers` never falls back to the base. No built-in configuration
+  uses triggers today; the README and XSD document the current behaviour. Fix by treating an empty
+  list as absent (as `Cultures` already does) together with a regression test.
 
 NTS-01 through NTS-05 are closed:
 

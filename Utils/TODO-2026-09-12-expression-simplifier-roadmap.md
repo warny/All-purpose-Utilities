@@ -2617,6 +2617,7 @@ in whether they copy).
 
 This PR remains opened for review only and is **not** merged.
 
+aude/s5-p5-comparer-resimplification-cache
 #### S5 progress (2026-09-26) — P5: comparer-driven re-simplification reuse, benchmarked and REJECTED
 
 **Baseline.** `master` at `103fdbbf5244a1e6c1449169b207d6577dadc943` (PR #606, the P4 commit) - confirmed to
@@ -2820,6 +2821,149 @@ investigation surfaced):**
 
 This PR is opened for review only and is **not** merged, per the task brief. It ships a documentation-only
 change (this roadmap entry); no production or test code differs from the `103fdbbf...` baseline.
+
+#### S5 P5 — cross-rule comparer re-simplification cache (rejected experiment, 2026-10-01)
+
+### Audited finding
+
+- `TransformCore` is deliberately one-pass at a matched root.
+- `ExpressionComparer` therefore legitimately performs a second public simplification pass.
+- P3 deduplicates candidates only within one Add/Sub factoring-rule invocation.
+- Deeply nested left-associated expressions create many independent probes.
+- The same growing arithmetic subtree can consequently be comparer-simplified again at parent levels.
+- Sharing arbitrary `TransformCore` results is unsafe because of lexical scopes, public-comparer top-level
+  isolation, and observable user code.
+- P5 therefore evaluated sharing only successfully comparer-simplified, ordinary lambda-free numeric
+  arithmetic subtrees, and only inside one public `Transform` call.
+
+The exact benchmarked implementation is preserved in audit commit `01e48db`; the experiment used base `11ab6df13848b8b494790a44c588b13ed713a282` (the locally available current
+`master` descendant of audited SHA `103fdbbf5244a1e6c1449169b207d6577dadc943`; this checkout has no configured
+Git remote, so an origin fetch could not be performed). It added a lazy, reference-identity dictionary plus
+an active flag as `[ThreadStatic]` state, saved/reset/restored both in `Transform` alongside the lexical scope,
+and consulted that cache only after P3 had classified both operands. Nested public/comparer `Simplify()` calls
+therefore established fresh sessions and restored their caller's session. Eligibility was restricted exactly
+to non-null native numeric constants, numeric parameters, ordinary numeric negation, and ordinary non-lifted
+Add/Subtract/Multiply/Divide/Power trees (including every non-null conversion child). Custom/lifted operators,
+lambdas, calls, members, opaque constants, and every other node kind were rejected.
+
+A standalone Release harness outside the repository preconstructed every expression, warmed each scenario for
+at least 700 ms, calibrated measurement work for at least 250 ms, measured elapsed time and
+`GC.GetAllocatedBytesForCurrentThread()`, and used a temporary counter at the single
+`ExpressionComparer.SimplifyForComparison` entry point. The counter was removed after measurement. Results are
+per public `new ExpressionSimplifier().Simplify(source)` call:
+
+| Family | n | Baseline ms | Candidate ms | Baseline bytes | Candidate bytes | Baseline calls | Candidate calls |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| A additive near miss | 4 | 0.6564 | 0.7752 | 53,616 | 56,534 | 50 | 50 |
+| A additive near miss | 8 | 1.8179 | 1.7815 | 997,482 | 1,048,442 | 890 | 890 |
+| B subtraction near miss | 4 | 0.2261 | 0.8730 | 103,105 | 105,497 | 90 | 88 |
+| B subtraction near miss | 8 | 5.4776 | 5.5713 | 2,755,211 | 2,867,711 | 2,418 | 2,338 |
+
+A second candidate timing run showed the same qualitative result (A/B n=8: 2.1777/6.0951 ms; allocations
+1,048,433/2,867,682 bytes; counts 890/2,338). Bound-additive candidate controls measured 0.1087 ms,
+57,344 bytes and 50 calls at n=4, and 1.9621 ms, 1,049,970 bytes and 890 calls at n=8. The function-like
+n=16 control measured 978.78 ms and 318,474,981 bytes; the multiplication-only n=16 control measured
+0.0188 ms and 12,929 bytes. Larger baseline cases were stopped after n=16 became excessively expensive
+(A: 676.60 ms/258,821,589 bytes/229,370 calls; B: 1,715.58 ms/775,477,165 bytes/687,090 calls), so n=32
+was not used and no unsupported large-size conclusion is claimed.
+
+The diagnostic establishes that the prescribed reference-keyed cache produced no reduction for additive
+A and only a small reduction for subtraction B at n=8, while allocations increased by about 5.1% and 4.1%
+respectively. It therefore failed the required causal-call and allocation acceptance criteria. The production
+implementation and its proposed focused tests were reverted; no runtime or public API change is shipped.
+Bottom-up repeated canonicalization remains intentionally untouched and is still a separate follow-up.
+
+Validation of the final state is documentation-only: `git diff --check` passed, and the temporary diagnostic
+changes were confirmed absent. No test suite was required or run against the reverted production experiment's
+final state. The prescribed implementation is the only rejected experiment recorded here; no alternative
+optimization was substituted.
+
+
+#### S5 P6 — strict structural memoization inside recursive factoring comparisons
+
+**Rejected experiment (2026-10-01).** The experiment used audited/current base
+`34f21f1f81246bb1b5edfa3d8c9b9e0ba4a2e061`; the two target expression files were unchanged from that
+base. P5's reference identity missed rebuilt equivalent expressions. Although bottom-up canonicalization is
+also present, it cannot safely be skipped generically because parent rules observe prepared child shapes.
+The dominant audited symptom was recursive comparer simplification, so P6 left transformation,
+canonicalization, rule ordering, and the public comparer contract untouched and deduplicated only completed,
+safe comparer simplifications.
+
+The candidate added a thread-static session owned by each disposable `FactorEqualityProbe`. Nested probes
+incremented the depth and shared the same cache; the outermost exit cleared the first source/result slot and
+lazy dictionary. The existing P3 reference cache and its classify-both-before-simplifying-either ordering were
+preserved. Only numeric parameters, non-null native numeric constants, ordinary predefined numeric negation,
+and ordinary non-lifted Add/Subtract/Multiply/Divide/Power trees were eligible. Results were inserted only
+after successful simplification, so exceptions remained uncached and x-before-y behavior remained intact.
+
+The first-slot insertion logic was not re-entrancy-safe, however. An outer cache miss could call the
+simplifier while both the first slot and dictionary were empty; a recursively reached factoring probe in the
+same session could then populate only the shared first slot. When the outer simplification returned, it saw a
+non-empty first slot and attempted to insert its result through the still-null dictionary, causing a
+`NullReferenceException`. This is a separate correctness failure in exactly the nested-probe scenario P6 was
+intended to support. A future attempt must re-check both cache tiers after re-entrant simplification and must
+not assume that their state is unchanged across the call.
+
+The intended memo identity was a strict oriented structural comparer: parameter leaves required reference
+identity, and unary/binary operator metadata, lifting flags, ordered children, and conversion were included.
+`StructuralEqualsRaw` was deliberately not used because its direct Add/Multiply commutative fallback can
+equate `a+b` with `b+a`, while those sources can retain different simplified operand order. The constant
+implementation was nevertheless not strict enough: it reused `ExactNumericValue`, whose zero normalization
+collapses IEEE `+0.0` and `-0.0`. Consequently, `Divide(1.0, +0.0)` and `Divide(1.0, -0.0)` could share a memo
+key even though their simplifications are respectively positive and negative infinity. Any future structural
+memo must preserve at least the IEEE bit representations of `float` and `double` constants.
+
+Focused tests covered orientation, association, rebuilt identical trees, distinct same-named parameters,
+eligibility/exclusions, reuse, nested lifetime, teardown, exceptions, and nominal thread isolation. Review
+found that the concurrency test's `Parallel.Invoke` did not force two sessions to overlap on distinct threads;
+a future attempt should use explicit `Thread` instances and a `Barrier` or `ManualResetEventSlim`. The
+unchanged P3 and structural-canonicalization suites passed in the candidate.
+
+A standalone Release harness outside the repository preconstructed sources, warmed the simplifier, invoked
+public `ExpressionSimplifier.Simplify`, and measured elapsed time and
+`GC.GetAllocatedBytesForCurrentThread`. Temporary counters distinguished helper requests, actual underlying
+simplifier executions, and memo hits; they were removed before the candidate commit. Median timings from
+three measured runs after three warmups were:
+
+| Family | n | Baseline ms | P6 ms | Baseline bytes | P6 bytes | Baseline requests/executions/hits | P6 requests/executions/hits |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| A additive near miss | 4 | 0.825 | 0.783 | 56,624 | 63,128 | 50 / 50 / 0 | 50 / 45 / 5 |
+| A additive near miss | 8 | 7.177 | 4.391 | 1,000,368 | 572,464 | 890 / 890 / 0 | 422 / 267 / 155 |
+| A additive near miss | 16 | 453.233 | 124.375 | 258,823,600 | 6,355,312 | 229,370 / 229,370 / 0 | 3,662 / 1,751 / 1,911 |
+| B subtraction near miss | 4 | 0.272 | 1.583 | 112,744 | 120,216 | 90 / 90 / 0 | 90 / 82 / 8 |
+| B subtraction near miss | 8 | 4.726 | 30.147 | 2,763,728 | 1,575,760 | 2,418 / 2,418 / 0 | 1,154 / 704 / 450 |
+| B subtraction near miss | 16 | 1,302.092 | 89.191 | 775,477,192 | 21,380,968 | 687,090 / 687,090 / 0 | 12,306 / 5,676 / 6,630 |
+| C bound additive | 4 | 0.152 | 0.216 | 57,440 | 63,944 | 50 / 50 / 0 | 50 / 45 / 5 |
+| C bound additive | 8 | 1.657 | 1.353 | 1,001,896 | 573,992 | 890 / 890 / 0 | 422 / 267 / 155 |
+| C bound additive | 16 | 432.839 | 15.664 | 258,825,768 | 6,357,480 | 229,370 / 229,370 / 0 | 3,662 / 1,751 / 1,911 |
+
+An isolated B/n=8 confirmation with 30 warmups and ten measurements still regressed from a 10.515 ms
+baseline median to 13.106 ms for P6 (about 24.6%), despite allocations falling from 2,763,728 to 1,575,760
+bytes and actual executions falling from 2,418 to 704. The execution counter therefore demonstrates that
+strict memoization removes repeated simplification work. The P6 hypothesis was therefore correct: structural
+identity reached reconstructed repeated work that P5's reference identity missed, and at n=16 reduced actual
+executions from 229,370 to 1,751 for addition and from 687,090 to 5,676 for subtraction. This implementation
+is nevertheless rejected for **three independent reasons**: the repeatable B/n=8 CPU regression exceeds the
+mandatory 5% ceiling; its numeric identity is semantically incorrect for IEEE signed zero; and re-entrant
+population of the first slot can leave the insertion path with a null dictionary and cause a
+`NullReferenceException`. No alternative optimization was substituted. The decisive performance failure was
+established before the remaining control and memo-infrastructure microbenchmarks, so those diagnostics were
+not used to override the acceptance gate.
+
+The candidate also failed the Release source-quality gate because adding the overload made the pre-existing
+`ExpressionComparer.SimplifyForComparison` XML `cref` ambiguous (`CS0419`). The reverted final state removes
+the overload and therefore removes that ambiguity. Unit, Functional, Security, the build, and package jobs
+were otherwise green on the reviewed candidate.
+
+The complete benchmarked candidate remains durably reviewable as remote commit
+`64e17c2c6cf2e0de9a312e540ecccb7b72e6fd21`, reachable in the history of
+`codex/ajouter-la-memoisation-stricte-pour-le-comparateur`; that branch now points to the later documentation-
+only revert commit `1808c69ea55c700010c01fa28d005fd24f29263d`. An attempted additional push to the
+preferred `audit/s5-p6-structural-comparer-memo` name was blocked by the execution environment's missing
+GitHub credentials, but the existing remote history already preserves the complete candidate. The PR
+branch now reverts `ExpressionComparer.cs`, `ExpressionSimplifier.cs`, and the P6-specific tests completely;
+only this rejected-experiment record remains.
+
 
 ## Execution-optimizer stages
 

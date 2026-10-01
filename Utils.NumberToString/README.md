@@ -19,9 +19,11 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 
 | Code | Language | Ordinals | ClockTime | Variants |
 |------|----------|----------|-----------|----------|
-| EN, EN-uk, EN-us | English | ✓ | ✓ | — (numbers are invariable) |
-| FR, FR-fr, FR-ca | French | ✓ | ✓ | gender (masculin/feminin) |
-| FR-be, FR-ch | Belgian/Swiss French (regional children of FR) | ✓ | ✓ | gender (masculin/feminin) |
+| EN, EN-us | English | ✓ | ✓ (5 min, 12 h) | — (numbers are invariable) |
+| EN-GB, EN-uk | British English (regional child of EN) | ✓ (inherited) | ✓ (inherited) | — (numbers are invariable) |
+| FR, FR-fr, FR-ca | French | ✓ | ✓ (5 min, 24 h) | gender (masculin/feminin) |
+| FR-be | Belgian French (regional child of FR: septante / quatre-vingts / nonante) | ✓ | ✓ (inherited) | gender (masculin/feminin) |
+| FR-ch | Swiss French (regional child of FR: septante / huitante / nonante) | ✓ | ✓ (inherited) | gender (masculin/feminin) |
 | DE, de-DE, de-AT | German (standard) | ✓ | ✓ | genus (maskulin/feminin/neutrum) × kasus (nominativ/akkusativ/dativ/genitiv) |
 | de-CH, de-LI | Swiss/Liechtenstein German | ✓ | ✓ (inherited) | (same as DE; "ein tausend" not contracted to "tausend") |
 | ES | Spanish | ✓ | — | gender (masculino/femenino) |
@@ -40,7 +42,7 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | EL | Greek | ✓ | — | gender (αρσενικό/θηλυκό/ουδέτερο) |
 | FI | Finnish | ✓ | — | sijamuoto (nominatiivi/partitiivi/genetiivi) |
 | CA, ca-ES | Catalan | ✓ | ✓ (15 min, 12 h) | gender (masculí/femení) |
-| ca-ES-valencia | Valencian | ✓ (inherited) | ✓ (5 min, 12 h) | gender (masculí/femení) |
+| ca-ES-valencia | Valencian (regional child of CA) | ✓ (inherited) | ✓ (5 min, 12 h, own section) | gender (masculí/femení) |
 | EU | Basque | ✓ | — | — (no grammatical gender) |
 | GL | Galician | ✓ | — | gender (masculino/feminino) |
 | ZU | Zulu | — | — | — (not yet implemented) |
@@ -58,7 +60,7 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | SK, SK-SK | Slovak | — | — | — (numbers are invariable) |
 | BG, BG-BG | Bulgarian | — | — | — (numbers are invariable) |
 | ID, ID-ID | Indonesian | ✓ | ✓ (5 min, 12 h) | — (numbers are invariable) |
-| MS, MS-MY | Malay | ✓ | ✓ (5 min, 12 h) | — (numbers are invariable) |
+| MS, MS-MY | Malay (regional child of ID: lapan, bilion, trilion) | ✓ | ✓ (5 min, 12 h, own section) | — (numbers are invariable) |
 | FA, FA-IR | Persian (Farsi) | — | — | — (numbers are invariable) |
 | SW | Swahili | — | — | — (numbers are invariable) |
 
@@ -117,8 +119,11 @@ NumberToStringConverter frBe = NumberToStringConverter.GetConverter("FR-be");
 
 frBe.ConvertOrdinal(1);   // "premier"           ← exception
 frBe.ConvertOrdinal(71);  // "septante et unième" ← Belgian 70 + word rule for "un"
-frBe.ConvertOrdinal(80);  // "huitantième"        ← Belgian 80 + removeTrailing="e"
+frBe.ConvertOrdinal(80);  // "quatre-vingtième"   ← FR-be ordinal exception (not derived from "quatre-vingts")
 frBe.ConvertOrdinal(90);  // "nonantième"
+
+NumberToStringConverter frCh = NumberToStringConverter.GetConverter("FR-ch");
+frCh.ConvertOrdinal(80);  // "huitantième"        ← Swiss 80 + removeTrailing="e"
 ```
 
 ```csharp
@@ -390,16 +395,20 @@ gl.Convert(201, "gender=feminino"); // "douscentas unha"
 
 ### Belgian/Swiss French — same gender, different words
 
-FR-be and FR-ch use septante/huitante/nonante instead of soixante-dix/quatre-vingts/quatre-vingt-dix,
-but the gender rule is identical to FR: the `gender` dimension (masculin/féminin) is available.
+FR-be uses septante/quatre-vingts/nonante and FR-ch uses septante/huitante/nonante instead of
+soixante-dix/quatre-vingts/quatre-vingt-dix, but the gender rule is identical to FR: the `gender`
+dimension (masculin/féminin) is available.
 
 ```csharp
 NumberToStringConverter frBe = NumberToStringConverter.GetConverter("FR-be");
 
 frBe.Convert(71);                   // "septante et un"
 frBe.Convert(71, "gender=feminin"); // "septante et une"
-frBe.Convert(81, "gender=feminin"); // "huitante et une"
+frBe.Convert(81, "gender=feminin"); // "quatre-vingt une"
 frBe.Convert(91, "gender=feminin"); // "nonante et une"
+
+NumberToStringConverter frCh = NumberToStringConverter.GetConverter("FR-ch");
+frCh.Convert(81, "gender=feminin"); // "huitante et une"
 
 // "un million" → last word = "million" → no replacement
 frBe.Convert(1_000_000, "gender=feminin"); // "un million"
@@ -1215,10 +1224,12 @@ they are not globally registered converters and are not visible to `RegisterConf
 ```
 
 **Merge rules**:
-- Scalar attributes (`groupSize`, `separator`, `zero`, …): child wins; absent child attributes inherit from the base.
-- Collection elements (`Groups`, `Replacements`, `Exceptions`, `Fractions`, `Variants`): if declared in the child the entire collection replaces the base. Omitted collections are inherited. An empty element (e.g. `<Replacements />`) explicitly overrides with an empty list.
+- `Culture`: not inherited. Every `<Language>` declares at least one `<Culture>` (XSD `minOccurs="1"`) and only those are registered for the child. A regional culture must be declared once, in the child only, never also in its general parent (a culture declared by two built-in documents is a retained initialization failure).
+- Scalar attributes (`groupSize`, `separator`, `groupSeparator`, `zero`, `minus`, `decimalSeparator`, `fractionSeparator`, `maxNumber`, `groupConnector`, `intraGroupConnector`, `scaleConnector` and their thresholds): child wins; absent child attributes inherit from the base.
+- Sections replaced as a whole when the child declares them (`Groups`, `Exceptions`, `Replacements`, `Fractions`, `Variants`, `YearFormat`, `Multiplicatives`, `TimeUnits`, `ClockTime`, `DateFormat`, `LanguageSpecifics`): the child's section replaces the base's completely, nothing is merged inside it. Omitted sections are inherited. An empty element (e.g. `<Replacements />`) explicitly overrides with an empty list.
+- `Trigger` elements are currently **not** inherited: a child that needs the base's triggers must redeclare them (an absent `<Trigger>` list is read as an empty one). No built-in configuration uses triggers.
 - `NumberScale`: merged field by field, not replaced wholesale. A child may declare only the sub-elements it needs to override (e.g. `StaticNames`, `Suffixes`) while `startIndex`, `firstLetterUpperCase`, `groupSeparator`, `voidGroup`, and the `Scale0Prefixes`/`UnitsPrefixes`/`TensPrefixes`/`HundredsPrefixes` prefix tables independently fall back to the base when absent in the child. For example, `MS` (Malay) declares only `StaticNames`/`Suffixes` and still inherits `ID`'s `startIndex` and prefix tables unchanged.
-- `Ordinals`: `OrdinalExceptions` and `OrdinalRules` are merged element-by-element (child wins on key conflicts). `suffix`, `prefix`, and `OrdinalVariants` fall back to the base when absent in the child.
+- `Ordinals`: not replaced wholesale. `OrdinalException` entries are merged by `value` and `OrdinalRule` entries by `from` (child wins on key conflicts, new keys are appended). `suffix`, `prefix`, `removeTrailing`, and `OrdinalVariants` fall back to the base when absent in the child (`OrdinalVariants`, when present, replaces the base's block). For example, `FR-be` declares only `<OrdinalException value="80" string="quatre-vingtième"/>` and keeps every other French ordinal rule.
 
 ---
 

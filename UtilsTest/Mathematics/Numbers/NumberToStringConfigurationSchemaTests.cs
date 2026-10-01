@@ -38,44 +38,75 @@ public class NumberToStringConfigurationSchemaTests
     public void BuiltInConfigurations_InitializeWithoutFailures()
         => Assert.AreEqual(0, NumberToStringConverter.BuiltInInitialization.Failures.Count);
 
-    /// <summary>Ensures every embedded configuration key has exactly one generated strongly typed accessor.</summary>
+    /// <summary>
+    /// Ensures the generated resource designer and the <c>.resx</c> stay in a strict 1:1 relation:
+    /// every embedded configuration key has exactly one strongly typed accessor, and every
+    /// configuration accessor still has a backing resource (no stale, duplicated, or legacy property).
+    /// </summary>
     [TestMethod]
     public void ConfigurationResources_HaveGeneratedStronglyTypedAccessors()
     {
-        Type resourceType = typeof(NumberToStringConverter).Assembly.GetType("Utils.NumberConverterResources", throwOnError: true)!;
-        var manager = (ResourceManager)resourceType.GetProperty("ResourceManager", BindingFlags.NonPublic | BindingFlags.Static)!.GetValue(null)!;
-        ResourceSet resources = manager.GetResourceSet(System.Globalization.CultureInfo.InvariantCulture, true, true)!;
-        string[] keys = resources.Cast<System.Collections.DictionaryEntry>()
-            .Select(entry => (string)entry.Key)
-            .Where(key => key.StartsWith("NumberConvertionConfiguration", StringComparison.Ordinal))
+        Type resourceType = GetResourceType();
+        string[] keys = GetConfigurationResourceKeys(resourceType);
+        string[] accessorNames = resourceType.GetProperties(BindingFlags.NonPublic | BindingFlags.Static)
+            .Where(property => property.PropertyType == typeof(string)
+                && property.Name.StartsWith(ConfigurationResourcePrefix, StringComparison.Ordinal))
+            .Select(property => property.Name)
             .ToArray();
+        string[] expectedAccessorNames = keys.Select(ToAccessorName).ToArray();
 
         foreach (string key in keys)
-        {
-            string propertyName = key.Replace('.', '_').Replace('-', '_');
-            PropertyInfo[] accessors = resourceType.GetProperties(BindingFlags.NonPublic | BindingFlags.Static)
-                .Where(property => property.Name == propertyName)
-                .ToArray();
-            Assert.AreEqual(1, accessors.Length, key);
-        }
+            Assert.AreEqual(1, accessorNames.Count(name => name == ToAccessorName(key)), $"Resource '{key}' must have exactly one generated accessor.");
+        foreach (string accessorName in accessorNames)
+            Assert.AreEqual(1, expectedAccessorNames.Count(name => name == accessorName), $"Accessor '{accessorName}' has no matching .resx resource.");
+        foreach (IGrouping<string, string> group in accessorNames.GroupBy(name => name, StringComparer.OrdinalIgnoreCase))
+            Assert.AreEqual(1, group.Count(), $"Accessor '{group.Key}' is generated more than once (case-insensitive).");
+        Assert.AreEqual(keys.Length, accessorNames.Length);
 
-        Assert.IsNull(resourceType.GetProperty("NumberConvertionConfiguration_FR_be_ch", BindingFlags.NonPublic | BindingFlags.Static));
+        foreach (string required in new[] { "AR", "FR_be", "FR_ch", "CA_valencia", "MS", "ZU" })
+            Assert.AreEqual(1, accessorNames.Count(name => name == ConfigurationResourcePrefix + "_" + required), required);
+        Assert.IsFalse(accessorNames.Contains(ConfigurationResourcePrefix + "_FR_be_ch"), "The legacy FR-be-ch resource must not be generated.");
+        Assert.IsFalse(keys.Contains(ConfigurationResourcePrefix + ".FR-be-ch"), "The legacy FR-be-ch resource must not be embedded.");
     }
 
-    /// <summary>Ensures every culture affected by regional inheritance remains publicly resolvable.</summary>
+    /// <summary>
+    /// Ensures every embedded language configuration is registered as a built-in source and every
+    /// built-in source is backed by an embedded resource, so a resource cannot silently drop out of
+    /// the package and a registry entry cannot point to a resource that no longer exists.
+    /// </summary>
     [TestMethod]
-    public void RegionalCultures_AreResolvableAfterConfigurationSplits()
+    public void ConfigurationResources_AreAllRegisteredAsBuiltIns()
     {
-        string[] cultures =
-        [
-            "FR", "FR-fr", "FR-ca", "FR-be", "FR-ch",
-            "CA", "ca-ES", "ca-ES-valencia",
-            "ID", "ID-ID", "MS", "MS-MY",
-            "EN", "EN-GB", "DE", "de-CH"
-        ];
+        string[] languageKeys = GetConfigurationResourceKeys(GetResourceType())
+            .Where(key => key != ConfigurationResourcePrefix)
+            .Select(key => key.Substring(ConfigurationResourcePrefix.Length + 1))
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+        string[] builtInNames = NumberToStringConverter.BuiltInConfigurations
+            .Select(source => source.Name)
+            .ToArray();
 
-        foreach (string culture in cultures)
-            Assert.IsTrue(NumberToStringConverter.TryGetConverter(culture, out _), culture);
+        Assert.AreEqual(builtInNames.Length, builtInNames.Distinct(StringComparer.OrdinalIgnoreCase).Count(), "Built-in names must be unique.");
+        CollectionAssert.AreEqual(languageKeys, builtInNames.OrderBy(name => name, StringComparer.Ordinal).ToArray());
+        foreach (NumberToStringConverter.BuiltInConfigurationSource source in NumberToStringConverter.BuiltInConfigurations)
+            Assert.IsFalse(string.IsNullOrWhiteSpace(source.ConfigurationFactory()), source.Name);
+    }
+
+    /// <summary>
+    /// Ensures every built-in document is retrievable through its strongly typed accessor, is
+    /// schema-valid, and builds its converters; and that the eager initialization retained no failure.
+    /// </summary>
+    [TestMethod]
+    public void BuiltInConfigurations_AreRetrievableValidAndBuildable()
+    {
+        foreach (NumberToStringConverter.BuiltInConfigurationSource source in NumberToStringConverter.BuiltInConfigurations)
+            NumberToStringConverter.ValidateConfigurationSchemaForTesting(source.ConfigurationFactory());
+
+        NumberToStringConverter.BuiltInInitializationResult result =
+            NumberToStringConverter.InitializeBuiltInConfigurations(NumberToStringConverter.BuiltInConfigurations);
+        Assert.AreEqual(0, result.Failures.Count, FormatFailures(result));
+        Assert.AreEqual(0, NumberToStringConverter.BuiltInInitialization.Failures.Count, FormatFailures(NumberToStringConverter.BuiltInInitialization));
+        Assert.AreEqual(result.Converters.Count, NumberToStringConverter.BuiltInInitialization.Converters.Count);
     }
 
     /// <summary>Ensures a bad built-in document does not prevent a later independent document.</summary>
@@ -334,6 +365,30 @@ public class NumberToStringConfigurationSchemaTests
             "</NumberScale><TimeUnits><Unit name=\"hour\" singular=\"hour\" plural=\"hours\"/><SpecialHour hour=\"12\" value=\"   \"/></TimeUnits>",
             StringComparison.Ordinal));
 
+    /// <summary>Ensures the XSD rejects an empty or whitespace-only <c>specialHourPattern</c>, independently of the runtime constructor check.</summary>
+    [TestMethod]
+    [DataRow("")]
+    [DataRow(" ")]
+    [DataRow("   ")]
+    public void ExternalConfiguration_ClockTimeBlankSpecialHourPattern_IsRejected(string specialHourPattern)
+        => AssertSchemaFailure(ValidConfiguration.Replace(
+            "</NumberScale>",
+            $"</NumberScale><ClockTime step=\"60\"><Rule range=\"0\" hourOffset=\"0\" hourForm=\"cardinal\" pattern=\"{{hour}} o'clock\" specialHourPattern=\"{specialHourPattern}\"/></ClockTime>",
+            StringComparison.Ordinal));
+
+    /// <summary>Ensures a non-blank <c>specialHourPattern</c> is schema-valid and an omitted one falls back to <c>pattern</c>.</summary>
+    [TestMethod]
+    public void ExternalConfiguration_ClockTimeSpecialHourPattern_IsAcceptedAndOptional()
+    {
+        const string withSpecial = "<ClockTime step=\"60\"><Rule range=\"0\" hourOffset=\"0\" hourForm=\"cardinal\" pattern=\"{hour} o'clock\" specialHourPattern=\"{hour}\"/></ClockTime>";
+        const string withoutSpecial = "<ClockTime step=\"60\"><Rule range=\"0\" hourOffset=\"0\" hourForm=\"cardinal\" pattern=\"{hour} o'clock\"/></ClockTime>";
+
+        NumberToStringConverter.ValidateConfigurationSchemaForTesting(ValidConfiguration.Replace("</NumberScale>", $"</NumberScale>{withSpecial}", StringComparison.Ordinal));
+        NumberToStringConverter converter = NumberToStringConverter.ReadConfiguration(
+            ValidConfiguration.Replace("</NumberScale>", $"</NumberScale>{withoutSpecial}", StringComparison.Ordinal))["SCHEMA-TEST"];
+        Assert.AreEqual("one o'clock", converter.ConvertClockTime(new TimeOnly(1, 0)));
+    }
+
     /// <summary>Ensures sequence ordering is enforced by external configuration parsing.</summary>
     [TestMethod]
     public void ExternalConfiguration_InvalidElementOrder_IsRejected()
@@ -401,4 +456,25 @@ public class NumberToStringConfigurationSchemaTests
     /// <summary>Formats initialization failures for assertion diagnostics.</summary>
     private static string FormatFailures(NumberToStringConverter.BuiltInInitializationResult result)
         => string.Join(" | ", result.Failures.Select(failure => $"{failure.Name}: {failure.Exception.Message}"));
+
+    /// <summary>Common prefix of every embedded configuration resource key and generated accessor.</summary>
+    private const string ConfigurationResourcePrefix = "NumberConvertionConfiguration";
+
+    /// <summary>Gets the generated strongly typed resource class of the package.</summary>
+    private static Type GetResourceType()
+        => typeof(NumberToStringConverter).Assembly.GetType("Utils.NumberConverterResources", throwOnError: true)!;
+
+    /// <summary>Gets every configuration key embedded from the <c>.resx</c>, read through the resource manager rather than the designer.</summary>
+    private static string[] GetConfigurationResourceKeys(Type resourceType)
+    {
+        var manager = (ResourceManager)resourceType.GetProperty("ResourceManager", BindingFlags.NonPublic | BindingFlags.Static)!.GetValue(null)!;
+        ResourceSet resources = manager.GetResourceSet(System.Globalization.CultureInfo.InvariantCulture, true, true)!;
+        return resources.Cast<System.Collections.DictionaryEntry>()
+            .Select(entry => (string)entry.Key)
+            .Where(key => key.StartsWith(ConfigurationResourcePrefix, StringComparison.Ordinal))
+            .ToArray();
+    }
+
+    /// <summary>Maps a resource key to the property name the strongly typed resource builder generates for it.</summary>
+    private static string ToAccessorName(string key) => key.Replace('.', '_').Replace('-', '_');
 }

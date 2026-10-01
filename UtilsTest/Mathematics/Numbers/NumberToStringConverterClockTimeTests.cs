@@ -66,6 +66,27 @@ public class NumberToStringConverterClockTimeTests
 
         Assert.AreEqual("twelve o'clock", converter.ConvertClockTime(new TimeOnly(0, 0), options, []));
         Assert.AreEqual("twelve o'clock", converter.ConvertClockTime(new TimeOnly(12, 0), options, []));
+        Assert.AreEqual("twelve o'clock", converter.ConvertClockTime(new TimeOnly(11, 58), options, []));
+        Assert.AreEqual("twelve o'clock", converter.ConvertClockTime(new TimeOnly(23, 58), options, []));
+    }
+
+    /// <summary>
+    /// Verifies English special hours use only <c>specialHourPattern</c> ("noon", never "noon o'clock"),
+    /// including when rounding carries the time onto the special hour or across midnight.
+    /// </summary>
+    [TestMethod]
+    public void ConvertClockTime_EnglishSpecialHours_UseSpecialHourPatternAfterRounding()
+    {
+        var converter = NumberToStringConverter.GetConverter("EN");
+        var options = new ClockTimeConversionOptions { ReplaceSpecialHours = true };
+
+        Assert.AreEqual("midnight", converter.ConvertClockTime(new TimeOnly(0, 0)));
+        Assert.AreEqual("noon", converter.ConvertClockTime(new TimeOnly(12, 0)));
+        Assert.AreEqual("one o'clock", converter.ConvertClockTime(new TimeOnly(1, 0)));
+        Assert.AreEqual("two o'clock", converter.ConvertClockTime(new TimeOnly(2, 0)));
+        Assert.AreEqual("noon", converter.ConvertClockTime(new TimeOnly(11, 58), options, []));
+        Assert.AreEqual("midnight", converter.ConvertClockTime(new TimeOnly(23, 58), options, []));
+        Assert.AreEqual("five to twelve", converter.ConvertClockTime(new TimeOnly(23, 57), options, []));
     }
 
     /// <summary>Verifies the legacy exact TimeOnly API retains seconds and does not use clock rules.</summary>
