@@ -16,6 +16,12 @@ classification.
   are verified. SW/ZU additionally require a documented noun-class policy. AR and HE require a
   sourced decision for compounds above their existing explicitly configured ranges.
 
+- **NTS-09 — `Trigger` elements are not inherited through `baseOn`.** `XmlSerializer` materializes
+  an absent `<Trigger>` list as an empty list, so `MergeLanguageDefinition`'s
+  `overriding.Triggers ?? inherited.Triggers` never falls back to the base. No built-in configuration
+  uses triggers today; the README and XSD document the current behaviour. Fix by treating an empty
+  list as absent (as `Cultures` already does) together with a regression test.
+
 NTS-01 through NTS-05 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
