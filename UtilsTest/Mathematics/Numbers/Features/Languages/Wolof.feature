@@ -45,3 +45,9 @@ Scenario: Fraction connector wording
     Given I use the "WO" number converter
     When I convert the fraction 3/2 through both public fraction APIs
     Then both fraction results are "ñett ci ñaar"
+
+# Several modern Wolof clock conventions coexist (native "waxtu" and French-derived readings) and no
+# single sourced system covering 01:00-01:45 was established: clock-time stays deliberately unsupported.
+Scenario: Idiomatic clock-time conversion is unsupported
+    Given I use the "WO" number converter
+    Then the converter does not support clock-time conversion

@@ -73,3 +73,42 @@ Examples:
 Scenario: Ordinal conversion is supported
     Given I use the "EU" number converter
     Then the converter supports ordinal conversion
+
+Scenario: Idiomatic clock-time conversion is supported
+    Given I use the "EU" number converter
+    Then the converter supports clock-time conversion
+
+# Sareko Euskal Gramatika (EHU), "Orduak nola eman euskaraz": whole hours are definite
+# ("ordu bata", "ordu biak", "hirurak"); halves use the bare numeral ("ordu bat eta erdiak",
+# "*ordu bata eta erdiak" is marked incorrect; "hiru eta erdiak"); "ordu bata eta laurden";
+# "bostak laurden gutxi". "ordu" is only used with one and two. These clock-case forms are literal
+# per hour and do not change the cardinals ("bat", "bi").
+Scenario Outline: Idiomatic Basque clock times
+    Given I use the "EU" number converter
+    When I convert the clock time "<time>"
+    Then the result is "<expected>"
+
+Examples:
+    | time | expected |
+    | 01:00 | ordu bata |
+    | 01:15 | ordu bata eta laurden |
+    | 01:30 | ordu bat eta erdiak |
+    | 01:45 | ordu biak laurden gutxi |
+    | 02:00 | ordu biak |
+    | 02:30 | ordu bi eta erdiak |
+    | 03:00 | hirurak |
+    | 03:30 | hiru eta erdiak |
+    | 04:45 | bostak laurden gutxi |
+    | 12:00 | hamabiak |
+    | 12:45 | ordu bata laurden gutxi |
+    | 13:30 | ordu bat eta erdiak |
+
+Scenario Outline: Basque clock forms do not change the cardinals
+    Given I use the "EU" number converter
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1 | bat |
+    | 2 | bi |
