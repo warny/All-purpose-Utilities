@@ -8,7 +8,8 @@ row states what the configuration supports, how, and on which sources the tested
 comments. "Reference usage" means the wording follows standard school-grammar usage that was not
 re-fetched during the audit; those rows are flagged so that a native-speaker review can target them.
 A row marked "Consulted" may still be only partly sourced (e.g. HR clock, AR ordinals above 19, HI/KO/ZH
-ordinals); the remaining validation is tracked per capability in `TODO.md` (NTS-08).
+ordinals) or rest on a single isolated source (HI, ZH and ZU clocks, TR clock via a search summary);
+the remaining validation and its criterion are tracked per capability in `TODO.md` (NTS-08).
 
 ## Configurations
 
