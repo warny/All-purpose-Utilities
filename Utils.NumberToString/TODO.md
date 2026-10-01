@@ -1,6 +1,7 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-08-25 after NTS-05 was closed. Historical details remain in
+Re-audited on 2026-10-01 after the NTS-08 regional consolidation (#608), which also opened
+NTS-09. Historical details remain in
 the archived audit files; this file is the active source of truth.
 
 See `docs/releasing/TodoAudit-2026-08-16.md` for the repository-wide
