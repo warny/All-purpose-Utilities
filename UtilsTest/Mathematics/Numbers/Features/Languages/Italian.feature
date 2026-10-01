@@ -111,3 +111,29 @@ Scenario: Fraction connector wording
     Given I use the "IT" number converter
     When I convert the fraction 3/2 through both public fraction APIs
     Then both fraction results are "tre su due"
+
+Scenario: Idiomatic clock-time conversion is supported
+    Given I use the "IT" number converter
+    Then the converter supports clock-time conversion
+
+# Accademia della Crusca: "l'una e mezzo" (also "e mezza"), "le due meno un quarto". The article
+# is elided for one ("l'una") and plural otherwise ("le due"), selected through displayHourRange;
+# {hour} is forced to the feminine numeral.
+Scenario Outline: Idiomatic Italian clock times
+    Given I use the "IT" number converter
+    When I convert the clock time "<time>"
+    Then the result is "<expected>"
+
+Examples:
+    | time | expected |
+    | 01:00 | l'una |
+    | 01:05 | l'una e cinque |
+    | 01:15 | l'una e un quarto |
+    | 01:25 | l'una e venticinque |
+    | 01:30 | l'una e mezzo |
+    | 01:35 | le due meno venticinque |
+    | 01:45 | le due meno un quarto |
+    | 01:55 | le due meno cinque |
+    | 02:00 | le due |
+    | 12:45 | l'una meno un quarto |
+    | 13:30 | l'una e mezzo |

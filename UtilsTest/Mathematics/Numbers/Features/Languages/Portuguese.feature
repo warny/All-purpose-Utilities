@@ -157,3 +157,27 @@ Scenario: Fraction connector wording
     Given I use the "PT" number converter
     When I convert the fraction 3/2 through both public fraction APIs
     Then both fraction results are "três sobre dois"
+
+Scenario: Idiomatic clock-time conversion is supported
+    Given I use the "PT" number converter
+    Then the converter supports clock-time conversion
+
+# Direct convention (Ciberdúvidas da Língua Portuguesa, "uma hora e meia"): the hour is the
+# feminine "hora" time unit followed by the minutes; only the half hour is "e meia". No "menos"
+# construction is forced.
+Scenario Outline: Idiomatic Portuguese clock times
+    Given I use the "PT" number converter
+    When I convert the clock time "<time>"
+    Then the result is "<expected>"
+
+Examples:
+    | time | expected |
+    | 01:00 | uma hora |
+    | 01:05 | uma hora e cinco |
+    | 01:15 | uma hora e quinze |
+    | 01:30 | uma hora e meia |
+    | 01:45 | uma hora e quarenta e cinco |
+    | 02:00 | duas horas |
+    | 02:15 | duas horas e quinze |
+    | 12:00 | doze horas |
+    | 13:30 | uma hora e meia |
