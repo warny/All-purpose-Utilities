@@ -2982,10 +2982,10 @@ for the critical n=8 cases. B/n=8 was the decisive gate:
 | Scenario | Baseline median | P7/256 median | Delta | Baseline bytes | P7/256 bytes |
 |---|---:|---:|---:|---:|---:|
 | A/n=8 | 11.972 ms | 10.873 ms | -9.2% | 997,792 | 998,808 |
-| B/n=8 | 10.457 ms | 17.563 ms | **+68.0%** | 2,754,480 | 2,107,808 |
+| B/n=8 | 10.457 ms | 17.243 ms | **+64.9%** | 2,754,480 | 2,107,808 |
 | C/n=8 | 11.972 ms | 10.476 ms | -12.5% | 999,320 | 1,000,336 |
 
-The B/n=8 measurements were individually 18.9584, 16.2872, 42.1987, 16.3367, 16.9227, 19.2897,
+For ten values, the median is the mean of the fifth and sixth sorted measurements: `(16.9227 + 17.5626) / 2 = 17.24265` ms. The B/n=8 measurements were individually 18.9584, 16.2872, 42.1987, 16.3367, 16.9227, 19.2897,
 16.4408, 17.5626, 18.2048 and 16.4605 ms. The outlier does not cause the failure: excluding it still leaves
 the candidate far above the 10.457 ms baseline and the mandatory +5% ceiling. The previously published
 mixed-family 11.3 ms value was therefore not merely harmless noise, and the statement that an unreported
