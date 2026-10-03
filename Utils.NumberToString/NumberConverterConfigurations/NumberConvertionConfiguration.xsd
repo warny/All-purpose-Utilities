@@ -726,6 +726,11 @@
                   4. Base Ordinal word rule — last-word match.
                   5. Default suffix — appended to the last word (stripping removeTrailing first).
 
+                When none of these applies, a non-zero value keeps its cardinal text (a
+                legitimate ordinal in some languages, e.g. Hebrew above ten). Zero never does:
+                without a zero exception, a matching word rule, a suffix or a prefix,
+                ConvertOrdinal(0) throws NotSupportedException.
+
                 OrdinalException and Ordinal elements may be freely interleaved; their
                 relative order within the element does not matter.
             </xs:documentation>
