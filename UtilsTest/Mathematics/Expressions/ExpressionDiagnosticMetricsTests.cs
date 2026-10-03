@@ -18,6 +18,23 @@ public class ExpressionDiagnosticMetricsTests
     /// <returns>The sum.</returns>
     private static double CustomAdd(double left, double right) => left + right;
 
+    /// <summary>Validates that ordinary simplification leaves all diagnostic state inactive.</summary>
+    [TestMethod]
+    public void Diagnostics_Inactive_NormalSimplificationDoesNotCreateMetricState()
+    {
+        Assert.IsFalse(ExpressionComparer.IsDiagnosticCaptureActive);
+        Assert.IsFalse(ExpressionSimplifier.HasExpressionMetricsCache);
+
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        new ExpressionSimplifier().Simplify(Expression.Add(x, Expression.Constant(1.0)));
+        ExpressionComparer.Default.Equals(Expression.Add(x, Expression.Constant(1.0)), Expression.Add(x, Expression.Constant(2.0)));
+
+        Assert.IsFalse(ExpressionComparer.IsDiagnosticCaptureActive);
+        Assert.IsFalse(ExpressionSimplifier.HasExpressionMetricsCache);
+        Assert.AreEqual(0, ExpressionSimplifier.ExpressionMetricAnalysisCount);
+        Assert.AreEqual(0, ExpressionComparer.ComparisonSimplificationDepth);
+    }
+
     /// <summary>Validates the required ordinary-arithmetic examples and method-call chain break.</summary>
     [TestMethod]
     public void Metrics_OrdinaryExamples_HaveSpecifiedValues()
@@ -79,23 +96,43 @@ public class ExpressionDiagnosticMetricsTests
     [TestMethod]
     public void MetricCache_TwoThreads_AreIndependent()
     {
+        BinaryExpression shared = Expression.Add(Expression.Constant(1.0), Expression.Constant(2.0));
         using Barrier barrier = new(2);
         int[] counts = new int[2];
+        Exception?[] exceptions = new Exception?[2];
         Thread[] threads = new Thread[2];
         for (int i = 0; i < threads.Length; i++)
         {
             int index = i;
             threads[i] = new Thread(() =>
             {
-                using ExpressionSimplifier.ExpressionMetricsScope scope = ExpressionSimplifier.BeginExpressionMetricsScope();
-                ExpressionSimplifier.GetExpressionMetrics(Expression.Add(Expression.Constant(1.0), Expression.Constant(2.0)));
-                counts[index] = ExpressionSimplifier.ExpressionMetricAnalysisCount;
-                Assert.IsTrue(barrier.SignalAndWait(TimeSpan.FromSeconds(5)));
+                try
+                {
+                    using ExpressionSimplifier.ExpressionMetricsScope scope = ExpressionSimplifier.BeginExpressionMetricsScope();
+                    if (!barrier.SignalAndWait(TimeSpan.FromSeconds(5))) throw new TimeoutException("Worker scopes did not overlap.");
+                    ExpressionSimplifier.GetExpressionMetrics(shared);
+                    counts[index] = ExpressionSimplifier.ExpressionMetricAnalysisCount;
+                    if (!barrier.SignalAndWait(TimeSpan.FromSeconds(5))) throw new TimeoutException("Workers did not finish their first analysis together.");
+                    ExpressionSimplifier.GetExpressionMetrics(shared);
+                    if (ExpressionSimplifier.ExpressionMetricAnalysisCount != counts[index])
+                    {
+                        throw new InvalidOperationException("The thread-local cache did not reuse the shared reference.");
+                    }
+                }
+                catch (Exception exception)
+                {
+                    exceptions[index] = exception;
+                }
             });
             threads[i].Start();
         }
 
         foreach (Thread thread in threads) Assert.IsTrue(thread.Join(TimeSpan.FromSeconds(10)));
+        foreach (Exception? exception in exceptions)
+        {
+            if (exception is not null) Assert.Fail(exception.ToString());
+        }
+
         CollectionAssert.AreEqual(new[] { 3, 3 }, counts);
     }
 
@@ -119,7 +156,9 @@ public class ExpressionDiagnosticMetricsTests
         Assert.IsTrue(events.Any(item => item.ComparisonDepth >= 2));
         Assert.AreEqual(0, ExpressionComparer.ComparisonSimplificationDepth);
 
+        ExpressionComparer.BeginDiagnosticCapture();
         Assert.ThrowsExactly<ArgumentNullException>(() => ExpressionComparer.SimplifyForComparison(null!));
+        ExpressionComparer.EndDiagnosticCapture();
         Assert.AreEqual(0, ExpressionComparer.ComparisonSimplificationDepth);
     }
 

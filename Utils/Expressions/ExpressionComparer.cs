@@ -29,19 +29,26 @@ namespace Utils.Mathematics.Expressions;
 /// </remarks>
 public class ExpressionComparer : IEqualityComparer<Expression>
 {
+    /// <summary>Tracks nested comparison simplifications while diagnostic capture is active on this thread.</summary>
     [ThreadStatic]
     private static int _comparisonSimplificationDepth;
 
+    /// <summary>Tracks the cumulative nodes attempted by the current diagnostic comparison chain.</summary>
     [ThreadStatic]
     private static long _cumulativeNodeBudget;
 
+    /// <summary>Stores diagnostic events for the active capture on this thread, or <see langword="null"/> when inactive.</summary>
     [ThreadStatic]
     private static List<ComparisonDiagnosticEvent>? _diagnosticEvents;
 
+    /// <summary>Stores the ambient outer comparison context for diagnostic attribution on this thread.</summary>
     [ThreadStatic]
     private static ComparisonOrigin _currentComparisonOrigin;
 
-    /// <summary>Identifies the simplifier rule path that initiated a comparison.</summary>
+    /// <summary>
+    /// Identifies the active outer simplifier comparison context. Nested direct comparer calls can inherit
+    /// this value, so it does not necessarily identify their immediate call site.
+    /// </summary>
     internal enum ComparisonOrigin
     {
         /// <summary>The comparison came from an unclassified direct comparer path.</summary>
@@ -71,6 +78,9 @@ public class ExpressionComparer : IEqualityComparer<Expression>
 
     /// <summary>Gets the current comparison-simplification depth for focused diagnostics.</summary>
     internal static int ComparisonSimplificationDepth => _comparisonSimplificationDepth;
+
+    /// <summary>Gets whether diagnostic event capture is active on the current thread.</summary>
+    internal static bool IsDiagnosticCaptureActive => _diagnosticEvents is not null;
 
     /// <summary>Starts event capture on the current thread.</summary>
     internal static void BeginDiagnosticCapture()
@@ -191,6 +201,11 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// <returns>The simplified expression.</returns>
     internal static Expression SimplifyForComparison(Expression expression)
     {
+        if (!IsDiagnosticCaptureActive)
+        {
+            return _expressionSimplifier.Simplify(expression);
+        }
+
         using ExpressionSimplifier.ExpressionMetricsScope metricsScope = ExpressionSimplifier.BeginExpressionMetricsScope();
         _comparisonSimplificationDepth++;
         if (_comparisonSimplificationDepth == 1) _cumulativeNodeBudget = 0;

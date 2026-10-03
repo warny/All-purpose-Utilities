@@ -62,12 +62,15 @@ namespace Utils.Mathematics.Expressions
     /// </remarks>
     public partial class ExpressionSimplifier : ExpressionTransformer
     {
+        /// <summary>Stores structural metrics by expression reference for the active diagnostic lifetime.</summary>
         [ThreadStatic]
         private static Dictionary<Expression, ExpressionMetrics>? _expressionMetricsCache;
 
+        /// <summary>Tracks nested structural-metric lifetimes on the current thread.</summary>
         [ThreadStatic]
         private static int _expressionMetricsScopeDepth;
 
+        /// <summary>Counts structural cache misses during the active diagnostic lifetime on this thread.</summary>
         [ThreadStatic]
         private static int _expressionMetricAnalysisCount;
 
@@ -92,7 +95,8 @@ namespace Utils.Mathematics.Expressions
         /// </remarks>
         public override Expression Transform(Expression expression)
         {
-            using ExpressionMetricsScope metricsScope = BeginExpressionMetricsScope();
+            bool diagnosticsActive = ExpressionComparer.IsDiagnosticCaptureActive;
+            ExpressionMetricsScope metricsScope = diagnosticsActive ? BeginExpressionMetricsScope() : default;
             List<ParameterExpression[]>? callerScope = _lexicalScopeStack;
             _lexicalScopeStack = null;
             try
@@ -102,6 +106,7 @@ namespace Utils.Mathematics.Expressions
             finally
             {
                 _lexicalScopeStack = callerScope;
+                if (diagnosticsActive) metricsScope.Dispose();
             }
         }
 
@@ -157,7 +162,7 @@ namespace Utils.Mathematics.Expressions
         {
             if (_expressionMetricsScopeDepth++ == 0)
             {
-                _expressionMetricsCache = new Dictionary<Expression, ExpressionMetrics>(ReferenceEqualityComparer.Instance);
+                _expressionMetricsCache = null;
                 _expressionMetricAnalysisCount = 0;
             }
 
@@ -170,12 +175,14 @@ namespace Utils.Mathematics.Expressions
         internal static ExpressionMetrics GetExpressionMetrics(Expression expression)
         {
             ArgumentNullException.ThrowIfNull(expression);
-            Dictionary<Expression, ExpressionMetrics>? cache = _expressionMetricsCache;
-            if (cache is null)
+            if (_expressionMetricsScopeDepth == 0)
             {
                 using ExpressionMetricsScope scope = BeginExpressionMetricsScope();
                 return GetExpressionMetrics(expression);
             }
+
+            Dictionary<Expression, ExpressionMetrics> cache = _expressionMetricsCache ??=
+                new Dictionary<Expression, ExpressionMetrics>(ReferenceEqualityComparer.Instance);
 
             if (cache.TryGetValue(expression, out ExpressionMetrics cached)) return cached;
 
@@ -192,54 +199,35 @@ namespace Utils.Mathematics.Expressions
         internal static bool HasExpressionMetricsCache => _expressionMetricsCache is not null;
 
         /// <summary>Analyzes one node and its conservatively traversed children without executing user code.</summary>
+        /// <remarks>
+        /// The traversal deliberately recognizes only parameters, constants, lambdas, unary and binary
+        /// expressions, method calls, and member expressions. Unknown nodes are conservatively unsafe and
+        /// are not reduced or visited through <see cref="ExpressionVisitor"/>. Non-safe constants retain the
+        /// historical P3 classification based on numeric and known-safe constant types.
+        /// </remarks>
         /// <param name="expression">The non-null expression node to analyze.</param>
         /// <returns>The combined safety and structural metrics.</returns>
         private static ExpressionMetrics AnalyzeExpression(Expression expression)
         {
-            List<Expression> children = new();
-            bool locallyUnsafe = false;
-            switch (expression)
+            ExpressionMetrics children = expression switch
             {
-                case ParameterExpression:
-                    break;
-                case ConstantExpression constant:
-                    locallyUnsafe = constant.Value is not null
+                ParameterExpression => default,
+                ConstantExpression constant => new ExpressionMetrics(0, 0, 0,
+                    constant.Value is not null
                         && !Types.Number.Contains(constant.Type)
-                        && !ExpressionComparer.IsKnownSafeConstantValue(constant.Value);
-                    break;
-                case LambdaExpression lambda:
-                    children.Add(lambda.Body);
-                    break;
-                case UnaryExpression unary:
-                    children.Add(unary.Operand);
-                    break;
-                case BinaryExpression binary:
-                    children.Add(binary.Left);
-                    children.Add(binary.Right);
-                    if (binary.Conversion is not null) children.Add(binary.Conversion);
-                    break;
-                case MethodCallExpression call:
-                    if (call.Object is not null) children.Add(call.Object);
-                    for (int i = 0; i < call.Arguments.Count; i++) children.Add(call.Arguments[i]);
-                    break;
-                case MemberExpression member:
-                    if (member.Expression is not null) children.Add(member.Expression);
-                    break;
-                default:
-                    locallyUnsafe = true;
-                    break;
-            }
+                        && !ExpressionComparer.IsKnownSafeConstantValue(constant.Value)),
+                LambdaExpression lambda => GetExpressionMetrics(lambda.Body),
+                UnaryExpression unary => GetExpressionMetrics(unary.Operand),
+                BinaryExpression binary => CombineMetrics(
+                    GetExpressionMetrics(binary.Left),
+                    GetExpressionMetrics(binary.Right),
+                    GetOptionalExpressionMetrics(binary.Conversion)),
+                MethodCallExpression call => AnalyzeMethodCallChildren(call),
+                MemberExpression member => GetOptionalExpressionMetrics(member.Expression),
+                _ => new ExpressionMetrics(0, 0, 0, true),
+            };
 
-            int nodeCount = 1;
-            int arithmeticNodeCount = 0;
-            bool mightInvokeUserCode = locallyUnsafe;
-            for (int i = 0; i < children.Count; i++)
-            {
-                ExpressionMetrics child = GetExpressionMetrics(children[i]);
-                nodeCount += child.NodeCount;
-                arithmeticNodeCount += child.ArithmeticNodeCount;
-                mightInvokeUserCode |= child.MightInvokeUserCode;
-            }
+            int arithmeticNodeCount = children.ArithmeticNodeCount;
 
             int arithmeticDepth = 0;
             if (expression is UnaryExpression unaryArithmetic && IsOrdinaryUnaryNegate(unaryArithmetic))
@@ -255,7 +243,43 @@ namespace Utils.Mathematics.Expressions
                     GetExpressionMetrics(binaryArithmetic.Right).ArithmeticDepth);
             }
 
-            return new ExpressionMetrics(nodeCount, arithmeticNodeCount, arithmeticDepth, mightInvokeUserCode);
+            return new ExpressionMetrics(
+                1 + children.NodeCount,
+                arithmeticNodeCount,
+                arithmeticDepth,
+                children.MightInvokeUserCode);
+        }
+
+        /// <summary>Gets metrics for an optional expression, returning zero metrics when it is absent.</summary>
+        /// <param name="expression">The optional expression.</param>
+        /// <returns>The expression metrics or zero metrics.</returns>
+        private static ExpressionMetrics GetOptionalExpressionMetrics(Expression? expression)
+            => expression is null ? default : GetExpressionMetrics(expression);
+
+        /// <summary>Combines child metrics without propagating arithmetic depth through their parent.</summary>
+        /// <param name="first">The first child metrics.</param>
+        /// <param name="second">The second child metrics.</param>
+        /// <param name="third">The optional third child metrics.</param>
+        /// <returns>The aggregate child metrics.</returns>
+        private static ExpressionMetrics CombineMetrics(ExpressionMetrics first, ExpressionMetrics second, ExpressionMetrics third = default)
+            => new(
+                first.NodeCount + second.NodeCount + third.NodeCount,
+                first.ArithmeticNodeCount + second.ArithmeticNodeCount + third.ArithmeticNodeCount,
+                0,
+                first.MightInvokeUserCode || second.MightInvokeUserCode || third.MightInvokeUserCode);
+
+        /// <summary>Aggregates a method call's optional receiver and arguments without temporary collections.</summary>
+        /// <param name="call">The method call to analyze.</param>
+        /// <returns>The aggregate metrics of the call's children.</returns>
+        private static ExpressionMetrics AnalyzeMethodCallChildren(MethodCallExpression call)
+        {
+            ExpressionMetrics result = GetOptionalExpressionMetrics(call.Object);
+            for (int i = 0; i < call.Arguments.Count; i++)
+            {
+                result = CombineMetrics(result, GetExpressionMetrics(call.Arguments[i]));
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -845,10 +869,29 @@ namespace Utils.Mathematics.Expressions
             /// <returns><see langword="true"/> if the two candidates are equal under the public <see cref="ExpressionComparer"/> contract.</returns>
             public bool Equals(Expression x, Expression y)
             {
+                if (!ExpressionComparer.IsDiagnosticCaptureActive)
+                {
+                    return EqualsCore(x, y);
+                }
+
                 ExpressionComparer.ComparisonOrigin previousOrigin = ExpressionComparer.CurrentComparisonOrigin;
                 ExpressionComparer.CurrentComparisonOrigin = ExpressionComparer.ComparisonOrigin.FactorEqualityProbe;
                 try
                 {
+                    return EqualsCore(x, y);
+                }
+                finally
+                {
+                    ExpressionComparer.CurrentComparisonOrigin = previousOrigin;
+                }
+            }
+
+            /// <summary>Performs the factor comparison after any diagnostic context has been established.</summary>
+            /// <param name="x">The first candidate operand.</param>
+            /// <param name="y">The second candidate operand.</param>
+            /// <returns><see langword="true"/> when the operands compare equal.</returns>
+            private bool EqualsCore(Expression x, Expression y)
+            {
                 if (ExpressionComparer.TryFastPathEquals(x, y, out bool fastResult)) return fastResult;
 
                 // Classify BOTH operands before simplifying EITHER one (S5 P3 review round 7): classification
@@ -871,11 +914,6 @@ namespace Utils.Mathematics.Expressions
                 Expression simplifiedY = GetOrSimplify(y);
 
                 return ExpressionComparer.StructuralEqualsAfterSimplification(simplifiedX, simplifiedY);
-                }
-                finally
-                {
-                    ExpressionComparer.CurrentComparisonOrigin = previousOrigin;
-                }
             }
 
             /// <summary>
@@ -896,8 +934,18 @@ namespace Utils.Mathematics.Expressions
                     }
                 }
 
-                ExpressionMetrics metrics = GetExpressionMetrics(original);
-                bool canCache = !metrics.MightInvokeUserCode;
+                ExpressionMetrics metrics = default;
+                bool canCache;
+                if (ExpressionComparer.IsDiagnosticCaptureActive)
+                {
+                    metrics = GetExpressionMetrics(original);
+                    canCache = !metrics.MightInvokeUserCode;
+                }
+                else
+                {
+                    canCache = !MightInvokeUserCodeWhenSimplified(original);
+                }
+
                 _cache.Add((original, canCache, metrics, null));
                 return canCache;
             }
@@ -959,6 +1007,36 @@ namespace Utils.Mathematics.Expressions
             /// </remarks>
             /// <param name="expression">The candidate operand's subtree to scan, or <see langword="null"/> for an absent optional sub-expression.</param>
             /// <returns><see langword="true"/> if simplifying <paramref name="expression"/> might invoke user-defined code; <see langword="false"/> only when this is proven impossible.</returns>
+            private static bool MightInvokeUserCodeWhenSimplified(Expression? expression) => expression switch
+            {
+                null => false,
+                ParameterExpression => false,
+                ConstantExpression constant => constant.Value is not null
+                    && !Types.Number.Contains(constant.Type)
+                    && !ExpressionComparer.IsKnownSafeConstantValue(constant.Value),
+                LambdaExpression lambda => MightInvokeUserCodeWhenSimplified(lambda.Body),
+                UnaryExpression unary => MightInvokeUserCodeWhenSimplified(unary.Operand),
+                BinaryExpression binary => MightInvokeUserCodeWhenSimplified(binary.Left)
+                    || MightInvokeUserCodeWhenSimplified(binary.Right)
+                    || MightInvokeUserCodeWhenSimplified(binary.Conversion),
+                MethodCallExpression call => MightInvokeUserCodeWhenSimplified(call.Object)
+                    || AnyArgumentMightInvokeUserCodeWhenSimplified(call.Arguments),
+                MemberExpression member => MightInvokeUserCodeWhenSimplified(member.Expression),
+                _ => true,
+            };
+
+            /// <summary>Determines whether any method-call argument may invoke user code when simplified.</summary>
+            /// <param name="arguments">The arguments to inspect without LINQ allocation.</param>
+            /// <returns><see langword="true"/> when any argument is conservatively unsafe.</returns>
+            private static bool AnyArgumentMightInvokeUserCodeWhenSimplified(IReadOnlyList<Expression> arguments)
+            {
+                for (int i = 0; i < arguments.Count; i++)
+                {
+                    if (MightInvokeUserCodeWhenSimplified(arguments[i])) return true;
+                }
+
+                return false;
+            }
         }
 
         /// <summary>
@@ -1370,16 +1448,23 @@ namespace Utils.Mathematics.Expressions
                 rightright = Expression.Constant(Convert.ChangeType(1, right.Type));
             }
 
-            ExpressionComparer.ComparisonOrigin previousOrigin = ExpressionComparer.CurrentComparisonOrigin;
-            ExpressionComparer.CurrentComparisonOrigin = ExpressionComparer.ComparisonOrigin.Multiplication;
             bool equalBases;
-            try
+            if (ExpressionComparer.IsDiagnosticCaptureActive)
+            {
+                ExpressionComparer.ComparisonOrigin previousOrigin = ExpressionComparer.CurrentComparisonOrigin;
+                ExpressionComparer.CurrentComparisonOrigin = ExpressionComparer.ComparisonOrigin.Multiplication;
+                try
+                {
+                    equalBases = ExpressionComparer.Default.Equals(leftleft, rightleft);
+                }
+                finally
+                {
+                    ExpressionComparer.CurrentComparisonOrigin = previousOrigin;
+                }
+            }
+            else
             {
                 equalBases = ExpressionComparer.Default.Equals(leftleft, rightleft);
-            }
-            finally
-            {
-                ExpressionComparer.CurrentComparisonOrigin = previousOrigin;
             }
 
             if (equalBases)
