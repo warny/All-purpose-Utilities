@@ -72,6 +72,82 @@
             <Number value="17" string="सत्रह" />
             <Number value="18" string="अठारह" />
             <Number value="19" string="उन्नीस" />
+            <!-- 21-99 are lexicalized (NTS-10). Sources: Wiktionary Module:number_list/data/hi,
+                 Unicode CLDR RBNF hi and a school counting list; divergent spellings follow the
+                 majority (31 इकतीस, 44 चौवालीस, 53 तिरपन, 63 तिरसठ, 79 उन्यासी, 91-99 in -नवे).
+                 Round tens stay composed from the tens digit. -->
+            <Number value="21" string="इक्कीस" />
+            <Number value="22" string="बाईस" />
+            <Number value="23" string="तेईस" />
+            <Number value="24" string="चौबीस" />
+            <Number value="25" string="पच्चीस" />
+            <Number value="26" string="छब्बीस" />
+            <Number value="27" string="सत्ताईस" />
+            <Number value="28" string="अट्ठाईस" />
+            <Number value="29" string="उनतीस" />
+            <Number value="31" string="इकतीस" />
+            <Number value="32" string="बत्तीस" />
+            <Number value="33" string="तैंतीस" />
+            <Number value="34" string="चौंतीस" />
+            <Number value="35" string="पैंतीस" />
+            <Number value="36" string="छत्तीस" />
+            <Number value="37" string="सैंतीस" />
+            <Number value="38" string="अड़तीस" />
+            <Number value="39" string="उनतालीस" />
+            <Number value="41" string="इकतालीस" />
+            <Number value="42" string="बयालीस" />
+            <Number value="43" string="तैंतालीस" />
+            <Number value="44" string="चौवालीस" />
+            <Number value="45" string="पैंतालीस" />
+            <Number value="46" string="छियालीस" />
+            <Number value="47" string="सैंतालीस" />
+            <Number value="48" string="अड़तालीस" />
+            <Number value="49" string="उनचास" />
+            <Number value="51" string="इक्यावन" />
+            <Number value="52" string="बावन" />
+            <Number value="53" string="तिरपन" />
+            <Number value="54" string="चौवन" />
+            <Number value="55" string="पचपन" />
+            <Number value="56" string="छप्पन" />
+            <Number value="57" string="सत्तावन" />
+            <Number value="58" string="अट्ठावन" />
+            <Number value="59" string="उनसठ" />
+            <Number value="61" string="इकसठ" />
+            <Number value="62" string="बासठ" />
+            <Number value="63" string="तिरसठ" />
+            <Number value="64" string="चौंसठ" />
+            <Number value="65" string="पैंसठ" />
+            <Number value="66" string="छियासठ" />
+            <Number value="67" string="सड़सठ" />
+            <Number value="68" string="अड़सठ" />
+            <Number value="69" string="उनहत्तर" />
+            <Number value="71" string="इकहत्तर" />
+            <Number value="72" string="बहत्तर" />
+            <Number value="73" string="तिहत्तर" />
+            <Number value="74" string="चौहत्तर" />
+            <Number value="75" string="पचहत्तर" />
+            <Number value="76" string="छिहत्तर" />
+            <Number value="77" string="सतहत्तर" />
+            <Number value="78" string="अठहत्तर" />
+            <Number value="79" string="उन्यासी" />
+            <Number value="81" string="इक्यासी" />
+            <Number value="82" string="बयासी" />
+            <Number value="83" string="तिरासी" />
+            <Number value="84" string="चौरासी" />
+            <Number value="85" string="पचासी" />
+            <Number value="86" string="छियासी" />
+            <Number value="87" string="सत्तासी" />
+            <Number value="88" string="अट्ठासी" />
+            <Number value="89" string="नवासी" />
+            <Number value="91" string="इक्यानवे" />
+            <Number value="92" string="बानवे" />
+            <Number value="93" string="तिरानवे" />
+            <Number value="94" string="चौरानवे" />
+            <Number value="95" string="पंचानवे" />
+            <Number value="96" string="छियानवे" />
+            <Number value="97" string="सत्तानवे" />
+            <Number value="98" string="अट्ठानवे" />
+            <Number value="99" string="निन्यानवे" />
         </Exceptions>
         <Variants>
             <!-- Grammatical gender dimension used by OrdinalVariants. -->
