@@ -24,29 +24,92 @@
 				<Digit digit="8" string="otto" />
 				<Digit digit="9" string="nove" />
 			</Group>
+			<!--
+			  Treccani, Enciclopedia dell'Italiano, "numerali": compounds are written as one word;
+			  the final vowel of the tens is elided before uno and otto ("ventuno [e non *ventiuno]",
+			  "ventotto"); compounds of tre are accented ("ventitré") although tre alone is not.
+			  The buildStrings solder the constituents; the <Fusion> rules implement the junction
+			  changes (elision, accented tre) at the tens/units and hundreds/rest boundaries.
+			-->
 			<Group level="2">
 				<Digit digit="0" string="" buildString="*" />
 				<Digit digit="1" string="dieci" buildString="dici*" />
-				<Digit digit="2" string="venti" buildString="venti *" />
-				<Digit digit="3" string="trenta" buildString="trenta*" />
-				<Digit digit="4" string="quaranta" buildString="quaranta*" />
-				<Digit digit="5" string="cinquanta" buildString="cinquanta*" />
-				<Digit digit="6" string="sessanta" buildString="sessanta*" />
-				<Digit digit="7" string="settanta" buildString="settanta*" />
-				<Digit digit="8" string="ottanta" buildString="ottanta*" />
-				<Digit digit="9" string="novanta" buildString="novanta*" />
+				<Digit digit="2" string="venti" buildString="venti*">
+					<Fusion for="1,8" removeLeft="i" />
+					<Fusion for="3" right="tré" />
+				</Digit>
+				<Digit digit="3" string="trenta" buildString="trenta*">
+					<Fusion for="1,8" removeLeft="a" />
+					<Fusion for="3" right="tré" />
+				</Digit>
+				<Digit digit="4" string="quaranta" buildString="quaranta*">
+					<Fusion for="1,8" removeLeft="a" />
+					<Fusion for="3" right="tré" />
+				</Digit>
+				<Digit digit="5" string="cinquanta" buildString="cinquanta*">
+					<Fusion for="1,8" removeLeft="a" />
+					<Fusion for="3" right="tré" />
+				</Digit>
+				<Digit digit="6" string="sessanta" buildString="sessanta*">
+					<Fusion for="1,8" removeLeft="a" />
+					<Fusion for="3" right="tré" />
+				</Digit>
+				<Digit digit="7" string="settanta" buildString="settanta*">
+					<Fusion for="1,8" removeLeft="a" />
+					<Fusion for="3" right="tré" />
+				</Digit>
+				<Digit digit="8" string="ottanta" buildString="ottanta*">
+					<Fusion for="1,8" removeLeft="a" />
+					<Fusion for="3" right="tré" />
+				</Digit>
+				<Digit digit="9" string="novanta" buildString="novanta*">
+					<Fusion for="1,8" removeLeft="a" />
+					<Fusion for="3" right="tré" />
+				</Digit>
 			</Group>
+			<!--
+			  Treccani: with cento followed by a ten or a unit the elision is uncommon before uno,
+			  otto and undici (centouno, centootto, centoundici: plain buildString), but the hundreds
+			  elide before ottanta (centottanta). A final tre keeps its accent (centotré).
+			-->
 			<Group level="3">
 				<Digit digit="0" string="" buildString="*" />
-				<Digit digit="1" string="cento" buildString="cento*" />
-				<Digit digit="2" string="duecento" buildString="duecento*" />
-				<Digit digit="3" string="trecento" buildString="trecento*" />
-				<Digit digit="4" string="quattrocento" buildString="quattrocento*" />
-				<Digit digit="5" string="cinquecento" buildString="cinquecento*" />
-				<Digit digit="6" string="seicento" buildString="seicento*" />
-				<Digit digit="7" string="settecento" buildString="settecento*" />
-				<Digit digit="8" string="ottocento" buildString="ottocento*" />
-				<Digit digit="9" string="novecento" buildString="novecento*" />
+				<Digit digit="1" string="cento" buildString="cento*">
+					<Fusion for="3" right="tré" />
+					<Fusion for="80..89" removeLeft="o" />
+				</Digit>
+				<Digit digit="2" string="duecento" buildString="duecento*">
+					<Fusion for="3" right="tré" />
+					<Fusion for="80..89" removeLeft="o" />
+				</Digit>
+				<Digit digit="3" string="trecento" buildString="trecento*">
+					<Fusion for="3" right="tré" />
+					<Fusion for="80..89" removeLeft="o" />
+				</Digit>
+				<Digit digit="4" string="quattrocento" buildString="quattrocento*">
+					<Fusion for="3" right="tré" />
+					<Fusion for="80..89" removeLeft="o" />
+				</Digit>
+				<Digit digit="5" string="cinquecento" buildString="cinquecento*">
+					<Fusion for="3" right="tré" />
+					<Fusion for="80..89" removeLeft="o" />
+				</Digit>
+				<Digit digit="6" string="seicento" buildString="seicento*">
+					<Fusion for="3" right="tré" />
+					<Fusion for="80..89" removeLeft="o" />
+				</Digit>
+				<Digit digit="7" string="settecento" buildString="settecento*">
+					<Fusion for="3" right="tré" />
+					<Fusion for="80..89" removeLeft="o" />
+				</Digit>
+				<Digit digit="8" string="ottocento" buildString="ottocento*">
+					<Fusion for="3" right="tré" />
+					<Fusion for="80..89" removeLeft="o" />
+				</Digit>
+				<Digit digit="9" string="novecento" buildString="novecento*">
+					<Fusion for="3" right="tré" />
+					<Fusion for="80..89" removeLeft="o" />
+				</Digit>
 			</Group>
 		</Groups>
 		<NumberScale firstLetterUpperCase="true">
@@ -59,8 +122,22 @@
 				<Suffix>ard(o|i)</Suffix>
 			</Suffixes>
 		</NumberScale>
+		<!--
+		  Thousands (Treccani: mille becomes -mila and joins the multiplier, "duemila"; with mille
+		  the elision is avoided, "milleuno"). Below a million the whole number is one word, and a
+		  final tre keeps its accent ("milletré", "duemilatré") while an inner tre loses it
+		  ("ventitremila"). These junctions involve a scale name, so they are Replacements (onScale
+		  for the thousands group, then the final assembled-string pass), not <Fusion>.
+		  Millions and above (separate words) are not handled here.
+		-->
 		<Replacements>
 			<Replacement oldValue="uno mille" newValue="mille" onScale="1" onValue="1" />
+			<Replacement oldValue="tré mila" newValue="tremila" scope="Anywhere" onScale="1" />
+			<Replacement oldValue=" mila" newValue="mila" scope="Anywhere" onScale="1" />
+			<Replacement oldValue="mila " newValue="mila" scope="Anywhere" />
+			<Replacement oldValue="mille " newValue="mille" scope="Anywhere" />
+			<Replacement oldValue="milatre" newValue="milatré" scope="EndsWith" />
+			<Replacement oldValue="milletre" newValue="milletré" scope="EndsWith" />
 		</Replacements>
 		<Exceptions>
 			<Number value="11" string="undici" />
@@ -76,10 +153,10 @@
 		<Variants>
 			<!--
 			  En italien, seul "uno" (1) varie en genre ; les centaines (duecento,
-			  trecento…) sont invariables. Les formes composées des dizaines sont
-			  soudées sans espace (ventiuno, trentuno…) : LastWord ne transforme pas
-			  "uno" à l'intérieur de ces composés. Si les buildStrings étaient
-			  modifiés pour inclure une espace, la couverture serait complète.
+			  trecento…) sont invariables. Les composés soudés (ventuno, trentuno…)
+			  restent en -uno devant un nom féminin pluriel (Treccani, vocabolario
+			  "ventuno" : "ventuno ballerine" ; "ventun(o) ballerina sarebbe raro") :
+			  LastWord ne transforme volontairement que le mot isolé "uno".
 			-->
 			<Dimension name="gender" localName="genere" values="maschile,femminile" />
 
@@ -90,10 +167,12 @@
 		<!--
 		  Italian ordinals: 1-10 are irregular (primo…decimo); 11+ follow the pattern
 		  of dropping the final vowel and adding "esimo" (undici → undicesimo).
-		  For compound numbers, Italian fuses digits without spaces so only the full
-		  fused word can be matched. Coverage here is limited to standalone forms.
-		  Compounds like "trentuno" (31) fall back to the cardinal.
+		  Compound ordinals (ventunesimo, ventitreesimo, ventiseiesimo…) need a
+		  vowel-specific stem rule the suffix pipeline cannot express, so
+		  ItalianOrdinalLanguageSpecifics rejects every value other than 1-20, the
+		  round tens, 100 and 1000 instead of producing "ventunoesimo" (TODO NTS-13).
 		-->
+		<LanguageSpecifics>ItalianOrdinalLanguageSpecifics</LanguageSpecifics>
 		<Ordinals removeTrailing="i" suffix="esimo">
 			<!-- Irregular 1-10 (maschile) -->
 			<OrdinalException value="1"  string="primo" />
@@ -121,6 +200,8 @@
 			<Ordinal from="diciassette" to="diciassettesimo" />
 			<!-- "diciotto" ends in "o": explicit rule -->
 			<Ordinal from="diciotto"    to="diciottesimo" />
+			<!-- "diciannove" ends in "e" (Treccani, vocabolario "diciannovesimo") -->
+			<Ordinal from="diciannove"  to="diciannovesimo" />
 			<!-- Scale words -->
 			<Ordinal from="cento"  to="centesimo" />
 			<Ordinal from="mille"  to="millesimo" />
@@ -148,20 +229,25 @@
 					<Ordinal from="novanta"     to="novantesima" />
 					<Ordinal from="diciassette" to="diciassettesima" />
 					<Ordinal from="diciotto"    to="diciottesima" />
+					<Ordinal from="diciannove"  to="diciannovesima" />
 					<Ordinal from="cento"       to="centesima" />
 					<Ordinal from="mille"       to="millesima" />
 				</Variant>
 			</OrdinalVariants>
 		</Ordinals>
-		<!-- Accademia della Crusca: "l'una e mezzo" (also "e mezza"), "le due meno un quarto".
-			 Neutral 12-hour clock without day-part wording (no mezzogiorno/mezzanotte: the Italian
-			 configuration has no TimeUnits section). The article is elided for one (l'una) and
-			 plural otherwise (le due); {hour} is forced to the feminine numeral. Quarter-hour step:
-			 the compound cardinals are not yet orthographic ("venti cinque", TODO NTS-10), so minute
-			 amounts are not rendered until they are fixed. -->
-		<ClockTime step="15" hourCycle="12">
+		<!-- Accademia della Crusca: "l'una e mezzo" (also "e mezza"), "le due meno un quarto", and
+			 "le otto meno venti" / "meno dieci" before the hour. Neutral 12-hour clock without
+			 day-part wording (no mezzogiorno/mezzanotte: the Italian configuration has no TimeUnits
+			 section). The article is elided for one (l'una) and plural otherwise (le due); {hour} is
+			 forced to the feminine numeral. Five-minute step since the compound cardinals are
+			 orthographic (NTS-10): "e {amount}" after the hour, "meno {amount}" before the next. -->
+		<ClockTime step="5" hourCycle="12">
 			<Rule range="0" displayHourRange="1" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femminile" pattern="l'{hour}" />
 			<Rule range="0" displayHourRange="2-12" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femminile" pattern="le {hour}" />
+			<Rule range="5,10,20,25" displayHourRange="1" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femminile" amountReference="0" amountDirection="after" pattern="l'{hour} e {amount}" />
+			<Rule range="5,10,20,25" displayHourRange="2-12" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femminile" amountReference="0" amountDirection="after" pattern="le {hour} e {amount}" />
+			<Rule range="35,40,50,55" displayHourRange="1" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=femminile" amountReference="60" amountDirection="before" pattern="l'{hour} meno {amount}" />
+			<Rule range="35,40,50,55" displayHourRange="2-12" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=femminile" amountReference="60" amountDirection="before" pattern="le {hour} meno {amount}" />
 			<Rule range="15" displayHourRange="1" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femminile" pattern="l'{hour} e un quarto" />
 			<Rule range="15" displayHourRange="2-12" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femminile" pattern="le {hour} e un quarto" />
 			<Rule range="30" displayHourRange="1" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femminile" pattern="l'{hour} e mezzo" />
