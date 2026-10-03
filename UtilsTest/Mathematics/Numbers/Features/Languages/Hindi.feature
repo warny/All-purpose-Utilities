@@ -1,6 +1,70 @@
 @NumberToString @HI
 Feature: Hindi number conversion
 
+# Hindi cardinals 21-99 are lexicalized, not composed (NTS-10): "इक्कीस", never "बीस एक".
+# Sources: Wiktionary Module:number_list/data/hi, Unicode CLDR RBNF hi (spellout-cardinal) and a
+# Hindi school counting list (schooldekho.org). Where the sources disagree the majority spelling
+# is used: 44 चौवालीस (CLDR, school; Wiktionary चवालीस), 53 तिरपन and 63 तिरसठ (Wiktionary,
+# school; CLDR तिरेपन/तिरेसठ), 79 उन्यासी (Wiktionary, school; CLDR उनासी), 91-99 in -नवे
+# (Wiktionary, school; CLDR -नबे), 95 पंचानवे (Wiktionary; stem shared with CLDR पंचानबे).
+Scenario Outline: Lexicalized cardinals 20-99
+    Given I use the "HI" number converter
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 20 | बीस |
+    | 21 | इक्कीस |
+    | 22 | बाईस |
+    | 29 | उनतीस |
+    | 31 | इकतीस |
+    | 37 | सैंतीस |
+    | 42 | बयालीस |
+    | 44 | चौवालीस |
+    | 48 | अड़तालीस |
+    | 53 | तिरपन |
+    | 57 | सत्तावन |
+    | 63 | तिरसठ |
+    | 64 | चौंसठ |
+    | 68 | अड़सठ |
+    | 73 | तिहत्तर |
+    | 79 | उन्यासी |
+    | 88 | अट्ठासी |
+    | 91 | इक्यानवे |
+    | 95 | पंचानवे |
+    | 99 | निन्यानवे |
+
+# The lexicalized forms are reused inside larger numbers. 1021 keeps the configuration's existing
+# bare "हज़ार" for one thousand (Wiktionary's headword; not re-audited by NTS-10).
+Scenario Outline: Lexicalized cardinals inside larger numbers
+    Given I use the "HI" number converter
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 121 | एक सौ इक्कीस |
+    | 221 | दो सौ इक्कीस |
+    | 1021 | हज़ार इक्कीस |
+    | 2021 | दो हज़ार इक्कीस |
+    | 21000 | इक्कीस हज़ार |
+    | 99999 | निन्यानवे हज़ार नौ सौ निन्यानवे |
+
+# The ordinal suffix attaches to the lexicalized cardinal (इक्कीसवाँ, Wiktionary ordinal forms).
+Scenario Outline: Ordinals of lexicalized cardinals
+    Given I use the "HI" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 21 |  | इक्कीसवाँ |
+    | 99 |  | निन्यानवेवाँ |
+    | 121 |  | एक सौ इक्कीसवाँ |
+    | 21 | gender=strī | इक्कीसवीं |
+
 Scenario Outline: Decimal numbers
     Given I use the "HI" number converter
     When I convert the decimal number <number>
