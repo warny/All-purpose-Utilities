@@ -288,6 +288,18 @@ public class DigitType
     public string BuildString { get; set; }
 
     /// <summary>
+    /// Gets or sets the morphological fusion rules applied when this digit is composed with the
+    /// text of its lower sub-group (see <see cref="FusionType"/>). <see langword="null"/> or empty
+    /// means the digit always composes through <see cref="BuildString"/>.
+    /// </summary>
+    /// <remarks>
+    /// The converter compiles these rules into an immutable snapshot at construction; mutating the
+    /// list afterwards has no effect on an existing converter.
+    /// </remarks>
+    [XmlElement("Fusion")]
+    public List<FusionType>? Fusions { get; set; }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="DigitType"/> class for XML serialization.
     /// </summary>
     public DigitType()
@@ -323,6 +335,55 @@ public class DigitType
 
     /// <inheritdoc />
     public override string ToString() => $"D : {Digit} => {StringValue}, {BuildString}";
+}
+
+/// <summary>
+/// Declares a morphological fusion between a digit (the <em>left</em> constituent) and the already
+/// built text of its lower sub-group (the <em>right</em> constituent), e.g. Italian
+/// <c>venti + uno → ventuno</c>.
+/// </summary>
+/// <remarks>
+/// <para>
+/// When at least one rule of a digit matches the numeric value of the lower sub-group, the two
+/// constituents are concatenated directly (<c>left + right</c>) instead of going through
+/// <see cref="DigitType.BuildString"/>. Matching rules are cumulative, from the least specific
+/// (widest range) to the most specific (narrowest range); a property absent from a more specific
+/// rule keeps the value set by a less specific one.
+/// </para>
+/// <para>
+/// On each edge the override (<see cref="Left"/>/<see cref="Right"/>) is applied first, then the
+/// removal (<see cref="RemoveLeft"/>/<see cref="RemoveRight"/>). Every attribute that is present
+/// must be non-empty.
+/// </para>
+/// </remarks>
+public class FusionType
+{
+    /// <summary>
+    /// Gets or sets the numeric values of the lower sub-group this rule applies to, in the shared
+    /// range syntax (<c>1</c>, <c>1,8</c>, <c>1..9</c>, <c>80..89</c>). Required.
+    /// </summary>
+    [XmlAttribute("for")]
+    public string? For { get; set; }
+
+    /// <summary>Gets or sets a suffix removed from the left constituent; the suffix must be present.</summary>
+    [XmlAttribute("removeLeft")]
+    public string? RemoveLeft { get; set; }
+
+    /// <summary>Gets or sets a prefix removed from the right constituent; the prefix must be present.</summary>
+    [XmlAttribute("removeRight")]
+    public string? RemoveRight { get; set; }
+
+    /// <summary>Gets or sets a replacement form of the left constituent for this fusion.</summary>
+    [XmlAttribute("left")]
+    public string? Left { get; set; }
+
+    /// <summary>Gets or sets a replacement form of the right constituent for this fusion.</summary>
+    [XmlAttribute("right")]
+    public string? Right { get; set; }
+
+    /// <inheritdoc />
+    public override string ToString()
+        => $"Fusion for={For} removeLeft={RemoveLeft} removeRight={RemoveRight} left={Left} right={Right}";
 }
 
 /// <summary>

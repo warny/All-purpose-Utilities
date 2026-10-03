@@ -169,6 +169,8 @@
             </Variant>
         </Variants>
         <Ordinals>
+            <!-- Zéro : "nollas" (Wiktionary citant le Kielitoimiston sanakirja ; kieli.net), NTS-12 -->
+            <OrdinalException value="0" string="nollas" />
             <!-- Unités -->
             <OrdinalException value="1" string="ensimmäinen" />
             <OrdinalException value="2" string="toinen" />

@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added — `omy.Utils.NumberToString`
+- Added the `<Fusion>` morphological composition primitive: `<Digit>` elements (Groups levels 2+)
+  and the additive `DigitType.Fusions` / `FusionType` model accept rules (`for`, `removeLeft`,
+  `removeRight`, `left`, `right`) that join a digit and its lower sub-group directly, with edge
+  changes, instead of through `buildString` (e.g. Italian `venti + uno → ventuno`). Rules are
+  cumulative by range specificity, validated strictly at load (conflicts, domain, empty values,
+  absent edges, intra-group connector overlap) and compiled into immutable lookup tables.
+- Added `ItalianOrdinalLanguageSpecifics`, restricting Italian ordinals to verified forms.
+
+### Fixed — `omy.Utils.NumberToString` (NTS-10, NTS-11, NTS-12)
+- Italian compound cardinals are written as one word (`ventuno`, `ventitré`, `centottanta`,
+  `duemila`, `milletré`); the Italian clock uses a five-minute step; `diciannovesimo` is fixed and
+  unverified compound ordinals now fail closed instead of producing `ventunoesimo`.
+- Hindi cardinals 21–99 are lexicalized (`इक्कीस` instead of `बीस एक`).
+- Arabic thousands take the attached `و` connector (`ألف وواحد`), and the feminine variant reaches a
+  final unit after `و` (`مائة وواحدة`).
+- Hebrew cardinals from 1000 are correct (`אלף`, `אלפיים`, `שלושת אלפים`, `אחד עשר אלף`, `ו` before
+  the last element only).
+- `ConvertOrdinal(0)` no longer returns the cardinal zero unchanged: without an explicit formation it
+  throws `NotSupportedException` (PL, ES, GL, PT, EL, HE); Finnish gains `nollas`.
 - Added the additive `ClockTimeRule.DisplayHourRange` property and matching
   `displayHourRange` XML/XSD attribute. Clock rules can now vary by the projected hour after each
   candidate rule's offset and the configured hour cycle; construction validates complete,

@@ -210,3 +210,11 @@ Scenario: The exact Spanish time API is unchanged by the clock wording
     Given I use the "ES" number converter
     When I convert the time "01:00:00"
     Then the result is "una hora"
+
+# NTS-12: no ordinal of zero fits the library contract:
+# the RAE ordinal series starts at "primero"; the informal "ceroésimo" is not a recognized form.
+# The converter fails closed instead of returning the cardinal "cero" unchanged.
+Scenario: Zero has no ordinal form
+    Given I use the "ES" number converter
+    When I attempt to convert the ordinal number 0
+    Then conversion is rejected because no ordinal form is available

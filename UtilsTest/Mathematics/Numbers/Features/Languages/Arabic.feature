@@ -27,6 +27,45 @@ Examples:
     | 100 | مائة |
     | 1000 | ألف |
 
+# NTS-10: the conjunction "و" joins the thousands to the lower group and, being a proclitic, is
+# written attached to the following word ("ألف وواحد"), as it already is after the hundreds.
+# Sources: Unicode CLDR RBNF ar ("ألف[ و>>]") and the University of Montana Arabic numbers sheet.
+# Only the connector is in scope: the dual/plural morphology of the thousands themselves
+# (ألفان, ثلاثة آلاف) is not, so 2000 and above are not pinned here.
+Scenario Outline: Thousands joined to the lower group with the attached conjunction
+    Given I use the "AR" number converter
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1001 | ألف وواحد |
+    | 1002 | ألف واثنان |
+    | 1005 | ألف وخمسة |
+    | 1010 | ألف وعشرة |
+    | 1011 | ألف وأحد عشر |
+    | 1021 | ألف وواحد وعشرون |
+    | 1100 | ألف ومائة |
+    | 1121 | ألف ومائة وواحد وعشرون |
+
+# The feminine agreement still reaches a final unit written with the attached "و" (after the
+# thousands and, likewise, after the hundreds).
+Scenario Outline: Feminine units after an attached conjunction
+    Given I use the "AR" number converter
+    And I use the variants "gender=muʾannath"
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 101 | مائة وواحدة |
+    | 103 | مائة وثلاث |
+    | 1001 | ألف وواحدة |
+    | 1003 | ألف وثلاث |
+    | 1010 | ألف وعشر |
+    | 1011 | ألف وإحدى عشرة |
+    | 1021 | ألف وواحدة وعشرون |
+
 Scenario Outline: Feminine cardinal numbers
     Given I use the "AR" number converter
     And I use the variants "gender=muʾannath"

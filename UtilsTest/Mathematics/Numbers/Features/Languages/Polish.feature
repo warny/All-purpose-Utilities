@@ -120,3 +120,12 @@ Examples:
     | 12:00 | dwunasta |
     | 12:30 | wpół do pierwszej |
     | 13:30 | wpół do drugiej |
+
+# NTS-12: no ordinal of zero fits the library contract:
+# "zerowy" is a relational adjective ("lekcja zerowa") whose full gender and case declension is
+# not configured; the Polish ordinal plugin covers 1 and above only.
+# The converter fails closed instead of returning the cardinal "zero" unchanged.
+Scenario: Zero has no ordinal form
+    Given I use the "PL" number converter
+    When I attempt to convert the ordinal number 0
+    Then conversion is rejected because no ordinal form is available

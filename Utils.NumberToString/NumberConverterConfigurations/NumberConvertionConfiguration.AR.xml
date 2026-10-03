@@ -58,8 +58,13 @@
                 <Suffix>مليون</Suffix>
             </Suffixes>
         </NumberScale>
+        <!-- "و" joins the thousands to the lower group and is written attached to the next word
+             ("ألف وواحد", CLDR RBNF ar; NTS-10). With maxNumber 999999, "ألف" followed by a space
+             only occurs before the lower group. The dual/plural forms of the thousands are not
+             handled (out of scope of the connector). -->
         <Replacements>
             <Replacement oldValue="واحد ألف" newValue="ألف" />
+            <Replacement oldValue="ألف " newValue="ألف و" scope="Anywhere" />
         </Replacements>
         <!-- 11-19: unit first, then "عشر" (masculine; the feminine variant below agrees them). -->
         <Exceptions>
@@ -138,6 +143,18 @@
                 <Replacement oldValue="ثمانية" newValue="ثمان"   scope="LastWord" />
                 <Replacement oldValue="تسعة"   newValue="تسع"    scope="LastWord" />
                 <Replacement oldValue="عشرة"   newValue="عشر"    scope="LastWord" />
+                <!-- Final unit written with the attached "و" after the hundreds or the thousands
+                     ("مائة وواحدة", "ألف وثلاث"). -->
+                <Replacement oldValue="وواحد"   newValue="وواحدة"  scope="LastWord" />
+                <Replacement oldValue="واثنان"  newValue="واثنتان" scope="LastWord" />
+                <Replacement oldValue="وثلاثة"  newValue="وثلاث"   scope="LastWord" />
+                <Replacement oldValue="وأربعة"  newValue="وأربع"   scope="LastWord" />
+                <Replacement oldValue="وخمسة"   newValue="وخمس"    scope="LastWord" />
+                <Replacement oldValue="وستة"    newValue="وست"     scope="LastWord" />
+                <Replacement oldValue="وسبعة"   newValue="وسبع"    scope="LastWord" />
+                <Replacement oldValue="وثمانية" newValue="وثمان"   scope="LastWord" />
+                <Replacement oldValue="وتسعة"   newValue="وتسع"    scope="LastWord" />
+                <Replacement oldValue="وعشرة"   newValue="وعشر"    scope="LastWord" />
                 <!-- Compounds: the unit before "و" + tens, and the 11-19 forms (applied after the
                      single-word rules above, so the final "عشرة" is not shortened). -->
                 <Replacement oldValue="واحد و" newValue="واحدة و" scope="Anywhere" />

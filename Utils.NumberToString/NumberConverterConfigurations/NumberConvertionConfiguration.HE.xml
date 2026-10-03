@@ -71,8 +71,56 @@
             <Number value="19" string="תשע עשרה" />
         </Exceptions>
         <!-- "ו" joins only the last element: the hundreds add it before their remainder, so it is
-             removed again when tens precede a final unit ("מאה עשרים ואחד"). -->
+             removed again when tens precede a final unit ("מאה עשרים ואחד").
+
+             Thousands (NTS-11; CLDR RBNF he, ulpan.net, Academy of the Hebrew Language). The
+             thousands group (onScale="1") gets its lexical forms: אלף, אלפיים, the construct
+             forms שלושת … עשרת אלפים, and from eleven thousand the masculine multiplier agreeing
+             with the masculine noun אלף (אחד עשר אלף, עשרים ושניים אלף). These rules run on the
+             group text before any gender variant, which only reaches the final lower group.
+             The final pass then puts "ו" after the thousands and removes it again when the lower
+             group starts with hundreds followed by a remainder, or with tens followed by a unit,
+             so that "ו" precedes the last element only ("אלף ומאה", "אלף מאה ואחד"). -->
         <Replacements>
+            <Replacement oldValue="אחד אלף" newValue="אלף" onScale="1" />
+            <Replacement oldValue="שתיים אלף" newValue="אלפיים" onScale="1" />
+            <Replacement oldValue="שלוש אלף" newValue="שלושת אלפים" onScale="1" />
+            <Replacement oldValue="ארבע אלף" newValue="ארבעת אלפים" onScale="1" />
+            <Replacement oldValue="חמש אלף" newValue="חמשת אלפים" onScale="1" />
+            <Replacement oldValue="שש אלף" newValue="ששת אלפים" onScale="1" />
+            <Replacement oldValue="שבע אלף" newValue="שבעת אלפים" onScale="1" />
+            <Replacement oldValue="שמונה אלף" newValue="שמונת אלפים" onScale="1" />
+            <Replacement oldValue="תשע אלף" newValue="תשעת אלפים" onScale="1" />
+            <Replacement oldValue="עשר אלף" newValue="עשרת אלפים" onScale="1" />
+            <Replacement oldValue="אחת עשרה אלף" newValue="אחד עשר אלף" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="שתים עשרה אלף" newValue="שנים עשר אלף" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="שלוש עשרה אלף" newValue="שלושה עשר אלף" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="ארבע עשרה אלף" newValue="ארבעה עשר אלף" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="חמש עשרה אלף" newValue="חמישה עשר אלף" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="שש עשרה אלף" newValue="שישה עשר אלף" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="שבע עשרה אלף" newValue="שבעה עשר אלף" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="שמונה עשרה אלף" newValue="שמונה עשר אלף" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="תשע עשרה אלף" newValue="תשעה עשר אלף" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="ושתיים אלף" newValue="ושניים אלף" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="ושלוש אלף" newValue="ושלושה אלף" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="וארבע אלף" newValue="וארבעה אלף" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="וחמש אלף" newValue="וחמישה אלף" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="ושש אלף" newValue="ושישה אלף" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="ושבע אלף" newValue="ושבעה אלף" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="ותשע אלף" newValue="ותשעה אלף" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="ועשר אלף" newValue="ועשרה אלף" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="אלף " newValue="אלף ו" scope="Anywhere" />
+            <Replacement oldValue="אלפיים " newValue="אלפיים ו" scope="Anywhere" />
+            <Replacement oldValue="אלפים " newValue="אלפים ו" scope="Anywhere" />
+            <Replacement oldValue="ומאה " newValue="מאה " scope="Anywhere" />
+            <Replacement oldValue="ומאתיים " newValue="מאתיים " scope="Anywhere" />
+            <Replacement oldValue="ושלוש מאות " newValue="שלוש מאות " scope="Anywhere" />
+            <Replacement oldValue="וארבע מאות " newValue="ארבע מאות " scope="Anywhere" />
+            <Replacement oldValue="וחמש מאות " newValue="חמש מאות " scope="Anywhere" />
+            <Replacement oldValue="ושש מאות " newValue="שש מאות " scope="Anywhere" />
+            <Replacement oldValue="ושבע מאות " newValue="שבע מאות " scope="Anywhere" />
+            <Replacement oldValue="ושמונה מאות " newValue="שמונה מאות " scope="Anywhere" />
+            <Replacement oldValue="ותשע מאות " newValue="תשע מאות " scope="Anywhere" />
             <Replacement oldValue="ועשרים ו" newValue="עשרים ו" scope="Anywhere" />
             <Replacement oldValue="ושלושים ו" newValue="שלושים ו" scope="Anywhere" />
             <Replacement oldValue="וארבעים ו" newValue="ארבעים ו" scope="Anywhere" />
@@ -125,6 +173,8 @@
                     <Ordinal from="ושש" to="ושישה" />
                     <Ordinal from="ושבע" to="ושבעה" />
                     <Ordinal from="ותשע" to="ותשעה" />
+                    <!-- Masculine final ten after "ו" ("מאה ועשרה", "אלף ועשרה"), like 3-9 above. -->
+                    <Ordinal from="ועשר" to="ועשרה" />
                 </Variant>
             </OrdinalVariants>
         </Ordinals>
