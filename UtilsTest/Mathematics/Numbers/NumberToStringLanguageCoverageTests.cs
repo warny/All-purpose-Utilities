@@ -21,13 +21,6 @@ public class NumberToStringLanguageCoverageTests
     private static readonly string[] OrdinalLanguages =
         ["DA", "NO", "SV", "BG", "HR", "HU", "CS", "SK", "UK", "RO", "AR", "HE", "FA", "TR"];
 
-    /// <summary>
-    /// Languages exempted from the thousands example, with the documented reason: Hebrew ordinals
-    /// above ten are the agreeing cardinal, and Hebrew cardinals from 1000 are not orthographic yet
-    /// ("אחד אלף" instead of "אלף", TODO NTS-11).
-    /// </summary>
-    private static readonly string[] ThousandsExemptions = ["HE"];
-
     /// <summary>Languages whose idiomatic clock was added by NTS-08.</summary>
     private static readonly string[] ClockLanguages =
     [
@@ -70,8 +63,34 @@ public class NumberToStringLanguageCoverageTests
                 .ToArray();
             Assert.IsTrue(numbers.Any(n => n is > 20 and < 100 && n % 10 != 0), $"{language}: no compound ordinal example.");
             Assert.IsTrue(numbers.Any(n => n is >= 100 and < 1000), $"{language}: no hundreds ordinal example.");
-            if (!ThousandsExemptions.Contains(language))
-                Assert.IsTrue(numbers.Any(n => n >= 1000), $"{language}: no thousands ordinal example.");
+            Assert.IsTrue(numbers.Any(n => n >= 1000), $"{language}: no thousands ordinal example.");
+        }
+    }
+
+    /// <summary>
+    /// NTS-12 guard over every built-in language: an ordinal-capable converter either forms an
+    /// ordinal of zero that differs from its cardinal zero, or rejects zero with
+    /// <see cref="NotSupportedException"/>; it never returns the cardinal zero unchanged.
+    /// </summary>
+    [TestMethod]
+    public void BuiltInLanguages_NeverReturnTheCardinalZeroAsOrdinal()
+    {
+        var converters = NumberToStringConverter.BuiltInInitialization.Converters;
+        Assert.IsTrue(converters.Count > 0, "No built-in converter was initialized.");
+        foreach (var (culture, converter) in converters)
+        {
+            if (!converter.SupportsOrdinals) continue;
+            string cardinal = converter.Convert(0);
+            string ordinal;
+            try
+            {
+                ordinal = converter.ConvertOrdinal(0);
+            }
+            catch (NotSupportedException)
+            {
+                continue;
+            }
+            Assert.AreNotEqual(cardinal, ordinal, $"{culture}: the ordinal of zero is the unchanged cardinal.");
         }
     }
 
@@ -163,14 +182,18 @@ public class NumberToStringLanguageCoverageTests
         => methods.Any(method => method.GetCustomAttribute<DescriptionAttribute>()?.Description
             .Contains(statement, StringComparison.OrdinalIgnoreCase) == true);
 
-    /// <summary>Gets the first example column of every scenario outline whose description contains a keyword.</summary>
+    /// <summary>
+    /// Gets the first example column of every scenario outline whose description contains a keyword,
+    /// excluding outlines that pin rejections (their values are not covered conversions).
+    /// </summary>
     /// <param name="methods">The language's scenario methods.</param>
     /// <param name="keyword">The keyword selecting the outlines (e.g. "ordinal", "clock").</param>
     /// <returns>The first value of each example row.</returns>
     private static IEnumerable<string> ExampleValues(IEnumerable<MethodInfo> methods, string keyword)
         => methods
-            .Where(method => method.GetCustomAttribute<DescriptionAttribute>()?.Description
-                .Contains(keyword, StringComparison.OrdinalIgnoreCase) == true)
+            .Where(method => method.GetCustomAttribute<DescriptionAttribute>()?.Description is { } description
+                && description.Contains(keyword, StringComparison.OrdinalIgnoreCase)
+                && !description.Contains("rejected", StringComparison.OrdinalIgnoreCase))
             .SelectMany(method => method.GetCustomAttributes<DataRowAttribute>())
             .Select(row => row.Data.Length > 0 ? row.Data[0] as string : null)
             .Where(value => value != null)
