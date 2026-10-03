@@ -84,10 +84,12 @@ public class NumberToStringFusionTests
             </Group>
             """;
         int groupSize = hundred is null ? 2 : 3;
+        // Two static scale levels (units and "thousand") bound the language to two groups.
+        string maxNumber = new string('9', 2 * groupSize);
         return $"""
             <?xml version="1.0" encoding="utf-8"?>
             <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
-              <Language groupSize="{groupSize}" separator=" " groupSeparator="" zero="zero" minus="minus *" decimalSeparator="point"{languageAttributes}>
+              <Language groupSize="{groupSize}" separator=" " groupSeparator="" zero="zero" minus="minus *" decimalSeparator="point" maxNumber="{maxNumber}"{languageAttributes}>
                 <Culture>{culture}</Culture>
                 <Groups>
                   <Group level="1">{unitDigits}</Group>

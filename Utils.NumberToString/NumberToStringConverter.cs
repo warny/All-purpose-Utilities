@@ -230,6 +230,9 @@ namespace Utils.NumberToString
             _intraGroupConnectorThreshold = options.IntraGroupConnectorThreshold;
             _scaleConnector = options.ScaleConnector;
             _scaleConnectorThreshold = options.ScaleConnectorThreshold;
+            // Needs Groups, Exceptions and the intra-group connector: edge validation renders the
+            // actual lower constituents through ConvertGroup.
+            CompileFusions(options.Groups!, nameof(options.Groups));
             {
                 var rawTimeUnits = options.TimeUnits ?? ImmutableDictionary<string, (string Singular, string Plural, string? Count1Form)>.Empty;
                 var timeUnitForced = options.TimeUnitForcedVariants ?? ImmutableDictionary<string, ForcedVariantSet>.Empty;
@@ -1872,6 +1875,12 @@ namespace Utils.NumberToString
             var valueText = Groups[groupNumber][groupValue];
 
             if (string.IsNullOrEmpty(leftText)) return valueText.StringValue;
+
+            // A configured <Fusion> replaces buildString for this junction (validated at load to
+            // never overlap the intra-group connector below). "leftText" is the lower sub-group,
+            // i.e. the fusion's right constituent.
+            if (_fusionPlans != null && TryGetFusionPlan(groupNumber, groupValue, remainder, out var fusion))
+                return fusion.Compose(valueText.StringValue, leftText);
 
             // Inject intra-group connector at the hundreds level when there are hundreds AND remainder < threshold
             if (groupNumber == 3 && _intraGroupConnector != null && groupValue > 0 && remainder > 0 && remainder < _intraGroupConnectorThreshold)
