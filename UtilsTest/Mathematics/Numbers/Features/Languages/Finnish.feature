@@ -237,3 +237,10 @@ Examples:
     | 13:30 | puoli kaksi |
     | 01:07 | yksi |
     | 01:08 | varttia yli yksi |
+
+# NTS-12: Finnish has a dedicated ordinal of zero, "nollas" (Wiktionary, citing Kielitoimiston
+# sanakirja; kieli.net), configured as an explicit ordinal exception.
+Scenario: Ordinal of zero
+    Given I use the "FI" number converter
+    When I convert the ordinal number 0
+    Then the result is "nollas"

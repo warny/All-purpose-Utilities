@@ -190,3 +190,11 @@ Examples:
     | 12:15 | doze horas e quinze |
     | 12:45 | doze horas e quarenta e cinco |
     | 23:45 | onze horas e quarenta e cinco |
+
+# NTS-12: no ordinal of zero fits the library contract:
+# the ordinal series starts at "primeiro"; the informal "zerésimo" is not a standard form.
+# The converter fails closed instead of returning the cardinal "zero" unchanged.
+Scenario: Zero has no ordinal form
+    Given I use the "PT" number converter
+    When I attempt to convert the ordinal number 0
+    Then conversion is rejected because no ordinal form is available

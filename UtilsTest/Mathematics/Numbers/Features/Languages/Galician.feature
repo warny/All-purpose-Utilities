@@ -138,3 +138,11 @@ Examples:
     | 02:00 | as dúas |
     | 12:45 | a unha menos cuarto |
     | 13:30 | a unha e media |
+
+# NTS-12: no ordinal of zero fits the library contract:
+# the ordinal series starts at "primeiro"; no standard ordinal of zero is recorded.
+# The converter fails closed instead of returning the cardinal "cero" unchanged.
+Scenario: Zero has no ordinal form
+    Given I use the "GL" number converter
+    When I attempt to convert the ordinal number 0
+    Then conversion is rejected because no ordinal form is available

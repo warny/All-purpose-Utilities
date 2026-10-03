@@ -130,3 +130,11 @@ Examples:
     | 04:00 | τέσσερις |
     | 12:45 | μία παρά τέταρτο |
     | 13:30 | μία και μισή |
+
+# NTS-12: no ordinal of zero fits the library contract:
+# "μηδενικός" is the adjective "zero" ("μηδενική ώρα"), not an ordinal numeral.
+# The converter fails closed instead of returning the cardinal "μηδέν" unchanged.
+Scenario: Zero has no ordinal form
+    Given I use the "EL" number converter
+    When I attempt to convert the ordinal number 0
+    Then conversion is rejected because no ordinal form is available

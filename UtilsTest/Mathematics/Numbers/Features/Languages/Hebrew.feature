@@ -263,3 +263,12 @@ Examples:
     | 12:00 | שתים עשרה |
     | 12:45 | רבע לאחת |
     | 13:30 | אחת וחצי |
+
+# NTS-12: no ordinal of zero fits the library contract:
+# Hebrew ordinal adjectives exist for 1-10 only, and zero is not used as an agreeing-cardinal
+# ordinal.
+# The converter fails closed instead of returning the cardinal "אפס" unchanged.
+Scenario: Zero has no ordinal form
+    Given I use the "HE" number converter
+    When I attempt to convert the ordinal number 0
+    Then conversion is rejected because no ordinal form is available
