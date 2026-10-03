@@ -3026,6 +3026,98 @@ branch rather than preserving tests for rejected production. The public comparer
 canonicalization, rule ordering, and runtime API remain unchanged. P7 is rejected; only this corrected,
 auditable experiment record remains.
 
+#### S5 P8 — diagnostic trigger-metric characterization
+
+**Diagnostic experiment only (2026-10-02; not an accepted optimization).** The externally audited base is
+`7d76d07d7eccc52362f9fa26a506db44bac09335`; the instrumentation/test commit measured here is
+`93b9459f7c02b875caf8f676f8c05c3c9503d92f`. The architecture and metric choices came from that external
+audit. No structural memo, activation threshold, or production optimization is present.
+
+`NodeCount` counts the root and every child reached by P3's conservative traversal.
+`ArithmeticNodeCount` counts ordinary predefined, non-lifted Add/Subtract/Multiply/Divide/Power/Negate
+nodes. `ArithmeticDepth` is the continuous ordinary-arithmetic chain at the measured root; every method,
+lambda, member, custom/lifted operator, or unsupported node breaks it to zero. The same traversal preserves
+P3's user-code safety classification. Metrics use a reference-equality, thread-static cache shared by nested
+operations and released at the outermost scope. `ComparisonDepth` is counted centrally with `try/finally`;
+cumulative node budget resets at depth one.
+
+The Release diagnostic harness constructed each source once and ran one public simplification. A is the
+left-associated additive near miss, B the subtractive near miss, C A under one lambda, G left-associated
+multiplication, and H `2*x + 3*x + ...`. Percentiles use nearest rank. Instrumentation-contaminated timings
+and allocations are intentionally omitted.
+
+| family | n | calls | max depth | median | p90 | p95 | median nodes | max nodes | median arith depth | max arith depth |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| A | 4 | 50 | 3 | 2 | 3 | 3 | 1 | 11 | 0 | 3 |
+| A | 6 | 218 | 5 | 3 | 4 | 4 | 1 | 19 | 0 | 5 |
+| A | 8 | 890 | 7 | 4 | 5 | 6 | 1 | 27 | 0 | 7 |
+| A | 10 | 3,578 | 9 | 5 | 6 | 7 | 1 | 35 | 0 | 9 |
+| A | 12 | 14,330 | 11 | 6 | 8 | 8 | 1 | 43 | 0 | 11 |
+| A | 14 | 57,338 | 13 | 7 | 9 | 9 | 1 | 51 | 0 | 13 |
+| A | 16 | 229,370 | 15 | 8 | 10 | 11 | 1 | 59 | 0 | 15 |
+| B | 4 | 90 | 3 | 2 | 3 | 3 | 1 | 17 | 0 | 5 |
+| B | 6 | 514 | 5 | 2 | 4 | 4 | 1 | 39 | 0 | 7 |
+| B | 8 | 2,418 | 7 | 3 | 5 | 5 | 1 | 69 | 0 | 15 |
+| B | 10 | 10,338 | 9 | 4 | 6 | 6 | 1 | 107 | 0 | 28 |
+| B | 12 | 42,418 | 11 | 5 | 7 | 8 | 1 | 153 | 0 | 45 |
+| B | 14 | 171,234 | 13 | 6 | 8 | 9 | 1 | 207 | 0 | 66 |
+| B | 16 | 687,090 | 15 | 7 | 9 | 10 | 1 | 269 | 0 | 91 |
+| C | 4 | 50 | 3 | 2 | 3 | 3 | 1 | 11 | 0 | 3 |
+| C | 6 | 218 | 5 | 3 | 4 | 4 | 1 | 19 | 0 | 5 |
+| C | 8 | 890 | 7 | 4 | 5 | 6 | 1 | 27 | 0 | 7 |
+| C | 10 | 3,578 | 9 | 5 | 6 | 7 | 1 | 35 | 0 | 9 |
+| C | 12 | 14,330 | 11 | 6 | 8 | 8 | 1 | 43 | 0 | 11 |
+| C | 14 | 57,338 | 13 | 7 | 9 | 9 | 1 | 51 | 0 | 13 |
+| C | 16 | 229,370 | 15 | 8 | 10 | 11 | 1 | 59 | 0 | 15 |
+| G | 4 | 14 | 3 | 2 | 3 | 3 | 1 | 5 | 0 | 2 |
+| G | 6 | 62 | 5 | 3 | 4 | 4 | 1 | 9 | 0 | 4 |
+| G | 8 | 254 | 7 | 4 | 5 | 6 | 1 | 13 | 0 | 6 |
+| G | 10 | 1,022 | 9 | 5 | 6 | 7 | 1 | 17 | 0 | 8 |
+| G | 12 | 4,094 | 11 | 6 | 8 | 8 | 1 | 21 | 0 | 10 |
+| G | 14 | 16,382 | 13 | 7 | 9 | 9 | 1 | 25 | 0 | 12 |
+| G | 16 | 65,534 | 15 | 8 | 10 | 11 | 1 | 29 | 0 | 14 |
+| H | 4 | 17 | 1 | 1 | 1 | 1 | 1 | 5 | 0 | 2 |
+| H | 6 | 27 | 1 | 1 | 1 | 1 | 1 | 9 | 0 | 4 |
+| H | 8 | 37 | 1 | 1 | 1 | 1 | 1 | 13 | 0 | 6 |
+| H | 10 | 47 | 1 | 1 | 1 | 1 | 1 | 17 | 0 | 8 |
+| H | 12 | 57 | 1 | 1 | 1 | 1 | 1 | 21 | 0 | 10 |
+| H | 14 | 67 | 1 | 1 | 1 | 1 | 1 | 25 | 0 | 12 |
+| H | 16 | 77 | 1 | 1 | 1 | 1 | 1 | 29 | 0 | 14 |
+
+These percentages are projections of the recorded joint distributions. They are candidate boundaries, not
+a selected policy.
+
+| scenario | AD>=2 | nodes>=9 | D>=4 & AD>=2 | D>=6 & AD>=2 | D>=8 & AD>=4 | budget>=1,000 |
+|---|---:|---:|---:|---:|---:|---:|
+| A8 | 7.08% | 3.48% | 2.47% | 0.11% | 0.00% | 0.00% |
+| B8 | 6.70% | 2.65% | 1.49% | 0.04% | 0.00% | 27.75% |
+| A12 | 7.14% | 3.57% | 5.92% | 2.69% | 0.01% | 77.73% |
+| B12 | 7.08% | 3.40% | 5.01% | 1.74% | 0.00% | 90.35% |
+| A16 | 7.14% | 3.57% | 6.94% | 5.63% | 0.35% | 97.61% |
+| B16 | 7.14% | 3.55% | 6.66% | 4.76% | 0.20% | 99.10% |
+| G8 | 12.20% | 2.76% | 2.36% | 0.00% | 0.00% | 0.00% |
+| G16 | 12.50% | 3.12% | 11.92% | 8.87% | 0.35% | 93.92% |
+| H8 | 13.51% | 8.11% | 0.00% | 0.00% | 0.00% | 0.00% |
+| H16 | 16.88% | 14.29% | 0.00% | 0.00% | 0.00% | 0.00% |
+
+Origin counts corroborate the paths: A8/A16 split 508/131,068 factor-probe and 382/98,302 multiplication
+events; B8/B16 split 1,262/392,038 and 1,156/295,052; G8/G16 were entirely multiplication (254/65,534);
+H8/H16 split 21/45 and 16/32. No event in these families used the `Other` tag.
+
+**Answers.** (1) Arithmetic depth alone does not separate B8: AD>=2 is 6.70% there versus 7.14%, 7.14%,
+and 12.50% in A16/B16/G16. (2) Node count alone does not: nodes>=9 is 2.65% versus 3.57%, 3.55%, and
+3.12%. (3) The conjunction is materially cleaner: D>=6 and AD>=2 leaves 0.04% of B8 while retaining 5.63%,
+4.76%, and 8.87% of A16/B16/G16; all n=4 and H controls remain at 0%. Adjacent candidate pairs above remain
+deliberately unselected. (4) Adding NodeCount is not justified by these observations: it overlaps and tracks
+arithmetic depth, adding no demonstrated separation to C. (5) Cumulative budget does not outperform raw
+depth: budget>=1,000 admits 27.75% of B8 while D>=6/AD>=2 admits 0.04%. These are measurements, not a final
+production-design choice.
+
+Focused tests validate the required metric examples, custom/lifted chain breaks, same-reference reuse,
+distinct rebuilt objects, nested reuse, teardown, bounded two-thread isolation, nested comparison depth, and
+normal/exception cleanup. The unchanged comparer-batching, structural-canonicalization, comparer, symbolic
+contract, custom-operator safety, and reconstruction-fidelity suites remain semantic gates.
+
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.

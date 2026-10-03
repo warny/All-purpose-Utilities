@@ -62,6 +62,15 @@ namespace Utils.Mathematics.Expressions
     /// </remarks>
     public partial class ExpressionSimplifier : ExpressionTransformer
     {
+        [ThreadStatic]
+        private static Dictionary<Expression, ExpressionMetrics>? _expressionMetricsCache;
+
+        [ThreadStatic]
+        private static int _expressionMetricsScopeDepth;
+
+        [ThreadStatic]
+        private static int _expressionMetricAnalysisCount;
+
         /// <summary>
         /// The exact built-in <see cref="ExpressionSimplifier"/> requires no extra preparation beyond
         /// what <see cref="ExpressionTransformer.TransformCore(Expression)"/> already does, so this
@@ -83,6 +92,7 @@ namespace Utils.Mathematics.Expressions
         /// </remarks>
         public override Expression Transform(Expression expression)
         {
+            using ExpressionMetricsScope metricsScope = BeginExpressionMetricsScope();
             List<ParameterExpression[]>? callerScope = _lexicalScopeStack;
             _lexicalScopeStack = null;
             try
@@ -93,6 +103,159 @@ namespace Utils.Mathematics.Expressions
             {
                 _lexicalScopeStack = callerScope;
             }
+        }
+
+        /// <summary>
+        /// Immutable structural measurements for one expression object.
+        /// </summary>
+        internal readonly struct ExpressionMetrics
+        {
+            /// <summary>Initializes a structural measurement.</summary>
+            /// <param name="nodeCount">The number of visited nodes.</param>
+            /// <param name="arithmeticNodeCount">The number of ordinary arithmetic nodes.</param>
+            /// <param name="arithmeticDepth">The continuous ordinary-arithmetic depth at the root.</param>
+            /// <param name="mightInvokeUserCode">Whether simplification may invoke user code.</param>
+            internal ExpressionMetrics(int nodeCount, int arithmeticNodeCount, int arithmeticDepth, bool mightInvokeUserCode)
+            {
+                NodeCount = nodeCount;
+                ArithmeticNodeCount = arithmeticNodeCount;
+                ArithmeticDepth = arithmeticDepth;
+                MightInvokeUserCode = mightInvokeUserCode;
+            }
+
+            /// <summary>Gets the number of visited expression nodes.</summary>
+            internal int NodeCount { get; }
+
+            /// <summary>Gets the number of ordinary predefined arithmetic nodes.</summary>
+            internal int ArithmeticNodeCount { get; }
+
+            /// <summary>Gets the continuous ordinary-arithmetic depth at the root.</summary>
+            internal int ArithmeticDepth { get; }
+
+            /// <summary>Gets whether simplification may invoke arbitrary user code.</summary>
+            internal bool MightInvokeUserCode { get; }
+        }
+
+        /// <summary>Represents one nested lifetime of the thread-local structural-metric cache.</summary>
+        internal readonly struct ExpressionMetricsScope : IDisposable
+        {
+            /// <summary>Ends this structural-metric cache lifetime.</summary>
+            public void Dispose()
+            {
+                _expressionMetricsScopeDepth--;
+                if (_expressionMetricsScopeDepth == 0)
+                {
+                    _expressionMetricsCache = null;
+                    _expressionMetricAnalysisCount = 0;
+                }
+            }
+        }
+
+        /// <summary>Begins a nested thread-local structural-metric cache lifetime.</summary>
+        /// <returns>A scope which releases the cache after the outermost operation.</returns>
+        internal static ExpressionMetricsScope BeginExpressionMetricsScope()
+        {
+            if (_expressionMetricsScopeDepth++ == 0)
+            {
+                _expressionMetricsCache = new Dictionary<Expression, ExpressionMetrics>(ReferenceEqualityComparer.Instance);
+                _expressionMetricAnalysisCount = 0;
+            }
+
+            return new ExpressionMetricsScope();
+        }
+
+        /// <summary>Gets structural metrics, reusing the current reference-keyed diagnostic cache.</summary>
+        /// <param name="expression">The expression to measure.</param>
+        /// <returns>The immutable metrics for <paramref name="expression"/>.</returns>
+        internal static ExpressionMetrics GetExpressionMetrics(Expression expression)
+        {
+            ArgumentNullException.ThrowIfNull(expression);
+            Dictionary<Expression, ExpressionMetrics>? cache = _expressionMetricsCache;
+            if (cache is null)
+            {
+                using ExpressionMetricsScope scope = BeginExpressionMetricsScope();
+                return GetExpressionMetrics(expression);
+            }
+
+            if (cache.TryGetValue(expression, out ExpressionMetrics cached)) return cached;
+
+            _expressionMetricAnalysisCount++;
+            ExpressionMetrics metrics = AnalyzeExpression(expression);
+            cache.Add(expression, metrics);
+            return metrics;
+        }
+
+        /// <summary>Gets the current thread's number of cache-miss analyses for focused diagnostics.</summary>
+        internal static int ExpressionMetricAnalysisCount => _expressionMetricAnalysisCount;
+
+        /// <summary>Gets whether the current thread retains a structural-metric cache.</summary>
+        internal static bool HasExpressionMetricsCache => _expressionMetricsCache is not null;
+
+        /// <summary>Analyzes one node and its conservatively traversed children without executing user code.</summary>
+        /// <param name="expression">The non-null expression node to analyze.</param>
+        /// <returns>The combined safety and structural metrics.</returns>
+        private static ExpressionMetrics AnalyzeExpression(Expression expression)
+        {
+            List<Expression> children = new();
+            bool locallyUnsafe = false;
+            switch (expression)
+            {
+                case ParameterExpression:
+                    break;
+                case ConstantExpression constant:
+                    locallyUnsafe = constant.Value is not null
+                        && !Types.Number.Contains(constant.Type)
+                        && !ExpressionComparer.IsKnownSafeConstantValue(constant.Value);
+                    break;
+                case LambdaExpression lambda:
+                    children.Add(lambda.Body);
+                    break;
+                case UnaryExpression unary:
+                    children.Add(unary.Operand);
+                    break;
+                case BinaryExpression binary:
+                    children.Add(binary.Left);
+                    children.Add(binary.Right);
+                    if (binary.Conversion is not null) children.Add(binary.Conversion);
+                    break;
+                case MethodCallExpression call:
+                    if (call.Object is not null) children.Add(call.Object);
+                    for (int i = 0; i < call.Arguments.Count; i++) children.Add(call.Arguments[i]);
+                    break;
+                case MemberExpression member:
+                    if (member.Expression is not null) children.Add(member.Expression);
+                    break;
+                default:
+                    locallyUnsafe = true;
+                    break;
+            }
+
+            int nodeCount = 1;
+            int arithmeticNodeCount = 0;
+            bool mightInvokeUserCode = locallyUnsafe;
+            for (int i = 0; i < children.Count; i++)
+            {
+                ExpressionMetrics child = GetExpressionMetrics(children[i]);
+                nodeCount += child.NodeCount;
+                arithmeticNodeCount += child.ArithmeticNodeCount;
+                mightInvokeUserCode |= child.MightInvokeUserCode;
+            }
+
+            int arithmeticDepth = 0;
+            if (expression is UnaryExpression unaryArithmetic && IsOrdinaryUnaryNegate(unaryArithmetic))
+            {
+                arithmeticNodeCount++;
+                arithmeticDepth = 1 + GetExpressionMetrics(unaryArithmetic.Operand).ArithmeticDepth;
+            }
+            else if (expression is BinaryExpression binaryArithmetic && IsOrdinaryBinaryArithmetic(binaryArithmetic))
+            {
+                arithmeticNodeCount++;
+                arithmeticDepth = 1 + int.Max(
+                    GetExpressionMetrics(binaryArithmetic.Left).ArithmeticDepth,
+                    GetExpressionMetrics(binaryArithmetic.Right).ArithmeticDepth);
+            }
+
+            return new ExpressionMetrics(nodeCount, arithmeticNodeCount, arithmeticDepth, mightInvokeUserCode);
         }
 
         /// <summary>
@@ -667,7 +830,7 @@ namespace Utils.Mathematics.Expressions
             /// (<see langword="true"/>) or is meaningless/<see langword="null"/> because
             /// <see cref="MightInvokeUserCodeWhenSimplified"/> ruled the operand out (<see langword="false"/>).
             /// </summary>
-            private readonly List<(Expression Original, bool CanCache, Expression? Simplified)> _cache = new(4);
+            private readonly List<(Expression Original, bool CanCache, ExpressionMetrics Metrics, Expression? Simplified)> _cache = new(4);
 
             /// <summary>
             /// Compares <paramref name="x"/> and <paramref name="y"/> exactly like the public
@@ -682,6 +845,10 @@ namespace Utils.Mathematics.Expressions
             /// <returns><see langword="true"/> if the two candidates are equal under the public <see cref="ExpressionComparer"/> contract.</returns>
             public bool Equals(Expression x, Expression y)
             {
+                ExpressionComparer.ComparisonOrigin previousOrigin = ExpressionComparer.CurrentComparisonOrigin;
+                ExpressionComparer.CurrentComparisonOrigin = ExpressionComparer.ComparisonOrigin.FactorEqualityProbe;
+                try
+                {
                 if (ExpressionComparer.TryFastPathEquals(x, y, out bool fastResult)) return fastResult;
 
                 // Classify BOTH operands before simplifying EITHER one (S5 P3 review round 7): classification
@@ -704,6 +871,11 @@ namespace Utils.Mathematics.Expressions
                 Expression simplifiedY = GetOrSimplify(y);
 
                 return ExpressionComparer.StructuralEqualsAfterSimplification(simplifiedX, simplifiedY);
+                }
+                finally
+                {
+                    ExpressionComparer.CurrentComparisonOrigin = previousOrigin;
+                }
             }
 
             /// <summary>
@@ -724,8 +896,9 @@ namespace Utils.Mathematics.Expressions
                     }
                 }
 
-                bool canCache = !MightInvokeUserCodeWhenSimplified(original);
-                _cache.Add((original, canCache, null));
+                ExpressionMetrics metrics = GetExpressionMetrics(original);
+                bool canCache = !metrics.MightInvokeUserCode;
+                _cache.Add((original, canCache, metrics, null));
                 return canCache;
             }
 
@@ -746,7 +919,7 @@ namespace Utils.Mathematics.Expressions
                         if (simplified is not null) return simplified;
 
                         simplified = ExpressionComparer.SimplifyForComparison(original);
-                        _cache[i] = (original, true, simplified);
+                        _cache[i] = (original, true, _cache[i].Metrics, simplified);
                         return simplified;
                     }
                 }
@@ -786,45 +959,6 @@ namespace Utils.Mathematics.Expressions
             /// </remarks>
             /// <param name="expression">The candidate operand's subtree to scan, or <see langword="null"/> for an absent optional sub-expression.</param>
             /// <returns><see langword="true"/> if simplifying <paramref name="expression"/> might invoke user-defined code; <see langword="false"/> only when this is proven impossible.</returns>
-            private static bool MightInvokeUserCodeWhenSimplified(Expression? expression) => expression switch
-            {
-                null => false,
-                ParameterExpression => false,
-                ConstantExpression ce => ce.Value is not null
-                    && !Types.Number.Contains(ce.Type)
-                    && !ExpressionComparer.IsKnownSafeConstantValue(ce.Value),
-                LambdaExpression le => MightInvokeUserCodeWhenSimplified(le.Body),
-                UnaryExpression ue => MightInvokeUserCodeWhenSimplified(ue.Operand),
-                BinaryExpression be => MightInvokeUserCodeWhenSimplified(be.Left)
-                    || MightInvokeUserCodeWhenSimplified(be.Right)
-                    || MightInvokeUserCodeWhenSimplified(be.Conversion),
-                MethodCallExpression mce => MightInvokeUserCodeWhenSimplified(mce.Object)
-                    || AnyArgumentMightInvokeUserCodeWhenSimplified(mce.Arguments),
-                MemberExpression me => MightInvokeUserCodeWhenSimplified(me.Expression),
-                _ => true,
-            };
-
-            /// <summary>
-            /// Indexed-loop equivalent of <c>arguments.Any(MightInvokeUserCodeWhenSimplified)</c> (S5 P3 review
-            /// round 7), used instead of the
-            /// <see cref="Enumerable.Any{TSource}(IEnumerable{TSource}, Func{TSource, bool})"/> LINQ extension
-            /// so this classification path - meant to be a cheap, allocation-light static-shape scan run once
-            /// per candidate per rule invocation - does not risk the delegate/enumerator scaffolding <c>Any</c>
-            /// can introduce for a non-array <see cref="IReadOnlyList{T}"/> source such as
-            /// <see cref="MethodCallExpression.Arguments"/>, consistent with this project's existing avoidance
-            /// of LINQ on other frequently used construction paths (see the roadmap's S5 stage).
-            /// </summary>
-            /// <param name="arguments">The call's argument list to scan.</param>
-            /// <returns><see langword="true"/> if any argument might invoke user code when simplified.</returns>
-            private static bool AnyArgumentMightInvokeUserCodeWhenSimplified(IReadOnlyList<Expression> arguments)
-            {
-                for (int i = 0; i < arguments.Count; i++)
-                {
-                    if (MightInvokeUserCodeWhenSimplified(arguments[i])) return true;
-                }
-
-                return false;
-            }
         }
 
         /// <summary>
@@ -1236,7 +1370,19 @@ namespace Utils.Mathematics.Expressions
                 rightright = Expression.Constant(Convert.ChangeType(1, right.Type));
             }
 
-            if (ExpressionComparer.Default.Equals(leftleft, rightleft))
+            ExpressionComparer.ComparisonOrigin previousOrigin = ExpressionComparer.CurrentComparisonOrigin;
+            ExpressionComparer.CurrentComparisonOrigin = ExpressionComparer.ComparisonOrigin.Multiplication;
+            bool equalBases;
+            try
+            {
+                equalBases = ExpressionComparer.Default.Equals(leftleft, rightleft);
+            }
+            finally
+            {
+                ExpressionComparer.CurrentComparisonOrigin = previousOrigin;
+            }
+
+            if (equalBases)
             {
                 // Expression.Power only resolves to Math.Pow(double,double); for other
                 // numeric types it throws. Skip the x^(a+b) rewrite in that case so

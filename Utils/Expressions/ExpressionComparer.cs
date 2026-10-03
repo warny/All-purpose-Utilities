@@ -29,6 +29,64 @@ namespace Utils.Mathematics.Expressions;
 /// </remarks>
 public class ExpressionComparer : IEqualityComparer<Expression>
 {
+    [ThreadStatic]
+    private static int _comparisonSimplificationDepth;
+
+    [ThreadStatic]
+    private static long _cumulativeNodeBudget;
+
+    [ThreadStatic]
+    private static List<ComparisonDiagnosticEvent>? _diagnosticEvents;
+
+    [ThreadStatic]
+    private static ComparisonOrigin _currentComparisonOrigin;
+
+    /// <summary>Identifies the simplifier rule path that initiated a comparison.</summary>
+    internal enum ComparisonOrigin
+    {
+        /// <summary>The comparison came from an unclassified direct comparer path.</summary>
+        Other,
+        /// <summary>The comparison came from additive or subtractive factor probing.</summary>
+        FactorEqualityProbe,
+        /// <summary>The comparison came from multiplication power combination.</summary>
+        Multiplication,
+    }
+
+    /// <summary>Describes one diagnostic simplification performed for comparison.</summary>
+    internal readonly record struct ComparisonDiagnosticEvent(
+        int ComparisonDepth,
+        int NodeCount,
+        int ArithmeticNodeCount,
+        int ArithmeticDepth,
+        ExpressionType RootNodeType,
+        ComparisonOrigin Origin,
+        long CumulativeNodeBudget);
+
+    /// <summary>Gets or sets the comparison origin on the current thread.</summary>
+    internal static ComparisonOrigin CurrentComparisonOrigin
+    {
+        get => _currentComparisonOrigin;
+        set => _currentComparisonOrigin = value;
+    }
+
+    /// <summary>Gets the current comparison-simplification depth for focused diagnostics.</summary>
+    internal static int ComparisonSimplificationDepth => _comparisonSimplificationDepth;
+
+    /// <summary>Starts event capture on the current thread.</summary>
+    internal static void BeginDiagnosticCapture()
+    {
+        _diagnosticEvents = new List<ComparisonDiagnosticEvent>();
+    }
+
+    /// <summary>Stops event capture and returns the captured events.</summary>
+    /// <returns>The events captured on the current thread.</returns>
+    internal static IReadOnlyList<ComparisonDiagnosticEvent> EndDiagnosticCapture()
+    {
+        List<ComparisonDiagnosticEvent> events = _diagnosticEvents ?? new List<ComparisonDiagnosticEvent>();
+        _diagnosticEvents = null;
+        return events;
+    }
+
     /// <summary>
     /// A shared <see cref="ExpressionSimplifier"/> instance used to simplify expressions
     /// before they are compared.
@@ -131,7 +189,31 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// </summary>
     /// <param name="expression">The expression to simplify; never <see langword="null"/>.</param>
     /// <returns>The simplified expression.</returns>
-    internal static Expression SimplifyForComparison(Expression expression) => _expressionSimplifier.Simplify(expression);
+    internal static Expression SimplifyForComparison(Expression expression)
+    {
+        using ExpressionSimplifier.ExpressionMetricsScope metricsScope = ExpressionSimplifier.BeginExpressionMetricsScope();
+        _comparisonSimplificationDepth++;
+        if (_comparisonSimplificationDepth == 1) _cumulativeNodeBudget = 0;
+        try
+        {
+            ExpressionSimplifier.ExpressionMetrics metrics = ExpressionSimplifier.GetExpressionMetrics(expression);
+            _cumulativeNodeBudget += metrics.NodeCount;
+            _diagnosticEvents?.Add(new ComparisonDiagnosticEvent(
+                _comparisonSimplificationDepth,
+                metrics.NodeCount,
+                metrics.ArithmeticNodeCount,
+                metrics.ArithmeticDepth,
+                expression.NodeType,
+                _currentComparisonOrigin,
+                _cumulativeNodeBudget));
+            return _expressionSimplifier.Simplify(expression);
+        }
+        finally
+        {
+            _comparisonSimplificationDepth--;
+            if (_comparisonSimplificationDepth == 0) _cumulativeNodeBudget = 0;
+        }
+    }
 
     /// <summary>
     /// Structurally compares two ALREADY-simplified expressions using the exact same policy the public
