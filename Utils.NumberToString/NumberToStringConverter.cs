@@ -1880,7 +1880,7 @@ namespace Utils.NumberToString
             // never overlap the intra-group connector below). "leftText" is the lower sub-group,
             // i.e. the fusion's right constituent.
             if (_fusionPlans != null && TryGetFusionPlan(groupNumber, groupValue, remainder, out var fusion))
-                return fusion.Compose(valueText.StringValue, leftText);
+                return ComposeFusion(fusion, valueText.StringValue, leftText);
 
             // Inject intra-group connector at the hundreds level when there are hundreds AND remainder < threshold
             if (groupNumber == 3 && _intraGroupConnector != null && groupValue > 0 && remainder > 0 && remainder < _intraGroupConnectorThreshold)

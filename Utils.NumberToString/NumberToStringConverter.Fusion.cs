@@ -27,37 +27,23 @@ namespace Utils.NumberToString
         /// <param name="Right">Replacement form of the right constituent, or <see langword="null"/>.</param>
         /// <param name="RemoveLeft">Suffix removed from the left constituent, or <see langword="null"/>.</param>
         /// <param name="RemoveRight">Prefix removed from the right constituent, or <see langword="null"/>.</param>
-        private sealed record FusionPlan(string? Left, string? Right, string? RemoveLeft, string? RemoveRight)
+        private sealed record FusionPlan(string? Left, string? Right, string? RemoveLeft, string? RemoveRight);
+
+        /// <summary>Composes two constituents according to a fusion plan: overrides first, then removals.</summary>
+        /// <param name="plan">The effective plan.</param>
+        /// <param name="left">The digit text (left constituent).</param>
+        /// <param name="right">The lower sub-group text (right constituent).</param>
+        /// <returns>The fused text.</returns>
+        private static string ComposeFusion(FusionPlan plan, string left, string right)
         {
-            /// <summary>Composes the two constituents according to this plan.</summary>
-            /// <param name="left">The digit text (left constituent).</param>
-            /// <param name="right">The lower sub-group text (right constituent).</param>
-            /// <returns>The fused text.</returns>
-            public string Compose(string left, string right)
-                => ApplyLeft(left) + ApplyRight(right);
-
-            /// <summary>Applies the left override then the left removal.</summary>
-            /// <param name="left">The digit text.</param>
-            /// <returns>The transformed left constituent.</returns>
-            public string ApplyLeft(string left)
-            {
-                left = Left ?? left;
-                // Load-time validation guarantees the suffix is present; stay non-destructive anyway.
-                return RemoveLeft != null && left.EndsWith(RemoveLeft, StringComparison.Ordinal)
-                    ? left[..^RemoveLeft.Length]
-                    : left;
-            }
-
-            /// <summary>Applies the right override then the right removal.</summary>
-            /// <param name="right">The lower sub-group text.</param>
-            /// <returns>The transformed right constituent.</returns>
-            public string ApplyRight(string right)
-            {
-                right = Right ?? right;
-                return RemoveRight != null && right.StartsWith(RemoveRight, StringComparison.Ordinal)
-                    ? right[RemoveRight.Length..]
-                    : right;
-            }
+            left = plan.Left ?? left;
+            right = plan.Right ?? right;
+            // Load-time validation guarantees both edges are present; stay non-destructive anyway.
+            if (plan.RemoveLeft != null && left.EndsWith(plan.RemoveLeft, StringComparison.Ordinal))
+                left = left[..^plan.RemoveLeft.Length];
+            if (plan.RemoveRight != null && right.StartsWith(plan.RemoveRight, StringComparison.Ordinal))
+                right = right[plan.RemoveRight.Length..];
+            return left + right;
         }
 
         /// <summary>A validated source rule with its precomputed range and specificity.</summary>
