@@ -64,6 +64,48 @@ public class ExpressionDiagnosticMetricsTests
         AssertMetrics(Expression.Add(nullableX, nullableY), 3, 0, 0);
     }
 
+    /// <summary>
+    /// Validates that floating-point complexity magnitudes grow safely beyond integer range on a shared DAG.
+    /// </summary>
+    [TestMethod]
+    public void Metrics_StronglySharedDag_RemainsPositiveAndThresholdComparable()
+    {
+        Expression shallow = BuildSharedAdditionDag(12);
+        Expression deep = BuildSharedAdditionDag(40);
+
+        using ExpressionSimplifier.ExpressionMetricsScope scope = ExpressionSimplifier.BeginExpressionMetricsScope();
+        ExpressionSimplifier.ExpressionMetrics shallowMetrics = ExpressionSimplifier.GetExpressionMetrics(shallow);
+        ExpressionSimplifier.ExpressionMetrics deepMetrics = ExpressionSimplifier.GetExpressionMetrics(deep);
+
+        Assert.IsGreaterThan(0f, shallowMetrics.NodeCount);
+        Assert.IsGreaterThan(0f, shallowMetrics.ArithmeticNodeCount);
+        Assert.IsGreaterThan(shallowMetrics.NodeCount, deepMetrics.NodeCount);
+        Assert.IsGreaterThan(shallowMetrics.ArithmeticNodeCount, deepMetrics.ArithmeticNodeCount);
+        Assert.IsGreaterThan(1_000_000f, deepMetrics.NodeCount);
+        Assert.IsGreaterThan(1_000_000f, deepMetrics.ArithmeticNodeCount);
+        Assert.IsGreaterThan((float)int.MaxValue, deepMetrics.NodeCount);
+        Assert.AreEqual(40, deepMetrics.ArithmeticDepth);
+    }
+
+    /// <summary>Validates that cumulative budget remains usable for threshold checks on shared structure.</summary>
+    [TestMethod]
+    public void CumulativeNodeBudget_SharedDag_RemainsPositiveAndThresholdComparable()
+    {
+        ExpressionComparer.BeginDiagnosticCapture();
+        try
+        {
+            ExpressionComparer.SimplifyForComparison(BuildSharedAdditionDag(13));
+            var events = ExpressionComparer.EndDiagnosticCapture();
+            Assert.IsNotEmpty(events);
+            Assert.IsGreaterThan(0f, events[0].CumulativeNodeBudget);
+            Assert.IsGreaterThan(8_192f, events[0].CumulativeNodeBudget);
+        }
+        finally
+        {
+            if (ExpressionComparer.IsDiagnosticCaptureActive) ExpressionComparer.EndDiagnosticCapture();
+        }
+    }
+
     /// <summary>Validates reference identity, nested reuse, and outermost cache teardown.</summary>
     [TestMethod]
     public void MetricCache_UsesReferenceIdentityAndOutermostLifetime()
@@ -171,8 +213,22 @@ public class ExpressionDiagnosticMetricsTests
     {
         using ExpressionSimplifier.ExpressionMetricsScope scope = ExpressionSimplifier.BeginExpressionMetricsScope();
         ExpressionSimplifier.ExpressionMetrics metrics = ExpressionSimplifier.GetExpressionMetrics(expression);
-        Assert.AreEqual(nodes, metrics.NodeCount);
-        Assert.AreEqual(arithmeticNodes, metrics.ArithmeticNodeCount);
+        Assert.AreEqual((float)nodes, metrics.NodeCount);
+        Assert.AreEqual((float)arithmeticNodes, metrics.ArithmeticNodeCount);
         Assert.AreEqual(depth, metrics.ArithmeticDepth);
+    }
+
+    /// <summary>Builds a logical binary tree whose two branches share the same object at every level.</summary>
+    /// <param name="depth">The exact number of ordinary addition levels.</param>
+    /// <returns>The root of the strongly shared expression DAG.</returns>
+    private static Expression BuildSharedAdditionDag(int depth)
+    {
+        Expression node = Expression.Parameter(typeof(double), "x");
+        for (int i = 0; i < depth; i++)
+        {
+            node = Expression.Add(node, node);
+        }
+
+        return node;
     }
 }

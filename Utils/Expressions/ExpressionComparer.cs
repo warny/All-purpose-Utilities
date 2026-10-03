@@ -33,9 +33,12 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     [ThreadStatic]
     private static int _comparisonSimplificationDepth;
 
-    /// <summary>Tracks the cumulative nodes attempted by the current diagnostic comparison chain.</summary>
+    /// <summary>
+    /// Tracks the approximate magnitude of logical nodes attempted by the current diagnostic comparison
+    /// chain. Large values may lose low-order precision, which is acceptable for threshold comparisons.
+    /// </summary>
     [ThreadStatic]
-    private static long _cumulativeNodeBudget;
+    private static float _cumulativeNodeBudget;
 
     /// <summary>Stores diagnostic events for the active capture on this thread, or <see langword="null"/> when inactive.</summary>
     [ThreadStatic]
@@ -60,14 +63,20 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     }
 
     /// <summary>Describes one diagnostic simplification performed for comparison.</summary>
+    /// <remarks>
+    /// Node counts and cumulative budget are floating-point complexity magnitudes. They are exact for small
+    /// exactly representable values but may lose low-order precision for heavily shared DAGs; shared paths
+    /// count repeatedly, and the values are intended for threshold comparisons rather than distinct-object
+    /// counting.
+    /// </remarks>
     internal readonly record struct ComparisonDiagnosticEvent(
         int ComparisonDepth,
-        int NodeCount,
-        int ArithmeticNodeCount,
+        float NodeCount,
+        float ArithmeticNodeCount,
         int ArithmeticDepth,
         ExpressionType RootNodeType,
         ComparisonOrigin Origin,
-        long CumulativeNodeBudget);
+        float CumulativeNodeBudget);
 
     /// <summary>Gets or sets the comparison origin on the current thread.</summary>
     internal static ComparisonOrigin CurrentComparisonOrigin
@@ -208,7 +217,7 @@ public class ExpressionComparer : IEqualityComparer<Expression>
 
         using ExpressionSimplifier.ExpressionMetricsScope metricsScope = ExpressionSimplifier.BeginExpressionMetricsScope();
         _comparisonSimplificationDepth++;
-        if (_comparisonSimplificationDepth == 1) _cumulativeNodeBudget = 0;
+        if (_comparisonSimplificationDepth == 1) _cumulativeNodeBudget = 0f;
         try
         {
             ExpressionSimplifier.ExpressionMetrics metrics = ExpressionSimplifier.GetExpressionMetrics(expression);
@@ -226,7 +235,7 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         finally
         {
             _comparisonSimplificationDepth--;
-            if (_comparisonSimplificationDepth == 0) _cumulativeNodeBudget = 0;
+            if (_comparisonSimplificationDepth == 0) _cumulativeNodeBudget = 0f;
         }
     }
 

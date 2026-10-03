@@ -116,11 +116,11 @@ namespace Utils.Mathematics.Expressions
         internal readonly struct ExpressionMetrics
         {
             /// <summary>Initializes a structural measurement.</summary>
-            /// <param name="nodeCount">The number of visited nodes.</param>
-            /// <param name="arithmeticNodeCount">The number of ordinary arithmetic nodes.</param>
+            /// <param name="nodeCount">The logical structural-work magnitude.</param>
+            /// <param name="arithmeticNodeCount">The ordinary-arithmetic-work magnitude.</param>
             /// <param name="arithmeticDepth">The continuous ordinary-arithmetic depth at the root.</param>
             /// <param name="mightInvokeUserCode">Whether simplification may invoke user code.</param>
-            internal ExpressionMetrics(int nodeCount, int arithmeticNodeCount, int arithmeticDepth, bool mightInvokeUserCode)
+            internal ExpressionMetrics(float nodeCount, float arithmeticNodeCount, int arithmeticDepth, bool mightInvokeUserCode)
             {
                 NodeCount = nodeCount;
                 ArithmeticNodeCount = arithmeticNodeCount;
@@ -128,11 +128,22 @@ namespace Utils.Mathematics.Expressions
                 MightInvokeUserCode = mightInvokeUserCode;
             }
 
-            /// <summary>Gets the number of visited expression nodes.</summary>
-            internal int NodeCount { get; }
+            /// <summary>
+            /// Gets the logical structural-work magnitude. A shared sub-expression reached through two
+            /// branches is counted twice because this measures potential traversal work, not distinct CLR
+            /// <see cref="Expression"/> instances. Small exactly representable values are exact; very large
+            /// shared DAGs may lose low-order precision. The value is intended for magnitude and threshold
+            /// comparisons, for which <see cref="float.PositiveInfinity"/> is also valid.
+            /// </summary>
+            internal float NodeCount { get; }
 
-            /// <summary>Gets the number of ordinary predefined arithmetic nodes.</summary>
-            internal int ArithmeticNodeCount { get; }
+            /// <summary>
+            /// Gets the logical ordinary-arithmetic-work magnitude. Shared arithmetic reached through two
+            /// branches is counted twice rather than deduplicated by object identity. Small exactly
+            /// representable values are exact; very large shared DAGs may be approximate. The value is a
+            /// threshold signal, not an exact count of distinct <see cref="Expression"/> instances.
+            /// </summary>
+            internal float ArithmeticNodeCount { get; }
 
             /// <summary>Gets the continuous ordinary-arithmetic depth at the root.</summary>
             internal int ArithmeticDepth { get; }
@@ -212,7 +223,7 @@ namespace Utils.Mathematics.Expressions
             ExpressionMetrics children = expression switch
             {
                 ParameterExpression => default,
-                ConstantExpression constant => new ExpressionMetrics(0, 0, 0,
+                ConstantExpression constant => new ExpressionMetrics(0f, 0f, 0,
                     constant.Value is not null
                         && !Types.Number.Contains(constant.Type)
                         && !ExpressionComparer.IsKnownSafeConstantValue(constant.Value)),
@@ -224,27 +235,27 @@ namespace Utils.Mathematics.Expressions
                     GetOptionalExpressionMetrics(binary.Conversion)),
                 MethodCallExpression call => AnalyzeMethodCallChildren(call),
                 MemberExpression member => GetOptionalExpressionMetrics(member.Expression),
-                _ => new ExpressionMetrics(0, 0, 0, true),
+                _ => new ExpressionMetrics(0f, 0f, 0, true),
             };
 
-            int arithmeticNodeCount = children.ArithmeticNodeCount;
+            float arithmeticNodeCount = children.ArithmeticNodeCount;
 
             int arithmeticDepth = 0;
             if (expression is UnaryExpression unaryArithmetic && IsOrdinaryUnaryNegate(unaryArithmetic))
             {
-                arithmeticNodeCount++;
+                arithmeticNodeCount += 1f;
                 arithmeticDepth = 1 + GetExpressionMetrics(unaryArithmetic.Operand).ArithmeticDepth;
             }
             else if (expression is BinaryExpression binaryArithmetic && IsOrdinaryBinaryArithmetic(binaryArithmetic))
             {
-                arithmeticNodeCount++;
+                arithmeticNodeCount += 1f;
                 arithmeticDepth = 1 + int.Max(
                     GetExpressionMetrics(binaryArithmetic.Left).ArithmeticDepth,
                     GetExpressionMetrics(binaryArithmetic.Right).ArithmeticDepth);
             }
 
             return new ExpressionMetrics(
-                1 + children.NodeCount,
+                1f + children.NodeCount,
                 arithmeticNodeCount,
                 arithmeticDepth,
                 children.MightInvokeUserCode);

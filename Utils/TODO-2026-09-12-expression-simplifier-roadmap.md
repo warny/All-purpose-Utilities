@@ -3043,6 +3043,14 @@ P3's user-code safety classification. Metrics use a reference-equality, thread-s
 operations and released at the outermost scope. `ComparisonDepth` is counted centrally with `try/finally`;
 cumulative node budget resets at depth one.
 
+`NodeCount`, `ArithmeticNodeCount`, and cumulative node budget are stored as `float` complexity magnitudes.
+This prevents integer wraparound when a strongly shared expression DAG is reached through both branches and
+therefore doubles its logical-work estimate at each level. Shared sub-expressions are intentionally counted
+once per path rather than once per CLR object. Small values remain exact; low-order precision loss at large
+magnitudes, and eventual positive infinity, are intentional and harmless for their threshold-comparison use.
+`ArithmeticDepth` remains an exact `int`. Existing A/B/C/G/H measurements are unchanged because their values
+are small enough to be represented exactly.
+
 After review correction, capture is explicitly opt-in. With capture inactive, comparer simplification takes
 the historical direct path, P3 uses its safety-only traversal, no origin/depth/budget state is manipulated,
 and no metrics dictionary is allocated. During capture, the reference cache is allocated lazily on its first
