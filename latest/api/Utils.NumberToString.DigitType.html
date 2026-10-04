@@ -245,7 +245,7 @@ Class DigitType  <a class="header-action link-secondary" title="View source" hre
 
   <h3 id="Utils_NumberToString_DigitType__ctor" data-uid="Utils.NumberToString.DigitType.#ctor">
   DigitType()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L293"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L305"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.NumberToString.DigitType.html">DigitType</a> class for XML serialization.</p>
@@ -272,7 +272,7 @@ Class DigitType  <a class="header-action link-secondary" title="View source" hre
 
   <h3 id="Utils_NumberToString_DigitType__ctor_System_Int32_System_String_System_String_" data-uid="Utils.NumberToString.DigitType.#ctor(System.Int32,System.String,System.String)">
   DigitType(int, string, string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L303"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L315"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.NumberToString.DigitType.html">DigitType</a> class with explicit mapping information.</p>
@@ -375,6 +375,44 @@ Class DigitType  <a class="header-action link-secondary" title="View source" hre
 
 
 
+  <a id="Utils_NumberToString_DigitType_Fusions_" data-uid="Utils.NumberToString.DigitType.Fusions*"></a>
+
+  <h3 id="Utils_NumberToString_DigitType_Fusions" data-uid="Utils.NumberToString.DigitType.Fusions">
+  Fusions
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L299"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the morphological fusion rules applied when this digit is composed with the
+text of its lower sub-group (see <a class="xref" href="Utils.NumberToString.FusionType.html">FusionType</a>). <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> or empty
+means the digit always composes through <a class="xref" href="Utils.NumberToString.DigitType.html#Utils_NumberToString_DigitType_BuildString">BuildString</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public List&lt;FusionType&gt;? Fusions { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;<a class="xref" href="Utils.NumberToString.FusionType.html">FusionType</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+  <h4 class="section" id="Utils_NumberToString_DigitType_Fusions_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>The converter compiles these rules into an immutable snapshot at construction; mutating the
+list afterwards has no effect on an existing converter.</p>
+</div>
+
+
+
+
   <a id="Utils_NumberToString_DigitType_StringValue_" data-uid="Utils.NumberToString.DigitType.StringValue*"></a>
 
   <h3 id="Utils_NumberToString_DigitType_StringValue" data-uid="Utils.NumberToString.DigitType.StringValue">
@@ -415,7 +453,7 @@ Class DigitType  <a class="header-action link-secondary" title="View source" hre
 
   <h3 id="Utils_NumberToString_DigitType_ToString" data-uid="Utils.NumberToString.DigitType.ToString">
   ToString()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L325"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L337"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a string that represents the current object.</p>
@@ -452,7 +490,7 @@ Class DigitType  <a class="header-action link-secondary" title="View source" hre
 
   <h3 id="Utils_NumberToString_DigitType_op_Implicit_System_String____Utils_NumberToString_DigitType" data-uid="Utils.NumberToString.DigitType.op_Implicit(System.String[])~Utils.NumberToString.DigitType">
   implicit operator DigitType(string[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L315"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L327"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts a pair of string values into a <a class="xref" href="Utils.NumberToString.DigitType.html">DigitType</a> instance.</p>

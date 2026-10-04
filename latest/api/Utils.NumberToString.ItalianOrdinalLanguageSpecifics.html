@@ -2,11 +2,11 @@
 <html>
   <head>
     <meta charset="utf-8">
-      <title>Class NumberToStringConverter.VariantDimension | omy.Utils Documentation </title>
+      <title>Class ItalianOrdinalLanguageSpecifics | omy.Utils Documentation </title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="title" content="Class NumberToStringConverter.VariantDimension | omy.Utils Documentation ">
+      <meta name="title" content="Class ItalianOrdinalLanguageSpecifics | omy.Utils Documentation ">
       
-      <meta name="description" content="Declares one dimension of grammatical variation (e.g. &amp;quot;gender&amp;quot;) with its ordered set of values. The first value is the default applied when no explicit variant is requested.">
+      <meta name="description" content="Restricts Italian ordinals to the forms the declarative XML rules produce correctly: the irregular 1-10 (primo … decimo), the teens 11-19 (undicesimo … diciannovesimo), the round tens 20-90 (ventesimo … novantesimo), centesimo and millesimo.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -16,7 +16,7 @@
       <meta name="docfx:rel" content="../">
       
       
-      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_NumberToStringConverter_VariantDimension.md&amp;value=---%0Auid%3A%20Utils.NumberToString.NumberToStringConverter.VariantDimension%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_ItalianOrdinalLanguageSpecifics.md&amp;value=---%0Auid%3A%20Utils.NumberToString.ItalianOrdinalLanguageSpecifics%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
       <meta name="loc:inThisArticle" content="In this article">
       <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
       <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
@@ -84,12 +84,12 @@
           <nav id="breadcrumb"></nav>
         </div>
 
-        <article data-uid="Utils.NumberToString.NumberToStringConverter.VariantDimension">
+        <article data-uid="Utils.NumberToString.ItalianOrdinalLanguageSpecifics">
 
 
 
-  <h1 id="Utils_NumberToString_NumberToStringConverter_VariantDimension" data-uid="Utils.NumberToString.NumberToStringConverter.VariantDimension" class="text-break">
-Class NumberToStringConverter.VariantDimension  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L1720"><i class="bi bi-code-slash"></i></a>
+  <h1 id="Utils_NumberToString_ItalianOrdinalLanguageSpecifics" data-uid="Utils.NumberToString.ItalianOrdinalLanguageSpecifics" class="text-break">
+Class ItalianOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ItalianOrdinalLanguageSpecifics.cs/#L21"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,13 +97,15 @@ Class NumberToStringConverter.VariantDimension  <a class="header-action link-sec
   <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Declares one dimension of grammatical variation (e.g. &quot;gender&quot;) with its ordered
-set of values. The first value is the default applied when no explicit variant is requested.</p>
+  <div class="markdown summary"><p>Restricts Italian ordinals to the forms the declarative XML rules produce correctly: the
+irregular 1-10 (<code>primo</code> … <code>decimo</code>), the teens 11-19 (<code>undicesimo</code> …
+<code>diciannovesimo</code>), the round tens 20-90 (<code>ventesimo</code> … <code>novantesimo</code>),
+<code>centesimo</code> and <code>millesimo</code>.</p>
 </div>
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public sealed class NumberToStringConverter.VariantDimension</code></pre>
+    <pre><code class="lang-csharp hljs">public sealed class ItalianOrdinalLanguageSpecifics : INumberToStringLanguageSpecifics, IOrdinalLanguageSpecifics</code></pre>
   </div>
 
 
@@ -113,10 +115,17 @@ set of values. The first value is the default applied when no explicit variant i
     <dt>Inheritance</dt>
     <dd>
       <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
-      <div><span class="xref">NumberToStringConverter.VariantDimension</span></div>
+      <div><span class="xref">ItalianOrdinalLanguageSpecifics</span></div>
     </dd>
   </dl>
 
+  <dl class="typelist implements">
+    <dt>Implements</dt>
+    <dd>
+      <div><a class="xref" href="Utils.NumberToString.INumberToStringLanguageSpecifics.html">INumberToStringLanguageSpecifics</a></div>
+      <div><a class="xref" href="Utils.NumberToString.IOrdinalLanguageSpecifics.html">IOrdinalLanguageSpecifics</a></div>
+    </dd>
+  </dl>
 
 
   <dl class="typelist inheritedMembers">
@@ -236,78 +245,51 @@ set of values. The first value is the default applied when no explicit variant i
 
 
 
+  <h2 id="Utils_NumberToString_ItalianOrdinalLanguageSpecifics_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>Italian compound cardinals are written as one word (<code>ventuno</code>, <code>ventitré</code>,
+<code>centottanta</code>). Their ordinal drops the final vowel of the soldered word except after
+<code>tre</code> and <code>sei</code> (<code>ventunesimo</code>, <code>ventitreesimo</code>, <code>ventiseiesimo</code>), a
+vowel-specific stem rule that the declarative suffix pipeline (one <code>removeTrailing</code>
+string and whole-word rules) cannot express. Rather than letting a mechanical suffix produce
+an invented form such as <code>ventunoesimo</code>, every other value, including zero, is rejected.
+See TODO NTS-13.</p>
+</div>
 
 
-  <h2 class="section" id="constructors">Constructors
+  <h2 class="section" id="methods">Methods
 </h2>
 
 
-  <a id="Utils_NumberToString_NumberToStringConverter_VariantDimension__ctor_" data-uid="Utils.NumberToString.NumberToStringConverter.VariantDimension.#ctor*"></a>
+  <a id="Utils_NumberToString_ItalianOrdinalLanguageSpecifics_FinalizeWriting_" data-uid="Utils.NumberToString.ItalianOrdinalLanguageSpecifics.FinalizeWriting*"></a>
 
-  <h3 id="Utils_NumberToString_NumberToStringConverter_VariantDimension__ctor_System_String_System_Collections_Generic_IReadOnlyList_System_String__System_String_" data-uid="Utils.NumberToString.NumberToStringConverter.VariantDimension.#ctor(System.String,System.Collections.Generic.IReadOnlyList{System.String},System.String)">
-  VariantDimension(string, IReadOnlyList&lt;string&gt;, string?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L1728"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_NumberToString_ItalianOrdinalLanguageSpecifics_FinalizeWriting_System_String_System_String_" data-uid="Utils.NumberToString.ItalianOrdinalLanguageSpecifics.FinalizeWriting(System.String,System.String)">
+  FinalizeWriting(string, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ItalianOrdinalLanguageSpecifics.cs/#L24"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.NumberToString.NumberToStringConverter.VariantDimension.html">NumberToStringConverter.VariantDimension</a> class.</p>
+  <div class="markdown level1 summary"><p>Finalizes a converted text according to language-specific writing rules.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public VariantDimension(string name, IReadOnlyList&lt;string&gt; values, string? localName = null)</code></pre>
+    <pre><code class="lang-csharp hljs">public string FinalizeWriting(string languageIdentifier, string text)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
-    <dt><code>name</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>The canonical English dimension name (e.g. &quot;gender&quot;, &quot;case&quot;).</p>
+    <dt><code>languageIdentifier</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The culture or language identifier currently being converted.</p>
 </dd>
-    <dt><code>values</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
-    <dd><p>The ordered list of valid values; the first is the default.</p>
-</dd>
-    <dt><code>localName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Optional language-specific alias (e.g. &quot;genus&quot; for German, &quot;sijamuoto&quot; for Finnish).</p>
+    <dt><code>text</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The converted text to finalize.</p>
 </dd>
   </dl>
 
-
-
-
-
-
-
-
-
-
-
-
-  <h2 class="section" id="properties">Properties
-</h2>
-
-
-  <a id="Utils_NumberToString_NumberToStringConverter_VariantDimension_DefaultValue_" data-uid="Utils.NumberToString.NumberToStringConverter.VariantDimension.DefaultValue*"></a>
-
-  <h3 id="Utils_NumberToString_NumberToStringConverter_VariantDimension_DefaultValue" data-uid="Utils.NumberToString.NumberToStringConverter.VariantDimension.DefaultValue">
-  DefaultValue
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L1747"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Gets the default value (first declared), or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> when the list is empty.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string? DefaultValue { get; }</code></pre>
-  </div>
-
-
-
-
-
-  <h4 class="section">Property Value</h4>
+  <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd></dd>
+    <dd><p>The finalized text.</p>
+</dd>
   </dl>
 
 
@@ -316,30 +298,50 @@ set of values. The first value is the default applied when no explicit variant i
 
 
 
+  <h4 class="section" id="Utils_NumberToString_ItalianOrdinalLanguageSpecifics_FinalizeWriting_System_String_System_String__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Finalization is a top-level phrase operation. The converter assembles internal numeric
+fragments without invoking this method, then invokes it exactly once for each public result.</p>
+</div>
 
-  <a id="Utils_NumberToString_NumberToStringConverter_VariantDimension_LocalName_" data-uid="Utils.NumberToString.NumberToStringConverter.VariantDimension.LocalName*"></a>
 
-  <h3 id="Utils_NumberToString_NumberToStringConverter_VariantDimension_LocalName" data-uid="Utils.NumberToString.NumberToStringConverter.VariantDimension.LocalName">
-  LocalName
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L1741"><i class="bi bi-code-slash"></i></a>
+
+
+  <a id="Utils_NumberToString_ItalianOrdinalLanguageSpecifics_TryConvertOrdinal_" data-uid="Utils.NumberToString.ItalianOrdinalLanguageSpecifics.TryConvertOrdinal*"></a>
+
+  <h3 id="Utils_NumberToString_ItalianOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int32_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__" data-uid="Utils.NumberToString.ItalianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)">
+  TryConvertOrdinal(int, IReadOnlyDictionary&lt;string, string&gt;, out string?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ItalianOrdinalLanguageSpecifics.cs/#L27"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets the optional language-specific alias for this dimension (e.g. &quot;genus&quot;, &quot;sijamuoto&quot;).</p>
+  <div class="markdown level1 summary"><p>Attempts to convert a non-negative integer to its ordinal string representation.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string? LocalName { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public bool TryConvertOrdinal(int number, IReadOnlyDictionary&lt;string, string&gt; activeVariants, out string? result)</code></pre>
   </div>
 
-
-
-
-
-  <h4 class="section">Property Value</h4>
+  <h4 class="section">Parameters</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd></dd>
+    <dt><code>number</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The absolute value of the number to convert (always ≥ 0).</p>
+</dd>
+    <dt><code>activeVariants</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
+    <dd><p>The active dimension constraints, e.g. <code>{ &quot;gender&quot; → &quot;feminin&quot;, &quot;case&quot; → &quot;dativ&quot; }</code>.
+Populated by merging the caller's explicit parameters with dimension defaults.</p>
+</dd>
+    <dt><code>result</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The ordinal string when this method returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>;
+otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> to use <code class="paramref">result</code> directly;
+<a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> to fall through to the XML-based ordinal pipeline.</p>
+</dd>
   </dl>
 
 
@@ -349,62 +351,53 @@ set of values. The first value is the default applied when no explicit variant i
 
 
 
-  <a id="Utils_NumberToString_NumberToStringConverter_VariantDimension_Name_" data-uid="Utils.NumberToString.NumberToStringConverter.VariantDimension.Name*"></a>
 
-  <h3 id="Utils_NumberToString_NumberToStringConverter_VariantDimension_Name" data-uid="Utils.NumberToString.NumberToStringConverter.VariantDimension.Name">
-  Name
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L1738"><i class="bi bi-code-slash"></i></a>
+
+
+  <a id="Utils_NumberToString_ItalianOrdinalLanguageSpecifics_TryConvertOrdinal_" data-uid="Utils.NumberToString.ItalianOrdinalLanguageSpecifics.TryConvertOrdinal*"></a>
+
+  <h3 id="Utils_NumberToString_ItalianOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__" data-uid="Utils.NumberToString.ItalianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)">
+  TryConvertOrdinal(long, IReadOnlyDictionary&lt;string, string&gt;, out string?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ItalianOrdinalLanguageSpecifics.cs/#L31"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets the canonical English dimension name (e.g. &quot;gender&quot;, &quot;case&quot;).</p>
+  <div class="markdown level1 summary"><p>Attempts to convert a 64-bit integer to its ordinal string representation.
+The default implementation delegates to
+<a class="xref" href="Utils.NumberToString.IOrdinalLanguageSpecifics.html#Utils_NumberToString_IOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int32_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__">TryConvertOrdinal(int, IReadOnlyDictionary&lt;string, string&gt;, out string?)</a> when the value
+fits in <code>int</code>; values above <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32.maxvalue">MaxValue</a> return <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> (fall through
+to the XML ordinal pipeline).
+Override this to handle ordinal values above <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32.maxvalue">MaxValue</a>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string Name { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public bool TryConvertOrdinal(long number, IReadOnlyDictionary&lt;string, string&gt; activeVariants, out string? result)</code></pre>
   </div>
 
-
-
-
-
-  <h4 class="section">Property Value</h4>
+  <h4 class="section">Parameters</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd></dd>
+    <dt><code>number</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a></dt>
+    <dd><p>The absolute value of the number to convert (always ≥ 0).</p>
+</dd>
+    <dt><code>activeVariants</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
+    <dd><p>The active dimension constraints, e.g. <code>{ &quot;gender&quot; → &quot;feminin&quot; }</code>.</p>
+</dd>
+    <dt><code>result</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The ordinal string when this method returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>;
+otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> to use <code class="paramref">result</code> directly;
+<a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> to fall through to the XML-based ordinal pipeline.</p>
+</dd>
   </dl>
 
 
 
-
-
-
-
-
-  <a id="Utils_NumberToString_NumberToStringConverter_VariantDimension_Values_" data-uid="Utils.NumberToString.NumberToStringConverter.VariantDimension.Values*"></a>
-
-  <h3 id="Utils_NumberToString_NumberToStringConverter_VariantDimension_Values" data-uid="Utils.NumberToString.NumberToStringConverter.VariantDimension.Values">
-  Values
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L1744"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Gets the ordered list of valid values. The first value is the default.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public IReadOnlyList&lt;string&gt; Values { get; }</code></pre>
-  </div>
-
-
-
-
-
-  <h4 class="section">Property Value</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
-    <dd></dd>
-  </dl>
 
 
 
@@ -417,7 +410,7 @@ set of values. The first value is the default applied when no explicit variant i
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L1720" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ItalianOrdinalLanguageSpecifics.cs/#L21" class="edit-link">Edit this page</a>
         </div>
 
 

@@ -61916,6 +61916,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.DigitType.Digit
   nameWithType: DigitType.Digit
+- uid: Utils.NumberToString.DigitType.Fusions
+  name: Fusions
+  href: api/Utils.NumberToString.DigitType.html#Utils_NumberToString_DigitType_Fusions
+  commentId: P:Utils.NumberToString.DigitType.Fusions
+  fullName: Utils.NumberToString.DigitType.Fusions
+  nameWithType: DigitType.Fusions
+- uid: Utils.NumberToString.DigitType.Fusions*
+  name: Fusions
+  href: api/Utils.NumberToString.DigitType.html#Utils_NumberToString_DigitType_Fusions_
+  commentId: Overload:Utils.NumberToString.DigitType.Fusions
+  isSpec: "True"
+  fullName: Utils.NumberToString.DigitType.Fusions
+  nameWithType: DigitType.Fusions
 - uid: Utils.NumberToString.DigitType.StringValue
   name: StringValue
   href: api/Utils.NumberToString.DigitType.html#Utils_NumberToString_DigitType_StringValue
@@ -62197,6 +62210,90 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.FractionType.StringValue
   nameWithType: FractionType.StringValue
+- uid: Utils.NumberToString.FusionType
+  name: FusionType
+  href: api/Utils.NumberToString.FusionType.html
+  commentId: T:Utils.NumberToString.FusionType
+  fullName: Utils.NumberToString.FusionType
+  nameWithType: FusionType
+- uid: Utils.NumberToString.FusionType.For
+  name: For
+  href: api/Utils.NumberToString.FusionType.html#Utils_NumberToString_FusionType_For
+  commentId: P:Utils.NumberToString.FusionType.For
+  fullName: Utils.NumberToString.FusionType.For
+  nameWithType: FusionType.For
+- uid: Utils.NumberToString.FusionType.For*
+  name: For
+  href: api/Utils.NumberToString.FusionType.html#Utils_NumberToString_FusionType_For_
+  commentId: Overload:Utils.NumberToString.FusionType.For
+  isSpec: "True"
+  fullName: Utils.NumberToString.FusionType.For
+  nameWithType: FusionType.For
+- uid: Utils.NumberToString.FusionType.Left
+  name: Left
+  href: api/Utils.NumberToString.FusionType.html#Utils_NumberToString_FusionType_Left
+  commentId: P:Utils.NumberToString.FusionType.Left
+  fullName: Utils.NumberToString.FusionType.Left
+  nameWithType: FusionType.Left
+- uid: Utils.NumberToString.FusionType.Left*
+  name: Left
+  href: api/Utils.NumberToString.FusionType.html#Utils_NumberToString_FusionType_Left_
+  commentId: Overload:Utils.NumberToString.FusionType.Left
+  isSpec: "True"
+  fullName: Utils.NumberToString.FusionType.Left
+  nameWithType: FusionType.Left
+- uid: Utils.NumberToString.FusionType.RemoveLeft
+  name: RemoveLeft
+  href: api/Utils.NumberToString.FusionType.html#Utils_NumberToString_FusionType_RemoveLeft
+  commentId: P:Utils.NumberToString.FusionType.RemoveLeft
+  fullName: Utils.NumberToString.FusionType.RemoveLeft
+  nameWithType: FusionType.RemoveLeft
+- uid: Utils.NumberToString.FusionType.RemoveLeft*
+  name: RemoveLeft
+  href: api/Utils.NumberToString.FusionType.html#Utils_NumberToString_FusionType_RemoveLeft_
+  commentId: Overload:Utils.NumberToString.FusionType.RemoveLeft
+  isSpec: "True"
+  fullName: Utils.NumberToString.FusionType.RemoveLeft
+  nameWithType: FusionType.RemoveLeft
+- uid: Utils.NumberToString.FusionType.RemoveRight
+  name: RemoveRight
+  href: api/Utils.NumberToString.FusionType.html#Utils_NumberToString_FusionType_RemoveRight
+  commentId: P:Utils.NumberToString.FusionType.RemoveRight
+  fullName: Utils.NumberToString.FusionType.RemoveRight
+  nameWithType: FusionType.RemoveRight
+- uid: Utils.NumberToString.FusionType.RemoveRight*
+  name: RemoveRight
+  href: api/Utils.NumberToString.FusionType.html#Utils_NumberToString_FusionType_RemoveRight_
+  commentId: Overload:Utils.NumberToString.FusionType.RemoveRight
+  isSpec: "True"
+  fullName: Utils.NumberToString.FusionType.RemoveRight
+  nameWithType: FusionType.RemoveRight
+- uid: Utils.NumberToString.FusionType.Right
+  name: Right
+  href: api/Utils.NumberToString.FusionType.html#Utils_NumberToString_FusionType_Right
+  commentId: P:Utils.NumberToString.FusionType.Right
+  fullName: Utils.NumberToString.FusionType.Right
+  nameWithType: FusionType.Right
+- uid: Utils.NumberToString.FusionType.Right*
+  name: Right
+  href: api/Utils.NumberToString.FusionType.html#Utils_NumberToString_FusionType_Right_
+  commentId: Overload:Utils.NumberToString.FusionType.Right
+  isSpec: "True"
+  fullName: Utils.NumberToString.FusionType.Right
+  nameWithType: FusionType.Right
+- uid: Utils.NumberToString.FusionType.ToString
+  name: ToString()
+  href: api/Utils.NumberToString.FusionType.html#Utils_NumberToString_FusionType_ToString
+  commentId: M:Utils.NumberToString.FusionType.ToString
+  fullName: Utils.NumberToString.FusionType.ToString()
+  nameWithType: FusionType.ToString()
+- uid: Utils.NumberToString.FusionType.ToString*
+  name: ToString
+  href: api/Utils.NumberToString.FusionType.html#Utils_NumberToString_FusionType_ToString_
+  commentId: Overload:Utils.NumberToString.FusionType.ToString
+  isSpec: "True"
+  fullName: Utils.NumberToString.FusionType.ToString
+  nameWithType: FusionType.ToString
 - uid: Utils.NumberToString.GermanNumberToStringLanguageSpecifics
   name: GermanNumberToStringLanguageSpecifics
   href: api/Utils.NumberToString.GermanNumberToStringLanguageSpecifics.html
@@ -63032,6 +63129,53 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.TryConvertOrdinal
   nameWithType: IndonesianOrdinalLanguageSpecifics.TryConvertOrdinal
+- uid: Utils.NumberToString.ItalianOrdinalLanguageSpecifics
+  name: ItalianOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.ItalianOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.ItalianOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.ItalianOrdinalLanguageSpecifics
+  nameWithType: ItalianOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.ItalianOrdinalLanguageSpecifics.FinalizeWriting(System.String,System.String)
+  name: FinalizeWriting(string, string)
+  href: api/Utils.NumberToString.ItalianOrdinalLanguageSpecifics.html#Utils_NumberToString_ItalianOrdinalLanguageSpecifics_FinalizeWriting_System_String_System_String_
+  commentId: M:Utils.NumberToString.ItalianOrdinalLanguageSpecifics.FinalizeWriting(System.String,System.String)
+  name.vb: FinalizeWriting(String, String)
+  fullName: Utils.NumberToString.ItalianOrdinalLanguageSpecifics.FinalizeWriting(string, string)
+  fullName.vb: Utils.NumberToString.ItalianOrdinalLanguageSpecifics.FinalizeWriting(String, String)
+  nameWithType: ItalianOrdinalLanguageSpecifics.FinalizeWriting(string, string)
+  nameWithType.vb: ItalianOrdinalLanguageSpecifics.FinalizeWriting(String, String)
+- uid: Utils.NumberToString.ItalianOrdinalLanguageSpecifics.FinalizeWriting*
+  name: FinalizeWriting
+  href: api/Utils.NumberToString.ItalianOrdinalLanguageSpecifics.html#Utils_NumberToString_ItalianOrdinalLanguageSpecifics_FinalizeWriting_
+  commentId: Overload:Utils.NumberToString.ItalianOrdinalLanguageSpecifics.FinalizeWriting
+  isSpec: "True"
+  fullName: Utils.NumberToString.ItalianOrdinalLanguageSpecifics.FinalizeWriting
+  nameWithType: ItalianOrdinalLanguageSpecifics.FinalizeWriting
+- uid: Utils.NumberToString.ItalianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name: TryConvertOrdinal(int, IReadOnlyDictionary<string, string>, out string?)
+  href: api/Utils.NumberToString.ItalianOrdinalLanguageSpecifics.html#Utils_NumberToString_ItalianOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int32_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__
+  commentId: M:Utils.NumberToString.ItalianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name.vb: TryConvertOrdinal(Integer, IReadOnlyDictionary(Of String, String), String)
+  fullName: Utils.NumberToString.ItalianOrdinalLanguageSpecifics.TryConvertOrdinal(int, System.Collections.Generic.IReadOnlyDictionary<string, string>, out string?)
+  fullName.vb: Utils.NumberToString.ItalianOrdinalLanguageSpecifics.TryConvertOrdinal(Integer, System.Collections.Generic.IReadOnlyDictionary(Of String, String), String)
+  nameWithType: ItalianOrdinalLanguageSpecifics.TryConvertOrdinal(int, IReadOnlyDictionary<string, string>, out string?)
+  nameWithType.vb: ItalianOrdinalLanguageSpecifics.TryConvertOrdinal(Integer, IReadOnlyDictionary(Of String, String), String)
+- uid: Utils.NumberToString.ItalianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name: TryConvertOrdinal(long, IReadOnlyDictionary<string, string>, out string?)
+  href: api/Utils.NumberToString.ItalianOrdinalLanguageSpecifics.html#Utils_NumberToString_ItalianOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__
+  commentId: M:Utils.NumberToString.ItalianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name.vb: TryConvertOrdinal(Long, IReadOnlyDictionary(Of String, String), String)
+  fullName: Utils.NumberToString.ItalianOrdinalLanguageSpecifics.TryConvertOrdinal(long, System.Collections.Generic.IReadOnlyDictionary<string, string>, out string?)
+  fullName.vb: Utils.NumberToString.ItalianOrdinalLanguageSpecifics.TryConvertOrdinal(Long, System.Collections.Generic.IReadOnlyDictionary(Of String, String), String)
+  nameWithType: ItalianOrdinalLanguageSpecifics.TryConvertOrdinal(long, IReadOnlyDictionary<string, string>, out string?)
+  nameWithType.vb: ItalianOrdinalLanguageSpecifics.TryConvertOrdinal(Long, IReadOnlyDictionary(Of String, String), String)
+- uid: Utils.NumberToString.ItalianOrdinalLanguageSpecifics.TryConvertOrdinal*
+  name: TryConvertOrdinal
+  href: api/Utils.NumberToString.ItalianOrdinalLanguageSpecifics.html#Utils_NumberToString_ItalianOrdinalLanguageSpecifics_TryConvertOrdinal_
+  commentId: Overload:Utils.NumberToString.ItalianOrdinalLanguageSpecifics.TryConvertOrdinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.ItalianOrdinalLanguageSpecifics.TryConvertOrdinal
+  nameWithType: ItalianOrdinalLanguageSpecifics.TryConvertOrdinal
 - uid: Utils.NumberToString.LanguageType
   name: LanguageType
   href: api/Utils.NumberToString.LanguageType.html

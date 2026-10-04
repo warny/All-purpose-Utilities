@@ -240,6 +240,13 @@ into <code>OrdinalVariantRule</code> or <code>VariantRule</code> entries — no 
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.FusionType.html">FusionType</a></dt>
+      <dd><p>Declares a morphological fusion between a digit (the <em>left</em> constituent) and the already
+built text of its lower sub-group (the <em>right</em> constituent), e.g. Italian
+<code>venti + uno → ventuno</code>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.GermanNumberToStringLanguageSpecifics.html">GermanNumberToStringLanguageSpecifics</a></dt>
       <dd><p>Applies German writing-specific finalization rules to converted numeric texts.</p>
 </dd>
@@ -268,6 +275,14 @@ larger ones separate their thousand groups with hyphens (<code>kétezer-egyedik<
       <dt><a class="xref" href="Utils.NumberToString.IndonesianOrdinalLanguageSpecifics.html">IndonesianOrdinalLanguageSpecifics</a></dt>
       <dd><p>Produces Indonesian ordinals, including suppletive <code>pertama</code> and productive
 <code>ke-</code> forms over the Indonesian cardinal system.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.ItalianOrdinalLanguageSpecifics.html">ItalianOrdinalLanguageSpecifics</a></dt>
+      <dd><p>Restricts Italian ordinals to the forms the declarative XML rules produce correctly: the
+irregular 1-10 (<code>primo</code> … <code>decimo</code>), the teens 11-19 (<code>undicesimo</code> …
+<code>diciannovesimo</code>), the round tens 20-90 (<code>ventesimo</code> … <code>novantesimo</code>),
+<code>centesimo</code> and <code>millesimo</code>.</p>
 </dd>
     </dl>
     <dl class="jumplist">
