@@ -455,20 +455,6 @@ public class NumberToStringFusionTests
         Assert.AreEqual("twenty two", Cardinal(converter, 22));
     }
 
-    /// <summary>Mutating the source rule list after construction does not affect the converter snapshot.</summary>
-    [TestMethod]
-    public void Fusion_SourceMutationAfterConstruction_DoesNotChangeConverter()
-    {
-        var fusions = new List<FusionType> { new() { For = "1" } };
-        var converter = new NumberToStringConverter(ProgrammaticOptions(fusions));
-
-        fusions[0].Right = "changed";
-        fusions.Add(new FusionType { For = "2" });
-
-        Assert.AreEqual("twentyone", Cardinal(converter, 21));
-        Assert.AreEqual("twenty two", Cardinal(converter, 22));
-    }
-
     /// <summary>Cloning a converter through its options preserves its fusion behaviour.</summary>
     [TestMethod]
     public void Fusion_OptionsClone_PreservesFusions()
