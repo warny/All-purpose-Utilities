@@ -11,25 +11,104 @@ Scenario Outline: Cardinal numbers
 Examples:
     | number | expected |
     | 1 | uno |
+    | 3 | tre |
     | 11 | undici |
     | 20 | venti |
-    | 21 | venti uno |
-    | 22 | venti due |
-    | 29 | venti nove |
     | 100 | cento |
     | 1000 | mille |
-    | 2000 | due mila |
+
+# Treccani, Enciclopedia dell'Italiano, "numerali": compound cardinals below a million are written
+# as one word; the final vowel of the tens is elided before uno and otto ("ventuno [e non
+# *ventiuno]"); compounds of tre take the accent ("ventitré") although tre alone does not. The
+# <Fusion> rules of the tens digits implement these junctions.
+Scenario Outline: Compound cardinals are written as one word
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 21 | ventuno |
+    | 22 | ventidue |
+    | 23 | ventitré |
+    | 25 | venticinque |
+    | 28 | ventotto |
+    | 29 | ventinove |
+    | 31 | trentuno |
+    | 33 | trentatré |
+    | 38 | trentotto |
+    | 43 | quarantatré |
+    | 48 | quarantotto |
+    | 58 | cinquantotto |
+    | 68 | sessantotto |
+    | 78 | settantotto |
+    | 88 | ottantotto |
+    | 98 | novantotto |
+    | 99 | novantanove |
+
+# Treccani: with cento followed by a ten or a unit, elision is uncommon before uno, otto and
+# undici ("centouno", "centootto", "centoundici"), so those keep the vowel; before ottanta the
+# hundreds elide ("centottanta"; also attested "trecentottanta-" in dictionary forms). The accent
+# of a final tre also applies after the hundreds ("centotré", Treccani/Libreriamo).
+Scenario Outline: Compound cardinals with hundreds
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 101 | centouno |
+    | 103 | centotré |
+    | 108 | centootto |
+    | 111 | centoundici |
+    | 123 | centoventitré |
+    | 180 | centottanta |
+    | 181 | centottantuno |
+    | 183 | centottantatré |
+    | 188 | centottantotto |
+    | 280 | duecentottanta |
+    | 281 | duecentottantuno |
+    | 999 | novecentonovantanove |
+
+# Treccani: mille becomes -mila in the plural and joins the multiplier in writing ("duemila"); with
+# mille the elision is "decisamente da evitare" ("milleuno [non *milluno]"). The whole number below
+# a million is one word, and a final tre keeps its accent ("milletré", "duemilatré", Libreriamo),
+# while an inner tre does not carry it ("ventitremila"). These scale-level junctions are handled by
+# onScale Replacements, not by <Fusion>, whose contract is intra-group. 21000 uses the regular,
+# non-apocopated "ventunomila"; the apocopated "ventunmila" is also attested and not chosen.
+Scenario Outline: Thousands are written as one word
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1001 | milleuno |
+    | 1003 | milletré |
+    | 1021 | milleventuno |
+    | 1100 | millecento |
+    | 2000 | duemila |
+    | 2001 | duemilauno |
+    | 2003 | duemilatré |
+    | 3000 | tremila |
+    | 21000 | ventunomila |
+    | 23000 | ventitremila |
+    | 28000 | ventottomila |
+    | 100000 | centomila |
+    | 123456 | centoventitremilaquattrocentocinquantasei |
+    | 180180 | centottantamilacentottanta |
+    | 999999 | novecentonovantanovemilanovecentonovantanove |
 
 Scenario Outline: Feminine cardinal numbers
     Given I use the variants "gender=femminile"
     When I convert the cardinal number <number>
     Then the result is "<expected>"
 
+# Treccani, vocabolario "ventuno": "ventuno ballerine" (the compound stays in -uno before a plural
+# feminine noun; "ventun(o) ballerina sarebbe raro"), so only the standalone 1 becomes "una".
 Examples:
     | number | expected |
     | 1 | una |
-    | 21 | venti una |
-    | 22 | venti due |
+    | 21 | ventuno |
+    | 22 | ventidue |
+    | 31 | trentuno |
 
 Scenario Outline: Ordinal numbers
     When I convert the ordinal number <number>
@@ -55,6 +134,38 @@ Examples:
     | 1 | prima |
     | 2 | seconda |
     | 11 | undicesima |
+    | 19 | diciannovesima |
+
+# Treccani, vocabolario "diciannovesimo": the ordinal of diciannove drops its final vowel.
+Scenario: Ordinal of nineteen
+    When I convert the ordinal number 19
+    Then the result is "diciannovesimo"
+
+# Compound ordinals (ventunesimo, ventitreesimo, centounesimo, duemillesimo, ...) need a
+# vowel-specific stem rule that the declarative suffix pipeline cannot express; until it is
+# implemented and sourced, every unverified ordinal is rejected instead of being produced by a
+# mechanical suffix on the soldered cardinal ("ventunoesimo"). See TODO NTS-13. Zero has no
+# Italian ordinal form.
+Scenario Outline: Unverified compound ordinals are rejected
+    Given I use the variants "<variants>"
+    When I attempt to convert the ordinal number <number>
+    Then conversion is rejected because no ordinal form is available
+
+Examples:
+    | number | variants |
+    | 0 | |
+    | 21 | |
+    | 23 | |
+    | 28 | |
+    | 31 | |
+    | 33 | |
+    | 101 | |
+    | 180 | |
+    | 200 | |
+    | 1001 | |
+    | 2000 | |
+    | 21 | gender=femminile |
+    | 23 | gender=femminile |
 
 Scenario Outline: Decimal numbers
     When I convert the decimal number <number>
@@ -116,11 +227,12 @@ Scenario: Idiomatic clock-time conversion is supported
     Given I use the "IT" number converter
     Then the converter supports clock-time conversion
 
-# Accademia della Crusca: "l'una e mezzo" (also "e mezza"), "le due meno un quarto". The article
-# is elided for one ("l'una") and plural otherwise ("le due"), selected through displayHourRange;
-# {hour} is forced to the feminine numeral. Quarter-hour clock: the configured Italian compound
-# cardinals are not yet orthographic ("venti cinque" instead of "venticinque", see TODO NTS-10),
-# so minute amounts are not rendered until they are fixed.
+# Accademia della Crusca: "l'una e mezzo" (also "e mezza"), "le due meno un quarto", and "le otto
+# meno venti" / "meno dieci" for the minutes before the hour. The article is elided for one
+# ("l'una") and plural otherwise ("le due"), selected through displayHourRange; {hour} is forced to
+# the feminine numeral. Five-minute clock since the compound cardinals are orthographic (NTS-10):
+# minutes after the hour are added with "e" ("le due e venticinque"), minutes before the following
+# hour are subtracted with "meno".
 Scenario Outline: Idiomatic Italian clock times
     Given I use the "IT" number converter
     When I convert the clock time "<time>"
@@ -129,9 +241,18 @@ Scenario Outline: Idiomatic Italian clock times
 Examples:
     | time | expected |
     | 01:00 | l'una |
+    | 01:05 | l'una e cinque |
     | 01:15 | l'una e un quarto |
+    | 01:25 | l'una e venticinque |
     | 01:30 | l'una e mezzo |
+    | 01:35 | le due meno venticinque |
     | 01:45 | le due meno un quarto |
+    | 01:55 | le due meno cinque |
     | 02:00 | le due |
+    | 02:10 | le due e dieci |
+    | 02:20 | le due e venti |
+    | 02:40 | le tre meno venti |
+    | 02:50 | le tre meno dieci |
     | 12:45 | l'una meno un quarto |
+    | 12:50 | l'una meno dieci |
     | 13:30 | l'una e mezzo |

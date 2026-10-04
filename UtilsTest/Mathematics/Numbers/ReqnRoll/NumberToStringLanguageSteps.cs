@@ -76,6 +76,26 @@ public sealed class NumberToStringLanguageSteps
     [When("I convert the ordinal number {word}")]
     public void WhenIConvertTheOrdinalNumber(string number) => result = Converter.ConvertOrdinal(BigInteger.Parse(number, CultureInfo.InvariantCulture), variants);
 
+    /// <summary>Attempts an ordinal conversion, retaining any exception for a following assertion.</summary>
+    [When("I attempt to convert the ordinal number {word}")]
+    public void WhenIAttemptToConvertTheOrdinalNumber(string number)
+    {
+        ResetAttemptState();
+        try
+        {
+            result = Converter.ConvertOrdinal(BigInteger.Parse(number, CultureInfo.InvariantCulture), variants);
+        }
+        catch (Exception caught)
+        {
+            exception = caught;
+        }
+    }
+
+    /// <summary>Verifies that an ordinal without a configured or verified form fails closed.</summary>
+    [Then("conversion is rejected because no ordinal form is available")]
+    public void ThenConversionIsRejectedBecauseNoOrdinalFormIsAvailable() =>
+        Assert.AreEqual(typeof(NotSupportedException), exception?.GetType(), $"Unexpected result: '{result}'.");
+
     /// <summary>Converts an invariant decimal through the public API.</summary>
     [When("I convert the decimal number {word}")]
     public void WhenIConvertTheDecimalNumber(string number) => result = Converter.Convert(decimal.Parse(number, CultureInfo.InvariantCulture), variants);

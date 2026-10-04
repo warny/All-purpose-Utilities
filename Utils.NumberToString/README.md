@@ -35,23 +35,23 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | HU, HU-HU | Hungarian | ✓ plugin (int range) | ✓ 15 min, 12 h | — | local | — |
 | CS, CS-CZ | Czech | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 (round millions/milliards: one only) |
 | SK, SK-SK | Slovak | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 and one million |
-| PL | Polish | ✓ plugin + declarative | ✓ 5 min, 12 h | rodzaj × przypadek | local | — |
+| PL | Polish | ✓ plugin + declarative | ✓ 5 min, 12 h | rodzaj × przypadek | local | No ordinal of zero |
 | RU | Russian | ✓ declarative | ✓ 15 min, 12 h | gender × case | local | — |
 | UK, UK-UA | Ukrainian | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Round thousands verified up to 10 000 |
-| ES | Spanish | ✓ declarative | ✓ 5 min, 12 h | gender × form | local | — |
-| IT | Italian | ✓ declarative | ✓ 15 min, 12 h | gender | local | Compound cardinals not orthographic yet ("venti cinque"), hence no 5-minute step |
-| PT | Portuguese | ✓ declarative | ✓ 5 min, 12 h (direct "e …") | gender | local | Deliberate direct numeric reading (no "para"/"menos" constructions); PT-PT/PT-BR not split |
-| GL, gl-ES | Galician | ✓ declarative | ✓ 5 min, 12 h | gender | local | — |
+| ES | Spanish | ✓ declarative | ✓ 5 min, 12 h | gender × form | local | No ordinal of zero |
+| IT | Italian | ✓ 1–20, round tens, 100, 1000 (range plugin) | ✓ 5 min, 12 h | gender | local | Compound ordinals (ventunesimo…) and zero fail closed; millions not orthographic ("uno Millione") |
+| PT | Portuguese | ✓ declarative | ✓ 5 min, 12 h (direct "e …") | gender | local | Deliberate direct numeric reading (no "para"/"menos" constructions); PT-PT/PT-BR not split; no ordinal of zero |
+| GL, gl-ES | Galician | ✓ declarative | ✓ 5 min, 12 h | gender | local | No ordinal of zero |
 | RO, RO-RO | Romanian | ✓ plugin (DOOM) | ✓ 15 min, 12 h | gen | local | Ordinals up to 999 999 and one million (masculine) |
 | CA, ca-ES | Catalan | ✓ declarative | ✓ 15 min, 12 h | gender | local | Traditional quarters only |
 | ca-ES-valencia | Valencian | ✓ inherited | ✓ 5 min, 12 h, own section | gender | child of CA | Invariable `dos` in ClockTime only |
-| EL | Greek | ✓ declarative | ✓ 15 min, 12 h | gender | local | Masculine cardinal forms (ένας) not modelled |
-| FI | Finnish | ✓ declarative | ✓ 15 min, 12 h | case | local | — |
-| AR | Arabic | ✓ 1–99, 100, 1000 | ✓ 15 min, 12 h | gender | local | Other ordinals above 99 fail closed; cardinals from 1001 lack the "و" group connector |
-| HE | Hebrew | ✓ 1–10 adjectives, above ten the agreeing cardinal | ✓ 15 min, 12 h | gender (standalone/zachar/nekeva) | local | Cardinals from 1000 not orthographic yet |
+| EL | Greek | ✓ declarative | ✓ 15 min, 12 h | gender | local | Masculine cardinal forms (ένας) not modelled; no ordinal of zero |
+| FI | Finnish | ✓ declarative (zero: nollas) | ✓ 15 min, 12 h | case | local | — |
+| AR | Arabic | ✓ 1–99, 100, 1000 | ✓ 15 min, 12 h | gender | local | Other ordinals above 99 fail closed; dual/plural thousands (ألفان, آلاف) not modelled |
+| HE | Hebrew | ✓ 1–10 adjectives, above ten the agreeing cardinal | ✓ 15 min, 12 h | gender (standalone/zachar/nekeva) | local | No ordinal of zero |
 | FA, FA-IR | Persian | ✓ declarative | ✓ 15 min, 12 h | — | local | — |
 | TR, TR-TR | Turkish | ✓ declarative (vowel harmony) | ✓ 15 min, 12 h | case (nominative/accusative/dative) | local | — |
-| HI | Hindi | ✓ declarative | ✓ 15 min, 12 h | gender | local | Cardinals 21–99 not lexicalized yet ("बीस एक") |
+| HI | Hindi | ✓ declarative | ✓ 15 min, 12 h | gender | local | No lakh/crore grouping |
 | JA | Japanese | ✓ prefix 第 | ✓ 5 min, 12 h | — | local | No 午前/午後 |
 | KO | Korean | ✓ prefix 제 | ✓ 5 min, 12 h | — | local | Native hour words only in ClockTime; no 오전/오후 |
 | ZH | Chinese | ✓ prefix 第 | ✓ 15 min, 12 h | — | local | `两` only in ClockTime; no 上午/下午 |
@@ -65,7 +65,9 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | WO | Wolof | ✓ declarative | — deferred (competing conventions) | — | local | — |
 
 "plugin" means an `IOrdinalLanguageSpecifics` implementation; values it does not implement fail
-closed with `NotSupportedException` rather than returning a cardinal. Sources and decisions per
+closed with `NotSupportedException` rather than returning a cardinal. The declarative pipeline
+never returns the cardinal for zero either: without a zero exception, word rule, suffix or prefix,
+`ConvertOrdinal(0)` throws `NotSupportedException` (NTS-12). Sources and decisions per
 configuration: `docs/NTS-08-linguistic-sources.md`.
 
 ---
@@ -360,10 +362,15 @@ NumberToStringConverter it = NumberToStringConverter.GetConverter("IT");
 it.Convert(1, "gender=femminile"); // "una"
 it.Convert(100); // "cento"         ← invariable
 it.Convert(200); // "duecento"      ← invariable
+it.Convert(21, "gender=femminile"); // "ventuno" ← "ventuno ballerine" (Treccani)
 ```
 
-> **Limitation**: fused compounds (`ventiuno`, `trentuno`…) are not converted,
-> for the same reason as Spanish.
+Compound cardinals are written as one word through `<Fusion>` rules (see
+[`<Fusion>`](#fusion--morphological-composition-at-a-junction)): `ventuno`, `ventitré`,
+`ventotto`, `centottanta`, `duemila`, `milletré`. Soldered compounds keep `-uno` in the
+feminine, as Treccani records for plural feminine nouns. Compound ordinals (`ventunesimo`,
+`ventitreesimo`) are not supported yet and fail closed with `NotSupportedException`; only
+1–20, the round tens, 100 and 1000 are produced.
 
 ### Catalan — hyphens as word boundaries
 
@@ -528,8 +535,14 @@ he.Convert(2, "gender=zachar");   // "שניים"
 he.Convert(3, "gender=zachar");   // "שלושה"
 ```
 
-> **Limitation**: the multiplier before אלף (thousands) is not converted because
-> "אלף" is the last word, not the unit.
+The multiplier before אלף/אלפים agrees with the scale noun, not with the selected gender; the
+variant only reaches the lower group (NTS-11):
+
+```csharp
+he.Convert(3000, "gender=nekeva");  // "שלושת אלפים"
+he.Convert(21000, "gender=nekeva"); // "עשרים ואחד אלף"
+he.Convert(1001, "gender=nekeva");  // "אלף ואחת"
+```
 
 ### Discovering available variants
 
@@ -1258,6 +1271,7 @@ they are not globally registered converters and are not visible to `RegisterConf
 - `Culture`: not inherited. Every `<Language>` declares at least one `<Culture>` (XSD `minOccurs="1"`) and only those are registered for the child. A regional culture must be declared once, in the child only, never also in its general parent (a culture declared by two built-in documents is a retained initialization failure).
 - Scalar attributes (`groupSize`, `separator`, `groupSeparator`, `zero`, `minus`, `decimalSeparator`, `fractionSeparator`, `maxNumber`, `groupConnector`, `intraGroupConnector`, `scaleConnector` and their thresholds): child wins; absent child attributes inherit from the base.
 - Sections replaced as a whole when the child declares them (`Groups`, `Exceptions`, `Replacements`, `Fractions`, `Variants`, `YearFormat`, `Multiplicatives`, `TimeUnits`, `ClockTime`, `DateFormat`, `LanguageSpecifics`): the child's section replaces the base's completely, nothing is merged inside it. Omitted sections are inherited. An empty element (e.g. `<Replacements />`) explicitly overrides with an empty list.
+- `Fusion` rules belong to their `<Digit>` and therefore follow the `Groups` rule: a child that omits `<Groups>` inherits the base's digits together with their fusions; a child that declares `<Groups>` replaces every digit, and the base's fusions are not merged into it.
 - `Trigger` elements are currently **not** inherited: a child that needs the base's triggers must redeclare them (an absent `<Trigger>` list is read as an empty one). No built-in configuration uses triggers.
 - `NumberScale`: merged field by field, not replaced wholesale. A child may declare only the sub-elements it needs to override (e.g. `StaticNames`, `Suffixes`) while `startIndex`, `firstLetterUpperCase`, `groupSeparator`, `voidGroup`, and the `Scale0Prefixes`/`UnitsPrefixes`/`TensPrefixes`/`HundredsPrefixes` prefix tables independently fall back to the base when absent in the child. For example, `MS` (Malay) declares only `StaticNames`/`Suffixes` and still inherits `ID`'s `startIndex` and prefix tables unchanged.
 - `Ordinals`: not replaced wholesale. `OrdinalException` entries are merged by `value` and `OrdinalRule` entries by `from` (child wins on key conflicts, new keys are appended). `suffix`, `prefix`, `removeTrailing`, and `OrdinalVariants` fall back to the base when absent in the child (`OrdinalVariants`, when present, replaces the base's block). For example, `FR-be` declares only `<OrdinalException value="80" string="quatre-vingtième"/>` and keeps every other French ordinal rule.
@@ -1293,6 +1307,91 @@ Each `<Digit digit="N" string="…" buildString="…"/>`:
     </Group>
 </Groups>
 ```
+
+#### `<Fusion>` — morphological composition at a junction
+
+`buildString` places the lower sub-group into a template, which cannot express languages where
+joining two numerals changes the words at the boundary. A `<Digit>` (levels 2 and above) may
+declare `<Fusion>` children that replace `buildString` for selected values of the lower
+sub-group:
+
+- the **left constituent** is the digit's `string` (`venti`, `cento`);
+- the **right constituent** is the already built text of the lower sub-group (`uno`, `ottanta`);
+- when at least one rule matches, the result is `left + right` concatenated directly, after the
+  rule's transformations; `buildString` is not used for that junction;
+- without a matching rule, `buildString` is used exactly as before.
+
+| Attribute | Meaning |
+|---|---|
+| `for` (required) | Values of the lower sub-group, in the shared range syntax (`1`, `1,8`, `1..9`, `80..89`). Every value must lie in the sub-group domain `[1, 10^(level-1) − 1]` (no open bounds). Supported up to group level 6. |
+| `removeLeft` | Suffix removed from the left constituent (`venti` → `vent`). It must be present: a mismatch is rejected at load. |
+| `removeRight` | Prefix removed from the right constituent. It must be present on every matched right constituent. |
+| `left` | Replacement form of the left constituent for this fusion. |
+| `right` | Replacement form of the right constituent for this fusion (`tre` → `tré` inside `ventitré`, while `3` alone stays `tre`). |
+
+On each edge the override (`left`/`right`) is applied first, then the removal. Every attribute
+that is present must be non-empty.
+
+**Cumulative rules and precedence.** Every rule matching a value contributes, from the least
+specific to the most specific. Specificity is the number of sub-group values the range covers
+(fewer values = more specific); XML order never matters. A property absent from a more specific
+rule keeps the value set by a less specific one; a property it sets overrides it. Only a range
+nested in another may override it: two overlapping rules whose ranges cross (neither contains the
+other, such as `1..5` and `4..6`) and that assign different values to the same property are
+rejected at load, as are two rules with the same canonical range on one digit. Crossing rules that
+touch different properties, or agree on a shared one, still combine.
+
+```xml
+<Digit digit="2" string="venti" buildString="venti *">
+    <Fusion for="1..9" />                   <!-- solder 21-29: ventidue, ventisei… -->
+    <Fusion for="1,8" removeLeft="i" />     <!-- ventuno, ventotto -->
+    <Fusion for="3" right="tré" />          <!-- ventitré -->
+</Digit>
+```
+
+For `23`, `1..9` enables the fusion and `3` adds `right="tré"`; for `21`, `1,8` adds
+`removeLeft="i"`. The built-in Italian configuration solders through `buildString="venti*"`
+instead of the general rule, so it only declares the junctions that change:
+
+```xml
+<Group level="2">
+    <Digit digit="2" string="venti" buildString="venti*">
+        <Fusion for="1,8" removeLeft="i" />   <!-- ventuno, ventotto -->
+        <Fusion for="3" right="tré" />        <!-- ventitré -->
+    </Digit>
+    <Digit digit="3" string="trenta" buildString="trenta*">
+        <Fusion for="1,8" removeLeft="a" />   <!-- trentuno, trentotto -->
+        <Fusion for="3" right="tré" />        <!-- trentatré -->
+    </Digit>
+    <!-- … quaranta … novanta alike -->
+</Group>
+<Group level="3">
+    <Digit digit="1" string="cento" buildString="cento*">
+        <Fusion for="3" right="tré" />        <!-- centotré -->
+        <Fusion for="80..89" removeLeft="o" /> <!-- centottanta, centottantatré -->
+    </Digit>
+    <!-- centouno, centootto keep the vowel: plain buildString -->
+</Group>
+```
+
+**Scope.** A fusion is an *intra-group* junction resolved while one positional group is composed.
+It never applies between a group and its scale name, nor between two scale groups: use
+`Replacement` (with `onScale`/`onValue`), `groupConnector` or `scaleConnector` there — the
+Italian thousands (`duemila`, `milletré`) and the Hebrew and Arabic thousands connectors are
+configured that way. Lexicalized forms (Hindi `इक्कीस` for 21) belong in `<Exceptions>`.
+
+**Difference with `Replacement`.** A `Replacement` rewrites the produced text by pattern, without
+knowing which numerals met at a boundary; a `Fusion` is tied to one digit and to the numeric value
+of the lower sub-group, so it only fires on the junction it describes.
+
+**Validation.** Fusions are compiled once at construction into an immutable per-level, per-digit
+table indexed by the sub-group value (no range parsing on the conversion path; nothing at all for
+a language without fusions). Load fails on: a missing or empty range, values outside the domain,
+empty attributes, duplicate ranges, crossing ranges overriding the same property, a fusion on level 1, a fusion that
+overlaps the `intraGroupConnector` range, a fusion in a scale prefix table, or a `removeLeft`/
+`removeRight` edge absent from the actual constituent. A value whose whole number is an
+`<Exceptions>` entry, or whose lower constituent is empty, never reaches the composition step, so
+a rule covering it is inert there.
 
 ---
 

@@ -1,7 +1,8 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-01 after the NTS-08 regional consolidation (#608), which also opened
-NTS-09. Historical details remain in
+Re-audited on 2026-10-03 after closing NTS-10, NTS-11 and NTS-12 (which opened NTS-13 and NTS-14);
+previously re-audited on 2026-10-01 after the NTS-08 regional consolidation (#608), which also
+opened NTS-09. Historical details remain in
 the archived audit files; this file is the active source of truth.
 
 See `docs/releasing/TodoAudit-2026-08-16.md` for the repository-wide
@@ -23,8 +24,9 @@ classification.
       HU; UK; FA; TR; AR 20-99, 100 and 1000; HE above ten (agreeing-cardinal policy) and the AR/HE
       compound cardinals 11-99 they rely on; VN `thứ tư`; CS compound spelling (search summary of
       Naše řeč only); CS and SK gender/case declension tables.
-    - *ClockTime*: DA, NO, SV, BG, HR, HU, CS, SK, UK, PL, RU, ES, IT, PT (the deliberate direct
-      reading; the consulted source covers `para`/`menos` only), GL, RO, EL, FI, HE, FA, JA, VN; and,
+    - *ClockTime*: DA, NO, SV, BG, HR, HU, CS, SK, UK, PL, RU, ES, IT (five-minute step since NTS-10: the
+      Crusca covers `meno venti`/`meno dieci`, the `e` + minutes reading follows learner usage), PT
+      (the deliberate direct reading; the consulted source covers `para`/`menos` only), GL, RO, EL, FI, HE, FA, JA, VN; and,
       backed by a single isolated source only, HI and ZH (one learner site each), TR (search summary
       of TDK usage, page not read) and ZU (sole introductory course).
     - *Pre-existing ordinals not re-verified by the audit*: NL, PL, RU, ES, IT, PT, GL, EL, FI, HI,
@@ -41,22 +43,25 @@ classification.
     - EE ClockTime: no sourced minute convention.
     - WO ClockTime: competing native and French-derived conventions, no single sourced system.
 
-- **NTS-10 — cardinal defects found during NTS-08.** Not caused by NTS-08 and left unchanged so
-  the clock/ordinal work stays reviewable:
-  - IT compound cardinals are not written as one word (`venti cinque` instead of `venticinque`);
-    the Italian clock therefore uses a quarter-hour step.
-  - HI cardinals 21–99 are not lexicalized (`बीस एक` instead of `इक्कीस`).
-  - AR cardinals from 1001 lack the `و` connector between groups.
+- **NTS-13 — Italian compound ordinals.** Since NTS-10 the cardinals are soldered (`ventuno`,
+  `ventitré`, `centottanta`), and their ordinal drops the final vowel of the whole word except after
+  `tre` and `sei` (`ventunesimo`, `ventitreesimo`, `ventiseiesimo`, `centesimo` but `duemillesimo`).
+  The declarative pipeline (one `removeTrailing` string and whole-word rules) cannot express this
+  stem rule, so `ItalianOrdinalLanguageSpecifics` fails closed for every value other than 1–20, the
+  round tens, 100 and 1000, and for zero. Needs a vowel-aware suffix rule (or a plugin that receives
+  the cardinal) plus a sourced ordinal table, including the feminine.
 
-- **NTS-12 — the declarative ordinal pipeline returns the cardinal for zero.** When no ordinal
-  exception or word rule matches and no suffix is configured, `ConvertOrdinal(0)` returns the
-  unchanged cardinal: PL `zero`, ES/GL `cero`, PT `zero`, EL `μηδέν`, FI `nolla`, HE `אפס`
-  (pre-existing; AR and TR were fixed in the NTS-08 PR). A fail-closed engine rule for an
-  unmatched declarative ordinal, with per-language zero forms where they exist, is needed.
-
-- **NTS-11 — Hebrew cardinals from 1000.** `אחד אלף` instead of `אלף`, missing `אלפיים` and the
-  construct forms (`שלושת אלפים`) and the `ו` connector between groups. The existing scenario
-  pinning `1000 → אחד אלף` must be corrected together with the fix.
+- **NTS-14 — findings outside the NTS-10/11/12 scope (not fixed).**
+  - IT millions and above: `uno Millione`, `due Millioni` (should be `un milione`, `due milioni`),
+    and the junction with a following thousands group is not handled.
+  - AR thousands morphology: `اثنان ألف`, `ثلاثة ألف`, `واحد وعشرون ألف` instead of the dual and
+    plural forms (`ألفان`, `ثلاثة آلاف`, `واحد وعشرون ألفًا`); only the `و` connector was in scope.
+  - HE agreeing-cardinal ordinals ending in a teen inside a larger number keep the counting
+    (feminine) teen without a gender: `111 → מאה ואחת עשרה`, `1011 → אלף ואחת עשרה` (11–19 alone
+    are masculine exceptions).
+  - Suffix-formed ordinals of zero in other languages, which NTS-12 deliberately accepts as explicit
+    formations but which look unsourced: RU `нолый` (expected `нулевой`), DE `nullste` (Duden:
+    `nullte`), CA `zeroè`, WO `seroël`, EE `etsõ zero`.
 
 - **NTS-09 — `Trigger` elements are not inherited through `baseOn`.** `XmlSerializer` materializes
   an absent `<Trigger>` list as an empty list, so `MergeLanguageDefinition`'s
@@ -64,7 +69,7 @@ classification.
   uses triggers today; the README and XSD document the current behaviour. Fix by treating an empty
   list as absent (as `Cultures` already does) together with a regression test.
 
-NTS-01 through NTS-05 are closed:
+NTS-01 through NTS-05, NTS-10, NTS-11 and NTS-12 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -79,6 +84,8 @@ NTS-01 through NTS-05 are closed:
   `DONE-2026-08-25(2).md`, and a second review round (selector activation
   caching reuses `Utils.Collections.CachedLoader` instead of a bespoke
   cache) in `DONE-2026-08-25(3).md`.
+- NTS-10 (IT/HI/AR cardinals), NTS-11 (HE thousands), NTS-12 (zero ordinal) and the `<Fusion>`
+  primitive: `DONE-2026-10-03.md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) are deliberately out of scope — the

@@ -230,6 +230,9 @@ namespace Utils.NumberToString
             _intraGroupConnectorThreshold = options.IntraGroupConnectorThreshold;
             _scaleConnector = options.ScaleConnector;
             _scaleConnectorThreshold = options.ScaleConnectorThreshold;
+            // Needs Groups, Exceptions and the intra-group connector: edge validation renders the
+            // actual lower constituents through ConvertGroup.
+            CompileFusions(options.Groups!, nameof(options.Groups));
             {
                 var rawTimeUnits = options.TimeUnits ?? ImmutableDictionary<string, (string Singular, string Plural, string? Count1Form)>.Empty;
                 var timeUnitForced = options.TimeUnitForcedVariants ?? ImmutableDictionary<string, ForcedVariantSet>.Empty;
@@ -1873,6 +1876,12 @@ namespace Utils.NumberToString
 
             if (string.IsNullOrEmpty(leftText)) return valueText.StringValue;
 
+            // A configured <Fusion> replaces buildString for this junction (validated at load to
+            // never overlap the intra-group connector below). "leftText" is the lower sub-group,
+            // i.e. the fusion's right constituent.
+            if (_fusionPlans != null && TryGetFusionPlan(groupNumber, groupValue, remainder, out var fusion))
+                return ComposeFusion(fusion, valueText.StringValue, leftText);
+
             // Inject intra-group connector at the hundreds level when there are hundreds AND remainder < threshold
             if (groupNumber == 3 && _intraGroupConnector != null && groupValue > 0 && remainder > 0 && remainder < _intraGroupConnectorThreshold)
                 return valueText.BuildString.Replace("*", _intraGroupConnector + Separator + leftText);
@@ -1997,7 +2006,14 @@ namespace Utils.NumberToString
             {
                 string raw = number == 0 ? Zero : ConvertRaw((BigInteger)number, activeVariants);
                 raw = ApplyVariantRules(raw, activeVariants, number);
-                return ApplyOrdinalTransform(raw, activeVariant, noExplicitVariants: !explicitVariantIntent);
+                string ordinal = ApplyOrdinalTransform(raw, activeVariant, out bool formed, noExplicitVariants: !explicitVariantIntent);
+                // NTS-12: an unchanged cardinal is a legitimate ordinal for some non-zero values
+                // (e.g. Hebrew above ten), but never for zero. Zero needs an explicit formation:
+                // a zero exception (handled above), a word rule, a suffix or a prefix.
+                if (number == 0 && !formed && string.IsNullOrEmpty(OrdinalPrefix))
+                    throw new NotSupportedException(
+                        $"Language '{LanguageIdentifier}' has no ordinal form for zero.");
+                return ordinal;
             }
         }
 
@@ -2839,20 +2855,34 @@ namespace Utils.NumberToString
         /// Transforms a cardinal string into its ordinal form by applying word-level rules
         /// or the ordinal suffix to the last word, optionally using a variant-specific override.
         /// </summary>
+        /// <param name="cardinal">The cardinal text to transform.</param>
+        /// <param name="activeVariant">The selected ordinal variant, if any.</param>
+        /// <param name="formed">
+        /// Receives <see langword="true"/> when a word rule or a suffix was actually applied, and
+        /// <see langword="false"/> when the cardinal is returned unchanged. Reported explicitly
+        /// rather than inferred by comparing strings, since a rule may legitimately reproduce
+        /// the cardinal text.
+        /// </param>
         /// <param name="noExplicitVariants">
         /// When <see langword="true"/>, the caller specified no variant arguments and
         /// <see cref="OrdinalWordRules"/> (explicit <c>to=</c> base rules) take priority over
         /// variant word rules, so that a dimension-default variant injected by
         /// <c>BuildVariantQuery</c> does not override an explicit base form.
         /// </param>
-        private string ApplyOrdinalTransform(string cardinal, OrdinalVariantRule? activeVariant = null, bool noExplicitVariants = false)
+        /// <returns>The ordinal text, or <paramref name="cardinal"/> when nothing applies.</returns>
+        private string ApplyOrdinalTransform(string cardinal, OrdinalVariantRule? activeVariant, out bool formed, bool noExplicitVariants = false)
         {
+            formed = true;
             string? effectiveSuffix = activeVariant?.Suffix ?? OrdinalSuffix;
             string? effectiveRemoveTrailing = activeVariant?.RemoveTrailing ?? OrdinalRemoveTrailing;
 
             bool hasWordRules = (activeVariant != null && activeVariant.WordRules.Count > 0)
                                 || OrdinalWordRules.Count > 0;
-            if (!hasWordRules && effectiveSuffix == null) return cardinal;
+            if (!hasWordRules && effectiveSuffix == null)
+            {
+                formed = false;
+                return cardinal;
+            }
 
             int lastSpace = cardinal.LastIndexOf(' ');
             string prefix = lastSpace >= 0 ? cardinal[..(lastSpace + 1)] : "";
@@ -2889,6 +2919,7 @@ namespace Utils.NumberToString
                 return prefix + hyphenPrefix + transformed + effectiveSuffix;
             }
 
+            formed = false;
             return cardinal;
         }
 

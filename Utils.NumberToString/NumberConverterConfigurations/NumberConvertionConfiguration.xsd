@@ -87,8 +87,16 @@
                     The placeholder "*" is replaced by the sub-group text.
                     Example: "twenty-*" → "twenty-one", "twenty-two", …
                     Omit at level 1 (units) where there is no lower group.
+
+                Fusion (optional child elements, Groups levels 2+ only)
+                    Morphological fusion rules replacing buildString for selected values
+                    of the lower sub-group (see FusionType). A self-closing Digit without
+                    Fusion children keeps the historical buildString composition.
             </xs:documentation>
         </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Fusion" type="FusionType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
         <xs:attribute name="digit" use="required">
             <xs:annotation>
                 <xs:documentation>The digit value, 0 through 9.</xs:documentation>
@@ -115,6 +123,98 @@
                     Composite template with "*" replaced by the lower-order sub-group text.
                     Required at levels 2+ when the digit can precede sub-group text.
                     At level 1 (units) the attribute is ignored and may be omitted.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:simpleType name="FusionTextType">
+        <xs:annotation>
+            <xs:documentation>
+                A Fusion edge value. An empty string has no meaningful effect and is rejected.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="FusionType">
+        <xs:annotation>
+            <xs:documentation>
+                Morphological fusion between a digit (the LEFT constituent: the digit's
+                "string") and the already built text of its lower sub-group (the RIGHT
+                constituent), e.g. Italian venti + uno → ventuno, venti + tre → ventitré,
+                cento + ottanta → centottanta.
+
+                Scope: a fusion is an intra-group junction resolved while a positional
+                group is composed. It never applies to the junction between a group and a
+                scale name, nor between two scale groups (use Replacement with onScale /
+                onValue, groupConnector or scaleConnector for those). It is only valid on
+                Groups levels 2 and above (level 1 has no lower sub-group) and is rejected
+                in scale prefix tables.
+
+                Semantics: when at least one Fusion of the digit matches the numeric value
+                of the lower sub-group, the result is left + right concatenated directly,
+                and buildString is NOT used for that junction. Without a matching Fusion
+                the buildString composition is used exactly as before.
+
+                Cumulative rules: every matching rule contributes, from the least specific
+                to the most specific. Specificity is the number of sub-group values the
+                range covers (fewer values = more specific); XML order is irrelevant. A
+                property absent from a more specific rule keeps the value set by a less
+                specific one; a property set by a more specific rule overrides it. Only a
+                range nested in another may override it: two overlapping rules whose ranges
+                cross (neither contains the other, e.g. 1..5 and 4..6) and that assign
+                different values to the same property are rejected at load, as are two
+                rules with the same canonical range on one digit.
+
+                Edge order: on each edge the override (left / right) is applied first,
+                then the removal (removeLeft / removeRight).
+
+                baseOn: Fusion rules belong to their Digit and follow the Groups merge
+                rule. A child language that omits Groups inherits the parent's digits and
+                their fusions; a child that redefines Groups replaces them entirely.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="for" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Values of the lower sub-group this rule applies to, in the shared range
+                    syntax: "1", "1,8", "1..9", "80..89". Every value must lie within the
+                    sub-group domain [1, 10^(level-1) - 1]; open bounds are therefore
+                    rejected. Fusion is supported up to group level 6.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="removeLeft" type="FusionTextType">
+            <xs:annotation>
+                <xs:documentation>
+                    Suffix removed from the left constituent (e.g. removeLeft="i": venti →
+                    vent). The left constituent must end with it; a mismatch is a
+                    configuration error detected at load.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="removeRight" type="FusionTextType">
+            <xs:annotation>
+                <xs:documentation>
+                    Prefix removed from the right constituent. Every matched right
+                    constituent must start with it; a mismatch is a configuration error
+                    detected at load.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="left" type="FusionTextType">
+            <xs:annotation>
+                <xs:documentation>Replacement form of the left constituent for this fusion.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="right" type="FusionTextType">
+            <xs:annotation>
+                <xs:documentation>
+                    Replacement form of the right constituent for this fusion only
+                    (e.g. right="tré" yields ventitré while 3 alone stays "tre").
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -626,6 +726,11 @@
                   3. Active OrdinalVariants/Variant word rules — most-specific first.
                   4. Base Ordinal word rule — last-word match.
                   5. Default suffix — appended to the last word (stripping removeTrailing first).
+
+                When none of these applies, a non-zero value keeps its cardinal text (a
+                legitimate ordinal in some languages, e.g. Hebrew above ten). Zero never does:
+                without a zero exception, a matching word rule, a suffix or a prefix,
+                ConvertOrdinal(0) throws NotSupportedException.
 
                 OrdinalException and Ordinal elements may be freely interleaved; their
                 relative order within the element does not matter.

@@ -1118,6 +1118,21 @@ namespace Utils.NumberToString
                 if (language.NumberScale.StaticNames?.Scales != null)
                     foreach (var scaleName in language.NumberScale.StaticNames.Scales.Where(s => s.Value > 0))
                         Require(!string.IsNullOrWhiteSpace(scaleName.StringValue), $"NumberScale.StaticNames[{scaleName.Value}]", "scale names above index zero must be non-empty.");
+
+                // Fusion is an intra-group composition primitive; prefix tables only contribute
+                // their string values to generated scale names, so a Fusion there would be ignored.
+                foreach (var (tableName, table) in new[]
+                {
+                    ("Scale0Prefixes", language.NumberScale.Scale0Prefixes),
+                    ("UnitsPrefixes", language.NumberScale.UnitsPrefixes),
+                    ("TensPrefixes", language.NumberScale.TensPrefixes),
+                    ("HundredsPrefixes", language.NumberScale.HundredsPrefixes),
+                })
+                {
+                    if (table?.Digits == null) continue;
+                    foreach (var digit in table.Digits.Where(d => d?.Fusions is { Count: > 0 }))
+                        Require(false, $"NumberScale.{tableName}[{digit.Digit}]", "Fusion is only valid on Groups digits.");
+                }
             }
 
             if (errors.Count > 0)
