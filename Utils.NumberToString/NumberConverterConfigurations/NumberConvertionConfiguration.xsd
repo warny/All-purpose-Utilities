@@ -163,10 +163,11 @@
                 to the most specific. Specificity is the number of sub-group values the
                 range covers (fewer values = more specific); XML order is irrelevant. A
                 property absent from a more specific rule keeps the value set by a less
-                specific one; a property set by a more specific rule overrides it. Two
-                equally specific rules that assign different values to the same property
-                for a shared value are rejected at load, as are two rules with the same
-                canonical range on one digit.
+                specific one; a property set by a more specific rule overrides it. Only a
+                range nested in another may override it: two overlapping rules whose ranges
+                cross (neither contains the other, e.g. 1..5 and 4..6) and that assign
+                different values to the same property are rejected at load, as are two
+                rules with the same canonical range on one digit.
 
                 Edge order: on each edge the override (left / right) is applied first,
                 then the removal (removeLeft / removeRight).

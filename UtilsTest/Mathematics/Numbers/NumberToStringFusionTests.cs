@@ -238,6 +238,63 @@ public class NumberToStringFusionTests
         Assert.AreEqual("twentygeneral", Cardinal(converter, 25));
     }
 
+    /// <summary>
+    /// Crossing ranges (overlapping, neither containing the other) cannot override one another,
+    /// even when one is smaller: only a nested range may override a general one.
+    /// </summary>
+    [TestMethod]
+    [DataRow("right")]
+    [DataRow("left")]
+    [DataRow("removeLeft")]
+    [DataRow("removeRight")]
+    public void Fusion_CrossingOverlappingRangesOnSameProperty_AreRejected(string attribute)
+    {
+        string twenty = $"""
+            <Digit digit="2" string="twenty" buildString="twenty *">
+              <Fusion for="1..5" {attribute}="a" />
+              <Fusion for="4..6" {attribute}="b" />
+            </Digit>
+            """;
+
+        var exception = Assert.Throws<ArgumentException>(() => Build(twenty));
+        StringAssert.Contains(exception.Message, "Fusion");
+        StringAssert.Contains(exception.Message, attribute);
+    }
+
+    /// <summary>Crossing ranges that agree on a shared property are not an override and stay accepted.</summary>
+    [TestMethod]
+    public void Fusion_CrossingRangesWithIdenticalValues_AreAccepted()
+    {
+        var converter = Build("""
+            <Digit digit="2" string="twenty" buildString="twenty *">
+              <Fusion for="1..5" right="x" />
+              <Fusion for="4..6" right="x" />
+            </Digit>
+            """);
+
+        Assert.AreEqual("twentyx", Cardinal(converter, 21));
+        Assert.AreEqual("twentyx", Cardinal(converter, 25));
+        Assert.AreEqual("twentyx", Cardinal(converter, 26));
+        Assert.AreEqual("twenty seven", Cardinal(converter, 27));
+    }
+
+    /// <summary>A nested non-contiguous range overrides the range that contains it.</summary>
+    [TestMethod]
+    public void Fusion_NestedRange_OverridesContainingRange()
+    {
+        var converter = Build("""
+            <Digit digit="2" string="twenty" buildString="twenty *">
+              <Fusion for="1..5" right="a" />
+              <Fusion for="2,4" right="b" />
+            </Digit>
+            """);
+
+        Assert.AreEqual("twentya", Cardinal(converter, 21));
+        Assert.AreEqual("twentyb", Cardinal(converter, 22));
+        Assert.AreEqual("twentyb", Cardinal(converter, 24));
+        Assert.AreEqual("twenty six", Cardinal(converter, 26));
+    }
+
     /// <summary>Two equally specific rules assigning different values to one property are rejected.</summary>
     [TestMethod]
     [DataRow("right")]

@@ -108,7 +108,7 @@ namespace Utils.NumberToString
                     var table = new FusionPlan?[domainMax + 1];
                     for (long value = 1; value <= domainMax; value++)
                     {
-                        var plan = ResolveFusionPlan(candidates, value, where, paramName);
+                        var plan = ResolveFusionPlan(candidates, value);
                         if (plan is null) continue;
 
                         long number = digit.Digit * _decimalPowersOfTen[level - 1] + value;
@@ -169,6 +169,7 @@ namespace Utils.NumberToString
                     throw new ArgumentException($"{where} for=\"{fusion.For}\": another rule of this digit has the same range.", paramName);
                 candidates.Add(new FusionRuleCandidate(fusion, range, specificity));
             }
+            RejectCrossingOverrides(candidates, where, paramName);
             // Widest range first: more specific rules are folded last and therefore win.
             candidates.Sort((a, b) => b.Specificity.CompareTo(a.Specificity));
             return candidates;
@@ -181,49 +182,68 @@ namespace Utils.NumberToString
         }
 
         /// <summary>
+        /// Rejects two overlapping rules that assign different values to the same property unless
+        /// one range is a subset of the other: an override is only meaningful from a general range
+        /// to a range it contains, never between crossing ranges such as <c>1..5</c> and <c>4..6</c>.
+        /// Two distinct overlapping ranges of equal size always cross, so equally specific
+        /// conflicts are rejected here too.
+        /// </summary>
+        /// <param name="candidates">The validated candidates of one digit (distinct, bounded ranges).</param>
+        /// <param name="where">Diagnostic location prefix.</param>
+        /// <param name="paramName">The parameter name used in diagnostics.</param>
+        /// <exception cref="ArgumentException">Thrown when two crossing rules disagree on a property.</exception>
+        private static void RejectCrossingOverrides(List<FusionRuleCandidate> candidates, string where, string paramName)
+        {
+            for (int i = 0; i < candidates.Count; i++)
+            {
+                for (int j = i + 1; j < candidates.Count; j++)
+                {
+                    var a = candidates[i];
+                    var b = candidates[j];
+                    var shared = a.Range & b.Range;
+                    // Bounded by the domain check, so the enumeration is finite.
+                    long sharedCount = shared.LongCount();
+                    if (sharedCount == 0 || sharedCount == a.Specificity || sharedCount == b.Specificity) continue;
+
+                    string? property = ConflictingProperty(a.Source, b.Source);
+                    if (property is null) continue;
+                    throw new ArgumentException(
+                        $"{where}: rules for=\"{a.Source.For}\" and for=\"{b.Source.For}\" overlap without one range containing the other, "
+                        + $"and assign different values to '{property}'; only a range nested in another may override it.",
+                        paramName);
+                }
+            }
+
+            static string? ConflictingProperty(FusionType a, FusionType b)
+                => Differs(a.Left, b.Left) ? "left"
+                : Differs(a.Right, b.Right) ? "right"
+                : Differs(a.RemoveLeft, b.RemoveLeft) ? "removeLeft"
+                : Differs(a.RemoveRight, b.RemoveRight) ? "removeRight"
+                : null;
+
+            static bool Differs(string? a, string? b) => a is not null && b is not null && a != b;
+        }
+
+        /// <summary>
         /// Folds every candidate matching <paramref name="value"/> from the least to the most
-        /// specific, rejecting equally specific rules that disagree on a property.
+        /// specific. <see cref="RejectCrossingOverrides"/> guarantees that only nested rules
+        /// override each other, so the order among equally specific rules is irrelevant.
         /// </summary>
         /// <param name="candidates">Candidates sorted from the widest to the narrowest range.</param>
         /// <param name="value">The lower sub-group value.</param>
-        /// <param name="where">Diagnostic location prefix.</param>
-        /// <param name="paramName">The parameter name used in diagnostics.</param>
         /// <returns>The effective plan, or <see langword="null"/> when no rule matches.</returns>
-        private static FusionPlan? ResolveFusionPlan(List<FusionRuleCandidate> candidates, long value, string where, string paramName)
+        private static FusionPlan? ResolveFusionPlan(List<FusionRuleCandidate> candidates, long value)
         {
             FusionPlan? plan = null;
-            int index = 0;
-            while (index < candidates.Count)
+            foreach (var candidate in candidates)
             {
-                long specificity = candidates[index].Specificity;
-                string? left = null, right = null, removeLeft = null, removeRight = null;
-                bool matched = false;
-                for (; index < candidates.Count && candidates[index].Specificity == specificity; index++)
-                {
-                    var candidate = candidates[index];
-                    if (!candidate.Range.Contains(value)) continue;
-                    matched = true;
-                    Merge(ref left, candidate.Source.Left, "left");
-                    Merge(ref right, candidate.Source.Right, "right");
-                    Merge(ref removeLeft, candidate.Source.RemoveLeft, "removeLeft");
-                    Merge(ref removeRight, candidate.Source.RemoveRight, "removeRight");
-                }
-                if (!matched) continue;
+                if (!candidate.Range.Contains(value)) continue;
+                var source = candidate.Source;
                 plan = plan is null
-                    ? new FusionPlan(left, right, removeLeft, removeRight)
-                    : new FusionPlan(left ?? plan.Left, right ?? plan.Right, removeLeft ?? plan.RemoveLeft, removeRight ?? plan.RemoveRight);
+                    ? new FusionPlan(source.Left, source.Right, source.RemoveLeft, source.RemoveRight)
+                    : new FusionPlan(source.Left ?? plan.Left, source.Right ?? plan.Right, source.RemoveLeft ?? plan.RemoveLeft, source.RemoveRight ?? plan.RemoveRight);
             }
             return plan;
-
-            void Merge(ref string? current, string? candidate, string property)
-            {
-                if (candidate is null) return;
-                if (current is not null && current != candidate)
-                    throw new ArgumentException(
-                        $"{where}: equally specific rules assign different values to '{property}' for value {value} ('{current}' and '{candidate}').",
-                        paramName);
-                current = candidate;
-            }
         }
 
         /// <summary>Checks that the removals of a plan can be applied to the actual constituents.</summary>

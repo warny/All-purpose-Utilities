@@ -1335,9 +1335,11 @@ that is present must be non-empty.
 **Cumulative rules and precedence.** Every rule matching a value contributes, from the least
 specific to the most specific. Specificity is the number of sub-group values the range covers
 (fewer values = more specific); XML order never matters. A property absent from a more specific
-rule keeps the value set by a less specific one; a property it sets overrides it. Two equally
-specific rules that assign different values to the same property for a shared value are rejected
-at load, as are two rules with the same canonical range on one digit.
+rule keeps the value set by a less specific one; a property it sets overrides it. Only a range
+nested in another may override it: two overlapping rules whose ranges cross (neither contains the
+other, such as `1..5` and `4..6`) and that assign different values to the same property are
+rejected at load, as are two rules with the same canonical range on one digit. Crossing rules that
+touch different properties, or agree on a shared one, still combine.
 
 ```xml
 <Digit digit="2" string="venti" buildString="venti *">
@@ -1385,7 +1387,7 @@ of the lower sub-group, so it only fires on the junction it describes.
 **Validation.** Fusions are compiled once at construction into an immutable per-level, per-digit
 table indexed by the sub-group value (no range parsing on the conversion path; nothing at all for
 a language without fusions). Load fails on: a missing or empty range, values outside the domain,
-empty attributes, duplicate ranges, equally specific conflicts, a fusion on level 1, a fusion that
+empty attributes, duplicate ranges, crossing ranges overriding the same property, a fusion on level 1, a fusion that
 overlaps the `intraGroupConnector` range, a fusion in a scale prefix table, or a `removeLeft`/
 `removeRight` edge absent from the actual constituent. A value whose whole number is an
 `<Exceptions>` entry, or whose lower constituent is empty, never reaches the composition step, so
