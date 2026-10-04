@@ -80,7 +80,9 @@
              group text before any gender variant, which only reaches the final lower group.
              The final pass then puts "ו" after the thousands and removes it again when the lower
              group starts with hundreds followed by a remainder, or with tens followed by a unit,
-             so that "ו" precedes the last element only ("אלף ומאה", "אלף מאה ואחד"). -->
+             so that "ו" precedes the last element only ("אלף ומאה", "אלף מאה ואחד"). A round ten
+             or hundred after thousands keeps its "ו" (Academy rule; m-math.co.il "אלפיים ושמונה
+             מאות"), deliberately diverging from CLDR, which writes "אלף מאה". -->
         <Replacements>
             <Replacement oldValue="אחד אלף" newValue="אלף" onScale="1" />
             <Replacement oldValue="שתיים אלף" newValue="אלפיים" onScale="1" />

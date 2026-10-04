@@ -95,6 +95,16 @@ sources; where sources disagree, the decision is stated.
   `אלף` (consistent with the masculine construct forms); the Academy's pages could not be fetched
   for an explicit 11000 example. The Academy example also contradicts CLDR's `and-feminine`
   rule set, which omits `ו` before a round ten; the configuration follows the Academy.
+  **Deliberate divergence from CLDR for a round hundred after thousands**: CLDR's `and-feminine`
+  (`100: מאה;`) gives `אלף מאה` for 1100, while the configuration writes `אלף ומאה`. The Academy
+  rule is general — modern Hebrew uses a single `ו` before the last element of the number (its
+  page "ו' החיבור במספרים": `מאה ושלושים`, `חמשת אלפים ארבע מאות וחמש עשרה`) — and a round
+  hundred is that last element. m-math.co.il (Israeli primary-school mathematics, "כתיבת מספר על
+  פי מילים") states it explicitly: `אלפיים ושמונה מאות`, `שלושת אלפים ושבע מאות`, `חמשת אלפים
+  ושלוש מאות`, next to `אלף שלוש מאות ועשרים`. CLDR omits `ו` both before a round ten and before a
+  round hundred, so following it here would contradict the Academy's `אלפיים ועשרים` as well. A
+  form without `ו` (`אלף מאה`) is also found in learner material (teachmehebrew.com) and is
+  acceptable colloquially, but it is not the normative form retained.
 - **Zero ordinals (NTS-12)** — FI `nollas`: Wiktionary (citing *Kielitoimiston sanakirja*) and
   kieli.net. PL, ES, GL, PT, EL, HE: no ordinal of zero fitting the library contract (PL *zerowy*
   would need its full declension; ES/PT informal *ceroésimo*/*zerésimo* are not standard; EL

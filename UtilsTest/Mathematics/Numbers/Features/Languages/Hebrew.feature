@@ -68,7 +68,11 @@ Examples:
 
 # The conjunction "ו" precedes only the last element of the whole number: it joins the lower
 # group to the thousands when that group is a single element (a unit, a teen, a round ten or a
-# round hundred), and is otherwise carried by the lower group's own last element.
+# round hundred), and is otherwise carried by the lower group's own last element. Sources: the
+# Academy of the Hebrew Language ("ו' החיבור במספרים": a single ו before the last element) and
+# m-math.co.il ("אלפיים ושמונה מאות", "שלושת אלפים ושבע מאות", "חמשת אלפים ושלוש מאות"). This
+# deliberately diverges from CLDR RBNF he, which omits ו before a round ten or hundred
+# ("אלף מאה"); see docs/NTS-08-linguistic-sources.md.
 Scenario Outline: Hebrew thousands joined to the lower group
     Given I use the "HE" number converter
     When I convert the cardinal number <number>
@@ -90,6 +94,10 @@ Examples:
     | 2001 | אלפיים ואחד |
     | 2009 | אלפיים ותשע |
     | 2020 | אלפיים ועשרים |
+    | 2800 | אלפיים ושמונה מאות |
+    | 3700 | שלושת אלפים ושבע מאות |
+    | 5300 | חמשת אלפים ושלוש מאות |
+    | 1320 | אלף שלוש מאות ועשרים |
     | 3001 | שלושת אלפים ואחד |
     | 11001 | אחד עשר אלף ואחד |
     | 21021 | עשרים ואחד אלף עשרים ואחד |
