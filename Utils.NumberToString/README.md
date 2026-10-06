@@ -39,7 +39,7 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | RU | Russian | ✓ declarative | ✓ 15 min, 12 h | gender × case | local | — |
 | UK, UK-UA | Ukrainian | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Round thousands verified up to 10 000 |
 | ES | Spanish | ✓ declarative | ✓ 5 min, 12 h | gender × form | local | No ordinal of zero |
-| IT | Italian | ✓ 1–1999 and round thousands to 999000 (`<OrdinalStem>`, domain-guard plugin) | ✓ 5 min, 12 h | gender | local | Zero, non-round thousands above 1999 (NTS-15) and millions fail closed; millions not orthographic ("uno Millione", NTS-14) |
+| IT | Italian | ✓ 1–1999 except 1010–1910, and round thousands to 999000 (`<OrdinalStem>`, domain-guard plugin) | ✓ 5 min, 12 h | gender | local | Zero, 1010–1910 and non-round thousands above 1999 (NTS-15) and millions fail closed; millions not orthographic ("uno Millione", NTS-14) |
 | PT | Portuguese | ✓ declarative | ✓ 5 min, 12 h (direct "e …") | gender | local | Deliberate direct numeric reading (no "para"/"menos" constructions); PT-PT/PT-BR not split; no ordinal of zero |
 | GL, gl-ES | Galician | ✓ declarative | ✓ 5 min, 12 h | gender | local | No ordinal of zero |
 | RO, RO-RO | Romanian | ✓ plugin (DOOM) | ✓ 15 min, 12 h | gen | local | Ordinals up to 999 999 and one million (masculine) |
@@ -371,8 +371,10 @@ Compound cardinals are written as one word through `<Fusion>` rules (see
 feminine, as Treccani records for plural feminine nouns. Compound ordinals are formed by
 `<OrdinalStem>` rules (see [`<OrdinalStem>`](#ending-rewrite-before-the-suffix--ordinalstem)):
 `ventunesimo`, `ventitreesimo`, `ventiseiesimo`, `centunesimo`, `milleunesimo`, `duemillesimo`,
-in both genders (`ventunesima`). Zero, non-round thousands above 1999 (`2001`) and one million
-and above fail closed with `NotSupportedException` (NTS-15, NTS-14).
+in both genders (`ventunesima`). After a hundred, `dieci` keeps its lexical ordinal (`centodecimo`,
+`duecentodecimo`, Crusca) through exact word rules. Zero, the thousands ending in ten
+(`1010`–`1910`), non-round thousands above 1999 (`2001`) and one million and above fail closed with
+`NotSupportedException` (NTS-15, NTS-14).
 
 ### Catalan — hyphens as word boundaries
 
@@ -1648,6 +1650,7 @@ var it = NumberToStringConverter.GetConverter("IT");
 it.ConvertOrdinal(23);                       // "ventitreesimo"
 it.ConvertOrdinal(26, "gender=femminile");   // "ventiseiesima"
 it.ConvertOrdinal(2000);                     // "duemillesimo"
+it.ConvertOrdinal(110);                      // "centodecimo" ← exact <Ordinal> word rule wins over the stems
 it.ConvertOrdinal(2001);                     // NotSupportedException (NTS-15)
 ```
 

@@ -21,9 +21,10 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed — `omy.Utils.NumberToString` (NTS-13)
 - Italian compound ordinals are formed from the soldered cardinal (`ventunesimo`, `ventitreesimo`,
-  `ventiseiesimo`, `centunesimo`, `milleunesimo`, `duemillesimo`, feminine `ventunesima`) for 1–1999
-  and the round thousands up to 999000. `ItalianOrdinalLanguageSpecifics` is now only a domain guard:
-  zero, non-round thousands above 1999 (NTS-15) and one million and above (NTS-14) still throw
+  `ventiseiesimo`, `centunesimo`, `centodecimo`, `milleunesimo`, `duemillesimo`, feminine
+  `ventunesima`) for 1–1999 except 1010–1910 and the round thousands up to 999000.
+  `ItalianOrdinalLanguageSpecifics` is now only a domain guard: zero, 1010–1910, non-round thousands
+  above 1999 (NTS-15) and one million and above (NTS-14) still throw
   `NotSupportedException`.
 
 ### Fixed — `omy.Utils.NumberToString` (NTS-10, NTS-11, NTS-12)

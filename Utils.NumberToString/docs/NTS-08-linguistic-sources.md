@@ -35,7 +35,7 @@ the remaining validation and its criterion are tracked per capability in `TODO.m
 | RU | RU | SCALE-LONG | Yes (existing) | Declarative | Yes | 15 / 12 | gender × case | Reference usage (`четверть второго`, `половина второго`, `без четверти два`, `час/часа/часов`) | — |
 | UK | UK, UK-UA | SCALE-LONG | Yes | `UkrainianOrdinalLanguageSpecifics` (gender × case) | Yes | 15 / 12 | `gender` × `case` (Ukrainian values) | Reference usage (`двадцять перший`; `чверть по першій`, `пів на другу`, `чверть до другої`) | Round thousands verified up to 10 000; ASCII apostrophe as in the cardinals |
 | ES | ES | none | Yes (existing) | Declarative | Yes | 5 / 12 | gender × form | Reference usage (RAE, *Diccionario panhispánico de dudas*, “hora”) | Exact `Convert(TimeOnly)` unchanged |
-| IT | IT | SCALE-LONG | Yes: 1–1999, round thousands 2000–999000 | Declarative `<OrdinalStem>` + `ItalianOrdinalLanguageSpecifics` (domain guard) | Yes | 5 / 12 | gender | Reference usage (Accademia della Crusca: `l'una e mezzo`, `le due meno un quarto`, `le otto meno venti`) | Cardinals soldered with `<Fusion>` (NTS-10); compound ordinals by `<OrdinalStem>` (NTS-13, see below); zero, non-round thousands above 1999 (NTS-15) and millions (NTS-14) fail closed |
+| IT | IT | SCALE-LONG | Yes: 1–1999 except 1010–1910, round thousands 2000–999000 | Declarative `<OrdinalStem>` + `ItalianOrdinalLanguageSpecifics` (domain guard) | Yes | 5 / 12 | gender | Reference usage (Accademia della Crusca: `l'una e mezzo`, `le due meno un quarto`, `le otto meno venti`) | Cardinals soldered with `<Fusion>` (NTS-10); compound ordinals by `<OrdinalStem>` (NTS-13, see below); zero, 1010–1910 and non-round thousands above 1999 (NTS-15) and millions (NTS-14) fail closed |
 | PT | PT | none | Yes (existing) | Declarative | Yes | 5 / 12 | gender | **Consulted** for the constructions the configuration does *not* use: Ciberdúvidas, “Minutos para a hora” (`um quarto para as dez`, `dez para as três`, `três menos dez`). The direct reading itself (`uma hora e quarenta e cinco`) is a project convention not attested by that source | Deliberate direct numeric reading; `para`/`menos` constructions not produced; PT-PT/PT-BR not split |
 | GL | GL, gl-ES | none | Yes (existing) | Declarative | Yes | 5 / 12 | gender | Reference usage (RAG usage `a unha e media`, `as dúas menos cuarto`) | — |
 | RO | RO, RO-RO | none | Yes | `RomanianOrdinalLanguageSpecifics` (DOOM) | Yes | 15 / 12 | `gen` | **Consulted**: dexonline/DOOM entries `sutălea` (`al (o) sutălea`, `a (o) suta`, `al două sutelea`) and `miilea` (`al o miilea`, `a o mia`, `al două miilea`); reference usage for the clock (`ora două`, `două fără un sfert`) | Ordinals up to 999 999 and one million (masculine); round `de mii` thousands declined |
@@ -96,8 +96,19 @@ sources; where sources disagree, the decision is stated.
   ordinali divengono rarissimi; le forme ufficiali, comunque, sono milleunesimo, milleduesimo ecc.");
   Accademia della Crusca, consulenza "Quarantaquattro gatti in fila per sei…" (V. Gheno, 2016:
   *milleunesimo*).
-  **Validated domain**: 1–1999 and the round thousands 2000–999000, both genders (the feminine only
-  replaces *-esimo* by *-esima*; the stem rules are shared).
+  **Validated domain**: 1–1999 except 1010–1910, and the round thousands 2000–999000, both genders
+  (the feminine only replaces *-esimo* by *-esima*; the stem rules are shared).
+  **x10 family (review of #617)**: after a hundred, *dieci* keeps its lexical ordinal *decimo*
+  instead of the mechanical *centodiecesimo*, which no consulted source attests — Vocabolario degli
+  Accademici della Crusca, 5th ed., vol. 2 p. 753, s.v. "centesimo" § III: "Centodecimo,
+  Centundicesimo, Centododicesimo ec., Centoventesimo"; Wiktionary, Appendix:Italian numbers:
+  *centodecimo*, *duecentodecimo*. Treccani ("ordinale") prefers the analytic *centesimo decimo* /
+  *millesimo decimo* ("la grafia staccata è preferita"), which is not modelled. 110–910 are
+  therefore nine exact word rules (*centodecimo/centodecima* … *novecentodecimo/novecentodecima*);
+  1010–1910 have no attested synthetic form and fail closed (NTS-15). The Crusca 5th edition also
+  lists *centundicesimo*; the modern DICO *centoundicesimo*, which follows the cardinal
+  *centoundici*, is kept. The sweep tests are only a mechanical guard (structural invariants); the
+  forms rest on the sourced examples of `Italian.feature`, one morphological family at a time.
   **Decisions**: *-seiesimo* is canonical (Treccani grammar and prontuario; *-seesimo* rejected).
   101 is *centunesimo* (Treccani, twice, "più com.") rather than DICO's *centounesimo*, although the
   cardinal stays *centouno*; the *centouno → centun* stem extends to every hundred by analogy
@@ -109,7 +120,7 @@ sources; where sources disagree, the decision is stated.
   forms (*milleunesimo*, *milletreesimo*, *millecentunesimo*); the formal analytic *millesimo primo* is
   not modelled.
   **Left fail-closed**: zero (NTS-12 decision unchanged; Treccani records *zeresimo* only in special,
-  mathematical uses); non-round thousands above 1999 (2001, 21001, 100001 …) because no consulted
+  mathematical uses); 1010–1910 (above); non-round thousands above 1999 (2001, 21001, 100001 …) because no consulted
   source gives a canonical synthetic form and Treccani gives the analytic *centomillesimoprimo* for
   100001 (NTS-15); one million and above because the cardinals are known wrong (NTS-14), although
   Treccani attests *milionesimo*.

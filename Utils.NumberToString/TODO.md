@@ -34,8 +34,8 @@ classification.
       JA, KO, ZH, EU, EE, WO.
     Validated so far: NL (Taaladvies), EU (EHU grammar), KO (National Institute of Korean
     Language), SW (two sources) and AR (university textbook) ClockTime; NO, BG, HR, RO and DA 100
-    (`hundrede`) ordinals; SK compound ordinal spelling; HR cardinals; IT ordinals 1–1999 and round
-    thousands (NTS-13: Treccani grammar and vocabolario, DICO, Crusca).
+    (`hundrede`) ordinals; SK compound ordinal spelling; HR cardinals; IT ordinals 1–1999 (except
+    1010–1910) and round thousands (NTS-13: Treccani grammar and vocabolario, DICO, Crusca).
     NTS-08 closes when every capability above is validated or explicitly deferred; a corrected
     string must be fixed in the `.feature` first, then in the configuration.
   - The remaining gaps below are explicit decisions, each pinned by a "does not support"
@@ -45,9 +45,12 @@ classification.
     - EE ClockTime: no sourced minute convention.
     - WO ClockTime: competing native and French-derived conventions, no single sourced system.
 
-- **NTS-15 — Italian ordinals of non-round thousands above 1999.** NTS-13 makes 1–1999 and the
-  round thousands up to 999000 productive; `ItalianOrdinalLanguageSpecifics` still rejects 2001,
-  21001, 100001 … with `NotSupportedException`. The consulted sources do not establish a canonical
+- **NTS-15 — Italian ordinals of non-round thousands above 1999 and of 1010–1910.** NTS-13 makes
+  1–1999 (except 1010–1910) and the round thousands up to 999000 productive;
+  `ItalianOrdinalLanguageSpecifics` still rejects 1010, 1110 … 1910 and 2001, 21001, 100001 … with
+  `NotSupportedException`. For the thousands ending in ten, *dieci* keeps its lexical *decimo* in
+  compounds (`centodecimo`, Crusca) but only the analytic `millesimo decimo` is attested (Treccani),
+  no synthetic form. The consulted sources do not establish a canonical
   synthetic form there: DICO lists only `milleunesimo, milleduesimo ecc.`, and Treccani
   ("centomillesimo") gives the analytic `centomillesimoprimo, centomillesimosecondo` for 100001+,
   the synthetic `centomiladuesimo` being a partitive. Needs a sourced decision between the
