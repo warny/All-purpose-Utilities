@@ -192,7 +192,7 @@
 		  matching ending wins, so declaration order is irrelevant. The feminine variant only changes
 		  the suffix: the stem rules are shared.
 		  ItalianOrdinalLanguageSpecifics keeps zero, 1010-1910, non-round thousands above 1999 (NTS-15)
-		  and millions (NTS-15) fail-closed.
+		  and millions (NTS-17) fail-closed.
 		-->
 		<LanguageSpecifics>ItalianOrdinalLanguageSpecifics</LanguageSpecifics>
 		<Ordinals suffix="esimo">

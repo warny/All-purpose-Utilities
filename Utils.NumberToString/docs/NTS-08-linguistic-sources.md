@@ -20,7 +20,7 @@ the remaining validation and its criterion are tracked per capability in `TODO.m
 | FR | FR, FR-fr, FR-ca | SCALE-LONG | Yes | Declarative | Yes | 5 / 24 | `gender=feminin` through time units | OQLF, Banque de dépannage linguistique, “Heure”; Académie française | Existing project convention retained |
 | FR-be | FR-be | FR | Inherited, merged with one override (`80 → quatre-vingtième`) | Declarative | Inherited (no own section) | 5 / 24 (inherited) | inherited gender | Fédération Wallonie-Bruxelles, *Guide de rédaction* | Belgian `septante` / `quatre-vingts` / `nonante` |
 | FR-ch | FR-ch | FR | Inherited (`huitantième`) | Declarative | Inherited (no own section) | 5 / 24 (inherited) | inherited gender | Dictionnaire suisse romand; TERMDAT | Project convention `huitante` (no cantonal `octante`) |
-| DE | DE (and parent fallbacks) | SCALE-LONG | Yes | Declarative (German finalization hook) | Yes | 5 / 12 | genus × kasus | Existing configuration | — |
+| DE | DE (and parent fallbacks) | SCALE-LONG | Yes | Declarative (German finalization hook) | Yes | 5 / 12 | genus × kasus | Existing configuration; Duden `nullte` | Ordinal of zero `nullte` (NTS-14) |
 | DE-ch | de-CH, de-LI | DE | Merged | Declarative | Inherited (no own section) | 5 / 12 (inherited) | inherited | Existing configuration | — |
 | NL | NL | none | Yes | Declarative | Yes | 5 / 12 | none | **Consulted**: Taaladvies.net, “Kloktijden” (`voor half`, `over half`, quarter division of the hour) and “Klemtoonteken” (`één uur`); Taaladvies on `halfacht`/`half acht` (both correct) | No day-part wording; `half twee` written in two words |
 | DA | DA, DA-DK | SCALE-LONG | Yes | `DanishOrdinalLanguageSpecifics` (int range) | Yes | 5 / 12 | `gender` (fælleskøn/intetkøn): neuter `et` for the clock hour | **Consulted**: sproget.dk (Dansk Sprognævn), “Den 101. dalmatiner …” (`hundrede` is the ordinal of 100 per Retskrivningsordbogen); reference usage for the vigesimal ordinals (`halvtredsindstyvende`) and the clock | Ordinals above `int.MaxValue` fail closed |
@@ -32,17 +32,17 @@ the remaining validation and its criterion are tracked per capability in `TODO.m
 | CS | CS, CS-CZ | SCALE-LONG | Yes | `CzechOrdinalLanguageSpecifics` (gender × case) | Yes | 15 / 12 | `gender` (standalone/mužský/ženský/střední) × `case` | **Consulted** (via search summary): Naše řeč, “Řadové číslovky” (`stý první`, `dvoustý`); reference: Internetová jazyková příručka “Časové údaje” (`půl druhé`, `čtvrt na dvě`) | Ordinals verified up to 9 999; round millions/milliards only for one |
 | SK | SK, SK-SK | SCALE-LONG | Yes | `SlovakOrdinalLanguageSpecifics` (gender × case) | Yes | 15 / 12 | `gender` (mužský/ženský/stredný) × `case` | **Consulted**: teraz.sk, “Ako písať jednoslovné a viacslovné číslovky” (`stoprvý`, `dvetisícdruhý`, `päťsto dvadsiaty ôsmy`); lexika.sk / search summaries (`dvojstý`, `trojstý`, `tisíci`) | Ordinals verified up to 9 999 and one million |
 | PL | PL | none | Yes (existing) | `PolishOrdinalLanguageSpecifics` + declarative | Yes | 5 / 12 | rodzaj × przypadek | Reference usage (Poradnia PWN conventions: `pięć po pierwszej`, `wpół do drugiej`, `za pięć druga`) | — |
-| RU | RU | SCALE-LONG | Yes (existing) | Declarative | Yes | 15 / 12 | gender × case | Reference usage (`четверть второго`, `половина второго`, `без четверти два`, `час/часа/часов`) | — |
+| RU | RU | SCALE-LONG | Yes (existing) | Declarative | Yes | 15 / 12 | gender × case | Reference usage (`четверть второго`, `половина второго`, `без четверти два`, `час/часа/часов`) | Ordinal of zero `нулевой` (NTS-14) |
 | UK | UK, UK-UA | SCALE-LONG | Yes | `UkrainianOrdinalLanguageSpecifics` (gender × case) | Yes | 15 / 12 | `gender` × `case` (Ukrainian values) | Reference usage (`двадцять перший`; `чверть по першій`, `пів на другу`, `чверть до другої`) | Round thousands verified up to 10 000; ASCII apostrophe as in the cardinals |
 | ES | ES | none | Yes (existing) | Declarative | Yes | 5 / 12 | gender × form | Reference usage (RAE, *Diccionario panhispánico de dudas*, “hora”) | Exact `Convert(TimeOnly)` unchanged |
-| IT | IT | SCALE-LONG | Yes: 1–1999 except 1010–1910, round thousands 2000–999000 | Declarative `<OrdinalStem>` + `ItalianOrdinalLanguageSpecifics` (domain guard) | Yes | 5 / 12 | gender | Reference usage (Accademia della Crusca: `l'una e mezzo`, `le due meno un quarto`, `le otto meno venti`) | Cardinals soldered with `<Fusion>` (NTS-10); compound ordinals by `<OrdinalStem>` (NTS-13, see below); zero, 1010–1910 and non-round thousands above 1999 (NTS-15) and millions (NTS-14) fail closed |
+| IT | IT | SCALE-LONG | Yes: 1–1999 except 1010–1910, round thousands 2000–999000 | Declarative `<OrdinalStem>` + `ItalianOrdinalLanguageSpecifics` (domain guard) | Yes | 5 / 12 | gender | Reference usage (Accademia della Crusca: `l'una e mezzo`, `le due meno un quarto`, `le otto meno venti`) | Cardinals soldered with `<Fusion>` (NTS-10); compound ordinals by `<OrdinalStem>` (NTS-13, see below); zero, 1010–1910 and non-round thousands above 1999 (NTS-15) and millions (NTS-17) fail closed as ordinals; millions and above are separate nouns joined by `e` (NTS-14, see below) |
 | PT | PT | none | Yes (existing) | Declarative | Yes | 5 / 12 | gender | **Consulted** for the constructions the configuration does *not* use: Ciberdúvidas, “Minutos para a hora” (`um quarto para as dez`, `dez para as três`, `três menos dez`). The direct reading itself (`uma hora e quarenta e cinco`) is a project convention not attested by that source | Deliberate direct numeric reading; `para`/`menos` constructions not produced; PT-PT/PT-BR not split |
 | GL | GL, gl-ES | none | Yes (existing) | Declarative | Yes | 5 / 12 | gender | Reference usage (RAG usage `a unha e media`, `as dúas menos cuarto`) | — |
 | RO | RO, RO-RO | none | Yes | `RomanianOrdinalLanguageSpecifics` (DOOM) | Yes | 15 / 12 | `gen` | **Consulted**: dexonline/DOOM entries `sutălea` (`al (o) sutălea`, `a (o) suta`, `al două sutelea`) and `miilea` (`al o miilea`, `a o mia`, `al două miilea`); reference usage for the clock (`ora două`, `două fără un sfert`) | Ordinals up to 999 999 and one million (masculine); round `de mii` thousands declined |
 | EL | EL | none | Yes (existing) | Declarative | Yes | 15 / 12 | gender (feminine cardinals added) | Reference usage (`μία και μισή`, `δύο παρά τέταρτο`, feminine `τρεις`, `τέσσερις`) | Masculine cardinals (`ένας`) not modelled; feminine cardinal words mirrored in ordinal rules so ordinals are unchanged |
 | FI | FI | none | Yes (existing) | Declarative | Yes | 15 / 12 | case | Reference usage (Kielitoimisto: `varttia yli yksi`, `puoli kaksi`, `varttia vaille kaksi`) | — |
-| AR | AR | none | Yes, 1–99, 100, 1000 | Declarative 1–19 + `ArabicOrdinalLanguageSpecifics` | Yes | 15 / 12 | gender | **Consulted** (clock): LibreTexts, *Introduction to Arabic II*, 5.6 “Ordinal Number and Telling Time” (feminine ordinal hours, `الواحدة` for one, `الحادية عشرة`, `الثانية عشرة`, quarter/half/quarter-to); search summaries of OpenArabic/Noor Sisters (`والربع`, `والنصف`, `إلا ربعًا`, next hour after subtraction). Reference usage for the ordinals above 19 | Contract = indefinite short nominative without article; other ordinals above 99 fail closed; the thousands take the attached `و` connector (NTS-10, see below), their dual/plural forms are not modelled. LibreTexts writes `وربع` / `إلا ربع`; the configuration keeps `والربع` / `إلا ربعًا` |
-| HE | HE | none | Yes: adjectives 1–10, agreeing cardinal above | Declarative | Yes | 15 / 12 | gender (standalone/zachar/nekeva) | Reference usage (Academy of the Hebrew Language: `אחד עשר` / `אחת עשרה`, `ו` before the last element; `רבע לשתיים`) | Above ten the cardinal is the intended ordinal; thousands fixed by NTS-11 (see below); no ordinal of zero (NTS-12) |
+| AR | AR | none | Yes, 1–99, 100, 1000 | Declarative 1–19 + `ArabicOrdinalLanguageSpecifics` | Yes | 15 / 12 | gender | **Consulted** (clock): LibreTexts, *Introduction to Arabic II*, 5.6 “Ordinal Number and Telling Time” (feminine ordinal hours, `الواحدة` for one, `الحادية عشرة`, `الثانية عشرة`, quarter/half/quarter-to); search summaries of OpenArabic/Noor Sisters (`والربع`, `والنصف`, `إلا ربعًا`, next hour after subtraction). Reference usage for the ordinals above 19 | Contract = indefinite short nominative without article; other ordinals above 99 fail closed; the thousands take the attached `و` connector (NTS-10) and the form their multiplier governs (NTS-14, see below). LibreTexts writes `وربع` / `إلا ربع`; the configuration keeps `والربع` / `إلا ربعًا` |
+| HE | HE | none | Yes: adjectives 1–10, agreeing cardinal above | Declarative | Yes | 15 / 12 | gender (standalone/zachar/nekeva) | Reference usage (Academy of the Hebrew Language: `אחד עשר` / `אחת עשרה`, `ו` before the last element; `רבע לשתיים`) | Above ten the cardinal is the intended ordinal, masculine by default also when a compound ends in a teen (NTS-14); thousands fixed by NTS-11 (see below); no ordinal of zero (NTS-12) |
 | FA | FA, FA-IR | none | Yes | Declarative (`م`, `سوم`, `سی‌ام`) | Yes | 15 / 12 | none | Reference usage (Academy of Persian Language: `اول` and `یکم` both accepted) | `اول` chosen for the standalone first; compounds use `یکم` |
 | TR | TR, TR-TR | SCALE-SHORT | Yes | Declarative, every final word mapped (vowel harmony) | Yes | 15 / 12 | `case` (nominative/accusative/dative) | **Consulted** (via search summary): TDK usage (`saat yediyi çeyrek geçiyor`, `saat bir buçuk`, `saat sekize çeyrek var`) | — |
 | HI | HI | none | Yes (existing) | Declarative | Yes | 15 / 12 | gender | **Consulted** (clock): HindiPod101, “Telling the Time in Hindi” (`सवा चार`, `साढ़े छह`, `पौने बारह` = 11:45, `डेढ़` = 1:30, `ढाई` = 2:30) | Cardinals 21–99 lexicalized by NTS-10 (see below); nukta written in NFC (ढ + ़) |
@@ -52,13 +52,63 @@ the remaining validation and its criterion are tracked per capability in `TODO.m
 | VN | VN, VI, VI-VN | none | Yes (repaired: `thứ tư`) | Declarative | Yes | 15 / 12 | none | Reference usage (`thứ nhất`, `thứ tư`; `hai giờ kém mười lăm`) | No sáng/chiều/tối |
 | ID | ID, ID-ID | SCALE-SHORT | Yes | `IndonesianOrdinalLanguageSpecifics` (`long`) | Yes | 5 / 12 | none | KBBI entries `pertama`, `lewat`, `setengah`, `kurang` | Half hour refers to the following hour |
 | MS | MS, MS-MY | ID | Yes | `MalayOrdinalLanguageSpecifics` (`long`) | Yes, replaces parent | 5 / 12 | none | DBP PRPM entries `lapan`, `pukul`, `suku`, `setengah`, `bilion`, `trilion` | Half hour keeps the current hour |
-| CA | CA, ca-ES | none | Yes | Declarative | Yes | 15 / 12 | `gender=femení` forced on `{hour}` | IEC, *Gramàtica essencial*, §31.2; Optimot | Traditional quarters only |
+| CA | CA, ca-ES | none | Yes | Declarative | Yes | 15 / 12 | `gender=femení` forced on `{hour}` | IEC, *Gramàtica essencial*, §31.2; Optimot | Traditional quarters only; no ordinal of zero (NTS-14) |
 | CA-valencia | ca-ES-valencia | CA | Inherited | Declarative | Yes, replaces parent | 5 / 12 | `una` forced; invariable `dos` in ClockTime only | AVL, *Gramàtica normativa valenciana*, §32.2; AVL glossary `dos` | `dos` limited to ConvertClockTime |
 | EU | EU, eu-ES | none | Yes (existing) | Declarative | Yes | 15 / 12 | none | **Consulted**: Sareko Euskal Gramatika (EHU), “Orduak nola eman euskaraz” (`ordu bata`, `ordu bat eta erdiak` with `*ordu bata eta erdiak` marked wrong, `ordu bata eta laurden`, `bostak laurden gutxi`) | Clock-case forms are literal per hour; cardinals unchanged |
 | SW | SW, SW-KE, SW-TZ | SCALE-SHORT | **Deferred** | — | Yes | 15 / 12, `hourOffset=-6` | none | **Consulted**: Five Colleges LangMedia, “Swahili – Tanzania – Telling Time”; SpokenSwahili, “Telling the time in Swahili” | No day-part words (asubuhi, mchana, jioni, usiku) |
 | ZU | ZU | none | **Deferred** | — | Yes | 15 / 12 | none | **Consulted**: Unisa, *Learn online Zulu*, Theme 4 (`Yihora lesihlanu`, `Ligamenxe elesihlanu`, `... lishayile elesihlanu`, `... ngaphambi kwelesihlanu`) — single source | Hour forms are literal ClockTime patterns; they do not enable ordinals |
-| EE | EE | none | Yes (existing, prefix `etsõ`) | Declarative | **Deferred** | — | none | No source found | — |
-| WO | WO | none | Yes (existing) | Declarative | **Deferred** | — | none | No consistent source found | — |
+| EE | EE | none | Yes (existing, prefix `etsõ`; formation unsourced, NTS-16) | Declarative + zero guard | **Deferred** | — | none | No source found | No ordinal of zero (NTS-14) |
+| WO | WO | none | Yes (existing; `-ël` spelling unsourced, NTS-16) | Declarative + zero guard | **Deferred** | — | none | No consistent source found | No ordinal of zero (NTS-14) |
+
+## NTS-14 (2026-10-06)
+
+Four independent families, each fixed test-first. Sweeps added with them are structural guards only.
+
+- **IT millions and above** — **Consulted**: Treccani, *Enciclopedia dell'Italiano*, "numerali
+  [prontuario]" ("Milione e miliardo sono nomi: hanno la forma plurale [...] e, quando la cifra non
+  è tonda al milione / miliardo, sono seguiti da un altro cardinale separato dalla congiunzione e";
+  "un milione, due milioni; un miliardo, due miliardi; due milioni e centomila") and "uno, numerali
+  composti con [prontuario]" ("I composti con milioni e miliardi ammettono solo la forma separata
+  (un milione e uno, due milioni e uno ...)"; compounds of *uno* "tendono a rimanere invariati":
+  hence *ventuno milioni*); DICO, Università di Messina ("Milione e miliardo si scrivono sempre
+  separati dalle altre cifre, con la congiunzione e", "un milione e novantunmila"); Treccani
+  vocabolario *bilione* (10^12) and *trilione* (10^18); *biliardo* (10^15) from Libreriamo and
+  Wiktionary. Implemented with existing mechanisms only (scale `groupSeparator="li"`, lower-case,
+  `groupConnector="e"` removed again after *mille*/*-mila*, `un` before a single scale noun). The
+  Italian ordinals of a million and above stay fail-closed (NTS-17): the mechanical form of
+  *un milione* would be the fractional *un milionesimo*.
+- **AR thousands** — **Consulted**: Kalimah Center, "Arabic Numbers Grammar" (100/1000 and
+  multiples take a singular genitive noun; "For a long number like 28,061, the counted noun follows
+  the rules of the last number written"; "ثمانية وعشرون ألفًا"; duals مائتا/ألفا decline as duals);
+  al-Dirassa, "Arabic Numbers" (3-10 plural genitive, 11-99 singular accusative, "أحد عشر ألفًا",
+  "ألفان", "ثلاثة آلاف", "مائة ألف"); Virtual Arabic Language Academy, decision 29 (the thousand
+  conjoined after a number: "أحد وألف، عشرة وألف، مئة وألف"). Rule: the noun follows the last number
+  written — 1 and 2 the noun alone (ألف, ألفان), 3-10 آلاف, 11-99 ألفًا, whole hundreds ألف (dual
+  hundred in construct: مائتا ألف). Contract: standalone nominative (ألفان, not ألفين), as in the rest
+  of the configuration. The multiplier counts the masculine ألف and keeps its own agreement in the
+  feminine (واحد وعشرون ألفًا). Implemented by the new generic scale lexical forms
+  (`ArabicScaleLexicalFormSelector` returns keys; words in XML) plus `onScale` replacements for the
+  multiplier text.
+- **HE compound ordinals ending in a teen** — the existing contract (Academy of the Hebrew
+  Language; ordinal above ten = agreeing cardinal, masculine by default) already gives
+  `מאה ואחד עשר` in the zachar variant; the default/standalone ordinal now matches it through
+  ordinal-only replacements. The standalone cardinal keeps the counting teen.
+- **Zero ordinals** —
+  - RU `нулевой`: Wiktionary (relative adjective, Zaliznyak 1b, нулевой/нулевая/нулевое/нулевые);
+    Dal records нулевой and нолевой. Gramota.ru could not be read (HTTP 403). Declined like второй;
+    the mechanical "нолый" is unattested.
+  - DE `nullte`: Duden, "nullte" ("Ordinalzahl zu null", forms *nullter*, *nulltes*), declined like
+    *dritte*; replaces "nullste". Inherited by DE-ch.
+  - CA: no normative (IEC, Optimot, TERMCAT) or pair of independent sources found for an ordinal
+    of zero; "zeroè"/"zeroena" were mechanical → fail closed (shared
+    `ZeroOrdinalUnsupportedLanguageSpecifics`), inherited by CA-valencia.
+  - WO: Janga Wolof ("–éél" added to the cardinal: ñaaréél, fukkéél; first = bu njëk; zero = tus,
+    dara); search summaries of an academic grammatical sketch (-eel). No source attests an ordinal
+    of zero, and the configured cardinal "sero" is not the attested zero → fail closed. The
+    configured `-ël` spelling of every other ordinal does not match the sources (NTS-16).
+  - EE: Omniglot and Wiktionary (zero = nadeke/nanekeo; ordinals gbãtɔ, evelia, etɔ̃lia … with a
+    `-lia` suffix). No source attests an ordinal of zero → fail closed. The configured `etsõ`
+    prefix of every other ordinal is not attested either (NTS-16).
 
 ## NTS-10, NTS-11 and NTS-12 (2026-10-03)
 
@@ -122,7 +172,7 @@ sources; where sources disagree, the decision is stated.
   **Left fail-closed**: zero (NTS-12 decision unchanged; Treccani records *zeresimo* only in special,
   mathematical uses); 1010–1910 (above); non-round thousands above 1999 (2001, 21001, 100001 …) because no consulted
   source gives a canonical synthetic form and Treccani gives the analytic *centomillesimoprimo* for
-  100001 (NTS-15); one million and above because the cardinals are known wrong (NTS-14), although
+  100001 (NTS-15); one million and above because the cardinals were known wrong (NTS-14, since fixed; the ordinals are now tracked by NTS-17), although
   Treccani attests *milionesimo*.
 - **HI cardinals 21–99 (NTS-10)** — Wiktionary `Module:number_list/data/hi` (raw data), Unicode CLDR
   RBNF `hi`, and a Hindi school counting list (schooldekho.org). The three agree on most values;

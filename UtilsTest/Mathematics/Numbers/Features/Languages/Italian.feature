@@ -322,7 +322,7 @@ Scenario: Negative compound ordinal keeps the existing sign policy
 # derivation (TODO NTS-15). The thousands ending in ten (1010, 1110 ... 1910): Treccani gives only
 # the analytic "millesimo decimo", and no synthetic form was found (TODO NTS-15). Millions and
 # above: the cardinals are fixed by NTS-14 ("un milione"), but no ordinal is validated there (the
-# mechanical form would be the fractional "un milionesimo"; TODO NTS-15).
+# mechanical form would be the fractional "un milionesimo"; TODO NTS-17).
 Scenario Outline: Ordinals outside the validated domain are rejected
     Given I use the variants "<variants>"
     When I attempt to convert the ordinal number <number>
