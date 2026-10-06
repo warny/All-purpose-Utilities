@@ -25,6 +25,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<InternalsVisibleTo Include="UtilsTest.Unit" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<Compile Remove="Globalization\**" />
 <EmbeddedResource Remove="Globalization\**" />
 		<None Remove="Globalization\**" />

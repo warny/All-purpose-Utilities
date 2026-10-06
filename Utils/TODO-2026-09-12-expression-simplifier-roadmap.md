@@ -3026,6 +3026,254 @@ branch rather than preserving tests for rejected production. The public comparer
 canonicalization, rule ordering, and runtime API remain unchanged. P7 is rejected; only this corrected,
 auditable experiment record remains.
 
+#### S5 P8 — diagnostic trigger-metric characterization
+
+**Diagnostic experiment only (2026-10-02; not an accepted optimization).**
+
+- Audited baseline: `7d76d07d7eccc52362f9fa26a506db44bac09335`.
+- Earlier remotely reviewed diagnostic candidate: `f2b010338f7418f8d49ac441aef9a3b29f3e6a9c`.
+- Final corrected implementation candidate: `68e9bdf5fd9281a9ab3df483f1fc507fda7e3f5a`.
+
+The final candidate includes the capture-OFF corrections and restoration of the baseline P3 local cache tuple
+layout. This final evidence/provenance correction is a separate documentation commit on top of that candidate;
+the implementation commit is neither amended nor squashed. The architecture and metric choices came from the
+external audit. No structural memo, activation threshold, or production optimization is present.
+
+`NodeCount` counts the root and every child reached by P3's conservative traversal.
+`ArithmeticNodeCount` counts ordinary predefined, non-lifted Add/Subtract/Multiply/Divide/Power/Negate
+nodes. `ArithmeticDepth` is the continuous ordinary-arithmetic chain at the measured root; every method,
+lambda, member, custom/lifted operator, or unsupported node breaks it to zero. The same traversal preserves
+P3's user-code safety classification. Metrics use a reference-equality, thread-static cache shared by nested
+operations and released at the outermost scope. `ComparisonDepth` is counted centrally with `try/finally`;
+cumulative node budget resets at depth one.
+
+`NodeCount`, `ArithmeticNodeCount`, and cumulative node budget are stored as `float` complexity magnitudes.
+This prevents integer wraparound when a strongly shared expression DAG is reached through both branches and
+therefore doubles its logical-work estimate at each level. Shared sub-expressions are intentionally counted
+once per path rather than once per CLR object. Small values remain exact; low-order precision loss at large
+magnitudes, and eventual positive infinity, are intentional and harmless for their threshold-comparison use.
+`ArithmeticDepth` remains an exact `int`. Existing A/B/C/G/H measurements are unchanged because their values
+are small enough to be represented exactly.
+
+After review correction, capture is explicitly opt-in. With capture inactive, comparer simplification takes
+the historical direct path, P3 uses its safety-only traversal, no origin/depth/budget state is manipulated,
+and no metrics dictionary is allocated. During capture, the reference cache is allocated lazily on its first
+metric request and released by the outermost scope.
+
+**Capture-OFF overhead validation (2026-10-04).** A standalone Release harness compared the audited base
+`7d76d07d7eccc52362f9fa26a506db44bac09335` against the final opt-in implementation with capture never
+enabled. Sources were preconstructed; each process used 20 warmups followed by 21 GC-isolated rounds, with
+40 operations per round at n=4 and 2 at n=8. Five fresh baseline/head process pairs were alternated. The
+table reports the median of the five per-process medians. Allocation medians were identical byte-for-byte in
+every scenario. Every n=8 case stayed within +5%. The original B4 pair-level output was not retained in the
+available workspace, PR discussion, or listed CI artifacts, so its direction-change claim cannot be audited
+from the original aggregate alone. The B4-only rerun below supplies new pair-level evidence.
+
+| Family/size | Base ms/op | Capture-OFF head ms/op | Delta | Base bytes/op | Head bytes/op |
+|---|---:|---:|---:|---:|---:|
+| A4 | 0.373110 | 0.368418 | -1.26% | 53,683 | 53,683 |
+| A8 | 4.055250 | 4.223150 | +4.14% | 998,860 | 998,860 |
+| B4 | 0.364040 | 0.412013 | +13.18% noisy, not repeatable | 103,298 | 103,298 |
+| B8 | 5.457900 | 5.505150 | +0.87% | 2,758,884 | 2,758,884 |
+| C4 | 0.092230 | 0.095738 | +3.80% | 54,499 | 54,499 |
+| C8 | 1.621000 | 1.637400 | +1.01% | 1,000,388 | 1,000,388 |
+| G4 | 0.013345 | 0.013275 | -0.52% | 7,549 | 7,549 |
+| G8 | 0.245350 | 0.250850 | +2.24% | 143,540 | 143,540 |
+| H4 | 0.023482 | 0.023140 | -1.46% | 15,683 | 15,683 |
+| H8 | 0.086300 | 0.085850 | -0.52% | 55,884 | 55,884 |
+
+**B4-only capture-OFF evidence rerun (2026-10-06).** The original five pairs were unavailable; the following
+are fresh measurements, not reconstructed values for the 2026-10-04 aggregate. Compared the exact audited
+baseline against the final corrected implementation candidate above. Both Release builds succeeded using
+SDK 10.0.401; the standalone harness ran on .NET 9 (net9.0), referencing the net8.0 library. Dependency restore
+used the local package cache; vulnerability-feed access was unavailable. No implementation edits were made.
+
+The source was preconstructed once: four terms with coefficients 2, 3, 4, 5 and distinct free double
+parameters x0, x1, x2, x3; coefficient/parameter multiplication order alternates by parity, and the terms
+form a left-associated subtraction chain. Each operation used `new ExpressionSimplifier().Simplify(source)`.
+Capture was never enabled. Each fresh process performed 20 warmups and 21 GC-isolated rounds of 40 operations;
+full collection, finalizer wait, and full collection preceded each round. Elapsed time and current-thread
+allocated bytes were divided by 40; the per-process median is the 11th sorted round. The stopwatch contributes
+one byte per operation to the reported allocation median. Baseline/head order alternated by pair.
+
+| Pair | Order | Baseline ms/op | Head ms/op | Delta | Baseline bytes/op | Head bytes/op |
+|---:|---|---:|---:|---:|---:|---:|
+| 1 | Baseline then head | 0.480718 | 0.427348 | -11.10% | 100,898 | 100,898 |
+| 2 | Head then baseline | 0.476725 | 0.485588 | +1.86% | 100,898 | 100,898 |
+| 3 | Baseline then head | 0.544177 | 0.452558 | -16.84% | 100,898 | 100,898 |
+| 4 | Head then baseline | 0.456802 | 0.425310 | -6.89% | 100,898 | 100,898 |
+| 5 | Baseline then head | 0.460655 | 0.643047 | +39.59% | 100,898 | 100,898 |
+
+Delta is `100 * (head / baseline - 1)`. The median of the five process medians is 0.476725 ms/op baseline
+and 0.452558 ms/op head (-5.07%). Three pairs are faster and two slower; only one pair is slower by more
+than 5%. The direction changes across independent pairs, supporting treatment as CPU microbenchmark noise
+rather than a demonstrated repeatable regression. B4's original aggregate median is above 5%, but the fresh
+pair-level evidence does not demonstrate a repeatable regression. Allocation medians remain identical within
+the rerun; its absolute 100,898-byte values are separate from the historical 103,298-byte measurements.
+Only B4 was rerun; the existing A/C/G/H and n=8 results were preserved.
+
+The local four-entry P3 cache retains its baseline tuple layout when capture is off; diagnostic metrics remain
+in the separately scoped reference cache. Thus the instrumentation checks add no allocation to these measured
+paths, and this experiment found no repeatable capture-OFF CPU regression above the 5% criterion. These are
+instrumentation-retention measurements only: they validate no demonstrated production regression while
+capture is disabled. They do not validate a P9 memo, select D6/A2 or D7/A2, equate event coverage with runtime
+savings, or prove memo-hit coverage. No production trigger is selected.
+
+The Release diagnostic harness constructed each source once and ran one public simplification. A is the
+left-associated additive near miss, B the subtractive near miss, C A under one lambda, G left-associated
+multiplication, and H `2*x + 3*x + ...`. Percentiles use nearest rank. Instrumentation-contaminated timings
+and allocations are intentionally omitted.
+
+| family | n | calls | max depth | median | p90 | p95 | median nodes | max nodes | median arith depth | max arith depth |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| A | 4 | 50 | 3 | 2 | 3 | 3 | 1 | 11 | 0 | 3 |
+| A | 6 | 218 | 5 | 3 | 4 | 4 | 1 | 19 | 0 | 5 |
+| A | 8 | 890 | 7 | 4 | 5 | 6 | 1 | 27 | 0 | 7 |
+| A | 10 | 3,578 | 9 | 5 | 6 | 7 | 1 | 35 | 0 | 9 |
+| A | 12 | 14,330 | 11 | 6 | 8 | 8 | 1 | 43 | 0 | 11 |
+| A | 14 | 57,338 | 13 | 7 | 9 | 9 | 1 | 51 | 0 | 13 |
+| A | 16 | 229,370 | 15 | 8 | 10 | 11 | 1 | 59 | 0 | 15 |
+| B | 4 | 90 | 3 | 2 | 3 | 3 | 1 | 17 | 0 | 5 |
+| B | 6 | 514 | 5 | 2 | 4 | 4 | 1 | 39 | 0 | 7 |
+| B | 8 | 2,418 | 7 | 3 | 5 | 5 | 1 | 69 | 0 | 15 |
+| B | 10 | 10,338 | 9 | 4 | 6 | 6 | 1 | 107 | 0 | 28 |
+| B | 12 | 42,418 | 11 | 5 | 7 | 8 | 1 | 153 | 0 | 45 |
+| B | 14 | 171,234 | 13 | 6 | 8 | 9 | 1 | 207 | 0 | 66 |
+| B | 16 | 687,090 | 15 | 7 | 9 | 10 | 1 | 269 | 0 | 91 |
+| C | 4 | 50 | 3 | 2 | 3 | 3 | 1 | 11 | 0 | 3 |
+| C | 6 | 218 | 5 | 3 | 4 | 4 | 1 | 19 | 0 | 5 |
+| C | 8 | 890 | 7 | 4 | 5 | 6 | 1 | 27 | 0 | 7 |
+| C | 10 | 3,578 | 9 | 5 | 6 | 7 | 1 | 35 | 0 | 9 |
+| C | 12 | 14,330 | 11 | 6 | 8 | 8 | 1 | 43 | 0 | 11 |
+| C | 14 | 57,338 | 13 | 7 | 9 | 9 | 1 | 51 | 0 | 13 |
+| C | 16 | 229,370 | 15 | 8 | 10 | 11 | 1 | 59 | 0 | 15 |
+| G | 4 | 14 | 3 | 2 | 3 | 3 | 1 | 5 | 0 | 2 |
+| G | 6 | 62 | 5 | 3 | 4 | 4 | 1 | 9 | 0 | 4 |
+| G | 8 | 254 | 7 | 4 | 5 | 6 | 1 | 13 | 0 | 6 |
+| G | 10 | 1,022 | 9 | 5 | 6 | 7 | 1 | 17 | 0 | 8 |
+| G | 12 | 4,094 | 11 | 6 | 8 | 8 | 1 | 21 | 0 | 10 |
+| G | 14 | 16,382 | 13 | 7 | 9 | 9 | 1 | 25 | 0 | 12 |
+| G | 16 | 65,534 | 15 | 8 | 10 | 11 | 1 | 29 | 0 | 14 |
+| H | 4 | 17 | 1 | 1 | 1 | 1 | 1 | 5 | 0 | 2 |
+| H | 6 | 27 | 1 | 1 | 1 | 1 | 1 | 9 | 0 | 4 |
+| H | 8 | 37 | 1 | 1 | 1 | 1 | 1 | 13 | 0 | 6 |
+| H | 10 | 47 | 1 | 1 | 1 | 1 | 1 | 17 | 0 | 8 |
+| H | 12 | 57 | 1 | 1 | 1 | 1 | 1 | 21 | 0 | 10 |
+| H | 14 | 67 | 1 | 1 | 1 | 1 | 1 | 25 | 0 | 12 |
+| H | 16 | 77 | 1 | 1 | 1 | 1 | 1 | 29 | 0 | 14 |
+
+These percentages are projections of the recorded joint distributions. They are candidate boundaries, not
+a selected policy.
+
+| scenario | AD>=2 | nodes>=9 | D>=4 & AD>=2 | D>=6 & AD>=2 | D>=8 & AD>=4 | budget>=1,000 |
+|---|---:|---:|---:|---:|---:|---:|
+| A8 | 7.08% | 3.48% | 2.47% | 0.11% | 0.00% | 0.00% |
+| B8 | 6.70% | 2.65% | 1.49% | 0.04% | 0.00% | 27.75% |
+| A12 | 7.14% | 3.57% | 5.92% | 2.69% | 0.01% | 77.73% |
+| B12 | 7.08% | 3.40% | 5.01% | 1.74% | 0.00% | 90.35% |
+| A16 | 7.14% | 3.57% | 6.94% | 5.63% | 0.35% | 97.61% |
+| B16 | 7.14% | 3.55% | 6.66% | 4.76% | 0.20% | 99.10% |
+| G8 | 12.20% | 2.76% | 2.36% | 0.00% | 0.00% | 0.00% |
+| G16 | 12.50% | 3.12% | 11.92% | 8.87% | 0.35% | 93.92% |
+| H8 | 13.51% | 8.11% | 0.00% | 0.00% | 0.00% | 0.00% |
+| H16 | 16.88% | 14.29% | 0.00% | 0.00% | 0.00% | 0.00% |
+
+Origin counts corroborate the paths: A8/A16 split 508/131,068 factor-probe and 382/98,302 multiplication
+events; B8/B16 split 1,262/392,038 and 1,156/295,052; G8/G16 were entirely multiplication (254/65,534);
+H8/H16 split 21/45 and 16/32. No event in these families used the `Other` tag.
+
+The correction-round sweeps below report percentages of `SimplifyForComparison` events satisfying each
+condition. Columns follow the threshold/header line exactly. These event percentages do **not** measure
+runtime saved or memo hits captured; a later stage would still have to test an actual optimization. No
+boundary is selected here.
+
+```text
+[ArithmeticDepth] thresholds=1,2,3,4,5,6,8,10,12
+A8,7.079,7.079,3.483,1.685,0.787,0.337,0.000,0.000,0.000
+B8,7.196,6.700,2.647,1.075,0.455,0.207,0.083,0.083,0.041
+A12,7.139,7.139,3.566,1.779,0.886,0.440,0.105,0.021,0.000
+B12,7.129,7.082,3.404,1.636,0.771,0.351,0.064,0.017,0.012
+A16,7.143,7.143,3.571,1.785,0.892,0.446,0.111,0.027,0.007
+B16,7.140,7.136,3.550,1.765,0.875,0.431,0.101,0.022,0.004
+G8,24.803,12.205,5.906,2.756,1.181,0.394,0.000,0.000,0.000
+G16,24.999,12.499,6.249,3.124,1.561,0.780,0.194,0.047,0.011
+H8,16.216,13.514,10.811,8.108,5.405,2.703,0.000,0.000,0.000
+H16,18.182,16.883,15.584,14.286,12.987,11.688,9.091,6.494,3.896
+
+[NodeCount] thresholds=5,9,13,17,21,25,33,41,49,65
+A8,7.079,3.483,1.685,0.787,0.337,0.112,0.000,0.000,0.000,0.000
+B8,6.079,2.647,1.075,0.455,0.207,0.165,0.124,0.083,0.083,0.041
+A12,7.139,3.566,1.779,0.886,0.440,0.216,0.049,0.007,0.000,0.000
+B12,6.976,3.404,1.636,0.771,0.351,0.156,0.031,0.014,0.014,0.012
+A16,7.143,3.571,1.785,0.892,0.446,0.223,0.055,0.014,0.003,0.000
+B16,7.123,3.550,1.765,0.875,0.431,0.210,0.048,0.010,0.002,0.001
+G8,12.205,2.756,0.394,0.000,0.000,0.000,0.000,0.000,0.000,0.000
+G16,12.499,3.124,0.780,0.194,0.047,0.011,0.000,0.000,0.000,0.000
+H8,13.514,8.108,2.703,0.000,0.000,0.000,0.000,0.000,0.000,0.000
+H16,16.883,14.286,11.688,9.091,6.494,3.896,0.000,0.000,0.000,0.000
+
+[CumulativeNodeBudget] thresholds=128,256,512,1000,2048,4096,8192,16384
+A8,63.708,42.809,16.966,0.000,0.000,0.000,0.000,0.000
+B8,84.781,71.588,52.357,27.750,1.365,0.000,0.000,0.000
+A12,95.862,92.456,86.720,77.732,62.701,41.766,16.734,0.000
+B12,98.951,97.308,94.634,90.346,82.842,71.217,53.718,30.004
+A16,99.635,99.295,98.669,97.610,95.605,92.216,86.484,77.103
+B16,99.932,99.811,99.541,99.098,98.259,96.830,94.338,90.070
+G8,25.197,0.000,0.000,0.000,0.000,0.000,0.000,0.000
+G16,99.001,98.106,96.532,93.924,89.088,81.266,68.760,50.005
+H8,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000
+H16,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000
+```
+
+The complete C grid is compacted into four values per depth (`A=1,2,3,4`):
+
+```text
+scenario,D3,D4,D5,D6,D7,D8
+A8,4.719/4.719/1.798/0.562,2.472/2.472/0.674/0.112,0.787/0.787/0.112/0,0.112/0.112/0/0,0/0/0/0,0/0/0/0
+B8,3.557/3.557/1.158/0.289,1.489/1.489/0.331/0.041,0.372/0.372/0.041/0,0.041/0.041/0/0,0/0/0/0,0/0/0/0
+A12,6.755/6.755/3.252/1.528,5.918/5.918/2.666/1.137,4.452/4.452/1.786/0.649,2.694/2.694/0.907/0.258,1.228/1.228/0.321/0.063,0.391/0.391/0.070/0.007
+B12,6.280/6.280/2.900/1.285,5.007/5.007/2.108/0.823,3.324/3.324/1.216/0.394,1.740/1.740/0.523/0.130,0.679/0.679/0.156/0.026,0.184/0.184/0.028/0.002
+A16,7.097/7.097/3.531/1.751,6.938/6.938/3.407/1.655,6.502/6.502/3.095/1.440,5.629/5.629/2.534/1.094,4.320/4.320/1.786/0.691,2.823/2.823/1.038/0.346
+B16,7.001/7.001/3.453/1.690,6.657/6.657/3.204/1.514,5.929/5.929/2.725/1.211,4.763/4.763/2.038/0.827,3.327/3.327/1.289/0.462,1.953/1.953/0.665/0.203
+G8,16.535/6.299/1.969/0.394,8.661/2.362/0.394/0,2.756/0.394/0/0,0.394/0/0/0,0/0/0/0,0/0/0/0
+G16,24.839/12.360/6.130/3.023,24.284/11.924/5.794/2.771,22.756/10.833/5.039/2.268,19.701/8.869/3.830/1.563,15.119/6.250/2.420/0.858,9.882/3.632/1.212/0.354
+H8,0/0/0/0,0/0/0/0,0/0/0/0,0/0/0/0,0/0/0/0,0/0/0/0
+H16,0/0/0/0,0/0/0/0,0/0/0/0,0/0/0/0,0/0/0/0,0/0/0/0
+```
+
+For C plus NodeCount, each group is `N=5/9/13/17/25/33`:
+
+```text
+scenario,D5A2,D6A2,D7A2
+A8,.787/.112/0/0/0/0,.112/0/0/0/0/0,0/0/0/0/0/0
+B8,.372/.041/0/0/0/0,.041/0/0/0/0/0,0/0/0/0/0/0
+A12,4.452/1.786/.649/.202/.007/0,2.694/.907/.258/.056/0/0,1.228/.321/.063/.007/0/0
+B12,3.324/1.216/.394/.106/.002/0,1.740/.523/.130/.024/0/0,.679/.156/.026/.002/0/0
+A16,6.502/3.095/1.440/.648/.112/.013,5.629/2.534/1.094/.446/.057/.003,4.320/1.786/.691/.245/.020/0
+B16,5.929/2.725/1.211/.514/.075/.007,4.763/2.038/.827/.313/.032/.001,3.327/1.289/.462/.149/.010/0
+G8,.394/0/0/0/0/0,0/0/0/0/0/0,0/0/0/0/0/0
+G16,10.833/2.268/.391/.044/0/0,8.869/1.563/.198/.012/0/0,6.250/.858/.070/.002/0/0
+H8,0/0/0/0/0/0,0/0/0/0/0/0,0/0/0/0/0/0
+H16,0/0/0/0/0/0,0/0/0/0/0/0,0/0/0/0/0/0
+```
+
+**Revised answers.** (1) Among tested ArithmeticDepth-only boundaries, none cleanly separates B8 from all
+three large pathologies: high thresholds retain H16 strongly while large-pathology coverage becomes tiny;
+AD>=6, for example, is 0.207% B8 versus 0.446%/0.431%/0.780% A16/B16/G16. (2) Among tested NodeCount-only
+boundaries, the same overlap remains; N>=17 is 0.455% B8 versus 0.892%/0.875%/0.194%, and larger N removes G16
+before B8. (3) Among tested C boundaries, depth plus arithmetic depth is materially cleaner: D6/A2 is 0.041%
+B8 versus 5.629%/4.763%/8.869% A16/B16/G16, while H controls are zero. This is a promising region, not a
+selection. (4) Measured NodeCount additions lower both leakage and desired coverage: adding N>=9 to D6/A2
+moves B8 from 0.041% to 0%, but A16/B16/G16 from 5.629/4.763/8.869% to 2.534/2.038/1.563%; it does not
+preserve coverage well enough to demonstrate useful extra discrimination. (5) Among tested budgets, 2048
+reduces B8 to 1.365% while retaining 95.605%/98.259%/89.088% A16/B16/G16, but it remains less selective by
+event percentage than D6/A2's 0.041% leakage. No statement is made outside these tested boundaries.
+
+Focused tests validate the required metric examples, custom/lifted chain breaks, same-reference reuse,
+distinct rebuilt objects, nested reuse, teardown, bounded two-thread isolation, nested comparison depth, and
+normal/exception cleanup. The unchanged comparer-batching, structural-canonicalization, comparer, symbolic
+contract, custom-operator safety, and reconstruction-fidelity suites remain semantic gates.
+
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.
