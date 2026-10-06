@@ -191,8 +191,9 @@
 		  thousands becomes mill- ("duemillesimo", "diecimillesimo", "centomillesimo"). The longest
 		  matching ending wins, so declaration order is irrelevant. The feminine variant only changes
 		  the suffix: the stem rules are shared.
-		  ItalianOrdinalLanguageSpecifics keeps zero, 1010-1910, non-round thousands above 1999 (NTS-15)
-		  and millions (NTS-17) fail-closed.
+		  ItalianOrdinalLanguageSpecifics keeps zero, 1110-1910 and the non-round thousands above 1999
+		  outside 100001-100009 (NTS-15), the non-round values from a million and every value from a
+		  biliardo (NTS-18) fail-closed.
 		-->
 		<LanguageSpecifics>ItalianOrdinalLanguageSpecifics</LanguageSpecifics>
 		<Ordinals suffix="esimo">
@@ -218,7 +219,7 @@
 			<!--
 			  After a hundred, dieci keeps its lexical ordinal decimo (Crusca, Vocabolario 5th ed.,
 			  s.v. "centesimo": "Centodecimo, Centundicesimo, Centododicesimo ec."), not the unattested
-			  "centodiecesimo". Whole soldered words, so exact word rules. 1010-1910 fail closed (NTS-15).
+			  "centodiecesimo". Whole soldered words, so exact word rules. 1110-1910 fail closed (NTS-15).
 			-->
 			<Ordinal from="centodieci"><Variant type="gender" forms="centodecimo,centodecima" /></Ordinal>
 			<Ordinal from="duecentodieci"><Variant type="gender" forms="duecentodecimo,duecentodecima" /></Ordinal>
@@ -229,6 +230,33 @@
 			<Ordinal from="settecentodieci"><Variant type="gender" forms="settecentodecimo,settecentodecima" /></Ordinal>
 			<Ordinal from="ottocentodieci"><Variant type="gender" forms="ottocentodecimo,ottocentodecima" /></Ordinal>
 			<Ordinal from="novecentodieci"><Variant type="gender" forms="novecentodecimo,novecentodecima" /></Ordinal>
+
+			<!--
+			  NTS-17. From a million the ordinal is formed on the scale noun, not on the cardinal "un
+			  milione" (whose mechanical "un milionesimo" is the fraction): Treccani, vocabolario
+			  "milionesimo", "miliardesimo", "bilionesimo", "decimilionesimo (o diecimilionesimo)"; CNR
+			  press release on the .it registry, "il duemilionesimo indirizzo web". A multiplier above
+			  one is soldered to the noun, as for the thousands (Treccani "ordinale": "duemillesimo",
+			  "diecimillesimo"), and an inner tre loses its accent as in "ventitremila"/"ventitremillesimo"
+			  (ordinal-only replacements; the cardinal "ventitré milioni" is unchanged). The stems and the
+			  gender suffix are the shared ones (milione → milion + esimo/esima). Scales 2-4 only
+			  (milione, miliardo, bilione): biliardo and trilione ordinals are unsourced (TODO NTS-18).
+			-->
+			<OrdinalScale scales="2..4" multiplierSeparator="" />
+			<Replacement oldValue="trémili" newValue="tremili" scope="Anywhere" />
+			<Replacement oldValue="trébili" newValue="trebili" scope="Anywhere" />
+			<!--
+			  NTS-15. Treccani, vocabolario "ordinale": the juxtaposition of the ordinal of the thousand
+			  with the ordinal of the rest is "pressoché l'unico" type where the synthetic one would be
+			  uneuphonious, separate spelling preferred: "millesimo primo, millesimo secondo, millesimo
+			  decimo" (1001-1009 keep the official synthetic milleunesimo of NTS-13; 1010 has no attested
+			  synthetic form). Treccani, vocabolario "centomillesimo": "i successivi sono:
+			  centomillesimoprimo, centomillesimosecondo, centomillesimoterzo, ecc.", soldered, the
+			  synthetic "un centomiladuesimo" being a partitive. Both parts take the requested gender.
+			  Other non-round thousands stay fail-closed (TODO NTS-15).
+			-->
+			<OrdinalComposition for="1010" divisor="1000" separator=" " />
+			<OrdinalComposition for="100001..100009" divisor="1000" separator="" />
 
 			<!-- Femminile variant: same stems, suffix -esima -->
 			<OrdinalVariants>
