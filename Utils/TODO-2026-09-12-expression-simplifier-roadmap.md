@@ -3028,10 +3028,16 @@ auditable experiment record remains.
 
 #### S5 P8 — diagnostic trigger-metric characterization
 
-**Diagnostic experiment only (2026-10-02; not an accepted optimization).** The externally audited base is
-`7d76d07d7eccc52362f9fa26a506db44bac09335`. The remotely published and review-verified diagnostic candidate
-is `f2b010338f7418f8d49ac441aef9a3b29f3e6a9c`. The architecture and metric choices came from the external
-audit. No structural memo, activation threshold, or production optimization is present.
+**Diagnostic experiment only (2026-10-02; not an accepted optimization).**
+
+- Audited baseline: `7d76d07d7eccc52362f9fa26a506db44bac09335`.
+- Earlier remotely reviewed diagnostic candidate: `f2b010338f7418f8d49ac441aef9a3b29f3e6a9c`.
+- Final corrected implementation candidate: `68e9bdf5fd9281a9ab3df483f1fc507fda7e3f5a`.
+
+The final candidate includes the capture-OFF corrections and restoration of the baseline P3 local cache tuple
+layout. This final evidence/provenance correction is a separate documentation commit on top of that candidate;
+the implementation commit is neither amended nor squashed. The architecture and metric choices came from the
+external audit. No structural memo, activation threshold, or production optimization is present.
 
 `NodeCount` counts the root and every child reached by P3's conservative traversal.
 `ArithmeticNodeCount` counts ordinary predefined, non-lifted Add/Subtract/Multiply/Divide/Power/Negate
@@ -3059,9 +3065,9 @@ metric request and released by the outermost scope.
 enabled. Sources were preconstructed; each process used 20 warmups followed by 21 GC-isolated rounds, with
 40 operations per round at n=4 and 2 at n=8. Five fresh baseline/head process pairs were alternated. The
 table reports the median of the five per-process medians. Allocation medians were identical byte-for-byte in
-every scenario. CPU direction was not repeatable above 5%: notably, noisy B4 alternated between head slower
-and head faster across process pairs (rather than showing a stable regression), while every n=8 case stayed
-within +5%.
+every scenario. Every n=8 case stayed within +5%. The original B4 pair-level output was not retained in the
+available workspace, PR discussion, or listed CI artifacts, so its direction-change claim cannot be audited
+from the original aggregate alone. The B4-only rerun below supplies new pair-level evidence.
 
 | Family/size | Base ms/op | Capture-OFF head ms/op | Delta | Base bytes/op | Head bytes/op |
 |---|---:|---:|---:|---:|---:|
@@ -3076,10 +3082,42 @@ within +5%.
 | H4 | 0.023482 | 0.023140 | -1.46% | 15,683 | 15,683 |
 | H8 | 0.086300 | 0.085850 | -0.52% | 55,884 | 55,884 |
 
+**B4-only capture-OFF evidence rerun (2026-10-06).** The original five pairs were unavailable; the following
+are fresh measurements, not reconstructed values for the 2026-10-04 aggregate. Compared the exact audited
+baseline against the final corrected implementation candidate above. Both Release builds succeeded using
+SDK 10.0.401; the standalone harness ran on .NET 9 (net9.0), referencing the net8.0 library. Dependency restore
+used the local package cache; vulnerability-feed access was unavailable. No implementation edits were made.
+
+The source was preconstructed once: four terms with coefficients 2, 3, 4, 5 and distinct free double
+parameters x0, x1, x2, x3; coefficient/parameter multiplication order alternates by parity, and the terms
+form a left-associated subtraction chain. Each operation used `new ExpressionSimplifier().Simplify(source)`.
+Capture was never enabled. Each fresh process performed 20 warmups and 21 GC-isolated rounds of 40 operations;
+full collection, finalizer wait, and full collection preceded each round. Elapsed time and current-thread
+allocated bytes were divided by 40; the per-process median is the 11th sorted round. The stopwatch contributes
+one byte per operation to the reported allocation median. Baseline/head order alternated by pair.
+
+| Pair | Order | Baseline ms/op | Head ms/op | Delta | Baseline bytes/op | Head bytes/op |
+|---:|---|---:|---:|---:|---:|---:|
+| 1 | Baseline then head | 0.480718 | 0.427348 | -11.10% | 100,898 | 100,898 |
+| 2 | Head then baseline | 0.476725 | 0.485588 | +1.86% | 100,898 | 100,898 |
+| 3 | Baseline then head | 0.544177 | 0.452558 | -16.84% | 100,898 | 100,898 |
+| 4 | Head then baseline | 0.456802 | 0.425310 | -6.89% | 100,898 | 100,898 |
+| 5 | Baseline then head | 0.460655 | 0.643047 | +39.59% | 100,898 | 100,898 |
+
+Delta is `100 * (head / baseline - 1)`. The median of the five process medians is 0.476725 ms/op baseline
+and 0.452558 ms/op head (-5.07%). Three pairs are faster and two slower; only one pair is slower by more
+than 5%. The direction changes across independent pairs, supporting treatment as CPU microbenchmark noise
+rather than a demonstrated repeatable regression. B4's original aggregate median is above 5%, but the fresh
+pair-level evidence does not demonstrate a repeatable regression. Allocation medians remain identical within
+the rerun; its absolute 100,898-byte values are separate from the historical 103,298-byte measurements.
+Only B4 was rerun; the existing A/C/G/H and n=8 results were preserved.
+
 The local four-entry P3 cache retains its baseline tuple layout when capture is off; diagnostic metrics remain
 in the separately scoped reference cache. Thus the instrumentation checks add no allocation to these measured
 paths, and this experiment found no repeatable capture-OFF CPU regression above the 5% criterion. These are
-instrumentation-retention measurements only and do not select a P9 trigger.
+instrumentation-retention measurements only: they validate no demonstrated production regression while
+capture is disabled. They do not validate a P9 memo, select D6/A2 or D7/A2, equate event coverage with runtime
+savings, or prove memo-hit coverage. No production trigger is selected.
 
 The Release diagnostic harness constructed each source once and ran one public simplification. A is the
 left-associated additive near miss, B the subtractive near miss, C A under one lambda, G left-associated
