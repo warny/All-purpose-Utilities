@@ -8,8 +8,9 @@ namespace Utils.NumberToString;
 /// <remarks>
 /// <para>The ordinal is then built from the scale noun rather than from the assembled cardinal: a
 /// multiplier of one is dropped (the singular scale noun alone), a larger multiplier is its own
-/// cardinal (rendered with the caller's variants) followed by <see cref="MultiplierSeparator"/> and
-/// the singular scale noun. That text then goes through the usual ordinal transformation (ordinal
+/// cardinal, rendered exactly like the standalone cardinal of the multiplier with the caller's
+/// variants (cardinal variant rules included, <c>onValue</c> evaluated against the multiplier),
+/// followed by <see cref="MultiplierSeparator"/> and the singular scale noun. That text then goes through the usual ordinal transformation (ordinal
 /// replacements, word rules, stems, removeTrailing, the effective suffix of the selected variant).
 /// Whole-number ordinal exceptions keep precedence.</para>
 /// <para>A value is matched at its highest scale only: 10^9 is the ordinal of the billion scale, never

@@ -2126,7 +2126,8 @@ namespace Utils.NumberToString
             {
                 string raw;
                 // A round value covered by an OrdinalScale rule is formed on its scale noun, never on
-                // the assembled cardinal (the cardinal variant rules agree that cardinal, not this text).
+                // the assembled cardinal; the cardinal variant rules were applied to its multiplier only,
+                // since they agree a cardinal, not the joined multiplier + noun text.
                 if (!TryBuildRoundScaleText(number, activeVariants, out raw))
                 {
                     raw = number == 0 ? Zero : ConvertRaw((BigInteger)number, activeVariants);

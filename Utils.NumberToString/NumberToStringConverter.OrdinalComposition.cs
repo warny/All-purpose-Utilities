@@ -214,9 +214,18 @@ namespace Utils.NumberToString
                 if (_ordinalScaleByIndex[index] is not { } rule || number % unit != 0) return false;
                 long multiplier = number / unit;
                 string noun = GetScaleWord(index, 1, activeVariants);
-                text = multiplier == 1
-                    ? noun
-                    : string.Concat(ConvertRaw(multiplier, activeVariants), rule.MultiplierSeparator, noun);
+                if (multiplier == 1)
+                {
+                    text = noun;
+                    return true;
+                }
+                // The multiplier is rendered exactly like its standalone cardinal: ConvertRaw (which
+                // already applies the scale-specific variant rules), then the global variant rules
+                // evaluated against the multiplier itself (onValue included). ApplyVariantRules skips
+                // the onScale rules, so nothing is applied twice.
+                string multiplierText = ConvertRaw(multiplier, activeVariants);
+                multiplierText = ApplyVariantRules(multiplierText, activeVariants, multiplier);
+                text = string.Concat(multiplierText, rule.MultiplierSeparator, noun);
                 return true;
             }
             return false;

@@ -1788,11 +1788,13 @@ a **round scale value** — multiplier × scale unit, every lower group zero —
 - `scales` uses the range syntax (`2`, `2..4`, `2..`); every index must be ≥ 1 and nameable by the
   `<NumberScale>`, and two rules must not cover the same index. `multiplierSeparator` is required
   and may be empty.
-- The multiplier is its own cardinal, rendered with the caller's variants; the noun is the singular
-  scale word (through `<ScaleForm>` when configured). The resulting text then goes through the
-  ordinal `<Replacement>` rules, the word rules, `<OrdinalStem>`, `removeTrailing` and the
-  **effective suffix**, so the feminine variant needs no extra rule (`duemilionesima`). The cardinal
-  `<Variants>` rules are not applied to that text: they agree the assembled cardinal.
+- The multiplier is rendered exactly like its standalone cardinal with the caller's variants: the
+  cardinal `<Variants>` rules apply to it (scale-specific ones inside the cardinal, global ones
+  afterwards, `onValue` evaluated against the multiplier). The noun is the singular scale word
+  (through `<ScaleForm>` when configured); the cardinal variant rules are not applied to the
+  joined text. That text then goes through the ordinal `<Replacement>` rules, the word rules,
+  `<OrdinalStem>`, `removeTrailing` and the **effective suffix**, so the feminine variant needs no
+  extra rule (`duemilionesima`).
 - Only the highest scale of the value is considered. Whole-number `<OrdinalException>` entries and
   `<OrdinalComposition>` keep precedence. Cardinals are never affected.
 - `baseOn`: a derived language declaring `<OrdinalScale>` replaces the inherited list. Programmatic:

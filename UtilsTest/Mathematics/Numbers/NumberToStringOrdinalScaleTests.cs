@@ -194,6 +194,52 @@ public class NumberToStringOrdinalScaleTests
         Assert.AreEqual("two-millionth", converter.ConvertOrdinal(2_000_000));
     }
 
+    /// <summary>Builds the synthetic converter with the given feminine cardinal variant replacements and a "-" multiplier separator.</summary>
+    /// <param name="replacements">The Replacement elements of the feminine cardinal variant.</param>
+    /// <returns>The converter.</returns>
+    private static NumberToStringConverter BuildWithFeminineCardinalRules(string replacements)
+    {
+        string culture = NewCulture();
+        string document = Document(culture, Ordinals("""<OrdinalScale scales="2" multiplierSeparator="-" />"""))
+            .Replace("""<Variants><Dimension name="gender" values="plain,fem" /></Variants>""",
+                $"""<Variants><Dimension name="gender" values="plain,fem" /><Variant type="gender" variant="fem">{replacements}</Variant></Variants>""");
+        return NumberToStringConverter.ReadConfiguration(document)[culture];
+    }
+
+    /// <summary>
+    /// A global cardinal variant rule (no onScale) applies to the multiplier exactly as to the
+    /// standalone cardinal of the multiplier.
+    /// </summary>
+    [TestMethod]
+    public void OrdinalScale_Multiplier_AppliesGlobalVariantRules()
+    {
+        var converter = BuildWithFeminineCardinalRules("""<Replacement oldValue="two" newValue="twa" scope="LastWord" />""");
+
+        Assert.AreEqual("twa", converter.Convert(new BigInteger(2), "gender=fem"));
+        Assert.AreEqual("twa-millionthe", converter.ConvertOrdinal(2_000_000, "gender=fem"));
+        Assert.AreEqual("two-millionth", converter.ConvertOrdinal(2_000_000));
+    }
+
+    /// <summary>An onValue cardinal variant rule is evaluated against the multiplier, not the whole value.</summary>
+    [TestMethod]
+    public void OrdinalScale_Multiplier_AppliesOnValueVariantRules()
+    {
+        var converter = BuildWithFeminineCardinalRules("""<Replacement oldValue="two" newValue="twa" scope="LastWord" onValue="2" />""");
+
+        Assert.AreEqual("twa-millionthe", converter.ConvertOrdinal(2_000_000, "gender=fem"));
+        Assert.AreEqual("twenty two-millionthe", converter.ConvertOrdinal(22_000_000, "gender=fem"));
+    }
+
+    /// <summary>A scale-specific variant rule, already applied inside the multiplier's cardinal, is not applied a second time.</summary>
+    [TestMethod]
+    public void OrdinalScale_Multiplier_DoesNotReapplyScaleSpecificVariantRules()
+    {
+        var converter = BuildWithFeminineCardinalRules("""<Replacement oldValue="two" newValue="xtwo" scope="Anywhere" onScale="0" />""");
+
+        Assert.AreEqual("xtwo", converter.Convert(new BigInteger(2), "gender=fem"));
+        Assert.AreEqual("xtwo-millionthe", converter.ConvertOrdinal(2_000_000, "gender=fem"));
+    }
+
     /// <summary>A whole-number exception keeps precedence over the scale ordinal.</summary>
     [TestMethod]
     public void OrdinalScale_OrdinalException_KeepsPrecedence()
