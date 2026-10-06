@@ -57,14 +57,35 @@
             <Suffixes>
                 <Suffix>مليون</Suffix>
             </Suffixes>
+            <!-- NTS-14. The noun ألف takes the form governed by its multiplier, i.e. by the last
+                 number written (Kalimah Center, al-Dirassa, Virtual Arabic Language Academy
+                 decision 29): ArabicScaleLexicalFormSelector returns the key, the words are here.
+                 Standalone nominative, consistent with the rest of the configuration (ألفان, not
+                 the oblique ألفين). -->
+            <ScaleForm scale="1" formSelector="ArabicScaleLexicalFormSelector">
+                <Forms>
+                    <Form key="singular" value="ألف" />
+                    <Form key="dual" value="ألفان" />
+                    <Form key="plural" value="آلاف" />
+                    <Form key="singularAccusative" value="ألفًا" />
+                </Forms>
+            </ScaleForm>
         </NumberScale>
-        <!-- "و" joins the thousands to the lower group and is written attached to the next word
-             ("ألف وواحد", CLDR RBNF ar; NTS-10). With maxNumber 999999, "ألف" followed by a space
-             only occurs before the lower group. The dual/plural forms of the thousands are not
-             handled (out of scope of the connector). -->
+        <!-- One and two thousand are the noun alone, the multiplier word disappears, also after a
+             hundred ("ألف", "ألفان", "مائة وألف", "مائة وألفان"); a dual hundred before the noun is
+             in construct ("مائتا ألف"). These are text changes on the thousands group (onScale="1"),
+             the selector only choosing the form.
+             "و" joins the thousands to the lower group and is written attached to the next word
+             ("ألف وواحد", CLDR RBNF ar; NTS-10). With maxNumber 999999, a thousands noun followed by
+             a space only occurs before the lower group. -->
         <Replacements>
-            <Replacement oldValue="واحد ألف" newValue="ألف" />
+            <Replacement oldValue="واحد ألف" newValue="ألف" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="اثنان ألفان" newValue="ألفان" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="مائتان ألف" newValue="مائتا ألف" scope="EndsWith" onScale="1" />
             <Replacement oldValue="ألف " newValue="ألف و" scope="Anywhere" />
+            <Replacement oldValue="ألفان " newValue="ألفان و" scope="Anywhere" />
+            <Replacement oldValue="آلاف " newValue="آلاف و" scope="Anywhere" />
+            <Replacement oldValue="ألفًا " newValue="ألفًا و" scope="Anywhere" />
         </Replacements>
         <!-- 11-19: unit first, then "عشر" (masculine; the feminine variant below agrees them). -->
         <Exceptions>
@@ -156,16 +177,19 @@
                 <Replacement oldValue="وتسعة"   newValue="وتسع"    scope="LastWord" />
                 <Replacement oldValue="وعشرة"   newValue="وعشر"    scope="LastWord" />
                 <!-- Compounds: the unit before "و" + tens, and the 11-19 forms (applied after the
-                     single-word rules above, so the final "عشرة" is not shortened). -->
-                <Replacement oldValue="واحد و" newValue="واحدة و" scope="Anywhere" />
-                <Replacement oldValue="اثنان و" newValue="اثنتان و" scope="Anywhere" />
-                <Replacement oldValue="ثلاثة و" newValue="ثلاث و" scope="Anywhere" />
-                <Replacement oldValue="أربعة و" newValue="أربع و" scope="Anywhere" />
-                <Replacement oldValue="خمسة و" newValue="خمس و" scope="Anywhere" />
-                <Replacement oldValue="ستة و" newValue="ست و" scope="Anywhere" />
-                <Replacement oldValue="سبعة و" newValue="سبع و" scope="Anywhere" />
-                <Replacement oldValue="ثمانية و" newValue="ثمان و" scope="Anywhere" />
-                <Replacement oldValue="تسعة و" newValue="تسع و" scope="Anywhere" />
+                     single-word rules above, so the final "عشرة" is not shortened). The unit-and-tens
+                     compounds are restricted to the units group (onScale="0"): a thousands multiplier
+                     counts the masculine noun ألف and keeps its own agreement whatever the gender of
+                     the counted noun ("واحد وعشرون ألفًا", "ثلاثة وعشرون ألفًا وثلاث", NTS-14). -->
+                <Replacement oldValue="واحد و" newValue="واحدة و" scope="Anywhere" onScale="0" />
+                <Replacement oldValue="اثنان و" newValue="اثنتان و" scope="Anywhere" onScale="0" />
+                <Replacement oldValue="ثلاثة و" newValue="ثلاث و" scope="Anywhere" onScale="0" />
+                <Replacement oldValue="أربعة و" newValue="أربع و" scope="Anywhere" onScale="0" />
+                <Replacement oldValue="خمسة و" newValue="خمس و" scope="Anywhere" onScale="0" />
+                <Replacement oldValue="ستة و" newValue="ست و" scope="Anywhere" onScale="0" />
+                <Replacement oldValue="سبعة و" newValue="سبع و" scope="Anywhere" onScale="0" />
+                <Replacement oldValue="ثمانية و" newValue="ثمان و" scope="Anywhere" onScale="0" />
+                <Replacement oldValue="تسعة و" newValue="تسع و" scope="Anywhere" onScale="0" />
                 <Replacement oldValue="أحد عشر" newValue="إحدى عشرة" scope="EndsWith" />
                 <Replacement oldValue="اثنا عشر" newValue="اثنتا عشرة" scope="EndsWith" />
                 <Replacement oldValue="ثلاثة عشر" newValue="ثلاث عشرة" scope="EndsWith" />

@@ -76,6 +76,7 @@ Examples:
 # ألفين). The multiplier counts the masculine noun ألف, so it keeps its own form whatever the
 # gender requested for the number.
 Scenario Outline: Thousands take the form governed by their multiplier
+    Given I use the "AR" number converter
     When I convert the cardinal number <number>
     Then the result is "<expected>"
 
@@ -111,7 +112,8 @@ Examples:
     | 345678 | ثلاثمائة وخمسة وأربعون ألفًا وستمائة وثمانية وسبعون |
 
 Scenario Outline: Feminine numbers keep the masculine agreement of the thousands multiplier
-    Given I use the variants "gender=muʾannath"
+    Given I use the "AR" number converter
+    And I use the variants "gender=muʾannath"
     When I convert the cardinal number <number>
     Then the result is "<expected>"
 
