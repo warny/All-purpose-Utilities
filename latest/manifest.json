@@ -8997,7 +8997,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.NumberToString.ItalianOrdinalLanguageSpecifics",
-      "Summary": "<p sourcefile=\"api/Utils.NumberToString.ItalianOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Restricts Italian ordinals to the forms the declarative XML rules produce correctly: the\nirregular 1-10 (<code>primo</code> … <code>decimo</code>), the teens 11-19 (<code>undicesimo</code> …\n<code>diciannovesimo</code>), the round tens 20-90 (<code>ventesimo</code> … <code>novantesimo</code>),\n<code>centesimo</code> and <code>millesimo</code>.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.ItalianOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Domain guard for Italian ordinals. Every supported value is produced by the declarative XML\npipeline (exceptions 1-10, then the <code>&lt;OrdinalStem&gt;</code> rules and the <code>-esimo</code>/<code>-esima</code>\nsuffix); this plugin never builds a form itself and only rejects the values whose ordinal is\nnot established.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -9446,6 +9446,34 @@
       "IsMRef": true,
       "Title": "Utils.NumberToString.OrdinalRuleType",
       "Summary": "<p sourcefile=\"api/Utils.NumberToString.OrdinalRuleType.yml\" sourcestartlinenumber=\"1\">Describes a word-level transformation rule for ordinal conversion: when the last\nword of a cardinal equals <xref href=\"Utils.NumberToString.OrdinalRuleType.From\" data-throw-if-not-resolved=\"false\"></xref>, it is replaced with <xref href=\"Utils.NumberToString.OrdinalRuleType.To\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.OrdinalStemRule.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.OrdinalStemRule.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.OrdinalStemRule",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.OrdinalStemRule.yml\" sourcestartlinenumber=\"1\">Describes an ordinal stem rule: when the last word that receives the ordinal suffix ends with\n<xref href=\"Utils.NumberToString.OrdinalStemRule.From\" data-throw-if-not-resolved=\"false\"></xref>, that ending is replaced with <xref href=\"Utils.NumberToString.OrdinalStemRule.To\" data-throw-if-not-resolved=\"false\"></xref> before the suffix is appended.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.OrdinalStemType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.OrdinalStemType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.OrdinalStemType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.OrdinalStemType.yml\" sourcestartlinenumber=\"1\">XML element <code>&lt;OrdinalStem from=&quot;...&quot; to=&quot;...&quot; /&gt;</code>: when the last word that receives the\nordinal suffix ends with <xref href=\"Utils.NumberToString.OrdinalStemType.From\" data-throw-if-not-resolved=\"false\"></xref>, that ending is replaced with <xref href=\"Utils.NumberToString.OrdinalStemType.To\" data-throw-if-not-resolved=\"false\"></xref> before\nthe suffix is appended. Projected into <xref href=\"Utils.NumberToString.OrdinalStemRule\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
     },
     {
       "type": "ManagedReference",

@@ -279,10 +279,10 @@ larger ones separate their thousand groups with hyphens (<code>kétezer-egyedik<
     </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.ItalianOrdinalLanguageSpecifics.html">ItalianOrdinalLanguageSpecifics</a></dt>
-      <dd><p>Restricts Italian ordinals to the forms the declarative XML rules produce correctly: the
-irregular 1-10 (<code>primo</code> … <code>decimo</code>), the teens 11-19 (<code>undicesimo</code> …
-<code>diciannovesimo</code>), the round tens 20-90 (<code>ventesimo</code> … <code>novantesimo</code>),
-<code>centesimo</code> and <code>millesimo</code>.</p>
+      <dd><p>Domain guard for Italian ordinals. Every supported value is produced by the declarative XML
+pipeline (exceptions 1-10, then the <code>&lt;OrdinalStem&gt;</code> rules and the <code>-esimo</code>/<code>-esima</code>
+suffix); this plugin never builds a form itself and only rejects the values whose ordinal is
+not established.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -454,6 +454,19 @@ without exposing those technical members on the public configuration API.</p>
       <dt><a class="xref" href="Utils.NumberToString.OrdinalRuleType.html">OrdinalRuleType</a></dt>
       <dd><p>Describes a word-level transformation rule for ordinal conversion: when the last
 word of a cardinal equals <a class="xref" href="Utils.NumberToString.OrdinalRuleType.html#Utils_NumberToString_OrdinalRuleType_From">From</a>, it is replaced with <a class="xref" href="Utils.NumberToString.OrdinalRuleType.html#Utils_NumberToString_OrdinalRuleType_To">To</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.OrdinalStemRule.html">OrdinalStemRule</a></dt>
+      <dd><p>Describes an ordinal stem rule: when the last word that receives the ordinal suffix ends with
+<a class="xref" href="Utils.NumberToString.OrdinalStemRule.html#Utils_NumberToString_OrdinalStemRule_From">From</a>, that ending is replaced with <a class="xref" href="Utils.NumberToString.OrdinalStemRule.html#Utils_NumberToString_OrdinalStemRule_To">To</a> before the suffix is appended.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.OrdinalStemType.html">OrdinalStemType</a></dt>
+      <dd><p>XML element <code>&lt;OrdinalStem from=&quot;...&quot; to=&quot;...&quot; /&gt;</code>: when the last word that receives the
+ordinal suffix ends with <a class="xref" href="Utils.NumberToString.OrdinalStemType.html#Utils_NumberToString_OrdinalStemType_From">From</a>, that ending is replaced with <a class="xref" href="Utils.NumberToString.OrdinalStemType.html#Utils_NumberToString_OrdinalStemType_To">To</a> before
+the suffix is appended. Projected into <a class="xref" href="Utils.NumberToString.OrdinalStemRule.html">OrdinalStemRule</a>.</p>
 </dd>
     </dl>
     <dl class="jumplist">

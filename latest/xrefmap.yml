@@ -65988,6 +65988,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.OrdinalRemoveTrailing
   nameWithType: NumberToStringConverter.OrdinalRemoveTrailing
+- uid: Utils.NumberToString.NumberToStringConverter.OrdinalStemRules
+  name: OrdinalStemRules
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_OrdinalStemRules
+  commentId: P:Utils.NumberToString.NumberToStringConverter.OrdinalStemRules
+  fullName: Utils.NumberToString.NumberToStringConverter.OrdinalStemRules
+  nameWithType: NumberToStringConverter.OrdinalStemRules
+- uid: Utils.NumberToString.NumberToStringConverter.OrdinalStemRules*
+  name: OrdinalStemRules
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_OrdinalStemRules_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.OrdinalStemRules
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.OrdinalStemRules
+  nameWithType: NumberToStringConverter.OrdinalStemRules
 - uid: Utils.NumberToString.NumberToStringConverter.OrdinalSuffix
   name: OrdinalSuffix
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_OrdinalSuffix
@@ -67459,6 +67472,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverterOptions.OrdinalRemoveTrailing
   nameWithType: NumberToStringConverterOptions.OrdinalRemoveTrailing
+- uid: Utils.NumberToString.NumberToStringConverterOptions.OrdinalStemRules
+  name: OrdinalStemRules
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_OrdinalStemRules
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.OrdinalStemRules
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.OrdinalStemRules
+  nameWithType: NumberToStringConverterOptions.OrdinalStemRules
+- uid: Utils.NumberToString.NumberToStringConverterOptions.OrdinalStemRules*
+  name: OrdinalStemRules
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_OrdinalStemRules_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.OrdinalStemRules
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.OrdinalStemRules
+  nameWithType: NumberToStringConverterOptions.OrdinalStemRules
 - uid: Utils.NumberToString.NumberToStringConverterOptions.OrdinalSuffix
   name: OrdinalSuffix
   href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_OrdinalSuffix
@@ -67866,6 +67892,89 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.OrdinalRuleType.To
   nameWithType: OrdinalRuleType.To
+- uid: Utils.NumberToString.OrdinalStemRule
+  name: OrdinalStemRule
+  href: api/Utils.NumberToString.OrdinalStemRule.html
+  commentId: T:Utils.NumberToString.OrdinalStemRule
+  fullName: Utils.NumberToString.OrdinalStemRule
+  nameWithType: OrdinalStemRule
+- uid: Utils.NumberToString.OrdinalStemRule.#ctor(System.String,System.String)
+  name: OrdinalStemRule(string, string)
+  href: api/Utils.NumberToString.OrdinalStemRule.html#Utils_NumberToString_OrdinalStemRule__ctor_System_String_System_String_
+  commentId: M:Utils.NumberToString.OrdinalStemRule.#ctor(System.String,System.String)
+  name.vb: New(String, String)
+  fullName: Utils.NumberToString.OrdinalStemRule.OrdinalStemRule(string, string)
+  fullName.vb: Utils.NumberToString.OrdinalStemRule.New(String, String)
+  nameWithType: OrdinalStemRule.OrdinalStemRule(string, string)
+  nameWithType.vb: OrdinalStemRule.New(String, String)
+- uid: Utils.NumberToString.OrdinalStemRule.#ctor*
+  name: OrdinalStemRule
+  href: api/Utils.NumberToString.OrdinalStemRule.html#Utils_NumberToString_OrdinalStemRule__ctor_
+  commentId: Overload:Utils.NumberToString.OrdinalStemRule.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.NumberToString.OrdinalStemRule.OrdinalStemRule
+  fullName.vb: Utils.NumberToString.OrdinalStemRule.New
+  nameWithType: OrdinalStemRule.OrdinalStemRule
+  nameWithType.vb: OrdinalStemRule.New
+- uid: Utils.NumberToString.OrdinalStemRule.From
+  name: From
+  href: api/Utils.NumberToString.OrdinalStemRule.html#Utils_NumberToString_OrdinalStemRule_From
+  commentId: P:Utils.NumberToString.OrdinalStemRule.From
+  fullName: Utils.NumberToString.OrdinalStemRule.From
+  nameWithType: OrdinalStemRule.From
+- uid: Utils.NumberToString.OrdinalStemRule.From*
+  name: From
+  href: api/Utils.NumberToString.OrdinalStemRule.html#Utils_NumberToString_OrdinalStemRule_From_
+  commentId: Overload:Utils.NumberToString.OrdinalStemRule.From
+  isSpec: "True"
+  fullName: Utils.NumberToString.OrdinalStemRule.From
+  nameWithType: OrdinalStemRule.From
+- uid: Utils.NumberToString.OrdinalStemRule.To
+  name: To
+  href: api/Utils.NumberToString.OrdinalStemRule.html#Utils_NumberToString_OrdinalStemRule_To
+  commentId: P:Utils.NumberToString.OrdinalStemRule.To
+  fullName: Utils.NumberToString.OrdinalStemRule.To
+  nameWithType: OrdinalStemRule.To
+- uid: Utils.NumberToString.OrdinalStemRule.To*
+  name: To
+  href: api/Utils.NumberToString.OrdinalStemRule.html#Utils_NumberToString_OrdinalStemRule_To_
+  commentId: Overload:Utils.NumberToString.OrdinalStemRule.To
+  isSpec: "True"
+  fullName: Utils.NumberToString.OrdinalStemRule.To
+  nameWithType: OrdinalStemRule.To
+- uid: Utils.NumberToString.OrdinalStemType
+  name: OrdinalStemType
+  href: api/Utils.NumberToString.OrdinalStemType.html
+  commentId: T:Utils.NumberToString.OrdinalStemType
+  fullName: Utils.NumberToString.OrdinalStemType
+  nameWithType: OrdinalStemType
+- uid: Utils.NumberToString.OrdinalStemType.From
+  name: From
+  href: api/Utils.NumberToString.OrdinalStemType.html#Utils_NumberToString_OrdinalStemType_From
+  commentId: P:Utils.NumberToString.OrdinalStemType.From
+  fullName: Utils.NumberToString.OrdinalStemType.From
+  nameWithType: OrdinalStemType.From
+- uid: Utils.NumberToString.OrdinalStemType.From*
+  name: From
+  href: api/Utils.NumberToString.OrdinalStemType.html#Utils_NumberToString_OrdinalStemType_From_
+  commentId: Overload:Utils.NumberToString.OrdinalStemType.From
+  isSpec: "True"
+  fullName: Utils.NumberToString.OrdinalStemType.From
+  nameWithType: OrdinalStemType.From
+- uid: Utils.NumberToString.OrdinalStemType.To
+  name: To
+  href: api/Utils.NumberToString.OrdinalStemType.html#Utils_NumberToString_OrdinalStemType_To
+  commentId: P:Utils.NumberToString.OrdinalStemType.To
+  fullName: Utils.NumberToString.OrdinalStemType.To
+  nameWithType: OrdinalStemType.To
+- uid: Utils.NumberToString.OrdinalStemType.To*
+  name: To
+  href: api/Utils.NumberToString.OrdinalStemType.html#Utils_NumberToString_OrdinalStemType_To_
+  commentId: Overload:Utils.NumberToString.OrdinalStemType.To
+  isSpec: "True"
+  fullName: Utils.NumberToString.OrdinalStemType.To
+  nameWithType: OrdinalStemType.To
 - uid: Utils.NumberToString.OrdinalVariantElementType
   name: OrdinalVariantElementType
   href: api/Utils.NumberToString.OrdinalVariantElementType.html
@@ -68079,6 +68188,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.OrdinalsType.Rules
   nameWithType: OrdinalsType.Rules
+- uid: Utils.NumberToString.OrdinalsType.Stems
+  name: Stems
+  href: api/Utils.NumberToString.OrdinalsType.html#Utils_NumberToString_OrdinalsType_Stems
+  commentId: P:Utils.NumberToString.OrdinalsType.Stems
+  fullName: Utils.NumberToString.OrdinalsType.Stems
+  nameWithType: OrdinalsType.Stems
+- uid: Utils.NumberToString.OrdinalsType.Stems*
+  name: Stems
+  href: api/Utils.NumberToString.OrdinalsType.html#Utils_NumberToString_OrdinalsType_Stems_
+  commentId: Overload:Utils.NumberToString.OrdinalsType.Stems
+  isSpec: "True"
+  fullName: Utils.NumberToString.OrdinalsType.Stems
+  nameWithType: OrdinalsType.Stems
 - uid: Utils.NumberToString.OrdinalsType.Suffix
   name: Suffix
   href: api/Utils.NumberToString.OrdinalsType.html#Utils_NumberToString_OrdinalsType_Suffix
