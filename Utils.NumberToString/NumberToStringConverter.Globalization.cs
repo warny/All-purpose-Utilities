@@ -1230,6 +1230,12 @@ namespace Utils.NumberToString
                 confScale.FirstLetterUpperCase
             );
 
+            var scaleFormEntries = confScale.ScaleForms ?? [];
+            var duplicateScaleForm = scaleFormEntries.GroupBy(e => e.Scale).FirstOrDefault(g => g.Count() > 1);
+            if (duplicateScaleForm != null)
+                throw new ArgumentException(
+                    $"[{languageIdentifier}] NumberScale declares more than one ScaleForm for scale {duplicateScaleForm.Key}.");
+
             BigInteger? configuredMaximum = string.IsNullOrWhiteSpace(language.MaxNumber)
                 ? null
                 : BigInteger.Parse(language.MaxNumber, CultureInfo.InvariantCulture);
@@ -1759,6 +1765,19 @@ namespace Utils.NumberToString
                 IntraGroupConnectorThreshold = language.IntraGroupConnectorThreshold,
                 ScaleConnector = language.ScaleConnector,
                 ScaleConnectorThreshold = language.ScaleConnectorThreshold,
+                // Every <ScaleForm> registers its scale (with empty forms when it only names a
+                // selector) so that its index is validated; selectors are resolved here, once.
+                ScaleForms = scaleFormEntries.ToDictionary(
+                    e => e.Scale,
+                    e => e.Forms?.Entries is { Count: > 0 }
+                        ? LexicalFormSet.Create(e.Forms.Entries.Select(f => (f.Key, f.Value)))
+                        : LexicalFormSet.Empty),
+                ScaleFormSelectors = scaleFormEntries
+                    .Where(e => !string.IsNullOrWhiteSpace(e.LexicalFormSelector?.Type) || !string.IsNullOrWhiteSpace(e.FormSelector))
+                    .ToDictionary(e => e.Scale, e => ResolveLexicalFormSelector(
+                        !string.IsNullOrWhiteSpace(e.LexicalFormSelector?.Type) ? e.LexicalFormSelector!.Type : e.FormSelector,
+                        languageIdentifier,
+                        XmlElementToXElement(e.LexicalFormSelector?.Configuration))),
                 TimeUnits = language.TimeUnits?.Units?
                     .ToDictionary(u => u.Name, u => (u.Singular, u.Plural, u.Count1Form)),
                 TimeUnitForcedVariants = language.TimeUnits?.Units?

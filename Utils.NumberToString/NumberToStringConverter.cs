@@ -167,6 +167,9 @@ namespace Utils.NumberToString
                 .Where(r => r.OnScale is not null)
                 .ToImmutableArray();
             Scale = options.Scale;
+            _scaleForms = CompileScaleForms(options.ScaleForms, options.ScaleFormSelectors);
+            _scaleFormsPublic = _scaleForms.ToImmutableDictionary(kv => kv.Key, kv => kv.Value.Forms);
+            _scaleFormSelectorsPublic = _scaleForms.ToImmutableDictionary(kv => kv.Key, kv => kv.Value.Selector);
             LanguageSpecifics = options.LanguageSpecifics ?? new DefaultNumberToStringLanguageSpecifics();
             LanguageIdentifier = options.LanguageIdentifier ?? string.Empty;
             _rawAdjustFunction = options.AdjustFunction;
@@ -633,11 +636,11 @@ namespace Utils.NumberToString
             HasDeclarativeOrdinalSupport || LanguageSpecifics is IOrdinalLanguageSpecifics;
 
         /// <summary>Resolved scale-noun forms and selectors, keyed by scale index; empty when none is configured.</summary>
-        private readonly ImmutableDictionary<int, ScaleFormDefinition> _scaleForms = ImmutableDictionary<int, ScaleFormDefinition>.Empty;
+        private readonly ImmutableDictionary<int, ScaleFormDefinition> _scaleForms;
         /// <summary>Public read-only view of the effective scale forms.</summary>
-        private readonly ImmutableDictionary<int, LexicalFormSet> _scaleFormsPublic = ImmutableDictionary<int, LexicalFormSet>.Empty;
+        private readonly ImmutableDictionary<int, LexicalFormSet> _scaleFormsPublic;
         /// <summary>Public read-only view of the effective scale form selectors.</summary>
-        private readonly ImmutableDictionary<int, ILexicalFormSelector> _scaleFormSelectorsPublic = ImmutableDictionary<int, ILexicalFormSelector>.Empty;
+        private readonly ImmutableDictionary<int, ILexicalFormSelector> _scaleFormSelectorsPublic;
         /// <summary>Ordinal stem rules validated and sorted once at construction, longest ending first.</summary>
         private readonly ImmutableArray<OrdinalStemRule> _ordinalStemRules;
         private readonly ImmutableDictionary<string, string> _replacementLookup;
@@ -1190,7 +1193,7 @@ namespace Utils.NumberToString
                     string digits = ConvertGroup(maxGroup, group);
                     digits = ApplyTriggers(digits, TriggerAt.Group, groupNumber, variantQuery);
 
-                    string scaleName = Scale.GetScaleName(groupNumber).ToPlural(group);
+                    string scaleName = GetScaleWord(groupNumber, group, variantQuery);
                     string scaleJoin = (_scaleConnector != null && groupNumber > 0 && group >= _scaleConnectorThreshold)
                         ? Separator + _scaleConnector + Separator
                         : Separator;
