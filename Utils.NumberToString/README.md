@@ -39,7 +39,7 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | RU | Russian | ✓ declarative (zero: `нулевой`) | ✓ 15 min, 12 h | gender × case | local | — |
 | UK, UK-UA | Ukrainian | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Round thousands verified up to 10 000 |
 | ES | Spanish | ✓ declarative | ✓ 5 min, 12 h | gender × form | local | No ordinal of zero |
-| IT | Italian | ✓ 1–1999 except 1010–1910, and round thousands to 999000 (`<OrdinalStem>`, domain-guard plugin) | ✓ 5 min, 12 h | gender | local | Ordinals of zero, 1010–1910 and non-round thousands above 1999 (NTS-15) and of millions (NTS-17) fail closed; millions are separate nouns joined by `e` ("due milioni e centomila") |
+| IT | Italian | ✓ 1–1999 except 1110–1910, round thousands to 999000, 100001–100009, round multiples of milione/miliardo/bilione (`<OrdinalStem>`, `<OrdinalComposition>`, `<OrdinalScale>`, domain-guard plugin) | ✓ 5 min, 12 h | gender | local | Ordinals of zero, 1110–1910 and the other non-round thousands above 1999 (NTS-15), of non-round values from a million and of a biliardo and above (NTS-18) fail closed; millions are separate nouns joined by `e` ("due milioni e centomila") |
 | PT | Portuguese | ✓ declarative | ✓ 5 min, 12 h (direct "e …") | gender | local | Deliberate direct numeric reading (no "para"/"menos" constructions); PT-PT/PT-BR not split; no ordinal of zero |
 | GL, gl-ES | Galician | ✓ declarative | ✓ 5 min, 12 h | gender | local | No ordinal of zero |
 | RO, RO-RO | Romanian | ✓ plugin (DOOM) | ✓ 15 min, 12 h | gen | local | Ordinals up to 999 999 and one million (masculine) |
@@ -374,9 +374,14 @@ feminine, as Treccani records for plural feminine nouns. Compound ordinals are f
 `<OrdinalStem>` rules (see [`<OrdinalStem>`](#ending-rewrite-before-the-suffix--ordinalstem)):
 `ventunesimo`, `ventitreesimo`, `ventiseiesimo`, `centunesimo`, `milleunesimo`, `duemillesimo`,
 in both genders (`ventunesima`). After a hundred, `dieci` keeps its lexical ordinal (`centodecimo`,
-`duecentodecimo`, Crusca) through exact word rules. Zero, the thousands ending in ten
-(`1010`–`1910`), non-round thousands above 1999 (`2001`) and one million and above fail closed with
-`NotSupportedException` (NTS-15, NTS-14).
+`duecentodecimo`, Crusca) through exact word rules. The attested analytic forms are composed from
+the ordinals of their parts (see [`<OrdinalComposition>`](#analytic-ordinals--ordinalcomposition)):
+`millesimo decimo` (1010), `centomillesimoprimo` (100001). From a million the ordinal is formed on
+the scale noun (see [`<OrdinalScale>`](#ordinals-of-round-scale-values--ordinalscale)):
+`milionesimo`, `duemilionesimo`, `diecimilionesimo`, `miliardesimo`, `bilionesimo`. Zero,
+`1110`–`1910`, the other non-round thousands above 1999 (`2001`), the non-round values from a
+million (`1000001`) and a biliardo and above fail closed with `NotSupportedException` (NTS-15,
+NTS-18).
 
 ### Catalan — hyphens as word boundaries
 
@@ -1174,7 +1179,10 @@ number
 
 ```
 number
+  → IOrdinalLanguageSpecifics plugin (when configured; may form the ordinal or reject the value)
   → OrdinalExceptions      (integer-level early exit, e.g. 1 → "premier")
+  → OrdinalComposition     (ordinal(head) + separator + ordinal(tail), each part from the plugin step again)
+  → OrdinalScale           (round scale value: multiplier cardinal + singular scale noun, instead of the two steps below)
   → ConvertRaw + Triggers group/groupWithScale (same as cardinal)
   → ApplyVariantRules      (default variant values)
   → ordinal Replacements   (base, then the selected ordinal variant; ordinal-only)
@@ -1605,6 +1613,9 @@ Required to enable `ConvertOrdinal()`.
 **Resolution order** (highest to lowest priority):
 1. Active variant exceptions — from `<OrdinalVariants>`, most-specific constraint first.
 2. Base `<OrdinalException>` — whole-number match.
+   - then an applicable `<OrdinalComposition>` (ordinal of head + separator + ordinal of tail, each
+     resolved from step 1 again), and, for a round scale value covered by `<OrdinalScale>`, the
+     scale-noun text replaces the cardinal for the steps below.
 3. Active variant word rules — from `<OrdinalVariants>`, most-specific first.
 4. Base `<Ordinal>` word rule — last-word match.
 5. Default suffix (base or variant), after rewriting the ending of the last word with the longest
@@ -1750,6 +1761,80 @@ it.ConvertOrdinal(26, "gender=femminile");   // "ventiseiesima"
 it.ConvertOrdinal(2000);                     // "duemillesimo"
 it.ConvertOrdinal(110);                      // "centodecimo" ← exact <Ordinal> word rule wins over the stems
 it.ConvertOrdinal(2001);                     // NotSupportedException (NTS-15)
+```
+
+#### Ordinals of round scale values — `<OrdinalScale>`
+
+The historical pipeline transforms the whole cardinal, which is wrong when the ordinal is not built
+on it: the Italian cardinal of 1 000 000 is `un milione`, whose mechanical ordinal `un milionesimo`
+is the fraction "one millionth"; the ordinal is `milionesimo`. `<OrdinalScale>` forms the ordinal of
+a **round scale value** — multiplier × scale unit, every lower group zero — on the scale noun:
+
+```xml
+<Ordinals suffix="esimo">
+    <!-- scale 1 = thousands, 2 = milione, 3 = miliardo, 4 = bilione -->
+    <OrdinalScale scales="2..4" multiplierSeparator="" />
+</Ordinals>
+```
+
+| Value | Text built | Ordinal |
+|-------|------------|---------|
+| 1 000 000 | `milione` (multiplier one dropped) | `milionesimo` |
+| 2 000 000 | `due` + `""` + `milione` | `duemilionesimo` |
+| 10 000 000 | `dieci` + `""` + `milione` | `diecimilionesimo` |
+| 1 000 000 000 | `miliardo` (highest scale, never `mille` × milione) | `miliardesimo` |
+| 2 000 001 | not round: historical pipeline (or plugin rejection) | — |
+
+- `scales` uses the range syntax (`2`, `2..4`, `2..`); every index must be ≥ 1 and nameable by the
+  `<NumberScale>`, and two rules must not cover the same index. `multiplierSeparator` is required
+  and may be empty.
+- The multiplier is its own cardinal, rendered with the caller's variants; the noun is the singular
+  scale word (through `<ScaleForm>` when configured). The resulting text then goes through the
+  ordinal `<Replacement>` rules, the word rules, `<OrdinalStem>`, `removeTrailing` and the
+  **effective suffix**, so the feminine variant needs no extra rule (`duemilionesima`). The cardinal
+  `<Variants>` rules are not applied to that text: they agree the assembled cardinal.
+- Only the highest scale of the value is considered. Whole-number `<OrdinalException>` entries and
+  `<OrdinalComposition>` keep precedence. Cardinals are never affected.
+- `baseOn`: a derived language declaring `<OrdinalScale>` replaces the inherited list. Programmatic:
+  `NumberToStringConverterOptions.OrdinalScaleRules` (`OrdinalScaleRule(Scales, MultiplierSeparator)`),
+  snapshotted by the converter (`OrdinalScaleRules`).
+
+#### Analytic ordinals — `<OrdinalComposition>`
+
+Some ordinals are juxtapositions of two ordinals rather than the transformation of one cardinal:
+Treccani gives `millesimo decimo` for 1010 and `centomillesimoprimo` for 100001 (the synthetic
+`centomiladuesimo` being a partitive, i.e. a fraction). `<OrdinalComposition>` splits the value
+**numerically** and joins the ordinals of the parts:
+
+```xml
+<OrdinalComposition for="1010" divisor="1000" separator=" " />            <!-- millesimo decimo -->
+<OrdinalComposition for="100001..100009" divisor="1000" separator="" />   <!-- centomillesimoprimo -->
+```
+
+- head = value − value mod `divisor`, tail = value mod `divisor`; the ordinal is ordinal(head) +
+  `separator` + ordinal(tail). A value of the range whose head or tail is zero is not composed and
+  continues through the rest of the pipeline.
+- Each part goes through the **whole** ordinal pipeline again — plugin, exceptions, other
+  compositions, `<OrdinalScale>`, cardinal transformation — with the caller's variants, so both
+  parts agree (`millesima decima`, `centomillesimaprima`). The cardinal text is never cut up.
+- Both parts are strictly smaller than the value, so the recursion terminates without any runtime
+  bookkeeping. Raw adjustment, end triggers and the language finalization run once, on the composed
+  result; the sign and prefix are applied once.
+- `for` uses the range syntax; every value must be ≥ 1 and the ranges of two rules must not overlap
+  (one rule per value, independent of declaration order). `divisor` must be ≥ 2; `separator` is
+  required and may be empty. Ranges are parsed once at load.
+- `baseOn`: a derived language declaring `<OrdinalComposition>` replaces the inherited list.
+  Programmatic: `NumberToStringConverterOptions.OrdinalCompositionRules`
+  (`OrdinalCompositionRule(For, Divisor, Separator)`), snapshotted by the converter
+  (`OrdinalCompositionRules`).
+
+```csharp
+var it = NumberToStringConverter.GetConverter("IT");
+it.ConvertOrdinal(1010);                          // "millesimo decimo"
+it.ConvertOrdinal(100001, "gender=femminile");    // "centomillesimaprima"
+it.ConvertOrdinal(2_000_000);                     // "duemilionesimo"
+it.ConvertOrdinal(1_000_000_000, "gender=femminile"); // "miliardesima"
+it.ConvertOrdinal(1_000_001);                     // NotSupportedException (NTS-18)
 ```
 
 #### Variant-specific ordinal rules — `<OrdinalVariants>`
