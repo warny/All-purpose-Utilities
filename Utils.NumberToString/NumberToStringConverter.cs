@@ -207,7 +207,8 @@ namespace Utils.NumberToString
             OrdinalRemoveTrailing = options.OrdinalRemoveTrailing;
             OrdinalExceptions = (options.OrdinalExceptions ?? new Dictionary<long, string>()).ToImmutableDictionary();
             OrdinalWordRules = (options.OrdinalWordRules ?? new Dictionary<string, string>()).ToImmutableDictionary();
-            OrdinalStemRules = ImmutableArray<OrdinalStemRule>.Empty;
+            _ordinalStemRules = CompileOrdinalStemRules(options.OrdinalStemRules, nameof(options.OrdinalStemRules));
+            OrdinalStemRules = _ordinalStemRules;
             OrdinalPrefix = options.OrdinalPrefix;
             OrdinalVariants = (options.OrdinalVariants ?? []).ToImmutableArray();
 
@@ -616,6 +617,8 @@ namespace Utils.NumberToString
         public bool SupportsOrdinals =>
             HasDeclarativeOrdinalSupport || LanguageSpecifics is IOrdinalLanguageSpecifics;
 
+        /// <summary>Ordinal stem rules validated and sorted once at construction, longest ending first.</summary>
+        private readonly ImmutableArray<OrdinalStemRule> _ordinalStemRules;
         private readonly ImmutableDictionary<string, string> _replacementLookup;
         private readonly ImmutableArray<ReplacementRule> _substringReplacements;
         private readonly ImmutableArray<ReplacementRule> _valueFilteredGlobalReplacements;
@@ -2920,14 +2923,61 @@ namespace Utils.NumberToString
 
             if (effectiveSuffix != null)
             {
-                string transformed = lastWord;
-                if (!string.IsNullOrEmpty(effectiveRemoveTrailing) && transformed.EndsWith(effectiveRemoveTrailing))
+                // The longest matching stem rule rewrites the ending; removeTrailing keeps its
+                // historical behaviour only when no stem rule matches.
+                if (!TryApplyOrdinalStem(lastWord, out string transformed)
+                    && !string.IsNullOrEmpty(effectiveRemoveTrailing) && transformed.EndsWith(effectiveRemoveTrailing))
                     transformed = transformed[..^effectiveRemoveTrailing.Length];
                 return prefix + hyphenPrefix + transformed + effectiveSuffix;
             }
 
             formed = false;
             return cardinal;
+        }
+
+        /// <summary>Rewrites the ending of <paramref name="word"/> with the longest matching ordinal stem rule.</summary>
+        /// <param name="word">The last word that will receive the ordinal suffix.</param>
+        /// <param name="stem">Receives the rewritten word, or <paramref name="word"/> unchanged when no rule matches.</param>
+        /// <returns><see langword="true"/> when a stem rule matched.</returns>
+        private bool TryApplyOrdinalStem(string word, out string stem)
+        {
+            // The rules are pre-sorted longest "from" first, so the first match is the most specific.
+            foreach (var rule in _ordinalStemRules)
+            {
+                if (word.EndsWith(rule.From, StringComparison.Ordinal))
+                {
+                    stem = string.Concat(word.AsSpan(0, word.Length - rule.From.Length), rule.To);
+                    return true;
+                }
+            }
+            stem = word;
+            return false;
+        }
+
+        /// <summary>
+        /// Validates the configured ordinal stem rules and snapshots them sorted longest ending first,
+        /// so that matching never depends on declaration order.
+        /// </summary>
+        /// <param name="rules">The configured rules, or <see langword="null"/>.</param>
+        /// <param name="parameterName">The options property name reported in exceptions.</param>
+        /// <returns>The immutable sorted rules.</returns>
+        /// <exception cref="ArgumentException">A rule is null, has an empty <c>From</c>, a null <c>To</c>, or duplicates another rule's <c>From</c>.</exception>
+        private static ImmutableArray<OrdinalStemRule> CompileOrdinalStemRules(IReadOnlyList<OrdinalStemRule>? rules, string parameterName)
+        {
+            if (rules is null || rules.Count == 0) return [];
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var rule in rules)
+            {
+                if (rule is null)
+                    throw new ArgumentException("OrdinalStem rules must not be null.", parameterName);
+                if (string.IsNullOrEmpty(rule.From))
+                    throw new ArgumentException("An OrdinalStem rule must declare a non-empty 'from' ending.", parameterName);
+                if (rule.To is null)
+                    throw new ArgumentException($"OrdinalStem rule '{rule.From}' must declare a 'to' value (an empty string removes the ending).", parameterName);
+                if (!seen.Add(rule.From))
+                    throw new ArgumentException($"Duplicate OrdinalStem rule for ending '{rule.From}'.", parameterName);
+            }
+            return [.. rules.OrderByDescending(r => r.From.Length).ThenBy(r => r.From, StringComparer.Ordinal)];
         }
 
         /// <summary>

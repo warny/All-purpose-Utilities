@@ -365,6 +365,24 @@ public class NumberToStringOrdinalStemTests
             converters[child].OrdinalStemRules.ToArray());
     }
 
+    /// <summary>The baseOn merge does not hide two rules with the same <c>from</c> declared by the child itself.</summary>
+    [TestMethod]
+    public void OrdinalStem_BaseOnChildDuplicate_IsRejected()
+    {
+        string parent = NewCulture();
+        string child = NewCulture();
+        string document = Document(
+            """<Ordinals suffix="X"><OrdinalStem from="o" to="" /></Ordinals>""",
+            parent,
+            extraLanguages: $"""
+                <Language baseOn="{parent}"><Culture>{child}</Culture>
+                  <Ordinals><OrdinalStem from="i" to="" /><OrdinalStem from="i" to="x" /></Ordinals>
+                </Language>
+                """);
+
+        Assert.Throws<ArgumentException>(() => NumberToStringConverter.ReadConfiguration(document));
+    }
+
     /// <summary>A child without an Ordinals element inherits its parent's stem rules unchanged.</summary>
     [TestMethod]
     public void OrdinalStem_BaseOnChildWithoutOrdinals_InheritsRules()
