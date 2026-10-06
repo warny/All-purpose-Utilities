@@ -167,7 +167,12 @@ namespace Utils.NumberToString
                 .Where(r => r.OnScale is not null)
                 .ToImmutableArray();
             Scale = options.Scale;
-            _scaleForms = CompileScaleForms(options.ScaleForms, options.ScaleFormSelectors);
+            // Override-only snapshots, taken once: CompileScaleForms validates exactly these copies, and
+            // they are what a clone receives, so the singular/plural synthesized from this Scale never
+            // become explicit overrides of a clone built on another Scale.
+            _scaleFormOverrides = (options.ScaleForms ?? ImmutableDictionary<int, LexicalFormSet>.Empty).ToImmutableDictionary();
+            _scaleFormSelectorOverrides = (options.ScaleFormSelectors ?? ImmutableDictionary<int, ILexicalFormSelector>.Empty).ToImmutableDictionary();
+            _scaleForms = CompileScaleForms(_scaleFormOverrides, _scaleFormSelectorOverrides);
             _scaleFormsPublic = _scaleForms.ToImmutableDictionary(kv => kv.Key, kv => kv.Value.Forms);
             _scaleFormSelectorsPublic = _scaleForms.ToImmutableDictionary(kv => kv.Key, kv => kv.Value.Selector);
             LanguageSpecifics = options.LanguageSpecifics ?? new DefaultNumberToStringLanguageSpecifics();
@@ -446,6 +451,19 @@ namespace Utils.NumberToString
         public IReadOnlyDictionary<int, ILexicalFormSelector> ScaleFormSelectors => _scaleFormSelectorsPublic;
 
         /// <summary>
+        /// Gets only the explicitly configured scale forms, unlike the effective <see cref="ScaleForms"/>.
+        /// Used by <c>NumberToStringConverterOptions(NumberToStringConverter)</c> so that a clone built
+        /// on another <see cref="NumberScale"/> re-synthesizes its own singular/plural names.
+        /// </summary>
+        internal IReadOnlyDictionary<int, LexicalFormSet> ScaleFormOverrides => _scaleFormOverrides;
+
+        /// <summary>
+        /// Gets only the explicitly configured scale form selectors, unlike the effective
+        /// <see cref="ScaleFormSelectors"/> (which fills in <see cref="DefaultLexicalFormSelector"/>).
+        /// </summary>
+        internal IReadOnlyDictionary<int, ILexicalFormSelector> ScaleFormSelectorOverrides => _scaleFormSelectorOverrides;
+
+        /// <summary>
         /// Group definitions for digits
         /// </summary>
         public IReadOnlyDictionary<int, IReadOnlyDictionary<long, DigitType>> Groups { get; }
@@ -652,6 +670,10 @@ namespace Utils.NumberToString
         private readonly ImmutableDictionary<int, LexicalFormSet> _scaleFormsPublic;
         /// <summary>Public read-only view of the effective scale form selectors.</summary>
         private readonly ImmutableDictionary<int, ILexicalFormSelector> _scaleFormSelectorsPublic;
+        /// <summary>Only the explicitly configured scale forms (no synthesized singular/plural).</summary>
+        private readonly ImmutableDictionary<int, LexicalFormSet> _scaleFormOverrides;
+        /// <summary>Only the explicitly configured scale form selectors (no default filled in).</summary>
+        private readonly ImmutableDictionary<int, ILexicalFormSelector> _scaleFormSelectorOverrides;
         /// <summary>Base ordinal-only replacements, validated and snapshotted at construction.</summary>
         private readonly ImmutableArray<ReplacementRule> _ordinalReplacements;
         /// <summary>Ordinal stem rules validated and sorted once at construction, longest ending first.</summary>

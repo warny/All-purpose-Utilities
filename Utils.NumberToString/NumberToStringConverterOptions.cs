@@ -317,8 +317,10 @@ public sealed class NumberToStringConverterOptions
         OrdinalWordRules = source.OrdinalWordRules;
         OrdinalStemRules = source.OrdinalStemRules;
         OrdinalReplacements = source.OrdinalReplacements;
-        ScaleForms = source.ScaleForms;
-        ScaleFormSelectors = source.ScaleFormSelectors;
+        // Override-only, like TimeUnitForms below: the effective ScaleForms contain singular/plural
+        // synthesized from source.Scale, which must not override the names of a replaced Scale.
+        ScaleForms = source.ScaleFormOverrides;
+        ScaleFormSelectors = source.ScaleFormSelectorOverrides;
         OrdinalPrefix = source.OrdinalPrefix;
         OrdinalVariants = source.OrdinalVariants;
         VariantDimensions = source.VariantDimensions;

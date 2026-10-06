@@ -1466,7 +1466,10 @@ When a language needs more than singular/plural for a scale noun, `<ScaleForm>` 
   `<LexicalFormSelector type="…">`), never during conversion. Indices the scale cannot name and
   duplicate `scale` entries are rejected; `baseOn` merges entries by scale index.
 - Programmatic: `NumberToStringConverterOptions.ScaleForms` / `ScaleFormSelectors`; the converter
-  exposes read-only `ScaleForms` / `ScaleFormSelectors` snapshots.
+  exposes read-only `ScaleForms` / `ScaleFormSelectors` snapshots of the **effective** state.
+  `new NumberToStringConverterOptions(converter)` copies only the explicitly configured forms and
+  selectors (like `TimeUnitForms`), so a clone given another `Scale` re-synthesizes its own
+  singular/plural names.
 - Changing the multiplier text itself (e.g. dropping "one"/"two" before Arabic ألف/ألفان) stays the
   job of `onScale` replacements.
 
