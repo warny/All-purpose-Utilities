@@ -2,11 +2,11 @@
 <html>
   <head>
     <meta charset="utf-8">
-      <title>Class SpecialHourEntry | omy.Utils Documentation </title>
+      <title>Class OrdinalScaleRule | omy.Utils Documentation </title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="title" content="Class SpecialHourEntry | omy.Utils Documentation ">
+      <meta name="title" content="Class OrdinalScaleRule | omy.Utils Documentation ">
       
-      <meta name="description" content="Declares a literal word or phrase replacing the numeral hour fragment for one specific hour of the day when rendering Convert(TimeOnly)/Convert(DateTime) (e.g. &amp;quot;midnight&amp;quot; for hour 0, &amp;quot;noon&amp;quot; for hour 12).">
+      <meta name="description" content="Describes how the ordinal of a round scale value is formed: a value whose highest non-zero group is at a scale covered by  and whose lower groups are all zero (multiplier &#215; scale unit, e.g. 2 000 000 = 2 &#215; million).">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -16,7 +16,7 @@
       <meta name="docfx:rel" content="../">
       
       
-      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_SpecialHourEntry.md&amp;value=---%0Auid%3A%20Utils.NumberToString.SpecialHourEntry%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_OrdinalScaleRule.md&amp;value=---%0Auid%3A%20Utils.NumberToString.OrdinalScaleRule%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
       <meta name="loc:inThisArticle" content="In this article">
       <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
       <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
@@ -84,12 +84,12 @@
           <nav id="breadcrumb"></nav>
         </div>
 
-        <article data-uid="Utils.NumberToString.SpecialHourEntry">
+        <article data-uid="Utils.NumberToString.OrdinalScaleRule">
 
 
 
-  <h1 id="Utils_NumberToString_SpecialHourEntry" data-uid="Utils.NumberToString.SpecialHourEntry" class="text-break">
-Class SpecialHourEntry  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L834"><i class="bi bi-code-slash"></i></a>
+  <h1 id="Utils_NumberToString_OrdinalScaleRule" data-uid="Utils.NumberToString.OrdinalScaleRule" class="text-break">
+Class OrdinalScaleRule  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalScaleRule.cs/#L26"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,14 +97,14 @@ Class SpecialHourEntry  <a class="header-action link-secondary" title="View sour
   <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Declares a literal word or phrase replacing the numeral hour fragment for one specific hour
-of the day when rendering Convert(TimeOnly)/Convert(DateTime) (e.g. &quot;midnight&quot; for hour 0,
-&quot;noon&quot; for hour 12).</p>
+  <div class="markdown summary"><p>Describes how the ordinal of a round scale value is formed: a value whose highest non-zero group is
+at a scale covered by <a class="xref" href="Utils.NumberToString.OrdinalScaleRule.html#Utils_NumberToString_OrdinalScaleRule_Scales">Scales</a> and whose lower groups are all zero (multiplier × scale
+unit, e.g. 2 000 000 = 2 × million).</p>
 </div>
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class SpecialHourEntry</code></pre>
+    <pre><code class="lang-csharp hljs">public sealed record OrdinalScaleRule : IEquatable&lt;OrdinalScaleRule&gt;</code></pre>
   </div>
 
 
@@ -114,10 +114,16 @@ of the day when rendering Convert(TimeOnly)/Convert(DateTime) (e.g. &quot;midnig
     <dt>Inheritance</dt>
     <dd>
       <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
-      <div><span class="xref">SpecialHourEntry</span></div>
+      <div><span class="xref">OrdinalScaleRule</span></div>
     </dd>
   </dl>
 
+  <dl class="typelist implements">
+    <dt>Implements</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a class="xref" href="Utils.NumberToString.OrdinalScaleRule.html">OrdinalScaleRule</a>&gt;</div>
+    </dd>
+  </dl>
 
 
   <dl class="typelist inheritedMembers">
@@ -134,9 +140,6 @@ of the day when rendering Convert(TimeOnly)/Convert(DateTime) (e.g. &quot;midnig
     </div>
     <div>
       <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
     </div>
     <div>
       <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
@@ -240,35 +243,51 @@ of the day when rendering Convert(TimeOnly)/Convert(DateTime) (e.g. &quot;midnig
 
 
 
+  <h2 id="Utils_NumberToString_OrdinalScaleRule_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>The ordinal is then built from the scale noun rather than from the assembled cardinal: a
+multiplier of one is dropped (the singular scale noun alone), a larger multiplier is its own
+cardinal, rendered exactly like the standalone cardinal of the multiplier with the caller's
+variants (cardinal variant rules included, <code>onValue</code> evaluated against the multiplier),
+followed by <a class="xref" href="Utils.NumberToString.OrdinalScaleRule.html#Utils_NumberToString_OrdinalScaleRule_MultiplierSeparator">MultiplierSeparator</a> and the singular scale noun. That text then goes through the usual ordinal transformation (ordinal
+replacements, word rules, stems, removeTrailing, the effective suffix of the selected variant).
+Whole-number ordinal exceptions keep precedence.</p>
+<p>A value is matched at its highest scale only: 10^9 is the ordinal of the billion scale, never
+a thousand times the million scale.</p>
+</div>
 
 
-  <h2 class="section" id="properties">Properties
+  <h2 class="section" id="constructors">Constructors
 </h2>
 
 
-  <a id="Utils_NumberToString_SpecialHourEntry_Hour_" data-uid="Utils.NumberToString.SpecialHourEntry.Hour*"></a>
+  <a id="Utils_NumberToString_OrdinalScaleRule__ctor_" data-uid="Utils.NumberToString.OrdinalScaleRule.#ctor*"></a>
 
-  <h3 id="Utils_NumberToString_SpecialHourEntry_Hour" data-uid="Utils.NumberToString.SpecialHourEntry.Hour">
-  Hour
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L837"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_NumberToString_OrdinalScaleRule__ctor_System_String_System_String_" data-uid="Utils.NumberToString.OrdinalScaleRule.#ctor(System.String,System.String)">
+  OrdinalScaleRule(string, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalScaleRule.cs/#L26"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>The 24-hour clock hour (0-23) this rule applies to.</p>
+  <div class="markdown level1 summary"><p>Describes how the ordinal of a round scale value is formed: a value whose highest non-zero group is
+at a scale covered by <a class="xref" href="Utils.NumberToString.OrdinalScaleRule.html#Utils_NumberToString_OrdinalScaleRule_Scales">Scales</a> and whose lower groups are all zero (multiplier × scale
+unit, e.g. 2 000 000 = 2 × million).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public int Hour { get; set; }</code></pre>
+    <pre><code class="lang-csharp hljs">public OrdinalScaleRule(string Scales, string MultiplierSeparator)</code></pre>
   </div>
 
-
-
-
-
-  <h4 class="section">Property Value</h4>
+  <h4 class="section">Parameters</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd></dd>
+    <dt><code>Scales</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The scale indices covered (1 = thousands, 2 = the next scale …), in the range syntax of
+<a class="xref" href="Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ParseRangeExpression_System_String_">ParseRangeExpression(string)</a> (e.g. <code>&quot;2..4&quot;</code>). Every
+index must be at least 1 and nameable by the converter's scale; two rules must not cover the same
+index.</p>
+</dd>
+    <dt><code>MultiplierSeparator</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The text between the multiplier and the scale noun; may be empty.</p>
+</dd>
   </dl>
 
 
@@ -278,19 +297,38 @@ of the day when rendering Convert(TimeOnly)/Convert(DateTime) (e.g. &quot;midnig
 
 
 
-  <a id="Utils_NumberToString_SpecialHourEntry_Value_" data-uid="Utils.NumberToString.SpecialHourEntry.Value*"></a>
+  <h4 class="section" id="Utils_NumberToString_OrdinalScaleRule__ctor_System_String_System_String__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>The ordinal is then built from the scale noun rather than from the assembled cardinal: a
+multiplier of one is dropped (the singular scale noun alone), a larger multiplier is its own
+cardinal, rendered exactly like the standalone cardinal of the multiplier with the caller's
+variants (cardinal variant rules included, <code>onValue</code> evaluated against the multiplier),
+followed by <a class="xref" href="Utils.NumberToString.OrdinalScaleRule.html#Utils_NumberToString_OrdinalScaleRule_MultiplierSeparator">MultiplierSeparator</a> and the singular scale noun. That text then goes through the usual ordinal transformation (ordinal
+replacements, word rules, stems, removeTrailing, the effective suffix of the selected variant).
+Whole-number ordinal exceptions keep precedence.</p>
+<p>A value is matched at its highest scale only: 10^9 is the ordinal of the billion scale, never
+a thousand times the million scale.</p>
+</div>
 
-  <h3 id="Utils_NumberToString_SpecialHourEntry_Value" data-uid="Utils.NumberToString.SpecialHourEntry.Value">
-  Value
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L841"><i class="bi bi-code-slash"></i></a>
+
+
+
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="Utils_NumberToString_OrdinalScaleRule_MultiplierSeparator_" data-uid="Utils.NumberToString.OrdinalScaleRule.MultiplierSeparator*"></a>
+
+  <h3 id="Utils_NumberToString_OrdinalScaleRule_MultiplierSeparator" data-uid="Utils.NumberToString.OrdinalScaleRule.MultiplierSeparator">
+  MultiplierSeparator
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalScaleRule.cs/#L26"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>The literal word or phrase replacing the hour fragment (e.g. &quot;midnight&quot;).</p>
+  <div class="markdown level1 summary"><p>The text between the multiplier and the scale noun; may be empty.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string Value { get; set; }</code></pre>
+    <pre><code class="lang-csharp hljs">public string MultiplierSeparator { get; init; }</code></pre>
   </div>
 
 
@@ -310,23 +348,22 @@ of the day when rendering Convert(TimeOnly)/Convert(DateTime) (e.g. &quot;midnig
 
 
 
-  <a id="Utils_NumberToString_SpecialHourEntry_WholeHour_" data-uid="Utils.NumberToString.SpecialHourEntry.WholeHour*"></a>
+  <a id="Utils_NumberToString_OrdinalScaleRule_Scales_" data-uid="Utils.NumberToString.OrdinalScaleRule.Scales*"></a>
 
-  <h3 id="Utils_NumberToString_SpecialHourEntry_WholeHour" data-uid="Utils.NumberToString.SpecialHourEntry.WholeHour">
-  WholeHour
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L851"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_NumberToString_OrdinalScaleRule_Scales" data-uid="Utils.NumberToString.OrdinalScaleRule.Scales">
+  Scales
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalScaleRule.cs/#L26"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> (default), the rule applies only when minute and second are
-both zero (sub-second precision is ignored, e.g. 12:00:00.500 still counts). When
-<a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>, it applies for the entire hour (e.g. 12:00:00 through
-12:59:59...); non-zero minutes/seconds are still appended after <a class="xref" href="Utils.NumberToString.SpecialHourEntry.html#Utils_NumberToString_SpecialHourEntry_Value">Value</a> as
-usual.</p>
+  <div class="markdown level1 summary"><p>The scale indices covered (1 = thousands, 2 = the next scale …), in the range syntax of
+<a class="xref" href="Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ParseRangeExpression_System_String_">ParseRangeExpression(string)</a> (e.g. <code>&quot;2..4&quot;</code>). Every
+index must be at least 1 and nameable by the converter's scale; two rules must not cover the same
+index.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public bool WholeHour { get; set; }</code></pre>
+    <pre><code class="lang-csharp hljs">public string Scales { get; init; }</code></pre>
   </div>
 
 
@@ -335,7 +372,7 @@ usual.</p>
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd></dd>
   </dl>
 
@@ -350,7 +387,7 @@ usual.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L834" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalScaleRule.cs/#L26" class="edit-link">Edit this page</a>
         </div>
 
 

@@ -286,9 +286,10 @@ larger ones separate their thousand groups with hyphens (<code>kétezer-egyedik<
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.ItalianOrdinalLanguageSpecifics.html">ItalianOrdinalLanguageSpecifics</a></dt>
       <dd><p>Domain guard for Italian ordinals. Every supported value is produced by the declarative XML
-pipeline (exceptions 1-10, then the <code>&lt;OrdinalStem&gt;</code> rules and the <code>-esimo</code>/<code>-esima</code>
-suffix); this plugin never builds a form itself and only rejects the values whose ordinal is
-not established.</p>
+pipeline (exceptions 1-10, the <code>&lt;OrdinalStem&gt;</code> rules and the <code>-esimo</code>/<code>-esima</code>
+suffix, <code>&lt;OrdinalComposition&gt;</code> for the analytic forms and <code>&lt;OrdinalScale&gt;</code> for the
+round values from a million); this plugin never builds a form itself and only rejects the values
+whose ordinal is not established.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -452,6 +453,21 @@ without exposing those technical members on the public configuration API.</p>
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.OrdinalCompositionRule.html">OrdinalCompositionRule</a></dt>
+      <dd><p>Describes an analytic ordinal: the ordinal of a value covered by <a class="xref" href="Utils.NumberToString.OrdinalCompositionRule.html#Utils_NumberToString_OrdinalCompositionRule_For">For</a> is the ordinal
+of its head (value − value mod <a class="xref" href="Utils.NumberToString.OrdinalCompositionRule.html#Utils_NumberToString_OrdinalCompositionRule_Divisor">Divisor</a>) followed by <a class="xref" href="Utils.NumberToString.OrdinalCompositionRule.html#Utils_NumberToString_OrdinalCompositionRule_Separator">Separator</a> and the
+ordinal of its tail (value mod <a class="xref" href="Utils.NumberToString.OrdinalCompositionRule.html#Utils_NumberToString_OrdinalCompositionRule_Divisor">Divisor</a>), e.g. 1010 → ordinal(1000) + &quot; &quot; +
+ordinal(10).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.OrdinalCompositionType.html">OrdinalCompositionType</a></dt>
+      <dd><p>XML element <code>&lt;OrdinalComposition for=&quot;...&quot; divisor=&quot;...&quot; separator=&quot;...&quot; /&gt;</code>: the ordinal
+of a covered value is ordinal(head) + separator + ordinal(tail), split numerically by the divisor.
+Projected into <a class="xref" href="Utils.NumberToString.OrdinalCompositionRule.html">OrdinalCompositionRule</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.OrdinalExceptionType.html">OrdinalExceptionType</a></dt>
       <dd><p>Describes a single ordinal exception that maps an integer to its ordinal text.</p>
 </dd>
@@ -460,6 +476,20 @@ without exposing those technical members on the public configuration API.</p>
       <dt><a class="xref" href="Utils.NumberToString.OrdinalRuleType.html">OrdinalRuleType</a></dt>
       <dd><p>Describes a word-level transformation rule for ordinal conversion: when the last
 word of a cardinal equals <a class="xref" href="Utils.NumberToString.OrdinalRuleType.html#Utils_NumberToString_OrdinalRuleType_From">From</a>, it is replaced with <a class="xref" href="Utils.NumberToString.OrdinalRuleType.html#Utils_NumberToString_OrdinalRuleType_To">To</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.OrdinalScaleRule.html">OrdinalScaleRule</a></dt>
+      <dd><p>Describes how the ordinal of a round scale value is formed: a value whose highest non-zero group is
+at a scale covered by <a class="xref" href="Utils.NumberToString.OrdinalScaleRule.html#Utils_NumberToString_OrdinalScaleRule_Scales">Scales</a> and whose lower groups are all zero (multiplier × scale
+unit, e.g. 2 000 000 = 2 × million).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.OrdinalScaleType.html">OrdinalScaleType</a></dt>
+      <dd><p>XML element <code>&lt;OrdinalScale scales=&quot;...&quot; multiplierSeparator=&quot;...&quot; /&gt;</code>: the ordinal of a
+round value at one of the covered scales is formed on the singular scale noun, the multiplier one
+being dropped. Projected into <a class="xref" href="Utils.NumberToString.OrdinalScaleRule.html">OrdinalScaleRule</a>.</p>
 </dd>
     </dl>
     <dl class="jumplist">

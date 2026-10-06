@@ -65994,6 +65994,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.Multiplicatives
   nameWithType: NumberToStringConverter.Multiplicatives
+- uid: Utils.NumberToString.NumberToStringConverter.OrdinalCompositionRules
+  name: OrdinalCompositionRules
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_OrdinalCompositionRules
+  commentId: P:Utils.NumberToString.NumberToStringConverter.OrdinalCompositionRules
+  fullName: Utils.NumberToString.NumberToStringConverter.OrdinalCompositionRules
+  nameWithType: NumberToStringConverter.OrdinalCompositionRules
+- uid: Utils.NumberToString.NumberToStringConverter.OrdinalCompositionRules*
+  name: OrdinalCompositionRules
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_OrdinalCompositionRules_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.OrdinalCompositionRules
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.OrdinalCompositionRules
+  nameWithType: NumberToStringConverter.OrdinalCompositionRules
 - uid: Utils.NumberToString.NumberToStringConverter.OrdinalExceptions
   name: OrdinalExceptions
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_OrdinalExceptions
@@ -66046,6 +66059,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.OrdinalReplacements
   nameWithType: NumberToStringConverter.OrdinalReplacements
+- uid: Utils.NumberToString.NumberToStringConverter.OrdinalScaleRules
+  name: OrdinalScaleRules
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_OrdinalScaleRules
+  commentId: P:Utils.NumberToString.NumberToStringConverter.OrdinalScaleRules
+  fullName: Utils.NumberToString.NumberToStringConverter.OrdinalScaleRules
+  nameWithType: NumberToStringConverter.OrdinalScaleRules
+- uid: Utils.NumberToString.NumberToStringConverter.OrdinalScaleRules*
+  name: OrdinalScaleRules
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_OrdinalScaleRules_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.OrdinalScaleRules
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.OrdinalScaleRules
+  nameWithType: NumberToStringConverter.OrdinalScaleRules
 - uid: Utils.NumberToString.NumberToStringConverter.OrdinalStemRules
   name: OrdinalStemRules
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_OrdinalStemRules
@@ -67539,6 +67565,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverterOptions.Multiplicatives
   nameWithType: NumberToStringConverterOptions.Multiplicatives
+- uid: Utils.NumberToString.NumberToStringConverterOptions.OrdinalCompositionRules
+  name: OrdinalCompositionRules
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_OrdinalCompositionRules
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.OrdinalCompositionRules
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.OrdinalCompositionRules
+  nameWithType: NumberToStringConverterOptions.OrdinalCompositionRules
+- uid: Utils.NumberToString.NumberToStringConverterOptions.OrdinalCompositionRules*
+  name: OrdinalCompositionRules
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_OrdinalCompositionRules_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.OrdinalCompositionRules
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.OrdinalCompositionRules
+  nameWithType: NumberToStringConverterOptions.OrdinalCompositionRules
 - uid: Utils.NumberToString.NumberToStringConverterOptions.OrdinalExceptions
   name: OrdinalExceptions
   href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_OrdinalExceptions
@@ -67591,6 +67630,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverterOptions.OrdinalReplacements
   nameWithType: NumberToStringConverterOptions.OrdinalReplacements
+- uid: Utils.NumberToString.NumberToStringConverterOptions.OrdinalScaleRules
+  name: OrdinalScaleRules
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_OrdinalScaleRules
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.OrdinalScaleRules
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.OrdinalScaleRules
+  nameWithType: NumberToStringConverterOptions.OrdinalScaleRules
+- uid: Utils.NumberToString.NumberToStringConverterOptions.OrdinalScaleRules*
+  name: OrdinalScaleRules
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_OrdinalScaleRules_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.OrdinalScaleRules
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.OrdinalScaleRules
+  nameWithType: NumberToStringConverterOptions.OrdinalScaleRules
 - uid: Utils.NumberToString.NumberToStringConverterOptions.OrdinalStemRules
   name: OrdinalStemRules
   href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_OrdinalStemRules
@@ -67947,6 +67999,115 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumbersXmlModel.Languages
   nameWithType: NumbersXmlModel.Languages
+- uid: Utils.NumberToString.OrdinalCompositionRule
+  name: OrdinalCompositionRule
+  href: api/Utils.NumberToString.OrdinalCompositionRule.html
+  commentId: T:Utils.NumberToString.OrdinalCompositionRule
+  fullName: Utils.NumberToString.OrdinalCompositionRule
+  nameWithType: OrdinalCompositionRule
+- uid: Utils.NumberToString.OrdinalCompositionRule.#ctor(System.String,System.Int64,System.String)
+  name: OrdinalCompositionRule(string, long, string)
+  href: api/Utils.NumberToString.OrdinalCompositionRule.html#Utils_NumberToString_OrdinalCompositionRule__ctor_System_String_System_Int64_System_String_
+  commentId: M:Utils.NumberToString.OrdinalCompositionRule.#ctor(System.String,System.Int64,System.String)
+  name.vb: New(String, Long, String)
+  fullName: Utils.NumberToString.OrdinalCompositionRule.OrdinalCompositionRule(string, long, string)
+  fullName.vb: Utils.NumberToString.OrdinalCompositionRule.New(String, Long, String)
+  nameWithType: OrdinalCompositionRule.OrdinalCompositionRule(string, long, string)
+  nameWithType.vb: OrdinalCompositionRule.New(String, Long, String)
+- uid: Utils.NumberToString.OrdinalCompositionRule.#ctor*
+  name: OrdinalCompositionRule
+  href: api/Utils.NumberToString.OrdinalCompositionRule.html#Utils_NumberToString_OrdinalCompositionRule__ctor_
+  commentId: Overload:Utils.NumberToString.OrdinalCompositionRule.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.NumberToString.OrdinalCompositionRule.OrdinalCompositionRule
+  fullName.vb: Utils.NumberToString.OrdinalCompositionRule.New
+  nameWithType: OrdinalCompositionRule.OrdinalCompositionRule
+  nameWithType.vb: OrdinalCompositionRule.New
+- uid: Utils.NumberToString.OrdinalCompositionRule.Divisor
+  name: Divisor
+  href: api/Utils.NumberToString.OrdinalCompositionRule.html#Utils_NumberToString_OrdinalCompositionRule_Divisor
+  commentId: P:Utils.NumberToString.OrdinalCompositionRule.Divisor
+  fullName: Utils.NumberToString.OrdinalCompositionRule.Divisor
+  nameWithType: OrdinalCompositionRule.Divisor
+- uid: Utils.NumberToString.OrdinalCompositionRule.Divisor*
+  name: Divisor
+  href: api/Utils.NumberToString.OrdinalCompositionRule.html#Utils_NumberToString_OrdinalCompositionRule_Divisor_
+  commentId: Overload:Utils.NumberToString.OrdinalCompositionRule.Divisor
+  isSpec: "True"
+  fullName: Utils.NumberToString.OrdinalCompositionRule.Divisor
+  nameWithType: OrdinalCompositionRule.Divisor
+- uid: Utils.NumberToString.OrdinalCompositionRule.For
+  name: For
+  href: api/Utils.NumberToString.OrdinalCompositionRule.html#Utils_NumberToString_OrdinalCompositionRule_For
+  commentId: P:Utils.NumberToString.OrdinalCompositionRule.For
+  fullName: Utils.NumberToString.OrdinalCompositionRule.For
+  nameWithType: OrdinalCompositionRule.For
+- uid: Utils.NumberToString.OrdinalCompositionRule.For*
+  name: For
+  href: api/Utils.NumberToString.OrdinalCompositionRule.html#Utils_NumberToString_OrdinalCompositionRule_For_
+  commentId: Overload:Utils.NumberToString.OrdinalCompositionRule.For
+  isSpec: "True"
+  fullName: Utils.NumberToString.OrdinalCompositionRule.For
+  nameWithType: OrdinalCompositionRule.For
+- uid: Utils.NumberToString.OrdinalCompositionRule.Separator
+  name: Separator
+  href: api/Utils.NumberToString.OrdinalCompositionRule.html#Utils_NumberToString_OrdinalCompositionRule_Separator
+  commentId: P:Utils.NumberToString.OrdinalCompositionRule.Separator
+  fullName: Utils.NumberToString.OrdinalCompositionRule.Separator
+  nameWithType: OrdinalCompositionRule.Separator
+- uid: Utils.NumberToString.OrdinalCompositionRule.Separator*
+  name: Separator
+  href: api/Utils.NumberToString.OrdinalCompositionRule.html#Utils_NumberToString_OrdinalCompositionRule_Separator_
+  commentId: Overload:Utils.NumberToString.OrdinalCompositionRule.Separator
+  isSpec: "True"
+  fullName: Utils.NumberToString.OrdinalCompositionRule.Separator
+  nameWithType: OrdinalCompositionRule.Separator
+- uid: Utils.NumberToString.OrdinalCompositionType
+  name: OrdinalCompositionType
+  href: api/Utils.NumberToString.OrdinalCompositionType.html
+  commentId: T:Utils.NumberToString.OrdinalCompositionType
+  fullName: Utils.NumberToString.OrdinalCompositionType
+  nameWithType: OrdinalCompositionType
+- uid: Utils.NumberToString.OrdinalCompositionType.Divisor
+  name: Divisor
+  href: api/Utils.NumberToString.OrdinalCompositionType.html#Utils_NumberToString_OrdinalCompositionType_Divisor
+  commentId: P:Utils.NumberToString.OrdinalCompositionType.Divisor
+  fullName: Utils.NumberToString.OrdinalCompositionType.Divisor
+  nameWithType: OrdinalCompositionType.Divisor
+- uid: Utils.NumberToString.OrdinalCompositionType.Divisor*
+  name: Divisor
+  href: api/Utils.NumberToString.OrdinalCompositionType.html#Utils_NumberToString_OrdinalCompositionType_Divisor_
+  commentId: Overload:Utils.NumberToString.OrdinalCompositionType.Divisor
+  isSpec: "True"
+  fullName: Utils.NumberToString.OrdinalCompositionType.Divisor
+  nameWithType: OrdinalCompositionType.Divisor
+- uid: Utils.NumberToString.OrdinalCompositionType.For
+  name: For
+  href: api/Utils.NumberToString.OrdinalCompositionType.html#Utils_NumberToString_OrdinalCompositionType_For
+  commentId: P:Utils.NumberToString.OrdinalCompositionType.For
+  fullName: Utils.NumberToString.OrdinalCompositionType.For
+  nameWithType: OrdinalCompositionType.For
+- uid: Utils.NumberToString.OrdinalCompositionType.For*
+  name: For
+  href: api/Utils.NumberToString.OrdinalCompositionType.html#Utils_NumberToString_OrdinalCompositionType_For_
+  commentId: Overload:Utils.NumberToString.OrdinalCompositionType.For
+  isSpec: "True"
+  fullName: Utils.NumberToString.OrdinalCompositionType.For
+  nameWithType: OrdinalCompositionType.For
+- uid: Utils.NumberToString.OrdinalCompositionType.Separator
+  name: Separator
+  href: api/Utils.NumberToString.OrdinalCompositionType.html#Utils_NumberToString_OrdinalCompositionType_Separator
+  commentId: P:Utils.NumberToString.OrdinalCompositionType.Separator
+  fullName: Utils.NumberToString.OrdinalCompositionType.Separator
+  nameWithType: OrdinalCompositionType.Separator
+- uid: Utils.NumberToString.OrdinalCompositionType.Separator*
+  name: Separator
+  href: api/Utils.NumberToString.OrdinalCompositionType.html#Utils_NumberToString_OrdinalCompositionType_Separator_
+  commentId: Overload:Utils.NumberToString.OrdinalCompositionType.Separator
+  isSpec: "True"
+  fullName: Utils.NumberToString.OrdinalCompositionType.Separator
+  nameWithType: OrdinalCompositionType.Separator
 - uid: Utils.NumberToString.OrdinalExceptionType
   name: OrdinalExceptionType
   href: api/Utils.NumberToString.OrdinalExceptionType.html
@@ -68037,6 +68198,89 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.OrdinalRuleType.To
   nameWithType: OrdinalRuleType.To
+- uid: Utils.NumberToString.OrdinalScaleRule
+  name: OrdinalScaleRule
+  href: api/Utils.NumberToString.OrdinalScaleRule.html
+  commentId: T:Utils.NumberToString.OrdinalScaleRule
+  fullName: Utils.NumberToString.OrdinalScaleRule
+  nameWithType: OrdinalScaleRule
+- uid: Utils.NumberToString.OrdinalScaleRule.#ctor(System.String,System.String)
+  name: OrdinalScaleRule(string, string)
+  href: api/Utils.NumberToString.OrdinalScaleRule.html#Utils_NumberToString_OrdinalScaleRule__ctor_System_String_System_String_
+  commentId: M:Utils.NumberToString.OrdinalScaleRule.#ctor(System.String,System.String)
+  name.vb: New(String, String)
+  fullName: Utils.NumberToString.OrdinalScaleRule.OrdinalScaleRule(string, string)
+  fullName.vb: Utils.NumberToString.OrdinalScaleRule.New(String, String)
+  nameWithType: OrdinalScaleRule.OrdinalScaleRule(string, string)
+  nameWithType.vb: OrdinalScaleRule.New(String, String)
+- uid: Utils.NumberToString.OrdinalScaleRule.#ctor*
+  name: OrdinalScaleRule
+  href: api/Utils.NumberToString.OrdinalScaleRule.html#Utils_NumberToString_OrdinalScaleRule__ctor_
+  commentId: Overload:Utils.NumberToString.OrdinalScaleRule.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.NumberToString.OrdinalScaleRule.OrdinalScaleRule
+  fullName.vb: Utils.NumberToString.OrdinalScaleRule.New
+  nameWithType: OrdinalScaleRule.OrdinalScaleRule
+  nameWithType.vb: OrdinalScaleRule.New
+- uid: Utils.NumberToString.OrdinalScaleRule.MultiplierSeparator
+  name: MultiplierSeparator
+  href: api/Utils.NumberToString.OrdinalScaleRule.html#Utils_NumberToString_OrdinalScaleRule_MultiplierSeparator
+  commentId: P:Utils.NumberToString.OrdinalScaleRule.MultiplierSeparator
+  fullName: Utils.NumberToString.OrdinalScaleRule.MultiplierSeparator
+  nameWithType: OrdinalScaleRule.MultiplierSeparator
+- uid: Utils.NumberToString.OrdinalScaleRule.MultiplierSeparator*
+  name: MultiplierSeparator
+  href: api/Utils.NumberToString.OrdinalScaleRule.html#Utils_NumberToString_OrdinalScaleRule_MultiplierSeparator_
+  commentId: Overload:Utils.NumberToString.OrdinalScaleRule.MultiplierSeparator
+  isSpec: "True"
+  fullName: Utils.NumberToString.OrdinalScaleRule.MultiplierSeparator
+  nameWithType: OrdinalScaleRule.MultiplierSeparator
+- uid: Utils.NumberToString.OrdinalScaleRule.Scales
+  name: Scales
+  href: api/Utils.NumberToString.OrdinalScaleRule.html#Utils_NumberToString_OrdinalScaleRule_Scales
+  commentId: P:Utils.NumberToString.OrdinalScaleRule.Scales
+  fullName: Utils.NumberToString.OrdinalScaleRule.Scales
+  nameWithType: OrdinalScaleRule.Scales
+- uid: Utils.NumberToString.OrdinalScaleRule.Scales*
+  name: Scales
+  href: api/Utils.NumberToString.OrdinalScaleRule.html#Utils_NumberToString_OrdinalScaleRule_Scales_
+  commentId: Overload:Utils.NumberToString.OrdinalScaleRule.Scales
+  isSpec: "True"
+  fullName: Utils.NumberToString.OrdinalScaleRule.Scales
+  nameWithType: OrdinalScaleRule.Scales
+- uid: Utils.NumberToString.OrdinalScaleType
+  name: OrdinalScaleType
+  href: api/Utils.NumberToString.OrdinalScaleType.html
+  commentId: T:Utils.NumberToString.OrdinalScaleType
+  fullName: Utils.NumberToString.OrdinalScaleType
+  nameWithType: OrdinalScaleType
+- uid: Utils.NumberToString.OrdinalScaleType.MultiplierSeparator
+  name: MultiplierSeparator
+  href: api/Utils.NumberToString.OrdinalScaleType.html#Utils_NumberToString_OrdinalScaleType_MultiplierSeparator
+  commentId: P:Utils.NumberToString.OrdinalScaleType.MultiplierSeparator
+  fullName: Utils.NumberToString.OrdinalScaleType.MultiplierSeparator
+  nameWithType: OrdinalScaleType.MultiplierSeparator
+- uid: Utils.NumberToString.OrdinalScaleType.MultiplierSeparator*
+  name: MultiplierSeparator
+  href: api/Utils.NumberToString.OrdinalScaleType.html#Utils_NumberToString_OrdinalScaleType_MultiplierSeparator_
+  commentId: Overload:Utils.NumberToString.OrdinalScaleType.MultiplierSeparator
+  isSpec: "True"
+  fullName: Utils.NumberToString.OrdinalScaleType.MultiplierSeparator
+  nameWithType: OrdinalScaleType.MultiplierSeparator
+- uid: Utils.NumberToString.OrdinalScaleType.Scales
+  name: Scales
+  href: api/Utils.NumberToString.OrdinalScaleType.html#Utils_NumberToString_OrdinalScaleType_Scales
+  commentId: P:Utils.NumberToString.OrdinalScaleType.Scales
+  fullName: Utils.NumberToString.OrdinalScaleType.Scales
+  nameWithType: OrdinalScaleType.Scales
+- uid: Utils.NumberToString.OrdinalScaleType.Scales*
+  name: Scales
+  href: api/Utils.NumberToString.OrdinalScaleType.html#Utils_NumberToString_OrdinalScaleType_Scales_
+  commentId: Overload:Utils.NumberToString.OrdinalScaleType.Scales
+  isSpec: "True"
+  fullName: Utils.NumberToString.OrdinalScaleType.Scales
+  nameWithType: OrdinalScaleType.Scales
 - uid: Utils.NumberToString.OrdinalStemRule
   name: OrdinalStemRule
   href: api/Utils.NumberToString.OrdinalStemRule.html
@@ -68281,6 +68525,19 @@ references:
   commentId: T:Utils.NumberToString.OrdinalsType
   fullName: Utils.NumberToString.OrdinalsType
   nameWithType: OrdinalsType
+- uid: Utils.NumberToString.OrdinalsType.CompositionRules
+  name: CompositionRules
+  href: api/Utils.NumberToString.OrdinalsType.html#Utils_NumberToString_OrdinalsType_CompositionRules
+  commentId: P:Utils.NumberToString.OrdinalsType.CompositionRules
+  fullName: Utils.NumberToString.OrdinalsType.CompositionRules
+  nameWithType: OrdinalsType.CompositionRules
+- uid: Utils.NumberToString.OrdinalsType.CompositionRules*
+  name: CompositionRules
+  href: api/Utils.NumberToString.OrdinalsType.html#Utils_NumberToString_OrdinalsType_CompositionRules_
+  commentId: Overload:Utils.NumberToString.OrdinalsType.CompositionRules
+  isSpec: "True"
+  fullName: Utils.NumberToString.OrdinalsType.CompositionRules
+  nameWithType: OrdinalsType.CompositionRules
 - uid: Utils.NumberToString.OrdinalsType.Exceptions
   name: Exceptions
   href: api/Utils.NumberToString.OrdinalsType.html#Utils_NumberToString_OrdinalsType_Exceptions
@@ -68359,6 +68616,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.OrdinalsType.Rules
   nameWithType: OrdinalsType.Rules
+- uid: Utils.NumberToString.OrdinalsType.ScaleRules
+  name: ScaleRules
+  href: api/Utils.NumberToString.OrdinalsType.html#Utils_NumberToString_OrdinalsType_ScaleRules
+  commentId: P:Utils.NumberToString.OrdinalsType.ScaleRules
+  fullName: Utils.NumberToString.OrdinalsType.ScaleRules
+  nameWithType: OrdinalsType.ScaleRules
+- uid: Utils.NumberToString.OrdinalsType.ScaleRules*
+  name: ScaleRules
+  href: api/Utils.NumberToString.OrdinalsType.html#Utils_NumberToString_OrdinalsType_ScaleRules_
+  commentId: Overload:Utils.NumberToString.OrdinalsType.ScaleRules
+  isSpec: "True"
+  fullName: Utils.NumberToString.OrdinalsType.ScaleRules
+  nameWithType: OrdinalsType.ScaleRules
 - uid: Utils.NumberToString.OrdinalsType.Stems
   name: Stems
   href: api/Utils.NumberToString.OrdinalsType.html#Utils_NumberToString_OrdinalsType_Stems

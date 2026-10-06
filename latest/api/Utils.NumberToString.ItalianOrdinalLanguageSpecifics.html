@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class ItalianOrdinalLanguageSpecifics | omy.Utils Documentation ">
       
-      <meta name="description" content="Domain guard for Italian ordinals. Every supported value is produced by the declarative XML pipeline (exceptions 1-10, then the &amp;lt;OrdinalStem&amp;gt; rules and the -esimo/-esima suffix); this plugin never builds a form itself and only rejects the values whose ordinal is not established.">
+      <meta name="description" content="Domain guard for Italian ordinals. Every supported value is produced by the declarative XML pipeline (exceptions 1-10, the &amp;lt;OrdinalStem&amp;gt; rules and the -esimo/-esima suffix, &amp;lt;OrdinalComposition&amp;gt; for the analytic forms and &amp;lt;OrdinalScale&amp;gt; for the round values from a million); this plugin never builds a form itself and only rejects the values whose ordinal is not established.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_ItalianOrdinalLanguageSpecifics" data-uid="Utils.NumberToString.ItalianOrdinalLanguageSpecifics" class="text-break">
-Class ItalianOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ItalianOrdinalLanguageSpecifics.cs/#L24"><i class="bi bi-code-slash"></i></a>
+Class ItalianOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ItalianOrdinalLanguageSpecifics.cs/#L26"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -98,9 +98,10 @@ Class ItalianOrdinalLanguageSpecifics  <a class="header-action link-secondary" t
   </div>
 
   <div class="markdown summary"><p>Domain guard for Italian ordinals. Every supported value is produced by the declarative XML
-pipeline (exceptions 1-10, then the <code>&lt;OrdinalStem&gt;</code> rules and the <code>-esimo</code>/<code>-esima</code>
-suffix); this plugin never builds a form itself and only rejects the values whose ordinal is
-not established.</p>
+pipeline (exceptions 1-10, the <code>&lt;OrdinalStem&gt;</code> rules and the <code>-esimo</code>/<code>-esima</code>
+suffix, <code>&lt;OrdinalComposition&gt;</code> for the analytic forms and <code>&lt;OrdinalScale&gt;</code> for the
+round values from a million); this plugin never builds a form itself and only rejects the values
+whose ordinal is not established.</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -246,11 +247,12 @@ not established.</p>
 
 
   <h2 id="Utils_NumberToString_ItalianOrdinalLanguageSpecifics_remarks">Remarks</h2>
-  <div class="markdown level0 remarks"><p>Validated domain (NTS-13): 1-1999 except 1010-1910, and the round thousands 2000-999000
-(<code>ventunesimo</code>, <code>ventitreesimo</code>, <code>ventiseiesimo</code>, <code>centunesimo</code>,
-<code>centodecimo</code>, <code>milleunesimo</code>, <code>duemillesimo</code>, <code>centomillesimo</code>).</p>
+  <div class="markdown level0 remarks"><p>Validated domain: 1-1999 except 1110-1910, the round thousands 2000-999000 (NTS-13), 1010
+(<code>millesimo decimo</code>) and 100001-100009 (<code>centomillesimoprimo</code> …) (NTS-15), and the round
+multiples of milione, miliardo and bilione, 10^6-999 × 10^12 (<code>milionesimo</code>,
+<code>duemilionesimo</code>, <code>miliardesimo</code>, <code>bilionesimo</code>) (NTS-17).</p>
 <p>Rejected with <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a>:</p>
-<ul><li>zero — the NTS-12 decision is unchanged (<code>zeresimo</code> is only attested in special, mathematical uses);</li><li>the thousands ending in ten (1010, 1110 … 1910) — dieci keeps its lexical <code>decimo</code> in compounds, and only the analytic <code>millesimo decimo</code> is attested (TODO NTS-15);</li><li>non-round thousands above 1999 — no consulted source establishes a canonical synthetic form, and Treccani gives the analytic <code>centomillesimoprimo</code> for 100001 (TODO NTS-15);</li><li>one million and above — the cardinals are correct since NTS-14 ("un milione"), but no ordinal is validated there: the mechanical form of "un milione" would be the fractional "un milionesimo" (TODO NTS-17).</li></ul>
+<ul><li>zero — the NTS-12 decision is unchanged (<code>zeresimo</code> is only attested in special, mathematical uses);</li><li>1110, 1210 … 1910 — two analytic splits are possible (<code>millesimo centodecimo</code>, <code>millecentesimo decimo</code>) and none is attested (TODO NTS-15);</li><li>the other non-round thousands above 1999 — no consulted source establishes a canonical form, and Treccani ("centomillesimo") treats the synthetic <code>centomiladuesimo</code> as a partitive (TODO NTS-15);</li><li>the non-round values from a million, and every value from a biliardo (10^15) — no compound form and no biliardo/trilione ordinal is sourced (TODO NTS-18).</li></ul>
 </div>
 
 
@@ -262,7 +264,7 @@ not established.</p>
 
   <h3 id="Utils_NumberToString_ItalianOrdinalLanguageSpecifics_FinalizeWriting_System_String_System_String_" data-uid="Utils.NumberToString.ItalianOrdinalLanguageSpecifics.FinalizeWriting(System.String,System.String)">
   FinalizeWriting(string, string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ItalianOrdinalLanguageSpecifics.cs/#L30"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ItalianOrdinalLanguageSpecifics.cs/#L35"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Finalizes a converted text according to language-specific writing rules.</p>
@@ -308,7 +310,7 @@ fragments without invoking this method, then invokes it exactly once for each pu
 
   <h3 id="Utils_NumberToString_ItalianOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int32_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__" data-uid="Utils.NumberToString.ItalianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)">
   TryConvertOrdinal(int, IReadOnlyDictionary&lt;string, string&gt;, out string?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ItalianOrdinalLanguageSpecifics.cs/#L33"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ItalianOrdinalLanguageSpecifics.cs/#L38"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Attempts to convert a non-negative integer to its ordinal string representation.</p>
@@ -356,7 +358,7 @@ otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/
 
   <h3 id="Utils_NumberToString_ItalianOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__" data-uid="Utils.NumberToString.ItalianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)">
   TryConvertOrdinal(long, IReadOnlyDictionary&lt;string, string&gt;, out string?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ItalianOrdinalLanguageSpecifics.cs/#L37"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ItalianOrdinalLanguageSpecifics.cs/#L42"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Attempts to convert a 64-bit integer to its ordinal string representation.
@@ -408,7 +410,7 @@ otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ItalianOrdinalLanguageSpecifics.cs/#L24" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ItalianOrdinalLanguageSpecifics.cs/#L26" class="edit-link">Edit this page</a>
         </div>
 
 
