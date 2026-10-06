@@ -70,6 +70,8 @@
             <Number value="18" string="fukk ak juróom-ñett" />
             <Number value="19" string="fukk ak juróom-ñent" />
         </Exceptions>
+        <!-- NTS-14: no consulted source attests an ordinal of zero (zero is tus/dara; ordinals add -eel to a cardinal); the suffix would form "seroël", so zero fails closed. -->
+        <LanguageSpecifics>ZeroOrdinalUnsupportedLanguageSpecifics</LanguageSpecifics>
         <Ordinals suffix="ël">
             <!-- 1er : forme lexicalisée distincte -->
             <OrdinalException value="1" string="bu njëkk" />

@@ -63,6 +63,8 @@
 		  Ewe ordinals: "gbãtõ" is the irregular first ordinal; all others prefix
 		  "etsõ " to the cardinal (etsõ eve = second, etsõ eto = third, …).
 		-->
+		<!-- NTS-14: no consulted source attests an ordinal of zero (zero is nadeke/nanekeo); the prefix would form "etsõ zero", so zero fails closed. -->
+		<LanguageSpecifics>ZeroOrdinalUnsupportedLanguageSpecifics</LanguageSpecifics>
 		<Ordinals prefix="etsõ ">
 			<OrdinalException value="1" string="gbãtõ" />
 		</Ordinals>
