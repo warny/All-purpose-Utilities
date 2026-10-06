@@ -51,3 +51,12 @@ Scenario: Fraction connector wording
 Scenario: Idiomatic clock-time conversion is unsupported
     Given I use the "WO" number converter
     Then the converter does not support clock-time conversion
+
+# NTS-14. Wolof ordinals add -eel/-éél to the cardinal (Janga Wolof: ñaaréél, fukkéél), "first"
+# being bu njëkk; no consulted source attests an ordinal of zero (zero is given as tus or dara), so
+# the mechanical "seroël" is not produced: zero fails closed. The -ël spelling of the other ordinals
+# is tracked separately (NTS-16).
+Scenario: Zero has no ordinal form
+    Given I use the "WO" number converter
+    When I attempt to convert the ordinal number 0
+    Then conversion is rejected because no ordinal form is available

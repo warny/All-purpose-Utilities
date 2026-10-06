@@ -96,6 +96,52 @@ Examples:
     | 180180 | centottantamilacentottanta |
     | 999999 | novecentonovantanovemilanovecentonovantanove |
 
+# NTS-14. Treccani, Enciclopedia dell'Italiano, "numerali [prontuario]": "Milione e miliardo sono
+# nomi: hanno la forma plurale, sono preceduti da un altro cardinale [...] e, quando la cifra non è
+# tonda al milione / miliardo, sono seguiti da un altro cardinale separato dalla congiunzione e"
+# ("un milione, due milioni; un miliardo, due miliardi; 2.100.000 / due milioni e centomila").
+# Treccani, "uno, numerali composti con [prontuario]": "I composti con milioni e miliardi ammettono
+# solo la forma separata (un milione e uno, due milioni e uno ...; un miliardo e uno)"; compounds of
+# uno stay invariable ("ventuno banchi"), hence "ventuno milioni". DICO (Università di Messina):
+# "Milione e miliardo si scrivono sempre separati dalle altre cifre, con la congiunzione e". Treccani
+# vocabolario: bilione = 10^12, trilione = 10^18; biliardo = 10^15 (Libreriamo, Wiktionary). Below a
+# million the number stays soldered (duemilauno), unchanged by NTS-14.
+Scenario Outline: Millions and above are separate nouns joined by e
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1000000 | un milione |
+    | 2000000 | due milioni |
+    | 1000001 | un milione e uno |
+    | 2000001 | due milioni e uno |
+    | 2100000 | due milioni e centomila |
+    | 1001000 | un milione e mille |
+    | 1001001 | un milione e milleuno |
+    | 1021000 | un milione e ventunomila |
+    | 21000000 | ventuno milioni |
+    | 31000000 | trentuno milioni |
+    | 1000000000 | un miliardo |
+    | 2000000000 | due miliardi |
+    | 1000000001 | un miliardo e uno |
+    | 1001000000 | un miliardo e un milione |
+    | 1000000000000 | un bilione |
+    | 2000000000000 | due bilioni |
+    | 1000000000000000 | un biliardo |
+    | 1000000000000000000 | un trilione |
+
+Scenario Outline: Millions keep their noun form in the feminine
+    Given I use the variants "gender=femminile"
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1000000 | un milione |
+    | 1000001 | un milione e una |
+    | 2000001 | due milioni e una |
+
 Scenario Outline: Feminine cardinal numbers
     Given I use the variants "gender=femminile"
     When I convert the cardinal number <number>

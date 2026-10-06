@@ -63,3 +63,11 @@ Scenario: Fraction connector wording
 Scenario: Idiomatic clock-time conversion is unsupported
     Given I use the "EE" number converter
     Then the converter does not support clock-time conversion
+
+# NTS-14. No consulted source attests an ordinal of zero (zero is nadeke/nanekeo; Omniglot and
+# Wiktionary list gbãtɔ, evelia, etɔ̃lia ...), so the prefix does not produce "etsõ zero": zero fails
+# closed. The prefix-based formation of the other ordinals is tracked separately (NTS-16).
+Scenario: Zero has no ordinal form
+    Given I use the "EE" number converter
+    When I attempt to convert the ordinal number 0
+    Then conversion is rejected because no ordinal form is available

@@ -250,6 +250,54 @@ Examples:
     | 21 | gender=nekeva | עשרים ואחת |
     | 12 | gender=zachar | שנים עשר |
 
+# NTS-14. The same masculine contract applies when a compound ordinal ends in a teen: the counting
+# (feminine) teen of the standalone cardinal ("מאה ואחת עשרה") becomes the masculine teen
+# ("מאה ואחד עשר"), exactly as the zachar variant already renders it. The cardinal itself stays the
+# standalone counting form; nekeva keeps the feminine teen and zachar is not transformed twice.
+Scenario Outline: Hebrew compound ordinals ending in a teen agree in the masculine by default
+    Given I use the "HE" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 111 |  | מאה ואחד עשר |
+    | 112 |  | מאה ושנים עשר |
+    | 119 |  | מאה ותשעה עשר |
+    | 211 |  | מאתיים ואחד עשר |
+    | 512 |  | חמש מאות ושנים עשר |
+    | 919 |  | תשע מאות ותשעה עשר |
+    | 1011 |  | אלף ואחד עשר |
+    | 1012 |  | אלף ושנים עשר |
+    | 1019 |  | אלף ותשעה עשר |
+    | 1111 |  | אלף מאה ואחד עשר |
+    | 2119 |  | אלפיים מאה ותשעה עשר |
+    | 11011 |  | אחד עשר אלף ואחד עשר |
+    | 111 | gender=standalone | מאה ואחד עשר |
+    | 1011 | gender=standalone | אלף ואחד עשר |
+    | 111 | gender=zachar | מאה ואחד עשר |
+    | 1012 | gender=zachar | אלף ושנים עשר |
+    | 11011 | gender=zachar | אחד עשר אלף ואחד עשר |
+    | 111 | gender=nekeva | מאה ואחת עשרה |
+    | 1012 | gender=nekeva | אלף ושתים עשרה |
+    | 11011 | gender=nekeva | אחד עשר אלף ואחת עשרה |
+    | 110 |  | מאה ועשרה |
+    | 120 |  | מאה ועשרים |
+    | 121 |  | מאה עשרים ואחד |
+    | 1001 |  | אלף ואחד |
+    | 1021 |  | אלף עשרים ואחד |
+
+Scenario Outline: Hebrew cardinals keep the standalone counting teen
+    Given I use the "HE" number converter
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 111 | מאה ואחת עשרה |
+    | 1011 | אלף ואחת עשרה |
+
 Scenario: Idiomatic clock-time conversion is supported
     Given I use the "HE" number converter
     Then the converter supports clock-time conversion

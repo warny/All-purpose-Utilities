@@ -30,8 +30,8 @@ Examples:
 # NTS-10: the conjunction "و" joins the thousands to the lower group and, being a proclitic, is
 # written attached to the following word ("ألف وواحد"), as it already is after the hundreds.
 # Sources: Unicode CLDR RBNF ar ("ألف[ و>>]") and the University of Montana Arabic numbers sheet.
-# Only the connector is in scope: the dual/plural morphology of the thousands themselves
-# (ألفان, ثلاثة آلاف) is not, so 2000 and above are not pinned here.
+# Only the connector is in scope here; the dual/plural morphology of the thousands themselves
+# (ألفان, ثلاثة آلاف) is pinned by the NTS-14 scenario below.
 Scenario Outline: Thousands joined to the lower group with the attached conjunction
     Given I use the "AR" number converter
     When I convert the cardinal number <number>
@@ -65,6 +65,66 @@ Examples:
     | 1010 | ألف وعشر |
     | 1011 | ألف وإحدى عشرة |
     | 1021 | ألف وواحدة وعشرون |
+
+# NTS-14. The noun ألف takes the form governed by its multiplier: one and two are expressed by the
+# noun alone (ألف, the dual ألفان, the multiplier word omitted); 3-10 take the plural آلاف; 11-99 the
+# singular accusative ألفًا; whole hundreds the singular genitive ألف, the dual hundred standing in
+# construct (مائتا ألف). For a compound multiplier the noun follows the last number written
+# (Kalimah Center: "the counted noun follows the rules of the last number written",
+# "ثمانية وعشرون ألفًا"; al-Dirassa; Virtual Arabic Language Academy, decision 29: "مئة وألف").
+# Like the rest of the configuration, the standalone nominative is used (ألفان, not the oblique
+# ألفين). The multiplier counts the masculine noun ألف, so it keeps its own form whatever the
+# gender requested for the number.
+Scenario Outline: Thousands take the form governed by their multiplier
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1000 | ألف |
+    | 2000 | ألفان |
+    | 3000 | ثلاثة آلاف |
+    | 9000 | تسعة آلاف |
+    | 10000 | عشرة آلاف |
+    | 11000 | أحد عشر ألفًا |
+    | 12000 | اثنا عشر ألفًا |
+    | 20000 | عشرون ألفًا |
+    | 21000 | واحد وعشرون ألفًا |
+    | 25000 | خمسة وعشرون ألفًا |
+    | 100000 | مائة ألف |
+    | 101000 | مائة وألف |
+    | 102000 | مائة وألفان |
+    | 103000 | مائة وثلاثة آلاف |
+    | 110000 | مائة وعشرة آلاف |
+    | 111000 | مائة وأحد عشر ألفًا |
+    | 121000 | مائة وواحد وعشرون ألفًا |
+    | 200000 | مائتا ألف |
+    | 201000 | مائتان وألف |
+    | 202000 | مائتان وألفان |
+    | 345000 | ثلاثمائة وخمسة وأربعون ألفًا |
+    | 999000 | تسعمائة وتسعة وتسعون ألفًا |
+    | 2001 | ألفان وواحد |
+    | 3001 | ثلاثة آلاف وواحد |
+    | 11001 | أحد عشر ألفًا وواحد |
+    | 21001 | واحد وعشرون ألفًا وواحد |
+    | 123456 | مائة وثلاثة وعشرون ألفًا وأربعمائة وستة وخمسون |
+    | 345678 | ثلاثمائة وخمسة وأربعون ألفًا وستمائة وثمانية وسبعون |
+
+Scenario Outline: Feminine numbers keep the masculine agreement of the thousands multiplier
+    Given I use the variants "gender=muʾannath"
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 2002 | ألفان واثنتان |
+    | 3000 | ثلاثة آلاف |
+    | 3001 | ثلاثة آلاف وواحدة |
+    | 11011 | أحد عشر ألفًا وإحدى عشرة |
+    | 21000 | واحد وعشرون ألفًا |
+    | 23003 | ثلاثة وعشرون ألفًا وثلاث |
+    | 23023 | ثلاثة وعشرون ألفًا وثلاث وعشرون |
+    | 101000 | مائة وألف |
 
 Scenario Outline: Feminine cardinal numbers
     Given I use the "AR" number converter
