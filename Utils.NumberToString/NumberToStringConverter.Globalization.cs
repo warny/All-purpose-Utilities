@@ -963,6 +963,9 @@ namespace Utils.NumberToString
                 Exceptions = mergedExceptions,
                 Rules = mergedRules,
                 Stems = mergedStems,
+                // Like the cardinal Replacements, a derived language declaring ordinal replacements
+                // replaces the inherited list; otherwise the list is inherited.
+                Replacements = childOrdinals.Replacements is { Count: > 0 } ? childOrdinals.Replacements : baseOrdinals.Replacements,
                 OrdinalVariantsContainer = childOrdinals.OrdinalVariantsContainer ?? baseOrdinals.OrdinalVariantsContainer,
             };
         }
@@ -1264,6 +1267,20 @@ namespace Utils.NumberToString
                             $"[{languageIdentifier}] Replacement for '{r.OldValue}' has neither a newValue " +
                             $"nor child form-variant elements. Either add newValue or provide at least one <Variant>.");
                     // else: no direct newValue but has form variants — handled by ExpandFormVariants in ParseVariantRules
+                }
+                return rules;
+            }
+
+            List<NumberToStringConverter.ReplacementRule> ParseOrdinalReplacements(List<ReplacementType>? list)
+            {
+                var rules = new List<NumberToStringConverter.ReplacementRule>();
+                foreach (var r in list ?? [])
+                {
+                    if (r.NewValue == null)
+                        throw new InvalidOperationException(
+                            $"[{languageIdentifier}] Ordinal replacement for '{r.OldValue}' must declare a newValue; " +
+                            "form-variant children are not supported in ordinal replacements.");
+                    rules.Add(new NumberToStringConverter.ReplacementRule(r.OldValue, r.NewValue, r.Scope, r.OnScale, r.OnValue));
                 }
                 return rules;
             }
@@ -1588,7 +1605,7 @@ namespace Utils.NumberToString
                         foreach (var kv in wordRules) mergedWr[kv.Key] = kv.Value;
                         result[idx] = new NumberToStringConverter.OrdinalVariantRule(
                             existing.Constraints, mergedExc, mergedWr,
-                            existing.Suffix, existing.RemoveTrailing, existing.Priority);
+                            existing.Suffix, existing.RemoveTrailing, existing.Replacements, existing.Priority);
                     }
                     else
                     {
@@ -1630,6 +1647,7 @@ namespace Utils.NumberToString
                 var wordRules = variant.Rules?.Where(r => r.To != null)
                     .ToDictionary(r => r.From, r => r.To!)
                     ?? new Dictionary<string, string>();
+                var replacements = ParseOrdinalReplacements(variant.Replacements);
 
                 foreach (var dimValue in dimValues)
                 {
@@ -1638,7 +1656,7 @@ namespace Utils.NumberToString
                         constraints[dimType] = dimValue;
 
                     result.Add(new NumberToStringConverter.OrdinalVariantRule(
-                        constraints, exceptions, wordRules, variant.Suffix, variant.RemoveTrailing, variant.Priority));
+                        constraints, exceptions, wordRules, variant.Suffix, variant.RemoveTrailing, replacements, variant.Priority));
 
                     foreach (var child in variant.NestedVariants ?? [])
                         CollectOrdinalVariants(child, constraints, result);
@@ -1745,6 +1763,7 @@ namespace Utils.NumberToString
                     .Select(s => new OrdinalStemRule(s.From!, s.To!))
                     .ToList()
                     ?? [],
+                OrdinalReplacements = ParseOrdinalReplacements(language.Ordinals?.Replacements),
                 OrdinalPrefix = language.Ordinals?.Prefix,
                 OrdinalVariants = ParseOrdinalVariants(language.Ordinals),
                 VariantDimensions = parsedDimensions,

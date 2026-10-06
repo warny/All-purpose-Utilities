@@ -90,6 +90,42 @@ public sealed class NumberToStringImmutabilityTests
         Assert.IsFalse(converter.ScaleFormSelectors is Dictionary<int, ILexicalFormSelector>, "The converter must not expose a mutable dictionary.");
     }
 
+    /// <summary>Mutating the source ordinal replacement lists after construction does not affect the converter snapshot.</summary>
+    [TestMethod]
+    public void OrdinalReplacements_SourceMutationAfterConstruction_DoesNotChangeConverter()
+    {
+        var baseReplacements = new List<NumberToStringConverter.ReplacementRule>
+        {
+            new("twenty one", "twenty-one", ReplacementScope.Standalone),
+        };
+        var variantReplacements = new List<NumberToStringConverter.ReplacementRule>
+        {
+            new("twenty-one", "twenty-first", ReplacementScope.Standalone),
+        };
+        var options = Options([]);
+        options.OrdinalSuffix = "th";
+        options.VariantDimensions = [new NumberToStringConverter.VariantDimension("gender", ["plain", "other"])];
+        options.OrdinalReplacements = baseReplacements;
+        options.OrdinalVariants =
+        [
+            new NumberToStringConverter.OrdinalVariantRule(
+                new Dictionary<string, string> { ["gender"] = "other" },
+                new Dictionary<long, string>(), new Dictionary<string, string>(), null, null, variantReplacements),
+        ];
+        var converter = new NumberToStringConverter(options);
+
+        baseReplacements[0] = new("twenty one", "changed", ReplacementScope.Standalone);
+        baseReplacements.Add(new("x", "y", ReplacementScope.Anywhere));
+        variantReplacements.Clear();
+
+        Assert.AreEqual("twenty-oneth", converter.ConvertOrdinal(21));
+        Assert.AreEqual("twenty-firstth", converter.ConvertOrdinal(21, "gender=other"));
+        Assert.AreEqual(1, converter.OrdinalReplacements.Count);
+        Assert.AreEqual(1, converter.OrdinalVariants[0].Replacements.Count);
+        Assert.IsFalse(converter.OrdinalReplacements is List<NumberToStringConverter.ReplacementRule>, "The converter must not expose a mutable list.");
+        Assert.IsFalse(converter.OrdinalVariants[0].Replacements is List<NumberToStringConverter.ReplacementRule>, "The variant must not expose a mutable list.");
+    }
+
     /// <summary>Creates options for a two-level language whose tens digit 2 carries <paramref name="fusions"/>.</summary>
     /// <param name="fusions">The fusion rules attached to the tens digit 2.</param>
     /// <returns>The converter options.</returns>

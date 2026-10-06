@@ -189,9 +189,9 @@ public class NumberToStringOrdinalReplacementTests
     [TestMethod]
     public void OrdinalReplacement_RunsBeforeExactWordRules()
     {
-        var converter = Build("""<Ordinals suffix="th"><Replacement oldValue="feminine-eleven" newValue="masculine-eleven" scope="EndsWith" /><Ordinal from="masculine-eleven" to="masc-11th" /></Ordinals>""");
+        var converter = Build("""<Ordinals suffix="th"><Replacement oldValue="feminine-eleven" newValue="masc" scope="EndsWith" /><Ordinal from="masc" to="MASC-TH" /></Ordinals>""");
 
-        Assert.AreEqual("one hundred masc-11th", converter.ConvertOrdinal(111));
+        Assert.AreEqual("one hundred MASC-TH", converter.ConvertOrdinal(111));
     }
 
     /// <summary>Stem rules see the replaced text.</summary>

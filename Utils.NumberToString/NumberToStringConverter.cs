@@ -212,9 +212,12 @@ namespace Utils.NumberToString
             OrdinalWordRules = (options.OrdinalWordRules ?? new Dictionary<string, string>()).ToImmutableDictionary();
             _ordinalStemRules = CompileOrdinalStemRules(options.OrdinalStemRules, nameof(options.OrdinalStemRules));
             OrdinalStemRules = _ordinalStemRules;
-            OrdinalReplacements = ImmutableArray<ReplacementRule>.Empty;
+            _ordinalReplacements = CompileOrdinalReplacements(options.OrdinalReplacements, nameof(options.OrdinalReplacements));
+            OrdinalReplacements = _ordinalReplacements;
             OrdinalPrefix = options.OrdinalPrefix;
             OrdinalVariants = (options.OrdinalVariants ?? []).ToImmutableArray();
+            foreach (var ordinalVariant in OrdinalVariants)
+                CompileOrdinalReplacements(ordinalVariant.Replacements, nameof(options.OrdinalVariants));
 
             VariantDimensions = (options.VariantDimensions ?? []).ToImmutableArray();
             // Clock-time rules canonicalize forced variants during compilation.
@@ -649,6 +652,8 @@ namespace Utils.NumberToString
         private readonly ImmutableDictionary<int, LexicalFormSet> _scaleFormsPublic;
         /// <summary>Public read-only view of the effective scale form selectors.</summary>
         private readonly ImmutableDictionary<int, ILexicalFormSelector> _scaleFormSelectorsPublic;
+        /// <summary>Base ordinal-only replacements, validated and snapshotted at construction.</summary>
+        private readonly ImmutableArray<ReplacementRule> _ordinalReplacements;
         /// <summary>Ordinal stem rules validated and sorted once at construction, longest ending first.</summary>
         private readonly ImmutableArray<OrdinalStemRule> _ordinalStemRules;
         private readonly ImmutableDictionary<string, string> _replacementLookup;
@@ -2078,6 +2083,9 @@ namespace Utils.NumberToString
             {
                 string raw = number == 0 ? Zero : ConvertRaw((BigInteger)number, activeVariants);
                 raw = ApplyVariantRules(raw, activeVariants, number);
+                // Ordinal-only replacements see the assembled, variant-transformed cardinal and run
+                // before the ordinal transformation (word rules, stems, removeTrailing, suffix).
+                raw = ApplyOrdinalReplacements(raw, activeVariant);
                 string ordinal = ApplyOrdinalTransform(raw, activeVariant, out bool formed, noExplicitVariants: !explicitVariantIntent);
                 // NTS-12: an unchanged cardinal is a legitimate ordinal for some non-zero values
                 // (e.g. Hebrew above ten), but never for zero. Zero needs an explicit formation:
@@ -2998,6 +3006,48 @@ namespace Utils.NumberToString
 
             formed = false;
             return cardinal;
+        }
+
+        /// <summary>
+        /// Applies the base ordinal-only replacements, then those of the selected ordinal variant, to
+        /// the assembled cardinal, in declaration order and with the cardinal replacement scopes.
+        /// </summary>
+        /// <param name="cardinal">The assembled, variant-transformed cardinal.</param>
+        /// <param name="activeVariant">The selected ordinal variant (including an injected default), if any.</param>
+        /// <returns>The text handed to the ordinal transformation.</returns>
+        private string ApplyOrdinalReplacements(string cardinal, OrdinalVariantRule? activeVariant)
+        {
+            foreach (var replacement in _ordinalReplacements)
+                cardinal = ApplyVariantReplacement(cardinal, replacement);
+            if (activeVariant != null)
+                foreach (var replacement in activeVariant.Replacements)
+                    cardinal = ApplyVariantReplacement(cardinal, replacement);
+            return cardinal;
+        }
+
+        /// <summary>
+        /// Validates ordinal-only replacements and snapshots them. They act on the whole assembled
+        /// cardinal, so the per-group <c>onScale</c> and value <c>onValue</c> filters do not apply
+        /// and are rejected rather than silently ignored.
+        /// </summary>
+        /// <param name="replacements">The configured replacements, or <see langword="null"/>.</param>
+        /// <param name="parameterName">The options property name reported in exceptions.</param>
+        /// <returns>The immutable replacements.</returns>
+        /// <exception cref="ArgumentException">An entry is null or declares an <c>onScale</c>/<c>onValue</c> filter.</exception>
+        private static ImmutableArray<ReplacementRule> CompileOrdinalReplacements(IReadOnlyList<ReplacementRule>? replacements, string parameterName)
+        {
+            if (replacements is null || replacements.Count == 0) return [];
+            ReplacementRule[] snapshot = [.. replacements];
+            foreach (var replacement in snapshot)
+            {
+                if (replacement is null)
+                    throw new ArgumentException("Ordinal replacements must not be null.", parameterName);
+                if (replacement.OnScale is not null || replacement.OnValue is not null)
+                    throw new ArgumentException(
+                        $"Ordinal replacement '{replacement.OldValue}' declares onScale/onValue, which ordinal replacements do not support.",
+                        parameterName);
+            }
+            return [.. snapshot];
         }
 
         /// <summary>Rewrites the ending of <paramref name="word"/> with the longest matching ordinal stem rule.</summary>
