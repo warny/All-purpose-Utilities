@@ -303,6 +303,77 @@ public class NumberToStringScaleFormTests
         Assert.AreSame(original.ScaleFormSelectors[1], clone.ScaleFormSelectors[1]);
     }
 
+    /// <summary>Custom selector returning only the synthesized keys "singular" and "plural".</summary>
+    private sealed class SingularPluralSelector : ILexicalFormSelector
+    {
+        /// <inheritdoc />
+        public string SelectForm(LexicalFormContext context) => context.AbsoluteValue == 1 ? "singular" : "plural";
+    }
+
+    /// <summary>Selector returning "singular" for one, "dual" for two and "plural" otherwise.</summary>
+    private sealed class SingularDualPluralSelector : ILexicalFormSelector
+    {
+        /// <inheritdoc />
+        public string SelectForm(LexicalFormContext context)
+            => context.AbsoluteValue == 1 ? "singular" : context.AbsoluteValue == 2 ? "dual" : "plural";
+    }
+
+    /// <summary>Clones <paramref name="original"/> through its options while replacing the scale by "bar(s)".</summary>
+    /// <param name="original">The converter to clone.</param>
+    /// <returns>The clone built on the new scale.</returns>
+    private static NumberToStringConverter CloneWithBarScale(NumberToStringConverter original)
+        => new(new NumberToStringConverterOptions(original) { Scale = new NumberScale(["", "bar(s)"], ["illion"]) });
+
+    /// <summary>A selector-only configuration does not freeze the synthesized names of the original scale in a clone.</summary>
+    [TestMethod]
+    public void ScaleForms_OptionsClone_SelectorOnlyDoesNotFreezeOldScaleNames()
+    {
+        var options = Options();
+        options.ScaleFormSelectors = new Dictionary<int, ILexicalFormSelector> { [1] = new SingularPluralSelector() };
+        var original = new NumberToStringConverter(options);
+        Assert.AreEqual("two foos", Cardinal(original, 200));
+
+        var clone = CloneWithBarScale(original);
+
+        Assert.AreEqual("one bar", Cardinal(clone, 100));
+        Assert.AreEqual("two bars", Cardinal(clone, 200));
+    }
+
+    /// <summary>Synthesized singular/plural forms are recomputed from the clone's scale.</summary>
+    [TestMethod]
+    public void ScaleForms_OptionsClone_RecomputesSynthesizedFormsAfterScaleChange()
+    {
+        var options = Options();
+        options.ScaleForms = new Dictionary<int, LexicalFormSet> { [1] = LexicalFormSet.Create(("plural", "foozles")) };
+        var original = new NumberToStringConverter(options);
+        Assert.AreEqual("one foo", Cardinal(original, 100));
+
+        var clone = CloneWithBarScale(original);
+
+        Assert.AreEqual("one bar", Cardinal(clone, 100));
+        Assert.AreEqual("three foozles", Cardinal(clone, 300));
+    }
+
+    /// <summary>A clone carries only the explicitly configured forms and selectors.</summary>
+    [TestMethod]
+    public void ScaleForms_OptionsClone_PreservesOnlyExplicitOverrides()
+    {
+        var selector = new SingularDualPluralSelector();
+        var options = Options();
+        options.ScaleForms = new Dictionary<int, LexicalFormSet> { [1] = LexicalFormSet.Create(("dual", "pair")) };
+        options.ScaleFormSelectors = new Dictionary<int, ILexicalFormSelector> { [1] = selector };
+        var original = new NumberToStringConverter(options);
+
+        var cloneOptions = new NumberToStringConverterOptions(original);
+        var clone = CloneWithBarScale(original);
+
+        Assert.AreEqual(1, cloneOptions.ScaleForms!.Count);
+        Assert.AreSame(selector, cloneOptions.ScaleFormSelectors![1]);
+        Assert.AreEqual("one bar", Cardinal(clone, 100));
+        Assert.AreEqual("two pair", Cardinal(clone, 200));
+        Assert.AreEqual("three bars", Cardinal(clone, 300));
+    }
+
     /// <summary>A selector is resolved once while loading; conversions never resolve it again.</summary>
     [TestMethod]
     public void ScaleForms_Selector_IsResolvedOnceAtLoadNotPerConversion()
