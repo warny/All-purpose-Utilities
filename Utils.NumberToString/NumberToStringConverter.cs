@@ -2864,6 +2864,9 @@ namespace Utils.NumberToString
         /// <summary>
         /// Transforms a cardinal string into its ordinal form by applying word-level rules
         /// or the ordinal suffix to the last word, optionally using a variant-specific override.
+        /// Before the suffix is appended, the last word's ending is rewritten by the longest
+        /// matching <see cref="OrdinalStemRules"/> entry, or stripped of the removeTrailing value
+        /// when no stem rule matches.
         /// </summary>
         /// <param name="cardinal">The cardinal text to transform.</param>
         /// <param name="activeVariant">The selected ordinal variant, if any.</param>
@@ -2965,8 +2968,10 @@ namespace Utils.NumberToString
         private static ImmutableArray<OrdinalStemRule> CompileOrdinalStemRules(IReadOnlyList<OrdinalStemRule>? rules, string parameterName)
         {
             if (rules is null || rules.Count == 0) return [];
+            // Copy once so that the validated rules are exactly the ones kept, whatever the source collection does later.
+            OrdinalStemRule[] snapshot = [.. rules];
             var seen = new HashSet<string>(StringComparer.Ordinal);
-            foreach (var rule in rules)
+            foreach (var rule in snapshot)
             {
                 if (rule is null)
                     throw new ArgumentException("OrdinalStem rules must not be null.", parameterName);
@@ -2977,7 +2982,7 @@ namespace Utils.NumberToString
                 if (!seen.Add(rule.From))
                     throw new ArgumentException($"Duplicate OrdinalStem rule for ending '{rule.From}'.", parameterName);
             }
-            return [.. rules.OrderByDescending(r => r.From.Length).ThenBy(r => r.From, StringComparer.Ordinal)];
+            return [.. snapshot.OrderByDescending(r => r.From.Length).ThenBy(r => r.From, StringComparer.Ordinal)];
         }
 
         /// <summary>

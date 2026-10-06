@@ -39,7 +39,7 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | RU | Russian | ✓ declarative | ✓ 15 min, 12 h | gender × case | local | — |
 | UK, UK-UA | Ukrainian | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Round thousands verified up to 10 000 |
 | ES | Spanish | ✓ declarative | ✓ 5 min, 12 h | gender × form | local | No ordinal of zero |
-| IT | Italian | ✓ 1–20, round tens, 100, 1000 (range plugin) | ✓ 5 min, 12 h | gender | local | Compound ordinals (ventunesimo…) and zero fail closed; millions not orthographic ("uno Millione") |
+| IT | Italian | ✓ 1–1999 and round thousands to 999000 (`<OrdinalStem>`, domain-guard plugin) | ✓ 5 min, 12 h | gender | local | Zero, non-round thousands above 1999 (NTS-15) and millions fail closed; millions not orthographic ("uno Millione", NTS-14) |
 | PT | Portuguese | ✓ declarative | ✓ 5 min, 12 h (direct "e …") | gender | local | Deliberate direct numeric reading (no "para"/"menos" constructions); PT-PT/PT-BR not split; no ordinal of zero |
 | GL, gl-ES | Galician | ✓ declarative | ✓ 5 min, 12 h | gender | local | No ordinal of zero |
 | RO, RO-RO | Romanian | ✓ plugin (DOOM) | ✓ 15 min, 12 h | gen | local | Ordinals up to 999 999 and one million (masculine) |
@@ -368,9 +368,11 @@ it.Convert(21, "gender=femminile"); // "ventuno" ← "ventuno ballerine" (Trecca
 Compound cardinals are written as one word through `<Fusion>` rules (see
 [`<Fusion>`](#fusion--morphological-composition-at-a-junction)): `ventuno`, `ventitré`,
 `ventotto`, `centottanta`, `duemila`, `milletré`. Soldered compounds keep `-uno` in the
-feminine, as Treccani records for plural feminine nouns. Compound ordinals (`ventunesimo`,
-`ventitreesimo`) are not supported yet and fail closed with `NotSupportedException`; only
-1–20, the round tens, 100 and 1000 are produced.
+feminine, as Treccani records for plural feminine nouns. Compound ordinals are formed by
+`<OrdinalStem>` rules (see [`<OrdinalStem>`](#ending-rewrite-before-the-suffix--ordinalstem)):
+`ventunesimo`, `ventitreesimo`, `ventiseiesimo`, `centunesimo`, `milleunesimo`, `duemillesimo`,
+in both genders (`ventunesima`). Zero, non-round thousands above 1999 (`2001`) and one million
+and above fail closed with `NotSupportedException` (NTS-15, NTS-14).
 
 ### Catalan — hyphens as word boundaries
 
@@ -1274,7 +1276,7 @@ they are not globally registered converters and are not visible to `RegisterConf
 - `Fusion` rules belong to their `<Digit>` and therefore follow the `Groups` rule: a child that omits `<Groups>` inherits the base's digits together with their fusions; a child that declares `<Groups>` replaces every digit, and the base's fusions are not merged into it.
 - `Trigger` elements are currently **not** inherited: a child that needs the base's triggers must redeclare them (an absent `<Trigger>` list is read as an empty one). No built-in configuration uses triggers.
 - `NumberScale`: merged field by field, not replaced wholesale. A child may declare only the sub-elements it needs to override (e.g. `StaticNames`, `Suffixes`) while `startIndex`, `firstLetterUpperCase`, `groupSeparator`, `voidGroup`, and the `Scale0Prefixes`/`UnitsPrefixes`/`TensPrefixes`/`HundredsPrefixes` prefix tables independently fall back to the base when absent in the child. For example, `MS` (Malay) declares only `StaticNames`/`Suffixes` and still inherits `ID`'s `startIndex` and prefix tables unchanged.
-- `Ordinals`: not replaced wholesale. `OrdinalException` entries are merged by `value` and `OrdinalRule` entries by `from` (child wins on key conflicts, new keys are appended). `suffix`, `prefix`, `removeTrailing`, and `OrdinalVariants` fall back to the base when absent in the child (`OrdinalVariants`, when present, replaces the base's block). For example, `FR-be` declares only `<OrdinalException value="80" string="quatre-vingtième"/>` and keeps every other French ordinal rule.
+- `Ordinals`: not replaced wholesale. `OrdinalException` entries are merged by `value`, and `OrdinalRule` and `OrdinalStem` entries by `from` (child wins on key conflicts, new keys are appended). `suffix`, `prefix`, `removeTrailing`, and `OrdinalVariants` fall back to the base when absent in the child (`OrdinalVariants`, when present, replaces the base's block). For example, `FR-be` declares only `<OrdinalException value="80" string="quatre-vingtième"/>` and keeps every other French ordinal rule.
 
 ---
 
@@ -1551,7 +1553,8 @@ Required to enable `ConvertOrdinal()`.
 2. Base `<OrdinalException>` — whole-number match.
 3. Active variant word rules — from `<OrdinalVariants>`, most-specific first.
 4. Base `<Ordinal>` word rule — last-word match.
-5. Default suffix (± `removeTrailing` strip).
+5. Default suffix (base or variant), after rewriting the ending of the last word with the longest
+   matching `<OrdinalStem>` rule — or, when no stem rule matches, after the `removeTrailing` strip.
 
 ```xml
 <Ordinals suffix="ième" removeTrailing="e">
@@ -1574,7 +1577,7 @@ Required to enable `ConvertOrdinal()`.
 | Attribute | Description |
 |-----------|-------------|
 | `suffix` | Suffix added to the last word when no word rule matches. |
-| `removeTrailing` | String to strip from the end of the last word before adding `suffix` (only when the word actually ends with this value). |
+| `removeTrailing` | String to strip from the end of the last word before adding `suffix` (only when the word actually ends with this value and no `<OrdinalStem>` rule matched). |
 | `prefix` | String prepended to the entire ordinal result (e.g. `"第"` for Chinese, `"etsõ "` for Ewe). May be combined with exceptions; suffix and word rules are ignored when `prefix` is set. |
 
 ```xml
@@ -1588,6 +1591,64 @@ Required to enable `ConvertOrdinal()`.
     <OrdinalException value="1" string="gbãtõ" />
     <!-- 1 → "gbãtõ" (exception wins); 2 → "etsõ eve" (prefix + cardinal) -->
 </Ordinals>
+```
+
+#### Ending rewrite before the suffix — `<OrdinalStem>`
+
+`<OrdinalStem from="…" to="…" />` rewrites the **ending** of the last word before the ordinal
+suffix is appended. It complements the two existing mechanisms:
+
+| Rule | Acts on | Suffix appended? |
+|------|---------|------------------|
+| `<Ordinal from="x" to="y">` | the **whole** last word (exact match) | no — `to` is the complete ordinal |
+| `<OrdinalStem from="x" to="y">` | the **ending** of the last word | yes — the effective suffix follows |
+| `removeTrailing="x"` | one fixed ending | yes — historical fallback |
+
+Semantics:
+
+- `from` is required and must not be empty; `to` is required but may be empty (`to=""` removes
+  the matched ending).
+- Matching is ordinal and case-sensitive (`EndsWith`, no regular expression).
+- When several rules match, the **longest `from` wins**; declaration order is irrelevant. Two rules
+  with the same `from` are rejected at load.
+- `<OrdinalException>` and exact `<Ordinal>` word rules keep priority; stem rules act only on the
+  suffixed path (a prefix-only configuration ignores them).
+- When a stem rule matches, `removeTrailing` is not applied to that word; when none matches,
+  `removeTrailing` behaves exactly as before. A configuration without `<OrdinalStem>` is unchanged.
+- The **effective suffix** — the `<OrdinalVariants>` `suffix` override when a variant is selected,
+  otherwise the base `suffix` — is appended after the rewrite, so the base stem rules serve every
+  variant. Stem rules are declared on `<Ordinals>` only.
+- Under `baseOn`, stem rules are merged by `from`: inherited rules are kept, a child rule with the
+  same `from` replaces the parent's, new child rules are added.
+- The converter snapshots the rules at construction (`OrdinalStemRules`, sorted longest first);
+  mutating the source collection afterwards has no effect.
+
+Italian (NTS-13): the cardinal loses its final vowel before `-esimo`, except after `tre` (accent
+dropped) and `sei`, and the plural `-mila` of round thousands becomes `mill-`:
+
+```xml
+<Ordinals suffix="esimo">
+    <OrdinalStem from="centouno" to="centun" /> <!-- centouno     → centunesimo (Treccani) -->
+    <OrdinalStem from="mila" to="mill" />       <!-- duemila      → duemillesimo -->
+    <OrdinalStem from="tré" to="tre" />         <!-- ventitré     → ventitreesimo -->
+    <OrdinalStem from="sei" to="sei" />         <!-- ventisei     → ventiseiesimo -->
+    <OrdinalStem from="a" to="" />              <!-- trenta       → trentesimo -->
+    <OrdinalStem from="e" to="" />              <!-- diciassette  → diciassettesimo -->
+    <OrdinalStem from="i" to="" />              <!-- undici       → undicesimo -->
+    <OrdinalStem from="o" to="" />              <!-- ventuno      → ventunesimo -->
+    <OrdinalVariants>
+        <!-- same stems, feminine suffix: ventunesima, ventitreesima, duemillesima -->
+        <Variant type="gender" variant="femminile" suffix="esima" />
+    </OrdinalVariants>
+</Ordinals>
+```
+
+```csharp
+var it = NumberToStringConverter.GetConverter("IT");
+it.ConvertOrdinal(23);                       // "ventitreesimo"
+it.ConvertOrdinal(26, "gender=femminile");   // "ventiseiesima"
+it.ConvertOrdinal(2000);                     // "duemillesimo"
+it.ConvertOrdinal(2001);                     // NotSupportedException (NTS-15)
 ```
 
 #### Variant-specific ordinal rules — `<OrdinalVariants>`
