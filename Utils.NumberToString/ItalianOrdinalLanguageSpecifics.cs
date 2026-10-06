@@ -18,12 +18,12 @@ namespace Utils.NumberToString;
 ///   <item><description>zero — the NTS-12 decision is unchanged (<c>zeresimo</c> is only attested in special, mathematical uses);</description></item>
 ///   <item><description>the thousands ending in ten (1010, 1110 … 1910) — dieci keeps its lexical <c>decimo</c> in compounds, and only the analytic <c>millesimo decimo</c> is attested (TODO NTS-15);</description></item>
 ///   <item><description>non-round thousands above 1999 — no consulted source establishes a canonical synthetic form, and Treccani gives the analytic <c>centomillesimoprimo</c> for 100001 (TODO NTS-15);</description></item>
-///   <item><description>one million and above — the Italian cardinals are known to be wrong there (TODO NTS-14).</description></item>
+///   <item><description>one million and above — the cardinals are correct since NTS-14 ("un milione"), but no ordinal is validated there: the mechanical form of "un milione" would be the fractional "un milionesimo" (TODO NTS-15).</description></item>
 /// </list>
 /// </remarks>
 public sealed class ItalianOrdinalLanguageSpecifics : INumberToStringLanguageSpecifics, IOrdinalLanguageSpecifics
 {
-    /// <summary>The first value whose Italian cardinal is outside the validated domain (NTS-14).</summary>
+    /// <summary>The first value whose Italian ordinal is outside the validated domain (NTS-15).</summary>
     private const long OneMillion = 1_000_000;
 
     /// <inheritdoc />
@@ -41,7 +41,7 @@ public sealed class ItalianOrdinalLanguageSpecifics : INumberToStringLanguageSpe
             throw new NotSupportedException("Italian has no ordinal form for zero in the supported domain.");
         if (number >= OneMillion)
             throw new NotSupportedException(
-                $"Italian ordinal {number} is not supported: the Italian cardinals of one million and above are not validated (NTS-14).");
+                $"Italian ordinal {number} is not supported: no ordinal of one million and above is validated (NTS-15).");
         if (number >= 2000 && number % 1000 != 0)
             throw new NotSupportedException(
                 $"Italian ordinal {number} is not supported: no canonical form is established for non-round thousands above 1999 (NTS-15).");

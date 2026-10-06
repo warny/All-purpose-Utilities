@@ -9,6 +9,8 @@
                 minus="meno *"
                 decimalSeparator="virgola"
                 fractionSeparator="su"
+                groupConnector="e"
+                groupConnectorThreshold="1000"
         >
 		<Culture>IT</Culture>
 		<Groups>
@@ -112,7 +114,13 @@
 				</Digit>
 			</Group>
 		</Groups>
-		<NumberScale firstLetterUpperCase="true">
+		<!--
+		  NTS-14. Milione, miliardo, bilione … are lower-case nouns with a regular plural (Treccani,
+		  "numerali [prontuario]"): the SCALE-LONG generator joins prefix and suffix with "li"
+		  (mi + li + on(e|i) → milione/milioni, mi + li + ard(o|i) → miliardo/miliardi, bilione,
+		  biliardo, trilione …) instead of the inherited default "lli" ("Millione").
+		-->
+		<NumberScale firstLetterUpperCase="false" groupSeparator="li">
 			<StaticNames>
 				<Scale value="0" string="" />
 				<Scale value="1" string="mi(lle|la)" />
@@ -128,14 +136,22 @@
 		  final tre keeps its accent ("milletré", "duemilatré") while an inner tre loses it
 		  ("ventitremila"). These junctions involve a scale name, so they are Replacements (onScale
 		  for the thousands group, then the final assembled-string pass), not <Fusion>.
-		  Millions and above (separate words) are not handled here.
+		  NTS-14: from a million the scale nouns are separate words and every following group is joined
+		  by "e" ("due milioni e centomila", "un milione e uno": Treccani prontuari "numerali" and
+		  "uno, numerali composti con"; DICO). The language-level groupConnector "e" (threshold 1000,
+		  i.e. before every lower group) provides that junction; below a million the thousands stay
+		  soldered, so the connector is removed again right after mille/-mila ("mille e uno" →
+		  "milleuno", "duemila e uno" → "duemilauno"), which never touches milione/milioni. A
+		  multiplier of exactly one is the article "un" before the noun ("un milione", "un miliardo"),
+		  while compounds of uno stay invariable ("ventuno milioni", Treccani).
 		-->
 		<Replacements>
 			<Replacement oldValue="uno mille" newValue="mille" onScale="1" onValue="1" />
 			<Replacement oldValue="tré mila" newValue="tremila" scope="Anywhere" onScale="1" />
 			<Replacement oldValue=" mila" newValue="mila" scope="Anywhere" onScale="1" />
-			<Replacement oldValue="mila " newValue="mila" scope="Anywhere" />
-			<Replacement oldValue="mille " newValue="mille" scope="Anywhere" />
+			<Replacement oldValue="uno " newValue="un " scope="StartsWith" onScale="2.." onValue="1" />
+			<Replacement oldValue="mila e " newValue="mila" scope="Anywhere" />
+			<Replacement oldValue="mille e " newValue="mille" scope="Anywhere" />
 			<Replacement oldValue="milatre" newValue="milatré" scope="EndsWith" />
 			<Replacement oldValue="milletre" newValue="milletré" scope="EndsWith" />
 		</Replacements>
@@ -176,7 +192,7 @@
 		  matching ending wins, so declaration order is irrelevant. The feminine variant only changes
 		  the suffix: the stem rules are shared.
 		  ItalianOrdinalLanguageSpecifics keeps zero, 1010-1910, non-round thousands above 1999 (NTS-15)
-		  and millions (NTS-14) fail-closed.
+		  and millions (NTS-15) fail-closed.
 		-->
 		<LanguageSpecifics>ItalianOrdinalLanguageSpecifics</LanguageSpecifics>
 		<Ordinals suffix="esimo">
