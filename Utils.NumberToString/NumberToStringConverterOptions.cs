@@ -124,6 +124,21 @@ public sealed class NumberToStringConverterOptions
     public IReadOnlyList<NumberToStringConverter.ReplacementRule> OrdinalReplacements { get; set; } = [];
 
     /// <summary>
+    /// Rules forming the ordinal of a round scale value (multiplier × scale unit, lower groups zero)
+    /// from the singular scale noun, the multiplier one being dropped (e.g. Italian 1 000 000 →
+    /// "milionesimo", 2 000 000 → "duemilionesimo"). See <see cref="OrdinalScaleRule"/>. Two rules
+    /// covering the same scale index are rejected by the converter.
+    /// </summary>
+    public IReadOnlyList<OrdinalScaleRule> OrdinalScaleRules { get; set; } = [];
+
+    /// <summary>
+    /// Rules forming an analytic ordinal from the ordinals of the numeric head and tail of the value
+    /// (e.g. Italian 1010 → "millesimo" + " " + "decimo"). See <see cref="OrdinalCompositionRule"/>.
+    /// Overlapping value ranges are rejected by the converter.
+    /// </summary>
+    public IReadOnlyList<OrdinalCompositionRule> OrdinalCompositionRules { get; set; } = [];
+
+    /// <summary>
     /// Prefix prepended to the whole ordinal result after <see cref="AdjustFunction"/> is applied.
     /// Example: <c>"第"</c> for Chinese/Japanese (第一, 第二…).
     /// </summary>
@@ -317,6 +332,8 @@ public sealed class NumberToStringConverterOptions
         OrdinalWordRules = source.OrdinalWordRules;
         OrdinalStemRules = source.OrdinalStemRules;
         OrdinalReplacements = source.OrdinalReplacements;
+        OrdinalScaleRules = source.OrdinalScaleRules;
+        OrdinalCompositionRules = source.OrdinalCompositionRules;
         // Override-only, like TimeUnitForms below: the effective ScaleForms contain singular/plural
         // synthesized from source.Scale, which must not override the names of a replaced Scale.
         ScaleForms = source.ScaleFormOverrides;
