@@ -205,6 +205,26 @@ Examples:
     | 201 | duecentunesimo |
     | 999 | novecentonovantanovesimo |
 
+# After a hundred, dieci keeps its lexical ordinal decimo instead of the mechanical "centodiecesimo",
+# which no consulted source attests. Vocabolario degli Accademici della Crusca, 5th ed., vol. 2
+# p. 753, s.v. "centesimo" § III: "Centodecimo, Centundicesimo, Centododicesimo ec."; Wiktionary,
+# Appendix:Italian numbers: "centodecimo", "duecentodecimo". Treccani ("ordinale") prefers the
+# analytic "centesimo decimo" (separate spelling), which is not modelled, like "millesimo primo".
+Scenario Outline: Hundreds followed by ten keep the lexical decimo
+    Given I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 110 | | centodecimo |
+    | 210 | | duecentodecimo |
+    | 310 | | trecentodecimo |
+    | 910 | | novecentodecimo |
+    | 110 | gender=femminile | centodecima |
+    | 210 | gender=femminile | duecentodecima |
+    | 910 | gender=femminile | novecentodecima |
+
 # Thousands. Treccani, vocabolario "ordinale": "millesimo, duemillesimo, ... diecimillesimo";
 # vocabolario "centomillesimo": the ordinal of centomila. Round thousands therefore turn the plural
 # -mila into mill- before -esimo. Between 1001 and 1999 the official forms are the synthetic
@@ -253,7 +273,9 @@ Scenario: Negative compound ordinal keeps the existing sign policy
 # Zero: NTS-12 decision unchanged (Treccani attests "zeresimo" only in special, mathematical uses).
 # Non-round thousands above 1999: no source establishes a canonical form, and Treccani
 # ("centomillesimo") gives the analytic "centomillesimoprimo" for 100001 rather than a synthetic
-# derivation (TODO NTS-15). Millions and above: the cardinals are known wrong (TODO NTS-14).
+# derivation (TODO NTS-15). The thousands ending in ten (1010, 1110 ... 1910): Treccani gives only
+# the analytic "millesimo decimo", and no synthetic form was found (TODO NTS-15). Millions and
+# above: the cardinals are known wrong (TODO NTS-14).
 Scenario Outline: Ordinals outside the validated domain are rejected
     Given I use the variants "<variants>"
     When I attempt to convert the ordinal number <number>
@@ -263,6 +285,11 @@ Examples:
     | number | variants |
     | 0 | |
     | 0 | gender=femminile |
+    | 1010 | |
+    | 1110 | |
+    | 1210 | |
+    | 1910 | |
+    | 1010 | gender=femminile |
     | 2001 | |
     | 2021 | |
     | 21001 | |
