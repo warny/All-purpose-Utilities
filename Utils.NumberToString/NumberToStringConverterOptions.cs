@@ -103,6 +103,16 @@ public sealed class NumberToStringConverterOptions
     public IReadOnlyDictionary<string, string> OrdinalWordRules { get; set; } = new Dictionary<string, string>();
 
     /// <summary>
+    /// Stem rules rewriting the ending of the last cardinal word before the effective ordinal suffix
+    /// (base or variant) is appended (e.g. Italian <c>"o"</c> → <c>""</c>: "ventuno" → "ventun" +
+    /// "esimo"). The longest matching <see cref="OrdinalStemRule.From"/> wins regardless of order;
+    /// when no rule matches, <see cref="OrdinalRemoveTrailing"/> applies as before. Exact
+    /// <see cref="OrdinalWordRules"/> keep priority. Two rules with the same
+    /// <see cref="OrdinalStemRule.From"/> are rejected by the converter.
+    /// </summary>
+    public IReadOnlyList<OrdinalStemRule> OrdinalStemRules { get; set; } = [];
+
+    /// <summary>
     /// Prefix prepended to the whole ordinal result after <see cref="AdjustFunction"/> is applied.
     /// Example: <c>"第"</c> for Chinese/Japanese (第一, 第二…).
     /// </summary>
@@ -275,6 +285,7 @@ public sealed class NumberToStringConverterOptions
         OrdinalRemoveTrailing = source.OrdinalRemoveTrailing;
         OrdinalExceptions = source.OrdinalExceptions;
         OrdinalWordRules = source.OrdinalWordRules;
+        OrdinalStemRules = source.OrdinalStemRules;
         OrdinalPrefix = source.OrdinalPrefix;
         OrdinalVariants = source.OrdinalVariants;
         VariantDimensions = source.VariantDimensions;

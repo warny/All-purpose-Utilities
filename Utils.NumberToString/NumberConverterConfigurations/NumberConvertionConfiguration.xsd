@@ -627,6 +627,50 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:complexType name="OrdinalStemType">
+        <xs:annotation>
+            <xs:documentation>
+                An ending-level ordinal rule: when the last word that receives the ordinal suffix
+                ends with "from" (ordinal, case-sensitive match), only that ending is replaced by
+                "to", then the effective suffix (base suffix or OrdinalVariants suffix override)
+                is appended. No regular expression is involved.
+
+                Contrast with Ordinal (OrdinalRuleType), which replaces the whole last word by a
+                complete ordinal and appends no suffix.
+
+                Precedence: OrdinalException, then exact Ordinal word rules, then — only when a
+                suffix is in effect — the OrdinalStem rule with the longest matching "from"
+                (declaration order is irrelevant; two rules with the same "from" are rejected),
+                and removeTrailing only when no OrdinalStem rule matches.
+
+                Example (Italian):
+                    &lt;Ordinals suffix="esimo"&gt;
+                        &lt;OrdinalStem from="tré" to="tre" /&gt;   ventitré → ventitreesimo
+                        &lt;OrdinalStem from="sei" to="sei" /&gt;   ventisei → ventiseiesimo
+                        &lt;OrdinalStem from="o" to="" /&gt;       ventuno  → ventunesimo
+                    &lt;/Ordinals&gt;
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="from" use="required">
+            <xs:annotation>
+                <xs:documentation>The ending to match. Must not be empty.</xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:minLength value="1"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="to" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The replacement ending. Required, but may be empty (to="") to remove the
+                    matched ending.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="OrdinalVariantElementType">
         <xs:annotation>
             <xs:documentation>
@@ -725,7 +769,9 @@
                   2. Base OrdinalException — whole-number match.
                   3. Active OrdinalVariants/Variant word rules — most-specific first.
                   4. Base Ordinal word rule — last-word match.
-                  5. Default suffix — appended to the last word (stripping removeTrailing first).
+                  5. Default suffix — appended to the last word, after rewriting its ending with
+                     the longest matching OrdinalStem rule or, when none matches, stripping
+                     removeTrailing.
 
                 When none of these applies, a non-zero value keeps its cardinal text (a
                 legitimate ordinal in some languages, e.g. Hebrew above ten). Zero never does:
@@ -749,6 +795,14 @@
                     <xs:annotation>
                         <xs:documentation>
                             Word-level rule applied to the last word of the cardinal.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="OrdinalStem" type="OrdinalStemType">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Ending-level rule rewriting the end of the last word before the
+                            effective suffix is appended (see OrdinalStemType).
                         </xs:documentation>
                     </xs:annotation>
                 </xs:element>
@@ -786,7 +840,8 @@
                     When set, the given string is stripped from the end of the last cardinal
                     word before appending the suffix (only if the word actually ends with it).
                     Example (French): removeTrailing="e" — "quatre" → "quatr" + "ième" → "quatrième".
-                    Has no effect when a word rule matches (the "to" value is used as-is).
+                    Has no effect when a word rule matches (the "to" value is used as-is) or when
+                    an OrdinalStem rule matches the last word (the stem rule replaces it).
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

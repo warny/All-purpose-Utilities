@@ -207,6 +207,7 @@ namespace Utils.NumberToString
             OrdinalRemoveTrailing = options.OrdinalRemoveTrailing;
             OrdinalExceptions = (options.OrdinalExceptions ?? new Dictionary<long, string>()).ToImmutableDictionary();
             OrdinalWordRules = (options.OrdinalWordRules ?? new Dictionary<string, string>()).ToImmutableDictionary();
+            OrdinalStemRules = ImmutableArray<OrdinalStemRule>.Empty;
             OrdinalPrefix = options.OrdinalPrefix;
             OrdinalVariants = (options.OrdinalVariants ?? []).ToImmutableArray();
 
@@ -450,6 +451,12 @@ namespace Utils.NumberToString
         /// Word-level ordinal transformation rules applied to the last word of the cardinal.
         /// </summary>
         public IReadOnlyDictionary<string, string> OrdinalWordRules { get; }
+
+        /// <summary>
+        /// Stem rules rewriting the ending of the last cardinal word before the effective ordinal
+        /// suffix is appended, snapshotted at construction and sorted longest <see cref="OrdinalStemRule.From"/> first.
+        /// </summary>
+        public IReadOnlyList<OrdinalStemRule> OrdinalStemRules { get; }
 
         /// <summary>
         /// Prefix prepended to the whole ordinal result after <see cref="AdjustFunction"/> is applied.
