@@ -113,6 +113,17 @@ public sealed class NumberToStringConverterOptions
     public IReadOnlyList<OrdinalStemRule> OrdinalStemRules { get; set; } = [];
 
     /// <summary>
+    /// Ordinal-only replacements applied to the assembled, variant-transformed cardinal before the
+    /// ordinal transformation (exact word rules, <see cref="OrdinalStemRules"/>,
+    /// <see cref="OrdinalRemoveTrailing"/>, suffix/prefix). They use the cardinal replacement
+    /// scopes, are followed by the replacements of the selected
+    /// <see cref="NumberToString.NumberToStringConverter.OrdinalVariantRule"/>, are bypassed by
+    /// whole-number <see cref="OrdinalExceptions"/>, and never affect cardinal conversions.
+    /// <c>OnScale</c>/<c>OnValue</c> filters are not supported here and are rejected by the converter.
+    /// </summary>
+    public IReadOnlyList<NumberToStringConverter.ReplacementRule> OrdinalReplacements { get; set; } = [];
+
+    /// <summary>
     /// Prefix prepended to the whole ordinal result after <see cref="AdjustFunction"/> is applied.
     /// Example: <c>"第"</c> for Chinese/Japanese (第一, 第二…).
     /// </summary>
@@ -305,6 +316,7 @@ public sealed class NumberToStringConverterOptions
         OrdinalExceptions = source.OrdinalExceptions;
         OrdinalWordRules = source.OrdinalWordRules;
         OrdinalStemRules = source.OrdinalStemRules;
+        OrdinalReplacements = source.OrdinalReplacements;
         ScaleForms = source.ScaleForms;
         ScaleFormSelectors = source.ScaleFormSelectors;
         OrdinalPrefix = source.OrdinalPrefix;

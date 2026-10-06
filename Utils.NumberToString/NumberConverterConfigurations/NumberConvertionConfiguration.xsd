@@ -694,6 +694,16 @@
         <xs:choice minOccurs="0" maxOccurs="unbounded">
             <xs:element name="OrdinalException" type="OrdinalExceptionType" />
             <xs:element name="Ordinal" type="OrdinalRuleType" />
+            <xs:element name="Replacement" type="ReplacementType">
+                <xs:annotation>
+                    <xs:documentation>
+                        Ordinal-only replacement applied, for this variant only, to the assembled and
+                        variant-transformed cardinal after the base ordinal replacements and before the
+                        word/stem/suffix transformation. Never affects cardinal conversions.
+                        onScale/onValue and child Variant forms are not supported here.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="Variant" type="OrdinalVariantElementType" />
         </xs:choice>
         <xs:attribute name="type" type="xs:string" use="required">
@@ -803,6 +813,19 @@
                         <xs:documentation>
                             Ending-level rule rewriting the end of the last word before the
                             effective suffix is appended (see OrdinalStemType).
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="Replacement" type="ReplacementType">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Ordinal-only replacement (same oldValue/newValue/scope semantics as the
+                            cardinal Replacements) applied to the assembled, variant-transformed
+                            cardinal before exact Ordinal word rules, OrdinalStem, removeTrailing and
+                            the suffix/prefix. Whole-number OrdinalException entries bypass it. Never
+                            affects cardinal conversions. onScale/onValue and child Variant forms are
+                            not supported here. Under baseOn, a derived language declaring ordinal
+                            Replacement elements replaces the inherited list.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:element>

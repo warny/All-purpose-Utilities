@@ -190,6 +190,13 @@ public class OrdinalsType
     public List<OrdinalStemType>? Stems { get; set; }
 
     /// <summary>
+    /// Gets or sets the ordinal-only replacements applied to the assembled cardinal before the
+    /// ordinal transformation (they never affect cardinal conversions).
+    /// </summary>
+    [XmlElement("Replacement")]
+    public List<ReplacementType>? Replacements { get; set; }
+
+    /// <summary>
     /// Gets or sets the container for variant-specific ordinal blocks.
     /// </summary>
     [XmlElement("OrdinalVariants")]
@@ -265,6 +272,10 @@ public class OrdinalVariantElementType
     /// <summary>Variant-specific word-level rules (checked before base word rules).</summary>
     [XmlElement("Ordinal")]
     public List<OrdinalRuleType>? Rules { get; set; }
+
+    /// <summary>Variant-specific ordinal-only replacements, applied after the base ordinal replacements.</summary>
+    [XmlElement("Replacement")]
+    public List<ReplacementType>? Replacements { get; set; }
 
     /// <summary>
     /// Nested sub-variants that inherit this variant's constraint and add further constraints.

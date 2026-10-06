@@ -212,6 +212,7 @@ namespace Utils.NumberToString
             OrdinalWordRules = (options.OrdinalWordRules ?? new Dictionary<string, string>()).ToImmutableDictionary();
             _ordinalStemRules = CompileOrdinalStemRules(options.OrdinalStemRules, nameof(options.OrdinalStemRules));
             OrdinalStemRules = _ordinalStemRules;
+            OrdinalReplacements = ImmutableArray<ReplacementRule>.Empty;
             OrdinalPrefix = options.OrdinalPrefix;
             OrdinalVariants = (options.OrdinalVariants ?? []).ToImmutableArray();
 
@@ -476,6 +477,13 @@ namespace Utils.NumberToString
         /// suffix is appended, snapshotted at construction and sorted longest <see cref="OrdinalStemRule.From"/> first.
         /// </summary>
         public IReadOnlyList<OrdinalStemRule> OrdinalStemRules { get; }
+
+        /// <summary>
+        /// Ordinal-only replacements applied to the assembled cardinal before the ordinal
+        /// transformation, snapshotted at construction (see
+        /// <see cref="NumberToStringConverterOptions.OrdinalReplacements"/>).
+        /// </summary>
+        public IReadOnlyList<ReplacementRule> OrdinalReplacements { get; }
 
         /// <summary>
         /// Prefix prepended to the whole ordinal result after <see cref="AdjustFunction"/> is applied.
@@ -1820,13 +1828,13 @@ namespace Utils.NumberToString
 
         /// <summary>
         /// Associates dimension constraints with variant-specific ordinal configuration
-        /// (exceptions, word rules, suffix, and removeTrailing override).
+        /// (exceptions, word rules, ordinal-only replacements, suffix, and removeTrailing override).
         /// All fields fall through to the base ordinal config when absent.
         /// </summary>
         public sealed class OrdinalVariantRule
         {
             /// <summary>
-            /// Initializes a new instance of <see cref="OrdinalVariantRule"/>.
+            /// Initializes a new instance of <see cref="OrdinalVariantRule"/> without ordinal replacements.
             /// </summary>
             public OrdinalVariantRule(
                 IReadOnlyDictionary<string, string> constraints,
@@ -1835,18 +1843,48 @@ namespace Utils.NumberToString
                 string? suffix,
                 string? removeTrailing,
                 int priority = 0)
+                : this(constraints, exceptions, wordRules, suffix, removeTrailing, [], priority)
+            {
+            }
+
+            /// <summary>
+            /// Initializes a new instance of <see cref="OrdinalVariantRule"/> with ordinal-only replacements.
+            /// </summary>
+            /// <param name="constraints">The dimension constraints.</param>
+            /// <param name="exceptions">The variant whole-number exceptions.</param>
+            /// <param name="wordRules">The variant last-word rules.</param>
+            /// <param name="suffix">The variant suffix override, or <see langword="null"/>.</param>
+            /// <param name="removeTrailing">The variant removeTrailing override, or <see langword="null"/>.</param>
+            /// <param name="replacements">
+            /// Replacements applied, for this variant only, to the assembled cardinal before the ordinal
+            /// transformation (after the base ordinal replacements); copied into an immutable snapshot.
+            /// </param>
+            /// <param name="priority">Explicit precedence after specificity.</param>
+            public OrdinalVariantRule(
+                IReadOnlyDictionary<string, string> constraints,
+                IReadOnlyDictionary<long, string> exceptions,
+                IReadOnlyDictionary<string, string> wordRules,
+                string? suffix,
+                string? removeTrailing,
+                IReadOnlyList<ReplacementRule> replacements,
+                int priority = 0)
             {
                 ArgumentNullException.ThrowIfNull(constraints);
                 ArgumentNullException.ThrowIfNull(exceptions);
                 ArgumentNullException.ThrowIfNull(wordRules);
+                ArgumentNullException.ThrowIfNull(replacements);
                 Constraints = constraints.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
                 Exceptions = exceptions.ToImmutableDictionary();
                 WordRules = wordRules.ToImmutableDictionary();
+                Replacements = replacements.ToImmutableArray();
                 Suffix = suffix;
                 RemoveTrailing = removeTrailing;
                 Priority = priority;
                 NormalizedConstraints = new VariantConstraintSet(Constraints);
             }
+
+            /// <summary>Gets the variant ordinal-only replacements (see <see cref="NumberToStringConverterOptions.OrdinalReplacements"/>).</summary>
+            public IReadOnlyList<ReplacementRule> Replacements { get; }
 
             /// <summary>Gets the dimension constraints that must all be satisfied for this variant to apply.</summary>
             public IReadOnlyDictionary<string, string> Constraints { get; }
