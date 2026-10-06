@@ -4,22 +4,27 @@ using System.Collections.Generic;
 namespace Utils.NumberToString;
 
 /// <summary>
-/// Restricts Italian ordinals to the forms the declarative XML rules produce correctly: the
-/// irregular 1-10 (<c>primo</c> … <c>decimo</c>), the teens 11-19 (<c>undicesimo</c> …
-/// <c>diciannovesimo</c>), the round tens 20-90 (<c>ventesimo</c> … <c>novantesimo</c>),
-/// <c>centesimo</c> and <c>millesimo</c>.
+/// Domain guard for Italian ordinals. Every supported value is produced by the declarative XML
+/// pipeline (exceptions 1-10, then the <c>&lt;OrdinalStem&gt;</c> rules and the <c>-esimo</c>/<c>-esima</c>
+/// suffix); this plugin never builds a form itself and only rejects the values whose ordinal is
+/// not established.
 /// </summary>
 /// <remarks>
-/// Italian compound cardinals are written as one word (<c>ventuno</c>, <c>ventitré</c>,
-/// <c>centottanta</c>). Their ordinal drops the final vowel of the soldered word except after
-/// <c>tre</c> and <c>sei</c> (<c>ventunesimo</c>, <c>ventitreesimo</c>, <c>ventiseiesimo</c>), a
-/// vowel-specific stem rule that the declarative suffix pipeline (one <c>removeTrailing</c>
-/// string and whole-word rules) cannot express. Rather than letting a mechanical suffix produce
-/// an invented form such as <c>ventunoesimo</c>, every other value, including zero, is rejected.
-/// See TODO NTS-13.
+/// <para>Validated domain (NTS-13): 1-1999 and the round thousands 2000-999000
+/// (<c>ventunesimo</c>, <c>ventitreesimo</c>, <c>ventiseiesimo</c>, <c>centunesimo</c>,
+/// <c>milleunesimo</c>, <c>duemillesimo</c>, <c>centomillesimo</c>).</para>
+/// <para>Rejected with <see cref="NotSupportedException"/>:</para>
+/// <list type="bullet">
+///   <item><description>zero — the NTS-12 decision is unchanged (<c>zeresimo</c> is only attested in special, mathematical uses);</description></item>
+///   <item><description>non-round thousands above 1999 — no consulted source establishes a canonical synthetic form, and Treccani gives the analytic <c>centomillesimoprimo</c> for 100001 (TODO NTS-15);</description></item>
+///   <item><description>one million and above — the Italian cardinals are known to be wrong there (TODO NTS-14).</description></item>
+/// </list>
 /// </remarks>
 public sealed class ItalianOrdinalLanguageSpecifics : INumberToStringLanguageSpecifics, IOrdinalLanguageSpecifics
 {
+    /// <summary>The first value whose Italian cardinal is outside the validated domain (NTS-14).</summary>
+    private const long OneMillion = 1_000_000;
+
     /// <inheritdoc />
     public string FinalizeWriting(string languageIdentifier, string text) => text;
 
@@ -31,18 +36,15 @@ public sealed class ItalianOrdinalLanguageSpecifics : INumberToStringLanguageSpe
     public bool TryConvertOrdinal(long number, IReadOnlyDictionary<string, string> activeVariants, out string? result)
     {
         result = null;
-        if (!IsVerified(number))
+        if (number == 0)
+            throw new NotSupportedException("Italian has no ordinal form for zero in the supported domain.");
+        if (number >= OneMillion)
             throw new NotSupportedException(
-                $"Italian ordinal {number} would be formed by a mechanical suffix on a soldered cardinal; only 1-20, the round tens, 100 and 1000 are verified.");
-        // Verified values fall through to the declarative XML pipeline.
+                $"Italian ordinal {number} is not supported: the Italian cardinals of one million and above are not validated (NTS-14).");
+        if (number >= 2000 && number % 1000 != 0)
+            throw new NotSupportedException(
+                $"Italian ordinal {number} is not supported: no canonical form is established for non-round thousands above 1999 (NTS-15).");
+        // Validated values fall through to the declarative XML pipeline.
         return false;
     }
-
-    /// <summary>Determines whether the declarative pipeline produces a verified ordinal for <paramref name="number"/>.</summary>
-    /// <param name="number">The non-negative ordinal value.</param>
-    /// <returns><see langword="true"/> for 1-20, 30-90 by tens, 100 and 1000.</returns>
-    private static bool IsVerified(long number)
-        => number is >= 1 and <= 20
-            || (number is >= 30 and <= 90 && number % 10 == 0)
-            || number is 100 or 1000;
 }
