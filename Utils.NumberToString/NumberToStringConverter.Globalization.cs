@@ -916,7 +916,8 @@ namespace Utils.NumberToString
         /// Merges two <see cref="OrdinalsType"/> instances. When <paramref name="childOrdinals"/> is
         /// <see langword="null"/>, the base is returned unchanged. Otherwise ordinal exceptions and
         /// word-rules from the base are merged with those from the child (child values win on conflict,
-        /// new values are added), while suffix, prefix, removeTrailing, and OrdinalVariants are
+        /// new values are added), OrdinalStem rules are merged the same way keyed by their <c>from</c>
+        /// ending, while suffix, prefix, removeTrailing, and OrdinalVariants are
         /// overridden only when the child provides them explicitly.
         /// </summary>
         private static OrdinalsType? MergeOrdinalsType(OrdinalsType? baseOrdinals, OrdinalsType? childOrdinals)
@@ -943,6 +944,16 @@ namespace Utils.NumberToString
                 mergedRules.Add(childRule);
             }
 
+            // Merge OrdinalStem rules: base rules whose "from" ending the child redeclares are dropped,
+            // then every child rule is appended as-is, so a duplicate inside the child itself still
+            // reaches the converter and is rejected there instead of being silently hidden.
+            var childStems = childOrdinals.Stems ?? [];
+            var childEndings = new HashSet<string?>(childStems.Select(s => s.From), StringComparer.Ordinal);
+            var mergedStems = (baseOrdinals.Stems ?? [])
+                .Where(s => !childEndings.Contains(s.From))
+                .Concat(childStems)
+                .ToList();
+
             return new OrdinalsType
             {
                 Suffix = childOrdinals.Suffix ?? baseOrdinals.Suffix,
@@ -950,6 +961,7 @@ namespace Utils.NumberToString
                 Prefix = childOrdinals.Prefix ?? baseOrdinals.Prefix,
                 Exceptions = mergedExceptions,
                 Rules = mergedRules,
+                Stems = mergedStems,
                 OrdinalVariantsContainer = childOrdinals.OrdinalVariantsContainer ?? baseOrdinals.OrdinalVariantsContainer,
             };
         }
@@ -1703,6 +1715,10 @@ namespace Utils.NumberToString
                     .Where(r => r.To != null)
                     .ToDictionary(r => r.From, r => r.To!)
                     ?? new Dictionary<string, string>(),
+                OrdinalStemRules = language.Ordinals?.Stems?
+                    .Select(s => new OrdinalStemRule(s.From!, s.To!))
+                    .ToList()
+                    ?? [],
                 OrdinalPrefix = language.Ordinals?.Prefix,
                 OrdinalVariants = ParseOrdinalVariants(language.Ordinals),
                 VariantDimensions = parsedDimensions,

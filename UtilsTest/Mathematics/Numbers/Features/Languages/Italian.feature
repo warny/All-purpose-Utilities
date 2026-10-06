@@ -141,12 +141,142 @@ Scenario: Ordinal of nineteen
     When I convert the ordinal number 19
     Then the result is "diciannovesimo"
 
-# Compound ordinals (ventunesimo, ventitreesimo, centounesimo, duemillesimo, ...) need a
-# vowel-specific stem rule that the declarative suffix pipeline cannot express; until it is
-# implemented and sourced, every unverified ordinal is rejected instead of being produced by a
-# mechanical suffix on the soldered cardinal ("ventunoesimo"). See TODO NTS-13. Zero has no
-# Italian ordinal form.
-Scenario Outline: Unverified compound ordinals are rejected
+# NTS-13. Treccani, La grammatica italiana, "Aggettivi numerali ordinali": from 11 on, the ordinal
+# is the cardinal without its final vowel + -esimo ("sedici ▶ sedicesimo", "ventiquattro ▶
+# ventiquattresimo", "trentotto ▶ trentottesimo"); compounds of tre keep the -e ("ventitré ▶
+# ventitreesimo", "trentatré ▶ trentatreesimo") and compounds of sei keep the -i ("ventisei ▶
+# ventiseiesimo"). Treccani, vocabolario "ordinale": "undicesimo, dodicesimo, ... ventesimo,
+# ventunesimo, ventiduesimo, ventitreesimo, ... novantanovesimo, centesimo, centunesimo". The
+# prontuario of the Enciclopedia dell'Italiano lists "trentaseesimo / trentaseiesimo" and notes that
+# only the second is used: -seiesimo is the canonical form.
+Scenario Outline: Compound ordinals below one hundred
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 11 | undicesimo |
+    | 12 | dodicesimo |
+    | 16 | sedicesimo |
+    | 17 | diciassettesimo |
+    | 18 | diciottesimo |
+    | 19 | diciannovesimo |
+    | 20 | ventesimo |
+    | 21 | ventunesimo |
+    | 22 | ventiduesimo |
+    | 23 | ventitreesimo |
+    | 24 | ventiquattresimo |
+    | 25 | venticinquesimo |
+    | 26 | ventiseiesimo |
+    | 27 | ventisettesimo |
+    | 28 | ventottesimo |
+    | 29 | ventinovesimo |
+    | 30 | trentesimo |
+    | 31 | trentunesimo |
+    | 33 | trentatreesimo |
+    | 36 | trentaseiesimo |
+    | 38 | trentottesimo |
+    | 90 | novantesimo |
+    | 99 | novantanovesimo |
+
+# Treccani, vocabolario "centesimo": "centesimo primo (o, più com., centunesimo), centesimo secondo
+# (o, più com., centoduesimo)"; vocabolario "ordinale": "centesimo, centunesimo". The cardinal
+# keeps "centouno" (NTS-10) but the ordinal follows the attested "centunesimo"; the -ouno → -un
+# stem is applied to every hundred (duecentunesimo) by analogy. Otherwise the hundreds keep their
+# vowels as in the cardinal (DICO, Università di Messina: "le vocali si mantengono al di sopra di
+# cento: centoduesimo, centoundicesimo"), and the tre/sei rules apply to the final constituent.
+Scenario Outline: Compound ordinals with hundreds
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 100 | centesimo |
+    | 101 | centunesimo |
+    | 102 | centoduesimo |
+    | 103 | centotreesimo |
+    | 106 | centoseiesimo |
+    | 111 | centoundicesimo |
+    | 120 | centoventesimo |
+    | 180 | centottantesimo |
+    | 183 | centottantatreesimo |
+    | 186 | centottantaseiesimo |
+    | 200 | duecentesimo |
+    | 201 | duecentunesimo |
+    | 999 | novecentonovantanovesimo |
+
+# After a hundred, dieci keeps its lexical ordinal decimo instead of the mechanical "centodiecesimo",
+# which no consulted source attests. Vocabolario degli Accademici della Crusca, 5th ed., vol. 2
+# p. 753, s.v. "centesimo" § III: "Centodecimo, Centundicesimo, Centododicesimo ec."; Wiktionary,
+# Appendix:Italian numbers: "centodecimo", "duecentodecimo". Treccani ("ordinale") prefers the
+# analytic "centesimo decimo" (separate spelling), which is not modelled, like "millesimo primo".
+Scenario Outline: Hundreds followed by ten keep the lexical decimo
+    Given I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 110 | | centodecimo |
+    | 210 | | duecentodecimo |
+    | 310 | | trecentodecimo |
+    | 910 | | novecentodecimo |
+    | 110 | gender=femminile | centodecima |
+    | 210 | gender=femminile | duecentodecima |
+    | 910 | gender=femminile | novecentodecima |
+
+# Thousands. Treccani, vocabolario "ordinale": "millesimo, duemillesimo, ... diecimillesimo";
+# vocabolario "centomillesimo": the ordinal of centomila. Round thousands therefore turn the plural
+# -mila into mill- before -esimo. Between 1001 and 1999 the official forms are the synthetic
+# "milleunesimo, milleduesimo ecc." (DICO, Università di Messina; Accademia della Crusca for
+# milleunesimo), the analytic "millesimo primo" being a formal alternative (Treccani "ordinale").
+Scenario Outline: Ordinals of thousands
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1000 | millesimo |
+    | 1001 | milleunesimo |
+    | 1002 | milleduesimo |
+    | 1003 | milletreesimo |
+    | 1100 | millecentesimo |
+    | 1999 | millenovecentonovantanovesimo |
+    | 2000 | duemillesimo |
+    | 3000 | tremillesimo |
+    | 10000 | diecimillesimo |
+    | 23000 | ventitremillesimo |
+    | 100000 | centomillesimo |
+    | 999000 | novecentonovantanovemillesimo |
+
+# The stem rules are shared by both genders; the feminine variant only changes the suffix.
+Scenario Outline: Feminine compound ordinals
+    Given I use the variants "gender=femminile"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 21 | ventunesima |
+    | 23 | ventitreesima |
+    | 26 | ventiseiesima |
+    | 101 | centunesima |
+    | 180 | centottantesima |
+    | 1001 | milleunesima |
+    | 2000 | duemillesima |
+
+Scenario: Negative compound ordinal keeps the existing sign policy
+    When I convert the ordinal number -21
+    Then the result is "meno ventunesimo"
+
+# Values outside the validated domain fail closed instead of being produced by a mechanical suffix.
+# Zero: NTS-12 decision unchanged (Treccani attests "zeresimo" only in special, mathematical uses).
+# Non-round thousands above 1999: no source establishes a canonical form, and Treccani
+# ("centomillesimo") gives the analytic "centomillesimoprimo" for 100001 rather than a synthetic
+# derivation (TODO NTS-15). The thousands ending in ten (1010, 1110 ... 1910): Treccani gives only
+# the analytic "millesimo decimo", and no synthetic form was found (TODO NTS-15). Millions and
+# above: the cardinals are known wrong (TODO NTS-14).
+Scenario Outline: Ordinals outside the validated domain are rejected
     Given I use the variants "<variants>"
     When I attempt to convert the ordinal number <number>
     Then conversion is rejected because no ordinal form is available
@@ -154,18 +284,21 @@ Scenario Outline: Unverified compound ordinals are rejected
 Examples:
     | number | variants |
     | 0 | |
-    | 21 | |
-    | 23 | |
-    | 28 | |
-    | 31 | |
-    | 33 | |
-    | 101 | |
-    | 180 | |
-    | 200 | |
-    | 1001 | |
-    | 2000 | |
-    | 21 | gender=femminile |
-    | 23 | gender=femminile |
+    | 0 | gender=femminile |
+    | 1010 | |
+    | 1110 | |
+    | 1210 | |
+    | 1910 | |
+    | 1010 | gender=femminile |
+    | 2001 | |
+    | 2021 | |
+    | 21001 | |
+    | 100001 | |
+    | 999999 | |
+    | 2001 | gender=femminile |
+    | 1000000 | |
+    | 2000000 | |
+    | 1000000000 | |
 
 Scenario Outline: Decimal numbers
     When I convert the decimal number <number>

@@ -1,6 +1,7 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-03 after closing NTS-10, NTS-11 and NTS-12 (which opened NTS-13 and NTS-14);
+Re-audited on 2026-10-06 after closing NTS-13 (which opened NTS-15); on 2026-10-03 after closing
+NTS-10, NTS-11 and NTS-12 (which opened NTS-13 and NTS-14);
 previously re-audited on 2026-10-01 after the NTS-08 regional consolidation (#608), which also
 opened NTS-09. Historical details remain in
 the archived audit files; this file is the active source of truth.
@@ -29,11 +30,12 @@ classification.
       (the deliberate direct reading; the consulted source covers `para`/`menos` only), GL, RO, EL, FI, HE, FA, JA, VN; and,
       backed by a single isolated source only, HI and ZH (one learner site each), TR (search summary
       of TDK usage, page not read) and ZU (sole introductory course).
-    - *Pre-existing ordinals not re-verified by the audit*: NL, PL, RU, ES, IT, PT, GL, EL, FI, HI,
+    - *Pre-existing ordinals not re-verified by the audit*: NL, PL, RU, ES, PT, GL, EL, FI, HI,
       JA, KO, ZH, EU, EE, WO.
     Validated so far: NL (Taaladvies), EU (EHU grammar), KO (National Institute of Korean
     Language), SW (two sources) and AR (university textbook) ClockTime; NO, BG, HR, RO and DA 100
-    (`hundrede`) ordinals; SK compound ordinal spelling; HR cardinals.
+    (`hundrede`) ordinals; SK compound ordinal spelling; HR cardinals; IT ordinals 1–1999 (except
+    1010–1910) and round thousands (NTS-13: Treccani grammar and vocabolario, DICO, Crusca).
     NTS-08 closes when every capability above is validated or explicitly deferred; a corrected
     string must be fixed in the `.feature` first, then in the configuration.
   - The remaining gaps below are explicit decisions, each pinned by a "does not support"
@@ -43,13 +45,17 @@ classification.
     - EE ClockTime: no sourced minute convention.
     - WO ClockTime: competing native and French-derived conventions, no single sourced system.
 
-- **NTS-13 — Italian compound ordinals.** Since NTS-10 the cardinals are soldered (`ventuno`,
-  `ventitré`, `centottanta`), and their ordinal drops the final vowel of the whole word except after
-  `tre` and `sei` (`ventunesimo`, `ventitreesimo`, `ventiseiesimo`, `centesimo` but `duemillesimo`).
-  The declarative pipeline (one `removeTrailing` string and whole-word rules) cannot express this
-  stem rule, so `ItalianOrdinalLanguageSpecifics` fails closed for every value other than 1–20, the
-  round tens, 100 and 1000, and for zero. Needs a vowel-aware suffix rule (or a plugin that receives
-  the cardinal) plus a sourced ordinal table, including the feminine.
+- **NTS-15 — Italian ordinals of non-round thousands above 1999 and of 1010–1910.** NTS-13 makes
+  1–1999 (except 1010–1910) and the round thousands up to 999000 productive;
+  `ItalianOrdinalLanguageSpecifics` still rejects 1010, 1110 … 1910 and 2001, 21001, 100001 … with
+  `NotSupportedException`. For the thousands ending in ten, *dieci* keeps its lexical *decimo* in
+  compounds (`centodecimo`, Crusca) but only the analytic `millesimo decimo` is attested (Treccani),
+  no synthetic form. The consulted sources do not establish a canonical
+  synthetic form there: DICO lists only `milleunesimo, milleduesimo ecc.`, and Treccani
+  ("centomillesimo") gives the analytic `centomillesimoprimo, centomillesimosecondo` for 100001+,
+  the synthetic `centomiladuesimo` being a partitive. Needs a sourced decision between the
+  synthetic (`duemilaunesimo`) and analytic (`duemillesimo primo`) forms, per range, before the
+  guard can be lifted. Millions stay blocked by NTS-14.
 
 - **NTS-14 — findings outside the NTS-10/11/12 scope (not fixed).**
   - IT millions and above: `uno Millione`, `due Millioni` (should be `un milione`, `due milioni`),
@@ -69,7 +75,7 @@ classification.
   uses triggers today; the README and XSD document the current behaviour. Fix by treating an empty
   list as absent (as `Cultures` already does) together with a regression test.
 
-NTS-01 through NTS-05, NTS-10, NTS-11 and NTS-12 are closed:
+NTS-01 through NTS-05 and NTS-10 through NTS-13 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -86,6 +92,7 @@ NTS-01 through NTS-05, NTS-10, NTS-11 and NTS-12 are closed:
   cache) in `DONE-2026-08-25(3).md`.
 - NTS-10 (IT/HI/AR cardinals), NTS-11 (HE thousands), NTS-12 (zero ordinal) and the `<Fusion>`
   primitive: `DONE-2026-10-03.md`.
+- NTS-13 (Italian compound ordinals) and the `<OrdinalStem>` primitive: `DONE-2026-10-06.md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) are deliberately out of scope — the

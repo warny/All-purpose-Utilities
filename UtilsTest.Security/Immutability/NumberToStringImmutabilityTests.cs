@@ -32,6 +32,27 @@ public sealed class NumberToStringImmutabilityTests
         Assert.AreEqual("twenty two", converter.Convert(new BigInteger(22)));
     }
 
+    /// <summary>Mutating the source ordinal stem rule list after construction does not affect the converter snapshot.</summary>
+    [TestMethod]
+    public void OrdinalStem_SourceMutationAfterConstruction_DoesNotChangeConverter()
+    {
+        var stems = new List<OrdinalStemRule> { new("o", "") };
+        var options = Options([]);
+        options.OrdinalSuffix = "X";
+        options.OrdinalStemRules = stems;
+        var converter = new NumberToStringConverter(options);
+
+        stems[0] = new OrdinalStemRule("o", "changed");
+        stems.Add(new OrdinalStemRule("e", ""));
+        options.OrdinalStemRules = [new OrdinalStemRule("o", "other")];
+
+        Assert.AreEqual("twX", converter.ConvertOrdinal(2));
+        Assert.AreEqual("threeX", converter.ConvertOrdinal(3));
+        Assert.AreEqual(1, converter.OrdinalStemRules.Count);
+        Assert.AreEqual(new OrdinalStemRule("o", ""), converter.OrdinalStemRules[0]);
+        Assert.IsFalse(converter.OrdinalStemRules is List<OrdinalStemRule>, "The converter must not expose a mutable list.");
+    }
+
     /// <summary>Creates options for a two-level language whose tens digit 2 carries <paramref name="fusions"/>.</summary>
     /// <param name="fusions">The fusion rules attached to the tens digit 2.</param>
     /// <returns>The converter options.</returns>

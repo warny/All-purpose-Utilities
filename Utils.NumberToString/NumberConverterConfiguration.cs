@@ -183,10 +183,33 @@ public class OrdinalsType
     public List<OrdinalRuleType> Rules { get; set; }
 
     /// <summary>
+    /// Gets or sets the stem rules that rewrite the ending of the last word before the ordinal
+    /// suffix is appended (see <see cref="OrdinalStemType"/>).
+    /// </summary>
+    [XmlElement("OrdinalStem")]
+    public List<OrdinalStemType>? Stems { get; set; }
+
+    /// <summary>
     /// Gets or sets the container for variant-specific ordinal blocks.
     /// </summary>
     [XmlElement("OrdinalVariants")]
     public OrdinalVariants? OrdinalVariantsContainer { get; set; }
+}
+
+/// <summary>
+/// XML element <c>&lt;OrdinalStem from="..." to="..." /&gt;</c>: when the last word that receives the
+/// ordinal suffix ends with <see cref="From"/>, that ending is replaced with <see cref="To"/> before
+/// the suffix is appended. Projected into <see cref="OrdinalStemRule"/>.
+/// </summary>
+public class OrdinalStemType
+{
+    /// <summary>Gets or sets the ending to match (required, non-empty).</summary>
+    [XmlAttribute("from")]
+    public string? From { get; set; }
+
+    /// <summary>Gets or sets the replacement ending (required, may be empty).</summary>
+    [XmlAttribute("to")]
+    public string? To { get; set; }
 }
 
 /// <summary>

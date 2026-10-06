@@ -165,15 +165,29 @@
 			</Variant>
 		</Variants>
 		<!--
-		  Italian ordinals: 1-10 are irregular (primo…decimo); 11+ follow the pattern
-		  of dropping the final vowel and adding "esimo" (undici → undicesimo).
-		  Compound ordinals (ventunesimo, ventitreesimo, ventiseiesimo…) need a
-		  vowel-specific stem rule the suffix pipeline cannot express, so
-		  ItalianOrdinalLanguageSpecifics rejects every value other than 1-20, the
-		  round tens, 100 and 1000 instead of producing "ventunoesimo" (TODO NTS-13).
+		  Italian ordinals (NTS-13). 1-10 are irregular (primo … decimo). From 11 on the ordinal is
+		  the cardinal without its final vowel + -esimo (Treccani, La grammatica italiana, "Aggettivi
+		  numerali ordinali": "ventiquattro ▶ ventiquattresimo"), expressed by the OrdinalStem rules on
+		  the final vowel. Compounds of tre keep the vowel and lose the accent ("ventitré ▶
+		  ventitreesimo"), compounds of sei keep the -i ("ventisei ▶ ventiseiesimo", the form actually
+		  used per the Enciclopedia dell'Italiano prontuario). Treccani gives "centunesimo" (more
+		  common than "centesimo primo") although the cardinal is "centouno"; the -mila of the round
+		  thousands becomes mill- ("duemillesimo", "diecimillesimo", "centomillesimo"). The longest
+		  matching ending wins, so declaration order is irrelevant. The feminine variant only changes
+		  the suffix: the stem rules are shared.
+		  ItalianOrdinalLanguageSpecifics keeps zero, 1010-1910, non-round thousands above 1999 (NTS-15)
+		  and millions (NTS-14) fail-closed.
 		-->
 		<LanguageSpecifics>ItalianOrdinalLanguageSpecifics</LanguageSpecifics>
-		<Ordinals removeTrailing="i" suffix="esimo">
+		<Ordinals suffix="esimo">
+			<OrdinalStem from="centouno" to="centun" />
+			<OrdinalStem from="mila" to="mill" />
+			<OrdinalStem from="tré" to="tre" />
+			<OrdinalStem from="sei" to="sei" />
+			<OrdinalStem from="a" to="" />
+			<OrdinalStem from="e" to="" />
+			<OrdinalStem from="i" to="" />
+			<OrdinalStem from="o" to="" />
 			<!-- Irregular 1-10 (maschile) -->
 			<OrdinalException value="1"  string="primo" />
 			<OrdinalException value="2"  string="secondo" />
@@ -185,28 +199,22 @@
 			<OrdinalException value="8"  string="ottavo" />
 			<OrdinalException value="9"  string="nono" />
 			<OrdinalException value="10" string="decimo" />
-			<!-- Teens (last word = cardinal exception word ending in "i") — removeTrailing "i" handles these -->
-			<!-- "undici" → "undic" + "esimo" = "undicesimo" ✓ -->
-			<!-- Round tens (end in "a" — need explicit word rules since removeTrailing="i" won't match) -->
-			<Ordinal from="venti"     to="ventesimo" />
-			<Ordinal from="trenta"    to="trentesimo" />
-			<Ordinal from="quaranta"  to="quarantesimo" />
-			<Ordinal from="cinquanta" to="cinquantesimo" />
-			<Ordinal from="sessanta"  to="sessantesimo" />
-			<Ordinal from="settanta"  to="settantesimo" />
-			<Ordinal from="ottanta"   to="ottantesimo" />
-			<Ordinal from="novanta"   to="novantesimo" />
-			<!-- "diciassette" ends in "e", not "i": explicit rule -->
-			<Ordinal from="diciassette" to="diciassettesimo" />
-			<!-- "diciotto" ends in "o": explicit rule -->
-			<Ordinal from="diciotto"    to="diciottesimo" />
-			<!-- "diciannove" ends in "e" (Treccani, vocabolario "diciannovesimo") -->
-			<Ordinal from="diciannove"  to="diciannovesimo" />
-			<!-- Scale words -->
-			<Ordinal from="cento"  to="centesimo" />
-			<Ordinal from="mille"  to="millesimo" />
+			<!--
+			  After a hundred, dieci keeps its lexical ordinal decimo (Crusca, Vocabolario 5th ed.,
+			  s.v. "centesimo": "Centodecimo, Centundicesimo, Centododicesimo ec."), not the unattested
+			  "centodiecesimo". Whole soldered words, so exact word rules. 1010-1910 fail closed (NTS-15).
+			-->
+			<Ordinal from="centodieci"><Variant type="gender" forms="centodecimo,centodecima" /></Ordinal>
+			<Ordinal from="duecentodieci"><Variant type="gender" forms="duecentodecimo,duecentodecima" /></Ordinal>
+			<Ordinal from="trecentodieci"><Variant type="gender" forms="trecentodecimo,trecentodecima" /></Ordinal>
+			<Ordinal from="quattrocentodieci"><Variant type="gender" forms="quattrocentodecimo,quattrocentodecima" /></Ordinal>
+			<Ordinal from="cinquecentodieci"><Variant type="gender" forms="cinquecentodecimo,cinquecentodecima" /></Ordinal>
+			<Ordinal from="seicentodieci"><Variant type="gender" forms="seicentodecimo,seicentodecima" /></Ordinal>
+			<Ordinal from="settecentodieci"><Variant type="gender" forms="settecentodecimo,settecentodecima" /></Ordinal>
+			<Ordinal from="ottocentodieci"><Variant type="gender" forms="ottocentodecimo,ottocentodecima" /></Ordinal>
+			<Ordinal from="novecentodieci"><Variant type="gender" forms="novecentodecimo,novecentodecima" /></Ordinal>
 
-			<!-- Femminile variant -->
+			<!-- Femminile variant: same stems, suffix -esima -->
 			<OrdinalVariants>
 				<Variant type="gender" variant="femminile" suffix="esima">
 					<OrdinalException value="1"  string="prima" />
@@ -219,19 +227,6 @@
 					<OrdinalException value="8"  string="ottava" />
 					<OrdinalException value="9"  string="nona" />
 					<OrdinalException value="10" string="decima" />
-					<Ordinal from="venti"       to="ventesima" />
-					<Ordinal from="trenta"      to="trentesima" />
-					<Ordinal from="quaranta"    to="quarantesima" />
-					<Ordinal from="cinquanta"   to="cinquantesima" />
-					<Ordinal from="sessanta"    to="sessantesima" />
-					<Ordinal from="settanta"    to="settantesima" />
-					<Ordinal from="ottanta"     to="ottantesima" />
-					<Ordinal from="novanta"     to="novantesima" />
-					<Ordinal from="diciassette" to="diciassettesima" />
-					<Ordinal from="diciotto"    to="diciottesima" />
-					<Ordinal from="diciannove"  to="diciannovesima" />
-					<Ordinal from="cento"       to="centesima" />
-					<Ordinal from="mille"       to="millesima" />
 				</Variant>
 			</OrdinalVariants>
 		</Ordinals>

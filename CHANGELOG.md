@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added — `omy.Utils.NumberToString`
+- Added the `<OrdinalStem from to>` ordinal primitive (XSD `OrdinalStemType`, additive
+  `OrdinalStemRule` record, `NumberToStringConverterOptions.OrdinalStemRules` and converter
+  `OrdinalStemRules`): on the suffixed ordinal path the longest matching ending of the last word is
+  rewritten before the effective (base or variant) suffix is appended. Exceptions and exact word
+  rules keep priority, `removeTrailing` applies unchanged when no stem rule matches, rules are
+  validated, snapshotted and sorted once at construction, and `baseOn` merges them by `from`.
 - Added the `<Fusion>` morphological composition primitive: `<Digit>` elements (Groups levels 2+)
   and the additive `DigitType.Fusions` / `FusionType` model accept rules (`for`, `removeLeft`,
   `removeRight`, `left`, `right`) that join a digit and its lower sub-group directly, with edge
@@ -12,6 +18,14 @@ All notable changes to this project will be documented in this file.
   cumulative by range specificity, validated strictly at load (conflicts, domain, empty values,
   absent edges, intra-group connector overlap) and compiled into immutable lookup tables.
 - Added `ItalianOrdinalLanguageSpecifics`, restricting Italian ordinals to verified forms.
+
+### Fixed — `omy.Utils.NumberToString` (NTS-13)
+- Italian compound ordinals are formed from the soldered cardinal (`ventunesimo`, `ventitreesimo`,
+  `ventiseiesimo`, `centunesimo`, `centodecimo`, `milleunesimo`, `duemillesimo`, feminine
+  `ventunesima`) for 1–1999 except 1010–1910 and the round thousands up to 999000.
+  `ItalianOrdinalLanguageSpecifics` is now only a domain guard: zero, 1010–1910, non-round thousands
+  above 1999 (NTS-15) and one million and above (NTS-14) still throw
+  `NotSupportedException`.
 
 ### Fixed — `omy.Utils.NumberToString` (NTS-10, NTS-11, NTS-12)
 - Italian compound cardinals are written as one word (`ventuno`, `ventitré`, `centottanta`,
