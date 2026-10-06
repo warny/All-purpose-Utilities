@@ -105,6 +105,12 @@ article).</p>
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.ArabicScaleLexicalFormSelector.html">ArabicScaleLexicalFormSelector</a></dt>
+      <dd><p>Chooses the form of an Arabic scale noun (e.g. ألف, &quot;thousand&quot;) from its multiplier, following
+the rule of the counted noun (تمييز العدد): the noun agrees with the last number written.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.html">BulgarianOrdinalLanguageSpecifics</a></dt>
       <dd><p>Produces Bulgarian ordinals. Only the last element of a compound is ordinal and, as in the
 cardinal, the conjunction <code>и</code> precedes that last element (<code>двадесет и първи</code>,
@@ -384,7 +390,7 @@ companions. Projected onto the public <a class="xref" href="Utils.NumberToString
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.html">NumberToStringConverter.OrdinalVariantRule</a></dt>
       <dd><p>Associates dimension constraints with variant-specific ordinal configuration
-(exceptions, word rules, suffix, and removeTrailing override).
+(exceptions, word rules, ordinal-only replacements, suffix, and removeTrailing override).
 All fields fall through to the base ordinal config when absent.</p>
 </dd>
     </dl>
@@ -514,6 +520,14 @@ the cardinal, and <code>-lea</code> on its last word (<code>al doilea</code>, <c
 <code>al o sutălea</code>, <code>al două sutelea</code>, <code>al o miilea</code>); the feminine is <code>a</code>, the
 cardinal, and <code>-a</code> on its last word (<code>a doua</code>, <code>a douăzeci și una</code>,
 <code>a o suta</code>, <code>a o mia</code>). One alone is suppletive (<code>primul</code>, <code>prima</code>).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.ScaleFormEntry.html">ScaleFormEntry</a></dt>
+      <dd><p>XML element <code>&lt;ScaleForm scale=&quot;…&quot;&gt;</code> inside <code>&lt;NumberScale&gt;</code>: declares the named
+lexical forms of one scale noun (e.g. the Arabic dual/plural/accusative forms of &quot;thousand&quot;) and
+the selector choosing which form the group multiplier governs. Projected into
+<code>NumberToStringConverterOptions.ScaleForms</code> and <code>ScaleFormSelectors</code>.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -651,6 +665,15 @@ and the list of variant rules.</p>
       <dt><a class="xref" href="Utils.NumberToString.YearFormatType.html">YearFormatType</a></dt>
       <dd><p>Configures the year-format algorithm used by <a class="xref" href="Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ConvertYear_System_Int32_">ConvertYear(int)</a>.
 When present, years within any declared <a class="xref" href="Utils.NumberToString.YearFormatType.html#Utils_NumberToString_YearFormatType_SplitRanges">SplitRanges</a> are split at the hundreds boundary.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.html">ZeroOrdinalUnsupportedLanguageSpecifics</a></dt>
+      <dd><p>Shared domain guard for languages whose productive ordinal suffix or prefix would mechanically
+form an ordinal of zero that no consulted source attests (NTS-14: Catalan &quot;zeroè&quot;, Wolof
+&quot;seroël&quot;, Ewe &quot;etsõ zero&quot;). Zero is rejected with <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a>, like the
+languages without any zero formation (NTS-12); every other value falls through to the
+declarative ordinal pipeline unchanged. Builds no text and finalizes nothing.</p>
 </dd>
     </dl>
     <h3 id="structs">

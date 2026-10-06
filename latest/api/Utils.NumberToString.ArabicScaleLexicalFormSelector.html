@@ -2,11 +2,11 @@
 <html>
   <head>
     <meta charset="utf-8">
-      <title>Class VariantsType | omy.Utils Documentation </title>
+      <title>Class ArabicScaleLexicalFormSelector | omy.Utils Documentation </title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="title" content="Class VariantsType | omy.Utils Documentation ">
+      <meta name="title" content="Class ArabicScaleLexicalFormSelector | omy.Utils Documentation ">
       
-      <meta name="description" content="Holds the complete variant configuration for a language: the declared dimensions and the list of variant rules.">
+      <meta name="description" content="Chooses the form of an Arabic scale noun (e.g. ألف, &amp;quot;thousand&amp;quot;) from its multiplier, following the rule of the counted noun (تمييز العدد): the noun agrees with the last number written.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -16,7 +16,7 @@
       <meta name="docfx:rel" content="../">
       
       
-      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_VariantsType.md&amp;value=---%0Auid%3A%20Utils.NumberToString.VariantsType%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_ArabicScaleLexicalFormSelector.md&amp;value=---%0Auid%3A%20Utils.NumberToString.ArabicScaleLexicalFormSelector%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
       <meta name="loc:inThisArticle" content="In this article">
       <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
       <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
@@ -84,12 +84,12 @@
           <nav id="breadcrumb"></nav>
         </div>
 
-        <article data-uid="Utils.NumberToString.VariantsType">
+        <article data-uid="Utils.NumberToString.ArabicScaleLexicalFormSelector">
 
 
 
-  <h1 id="Utils_NumberToString_VariantsType" data-uid="Utils.NumberToString.VariantsType" class="text-break">
-Class VariantsType  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L632"><i class="bi bi-code-slash"></i></a>
+  <h1 id="Utils_NumberToString_ArabicScaleLexicalFormSelector" data-uid="Utils.NumberToString.ArabicScaleLexicalFormSelector" class="text-break">
+Class ArabicScaleLexicalFormSelector  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ArabicScaleLexicalFormSelector.cs/#L28"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,13 +97,13 @@ Class VariantsType  <a class="header-action link-secondary" title="View source" 
   <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Holds the complete variant configuration for a language: the declared dimensions
-and the list of variant rules.</p>
+  <div class="markdown summary"><p>Chooses the form of an Arabic scale noun (e.g. ألف, &quot;thousand&quot;) from its multiplier, following
+the rule of the counted noun (تمييز العدد): the noun agrees with the last number written.</p>
 </div>
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class VariantsType</code></pre>
+    <pre><code class="lang-csharp hljs">public sealed class ArabicScaleLexicalFormSelector : ILexicalFormSelector</code></pre>
   </div>
 
 
@@ -113,10 +113,16 @@ and the list of variant rules.</p>
     <dt>Inheritance</dt>
     <dd>
       <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
-      <div><span class="xref">VariantsType</span></div>
+      <div><span class="xref">ArabicScaleLexicalFormSelector</span></div>
     </dd>
   </dl>
 
+  <dl class="typelist implements">
+    <dt>Implements</dt>
+    <dd>
+      <div><a class="xref" href="Utils.NumberToString.ILexicalFormSelector.html">ILexicalFormSelector</a></div>
+    </dd>
+  </dl>
 
 
   <dl class="typelist inheritedMembers">
@@ -133,9 +139,6 @@ and the list of variant rules.</p>
     </div>
     <div>
       <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
     </div>
     <div>
       <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
@@ -239,68 +242,59 @@ and the list of variant rules.</p>
 
 
 
+  <h2 id="Utils_NumberToString_ArabicScaleLexicalFormSelector_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>
+Returns form keys only; the words are configured in XML (<code>&lt;ScaleForm&gt;</code>). With the
+last number written taken as the multiplier's last two digits (Arabic writes 21-99 as a
+single unit-and-tens element, "خمسة وأربعون"):
+</p>
+<ul><li><code>"singular"</code> — 1 (the noun alone, ألف) and whole hundreds (singular genitive after مائة, مائة ألف);</li><li><code>"dual"</code> — 2 (the dual alone, ألفان);</li><li><code>"plural"</code> — 3-10 (plural genitive, ثلاثة آلاف);</li><li><code>"singularAccusative"</code> — 11-99 (singular accusative, أحد عشر ألفًا).</li></ul>
+<p>
+Hence 101 → singular (مائة وألف), 102 → dual (مائة وألفان), 103 and 110 → plural
+(مائة وثلاثة آلاف), 111 and 121 → singularAccusative, 200 → singular (مائتا ألف). Sources:
+Kalimah Center ("the counted noun follows the rules of the last number written"), al-Dirassa,
+and the Virtual Arabic Language Academy (decision 29, "مئة وألف"). Removing the multiplier word
+for 1 and 2 and the construct form of مائتان are text changes left to the configuration's
+<code>onScale</code> replacements: this selector only chooses the key. Stateless and thread-safe.
+</p>
+</div>
 
 
-  <h2 class="section" id="properties">Properties
+  <h2 class="section" id="methods">Methods
 </h2>
 
 
-  <a id="Utils_NumberToString_VariantsType_Dimensions_" data-uid="Utils.NumberToString.VariantsType.Dimensions*"></a>
+  <a id="Utils_NumberToString_ArabicScaleLexicalFormSelector_SelectForm_" data-uid="Utils.NumberToString.ArabicScaleLexicalFormSelector.SelectForm*"></a>
 
-  <h3 id="Utils_NumberToString_VariantsType_Dimensions" data-uid="Utils.NumberToString.VariantsType.Dimensions">
-  Dimensions
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L635"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_NumberToString_ArabicScaleLexicalFormSelector_SelectForm_Utils_NumberToString_LexicalFormContext_" data-uid="Utils.NumberToString.ArabicScaleLexicalFormSelector.SelectForm(Utils.NumberToString.LexicalFormContext)">
+  SelectForm(LexicalFormContext)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ArabicScaleLexicalFormSelector.cs/#L33"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets or sets the declared variant dimensions.</p>
+  <div class="markdown level1 summary"><p>Returns the form key governed by the multiplier in <code class="paramref">context</code>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public List&lt;VariantDimensionType&gt;? Dimensions { get; set; }</code></pre>
+    <pre><code class="lang-csharp hljs">public string SelectForm(LexicalFormContext context)</code></pre>
   </div>
 
-
-
-
-
-  <h4 class="section">Property Value</h4>
+  <h4 class="section">Parameters</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;<a class="xref" href="Utils.NumberToString.VariantDimensionType.html">VariantDimensionType</a>&gt;</dt>
-    <dd></dd>
+    <dt><code>context</code> <a class="xref" href="Utils.NumberToString.LexicalFormContext.html">LexicalFormContext</a></dt>
+    <dd><p>The multiplier of the scale noun and the active variants (unused: the scale noun's form does not depend on the counted noun's gender).</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p><code>&quot;singular&quot;</code>, <code>&quot;dual&quot;</code>, <code>&quot;plural&quot;</code> or <code>&quot;singularAccusative&quot;</code>.</p>
+</dd>
   </dl>
 
 
 
-
-
-
-
-
-  <a id="Utils_NumberToString_VariantsType_Variants_" data-uid="Utils.NumberToString.VariantsType.Variants*"></a>
-
-  <h3 id="Utils_NumberToString_VariantsType_Variants" data-uid="Utils.NumberToString.VariantsType.Variants">
-  Variants
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L639"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Gets or sets the list of variant rules.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public List&lt;VariantType&gt;? Variants { get; set; }</code></pre>
-  </div>
-
-
-
-
-
-  <h4 class="section">Property Value</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;<a class="xref" href="Utils.NumberToString.VariantType.html">VariantType</a>&gt;</dt>
-    <dd></dd>
-  </dl>
 
 
 
@@ -313,7 +307,7 @@ and the list of variant rules.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L632" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ArabicScaleLexicalFormSelector.cs/#L28" class="edit-link">Edit this page</a>
         </div>
 
 

@@ -2,11 +2,11 @@
 <html>
   <head>
     <meta charset="utf-8">
-      <title>Class VariantsType | omy.Utils Documentation </title>
+      <title>Class ScaleFormEntry | omy.Utils Documentation </title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="title" content="Class VariantsType | omy.Utils Documentation ">
+      <meta name="title" content="Class ScaleFormEntry | omy.Utils Documentation ">
       
-      <meta name="description" content="Holds the complete variant configuration for a language: the declared dimensions and the list of variant rules.">
+      <meta name="description" content="XML element &amp;lt;ScaleForm scale=&amp;quot;…&amp;quot;&amp;gt; inside &amp;lt;NumberScale&amp;gt;: declares the named lexical forms of one scale noun (e.g. the Arabic dual/plural/accusative forms of &amp;quot;thousand&amp;quot;) and the selector choosing which form the group multiplier governs. Projected into NumberToStringConverterOptions.ScaleForms and ScaleFormSelectors.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -16,7 +16,7 @@
       <meta name="docfx:rel" content="../">
       
       
-      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_VariantsType.md&amp;value=---%0Auid%3A%20Utils.NumberToString.VariantsType%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_ScaleFormEntry.md&amp;value=---%0Auid%3A%20Utils.NumberToString.ScaleFormEntry%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
       <meta name="loc:inThisArticle" content="In this article">
       <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
       <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
@@ -84,12 +84,12 @@
           <nav id="breadcrumb"></nav>
         </div>
 
-        <article data-uid="Utils.NumberToString.VariantsType">
+        <article data-uid="Utils.NumberToString.ScaleFormEntry">
 
 
 
-  <h1 id="Utils_NumberToString_VariantsType" data-uid="Utils.NumberToString.VariantsType" class="text-break">
-Class VariantsType  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L632"><i class="bi bi-code-slash"></i></a>
+  <h1 id="Utils_NumberToString_ScaleFormEntry" data-uid="Utils.NumberToString.ScaleFormEntry" class="text-break">
+Class ScaleFormEntry  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L879"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,13 +97,15 @@ Class VariantsType  <a class="header-action link-secondary" title="View source" 
   <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Holds the complete variant configuration for a language: the declared dimensions
-and the list of variant rules.</p>
+  <div class="markdown summary"><p>XML element <code>&lt;ScaleForm scale=&quot;…&quot;&gt;</code> inside <code>&lt;NumberScale&gt;</code>: declares the named
+lexical forms of one scale noun (e.g. the Arabic dual/plural/accusative forms of &quot;thousand&quot;) and
+the selector choosing which form the group multiplier governs. Projected into
+<code>NumberToStringConverterOptions.ScaleForms</code> and <code>ScaleFormSelectors</code>.</p>
 </div>
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class VariantsType</code></pre>
+    <pre><code class="lang-csharp hljs">public class ScaleFormEntry</code></pre>
   </div>
 
 
@@ -113,7 +115,7 @@ and the list of variant rules.</p>
     <dt>Inheritance</dt>
     <dd>
       <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
-      <div><span class="xref">VariantsType</span></div>
+      <div><span class="xref">ScaleFormEntry</span></div>
     </dd>
   </dl>
 
@@ -245,19 +247,19 @@ and the list of variant rules.</p>
 </h2>
 
 
-  <a id="Utils_NumberToString_VariantsType_Dimensions_" data-uid="Utils.NumberToString.VariantsType.Dimensions*"></a>
+  <a id="Utils_NumberToString_ScaleFormEntry_FormSelector_" data-uid="Utils.NumberToString.ScaleFormEntry.FormSelector*"></a>
 
-  <h3 id="Utils_NumberToString_VariantsType_Dimensions" data-uid="Utils.NumberToString.VariantsType.Dimensions">
-  Dimensions
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L635"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_NumberToString_ScaleFormEntry_FormSelector" data-uid="Utils.NumberToString.ScaleFormEntry.FormSelector">
+  FormSelector
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L886"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets or sets the declared variant dimensions.</p>
+  <div class="markdown level1 summary"><p>Optional selector type name or built-in alias (same vocabulary as <a class="xref" href="Utils.NumberToString.TimeUnitEntry.html#Utils_NumberToString_TimeUnitEntry_FormSelector">FormSelector</a>).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public List&lt;VariantDimensionType&gt;? Dimensions { get; set; }</code></pre>
+    <pre><code class="lang-csharp hljs">public string? FormSelector { get; set; }</code></pre>
   </div>
 
 
@@ -266,7 +268,7 @@ and the list of variant rules.</p>
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;<a class="xref" href="Utils.NumberToString.VariantDimensionType.html">VariantDimensionType</a>&gt;</dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd></dd>
   </dl>
 
@@ -277,19 +279,20 @@ and the list of variant rules.</p>
 
 
 
-  <a id="Utils_NumberToString_VariantsType_Variants_" data-uid="Utils.NumberToString.VariantsType.Variants*"></a>
+  <a id="Utils_NumberToString_ScaleFormEntry_Forms_" data-uid="Utils.NumberToString.ScaleFormEntry.Forms*"></a>
 
-  <h3 id="Utils_NumberToString_VariantsType_Variants" data-uid="Utils.NumberToString.VariantsType.Variants">
-  Variants
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L639"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_NumberToString_ScaleFormEntry_Forms" data-uid="Utils.NumberToString.ScaleFormEntry.Forms">
+  Forms
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L897"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets or sets the list of variant rules.</p>
+  <div class="markdown level1 summary"><p>Optional named forms, overriding or extending the &quot;singular&quot;/&quot;plural&quot; forms synthesized from
+the scale name.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public List&lt;VariantType&gt;? Variants { get; set; }</code></pre>
+    <pre><code class="lang-csharp hljs">public LexicalFormsType? Forms { get; set; }</code></pre>
   </div>
 
 
@@ -298,7 +301,71 @@ and the list of variant rules.</p>
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;<a class="xref" href="Utils.NumberToString.VariantType.html">VariantType</a>&gt;</dt>
+    <dt><a class="xref" href="Utils.NumberToString.LexicalFormsType.html">LexicalFormsType</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_NumberToString_ScaleFormEntry_LexicalFormSelector_" data-uid="Utils.NumberToString.ScaleFormEntry.LexicalFormSelector*"></a>
+
+  <h3 id="Utils_NumberToString_ScaleFormEntry_LexicalFormSelector" data-uid="Utils.NumberToString.ScaleFormEntry.LexicalFormSelector">
+  LexicalFormSelector
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L890"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Optional structured selector declaration, used instead of <a class="xref" href="Utils.NumberToString.ScaleFormEntry.html#Utils_NumberToString_ScaleFormEntry_FormSelector">FormSelector</a> when the selector needs its own configuration.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public LexicalFormSelectorElementType? LexicalFormSelector { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.NumberToString.LexicalFormSelectorElementType.html">LexicalFormSelectorElementType</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_NumberToString_ScaleFormEntry_Scale_" data-uid="Utils.NumberToString.ScaleFormEntry.Scale*"></a>
+
+  <h3 id="Utils_NumberToString_ScaleFormEntry_Scale" data-uid="Utils.NumberToString.ScaleFormEntry.Scale">
+  Scale
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L882"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>The scale index the forms apply to (1 = thousands, 2 = millions, …).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int Scale { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
     <dd></dd>
   </dl>
 
@@ -313,7 +380,7 @@ and the list of variant rules.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L632" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L879" class="edit-link">Edit this page</a>
         </div>
 
 

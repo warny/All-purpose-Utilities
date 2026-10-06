@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_OrdinalVariantElementType" data-uid="Utils.NumberToString.OrdinalVariantElementType" class="text-break">
-Class OrdinalVariantElementType  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L232"><i class="bi bi-code-slash"></i></a>
+Class OrdinalVariantElementType  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L239"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -250,7 +250,7 @@ overrides, ordinal exceptions, word rules, and nested sub-variants for cascaded 
 
   <h3 id="Utils_NumberToString_OrdinalVariantElementType_DimensionType" data-uid="Utils.NumberToString.OrdinalVariantElementType.DimensionType">
   DimensionType
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L238"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L245"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>The canonical dimension name this constraint targets (e.g. &quot;gender&quot;, &quot;case&quot;).</p>
@@ -282,7 +282,7 @@ overrides, ordinal exceptions, word rules, and nested sub-variants for cascaded 
 
   <h3 id="Utils_NumberToString_OrdinalVariantElementType_Exceptions" data-uid="Utils.NumberToString.OrdinalVariantElementType.Exceptions">
   Exceptions
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L262"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L269"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Variant-specific whole-number exceptions (checked before base exceptions).</p>
@@ -314,7 +314,7 @@ overrides, ordinal exceptions, word rules, and nested sub-variants for cascaded 
 
   <h3 id="Utils_NumberToString_OrdinalVariantElementType_NestedVariants" data-uid="Utils.NumberToString.OrdinalVariantElementType.NestedVariants">
   NestedVariants
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L273"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L284"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Nested sub-variants that inherit this variant's constraint and add further constraints.
@@ -347,7 +347,7 @@ Used to express combinations without listing all attribute permutations at a fla
 
   <h3 id="Utils_NumberToString_OrdinalVariantElementType_Priority" data-uid="Utils.NumberToString.OrdinalVariantElementType.Priority">
   Priority
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L235"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L242"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets explicit precedence after specificity.</p>
@@ -379,7 +379,7 @@ Used to express combinations without listing all attribute permutations at a fla
 
   <h3 id="Utils_NumberToString_OrdinalVariantElementType_RemoveTrailing" data-uid="Utils.NumberToString.OrdinalVariantElementType.RemoveTrailing">
   RemoveTrailing
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L258"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L265"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>RemoveTrailing override for this variant; falls back to the base value when absent.</p>
@@ -407,11 +407,43 @@ Used to express combinations without listing all attribute permutations at a fla
 
 
 
+  <a id="Utils_NumberToString_OrdinalVariantElementType_Replacements_" data-uid="Utils.NumberToString.OrdinalVariantElementType.Replacements*"></a>
+
+  <h3 id="Utils_NumberToString_OrdinalVariantElementType_Replacements" data-uid="Utils.NumberToString.OrdinalVariantElementType.Replacements">
+  Replacements
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L277"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Variant-specific ordinal-only replacements, applied after the base ordinal replacements.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public List&lt;ReplacementType&gt;? Replacements { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;<a class="xref" href="Utils.NumberToString.ReplacementType.html">ReplacementType</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_NumberToString_OrdinalVariantElementType_Rules_" data-uid="Utils.NumberToString.OrdinalVariantElementType.Rules*"></a>
 
   <h3 id="Utils_NumberToString_OrdinalVariantElementType_Rules" data-uid="Utils.NumberToString.OrdinalVariantElementType.Rules">
   Rules
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L266"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L273"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Variant-specific word-level rules (checked before base word rules).</p>
@@ -443,7 +475,7 @@ Used to express combinations without listing all attribute permutations at a fla
 
   <h3 id="Utils_NumberToString_OrdinalVariantElementType_Suffix" data-uid="Utils.NumberToString.OrdinalVariantElementType.Suffix">
   Suffix
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L254"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L261"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Suffix override for this variant; falls back to the base suffix when absent.</p>
@@ -475,7 +507,7 @@ Used to express combinations without listing all attribute permutations at a fla
 
   <h3 id="Utils_NumberToString_OrdinalVariantElementType_VariantValue" data-uid="Utils.NumberToString.OrdinalVariantElementType.VariantValue">
   VariantValue
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L242"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L249"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>The value that must be active for this variant to apply (e.g. &quot;femenino&quot;).</p>
@@ -507,7 +539,7 @@ Used to express combinations without listing all attribute permutations at a fla
 
   <h3 id="Utils_NumberToString_OrdinalVariantElementType_VariantValues" data-uid="Utils.NumberToString.OrdinalVariantElementType.VariantValues">
   VariantValues
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L250"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L257"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Comma-separated list of dimension values; alternative to <a class="xref" href="Utils.NumberToString.OrdinalVariantElementType.html#Utils_NumberToString_OrdinalVariantElementType_VariantValue">VariantValue</a>.
@@ -541,7 +573,7 @@ Takes priority over <a class="xref" href="Utils.NumberToString.OrdinalVariantEle
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L232" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L239" class="edit-link">Edit this page</a>
         </div>
 
 

@@ -60782,6 +60782,25 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.ArabicOrdinalLanguageSpecifics.TryConvertOrdinal
   nameWithType: ArabicOrdinalLanguageSpecifics.TryConvertOrdinal
+- uid: Utils.NumberToString.ArabicScaleLexicalFormSelector
+  name: ArabicScaleLexicalFormSelector
+  href: api/Utils.NumberToString.ArabicScaleLexicalFormSelector.html
+  commentId: T:Utils.NumberToString.ArabicScaleLexicalFormSelector
+  fullName: Utils.NumberToString.ArabicScaleLexicalFormSelector
+  nameWithType: ArabicScaleLexicalFormSelector
+- uid: Utils.NumberToString.ArabicScaleLexicalFormSelector.SelectForm(Utils.NumberToString.LexicalFormContext)
+  name: SelectForm(LexicalFormContext)
+  href: api/Utils.NumberToString.ArabicScaleLexicalFormSelector.html#Utils_NumberToString_ArabicScaleLexicalFormSelector_SelectForm_Utils_NumberToString_LexicalFormContext_
+  commentId: M:Utils.NumberToString.ArabicScaleLexicalFormSelector.SelectForm(Utils.NumberToString.LexicalFormContext)
+  fullName: Utils.NumberToString.ArabicScaleLexicalFormSelector.SelectForm(Utils.NumberToString.LexicalFormContext)
+  nameWithType: ArabicScaleLexicalFormSelector.SelectForm(LexicalFormContext)
+- uid: Utils.NumberToString.ArabicScaleLexicalFormSelector.SelectForm*
+  name: SelectForm
+  href: api/Utils.NumberToString.ArabicScaleLexicalFormSelector.html#Utils_NumberToString_ArabicScaleLexicalFormSelector_SelectForm_
+  commentId: Overload:Utils.NumberToString.ArabicScaleLexicalFormSelector.SelectForm
+  isSpec: "True"
+  fullName: Utils.NumberToString.ArabicScaleLexicalFormSelector.SelectForm
+  nameWithType: ArabicScaleLexicalFormSelector.SelectForm
 - uid: Utils.NumberToString.BulgarianOrdinalLanguageSpecifics
   name: BulgarianOrdinalLanguageSpecifics
   href: api/Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.html
@@ -64836,6 +64855,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberScaleType.Scale0Prefixes
   nameWithType: NumberScaleType.Scale0Prefixes
+- uid: Utils.NumberToString.NumberScaleType.ScaleForms
+  name: ScaleForms
+  href: api/Utils.NumberToString.NumberScaleType.html#Utils_NumberToString_NumberScaleType_ScaleForms
+  commentId: P:Utils.NumberToString.NumberScaleType.ScaleForms
+  fullName: Utils.NumberToString.NumberScaleType.ScaleForms
+  nameWithType: NumberScaleType.ScaleForms
+- uid: Utils.NumberToString.NumberScaleType.ScaleForms*
+  name: ScaleForms
+  href: api/Utils.NumberToString.NumberScaleType.html#Utils_NumberToString_NumberScaleType_ScaleForms_
+  commentId: Overload:Utils.NumberToString.NumberScaleType.ScaleForms
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberScaleType.ScaleForms
+  nameWithType: NumberScaleType.ScaleForms
 - uid: Utils.NumberToString.NumberScaleType.StartIndex
   name: StartIndex
   href: api/Utils.NumberToString.NumberScaleType.html#Utils_NumberToString_NumberScaleType_StartIndex
@@ -64985,6 +65017,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberScaleXmlModel.Scale0Prefixes
   nameWithType: NumberScaleXmlModel.Scale0Prefixes
+- uid: Utils.NumberToString.NumberScaleXmlModel.ScaleForms
+  name: ScaleForms
+  href: api/Utils.NumberToString.NumberScaleXmlModel.html#Utils_NumberToString_NumberScaleXmlModel_ScaleForms
+  commentId: P:Utils.NumberToString.NumberScaleXmlModel.ScaleForms
+  fullName: Utils.NumberToString.NumberScaleXmlModel.ScaleForms
+  nameWithType: NumberScaleXmlModel.ScaleForms
+- uid: Utils.NumberToString.NumberScaleXmlModel.ScaleForms*
+  name: ScaleForms
+  href: api/Utils.NumberToString.NumberScaleXmlModel.html#Utils_NumberToString_NumberScaleXmlModel_ScaleForms_
+  commentId: Overload:Utils.NumberToString.NumberScaleXmlModel.ScaleForms
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberScaleXmlModel.ScaleForms
+  nameWithType: NumberScaleXmlModel.ScaleForms
 - uid: Utils.NumberToString.NumberScaleXmlModel.StartIndex
   name: StartIndex
   href: api/Utils.NumberToString.NumberScaleXmlModel.html#Utils_NumberToString_NumberScaleXmlModel_StartIndex
@@ -65988,6 +66033,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.OrdinalRemoveTrailing
   nameWithType: NumberToStringConverter.OrdinalRemoveTrailing
+- uid: Utils.NumberToString.NumberToStringConverter.OrdinalReplacements
+  name: OrdinalReplacements
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_OrdinalReplacements
+  commentId: P:Utils.NumberToString.NumberToStringConverter.OrdinalReplacements
+  fullName: Utils.NumberToString.NumberToStringConverter.OrdinalReplacements
+  nameWithType: NumberToStringConverter.OrdinalReplacements
+- uid: Utils.NumberToString.NumberToStringConverter.OrdinalReplacements*
+  name: OrdinalReplacements
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_OrdinalReplacements_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.OrdinalReplacements
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.OrdinalReplacements
+  nameWithType: NumberToStringConverter.OrdinalReplacements
 - uid: Utils.NumberToString.NumberToStringConverter.OrdinalStemRules
   name: OrdinalStemRules
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_OrdinalStemRules
@@ -66020,6 +66078,15 @@ references:
   commentId: T:Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule
   fullName: Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule
   nameWithType: NumberToStringConverter.OrdinalVariantRule
+- uid: Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.#ctor(System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.Collections.Generic.IReadOnlyDictionary{System.Int64,System.String},System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String,System.String,System.Collections.Generic.IReadOnlyList{Utils.NumberToString.NumberToStringConverter.ReplacementRule},System.Int32)
+  name: OrdinalVariantRule(IReadOnlyDictionary<string, string>, IReadOnlyDictionary<long, string>, IReadOnlyDictionary<string, string>, string?, string?, IReadOnlyList<ReplacementRule>, int)
+  href: api/Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.html#Utils_NumberToString_NumberToStringConverter_OrdinalVariantRule__ctor_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_Collections_Generic_IReadOnlyDictionary_System_Int64_System_String__System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String_System_String_System_Collections_Generic_IReadOnlyList_Utils_NumberToString_NumberToStringConverter_ReplacementRule__System_Int32_
+  commentId: M:Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.#ctor(System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.Collections.Generic.IReadOnlyDictionary{System.Int64,System.String},System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String,System.String,System.Collections.Generic.IReadOnlyList{Utils.NumberToString.NumberToStringConverter.ReplacementRule},System.Int32)
+  name.vb: New(IReadOnlyDictionary(Of String, String), IReadOnlyDictionary(Of Long, String), IReadOnlyDictionary(Of String, String), String, String, IReadOnlyList(Of ReplacementRule), Integer)
+  fullName: Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.OrdinalVariantRule(System.Collections.Generic.IReadOnlyDictionary<string, string>, System.Collections.Generic.IReadOnlyDictionary<long, string>, System.Collections.Generic.IReadOnlyDictionary<string, string>, string?, string?, System.Collections.Generic.IReadOnlyList<Utils.NumberToString.NumberToStringConverter.ReplacementRule>, int)
+  fullName.vb: Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.New(System.Collections.Generic.IReadOnlyDictionary(Of String, String), System.Collections.Generic.IReadOnlyDictionary(Of Long, String), System.Collections.Generic.IReadOnlyDictionary(Of String, String), String, String, System.Collections.Generic.IReadOnlyList(Of Utils.NumberToString.NumberToStringConverter.ReplacementRule), Integer)
+  nameWithType: NumberToStringConverter.OrdinalVariantRule.OrdinalVariantRule(IReadOnlyDictionary<string, string>, IReadOnlyDictionary<long, string>, IReadOnlyDictionary<string, string>, string?, string?, IReadOnlyList<NumberToStringConverter.ReplacementRule>, int)
+  nameWithType.vb: NumberToStringConverter.OrdinalVariantRule.New(IReadOnlyDictionary(Of String, String), IReadOnlyDictionary(Of Long, String), IReadOnlyDictionary(Of String, String), String, String, IReadOnlyList(Of NumberToStringConverter.ReplacementRule), Integer)
 - uid: Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.#ctor(System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.Collections.Generic.IReadOnlyDictionary{System.Int64,System.String},System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String,System.String,System.Int32)
   name: OrdinalVariantRule(IReadOnlyDictionary<string, string>, IReadOnlyDictionary<long, string>, IReadOnlyDictionary<string, string>, string?, string?, int)
   href: api/Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.html#Utils_NumberToString_NumberToStringConverter_OrdinalVariantRule__ctor_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_Collections_Generic_IReadOnlyDictionary_System_Int64_System_String__System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String_System_String_System_Int32_
@@ -66091,6 +66158,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.RemoveTrailing
   nameWithType: NumberToStringConverter.OrdinalVariantRule.RemoveTrailing
+- uid: Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.Replacements
+  name: Replacements
+  href: api/Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.html#Utils_NumberToString_NumberToStringConverter_OrdinalVariantRule_Replacements
+  commentId: P:Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.Replacements
+  fullName: Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.Replacements
+  nameWithType: NumberToStringConverter.OrdinalVariantRule.Replacements
+- uid: Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.Replacements*
+  name: Replacements
+  href: api/Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.html#Utils_NumberToString_NumberToStringConverter_OrdinalVariantRule_Replacements_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.Replacements
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.Replacements
+  nameWithType: NumberToStringConverter.OrdinalVariantRule.Replacements
 - uid: Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.Specificity
   name: Specificity
   href: api/Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.html#Utils_NumberToString_NumberToStringConverter_OrdinalVariantRule_Specificity
@@ -66436,6 +66516,32 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.ScaleConnectorThreshold
   nameWithType: NumberToStringConverter.ScaleConnectorThreshold
+- uid: Utils.NumberToString.NumberToStringConverter.ScaleFormSelectors
+  name: ScaleFormSelectors
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ScaleFormSelectors
+  commentId: P:Utils.NumberToString.NumberToStringConverter.ScaleFormSelectors
+  fullName: Utils.NumberToString.NumberToStringConverter.ScaleFormSelectors
+  nameWithType: NumberToStringConverter.ScaleFormSelectors
+- uid: Utils.NumberToString.NumberToStringConverter.ScaleFormSelectors*
+  name: ScaleFormSelectors
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ScaleFormSelectors_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.ScaleFormSelectors
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.ScaleFormSelectors
+  nameWithType: NumberToStringConverter.ScaleFormSelectors
+- uid: Utils.NumberToString.NumberToStringConverter.ScaleForms
+  name: ScaleForms
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ScaleForms
+  commentId: P:Utils.NumberToString.NumberToStringConverter.ScaleForms
+  fullName: Utils.NumberToString.NumberToStringConverter.ScaleForms
+  nameWithType: NumberToStringConverter.ScaleForms
+- uid: Utils.NumberToString.NumberToStringConverter.ScaleForms*
+  name: ScaleForms
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ScaleForms_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.ScaleForms
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.ScaleForms
+  nameWithType: NumberToStringConverter.ScaleForms
 - uid: Utils.NumberToString.NumberToStringConverter.Separator
   name: Separator
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_Separator
@@ -67472,6 +67578,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverterOptions.OrdinalRemoveTrailing
   nameWithType: NumberToStringConverterOptions.OrdinalRemoveTrailing
+- uid: Utils.NumberToString.NumberToStringConverterOptions.OrdinalReplacements
+  name: OrdinalReplacements
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_OrdinalReplacements
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.OrdinalReplacements
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.OrdinalReplacements
+  nameWithType: NumberToStringConverterOptions.OrdinalReplacements
+- uid: Utils.NumberToString.NumberToStringConverterOptions.OrdinalReplacements*
+  name: OrdinalReplacements
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_OrdinalReplacements_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.OrdinalReplacements
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.OrdinalReplacements
+  nameWithType: NumberToStringConverterOptions.OrdinalReplacements
 - uid: Utils.NumberToString.NumberToStringConverterOptions.OrdinalStemRules
   name: OrdinalStemRules
   href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_OrdinalStemRules
@@ -67576,6 +67695,32 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverterOptions.ScaleConnectorThreshold
   nameWithType: NumberToStringConverterOptions.ScaleConnectorThreshold
+- uid: Utils.NumberToString.NumberToStringConverterOptions.ScaleFormSelectors
+  name: ScaleFormSelectors
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_ScaleFormSelectors
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.ScaleFormSelectors
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.ScaleFormSelectors
+  nameWithType: NumberToStringConverterOptions.ScaleFormSelectors
+- uid: Utils.NumberToString.NumberToStringConverterOptions.ScaleFormSelectors*
+  name: ScaleFormSelectors
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_ScaleFormSelectors_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.ScaleFormSelectors
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.ScaleFormSelectors
+  nameWithType: NumberToStringConverterOptions.ScaleFormSelectors
+- uid: Utils.NumberToString.NumberToStringConverterOptions.ScaleForms
+  name: ScaleForms
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_ScaleForms
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.ScaleForms
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.ScaleForms
+  nameWithType: NumberToStringConverterOptions.ScaleForms
+- uid: Utils.NumberToString.NumberToStringConverterOptions.ScaleForms*
+  name: ScaleForms
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_ScaleForms_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.ScaleForms
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.ScaleForms
+  nameWithType: NumberToStringConverterOptions.ScaleForms
 - uid: Utils.NumberToString.NumberToStringConverterOptions.Separator
   name: Separator
   href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_Separator
@@ -68046,6 +68191,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.OrdinalVariantElementType.RemoveTrailing
   nameWithType: OrdinalVariantElementType.RemoveTrailing
+- uid: Utils.NumberToString.OrdinalVariantElementType.Replacements
+  name: Replacements
+  href: api/Utils.NumberToString.OrdinalVariantElementType.html#Utils_NumberToString_OrdinalVariantElementType_Replacements
+  commentId: P:Utils.NumberToString.OrdinalVariantElementType.Replacements
+  fullName: Utils.NumberToString.OrdinalVariantElementType.Replacements
+  nameWithType: OrdinalVariantElementType.Replacements
+- uid: Utils.NumberToString.OrdinalVariantElementType.Replacements*
+  name: Replacements
+  href: api/Utils.NumberToString.OrdinalVariantElementType.html#Utils_NumberToString_OrdinalVariantElementType_Replacements_
+  commentId: Overload:Utils.NumberToString.OrdinalVariantElementType.Replacements
+  isSpec: "True"
+  fullName: Utils.NumberToString.OrdinalVariantElementType.Replacements
+  nameWithType: OrdinalVariantElementType.Replacements
 - uid: Utils.NumberToString.OrdinalVariantElementType.Rules
   name: Rules
   href: api/Utils.NumberToString.OrdinalVariantElementType.html#Utils_NumberToString_OrdinalVariantElementType_Rules
@@ -68175,6 +68333,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.OrdinalsType.RemoveTrailing
   nameWithType: OrdinalsType.RemoveTrailing
+- uid: Utils.NumberToString.OrdinalsType.Replacements
+  name: Replacements
+  href: api/Utils.NumberToString.OrdinalsType.html#Utils_NumberToString_OrdinalsType_Replacements
+  commentId: P:Utils.NumberToString.OrdinalsType.Replacements
+  fullName: Utils.NumberToString.OrdinalsType.Replacements
+  nameWithType: OrdinalsType.Replacements
+- uid: Utils.NumberToString.OrdinalsType.Replacements*
+  name: Replacements
+  href: api/Utils.NumberToString.OrdinalsType.html#Utils_NumberToString_OrdinalsType_Replacements_
+  commentId: Overload:Utils.NumberToString.OrdinalsType.Replacements
+  isSpec: "True"
+  fullName: Utils.NumberToString.OrdinalsType.Replacements
+  nameWithType: OrdinalsType.Replacements
 - uid: Utils.NumberToString.OrdinalsType.Rules
   name: Rules
   href: api/Utils.NumberToString.OrdinalsType.html#Utils_NumberToString_OrdinalsType_Rules
@@ -68468,6 +68639,64 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.RomanianOrdinalLanguageSpecifics.TryConvertOrdinal
   nameWithType: RomanianOrdinalLanguageSpecifics.TryConvertOrdinal
+- uid: Utils.NumberToString.ScaleFormEntry
+  name: ScaleFormEntry
+  href: api/Utils.NumberToString.ScaleFormEntry.html
+  commentId: T:Utils.NumberToString.ScaleFormEntry
+  fullName: Utils.NumberToString.ScaleFormEntry
+  nameWithType: ScaleFormEntry
+- uid: Utils.NumberToString.ScaleFormEntry.FormSelector
+  name: FormSelector
+  href: api/Utils.NumberToString.ScaleFormEntry.html#Utils_NumberToString_ScaleFormEntry_FormSelector
+  commentId: P:Utils.NumberToString.ScaleFormEntry.FormSelector
+  fullName: Utils.NumberToString.ScaleFormEntry.FormSelector
+  nameWithType: ScaleFormEntry.FormSelector
+- uid: Utils.NumberToString.ScaleFormEntry.FormSelector*
+  name: FormSelector
+  href: api/Utils.NumberToString.ScaleFormEntry.html#Utils_NumberToString_ScaleFormEntry_FormSelector_
+  commentId: Overload:Utils.NumberToString.ScaleFormEntry.FormSelector
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScaleFormEntry.FormSelector
+  nameWithType: ScaleFormEntry.FormSelector
+- uid: Utils.NumberToString.ScaleFormEntry.Forms
+  name: Forms
+  href: api/Utils.NumberToString.ScaleFormEntry.html#Utils_NumberToString_ScaleFormEntry_Forms
+  commentId: P:Utils.NumberToString.ScaleFormEntry.Forms
+  fullName: Utils.NumberToString.ScaleFormEntry.Forms
+  nameWithType: ScaleFormEntry.Forms
+- uid: Utils.NumberToString.ScaleFormEntry.Forms*
+  name: Forms
+  href: api/Utils.NumberToString.ScaleFormEntry.html#Utils_NumberToString_ScaleFormEntry_Forms_
+  commentId: Overload:Utils.NumberToString.ScaleFormEntry.Forms
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScaleFormEntry.Forms
+  nameWithType: ScaleFormEntry.Forms
+- uid: Utils.NumberToString.ScaleFormEntry.LexicalFormSelector
+  name: LexicalFormSelector
+  href: api/Utils.NumberToString.ScaleFormEntry.html#Utils_NumberToString_ScaleFormEntry_LexicalFormSelector
+  commentId: P:Utils.NumberToString.ScaleFormEntry.LexicalFormSelector
+  fullName: Utils.NumberToString.ScaleFormEntry.LexicalFormSelector
+  nameWithType: ScaleFormEntry.LexicalFormSelector
+- uid: Utils.NumberToString.ScaleFormEntry.LexicalFormSelector*
+  name: LexicalFormSelector
+  href: api/Utils.NumberToString.ScaleFormEntry.html#Utils_NumberToString_ScaleFormEntry_LexicalFormSelector_
+  commentId: Overload:Utils.NumberToString.ScaleFormEntry.LexicalFormSelector
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScaleFormEntry.LexicalFormSelector
+  nameWithType: ScaleFormEntry.LexicalFormSelector
+- uid: Utils.NumberToString.ScaleFormEntry.Scale
+  name: Scale
+  href: api/Utils.NumberToString.ScaleFormEntry.html#Utils_NumberToString_ScaleFormEntry_Scale
+  commentId: P:Utils.NumberToString.ScaleFormEntry.Scale
+  fullName: Utils.NumberToString.ScaleFormEntry.Scale
+  nameWithType: ScaleFormEntry.Scale
+- uid: Utils.NumberToString.ScaleFormEntry.Scale*
+  name: Scale
+  href: api/Utils.NumberToString.ScaleFormEntry.html#Utils_NumberToString_ScaleFormEntry_Scale_
+  commentId: Overload:Utils.NumberToString.ScaleFormEntry.Scale
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScaleFormEntry.Scale
+  nameWithType: ScaleFormEntry.Scale
 - uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics
   name: ScandinavianOrdinalLanguageSpecifics
   href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html
@@ -69971,6 +70200,53 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.YearFormatType.ZeroConnector
   nameWithType: YearFormatType.ZeroConnector
+- uid: Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics
+  name: ZeroOrdinalUnsupportedLanguageSpecifics
+  href: api/Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics
+  fullName: Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics
+  nameWithType: ZeroOrdinalUnsupportedLanguageSpecifics
+- uid: Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.FinalizeWriting(System.String,System.String)
+  name: FinalizeWriting(string, string)
+  href: api/Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.html#Utils_NumberToString_ZeroOrdinalUnsupportedLanguageSpecifics_FinalizeWriting_System_String_System_String_
+  commentId: M:Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.FinalizeWriting(System.String,System.String)
+  name.vb: FinalizeWriting(String, String)
+  fullName: Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.FinalizeWriting(string, string)
+  fullName.vb: Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.FinalizeWriting(String, String)
+  nameWithType: ZeroOrdinalUnsupportedLanguageSpecifics.FinalizeWriting(string, string)
+  nameWithType.vb: ZeroOrdinalUnsupportedLanguageSpecifics.FinalizeWriting(String, String)
+- uid: Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.FinalizeWriting*
+  name: FinalizeWriting
+  href: api/Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.html#Utils_NumberToString_ZeroOrdinalUnsupportedLanguageSpecifics_FinalizeWriting_
+  commentId: Overload:Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.FinalizeWriting
+  isSpec: "True"
+  fullName: Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.FinalizeWriting
+  nameWithType: ZeroOrdinalUnsupportedLanguageSpecifics.FinalizeWriting
+- uid: Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name: TryConvertOrdinal(int, IReadOnlyDictionary<string, string>, out string?)
+  href: api/Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.html#Utils_NumberToString_ZeroOrdinalUnsupportedLanguageSpecifics_TryConvertOrdinal_System_Int32_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__
+  commentId: M:Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name.vb: TryConvertOrdinal(Integer, IReadOnlyDictionary(Of String, String), String)
+  fullName: Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.TryConvertOrdinal(int, System.Collections.Generic.IReadOnlyDictionary<string, string>, out string?)
+  fullName.vb: Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.TryConvertOrdinal(Integer, System.Collections.Generic.IReadOnlyDictionary(Of String, String), String)
+  nameWithType: ZeroOrdinalUnsupportedLanguageSpecifics.TryConvertOrdinal(int, IReadOnlyDictionary<string, string>, out string?)
+  nameWithType.vb: ZeroOrdinalUnsupportedLanguageSpecifics.TryConvertOrdinal(Integer, IReadOnlyDictionary(Of String, String), String)
+- uid: Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.TryConvertOrdinal(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name: TryConvertOrdinal(long, IReadOnlyDictionary<string, string>, out string?)
+  href: api/Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.html#Utils_NumberToString_ZeroOrdinalUnsupportedLanguageSpecifics_TryConvertOrdinal_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__
+  commentId: M:Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.TryConvertOrdinal(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name.vb: TryConvertOrdinal(Long, IReadOnlyDictionary(Of String, String), String)
+  fullName: Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.TryConvertOrdinal(long, System.Collections.Generic.IReadOnlyDictionary<string, string>, out string?)
+  fullName.vb: Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.TryConvertOrdinal(Long, System.Collections.Generic.IReadOnlyDictionary(Of String, String), String)
+  nameWithType: ZeroOrdinalUnsupportedLanguageSpecifics.TryConvertOrdinal(long, IReadOnlyDictionary<string, string>, out string?)
+  nameWithType.vb: ZeroOrdinalUnsupportedLanguageSpecifics.TryConvertOrdinal(Long, IReadOnlyDictionary(Of String, String), String)
+- uid: Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.TryConvertOrdinal*
+  name: TryConvertOrdinal
+  href: api/Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.html#Utils_NumberToString_ZeroOrdinalUnsupportedLanguageSpecifics_TryConvertOrdinal_
+  commentId: Overload:Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.TryConvertOrdinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.TryConvertOrdinal
+  nameWithType: ZeroOrdinalUnsupportedLanguageSpecifics.TryConvertOrdinal
 - uid: Utils.Numerics
   name: Utils.Numerics
   href: api/Utils.Numerics.html
