@@ -104,6 +104,23 @@
         </Variants>
         <Ordinals suffix="ый" removeTrailing="ь">
             <!-- Ordinal 1 — exception by value (also handled as word rule below) -->
+            <!-- NTS-14: the ordinal of ноль/нуль is the adjective нулевой (Wiktionary: relative
+                 adjective, Zaliznyak 1b; Dal: нулевой/нолевой), declined like второй, instead of the
+                 mechanical "нолый". Accusative masculine/plural = nominative (inanimate convention). -->
+            <OrdinalException value="0" string="нулевой">
+                <Variant type="gender" variant="maskulin">
+                    <Variant type="case" forms="нулевой,нулевого,нулевому,нулевой,нулевым,нулевом" />
+                </Variant>
+                <Variant type="gender" variant="feminin">
+                    <Variant type="case" forms="нулевая,нулевой,нулевой,нулевую,нулевой,нулевой" />
+                </Variant>
+                <Variant type="gender" variant="neutrum">
+                    <Variant type="case" forms="нулевое,нулевого,нулевому,нулевое,нулевым,нулевом" />
+                </Variant>
+                <Variant type="gender" variant="plural">
+                    <Variant type="case" forms="нулевые,нулевых,нулевым,нулевые,нулевыми,нулевых" />
+                </Variant>
+            </OrdinalException>
             <OrdinalException value="1" string="первый">
                 <Variant type="gender" variant="maskulin">
                     <Variant type="case" forms="первый,первого,первому,первый,первым,первом" />

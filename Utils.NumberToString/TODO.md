@@ -1,6 +1,7 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-06 after closing NTS-13 (which opened NTS-15); on 2026-10-03 after closing
+Re-audited on 2026-10-06 after closing NTS-14 (which opened NTS-16 and NTS-17) and NTS-13 (which
+opened NTS-15); on 2026-10-03 after closing
 NTS-10, NTS-11 and NTS-12 (which opened NTS-13 and NTS-14);
 previously re-audited on 2026-10-01 after the NTS-08 regional consolidation (#608), which also
 opened NTS-09. Historical details remain in
@@ -55,19 +56,20 @@ classification.
   ("centomillesimo") gives the analytic `centomillesimoprimo, centomillesimosecondo` for 100001+,
   the synthetic `centomiladuesimo` being a partitive. Needs a sourced decision between the
   synthetic (`duemilaunesimo`) and analytic (`duemillesimo primo`) forms, per range, before the
-  guard can be lifted. Millions stay blocked by NTS-14.
+  guard can be lifted. Millions are tracked separately (NTS-17).
 
-- **NTS-14 — findings outside the NTS-10/11/12 scope (not fixed).**
-  - IT millions and above: `uno Millione`, `due Millioni` (should be `un milione`, `due milioni`),
-    and the junction with a following thousands group is not handled.
-  - AR thousands morphology: `اثنان ألف`, `ثلاثة ألف`, `واحد وعشرون ألف` instead of the dual and
-    plural forms (`ألفان`, `ثلاثة آلاف`, `واحد وعشرون ألفًا`); only the `و` connector was in scope.
-  - HE agreeing-cardinal ordinals ending in a teen inside a larger number keep the counting
-    (feminine) teen without a gender: `111 → מאה ואחת עשרה`, `1011 → אלף ואחת עשרה` (11–19 alone
-    are masculine exceptions).
-  - Suffix-formed ordinals of zero in other languages, which NTS-12 deliberately accepts as explicit
-    formations but which look unsourced: RU `нолый` (expected `нулевой`), DE `nullste` (Duden:
-    `nullte`), CA `zeroè`, WO `seroël`, EE `etsõ zero`.
+- **NTS-16 — Wolof and Ewe ordinal formation unsourced.** Found while deciding their ordinal of
+  zero (NTS-14, now fail-closed). The consulted sources form Wolof ordinals with `-eel`/`-éél`
+  (`ñaaréél`, Janga Wolof) whereas the configuration writes `-ël` (`ñaarël`), and Ewe ordinals with
+  a `-lia` suffix (`evelia`, `etɔ̃lia`, Omniglot/Wiktionary) whereas the configuration prefixes
+  `etsõ`. The configured zero cardinals (`sero`, `zero`) also differ from the attested `tus`/`dara`
+  and `nadeke`. Needs a normative orthography source for each language before changing them.
+
+- **NTS-17 — Italian ordinals of one million and above.** NTS-14 fixed the cardinals
+  (`un milione`, `due milioni e centomila`), but no ordinal is validated there: Treccani attests
+  `milionesimo`, while the mechanical form of `un milione` would be the fractional
+  `un milionesimo`, and compound forms are unsourced. `ItalianOrdinalLanguageSpecifics` keeps
+  rejecting them.
 
 - **NTS-09 — `Trigger` elements are not inherited through `baseOn`.** `XmlSerializer` materializes
   an absent `<Trigger>` list as an empty list, so `MergeLanguageDefinition`'s
@@ -75,7 +77,7 @@ classification.
   uses triggers today; the README and XSD document the current behaviour. Fix by treating an empty
   list as absent (as `Cultures` already does) together with a regression test.
 
-NTS-01 through NTS-05 and NTS-10 through NTS-13 are closed:
+NTS-01 through NTS-05 and NTS-10 through NTS-14 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -93,6 +95,8 @@ NTS-01 through NTS-05 and NTS-10 through NTS-13 are closed:
 - NTS-10 (IT/HI/AR cardinals), NTS-11 (HE thousands), NTS-12 (zero ordinal) and the `<Fusion>`
   primitive: `DONE-2026-10-03.md`.
 - NTS-13 (Italian compound ordinals) and the `<OrdinalStem>` primitive: `DONE-2026-10-06.md`.
+- NTS-14 (IT millions, AR thousands, HE compound ordinals, zero ordinals) with scale lexical forms
+  and ordinal-only replacements: `DONE-2026-10-06(1).md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) are deliberately out of scope — the

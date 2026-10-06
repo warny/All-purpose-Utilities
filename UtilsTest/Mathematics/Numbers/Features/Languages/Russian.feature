@@ -133,3 +133,25 @@ Examples:
     | 12:45 | без четверти час |
     | 13:30 | половина второго |
     | 23:45 | без четверти двенадцать |
+
+# NTS-14. The ordinal of ноль/нуль is the adjective нулевой (Wiktionary: relative adjective,
+# Zaliznyak declension type 1b, нулевой/нулевая/нулевое/нулевые; Dal records нулевой and нолевой),
+# declined like второй; the mechanical "нолый" is not attested. The masculine and plural accusative
+# follow the configuration's inanimate convention (= nominative), as for первый and второй.
+Scenario Outline: Ordinal of zero
+    Given I use the variants "<variants>"
+    When I convert the ordinal number 0
+    Then the result is "<expected>"
+
+Examples:
+    | variants | expected |
+    |  | нулевой |
+    | gender=feminin | нулевая |
+    | gender=neutrum | нулевое |
+    | gender=plural | нулевые |
+    | case=родительный | нулевого |
+    | case=винительный | нулевой |
+    | gender=feminin,case=винительный | нулевую |
+    | gender=neutrum,case=дательный | нулевому |
+    | gender=plural,case=творительный | нулевыми |
+    | gender=feminin,case=предложный | нулевой |

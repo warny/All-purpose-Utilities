@@ -435,3 +435,23 @@ Scenario: German variant metadata
         | gender     | genus       | maskulin,feminin,neutrum          |
         | case       | kasus       | nominativ,akkusativ,dativ,genitiv |
         | declension | deklination | schwach,stark                     |
+
+# NTS-14. Duden, "nullte": "Ordinalzahl zu null", "in einer Reihe, Folge, auf einer Skala o. Ä. den
+# Ausgangspunkt betreffend" (mathematics, natural sciences), with the forms nullter/nulltes; it is
+# declined like the other -te ordinals (dritte), replacing the mechanical "nullste".
+Scenario Outline: Ordinal of zero
+    Given I use the "<culture>" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number 0
+    Then the result is "<expected>"
+
+Examples:
+    | culture | variants | expected |
+    | DE |  | nullte |
+    | DE | deklination=schwach,genus=maskulin,kasus=akkusativ | nullten |
+    | DE | deklination=schwach,genus=feminin,kasus=nominativ | nullte |
+    | DE | deklination=stark,genus=maskulin,kasus=nominativ | nullter |
+    | DE | deklination=stark,genus=maskulin,kasus=dativ | nulltem |
+    | DE | deklination=stark,genus=feminin,kasus=dativ | nullter |
+    | DE | deklination=stark,genus=neutrum,kasus=nominativ | nulltes |
+    | DE-ch |  | nullte |

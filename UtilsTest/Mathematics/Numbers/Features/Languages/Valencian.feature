@@ -50,3 +50,9 @@ Scenario: The same hour reads "les dos" as a clock time but "dues hores" as an e
     Then the result is "les dos en punt"
     When I convert the time "02:00:00"
     Then the result is "dues hores"
+
+# NTS-14: the Catalan zero-ordinal decision is inherited.
+Scenario: Zero has no ordinal form
+    Given I use the "CA-valencia" number converter
+    When I attempt to convert the ordinal number 0
+    Then conversion is rejected because no ordinal form is available

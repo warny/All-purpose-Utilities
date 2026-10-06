@@ -177,6 +177,19 @@
                     <Ordinal from="ותשע" to="ותשעה" />
                     <!-- Masculine final ten after "ו" ("מאה ועשרה", "אלף ועשרה"), like 3-9 above. -->
                     <Ordinal from="ועשר" to="ועשרה" />
+                    <!-- NTS-14. A compound ending in a teen keeps the masculine contract too ("מאה ואחד
+                         עשר", "אלף ושנים עשר", like the zachar variant); the teen spans two words, so
+                         ordinal-only replacements on the end of the phrase are used. They never touch
+                         the standalone cardinal ("מאה ואחת עשרה"); 11-19 alone are exceptions above. -->
+                    <Replacement oldValue="אחת עשרה" newValue="אחד עשר" scope="EndsWith" />
+                    <Replacement oldValue="שתים עשרה" newValue="שנים עשר" scope="EndsWith" />
+                    <Replacement oldValue="שלוש עשרה" newValue="שלושה עשר" scope="EndsWith" />
+                    <Replacement oldValue="ארבע עשרה" newValue="ארבעה עשר" scope="EndsWith" />
+                    <Replacement oldValue="חמש עשרה" newValue="חמישה עשר" scope="EndsWith" />
+                    <Replacement oldValue="שש עשרה" newValue="שישה עשר" scope="EndsWith" />
+                    <Replacement oldValue="שבע עשרה" newValue="שבעה עשר" scope="EndsWith" />
+                    <Replacement oldValue="שמונה עשרה" newValue="שמונה עשר" scope="EndsWith" />
+                    <Replacement oldValue="תשע עשרה" newValue="תשעה עשר" scope="EndsWith" />
                 </Variant>
             </OrdinalVariants>
         </Ordinals>

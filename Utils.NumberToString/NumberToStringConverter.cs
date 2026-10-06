@@ -167,6 +167,14 @@ namespace Utils.NumberToString
                 .Where(r => r.OnScale is not null)
                 .ToImmutableArray();
             Scale = options.Scale;
+            // Override-only snapshots, taken once: CompileScaleForms validates exactly these copies, and
+            // they are what a clone receives, so the singular/plural synthesized from this Scale never
+            // become explicit overrides of a clone built on another Scale.
+            _scaleFormOverrides = (options.ScaleForms ?? ImmutableDictionary<int, LexicalFormSet>.Empty).ToImmutableDictionary();
+            _scaleFormSelectorOverrides = (options.ScaleFormSelectors ?? ImmutableDictionary<int, ILexicalFormSelector>.Empty).ToImmutableDictionary();
+            _scaleForms = CompileScaleForms(_scaleFormOverrides, _scaleFormSelectorOverrides);
+            _scaleFormsPublic = _scaleForms.ToImmutableDictionary(kv => kv.Key, kv => kv.Value.Forms);
+            _scaleFormSelectorsPublic = _scaleForms.ToImmutableDictionary(kv => kv.Key, kv => kv.Value.Selector);
             LanguageSpecifics = options.LanguageSpecifics ?? new DefaultNumberToStringLanguageSpecifics();
             LanguageIdentifier = options.LanguageIdentifier ?? string.Empty;
             _rawAdjustFunction = options.AdjustFunction;
@@ -209,8 +217,12 @@ namespace Utils.NumberToString
             OrdinalWordRules = (options.OrdinalWordRules ?? new Dictionary<string, string>()).ToImmutableDictionary();
             _ordinalStemRules = CompileOrdinalStemRules(options.OrdinalStemRules, nameof(options.OrdinalStemRules));
             OrdinalStemRules = _ordinalStemRules;
+            _ordinalReplacements = CompileOrdinalReplacements(options.OrdinalReplacements, nameof(options.OrdinalReplacements));
+            OrdinalReplacements = _ordinalReplacements;
             OrdinalPrefix = options.OrdinalPrefix;
             OrdinalVariants = (options.OrdinalVariants ?? []).ToImmutableArray();
+            foreach (var ordinalVariant in OrdinalVariants)
+                CompileOrdinalReplacements(ordinalVariant.Replacements, nameof(options.OrdinalVariants));
 
             VariantDimensions = (options.VariantDimensions ?? []).ToImmutableArray();
             // Clock-time rules canonicalize forced variants during compilation.
@@ -424,6 +436,34 @@ namespace Utils.NumberToString
         /// </remarks>
         public BigInteger? MaxNumber { get; }
         /// <summary>
+        /// Gets the effective lexical forms of each scale noun configured with
+        /// <see cref="NumberToStringConverterOptions.ScaleForms"/> or
+        /// <see cref="NumberToStringConverterOptions.ScaleFormSelectors"/>, keyed by scale index
+        /// (synthesized "singular"/"plural" merged with the configured overrides). Scales absent
+        /// from this dictionary use the historical singular/plural scale name.
+        /// </summary>
+        public IReadOnlyDictionary<int, LexicalFormSet> ScaleForms => _scaleFormsPublic;
+
+        /// <summary>
+        /// Gets the effective lexical form selector of each scale listed in <see cref="ScaleForms"/>
+        /// (<see cref="DefaultLexicalFormSelector"/> when none was configured).
+        /// </summary>
+        public IReadOnlyDictionary<int, ILexicalFormSelector> ScaleFormSelectors => _scaleFormSelectorsPublic;
+
+        /// <summary>
+        /// Gets only the explicitly configured scale forms, unlike the effective <see cref="ScaleForms"/>.
+        /// Used by <c>NumberToStringConverterOptions(NumberToStringConverter)</c> so that a clone built
+        /// on another <see cref="NumberScale"/> re-synthesizes its own singular/plural names.
+        /// </summary>
+        internal IReadOnlyDictionary<int, LexicalFormSet> ScaleFormOverrides => _scaleFormOverrides;
+
+        /// <summary>
+        /// Gets only the explicitly configured scale form selectors, unlike the effective
+        /// <see cref="ScaleFormSelectors"/> (which fills in <see cref="DefaultLexicalFormSelector"/>).
+        /// </summary>
+        internal IReadOnlyDictionary<int, ILexicalFormSelector> ScaleFormSelectorOverrides => _scaleFormSelectorOverrides;
+
+        /// <summary>
         /// Group definitions for digits
         /// </summary>
         public IReadOnlyDictionary<int, IReadOnlyDictionary<long, DigitType>> Groups { get; }
@@ -458,6 +498,13 @@ namespace Utils.NumberToString
         /// suffix is appended, snapshotted at construction and sorted longest <see cref="OrdinalStemRule.From"/> first.
         /// </summary>
         public IReadOnlyList<OrdinalStemRule> OrdinalStemRules { get; }
+
+        /// <summary>
+        /// Ordinal-only replacements applied to the assembled cardinal before the ordinal
+        /// transformation, snapshotted at construction (see
+        /// <see cref="NumberToStringConverterOptions.OrdinalReplacements"/>).
+        /// </summary>
+        public IReadOnlyList<ReplacementRule> OrdinalReplacements { get; }
 
         /// <summary>
         /// Prefix prepended to the whole ordinal result after <see cref="AdjustFunction"/> is applied.
@@ -617,6 +664,18 @@ namespace Utils.NumberToString
         public bool SupportsOrdinals =>
             HasDeclarativeOrdinalSupport || LanguageSpecifics is IOrdinalLanguageSpecifics;
 
+        /// <summary>Resolved scale-noun forms and selectors, keyed by scale index; empty when none is configured.</summary>
+        private readonly ImmutableDictionary<int, ScaleFormDefinition> _scaleForms;
+        /// <summary>Public read-only view of the effective scale forms.</summary>
+        private readonly ImmutableDictionary<int, LexicalFormSet> _scaleFormsPublic;
+        /// <summary>Public read-only view of the effective scale form selectors.</summary>
+        private readonly ImmutableDictionary<int, ILexicalFormSelector> _scaleFormSelectorsPublic;
+        /// <summary>Only the explicitly configured scale forms (no synthesized singular/plural).</summary>
+        private readonly ImmutableDictionary<int, LexicalFormSet> _scaleFormOverrides;
+        /// <summary>Only the explicitly configured scale form selectors (no default filled in).</summary>
+        private readonly ImmutableDictionary<int, ILexicalFormSelector> _scaleFormSelectorOverrides;
+        /// <summary>Base ordinal-only replacements, validated and snapshotted at construction.</summary>
+        private readonly ImmutableArray<ReplacementRule> _ordinalReplacements;
         /// <summary>Ordinal stem rules validated and sorted once at construction, longest ending first.</summary>
         private readonly ImmutableArray<OrdinalStemRule> _ordinalStemRules;
         private readonly ImmutableDictionary<string, string> _replacementLookup;
@@ -1169,7 +1228,7 @@ namespace Utils.NumberToString
                     string digits = ConvertGroup(maxGroup, group);
                     digits = ApplyTriggers(digits, TriggerAt.Group, groupNumber, variantQuery);
 
-                    string scaleName = Scale.GetScaleName(groupNumber).ToPlural(group);
+                    string scaleName = GetScaleWord(groupNumber, group, variantQuery);
                     string scaleJoin = (_scaleConnector != null && groupNumber > 0 && group >= _scaleConnectorThreshold)
                         ? Separator + _scaleConnector + Separator
                         : Separator;
@@ -1796,13 +1855,13 @@ namespace Utils.NumberToString
 
         /// <summary>
         /// Associates dimension constraints with variant-specific ordinal configuration
-        /// (exceptions, word rules, suffix, and removeTrailing override).
+        /// (exceptions, word rules, ordinal-only replacements, suffix, and removeTrailing override).
         /// All fields fall through to the base ordinal config when absent.
         /// </summary>
         public sealed class OrdinalVariantRule
         {
             /// <summary>
-            /// Initializes a new instance of <see cref="OrdinalVariantRule"/>.
+            /// Initializes a new instance of <see cref="OrdinalVariantRule"/> without ordinal replacements.
             /// </summary>
             public OrdinalVariantRule(
                 IReadOnlyDictionary<string, string> constraints,
@@ -1811,18 +1870,48 @@ namespace Utils.NumberToString
                 string? suffix,
                 string? removeTrailing,
                 int priority = 0)
+                : this(constraints, exceptions, wordRules, suffix, removeTrailing, [], priority)
+            {
+            }
+
+            /// <summary>
+            /// Initializes a new instance of <see cref="OrdinalVariantRule"/> with ordinal-only replacements.
+            /// </summary>
+            /// <param name="constraints">The dimension constraints.</param>
+            /// <param name="exceptions">The variant whole-number exceptions.</param>
+            /// <param name="wordRules">The variant last-word rules.</param>
+            /// <param name="suffix">The variant suffix override, or <see langword="null"/>.</param>
+            /// <param name="removeTrailing">The variant removeTrailing override, or <see langword="null"/>.</param>
+            /// <param name="replacements">
+            /// Replacements applied, for this variant only, to the assembled cardinal before the ordinal
+            /// transformation (after the base ordinal replacements); copied into an immutable snapshot.
+            /// </param>
+            /// <param name="priority">Explicit precedence after specificity.</param>
+            public OrdinalVariantRule(
+                IReadOnlyDictionary<string, string> constraints,
+                IReadOnlyDictionary<long, string> exceptions,
+                IReadOnlyDictionary<string, string> wordRules,
+                string? suffix,
+                string? removeTrailing,
+                IReadOnlyList<ReplacementRule> replacements,
+                int priority = 0)
             {
                 ArgumentNullException.ThrowIfNull(constraints);
                 ArgumentNullException.ThrowIfNull(exceptions);
                 ArgumentNullException.ThrowIfNull(wordRules);
+                ArgumentNullException.ThrowIfNull(replacements);
                 Constraints = constraints.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
                 Exceptions = exceptions.ToImmutableDictionary();
                 WordRules = wordRules.ToImmutableDictionary();
+                Replacements = replacements.ToImmutableArray();
                 Suffix = suffix;
                 RemoveTrailing = removeTrailing;
                 Priority = priority;
                 NormalizedConstraints = new VariantConstraintSet(Constraints);
             }
+
+            /// <summary>Gets the variant ordinal-only replacements (see <see cref="NumberToStringConverterOptions.OrdinalReplacements"/>).</summary>
+            public IReadOnlyList<ReplacementRule> Replacements { get; }
 
             /// <summary>Gets the dimension constraints that must all be satisfied for this variant to apply.</summary>
             public IReadOnlyDictionary<string, string> Constraints { get; }
@@ -2016,6 +2105,9 @@ namespace Utils.NumberToString
             {
                 string raw = number == 0 ? Zero : ConvertRaw((BigInteger)number, activeVariants);
                 raw = ApplyVariantRules(raw, activeVariants, number);
+                // Ordinal-only replacements see the assembled, variant-transformed cardinal and run
+                // before the ordinal transformation (word rules, stems, removeTrailing, suffix).
+                raw = ApplyOrdinalReplacements(raw, activeVariant);
                 string ordinal = ApplyOrdinalTransform(raw, activeVariant, out bool formed, noExplicitVariants: !explicitVariantIntent);
                 // NTS-12: an unchanged cardinal is a legitimate ordinal for some non-zero values
                 // (e.g. Hebrew above ten), but never for zero. Zero needs an explicit formation:
@@ -2936,6 +3028,48 @@ namespace Utils.NumberToString
 
             formed = false;
             return cardinal;
+        }
+
+        /// <summary>
+        /// Applies the base ordinal-only replacements, then those of the selected ordinal variant, to
+        /// the assembled cardinal, in declaration order and with the cardinal replacement scopes.
+        /// </summary>
+        /// <param name="cardinal">The assembled, variant-transformed cardinal.</param>
+        /// <param name="activeVariant">The selected ordinal variant (including an injected default), if any.</param>
+        /// <returns>The text handed to the ordinal transformation.</returns>
+        private string ApplyOrdinalReplacements(string cardinal, OrdinalVariantRule? activeVariant)
+        {
+            foreach (var replacement in _ordinalReplacements)
+                cardinal = ApplyVariantReplacement(cardinal, replacement);
+            if (activeVariant != null)
+                foreach (var replacement in activeVariant.Replacements)
+                    cardinal = ApplyVariantReplacement(cardinal, replacement);
+            return cardinal;
+        }
+
+        /// <summary>
+        /// Validates ordinal-only replacements and snapshots them. They act on the whole assembled
+        /// cardinal, so the per-group <c>onScale</c> and value <c>onValue</c> filters do not apply
+        /// and are rejected rather than silently ignored.
+        /// </summary>
+        /// <param name="replacements">The configured replacements, or <see langword="null"/>.</param>
+        /// <param name="parameterName">The options property name reported in exceptions.</param>
+        /// <returns>The immutable replacements.</returns>
+        /// <exception cref="ArgumentException">An entry is null or declares an <c>onScale</c>/<c>onValue</c> filter.</exception>
+        private static ImmutableArray<ReplacementRule> CompileOrdinalReplacements(IReadOnlyList<ReplacementRule>? replacements, string parameterName)
+        {
+            if (replacements is null || replacements.Count == 0) return [];
+            ReplacementRule[] snapshot = [.. replacements];
+            foreach (var replacement in snapshot)
+            {
+                if (replacement is null)
+                    throw new ArgumentException("Ordinal replacements must not be null.", parameterName);
+                if (replacement.OnScale is not null || replacement.OnValue is not null)
+                    throw new ArgumentException(
+                        $"Ordinal replacement '{replacement.OldValue}' declares onScale/onValue, which ordinal replacements do not support.",
+                        parameterName);
+            }
+            return [.. snapshot];
         }
 
         /// <summary>Rewrites the ending of <paramref name="word"/> with the longest matching ordinal stem rule.</summary>

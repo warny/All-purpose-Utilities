@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added — `omy.Utils.NumberToString`
+- Added scale lexical forms: `<NumberScale><ScaleForm scale formSelector>` (XSD, `ScaleFormEntry`),
+  `NumberToStringConverterOptions.ScaleForms` / `ScaleFormSelectors` and the converter's read-only
+  `ScaleForms` / `ScaleFormSelectors`. The existing `ILexicalFormSelector` chooses the form of a
+  scale noun from its group multiplier; scales without configuration keep the historical
+  singular/plural name. Added `ArabicScaleLexicalFormSelector`.
+- Added ordinal-only replacements: `<Replacement>` inside `<Ordinals>` and inside an ordinal
+  `<Variant>`, `NumberToStringConverterOptions.OrdinalReplacements`, converter
+  `OrdinalReplacements`, and `OrdinalVariantRule.Replacements` through an additional constructor
+  overload (the existing constructor is unchanged). They apply to the assembled cardinal before the
+  ordinal word/stem/suffix transformation and never affect cardinal conversions.
+- Added `ZeroOrdinalUnsupportedLanguageSpecifics`, a shared opt-in guard rejecting the ordinal of
+  zero.
 - Added the `<OrdinalStem from to>` ordinal primitive (XSD `OrdinalStemType`, additive
   `OrdinalStemRule` record, `NumberToStringConverterOptions.OrdinalStemRules` and converter
   `OrdinalStemRules`): on the suffixed ordinal path the longest matching ending of the last word is
@@ -18,6 +30,19 @@ All notable changes to this project will be documented in this file.
   cumulative by range specificity, validated strictly at load (conflicts, domain, empty values,
   absent edges, intra-group connector overlap) and compiled into immutable lookup tables.
 - Added `ItalianOrdinalLanguageSpecifics`, restricting Italian ordinals to verified forms.
+
+### Fixed — `omy.Utils.NumberToString` (NTS-14)
+- Italian millions and above are lower-case separate nouns joined by `e` (`un milione`,
+  `due milioni e centomila`, `un milione e uno`, `un miliardo`) instead of `uno Millione`; the
+  thousands below a million stay soldered. Italian ordinals of a million and above still fail
+  closed (NTS-17).
+- Arabic thousands take the form their multiplier governs (`ألف`, `ألفان`, `ثلاثة آلاف`,
+  `أحد عشر ألفًا`, `مائة ألف`, `مائتا ألف`, `مائة وألف`); a feminine number no longer changes the
+  thousands multiplier.
+- Hebrew default/standalone ordinals ending in a teen use the masculine teen (`מאה ואחד עשר`).
+- The ordinal of zero is `нулевой` (declined) in Russian and `nullte` (declined) in German; Catalan,
+  Valencian, Wolof and Ewe now reject it (`NotSupportedException`) instead of producing unsourced
+  forms (`zeroè`, `seroël`, `etsõ zero`).
 
 ### Fixed — `omy.Utils.NumberToString` (NTS-13)
 - Italian compound ordinals are formed from the soldered cardinal (`ventunesimo`, `ventitreesimo`,

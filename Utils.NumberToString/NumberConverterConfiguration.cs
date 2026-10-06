@@ -190,6 +190,13 @@ public class OrdinalsType
     public List<OrdinalStemType>? Stems { get; set; }
 
     /// <summary>
+    /// Gets or sets the ordinal-only replacements applied to the assembled cardinal before the
+    /// ordinal transformation (they never affect cardinal conversions).
+    /// </summary>
+    [XmlElement("Replacement")]
+    public List<ReplacementType>? Replacements { get; set; }
+
+    /// <summary>
     /// Gets or sets the container for variant-specific ordinal blocks.
     /// </summary>
     [XmlElement("OrdinalVariants")]
@@ -265,6 +272,10 @@ public class OrdinalVariantElementType
     /// <summary>Variant-specific word-level rules (checked before base word rules).</summary>
     [XmlElement("Ordinal")]
     public List<OrdinalRuleType>? Rules { get; set; }
+
+    /// <summary>Variant-specific ordinal-only replacements, applied after the base ordinal replacements.</summary>
+    [XmlElement("Replacement")]
+    public List<ReplacementType>? Replacements { get; set; }
 
     /// <summary>
     /// Nested sub-variants that inherit this variant's constraint and add further constraints.
@@ -860,6 +871,34 @@ public class ClockTimeRuleEntry
 }
 
 /// <summary>
+/// XML element <c>&lt;ScaleForm scale="…"&gt;</c> inside <c>&lt;NumberScale&gt;</c>: declares the named
+/// lexical forms of one scale noun (e.g. the Arabic dual/plural/accusative forms of "thousand") and
+/// the selector choosing which form the group multiplier governs. Projected into
+/// <c>NumberToStringConverterOptions.ScaleForms</c> and <c>ScaleFormSelectors</c>.
+/// </summary>
+public class ScaleFormEntry
+{
+    /// <summary>The scale index the forms apply to (1 = thousands, 2 = millions, …).</summary>
+    [XmlAttribute("scale")]
+    public int Scale { get; set; }
+
+    /// <summary>Optional selector type name or built-in alias (same vocabulary as <see cref="TimeUnitEntry.FormSelector"/>).</summary>
+    [XmlAttribute("formSelector")]
+    public string? FormSelector { get; set; }
+
+    /// <summary>Optional structured selector declaration, used instead of <see cref="FormSelector"/> when the selector needs its own configuration.</summary>
+    [XmlElement("LexicalFormSelector")]
+    public LexicalFormSelectorElementType? LexicalFormSelector { get; set; }
+
+    /// <summary>
+    /// Optional named forms, overriding or extending the "singular"/"plural" forms synthesized from
+    /// the scale name.
+    /// </summary>
+    [XmlElement("Forms")]
+    public LexicalFormsType? Forms { get; set; }
+}
+
+/// <summary>
 /// Holds named lexical form entries for a configurable constituent (e.g. a time unit).
 /// </summary>
 public class LexicalFormsType
@@ -1350,4 +1389,10 @@ public class NumberScaleType
     /// </summary>
     [XmlElement(ElementName = "Suffixes")]
     public SuffixesType Suffixes { get; set; }
+
+    /// <summary>
+    /// Gets or sets the per-scale lexical forms and selectors (see <see cref="ScaleFormEntry"/>).
+    /// </summary>
+    [XmlElement(ElementName = "ScaleForm")]
+    public List<ScaleFormEntry>? ScaleForms { get; set; }
 }

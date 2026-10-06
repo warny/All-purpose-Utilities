@@ -84,6 +84,8 @@
 		  The feminine variant supplies the feminized unit forms (cinc→cinquena…)
 		  and handles "dues" (from cardinal "dos→dues") correctly.
 		-->
+		<!-- NTS-14: no normative source (IEC, Optimot, TERMCAT) attests an ordinal of zero; the suffix would form "zeroè"/"zeroena", so zero fails closed (inherited by CA-valencia). -->
+		<LanguageSpecifics>ZeroOrdinalUnsupportedLanguageSpecifics</LanguageSpecifics>
 		<Ordinals suffix="è" removeTrailing="a">
 			<!-- Irregular masculine 1-4 -->
 			<OrdinalException value="1"  string="primer" />

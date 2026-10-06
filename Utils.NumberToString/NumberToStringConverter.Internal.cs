@@ -241,6 +241,10 @@ namespace Utils.NumberToString
         /// <summary>Gets or sets the suffix table associated with scale prefixes.</summary>
         [XmlElement(ElementName = "Suffixes")]
         public SuffixesType? Suffixes { get; set; }
+
+        /// <summary>Gets or sets the per-scale lexical forms and selectors.</summary>
+        [XmlElement(ElementName = "ScaleForm")]
+        public List<ScaleFormEntry>? ScaleForms { get; set; }
     }
 
     /// <summary>
@@ -301,5 +305,6 @@ namespace Utils.NumberToString
         public DigitListType? TensPrefixes { get; init; }
         public DigitListType? HundredsPrefixes { get; init; }
         public SuffixesType? Suffixes { get; init; }
+        public List<ScaleFormEntry>? ScaleForms { get; init; }
     }
 }

@@ -24,7 +24,7 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | FR, FR-fr, FR-ca | French | ✓ declarative | ✓ 5 min, 24 h | gender | local | — |
 | FR-be | Belgian French (septante / quatre-vingts / nonante) | ✓ merged | ✓ inherited | gender | child of FR | — |
 | FR-ch | Swiss French (septante / huitante / nonante) | ✓ inherited | ✓ inherited | gender | child of FR | No cantonal `octante` |
-| DE, de-DE, de-AT | German | ✓ declarative | ✓ 5 min, 12 h | genus × kasus | local | — |
+| DE, de-DE, de-AT | German | ✓ declarative (zero: `nullte`, Duden) | ✓ 5 min, 12 h | genus × kasus | local | — |
 | de-CH, de-LI | Swiss German | ✓ merged | ✓ inherited | genus × kasus | child of DE | — |
 | NL | Dutch | ✓ declarative | ✓ 5 min, 12 h | — | local | No day-part wording |
 | DA, DA-DK | Danish | ✓ plugin (int range) | ✓ 5 min, 12 h | gender (fælleskøn/intetkøn) | local | Ordinals above `int.MaxValue` fail closed |
@@ -36,19 +36,19 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | CS, CS-CZ | Czech | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 (round millions/milliards: one only) |
 | SK, SK-SK | Slovak | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 and one million |
 | PL | Polish | ✓ plugin + declarative | ✓ 5 min, 12 h | rodzaj × przypadek | local | No ordinal of zero |
-| RU | Russian | ✓ declarative | ✓ 15 min, 12 h | gender × case | local | — |
+| RU | Russian | ✓ declarative (zero: `нулевой`) | ✓ 15 min, 12 h | gender × case | local | — |
 | UK, UK-UA | Ukrainian | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Round thousands verified up to 10 000 |
 | ES | Spanish | ✓ declarative | ✓ 5 min, 12 h | gender × form | local | No ordinal of zero |
-| IT | Italian | ✓ 1–1999 except 1010–1910, and round thousands to 999000 (`<OrdinalStem>`, domain-guard plugin) | ✓ 5 min, 12 h | gender | local | Zero, 1010–1910 and non-round thousands above 1999 (NTS-15) and millions fail closed; millions not orthographic ("uno Millione", NTS-14) |
+| IT | Italian | ✓ 1–1999 except 1010–1910, and round thousands to 999000 (`<OrdinalStem>`, domain-guard plugin) | ✓ 5 min, 12 h | gender | local | Ordinals of zero, 1010–1910 and non-round thousands above 1999 (NTS-15) and of millions (NTS-17) fail closed; millions are separate nouns joined by `e` ("due milioni e centomila") |
 | PT | Portuguese | ✓ declarative | ✓ 5 min, 12 h (direct "e …") | gender | local | Deliberate direct numeric reading (no "para"/"menos" constructions); PT-PT/PT-BR not split; no ordinal of zero |
 | GL, gl-ES | Galician | ✓ declarative | ✓ 5 min, 12 h | gender | local | No ordinal of zero |
 | RO, RO-RO | Romanian | ✓ plugin (DOOM) | ✓ 15 min, 12 h | gen | local | Ordinals up to 999 999 and one million (masculine) |
-| CA, ca-ES | Catalan | ✓ declarative | ✓ 15 min, 12 h | gender | local | Traditional quarters only |
+| CA, ca-ES | Catalan | ✓ declarative | ✓ 15 min, 12 h | gender | local | Traditional quarters only; no ordinal of zero |
 | ca-ES-valencia | Valencian | ✓ inherited | ✓ 5 min, 12 h, own section | gender | child of CA | Invariable `dos` in ClockTime only |
 | EL | Greek | ✓ declarative | ✓ 15 min, 12 h | gender | local | Masculine cardinal forms (ένας) not modelled; no ordinal of zero |
 | FI | Finnish | ✓ declarative (zero: nollas) | ✓ 15 min, 12 h | case | local | — |
-| AR | Arabic | ✓ 1–99, 100, 1000 | ✓ 15 min, 12 h | gender | local | Other ordinals above 99 fail closed; dual/plural thousands (ألفان, آلاف) not modelled |
-| HE | Hebrew | ✓ 1–10 adjectives, above ten the agreeing cardinal | ✓ 15 min, 12 h | gender (standalone/zachar/nekeva) | local | No ordinal of zero |
+| AR | Arabic | ✓ 1–99, 100, 1000 | ✓ 15 min, 12 h | gender | local | Other ordinals above 99 fail closed; thousands take the form their multiplier governs (ألف, ألفان, ثلاثة آلاف, أحد عشر ألفًا) |
+| HE | Hebrew | ✓ 1–10 adjectives, above ten the agreeing cardinal (masculine by default, also for compounds ending in a teen) | ✓ 15 min, 12 h | gender (standalone/zachar/nekeva) | local | No ordinal of zero |
 | FA, FA-IR | Persian | ✓ declarative | ✓ 15 min, 12 h | — | local | — |
 | TR, TR-TR | Turkish | ✓ declarative (vowel harmony) | ✓ 15 min, 12 h | case (nominative/accusative/dative) | local | — |
 | HI | Hindi | ✓ declarative | ✓ 15 min, 12 h | gender | local | No lakh/crore grouping |
@@ -61,8 +61,8 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | EU, eu-ES | Basque | ✓ declarative | ✓ 15 min, 12 h | — | local | Clock-case forms only in ClockTime |
 | SW, SW-KE, SW-TZ | Swahili | — deferred (noun-class concord) | ✓ 15 min, 12 h, six-hour offset | — | local | No asubuhi/mchana/jioni/usiku |
 | ZU | Zulu | — deferred (noun-class policy) | ✓ 15 min, 12 h | — | local | Hour forms only in ClockTime |
-| EE | Ewe | ✓ prefix etsõ | — deferred (no sourced minute convention) | — | local | — |
-| WO | Wolof | ✓ declarative | — deferred (competing conventions) | — | local | — |
+| EE | Ewe | ✓ prefix etsõ (unsourced, NTS-16) | — deferred (no sourced minute convention) | — | local | No ordinal of zero |
+| WO | Wolof | ✓ declarative (`-ël` spelling unsourced, NTS-16) | — deferred (competing conventions) | — | local | No ordinal of zero |
 
 "plugin" means an `IOrdinalLanguageSpecifics` implementation; values it does not implement fail
 closed with `NotSupportedException` rather than returning a cardinal. The declarative pipeline
@@ -367,7 +367,9 @@ it.Convert(21, "gender=femminile"); // "ventuno" ← "ventuno ballerine" (Trecca
 
 Compound cardinals are written as one word through `<Fusion>` rules (see
 [`<Fusion>`](#fusion--morphological-composition-at-a-junction)): `ventuno`, `ventitré`,
-`ventotto`, `centottanta`, `duemila`, `milletré`. Soldered compounds keep `-uno` in the
+`ventotto`, `centottanta`, `duemila`, `milletré`. From a million the scale words are separate
+nouns with a plural, joined to the lower groups by `e` (Treccani): `un milione`, `due milioni e
+centomila`, `un milione e uno`, `ventuno milioni`, `un miliardo` (NTS-14). Soldered compounds keep `-uno` in the
 feminine, as Treccani records for plural feminine nouns. Compound ordinals are formed by
 `<OrdinalStem>` rules (see [`<OrdinalStem>`](#ending-rewrite-before-the-suffix--ordinalstem)):
 `ventunesimo`, `ventitreesimo`, `ventiseiesimo`, `centunesimo`, `milleunesimo`, `duemillesimo`,
@@ -1155,7 +1157,7 @@ number
       for each group (millions, thousands, units, …):
           ConvertGroup                    (digit text for this group)
           Trigger group(N)                (optional: replacements on digit text)
-          append scale name
+          append scale name               (ScaleForm selector when configured, else singular/plural)
           Replacements with onScale=N     (per-group rules, filtered by onValue)
           Trigger groupWithScale(N)       (optional: replacements on digit+scale text)
           push to stack
@@ -1175,7 +1177,8 @@ number
   → OrdinalExceptions      (integer-level early exit, e.g. 1 → "premier")
   → ConvertRaw + Triggers group/groupWithScale (same as cardinal)
   → ApplyVariantRules      (default variant values)
-  → ApplyOrdinalTransform  (word rules + suffix on last word)
+  → ordinal Replacements   (base, then the selected ordinal variant; ordinal-only)
+  → ApplyOrdinalTransform  (exact word rules, OrdinalStem / removeTrailing + suffix on last word)
   → AdjustFunction         (user transform + FinalizeWriting)
   → Trigger end
   → sign wrapping
@@ -1427,7 +1430,56 @@ a rule covering it is inert there.
 ```
 
 `firstLetterUpperCase="true"` capitalises generated scale names (useful for German:
-"Million", "Milliarde"). The `"(s)"` string in names is a plural marker.
+"Million", "Milliarde"). The `"(s)"` string in names is a plural marker. `groupSeparator` joins the
+prefix and the suffix of generated names (default `lli`: "million"); Italian uses `li` for
+"milione", "miliardo", "bilione".
+
+#### Scale lexical forms — `<ScaleForm>`
+
+When a language needs more than singular/plural for a scale noun, `<ScaleForm>` (inside
+`<NumberScale>`) declares named forms and an `ILexicalFormSelector` — the same mechanism as
+[time units](#lexical-form-selection--ilexicalformselector):
+
+```xml
+<NumberScale firstLetterUpperCase="false">
+    <StaticNames>…<Scale value="1" string="ألف" /></StaticNames>
+    <ScaleForm scale="1" formSelector="ArabicScaleLexicalFormSelector">
+        <Forms>
+            <Form key="singular" value="ألف" />
+            <Form key="dual" value="ألفان" />
+            <Form key="plural" value="آلاف" />
+            <Form key="singularAccusative" value="ألفًا" />
+        </Forms>
+    </ScaleForm>
+</NumberScale>
+```
+
+- The **scale name** (`NumberScale.GetScaleName`) stays the base lexical name; the **form key** is
+  chosen per conversion by the selector and resolved to a word from `<Forms>`.
+- The selector receives `LexicalFormContext.Value` = the group multiplier (3 for 3 000) and
+  `Variants` = the effective variant query. It returns a key only; words stay in XML.
+- `singular`/`plural` are synthesized from the scale name and may be overridden; a scale with
+  forms but no selector uses `DefaultLexicalFormSelector`. A key with no form throws
+  `NumberToStringConfigurationException` `UNTS007`.
+- A scale without `<ScaleForm>` keeps `GetScaleName(index).ToPlural(multiplier)` byte for byte.
+- Selectors are resolved once while loading (`formSelector` attribute or a structured
+  `<LexicalFormSelector type="…">`), never during conversion. Indices the scale cannot name and
+  duplicate `scale` entries are rejected; `baseOn` merges entries by scale index.
+- Programmatic: `NumberToStringConverterOptions.ScaleForms` / `ScaleFormSelectors`; the converter
+  exposes read-only `ScaleForms` / `ScaleFormSelectors` snapshots of the **effective** state.
+  `new NumberToStringConverterOptions(converter)` copies only the explicitly configured forms and
+  selectors (like `TimeUnitForms`), so a clone given another `Scale` re-synthesizes its own
+  singular/plural names.
+- Changing the multiplier text itself (e.g. dropping "one"/"two" before Arabic ألف/ألفان) stays the
+  job of `onScale` replacements.
+
+```csharp
+var ar = NumberToStringConverter.GetConverter("AR");
+ar.Convert(2000);    // "ألفان"
+ar.Convert(3000);    // "ثلاثة آلاف"
+ar.Convert(11000);   // "أحد عشر ألفًا"
+ar.Convert(101000);  // "مائة وألف"
+```
 
 ---
 
@@ -1558,6 +1610,9 @@ Required to enable `ConvertOrdinal()`.
 5. Default suffix (base or variant), after rewriting the ending of the last word with the longest
    matching `<OrdinalStem>` rule — or, when no stem rule matches, after the `removeTrailing` strip.
 
+Steps 3–5 act on the cardinal after the ordinal `<Replacement>` rules (see
+[Ordinal-only replacements](#ordinal-only-replacements--replacement-inside-ordinals)).
+
 ```xml
 <Ordinals suffix="ième" removeTrailing="e">
 
@@ -1593,6 +1648,49 @@ Required to enable `ConvertOrdinal()`.
     <OrdinalException value="1" string="gbãtõ" />
     <!-- 1 → "gbãtõ" (exception wins); 2 → "etsõ eve" (prefix + cardinal) -->
 </Ordinals>
+```
+
+#### Ordinal-only replacements — `<Replacement>` inside `<Ordinals>`
+
+`<Replacement>` elements placed in `<Ordinals>` (base) or in an ordinal `<Variant>` reuse the
+cardinal replacement syntax (`oldValue`, `newValue`, `scope` = `Standalone`, `Anywhere`,
+`StartsWith`, `EndsWith`, `LastWord`) but act **only on the ordinal pipeline**:
+
+```
+OrdinalException (whole number)          ← bypasses everything below
+  ↓
+ConvertRaw cardinal → cardinal VariantRules
+  ↓
+ordinal <Replacement>: base, then the selected ordinal variant
+  ↓
+exact <Ordinal from to> → <OrdinalStem> → removeTrailing → suffix / prefix
+  ↓
+adjustment, end triggers, finalization
+```
+
+- They see the cardinal already assembled and transformed by the cardinal `<Variants>` rules, and
+  never change `Convert(...)`.
+- The selected ordinal variant includes a dimension default injected when the caller passes no
+  variant, so a rule declared in the default variant applies to `ConvertOrdinal(n)`.
+- `onScale`/`onValue` filters and form-variant children are rejected: the rules act on the whole
+  phrase.
+- `baseOn`: a derived language declaring base ordinal replacements replaces the inherited list
+  (like the cardinal `<Replacements>`); variant replacements follow `<OrdinalVariants>`, which a
+  derived language replaces as a whole.
+- Programmatic: `NumberToStringConverterOptions.OrdinalReplacements` and
+  `OrdinalVariantRule.Replacements` (new constructor overload; the historical one is unchanged).
+
+Hebrew (NTS-14): the ordinal above ten is the masculine agreeing cardinal, but the standalone
+cardinal ends compounds with the counting teen; the default variant rewrites the end of the phrase:
+
+```xml
+<OrdinalVariants>
+    <Variant type="gender" variant="standalone">
+        <Replacement oldValue="אחת עשרה" newValue="אחד עשר" scope="EndsWith" />
+        <!-- … the other teens … -->
+    </Variant>
+</OrdinalVariants>
+<!-- ConvertOrdinal(111) → "מאה ואחד עשר"; Convert(111) → "מאה ואחת עשרה" -->
 ```
 
 #### Ending rewrite before the suffix — `<OrdinalStem>`

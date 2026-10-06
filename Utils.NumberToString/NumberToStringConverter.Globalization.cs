@@ -843,6 +843,7 @@ namespace Utils.NumberToString
                 TensPrefixes = model.TensPrefixes,
                 HundredsPrefixes = model.HundredsPrefixes,
                 Suffixes = model.Suffixes,
+                ScaleForms = model.ScaleForms,
             };
         }
 
@@ -962,6 +963,9 @@ namespace Utils.NumberToString
                 Exceptions = mergedExceptions,
                 Rules = mergedRules,
                 Stems = mergedStems,
+                // Like the cardinal Replacements, a derived language declaring ordinal replacements
+                // replaces the inherited list; otherwise the list is inherited.
+                Replacements = childOrdinals.Replacements is { Count: > 0 } ? childOrdinals.Replacements : baseOrdinals.Replacements,
                 OrdinalVariantsContainer = childOrdinals.OrdinalVariantsContainer ?? baseOrdinals.OrdinalVariantsContainer,
             };
         }
@@ -990,7 +994,25 @@ namespace Utils.NumberToString
                 TensPrefixes = overriding.TensPrefixes ?? inherited.TensPrefixes,
                 HundredsPrefixes = overriding.HundredsPrefixes ?? inherited.HundredsPrefixes,
                 Suffixes = overriding.Suffixes ?? inherited.Suffixes,
+                ScaleForms = MergeScaleForms(inherited.ScaleForms, overriding.ScaleForms),
             };
+        }
+
+        /// <summary>
+        /// Merges inherited and overriding <c>&lt;ScaleForm&gt;</c> entries by scale index: an
+        /// overriding entry replaces the inherited entry of the same scale, other inherited entries
+        /// are kept and new ones are appended. Every overriding entry is kept as-is, so a duplicate
+        /// scale declared by the overriding language itself still reaches validation.
+        /// </summary>
+        /// <param name="inherited">The base language entries, or <see langword="null"/>.</param>
+        /// <param name="overriding">The derived language entries, or <see langword="null"/>.</param>
+        /// <returns>The merged entries, or <see langword="null"/> when neither side declares any.</returns>
+        private static List<ScaleFormEntry>? MergeScaleForms(List<ScaleFormEntry>? inherited, List<ScaleFormEntry>? overriding)
+        {
+            if (overriding is not { Count: > 0 }) return inherited;
+            if (inherited is not { Count: > 0 }) return overriding;
+            var overridden = new HashSet<int>(overriding.Select(e => e.Scale));
+            return [.. inherited.Where(e => !overridden.Contains(e.Scale)), .. overriding];
         }
 
         /// <summary>
@@ -1052,6 +1074,7 @@ namespace Utils.NumberToString
                 UnitsPrefixes = definition.UnitsPrefixes,
                 TensPrefixes = definition.TensPrefixes,
                 HundredsPrefixes = definition.HundredsPrefixes,
+                ScaleForms = definition.ScaleForms,
                 Suffixes = definition.Suffixes,
             };
         }
@@ -1210,6 +1233,12 @@ namespace Utils.NumberToString
                 confScale.FirstLetterUpperCase
             );
 
+            var scaleFormEntries = confScale.ScaleForms ?? [];
+            var duplicateScaleForm = scaleFormEntries.GroupBy(e => e.Scale).FirstOrDefault(g => g.Count() > 1);
+            if (duplicateScaleForm != null)
+                throw new ArgumentException(
+                    $"[{languageIdentifier}] NumberScale declares more than one ScaleForm for scale {duplicateScaleForm.Key}.");
+
             BigInteger? configuredMaximum = string.IsNullOrWhiteSpace(language.MaxNumber)
                 ? null
                 : BigInteger.Parse(language.MaxNumber, CultureInfo.InvariantCulture);
@@ -1238,6 +1267,20 @@ namespace Utils.NumberToString
                             $"[{languageIdentifier}] Replacement for '{r.OldValue}' has neither a newValue " +
                             $"nor child form-variant elements. Either add newValue or provide at least one <Variant>.");
                     // else: no direct newValue but has form variants — handled by ExpandFormVariants in ParseVariantRules
+                }
+                return rules;
+            }
+
+            List<NumberToStringConverter.ReplacementRule> ParseOrdinalReplacements(List<ReplacementType>? list)
+            {
+                var rules = new List<NumberToStringConverter.ReplacementRule>();
+                foreach (var r in list ?? [])
+                {
+                    if (r.NewValue == null)
+                        throw new InvalidOperationException(
+                            $"[{languageIdentifier}] Ordinal replacement for '{r.OldValue}' must declare a newValue; " +
+                            "form-variant children are not supported in ordinal replacements.");
+                    rules.Add(new NumberToStringConverter.ReplacementRule(r.OldValue, r.NewValue, r.Scope, r.OnScale, r.OnValue));
                 }
                 return rules;
             }
@@ -1562,7 +1605,7 @@ namespace Utils.NumberToString
                         foreach (var kv in wordRules) mergedWr[kv.Key] = kv.Value;
                         result[idx] = new NumberToStringConverter.OrdinalVariantRule(
                             existing.Constraints, mergedExc, mergedWr,
-                            existing.Suffix, existing.RemoveTrailing, existing.Priority);
+                            existing.Suffix, existing.RemoveTrailing, existing.Replacements, existing.Priority);
                     }
                     else
                     {
@@ -1604,6 +1647,7 @@ namespace Utils.NumberToString
                 var wordRules = variant.Rules?.Where(r => r.To != null)
                     .ToDictionary(r => r.From, r => r.To!)
                     ?? new Dictionary<string, string>();
+                var replacements = ParseOrdinalReplacements(variant.Replacements);
 
                 foreach (var dimValue in dimValues)
                 {
@@ -1612,7 +1656,7 @@ namespace Utils.NumberToString
                         constraints[dimType] = dimValue;
 
                     result.Add(new NumberToStringConverter.OrdinalVariantRule(
-                        constraints, exceptions, wordRules, variant.Suffix, variant.RemoveTrailing, variant.Priority));
+                        constraints, exceptions, wordRules, variant.Suffix, variant.RemoveTrailing, replacements, variant.Priority));
 
                     foreach (var child in variant.NestedVariants ?? [])
                         CollectOrdinalVariants(child, constraints, result);
@@ -1719,6 +1763,7 @@ namespace Utils.NumberToString
                     .Select(s => new OrdinalStemRule(s.From!, s.To!))
                     .ToList()
                     ?? [],
+                OrdinalReplacements = ParseOrdinalReplacements(language.Ordinals?.Replacements),
                 OrdinalPrefix = language.Ordinals?.Prefix,
                 OrdinalVariants = ParseOrdinalVariants(language.Ordinals),
                 VariantDimensions = parsedDimensions,
@@ -1739,6 +1784,19 @@ namespace Utils.NumberToString
                 IntraGroupConnectorThreshold = language.IntraGroupConnectorThreshold,
                 ScaleConnector = language.ScaleConnector,
                 ScaleConnectorThreshold = language.ScaleConnectorThreshold,
+                // Every <ScaleForm> registers its scale (with empty forms when it only names a
+                // selector) so that its index is validated; selectors are resolved here, once.
+                ScaleForms = scaleFormEntries.ToDictionary(
+                    e => e.Scale,
+                    e => e.Forms?.Entries is { Count: > 0 }
+                        ? LexicalFormSet.Create(e.Forms.Entries.Select(f => (f.Key, f.Value)))
+                        : LexicalFormSet.Empty),
+                ScaleFormSelectors = scaleFormEntries
+                    .Where(e => !string.IsNullOrWhiteSpace(e.LexicalFormSelector?.Type) || !string.IsNullOrWhiteSpace(e.FormSelector))
+                    .ToDictionary(e => e.Scale, e => ResolveLexicalFormSelector(
+                        !string.IsNullOrWhiteSpace(e.LexicalFormSelector?.Type) ? e.LexicalFormSelector!.Type : e.FormSelector,
+                        languageIdentifier,
+                        XmlElementToXElement(e.LexicalFormSelector?.Configuration))),
                 TimeUnits = language.TimeUnits?.Units?
                     .ToDictionary(u => u.Name, u => (u.Singular, u.Plural, u.Count1Form)),
                 TimeUnitForcedVariants = language.TimeUnits?.Units?

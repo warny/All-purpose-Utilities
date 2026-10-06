@@ -90,7 +90,34 @@
 		  OrdinalVariants handles the 20+ suffix pattern for both declensions.
 		-->
 		<Ordinals suffix="ste">
-			<OrdinalException value="1"  string="erste">
+			<!-- NTS-14: Duden "nullte", "Ordinalzahl zu null" (forms nullter, nulltes), declined like
+			     dritte, instead of the mechanical "nullste". -->
+			<OrdinalException value="0"  string="nullte">
+				<Variant type="gender" variant="maskulin">
+					<Variant type="declension" variant="schwach">
+						<Variant type="case" forms="nullte,nullten,nullten,nullten" />
+					</Variant>
+					<Variant type="declension" variant="stark">
+						<Variant type="case" forms="nullter,nullten,nulltem,nullten" />
+					</Variant>
+				</Variant>
+				<Variant type="gender" variant="feminin">
+					<Variant type="declension" variant="schwach">
+						<Variant type="case" forms="nullte,nullte,nullten,nullten" />
+					</Variant>
+					<Variant type="declension" variant="stark">
+						<Variant type="case" forms="nullte,nullte,nullter,nullter" />
+					</Variant>
+				</Variant>
+				<Variant type="gender" variant="neutrum">
+					<Variant type="declension" variant="schwach">
+						<Variant type="case" forms="nullte,nullte,nullten,nullten" />
+					</Variant>
+					<Variant type="declension" variant="stark">
+						<Variant type="case" forms="nulltes,nulltes,nulltem,nullten" />
+					</Variant>
+				</Variant>
+			</OrdinalException>			<OrdinalException value="1"  string="erste">
 				<Variant type="gender" variant="maskulin">
 					<Variant type="declension" variant="schwach">
 						<Variant type="case" forms="erste,ersten,ersten,ersten" />

@@ -113,6 +113,17 @@ public sealed class NumberToStringConverterOptions
     public IReadOnlyList<OrdinalStemRule> OrdinalStemRules { get; set; } = [];
 
     /// <summary>
+    /// Ordinal-only replacements applied to the assembled, variant-transformed cardinal before the
+    /// ordinal transformation (exact word rules, <see cref="OrdinalStemRules"/>,
+    /// <see cref="OrdinalRemoveTrailing"/>, suffix/prefix). They use the cardinal replacement
+    /// scopes, are followed by the replacements of the selected
+    /// <see cref="NumberToString.NumberToStringConverter.OrdinalVariantRule"/>, are bypassed by
+    /// whole-number <see cref="OrdinalExceptions"/>, and never affect cardinal conversions.
+    /// <c>OnScale</c>/<c>OnValue</c> filters are not supported here and are rejected by the converter.
+    /// </summary>
+    public IReadOnlyList<NumberToStringConverter.ReplacementRule> OrdinalReplacements { get; set; } = [];
+
+    /// <summary>
     /// Prefix prepended to the whole ordinal result after <see cref="AdjustFunction"/> is applied.
     /// Example: <c>"第"</c> for Chinese/Japanese (第一, 第二…).
     /// </summary>
@@ -227,6 +238,25 @@ public sealed class NumberToStringConverterOptions
     /// </summary>
     public IReadOnlyList<SpecialHourRule> SpecialHours { get; set; } = [];
 
+    /// <summary>
+    /// Optional per-scale <see cref="LexicalFormSet"/> declaring named forms of a scale noun
+    /// (e.g. Arabic "dual", "plural", "singularAccusative" for "thousand"), keyed by scale index
+    /// (1 = thousands, 2 = millions, …). The "singular"/"plural" keys are synthesized from
+    /// <see cref="NumberScale.GetScaleName"/> and may be overridden here. A scale absent from both
+    /// this dictionary and <see cref="ScaleFormSelectors"/> keeps the historical
+    /// <c>GetScaleName(index).ToPlural(multiplier)</c> rendering byte for byte. Keys must be scale
+    /// indices the <see cref="Scale"/> can name (≥ 1); others are rejected by the converter.
+    /// </summary>
+    public IReadOnlyDictionary<int, LexicalFormSet>? ScaleForms { get; set; }
+
+    /// <summary>
+    /// Optional per-scale <see cref="ILexicalFormSelector"/> choosing which form of the scale noun
+    /// the group multiplier governs; it receives the multiplier as
+    /// <see cref="LexicalFormContext.Value"/>. Instances must be ready to use (no reflection is
+    /// performed here). Scales with forms but no selector use <see cref="DefaultLexicalFormSelector"/>.
+    /// </summary>
+    public IReadOnlyDictionary<int, ILexicalFormSelector>? ScaleFormSelectors { get; set; }
+
     /// <summary>Optional idiomatic clock-time formatting configuration.</summary>
     public ClockTimeFormatOptions? ClockTime { get; set; }
 
@@ -286,6 +316,11 @@ public sealed class NumberToStringConverterOptions
         OrdinalExceptions = source.OrdinalExceptions;
         OrdinalWordRules = source.OrdinalWordRules;
         OrdinalStemRules = source.OrdinalStemRules;
+        OrdinalReplacements = source.OrdinalReplacements;
+        // Override-only, like TimeUnitForms below: the effective ScaleForms contain singular/plural
+        // synthesized from source.Scale, which must not override the names of a replaced Scale.
+        ScaleForms = source.ScaleFormOverrides;
+        ScaleFormSelectors = source.ScaleFormSelectorOverrides;
         OrdinalPrefix = source.OrdinalPrefix;
         OrdinalVariants = source.OrdinalVariants;
         VariantDimensions = source.VariantDimensions;

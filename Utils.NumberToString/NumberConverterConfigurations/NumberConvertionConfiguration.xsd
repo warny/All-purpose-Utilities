@@ -694,6 +694,16 @@
         <xs:choice minOccurs="0" maxOccurs="unbounded">
             <xs:element name="OrdinalException" type="OrdinalExceptionType" />
             <xs:element name="Ordinal" type="OrdinalRuleType" />
+            <xs:element name="Replacement" type="ReplacementType">
+                <xs:annotation>
+                    <xs:documentation>
+                        Ordinal-only replacement applied, for this variant only, to the assembled and
+                        variant-transformed cardinal after the base ordinal replacements and before the
+                        word/stem/suffix transformation. Never affects cardinal conversions.
+                        onScale/onValue and child Variant forms are not supported here.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="Variant" type="OrdinalVariantElementType" />
         </xs:choice>
         <xs:attribute name="type" type="xs:string" use="required">
@@ -803,6 +813,19 @@
                         <xs:documentation>
                             Ending-level rule rewriting the end of the last word before the
                             effective suffix is appended (see OrdinalStemType).
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="Replacement" type="ReplacementType">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Ordinal-only replacement (same oldValue/newValue/scope semantics as the
+                            cardinal Replacements) applied to the assembled, variant-transformed
+                            cardinal before exact Ordinal word rules, OrdinalStem, removeTrailing and
+                            the suffix/prefix. Whole-number OrdinalException entries bypass it. Never
+                            affects cardinal conversions. onScale/onValue and child Variant forms are
+                            not supported here. Under baseOn, a derived language declaring ordinal
+                            Replacement elements replaces the inherited list.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:element>
@@ -1335,6 +1358,61 @@
                                                     ("", "(nx)centi", "(ms)ducenti", …).
                                                 </xs:documentation>
                                             </xs:annotation>
+                                        </xs:element>
+                                        <xs:element name="ScaleForm" minOccurs="0" maxOccurs="unbounded">
+                                            <xs:annotation>
+                                                <xs:documentation>
+                                                    Named lexical forms of one scale noun and the selector choosing which
+                                                    form the group multiplier governs (e.g. Arabic ألف / ألفان / آلاف /
+                                                    ألفًا). The "singular"/"plural" keys are synthesized from the scale
+                                                    name and may be overridden. The selector receives the multiplier
+                                                    (the group value) and the effective variants, and returns a form key
+                                                    only; the words stay in Forms. A scale without ScaleForm keeps the
+                                                    historical singular/plural name. Under baseOn, entries are merged by
+                                                    scale index (the derived entry replaces the inherited one).
+                                                </xs:documentation>
+                                            </xs:annotation>
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element name="LexicalFormSelector" minOccurs="0">
+                                                        <xs:annotation><xs:documentation>
+                                                            Structured alternative to the formSelector attribute (same contract
+                                                            as TimeUnits/Unit/LexicalFormSelector).
+                                                        </xs:documentation></xs:annotation>
+                                                        <xs:complexType>
+                                                            <xs:sequence>
+                                                                <xs:element name="Configuration" minOccurs="0">
+                                                                    <xs:complexType>
+                                                                        <xs:sequence>
+                                                                            <xs:any processContents="lax" minOccurs="0" maxOccurs="unbounded" />
+                                                                        </xs:sequence>
+                                                                        <xs:anyAttribute processContents="lax" />
+                                                                    </xs:complexType>
+                                                                </xs:element>
+                                                            </xs:sequence>
+                                                            <xs:attribute name="type" type="xs:string" use="required" />
+                                                        </xs:complexType>
+                                                    </xs:element>
+                                                    <xs:element name="Forms" minOccurs="0">
+                                                        <xs:complexType>
+                                                            <xs:sequence>
+                                                                <xs:element name="Form" minOccurs="0" maxOccurs="unbounded">
+                                                                    <xs:complexType>
+                                                                        <xs:attribute name="key" type="xs:string" use="required" />
+                                                                        <xs:attribute name="value" type="xs:string" use="required" />
+                                                                    </xs:complexType>
+                                                                </xs:element>
+                                                            </xs:sequence>
+                                                        </xs:complexType>
+                                                    </xs:element>
+                                                </xs:sequence>
+                                                <xs:attribute name="scale" type="xs:positiveInteger" use="required">
+                                                    <xs:annotation><xs:documentation>Scale index (1 = thousands, 2 = millions, …).</xs:documentation></xs:annotation>
+                                                </xs:attribute>
+                                                <xs:attribute name="formSelector" type="xs:string" use="optional">
+                                                    <xs:annotation><xs:documentation>Selector type name or built-in alias ("default"), resolved once at load.</xs:documentation></xs:annotation>
+                                                </xs:attribute>
+                                            </xs:complexType>
                                         </xs:element>
                                     </xs:sequence>
                                     <xs:attribute name="firstLetterUpperCase" type="xs:boolean" use="optional">

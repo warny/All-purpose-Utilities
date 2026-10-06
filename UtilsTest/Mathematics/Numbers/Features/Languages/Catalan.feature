@@ -136,3 +136,17 @@ Examples:
     | 01:45 | tres quarts de dues |
     | 11:45 | tres quarts de dotze |
     | 12:15 | un quart d'una |
+
+# NTS-14. No normative source (IEC, Optimot, TERMCAT) or pair of independent sources attests an
+# ordinal of zero; the suffix would mechanically produce "zeroè"/"zeroena", so zero fails closed like
+# Spanish, Galician and Portuguese.
+Scenario Outline: Zero has no ordinal form
+    Given I use the "CA" number converter
+    And I use the variants "<variants>"
+    When I attempt to convert the ordinal number 0
+    Then conversion is rejected because no ordinal form is available
+
+Examples:
+    | variants |
+    |  |
+    | gender=femení |
