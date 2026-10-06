@@ -424,6 +424,21 @@ namespace Utils.NumberToString
         /// </remarks>
         public BigInteger? MaxNumber { get; }
         /// <summary>
+        /// Gets the effective lexical forms of each scale noun configured with
+        /// <see cref="NumberToStringConverterOptions.ScaleForms"/> or
+        /// <see cref="NumberToStringConverterOptions.ScaleFormSelectors"/>, keyed by scale index
+        /// (synthesized "singular"/"plural" merged with the configured overrides). Scales absent
+        /// from this dictionary use the historical singular/plural scale name.
+        /// </summary>
+        public IReadOnlyDictionary<int, LexicalFormSet> ScaleForms => _scaleFormsPublic;
+
+        /// <summary>
+        /// Gets the effective lexical form selector of each scale listed in <see cref="ScaleForms"/>
+        /// (<see cref="DefaultLexicalFormSelector"/> when none was configured).
+        /// </summary>
+        public IReadOnlyDictionary<int, ILexicalFormSelector> ScaleFormSelectors => _scaleFormSelectorsPublic;
+
+        /// <summary>
         /// Group definitions for digits
         /// </summary>
         public IReadOnlyDictionary<int, IReadOnlyDictionary<long, DigitType>> Groups { get; }
@@ -617,6 +632,12 @@ namespace Utils.NumberToString
         public bool SupportsOrdinals =>
             HasDeclarativeOrdinalSupport || LanguageSpecifics is IOrdinalLanguageSpecifics;
 
+        /// <summary>Resolved scale-noun forms and selectors, keyed by scale index; empty when none is configured.</summary>
+        private readonly ImmutableDictionary<int, ScaleFormDefinition> _scaleForms = ImmutableDictionary<int, ScaleFormDefinition>.Empty;
+        /// <summary>Public read-only view of the effective scale forms.</summary>
+        private readonly ImmutableDictionary<int, LexicalFormSet> _scaleFormsPublic = ImmutableDictionary<int, LexicalFormSet>.Empty;
+        /// <summary>Public read-only view of the effective scale form selectors.</summary>
+        private readonly ImmutableDictionary<int, ILexicalFormSelector> _scaleFormSelectorsPublic = ImmutableDictionary<int, ILexicalFormSelector>.Empty;
         /// <summary>Ordinal stem rules validated and sorted once at construction, longest ending first.</summary>
         private readonly ImmutableArray<OrdinalStemRule> _ordinalStemRules;
         private readonly ImmutableDictionary<string, string> _replacementLookup;

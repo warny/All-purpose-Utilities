@@ -843,6 +843,7 @@ namespace Utils.NumberToString
                 TensPrefixes = model.TensPrefixes,
                 HundredsPrefixes = model.HundredsPrefixes,
                 Suffixes = model.Suffixes,
+                ScaleForms = model.ScaleForms,
             };
         }
 
@@ -990,7 +991,25 @@ namespace Utils.NumberToString
                 TensPrefixes = overriding.TensPrefixes ?? inherited.TensPrefixes,
                 HundredsPrefixes = overriding.HundredsPrefixes ?? inherited.HundredsPrefixes,
                 Suffixes = overriding.Suffixes ?? inherited.Suffixes,
+                ScaleForms = MergeScaleForms(inherited.ScaleForms, overriding.ScaleForms),
             };
+        }
+
+        /// <summary>
+        /// Merges inherited and overriding <c>&lt;ScaleForm&gt;</c> entries by scale index: an
+        /// overriding entry replaces the inherited entry of the same scale, other inherited entries
+        /// are kept and new ones are appended. Every overriding entry is kept as-is, so a duplicate
+        /// scale declared by the overriding language itself still reaches validation.
+        /// </summary>
+        /// <param name="inherited">The base language entries, or <see langword="null"/>.</param>
+        /// <param name="overriding">The derived language entries, or <see langword="null"/>.</param>
+        /// <returns>The merged entries, or <see langword="null"/> when neither side declares any.</returns>
+        private static List<ScaleFormEntry>? MergeScaleForms(List<ScaleFormEntry>? inherited, List<ScaleFormEntry>? overriding)
+        {
+            if (overriding is not { Count: > 0 }) return inherited;
+            if (inherited is not { Count: > 0 }) return overriding;
+            var overridden = new HashSet<int>(overriding.Select(e => e.Scale));
+            return [.. inherited.Where(e => !overridden.Contains(e.Scale)), .. overriding];
         }
 
         /// <summary>
@@ -1052,6 +1071,7 @@ namespace Utils.NumberToString
                 UnitsPrefixes = definition.UnitsPrefixes,
                 TensPrefixes = definition.TensPrefixes,
                 HundredsPrefixes = definition.HundredsPrefixes,
+                ScaleForms = definition.ScaleForms,
                 Suffixes = definition.Suffixes,
             };
         }

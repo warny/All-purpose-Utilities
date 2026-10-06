@@ -227,6 +227,25 @@ public sealed class NumberToStringConverterOptions
     /// </summary>
     public IReadOnlyList<SpecialHourRule> SpecialHours { get; set; } = [];
 
+    /// <summary>
+    /// Optional per-scale <see cref="LexicalFormSet"/> declaring named forms of a scale noun
+    /// (e.g. Arabic "dual", "plural", "singularAccusative" for "thousand"), keyed by scale index
+    /// (1 = thousands, 2 = millions, …). The "singular"/"plural" keys are synthesized from
+    /// <see cref="NumberScale.GetScaleName"/> and may be overridden here. A scale absent from both
+    /// this dictionary and <see cref="ScaleFormSelectors"/> keeps the historical
+    /// <c>GetScaleName(index).ToPlural(multiplier)</c> rendering byte for byte. Keys must be scale
+    /// indices the <see cref="Scale"/> can name (≥ 1); others are rejected by the converter.
+    /// </summary>
+    public IReadOnlyDictionary<int, LexicalFormSet>? ScaleForms { get; set; }
+
+    /// <summary>
+    /// Optional per-scale <see cref="ILexicalFormSelector"/> choosing which form of the scale noun
+    /// the group multiplier governs; it receives the multiplier as
+    /// <see cref="LexicalFormContext.Value"/>. Instances must be ready to use (no reflection is
+    /// performed here). Scales with forms but no selector use <see cref="DefaultLexicalFormSelector"/>.
+    /// </summary>
+    public IReadOnlyDictionary<int, ILexicalFormSelector>? ScaleFormSelectors { get; set; }
+
     /// <summary>Optional idiomatic clock-time formatting configuration.</summary>
     public ClockTimeFormatOptions? ClockTime { get; set; }
 
@@ -286,6 +305,8 @@ public sealed class NumberToStringConverterOptions
         OrdinalExceptions = source.OrdinalExceptions;
         OrdinalWordRules = source.OrdinalWordRules;
         OrdinalStemRules = source.OrdinalStemRules;
+        ScaleForms = source.ScaleForms;
+        ScaleFormSelectors = source.ScaleFormSelectors;
         OrdinalPrefix = source.OrdinalPrefix;
         OrdinalVariants = source.OrdinalVariants;
         VariantDimensions = source.VariantDimensions;

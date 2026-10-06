@@ -53,6 +53,43 @@ public sealed class NumberToStringImmutabilityTests
         Assert.IsFalse(converter.OrdinalStemRules is List<OrdinalStemRule>, "The converter must not expose a mutable list.");
     }
 
+    /// <summary>Selector returning "one" for a multiplier of one and "other" otherwise.</summary>
+    private sealed class OneOtherSelector : ILexicalFormSelector
+    {
+        /// <inheritdoc />
+        public string SelectForm(LexicalFormContext context) => context.AbsoluteValue == 1 ? "one" : "other";
+    }
+
+    /// <summary>Selector always returning "other".</summary>
+    private sealed class AlwaysOtherSelector : ILexicalFormSelector
+    {
+        /// <inheritdoc />
+        public string SelectForm(LexicalFormContext context) => "other";
+    }
+
+    /// <summary>Mutating the source scale form and selector dictionaries after construction does not affect the converter snapshot.</summary>
+    [TestMethod]
+    public void ScaleForms_SourceMutationAfterConstruction_DoesNotChangeConverter()
+    {
+        var forms = new Dictionary<int, LexicalFormSet> { [1] = LexicalFormSet.Create(("one", "grand"), ("other", "grands")) };
+        var selectors = new Dictionary<int, ILexicalFormSelector> { [1] = new OneOtherSelector() };
+        var options = Options([]);
+        options.ScaleForms = forms;
+        options.ScaleFormSelectors = selectors;
+        var converter = new NumberToStringConverter(options);
+
+        forms[1] = LexicalFormSet.Create(("one", "changed"), ("other", "changed"));
+        selectors[1] = new AlwaysOtherSelector();
+        forms.Clear();
+        selectors.Clear();
+
+        Assert.AreEqual("one grand", converter.Convert(new BigInteger(100)));
+        Assert.AreEqual("two grands", converter.Convert(new BigInteger(200)));
+        Assert.IsInstanceOfType<OneOtherSelector>(converter.ScaleFormSelectors[1]);
+        Assert.IsFalse(converter.ScaleForms is Dictionary<int, LexicalFormSet>, "The converter must not expose a mutable dictionary.");
+        Assert.IsFalse(converter.ScaleFormSelectors is Dictionary<int, ILexicalFormSelector>, "The converter must not expose a mutable dictionary.");
+    }
+
     /// <summary>Creates options for a two-level language whose tens digit 2 carries <paramref name="fusions"/>.</summary>
     /// <param name="fusions">The fusion rules attached to the tens digit 2.</param>
     /// <returns>The converter options.</returns>
