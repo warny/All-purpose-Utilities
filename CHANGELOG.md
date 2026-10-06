@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added — `omy.Utils.NumberToString`
+- Added the `<OrdinalScale scales multiplierSeparator>` ordinal primitive (XSD `OrdinalScaleType`,
+  additive `OrdinalScaleRule` record, `NumberToStringConverterOptions.OrdinalScaleRules`, converter
+  `OrdinalScaleRules`): the ordinal of a round scale value is formed on the singular scale noun (the
+  multiplier one dropped, a larger multiplier as its own cardinal), then through the usual ordinal
+  replacements, stems and variant suffix — never on the assembled cardinal.
+- Added the `<OrdinalComposition for divisor separator>` ordinal primitive (XSD
+  `OrdinalCompositionType`, additive `OrdinalCompositionRule` record,
+  `NumberToStringConverterOptions.OrdinalCompositionRules`, converter `OrdinalCompositionRules`): the
+  ordinal of a covered value is ordinal(head) + separator + ordinal(tail), split numerically; each
+  part goes through the whole ordinal pipeline with the caller's variants, and adjustment, end
+  triggers and finalization run once. Overlapping rules are rejected; `baseOn` replaces the list.
 - Added scale lexical forms: `<NumberScale><ScaleForm scale formSelector>` (XSD, `ScaleFormEntry`),
   `NumberToStringConverterOptions.ScaleForms` / `ScaleFormSelectors` and the converter's read-only
   `ScaleForms` / `ScaleFormSelectors`. The existing `ILexicalFormSelector` chooses the form of a
@@ -30,6 +41,15 @@ All notable changes to this project will be documented in this file.
   cumulative by range specificity, validated strictly at load (conflicts, domain, empty values,
   absent edges, intra-group connector overlap) and compiled into immutable lookup tables.
 - Added `ItalianOrdinalLanguageSpecifics`, restricting Italian ordinals to verified forms.
+
+### Fixed — `omy.Utils.NumberToString` (NTS-15, NTS-17)
+- Italian ordinals of the round multiples of milione, miliardo and bilione are supported
+  (`milionesimo`, `duemilionesimo`, `diecimilionesimo`, `miliardesimo`, `bilionesimo`, feminine
+  `milionesima`) instead of failing closed; the non-round values from a million and every value from
+  a biliardo still fail closed (NTS-18).
+- Italian 1010 is `millesimo decimo` and 100001–100009 are `centomillesimoprimo` …
+  `centomillesimonono` (Treccani analytic forms) instead of failing closed; 1110–1910 and the other
+  non-round thousands above 1999 still fail closed (NTS-15).
 
 ### Fixed — `omy.Utils.NumberToString` (NTS-14)
 - Italian millions and above are lower-case separate nouns joined by `e` (`un milione`,

@@ -966,6 +966,11 @@ namespace Utils.NumberToString
                 // Like the cardinal Replacements, a derived language declaring ordinal replacements
                 // replaces the inherited list; otherwise the list is inherited.
                 Replacements = childOrdinals.Replacements is { Count: > 0 } ? childOrdinals.Replacements : baseOrdinals.Replacements,
+                // Scale and composition rules are keyed by possibly overlapping ranges, so they are not
+                // merged rule by rule: a child declaring any rule of a kind replaces the inherited list of
+                // that kind (and the converter then rejects overlaps inside it); otherwise it is inherited.
+                ScaleRules = childOrdinals.ScaleRules is { Count: > 0 } ? childOrdinals.ScaleRules : baseOrdinals.ScaleRules,
+                CompositionRules = childOrdinals.CompositionRules is { Count: > 0 } ? childOrdinals.CompositionRules : baseOrdinals.CompositionRules,
                 OrdinalVariantsContainer = childOrdinals.OrdinalVariantsContainer ?? baseOrdinals.OrdinalVariantsContainer,
             };
         }
@@ -1764,6 +1769,14 @@ namespace Utils.NumberToString
                     .ToList()
                     ?? [],
                 OrdinalReplacements = ParseOrdinalReplacements(language.Ordinals?.Replacements),
+                OrdinalScaleRules = language.Ordinals?.ScaleRules?
+                    .Select(s => new OrdinalScaleRule(s.Scales!, s.MultiplierSeparator!))
+                    .ToList()
+                    ?? [],
+                OrdinalCompositionRules = language.Ordinals?.CompositionRules?
+                    .Select(c => new OrdinalCompositionRule(c.For!, c.Divisor, c.Separator!))
+                    .ToList()
+                    ?? [],
                 OrdinalPrefix = language.Ordinals?.Prefix,
                 OrdinalVariants = ParseOrdinalVariants(language.Ordinals),
                 VariantDimensions = parsedDimensions,

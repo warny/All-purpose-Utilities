@@ -219,6 +219,7 @@ namespace Utils.NumberToString
             OrdinalStemRules = _ordinalStemRules;
             _ordinalReplacements = CompileOrdinalReplacements(options.OrdinalReplacements, nameof(options.OrdinalReplacements));
             OrdinalReplacements = _ordinalReplacements;
+            CompileOrdinalCompositionRules(options.OrdinalScaleRules, options.OrdinalCompositionRules);
             OrdinalPrefix = options.OrdinalPrefix;
             OrdinalVariants = (options.OrdinalVariants ?? []).ToImmutableArray();
             foreach (var ordinalVariant in OrdinalVariants)
@@ -2059,24 +2060,41 @@ namespace Utils.NumberToString
         {
             activeVariants ??= BuildVariantQuery(variants);
             bool explicitVariantIntent = hasExplicitVariantIntent ?? variants.Length > 0;
-            string ordinal;
-            if (LanguageSpecifics is IOrdinalLanguageSpecifics ordinalPlugin)
-            {
-                if (ordinalPlugin.TryConvertOrdinal(number, activeVariants, out var pluginResult))
-                    ordinal = pluginResult!;
-                else if (!HasDeclarativeOrdinalSupport)
-                    throw new NotSupportedException(
-                        $"Language '{LanguageIdentifier}' has no ordinal fallback for value {number}.");
-                else
-                    ordinal = BuildDeclarativeOrdinalFragment(number, activeVariants, explicitVariantIntent);
-            }
-            else
-                ordinal = BuildDeclarativeOrdinalFragment(number, activeVariants, explicitVariantIntent);
+            string ordinal = BuildOrdinalCore(number, activeVariants, explicitVariantIntent);
             ordinal = ApplyRawAdjustment(ordinal);
             return ApplyTriggers(ordinal, TriggerAt.End, null, activeVariants);
         }
 
-        /// <summary>Builds an ordinal fragment using configured exceptions, variants, word rules, and affixes.</summary>
+        /// <summary>
+        /// Builds an unsigned ordinal through the ordinal plugin, then the declarative pipeline, without
+        /// raw adjustment, end triggers, prefix or finalization. Used for the whole value and, by
+        /// <see cref="OrdinalCompositionRules"/>, for each composed part.
+        /// </summary>
+        /// <param name="number">The non-negative ordinal value.</param>
+        /// <param name="activeVariants">The resolved variant query.</param>
+        /// <param name="explicitVariantIntent">Whether a caller or constituent explicitly selected a variant.</param>
+        /// <returns>The unadjusted ordinal.</returns>
+        private string BuildOrdinalCore(long number, IReadOnlyDictionary<string, string> activeVariants, bool explicitVariantIntent)
+        {
+            if (LanguageSpecifics is IOrdinalLanguageSpecifics ordinalPlugin)
+            {
+                if (ordinalPlugin.TryConvertOrdinal(number, activeVariants, out var pluginResult))
+                    return pluginResult!;
+                if (!HasDeclarativeOrdinalSupport)
+                    throw new NotSupportedException(
+                        $"Language '{LanguageIdentifier}' has no ordinal fallback for value {number}.");
+            }
+            return BuildDeclarativeOrdinalFragment(number, activeVariants, explicitVariantIntent);
+        }
+
+        /// <summary>
+        /// Builds an ordinal fragment using configured exceptions, variants, word rules, and affixes.
+        /// Order: whole-number exceptions (variant, then base), then an applicable
+        /// <see cref="OrdinalCompositionRules"/> entry (head and tail built recursively), then — for a
+        /// round value covered by <see cref="OrdinalScaleRules"/> — the scale-noun text, otherwise the
+        /// variant-transformed cardinal; the text then goes through the ordinal replacements and the
+        /// ordinal transformation.
+        /// </summary>
         /// <param name="number">The non-negative ordinal value.</param>
         /// <param name="activeVariants">The resolved variant query.</param>
         /// <param name="explicitVariantIntent">Whether a caller or constituent explicitly selected a variant.</param>
@@ -2101,10 +2119,20 @@ namespace Utils.NumberToString
                 return varException;
             else if (OrdinalExceptions.TryGetValue(number, out var exception))
                 return exception;
+            // An analytic composition (numeric head + tail, each through the whole pipeline) comes next.
+            else if (TryComposeOrdinal(number, activeVariants, explicitVariantIntent, out string composed))
+                return composed;
             else
             {
-                string raw = number == 0 ? Zero : ConvertRaw((BigInteger)number, activeVariants);
-                raw = ApplyVariantRules(raw, activeVariants, number);
+                string raw;
+                // A round value covered by an OrdinalScale rule is formed on its scale noun, never on
+                // the assembled cardinal; the cardinal variant rules were applied to its multiplier only,
+                // since they agree a cardinal, not the joined multiplier + noun text.
+                if (!TryBuildRoundScaleText(number, activeVariants, out raw))
+                {
+                    raw = number == 0 ? Zero : ConvertRaw((BigInteger)number, activeVariants);
+                    raw = ApplyVariantRules(raw, activeVariants, number);
+                }
                 // Ordinal-only replacements see the assembled, variant-transformed cardinal and run
                 // before the ordinal transformation (word rules, stems, removeTrailing, suffix).
                 raw = ApplyOrdinalReplacements(raw, activeVariant);

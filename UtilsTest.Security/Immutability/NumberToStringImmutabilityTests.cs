@@ -126,6 +126,49 @@ public sealed class NumberToStringImmutabilityTests
         Assert.IsFalse(converter.OrdinalVariants[0].Replacements is List<NumberToStringConverter.ReplacementRule>, "The variant must not expose a mutable list.");
     }
 
+    /// <summary>Mutating the source ordinal scale rule list after construction does not affect the converter snapshot.</summary>
+    [TestMethod]
+    public void OrdinalScaleRules_SourceMutationAfterConstruction_DoesNotChangeConverter()
+    {
+        var rules = new List<OrdinalScaleRule> { new("1", "-") };
+        var options = Options([]);
+        options.OrdinalSuffix = "th";
+        options.OrdinalScaleRules = rules;
+        var converter = new NumberToStringConverter(options);
+
+        rules[0] = new OrdinalScaleRule("1", "+");
+        rules.Add(new OrdinalScaleRule("2", "+"));
+        options.OrdinalScaleRules = [new OrdinalScaleRule("1", "*")];
+
+        Assert.AreEqual("two-thousandth", converter.ConvertOrdinal(200));
+        Assert.AreEqual("thousandth", converter.ConvertOrdinal(100));
+        Assert.AreEqual(1, converter.OrdinalScaleRules.Count);
+        Assert.AreEqual(new OrdinalScaleRule("1", "-"), converter.OrdinalScaleRules[0]);
+        Assert.IsFalse(converter.OrdinalScaleRules is List<OrdinalScaleRule>, "The converter must not expose a mutable list.");
+    }
+
+    /// <summary>Mutating the source ordinal composition rule list after construction does not affect the converter snapshot.</summary>
+    [TestMethod]
+    public void OrdinalCompositionRules_SourceMutationAfterConstruction_DoesNotChangeConverter()
+    {
+        var rules = new List<OrdinalCompositionRule> { new("101..199", 100, " ") };
+        var options = Options([]);
+        options.OrdinalSuffix = "th";
+        options.OrdinalScaleRules = [new OrdinalScaleRule("1", "")];
+        options.OrdinalCompositionRules = rules;
+        var converter = new NumberToStringConverter(options);
+
+        rules[0] = new OrdinalCompositionRule("101..199", 100, "+");
+        rules.Add(new OrdinalCompositionRule("201..299", 100, "+"));
+        options.OrdinalCompositionRules = [new OrdinalCompositionRule("101..199", 100, "*")];
+
+        Assert.AreEqual("thousandth oneth", converter.ConvertOrdinal(101));
+        Assert.AreEqual("two thousand oneth", converter.ConvertOrdinal(201));
+        Assert.AreEqual(1, converter.OrdinalCompositionRules.Count);
+        Assert.AreEqual(new OrdinalCompositionRule("101..199", 100, " "), converter.OrdinalCompositionRules[0]);
+        Assert.IsFalse(converter.OrdinalCompositionRules is List<OrdinalCompositionRule>, "The converter must not expose a mutable list.");
+    }
+
     /// <summary>Creates options for a two-level language whose tens digit 2 carries <paramref name="fusions"/>.</summary>
     /// <param name="fusions">The fusion rules attached to the tens digit 2.</param>
     /// <returns>The converter options.</returns>

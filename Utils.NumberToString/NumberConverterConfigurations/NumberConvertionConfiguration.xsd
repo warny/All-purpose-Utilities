@@ -671,6 +671,96 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:complexType name="OrdinalScaleType">
+        <xs:annotation>
+            <xs:documentation>
+                Ordinal of a round scale value: a value whose highest non-zero group is at a scale
+                covered by "scales" and whose lower groups are all zero (multiplier × scale unit).
+                Its ordinal is built on the singular scale noun rather than on the assembled
+                cardinal: a multiplier of one is dropped, a larger multiplier is its own cardinal
+                (rendered like the standalone cardinal with the caller's variants, cardinal
+                Variants rules included) followed by multiplierSeparator and the noun.
+                That text then goes through the ordinal Replacement, Ordinal word rules, OrdinalStem,
+                removeTrailing and the effective suffix (base or OrdinalVariants override). A value
+                is matched at its highest scale only (10^9 is never 1000 × 10^6). Whole-number
+                OrdinalException entries and OrdinalComposition keep precedence.
+
+                Example (Italian):
+                    &lt;OrdinalScale scales="2..4" multiplierSeparator="" /&gt;
+                    1 000 000 → milione → milionesimo; 2 000 000 → duemilione → duemilionesimo
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="scales" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Covered scale indices (1 = thousands, 2 = the next scale …) in range syntax
+                    ("2", "2..4", "2.."). Every index must be at least 1 and nameable by the
+                    NumberScale; two rules must not cover the same index.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:minLength value="1"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="multiplierSeparator" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>Text between the multiplier and the scale noun. Required, may be empty.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="OrdinalCompositionType">
+        <xs:annotation>
+            <xs:documentation>
+                Analytic ordinal: for a covered value, head = value - value mod divisor and
+                tail = value mod divisor; when both are non-zero the ordinal is
+                ordinal(head) + separator + ordinal(tail). The split is numeric, never textual: each
+                part goes through the whole ordinal pipeline again (plugin, OrdinalException, other
+                OrdinalComposition rules, OrdinalScale, cardinal-based transformation) with the
+                caller's variants. Raw adjustment, end triggers and finalization run once on the
+                composed result. Both parts are strictly smaller than the value, so the recursion
+                terminates. Whole-number OrdinalException entries keep precedence; a value whose
+                head or tail is zero continues through the rest of the pipeline.
+
+                Example (Italian, Treccani):
+                    &lt;OrdinalComposition for="1010" divisor="1000" separator=" " /&gt;
+                    1010 → millesimo decimo
+                    &lt;OrdinalComposition for="100001..100009" divisor="1000" separator="" /&gt;
+                    100001 → centomillesimoprimo
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="for" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Covered values in range syntax. Every value must be at least 1; the ranges of two
+                    rules must not overlap.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:minLength value="1"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="divisor" use="required">
+            <xs:annotation>
+                <xs:documentation>Divisor separating head and tail; at least 2.</xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:long">
+                    <xs:minInclusive value="2"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="separator" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>Text between the two ordinals. Required, may be empty (soldered form).</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="OrdinalVariantElementType">
         <xs:annotation>
             <xs:documentation>
@@ -777,6 +867,11 @@
                 Resolution order (highest to lowest priority):
                   1. Active OrdinalVariants/Variant exceptions — most-specific matching variant first.
                   2. Base OrdinalException — whole-number match.
+                  2a. OrdinalComposition — ordinal(head) + separator + ordinal(tail), each part
+                      resolved from step 1 again.
+                  2b. OrdinalScale — a covered round scale value is transformed from its scale-noun
+                      text instead of the cardinal (steps 3-5 then apply to that text, after the
+                      ordinal Replacement elements).
                   3. Active OrdinalVariants/Variant word rules — most-specific first.
                   4. Base Ordinal word rule — last-word match.
                   5. Default suffix — appended to the last word, after rewriting its ending with
@@ -826,6 +921,24 @@
                             affects cardinal conversions. onScale/onValue and child Variant forms are
                             not supported here. Under baseOn, a derived language declaring ordinal
                             Replacement elements replaces the inherited list.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="OrdinalScale" type="OrdinalScaleType">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Forms the ordinal of a round scale value from the scale noun instead of
+                            the assembled cardinal (see OrdinalScaleType). Under baseOn, a derived
+                            language declaring OrdinalScale elements replaces the inherited list.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="OrdinalComposition" type="OrdinalCompositionType">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Composes an analytic ordinal from the ordinals of the numeric head and
+                            tail of the value (see OrdinalCompositionType). Under baseOn, a derived
+                            language declaring OrdinalComposition elements replaces the inherited list.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:element>

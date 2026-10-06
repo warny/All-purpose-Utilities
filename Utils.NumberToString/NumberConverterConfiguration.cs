@@ -197,6 +197,20 @@ public class OrdinalsType
     public List<ReplacementType>? Replacements { get; set; }
 
     /// <summary>
+    /// Gets or sets the rules forming the ordinal of round scale values from the scale noun
+    /// (see <see cref="OrdinalScaleType"/>).
+    /// </summary>
+    [XmlElement("OrdinalScale")]
+    public List<OrdinalScaleType>? ScaleRules { get; set; }
+
+    /// <summary>
+    /// Gets or sets the rules composing analytic ordinals from the ordinals of the numeric head and
+    /// tail (see <see cref="OrdinalCompositionType"/>).
+    /// </summary>
+    [XmlElement("OrdinalComposition")]
+    public List<OrdinalCompositionType>? CompositionRules { get; set; }
+
+    /// <summary>
     /// Gets or sets the container for variant-specific ordinal blocks.
     /// </summary>
     [XmlElement("OrdinalVariants")]
@@ -217,6 +231,42 @@ public class OrdinalStemType
     /// <summary>Gets or sets the replacement ending (required, may be empty).</summary>
     [XmlAttribute("to")]
     public string? To { get; set; }
+}
+
+/// <summary>
+/// XML element <c>&lt;OrdinalScale scales="..." multiplierSeparator="..." /&gt;</c>: the ordinal of a
+/// round value at one of the covered scales is formed on the singular scale noun, the multiplier one
+/// being dropped. Projected into <see cref="OrdinalScaleRule"/>.
+/// </summary>
+public class OrdinalScaleType
+{
+    /// <summary>Gets or sets the covered scale indices, in range syntax (required).</summary>
+    [XmlAttribute("scales")]
+    public string? Scales { get; set; }
+
+    /// <summary>Gets or sets the text between the multiplier and the scale noun (required, may be empty).</summary>
+    [XmlAttribute("multiplierSeparator")]
+    public string? MultiplierSeparator { get; set; }
+}
+
+/// <summary>
+/// XML element <c>&lt;OrdinalComposition for="..." divisor="..." separator="..." /&gt;</c>: the ordinal
+/// of a covered value is ordinal(head) + separator + ordinal(tail), split numerically by the divisor.
+/// Projected into <see cref="OrdinalCompositionRule"/>.
+/// </summary>
+public class OrdinalCompositionType
+{
+    /// <summary>Gets or sets the covered values, in range syntax (required).</summary>
+    [XmlAttribute("for")]
+    public string? For { get; set; }
+
+    /// <summary>Gets or sets the divisor separating head and tail (required, at least 2).</summary>
+    [XmlAttribute("divisor")]
+    public long Divisor { get; set; }
+
+    /// <summary>Gets or sets the text between the two ordinals (required, may be empty).</summary>
+    [XmlAttribute("separator")]
+    public string? Separator { get; set; }
 }
 
 /// <summary>

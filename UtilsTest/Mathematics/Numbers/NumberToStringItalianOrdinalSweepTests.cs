@@ -7,7 +7,7 @@ using Utils.NumberToString;
 namespace UtilsTest.NumberToString;
 
 /// <summary>
-/// Mechanical regression guard over the Italian ordinal domain declared productive by NTS-13.
+/// Mechanical regression guard over the Italian ordinal domain declared productive by NTS-13, NTS-15 and NTS-17.
 /// </summary>
 /// <remarks>
 /// These sweeps check structural invariants only — no exception, a soldered single word, the gender
@@ -34,7 +34,7 @@ public class NumberToStringItalianOrdinalSweepTests
     /// <returns><see langword="true"/> for 110, 210 … 910.</returns>
     private static bool IsHundredAndTen(long number) => number is > 100 and < 1000 && number % 100 == 10;
 
-    /// <summary>Determines whether <paramref name="number"/> is a thousand ending in ten below 2000 (1010 … 1910), left fail-closed (NTS-15).</summary>
+    /// <summary>Determines whether <paramref name="number"/> is a thousand ending in ten below 2000 (1010 … 1910), left fail-closed except 1010 (NTS-15).</summary>
     /// <param name="number">The value to classify.</param>
     /// <returns><see langword="true"/> for 1010, 1110 … 1910.</returns>
     private static bool IsThousandEndingInTen(long number) => number is > 1000 and < 2000 && number % 100 == 10;
@@ -120,16 +120,21 @@ public class NumberToStringItalianOrdinalSweepTests
     /// <param name="number">The rejected value.</param>
     [TestMethod]
     [DataRow(0L)]
-    [DataRow(1010L)]
     [DataRow(1110L)]
     [DataRow(1910L)]
     [DataRow(2001L)]
+    [DataRow(2010L)]
     [DataRow(2999L)]
     [DataRow(21_001L)]
-    [DataRow(100_001L)]
+    [DataRow(100_010L)]
+    [DataRow(100_011L)]
     [DataRow(999_999L)]
-    [DataRow(1_000_000L)]
+    [DataRow(1_000_001L)]
     [DataRow(1_001_000L)]
+    [DataRow(2_000_001L)]
+    [DataRow(1_000_000_000_001L)]
+    [DataRow(1_000_000_000_000_000L)]
+    [DataRow(999_000_000_000_000_000L)]
     [DataRow(long.MaxValue)]
     public void OutsideDomain_IsRejected(long number)
     {
@@ -137,12 +142,81 @@ public class NumberToStringItalianOrdinalSweepTests
         Assert.Throws<NotSupportedException>(() => Italian.ConvertOrdinal(number, "gender=femminile"));
     }
 
-    /// <summary>Every thousand ending in ten below 2000 fails closed.</summary>
+    /// <summary>Every thousand ending in ten from 1110 to 1910 fails closed (NTS-15); 1010 is the attested "millesimo decimo".</summary>
     [TestMethod]
     public void ThousandsEndingInTen_AreRejected()
     {
-        for (long number = 1010; number <= 1910; number += 100)
+        for (long number = 1110; number <= 1910; number += 100)
             Assert.Throws<NotSupportedException>(() => Italian.ConvertOrdinal(number), $"number {number}");
+        Assert.AreEqual("millesimo decimo", Italian.ConvertOrdinal(1010));
+    }
+
+    /// <summary>
+    /// 100001-100009 are the ordinal of centomila soldered to the ordinal of the unit, in both genders
+    /// (structural guard; the sourced examples are pinned in <c>Italian.feature</c>).
+    /// </summary>
+    [TestMethod]
+    public void CentomilaFollowedByAUnit_IsTheSolderedJuxtaposition()
+    {
+        for (long unit = 1; unit <= 9; unit++)
+        {
+            Assert.AreEqual("centomillesimo" + Italian.ConvertOrdinal(unit), Italian.ConvertOrdinal(100_000 + unit), $"unit {unit}");
+            Assert.AreEqual("centomillesima" + Italian.ConvertOrdinal(unit, "gender=femminile"),
+                Italian.ConvertOrdinal(100_000 + unit, "gender=femminile"), $"unit {unit}");
+        }
+    }
+
+    /// <summary>
+    /// Mechanical guard over every round value of milione, miliardo and bilione (multipliers 1-999,
+    /// both genders): one soldered word, no "un" article, no accented tre, the multiplier's cardinal
+    /// (absent for one) followed by the stem of the singular scale noun and the gender suffix.
+    /// </summary>
+    /// <param name="variant">The variant argument, or an empty string for the default (masculine) form.</param>
+    /// <param name="suffix">The expected gender suffix.</param>
+    [TestMethod]
+    [DataRow("", "esimo")]
+    [DataRow("gender=femminile", "esima")]
+    public void RoundScaleValues_AreTheMultiplierSolderedToTheScaleOrdinal(string variant, string suffix)
+    {
+        string[] variants = variant.Length == 0 ? [] : [variant];
+        string[] stems = ["milion", "miliard", "bilion"];
+        var failures = new List<string>();
+        for (int scale = 2; scale <= 4; scale++)
+        {
+            long unit = (long)Math.Pow(1000, scale);
+            for (long multiplier = 1; multiplier <= 999; multiplier++)
+            {
+                long number = multiplier * unit;
+                string ordinal;
+                try
+                {
+                    ordinal = Italian.ConvertOrdinal(number, variants);
+                }
+                catch (Exception exception)
+                {
+                    failures.Add($"{number}: {exception.GetType().Name}");
+                    continue;
+                }
+                string prefix = multiplier == 1 ? "" : Italian.Convert((BigInteger)multiplier).Replace("tré", "tre", StringComparison.Ordinal);
+                string expected = prefix + stems[scale - 2] + suffix;
+                if (ordinal != expected || ordinal.Contains(' ') || ordinal.Contains('é'))
+                    failures.Add($"{number}: '{ordinal}', expected shape '{expected}'");
+            }
+        }
+
+        Assert.AreEqual(0, failures.Count, string.Join(Environment.NewLine, failures));
+    }
+
+    /// <summary>The non-round values from a million fail closed across a sample of every scale (NTS-18).</summary>
+    [TestMethod]
+    public void NonRoundValuesFromAMillion_AreRejected()
+    {
+        for (int scale = 2; scale <= 6; scale++)
+        {
+            long unit = (long)Math.Pow(1000, scale);
+            foreach (long lower in new long[] { 1, 10, 1000, unit / 1000 * 999 })
+                Assert.Throws<NotSupportedException>(() => Italian.ConvertOrdinal(unit + lower), $"value {unit + lower}");
+        }
     }
 
     /// <summary>The rejection of non-round thousands holds across a whole sweep of 2001-9999.</summary>

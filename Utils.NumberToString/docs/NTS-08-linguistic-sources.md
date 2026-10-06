@@ -35,7 +35,7 @@ the remaining validation and its criterion are tracked per capability in `TODO.m
 | RU | RU | SCALE-LONG | Yes (existing) | Declarative | Yes | 15 / 12 | gender × case | Reference usage (`четверть второго`, `половина второго`, `без четверти два`, `час/часа/часов`) | Ordinal of zero `нулевой` (NTS-14) |
 | UK | UK, UK-UA | SCALE-LONG | Yes | `UkrainianOrdinalLanguageSpecifics` (gender × case) | Yes | 15 / 12 | `gender` × `case` (Ukrainian values) | Reference usage (`двадцять перший`; `чверть по першій`, `пів на другу`, `чверть до другої`) | Round thousands verified up to 10 000; ASCII apostrophe as in the cardinals |
 | ES | ES | none | Yes (existing) | Declarative | Yes | 5 / 12 | gender × form | Reference usage (RAE, *Diccionario panhispánico de dudas*, “hora”) | Exact `Convert(TimeOnly)` unchanged |
-| IT | IT | SCALE-LONG | Yes: 1–1999 except 1010–1910, round thousands 2000–999000 | Declarative `<OrdinalStem>` + `ItalianOrdinalLanguageSpecifics` (domain guard) | Yes | 5 / 12 | gender | Reference usage (Accademia della Crusca: `l'una e mezzo`, `le due meno un quarto`, `le otto meno venti`) | Cardinals soldered with `<Fusion>` (NTS-10); compound ordinals by `<OrdinalStem>` (NTS-13, see below); zero, 1010–1910 and non-round thousands above 1999 (NTS-15) and millions (NTS-17) fail closed as ordinals; millions and above are separate nouns joined by `e` (NTS-14, see below) |
+| IT | IT | SCALE-LONG | Yes: 1–1999 except 1110–1910, round thousands 2000–999000, 100001–100009, round multiples of milione/miliardo/bilione | Declarative `<OrdinalStem>`, `<OrdinalComposition>`, `<OrdinalScale>` + `ItalianOrdinalLanguageSpecifics` (domain guard) | Yes | 5 / 12 | gender | Reference usage (Accademia della Crusca: `l'una e mezzo`, `le due meno un quarto`, `le otto meno venti`) | Cardinals soldered with `<Fusion>` (NTS-10); compound ordinals by `<OrdinalStem>` (NTS-13, see below), analytic 1010 and 100001–100009 (NTS-15) and round scale ordinals (NTS-17) (see below); zero, 1110–1910 and the other non-round thousands above 1999 (NTS-15), non-round values from a million and a biliardo and above (NTS-18) fail closed as ordinals; millions and above are separate nouns joined by `e` (NTS-14, see below) |
 | PT | PT | none | Yes (existing) | Declarative | Yes | 5 / 12 | gender | **Consulted** for the constructions the configuration does *not* use: Ciberdúvidas, “Minutos para a hora” (`um quarto para as dez`, `dez para as três`, `três menos dez`). The direct reading itself (`uma hora e quarenta e cinco`) is a project convention not attested by that source | Deliberate direct numeric reading; `para`/`menos` constructions not produced; PT-PT/PT-BR not split |
 | GL | GL, gl-ES | none | Yes (existing) | Declarative | Yes | 5 / 12 | gender | Reference usage (RAG usage `a unha e media`, `as dúas menos cuarto`) | — |
 | RO | RO, RO-RO | none | Yes | `RomanianOrdinalLanguageSpecifics` (DOOM) | Yes | 15 / 12 | `gen` | **Consulted**: dexonline/DOOM entries `sutălea` (`al (o) sutălea`, `a (o) suta`, `al două sutelea`) and `miilea` (`al o miilea`, `a o mia`, `al două miilea`); reference usage for the clock (`ora două`, `două fără un sfert`) | Ordinals up to 999 999 and one million (masculine); round `de mii` thousands declined |
@@ -60,6 +60,60 @@ the remaining validation and its criterion are tracked per capability in `TODO.m
 | EE | EE | none | Yes (existing, prefix `etsõ`; formation unsourced, NTS-16) | Declarative + zero guard | **Deferred** | — | none | No source found | No ordinal of zero (NTS-14) |
 | WO | WO | none | Yes (existing; `-ël` spelling unsourced, NTS-16) | Declarative + zero guard | **Deferred** | — | none | No consistent source found | No ordinal of zero (NTS-14) |
 
+## NTS-15 and NTS-17 (2026-10-06)
+
+Worked together because both hit the same structural gap: the historical pipeline transforms the
+complete cardinal, whereas these ordinals are built from ordinal constituents (a scale noun, or two
+juxtaposed ordinals). Two generic primitives were added (`<OrdinalScale>`, `<OrdinalComposition>`);
+the decomposition is numeric, never a rewrite of the cardinal text.
+
+**Ordinal versus fraction.** In Italian the `-esimo` forms are both ordinals and fraction
+denominators. Treccani, vocabolario *centomillesimo*: "i successivi sono: *centomillesimoprimo*,
+*centomillesimosecondo*, *centomillesimoterzo*, ecc.", and, "come partitivo, *un centomiladuesimo*,
+*un centomilatreesimo*, ecc." — the synthetic derivation of a non-round thousand is the partitive
+(fraction), not the ordinal. Likewise the mechanical ordinal of the cardinal *un milione* is the
+fraction *un milionesimo* (Treccani *milionesimo*: "Con valore frazionario [...] un m."), while the
+ordinal is *milionesimo*. Neither primitive derives the ordinal from the assembled cardinal; the
+tests pin the ordinal forms and the guard keeps every unsourced value closed.
+
+- **Round scale values (NTS-17, closed for milione, miliardo, bilione)** — **Consulted**: Treccani
+  vocabolario *milionesimo* ("occupa il posto corrispondente a un milione"), *miliardesimo*,
+  *bilionesimo* (*bilione* = 10^12, NTS-14), *decimilionesimo* ("Decimilionèṡimo (o
+  diecimilionèṡimo) agg. num. ord."); Treccani vocabolario *ordinale* (above ten the ordinal is formed
+  "dal tema del corrispondente cardinale [...] con l'aggiunta della terminazione -èsimo":
+  *millesimo, duemillesimo, ... diecimillesimo*); Treccani *Enciclopedia dell'Italiano*, "numerali
+  [prontuario]" (*milionesimo* among the -èsimo ordinals); CNR press release on the .it registry,
+  relayed by Corecom Lazio and La Provincia di Como: "Il duemilionesimo indirizzo web a 'targa
+  italiana' attivato dal Registro .it" and "il milionesimo dominio '.it'". Rule: the multiplier one
+  is dropped (*milionesimo*); a larger multiplier is its cardinal soldered to the ordinal of the
+  noun, as for the thousands (*duemilionesimo*, *diecimilionesimo*). Treccani accepts
+  *decimilionesimo* and *diecimilionesimo*; the project writes *diecimilionesimo*, transparent on the
+  configured cardinal *dieci*. Compounds of *uno* and *tre* follow the thousands chosen by NTS-13
+  (*ventunomillesimo*, *ventitremillesimo*): *ventunomilionesimo*, *ventitremilionesimo* (inner *tre*
+  unaccented); these multiplier forms apply the general Treccani rule and are not individually
+  attested. Feminine through the variant suffix (*milionesima*, *duemilionesima*). **Searched
+  without result**: Treccani vocabolario *biliardesimo*, *trilionesimo* and *centomilionesimo* (no
+  entry). Biliardo (10^15) and trilione (10^18) stay fail-closed (NTS-18); *centomilionesimo* is
+  produced by the general rule.
+- **Analytic thousands (NTS-15, partly)** — **Consulted**: Treccani vocabolario *ordinale*: a second
+  formation juxtaposes "l'ordinale che indica la decina, o il centinaio, con quelli che indicano le
+  unità" (*decimoprimo, ventesimoprimo, centesimoprimo*), "anche in grafia staccata"; "questo tipo di
+  formazione è pressoché l'unico per alcuni ordinali per i quali l'altro tipo sarebbe sentito come
+  poco eufonico (*millesimo primo, millesimo secondo, millesimo decimo*) (in questi casi la grafia
+  staccata è preferita)"; Treccani vocabolario *centomillesimo* (above); DICO, Università di Messina
+  (above *millesimo* the official forms are *milleunesimo, milleduesimo ecc.*, the juxtaposed
+  *millesimoprimo* / *millesimo primo* being formal). Decisions: 1010 → *millesimo decimo*
+  (separate spelling, Treccani; no synthetic form attested); 100001–100009 → *centomillesimoprimo …
+  centomillesimonono* (soldered, Treccani); both parts agree in gender (*millesima decima*,
+  *centomillesimaprima*). 1001–1009 keep the official synthetic *milleunesimo* chosen by NTS-13 (the
+  change is additive). **Left fail-closed (NTS-15)**: 1110–1910, where two analytic splits are
+  conceivable (*millesimo centodecimo* or *millecentesimo decimo*) and searches found neither; every
+  other non-round thousand above 1999 (2001, 2010, 21001, 100010, 100100, 999999 …), for which
+  neither a canonical synthetic form (*duemilaunesimo* is unattested and would be partitive by
+  Treccani's *centomiladuesimo* remark) nor a sourced spelling of the analytic form (*duemillesimo
+  primo* or *duemillesimoprimo*) was found. **Opened NTS-18**: non-round values from a million
+  (1000001, 1001000, 2000001, 1000000001) and every value from a biliardo.
+
 ## NTS-14 (2026-10-06)
 
 Four independent families, each fixed test-first. Sweeps added with them are structural guards only.
@@ -75,8 +129,8 @@ Four independent families, each fixed test-first. Sweeps added with them are str
   vocabolario *bilione* (10^12) and *trilione* (10^18); *biliardo* (10^15) from Libreriamo and
   Wiktionary. Implemented with existing mechanisms only (scale `groupSeparator="li"`, lower-case,
   `groupConnector="e"` removed again after *mille*/*-mila*, `un` before a single scale noun). The
-  Italian ordinals of a million and above stay fail-closed (NTS-17): the mechanical form of
-  *un milione* would be the fractional *un milionesimo*.
+  Italian ordinals of a million and above stayed fail-closed (NTS-17, since resolved for the round
+  values, see above): the mechanical form of *un milione* would be the fractional *un milionesimo*.
 - **AR thousands** — **Consulted**: Kalimah Center, "Arabic Numbers Grammar" (100/1000 and
   multiples take a singular genitive noun; "For a long number like 28,061, the counted noun follows
   the rules of the last number written"; "ثمانية وعشرون ألفًا"; duals مائتا/ألفا decline as duals);
@@ -168,7 +222,8 @@ sources; where sources disagree, the decision is stated.
   multiplier is kept unchanged and *-mila* becomes *mill-* (*ventitremillesimo*,
   *ventunomillesimo* from the chosen cardinal *ventunomila*). 1001–1999 use the official synthetic
   forms (*milleunesimo*, *milletreesimo*, *millecentunesimo*); the formal analytic *millesimo primo* is
-  not modelled.
+  not modelled (since NTS-15 the analytic type is used only where no synthetic form exists: 1010,
+  100001–100009, see above).
   **Left fail-closed**: zero (NTS-12 decision unchanged; Treccani records *zeresimo* only in special,
   mathematical uses); 1010–1910 (above); non-round thousands above 1999 (2001, 21001, 100001 …) because no consulted
   source gives a canonical synthetic form and Treccani gives the analytic *centomillesimoprimo* for
@@ -272,6 +327,10 @@ supported value, round scales, fail-closed range) and by the language `.feature`
 - SpokenSwahili, “Telling the time in Swahili”: <https://www.spokenswahili.com/blog/telling-the-time-in-swahili/>
 - Unisa, *Learn online Zulu*, Theme 4: <https://www.unisa.ac.za/static/corporate_web/Content/UnisaOpen/freeOnlineCourse/PDF/Zulu/Learn%20online%20Zulu%20-%20Theme%204.pdf>
 - Treccani, *Enciclopedia dell'Italiano*, "numerali": <https://www.treccani.it/enciclopedia/numerali_(Enciclopedia-dell'Italiano)/>
+- Treccani vocabolario, "ordinale": <https://www.treccani.it/vocabolario/ordinale/>; "centomillesimo": <https://www.treccani.it/vocabolario/centomillesimo/>; "milionesimo": <https://www.treccani.it/vocabolario/milionesimo/>; "miliardesimo": <https://www.treccani.it/vocabolario/miliardesimo/>; "bilionesimo": <https://www.treccani.it/vocabolario/bilionesimo/>; "decimilionesimo": <https://www.treccani.it/vocabolario/decimilionesimo/>
+- Treccani, *Enciclopedia dell'Italiano*, "numerali [prontuario]": <https://www.treccani.it/enciclopedia/numerali-prontuario_(Enciclopedia-dell'Italiano)/>
+- DICO, "La forma dei numerali cardinali e ordinali": <https://dico.unime.it/ufaq/la-forma-dei-numerali-cardinali-e-ordinali/>
+- CNR press release on two million .it domains, relayed by Corecom Lazio: <https://corecom.regione.lazio.it/app/uploads/www.corecomlazio.it/810-il-it-a-quota-2-milioni-italia-nona-al-mondo-sui-domini.html>; La Provincia di Como: <https://www.laprovinciadicomo.it/stories/societa-e-costume/internet-due-milioni-domini-itil-numero-raddoppiato-5-anni-o_162790_11/>
 - Treccani vocabolario, "mila": <https://www.treccani.it/vocabolario/mila/>; "ventuno": <https://www.treccani.it/vocabolario/ventuno/>; "uno": <https://www.treccani.it/vocabolario/uno/>; "diciannovesimo": <https://www.treccani.it/vocabolario/diciannovesimo/>
 - Libreriamo, accent of numbers ending in three: <https://libreriamo.it/lingua-italiana/italiano-numeri-scritti-3-accentati/>
 - Linkiesta, Accademia della Crusca on "le otto meno un quarto": <https://www.linkiesta.it/2023/02/meglio-una-quarto-alle-otto-o-alle-otto-meno-un-quarto-risponde-la-crusca/>
