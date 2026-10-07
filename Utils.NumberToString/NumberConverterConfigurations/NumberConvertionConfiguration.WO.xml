@@ -70,12 +70,17 @@
             <Number value="18" string="fukk ak juróom-ñett" />
             <Number value="19" string="fukk ak juróom-ñent" />
         </Exceptions>
-        <!-- NTS-14: no consulted source attests an ordinal of zero (zero is tus/dara; ordinals add -eel to a cardinal); the suffix would form "seroël", so zero fails closed. -->
-        <LanguageSpecifics>ZeroOrdinalUnsupportedLanguageSpecifics</LanguageSpecifics>
-        <Ordinals suffix="ël">
-            <!-- 1er : forme lexicalisée distincte -->
+        <!--
+          NTS-16: ordinals add -eel to the last element of the cardinal (Kosogorova 2023, §4.2:
+          "juróom ñetteel", "fukk ak ñaareel", "ñaar fukk ak ñenteel"; Robert 2021: "juróóm ñaar-eel").
+          Open long vowel, spelled "ee" by decree 2005-992 (not "-éél", not "-ël").
+          The guard rejects zero (NTS-14: no attested ordinal of zero) and every value from a thousand,
+          whose cardinal base is not settled (NTS-19).
+        -->
+        <LanguageSpecifics>WolofOrdinalLanguageSpecifics</LanguageSpecifics>
+        <Ordinals suffix="eel">
+            <!-- 1: suppletive relative form of jëkk "to be first", cited in class B (Ngom 2003: "xale b-u njëkk") -->
             <OrdinalException value="1" string="bu njëkk" />
-            <!-- 2+ : suffixe -ël sur le dernier mot (ñaar → ñaarël, fukk → fukkël, etc.) -->
         </Ordinals>
     </Language>
 </Numbers>

@@ -61,8 +61,8 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | EU, eu-ES | Basque | ✓ declarative | ✓ 15 min, 12 h | — | local | Clock-case forms only in ClockTime |
 | SW, SW-KE, SW-TZ | Swahili | — deferred (noun-class concord) | ✓ 15 min, 12 h, six-hour offset | — | local | No asubuhi/mchana/jioni/usiku |
 | ZU | Zulu | — deferred (noun-class policy) | ✓ 15 min, 12 h | — | local | Hour forms only in ClockTime |
-| EE | Ewe | ✓ prefix etsõ (unsourced, NTS-16) | — deferred (no sourced minute convention) | — | local | No ordinal of zero |
-| WO | Wolof | ✓ declarative (`-ël` spelling unsourced, NTS-16) | — deferred (competing conventions) | — | local | No ordinal of zero |
+| EE | Ewe | — deferred (sourced `-lia` needs the cardinal rebuild, NTS-20) | — deferred (no sourced minute convention) | — | local | Cardinals not yet sourced (NTS-20) |
+| WO | Wolof | ✓ declarative `-eel` + plugin guard, 1–999 | — deferred (competing conventions) | — | local | No ordinal of zero; none from 1000 (NTS-19) |
 
 "plugin" means an `IOrdinalLanguageSpecifics` implementation; values it does not implement fail
 closed with `NotSupportedException` rather than returning a cardinal. The declarative pipeline
@@ -231,12 +231,15 @@ he.ConvertOrdinal(20);                   // "עשרים"   ← above 10: cardina
 ```
 
 ```csharp
-// Prefix ordinals (ZH, JA, KO, EE)
+// Prefix ordinals (ZH, JA, KO, VN)
 NumberToStringConverter.GetConverter("ZH").ConvertOrdinal(1);   // "第一"
 NumberToStringConverter.GetConverter("JA").ConvertOrdinal(3);   // "第三"
 NumberToStringConverter.GetConverter("KO").ConvertOrdinal(2);   // "제이"
-NumberToStringConverter.GetConverter("EE").ConvertOrdinal(1);   // "gbãtõ" ← irregular
-NumberToStringConverter.GetConverter("EE").ConvertOrdinal(2);   // "etsõ eve"
+NumberToStringConverter.GetConverter("VN").ConvertOrdinal(1);   // "thứ nhất" ← exception, then prefix
+
+// Suffix on the last element of the cardinal (WO, 1-999)
+NumberToStringConverter.GetConverter("WO").ConvertOrdinal(12);  // "fukk ak ñaareel"
+NumberToStringConverter.GetConverter("WO").ConvertOrdinal(1);   // "bu njëkk" ← suppletive
 ```
 
 ### `SupportsOrdinals`
@@ -1648,18 +1651,18 @@ Steps 3–5 act on the cardinal after the ordinal `<Replacement>` rules (see
 |-----------|-------------|
 | `suffix` | Suffix added to the last word when no word rule matches. |
 | `removeTrailing` | String to strip from the end of the last word before adding `suffix` (only when the word actually ends with this value and no `<OrdinalStem>` rule matched). |
-| `prefix` | String prepended to the entire ordinal result (e.g. `"第"` for Chinese, `"etsõ "` for Ewe). May be combined with exceptions; suffix and word rules are ignored when `prefix` is set. |
+| `prefix` | String prepended to the entire ordinal result (e.g. `"第"` for Chinese, `"thứ "` for Vietnamese). May be combined with exceptions, which receive the prefix too; suffix and word rules are ignored when `prefix` is set. |
 
 ```xml
-<!-- Prefix-based ordinals (ZH, JA, KO, EE) -->
+<!-- Prefix-based ordinals (ZH, JA, KO, VN) -->
 <Ordinals prefix="第">
     <!-- All numbers: "第" + cardinal -->
 </Ordinals>
 
-<!-- Mixed prefix + exception (EE) -->
-<Ordinals prefix="etsõ ">
-    <OrdinalException value="1" string="gbãtõ" />
-    <!-- 1 → "gbãtõ" (exception wins); 2 → "etsõ eve" (prefix + cardinal) -->
+<!-- Mixed prefix + exception (VN) -->
+<Ordinals prefix="thứ ">
+    <OrdinalException value="1" string="nhất" />
+    <!-- 1 → "thứ nhất" (exception, then prefix); 2 → "thứ hai" (prefix + cardinal) -->
 </Ordinals>
 ```
 

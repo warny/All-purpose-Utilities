@@ -38,7 +38,6 @@ public class NumberToStringNts14GuardTests
     [DataRow("CA")]
     [DataRow("CA-valencia")]
     [DataRow("WO")]
-    [DataRow("EE")]
     public void ZeroGuard_GuardedLanguages_StillFormNonZeroOrdinals(string culture)
     {
         var converter = NumberToStringConverter.GetConverter(culture);

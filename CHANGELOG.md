@@ -41,6 +41,17 @@ All notable changes to this project will be documented in this file.
   cumulative by range specificity, validated strictly at load (conflicts, domain, empty values,
   absent edges, intra-group connector overlap) and compiled into immutable lookup tables.
 - Added `ItalianOrdinalLanguageSpecifics`, restricting Italian ordinals to verified forms.
+- Added `WolofOrdinalLanguageSpecifics`, a domain guard limiting Wolof ordinals to 1–999.
+
+### Fixed — `omy.Utils.NumberToString` (NTS-16 closed)
+- Wolof ordinals take the sourced `-eel` suffix on the last element of the cardinal (`ñaareel`,
+  `fukk ak ñaareel`, `ñaar-fukk ak ñenteel`) instead of the unattested `-ël`; `bu njëkk` stays the
+  first. Ordinals from 1000 now throw `NotSupportedException`: the thousands cardinal they would be
+  built on is not settled (NTS-19).
+- **Behaviour change:** Ewe no longer supports ordinals (`SupportsOrdinals` is `false`,
+  `ConvertOrdinal` throws `NotSupportedException`) instead of producing the unattested `etsõ` +
+  cardinal (`etsõ gbãtõ`, `etsõ eve`). The sourced `-lia` formation needs the Ewe cardinals to be
+  rebuilt first (NTS-20). Cardinal conversions are unchanged for both languages.
 
 ### Fixed — `omy.Utils.NumberToString` (NTS-15, NTS-18 closed)
 - Italian ordinals of the round multiples of biliardo and trilione are supported (`biliardesimo`,
