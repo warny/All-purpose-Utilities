@@ -35,7 +35,7 @@ the remaining validation and its criterion are tracked per capability in `TODO.m
 | RU | RU | SCALE-LONG | Yes (existing) | Declarative | Yes | 15 / 12 | gender × case | Reference usage (`четверть второго`, `половина второго`, `без четверти два`, `час/часа/часов`) | Ordinal of zero `нулевой` (NTS-14) |
 | UK | UK, UK-UA | SCALE-LONG | Yes | `UkrainianOrdinalLanguageSpecifics` (gender × case) | Yes | 15 / 12 | `gender` × `case` (Ukrainian values) | Reference usage (`двадцять перший`; `чверть по першій`, `пів на другу`, `чверть до другої`) | Round thousands verified up to 10 000; ASCII apostrophe as in the cardinals |
 | ES | ES | none | Yes (existing) | Declarative | Yes | 5 / 12 | gender × form | Reference usage (RAE, *Diccionario panhispánico de dudas*, “hora”) | Exact `Convert(TimeOnly)` unchanged |
-| IT | IT | SCALE-LONG | Yes: 1–1999 except 1110–1910, round thousands 2000–999000, 100001–100009, round multiples of milione/miliardo/bilione | Declarative `<OrdinalStem>`, `<OrdinalComposition>`, `<OrdinalScale>` + `ItalianOrdinalLanguageSpecifics` (domain guard) | Yes | 5 / 12 | gender | Reference usage (Accademia della Crusca: `l'una e mezzo`, `le due meno un quarto`, `le otto meno venti`) | Cardinals soldered with `<Fusion>` (NTS-10); compound ordinals by `<OrdinalStem>` (NTS-13, see below), analytic 1010 and 100001–100009 (NTS-15) and round scale ordinals (NTS-17) (see below); zero, 1110–1910 and the other non-round thousands above 1999 (NTS-15), non-round values from a million and a biliardo and above (NTS-18) fail closed as ordinals; millions and above are separate nouns joined by `e` (NTS-14, see below) |
+| IT | IT | SCALE-LONG | Yes: 1–1999 except 1110–1910, round thousands 2000–999000, 100001–100009, round multiples of milione/miliardo/bilione/biliardo/trilione | Declarative `<OrdinalStem>`, `<OrdinalComposition>`, `<OrdinalScale>` + `ItalianOrdinalLanguageSpecifics` (domain guard) | Yes | 5 / 12 | gender | Reference usage (Accademia della Crusca: `l'una e mezzo`, `le due meno un quarto`, `le otto meno venti`) | Cardinals soldered with `<Fusion>` (NTS-10); compound ordinals by `<OrdinalStem>` (NTS-13, see below), analytic 1010 and 100001–100009 (NTS-15) and round scale ordinals through trilione (NTS-17, NTS-18) (see below); zero, 1110–1910, the other non-round thousands above 1999 and the non-round values from a million deliberately fail closed as ordinals (Italian closure, see below); millions and above are separate nouns joined by `e` (NTS-14, see below) |
 | PT | PT | none | Yes (existing) | Declarative | Yes | 5 / 12 | gender | **Consulted** for the constructions the configuration does *not* use: Ciberdúvidas, “Minutos para a hora” (`um quarto para as dez`, `dez para as três`, `três menos dez`). The direct reading itself (`uma hora e quarenta e cinco`) is a project convention not attested by that source | Deliberate direct numeric reading; `para`/`menos` constructions not produced; PT-PT/PT-BR not split |
 | GL | GL, gl-ES | none | Yes (existing) | Declarative | Yes | 5 / 12 | gender | Reference usage (RAG usage `a unha e media`, `as dúas menos cuarto`) | — |
 | RO | RO, RO-RO | none | Yes | `RomanianOrdinalLanguageSpecifics` (DOOM) | Yes | 15 / 12 | `gen` | **Consulted**: dexonline/DOOM entries `sutălea` (`al (o) sutălea`, `a (o) suta`, `al două sutelea`) and `miilea` (`al o miilea`, `a o mia`, `al două miilea`); reference usage for the clock (`ora două`, `două fără un sfert`) | Ordinals up to 999 999 and one million (masculine); round `de mii` thousands declined |
@@ -59,6 +59,65 @@ the remaining validation and its criterion are tracked per capability in `TODO.m
 | ZU | ZU | none | **Deferred** | — | Yes | 15 / 12 | none | **Consulted**: Unisa, *Learn online Zulu*, Theme 4 (`Yihora lesihlanu`, `Ligamenxe elesihlanu`, `... lishayile elesihlanu`, `... ngaphambi kwelesihlanu`) — single source | Hour forms are literal ClockTime patterns; they do not enable ordinals |
 | EE | EE | none | Yes (existing, prefix `etsõ`; formation unsourced, NTS-16) | Declarative + zero guard | **Deferred** | — | none | No source found | No ordinal of zero (NTS-14) |
 | WO | WO | none | Yes (existing; `-ël` spelling unsourced, NTS-16) | Declarative + zero guard | **Deferred** | — | none | No consistent source found | No ordinal of zero (NTS-14) |
+
+## Italian closure — NTS-15 and NTS-18 (2026-10-07)
+
+After this pass every Italian ordinal category has a deliberate contract: **supported** when the
+form is sourced or follows a productive rule established by the sources, **unsupported**
+(`NotSupportedException`) when no canonical composition or spelling could be established. The
+rejected families are deliberate linguistic limitations, not technical debt: the engine can
+already express them (`<OrdinalComposition>`), but generating one of several unsourced candidates
+would be a choice made by intuition. No engine primitive was added.
+
+Three levels of evidence are distinguished.
+
+- **Explicitly attested** — *millesimo*, *duemillesimo*, *diecimillesimo*, *centomillesimo*
+  (Treccani vocabolario *ordinale*, *centomillesimo*); *milionesimo*, *miliardesimo*, *bilionesimo*,
+  *decimilionesimo (o diecimilionesimo)* (Treccani vocabolario); *duemilionesimo* (CNR press release
+  on the .it registry); *biliardesimo* and *trilionesimo* (Ministero delle Infrastrutture e dei
+  Trasporti, ADN provisions on units of measurement, table of multiples and submultiples: 10^15
+  *Biliardo* / 10^-15 *Biliardesimo*, 10^18 *Trilione* / 10^-18 *Trilionesimo*, cited from the task
+  brief — the ministry document itself could not be retrieved online during this pass); *trilionesimo*
+  (Nuovo De Mauro, read: "agg.num.ord., s.m. [1987] che in una serie ordinata occupa il posto
+  corrispondente al trilione"; GDLI, "agg. numerale ordinale di un trilione", cited from the task
+  brief, not re-read); *millesimo decimo*,
+  *centomillesimoprimo … centomillesimonono* (Treccani *ordinale*, *centomillesimo*).
+  The Nuovo De Mauro has no entry *biliardesimo* (page not found); Italian Wikipedia "Biliardo
+  (numero)" lists the ordinal *Biliardesimo* without a source (corroboration only).
+- **Productivity retained** — *duemilionesimo* is attested, and *duemiliardesimo*,
+  *duebilionesimo*, *duebiliardesimo*, *duetrilionesimo*, *ventunobiliardesimo*,
+  *ventitrebiliardesimo*, *novetrilionesimo* … apply the same rule already retained for the thousands
+  and the millions (Treccani *ordinale*: "dal tema del corrispondente cardinale [...] con l'aggiunta
+  della terminazione -èsimo", *duemillesimo*, *diecimillesimo*): the multiplier's cardinal soldered
+  to the ordinal of the singular scale noun, multiplier one dropped. These multiplier forms are not
+  individually attested. Junctions checked by test: the inner *tre* loses its accent through the
+  existing *trébili* replacement (*ventitrebiliardesimo*); the trilione multiplier is at most 9 in
+  the `long` domain (9 × 10^18 ≤ `long.MaxValue` < 10 × 10^18), so no *trétri* junction can arise and
+  no replacement was added (*tretrilionesimo*); compounds of *uno* keep the plural-noun form
+  *ventuno* (*ventunobiliardesimo*), not the apocopated *ventun*.
+- **Not canonical / not established (rejected)** — 1110–1910: two splits are conceivable
+  (*millesimo centodecimo*, *millecentesimo decimo*, or a soldered *millecentodecimo*) and no source
+  selects one. Other non-round thousands above 1999 (*duemillesimo primo*? *duemillesimoprimo*?
+  *duemillesimo decimo*? *ventunomillesimo primo*?): Treccani *ordinale* gives the juxtaposition only
+  on *millesimo* ("pressoché l'unico [...] *millesimo primo, millesimo secondo, millesimo decimo*")
+  and *centomillesimo* never generalises it to other heads, and the synthetic derivation is the
+  partitive (*centomiladuesimo*). Non-round values from a million (*milionesimo primo*?
+  *milionesimoprimo*? *duemilionesimo primo*? *miliardesimo primo*? *bilionesimo primo*?): no
+  dictionary or grammar gives a form. An Italian Language Stack Exchange answer proposes
+  *unmilioneunesimo* or *milionesimoprimo* for 1 000 001 while stating that it is a virtual
+  extrapolation — evidence that the form is not stabilised, not a source for it.
+
+**Searched without result (2026-10-07)**: web searches for *duemillesimo primo*, *duemillesimoprimo*,
+*duemillesimo decimo*, *diecimillesimo primo*, *ventunomillesimo primo*, *millesimo centodecimo*,
+*millecentesimo decimo*, *millecentodecimo*, *milionesimo primo*, *milionesimoprimo*,
+*duemilionesimo primo*, *miliardesimo primo*; Treccani vocabolario *ordinale* re-read for a
+productivity statement beyond *millesimo* or a segmentation rule for 1110 (none: its examples stop
+at *millesimo decimo*). Only learner pages and the repository's own pull requests matched.
+
+Guard: `ItalianOrdinalLanguageSpecifics` takes the largest validated scale unit (10^6 … 10^18, a
+static table) not above the value and rejects it unless the value is a multiple of that unit; the
+scan never multiplies, so it cannot overflow up to `long.MaxValue`. Round values 10^15 … 9 × 10^18
+are accepted; 10^15 + 1, 10^18 + 1, 9 × 10^18 + 1 and `long.MaxValue` are rejected.
 
 ## NTS-15 and NTS-17 (2026-10-06)
 
@@ -93,8 +152,8 @@ tests pin the ordinal forms and the guard keeps every unsourced value closed.
   unaccented); these multiplier forms apply the general Treccani rule and are not individually
   attested. Feminine through the variant suffix (*milionesima*, *duemilionesima*). **Searched
   without result**: Treccani vocabolario *biliardesimo*, *trilionesimo* and *centomilionesimo* (no
-  entry). Biliardo (10^15) and trilione (10^18) stay fail-closed (NTS-18); *centomilionesimo* is
-  produced by the general rule.
+  entry). Biliardo (10^15) and trilione (10^18) stayed fail-closed (NTS-18, since closed: see the
+  Italian closure above); *centomilionesimo* is produced by the general rule.
 - **Analytic thousands (NTS-15, partly)** — **Consulted**: Treccani vocabolario *ordinale*: a second
   formation juxtaposes "l'ordinale che indica la decina, o il centinaio, con quelli che indicano le
   unità" (*decimoprimo, ventesimoprimo, centesimoprimo*), "anche in grafia staccata"; "questo tipo di

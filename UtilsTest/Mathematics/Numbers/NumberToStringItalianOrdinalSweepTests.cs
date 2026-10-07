@@ -7,7 +7,7 @@ using Utils.NumberToString;
 namespace UtilsTest.NumberToString;
 
 /// <summary>
-/// Mechanical regression guard over the Italian ordinal domain declared productive by NTS-13, NTS-15 and NTS-17.
+/// Mechanical regression guard over the Italian ordinal domain declared productive by NTS-13, NTS-15, NTS-17 and NTS-18.
 /// </summary>
 /// <remarks>
 /// These sweeps check structural invariants only — no exception, a soldered single word, the gender
@@ -34,7 +34,7 @@ public class NumberToStringItalianOrdinalSweepTests
     /// <returns><see langword="true"/> for 110, 210 … 910.</returns>
     private static bool IsHundredAndTen(long number) => number is > 100 and < 1000 && number % 100 == 10;
 
-    /// <summary>Determines whether <paramref name="number"/> is a thousand ending in ten below 2000 (1010 … 1910), left fail-closed except 1010 (NTS-15).</summary>
+    /// <summary>Determines whether <paramref name="number"/> is a thousand ending in ten below 2000 (1010 … 1910), deliberately fail-closed except 1010.</summary>
     /// <param name="number">The value to classify.</param>
     /// <returns><see langword="true"/> for 1010, 1110 … 1910.</returns>
     private static bool IsThousandEndingInTen(long number) => number is > 1000 and < 2000 && number % 100 == 10;
@@ -133,8 +133,10 @@ public class NumberToStringItalianOrdinalSweepTests
     [DataRow(1_001_000L)]
     [DataRow(2_000_001L)]
     [DataRow(1_000_000_000_001L)]
-    [DataRow(1_000_000_000_000_000L)]
-    [DataRow(999_000_000_000_000_000L)]
+    [DataRow(1_000_000_000_000_001L)]
+    [DataRow(999_000_000_000_000_001L)]
+    [DataRow(1_000_000_000_000_000_001L)]
+    [DataRow(9_000_000_000_000_000_001L)]
     [DataRow(long.MaxValue)]
     public void OutsideDomain_IsRejected(long number)
     {
@@ -142,7 +144,7 @@ public class NumberToStringItalianOrdinalSweepTests
         Assert.Throws<NotSupportedException>(() => Italian.ConvertOrdinal(number, "gender=femminile"));
     }
 
-    /// <summary>Every thousand ending in ten from 1110 to 1910 fails closed (NTS-15); 1010 is the attested "millesimo decimo".</summary>
+    /// <summary>Every thousand ending in ten from 1110 to 1910 fails closed (no source selects a split); 1010 is the attested "millesimo decimo".</summary>
     [TestMethod]
     public void ThousandsEndingInTen_AreRejected()
     {
@@ -167,9 +169,10 @@ public class NumberToStringItalianOrdinalSweepTests
     }
 
     /// <summary>
-    /// Mechanical guard over every round value of milione, miliardo and bilione (multipliers 1-999,
-    /// both genders): one soldered word, no "un" article, no accented tre, the multiplier's cardinal
-    /// (absent for one) followed by the stem of the singular scale noun and the gender suffix.
+    /// Mechanical guard over every round value of milione, miliardo, bilione, biliardo and trilione
+    /// that fits a <see cref="long"/> (multipliers 1-999, 1-9 for trilione; both genders): one soldered
+    /// word, no "un" article, no accented tre, the multiplier's cardinal (absent for one) followed by
+    /// the stem of the singular scale noun and the gender suffix.
     /// </summary>
     /// <param name="variant">The variant argument, or an empty string for the default (masculine) form.</param>
     /// <param name="suffix">The expected gender suffix.</param>
@@ -179,12 +182,14 @@ public class NumberToStringItalianOrdinalSweepTests
     public void RoundScaleValues_AreTheMultiplierSolderedToTheScaleOrdinal(string variant, string suffix)
     {
         string[] variants = variant.Length == 0 ? [] : [variant];
-        string[] stems = ["milion", "miliard", "bilion"];
+        string[] stems = ["milion", "miliard", "bilion", "biliard", "trilion"];
         var failures = new List<string>();
-        for (int scale = 2; scale <= 4; scale++)
+        long unit = 1_000;
+        for (int scale = 2; scale <= 6; scale++)
         {
-            long unit = (long)Math.Pow(1000, scale);
-            for (long multiplier = 1; multiplier <= 999; multiplier++)
+            unit *= 1_000;
+            long maxMultiplier = Math.Min(999, long.MaxValue / unit);
+            for (long multiplier = 1; multiplier <= maxMultiplier; multiplier++)
             {
                 long number = multiplier * unit;
                 string ordinal;
@@ -207,7 +212,44 @@ public class NumberToStringItalianOrdinalSweepTests
         Assert.AreEqual(0, failures.Count, string.Join(Environment.NewLine, failures));
     }
 
-    /// <summary>The non-round values from a million fail closed across a sample of every scale (NTS-18).</summary>
+    /// <summary>The largest round values that fit a <see cref="long"/> at the two new scales: 999 biliardi and 9 trilioni.</summary>
+    [TestMethod]
+    public void RoundScaleValues_HighestRepresentableMultipliers()
+    {
+        Assert.AreEqual("novecentonovantanovebiliardesimo", Italian.ConvertOrdinal(999_000_000_000_000_000L));
+        Assert.AreEqual("novetrilionesimo", Italian.ConvertOrdinal(9_000_000_000_000_000_000L));
+    }
+
+    /// <summary>
+    /// Boundaries of the structural guard: the highest scale is found without overflow up to
+    /// <see cref="long.MaxValue"/>, and a value is supported exactly when it is round at that scale.
+    /// </summary>
+    /// <param name="number">The value to classify.</param>
+    /// <param name="supported">Whether the value must be converted.</param>
+    [TestMethod]
+    [DataRow(999_000_000_000_000L, true)]
+    [DataRow(999_999_000_000_000L, false)]
+    [DataRow(1_000_000_000_000_000L, true)]
+    [DataRow(2_000_000_000_000_000L, true)]
+    [DataRow(999_000_000_000_000_000L, true)]
+    [DataRow(999_999_000_000_000_000L, false)]
+    [DataRow(1_000_000_000_000_000_000L, true)]
+    [DataRow(9_000_000_000_000_000_000L, true)]
+    [DataRow(9_000_000_000_000_000_001L, false)]
+    [DataRow(long.MaxValue, false)]
+    public void LargeValues_AreSupportedExactlyWhenRoundAtTheHighestScale(long number, bool supported)
+    {
+        string[][] variantSets = [[], ["gender=femminile"]];
+        foreach (string[] variants in variantSets)
+        {
+            if (supported)
+                Assert.IsFalse(string.IsNullOrEmpty(Italian.ConvertOrdinal(number, variants)), $"value {number}");
+            else
+                Assert.Throws<NotSupportedException>(() => Italian.ConvertOrdinal(number, variants), $"value {number}");
+        }
+    }
+
+    /// <summary>The non-round values from a million fail closed across a sample of every scale (deliberate limitation).</summary>
     [TestMethod]
     public void NonRoundValuesFromAMillion_AreRejected()
     {
