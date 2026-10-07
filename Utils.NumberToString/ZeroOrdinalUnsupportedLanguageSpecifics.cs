@@ -5,8 +5,8 @@ namespace Utils.NumberToString;
 
 /// <summary>
 /// Shared domain guard for languages whose productive ordinal suffix or prefix would mechanically
-/// form an ordinal of zero that no consulted source attests (NTS-14: Catalan "zeroè", Wolof
-/// "seroël", Ewe "etsõ zero"). Zero is rejected with <see cref="NotSupportedException"/>, like the
+/// form an ordinal of zero that no consulted source attests (NTS-14: Catalan "zeroè"; Wolof now
+/// uses <see cref="WolofOrdinalLanguageSpecifics"/> and Ewe has no ordinals since NTS-16). Zero is rejected with <see cref="NotSupportedException"/>, like the
 /// languages without any zero formation (NTS-12); every other value falls through to the
 /// declarative ordinal pipeline unchanged. Builds no text and finalizes nothing.
 /// </summary>

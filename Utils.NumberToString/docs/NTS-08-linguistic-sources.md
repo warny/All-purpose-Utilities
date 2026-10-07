@@ -57,9 +57,79 @@ the remaining validation and its criterion are tracked per capability in `TODO.m
 | EU | EU, eu-ES | none | Yes (existing) | Declarative | Yes | 15 / 12 | none | **Consulted**: Sareko Euskal Gramatika (EHU), “Orduak nola eman euskaraz” (`ordu bata`, `ordu bat eta erdiak` with `*ordu bata eta erdiak` marked wrong, `ordu bata eta laurden`, `bostak laurden gutxi`) | Clock-case forms are literal per hour; cardinals unchanged |
 | SW | SW, SW-KE, SW-TZ | SCALE-SHORT | **Deferred** | — | Yes | 15 / 12, `hourOffset=-6` | none | **Consulted**: Five Colleges LangMedia, “Swahili – Tanzania – Telling Time”; SpokenSwahili, “Telling the time in Swahili” | No day-part words (asubuhi, mchana, jioni, usiku) |
 | ZU | ZU | none | **Deferred** | — | Yes | 15 / 12 | none | **Consulted**: Unisa, *Learn online Zulu*, Theme 4 (`Yihora lesihlanu`, `Ligamenxe elesihlanu`, `... lishayile elesihlanu`, `... ngaphambi kwelesihlanu`) — single source | Hour forms are literal ClockTime patterns; they do not enable ordinals |
-| EE | EE | none | Yes (existing, prefix `etsõ`; formation unsourced, NTS-16) | Declarative + zero guard | **Deferred** | — | none | No source found | No ordinal of zero (NTS-14) |
-| WO | WO | none | Yes (existing; `-ël` spelling unsourced, NTS-16) | Declarative + zero guard | **Deferred** | — | none | No consistent source found | No ordinal of zero (NTS-14) |
+| EE | EE | none | **Deferred** (sourced `-lia` needs the cardinal rebuild, NTS-16 → NTS-20) | — | **Deferred** | — | none | No source found | Cardinals not yet sourced (NTS-20) |
+| WO | WO | none | Yes, 1–999 (`-eel`, NTS-16) | Declarative + `WolofOrdinalLanguageSpecifics` | **Deferred** | — | none | No consistent source found | No ordinal of zero (NTS-14) nor from 1000 (NTS-19) |
 
+## NTS-16 — Wolof and Ewe ordinals (2026-10-07)
+
+Two different situations. Levels of evidence follow the Italian closure: **attested** (the exact
+form is printed by a consulted source), **productive** (the source states a general rule and the
+form applies it), **unsupported** (`NotSupportedException`).
+
+### Wolof — corrected (`-eel`, 1–999)
+
+- **Consulted, full text read**: M. A. Kosogorova, "Numeral systems of Fula and Wolof: A comparison
+  of morphosyntactic characteristics", *Studies in African Languages and Cultures* 57 (2023),
+  141–174, §4 — §4.2: "An affix -eel is added to the last element of a cardinal numeral to turn it
+  into ordinal one" (`8 juróom ñetteel`, `12 fukk(a) ak ñaareel`, `24 ñaar fukk(a) ak ñenteel`);
+  after Ngom (2003): `ñaar-eel-u xarit bi`, `fukk-eel-u fas wi`, `ñett-eel-u rééw mi`; the only
+  exception is 'one', suppletive `(n)jëkk < jëkka` 'to be first', in a relative construction
+  (`jigéén j-u njëkk`, `xale b-u njëkk`). S. Robert (LLACAN, CNRS & INALCO), "Wolof: A grammatical
+  sketch", preprint 2021 for F. Lüpke (ed.), *The Oxford guide to the Atlantic languages of West
+  Africa*, §3.2.7: "With the exception of 'first' (for which a relative clause with the verb jëkk
+  'to be the first' is used), ordinal numbers are obtained by suffixation of an –eel morpheme to the
+  cardinal number (e.g. juróóm ñaar-eel 'seventh')".
+- **Also consulted**: Janga Wolof ("–éél": `ñaaréél`, `fukkéél`; first `bu njëk`); Omniglot, Wolof
+  numbers, compiled from Malherbe & Sall, Diouf (`ňaareel`, `ñetteel`, `temeereel`, `junneel`; first
+  `jëk, njëk`); decree 2005-992 on Wolof orthography and word separation, as summarized by
+  au-senegal.com ("La fermeture est notée par l'accent aigu"; long vowels doubled; "Lorsque la
+  voyelle longue est accentuée, seule la première voyelle porte l'accent": `néeg`, `wéer`).
+- **Spelling decision, `-eel`**: Kosogorova and Robert both distinguish the closed long vowel with
+  accents (`tééméér`, `juróóm`, `rééw`; Robert's vowel table opposes `éé` and `ee`) and both write the
+  suffix `-eel`, so the vowel is the open /ɛː/, spelled `ee` by the decree. `-éél` (Janga Wolof)
+  would be a closed vowel with a double accent, contrary to the decree. `-ël` (the former
+  configuration) appears in no source.
+- **First, `bu njëkk`, kept**: the relative form of `jëkk` in class B (the class Robert gives to
+  `benn`), as in Ngom's `xale b-u njëkk`; Janga Wolof cites `bu njëk` as the list form. The
+  converter's standalone contract needs one citation form; the class-B relative is it. Double `kk`
+  follows the verb `jëkk` (Robert) and Kosogorova's `njëkk`. `jëkk` alone is not used: the sources
+  present it only as the verb inside the relative construction.
+- **Attested**: 2, 3, 8, 10, 12, 24, 7 (and 100 by Omniglot). **Productive** (rule stated for any
+  cardinal, exception 'one' only): every other value 2–999, e.g. `fukk ak benneel`, `téeméereel`,
+  `ñaar téeméer ak ñett-fukk ak ñenteel`. The cardinals below 1000 agree with the sources' structure
+  (Kosogorova `234 ñaar tééméér ak ñett(a) fukk(a) ak ñen(en)t`, Robert `tééméér ak benn`) except for
+  the hyphens, and the engine's last-element suffix (hyphen-aware) is exactly the stated rule.
+  Kosogorova does not say that ordinals are rare above the tens; she notes "the overall lack of data
+  on Wolof ordinal numerals".
+- **Unsupported**: zero (NTS-14, unchanged) and every value from 1000 (`WolofOrdinalLanguageSpecifics`).
+  The thousands cardinal diverges from both academic sources (`benn junni benn` for 1001 vs
+  `juuni ak juróom ñaar` for 1007; Robert `ñaar-i junni ak juróóm ñett fukk`; `benn junni` vs
+  `junni` for 1000), and the vowel-final `junni` + `-eel` → `junneel` is exemplified by Omniglot
+  only. NTS-19 tracks those cardinals, the hyphens and the zero `sero`.
+
+### Ewe — withdrawn (pending NTS-20)
+
+- **Consulted, scanned text read**: I. Warburton, P. Kpotufe, R. Glover, *Ewe Basic Course*, Indiana
+  University African Studies Program, 1968 (ERIC ED028444): "The ordinal numerals, with the exception
+  of 'first', are formed by adding /-lia/ to each of the numbers"; glossary: `-lia` "suffix used to
+  form all ordinal numerals, with the exception of 'first', ex. /evelia/ 'second' but /gbãtɔ/
+  'first'"; cardinals 1–19 (`ɖeka` … `asieke`, `ewo`, `wuiɖeka`, `wuieve` …), 20–29 (`blaeve`,
+  `blaeve vɔ ɖeka` …), tens `bla` + unit, 100 `alafa ɖeka`. **Independent**: Omniglot (after
+  Wiktionary's Ewe numerals category and afropedea): 0 `nadeke, nanekeo`, `ɖeka`, `eve`, `etɔ̃`,
+  `ene`, `atɔ̃`, `ade`, `adrɛ`, `enyi`, `asieke`, `ewo`, `wuiɖekɛ` …, `blaeve`, `blaeve-vɔ̃-` + unit,
+  `blaetɔ̃`, `alafa ɖeka`, `alafa ɖeka kple ɖeka`, `akpe ɖeka`; ordinals `gbãtɔ`, `evelia`, `etɔ̃lia`,
+  `enelia`, `atɔ̃lia`, `ewolia`.
+- **Finding**: the `etsõ` prefix is attested nowhere, and the configured cardinals differ from both
+  sources in almost every family (units 1/3/5/7/9, teens, tens, the `vɔ` connector, hundreds,
+  thousands order, zero). No consulted source presents `blavo eve`, `kpeɖe` or `deka akpe` as a
+  dialectal or older form; the Ghana/Togo standard orthography (Bureau of Ghana Languages) could not
+  be consulted and is part of NTS-20.
+- **Decision**: correcting the ordinal alone would build `-lia` on wrong bases (`etolia`,
+  `asealia`), and the cardinal rebuild is broader than an ordinal ticket (and the noun-first
+  thousands may need configuration work). `<Ordinals>` is removed: no Ewe ordinal is produced, the
+  exception `gbãtɔ` included, until NTS-20. Expected target afterwards: `<Ordinals suffix="lia">`
+  with `<OrdinalException value="1" string="gbãtɔ" />` (the prefix also applied to exceptions, which
+  is why the former configuration produced `etsõ gbãtõ`).
 ## Italian closure — NTS-15 and NTS-18 (2026-10-07)
 
 After this pass every Italian ordinal category has a deliberate contract: **supported** when the
@@ -229,10 +299,12 @@ Four independent families, each fixed test-first. Sweeps added with them are str
   - WO: Janga Wolof ("–éél" added to the cardinal: ñaaréél, fukkéél; first = bu njëk; zero = tus,
     dara); search summaries of an academic grammatical sketch (-eel). No source attests an ordinal
     of zero, and the configured cardinal "sero" is not the attested zero → fail closed. The
-    configured `-ël` spelling of every other ordinal does not match the sources (NTS-16).
+    configured `-ël` spelling of every other ordinal does not match the sources (NTS-16, since
+    corrected to `-eel`; the guard is now `WolofOrdinalLanguageSpecifics`).
   - EE: Omniglot and Wiktionary (zero = nadeke/nanekeo; ordinals gbãtɔ, evelia, etɔ̃lia … with a
     `-lia` suffix). No source attests an ordinal of zero → fail closed. The configured `etsõ`
-    prefix of every other ordinal is not attested either (NTS-16).
+    prefix of every other ordinal is not attested either (NTS-16: Ewe ordinals since withdrawn
+    pending the cardinal rebuild, NTS-20).
 
 ## NTS-10, NTS-11 and NTS-12 (2026-10-03)
 
@@ -361,6 +433,8 @@ The task's working matrix was a starting point; wherever a consulted source disa
 - **ZU ordinals**: same reason (class-dependent relative concords `wokuqala`, `lesibili`, `esithathu` ...). The clock uses literal class-5 forms only.
 - **EE clock**: only `ga eto` / `ga eto kple afa` were known; no source for minutes was found, and a clock limited to :00 and :30 would round aggressively.
 - **WO clock**: native (`waxtu`) and French-derived readings coexist; no single sourced system covering 01:00–01:45 was established.
+- **EE ordinals** (NTS-16): the sourced `-lia` formation waits for the Ewe cardinal rebuild (NTS-20).
+- **WO ordinals from 1000** (NTS-16): wait for the Wolof thousands cardinal (NTS-19).
 
 ## Keeping the ordinal plugins in sync
 
@@ -411,3 +485,9 @@ supported value, round scales, fail-closed range) and by the language `.feature`
 - ulpan.net, Hebrew hundreds and thousands: <https://www.ulpan.net/hebrew-numbers-hundreds-thousands-and-more>
 - Academy of the Hebrew Language newsletter (30.12.2019): <https://hebrew-academy.org.il/wp-content/uploads/Newsletter-30.12.19-new-format.pdf>
 - Wiktionary, "nollas": <https://en.wiktionary.org/wiki/nollas>; kieli.net: <https://kieli.net/sana/nollas>
+- Kosogorova 2023, *SALC* 57: <https://salc.uw.edu.pl/index.php/SALC/article/view/306> (doi:10.32690/SALC57.7)
+- Robert, "Wolof: A grammatical sketch" (HAL preprint): <https://hal.science/hal-01513269>
+- Decree 2005-992 on Wolof orthography, summary: <https://au-senegal.com/comment-ecrire-correctement-le-wolof,16261.html>
+- Omniglot, Wolof numbers: <https://omniglot.com/language/numbers/wolof.htm>; Ewe numbers: <https://www.omniglot.com/language/numbers/ewe.htm>
+- Janga Wolof, numbers: <https://jangawolof.org/understanding-wolof-numbers-counting-in-wolof/>
+- *Ewe Basic Course* (ERIC ED028444): <https://files.eric.ed.gov/fulltext/ED028444.pdf>

@@ -11,6 +11,7 @@ Examples:
     | 1.5 | deka kpɔ atɔ |
     | 12.34 | ewo kple eve kpɔ eto ene |
 
+# These cardinals are the configured ones, not sourced forms: NTS-20 tracks their rebuild.
 Scenario Outline: Basic cardinal numbers
     Given I use the "EE" number converter
     When I convert the cardinal number <number>
@@ -28,30 +29,29 @@ Examples:
     | 100 | kpeɖe |
     | 1000 | deka akpe |
 
-Scenario Outline: Irregular first ordinal
+# NTS-16. The sourced Ewe ordinal is the cardinal + -lia, "first" being the suppletive gbãtɔ (Ewe Basic
+# Course, Indiana University 1968: "The ordinal numerals, with the exception of 'first', are formed by
+# adding /-lia/ to each of the numbers"; Omniglot and Wiktionary: evelia, etɔ̃lia, enelia, atɔ̃lia,
+# ewolia). The former "etsõ" prefix is unattested. The suffix cannot be applied yet: the configured
+# cardinals diverge from the same sources in almost every family (deka/ɖeka, eto/etɔ̃, atɔ/atɔ̃,
+# adre/adrɛ, asea/asieke, "ewo kple deka"/wuiɖeka, "blavo eve"/blaeve, "kple"/vɔ, kpeɖe/"alafa ɖeka",
+# "deka akpe"/"akpe ɖeka"), so "-lia" would form unattested words (etolia, asealia). Ordinal
+# conversion stays deliberately unsupported until the cardinal system is rebuilt (NTS-20).
+Scenario: Ordinal conversion is unsupported pending the cardinal audit
     Given I use the "EE" number converter
-    When I convert the ordinal number <number>
-    Then the result is "<expected>"
+    Then the converter does not support ordinal conversion
+
+Scenario Outline: Ordinal requests are rejected
+    Given I use the "EE" number converter
+    When I attempt to convert the ordinal number <number>
+    Then conversion is rejected because no ordinal form is available
 
 Examples:
-    | number | expected |
-    | 1 | etsõ gbãtõ |
-
-Scenario Outline: Prefixed ordinal numbers
-    Given I use the "EE" number converter
-    And I use the variants "<variants>"
-    When I convert the ordinal number <number>
-    Then the result is "<expected>"
-
-Examples:
-    | number | variants | expected |
-    | 2 |  | etsõ eve |
-    | 3 |  | etsõ eto |
-    | 9 |  | etsõ asea |
-
-Scenario: Ordinal conversion is supported
-    Given I use the "EE" number converter
-    Then the converter supports ordinal conversion
+    | number |
+    | 0 |
+    | 1 |
+    | 2 |
+    | 21 |
 
 Scenario: Fraction connector wording
     Given I use the "EE" number converter
@@ -63,11 +63,3 @@ Scenario: Fraction connector wording
 Scenario: Idiomatic clock-time conversion is unsupported
     Given I use the "EE" number converter
     Then the converter does not support clock-time conversion
-
-# NTS-14. No consulted source attests an ordinal of zero (zero is nadeke/nanekeo; Omniglot and
-# Wiktionary list gbãtɔ, evelia, etɔ̃lia ...), so the prefix does not produce "etsõ zero": zero fails
-# closed. The prefix-based formation of the other ordinals is tracked separately (NTS-16).
-Scenario: Zero has no ordinal form
-    Given I use the "EE" number converter
-    When I attempt to convert the ordinal number 0
-    Then conversion is rejected because no ordinal form is available
