@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Xml.Serialization;
 
 namespace Utils.NumberToString
@@ -102,9 +103,34 @@ namespace Utils.NumberToString
         [XmlAttribute("maxNumber")]
         public string? MaxNumber { get; set; }
 
-        /// <summary>Gets or sets the group definitions used when splitting large numbers.</summary>
+        /// <summary>
+        /// Gets or sets the default group definitions: the first <c>&lt;Groups&gt;</c> element without
+        /// <c>onScale</c> in <see cref="GroupsElements"/>. Kept with its historical signature; setting
+        /// it replaces the default elements of <see cref="GroupsElements"/> and keeps the scoped ones.
+        /// </summary>
+        [XmlIgnore]
+        public GroupsListType? Groups
+        {
+            get => GroupsElements?.FirstOrDefault(g => g != null && g.OnScale == null);
+            set
+            {
+                var elements = GroupsElements ??= [];
+                elements.RemoveAll(g => g != null && g.OnScale == null);
+                if (value != null) elements.Insert(0, value);
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets every declared <c>&lt;Groups&gt;</c> element as read by
+        /// <see cref="System.Xml.Serialization.XmlSerializer"/>: the default tables (no <c>onScale</c>)
+        /// and the scale-scoped ones, in document order.
+        /// </summary>
         [XmlElement(ElementName = "Groups")]
-        public GroupsListType? Groups { get; set; }
+        public List<GroupsListType>? GroupsElements { get; set; }
+
+        /// <summary>Gets or sets the <c>multiplierPosition</c> attribute.</summary>
+        [XmlAttribute("multiplierPosition")]
+        public string? MultiplierPosition { get; set; }
 
         /// <summary>Gets or sets the special-case number mappings for the language.</summary>
         [XmlElement(ElementName = "Exceptions")]
@@ -266,6 +292,8 @@ namespace Utils.NumberToString
         public string? FractionSeparator { get; init; }
         public string? MaxNumber { get; init; }
         public GroupsListType? Groups { get; init; }
+        public List<GroupsListType>? ScaleScopedGroups { get; init; }
+        public string? MultiplierPosition { get; init; }
         public NumberListType? Exceptions { get; init; }
         public NumberScaleDefinition? NumberScale { get; init; }
         public ReplacementsListType? Replacements { get; init; }

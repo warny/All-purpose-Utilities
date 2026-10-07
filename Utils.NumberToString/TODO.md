@@ -1,6 +1,8 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-07 after closing NTS-19 (Wolof cardinals and ordinals to 999 999; opened NTS-21),
+Re-audited on 2026-10-07 after closing NTS-20 (Ewe cardinals rebuilt to 999 999 and `-lia` ordinals
+restored, with the generic `<Groups onScale>` and `multiplierPosition` primitives; opened NTS-22), after
+closing NTS-19 (Wolof cardinals and ordinals to 999 999; opened NTS-21),
 after closing NTS-16 (Wolof ordinals corrected, Ewe ordinals withdrawn; opened NTS-19 and NTS-20)
 and after closing NTS-15 and NTS-18 (Italian ordinals complete: every
 category is either supported on sourced evidence or a deliberate fail-closed limitation); on 2026-10-06 after closing NTS-17 and narrowing NTS-15 (which opened NTS-18), after
@@ -43,7 +45,9 @@ classification.
     and 100001–100009 (NTS-15: Treccani "ordinale", "centomillesimo"), the round multiples of
     milione, miliardo and bilione (NTS-17: Treccani entries, CNR), and of biliardo and trilione
     (NTS-18: MIT/ADN table, Nuovo De Mauro, GDLI); WO cardinals 0–999 999 and ordinals (NTS-16, NTS-19: decree
-    2005-992, Kosogorova 2023, Robert 2021, Gaye 1980; large ordinals apply the stated rule). The remaining Italian values (1110–1910, other
+    2005-992, Kosogorova 2023, Robert 2021, Gaye 1980; large ordinals apply the stated rule); EE
+    cardinals 0–999 999 and ordinals (NTS-20: Dzablu-Kumah, *Basic Ewe for Foreign Students*; the Biblica
+    Ewe Bible corpus; Ewe Basic Course 1968; large ordinals apply the stated rule). The remaining Italian values (1110–1910, other
     non-round thousands, non-round values from a million) are deliberate linguistic limitations,
     not open work: see `DONE-2026-10-07.md`.
     NTS-08 closes when every capability above is validated or explicitly deferred; a corrected
@@ -54,7 +58,7 @@ classification.
       `nounClass` dimension and a documented class inventory.
     - EE ClockTime: no sourced minute convention.
     - WO ClockTime: competing native and French-derived conventions, no single sourced system.
-    - EE ordinals: withdrawn until the cardinal rebuild (NTS-20).
+    - EE ordinal of zero: no attested form (`ZeroOrdinalUnsupportedLanguageSpecifics`).
     - WO ordinals of zero and of the round thousands (last element `junni`): no attested ordinal of
       zero, conflicting forms for `junni` (`junneel`/`junniéél`); deliberate limitations.
 
@@ -63,15 +67,13 @@ classification.
   gives a million as `fukki téeméeri junni` (the regular 10 × 100 × 1000 with the connective) or
   `benn milyoŋ`, with the velar nasal. Decide the canonical form (decree 2005-992 alphabet for `ŋ`,
   a grammar or dictionary for the loan) before opening the domain above 999 999.
-- **NTS-20 — Ewe cardinal system rebuild.** Found by NTS-16. The configured cardinals diverge from
-  the Ewe Basic Course (Indiana University 1968) and Omniglot/Wiktionary in almost every family:
-  units 1, 3, 5, 7, 9 (`ɖeka`, `etɔ̃`, `atɔ̃`, `adrɛ`, `asieke`), teens (`wuiɖeka` … `wuiasieke`), tens
-  (`blaeve`, `blaetɔ̃`, `blaene` …), the tens-units connector `vɔ` (`blaeve vɔ ɖeka`), hundreds
-  (`alafa ɖeka`, `alafa ɖeka kple ɖeka`), thousands with the noun first (`akpe ɖeka`), the million,
-  and zero (`nadeke`/`naneke`). Check the Ghana/Togo standard orthography (Bureau of Ghana
-  Languages) and whether the noun-first thousands fit the existing scale configuration before
-  any engine work. Then restore ordinals as `<Ordinals suffix="lia">` with the exception `gbãtɔ`
-  (verify `-lia` on compounds: `blaevelia`, and where it attaches in `blaeve vɔ ɖeka`).
+- **NTS-22 — Ewe million-scale cardinals.** Found by NTS-20, which kept `maxNumber="999999"`. The
+  sources disagree on the million: Peace Corps Togo 2010 `akpe akpe` ("thousand thousand"), Omniglot
+  and Wiktionary `miliɔn ɖeka`; the Biblica Ewe Bible writes 1 100 000 `miliɔn ɖeka akpe alafa ɖeka`
+  (1CH 21:5, a single occurrence: noun first, like `akpe`). The configuration's `miliɔn` suffix is
+  unaudited. Decide the form (and check that it follows
+  `multiplierPosition="afterScale"` with the standalone cardinal as multiplier, `miliɔn eve`) before
+  opening the domain above 999 999.
 
 - **NTS-09 — `Trigger` elements are not inherited through `baseOn`.** `XmlSerializer` materializes
   an absent `<Trigger>` list as an empty list, so `MergeLanguageDefinition`'s
@@ -79,7 +81,7 @@ classification.
   uses triggers today; the README and XSD document the current behaviour. Fix by treating an empty
   list as absent (as `Cultures` already does) together with a regression test.
 
-NTS-01 through NTS-05, NTS-10 through NTS-18 and NTS-19 are closed:
+NTS-01 through NTS-05 and NTS-10 through NTS-20 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -108,6 +110,8 @@ NTS-01 through NTS-05, NTS-10 through NTS-18 and NTS-19 are closed:
   `DONE-2026-10-07(1).md`.
 - NTS-19 (Wolof cardinals: orthography and thousands; ordinals from 1000, spelling `-éel`):
   `DONE-2026-10-07(2).md`.
+- NTS-20 (Ewe cardinals rebuilt, `-lia` ordinals restored; generic `<Groups onScale>` and
+  `multiplierPosition` primitives): `DONE-2026-10-07(3).md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) are deliberately out of scope — the

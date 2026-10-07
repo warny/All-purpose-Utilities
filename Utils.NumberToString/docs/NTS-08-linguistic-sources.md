@@ -57,8 +57,84 @@ the remaining validation and its criterion are tracked per capability in `TODO.m
 | EU | EU, eu-ES | none | Yes (existing) | Declarative | Yes | 15 / 12 | none | **Consulted**: Sareko Euskal Gramatika (EHU), “Orduak nola eman euskaraz” (`ordu bata`, `ordu bat eta erdiak` with `*ordu bata eta erdiak` marked wrong, `ordu bata eta laurden`, `bostak laurden gutxi`) | Clock-case forms are literal per hour; cardinals unchanged |
 | SW | SW, SW-KE, SW-TZ | SCALE-SHORT | **Deferred** | — | Yes | 15 / 12, `hourOffset=-6` | none | **Consulted**: Five Colleges LangMedia, “Swahili – Tanzania – Telling Time”; SpokenSwahili, “Telling the time in Swahili” | No day-part words (asubuhi, mchana, jioni, usiku) |
 | ZU | ZU | none | **Deferred** | — | Yes | 15 / 12 | none | **Consulted**: Unisa, *Learn online Zulu*, Theme 4 (`Yihora lesihlanu`, `Ligamenxe elesihlanu`, `... lishayile elesihlanu`, `... ngaphambi kwelesihlanu`) — single source | Hour forms are literal ClockTime patterns; they do not enable ordinals |
-| EE | EE | none | **Deferred** (sourced `-lia` needs the cardinal rebuild, NTS-16 → NTS-20) | — | **Deferred** | — | none | No source found | Cardinals not yet sourced (NTS-20) |
+| EE | EE | none | Yes (NTS-20): cardinal + `-lia` on the last element, `gbãtɔ` for 1 | Declarative + `ZeroOrdinalUnsupportedLanguageSpecifics` | **Deferred** | — | none | **Consulted** (NTS-20): Dzablu-Kumah, *Basic Ewe for Foreign Students*; Biblica Open Ewe Contemporary Scriptures; *Ewe Basic Course* 1968; Peace Corps Togo 2010; Wiktionary | Cardinals validated 0–999 999 (`akpe` before its multiplier, `multiplierPosition="afterScale"`); zero ordinal and the million unsupported |
 | WO | WO | none | Yes (`-éel`, NTS-16, NTS-19) | Declarative + `WolofOrdinalLanguageSpecifics` | **Deferred** | — | none | No consistent source found | Cardinals 0–999 999; no ordinal of zero nor of the round thousands |
+
+## NTS-20 — Ewe cardinals rebuilt, ordinals restored (2026-10-07)
+
+Supersedes the Ewe part of NTS-16 ("Ewe — withdrawn", below).
+
+- **Consulted, full text**: S. W. Dzablu-Kumah, *Basic Ewe for Foreign Students*, 2nd ed., revised by
+  U. Claudi and J. A. Ossey, Institute of African Studies, University of Cologne, lesson III.2 "The
+  numerals" (tone-marked): `ɖeká`, `eve`, `etɔ̃`, `ene`, `atɔ̃́`, `adé`, `adrẽ́`, `enyí`, `asíéke`, `ewó`;
+  `wúíɖekɛ́` … `wúíasíéke` ("wúí is a contraction of ewó"); `bláeve (bláave)`, `bláeve vɔ̌ ɖekɛ́` …
+  `bláeve vɔ̌ asíéke` ("vɔ̌ means 'over'"), `bláetɔ̃` … `bláasíéke`; `alafá ɖeká` … `alafá ene`;
+  `akpé ɖeká`, `akpé eve`.
+- **Consulted, full text (corpus)**: *Biblica Open Ewe Contemporary Scriptures* (Ghana, 1988/2006/2020,
+  eBible.org `ewe`, CC BY-SA 4.0). Its narrative books write numbers out and repeat the digits in
+  parentheses (e.g. GEN 5:27 `ƒe alafa asiekɛ blaade-vɔ-asiekɛ (969)`, REV 7:4 `ame akpe alafa ɖeka
+  blaene-vɔ-ene (144,000)`); the 435 pairs were extracted mechanically and counted:
+  - thousands: always `akpe` + multiplier, the multiplier being the standalone cardinal (`akpe ɖeka`,
+    `akpe wuieve`, `akpe blaeve-vɔ-eve`, `akpe blaene-vɔ-ɖekɛ` 41 000, `akpe alafa ɖeka blaene-vɔ-ene`
+    144 000, `akpe alafa ade kple ɖeka` 601 000 in NUM 26:51);
+  - `kple` after the thousands: 8/8 before a lower part below 100 (1005 `akpe ɖeka kple atɔ̃`, 1017,
+    1052, 2056, 2067, 3023, 22 034), 2/140 before a lower part with hundreds (1200 `akpe ɖeka alafa
+    eve`, 1254, 2172 …);
+  - `kple` after the hundreds: units 8/8, ten 4/4 (`alafa ɖeka kple ewo`), teens 8/11, round tens
+    35/82, tens + units 77/106; the attested ordinals 150th `ŋkeke alafa ɖeka blaatɔ̃lia` (GEN 8:3)
+    and 480th `ƒe alafa ene blaenyilia` (1KI 6:1) have none;
+  - spellings: `adre` 591 / `adrɛ` 1; `wuiɖekɛ` 40 / `wuiɖeka` 0; `-vɔ-ɖekɛ` in every 21/31/41/61;
+    `asiekɛ` 108 / `asieke` 31; tens-units hyphenated (`-vɔ-` 445) or spaced;
+  - ordinals: `evelia` 244, `etɔ̃lia` 103, `adrelia` 83, `ewolia` 76, `enelia`, `atɔ̃lia`, `adelia`,
+    `enyilia`, `asiekelia` 6 / `asiekɛlia` 15, `wuiɖekɛlia`, `wuievelia`, `wuiasiekelia`, `blaevelia`,
+    `blaeve-vɔ-ɖekɛlia` (EXO 12:18), `blaeve-vɔ-evelia`, `blaeve-vɔ-etɔ̃lia`, `alafa ɖekalia` (NEH 5:11,
+    "the hundredth part"), `gbãtɔ` 414.
+- **Consulted, scanned pages read**: *Ewe Basic Course*, Indiana University 1968 (ERIC ED028444),
+  pp. 123–124 (tonal transcription): `/ɖèká, ɖè/` … `/asiéke/, /enyide/`, `/ewó/`, `/wúiɖèkɛ́(a)/` …,
+  `/bláavè/`, `/bláavè vo ɖeké/`, `/bla ètɔ̃/` …, `/alafa ɖeka/`; "The ordinal numerals, with the
+  exception of /gbãto/ 'first', are formed by adding /-lia/ to each of the numbers" (`/èvèlia/`,
+  `/ètɔ̃lia/`); glossary `alafá ɖeka` "one hundred". The forms are phonetic (contracted `bláavè`,
+  `vo ve`) and are not taken as spellings.
+- **Consulted, full text**: Peace Corps Togo, *Ewe O.P.L. Workbook*, 2010 (livelingua.com): 1–20
+  (`ɖeka`, `wuiɖeke`, `bla eve`), 21 `Bla eve vɔ ɖeke`, 100 `Alɔfa/alafa ɖeka`, 101 `Alafa ɖeka kplé
+  ɖeka`, 122 `Alafa ɖeka bla eve vɔ eve`, 1000F `akpé ɖeka`; glossary "million: akpe akpe", "nothing:
+  naneke o", "none: ɖeke o", "empty: ƒuƒlu, gbɔlo", "zero: naneke o, gbɔlo". Colloquial Togolese
+  spelling (`ɖeke`, `bla tɔ`, font without the nasal tilde): structure only.
+- **Also consulted**: Wiktionary (category Ewe cardinal numbers: `adre`, `asieke`, `wuiɖekɛ`,
+  `blaeve`, `blaeve vɔ ɖekɛ`, `alafa ɖeka`, `akpe ɖeka`, `akpe ewo`, `miliɔn ɖeka`; `adre` entry
+  citing Westermann 1905, Dzablu-Kumah 2015 and Nuseline's Ewe-English Dictionary 2017, ordinal
+  `adrelia`; `ɖeka` → ordinal `gbãtɔ`); Omniglot (0 `nadeke, nanekeo`; `wuiɖekɛ`, `blaeve-vɔ̃-ɖekɛ`,
+  `alafa ɖeka kple ɖeka`, `akpe ɖeka`, `miliɔn ɖeka`; ordinals `evelia` … `ewolia`); Wikivoyage Ewe
+  phrasebook (zero `nadɛkɛ o`, `Blaeve-vɔ-ɖeke`). The 1966 Peace Corps *Ewe Pronunciation* (ERIC
+  ED152111) has no numerals. No accessible Bureau of Ghana Languages orthography was found.
+- **Convention** (standard orthography without tone marks, one spelling per value):
+  - `ɖeka`; `ɖekɛ` after `wui-` and after `vɔ` (Dzablu-Kumah, Bible, Wiktionary, Omniglot), `ɖeka` after
+    `alafa`/`akpe` and after `kple` (Peace Corps, Omniglot, Bible `kple ɖeka`);
+  - `etɔ̃`, `atɔ̃` with the nasal tilde; `adre` (Bible, Wiktionary; `adrɛ` 1968/Omniglot and `adrẽ`
+    Dzablu-Kumah are transcriptions of the same nasalized vowel); `asieke` (Dzablu-Kumah, 1968,
+    Wiktionary, Omniglot, Peace Corps; the Bible's `asiekɛ` is accepted, not produced);
+  - `vɔ` written as a separate word (Dzablu-Kumah `vɔ̌` = tone mark, Wiktionary lemma `blaeve vɔ ɖekɛ`;
+    the Bible's hyphenation `blaeve-vɔ-eve` is accepted, not produced; Omniglot's `vɔ̃` is a nasal
+    mistranscription);
+  - `alafa`, `akpe` before their multiplier; `kple` after the hundreds before 1–10
+    (`intraGroupConnectorThreshold="11"`; before 11–99 it is optional and not produced) and after
+    the thousands before a lower part below 100 (`groupConnectorThreshold="100"`);
+  - zero `naneke o`: the only answer of every zero row consulted (Peace Corps glossary, Omniglot,
+    Wikivoyage); `gbɔlo` is the adjective "empty" (Bible `asi gbɔlo` "empty hands", Peace Corps
+    glossary) and is not produced. No consulted source has a numeral for zero distinct from this
+    phrase ("nothing"), which is the standalone answer to "how many?";
+  - ordinals: suffix `-lia` on the last element, `gbãtɔ` for 1 only, zero rejected
+    (`ZeroOrdinalUnsupportedLanguageSpecifics`); `-lia` is never applied to `akpe`.
+- **Engine decision**: the Bible shows that a multiplier of `akpe` is the standalone cardinal, so the
+  Ewe configuration uses only `multiplierPosition="afterScale"`; the generic `<Groups onScale>` primitive
+  added by NTS-20 is not used by Ewe (no duplicated table).
+- **Evidence levels**. Attested (value or ordinal printed by a source): 1–30 and the round tens
+  (Dzablu-Kumah), 100–400, 1000, 2000 (Dzablu-Kumah) and every value of the Bible pairs, among them
+  101 (Peace Corps), 105, 110, 120, 122, 153, 205, 276, 500, 1005, 1017, 1052, 1200, 1254, 1260, 3000,
+  10000, 12000, 20000, 22000, 100000, 120000, 144000, 601000; ordinals 1–22, 100, 150, 480. Productive (sourced rule, value not exemplified): every other value to
+  999 999 and every other ordinal (notably `akpe ɖekalia` 1000th, `alafa ɖeka kple ɖekalia` 101st).
+  Not validated by NTS-20: the decimal separator `kpɔ`, the fraction connector `kple`, `minus *`, the
+  million (`akpe akpe` vs `miliɔn ɖeka`, outside `maxNumber`).
 
 ## NTS-19 — Wolof cardinals: orthography and thousands (2026-10-07)
 
@@ -152,7 +228,7 @@ form applies it), **unsupported** (`NotSupportedException`).
   `junni` for 1000), and the vowel-final `junni` + `-eel` → `junneel` is exemplified by Omniglot
   only. NTS-19 tracks those cardinals, the hyphens and the zero `sero`.
 
-### Ewe — withdrawn (pending NTS-20)
+### Ewe — withdrawn (pending NTS-20; superseded by NTS-20 above)
 
 - **Consulted, scanned text read**: I. Warburton, P. Kpotufe, R. Glover, *Ewe Basic Course*, Indiana
   University African Studies Program, 1968 (ERIC ED028444): "The ordinal numerals, with the exception
@@ -478,7 +554,7 @@ The task's working matrix was a starting point; wherever a consulted source disa
 - **ZU ordinals**: same reason (class-dependent relative concords `wokuqala`, `lesibili`, `esithathu` ...). The clock uses literal class-5 forms only.
 - **EE clock**: only `ga eto` / `ga eto kple afa` were known; no source for minutes was found, and a clock limited to :00 and :30 would round aggressively.
 - **WO clock**: native (`waxtu`) and French-derived readings coexist; no single sourced system covering 01:00–01:45 was established.
-- **EE ordinals** (NTS-16): the sourced `-lia` formation waits for the Ewe cardinal rebuild (NTS-20).
+- **EE million** (NTS-20): `akpe akpe` (Peace Corps) vs `miliɔn ɖeka` (Omniglot, Wiktionary) is undecided; `maxNumber` stays 999999 (NTS-22).
 - **WO ordinals of the round thousands** (NTS-19): conflicting forms for `junni` + suffix (`junneel`, `junniéél`).
 - **WO million** (NTS-19): not audited, `maxNumber` stays 999 999 (NTS-21).
 
@@ -537,6 +613,10 @@ supported value, round scales, fail-closed range) and by the language `.feature`
 - Omniglot, Wolof numbers: <https://omniglot.com/language/numbers/wolof.htm>; Ewe numbers: <https://www.omniglot.com/language/numbers/ewe.htm>
 - Janga Wolof, numbers: <https://jangawolof.org/understanding-wolof-numbers-counting-in-wolof/>
 - *Ewe Basic Course* (ERIC ED028444): <https://files.eric.ed.gov/fulltext/ED028444.pdf>
+- Dzablu-Kumah, *Basic Ewe for Foreign Students*, 2nd ed.: <https://philtypo3.uni-koeln.de/sites/inst_afrika/pdf/BASIC_EWE_2nd_ed.pdf>
+- Biblica Open Ewe Contemporary Scriptures (eBible.org `ewe`): <https://ebible.org/details.php?id=ewe>
+- Peace Corps Togo, *Ewe O.P.L. Workbook* (2010): <https://www.livelingua.com/peace-corps/Ewe/Ewe%20Course%20-2010.pdf>
+- Wiktionary, Ewe cardinal numbers: <https://en.wiktionary.org/wiki/Category:Ewe_cardinal_numbers>
 - Decree 2005-992, full text (copy of the *Journal officiel*): <https://labo-styloculture.com/wolofologos/decret-n-2005-992-du-21-octobre-2005/>; original: <http://www.jo.gouv.sn/spip.php?article4802>
 - Gaye, *Practical Course in Wolof* (ERIC ED226616): <https://files.eric.ed.gov/fulltext/ED226616.pdf>
 - Voisin 2021, *Afrikanistik-Aegyptologie-Online*: <https://doi.org/10.18716/ojs/aaeo/2021_3478>

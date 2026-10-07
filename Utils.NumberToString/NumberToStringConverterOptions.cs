@@ -38,8 +38,21 @@ public sealed class NumberToStringConverterOptions
     /// <summary>Word placed between the integer and fractional parts.</summary>
     public string DecimalSeparator { get; set; } = ",";
 
-    /// <summary>Digit tables keyed by group level.</summary>
+    /// <summary>Digit tables keyed by group level (the default tables, used for every value outside <see cref="ScaleScopedGroups"/>).</summary>
     public IReadOnlyDictionary<int, DigitListType>? Groups { get; set; }
+
+    /// <summary>
+    /// Digit tables rendering the multiplier of specific scales instead of <see cref="Groups"/> (see
+    /// <see cref="Utils.NumberToString.ScaleScopedGroups"/>). Empty by default: every multiplier is
+    /// rendered like its standalone cardinal.
+    /// </summary>
+    public IReadOnlyList<ScaleScopedGroups> ScaleScopedGroups { get; set; } = [];
+
+    /// <summary>
+    /// Position of a group multiplier relative to its scale noun; <see cref="ScaleMultiplierPosition.BeforeScale"/>
+    /// ("two thousand") by default.
+    /// </summary>
+    public ScaleMultiplierPosition ScaleMultiplierPosition { get; set; }
 
     /// <summary>Irregular number names (e.g. <c>11 → "eleven"</c> instead of <c>"ten one"</c>).</summary>
     public IReadOnlyDictionary<long, string> Exceptions { get; set; } = new Dictionary<long, string>();
@@ -314,8 +327,13 @@ public sealed class NumberToStringConverterOptions
         DecimalSeparator = source.DecimalSeparator;
         Groups = source.Groups.ToDictionary(
             kv => kv.Key,
-            kv => new DigitListType { Digits = kv.Value.Values.ToList() }
+            kv => new DigitListType { Digits = kv.Value.Values.Select(NumberToStringConverter.CopyDigit).ToList() }
         );
+        // Deep copies: the clone may be edited without touching the converter's exposed snapshot.
+        ScaleScopedGroups = [.. source.ScaleScopedGroups.Select(scoped => new ScaleScopedGroups(
+            scoped.OnScale,
+            scoped.Groups.ToDictionary(kv => kv.Key, kv => NumberToStringConverter.CopyDigitList(kv.Value))))];
+        ScaleMultiplierPosition = source.ScaleMultiplierPosition;
         Exceptions = source.Exceptions;
         Replacements = source.Replacements;
         Scale = source.Scale;

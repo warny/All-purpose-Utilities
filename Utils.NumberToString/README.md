@@ -61,7 +61,7 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | EU, eu-ES | Basque | ✓ declarative | ✓ 15 min, 12 h | — | local | Clock-case forms only in ClockTime |
 | SW, SW-KE, SW-TZ | Swahili | — deferred (noun-class concord) | ✓ 15 min, 12 h, six-hour offset | — | local | No asubuhi/mchana/jioni/usiku |
 | ZU | Zulu | — deferred (noun-class policy) | ✓ 15 min, 12 h | — | local | Hour forms only in ClockTime |
-| EE | Ewe | — deferred (sourced `-lia` needs the cardinal rebuild, NTS-20) | — deferred (no sourced minute convention) | — | local | Cardinals not yet sourced (NTS-20) |
+| EE | Ewe | ✓ declarative `-lia` on the last element, first `gbãtɔ` + zero guard | — deferred (no sourced minute convention) | — | local | Cardinals validated to 999 999 (scale noun first: `akpe eve` = 2000, `multiplierPosition="afterScale"`); no ordinal of zero; the million is outside the domain |
 | WO | Wolof | ✓ declarative `-éel` + plugin guard | — deferred (competing conventions) | — | local | Cardinals to 999 999; no ordinal of zero nor of the round thousands |
 
 "plugin" means an `IOrdinalLanguageSpecifics` implementation; values it does not implement fail
@@ -241,6 +241,12 @@ NumberToStringConverter.GetConverter("VN").ConvertOrdinal(1);   // "thứ nhất
 NumberToStringConverter.GetConverter("WO").ConvertOrdinal(12);    // "fukk ak ñaaréel"
 NumberToStringConverter.GetConverter("WO").ConvertOrdinal(2001);  // "ñaari junni ak bennéel"
 NumberToStringConverter.GetConverter("WO").ConvertOrdinal(1);   // "bu njëkk" ← suppletive
+
+// Scale noun before its multiplier: the suffix lands on the multiplier (EE)
+NumberToStringConverter.GetConverter("EE").Convert(2001);         // "akpe eve kple ɖeka"
+NumberToStringConverter.GetConverter("EE").ConvertOrdinal(21);    // "blaeve vɔ ɖekɛlia"
+NumberToStringConverter.GetConverter("EE").ConvertOrdinal(2000);  // "akpe evelia"
+NumberToStringConverter.GetConverter("EE").ConvertOrdinal(1);     // "gbãtɔ" ← suppletive
 ```
 
 ### `SupportsOrdinals`
@@ -260,7 +266,7 @@ if (conv.SupportsOrdinals)
 > `"TWENTY-ONEth"`.
 
 > **Languages without ordinal support**: SW (Swahili) and ZU (Zulu) are deferred because of the
-> noun-class concord; EE (Ewe) is disabled pending the cardinal rebuild (NTS-20).
+> noun-class concord.
 > Their ordinals require an obligatory noun-class concord and have no standalone form; they are
 > deliberately deferred (see `docs/NTS-08-linguistic-sources.md`).
 > Romanian ordinals are supported through `RomanianOrdinalLanguageSpecifics` (DOOM forms) for
@@ -1047,6 +1053,17 @@ converter.Convert(42);            // "FORTY-TWO"
 converter.Convert(1_000_000_000); // throws ArgumentOutOfRangeException
 ```
 
+The multiplier tables of [`<Groups onScale>`](#groups-onscale--multiplier-tables-and-multiplierposition)
+and the multiplier position are available programmatically too (a clone copies both):
+
+```csharp
+var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+{
+    ScaleScopedGroups = [new ScaleScopedGroups("1", multiplierTables)], // levels 1..3, like Groups
+    ScaleMultiplierPosition = ScaleMultiplierPosition.AfterScale,       // "thousand two"
+};
+```
+
 ---
 
 ## Registering additional XML configurations
@@ -1167,9 +1184,10 @@ fr.Convert(123456789, 3, "gender=feminin"); // "cent vingt trois millions" (no g
 number
   → ConvertRaw:
       for each group (millions, thousands, units, …):
-          ConvertGroup                    (digit text for this group)
+          ConvertGroup                    (digit text for this group: the Groups onScale table covering N, else Groups)
           Trigger group(N)                (optional: replacements on digit text)
-          append scale name               (ScaleForm selector when configured, else singular/plural)
+          add scale name                  (ScaleForm selector when configured, else singular/plural;
+                                           after the digits, or before them with multiplierPosition="afterScale")
           Replacements with onScale=N     (per-group rules, filtered by onValue)
           Trigger groupWithScale(N)       (optional: replacements on digit+scale text)
           push to stack
@@ -1258,6 +1276,7 @@ on the same language register the same converter under several codes.
 | `groupConnector` / `groupConnectorThreshold` | | Word inserted between the last two groups when the lowest group's value is below the threshold (e.g. English "one thousand **and** one" — `groupConnector="and" groupConnectorThreshold="100"`). |
 | `intraGroupConnector` / `intraGroupConnectorThreshold` | | Word inserted between the hundreds digit and the remainder within a group of 3, when hundreds are present and the remainder is below the threshold (e.g. Vietnamese 101 → "một trăm **linh** một" — `intraGroupConnector="linh" intraGroupConnectorThreshold="10"`). |
 | `scaleConnector` / `scaleConnectorThreshold` | | Word inserted between a group's text and its scale name (thousand/million/…) when the group's value is at or above the threshold (e.g. Romanian 20 000 → "douăzeci **de** mii" — `scaleConnector="de" scaleConnectorThreshold="20"`). |
+| `multiplierPosition` | | `beforeScale` (default, "two thousand") or `afterScale`: the scale noun precedes its multiplier (Ewe 2000 → "akpe eve"). See [`<Groups onScale>` and `multiplierPosition`](#groups-onscale--multiplier-tables-and-multiplierposition). |
 
 ---
 
@@ -1291,7 +1310,8 @@ they are not globally registered converters and are not visible to `RegisterConf
 
 **Merge rules**:
 - `Culture`: not inherited. Every `<Language>` declares at least one `<Culture>` (XSD `minOccurs="1"`) and only those are registered for the child. A regional culture must be declared once, in the child only, never also in its general parent (a culture declared by two built-in documents is a retained initialization failure).
-- Scalar attributes (`groupSize`, `separator`, `groupSeparator`, `zero`, `minus`, `decimalSeparator`, `fractionSeparator`, `maxNumber`, `groupConnector`, `intraGroupConnector`, `scaleConnector` and their thresholds): child wins; absent child attributes inherit from the base.
+- Scalar attributes (`groupSize`, `separator`, `groupSeparator`, `zero`, `minus`, `decimalSeparator`, `fractionSeparator`, `maxNumber`, `groupConnector`, `intraGroupConnector`, `scaleConnector` and their thresholds, `multiplierPosition`): child wins; absent child attributes inherit from the base.
+- `<Groups onScale="…">` tables are merged by range: a child table whose range is identical to an inherited one (compared in canonical form) replaces it, a disjoint range is added, and any other overlap is rejected. The default `<Groups>` follows the rule below independently.
 - Sections replaced as a whole when the child declares them (`Groups`, `Exceptions`, `Replacements`, `Fractions`, `Variants`, `YearFormat`, `Multiplicatives`, `TimeUnits`, `ClockTime`, `DateFormat`, `LanguageSpecifics`): the child's section replaces the base's completely, nothing is merged inside it. Omitted sections are inherited. An empty element (e.g. `<Replacements />`) explicitly overrides with an empty list.
 - `Fusion` rules belong to their `<Digit>` and therefore follow the `Groups` rule: a child that omits `<Groups>` inherits the base's digits together with their fusions; a child that declares `<Groups>` replaces every digit, and the base's fusions are not merged into it.
 - `Trigger` elements are currently **not** inherited: a child that needs the base's triggers must redeclare them (an absent `<Trigger>` list is read as an empty one). No built-in configuration uses triggers.
@@ -1329,6 +1349,57 @@ Each `<Digit digit="N" string="…" buildString="…"/>`:
     </Group>
 </Groups>
 ```
+
+#### `<Groups onScale>` — multiplier tables, and `multiplierPosition`
+
+Two independent primitives describe how a scale multiplier (the "two" of "two thousand") is written:
+
+| Primitive | Decides |
+|---|---|
+| `<Groups onScale="…">` | how the multiplier is **built** (its digit tables) |
+| `multiplierPosition` | how the multiplier is **assembled** with the scale noun (before or after it) |
+
+A language declares one default `<Groups>` and, only when the multiplier of some scales is built
+with a different grammar than the standalone cardinal, extra `<Groups onScale="…">` tables:
+
+```xml
+<Language … multiplierPosition="afterScale">
+    <Groups>                       <!-- ordinary cardinal rendering -->
+        <Group level="1"> … 1 = "one", 2 = "two" … </Group>
+        <Group level="2"> … </Group>
+        <Group level="3"> … </Group>
+    </Groups>
+    <Groups onScale="1..">         <!-- rendering of the multiplier inside scales 1 and above -->
+        <Group level="1"> … 1 = "alpha", 2 = "beta" … </Group>
+        <Group level="2"> … </Group>
+        <Group level="3"> … </Group>
+    </Groups>
+    <NumberScale><StaticNames><Scale value="0" string="" /><Scale value="1" string="grand" /></StaticNames></NumberScale>
+</Language>
+```
+
+With these tables, 2 → "two" but 2000 → "grand beta"; with `multiplierPosition="beforeScale"`
+(the default) 2000 would be "beta grand", and without the scoped table "grand two".
+
+- `onScale` uses the range syntax of `Replacement onScale` (`1`, `2..4`, `1..`). Every covered index
+  is at least 1 (scale 0 is the standalone cardinal); two tables never cover the same index
+  (overlaps and duplicate ranges are rejected at load). A table declares the same levels as the
+  default one and replaces it as a whole: a multiplier never mixes units of one table with tens of
+  another. Its digits carry their own `<Fusion>` rules, so a fusion declared there never affects the
+  standalone cardinal. Whole-number `<Exceptions>` are shared by every table.
+- After the multiplier text, the pipeline is unchanged: scale noun, `Replacement onScale` and scale
+  variant rules (with `onValue` evaluated on the numeric multiplier), then `groupWithScale` triggers;
+  `group` triggers see the text of the scoped table.
+- Ranges are compiled once at load into a scale-index lookup; conversions do not parse, sort or allocate.
+- Declare a scoped table only for forms that really differ: Ewe (`akpe eve`, 2000) needs
+  `multiplierPosition="afterScale"` only, because its multipliers are the standalone cardinals.
+- With `afterScale` the ordinal suffix lands on the multiplier (Ewe `akpe evelia`, never `akpelia`).
+  [`<OrdinalScale>`](#ordinals-of-round-scale-values--ordinalscale), which assembles "multiplier +
+  noun" itself from the standalone cardinal, is rejected with `afterScale` and on a scale covered by a
+  scoped table.
+- Programmatic equivalents: `NumberToStringConverterOptions.ScaleScopedGroups` and
+  `ScaleMultiplierPosition`; the converter exposes copies through `ScaleScopedGroups` and
+  `ScaleMultiplierPosition`, while `Groups` remains the default table.
 
 #### `<Fusion>` — morphological composition at a junction
 
