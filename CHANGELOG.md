@@ -41,13 +41,25 @@ All notable changes to this project will be documented in this file.
   cumulative by range specificity, validated strictly at load (conflicts, domain, empty values,
   absent edges, intra-group connector overlap) and compiled into immutable lookup tables.
 - Added `ItalianOrdinalLanguageSpecifics`, restricting Italian ordinals to verified forms.
-- Added `WolofOrdinalLanguageSpecifics`, a domain guard limiting Wolof ordinals to 1–999.
+- Added `WolofOrdinalLanguageSpecifics`, a domain guard rejecting the Wolof ordinals of zero and of the round thousands.
+
+### Fixed — `omy.Utils.NumberToString` (NTS-19 closed)
+- Wolof cardinals follow decree 2005-992 and the grammars: words separated by spaces instead of
+  hyphens (`juróom benn`, `ñaar fukk`), the connective `-i` on the multiplier of hundreds and thousands
+  (`ñaari téeméer`, `juróom benni téeméer`, `ñaari junni`, `fukki junni`, `téeméeri junni`), `junni`
+  alone for 1000 (was `benn junni`), `ak` before the part below the thousands (`junni ak benn`, was
+  `benn junni benn`) and zero `tus` (was `sero`). The domain stays 0–999 999.
+- Wolof ordinals use the decree's spelling `-éel` (`ñaaréel`, `fukk ak ñaaréel`; was `-eel`) and are
+  supported from 1000 (`junni ak bennéel`); only zero and the round thousands (last element `junni`,
+  conflicting forms) throw `NotSupportedException`. Ordinals above 999 999 now throw the engine's
+  out-of-range `InvalidOperationException`, as in the other languages, instead of
+  `NotSupportedException`.
 
 ### Fixed — `omy.Utils.NumberToString` (NTS-16 closed)
-- Wolof ordinals take the sourced `-eel` suffix on the last element of the cardinal (`ñaareel`,
+- Wolof ordinals take the sourced suffix on the last element of the cardinal (`ñaareel`,
   `fukk ak ñaareel`, `ñaar-fukk ak ñenteel`) instead of the unattested `-ël`; `bu njëkk` stays the
   first. Ordinals from 1000 now throw `NotSupportedException`: the thousands cardinal they would be
-  built on is not settled (NTS-19).
+  built on is not settled (NTS-19). Superseded by NTS-19 above: spelling `-éel`, ordinals from 1000.
 - **Behaviour change:** Ewe no longer supports ordinals (`SupportsOrdinals` is `false`,
   `ConvertOrdinal` throws `NotSupportedException`) instead of producing the unattested `etsõ` +
   cardinal (`etsõ gbãtõ`, `etsõ eve`). The sourced `-lia` formation needs the Ewe cardinals to be

@@ -62,7 +62,7 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | SW, SW-KE, SW-TZ | Swahili | — deferred (noun-class concord) | ✓ 15 min, 12 h, six-hour offset | — | local | No asubuhi/mchana/jioni/usiku |
 | ZU | Zulu | — deferred (noun-class policy) | ✓ 15 min, 12 h | — | local | Hour forms only in ClockTime |
 | EE | Ewe | — deferred (sourced `-lia` needs the cardinal rebuild, NTS-20) | — deferred (no sourced minute convention) | — | local | Cardinals not yet sourced (NTS-20) |
-| WO | Wolof | ✓ declarative `-eel` + plugin guard, 1–999 | — deferred (competing conventions) | — | local | No ordinal of zero; none from 1000 (NTS-19) |
+| WO | Wolof | ✓ declarative `-éel` + plugin guard | — deferred (competing conventions) | — | local | Cardinals to 999 999; no ordinal of zero nor of the round thousands |
 
 "plugin" means an `IOrdinalLanguageSpecifics` implementation; values it does not implement fail
 closed with `NotSupportedException` rather than returning a cardinal. The declarative pipeline
@@ -237,8 +237,9 @@ NumberToStringConverter.GetConverter("JA").ConvertOrdinal(3);   // "第三"
 NumberToStringConverter.GetConverter("KO").ConvertOrdinal(2);   // "제이"
 NumberToStringConverter.GetConverter("VN").ConvertOrdinal(1);   // "thứ nhất" ← exception, then prefix
 
-// Suffix on the last element of the cardinal (WO, 1-999)
-NumberToStringConverter.GetConverter("WO").ConvertOrdinal(12);  // "fukk ak ñaareel"
+// Suffix on the last element of the cardinal (WO)
+NumberToStringConverter.GetConverter("WO").ConvertOrdinal(12);    // "fukk ak ñaaréel"
+NumberToStringConverter.GetConverter("WO").ConvertOrdinal(2001);  // "ñaari junni ak bennéel"
 NumberToStringConverter.GetConverter("WO").ConvertOrdinal(1);   // "bu njëkk" ← suppletive
 ```
 
@@ -258,7 +259,8 @@ if (conv.SupportsOrdinals)
 > converter with an uppercase `AdjustFunction` correctly produces `"TWENTY-FIRST"`, not
 > `"TWENTY-ONEth"`.
 
-> **Languages without ordinals**: SW (Swahili), ZU (Zulu).
+> **Languages without ordinal support**: SW (Swahili) and ZU (Zulu) are deferred because of the
+> noun-class concord; EE (Ewe) is disabled pending the cardinal rebuild (NTS-20).
 > Their ordinals require an obligatory noun-class concord and have no standalone form; they are
 > deliberately deferred (see `docs/NTS-08-linguistic-sources.md`).
 > Romanian ordinals are supported through `RomanianOrdinalLanguageSpecifics` (DOOM forms) for
