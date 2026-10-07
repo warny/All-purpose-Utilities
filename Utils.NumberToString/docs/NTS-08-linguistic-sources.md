@@ -57,8 +57,56 @@ the remaining validation and its criterion are tracked per capability in `TODO.m
 | EU | EU, eu-ES | none | Yes (existing) | Declarative | Yes | 15 / 12 | none | **Consulted**: Sareko Euskal Gramatika (EHU), “Orduak nola eman euskaraz” (`ordu bata`, `ordu bat eta erdiak` with `*ordu bata eta erdiak` marked wrong, `ordu bata eta laurden`, `bostak laurden gutxi`) | Clock-case forms are literal per hour; cardinals unchanged |
 | SW | SW, SW-KE, SW-TZ | SCALE-SHORT | **Deferred** | — | Yes | 15 / 12, `hourOffset=-6` | none | **Consulted**: Five Colleges LangMedia, “Swahili – Tanzania – Telling Time”; SpokenSwahili, “Telling the time in Swahili” | No day-part words (asubuhi, mchana, jioni, usiku) |
 | ZU | ZU | none | **Deferred** | — | Yes | 15 / 12 | none | **Consulted**: Unisa, *Learn online Zulu*, Theme 4 (`Yihora lesihlanu`, `Ligamenxe elesihlanu`, `... lishayile elesihlanu`, `... ngaphambi kwelesihlanu`) — single source | Hour forms are literal ClockTime patterns; they do not enable ordinals |
-| EE | EE | none | Yes (NTS-20): cardinal + `-lia` on the last element, `gbãtɔ` for 1 | Declarative + `ZeroOrdinalUnsupportedLanguageSpecifics` | **Deferred** | — | none | **Consulted** (NTS-20): Dzablu-Kumah, *Basic Ewe for Foreign Students*; Biblica Open Ewe Contemporary Scriptures; *Ewe Basic Course* 1968; Peace Corps Togo 2010; Wiktionary | Cardinals validated 0–999 999 999 (NTS-22: static scales `akpe`, `miliɔn`, each before its standalone multiplier, `multiplierPosition="afterScale"`); zero ordinal unsupported; `biliɔn`/`triliɔn` deferred (NTS-23) |
+| EE | EE | SCALE-SHORT (scale tables only, NTS-23) | Yes (NTS-20): cardinal + `-lia` on the last element, `gbãtɔ` for 1 | Declarative + `ZeroOrdinalUnsupportedLanguageSpecifics` | **Deferred** | — | none | **Consulted** (NTS-20): Dzablu-Kumah, *Basic Ewe for Foreign Students*; Biblica Open Ewe Contemporary Scriptures; *Ewe Basic Course* 1968; Peace Corps Togo 2010; Wiktionary | Cardinals unbounded (NTS-23): static `akpe`, then the Conway-Wechsler short scale `miliɔn`, `biliɔn`, `triliɔn` (sourced anchors), `quadriliɔn` … (project extrapolation), each before its standalone multiplier (`multiplierPosition="afterScale"`); zero ordinal unsupported |
 | WO | WO | none | Yes (`-éel`, NTS-16, NTS-19) | Declarative + `WolofOrdinalLanguageSpecifics` | **Deferred** | — | none | No consistent source found | Cardinals 0–999 999; no ordinal of zero nor of the round thousands |
+
+## NTS-23 — Ewe scales above the million (2026-10-07)
+
+- **Premises (ticket, not re-audited).** The linguistic audit preceding NTS-23 is taken as validated:
+  `akpe` = 10^3, `miliɔn` = 10^6, `biliɔn` = 10^9, `triliɔn` = 10^12, i.e. modern Ewe follows the short
+  scale, matching CLDR's compact patterns. Project decision: once these three `-liɔn` pivots are
+  established, higher names follow the Conway-Wechsler short scale productively, without requiring an
+  individual Ewe attestation of each `quadriliɔn`, `quintiliɔn` ….
+- **Linguistic anchors vs. project extrapolation.**
+
+  | Scale | Value | Name | Status |
+  |---|---|---|---|
+  | 1 | 10^3 | `akpe` | sourced linguistic anchor (static name, NTS-20) |
+  | 2 | 10^6 | `miliɔn` | sourced linguistic anchor (NTS-22), now generated |
+  | 3 | 10^9 | `biliɔn` | sourced linguistic anchor (ticket premise, CLDR compact) |
+  | 4 | 10^12 | `triliɔn` | sourced linguistic anchor (ticket premise, CLDR compact) |
+  | 5+ | 10^15 … | `quadriliɔn`, `quintiliɔn`, `sextiliɔn`, … `deciliɔn`, … `centiliɔn` | project-defined productive Conway-Wechsler continuation, not individually attested |
+
+- **Mechanism.** No engine change: `EE` declares `baseOn="SCALE-SHORT"` and inherits its Conway-Wechsler
+  prefix tables (`Scale0Prefixes`, `UnitsPrefixes`, `TensPrefixes`, `HundredsPrefixes`); it overrides the
+  static names (`""`, `akpe`), `groupSeparator="li"` and the suffix `ɔn`, so each name is
+  prefix + `li` + `ɔn` (`mi`+`li`+`ɔn` = `miliɔn`, `quadri`+`li`+`ɔn` = `quadriliɔn`). The effective
+  `startIndex` is 0: with two static names, scale 2 is Conway n = 1. The higher names therefore follow the
+  shared tables as they are. Conway's systematic forms are intended (`quinquadeciliɔn`, `sedeciliɔn`,
+  `novendeciliɔn`, not the dictionary `quin-`, `sex-`, `novem-`); two table errors (`uni` for `un`,
+  `vingti` for `viginti`, hence `unideciliɔn`, `vingtiliɔn`) are tracked for every SCALE-SHORT language
+  in NTS-24.
+- **Domain.** The scale is unbounded (`NumberScale.IsUnbounded`, `CanNameGroup` true for every index), so
+  `maxNumber` is removed, the policy of the other SCALE-SHORT languages (EN, ID, SW, TR). Cardinals accept
+  any `BigInteger` (10^303 = `centiliɔn ɖeka`); ordinals keep the engine-wide `long` limit.
+- **Composition and ordinals unchanged.** Scale noun first, standalone-cardinal multiplier
+  (`biliɔn blaeve vɔ ɖekɛ`, `quadriliɔn alafa asieke blaasieke vɔ asieke`); `kple` before a lower group
+  below 100; ordinals `-lia` on the last numeral element (`biliɔn ɖekalia`), never on the scale noun, no
+  `<OrdinalScale>`.
+- **`akpe akpe`.** A historical/traditional formation, attested with variable glosses in the sources
+  (Peace Corps glossary "million", Bible `akpe akpewo` "thousands upon thousands"). Not produced; no
+  `traditional|modern` variant.
+- **CLDR RBNF, divergent and not used.** CLDR compact patterns (10^6 `miliɔn`, 10^9 `biliɔn`, 10^12
+  `triliɔn`) match the retained system. CLDR `rbnf/ee.xml` (10^6 `miliɔn`, 10^9 `miliɔn akpe`, 10^12
+  `biliɔn`) diverges and is not combined with it.
+- **`kpakple`, a separate question.** Scale names are a nomenclature decision; connectors are a grammar
+  rule, and nothing about them follows from Conway-Wechsler. Minimal search for a second strong source
+  using `kpakple` as a numeral connector (large-number expression + `kpakple` + numeric remainder): none.
+  The Biblica Ewe Bible has 99 occurrences, all a nominal "and" between noun phrases (`tasiaɖamwo kpakple
+  sɔdola akpe wuieve`, 2CH 9:25: "chariots and 12 000 horsemen", the numeral inside the second noun
+  phrase); the Leiden grammar literature describes it as an additive linker of nominal groups; Omniglot
+  and Wiktionary have none. CLDR RBNF's `kpakple` remains an uncorroborated divergent rule;
+  `groupConnector="kple"` and `groupConnectorThreshold="100"` are kept.
 
 ## NTS-22 — Ewe millions (2026-10-07)
 
@@ -82,7 +130,7 @@ the remaining validation and its criterion are tracked per capability in `TODO.m
   `maxNumber="999999999"`. The groups are joined as below a million (`kple` before a lower top group
   below 100): a productive extension, since no source writes a million followed by a lower group below
   100 000. Ordinals: `-lia` on the last element (`miliɔn ɖekalia`, Wiktionary).
-- **Not opened (NTS-23).** `biliɔn` and `triliɔn`: no written Ewe attestation (0 in the Bible; none in
+- **Not opened (NTS-23; superseded by the NTS-23 section above).** `biliɔn` and `triliɔn`: no written Ewe attestation (0 in the Bible; none in
   the web searches made, which only returned Omniglot/Wiktionary tables) outside CLDR's compact patterns, and CLDR's spellout rules give a different system
   (`miliɔn akpe` for 10^9, `biliɔn` for 10^12). No scale system (short or long) is claimed beyond 10^6.
   No higher names are generated (no `<Suffixes>`, no prefix tables).

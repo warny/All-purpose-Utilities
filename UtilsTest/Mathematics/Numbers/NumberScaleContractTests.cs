@@ -57,4 +57,44 @@ public class NumberScaleContractTests
         Assert.AreEqual(nullPlaceholder.GetScaleName(999), emptyPlaceholder.GetScaleName(999));
         StringAssert.Contains(explicitPlaceholder.GetScaleName(999), "zero");
     }
+
+    /// <summary>
+    /// Verifies the shared SCALE-SHORT tables against a reference table of strict Conway-Guy-Wechsler names
+    /// (index = Conway n + 1). quinquadecillion, sedecillion and novendecillion are the systematic Conway
+    /// forms, intentionally preferred to the dictionary quindecillion, sexdecillion and novemdecillion.
+    /// The expected values are literal, not recomputed by the test.
+    /// </summary>
+    [TestMethod]
+    public void ShortScale_ConwayWechsler_MatchesReferenceNames()
+    {
+        var scale = NumberToStringConverter.GetConverter("SCALE-SHORT").Scale;
+        (int Index, string Name)[] reference =
+        [
+            (1, "thousand"), (2, "million"), (3, "billion"), (4, "trillion"), (5, "quadrillion"),
+            (6, "quintillion"), (7, "sextillion"), (8, "septillion"), (9, "octillion"), (10, "nonillion"),
+            (11, "decillion"), (13, "duodecillion"), (14, "tredecillion"), (15, "quattuordecillion"),
+            (16, "quinquadecillion"), (17, "sedecillion"), (18, "septendecillion"), (19, "octodecillion"),
+            (20, "novendecillion"), (101, "centillion"),
+        ];
+
+        Assert.IsTrue(scale.IsUnbounded);
+        foreach (var (index, name) in reference)
+            Assert.AreEqual(name, scale.GetScaleName(index), $"scale {index}");
+    }
+
+    /// <summary>
+    /// Pins the two known SCALE-SHORT table errors against strict Conway-Wechsler (NTS-24): the units prefix
+    /// "uni" instead of "un" (10^36 "unidecillion", strict "undecillion") and the tens prefix "vingti" instead
+    /// of "viginti" (10^63 "vingtillion", strict "vigintillion"). The tables are shared by EN, ID, SW, TR and
+    /// EE, so the correction is a separate, deliberate multi-language change; replace these assertions with
+    /// the strict forms when it lands.
+    /// </summary>
+    [TestMethod]
+    public void ShortScale_ConwayWechsler_KnownTableErrors()
+    {
+        var scale = NumberToStringConverter.GetConverter("SCALE-SHORT").Scale;
+
+        Assert.AreEqual("unidecillion", scale.GetScaleName(12));
+        Assert.AreEqual("vingtillion", scale.GetScaleName(21));
+    }
 }
