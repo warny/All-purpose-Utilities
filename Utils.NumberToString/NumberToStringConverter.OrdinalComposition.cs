@@ -57,7 +57,7 @@ namespace Utils.NumberToString
         /// <exception cref="ArgumentException">A rule is invalid or overlaps another one.</exception>
         private void CompileOrdinalCompositionRules(IReadOnlyList<OrdinalScaleRule>? scaleRules, IReadOnlyList<OrdinalCompositionRule>? compositionRules)
         {
-            _scaleGroupDigits = Groups.Keys.Max();
+            _scaleGroupDigits = _defaultGroupTable.Digits.Keys.Max();
             CompileOrdinalScaleRules(scaleRules);
 
             OrdinalCompositionRule[] snapshot = compositionRules is null ? [] : [.. compositionRules];
@@ -113,6 +113,7 @@ namespace Utils.NumberToString
                     if (!range.Contains(index)) continue;
                     if (!Scale.CanNameGroup(index))
                         throw new ArgumentException($"OrdinalScale scales=\"{rule.Scales}\" covers scale {index}, which the NumberScale cannot name.", parameterName);
+                    RejectOrdinalScaleConflicts(rule, index, parameterName);
                     if (byIndex[index] is { } other)
                         throw new ArgumentException(
                             $"OrdinalScale scales=\"{rule.Scales}\" and scales=\"{other.Scales}\" both cover scale {index}: a scale must be covered by one rule at most.", parameterName);

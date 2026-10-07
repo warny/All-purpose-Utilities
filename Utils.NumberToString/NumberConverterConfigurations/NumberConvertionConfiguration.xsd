@@ -1329,10 +1329,12 @@
                             <!-- Optional at schema level because an inherited Language may omit this
                                  section. Groups is required on the effective language after baseOn
                                  resolution and is enforced by C# semantic validation. -->
-                            <xs:element name="Groups" minOccurs="0">
+                            <xs:element name="Groups" minOccurs="0" maxOccurs="unbounded">
                                 <xs:annotation>
                                     <xs:documentation>
                                         Digit tables for each positional level within a chunk.
+                                        A language declares one default Groups (without onScale) and
+                                        optional Groups onScale="…" tables (see the onScale attribute).
                                         A chunk contains groupSize digits. Groups declares how each
                                         positional level renders its digit:
                                           level="1" = units within the chunk (always required)
@@ -1370,6 +1372,35 @@
                                             </xs:complexType>
                                         </xs:element>
                                     </xs:sequence>
+                                    <xs:attribute name="onScale" type="xs:string" use="optional">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Scale indices (1 = thousands, 2 = the next scale …) whose
+                                                multiplier is rendered with these tables instead of the
+                                                default Groups, for languages whose multiplier of a scale
+                                                noun differs from the standalone cardinal. Same range syntax
+                                                as Replacement onScale ("1", "2..4", "1..").
+
+                                                  default Groups      → ordinary cardinal rendering (and the
+                                                                        multiplier of every other scale)
+                                                  Groups onScale="…" → rendering of the multiplier inside the
+                                                                        covered scale groups
+
+                                                The tables replace the default ones as a whole (same levels,
+                                                all required; the digits carry their own Fusion rules). Every
+                                                covered index must be at least 1 and no index may be covered by
+                                                two tables. Whole-number Exceptions are shared by every table.
+                                                After the multiplier, the pipeline is unchanged: the scale noun
+                                                (see multiplierPosition), then the onScale Replacements and
+                                                variant rules with the numeric multiplier, then the triggers.
+                                                Do not declare a scoped table identical to the default one.
+                                                baseOn: a derived language redeclaring an identical range
+                                                replaces the inherited table, a disjoint range is added, any
+                                                other overlap is rejected; the default Groups is inherited
+                                                unless redeclared.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
                                 </xs:complexType>
                             </xs:element>
 
@@ -2153,6 +2184,27 @@
                                     Defaults to 10 when omitted (connector fires for remainder 1–9).
                                 </xs:documentation>
                             </xs:annotation>
+                        </xs:attribute>
+
+                        <xs:attribute name="multiplierPosition" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Position of a group multiplier relative to its scale noun.
+                                    beforeScale (default): "two thousand". afterScale: the scale noun
+                                    first, e.g. Ewe "akpe eve" (2000). It only orders the two
+                                    constituents (scaleConnector stays between them); the multiplier's
+                                    own form comes from Groups / Groups onScale. The ordinal suffix then
+                                    lands on the multiplier ("akpe evelia"). Incompatible with
+                                    OrdinalScale, which assembles multiplier + noun itself.
+                                    Inherited through baseOn unless redeclared.
+                                </xs:documentation>
+                            </xs:annotation>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                    <xs:enumeration value="beforeScale" />
+                                    <xs:enumeration value="afterScale" />
+                                </xs:restriction>
+                            </xs:simpleType>
                         </xs:attribute>
 
                         <xs:attribute name="scaleConnector" type="xs:string" use="optional">

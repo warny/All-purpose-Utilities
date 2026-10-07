@@ -9,8 +9,9 @@ namespace UtilsTest.NumberToString;
 
 /// <summary>
 /// NTS-16/NTS-19 guards: the Wolof ordinal domain guard and mechanical (structural, not linguistic)
-/// checks of the Wolof <c>-éel</c> suffix and thousands, and of the withdrawn Ewe ordinals. The forms
-/// themselves are pinned by the sourced examples of the Wolof and Ewe features.
+/// checks of the Wolof <c>-éel</c> suffix and thousands. The forms themselves are pinned by the
+/// sourced examples of the Wolof feature; the Ewe ordinals restored by NTS-20 are covered by
+/// <see cref="NumberToStringNts20Tests"/>.
 /// </summary>
 [TestClass]
 public class NumberToStringNts16Tests
@@ -102,19 +103,5 @@ public class NumberToStringNts16Tests
         }
 
         Assert.AreEqual(0, failures.Count, string.Join(Environment.NewLine, failures));
-    }
-    /// <summary>
-    /// Ewe ordinals are withdrawn until the cardinal rebuild (NTS-20): the converter no longer
-    /// advertises them and rejects every value, while its cardinals keep working.
-    /// </summary>
-    [TestMethod]
-    public void Ewe_OrdinalsAreUnsupported_CardinalsUnaffected()
-    {
-        var converter = NumberToStringConverter.GetConverter("EE");
-
-        Assert.IsFalse(converter.SupportsOrdinals);
-        foreach (long number in new long[] { 0, 1, 2, 21, 1000, -2 })
-            Assert.Throws<NotSupportedException>(() => converter.ConvertOrdinal(number));
-        Assert.AreEqual("eve", converter.Convert((BigInteger)2));
     }
 }

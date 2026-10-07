@@ -169,6 +169,39 @@ public sealed class NumberToStringImmutabilityTests
         Assert.IsFalse(converter.OrdinalCompositionRules is List<OrdinalCompositionRule>, "The converter must not expose a mutable list.");
     }
 
+    /// <summary>
+    /// Mutating the source scale-scoped groups after construction (the list, its group dictionary, a
+    /// digit list, a <see cref="DigitType"/> in place, the options themselves) does not affect the
+    /// converter, and the exposed snapshot cannot alter its conversions.
+    /// </summary>
+    [TestMethod]
+    public void ScaleScopedGroups_SourceMutationAfterConstruction_DoesNotChangeConverter()
+    {
+        var scopedUnits = new DigitListType { Digits = [.. Units.Select((u, i) => new DigitType(i, i == 2 ? "beta" : u))] };
+        var scopedTens = new DigitListType { Digits = [.. Tens.Select((t, i) => new DigitType(i, t, i == 0 ? "*" : t + " *"))] };
+        var scopedTables = new Dictionary<int, DigitListType> { [1] = scopedUnits, [2] = scopedTens };
+        var scoped = new List<ScaleScopedGroups> { new("1", scopedTables) };
+        var options = Options([]);
+        options.ScaleScopedGroups = scoped;
+        options.ScaleMultiplierPosition = ScaleMultiplierPosition.AfterScale;
+        var converter = new NumberToStringConverter(options);
+
+        scopedUnits.Digits[2].StringValue = "changed";
+        scopedUnits.Digits.Add(new DigitType(2, "duplicate"));
+        scopedTables[1] = new DigitListType { Digits = [.. Units.Select((u, i) => new DigitType(i, "replaced"))] };
+        scoped.Add(new ScaleScopedGroups("2", scopedTables));
+        options.ScaleScopedGroups = [];
+        options.ScaleMultiplierPosition = ScaleMultiplierPosition.BeforeScale;
+
+        Assert.AreEqual("thousand beta", converter.Convert(new BigInteger(200)));
+        Assert.AreEqual(1, converter.ScaleScopedGroups.Count);
+
+        converter.ScaleScopedGroups[0].Groups[1].Digits.Single(d => d.Digit == 2).StringValue = "exposed";
+        converter.Groups[1][2].StringValue = "exposed";
+        Assert.AreEqual("thousand beta", converter.Convert(new BigInteger(200)));
+        Assert.AreEqual("two", converter.Convert(new BigInteger(2)));
+    }
+
     /// <summary>Creates options for a two-level language whose tens digit 2 carries <paramref name="fusions"/>.</summary>
     /// <param name="fusions">The fusion rules attached to the tens digit 2.</param>
     /// <returns>The converter options.</returns>

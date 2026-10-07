@@ -14,13 +14,6 @@ namespace Utils.NumberToString
         internal const int MaxFusionGroupLevel = 6;
 
         /// <summary>
-        /// Compiled fusion plans, indexed by group level, then digit, then numeric value of the lower
-        /// sub-group. A <see langword="null"/> entry at any depth means "no fusion: use buildString".
-        /// Built once at construction from <see cref="DigitType.Fusions"/>; never mutated afterwards.
-        /// </summary>
-        private FusionPlan?[]?[]?[]? _fusionPlans;
-
-        /// <summary>
         /// The effective, already merged transformation applied to one fused junction.
         /// </summary>
         /// <param name="Left">Replacement form of the left constituent, or <see langword="null"/>.</param>
@@ -53,17 +46,20 @@ namespace Utils.NumberToString
         private sealed record FusionRuleCandidate(FusionType Source, Utils.Range.IntRange<long> Range, long Specificity);
 
         /// <summary>
-        /// Looks up the compiled fusion plan for a junction, if any.
+        /// Looks up the compiled fusion plan for a junction, if any. The plans of a table are indexed by
+        /// group level, then digit, then numeric value of the lower sub-group; a <see langword="null"/>
+        /// entry at any depth means "no fusion: use buildString".
         /// </summary>
+        /// <param name="table">The table whose plans are searched.</param>
         /// <param name="groupNumber">The group level being composed.</param>
         /// <param name="digit">The digit of the current position.</param>
         /// <param name="remainder">The numeric value of the lower sub-group.</param>
         /// <param name="plan">The plan when one applies.</param>
         /// <returns><see langword="true"/> when a fusion applies to this junction.</returns>
-        private bool TryGetFusionPlan(int groupNumber, long digit, long remainder, out FusionPlan plan)
+        private static bool TryGetFusionPlan(GroupTable table, int groupNumber, long digit, long remainder, out FusionPlan plan)
         {
             plan = null!;
-            var byLevel = _fusionPlans;
+            var byLevel = table.FusionPlans;
             if (byLevel is null || groupNumber >= byLevel.Length) return false;
             var byDigit = byLevel[groupNumber];
             if (byDigit is null || digit >= byDigit.Length) return false;
@@ -76,28 +72,31 @@ namespace Utils.NumberToString
         }
 
         /// <summary>
-        /// Validates every <see cref="DigitType.Fusions"/> rule and compiles them into
-        /// <see cref="_fusionPlans"/>, level by level from the lowest so that edge validation can
-        /// render the actual lower constituents (including already compiled lower-level fusions).
+        /// Validates every <see cref="DigitType.Fusions"/> rule of <paramref name="table"/> and compiles
+        /// them into its <see cref="GroupTable.FusionPlans"/>, level by level from the lowest so that edge
+        /// validation can render the actual lower constituents (including already compiled lower-level
+        /// fusions of the same table).
         /// </summary>
-        /// <param name="groups">The source groups.</param>
+        /// <param name="table">The table whose digits are compiled.</param>
+        /// <param name="label">The table name used in diagnostics (e.g. <c>Groups</c>).</param>
         /// <param name="paramName">The parameter name used in diagnostics.</param>
         /// <exception cref="ArgumentException">Thrown when a rule is invalid or ambiguous.</exception>
-        private void CompileFusions(IReadOnlyDictionary<int, DigitListType> groups, string paramName)
+        private void CompileFusions(GroupTable table, string label, string paramName)
         {
-            if (!groups.Values.Any(g => g.Digits.Any(d => d.Fusions is { Count: > 0 })))
+            var groups = table.Digits;
+            if (!groups.Values.Any(g => g.Values.Any(d => d.Fusions is { Count: > 0 })))
                 return;
 
             int maxLevel = groups.Keys.Max();
             var plans = new FusionPlan?[]?[]?[maxLevel + 1];
-            _fusionPlans = plans;
+            table.FusionPlans = plans;
 
             foreach (int level in groups.Keys.OrderBy(k => k))
             {
-                foreach (var digit in groups[level].Digits)
+                foreach (var digit in groups[level].Values.OrderBy(d => d.Digit))
                 {
                     if (digit.Fusions is not { Count: > 0 }) continue;
-                    string where = $"Groups[{level}].Digits[{digit.Digit}] Fusion";
+                    string where = $"{label}[{level}].Digits[{digit.Digit}] Fusion";
                     if (level == 1)
                         throw new ArgumentException($"{where}: a level-1 digit has no lower sub-group to fuse with.", paramName);
                     if (level > MaxFusionGroupLevel)
@@ -105,7 +104,7 @@ namespace Utils.NumberToString
 
                     long domainMax = _decimalPowersOfTen[level - 1] - 1;
                     var candidates = BuildFusionCandidates(digit.Fusions, domainMax, where, paramName);
-                    var table = new FusionPlan?[domainMax + 1];
+                    var byRemainder = new FusionPlan?[domainMax + 1];
                     for (long value = 1; value <= domainMax; value++)
                     {
                         var plan = ResolveFusionPlan(candidates, value);
@@ -119,15 +118,15 @@ namespace Utils.NumberToString
                                 $"{where}: value {value} is also joined by the intra-group connector '{_intraGroupConnector}'; a junction cannot be both fused and connected.",
                                 paramName);
 
-                        string right = ConvertGroup(level - 1, value);
+                        string right = ConvertGroup(table, level - 1, value);
                         // An empty lower constituent never reaches the composition step: the rule is inert.
                         if (string.IsNullOrEmpty(right)) continue;
                         ValidateFusionEdges(plan, digit.StringValue ?? string.Empty, right, value, where, paramName);
-                        table[value] = plan;
+                        byRemainder[value] = plan;
                     }
 
                     var byDigit = plans[level] ??= new FusionPlan?[10][];
-                    byDigit[digit.Digit] = table;
+                    byDigit[digit.Digit] = byRemainder;
                 }
             }
         }

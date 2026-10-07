@@ -785,6 +785,9 @@ namespace Utils.NumberToString
         /// </summary>
         private static LanguageDefinition ToDefinition(LanguageXmlModel model) => new()
         {
+            Groups = SelectDefaultGroups(model),
+            ScaleScopedGroups = model.Groups?.Where(g => g?.OnScale != null).ToList() is { Count: > 0 } scoped ? scoped : null,
+            MultiplierPosition = model.MultiplierPosition,
             Cultures = model.Cultures is { Count: > 0 }
                 ? model.Cultures
                 : (IReadOnlyList<string>)[],
@@ -797,7 +800,6 @@ namespace Utils.NumberToString
             DecimalSeparator = model.DecimalSeparator,
             FractionSeparator = model.FractionSeparator,
             MaxNumber = model.MaxNumber,
-            Groups = model.Groups,
             Exceptions = model.Exceptions,
             NumberScale = ToNumberScaleDefinition(model.NumberScale),
             Replacements = model.Replacements,
@@ -818,6 +820,73 @@ namespace Utils.NumberToString
             ClockTime = model.ClockTime,
             DateFormat = model.DateFormat,
         };
+
+        /// <summary>
+        /// Returns the default tables of a language model: its single <c>&lt;Groups&gt;</c> element
+        /// without <c>onScale</c>, or <see langword="null"/> when it declares none (inherited or missing).
+        /// </summary>
+        /// <param name="model">The XML language model.</param>
+        /// <returns>The default tables, or <see langword="null"/>.</returns>
+        /// <exception cref="InvalidOperationException">Several default <c>&lt;Groups&gt;</c> are declared.</exception>
+        private static GroupsListType? SelectDefaultGroups(LanguageXmlModel model)
+        {
+            var defaults = model.Groups?.Where(g => g != null && g.OnScale == null).ToList() ?? [];
+            if (defaults.Count > 1)
+                throw new InvalidOperationException(
+                    $"Language configuration error ({string.Join(", ", model.Cultures ?? [])}): more than one <Groups> without onScale; " +
+                    "a language declares one default <Groups> and optional <Groups onScale=\"…\"> tables.");
+            return defaults.Count == 1 ? defaults[0] : null;
+        }
+
+        /// <summary>
+        /// Merges inherited and overriding scale-scoped tables by range: an overriding table whose range is
+        /// identical to an inherited one replaces it, a new disjoint range is added, and any other overlap
+        /// is rejected rather than resolved implicitly. Ranges are compared in canonical form, so
+        /// <c>1..2</c> and <c>1,2</c> are the same range.
+        /// </summary>
+        /// <param name="inherited">The base language tables, or <see langword="null"/>.</param>
+        /// <param name="overriding">The derived language tables, or <see langword="null"/>.</param>
+        /// <returns>The merged tables, or <see langword="null"/> when neither side declares any.</returns>
+        /// <exception cref="InvalidOperationException">An overriding range crosses an inherited one.</exception>
+        private static List<GroupsListType>? MergeScaleScopedGroups(List<GroupsListType>? inherited, List<GroupsListType>? overriding)
+        {
+            if (overriding is not { Count: > 0 }) return inherited;
+            if (inherited is not { Count: > 0 }) return overriding;
+            var merged = new List<GroupsListType>(inherited);
+            foreach (var child in overriding)
+            {
+                // Malformed ranges are reported with their position by the converter's own validation.
+                if (!TryParseScopedRange(child.OnScale, out var childRange)) { merged.Add(child); continue; }
+                string childCanonical = childRange.ToString(null, CultureInfo.InvariantCulture)!;
+                for (int i = merged.Count - 1; i >= 0; i--)
+                {
+                    if (!inherited.Contains(merged[i]) || !TryParseScopedRange(merged[i].OnScale, out var parentRange)) continue;
+                    if (parentRange.ToString(null, CultureInfo.InvariantCulture) == childCanonical)
+                        merged.RemoveAt(i);
+                    else if (!IsEmptyRange(parentRange & childRange))
+                        throw new InvalidOperationException(
+                            $"Language configuration error: the derived <Groups onScale=\"{child.OnScale}\"> overlaps the inherited <Groups onScale=\"{merged[i].OnScale}\"> " +
+                            "without being identical; redeclare the inherited range exactly to replace it.");
+                }
+                merged.Add(child);
+            }
+            return merged;
+
+            static bool TryParseScopedRange(string? expression, out IntRange<long> range)
+            {
+                range = null!;
+                if (string.IsNullOrWhiteSpace(expression)) return false;
+                try
+                {
+                    range = ParseRangeExpression(expression);
+                    return true;
+                }
+                catch (Exception exception) when (exception is FormatException or OverflowException or ArgumentException or InvalidOperationException)
+                {
+                    return false;
+                }
+            }
+        }
 
         /// <summary>
         /// Projects a number-scale XML model onto an internal <see cref="NumberScaleDefinition"/>,
@@ -891,6 +960,8 @@ namespace Utils.NumberToString
                 FractionSeparator = overriding.FractionSeparator ?? inherited.FractionSeparator,
                 MaxNumber = overriding.MaxNumber ?? inherited.MaxNumber,
                 Groups = overriding.Groups ?? inherited.Groups,
+                ScaleScopedGroups = MergeScaleScopedGroups(inherited.ScaleScopedGroups, overriding.ScaleScopedGroups),
+                MultiplierPosition = overriding.MultiplierPosition ?? inherited.MultiplierPosition,
                 Exceptions = overriding.Exceptions ?? inherited.Exceptions,
                 NumberScale = MergeNumberScaleDefinition(inherited.NumberScale, overriding.NumberScale),
                 Replacements = overriding.Replacements ?? inherited.Replacements,
@@ -1039,6 +1110,8 @@ namespace Utils.NumberToString
             FractionSeparator = definition.FractionSeparator,
             MaxNumber = definition.MaxNumber,
             Groups = definition.Groups,
+            ScaleScopedGroups = definition.ScaleScopedGroups,
+            MultiplierPosition = definition.MultiplierPosition,
             Exceptions = definition.Exceptions,
             NumberScale = BuildNumberScale(definition.NumberScale),
             Replacements = definition.Replacements,
@@ -1097,28 +1170,38 @@ namespace Utils.NumberToString
             Require(language.GroupSize > 0 && language.GroupSize < _decimalPowersOfTen.Length, "GroupSize", $"must be between 1 and {_decimalPowersOfTen.Length - 1}.");
             Require(!string.IsNullOrWhiteSpace(language.Zero), "Zero", "must be non-empty.");
             Require(!string.IsNullOrWhiteSpace(language.Minus) && language.Minus.Count(c => c == '*') == 1, "Minus", "must be non-empty and contain exactly one '*' body placeholder.");
-            Require(language.Groups?.Groups != null && language.Groups.Groups.Count > 0, "Groups", "at least one group is required.");
-            if (language.Groups?.Groups != null)
+            Require(language.Groups?.Groups != null && language.Groups.Groups.Count > 0, "Groups", "at least one group is required (a default <Groups> without onScale).");
+            ValidateGroupTable(language.Groups, "Groups");
+            foreach (var scoped in language.ScaleScopedGroups ?? [])
             {
+                string path = $"Groups[onScale={scoped.OnScale}]";
+                Require(scoped.Groups != null && scoped.Groups.Count > 0, path, "at least one group is required.");
+                ValidateGroupTable(scoped, path);
+            }
+            Require(language.MultiplierPosition is null or "beforeScale" or "afterScale", "multiplierPosition", "must be 'beforeScale' or 'afterScale'.");
+
+            void ValidateGroupTable(GroupsListType? table, string path)
+            {
+                if (table?.Groups == null) return;
                 int expectedGroup = 1;
-                foreach (var group in language.Groups.Groups.OrderBy(g => g.Level))
+                foreach (var group in table.Groups.OrderBy(g => g.Level))
                 {
                     int level = group.Level;
                     DigitListType digits = group;
-                    Require(level == expectedGroup++, $"Groups[{level}]", "group levels must be contiguous starting at 1.");
-                    Require(digits?.Digits != null, $"Groups[{level}].Digits", "digit list is required.");
+                    Require(level == expectedGroup++, $"{path}[{level}]", "group levels must be contiguous starting at 1.");
+                    Require(digits?.Digits != null, $"{path}[{level}].Digits", "digit list is required.");
                     if (digits?.Digits == null) continue;
                     var values = new HashSet<long>();
                     for (int i = 0; i < digits.Digits.Count; i++)
                     {
                         var digit = digits.Digits[i];
-                        Require(digit != null, $"Groups[{level}].Digits[{i}]", "entry must not be null.");
+                        Require(digit != null, $"{path}[{level}].Digits[{i}]", "entry must not be null.");
                         if (digit == null) continue;
-                        Require(values.Add(digit.Digit), $"Groups[{level}].Digits[{i}]", $"digit {digit.Digit} is duplicated.");
-                        Require(digit.StringValue != null || digit.BuildString != null, $"Groups[{level}].Digits[{digit.Digit}]", "at least one of string or build must be non-null.");
+                        Require(values.Add(digit.Digit), $"{path}[{level}].Digits[{i}]", $"digit {digit.Digit} is duplicated.");
+                        Require(digit.StringValue != null || digit.BuildString != null, $"{path}[{level}].Digits[{digit.Digit}]", "at least one of string or build must be non-null.");
                     }
                     for (int digit = 0; digit <= 9; digit++)
-                        Require(values.Contains(digit), $"Groups[{level}].Digits[{digit}]", "required digit is missing.");
+                        Require(values.Contains(digit), $"{path}[{level}].Digits[{digit}]", "required digit is missing.");
                 }
             }
 
@@ -1739,6 +1822,12 @@ namespace Utils.NumberToString
                 Minus = language.Minus,
                 DecimalSeparator = language.DecimalSeparator,
                 Groups = language.Groups.Groups.ToDictionary(g => g.Level, g => (DigitListType)g),
+                ScaleScopedGroups = (language.ScaleScopedGroups ?? [])
+                    .Select(g => new ScaleScopedGroups(g.OnScale!, g.Groups.ToDictionary(group => group.Level, group => (DigitListType)group)))
+                    .ToList(),
+                ScaleMultiplierPosition = language.MultiplierPosition == "afterScale"
+                    ? ScaleMultiplierPosition.AfterScale
+                    : ScaleMultiplierPosition.BeforeScale,
                 Exceptions = language.Exceptions?.Numbers?.ToDictionary(e => (long)e.Value, e => e.StringValue)
                     ?? new Dictionary<long, string>(),
                 Replacements = ParseReplacements(language.Replacements),

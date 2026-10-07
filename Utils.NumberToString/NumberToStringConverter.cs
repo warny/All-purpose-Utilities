@@ -137,9 +137,12 @@ namespace Utils.NumberToString
             // produce a precise diagnostic rather than a raw NullReferenceException from LINQ.
             ValidateGroupsSource(options.Groups!, nameof(options.Groups));
 
-            Groups = options.Groups!.ToImmutableDictionary(
+            // Conversions read private deep copies (see CompileGroupTables); the exposed Groups is another
+            // copy, so neither the source options nor the exposed digits can alter this converter.
+            CompileGroupTables(options);
+            Groups = _defaultGroupTable.Digits.ToImmutableDictionary(
                 kv => kv.Key,
-                kv => (IReadOnlyDictionary<long, DigitType>)kv.Value.Digits.ToDictionary(d => d.Digit).ToImmutableDictionary());
+                kv => (IReadOnlyDictionary<long, DigitType>)kv.Value.ToImmutableDictionary(d => d.Key, d => CopyDigit(d.Value)));
             Exceptions = (options.Exceptions ?? new Dictionary<long, string>()).ToImmutableDictionary();
             Replacements = (options.Replacements ?? Array.Empty<ReplacementRule>())
                 .Select(r => r ?? throw new ArgumentNullException(nameof(options), "Replacement entries must not be null."))
@@ -245,9 +248,9 @@ namespace Utils.NumberToString
             _intraGroupConnectorThreshold = options.IntraGroupConnectorThreshold;
             _scaleConnector = options.ScaleConnector;
             _scaleConnectorThreshold = options.ScaleConnectorThreshold;
-            // Needs Groups, Exceptions and the intra-group connector: edge validation renders the
-            // actual lower constituents through ConvertGroup.
-            CompileFusions(options.Groups!, nameof(options.Groups));
+            // Needs the group tables, Exceptions and the intra-group connector: edge validation renders
+            // the actual lower constituents of each table through ConvertGroup.
+            CompileAllFusions();
             {
                 var rawTimeUnits = options.TimeUnits ?? ImmutableDictionary<string, (string Singular, string Plural, string? Count1Form)>.Empty;
                 var timeUnitForced = options.TimeUnitForcedVariants ?? ImmutableDictionary<string, ForcedVariantSet>.Empty;
@@ -465,7 +468,8 @@ namespace Utils.NumberToString
         internal IReadOnlyDictionary<int, ILexicalFormSelector> ScaleFormSelectorOverrides => _scaleFormSelectorOverrides;
 
         /// <summary>
-        /// Group definitions for digits
+        /// Gets the default digit tables keyed by group level, then by digit (see also
+        /// <see cref="ScaleScopedGroups"/>). The digits are copies: changing them never affects this converter.
         /// </summary>
         public IReadOnlyDictionary<int, IReadOnlyDictionary<long, DigitType>> Groups { get; }
         /// <summary>
@@ -1012,7 +1016,7 @@ namespace Utils.NumberToString
                     foreach (char c in digits)
                     {
                         int d = c - '0';
-                        result.Append(Groups[1][d].StringValue).Append(Separator);
+                        result.Append(_defaultGroupTable.Digits[1][d].StringValue).Append(Separator);
                     }
                 }
             }
@@ -1215,7 +1219,7 @@ namespace Utils.NumberToString
             if (abs.Between(long.MinValue, long.MaxValue) && Exceptions.TryGetValue((long)abs, out var exValue))
                 return exValue;
 
-            var maxGroup = Groups.Keys.Max();
+            var maxGroup = _defaultGroupTable.Digits.Keys.Max();
             var groupValue = BigInteger.Pow(10, maxGroup);
             int groupNumber = 0;
             var groupsValues = new Stack<(string text, long numericValue)>();
@@ -1226,7 +1230,8 @@ namespace Utils.NumberToString
                 var group = (long)(remaining % groupValue);
                 if (group != 0)
                 {
-                    string digits = ConvertGroup(maxGroup, group);
+                    // The multiplier of a scale covered by a scoped Groups uses that table.
+                    string digits = ConvertGroup(GetGroupTable(groupNumber), maxGroup, group);
                     digits = ApplyTriggers(digits, TriggerAt.Group, groupNumber, variantQuery);
 
                     string scaleName = GetScaleWord(groupNumber, group, variantQuery);
@@ -1239,7 +1244,9 @@ namespace Utils.NumberToString
                     // Separator="and", the word "thousand" ends with "and" and would be corrupted).
                     string resValue = string.IsNullOrEmpty(scaleName)
                         ? digits
-                        : digits + scaleJoin + scaleName;
+                        : ScaleMultiplierPosition == ScaleMultiplierPosition.AfterScale
+                            ? scaleName + scaleJoin + digits
+                            : digits + scaleJoin + scaleName;
                     resValue = ApplyReplacements(resValue, groupNumber, group);
                     if (variantQuery != null && _hasScaleSpecificVariantRules)
                         resValue = ApplyVariantRulesForScale(resValue, variantQuery, groupNumber, group);
@@ -1933,10 +1940,22 @@ namespace Utils.NumberToString
         }
 
         /// <summary>
-        /// Converts a group of digits to its string representation based on its group number.
+        /// Converts a group of digits to its string representation based on its group number, with the
+        /// default <see cref="Groups"/> tables.
         /// </summary>
-        public string ConvertGroup(int groupNumber, long number)
+        public string ConvertGroup(int groupNumber, long number) => ConvertGroup(_defaultGroupTable, groupNumber, number);
+
+        /// <summary>
+        /// Converts a group of digits to its string representation with the digit tables and fusion
+        /// plans of <paramref name="table"/>.
+        /// </summary>
+        /// <param name="table">The default or scale-scoped table.</param>
+        /// <param name="groupNumber">The group level (1 = units, 2 = tens …).</param>
+        /// <param name="number">The value of the group, below 10^<paramref name="groupNumber"/>.</param>
+        /// <returns>The group text (empty for level 0).</returns>
+        private string ConvertGroup(GroupTable table, int groupNumber, long number)
         {
+            var groups = table.Digits;
             if (groupNumber < 0)
                 throw new ArgumentOutOfRangeException(nameof(groupNumber),
                     $"groupNumber must be non-negative; got {groupNumber}.");
@@ -1944,10 +1963,10 @@ namespace Utils.NumberToString
                 throw new ArgumentOutOfRangeException(nameof(number),
                     $"number must be non-negative; got {number}.");
             if (groupNumber == 0) return string.Empty;
-            if (!Groups.ContainsKey(groupNumber))
+            if (!groups.ContainsKey(groupNumber))
                 throw new ArgumentOutOfRangeException(nameof(groupNumber),
                     $"groupNumber {groupNumber} is not a configured group index. " +
-                    $"Valid indices: {string.Join(", ", Groups.Keys.OrderBy(k => k))}.");
+                    $"Valid indices: {string.Join(", ", groups.Keys.OrderBy(k => k))}.");
 
             if (groupNumber > 1 && Exceptions.TryGetValue(number, out var value)) return value;
 
@@ -1971,15 +1990,15 @@ namespace Utils.NumberToString
             }
             var (groupValue, remainder) = long.DivRem(number, group);
 
-            var leftText = ConvertGroup(groupNumber - 1, remainder);
-            var valueText = Groups[groupNumber][groupValue];
+            var leftText = ConvertGroup(table, groupNumber - 1, remainder);
+            var valueText = groups[groupNumber][groupValue];
 
             if (string.IsNullOrEmpty(leftText)) return valueText.StringValue;
 
             // A configured <Fusion> replaces buildString for this junction (validated at load to
             // never overlap the intra-group connector below). "leftText" is the lower sub-group,
             // i.e. the fusion's right constituent.
-            if (_fusionPlans != null && TryGetFusionPlan(groupNumber, groupValue, remainder, out var fusion))
+            if (table.FusionPlans != null && TryGetFusionPlan(table, groupNumber, groupValue, remainder, out var fusion))
                 return ComposeFusion(fusion, valueText.StringValue, leftText);
 
             // Inject intra-group connector at the hundreds level when there are hundreds AND remainder < threshold

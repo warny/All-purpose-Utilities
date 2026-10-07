@@ -1,53 +1,69 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+	<!--
+	  NTS-20 rebuild. Sources (details in docs/NTS-08-linguistic-sources.md, section NTS-20):
+	    - S. W. Dzablu-Kumah, Basic Ewe for Foreign Students, 2nd ed., Univ. of Cologne (lesson III.2);
+	    - Biblica Open Ewe Contemporary Scriptures (Ghana), numbers written out with their digits;
+	    - Ewe Basic Course, Indiana University 1968 (ordinals: cardinal + -lia, "first" gbãtɔ);
+	    - Peace Corps Togo Ewe workbook 2010; Wiktionary (Westermann 1905, Nuseline 2017); Omniglot.
+	  Orthography: standard letters without tone marks, nasal tilde kept; "one" is ɖekɛ after wui- and vɔ.
+	  The scale noun precedes its multiplier (akpe eve = 2000), whose form is the standalone cardinal: no
+	  <Groups onScale> table is needed. "kple" joins the hundreds to 1-10 (optional before 11-99, not
+	  produced) and the thousands to a lower part below 100. The million stays outside maxNumber.
+	-->
 	<Language
         groupSize="3"
         separator=" "
         groupSeparator=""
-        zero="zero"
+        zero="naneke o"
         minus="minus *"
         decimalSeparator="kpɔ"
         fractionSeparator="kple"
-
-                maxNumber="999999"
+        multiplierPosition="afterScale"
+        groupConnector="kple"
+        groupConnectorThreshold="100"
+        intraGroupConnector="kple"
+        intraGroupConnectorThreshold="11"
+        maxNumber="999999"
         >
 		<Culture>EE</Culture>
 		<Groups>
 			<Group level="1">
 				<Digit digit="0" string="" />
-				<Digit digit="1" string="deka" />
+				<Digit digit="1" string="ɖeka" />
 				<Digit digit="2" string="eve" />
-				<Digit digit="3" string="eto" />
+				<Digit digit="3" string="etɔ̃" />
 				<Digit digit="4" string="ene" />
-				<Digit digit="5" string="atɔ" />
+				<Digit digit="5" string="atɔ̃" />
 				<Digit digit="6" string="ade" />
 				<Digit digit="7" string="adre" />
 				<Digit digit="8" string="enyi" />
-				<Digit digit="9" string="asea" />
+				<Digit digit="9" string="asieke" />
 			</Group>
 			<Group level="2">
 				<Digit digit="0" string="" buildString="*" />
-				<Digit digit="1" string="ewo" buildString="ewo kple *" />
-				<Digit digit="2" string="blavo eve" buildString="blavo eve kple *" />
-				<Digit digit="3" string="blavo eto" buildString="blavo eto kple *" />
-				<Digit digit="4" string="blavo ene" buildString="blavo ene kple *" />
-				<Digit digit="5" string="blavo atɔ" buildString="blavo atɔ kple *" />
-				<Digit digit="6" string="blavo ade" buildString="blavo ade kple *" />
-				<Digit digit="7" string="blavo adre" buildString="blavo adre kple *" />
-				<Digit digit="8" string="blavo enyi" buildString="blavo enyi kple *" />
-				<Digit digit="9" string="blavo asea" buildString="blavo asea kple *" />
+				<!-- 11-19 are the lexicalized wui- forms (Exceptions below). -->
+				<Digit digit="1" string="ewo" buildString="ewo *" />
+				<Digit digit="2" string="blaeve" buildString="blaeve vɔ *" />
+				<Digit digit="3" string="blaetɔ̃" buildString="blaetɔ̃ vɔ *" />
+				<Digit digit="4" string="blaene" buildString="blaene vɔ *" />
+				<Digit digit="5" string="blaatɔ̃" buildString="blaatɔ̃ vɔ *" />
+				<Digit digit="6" string="blaade" buildString="blaade vɔ *" />
+				<Digit digit="7" string="blaadre" buildString="blaadre vɔ *" />
+				<Digit digit="8" string="blaenyi" buildString="blaenyi vɔ *" />
+				<Digit digit="9" string="blaasieke" buildString="blaasieke vɔ *" />
 			</Group>
 			<Group level="3">
 				<Digit digit="0" string="" buildString="*" />
-				<Digit digit="1" string="kpeɖe" buildString="kpeɖe kple *" />
-				<Digit digit="2" string="kpeɖe eve" buildString="kpeɖe eve kple *" />
-				<Digit digit="3" string="kpeɖe eto" buildString="kpeɖe eto kple *" />
-				<Digit digit="4" string="kpeɖe ene" buildString="kpeɖe ene kple *" />
-				<Digit digit="5" string="kpeɖe atɔ" buildString="kpeɖe atɔ kple *" />
-				<Digit digit="6" string="kpeɖe ade" buildString="kpeɖe ade kple *" />
-				<Digit digit="7" string="kpeɖe adre" buildString="kpeɖe adre kple *" />
-				<Digit digit="8" string="kpeɖe enyi" buildString="kpeɖe enyi kple *" />
-				<Digit digit="9" string="kpeɖe asea" buildString="kpeɖe asea kple *" />
+				<Digit digit="1" string="alafa ɖeka" buildString="alafa ɖeka *" />
+				<Digit digit="2" string="alafa eve" buildString="alafa eve *" />
+				<Digit digit="3" string="alafa etɔ̃" buildString="alafa etɔ̃ *" />
+				<Digit digit="4" string="alafa ene" buildString="alafa ene *" />
+				<Digit digit="5" string="alafa atɔ̃" buildString="alafa atɔ̃ *" />
+				<Digit digit="6" string="alafa ade" buildString="alafa ade *" />
+				<Digit digit="7" string="alafa adre" buildString="alafa adre *" />
+				<Digit digit="8" string="alafa enyi" buildString="alafa enyi *" />
+				<Digit digit="9" string="alafa asieke" buildString="alafa asieke *" />
 			</Group>
 		</Groups>
 		<NumberScale firstLetterUpperCase="false">
@@ -55,27 +71,36 @@
 				<Scale value="0" string="" />
 				<Scale value="1" string="akpe" />
 			</StaticNames>
+			<!-- Unaudited and unreachable while maxNumber is 999999 (Peace Corps: "akpe akpe"; Omniglot: "miliɔn ɖeka"). -->
 			<Suffixes>
 				<Suffix>miliɔn</Suffix>
 			</Suffixes>
 		</NumberScale>
-		<!--
-		  NTS-16: no <Ordinals>. The sourced formation is cardinal + "-lia" with the suppletive "gbãtɔ"
-		  for first (Ewe Basic Course, Indiana University 1968; Omniglot/Wiktionary: evelia, etɔ̃lia),
-		  not the former unattested "etsõ" prefix. It cannot be applied to the cardinals below, which
-		  diverge from the same sources in almost every family (ɖeka, etɔ̃, atɔ̃, adrɛ, asieke; wui- teens;
-		  blaeve; vɔ; alafa; akpe ɖeka): ordinal conversion stays unsupported until NTS-20 rebuilds them.
-		-->
 		<Exceptions>
-			<Number value="11" string="ewo kple deka" />
-			<Number value="12" string="ewo kple eve" />
-			<Number value="13" string="ewo kple eto" />
-			<Number value="14" string="ewo kple ene" />
-			<Number value="15" string="ewo kple atɔ" />
-			<Number value="16" string="ewo kple ade" />
-			<Number value="17" string="ewo kple adre" />
-			<Number value="18" string="ewo kple enyi" />
-			<Number value="19" string="ewo kple asea" />
+			<Number value="11" string="wuiɖekɛ" />
+			<Number value="12" string="wuieve" />
+			<Number value="13" string="wuietɔ̃" />
+			<Number value="14" string="wuiene" />
+			<Number value="15" string="wuiatɔ̃" />
+			<Number value="16" string="wuiade" />
+			<Number value="17" string="wuiadre" />
+			<Number value="18" string="wuienyi" />
+			<Number value="19" string="wuiasieke" />
+			<!-- "One" after the tens-units connector vɔ is ɖekɛ (Dzablu-Kumah: bláeve vɔ̌ ɖekɛ́; Bible: blaeve-vɔ-ɖekɛ). -->
+			<Number value="21" string="blaeve vɔ ɖekɛ" />
+			<Number value="31" string="blaetɔ̃ vɔ ɖekɛ" />
+			<Number value="41" string="blaene vɔ ɖekɛ" />
+			<Number value="51" string="blaatɔ̃ vɔ ɖekɛ" />
+			<Number value="61" string="blaade vɔ ɖekɛ" />
+			<Number value="71" string="blaadre vɔ ɖekɛ" />
+			<Number value="81" string="blaenyi vɔ ɖekɛ" />
+			<Number value="91" string="blaasieke vɔ ɖekɛ" />
 		</Exceptions>
+		<!-- No ordinal of zero is attested: the suffix is never applied to "naneke o". -->
+		<LanguageSpecifics>ZeroOrdinalUnsupportedLanguageSpecifics</LanguageSpecifics>
+		<!-- Every ordinal but "first" adds -lia to the last element of the cardinal (Ewe Basic Course 1968). -->
+		<Ordinals suffix="lia">
+			<OrdinalException value="1" string="gbãtɔ" />
+		</Ordinals>
 	</Language>
 </Numbers>

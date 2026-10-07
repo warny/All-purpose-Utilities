@@ -1091,10 +1091,25 @@ public class LanguageType
     public string MaxNumber { get; set; }
 
     /// <summary>
-    /// Gets or sets the group definitions used when splitting large numbers.
+    /// Gets or sets the group definitions used when splitting large numbers (the default tables,
+    /// declared by the <c>&lt;Groups&gt;</c> element without <c>onScale</c>).
     /// </summary>
     [XmlElement(ElementName = "Groups")]
     public GroupsListType Groups { get; set; }
+
+    /// <summary>
+    /// Gets or sets the tables declared by <c>&lt;Groups onScale="…"&gt;</c> elements, rendering the
+    /// multiplier of the covered scales (see <see cref="Utils.NumberToString.ScaleScopedGroups"/>).
+    /// </summary>
+    [XmlIgnore]
+    public List<GroupsListType>? ScaleScopedGroups { get; set; }
+
+    /// <summary>
+    /// Gets or sets the <c>multiplierPosition</c> attribute: <c>beforeScale</c> (default, "two thousand")
+    /// or <c>afterScale</c> (the scale noun first, e.g. Ewe <c>akpe eve</c>).
+    /// </summary>
+    [XmlAttribute("multiplierPosition")]
+    public string? MultiplierPosition { get; set; }
 
     /// <summary>
     /// Gets or sets the special-case number mappings for the language.
@@ -1349,6 +1364,14 @@ public class GroupsListType
     /// </summary>
     [XmlElement("Group")]
     public List<GroupType> Groups { get; set; }
+
+    /// <summary>
+    /// Gets or sets the scale indices whose multiplier these tables render (see
+    /// <see cref="ScaleScopedGroups"/>), in the shared range syntax (<c>1</c>, <c>2..4</c>, <c>1..</c>);
+    /// <see langword="null"/> for the default tables.
+    /// </summary>
+    [XmlAttribute("onScale")]
+    public string? OnScale { get; set; }
 }
 
 /// <summary>
