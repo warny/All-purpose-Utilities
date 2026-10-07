@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class WolofOrdinalLanguageSpecifics | omy.Utils Documentation ">
       
-      <meta name="description" content="Domain guard for Wolof ordinals (NTS-16). Every supported value is produced by the declarative XML pipeline (the suppletive bu nj&#235;kk for 1 and the -eel suffix on the last element of the cardinal for 2-999); this plugin never builds a form itself and only rejects the values whose ordinal would rest on an unsettled base.">
+      <meta name="description" content="Domain guard for Wolof ordinals. Every supported value is produced by the declarative XML pipeline (the suppletive bu nj&#235;kk for 1 and the -&#233;el suffix on the last element of the cardinal otherwise); this plugin never builds a form itself and only rejects the values whose ordinal is not established.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -97,10 +97,10 @@ Class WolofOrdinalLanguageSpecifics  <a class="header-action link-secondary" tit
   <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Domain guard for Wolof ordinals (NTS-16). Every supported value is produced by the declarative XML
-pipeline (the suppletive <code>bu njëkk</code> for 1 and the <code>-eel</code> suffix on the last element of the
-cardinal for 2-999); this plugin never builds a form itself and only rejects the values whose
-ordinal would rest on an unsettled base.</p>
+  <div class="markdown summary"><p>Domain guard for Wolof ordinals. Every supported value is produced by the declarative XML pipeline
+(the suppletive <code>bu njëkk</code> for 1 and the <code>-éel</code> suffix on the last element of the
+cardinal otherwise); this plugin never builds a form itself and only rejects the values whose
+ordinal is not established.</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -246,11 +246,11 @@ ordinal would rest on an unsettled base.</p>
 
 
   <h2 id="Utils_NumberToString_WolofOrdinalLanguageSpecifics_remarks">Remarks</h2>
-  <div class="markdown level0 remarks"><p>Rejected with <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a>:</p>
-<ul><li>zero — no consulted source attests an ordinal of zero (NTS-14, unchanged);</li><li>every value from a thousand — the configured thousands cardinal diverges from
-  the sources (no <code>ak</code> after <code>junni</code>, <code>benn junni</code> for 1000) and the vowel-final
-  <code>junni</code> + <code>-eel</code> is exemplified by a single compilation (<code>junneel</code>); tracked by
-  NTS-19.</li></ul>
+  <div class="markdown level0 remarks"><p>Rejected with <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a>, as deliberate linguistic limitations:</p>
+<ul><li>zero — no consulted source attests an ordinal of zero;</li><li>the round thousands (1000, 2000 … 999000), whose last element is the
+  vowel-final <code>junni</code>: the only examples of its ordinal disagree (Omniglot <code>junneel</code>,
+  vowel dropped; Janga Wolof <code>junniéél</code>, vowel kept) and no academic or normative source
+  settles the junction.</li></ul>
 <p>The guard receives the absolute value, so negative values are bounded the same way.</p>
 </div>
 

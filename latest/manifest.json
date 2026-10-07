@@ -9935,7 +9935,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.NumberToString.WolofOrdinalLanguageSpecifics",
-      "Summary": "<p sourcefile=\"api/Utils.NumberToString.WolofOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Domain guard for Wolof ordinals (NTS-16). Every supported value is produced by the declarative XML\npipeline (the suppletive <code>bu njëkk</code> for 1 and the <code>-eel</code> suffix on the last element of the\ncardinal for 2-999); this plugin never builds a form itself and only rejects the values whose\nordinal would rest on an unsettled base.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.WolofOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Domain guard for Wolof ordinals. Every supported value is produced by the declarative XML pipeline\n(the suppletive <code>bu njëkk</code> for 1 and the <code>-éel</code> suffix on the last element of the\ncardinal otherwise); this plugin never builds a form itself and only rejects the values whose\nordinal is not established.</p>\n"
     },
     {
       "type": "ManagedReference",
