@@ -39,7 +39,7 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | RU | Russian | ✓ declarative (zero: `нулевой`) | ✓ 15 min, 12 h | gender × case | local | — |
 | UK, UK-UA | Ukrainian | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Round thousands verified up to 10 000 |
 | ES | Spanish | ✓ declarative | ✓ 5 min, 12 h | gender × form | local | No ordinal of zero |
-| IT | Italian | ✓ 1–1999 except 1110–1910, round thousands to 999000, 100001–100009, round multiples of milione/miliardo/bilione (`<OrdinalStem>`, `<OrdinalComposition>`, `<OrdinalScale>`, domain-guard plugin) | ✓ 5 min, 12 h | gender | local | Ordinals of zero, 1110–1910 and the other non-round thousands above 1999 (NTS-15), of non-round values from a million and of a biliardo and above (NTS-18) fail closed; millions are separate nouns joined by `e` ("due milioni e centomila") |
+| IT | Italian | ✓ validated productive forms through round trilione: 1–1999 except 1110–1910, round thousands to 999000, round multiples of milione/miliardo/bilione/biliardo/trilione; selected sourced analytic compounds (1010, 100001–100009) (`<OrdinalStem>`, `<OrdinalComposition>`, `<OrdinalScale>`, domain-guard plugin) | ✓ 5 min, 12 h | gender | local | Unsourced ordinals fail closed by design: zero, 1110–1910, the other non-round thousands above 1999 and the non-round values from a million (no canonical form established); millions are separate nouns joined by `e` ("due milioni e centomila") |
 | PT | Portuguese | ✓ declarative | ✓ 5 min, 12 h (direct "e …") | gender | local | Deliberate direct numeric reading (no "para"/"menos" constructions); PT-PT/PT-BR not split; no ordinal of zero |
 | GL, gl-ES | Galician | ✓ declarative | ✓ 5 min, 12 h | gender | local | No ordinal of zero |
 | RO, RO-RO | Romanian | ✓ plugin (DOOM) | ✓ 15 min, 12 h | gen | local | Ordinals up to 999 999 and one million (masculine) |
@@ -378,10 +378,12 @@ in both genders (`ventunesima`). After a hundred, `dieci` keeps its lexical ordi
 the ordinals of their parts (see [`<OrdinalComposition>`](#analytic-ordinals--ordinalcomposition)):
 `millesimo decimo` (1010), `centomillesimoprimo` (100001). From a million the ordinal is formed on
 the scale noun (see [`<OrdinalScale>`](#ordinals-of-round-scale-values--ordinalscale)):
-`milionesimo`, `duemilionesimo`, `diecimilionesimo`, `miliardesimo`, `bilionesimo`. Zero,
-`1110`–`1910`, the other non-round thousands above 1999 (`2001`), the non-round values from a
-million (`1000001`) and a biliardo and above fail closed with `NotSupportedException` (NTS-15,
-NTS-18).
+`milionesimo`, `duemilionesimo`, `diecimilionesimo`, `miliardesimo`, `bilionesimo`,
+`biliardesimo`, `trilionesimo`, `novetrilionesimo` (the largest round value of a `long`). Zero,
+`1110`–`1910`, the other non-round thousands above 1999 (`2001`) and the non-round values from a
+million (`1000001`) fail closed with `NotSupportedException`. This is a deliberate linguistic
+limitation, not pending work: the engine could compose these values, but no consulted normative
+source establishes a canonical composition or spelling for them.
 
 ### Catalan — hyphens as word boundaries
 
@@ -1760,7 +1762,7 @@ it.ConvertOrdinal(23);                       // "ventitreesimo"
 it.ConvertOrdinal(26, "gender=femminile");   // "ventiseiesima"
 it.ConvertOrdinal(2000);                     // "duemillesimo"
 it.ConvertOrdinal(110);                      // "centodecimo" ← exact <Ordinal> word rule wins over the stems
-it.ConvertOrdinal(2001);                     // NotSupportedException (NTS-15)
+it.ConvertOrdinal(2001);                     // NotSupportedException (deliberate: no canonical form)
 ```
 
 #### Ordinals of round scale values — `<OrdinalScale>`
@@ -1772,8 +1774,8 @@ a **round scale value** — multiplier × scale unit, every lower group zero —
 
 ```xml
 <Ordinals suffix="esimo">
-    <!-- scale 1 = thousands, 2 = milione, 3 = miliardo, 4 = bilione -->
-    <OrdinalScale scales="2..4" multiplierSeparator="" />
+    <!-- scale 1 = thousands, 2 = milione, 3 = miliardo, 4 = bilione, 5 = biliardo, 6 = trilione -->
+    <OrdinalScale scales="2..6" multiplierSeparator="" />
 </Ordinals>
 ```
 
@@ -1836,7 +1838,8 @@ it.ConvertOrdinal(1010);                          // "millesimo decimo"
 it.ConvertOrdinal(100001, "gender=femminile");    // "centomillesimaprima"
 it.ConvertOrdinal(2_000_000);                     // "duemilionesimo"
 it.ConvertOrdinal(1_000_000_000, "gender=femminile"); // "miliardesima"
-it.ConvertOrdinal(1_000_001);                     // NotSupportedException (NTS-18)
+it.ConvertOrdinal(2_000_000_000_000_000_000);     // "duetrilionesimo"
+it.ConvertOrdinal(1_000_001);                     // NotSupportedException (deliberate: no canonical form)
 ```
 
 #### Variant-specific ordinal rules — `<OrdinalVariants>`

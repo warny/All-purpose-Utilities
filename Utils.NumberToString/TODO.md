@@ -1,6 +1,7 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-06 after closing NTS-17 and narrowing NTS-15 (which opened NTS-18), after
+Re-audited on 2026-10-07 after closing NTS-15 and NTS-18 (Italian ordinals complete: every
+category is either supported on sourced evidence or a deliberate fail-closed limitation); on 2026-10-06 after closing NTS-17 and narrowing NTS-15 (which opened NTS-18), after
 closing NTS-14 (which opened NTS-16 and NTS-17) and NTS-13 (which opened NTS-15); on 2026-10-03 after closing
 NTS-10, NTS-11 and NTS-12 (which opened NTS-13 and NTS-14);
 previously re-audited on 2026-10-01 after the NTS-08 regional consolidation (#608), which also
@@ -37,8 +38,11 @@ classification.
     Language), SW (two sources) and AR (university textbook) ClockTime; NO, BG, HR, RO and DA 100
     (`hundrede`) ordinals; SK compound ordinal spelling; HR cardinals; IT ordinals 1–1999 (except
     1110–1910) and round thousands (NTS-13: Treccani grammar and vocabolario, DICO, Crusca), 1010
-    and 100001–100009 (NTS-15: Treccani "ordinale", "centomillesimo"), and the round multiples of
-    milione, miliardo and bilione (NTS-17: Treccani entries, CNR).
+    and 100001–100009 (NTS-15: Treccani "ordinale", "centomillesimo"), the round multiples of
+    milione, miliardo and bilione (NTS-17: Treccani entries, CNR), and of biliardo and trilione
+    (NTS-18: MIT/ADN table, Nuovo De Mauro, GDLI). The remaining Italian values (1110–1910, other
+    non-round thousands, non-round values from a million) are deliberate linguistic limitations,
+    not open work: see `DONE-2026-10-07.md`.
     NTS-08 closes when every capability above is validated or explicitly deferred; a corrected
     string must be fixed in the `.feature` first, then in the configuration.
   - The remaining gaps below are explicit decisions, each pinned by a "does not support"
@@ -48,21 +52,6 @@ classification.
     - EE ClockTime: no sourced minute convention.
     - WO ClockTime: competing native and French-derived conventions, no single sourced system.
 
-- **NTS-15 — Italian ordinals of non-round thousands above 1999 and of 1110–1910 (narrowed).**
-  Since 2026-10-06 the attested analytic forms are produced by `<OrdinalComposition>`: 1010 →
-  `millesimo decimo` (Treccani "ordinale", separate spelling preferred) and 100001–100009 →
-  `centomillesimoprimo` … (Treccani "centomillesimo", soldered). `ItalianOrdinalLanguageSpecifics`
-  still rejects:
-  - 1110, 1210 … 1910: two analytic splits are conceivable (`millesimo centodecimo`,
-    `millecentesimo decimo`) and neither was found;
-  - every other non-round thousand above 1999 (2001, 2010, 21001, 100010, 100100, 999999 …): the
-    synthetic form (`duemilaunesimo`) is unattested and would be partitive by Treccani's
-    `centomiladuesimo` remark, and the spelling of the analytic form (`duemillesimo primo` or
-    `duemillesimoprimo`) is not sourced. Treccani's "ecc." after `centomillesimoterzo` was not
-    extended beyond the units.
-  Needs a sourced spelling, per range, before more of the guard is lifted; the engine side is done
-  (`<OrdinalComposition>` rules per range).
-
 - **NTS-16 — Wolof and Ewe ordinal formation unsourced.** Found while deciding their ordinal of
   zero (NTS-14, now fail-closed). The consulted sources form Wolof ordinals with `-eel`/`-éél`
   (`ñaaréél`, Janga Wolof) whereas the configuration writes `-ël` (`ñaarël`), and Ewe ordinals with
@@ -70,24 +59,13 @@ classification.
   `etsõ`. The configured zero cardinals (`sero`, `zero`) also differ from the attested `tus`/`dara`
   and `nadeke`. Needs a normative orthography source for each language before changing them.
 
-- **NTS-18 — Italian compound ordinals from one million, and ordinals from a biliardo.** Opened
-  by NTS-17, which closed the round multiples of milione, miliardo and bilione (`<OrdinalScale>`).
-  `ItalianOrdinalLanguageSpecifics` still rejects:
-  - the non-round values from a million (1000001, 1001000, 2000001, 1000000001 …): no consulted
-    source gives a compound ordinal there (analytic `milionesimo primo`? soldered? synthetic forms
-    risk the partitive reading, as `centomiladuesimo` does);
-  - every value from a biliardo (10^15), round or not: Treccani has no entry for `biliardesimo` or
-    `trilionesimo`, so the productivity of the scale ordinal is not established there.
-  Once sourced, the engine needs only configuration (`<OrdinalComposition>` ranges, a wider
-  `<OrdinalScale scales>`).
-
 - **NTS-09 — `Trigger` elements are not inherited through `baseOn`.** `XmlSerializer` materializes
   an absent `<Trigger>` list as an empty list, so `MergeLanguageDefinition`'s
   `overriding.Triggers ?? inherited.Triggers` never falls back to the base. No built-in configuration
   uses triggers today; the README and XSD document the current behaviour. Fix by treating an empty
   list as absent (as `Cultures` already does) together with a regression test.
 
-NTS-01 through NTS-05, NTS-10 through NTS-14 and NTS-17 are closed:
+NTS-01 through NTS-05, NTS-10 through NTS-15, NTS-17 and NTS-18 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -109,6 +87,9 @@ NTS-01 through NTS-05, NTS-10 through NTS-14 and NTS-17 are closed:
   and ordinal-only replacements: `DONE-2026-10-06(1).md`.
 - NTS-17 (Italian round million-scale ordinals) with the `<OrdinalScale>` and `<OrdinalComposition>`
   primitives, and the attested part of NTS-15 (1010, 100001–100009): `DONE-2026-10-06(2).md`.
+- NTS-15 (Italian non-round thousands, 1110–1910) and NTS-18 (Italian ordinals from a biliardo,
+  non-round values from a million): round biliardo/trilione ordinals implemented, the unsourced
+  families closed as deliberate fail-closed limitations: `DONE-2026-10-07.md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) are deliberately out of scope — the

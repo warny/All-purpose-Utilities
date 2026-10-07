@@ -192,8 +192,8 @@
 		  matching ending wins, so declaration order is irrelevant. The feminine variant only changes
 		  the suffix: the stem rules are shared.
 		  ItalianOrdinalLanguageSpecifics keeps zero, 1110-1910 and the non-round thousands above 1999
-		  outside 100001-100009 (NTS-15), the non-round values from a million and every value from a
-		  biliardo (NTS-18) fail-closed.
+		  outside 100001-100009 and the non-round values from a million fail-closed: deliberate
+		  linguistic limitations, no consulted source establishes a canonical form (NTS-15, NTS-18 closed).
 		-->
 		<LanguageSpecifics>ItalianOrdinalLanguageSpecifics</LanguageSpecifics>
 		<Ordinals suffix="esimo">
@@ -219,7 +219,7 @@
 			<!--
 			  After a hundred, dieci keeps its lexical ordinal decimo (Crusca, Vocabolario 5th ed.,
 			  s.v. "centesimo": "Centodecimo, Centundicesimo, Centododicesimo ec."), not the unattested
-			  "centodiecesimo". Whole soldered words, so exact word rules. 1110-1910 fail closed (NTS-15).
+			  "centodiecesimo". Whole soldered words, so exact word rules. 1110-1910 deliberately fail closed.
 			-->
 			<Ordinal from="centodieci"><Variant type="gender" forms="centodecimo,centodecima" /></Ordinal>
 			<Ordinal from="duecentodieci"><Variant type="gender" forms="duecentodecimo,duecentodecima" /></Ordinal>
@@ -239,10 +239,17 @@
 			  one is soldered to the noun, as for the thousands (Treccani "ordinale": "duemillesimo",
 			  "diecimillesimo"), and an inner tre loses its accent as in "ventitremila"/"ventitremillesimo"
 			  (ordinal-only replacements; the cardinal "ventitré milioni" is unchanged). The stems and the
-			  gender suffix are the shared ones (milione → milion + esimo/esima). Scales 2-4 only
-			  (milione, miliardo, bilione): biliardo and trilione ordinals are unsourced (TODO NTS-18).
+			  gender suffix are the shared ones (milione → milion + esimo/esima).
+			  NTS-18. Scales 5-6 (biliardo, trilione): "trilionesimo" is attested as an ordinal (Nuovo De
+			  Mauro, GDLI: agg. num. ord.); "biliardesimo" is lexically attested as the submultiple 10^-15
+			  (ADN 2017, MIT Italian translation, §1.2.2.1, which also lists "Trilionesimo" 10^-18) and its
+			  ordinal use follows the general Treccani rule (cardinal stem + -esimo, as miliardo → miliardesimo). Multipliers above one ("duebiliardesimo", "duetrilionesimo")
+			  follow the same productive rule as "duemillesimo"/"duemilionesimo", not individual attestations.
+			  The "trébili" replacement also covers biliardo ("ventitrébiliardesimo" → "ventitrebiliardesimo");
+			  no trilione multiplier above 9 fits a long, so no "trétri" junction can arise. Non-round values
+			  from a million are deliberately rejected by ItalianOrdinalLanguageSpecifics.
 			-->
-			<OrdinalScale scales="2..4" multiplierSeparator="" />
+			<OrdinalScale scales="2..6" multiplierSeparator="" />
 			<Replacement oldValue="trémili" newValue="tremili" scope="Anywhere" />
 			<Replacement oldValue="trébili" newValue="trebili" scope="Anywhere" />
 			<!--
@@ -253,7 +260,9 @@
 			  synthetic form). Treccani, vocabolario "centomillesimo": "i successivi sono:
 			  centomillesimoprimo, centomillesimosecondo, centomillesimoterzo, ecc.", soldered, the
 			  synthetic "un centomiladuesimo" being a partitive. Both parts take the requested gender.
-			  Other non-round thousands stay fail-closed (TODO NTS-15).
+			  Other non-round thousands deliberately fail closed: among the consulted Treccani material the
+			  juxtaposition is explicitly exemplified only for millesimo and centomillesimo, and no consulted
+			  source establishes a split or a spelling elsewhere.
 			-->
 			<OrdinalComposition for="1010" divisor="1000" separator=" " />
 			<OrdinalComposition for="100001..100009" divisor="1000" separator="" />

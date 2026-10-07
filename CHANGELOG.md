@@ -42,6 +42,16 @@ All notable changes to this project will be documented in this file.
   absent edges, intra-group connector overlap) and compiled into immutable lookup tables.
 - Added `ItalianOrdinalLanguageSpecifics`, restricting Italian ordinals to verified forms.
 
+### Fixed — `omy.Utils.NumberToString` (NTS-15, NTS-18 closed)
+- Italian ordinals of the round multiples of biliardo and trilione are supported (`biliardesimo`,
+  `duebiliardesimo`, `trilionesimo`, `duetrilionesimo`, up to `novetrilionesimo` = 9 × 10^18,
+  feminine `biliardesima`) instead of failing closed. Configuration only (`<OrdinalScale
+  scales="2..6">`); the domain guard now detects the highest scale from a static table without
+  overflow up to `long.MaxValue`.
+- Italian 1110–1910, the other non-round thousands above 1999 and the non-round values from a
+  million still throw `NotSupportedException`, now as a documented deliberate linguistic limitation
+  (no canonical form established by the consulted sources) rather than an open item.
+
 ### Fixed — `omy.Utils.NumberToString` (NTS-15, NTS-17)
 - Italian ordinals of the round multiples of milione, miliardo and bilione are supported
   (`milionesimo`, `duemilionesimo`, `diecimilionesimo`, `miliardesimo`, `bilionesimo`, feminine

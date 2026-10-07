@@ -324,7 +324,7 @@ Scenario: Negative compound ordinal keeps the existing sign policy
 # juxtapositions, "centomillesimoprimo, centomillesimosecondo, centomillesimoterzo, ecc.", and warns
 # that the synthetic "un centomiladuesimo" is a partitive (a fraction), not the ordinal. Only these
 # attested families are composed (OrdinalComposition on the numeric split, never on the cardinal
-# text); 1110-1910 and the other non-round thousands stay rejected (TODO NTS-15).
+# text); 1110-1910 and the other non-round thousands are deliberately rejected (see below).
 Scenario Outline: Analytic compound ordinals after thousands
     Given I use the variants "<variants>"
     When I convert the ordinal number <number>
@@ -348,8 +348,7 @@ Examples:
 # web" and "il milionesimo dominio". A multiplier above one is the cardinal soldered to the ordinal
 # of the noun, as for the thousands ("duemillesimo", "diecimillesimo", Treccani "ordinale"): the
 # project writes "diecimilionesimo", transparent on the cardinal dieci (Treccani also accepts
-# "decimilionesimo"). Like "ventitremila"/"ventitremillesimo", an inner tre loses its accent. The
-# biliardo and trilione ordinals have no consulted source and stay rejected (TODO NTS-18).
+# "decimilionesimo"). Like "ventitremila"/"ventitremillesimo", an inner tre loses its accent.
 Scenario Outline: Round million-scale ordinals
     Given I use the variants "<variants>"
     When I convert the ordinal number <number>
@@ -374,12 +373,47 @@ Examples:
     | 10000000 | gender=femminile | diecimilionesima |
     | 1000000000 | gender=femminile | miliardesima |
 
-# Values outside the validated domain fail closed instead of being produced by a mechanical suffix.
+# NTS-18. "trilionesimo" is attested as an ordinal: Nuovo De Mauro (agg. num. ord., "che in una serie
+# ordinata occupa il posto corrispondente al trilione"), GDLI. "biliardesimo" is lexically attested as
+# the submultiple 10^-15 (ADN 2017, Italian translation by the Ministero delle Infrastrutture e dei
+# Trasporti, §1.2.2.1, beside "Trilionesimo" 10^-18); that table gives the fractional reading, and the
+# ordinal use follows the general Treccani rule (cardinal stem + -esimo, miliardo → miliardesimo). The forms with a multiplier above
+# one ("duebiliardesimo", "duetrilionesimo") are not individually attested: they result from the same
+# productive rule already retained for "duemillesimo", "duemilionesimo", "duemiliardesimo" and
+# "duebilionesimo". Every round multiple of trilione that fits a long is at most 9 × 10^18, so the
+# multiplier is a single digit and tre is unaccented ("tretrilionesimo"); compounds of uno keep the
+# invariable "ventuno" of the plural nouns ("ventuno biliardi" → "ventunobiliardesimo").
+Scenario Outline: Round biliardo and trilione ordinals
+    Given I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 1000000000000000 | | biliardesimo |
+    | 2000000000000000 | | duebiliardesimo |
+    | 3000000000000000 | | trebiliardesimo |
+    | 21000000000000000 | | ventunobiliardesimo |
+    | 23000000000000000 | | ventitrebiliardesimo |
+    | 999000000000000000 | | novecentonovantanovebiliardesimo |
+    | 1000000000000000000 | | trilionesimo |
+    | 2000000000000000000 | | duetrilionesimo |
+    | 3000000000000000000 | | tretrilionesimo |
+    | 9000000000000000000 | | novetrilionesimo |
+    | 1000000000000000 | gender=femminile | biliardesima |
+    | 2000000000000000 | gender=femminile | duebiliardesima |
+    | 1000000000000000000 | gender=femminile | trilionesima |
+    | 2000000000000000000 | gender=femminile | duetrilionesima |
+
+# Values outside the supported domain fail closed instead of being produced by a mechanical suffix.
+# These are deliberate linguistic limitations, not pending technical work: the engine could compose
+# them (<OrdinalComposition>), but no consulted source establishes a canonical form or spelling.
 # Zero: NTS-12 decision unchanged (Treccani attests "zeresimo" only in special, mathematical uses).
-# 1110-1910 (two possible analytic splits, "millesimo centodecimo" or "millecentesimo decimo", none
-# attested) and the non-round thousands above 1999 outside 100001-100009 (no canonical form
-# established, the synthetic one being partitive per Treccani): TODO NTS-15. Non-round values from a
-# million, and round values from a biliardo (10^15): TODO NTS-18.
+# 1110-1910: two analytic splits are possible ("millesimo centodecimo" or "millecentesimo decimo")
+# and no source selects one. The non-round thousands above 1999 outside 100001-100009: among the
+# consulted Treccani material the juxtaposition is explicitly exemplified only for millesimo and
+# centomillesimo, no consulted source gives "duemillesimo primo", and the synthetic form is partitive. The non-round values from a million: the only proposals
+# ("milionesimoprimo", "unmilioneunesimo") are self-declared virtual extrapolations.
 Scenario Outline: Ordinals outside the validated domain are rejected
     Given I use the variants "<variants>"
     When I attempt to convert the ordinal number <number>
@@ -407,9 +441,14 @@ Examples:
     | 2000001 | |
     | 1000000001 | |
     | 2000001 | gender=femminile |
-    | 1000000000000000 | |
-    | 2000000000000000 | |
-    | 1000000000000000000 | |
+    | 1000000000001000 | |
+    | 1000000000000001 | |
+    | 2000000000000001 | gender=femminile |
+    | 1000000000000000001 | |
+    | 1001000000000000000 | |
+    | 9000000000000000001 | |
+    | 9223372036854775807 | |
+    | 9223372036854775807 | gender=femminile |
 
 Scenario Outline: Decimal numbers
     When I convert the decimal number <number>
