@@ -786,7 +786,7 @@ namespace Utils.NumberToString
         private static LanguageDefinition ToDefinition(LanguageXmlModel model) => new()
         {
             Groups = SelectDefaultGroups(model),
-            ScaleScopedGroups = model.Groups?.Where(g => g?.OnScale != null).ToList() is { Count: > 0 } scoped ? scoped : null,
+            ScaleScopedGroups = model.GroupsElements?.Where(g => g?.OnScale != null).ToList() is { Count: > 0 } scoped ? scoped : null,
             MultiplierPosition = model.MultiplierPosition,
             Cultures = model.Cultures is { Count: > 0 }
                 ? model.Cultures
@@ -830,7 +830,7 @@ namespace Utils.NumberToString
         /// <exception cref="InvalidOperationException">Several default <c>&lt;Groups&gt;</c> are declared.</exception>
         private static GroupsListType? SelectDefaultGroups(LanguageXmlModel model)
         {
-            var defaults = model.Groups?.Where(g => g != null && g.OnScale == null).ToList() ?? [];
+            var defaults = model.GroupsElements?.Where(g => g != null && g.OnScale == null).ToList() ?? [];
             if (defaults.Count > 1)
                 throw new InvalidOperationException(
                     $"Language configuration error ({string.Join(", ", model.Cultures ?? [])}): more than one <Groups> without onScale; " +

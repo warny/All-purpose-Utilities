@@ -390,6 +390,34 @@ public class NumberToStringScaleScopedGroupsTests
         Assert.AreEqual(ScaleMultiplierPosition.AfterScale, converter.ScaleMultiplierPosition);
     }
 
+    /// <summary>
+    /// The public XML model keeps the historical <c>GroupsListType? Groups</c> member (default tables) while
+    /// every <c>&lt;Groups&gt;</c> element is read into <c>GroupsElements</c>; setting <c>Groups</c> replaces
+    /// the default element and keeps the scoped ones.
+    /// </summary>
+    [TestMethod]
+    public void XmlModel_KeepsHistoricalGroupsMember()
+    {
+        var property = typeof(LanguageXmlModel).GetProperty(nameof(LanguageXmlModel.Groups))!;
+        Assert.AreEqual(typeof(GroupsListType), property.PropertyType);
+        Assert.IsTrue(property.CanRead && property.CanWrite);
+
+        var scoped = new GroupsListType { OnScale = "1" };
+        var first = new GroupsListType();
+        var model = new LanguageXmlModel { GroupsElements = [scoped, first] };
+        Assert.AreSame(first, model.Groups);
+
+        var replacement = new GroupsListType();
+        model.Groups = replacement;
+        Assert.AreSame(replacement, model.Groups);
+        CollectionAssert.AreEqual(new[] { replacement, scoped }, model.GroupsElements);
+
+        model.Groups = null;
+        Assert.IsNull(model.Groups);
+        CollectionAssert.AreEqual(new[] { scoped }, model.GroupsElements);
+        Assert.IsNull(new LanguageXmlModel().Groups);
+    }
+
     /// <summary>XML: the historical single Groups without the new attributes is unchanged.</summary>
     [TestMethod]
     public void Xml_HistoricalGroupsUnchanged()

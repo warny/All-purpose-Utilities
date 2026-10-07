@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Xml.Serialization;
 
 namespace Utils.NumberToString
@@ -103,11 +104,29 @@ namespace Utils.NumberToString
         public string? MaxNumber { get; set; }
 
         /// <summary>
-        /// Gets or sets every declared <c>&lt;Groups&gt;</c> element: the default tables (no
-        /// <c>onScale</c>) and the scale-scoped ones.
+        /// Gets or sets the default group definitions: the first <c>&lt;Groups&gt;</c> element without
+        /// <c>onScale</c> in <see cref="GroupsElements"/>. Kept with its historical signature; setting
+        /// it replaces the default elements of <see cref="GroupsElements"/> and keeps the scoped ones.
+        /// </summary>
+        [XmlIgnore]
+        public GroupsListType? Groups
+        {
+            get => GroupsElements?.FirstOrDefault(g => g != null && g.OnScale == null);
+            set
+            {
+                var elements = GroupsElements ??= [];
+                elements.RemoveAll(g => g != null && g.OnScale == null);
+                if (value != null) elements.Insert(0, value);
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets every declared <c>&lt;Groups&gt;</c> element as read by
+        /// <see cref="System.Xml.Serialization.XmlSerializer"/>: the default tables (no <c>onScale</c>)
+        /// and the scale-scoped ones, in document order.
         /// </summary>
         [XmlElement(ElementName = "Groups")]
-        public List<GroupsListType>? Groups { get; set; }
+        public List<GroupsListType>? GroupsElements { get; set; }
 
         /// <summary>Gets or sets the <c>multiplierPosition</c> attribute.</summary>
         [XmlAttribute("multiplierPosition")]
