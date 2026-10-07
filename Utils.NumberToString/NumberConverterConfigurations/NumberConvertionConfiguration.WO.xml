@@ -1,10 +1,23 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <!--
+      NTS-19 orthography. Spelling: decree 2005-992 (one accent on a closed long vowel: téeméer,
+      juróom; the connective -u/-i attached to the completed term, Art. 13: "ñaari tomb"). The words
+      of a numeral are separated by spaces, as in every consulted grammar (Kosogorova 2023, Robert
+      2021, Gaye 1980, Wiktionary); the decree hyphenates only lexicalized compounds (Art. 21).
+      The multiplier of téeméer and junni bears the connective -i on its last element ("ñaari
+      téeméer", "juróom benni téeméer", "ñaari junni", "fukki junni", "téeméeri junni"); the tens do
+      not ("ñaar fukk"). "ak" joins every lower part ("téeméer ak benn", "junni ak benn").
+      Zero is "tus" (Boston University 200 Word Project, Wiktionary, Janga Wolof).
+      maxNumber stays 999999: the million (milyon / milyoŋ / fukki téeméeri junni) is not audited.
+    -->
     <Language
         groupSize="3"
         separator=" "
         groupSeparator=""
-        zero="sero"
+        groupConnector="ak"
+        groupConnectorThreshold="1000"
+        zero="tus"
         minus="minus *"
         decimalSeparator="pojint"
         fractionSeparator="ci"
@@ -20,34 +33,34 @@
                 <Digit digit="3" string="ñett" />
                 <Digit digit="4" string="ñent" />
                 <Digit digit="5" string="juróom" />
-                <Digit digit="6" string="juróom-benn" />
-                <Digit digit="7" string="juróom-ñaar" />
-                <Digit digit="8" string="juróom-ñett" />
-                <Digit digit="9" string="juróom-ñent" />
+                <Digit digit="6" string="juróom benn" />
+                <Digit digit="7" string="juróom ñaar" />
+                <Digit digit="8" string="juróom ñett" />
+                <Digit digit="9" string="juróom ñent" />
             </Group>
             <Group level="2">
                 <Digit digit="0" string="" buildString="*" />
                 <Digit digit="1" string="fukk" buildString="fukk ak *" />
-                <Digit digit="2" string="ñaar-fukk" buildString="ñaar-fukk ak *" />
-                <Digit digit="3" string="ñett-fukk" buildString="ñett-fukk ak *" />
-                <Digit digit="4" string="ñent-fukk" buildString="ñent-fukk ak *" />
-                <Digit digit="5" string="juróom-fukk" buildString="juróom-fukk ak *" />
-                <Digit digit="6" string="juróom-benn-fukk" buildString="juróom-benn-fukk ak *" />
-                <Digit digit="7" string="juróom-ñaar-fukk" buildString="juróom-ñaar-fukk ak *" />
-                <Digit digit="8" string="juróom-ñett-fukk" buildString="juróom-ñett-fukk ak *" />
-                <Digit digit="9" string="juróom-ñent-fukk" buildString="juróom-ñent-fukk ak *" />
+                <Digit digit="2" string="ñaar fukk" buildString="ñaar fukk ak *" />
+                <Digit digit="3" string="ñett fukk" buildString="ñett fukk ak *" />
+                <Digit digit="4" string="ñent fukk" buildString="ñent fukk ak *" />
+                <Digit digit="5" string="juróom fukk" buildString="juróom fukk ak *" />
+                <Digit digit="6" string="juróom benn fukk" buildString="juróom benn fukk ak *" />
+                <Digit digit="7" string="juróom ñaar fukk" buildString="juróom ñaar fukk ak *" />
+                <Digit digit="8" string="juróom ñett fukk" buildString="juróom ñett fukk ak *" />
+                <Digit digit="9" string="juróom ñent fukk" buildString="juróom ñent fukk ak *" />
             </Group>
             <Group level="3">
                 <Digit digit="0" string="" buildString="*" />
                 <Digit digit="1" string="téeméer" buildString="téeméer ak *" />
-                <Digit digit="2" string="ñaar téeméer" buildString="ñaar téeméer ak *" />
-                <Digit digit="3" string="ñett téeméer" buildString="ñett téeméer ak *" />
-                <Digit digit="4" string="ñent téeméer" buildString="ñent téeméer ak *" />
-                <Digit digit="5" string="juróom téeméer" buildString="juróom téeméer ak *" />
-                <Digit digit="6" string="juróom-benn téeméer" buildString="juróom-benn téeméer ak *" />
-                <Digit digit="7" string="juróom-ñaar téeméer" buildString="juróom-ñaar téeméer ak *" />
-                <Digit digit="8" string="juróom-ñett téeméer" buildString="juróom-ñett téeméer ak *" />
-                <Digit digit="9" string="juróom-ñent téeméer" buildString="juróom-ñent téeméer ak *" />
+                <Digit digit="2" string="ñaari téeméer" buildString="ñaari téeméer ak *" />
+                <Digit digit="3" string="ñetti téeméer" buildString="ñetti téeméer ak *" />
+                <Digit digit="4" string="ñenti téeméer" buildString="ñenti téeméer ak *" />
+                <Digit digit="5" string="juróomi téeméer" buildString="juróomi téeméer ak *" />
+                <Digit digit="6" string="juróom benni téeméer" buildString="juróom benni téeméer ak *" />
+                <Digit digit="7" string="juróom ñaari téeméer" buildString="juróom ñaari téeméer ak *" />
+                <Digit digit="8" string="juróom ñetti téeméer" buildString="juróom ñetti téeméer ak *" />
+                <Digit digit="9" string="juróom ñenti téeméer" buildString="juróom ñenti téeméer ak *" />
             </Group>
         </Groups>
         <NumberScale firstLetterUpperCase="false">
@@ -59,26 +72,38 @@
                 <Suffix>milyon</Suffix>
             </Suffixes>
         </NumberScale>
+        <Replacements>
+            <!-- 1000 is junni alone -->
+            <Replacement oldValue="benn junni" newValue="junni" onScale="1" onValue="1" />
+            <!-- The connective -i on the last element of any other multiplier of junni -->
+            <Replacement oldValue="benn junni" newValue="benni junni" scope="EndsWith" onScale="1" onValue="2..999" />
+            <Replacement oldValue="ñaar junni" newValue="ñaari junni" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="ñett junni" newValue="ñetti junni" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="ñent junni" newValue="ñenti junni" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="juróom junni" newValue="juróomi junni" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="fukk junni" newValue="fukki junni" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="téeméer junni" newValue="téeméeri junni" scope="EndsWith" onScale="1" />
+        </Replacements>
         <Exceptions>
             <Number value="11" string="fukk ak benn" />
             <Number value="12" string="fukk ak ñaar" />
             <Number value="13" string="fukk ak ñett" />
             <Number value="14" string="fukk ak ñent" />
             <Number value="15" string="fukk ak juróom" />
-            <Number value="16" string="fukk ak juróom-benn" />
-            <Number value="17" string="fukk ak juróom-ñaar" />
-            <Number value="18" string="fukk ak juróom-ñett" />
-            <Number value="19" string="fukk ak juróom-ñent" />
+            <Number value="16" string="fukk ak juróom benn" />
+            <Number value="17" string="fukk ak juróom ñaar" />
+            <Number value="18" string="fukk ak juróom ñett" />
+            <Number value="19" string="fukk ak juróom ñent" />
         </Exceptions>
         <!--
-          NTS-16: ordinals add -eel to the last element of the cardinal (Kosogorova 2023, §4.2:
-          "juróom ñetteel", "fukk ak ñaareel", "ñaar fukk ak ñenteel"; Robert 2021: "juróóm ñaar-eel").
-          Open long vowel, spelled "ee" by decree 2005-992 (not "-éél", not "-ël").
-          The guard rejects zero (NTS-14: no attested ordinal of zero) and every value from a thousand,
-          whose cardinal base is not settled (NTS-19).
+          Ordinals (NTS-16, spelling NTS-19): the suffix goes on the last element of the cardinal
+          (Kosogorova 2023 §4.2: "juróom ñetteel", "fukk ak ñaareel"; Robert 2021). Spelling -éel:
+          decree 2005-992 Art. 13 "fukkéelu garab gi", a suffix's spelling being invariable (Art. 20).
+          The guard rejects zero (no attested ordinal of zero) and the round thousands, whose last
+          element junni has conflicting forms (Omniglot "junneel", Janga Wolof "junniéél").
         -->
         <LanguageSpecifics>WolofOrdinalLanguageSpecifics</LanguageSpecifics>
-        <Ordinals suffix="eel">
+        <Ordinals suffix="éel">
             <!-- 1: suppletive relative form of jëkk "to be first", cited in class B (Ngom 2003: "xale b-u njëkk") -->
             <OrdinalException value="1" string="bu njëkk" />
         </Ordinals>

@@ -1,6 +1,7 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-07 after closing NTS-16 (Wolof ordinals corrected, Ewe ordinals withdrawn; opened NTS-19 and NTS-20)
+Re-audited on 2026-10-07 after closing NTS-19 (Wolof cardinals and ordinals to 999 999; opened NTS-21),
+after closing NTS-16 (Wolof ordinals corrected, Ewe ordinals withdrawn; opened NTS-19 and NTS-20)
 and after closing NTS-15 and NTS-18 (Italian ordinals complete: every
 category is either supported on sourced evidence or a deliberate fail-closed limitation); on 2026-10-06 after closing NTS-17 and narrowing NTS-15 (which opened NTS-18), after
 closing NTS-14 (which opened NTS-16 and NTS-17) and NTS-13 (which opened NTS-15); on 2026-10-03 after closing
@@ -41,8 +42,8 @@ classification.
     1110–1910) and round thousands (NTS-13: Treccani grammar and vocabolario, DICO, Crusca), 1010
     and 100001–100009 (NTS-15: Treccani "ordinale", "centomillesimo"), the round multiples of
     milione, miliardo and bilione (NTS-17: Treccani entries, CNR), and of biliardo and trilione
-    (NTS-18: MIT/ADN table, Nuovo De Mauro, GDLI); WO ordinals 1–999 (NTS-16: Kosogorova 2023,
-    Robert 2021; values above 24 apply the stated rule). The remaining Italian values (1110–1910, other
+    (NTS-18: MIT/ADN table, Nuovo De Mauro, GDLI); WO cardinals 0–999 999 and ordinals (NTS-16, NTS-19: decree
+    2005-992, Kosogorova 2023, Robert 2021, Gaye 1980; large ordinals apply the stated rule). The remaining Italian values (1110–1910, other
     non-round thousands, non-round values from a million) are deliberate linguistic limitations,
     not open work: see `DONE-2026-10-07.md`.
     NTS-08 closes when every capability above is validated or explicitly deferred; a corrected
@@ -53,20 +54,15 @@ classification.
       `nounClass` dimension and a documented class inventory.
     - EE ClockTime: no sourced minute convention.
     - WO ClockTime: competing native and French-derived conventions, no single sourced system.
-    - EE ordinals: withdrawn until the cardinal rebuild (NTS-20); WO ordinals from 1000: rejected
-      until the thousands cardinal is settled (NTS-19).
+    - EE ordinals: withdrawn until the cardinal rebuild (NTS-20).
+    - WO ordinals of zero and of the round thousands (last element `junni`): no attested ordinal of
+      zero, conflicting forms for `junni` (`junneel`/`junniéél`); deliberate limitations.
 
-- **NTS-19 — Wolof cardinals: orthography and thousands.** Found by NTS-16. The configuration
-  diverges from Kosogorova 2023 and Robert 2021 (read in full) on: no `ak` after `junni`
-  (`benn junni benn`, `ñaar junni ñaar-fukk ak benn`; sources `juuni ak juróom ñaar`, `ñaar-i junni
-  ak juróóm ñett fukk`); `benn junni` for 1000 (sources: `junni`/`juuni` alone); hyphens where the
-  sources write a space (`juróom-benn`, `ñaar-fukk`); and the zero `sero` (Janga Wolof `tus`, `dara`;
-  a blog citing Wikipedia `tus`, `neen`; Omniglot `barra`: no convergent form). Sources also disagree on the `-i`
-  linker of the multiplier (`ñaari téeméer`, Robert/Omniglot; `ñaar tééméér`, Kosogorova), so that
-  part may be a variant. Check decree 2005-992 (word separation) before choosing. When settled,
-  lift the Wolof ordinal guard from 1000 (`junni` + `-eel` = `junneel` is exemplified only by
-  Omniglot).
-
+- **NTS-21 — Wolof million-scale cardinals.** Found by NTS-19, which kept `maxNumber="999999"`. The
+  configuration's unused scale suffix `milyon` is unaudited: Boston University's 200 Word Project
+  gives a million as `fukki téeméeri junni` (the regular 10 × 100 × 1000 with the connective) or
+  `benn milyoŋ`, with the velar nasal. Decide the canonical form (decree 2005-992 alphabet for `ŋ`,
+  a grammar or dictionary for the loan) before opening the domain above 999 999.
 - **NTS-20 — Ewe cardinal system rebuild.** Found by NTS-16. The configured cardinals diverge from
   the Ewe Basic Course (Indiana University 1968) and Omniglot/Wiktionary in almost every family:
   units 1, 3, 5, 7, 9 (`ɖeka`, `etɔ̃`, `atɔ̃`, `adrɛ`, `asieke`), teens (`wuiɖeka` … `wuiasieke`), tens
@@ -83,7 +79,7 @@ classification.
   uses triggers today; the README and XSD document the current behaviour. Fix by treating an empty
   list as absent (as `Cultures` already does) together with a regression test.
 
-NTS-01 through NTS-05 and NTS-10 through NTS-18 are closed:
+NTS-01 through NTS-05, NTS-10 through NTS-18 and NTS-19 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -110,6 +106,8 @@ NTS-01 through NTS-05 and NTS-10 through NTS-18 are closed:
   families closed as deliberate fail-closed limitations: `DONE-2026-10-07.md`.
 - NTS-16 (Wolof and Ewe ordinals): Wolof `-eel` on 1–999, Ewe ordinals withdrawn pending NTS-20:
   `DONE-2026-10-07(1).md`.
+- NTS-19 (Wolof cardinals: orthography and thousands; ordinals from 1000, spelling `-éel`):
+  `DONE-2026-10-07(2).md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) are deliberately out of scope — the

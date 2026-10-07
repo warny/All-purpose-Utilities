@@ -58,8 +58,50 @@ the remaining validation and its criterion are tracked per capability in `TODO.m
 | SW | SW, SW-KE, SW-TZ | SCALE-SHORT | **Deferred** | — | Yes | 15 / 12, `hourOffset=-6` | none | **Consulted**: Five Colleges LangMedia, “Swahili – Tanzania – Telling Time”; SpokenSwahili, “Telling the time in Swahili” | No day-part words (asubuhi, mchana, jioni, usiku) |
 | ZU | ZU | none | **Deferred** | — | Yes | 15 / 12 | none | **Consulted**: Unisa, *Learn online Zulu*, Theme 4 (`Yihora lesihlanu`, `Ligamenxe elesihlanu`, `... lishayile elesihlanu`, `... ngaphambi kwelesihlanu`) — single source | Hour forms are literal ClockTime patterns; they do not enable ordinals |
 | EE | EE | none | **Deferred** (sourced `-lia` needs the cardinal rebuild, NTS-16 → NTS-20) | — | **Deferred** | — | none | No source found | Cardinals not yet sourced (NTS-20) |
-| WO | WO | none | Yes, 1–999 (`-eel`, NTS-16) | Declarative + `WolofOrdinalLanguageSpecifics` | **Deferred** | — | none | No consistent source found | No ordinal of zero (NTS-14) nor from 1000 (NTS-19) |
+| WO | WO | none | Yes (`-éel`, NTS-16, NTS-19) | Declarative + `WolofOrdinalLanguageSpecifics` | **Deferred** | — | none | No consistent source found | Cardinals 0–999 999; no ordinal of zero nor of the round thousands |
 
+## NTS-19 — Wolof cardinals: orthography and thousands (2026-10-07)
+
+Revises the Wolof part of NTS-16 (next section) for the ordinal spelling and the domain.
+
+- **Consulted, full text**: decree 2005-992 of 21 October 2005 on the orthography and word separation
+  of Wolof (copy of *Journal officiel* article 4802 at labo-styloculture.com; jo.gouv.sn unreachable).
+  Art. 10: a closed long vowel takes one accent (`néeg`). Art. 12: a determiner is written apart from
+  its noun. Art. 13: "Dans un syntagme déterminatif, la marque -u/-i du rapport complétant/complété est
+  rattachée au terme complété" (`néegu ñax`, `ay saami kaani`, `fukkéelu garab gi` "le dixième
+  arbre"). Art. 20: suffixes keep an invariable spelling despite vowel harmony. Art. 21: the elements
+  of a compound word are hyphenated (`gaynde-géej` "requin", `mbaam-àll`, `xam-xam`). Art. 23: `ñaari
+  tomb` "deux points". The decree has no section on numerals.
+- **Consulted, full text**: P. A. Gaye, *Practical Course in Wolof: An Audio-Aural Approach*, Peace
+  Corps, 1980 (ERIC ED226616), pp. 66–67: 1–100 (`juróom benn`, `fukk ag benn`, `ñaar fukk`,
+  `fanweer` 30, `juróom benn fukk` 60, `téeméer` 100) and money: "Notice also the -i- between the
+  number and dërëm. This -i- is a linker and indicates a relationship between the number and the
+  object counted. This is true not only for money but for counting any object. With ñaar the -i- is
+  optional"; `fukk-i dërëm`, `juróom-i dërëm`, `juróom benn-i dërëm`. S. Voisin, "Possession adnominale
+  dans différentes variétés de wolof", *Afrikanistik-Aegyptologie-Online* 2021, quoting Fal (1999:129)
+  `ñaari potu meew` "deux boîtes de lait". Robert 2021 §3.2.7 and Kosogorova 2023 §4.1 (see NTS-16).
+- **Also consulted**: Boston University, The 200 Word Project, "Woññi (Numbers)" (`Tus` zero, `Ñeent`,
+  `Juróóm Benn`, `Tééméér`, `Junni`, million `Fukki Téémééri Junni / Benn Milyoŋ`); Wiktionary, Wolof
+  number list (`tus`, `ñeent`, `juróom benn`, `fukk ak benn`, `ñaar fukk`, `téeméer`, `junni`); Janga
+  Wolof (`tus / dara`, `ñaari téeméer`, `junni`, `junni ak benn`, `ñaari junni`, `fukki junni`,
+  `téeméeri junni`; ordinals `-éél`, `junniéél`); Omniglot (`ñaari temeer`, `junneel`).
+- **Decisions** (detail and the thousands matrix in `DONE-2026-10-07(2).md`):
+  - spaces between the words of a numeral (every grammar; Art. 21 concerns lexicalized compounds);
+  - the connective `-i` on the last element of the multiplier of `téeméer` and `junni`, attached
+    (Art. 13): `ñaari téeméer`, `juróom benni téeméer`, `ñaari junni`, `fukki junni`, `téeméeri junni`;
+    not on the tens (`ñaar fukk`); Kosogorova's `ñaar tééméér` is the variant Gaye calls optional
+    with `ñaar`, accepted but not produced;
+  - `junni` alone for 1000; `ak` before the part below the thousands (`junni ak benn`);
+  - zero `tus` (BU, Wiktionary, Janga): `dara` is "anything/nothing", `sero` unattested;
+  - ordinal suffix `-éel` (Art. 13 `fukkéelu`, Art. 20), replacing NTS-16's `-eel`;
+  - `ñent` kept (Robert, Kosogorova, Gaye), `ñeent` (BU, Wiktionary) accepted, not produced.
+  - `ñett fukk` kept for 30 (Kosogorova); `fanweer` (Robert, Gaye: irregular primary number) accepted, not produced.
+- **Evidence levels**. Attested (structure; the ordinal spelling follows the decree): 0, 1–10, 11–19, the round tens, 100, 101, 111, 234, 1000, 1001, 1007,
+  2000, 2080, 10000, 100000; ordinals 2, 3, 7, 8, 10, 12, 24. Productive (rules stated by
+  the sources, value not exemplified): the other cardinals to 999 999, notably the compound
+  multipliers (`fukk ak benni junni`, `ñaar fukk ak benni junni`), and every other ordinal.
+  Unsupported: the ordinal of zero and of the round thousands (`junneel` vs `junniéél`, unsettled).
+  Not audited: the million (`maxNumber` stays 999 999, NTS-21); ClockTime (deferred).
 ## NTS-16 — Wolof and Ewe ordinals (2026-10-07)
 
 Two different situations. Levels of evidence follow the Italian closure: **attested** (the exact
@@ -67,6 +109,9 @@ form is printed by a consulted source), **productive** (the source states a gene
 form applies it), **unsupported** (`NotSupportedException`).
 
 ### Wolof — corrected (`-eel`, 1–999)
+
+> Superseded in part by NTS-19 (previous section): the decree's full text spells the suffix `-éel`, and
+> the ordinals are supported from 1000 except the round thousands.
 
 - **Consulted, full text read**: M. A. Kosogorova, "Numeral systems of Fula and Wolof: A comparison
   of morphosyntactic characteristics", *Studies in African Languages and Cultures* 57 (2023),
@@ -434,7 +479,8 @@ The task's working matrix was a starting point; wherever a consulted source disa
 - **EE clock**: only `ga eto` / `ga eto kple afa` were known; no source for minutes was found, and a clock limited to :00 and :30 would round aggressively.
 - **WO clock**: native (`waxtu`) and French-derived readings coexist; no single sourced system covering 01:00–01:45 was established.
 - **EE ordinals** (NTS-16): the sourced `-lia` formation waits for the Ewe cardinal rebuild (NTS-20).
-- **WO ordinals from 1000** (NTS-16): wait for the Wolof thousands cardinal (NTS-19).
+- **WO ordinals of the round thousands** (NTS-19): conflicting forms for `junni` + suffix (`junneel`, `junniéél`).
+- **WO million** (NTS-19): not audited, `maxNumber` stays 999 999 (NTS-21).
 
 ## Keeping the ordinal plugins in sync
 
@@ -491,3 +537,9 @@ supported value, round scales, fail-closed range) and by the language `.feature`
 - Omniglot, Wolof numbers: <https://omniglot.com/language/numbers/wolof.htm>; Ewe numbers: <https://www.omniglot.com/language/numbers/ewe.htm>
 - Janga Wolof, numbers: <https://jangawolof.org/understanding-wolof-numbers-counting-in-wolof/>
 - *Ewe Basic Course* (ERIC ED028444): <https://files.eric.ed.gov/fulltext/ED028444.pdf>
+- Decree 2005-992, full text (copy of the *Journal officiel*): <https://labo-styloculture.com/wolofologos/decret-n-2005-992-du-21-octobre-2005/>; original: <http://www.jo.gouv.sn/spip.php?article4802>
+- Gaye, *Practical Course in Wolof* (ERIC ED226616): <https://files.eric.ed.gov/fulltext/ED226616.pdf>
+- Voisin 2021, *Afrikanistik-Aegyptologie-Online*: <https://doi.org/10.18716/ojs/aaeo/2021_3478>
+- Boston University, The 200 Word Project, Wolof numbers: <https://www.bu.edu/200word/wolof/numbers>
+- Wiktionary, Wolof number list: <https://en.wiktionary.org/wiki/Module:number_list/data/wo>
+- Janga Wolof, numbers: <https://jangawolof.org/numbers/>
