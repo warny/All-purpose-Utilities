@@ -61,7 +61,7 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | EU, eu-ES | Basque | ✓ declarative | ✓ 15 min, 12 h | — | local | Clock-case forms only in ClockTime |
 | SW, SW-KE, SW-TZ | Swahili | — deferred (noun-class concord) | ✓ 15 min, 12 h, six-hour offset | — | local | No asubuhi/mchana/jioni/usiku |
 | ZU | Zulu | — deferred (noun-class policy) | ✓ 15 min, 12 h | — | local | Hour forms only in ClockTime |
-| EE | Ewe | ✓ declarative `-lia` on the last element, first `gbãtɔ` + zero guard | — deferred (no sourced minute convention) | — | local | Cardinals validated to 999 999 (scale noun first: `akpe eve` = 2000, `multiplierPosition="afterScale"`); no ordinal of zero; the million is outside the domain |
+| EE | Ewe | ✓ declarative `-lia` on the last element, first `gbãtɔ` + zero guard | — deferred (no sourced minute convention) | — | local | Cardinals validated to 999 999 999 with the static scales `akpe` and `miliɔn` (scale noun first: `akpe eve` = 2000, `miliɔn alafa eve` = 200 000 000, `multiplierPosition="afterScale"`); no ordinal of zero; `biliɔn`/`triliɔn` not opened (NTS-23) |
 | WO | Wolof | ✓ declarative `-éel` + plugin guard | — deferred (competing conventions) | — | local | Cardinals to 999 999; no ordinal of zero nor of the round thousands |
 
 "plugin" means an `IOrdinalLanguageSpecifics` implementation; values it does not implement fail

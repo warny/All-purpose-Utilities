@@ -1,6 +1,7 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-07 after closing NTS-20 (Ewe cardinals rebuilt to 999 999 and `-lia` ordinals
+Re-audited on 2026-10-07 after closing NTS-22 (Ewe millions: static `miliɔn`, domain 0–999 999 999;
+opened NTS-23), after closing NTS-20 (Ewe cardinals rebuilt to 999 999 and `-lia` ordinals
 restored, with the generic `<Groups onScale>` and `multiplierPosition` primitives; opened NTS-22), after
 closing NTS-19 (Wolof cardinals and ordinals to 999 999; opened NTS-21),
 after closing NTS-16 (Wolof ordinals corrected, Ewe ordinals withdrawn; opened NTS-19 and NTS-20)
@@ -67,13 +68,13 @@ classification.
   gives a million as `fukki téeméeri junni` (the regular 10 × 100 × 1000 with the connective) or
   `benn milyoŋ`, with the velar nasal. Decide the canonical form (decree 2005-992 alphabet for `ŋ`,
   a grammar or dictionary for the loan) before opening the domain above 999 999.
-- **NTS-22 — Ewe million-scale cardinals.** Found by NTS-20, which kept `maxNumber="999999"`. The
-  sources disagree on the million: Peace Corps Togo 2010 `akpe akpe` ("thousand thousand"), Omniglot
-  and Wiktionary `miliɔn ɖeka`; the Biblica Ewe Bible writes 1 100 000 `miliɔn ɖeka akpe alafa ɖeka`
-  (1CH 21:5, a single occurrence: noun first, like `akpe`). The configuration's `miliɔn` suffix is
-  unaudited. Decide the form (and check that it follows
-  `multiplierPosition="afterScale"` with the standalone cardinal as multiplier, `miliɔn eve`) before
-  opening the domain above 999 999.
+- **NTS-23 — Ewe scales above the million.** Found by NTS-22, which stops at `maxNumber="999999999"`.
+  `biliɔn`/`triliɔn` occur only in CLDR's long compact patterns (short scale: `biliɔn` 10^9, `triliɔn`
+  10^12), while CLDR's own Ewe spellout rules (rbnf/ee.xml) write 10^9 `miliɔn akpe <n>` and use
+  `biliɔn` for 10^12; the Bible has no value above 200 000 000. Find written attestations (finance,
+  census, JW or government texts) deciding the system before adding any static scale. The same rules
+  use `kpakple` after the hundred-thousands and the millions (`miliɔn ɖeka kpakple ɖeka`), which no
+  other source confirms; if attested, it needs a scale-dependent connector (engine change).
 
 - **NTS-09 — `Trigger` elements are not inherited through `baseOn`.** `XmlSerializer` materializes
   an absent `<Trigger>` list as an empty list, so `MergeLanguageDefinition`'s
@@ -81,7 +82,7 @@ classification.
   uses triggers today; the README and XSD document the current behaviour. Fix by treating an empty
   list as absent (as `Cultures` already does) together with a regression test.
 
-NTS-01 through NTS-05 and NTS-10 through NTS-20 are closed:
+NTS-01 through NTS-05 and NTS-10 through NTS-20, and NTS-22, are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -112,6 +113,8 @@ NTS-01 through NTS-05 and NTS-10 through NTS-20 are closed:
   `DONE-2026-10-07(2).md`.
 - NTS-20 (Ewe cardinals rebuilt, `-lia` ordinals restored; generic `<Groups onScale>` and
   `multiplierPosition` primitives): `DONE-2026-10-07(3).md`.
+- NTS-22 (Ewe millions: static `miliɔn`, domain 0–999 999 999; billions deferred to NTS-23):
+  `DONE-2026-10-07(4).md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) are deliberately out of scope — the

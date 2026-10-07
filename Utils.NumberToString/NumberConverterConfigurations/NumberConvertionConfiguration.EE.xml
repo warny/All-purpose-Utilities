@@ -9,7 +9,10 @@
 	  Orthography: standard letters without tone marks, nasal tilde kept; "one" is ɖekɛ after wui- and vɔ.
 	  The scale noun precedes its multiplier (akpe eve = 2000), whose form is the standalone cardinal: no
 	  <Groups onScale> table is needed. "kple" joins the hundreds to 1-10 (optional before 11-99, not
-	  produced) and the thousands to a lower part below 100. The million stays outside maxNumber.
+	  produced) and the thousands to a lower part below 100.
+	  NTS-22: miliɔn (10^6) is a static scale name used exactly like akpe (Bible: "miliɔn ɖeka akpe alafa
+	  ɖeka" 1 100 000, "miliɔn alafa eve" 200 000 000); "akpe akpe" is accepted, not produced. biliɔn and
+	  triliɔn are not opened (NTS-23): the domain stops at 999 999 999.
 	-->
 	<Language
         groupSize="3"
@@ -24,7 +27,7 @@
         groupConnectorThreshold="100"
         intraGroupConnector="kple"
         intraGroupConnectorThreshold="11"
-        maxNumber="999999"
+        maxNumber="999999999"
         >
 		<Culture>EE</Culture>
 		<Groups>
@@ -70,11 +73,8 @@
 			<StaticNames>
 				<Scale value="0" string="" />
 				<Scale value="1" string="akpe" />
+				<Scale value="2" string="miliɔn" />
 			</StaticNames>
-			<!-- Unaudited and unreachable while maxNumber is 999999 (Peace Corps: "akpe akpe"; Omniglot: "miliɔn ɖeka"). -->
-			<Suffixes>
-				<Suffix>miliɔn</Suffix>
-			</Suffixes>
 		</NumberScale>
 		<Exceptions>
 			<Number value="11" string="wuiɖekɛ" />
