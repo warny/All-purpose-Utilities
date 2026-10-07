@@ -69,16 +69,17 @@ classification.
   gives a million as `fukki téeméeri junni` (the regular 10 × 100 × 1000 with the connective) or
   `benn milyoŋ`, with the velar nasal. Decide the canonical form (decree 2005-992 alphabet for `ŋ`,
   a grammar or dictionary for the loan) before opening the domain above 999 999.
-- **NTS-24 — SCALE-SHORT names diverge from the dictionary short-scale names.** Found by NTS-23. The
-  shared Conway-Wechsler tables give `unidecillion` (10^36, dictionary `undecillion`: units prefix
-  `uni` instead of `un`), `quinquadecillion` (10^48, `quindecillion`), `sedecillion` (10^51,
-  `sexdecillion`), `novendecillion` (10^60, `novemdecillion`), `vingtillion` (10^63, `vigintillion`:
-  tens prefix `vingti` instead of `viginti`), `trigintallion` (10^93, Conway-Wechsler `trigintillion`)
-  and `unillinillion` (10^3003, `millinillion`). Some are Conway-Wechsler's own regularized forms, others
-  table defects. The tables are inherited by EN, ID, SW, TR and EE (`unideciliɔn`, `vingtiliɔn`), so
-  the fix is a multi-language behaviour change: decide the target (strict Conway-Wechsler or
-  dictionary names), then update `SCALE.xml`, `English.feature` and
-  `NumberScaleContractTests.ShortScale_ConwayWechsler_KnownDivergencesFromDictionaryNames` together.
+- **NTS-24 — Correct the Conway-Wechsler prefix-table errors in SCALE-SHORT.** Found by NTS-23. The
+  target is strict Conway-Guy-Wechsler, the convention the project applies (and chose for Ewe). Two
+  table entries are wrong: units prefix `uni` instead of `un` (10^36 `unidecillion` instead of
+  `undecillion`, likewise `univingtillion` …) and tens prefix `vingti` instead of `viginti` (10^63
+  `vingtillion` instead of `vigintillion`). Also to check with the fix: 10^93 `trigintallion` (strict
+  `trigintillion`, final vowel of the last prefix not turned into `i`) and 10^3003 `unillinillion`
+  (strict `millinillion`). Not errors, to keep and document as intentional divergences from dictionary
+  spellings: `quinquadecillion` (`quindecillion`), `sedecillion` (`sexdecillion`), `novendecillion`
+  (`novemdecillion`), which are the systematic Conway forms. The fix deliberately changes EN, ID, SW, TR
+  and EE (`unideciliɔn` → `undeciliɔn`, `vingtiliɔn` → `vigintiliɔn`): update `SCALE.xml`,
+  `English.feature` and `NumberScaleContractTests.ShortScale_ConwayWechsler_KnownTableErrors` together.
 
 - **NTS-09 — `Trigger` elements are not inherited through `baseOn`.** `XmlSerializer` materializes
   an absent `<Trigger>` list as an empty list, so `MergeLanguageDefinition`'s

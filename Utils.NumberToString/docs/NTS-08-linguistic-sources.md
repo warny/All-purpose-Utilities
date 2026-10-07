@@ -82,8 +82,10 @@ the remaining validation and its criterion are tracked per capability in `TODO.m
   static names (`""`, `akpe`), `groupSeparator="li"` and the suffix `ɔn`, so each name is
   prefix + `li` + `ɔn` (`mi`+`li`+`ɔn` = `miliɔn`, `quadri`+`li`+`ɔn` = `quadriliɔn`). The effective
   `startIndex` is 0: with two static names, scale 2 is Conway n = 1. The higher names therefore follow the
-  shared tables as they are, including their known divergences from the dictionary names
-  (`unideciliɔn`, `vingtiliɔn`, …), tracked for every SCALE-SHORT language in NTS-24.
+  shared tables as they are. Conway's systematic forms are intended (`quinquadeciliɔn`, `sedeciliɔn`,
+  `novendeciliɔn`, not the dictionary `quin-`, `sex-`, `novem-`); two table errors (`uni` for `un`,
+  `vingti` for `viginti`, hence `unideciliɔn`, `vingtiliɔn`) are tracked for every SCALE-SHORT language
+  in NTS-24.
 - **Domain.** The scale is unbounded (`NumberScale.IsUnbounded`, `CanNameGroup` true for every index), so
   `maxNumber` is removed, the policy of the other SCALE-SHORT languages (EN, ID, SW, TR). Cardinals accept
   any `BigInteger` (10^303 = `centiliɔn ɖeka`); ordinals keep the engine-wide `long` limit.

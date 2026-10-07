@@ -62,9 +62,11 @@ public class NumberToStringNts23Tests
         for (int index = 0; index < expected.Length; index++)
             Assert.AreEqual(expected[index], scale.GetScaleName(index), $"scale {index}");
 
-        // Higher names follow the SCALE-SHORT tables as they are (see NTS-24 for their known divergences).
+        // Higher names follow the SCALE-SHORT tables as they are: sedeciliɔn is the intended Conway form, while
+        // unideciliɔn and vingtiliɔn carry the two table errors tracked by NTS-24 (strict undeciliɔn, vigintiliɔn).
         Assert.AreEqual("unideciliɔn", scale.GetScaleName(12));
         Assert.AreEqual("duodeciliɔn", scale.GetScaleName(13));
+        Assert.AreEqual("sedeciliɔn", scale.GetScaleName(17));
         Assert.AreEqual("vingtiliɔn", scale.GetScaleName(21));
         Assert.AreEqual("centiliɔn", scale.GetScaleName(101));
     }

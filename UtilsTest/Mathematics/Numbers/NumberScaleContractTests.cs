@@ -59,8 +59,10 @@ public class NumberScaleContractTests
     }
 
     /// <summary>
-    /// Verifies the shared SCALE-SHORT Conway-Wechsler tables against a reference table of short-scale names
-    /// (index = Conway n + 1). The expected values are literal, not recomputed by the test.
+    /// Verifies the shared SCALE-SHORT tables against a reference table of strict Conway-Guy-Wechsler names
+    /// (index = Conway n + 1). quinquadecillion, sedecillion and novendecillion are the systematic Conway
+    /// forms, intentionally preferred to the dictionary quindecillion, sexdecillion and novemdecillion.
+    /// The expected values are literal, not recomputed by the test.
     /// </summary>
     [TestMethod]
     public void ShortScale_ConwayWechsler_MatchesReferenceNames()
@@ -71,7 +73,8 @@ public class NumberScaleContractTests
             (1, "thousand"), (2, "million"), (3, "billion"), (4, "trillion"), (5, "quadrillion"),
             (6, "quintillion"), (7, "sextillion"), (8, "septillion"), (9, "octillion"), (10, "nonillion"),
             (11, "decillion"), (13, "duodecillion"), (14, "tredecillion"), (15, "quattuordecillion"),
-            (18, "septendecillion"), (19, "octodecillion"), (101, "centillion"),
+            (16, "quinquadecillion"), (17, "sedecillion"), (18, "septendecillion"), (19, "octodecillion"),
+            (20, "novendecillion"), (101, "centillion"),
         ];
 
         Assert.IsTrue(scale.IsUnbounded);
@@ -80,20 +83,18 @@ public class NumberScaleContractTests
     }
 
     /// <summary>
-    /// Pins the SCALE-SHORT names that differ from the usual dictionary short-scale names (NTS-24): 10^36
-    /// "undecillion", 10^48 "quindecillion", 10^51 "sexdecillion", 10^60 "novemdecillion" and 10^63
-    /// "vigintillion". The tables are shared by EN, ID, SW, TR and EE, so a correction is a separate,
-    /// multi-language decision; update this test together with it.
+    /// Pins the two known SCALE-SHORT table errors against strict Conway-Wechsler (NTS-24): the units prefix
+    /// "uni" instead of "un" (10^36 "unidecillion", strict "undecillion") and the tens prefix "vingti" instead
+    /// of "viginti" (10^63 "vingtillion", strict "vigintillion"). The tables are shared by EN, ID, SW, TR and
+    /// EE, so the correction is a separate, deliberate multi-language change; replace these assertions with
+    /// the strict forms when it lands.
     /// </summary>
     [TestMethod]
-    public void ShortScale_ConwayWechsler_KnownDivergencesFromDictionaryNames()
+    public void ShortScale_ConwayWechsler_KnownTableErrors()
     {
         var scale = NumberToStringConverter.GetConverter("SCALE-SHORT").Scale;
 
         Assert.AreEqual("unidecillion", scale.GetScaleName(12));
-        Assert.AreEqual("quinquadecillion", scale.GetScaleName(16));
-        Assert.AreEqual("sedecillion", scale.GetScaleName(17));
-        Assert.AreEqual("novendecillion", scale.GetScaleName(20));
         Assert.AreEqual("vingtillion", scale.GetScaleName(21));
     }
 }
