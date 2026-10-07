@@ -13,6 +13,7 @@ Feature: Ewe number conversion
 # wui- and vɔ ([K], [B], [W]); seven "adre" ([B] 591 occurrences, [W]); nine "asieke" ([K], [I], [W], [P]);
 # the tens-units connector "vɔ" is written as a separate word ([K], [W]; [B] also hyphenates it).
 # Evidence column: A = explicitly attested value, R = productive application of a sourced rule.
+# P = project-defined productive Conway-Wechsler scale name (NTS-23), not an individually attested Ewe form.
 
 Scenario Outline: Units, teens and tens
     Given I use the "EE" number converter
@@ -157,12 +158,31 @@ Examples:
     | 999000000 | miliɔn alafa asieke blaasieke vɔ asieke                     | R                  |
     | 999999999 | miliɔn alafa asieke blaasieke vɔ asieke akpe alafa asieke blaasieke vɔ asieke alafa asieke blaasieke vɔ asieke | R |
 
-# biliɔn/triliɔn are not opened (NTS-23): no written Ewe attestation outside CLDR's compact patterns,
-# and CLDR's own Ewe spellout rules give 10^9 as "miliɔn akpe" and biliɔn as 10^12.
-Scenario: The billion is outside the documented domain
+# NTS-23. Larger scales follow the Conway-Wechsler short scale (SCALE-SHORT tables, prefix + "li" + "ɔn").
+# Sourced linguistic anchors (ticket premises, CLDR compact patterns): miliɔn 10^6, biliɔn 10^9, triliɔn 10^12.
+# quadriliɔn and above are a project-defined productive Conway-Wechsler continuation (P), not individually
+# attested Ewe forms. CLDR RBNF's divergent system (10^9 "miliɔn akpe", biliɔn 10^12) and its "kpakple"
+# connector are not used: "kpakple" is only attested as a nominal "and" ([B], 99 occurrences, none numeric).
+Scenario Outline: Billions and higher scales
     Given I use the "EE" number converter
-    When I attempt to convert the cardinal number 1000000000
-    Then conversion is rejected because the value is out of range
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number                 | expected                                    | evidence |
+    | 1000000000             | biliɔn ɖeka                                 | A anchor |
+    | 1000000000000          | triliɔn ɖeka                                | A anchor |
+    | 2000000000             | biliɔn eve                                  | R        |
+    | 21000000000            | biliɔn blaeve vɔ ɖekɛ                       | R        |
+    | 200000000000000        | triliɔn alafa eve                           | R        |
+    | 1001000000             | biliɔn ɖeka kple miliɔn ɖeka                | R        |
+    | 1000001000             | biliɔn ɖeka kple akpe ɖeka                  | R        |
+    | 1000000001             | biliɔn ɖeka kple ɖeka                       | R        |
+    | 1000000000001          | triliɔn ɖeka kple ɖeka                      | R        |
+    | 1000000000000000       | quadriliɔn ɖeka                             | P        |
+    | 999000000000000000     | quadriliɔn alafa asieke blaasieke vɔ asieke | P        |
+    | 1000000000000000000    | quintiliɔn ɖeka                             | P        |
+    | 1000000000000000000000 | sextiliɔn ɖeka                              | P        |
 
 # Ordinals: every ordinal except "first" (gbãtɔ) adds -lia to the cardinal ([I]: "The ordinal numerals,
 # with the exception of /gbãto/ 'first', are formed by adding /-lia/ to each of the numbers"). [B] attests
@@ -214,6 +234,9 @@ Examples:
     | 200000000 | miliɔn alafa evelia                     | R [I]                  |
     | 1100000   | miliɔn ɖeka akpe alafa ɖekalia          | R [I]                  |
     | 1100001   | miliɔn ɖeka akpe alafa ɖeka kple ɖekalia | R [I]                 |
+    | 1000000000       | biliɔn ɖekalia                   | R [I]                  |
+    | 1000000000000    | triliɔn ɖekalia                  | R [I]                  |
+    | 1000000000000000 | quadriliɔn ɖekalia               | R [I] P                |
 
 # No source attests an ordinal of zero: the suffix is never applied to "naneke o".
 Scenario: Ordinal zero is rejected

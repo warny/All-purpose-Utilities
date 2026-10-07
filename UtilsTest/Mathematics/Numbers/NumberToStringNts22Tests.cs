@@ -7,8 +7,8 @@ using Utils.NumberToString;
 namespace UtilsTest.NumberToString;
 
 /// <summary>
-/// NTS-22 guards for the Ewe millions: the technical domain matches the validated scales (akpe, miliɔn),
-/// the corpus attestations are reproduced exactly, and combinatorial sweeps (every multiplier 1–999 with
+/// NTS-22 guards for the Ewe millions: the border with the billions (opened by NTS-23), the corpus
+/// attestations are reproduced exactly, and combinatorial sweeps (every multiplier 1–999 with
 /// representative lower parts, never the whole domain) prove that miliɔn takes the standalone cardinal
 /// after the noun and that ordinals suffix the last element only. Structural checks, not linguistic ones.
 /// </summary>
@@ -28,22 +28,22 @@ public class NumberToStringNts22Tests
     /// <summary>Converts a cardinal.</summary>
     private static string C(long value) => Ewe.Convert((BigInteger)value);
 
-    /// <summary>The scale names stop at miliɔn, and the public domain at 999 999 999.</summary>
+    /// <summary>
+    /// The millions border the billions: 999 999 999 is the last value spelled with miliɔn as its highest scale,
+    /// and since NTS-23 the next value opens biliɔn instead of being rejected (see <see cref="NumberToStringNts23Tests"/>).
+    /// </summary>
     [TestMethod]
-    public void Ewe_DomainMatchesTheValidatedScales()
+    public void Ewe_MillionsBorderTheBillions()
     {
         var converter = Ewe;
-        Assert.IsTrue(converter.Scale.CanNameGroup(0));
-        Assert.IsTrue(converter.Scale.CanNameGroup(1));
         Assert.IsTrue(converter.Scale.CanNameGroup(2));
-        Assert.IsFalse(converter.Scale.CanNameGroup(3));
-        Assert.AreEqual(new BigInteger(999_999_999), converter.MaxNumber);
+        Assert.AreEqual("miliɔn", converter.Scale.GetScaleName(2));
 
         Assert.AreEqual("miliɔn alafa asieke blaasieke vɔ asieke akpe alafa asieke blaasieke vɔ asieke alafa asieke blaasieke vɔ asieke", C(999_999_999));
-        Assert.Throws<ArgumentOutOfRangeException>(() => converter.Convert((BigInteger)1_000_000_000));
-        Assert.Throws<ArgumentOutOfRangeException>(() => converter.Convert((BigInteger)(-1_000_000_000)));
+        Assert.AreEqual("biliɔn ɖeka", C(1_000_000_000));
+        Assert.AreEqual("minus biliɔn ɖeka", C(-1_000_000_000));
         Assert.AreEqual("miliɔn alafa asieke blaasieke vɔ asieke akpe alafa asieke blaasieke vɔ asieke alafa asieke blaasieke vɔ asiekelia", converter.ConvertOrdinal(999_999_999));
-        Assert.Throws<InvalidOperationException>(() => converter.ConvertOrdinal(1_000_000_000));
+        Assert.AreEqual("biliɔn ɖekalia", converter.ConvertOrdinal(1_000_000_000));
     }
 
     /// <summary>The Biblica values written out with their digits are reproduced exactly.</summary>

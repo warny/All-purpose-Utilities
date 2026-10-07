@@ -57,4 +57,43 @@ public class NumberScaleContractTests
         Assert.AreEqual(nullPlaceholder.GetScaleName(999), emptyPlaceholder.GetScaleName(999));
         StringAssert.Contains(explicitPlaceholder.GetScaleName(999), "zero");
     }
+
+    /// <summary>
+    /// Verifies the shared SCALE-SHORT Conway-Wechsler tables against a reference table of short-scale names
+    /// (index = Conway n + 1). The expected values are literal, not recomputed by the test.
+    /// </summary>
+    [TestMethod]
+    public void ShortScale_ConwayWechsler_MatchesReferenceNames()
+    {
+        var scale = NumberToStringConverter.GetConverter("SCALE-SHORT").Scale;
+        (int Index, string Name)[] reference =
+        [
+            (1, "thousand"), (2, "million"), (3, "billion"), (4, "trillion"), (5, "quadrillion"),
+            (6, "quintillion"), (7, "sextillion"), (8, "septillion"), (9, "octillion"), (10, "nonillion"),
+            (11, "decillion"), (13, "duodecillion"), (14, "tredecillion"), (15, "quattuordecillion"),
+            (18, "septendecillion"), (19, "octodecillion"), (101, "centillion"),
+        ];
+
+        Assert.IsTrue(scale.IsUnbounded);
+        foreach (var (index, name) in reference)
+            Assert.AreEqual(name, scale.GetScaleName(index), $"scale {index}");
+    }
+
+    /// <summary>
+    /// Pins the SCALE-SHORT names that differ from the usual dictionary short-scale names (NTS-24): 10^36
+    /// "undecillion", 10^48 "quindecillion", 10^51 "sexdecillion", 10^60 "novemdecillion" and 10^63
+    /// "vigintillion". The tables are shared by EN, ID, SW, TR and EE, so a correction is a separate,
+    /// multi-language decision; update this test together with it.
+    /// </summary>
+    [TestMethod]
+    public void ShortScale_ConwayWechsler_KnownDivergencesFromDictionaryNames()
+    {
+        var scale = NumberToStringConverter.GetConverter("SCALE-SHORT").Scale;
+
+        Assert.AreEqual("unidecillion", scale.GetScaleName(12));
+        Assert.AreEqual("quinquadecillion", scale.GetScaleName(16));
+        Assert.AreEqual("sedecillion", scale.GetScaleName(17));
+        Assert.AreEqual("novendecillion", scale.GetScaleName(20));
+        Assert.AreEqual("vingtillion", scale.GetScaleName(21));
+    }
 }

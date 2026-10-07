@@ -43,6 +43,13 @@ All notable changes to this project will be documented in this file.
 - Added `ItalianOrdinalLanguageSpecifics`, restricting Italian ordinals to verified forms.
 - Added `WolofOrdinalLanguageSpecifics`, a domain guard rejecting the Wolof ordinals of zero and of the round thousands.
 
+### Changed — `omy.Utils.NumberToString` (NTS-23 closed)
+- Ewe large-number naming now follows the Conway-Wechsler short scale, anchored by sourced `miliɔn`,
+  `biliɔn` and `triliɔn` forms and productively extended to higher `-liɔn` names (`quadriliɔn`,
+  `quintiliɔn` …). `EE` inherits the `SCALE-SHORT` prefix tables (`baseOn`), spelled prefix + `li` + `ɔn`;
+  its `maxNumber` is removed (unbounded `BigInteger` cardinals, ordinals within `long`). Values up to
+  999 999 999 are unchanged. Configuration only: no engine, API or XSD change.
+
 ### Added — `omy.Utils.NumberToString` (NTS-20)
 - Added `<Groups onScale="…">` (`NumberToStringConverterOptions.ScaleScopedGroups`, converter
   `ScaleScopedGroups`, `ScaleScopedGroups` record, `GroupsListType.OnScale`): digit tables rendering the

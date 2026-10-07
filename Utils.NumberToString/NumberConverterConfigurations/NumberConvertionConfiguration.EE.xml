@@ -11,10 +11,16 @@
 	  <Groups onScale> table is needed. "kple" joins the hundreds to 1-10 (optional before 11-99, not
 	  produced) and the thousands to a lower part below 100.
 	  NTS-22: miliɔn (10^6) is a static scale name used exactly like akpe (Bible: "miliɔn ɖeka akpe alafa
-	  ɖeka" 1 100 000, "miliɔn alafa eve" 200 000 000); "akpe akpe" is accepted, not produced. biliɔn and
-	  triliɔn are not opened (NTS-23): the domain stops at 999 999 999.
+	  ɖeka" 1 100 000, "miliɔn alafa eve" 200 000 000); "akpe akpe" is accepted, not produced.
+	  NTS-23: the large scales follow the Conway-Wechsler short scale inherited from SCALE-SHORT (baseOn),
+	  spelled prefix + "li" + "ɔn". Sourced linguistic anchors: akpe (10^3, static), miliɔn (10^6), biliɔn
+	  (10^9), triliɔn (10^12), which the generator reproduces exactly (CLDR compact patterns). Higher names
+	  (quadriliɔn, quintiliɔn, ...) are a project-defined productive continuation, not individually attested
+	  Ewe forms. CLDR RBNF's divergent system (10^9 "miliɔn akpe", biliɔn 10^12) and its "kpakple" connector
+	  are not used. The scale is unbounded, so the domain has no maxNumber, like the other SCALE-SHORT languages.
 	-->
 	<Language
+        baseOn="SCALE-SHORT"
         groupSize="3"
         separator=" "
         groupSeparator=""
@@ -27,7 +33,6 @@
         groupConnectorThreshold="100"
         intraGroupConnector="kple"
         intraGroupConnectorThreshold="11"
-        maxNumber="999999999"
         >
 		<Culture>EE</Culture>
 		<Groups>
@@ -69,12 +74,16 @@
 				<Digit digit="9" string="alafa asieke" buildString="alafa asieke *" />
 			</Group>
 		</Groups>
-		<NumberScale firstLetterUpperCase="false">
+		<!-- Scale 2 onward is generated from the inherited SCALE-SHORT prefix tables: mi + li + ɔn = miliɔn,
+		     bi + li + ɔn = biliɔn, tri + li + ɔn = triliɔn, quadri + li + ɔn = quadriliɔn, ... -->
+		<NumberScale firstLetterUpperCase="false" groupSeparator="li">
 			<StaticNames>
 				<Scale value="0" string="" />
 				<Scale value="1" string="akpe" />
-				<Scale value="2" string="miliɔn" />
 			</StaticNames>
+			<Suffixes>
+				<Suffix>ɔn</Suffix>
+			</Suffixes>
 		</NumberScale>
 		<Exceptions>
 			<Number value="11" string="wuiɖekɛ" />
