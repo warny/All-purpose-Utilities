@@ -259,7 +259,8 @@ if (conv.SupportsOrdinals)
 > converter with an uppercase `AdjustFunction` correctly produces `"TWENTY-FIRST"`, not
 > `"TWENTY-ONEth"`.
 
-> **Languages without ordinals**: SW (Swahili), ZU (Zulu).
+> **Languages without ordinal support**: SW (Swahili) and ZU (Zulu) are deferred because of the
+> noun-class concord; EE (Ewe) is disabled pending the cardinal rebuild (NTS-20).
 > Their ordinals require an obligatory noun-class concord and have no standalone form; they are
 > deliberately deferred (see `docs/NTS-08-linguistic-sources.md`).
 > Romanian ordinals are supported through `RomanianOrdinalLanguageSpecifics` (DOOM forms) for
