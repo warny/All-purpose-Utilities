@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_ItalianOrdinalLanguageSpecifics" data-uid="Utils.NumberToString.ItalianOrdinalLanguageSpecifics" class="text-break">
-Class ItalianOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ItalianOrdinalLanguageSpecifics.cs/#L26"><i class="bi bi-code-slash"></i></a>
+Class ItalianOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ItalianOrdinalLanguageSpecifics.cs/#L29"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -247,12 +247,15 @@ whose ordinal is not established.</p>
 
 
   <h2 id="Utils_NumberToString_ItalianOrdinalLanguageSpecifics_remarks">Remarks</h2>
-  <div class="markdown level0 remarks"><p>Validated domain: 1-1999 except 1110-1910, the round thousands 2000-999000 (NTS-13), 1010
-(<code>millesimo decimo</code>) and 100001-100009 (<code>centomillesimoprimo</code> …) (NTS-15), and the round
-multiples of milione, miliardo and bilione, 10^6-999 × 10^12 (<code>milionesimo</code>,
-<code>duemilionesimo</code>, <code>miliardesimo</code>, <code>bilionesimo</code>) (NTS-17).</p>
-<p>Rejected with <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a>:</p>
-<ul><li>zero — the NTS-12 decision is unchanged (<code>zeresimo</code> is only attested in special, mathematical uses);</li><li>1110, 1210 … 1910 — two analytic splits are possible (<code>millesimo centodecimo</code>, <code>millecentesimo decimo</code>) and none is attested (TODO NTS-15);</li><li>the other non-round thousands above 1999 — no consulted source establishes a canonical form, and Treccani ("centomillesimo") treats the synthetic <code>centomiladuesimo</code> as a partitive (TODO NTS-15);</li><li>the non-round values from a million, and every value from a biliardo (10^15) — no compound form and no biliardo/trilione ordinal is sourced (TODO NTS-18).</li></ul>
+  <div class="markdown level0 remarks"><p>Supported domain: 1-1999 except 1110-1910, the round thousands 2000-999000 (NTS-13), 1010
+(<code>millesimo decimo</code>) and 100001-100009 (<code>centomillesimoprimo</code> …) (NTS-15), and every
+round multiple of milione, miliardo, bilione, biliardo and trilione that fits a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a>,
+10^6-9 × 10^18 (<code>milionesimo</code>, <code>duemilionesimo</code> … <code>trilionesimo</code>,
+<code>novetrilionesimo</code>) (NTS-17, NTS-18).</p>
+<p>Rejected with <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a>. These are deliberate linguistic
+limitations, not pending technical work: the engine could compose these values, but no consulted
+normative source establishes a canonical composition or spelling.</p>
+<ul><li>zero — the NTS-12 decision is unchanged (<code>zeresimo</code> is only attested in special, mathematical uses);</li><li>1110, 1210 … 1910 — two analytic splits are possible (<code>millesimo centodecimo</code>, <code>millecentesimo decimo</code>) and no source selects one;</li><li>the other non-round thousands above 1999 — among the consulted Treccani material the juxtaposition is explicitly exemplified only for millesimo and centomillesimo, and Treccani treats the synthetic <code>centomiladuesimo</code> as a partitive;</li><li>the non-round values from a million — the only proposals (<code>milionesimoprimo</code>, <code>unmilioneunesimo</code>) are self-declared virtual extrapolations.</li></ul>
 </div>
 
 
@@ -264,7 +267,7 @@ multiples of milione, miliardo and bilione, 10^6-999 × 10^12 (<code>milionesimo
 
   <h3 id="Utils_NumberToString_ItalianOrdinalLanguageSpecifics_FinalizeWriting_System_String_System_String_" data-uid="Utils.NumberToString.ItalianOrdinalLanguageSpecifics.FinalizeWriting(System.String,System.String)">
   FinalizeWriting(string, string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ItalianOrdinalLanguageSpecifics.cs/#L35"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ItalianOrdinalLanguageSpecifics.cs/#L48"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Finalizes a converted text according to language-specific writing rules.</p>
@@ -310,7 +313,7 @@ fragments without invoking this method, then invokes it exactly once for each pu
 
   <h3 id="Utils_NumberToString_ItalianOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int32_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__" data-uid="Utils.NumberToString.ItalianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)">
   TryConvertOrdinal(int, IReadOnlyDictionary&lt;string, string&gt;, out string?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ItalianOrdinalLanguageSpecifics.cs/#L38"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ItalianOrdinalLanguageSpecifics.cs/#L51"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Attempts to convert a non-negative integer to its ordinal string representation.</p>
@@ -358,7 +361,7 @@ otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/
 
   <h3 id="Utils_NumberToString_ItalianOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__" data-uid="Utils.NumberToString.ItalianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)">
   TryConvertOrdinal(long, IReadOnlyDictionary&lt;string, string&gt;, out string?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ItalianOrdinalLanguageSpecifics.cs/#L42"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ItalianOrdinalLanguageSpecifics.cs/#L55"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Attempts to convert a 64-bit integer to its ordinal string representation.
@@ -410,7 +413,7 @@ otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ItalianOrdinalLanguageSpecifics.cs/#L26" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ItalianOrdinalLanguageSpecifics.cs/#L29" class="edit-link">Edit this page</a>
         </div>
 
 
