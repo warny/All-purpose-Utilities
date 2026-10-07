@@ -57,8 +57,37 @@ the remaining validation and its criterion are tracked per capability in `TODO.m
 | EU | EU, eu-ES | none | Yes (existing) | Declarative | Yes | 15 / 12 | none | **Consulted**: Sareko Euskal Gramatika (EHU), “Orduak nola eman euskaraz” (`ordu bata`, `ordu bat eta erdiak` with `*ordu bata eta erdiak` marked wrong, `ordu bata eta laurden`, `bostak laurden gutxi`) | Clock-case forms are literal per hour; cardinals unchanged |
 | SW | SW, SW-KE, SW-TZ | SCALE-SHORT | **Deferred** | — | Yes | 15 / 12, `hourOffset=-6` | none | **Consulted**: Five Colleges LangMedia, “Swahili – Tanzania – Telling Time”; SpokenSwahili, “Telling the time in Swahili” | No day-part words (asubuhi, mchana, jioni, usiku) |
 | ZU | ZU | none | **Deferred** | — | Yes | 15 / 12 | none | **Consulted**: Unisa, *Learn online Zulu*, Theme 4 (`Yihora lesihlanu`, `Ligamenxe elesihlanu`, `... lishayile elesihlanu`, `... ngaphambi kwelesihlanu`) — single source | Hour forms are literal ClockTime patterns; they do not enable ordinals |
-| EE | EE | none | Yes (NTS-20): cardinal + `-lia` on the last element, `gbãtɔ` for 1 | Declarative + `ZeroOrdinalUnsupportedLanguageSpecifics` | **Deferred** | — | none | **Consulted** (NTS-20): Dzablu-Kumah, *Basic Ewe for Foreign Students*; Biblica Open Ewe Contemporary Scriptures; *Ewe Basic Course* 1968; Peace Corps Togo 2010; Wiktionary | Cardinals validated 0–999 999 (`akpe` before its multiplier, `multiplierPosition="afterScale"`); zero ordinal and the million unsupported |
+| EE | EE | none | Yes (NTS-20): cardinal + `-lia` on the last element, `gbãtɔ` for 1 | Declarative + `ZeroOrdinalUnsupportedLanguageSpecifics` | **Deferred** | — | none | **Consulted** (NTS-20): Dzablu-Kumah, *Basic Ewe for Foreign Students*; Biblica Open Ewe Contemporary Scriptures; *Ewe Basic Course* 1968; Peace Corps Togo 2010; Wiktionary | Cardinals validated 0–999 999 999 (NTS-22: static scales `akpe`, `miliɔn`, each before its standalone multiplier, `multiplierPosition="afterScale"`); zero ordinal unsupported; `biliɔn`/`triliɔn` deferred (NTS-23) |
 | WO | WO | none | Yes (`-éel`, NTS-16, NTS-19) | Declarative + `WolofOrdinalLanguageSpecifics` | **Deferred** | — | none | No consistent source found | Cardinals 0–999 999; no ordinal of zero nor of the round thousands |
+
+## NTS-22 — Ewe millions (2026-10-07)
+
+- **Sources.**
+
+  | Source | Million | Type | Date | Status |
+  |---|---|---|---|---|
+  | Biblica Open Ewe Contemporary Scriptures (Ghana) | `miliɔn ɖeka akpe alafa ɖeka` (1 100 000, 1CH 21:5), `miliɔn alafa eve` (200 000 000, REV 9:16) | contemporary corpus, digits in parentheses | 1988/2006/2020 | written productive use: noun first, standalone multiplier, `akpe` group after it |
+  | Wiktionary, `miliɔn ɖeka` | `miliɔn ɖeka`, ordinal `miliɔn ɖekalia` | secondary | — | corroboration |
+  | Omniglot | `miliɔn ɖeka` | secondary | — | corroboration |
+  | CLDR `ee.xml`, long compact patterns | `miliɔn 0` (10^6–10^8), `biliɔn 0` (10^9–10^11), `triliɔn 0` (10^12–10^14) | localization data | current | formatting labels only |
+  | CLDR `rbnf/ee.xml` (Gilbert Adjoyi) | `miliɔn <n>`; 10^9 `miliɔn akpe <n>`; `biliɔn` = 10^12; `kpakple` after hundred-thousands and millions | spellout rules, one contributor | current | contradicts the compact patterns above; not produced |
+  | Peace Corps Togo 2010, glossary | `akpe akpe` | pedagogical, colloquial | 2010 | accepted, not produced |
+
+- **`akpe akpe`.** The Bible uses `akpe akpewo` (plural) only for an indefinite "thousands upon
+  thousands" (GEN 24:60, DAN 7:10 `Ame akpe akpewo nɔ esubɔm, ame akpe ewo teƒe akpe ewo`, ECC 4:16,
+  MIC 6:7), never for an exact million; its exact millions use `miliɔn`. The glossary form is therefore
+  documented as a descriptive (multiplicative) phrase, not produced.
+- **Decision.** `miliɔn` is a static scale name (`<Scale value="2" string="miliɔn" />`), placed before its
+  standalone-cardinal multiplier like `akpe`; the unused `<Suffixes><Suffix>miliɔn</Suffix>` is removed;
+  `maxNumber="999999999"`. The groups are joined as below a million (`kple` before a lower top group
+  below 100): a productive extension, since no source writes a million followed by a lower group below
+  100 000. Ordinals: `-lia` on the last element (`miliɔn ɖekalia`, Wiktionary).
+- **Not opened (NTS-23).** `biliɔn` and `triliɔn`: no written Ewe attestation (0 in the Bible; none in
+  the web searches made, which only returned Omniglot/Wiktionary tables) outside CLDR's compact patterns, and CLDR's spellout rules give a different system
+  (`miliɔn akpe` for 10^9, `biliɔn` for 10^12). No scale system (short or long) is claimed beyond 10^6.
+  No higher names are generated (no `<Suffixes>`, no prefix tables).
+- **Evidence levels.** Attested: 1 000 000, 1 100 000, 200 000 000; ordinal 1 000 000. Productive: every
+  other value to 999 999 999 and every other ordinal.
 
 ## NTS-20 — Ewe cardinals rebuilt, ordinals restored (2026-10-07)
 
@@ -554,7 +583,7 @@ The task's working matrix was a starting point; wherever a consulted source disa
 - **ZU ordinals**: same reason (class-dependent relative concords `wokuqala`, `lesibili`, `esithathu` ...). The clock uses literal class-5 forms only.
 - **EE clock**: only `ga eto` / `ga eto kple afa` were known; no source for minutes was found, and a clock limited to :00 and :30 would round aggressively.
 - **WO clock**: native (`waxtu`) and French-derived readings coexist; no single sourced system covering 01:00–01:45 was established.
-- **EE million** (NTS-20): `akpe akpe` (Peace Corps) vs `miliɔn ɖeka` (Omniglot, Wiktionary) is undecided; `maxNumber` stays 999999 (NTS-22).
+- **EE billion and trillion** (NTS-22 → NTS-23): `biliɔn`/`triliɔn` appear only in CLDR's compact patterns, which CLDR's own Ewe spellout contradicts (10^9 `miliɔn akpe`, `biliɔn` = 10^12); `maxNumber` stays 999 999 999.
 - **WO ordinals of the round thousands** (NTS-19): conflicting forms for `junni` + suffix (`junneel`, `junniéél`).
 - **WO million** (NTS-19): not audited, `maxNumber` stays 999 999 (NTS-21).
 
@@ -617,6 +646,7 @@ supported value, round scales, fail-closed range) and by the language `.feature`
 - Biblica Open Ewe Contemporary Scriptures (eBible.org `ewe`): <https://ebible.org/details.php?id=ewe>
 - Peace Corps Togo, *Ewe O.P.L. Workbook* (2010): <https://www.livelingua.com/peace-corps/Ewe/Ewe%20Course%20-2010.pdf>
 - Wiktionary, Ewe cardinal numbers: <https://en.wiktionary.org/wiki/Category:Ewe_cardinal_numbers>
+- Unicode CLDR, Ewe locale data: <https://github.com/unicode-org/cldr/blob/main/common/main/ee.xml>; Ewe spellout rules: <https://github.com/unicode-org/cldr/blob/main/common/rbnf/ee.xml>
 - Decree 2005-992, full text (copy of the *Journal officiel*): <https://labo-styloculture.com/wolofologos/decret-n-2005-992-du-21-octobre-2005/>; original: <http://www.jo.gouv.sn/spip.php?article4802>
 - Gaye, *Practical Course in Wolof* (ERIC ED226616): <https://files.eric.ed.gov/fulltext/ED226616.pdf>
 - Voisin 2021, *Afrikanistik-Aegyptologie-Online*: <https://doi.org/10.18716/ojs/aaeo/2021_3478>

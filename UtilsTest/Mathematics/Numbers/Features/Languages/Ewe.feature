@@ -127,10 +127,41 @@ Scenario: Zero
     When I convert the cardinal number 0
     Then the result is "naneke o"
 
-# The million stays outside the domain (maxNumber 999999): [P] gives "akpe akpe", Omniglot "miliɔn ɖeka".
-Scenario: The million is outside the documented domain
+# NTS-22. Millions: the noun miliɔn precedes its multiplier, the standalone cardinal, like akpe
+# ([B] 1CH 21:5 "miliɔn ɖeka akpe alafa ɖeka (1,100,000)", REV 9:16 "miliɔn alafa eve (200,000,000)";
+# [W] "miliɔn ɖeka"; CLDR compact "miliɔn 0"). [P]'s "akpe akpe" is accepted, not produced: the Bible
+# only uses "akpe akpewo" for an indefinite "thousands upon thousands" (DAN 7:10, GEN 24:60).
+# The groups are joined like the thousands ("kple" before a lower group below 100), a productive
+# extension: no source writes a million followed by a lower group below 100 000.
+Scenario Outline: Millions
     Given I use the "EE" number converter
-    When I attempt to convert the cardinal number 1000000
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number    | expected                                                    | evidence           |
+    | 1000000   | miliɔn ɖeka                                                 | A [W] Omniglot     |
+    | 1000001   | miliɔn ɖeka kple ɖeka                                       | R                  |
+    | 1001000   | miliɔn ɖeka kple akpe ɖeka                                  | R                  |
+    | 1001001   | miliɔn ɖeka kple akpe ɖeka kple ɖeka                        | R                  |
+    | 1100000   | miliɔn ɖeka akpe alafa ɖeka                                 | A [B] 1CH 21:5     |
+    | 1100001   | miliɔn ɖeka akpe alafa ɖeka kple ɖeka                       | R                  |
+    | 2000000   | miliɔn eve                                                  | R                  |
+    | 3000000   | miliɔn etɔ̃                                                  | R                  |
+    | 10000000  | miliɔn ewo                                                  | R                  |
+    | 20000000  | miliɔn blaeve                                               | R                  |
+    | 21000000  | miliɔn blaeve vɔ ɖekɛ                                       | R                  |
+    | 100000000 | miliɔn alafa ɖeka                                           | R                  |
+    | 122000000 | miliɔn alafa ɖeka blaeve vɔ eve                             | R                  |
+    | 200000000 | miliɔn alafa eve                                            | A [B] REV 9:16     |
+    | 999000000 | miliɔn alafa asieke blaasieke vɔ asieke                     | R                  |
+    | 999999999 | miliɔn alafa asieke blaasieke vɔ asieke akpe alafa asieke blaasieke vɔ asieke alafa asieke blaasieke vɔ asieke | R |
+
+# biliɔn/triliɔn are not opened (NTS-23): no written Ewe attestation outside CLDR's compact patterns,
+# and CLDR's own Ewe spellout rules give 10^9 as "miliɔn akpe" and biliɔn as 10^12.
+Scenario: The billion is outside the documented domain
+    Given I use the "EE" number converter
+    When I attempt to convert the cardinal number 1000000000
     Then conversion is rejected because the value is out of range
 
 # Ordinals: every ordinal except "first" (gbãtɔ) adds -lia to the cardinal ([I]: "The ordinal numerals,
@@ -177,6 +208,12 @@ Examples:
     | 2000   | akpe evelia                               | R [I]                  |
     | 10000  | akpe ewolia                               | R [I]                  |
     | 2345   | akpe eve alafa etɔ̃ blaene vɔ atɔ̃lia       | R [I]                  |
+    | 1000000   | miliɔn ɖekalia                          | A [W]                  |
+    | 2000000   | miliɔn evelia                           | R [I]                  |
+    | 21000000  | miliɔn blaeve vɔ ɖekɛlia                | R [I]                  |
+    | 200000000 | miliɔn alafa evelia                     | R [I]                  |
+    | 1100000   | miliɔn ɖeka akpe alafa ɖekalia          | R [I]                  |
+    | 1100001   | miliɔn ɖeka akpe alafa ɖeka kple ɖekalia | R [I]                 |
 
 # No source attests an ordinal of zero: the suffix is never applied to "naneke o".
 Scenario: Ordinal zero is rejected

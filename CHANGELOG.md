@@ -43,6 +43,20 @@ All notable changes to this project will be documented in this file.
 - Added `ItalianOrdinalLanguageSpecifics`, restricting Italian ordinals to verified forms.
 - Added `WolofOrdinalLanguageSpecifics`, a domain guard rejecting the Wolof ordinals of zero and of the round thousands.
 
+### Added — `omy.Utils.NumberToString` (NTS-20)
+- Added `<Groups onScale="…">` (`NumberToStringConverterOptions.ScaleScopedGroups`, converter
+  `ScaleScopedGroups`, `ScaleScopedGroups` record, `GroupsListType.OnScale`): digit tables rendering the
+  multiplier of the covered scales, validated and compiled at load; `baseOn` merges them by range.
+- Added `multiplierPosition="beforeScale|afterScale"` (`ScaleMultiplierPosition` enum, options and
+  converter property): the scale noun may precede its multiplier.
+
+### Fixed — `omy.Utils.NumberToString` (NTS-20 and NTS-22 closed)
+- Ewe cardinals rebuilt on a sourced orthography (`ɖeka`, `etɔ̃`, `atɔ̃`, `adre`, `asieke`, `wuiɖekɛ`,
+  `blaeve vɔ ɖekɛ`, `alafa ɖeka`, `akpe ɖeka`, zero `naneke o`) and Ewe ordinals restored (`-lia` on the
+  last element, `gbãtɔ` for 1, zero rejected).
+- Ewe large-number domain extended: cardinals and ordinals now reach 999 999 999 with the static
+  scale name `miliɔn` (`miliɔn ɖeka akpe alafa ɖeka` = 1 100 000); `biliɔn` and higher are not supported.
+
 ### Fixed — `omy.Utils.NumberToString` (NTS-19 closed)
 - Wolof cardinals follow decree 2005-992 and the grammars: words separated by spaces instead of
   hyphens (`juróom benn`, `ñaar fukk`), the connective `-i` on the multiplier of hundreds and thousands
